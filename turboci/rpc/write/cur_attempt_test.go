@@ -27,10 +27,10 @@ import (
 	"go.chromium.org/luci/turboci/rpc/write"
 )
 
-func TestCurrentStageWrite(t *testing.T) {
+func TestCurrentAttempt(t *testing.T) {
 	t.Parallel()
 
-	csw := write.CurrentStageWrite{Msg: &orchestratorpb.WriteNodesRequest_CurrentStageWrite{}}
+	csw := write.CurrentAttemptWrite{Msg: &orchestratorpb.WriteNodesRequest_CurrentAttemptWrite{}}
 
 	_, err := csw.AddProgress("hei", boolData)
 	assert.NoErr(t, err)
@@ -38,14 +38,14 @@ func TestCurrentStageWrite(t *testing.T) {
 	_, err = csw.AddDetails(boolData, numData)
 	assert.NoErr(t, err)
 
-	assert.That(t, csw.Msg, should.Match(orchestratorpb.WriteNodesRequest_CurrentStageWrite_builder{
+	assert.That(t, csw.Msg, should.Match(orchestratorpb.WriteNodesRequest_CurrentAttemptWrite_builder{
 		Details: []*orchestratorpb.Value{
 			data.Value(boolData),
 			data.Value(numData),
 		},
 		Progress: []*orchestratorpb.WriteNodesRequest_StageAttemptProgress{
 			orchestratorpb.WriteNodesRequest_StageAttemptProgress_builder{
-				Msg: proto.String("hei"),
+				Message: proto.String("hei"),
 				Details: []*orchestratorpb.Value{
 					data.Value(boolData),
 				},
@@ -58,15 +58,15 @@ func TestGetCurrentStage(t *testing.T) {
 	t.Parallel()
 
 	req := write.NewRequest()
-	cur := req.GetCurrentStage()
+	cur := req.GetCurrentAttempt()
 	_, err := cur.AddProgress("hei")
 	assert.NoErr(t, err)
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
-		CurrentStage: orchestratorpb.WriteNodesRequest_CurrentStageWrite_builder{
+		CurrentAttempt: orchestratorpb.WriteNodesRequest_CurrentAttemptWrite_builder{
 			Progress: []*orchestratorpb.WriteNodesRequest_StageAttemptProgress{
 				orchestratorpb.WriteNodesRequest_StageAttemptProgress_builder{
-					Msg: proto.String("hei"),
+					Message: proto.String("hei"),
 				}.Build(),
 			},
 		}.Build(),

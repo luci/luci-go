@@ -86,13 +86,13 @@ func NewRequest() Request {
 }
 
 // AddReason adds a reason to the WriteNodesRequest.
-func (req Request) AddReason(msg string, details ...proto.Message) (*orchestratorpb.WriteNodesRequest_Reason, error) {
+func (req Request) AddReason(message string, details ...proto.Message) (*orchestratorpb.WriteNodesRequest_Reason, error) {
 	vals, err := data.ValuesErr(details...)
 	if err != nil {
 		return nil, fmt.Errorf("write.ReasonAddWithDetails: %w", err)
 	}
 	ret := orchestratorpb.WriteNodesRequest_Reason_builder{
-		Reason:  &msg,
+		Message: &message,
 		Details: vals,
 	}.Build()
 	req.Msg.SetReasons(append(req.Msg.GetReasons(), ret))

@@ -31,6 +31,7 @@ type AttemptState = orchestratorpb.StageAttemptState
 const (
 	AttemptStateUnknown       AttemptState = orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_UNKNOWN
 	AttemptStatePending       AttemptState = orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_PENDING
+	AttemptStateThrottled     AttemptState = orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_THROTTLED
 	AttemptStateScheduled     AttemptState = orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_SCHEDULED
 	AttemptStateRunning       AttemptState = orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_RUNNING
 	AttemptStateCancelling    AttemptState = orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_CANCELLING

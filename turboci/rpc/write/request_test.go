@@ -42,14 +42,14 @@ func TestAddReason(t *testing.T) {
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
 		Reasons: []*orchestratorpb.WriteNodesRequest_Reason{
 			orchestratorpb.WriteNodesRequest_Reason_builder{
-				Reason: proto.String("hello"),
-				Realm:  proto.String("some/realm"),
+				Message: proto.String("hello"),
+				Realm:   proto.String("some/realm"),
 				Details: []*orchestratorpb.Value{
 					data.Value(boolData),
 				},
 			}.Build(),
 			orchestratorpb.WriteNodesRequest_Reason_builder{
-				Reason: proto.String("yo"),
+				Message: proto.String("yo"),
 				Details: []*orchestratorpb.Value{
 					data.Value(numData),
 				},

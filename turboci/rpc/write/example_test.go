@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/rpc/write/dep"
-	"go.chromium.org/luci/turboci/stage"
 )
 
 func ExampleNewRequest() {
@@ -97,14 +96,13 @@ func ExampleNewRequest() {
 
 	req.AddStageCancellation(id.StageWorkNode("bad one"))
 
-	cur := req.GetCurrentStage()
-	cur.Msg.SetState(stage.AttemptStateRunning)
-	cur.Msg.SetProcessUid("my process UID")
-	cur.AddProgress("a message")
-	if _, err := cur.AddDetails(numData); err != nil {
+	curAttempt := req.GetCurrentAttempt()
+	curAttempt.GetStateTransition().SetRunning("my process UID", nil)
+	curAttempt.AddProgress("a message")
+	if _, err := curAttempt.AddDetails(numData); err != nil {
 		panic(err)
 	}
-	cur.Msg.SetContinuationGroup(
+	req.GetCurrentStage().Msg.SetContinuationGroup(
 		dep.MustGroup(
 			id.Stage("neeple"),
 			id.Stage("bleeple"),
@@ -117,7 +115,7 @@ func ExampleNewRequest() {
 	// {
 	//   "reasons": [
 	//     {
-	//       "reason": "stuff",
+	//       "message": "stuff",
 	//       "details": [
 	//         {
 	//           "value": {
@@ -289,9 +287,27 @@ func ExampleNewRequest() {
 	//       "cancelled": true
 	//     }
 	//   ],
+	//   "currentAttempt": {
+	//     "details": [
+	//       {
+	//         "value": {
+	//           "@type": "type.googleapis.com/google.protobuf.Value",
+	//           "value": 100
+	//         }
+	//       }
+	//     ],
+	//     "progress": [
+	//       {
+	//         "message": "a message"
+	//       }
+	//     ],
+	//     "stateTransition": {
+	//       "running": {
+	//         "processUid": "my process UID"
+	//       }
+	//     }
+	//   },
 	//   "currentStage": {
-	//     "state": "STAGE_ATTEMPT_STATE_RUNNING",
-	//     "processUid": "my process UID",
 	//     "continuationGroup": {
 	//       "edges": [
 	//         {
@@ -312,20 +328,7 @@ func ExampleNewRequest() {
 	//         }
 	//       ],
 	//       "threshold": 1
-	//     },
-	//     "details": [
-	//       {
-	//         "value": {
-	//           "@type": "type.googleapis.com/google.protobuf.Value",
-	//           "value": 100
-	//         }
-	//       }
-	//     ],
-	//     "progress": [
-	//       {
-	//         "msg": "a message"
-	//       }
-	//     ]
+	//     }
 	//   }
 	// }
 }
