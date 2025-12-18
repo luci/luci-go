@@ -41,6 +41,8 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	"go.chromium.org/luci/bisection/internal/resultdb"
+	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -131,6 +133,14 @@ func TestRunBisector(t *testing.T) {
 	mc := buildbucket.NewMockedClient(ctx, ctl)
 	ctx = mc.Ctx
 
+	// Setup mock LLM client
+	mockLLMClient := llm.NewMockClient(ctl)
+	// GenAI will fail/return no suspects, allowing nthsection tests to work as before
+	mockLLMClient.EXPECT().GenerateContent(gomock.Any(), gomock.Any()).Return("", nil).AnyTimes()
+
+	// Setup mock ResultDB client
+	mockResultDBClient := resultdb.NewMockClient(ctl)
+
 	bootstrapProperties := &structpb.Struct{
 		Fields: map[string]*structpb.Value{
 			"bs_key_1": structpb.NewStringValue("bs_val_1"),
@@ -209,7 +219,7 @@ func TestRunBisector(t *testing.T) {
 	mc.Client.EXPECT().ScheduleBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(scheduleBuildRes1, nil).Times(1)
 
 	ftt.Run("No analysis", t, func(t *ftt.Test) {
-		err := Run(ctx, 123, luciAnalysisClient)
+		err := Run(ctx, 123, luciAnalysisClient, mockLLMClient, mockResultDBClient)
 		assert.Loosely(t, err, should.NotBeNil)
 	})
 
@@ -217,7 +227,7 @@ func TestRunBisector(t *testing.T) {
 		tfa := testutil.CreateTestFailureAnalysis(ctx, t, nil)
 		enableBisection(ctx, t, false, tfa.Project)
 
-		err := Run(ctx, 1000, luciAnalysisClient)
+		err := Run(ctx, 1000, luciAnalysisClient, mockLLMClient, mockResultDBClient)
 		assert.Loosely(t, err, should.BeNil)
 		err = datastore.Get(ctx, tfa)
 		assert.Loosely(t, err, should.BeNil)
@@ -231,7 +241,7 @@ func TestRunBisector(t *testing.T) {
 		})
 		enableBisection(ctx, t, true, tfa.Project)
 
-		err := Run(ctx, 1001, luciAnalysisClient)
+		err := Run(ctx, 1001, luciAnalysisClient, mockLLMClient, mockResultDBClient)
 		assert.Loosely(t, err, should.NotBeNil)
 		err = datastore.Get(ctx, tfa)
 		assert.Loosely(t, err, should.BeNil)
@@ -246,7 +256,7 @@ func TestRunBisector(t *testing.T) {
 		})
 		enableBisection(ctx, t, true, tfa.Project)
 
-		err := Run(ctx, 1002, luciAnalysisClient)
+		err := Run(ctx, 1002, luciAnalysisClient, mockLLMClient, mockResultDBClient)
 		assert.Loosely(t, err, should.BeNil)
 		err = datastore.Get(ctx, tfa)
 		assert.Loosely(t, err, should.BeNil)
@@ -282,7 +292,7 @@ func TestRunBisector(t *testing.T) {
 		})
 		enableBisection(ctx, t, true, tfa.Project)
 
-		err := Run(ctx, 1002, luciAnalysisClient)
+		err := Run(ctx, 1002, luciAnalysisClient, mockLLMClient, mockResultDBClient)
 		assert.Loosely(t, err, should.NotBeNil)
 		err = datastore.Get(ctx, tfa)
 		assert.Loosely(t, err, should.BeNil)
@@ -323,7 +333,7 @@ func TestRunBisector(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, tf), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		err := Run(ctx, 1002, luciAnalysisClient)
+		err := Run(ctx, 1002, luciAnalysisClient, mockLLMClient, mockResultDBClient)
 		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		err = datastore.Get(ctx, tfa)
@@ -497,7 +507,7 @@ func TestRunBisector(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, tf), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		err := Run(ctx, 1003, luciAnalysisClient)
+		err := Run(ctx, 1003, luciAnalysisClient, mockLLMClient, mockResultDBClient)
 		assert.Loosely(t, err, should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 		err = datastore.Get(ctx, tfa)

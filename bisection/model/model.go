@@ -425,6 +425,12 @@ type TestFailure struct {
 	PrimaryErrorMessage string `gae:"primary_error_message,noindex"`
 	// Stack trace from the first error (max 4096 bytes).
 	FirstErrorTrace string `gae:"first_error_trace,noindex"`
+	// The invocation ID where this test failure occurred.
+	// Used to fetch full artifact content from ResultDB.
+	InvocationID string `gae:"invocation_id"`
+	// The result ID of the specific test result that failed.
+	// Used to fetch full artifact content from ResultDB.
+	ResultID string `gae:"result_id"`
 }
 
 // TestFailureAnalysis is the analysis for test failure.

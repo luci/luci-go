@@ -23,8 +23,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
+//go:generate mockgen -source=client.go -destination=testutil.go -package=llm
+
 type Client interface {
 	GenerateContent(ctx context.Context, prompt string) (string, error)
+	GenerateContentWithSchema(ctx context.Context, prompt string, schema *genai.Schema) (string, error)
 }
 
 type clientImpl struct {
@@ -60,6 +63,30 @@ func (c *clientImpl) GenerateContent(ctx context.Context, prompt string) (string
 	response, err := c.client.Models.GenerateContent(ctx, "gemini-2.5-pro", contents, nil)
 	if err != nil {
 		return "", errors.Fmt("failed to generate content: %w", err)
+	}
+
+	return response.Text(), nil
+}
+
+func (c *clientImpl) GenerateContentWithSchema(ctx context.Context, prompt string, schema *genai.Schema) (string, error) {
+	if c == nil {
+		return "", errors.New("GenAI client is nil")
+	}
+
+	contents := []*genai.Content{
+		genai.NewContentFromText(prompt, genai.RoleUser),
+	}
+
+	// Configure generation with response schema
+	config := &genai.GenerateContentConfig{
+		ResponseMIMEType: "application/json",
+		ResponseSchema:   schema,
+	}
+
+	// Generate content with structured output
+	response, err := c.client.Models.GenerateContent(ctx, "gemini-2.5-pro", contents, config)
+	if err != nil {
+		return "", errors.Fmt("failed to generate content with schema: %w", err)
 	}
 
 	return response.Text(), nil

@@ -179,6 +179,8 @@ func Run(ctx context.Context, client analysisClient, task *tpb.TestFailureDetect
 				tf.FailureKind = failureMsg.FailureKind.String()
 				tf.PrimaryErrorMessage = failureMsg.PrimaryErrorMessage.String()
 				tf.FirstErrorTrace = failureMsg.FirstErrorTrace.String()
+				tf.InvocationID = failureMsg.InvocationID.String()
+				tf.ResultID = failureMsg.ResultID.String()
 			}
 		}
 	}

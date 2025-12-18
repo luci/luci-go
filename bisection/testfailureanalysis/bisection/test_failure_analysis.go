@@ -28,10 +28,14 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	"go.chromium.org/luci/bisection/internal/resultdb"
+	"go.chromium.org/luci/bisection/llm"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/genai"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/nthsection"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
@@ -55,19 +59,30 @@ var taskClassRef = tq.RegisterTaskClass(tq.TaskClass{
 // RegisterTaskClass registers the task class for tq dispatcher.
 func RegisterTaskClass(srv *server.Server, luciAnalysisProjectFunc func(luciProject string) string) error {
 	ctx := srv.Context
-	client, err := lucianalysis.NewClient(ctx, srv.Options.CloudProject, luciAnalysisProjectFunc)
+	luciAnalysisClient, err := lucianalysis.NewClient(ctx, srv.Options.CloudProject, luciAnalysisProjectFunc)
 	if err != nil {
 		return err
 	}
 	srv.RegisterCleanup(func(context.Context) {
-		client.Close()
+		luciAnalysisClient.Close()
 	})
+
+	llmClient, err := llm.NewClient(ctx, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Fmt("failed to create LLM client: %w", err)
+	}
+
+	resultDBClient, err := resultdb.NewClient(ctx, chromeinfra.ResultDBHost, srv.Options.CloudProject)
+	if err != nil {
+		return errors.Fmt("failed to create ResultDB client: %w", err)
+	}
+
 	handler := func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*tpb.TestFailureBisectionTask)
 		analysisID := task.GetAnalysisId()
 		ctx = loggingutil.SetAnalysisID(ctx, analysisID)
 		logging.Infof(ctx, "Processing test failure bisection task with id = %d", analysisID)
-		err := Run(ctx, analysisID, client)
+		err := Run(ctx, analysisID, luciAnalysisClient, llmClient, resultDBClient)
 		if err != nil {
 			err = errors.Fmt("run bisection: %w", err)
 			logging.Errorf(ctx, err.Error())
@@ -92,7 +107,7 @@ func Schedule(ctx context.Context, analysisID int64) error {
 }
 
 // Run runs bisection for the given analysisID.
-func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisClient) (reterr error) {
+func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisClient, llmClient llm.Client, rdbClient resultdb.Client) (reterr error) {
 	// Retrieves analysis from datastore.
 	tfa, err := datastoreutil.GetTestFailureAnalysis(ctx, analysisID)
 	if err != nil {
@@ -139,6 +154,13 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 	err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
 	if err != nil {
 		return errors.Fmt("update status: %w", err)
+	}
+
+	// Run GenAI analysis first
+	err = genai.Analyze(ctx, tfa, llmClient, rdbClient)
+	if err != nil {
+		// Log the error but continue with nthsection analysis
+		logging.Errorf(ctx, "GenAI analysis failed: %v", err)
 	}
 
 	// Run nthsection analysis

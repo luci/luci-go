@@ -120,3 +120,35 @@ func UpdateAnalysisStatusWhenError(ctx context.Context, tfa *model.TestFailureAn
 	}
 	return nil
 }
+
+// UpdateGenAIAnalysisStatus updates status of a GenAI analysis.
+func UpdateGenAIAnalysisStatus(ctx context.Context, genaiAnalysis *model.TestGenAIAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) error {
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		e := datastore.Get(ctx, genaiAnalysis)
+		if e != nil {
+			return e
+		}
+
+		// If the run has ended or canceled, we don't want to do anything.
+		if genaiAnalysis.RunStatus == pb.AnalysisRunStatus_ENDED || genaiAnalysis.RunStatus == pb.AnalysisRunStatus_CANCELED {
+			return nil
+		}
+
+		// All the same, no need to update.
+		if genaiAnalysis.RunStatus == runStatus && genaiAnalysis.Status == status {
+			return nil
+		}
+
+		if runStatus == pb.AnalysisRunStatus_ENDED || runStatus == pb.AnalysisRunStatus_CANCELED {
+			genaiAnalysis.EndTime = clock.Now(ctx)
+		}
+		// Do not update start time again if it has started.
+		if runStatus == pb.AnalysisRunStatus_STARTED && genaiAnalysis.RunStatus != pb.AnalysisRunStatus_STARTED {
+			genaiAnalysis.StartTime = clock.Now(ctx)
+		}
+
+		genaiAnalysis.Status = status
+		genaiAnalysis.RunStatus = runStatus
+		return datastore.Put(ctx, genaiAnalysis)
+	}, nil)
+}

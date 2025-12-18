@@ -193,3 +193,101 @@ func TestUpdateStatusWhenError(t *testing.T) {
 		})
 	})
 }
+
+func TestUpdateGenAIAnalysisStatus(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("Update GenAI Analysis Status", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
+
+		t.Run("Update status ended", func(t *ftt.Test) {
+			ga := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_RUNNING,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+			})
+			err := UpdateGenAIAnalysisStatus(ctx, ga, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ga.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, ga.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, ga.EndTime.Unix(), should.Equal(10000))
+		})
+
+		t.Run("Update status started", func(t *ftt.Test) {
+			ga := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_CREATED,
+				RunStatus: pb.AnalysisRunStatus_ANALYSIS_RUN_STATUS_UNSPECIFIED,
+			})
+			err := UpdateGenAIAnalysisStatus(ctx, ga, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ga.Status, should.Equal(pb.AnalysisStatus_RUNNING))
+			assert.Loosely(t, ga.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
+			assert.Loosely(t, ga.StartTime.Unix(), should.Equal(10000))
+		})
+
+		t.Run("Do not update the start time of a started analysis", func(t *ftt.Test) {
+			ga := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_RUNNING,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+				StartTime: time.Unix(5000, 0).UTC(),
+			})
+			err := UpdateGenAIAnalysisStatus(ctx, ga, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ga.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, ga.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
+			assert.Loosely(t, ga.StartTime.Unix(), should.Equal(5000))
+		})
+
+		t.Run("Ended analysis will not update", func(t *ftt.Test) {
+			ga := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_SUSPECTFOUND,
+				RunStatus: pb.AnalysisRunStatus_ENDED,
+			})
+			err := UpdateGenAIAnalysisStatus(ctx, ga, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_CANCELED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ga.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, ga.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		})
+
+		t.Run("Canceled analysis will not update", func(t *ftt.Test) {
+			ga := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_NOTFOUND,
+				RunStatus: pb.AnalysisRunStatus_CANCELED,
+			})
+			err := UpdateGenAIAnalysisStatus(ctx, ga, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ga.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
+			assert.Loosely(t, ga.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
+		})
+
+		t.Run("Update status to error", func(t *ftt.Test) {
+			ga := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_RUNNING,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+				StartTime: time.Unix(5000, 0).UTC(),
+			})
+			err := UpdateGenAIAnalysisStatus(ctx, ga, pb.AnalysisStatus_ERROR, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ga.Status, should.Equal(pb.AnalysisStatus_ERROR))
+			assert.Loosely(t, ga.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, ga.EndTime.Unix(), should.Equal(10000))
+			// Start time should not change
+			assert.Loosely(t, ga.StartTime.Unix(), should.Equal(5000))
+		})
+
+		t.Run("No update when status and run status are the same", func(t *ftt.Test) {
+			ga := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_RUNNING,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+				StartTime: time.Unix(5000, 0).UTC(),
+			})
+			err := UpdateGenAIAnalysisStatus(ctx, ga, pb.AnalysisStatus_RUNNING, pb.AnalysisRunStatus_STARTED)
+			assert.Loosely(t, err, should.BeNil)
+			// Status should remain the same
+			assert.Loosely(t, ga.Status, should.Equal(pb.AnalysisStatus_RUNNING))
+			assert.Loosely(t, ga.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
+		})
+	})
+}

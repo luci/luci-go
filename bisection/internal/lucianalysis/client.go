@@ -543,6 +543,8 @@ type TestFailure struct {
 	FailureKind         bigquery.NullString // ORDINARY, CRASH, TIMEOUT, or empty if not failed
 	PrimaryErrorMessage bigquery.NullString // Main error message (max 1024 bytes)
 	FirstErrorTrace     bigquery.NullString // Stack trace from first error (max 4096 bytes)
+	InvocationID        bigquery.NullString // Invocation ID where the test failure occurred
+	ResultID            bigquery.NullString // Result ID of the specific test result
 }
 
 // ReadFailure queries LUCI Analysis for failure messages and error details.
@@ -572,7 +574,9 @@ func (c *Client) ReadFailure(ctx context.Context, project string, keys []TestVer
 			ANY_VALUE(results[0].summary_html HAVING MAX partition_time) AS SummaryHTML,
 			ANY_VALUE(CAST(results[0].failure_reason.kind AS STRING) HAVING MAX partition_time) AS FailureKind,
 			ANY_VALUE(results[0].failure_reason.primary_error_message HAVING MAX partition_time) AS PrimaryErrorMessage,
-			ANY_VALUE(results[0].failure_reason.errors[SAFE_OFFSET(0)].trace HAVING MAX partition_time) AS FirstErrorTrace
+			ANY_VALUE(results[0].failure_reason.errors[SAFE_OFFSET(0)].trace HAVING MAX partition_time) AS FirstErrorTrace,
+			ANY_VALUE(invocation.id HAVING MAX partition_time) AS InvocationID,
+			ANY_VALUE(results[0].result_id HAVING MAX partition_time) AS ResultID
 		FROM test_verdicts
 		WHERE project = @project AND ` + whereClause + `
 		AND partition_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)

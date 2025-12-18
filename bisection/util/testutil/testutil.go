@@ -460,6 +460,41 @@ func CreateTestNthSectionAnalysis(ctx context.Context, t testing.TB, option *Tes
 	return nsa
 }
 
+type TestGenAIAnalysisCreationOption struct {
+	ParentAnalysisKey *datastore.Key
+	Status            pb.AnalysisStatus
+	RunStatus         pb.AnalysisRunStatus
+	StartTime         time.Time
+	EndTime           time.Time
+}
+
+func CreateTestGenAIAnalysis(ctx context.Context, t testing.TB, option *TestGenAIAnalysisCreationOption) *model.TestGenAIAnalysis {
+	t.Helper()
+	var parentAnalysisKey *datastore.Key
+	var status pb.AnalysisStatus
+	var runStatus pb.AnalysisRunStatus
+	var startTime time.Time
+	var endTime time.Time
+
+	if option != nil {
+		parentAnalysisKey = option.ParentAnalysisKey
+		status = option.Status
+		runStatus = option.RunStatus
+		startTime = option.StartTime
+		endTime = option.EndTime
+	}
+	ga := &model.TestGenAIAnalysis{
+		ParentAnalysisKey: parentAnalysisKey,
+		Status:            status,
+		RunStatus:         runStatus,
+		StartTime:         startTime,
+		EndTime:           endTime,
+	}
+	assert.Loosely(t, datastore.Put(ctx, ga), should.BeNil, truth.LineContext())
+	datastore.GetTestable(ctx).CatchupIndexes()
+	return ga
+}
+
 type SuspectCreationOption struct {
 	ID                 int64
 	ParentKey          *datastore.Key
