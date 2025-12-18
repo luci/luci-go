@@ -20,6 +20,11 @@ import { CheckResultStatus } from '../../utils/check_utils';
 import { getCollapsibleGroups } from '../../utils/graph_builder';
 
 /**
+ * The number of checks in the graph where we opt into collapsing everything by default on page load for performance reasons.
+ */
+const NUM_CHECKS_COLLAPSE_ALL = 500;
+
+/**
  * Manages the logic and state for collapsing groups of nodes in the graph.
  *
  * This hook:
@@ -54,9 +59,13 @@ export function useCollapsibleGroups(graph: GraphView | undefined) {
   // Initialize defaults: Collapse all successful groups when a new graph loads
   useEffect(() => {
     if (graph && initializedGraphRef.current !== graph) {
+      const numChecks = Object.keys(graph.checks).length;
       const initialCollapsed = new Set<number>();
       groupData.hashToGroup.forEach((_, hash) => {
-        if (groupData.hashToStatus.get(hash) === CheckResultStatus.SUCCESS) {
+        if (
+          numChecks > NUM_CHECKS_COLLAPSE_ALL ||
+          groupData.hashToStatus.get(hash) === CheckResultStatus.SUCCESS
+        ) {
           initialCollapsed.add(hash);
         }
       });

@@ -25,6 +25,7 @@ import {
   Typography,
   Snackbar,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   ReactFlow,
@@ -55,7 +56,7 @@ import { useDebounce } from 'react-use';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { WorkflowType } from '../fake_turboci_graph';
-import { TurboCIGraphBuilder, ChronicleNode } from '../utils/graph_builder';
+import { ChronicleNode } from '../utils/graph_builder';
 
 import { ChronicleContext } from './chronicle_context';
 import {
@@ -82,6 +83,35 @@ const HIGHLIGHTED_EDGE_STYLE = {
   strokeWidth: 3,
 };
 
+let graphWorkerPolicy: TrustedTypePolicy;
+
+/**
+ * Web Workers require a sanitized script URL via the Trusted Types API
+ * in order to protect against things like XSS.
+ */
+function getTrustedWorkerURL(url: URL): TrustedScriptURL | URL {
+  if (typeof window === 'undefined') return url;
+
+  const tt = window.trustedTypes;
+  if (!tt) return url;
+
+  if (!graphWorkerPolicy) {
+    try {
+      graphWorkerPolicy = tt.createPolicy('chronicle-graph-worker', {
+        createScriptURL: (u: string) => u,
+      }) as TrustedTypePolicy;
+    } catch {
+      return url;
+    }
+  }
+
+  if (graphWorkerPolicy) {
+    return graphWorkerPolicy.createScriptURL(url.toString());
+  }
+
+  return url;
+}
+
 function Graph() {
   const {
     graph,
@@ -100,7 +130,15 @@ function Graph() {
   const [contextMenuState, setContextMenuState] = useState<
     ContextMenuState | undefined
   >(undefined);
-  const [showNodeNotFound, setShowNodeNotFound] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(
+    undefined,
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [baseLayout, setBaseLayout] = useState<{
+    nodes: ChronicleNode[];
+    edges: Edge[];
+  }>({ nodes: [], edges: [] });
+
   // Track if we have applied the defaults for the current workflow.
   // Used to prevent overriding the graph (eg. collapsed/expanded nodes) after
   // interacted by the user.
@@ -130,15 +168,42 @@ function Graph() {
     }
   }, [workflowType, setSelectedNodeId]);
 
-  const { layoutedNodes, layoutedEdges } = useMemo(() => {
-    if (!graph) return { layoutedNodes: [], layoutedEdges: [] };
+  // The graph layout algorithm is a performance bottleneck so use the Web Worker API
+  // to perform this work in a background thread to prevent freezing the UI.
+  useEffect(() => {
+    if (!graph) {
+      return;
+    }
 
-    // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
-    const { nodes, edges } = new TurboCIGraphBuilder(graph).build({
-      showAssignmentEdges,
-      collapsedDependencyHashes: collapsedHashes,
+    setIsLoading(true);
+    const workerUrl = new URL('../utils/graph_worker.ts', import.meta.url);
+    const worker = new Worker(getTrustedWorkerURL(workerUrl) as URL, {
+      type: 'module',
     });
-    return { layoutedNodes: nodes, layoutedEdges: edges };
+
+    worker.postMessage({
+      graph,
+      options: {
+        showAssignmentEdges,
+        collapsedDependencyHashes: collapsedHashes,
+      },
+    });
+
+    worker.onmessage = (e) => {
+      if (e.data.error) {
+        setErrorMessage(`Failed to render graph: ${e.data.error}`);
+      } else {
+        const { nodes: calculatedNodes, edges: calculatedEdges } = e.data;
+        setBaseLayout({ nodes: calculatedNodes, edges: calculatedEdges });
+      }
+      setIsLoading(false);
+      worker.terminate();
+    };
+
+    // useEffect cleanup function
+    return () => {
+      worker.terminate();
+    };
   }, [graph, showAssignmentEdges, collapsedHashes]);
 
   useDebounce(
@@ -152,14 +217,14 @@ function Graph() {
   // Unified effect for handling graph highlighting (both search and selection).
   // Selection takes precedence over search.
   useEffect(() => {
-    let nextNodes = layoutedNodes;
-    let nextEdges = layoutedEdges;
+    let nextNodes = baseLayout.nodes;
+    let nextEdges = baseLayout.edges;
     let nodesToFit: string[] = [];
 
     // Check if there is a pending focus request from an expand/collapse action.
     if (pendingFocusNodes.current && !selectedNodeId) {
       const targetsExist = pendingFocusNodes.current.every((id) =>
-        layoutedNodes.some((n) => n.id === id),
+        baseLayout.nodes.some((n) => n.id === id),
       );
       if (targetsExist) {
         nodesToFit = pendingFocusNodes.current;
@@ -172,7 +237,7 @@ function Graph() {
       const relatedEdgeIds = new Set<string>();
 
       // Find immediate neighbors and connecting edges
-      layoutedEdges.forEach((edge) => {
+      baseLayout.edges.forEach((edge) => {
         if (edge.source === selectedNodeId) {
           relatedNodeIds.add(edge.target);
           relatedEdgeIds.add(edge.id);
@@ -241,8 +306,7 @@ function Graph() {
       };
     }
   }, [
-    layoutedNodes,
-    layoutedEdges,
+    baseLayout,
     selectedNodeId,
     debouncedSearchQuery,
     setNodes,
@@ -391,8 +455,11 @@ function Graph() {
   }, [groupActions]);
 
   const selectedNode = useMemo(() => {
+    if (!nodes || nodes.length === 0) return;
     const n = nodes.find((n) => n.id === selectedNodeId);
-    setShowNodeNotFound(!n && !!selectedNodeId);
+    if (!n && !!selectedNodeId) {
+      setErrorMessage(`Node "${selectedNodeId}" not found.`);
+    }
     return n;
   }, [nodes, selectedNodeId]);
 
@@ -402,107 +469,135 @@ function Graph() {
       style={{ height: '100%', width: '100%' }}
     >
       <Panel minSize={50}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeClick={onNodeClick}
-          onNodeContextMenu={onNodeContextMenu}
-          onPaneClick={onPaneClick}
-          fitView
-          panOnScroll
-          minZoom={0.1}
-        >
-          <Background />
-          <Controls />
-          <MiniMap pannable zoomable />
-          <ReactFlowPanel position="top-left">
-            <Paper
-              elevation={2}
-              sx={{
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          {isLoading && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(255, 255, 255, 0.7)',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 0,
-                p: 1,
-                borderRadius: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 1000,
               }}
             >
-              <input
-                type="text"
-                placeholder="Search nodes..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  // Clear selected node when searching
-                  if (e.target.value) {
-                    setSelectedNodeId(undefined);
-                  }
+              <CircularProgress />
+            </div>
+          )}
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onNodeClick={onNodeClick}
+            onNodeContextMenu={onNodeContextMenu}
+            onPaneClick={onPaneClick}
+            fitView
+            panOnScroll
+            minZoom={0.1}
+            onlyRenderVisibleElements={true}
+          >
+            <Background />
+            <Controls />
+            <MiniMap pannable zoomable />
+            <ReactFlowPanel position="top-left">
+              <Paper
+                elevation={2}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0,
+                  p: 1,
+                  borderRadius: 1,
                 }}
-                style={{
-                  padding: '8px',
-                  width: '200px',
-                  marginBottom: '8px',
-                }}
-              />
-              <FormControl fullWidth size="small" sx={{ mt: 2 }}>
-                <InputLabel id="workflow-type-select-label">
-                  Workflow Type
-                </InputLabel>
-                <Select
-                  labelId="workflow-type-select-label"
-                  id="workflow-type-select"
-                  value={workflowType}
-                  label="Workflow Type"
-                  onChange={(e) =>
-                    setWorkflowType(e.target.value as WorkflowType)
-                  }
-                >
-                  <MenuItem value={WorkflowType.ANDROID}>Android</MenuItem>
-                  <MenuItem value={WorkflowType.BROWSER}>Browser</MenuItem>
-                  <MenuItem value={WorkflowType.BROWSER_FUTURE}>
-                    Browser Future
-                  </MenuItem>
-                </Select>
-              </FormControl>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={showAssignmentEdges}
-                    onChange={(e) => setShowAssignmentEdges(e.target.checked)}
-                  />
-                }
-                label={
-                  <Typography variant="body2">Show Assignment Edges</Typography>
-                }
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={autoFitSelection}
-                    onChange={(e) => setAutoFitSelection(e.target.checked)}
-                  />
-                }
-                label={
-                  <Typography variant="body2">Fit View on Selection</Typography>
-                }
-              />
-              <Button
-                onClick={handleCollapseAllSuccessful}
-                sx={{ mt: 1 }}
-                size="small"
               >
-                Collapse Successful
-              </Button>
-              <Button onClick={handleCollapseAll} size="small">
-                Collapse All
-              </Button>
-              <Button onClick={handleExpandAll} size="small">
-                Expand All
-              </Button>
-            </Paper>
-          </ReactFlowPanel>
-        </ReactFlow>
+                <input
+                  type="text"
+                  placeholder="Search nodes..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    // Clear selected node when searching
+                    if (e.target.value) {
+                      setSelectedNodeId(undefined);
+                    }
+                  }}
+                  style={{
+                    padding: '8px',
+                    width: '200px',
+                    marginBottom: '8px',
+                  }}
+                />
+                <FormControl fullWidth size="small" sx={{ mt: 2 }}>
+                  <InputLabel id="workflow-type-select-label">
+                    Workflow Type
+                  </InputLabel>
+                  <Select
+                    labelId="workflow-type-select-label"
+                    id="workflow-type-select"
+                    value={workflowType}
+                    label="Workflow Type"
+                    onChange={(e) =>
+                      setWorkflowType(e.target.value as WorkflowType)
+                    }
+                  >
+                    <MenuItem value={WorkflowType.ANDROID}>Android</MenuItem>
+                    <MenuItem value={WorkflowType.BROWSER}>Browser</MenuItem>
+                    <MenuItem value={WorkflowType.BROWSER_FUTURE}>
+                      Browser Future
+                    </MenuItem>
+                    <MenuItem value={WorkflowType.ANDROID_GIGANTIC_POSTSUBMIT}>
+                      Android Gigantic Postsubmit
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={showAssignmentEdges}
+                      onChange={(e) => setShowAssignmentEdges(e.target.checked)}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2">
+                      Show Assignment Edges
+                    </Typography>
+                  }
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={autoFitSelection}
+                      onChange={(e) => setAutoFitSelection(e.target.checked)}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2">
+                      Fit View on Selection
+                    </Typography>
+                  }
+                />
+                <Button
+                  onClick={handleCollapseAllSuccessful}
+                  sx={{ mt: 1 }}
+                  size="small"
+                >
+                  Collapse Successful
+                </Button>
+                <Button onClick={handleCollapseAll} size="small">
+                  Collapse All
+                </Button>
+                <Button onClick={handleExpandAll} size="small">
+                  Expand All
+                </Button>
+              </Paper>
+            </ReactFlowPanel>
+          </ReactFlow>
+        </div>
         <ContextMenu
           contextMenuState={contextMenuState}
           onClose={handleContextMenuClose}
@@ -542,16 +637,16 @@ function Graph() {
           </>
         )}
       <Snackbar
-        open={showNodeNotFound}
+        open={!!errorMessage}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert
           severity="error"
           onClose={() => {
-            setShowNodeNotFound(false);
+            setErrorMessage(undefined);
           }}
         >
-          Node {selectedNodeId} not found.
+          {errorMessage}
         </Alert>
       </Snackbar>
     </PanelGroup>

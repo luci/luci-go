@@ -14,7 +14,6 @@
 
 import dagre from '@dagrejs/dagre';
 import { Edge, MarkerType, Node, Position } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 import { CSSProperties } from 'react';
 
 import { CheckKind } from '../../proto/turboci/graph/orchestrator/v1/check_kind.pb';

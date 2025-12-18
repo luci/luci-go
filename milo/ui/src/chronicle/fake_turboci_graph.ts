@@ -180,6 +180,7 @@ export enum WorkflowType {
   ANDROID = 'ANDROID',
   BROWSER = 'BROWSER',
   BROWSER_FUTURE = 'BROWSER_FUTURE',
+  ANDROID_GIGANTIC_POSTSUBMIT = 'ANDROID_GIGANTIC_POSTSUBMIT',
 }
 
 /**
@@ -241,6 +242,9 @@ export class FakeGraphGenerator {
       case WorkflowType.BROWSER_FUTURE:
         this.generateBrowserFuture();
         break;
+      case WorkflowType.ANDROID_GIGANTIC_POSTSUBMIT:
+        this.generateAndroid(200, 60);
+        break;
       default:
         // Fallback to Android
         this.generateAndroid();
@@ -273,7 +277,7 @@ export class FakeGraphGenerator {
   // Specific Workflow Generators
   // ==========================================
 
-  private generateAndroid() {
+  private generateAndroid(numBuilds = 10, testsPerBuild = 5) {
     // 1. Source
     const sourceId = this.createGobSourcePair();
     this.sourceCheckIds.push(sourceId);
@@ -288,9 +292,6 @@ export class FakeGraphGenerator {
     this.buildCheckIds.push(commonLkgb, commonTot);
 
     // 3. Builds & Tests
-    const numBuilds = 10;
-    const testsPerBuild = 5;
-
     for (let i = 0; i < numBuilds; i++) {
       const lkgb = this.createBuildPair(`Build_${i}_LKGB`, [
         { check: sourceId },
