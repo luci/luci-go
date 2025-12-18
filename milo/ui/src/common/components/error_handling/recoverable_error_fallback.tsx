@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { GrpcError } from '@chopsui/prpc-client';
-import { Link } from '@mui/material';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { Box, Button, Typography } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import { FallbackProps } from 'react-error-boundary';
 import { useLocation } from 'react-router';
@@ -57,24 +58,55 @@ export function RecoverableErrorFallback({
     err instanceof GrpcError &&
     POTENTIAL_PERM_ERROR_CODES.includes(err.code);
 
+  if (shouldAskToLogin) {
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        p={4}
+        gap={2}
+        sx={{ minHeight: '400px', textAlign: 'center' }}
+      >
+        <LockOutlinedIcon
+          sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.5 }}
+        />
+        <Typography variant="h5">Welcome</Typography>
+        <Typography variant="body1" color="text.secondary">
+          Please log in to see if you have access to this page.
+        </Typography>
+        <Button
+          variant="contained"
+          size="large"
+          href={getLoginUrl(
+            location.pathname + location.search + location.hash,
+          )}
+          sx={{ mt: 2 }}
+        >
+          Login
+        </Button>
+        <Box mt={4} maxWidth="600px">
+          <Typography
+            variant="caption"
+            color="text.disabled"
+            component="div"
+            sx={{
+              fontFamily: 'monospace',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}
+          >
+            Error: {err.message}
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <ErrorDisplay
       error={err}
-      instruction={
-        shouldAskToLogin && (
-          <b>
-            You may need to{' '}
-            <Link
-              href={getLoginUrl(
-                location.pathname + location.search + location.hash,
-              )}
-            >
-              login
-            </Link>{' '}
-            to view the page.
-          </b>
-        )
-      }
       showFileBugButton={initialIdentity.current !== ANONYMOUS_IDENTITY}
       onTryAgain={() => resetErrorBoundary()}
     />

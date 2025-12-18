@@ -191,9 +191,12 @@ describe('<RecoverableErrorBoundary />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    expect(screen.getByRole('alert')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('error display');
-    expect(screen.getByText('login')).toHaveAttribute(
+    expect(screen.getByText('Welcome')).toBeInTheDocument();
+    expect(
+      screen.getByText('Please log in to see if you have access to this page.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/error display/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Login' })).toHaveAttribute(
       'href',
       '/auth/openid/login?r=%2Fui%2Flink%2Fto%2Fcurrent%2Fpage',
     );
@@ -217,7 +220,9 @@ describe('<RecoverableErrorBoundary />', () => {
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('error display');
-    expect(screen.queryByText('login')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Login' }),
+    ).not.toBeInTheDocument();
   });
 
   it('does not displays login instruction when its not permission error', async () => {
@@ -238,6 +243,8 @@ describe('<RecoverableErrorBoundary />', () => {
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('error display');
-    expect(screen.queryByText('login')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Login' }),
+    ).not.toBeInTheDocument();
   });
 });
