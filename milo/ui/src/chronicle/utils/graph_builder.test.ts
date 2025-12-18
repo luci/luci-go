@@ -496,7 +496,7 @@ describe('TurboCIGraphBuilder', () => {
       expect(t1.data.dependencyHash).toBe(t2.data.dependencyHash);
     });
 
-    it('should not assign dependencyHash to unsuccessful nodes even with identical dependencies', () => {
+    it('should assign dependencyHash to unsuccessful nodes with identical dependencies', () => {
       const b1Ident = createCheckIdentifier('B1');
       const graph: TurboCIGraphView = {
         checks: {
@@ -524,11 +524,12 @@ describe('TurboCIGraphBuilder', () => {
       const t1 = nodes.find((n) => n.id === 'T1')!;
       const t2 = nodes.find((n) => n.id === 'T2')!;
 
-      expect(t1.data.dependencyHash).toBeUndefined();
-      expect(t2.data.dependencyHash).toBeUndefined();
+      expect(t1.data.dependencyHash).toBeDefined();
+      expect(t2.data.dependencyHash).toBeDefined();
+      expect(t1.data.dependencyHash).toBe(t2.data.dependencyHash);
     });
 
-    it('should only assign dependencyHash to successful nodes', () => {
+    it('should assign different dependencyHashes to successful and failed nodes with identical topology', () => {
       const b1Ident = createCheckIdentifier('B1');
       const graph: TurboCIGraphView = {
         checks: {
@@ -554,6 +555,13 @@ describe('TurboCIGraphBuilder', () => {
             [],
             false,
           ), // Failed
+          T4: createCheckView(
+            'T4',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            false,
+          ), // Failed
         },
         stages: {},
       };
@@ -563,14 +571,20 @@ describe('TurboCIGraphBuilder', () => {
       const t1 = nodes.find((n) => n.id === 'T1')!;
       const t2 = nodes.find((n) => n.id === 'T2')!;
       const t3 = nodes.find((n) => n.id === 'T3')!;
+      const t4 = nodes.find((n) => n.id === 'T4')!;
 
-      // T1 and T2 are successful and collapsible
+      // T1 and T2 should match
       expect(t1.data.dependencyHash).toBeDefined();
       expect(t2.data.dependencyHash).toBeDefined();
       expect(t1.data.dependencyHash).toBe(t2.data.dependencyHash);
 
-      // T3 is failed and should not be collapsible
-      expect(t3.data.dependencyHash).toBeUndefined();
+      // T3 and T4 should match
+      expect(t3.data.dependencyHash).toBeDefined();
+      expect(t4.data.dependencyHash).toBeDefined();
+      expect(t3.data.dependencyHash).toBe(t4.data.dependencyHash);
+
+      // T1 (success) and T3 (fail) should NOT match
+      expect(t1.data.dependencyHash).not.toBe(t3.data.dependencyHash);
     });
 
     it('should leave dependencyHash undefined for unique dependency sets', () => {
@@ -658,6 +672,125 @@ describe('TurboCIGraphBuilder', () => {
         (e) => e.source === 'B1' && e.target === groupNodeId,
       );
       expect(edge).toBeDefined();
+    });
+
+    it('should generate correct labels for collapsed groups', () => {
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1'),
+          // Success Builds
+          SuccessBuild1: createCheckView(
+            'SB1',
+            CheckKind.CHECK_KIND_BUILD,
+            [b1Ident],
+            [],
+            true,
+          ),
+          SuccessBuild2: createCheckView(
+            'SB2',
+            CheckKind.CHECK_KIND_BUILD,
+            [b1Ident],
+            [],
+            true,
+          ),
+          // Failed Tests
+          FailTest1: createCheckView(
+            'FT1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            false,
+          ),
+          FailTest2: createCheckView(
+            'FT2',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            false,
+          ),
+        },
+        stages: {},
+      };
+
+      const builder = new TurboCIGraphBuilder(graph);
+      const { nodes: initialNodes } = builder.build();
+
+      const successHash = initialNodes.find((n) => n.id === 'SB1')?.data
+        .dependencyHash;
+      const failHash = initialNodes.find((n) => n.id === 'FT1')?.data
+        .dependencyHash;
+
+      const { nodes: collapsedNodes } = builder.build({
+        collapsedDependencyHashes: new Set([successHash!, failHash!]),
+      });
+
+      const successGroup = collapsedNodes.find(
+        (n) => n.id === `collapsed-group-${successHash}`,
+      );
+      const failGroup = collapsedNodes.find(
+        (n) => n.id === `collapsed-group-${failHash}`,
+      );
+
+      expect(successGroup?.data.label).toBe('2 successful builds');
+      expect(failGroup?.data.label).toBe('2 failed tests');
+    });
+
+    it('should map parents to child group hashes', () => {
+      const b1Ident = createCheckIdentifier('B1');
+      const graph: TurboCIGraphView = {
+        checks: {
+          B1: createCheckView('B1'),
+          // Group 1: Successful T1, T2
+          T1: createCheckView(
+            'T1',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          T2: createCheckView(
+            'T2',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            true,
+          ),
+          // Group 2: Failed T3, T4
+          T3: createCheckView(
+            'T3',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            false,
+          ),
+          T4: createCheckView(
+            'T4',
+            CheckKind.CHECK_KIND_TEST,
+            [b1Ident],
+            [],
+            false,
+          ),
+        },
+        stages: {},
+      };
+
+      const { parentToGroupHashes, hashToGroup } = getCollapsibleGroups(graph);
+
+      // Expect B1 to map to two group hashes
+      expect(parentToGroupHashes.has('B1')).toBe(true);
+      const hashes = parentToGroupHashes.get('B1');
+      expect(hashes).toHaveLength(2);
+
+      // Verify hashes correspond to the expected groups
+      const group1 = hashToGroup.get(hashes![0]);
+      const group2 = hashToGroup.get(hashes![1]);
+
+      const allIds = new Set([...(group1 || []), ...(group2 || [])]);
+      expect(allIds.has('T1')).toBe(true);
+      expect(allIds.has('T2')).toBe(true);
+      expect(allIds.has('T3')).toBe(true);
+      expect(allIds.has('T4')).toBe(true);
     });
 
     it('should redirect edges from collapsed nodes', () => {

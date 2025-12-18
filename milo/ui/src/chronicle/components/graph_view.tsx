@@ -55,14 +55,15 @@ import { useDebounce } from 'react-use';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { WorkflowType } from '../fake_turboci_graph';
-import {
-  TurboCIGraphBuilder,
-  getCollapsibleGroups,
-  ChronicleNode,
-} from '../utils/graph_builder';
+import { TurboCIGraphBuilder, ChronicleNode } from '../utils/graph_builder';
 
 import { ChronicleContext } from './chronicle_context';
-import { ContextMenu, ContextMenuState } from './context_menu';
+import {
+  CollapsibleChildGroup,
+  ContextMenu,
+  ContextMenuState,
+} from './context_menu';
+import { useCollapsibleGroups } from './hooks/use_collapsible_groups';
 import { InspectorPanel } from './inspector_panel/inspector_panel';
 
 // We must explicit set all top/right/bottom/left border properties here instead
@@ -96,9 +97,6 @@ function Graph() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [showAssignmentEdges, setShowAssignmentEdges] = useState(false);
   const [autoFitSelection, setAutoFitSelection] = useState(true);
-  const [collapsedDependencyHashes, setCollapsedDependencyHashes] = useState<
-    Set<number>
-  >(new Set());
   const [contextMenuState, setContextMenuState] = useState<
     ContextMenuState | undefined
   >(undefined);
@@ -116,6 +114,12 @@ function Graph() {
   // Ref to store a pending fitView request
   const pendingFitViewOptions = useRef<FitViewOptions | undefined>(undefined);
 
+  const {
+    collapsedHashes,
+    groupData,
+    actions: groupActions,
+  } = useCollapsibleGroups(graph);
+
   // While we're still using canned fake data, we need to re-initialize defaults
   // when changing workflow type.
   useEffect(() => {
@@ -126,29 +130,16 @@ function Graph() {
     }
   }, [workflowType, setSelectedNodeId]);
 
-  const collapsibleHashToGroup = useMemo(() => {
-    if (!graph) return new Map<number, string[]>();
-    return getCollapsibleGroups(graph).hashToGroup;
-  }, [graph]);
-
-  // Collapse all collapsible nodes on initial graph load
-  useEffect(() => {
-    if (!hasInitializedDefaults.current) {
-      setCollapsedDependencyHashes(new Set(collapsibleHashToGroup.keys()));
-      hasInitializedDefaults.current = true;
-    }
-  }, [collapsibleHashToGroup]);
-
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     if (!graph) return { layoutedNodes: [], layoutedEdges: [] };
 
     // Convert TurboCI Graph to list of nodes and edges that React Flow understands.
     const { nodes, edges } = new TurboCIGraphBuilder(graph).build({
       showAssignmentEdges,
-      collapsedDependencyHashes,
+      collapsedDependencyHashes: collapsedHashes,
     });
     return { layoutedNodes: nodes, layoutedEdges: edges };
-  }, [graph, showAssignmentEdges, collapsedDependencyHashes]);
+  }, [graph, showAssignmentEdges, collapsedHashes]);
 
   useDebounce(
     () => {
@@ -298,17 +289,50 @@ function Graph() {
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: ChronicleNode) => {
       event.preventDefault();
-      if (node.data.dependencyHash) {
+
+      const isSelfCollapsed = !!(
+        node.data.dependencyHash && node.data.isCollapsed
+      );
+
+      let parentIds = [node.id];
+      // In order to support collapsing children of a node that itself is collapsed,
+      // we must iterate over all the children of each node in the current collapsed
+      // group.
+      if (isSelfCollapsed) {
+        const groupIds = groupData.hashToGroup.get(node.data.dependencyHash!);
+        if (groupIds) {
+          parentIds = groupIds;
+        }
+      }
+
+      const hashesFound = new Set<number>();
+      parentIds.forEach((id) => {
+        const hashes = groupData.parentToGroupHashes.get(id);
+        if (hashes) {
+          hashes.forEach((h) => hashesFound.add(h));
+        }
+      });
+
+      const childGroups: CollapsibleChildGroup[] = Array.from(hashesFound).map(
+        (hash) => ({
+          hash,
+          status: groupData.hashToStatus.get(hash)!,
+        }),
+      );
+
+      // Only show menu if this node itself is collapsed or it has collapsible children.
+      if (isSelfCollapsed || childGroups.length > 0) {
         setContextMenuState({
           mouseX: event.clientX - 2,
           mouseY: event.clientY - 4,
           node,
+          collapsibleGroups: childGroups,
         });
       } else {
         setContextMenuState(undefined);
       }
     },
-    [],
+    [groupData],
   );
 
   const onPaneClick = useCallback(() => {
@@ -324,47 +348,47 @@ function Graph() {
     setContextMenuState(undefined);
   }, []);
 
-  const handleCollapseSimilar = useCallback(
-    (dependencyHash: number) => {
-      setCollapsedDependencyHashes((prev) => {
-        const next = new Set(prev);
-        next.add(dependencyHash);
-        return next;
-      });
-
-      setSelectedNodeId(undefined);
-      pendingFocusNodes.current = [`collapsed-group-${dependencyHash}`];
+  const handleCollapse = useCallback(
+    (hashes: number[], focusNodeId?: string) => {
+      groupActions.collapse(hashes);
+      // Post-collapse, we want to select/focus on the parent.
+      setSelectedNodeId(focusNodeId);
     },
-    [setSelectedNodeId],
+    [groupActions, setSelectedNodeId],
   );
 
-  const handleExpandGroup = useCallback(
-    (dependencyHash: number) => {
-      setCollapsedDependencyHashes((prev) => {
-        const next = new Set(prev);
-        next.delete(dependencyHash);
-        return next;
+  const handleExpand = useCallback(
+    (hashes: number[]) => {
+      // Calculate which nodes are being expanded to focus on them
+      const nodesToFocus: string[] = [];
+      hashes.forEach((hash) => {
+        const groupNodes = groupData.hashToGroup.get(hash);
+        if (groupNodes) {
+          nodesToFocus.push(...groupNodes);
+        }
       });
 
-      setSelectedNodeId(undefined);
-
-      const nodeIds = collapsibleHashToGroup.get(dependencyHash);
-      if (nodeIds && nodeIds.length > 0) {
-        pendingFocusNodes.current = nodeIds;
+      if (nodesToFocus.length > 0) {
+        pendingFocusNodes.current = nodesToFocus;
       }
+
+      groupActions.expand(hashes);
+      setSelectedNodeId(undefined);
     },
-    [collapsibleHashToGroup, setSelectedNodeId],
+    [groupActions, groupData, setSelectedNodeId],
   );
+
+  const handleCollapseAllSuccessful = useCallback(() => {
+    groupActions.collapseAllSuccessful();
+  }, [groupActions]);
 
   const handleCollapseAll = useCallback(() => {
-    setCollapsedDependencyHashes(new Set(collapsibleHashToGroup.keys()));
-    setSelectedNodeId(undefined);
-  }, [collapsibleHashToGroup, setSelectedNodeId]);
+    groupActions.collapseAll();
+  }, [groupActions]);
 
   const handleExpandAll = useCallback(() => {
-    setCollapsedDependencyHashes(new Set());
-    setSelectedNodeId(undefined);
-  }, [setSelectedNodeId]);
+    groupActions.expandAll();
+  }, [groupActions]);
 
   const selectedNode = useMemo(() => {
     const n = nodes.find((n) => n.id === selectedNodeId);
@@ -463,8 +487,15 @@ function Graph() {
                   <Typography variant="body2">Fit View on Selection</Typography>
                 }
               />
-              <Button onClick={handleCollapseAll} sx={{ mt: 1 }} size="small">
-                Collapse All Successful
+              <Button
+                onClick={handleCollapseAllSuccessful}
+                sx={{ mt: 1 }}
+                size="small"
+              >
+                Collapse Successful
+              </Button>
+              <Button onClick={handleCollapseAll} size="small">
+                Collapse All
               </Button>
               <Button onClick={handleExpandAll} size="small">
                 Expand All
@@ -475,8 +506,8 @@ function Graph() {
         <ContextMenu
           contextMenuState={contextMenuState}
           onClose={handleContextMenuClose}
-          onCollapseSimilar={handleCollapseSimilar}
-          onExpandGroup={handleExpandGroup}
+          onCollapse={handleCollapse}
+          onExpand={handleExpand}
         />
       </Panel>
       {selectedNodeId &&

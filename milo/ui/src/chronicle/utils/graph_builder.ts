@@ -17,6 +17,7 @@ import { Edge, MarkerType, Node, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { CSSProperties } from 'react';
 
+import { CheckKind } from '../../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { CheckView } from '../../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Dependencies } from '../../proto/turboci/graph/orchestrator/v1/dependencies.pb';
 import { GraphView as TurboCIGraphView } from '../../proto/turboci/graph/orchestrator/v1/graph_view.pb';
@@ -338,29 +339,47 @@ function createCollapsedGroupNode(
   id: string,
   label: string,
   dependencyHash: number,
+  status?: CheckResultStatus,
 ): ChronicleNode {
+  const colors = getCheckColors(status);
   return {
     id,
     data: {
       label: truncateLabel(label),
       isCollapsed: true,
       dependencyHash,
+      resultStatus: status,
     },
-    style: NODE_STYLES.collapsedGroup(COLORS.collapsedGroup),
+    style: NODE_STYLES.collapsedGroup(colors),
     ...COMMON_NODE_PROPERTIES,
   };
 }
 
 /**
- * Returns a map of group hash to its corresponding group of collapsible node IDs.
- * A group is collapsible if it has more than one successful check with the same parents and children.
+ * Analyzes the graph to identify "collapsible groups" of Checks.
+ *
+ * A collapsible group consists of 2 or more Checks that share:
+ * 1. Identical sets of parent dependencies.
+ * 2. Identical sets of child dependents.
+ * 3. The same CheckResultStatus (e.g. all SUCCESS or all FAILURE).
+ *
+ * @param graphView The TurboCI GraphView to analyze.
+ * @returns An object containing lookup maps for managing these groups:
+ * - `hashToGroup`: Maps a numeric group hash to the list of Check IDs in that group.
+ * - `nodeToHash`: Maps a Check ID to the hash of the group it belongs to.
+ * - `hashToStatus`: Maps a group hash to the shared status of its members.
+ * - `parentToGroupHashes`: Maps a parent Node ID to the list of child group hashes it connects to.
  */
 export function getCollapsibleGroups(graphView: TurboCIGraphView): {
   hashToGroup: Map<number, string[]>;
   nodeToHash: Map<string, number>;
+  hashToStatus: Map<number, CheckResultStatus>;
+  parentToGroupHashes: Map<string, number[]>;
 } {
   const hashToGroup = new Map<number, string[]>();
   const nodeToHash = new Map<string, number>();
+  const hashToStatus = new Map<number, CheckResultStatus>();
+  const parentToGroupHashes = new Map<string, number[]>();
 
   const parentToChildren = new Map<string, string[]>();
 
@@ -383,25 +402,23 @@ export function getCollapsibleGroups(graphView: TurboCIGraphView): {
 
   // Group checks by their parents and children
   Object.entries(graphView.checks).forEach(([checkId, checkView]) => {
-    // We only collapse successful checks
-    if (getCheckResultStatus(checkView) !== CheckResultStatus.SUCCESS) {
-      return;
-    }
+    const status = getCheckResultStatus(checkView);
 
     const deps = checkView.check?.dependencies?.edges || [];
     // Create a unique signature based on sorted parent IDs
     const parentIds = deps
       .map((e) => e.check?.identifier?.id || e.stage?.identifier?.id)
-      .filter((id) => !!id)
+      .filter((id): id is string => !!id)
       .sort();
 
     const childIds = (parentToChildren.get(checkId) || []).sort();
 
-    // Create a unique signature based on sorted parent and child IDs.
-    const signature = `P:${parentIds.join('|')};C:${childIds.join('|')}`;
+    // Create a unique signature based on sorted parent and child IDs and status.
+    const signature = `P:${parentIds.join('|')};C:${childIds.join('|')};S:${status}`;
     const hash = hashString(signature);
 
     nodeToHash.set(checkId, hash);
+    hashToStatus.set(hash, status);
 
     if (!hashToGroup.has(hash)) {
       hashToGroup.set(hash, []);
@@ -409,14 +426,35 @@ export function getCollapsibleGroups(graphView: TurboCIGraphView): {
     hashToGroup.get(hash)!.push(checkId);
   });
 
-  // Filter out groups with only one or zero items
   for (const [hash, group] of hashToGroup.entries()) {
+    // Filter out groups with only one or zero items
     if (group.length <= 1) {
       hashToGroup.delete(hash);
+      hashToStatus.delete(hash);
+      group.forEach((id) => nodeToHash.delete(id));
+    } else {
+      // It's a valid group. Map the parents to this group hash.
+      // We only need to check one node in the group because they all share parents.
+      const exampleCheckId = group[0];
+      const deps =
+        graphView.checks[exampleCheckId]?.check?.dependencies?.edges || [];
+      deps.forEach((edge) => {
+        const parentId =
+          edge.check?.identifier?.id || edge.stage?.identifier?.id;
+        if (parentId) {
+          if (!parentToGroupHashes.has(parentId)) {
+            parentToGroupHashes.set(parentId, []);
+          }
+          const hashes = parentToGroupHashes.get(parentId)!;
+          if (!hashes.includes(hash)) {
+            hashes.push(hash);
+          }
+        }
+      });
     }
   }
 
-  return { hashToGroup, nodeToHash };
+  return { hashToGroup, nodeToHash, hashToStatus, parentToGroupHashes };
 }
 
 /**
@@ -473,13 +511,11 @@ export class TurboCIGraphBuilder {
           this.nodeToCollapsedIdMap.set(id, collapsedId);
         });
 
+        const { label, status } = this.getCollapsedCheckLabel(checkIds);
+
         // Add the synthetic node to the graph
         this.nodes.push(
-          createCollapsedGroupNode(
-            collapsedId,
-            `${checkIds.length} successful checks`,
-            hash,
-          ),
+          createCollapsedGroupNode(collapsedId, label, hash, status),
         );
         this.allNodeIds.add(collapsedId);
       }
@@ -494,13 +530,12 @@ export class TurboCIGraphBuilder {
       // Include the dependency hash when creating the check to support collapsing
       // it (and its sibling nodes). However we only support this if it has > 1
       // siblings in its group, otherwise just use undefined to indicate that
-      // it's not collapsible. The check itself, and its siblings must also
-      // be successful.
+      // it's not collapsible.
       const hash = nodeToHash.get(checkId);
       let dependencyHash = undefined;
       if (hash) {
-        const successfulCheckIds = hashToGroup.get(hash);
-        if (successfulCheckIds && successfulCheckIds.includes(checkId)) {
+        const checkIdsInGroup = hashToGroup.get(hash);
+        if (checkIdsInGroup && checkIdsInGroup.includes(checkId)) {
           dependencyHash = hash;
         }
       }
@@ -517,6 +552,41 @@ export class TurboCIGraphBuilder {
         this.allNodeIds.add(stageId);
       }
     });
+  }
+
+  private getCollapsedCheckLabel(groupCheckIds: string[]) {
+    const firstCheckId = groupCheckIds[0];
+
+    // Get the status of the check for labelling.
+    // Checking the first check is enough because all checks in the same group should
+    // have the same status.
+    const status = getCheckResultStatus(this.graphView.checks[firstCheckId]);
+    let statusText = '';
+    if (status === CheckResultStatus.SUCCESS) {
+      statusText = 'successful';
+    } else if (status === CheckResultStatus.FAILURE) {
+      statusText = 'failed';
+    }
+
+    let typeText = 'checks';
+    const kind = this.graphView.checks[firstCheckId].check?.kind;
+    const allSameKind = groupCheckIds.every(
+      (id) => this.graphView.checks[id].check?.kind === kind,
+    );
+
+    // Label the collapsed group as "builds" or "tests" if they're all the same kind.
+    if (allSameKind) {
+      if (kind === CheckKind.CHECK_KIND_BUILD) {
+        typeText = 'builds';
+      } else if (kind === CheckKind.CHECK_KIND_TEST) {
+        typeText = 'tests';
+      }
+    }
+
+    return {
+      label: `${groupCheckIds.length} ${statusText} ${typeText}`,
+      status,
+    };
   }
 
   private identifyAssignmentGroups(options: GraphBuilderOptions) {

@@ -14,42 +14,65 @@
 
 import { Menu, MenuItem } from '@mui/material';
 
+import { CheckResultStatus } from '../utils/check_utils';
 import { ChronicleNode } from '../utils/graph_builder';
+
+/**
+ * Information about a collapsible group of children for the current node
+ * (on which the context menu is being shown).
+ */
+export interface CollapsibleChildGroup {
+  hash: number;
+  status: CheckResultStatus;
+}
 
 export interface ContextMenuState {
   mouseX: number;
   mouseY: number;
   node: ChronicleNode;
+  collapsibleGroups?: CollapsibleChildGroup[];
 }
 
 export interface ContextMenuProps {
   contextMenuState: ContextMenuState | undefined;
   onClose: () => void;
-  onCollapseSimilar: (dependencyHash: number) => void;
-  onExpandGroup: (dependencyHash: number) => void;
+  onCollapse: (hashes: number[], focusNodeId?: string) => void;
+  onExpand: (hashes: number[]) => void;
 }
 
 export function ContextMenu({
   contextMenuState,
   onClose,
-  onCollapseSimilar,
-  onExpandGroup,
+  onCollapse,
+  onExpand,
 }: ContextMenuProps) {
   const isOpen = !!contextMenuState;
 
-  const handleCollapse = () => {
+  const handleExpandSelf = () => {
     if (contextMenuState?.node.data?.dependencyHash) {
-      onCollapseSimilar(contextMenuState.node.data.dependencyHash);
+      onExpand([contextMenuState.node.data.dependencyHash]);
     }
     onClose();
   };
 
-  const handleExpand = () => {
-    if (contextMenuState?.node.data?.dependencyHash) {
-      onExpandGroup(contextMenuState.node.data.dependencyHash);
-    }
+  const childGroups = contextMenuState?.collapsibleGroups || [];
+  const hasChildren = childGroups.length > 0;
+
+  const handleCollapseAllChildren = () => {
+    const hashes = childGroups.map((g) => g.hash);
+    onCollapse(hashes, contextMenuState?.node.id);
     onClose();
   };
+
+  const handleCollapseSuccessfulChildren = () => {
+    const hashes = childGroups
+      .filter((g) => g.status === CheckResultStatus.SUCCESS)
+      .map((g) => g.hash);
+    onCollapse(hashes, contextMenuState?.node.id);
+    onClose();
+  };
+
+  const isSelfCollapsed = !!contextMenuState?.node.data?.isCollapsed;
 
   return (
     <Menu
@@ -62,11 +85,23 @@ export function ContextMenu({
           : undefined
       }
     >
-      {contextMenuState?.node.data.isCollapsed ? (
-        <MenuItem onClick={handleExpand}>Expand successful nodes</MenuItem>
-      ) : (
-        <MenuItem onClick={handleCollapse}>Collapse successful nodes</MenuItem>
+      {/* Expand action if I am a collapsed node. */}
+      {isSelfCollapsed && (
+        <MenuItem onClick={handleExpandSelf}>Expand</MenuItem>
       )}
+
+      {/* Collapse actions if I am a parent with collapsible children */}
+      {hasChildren && [
+        <MenuItem key="collapse-all" onClick={handleCollapseAllChildren}>
+          Collapse all children
+        </MenuItem>,
+        <MenuItem
+          key="collapse-success"
+          onClick={handleCollapseSuccessfulChildren}
+        >
+          Collapse successful children
+        </MenuItem>,
+      ]}
     </Menu>
   );
 }
