@@ -177,25 +177,33 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 		}
 		return "(" + strings.Join(clauses, " OR ") + ")", nil
 	}
-	if restriction.Comparable.Member.Value.Quoted {
-		return "", fmt.Errorf("expected a field name on the left hand side of a restriction, got the string literal %q", restriction.Comparable.Member.Value)
-	}
-	column, err := w.table.FilterableFieldByFieldPath(aip132.NewFieldPath(restriction.Comparable.Member.Value.Value))
+	fieldPath, err := coerceMemberToFieldPath(restriction.Comparable.Member)
 	if err != nil {
 		return "", err
 	}
-	var nestedFields []string
-	for _, fld := range restriction.Comparable.Member.Fields {
-		nestedFields = append(nestedFields, fld.Value)
+	column, remainingPath, err := w.table.FilterableFieldByFieldPath(fieldPath)
+	if err != nil {
+		return "", err
 	}
-
 	context := RestrictionContext{
 		FieldPath:    column.fieldPath,
-		NestedFields: nestedFields,
+		NestedFields: remainingPath,
 		Comparator:   restriction.Comparator,
 		Arg:          restriction.Arg,
 	}
 	return column.backend.RestrictionQuery(context, w)
+}
+
+func coerceMemberToFieldPath(member *Member) (aip132.FieldPath, error) {
+	if member.Value.Quoted {
+		return aip132.FieldPath{}, fmt.Errorf("expected a field name on the left hand side of a restriction, got the string literal %q", member.Value)
+	}
+	var parts []string
+	parts = append(parts, member.Value.Value)
+	for _, fld := range member.Fields {
+		parts = append(parts, fld.Value)
+	}
+	return aip132.NewFieldPath(parts...), nil
 }
 
 // quoteLike turns a literal string into an escaped like expression.

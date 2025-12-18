@@ -57,11 +57,21 @@ type DatabaseTable struct {
 }
 
 // FilterableFieldByFieldPath returns the filterable field
-// with the given field path.
-func (t *DatabaseTable) FilterableFieldByFieldPath(path aip132.FieldPath) (*Field, error) {
-	col := t.fieldByFieldPath[path.String()]
-	if col != nil && col.filterable {
-		return col, nil
+// with the given field path, or a prefix thereof.
+// If a prefix is used, the unused segments of the path are returned.
+func (t *DatabaseTable) FilterableFieldByFieldPath(path aip132.FieldPath) (result *Field, unusedPath []string, err error) {
+	segments := path.GetSegments()
+	var field *Field
+
+	// Try the full path. If it doesn't match, try truncations thereof.
+	for truncation := 0; truncation < len(segments); truncation++ {
+		tryPath := aip132.NewFieldPath(segments[:len(segments)-truncation]...)
+		unusedPath := segments[len(segments)-truncation:]
+
+		field = t.fieldByFieldPath[tryPath.String()]
+		if field != nil && field.filterable {
+			return field, unusedPath, nil
+		}
 	}
 
 	fieldNames := []string{}
@@ -70,7 +80,7 @@ func (t *DatabaseTable) FilterableFieldByFieldPath(path aip132.FieldPath) (*Fiel
 			fieldNames = append(fieldNames, column.fieldPath.String())
 		}
 	}
-	return nil, fmt.Errorf("no filterable field %q, valid fields are %s", path.String(), strings.Join(fieldNames, ", "))
+	return nil, nil, fmt.Errorf("no filterable field %q or a prefix thereof, valid fields are %s", path.String(), strings.Join(fieldNames, ", "))
 }
 
 // SortableFieldByFieldPath returns the sortable field

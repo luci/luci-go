@@ -26,8 +26,9 @@ func TestWhereClause(t *testing.T) {
 	ftt.Run("WhereClause", t, func(t *ftt.Test) {
 		table := NewDatabaseTable().WithFields(
 			NewField().WithFieldPath("foo").WithBackend(NewStringColumn("db_foo")).FilterableImplicitly().Build(),
-			NewField().WithFieldPath("bar").WithBackend(NewStringColumn("db_bar")).FilterableImplicitly().Build(),
-			NewField().WithFieldPath("baz").WithBackend(NewStringColumn("db_baz")).Filterable().Build(),
+			NewField().WithFieldPath("path", "to", "bar").WithBackend(NewStringColumn("db_bar")).FilterableImplicitly().Build(),
+			NewField().WithFieldPath("path", "to", "baz").WithBackend(NewStringColumn("db_baz")).Filterable().Build(),
+			NewField().WithFieldPath("path", "to", "keyvalue").WithBackend(NewKeyValueColumn("db_kv").WithStringArray().Build()).Filterable().Build(),
 		).Build()
 
 		t.Run("Empty filter", func(t *ftt.Test) {
@@ -38,7 +39,7 @@ func TestWhereClause(t *testing.T) {
 		})
 
 		t.Run("Complex filter", func(t *ftt.Test) {
-			filter, err := ParseFilter("implicit (foo=\"explicitone\") OR -bar=\"explicittwo\" AND foo!=\"explicitthree\" OR baz:\"explicitfour\"")
+			filter, err := ParseFilter("implicit (foo=\"explicitone\") OR -path.to.bar=\"explicittwo\" AND foo!=\"explicitthree\" OR path.to.baz:\"explicitfour\" OR path.to.keyvalue.key:\"explicitfive\"")
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "T", "p_")
@@ -68,8 +69,26 @@ func TestWhereClause(t *testing.T) {
 					Name:  "p_5",
 					Value: "%explicitfour%",
 				},
+				{
+					Name:  "p_6",
+					Value: "key:%explicitfive%",
+				},
 			}))
-			assert.Loosely(t, result, should.Equal("(((T.db_foo LIKE @p_0) OR (T.db_bar LIKE @p_1)) AND ((T.db_foo = @p_2) OR (NOT (T.db_bar = @p_3))) AND ((T.db_foo <> @p_4) OR (T.db_baz LIKE @p_5)))"))
+			assert.Loosely(t, result, should.Equal(`((`+
+				`(T.db_foo LIKE @p_0) OR (T.db_bar LIKE @p_1)`+
+				`) AND (`+
+				`(T.db_foo = @p_2) OR (NOT (T.db_bar = @p_3))`+
+				`) AND (`+
+				`(T.db_foo <> @p_4) OR (T.db_baz LIKE @p_5) OR (EXISTS (SELECT 1 FROM UNNEST(T.db_kv) as _v WHERE _v LIKE @p_6))`+
+				`))`))
+		})
+
+		t.Run("Field does not exist", func(t *ftt.Test) {
+			filter, err := ParseFilter("path.to.nonexisting=\"somevalue\"")
+			assert.Loosely(t, err, should.BeNil)
+
+			_, _, err = table.WhereClause(filter, "T", "p_")
+			assert.Loosely(t, err, should.ErrLike(`no filterable field "path.to.nonexisting" or a prefix thereof, valid fields are foo, path.to.bar, path.to.baz`))
 		})
 	})
 }
