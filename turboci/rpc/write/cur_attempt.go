@@ -47,7 +47,7 @@ type CurrentStageWrite struct {
 }
 
 // GetCurrentAttempt returns a helper for manipulating the `current_attempt`
-// portion of the CurrentStageWrite.
+// of the given request.
 func (req Request) GetCurrentAttempt() CurrentAttemptWrite {
 	caw := req.Msg.GetCurrentAttempt()
 	if caw == nil {
@@ -57,8 +57,7 @@ func (req Request) GetCurrentAttempt() CurrentAttemptWrite {
 	return CurrentAttemptWrite{caw}
 }
 
-// CurrentAttemptWrite is a helper to manipulate the CurrentAttempt portion of a
-// CurrentStageWrite message.
+// CurrentAttemptWrite is a helper to manipulate a CurrentAttemptWrite message.
 //
 // As produced by this library, this never contains a nil pointer.
 type CurrentAttemptWrite struct {
