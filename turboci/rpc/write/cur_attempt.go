@@ -137,13 +137,19 @@ func (sa StateTransition) SetComplete() {
 }
 
 // SetIncomplete sets this StateTransition to "INCOMPLETE".
-func (sa StateTransition) SetIncomplete(blockNewAttempts bool) {
-	var bna *bool
-	if blockNewAttempts {
-		bna = &blockNewAttempts
-	}
+//
+// If the stage execution policy permits it, the orchestrator may create a
+// new attempt for this stage.
+func (sa StateTransition) SetIncomplete() {
+	sa.Msg.SetIncomplete(&orchestratorpb.WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete{})
+}
+
+// SetIncompleteBlockingNewAttempts sets this StateTransition to "INCOMPLETE"
+// and prevents the orchestrator from making a new attempt, even if the stage
+// execution policy permits it.
+func (sa StateTransition) SetIncompleteBlockingNewAttempts() {
 	sa.Msg.SetIncomplete(orchestratorpb.WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete_builder{
-		BlockNewAttempts: bna,
+		BlockNewAttempts: proto.Bool(true),
 	}.Build())
 }
 
