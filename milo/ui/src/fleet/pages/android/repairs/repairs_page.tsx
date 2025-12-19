@@ -854,7 +854,7 @@ function Metrics({
                     getFilterQueryString(
                       {
                         fc_machine_type: ['device'],
-                        state: ['BUSY', 'IDLE', 'INIT'],
+                        fc_is_offline: ['false'],
                       },
                       searchParams,
                       pagerContext,
@@ -874,13 +874,7 @@ function Metrics({
                     getFilterQueryString(
                       {
                         fc_machine_type: ['device'],
-                        state: [
-                          'DYING',
-                          'FAILED',
-                          'INSTALL_ERROR',
-                          'LAMEDUCK',
-                          'MISSING',
-                        ],
+                        fc_is_offline: ['true'],
                       },
                       searchParams,
                       pagerContext,

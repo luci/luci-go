@@ -105,6 +105,9 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
   fc_machine_type: {
     orderByField: 'fc_machine_type',
   },
+  fc_is_offline: {
+    orderByField: 'fc_is_offline',
+  },
   ['label-run_target']: {
     orderByField: 'labels.run_target',
     valueGetter: (_, device) => {
