@@ -117,7 +117,7 @@ func TestNotifyRootInvocationFinalized(t *testing.T) {
 			assert.Loosely(t, attrs[androidTargetFilter], should.Equal("brya-trunk_staging-userdebug_coverage"))
 
 			var msg pb.RootInvocationFinalizedNotification
-			assert.Loosely(t, protojson.Unmarshal(task.Message.GetData(), &msg), should.BeNil)
+			assert.Loosely(t, proto.Unmarshal(task.Message.GetData(), &msg), should.BeNil)
 			assert.Loosely(t, &msg, should.Match(&pb.RootInvocationFinalizedNotification{
 				RootInvocation: &pb.RootInvocation{
 					Name:         "rootInvocations/x",
