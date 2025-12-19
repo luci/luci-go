@@ -206,4 +206,31 @@ message TestAggregationPredicate {
   // - leave the test_prefix_filter unset, or set it to
   //   test_id_prefix.aggregation_level to INVOCATION.
   TestIdentifierPrefix test_prefix_filter = 2;
+
+  // Limits results to only those test aggregations that *contain* a test result
+  // matching this filter.
+  //
+  // The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
+  // with the following fields available:
+  // - test_id (string) - the flat-form test ID
+  // - test_id_structured.module_name (string) - the structured form test ID
+  // - test_id_structured.module_scheme (string)
+  // - test_id_structured.module_variant (filters behave as if this field is a map<string, string>)
+  // - test_id_structured.module_variant_hash (string)
+  // - test_id_structured.coarse_name (string)
+  // - test_id_structured.fine_name (string)
+  // - test_id_structured.case_name (string)
+  // - test_metadata.name (string)
+  // - tags (repeated (key string, value string))
+  // - test_metadata.location.repo (string)
+  // - test_metadata.location.file_name (string)
+  // - status (enum luci.resultdb.v1.TestResult.Status) - the status_v2 of the test result
+  // - duration (google.protobuf.Duration)
+  //
+  // While this filter generally offers a superset of functionality of the `test_prefix_filter`
+  // field, clients will generally prefer to use `test_prefix_filter` if it is
+  // sufficient as its use has less sharp edges (e.g. no need to escape test ID
+  // components when injecting them into filter strings, filtering on a variant is exact
+  // and not simply checking for presence of a subset of key/value pairs).
+  string contains_test_result_filter = 3;
 }
