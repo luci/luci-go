@@ -17,8 +17,6 @@ message GenAiAnalysisResult{
   google.protobuf.Timestamp start_time = 3;
   // End time of gen AI analysis.
   google.protobuf.Timestamp end_time = 4;
-  // Suspects found by the gen AI analysis for test analysis (up to 3).
-  repeated GenAiSuspect test_suspects = 5;
 }
 
 message GenAiSuspect {

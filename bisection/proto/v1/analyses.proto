@@ -267,6 +267,8 @@ message TestAnalysis {
   int64 sample_bbid = 14;
   // Nthsection result.
   TestNthSectionAnalysisResult nth_section_result = 15;
+  // GenAI analysis result.
+  TestGenAiAnalysisResult gen_ai_result = 16;
 }
 
 message TestFailure {
@@ -312,6 +314,20 @@ message TestNthSectionAnalysisResult {
   BlameList blame_list = 7;
   // Optional, when nth-section has found a culprit.
   TestCulprit suspect = 8;
+}
+
+message TestGenAiAnalysisResult {
+  // The status of the GenAI analysis.
+  AnalysisStatus status = 1;
+  // The run status of the GenAI analysis.
+  AnalysisRunStatus run_status = 2;
+  // Timestamp for the start time of the GenAI analysis.
+  google.protobuf.Timestamp start_time = 3;
+  // Timestamp for the end time of the GenAI analysis.
+  google.protobuf.Timestamp end_time = 4;
+  // Suspects found by GenAI analysis (up to 3).
+  // Sorted by confidence score in descending order.
+  repeated TestCulprit suspects = 5;
 }
 
 message TestSingleRerun {
@@ -381,6 +397,12 @@ message TestCulprit {
   repeated CulpritAction culprit_action = 4;
   // The details of suspect verification for the culprit.
   TestSuspectVerificationDetails verification_details = 5;
+  // Justification for why this commit was chosen as a suspect.
+  // Only populated for GenAI suspects.
+  string justification = 6;
+  // Confidence score for this suspect (0-10).
+  // Only populated for GenAI suspects.
+  int32 confidence_score = 7;
 }
 
 message BatchGetTestAnalysesRequest {

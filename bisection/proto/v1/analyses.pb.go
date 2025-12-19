@@ -1022,8 +1022,10 @@ type TestAnalysis struct {
 	SampleBbid int64 `protobuf:"varint,14,opt,name=sample_bbid,json=sampleBbid,proto3" json:"sample_bbid,omitempty"`
 	// Nthsection result.
 	NthSectionResult *TestNthSectionAnalysisResult `protobuf:"bytes,15,opt,name=nth_section_result,json=nthSectionResult,proto3" json:"nth_section_result,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// GenAI analysis result.
+	GenAiResult   *TestGenAiAnalysisResult `protobuf:"bytes,16,opt,name=gen_ai_result,json=genAiResult,proto3" json:"gen_ai_result,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TestAnalysis) Reset() {
@@ -1143,6 +1145,13 @@ func (x *TestAnalysis) GetSampleBbid() int64 {
 func (x *TestAnalysis) GetNthSectionResult() *TestNthSectionAnalysisResult {
 	if x != nil {
 		return x.NthSectionResult
+	}
+	return nil
+}
+
+func (x *TestAnalysis) GetGenAiResult() *TestGenAiAnalysisResult {
+	if x != nil {
+		return x.GenAiResult
 	}
 	return nil
 }
@@ -1377,6 +1386,88 @@ func (x *TestNthSectionAnalysisResult) GetSuspect() *TestCulprit {
 	return nil
 }
 
+type TestGenAiAnalysisResult struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The status of the GenAI analysis.
+	Status AnalysisStatus `protobuf:"varint,1,opt,name=status,proto3,enum=luci.bisection.v1.AnalysisStatus" json:"status,omitempty"`
+	// The run status of the GenAI analysis.
+	RunStatus AnalysisRunStatus `protobuf:"varint,2,opt,name=run_status,json=runStatus,proto3,enum=luci.bisection.v1.AnalysisRunStatus" json:"run_status,omitempty"`
+	// Timestamp for the start time of the GenAI analysis.
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	// Timestamp for the end time of the GenAI analysis.
+	EndTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	// Suspects found by GenAI analysis (up to 3).
+	// Sorted by confidence score in descending order.
+	Suspects      []*TestCulprit `protobuf:"bytes,5,rep,name=suspects,proto3" json:"suspects,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestGenAiAnalysisResult) Reset() {
+	*x = TestGenAiAnalysisResult{}
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestGenAiAnalysisResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestGenAiAnalysisResult) ProtoMessage() {}
+
+func (x *TestGenAiAnalysisResult) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestGenAiAnalysisResult.ProtoReflect.Descriptor instead.
+func (*TestGenAiAnalysisResult) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *TestGenAiAnalysisResult) GetStatus() AnalysisStatus {
+	if x != nil {
+		return x.Status
+	}
+	return AnalysisStatus_ANALYSIS_STATUS_UNSPECIFIED
+}
+
+func (x *TestGenAiAnalysisResult) GetRunStatus() AnalysisRunStatus {
+	if x != nil {
+		return x.RunStatus
+	}
+	return AnalysisRunStatus_ANALYSIS_RUN_STATUS_UNSPECIFIED
+}
+
+func (x *TestGenAiAnalysisResult) GetStartTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartTime
+	}
+	return nil
+}
+
+func (x *TestGenAiAnalysisResult) GetEndTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EndTime
+	}
+	return nil
+}
+
+func (x *TestGenAiAnalysisResult) GetSuspects() []*TestCulprit {
+	if x != nil {
+		return x.Suspects
+	}
+	return nil
+}
+
 type TestSingleRerun struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Buildbucket ID of the rerun build.
@@ -1410,7 +1501,7 @@ type TestSingleRerun struct {
 
 func (x *TestSingleRerun) Reset() {
 	*x = TestSingleRerun{}
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[16]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1422,7 +1513,7 @@ func (x *TestSingleRerun) String() string {
 func (*TestSingleRerun) ProtoMessage() {}
 
 func (x *TestSingleRerun) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[16]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1435,7 +1526,7 @@ func (x *TestSingleRerun) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestSingleRerun.ProtoReflect.Descriptor instead.
 func (*TestSingleRerun) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{16}
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *TestSingleRerun) GetBbid() int64 {
@@ -1512,7 +1603,7 @@ type RerunTestResults struct {
 
 func (x *RerunTestResults) Reset() {
 	*x = RerunTestResults{}
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[17]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1524,7 +1615,7 @@ func (x *RerunTestResults) String() string {
 func (*RerunTestResults) ProtoMessage() {}
 
 func (x *RerunTestResults) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[17]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1537,7 +1628,7 @@ func (x *RerunTestResults) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RerunTestResults.ProtoReflect.Descriptor instead.
 func (*RerunTestResults) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{17}
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RerunTestResults) GetResults() []*RerunTestSingleResult {
@@ -1570,7 +1661,7 @@ type RerunTestSingleResult struct {
 
 func (x *RerunTestSingleResult) Reset() {
 	*x = RerunTestSingleResult{}
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[18]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1582,7 +1673,7 @@ func (x *RerunTestSingleResult) String() string {
 func (*RerunTestSingleResult) ProtoMessage() {}
 
 func (x *RerunTestSingleResult) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[18]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1595,7 +1686,7 @@ func (x *RerunTestSingleResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RerunTestSingleResult.ProtoReflect.Descriptor instead.
 func (*RerunTestSingleResult) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{18}
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RerunTestSingleResult) GetTestId() string {
@@ -1640,7 +1731,7 @@ type TestSuspectVerificationDetails struct {
 
 func (x *TestSuspectVerificationDetails) Reset() {
 	*x = TestSuspectVerificationDetails{}
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[19]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1652,7 +1743,7 @@ func (x *TestSuspectVerificationDetails) String() string {
 func (*TestSuspectVerificationDetails) ProtoMessage() {}
 
 func (x *TestSuspectVerificationDetails) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[19]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1665,7 +1756,7 @@ func (x *TestSuspectVerificationDetails) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestSuspectVerificationDetails.ProtoReflect.Descriptor instead.
 func (*TestSuspectVerificationDetails) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{19}
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *TestSuspectVerificationDetails) GetStatus() SuspectVerificationStatus {
@@ -1703,13 +1794,19 @@ type TestCulprit struct {
 	CulpritAction []*CulpritAction `protobuf:"bytes,4,rep,name=culprit_action,json=culpritAction,proto3" json:"culprit_action,omitempty"`
 	// The details of suspect verification for the culprit.
 	VerificationDetails *TestSuspectVerificationDetails `protobuf:"bytes,5,opt,name=verification_details,json=verificationDetails,proto3" json:"verification_details,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Justification for why this commit was chosen as a suspect.
+	// Only populated for GenAI suspects.
+	Justification string `protobuf:"bytes,6,opt,name=justification,proto3" json:"justification,omitempty"`
+	// Confidence score for this suspect (0-10).
+	// Only populated for GenAI suspects.
+	ConfidenceScore int32 `protobuf:"varint,7,opt,name=confidence_score,json=confidenceScore,proto3" json:"confidence_score,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *TestCulprit) Reset() {
 	*x = TestCulprit{}
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[20]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1721,7 +1818,7 @@ func (x *TestCulprit) String() string {
 func (*TestCulprit) ProtoMessage() {}
 
 func (x *TestCulprit) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[20]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1734,7 +1831,7 @@ func (x *TestCulprit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestCulprit.ProtoReflect.Descriptor instead.
 func (*TestCulprit) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{20}
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *TestCulprit) GetCommit() *proto.GitilesCommit {
@@ -1772,6 +1869,20 @@ func (x *TestCulprit) GetVerificationDetails() *TestSuspectVerificationDetails {
 	return nil
 }
 
+func (x *TestCulprit) GetJustification() string {
+	if x != nil {
+		return x.Justification
+	}
+	return ""
+}
+
+func (x *TestCulprit) GetConfidenceScore() int32 {
+	if x != nil {
+		return x.ConfidenceScore
+	}
+	return 0
+}
+
 type BatchGetTestAnalysesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The LUCI project.
@@ -1788,7 +1899,7 @@ type BatchGetTestAnalysesRequest struct {
 
 func (x *BatchGetTestAnalysesRequest) Reset() {
 	*x = BatchGetTestAnalysesRequest{}
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[21]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1800,7 +1911,7 @@ func (x *BatchGetTestAnalysesRequest) String() string {
 func (*BatchGetTestAnalysesRequest) ProtoMessage() {}
 
 func (x *BatchGetTestAnalysesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[21]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1813,7 +1924,7 @@ func (x *BatchGetTestAnalysesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetTestAnalysesRequest.ProtoReflect.Descriptor instead.
 func (*BatchGetTestAnalysesRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{21}
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *BatchGetTestAnalysesRequest) GetProject() string {
@@ -1849,7 +1960,7 @@ type BatchGetTestAnalysesResponse struct {
 
 func (x *BatchGetTestAnalysesResponse) Reset() {
 	*x = BatchGetTestAnalysesResponse{}
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[22]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1861,7 +1972,7 @@ func (x *BatchGetTestAnalysesResponse) String() string {
 func (*BatchGetTestAnalysesResponse) ProtoMessage() {}
 
 func (x *BatchGetTestAnalysesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[22]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1874,7 +1985,7 @@ func (x *BatchGetTestAnalysesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetTestAnalysesResponse.ProtoReflect.Descriptor instead.
 func (*BatchGetTestAnalysesResponse) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{22}
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *BatchGetTestAnalysesResponse) GetTestAnalyses() []*TestAnalysis {
@@ -1903,7 +2014,7 @@ type BatchGetTestAnalysesRequest_TestFailureIdentifier struct {
 
 func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) Reset() {
 	*x = BatchGetTestAnalysesRequest_TestFailureIdentifier{}
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[23]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1915,7 +2026,7 @@ func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) String() string {
 func (*BatchGetTestAnalysesRequest_TestFailureIdentifier) ProtoMessage() {}
 
 func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[23]
+	mi := &file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1928,7 +2039,7 @@ func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) ProtoReflect() proto
 
 // Deprecated: Use BatchGetTestAnalysesRequest_TestFailureIdentifier.ProtoReflect.Descriptor instead.
 func (*BatchGetTestAnalysesRequest_TestFailureIdentifier) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{21, 0}
+	return file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP(), []int{22, 0}
 }
 
 func (x *BatchGetTestAnalysesRequest_TestFailureIdentifier) GetTestId() string {
@@ -2022,7 +2133,7 @@ const file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDesc = "" +
 	"\x16GetTestAnalysisRequest\x12$\n" +
 	"\vanalysis_id\x18\x01 \x01(\x03B\x03\xe0A\x02R\n" +
 	"analysisId\x122\n" +
-	"\x06fields\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\x06fields\"\xa0\x06\n" +
+	"\x06fields\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\x06fields\"\xf0\x06\n" +
 	"\fTestAnalysis\x12\x1f\n" +
 	"\vanalysis_id\x18\x01 \x01(\x03R\n" +
 	"analysisId\x12=\n" +
@@ -2042,7 +2153,8 @@ const file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDesc = "" +
 	"end_commit\x18\v \x01(\v2\x1d.buildbucket.v2.GitilesCommitR\tendCommit\x12\x1f\n" +
 	"\vsample_bbid\x18\x0e \x01(\x03R\n" +
 	"sampleBbid\x12]\n" +
-	"\x12nth_section_result\x18\x0f \x01(\v2/.luci.bisection.v1.TestNthSectionAnalysisResultR\x10nthSectionResultJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\x93\x03\n" +
+	"\x12nth_section_result\x18\x0f \x01(\v2/.luci.bisection.v1.TestNthSectionAnalysisResultR\x10nthSectionResult\x12N\n" +
+	"\rgen_ai_result\x18\x10 \x01(\v2*.luci.bisection.v1.TestGenAiAnalysisResultR\vgenAiResultJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\x93\x03\n" +
 	"\vTestFailure\x12\x17\n" +
 	"\atest_id\x18\x01 \x01(\tR\x06testId\x12!\n" +
 	"\fvariant_hash\x18\x02 \x01(\tR\vvariantHash\x12\x19\n" +
@@ -2067,7 +2179,15 @@ const file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDesc = "" +
 	"\x06reruns\x18\x06 \x03(\v2\".luci.bisection.v1.TestSingleRerunR\x06reruns\x12;\n" +
 	"\n" +
 	"blame_list\x18\a \x01(\v2\x1c.luci.bisection.v1.BlameListR\tblameList\x128\n" +
-	"\asuspect\x18\b \x01(\v2\x1e.luci.bisection.v1.TestCulpritR\asuspect\"\xbd\x03\n" +
+	"\asuspect\x18\b \x01(\v2\x1e.luci.bisection.v1.TestCulpritR\asuspect\"\xc7\x02\n" +
+	"\x17TestGenAiAnalysisResult\x129\n" +
+	"\x06status\x18\x01 \x01(\x0e2!.luci.bisection.v1.AnalysisStatusR\x06status\x12C\n" +
+	"\n" +
+	"run_status\x18\x02 \x01(\x0e2$.luci.bisection.v1.AnalysisRunStatusR\trunStatus\x129\n" +
+	"\n" +
+	"start_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x125\n" +
+	"\bend_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\x12:\n" +
+	"\bsuspects\x18\x05 \x03(\v2\x1e.luci.bisection.v1.TestCulpritR\bsuspects\"\xbd\x03\n" +
 	"\x0fTestSingleRerun\x12\x12\n" +
 	"\x04bbid\x18\x01 \x01(\x03R\x04bbid\x12;\n" +
 	"\vcreate_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
@@ -2092,14 +2212,16 @@ const file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDesc = "" +
 	"\x1eTestSuspectVerificationDetails\x12D\n" +
 	"\x06status\x18\x01 \x01(\x0e2,.luci.bisection.v1.SuspectVerificationStatusR\x06status\x12G\n" +
 	"\rsuspect_rerun\x18\x02 \x01(\v2\".luci.bisection.v1.TestSingleRerunR\fsuspectRerun\x12E\n" +
-	"\fparent_rerun\x18\x03 \x01(\v2\".luci.bisection.v1.TestSingleRerunR\vparentRerun\"\xb5\x02\n" +
+	"\fparent_rerun\x18\x03 \x01(\v2\".luci.bisection.v1.TestSingleRerunR\vparentRerun\"\x86\x03\n" +
 	"\vTestCulprit\x125\n" +
 	"\x06commit\x18\x01 \x01(\v2\x1d.buildbucket.v2.GitilesCommitR\x06commit\x12\x1d\n" +
 	"\n" +
 	"review_url\x18\x02 \x01(\tR\treviewUrl\x12!\n" +
 	"\freview_title\x18\x03 \x01(\tR\vreviewTitle\x12G\n" +
 	"\x0eculprit_action\x18\x04 \x03(\v2 .luci.bisection.v1.CulpritActionR\rculpritAction\x12d\n" +
-	"\x14verification_details\x18\x05 \x01(\v21.luci.bisection.v1.TestSuspectVerificationDetailsR\x13verificationDetails\"\xf0\x02\n" +
+	"\x14verification_details\x18\x05 \x01(\v21.luci.bisection.v1.TestSuspectVerificationDetailsR\x13verificationDetails\x12$\n" +
+	"\rjustification\x18\x06 \x01(\tR\rjustification\x12)\n" +
+	"\x10confidence_score\x18\a \x01(\x05R\x0fconfidenceScore\"\xf0\x02\n" +
 	"\x1bBatchGetTestAnalysesRequest\x12\x18\n" +
 	"\aproject\x18\x01 \x01(\tR\aproject\x12i\n" +
 	"\rtest_failures\x18\x02 \x03(\v2D.luci.bisection.v1.BatchGetTestAnalysesRequest.TestFailureIdentifierR\ftestFailures\x122\n" +
@@ -2145,7 +2267,7 @@ func file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDescGZIP() [
 }
 
 var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_goTypes = []any{
 	(AnalysisRunStatus)(0),                                    // 0: luci.bisection.v1.AnalysisRunStatus
 	(BuildFailureType)(0),                                     // 1: luci.bisection.v1.BuildFailureType
@@ -2165,113 +2287,120 @@ var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_goTypes = []any{
 	(*TestAnalysis)(nil),                                      // 15: luci.bisection.v1.TestAnalysis
 	(*TestFailure)(nil),                                       // 16: luci.bisection.v1.TestFailure
 	(*TestNthSectionAnalysisResult)(nil),                      // 17: luci.bisection.v1.TestNthSectionAnalysisResult
-	(*TestSingleRerun)(nil),                                   // 18: luci.bisection.v1.TestSingleRerun
-	(*RerunTestResults)(nil),                                  // 19: luci.bisection.v1.RerunTestResults
-	(*RerunTestSingleResult)(nil),                             // 20: luci.bisection.v1.RerunTestSingleResult
-	(*TestSuspectVerificationDetails)(nil),                    // 21: luci.bisection.v1.TestSuspectVerificationDetails
-	(*TestCulprit)(nil),                                       // 22: luci.bisection.v1.TestCulprit
-	(*BatchGetTestAnalysesRequest)(nil),                       // 23: luci.bisection.v1.BatchGetTestAnalysesRequest
-	(*BatchGetTestAnalysesResponse)(nil),                      // 24: luci.bisection.v1.BatchGetTestAnalysesResponse
-	(*BatchGetTestAnalysesRequest_TestFailureIdentifier)(nil), // 25: luci.bisection.v1.BatchGetTestAnalysesRequest.TestFailureIdentifier
-	(*BugInfo)(nil),                                           // 26: luci.bisection.v1.BugInfo
-	(AnalysisStatus)(0),                                       // 27: luci.bisection.v1.AnalysisStatus
-	(*timestamppb.Timestamp)(nil),                             // 28: google.protobuf.Timestamp
-	(*HeuristicAnalysisResult)(nil),                           // 29: luci.bisection.v1.HeuristicAnalysisResult
-	(*NthSectionAnalysisResult)(nil),                          // 30: luci.bisection.v1.NthSectionAnalysisResult
-	(*proto.BuilderID)(nil),                                   // 31: buildbucket.v2.BuilderID
-	(*Culprit)(nil),                                           // 32: luci.bisection.v1.Culprit
-	(*GenAiAnalysisResult)(nil),                               // 33: luci.bisection.v1.GenAiAnalysisResult
-	(*fieldmaskpb.FieldMask)(nil),                             // 34: google.protobuf.FieldMask
-	(*proto.GitilesCommit)(nil),                               // 35: buildbucket.v2.GitilesCommit
-	(*Variant)(nil),                                           // 36: luci.bisection.v1.Variant
-	(*RegressionRange)(nil),                                   // 37: luci.bisection.v1.RegressionRange
-	(*BlameList)(nil),                                         // 38: luci.bisection.v1.BlameList
-	(RerunStatus)(0),                                          // 39: luci.bisection.v1.RerunStatus
-	(SuspectVerificationStatus)(0),                            // 40: luci.bisection.v1.SuspectVerificationStatus
-	(*CulpritAction)(nil),                                     // 41: luci.bisection.v1.CulpritAction
+	(*TestGenAiAnalysisResult)(nil),                           // 18: luci.bisection.v1.TestGenAiAnalysisResult
+	(*TestSingleRerun)(nil),                                   // 19: luci.bisection.v1.TestSingleRerun
+	(*RerunTestResults)(nil),                                  // 20: luci.bisection.v1.RerunTestResults
+	(*RerunTestSingleResult)(nil),                             // 21: luci.bisection.v1.RerunTestSingleResult
+	(*TestSuspectVerificationDetails)(nil),                    // 22: luci.bisection.v1.TestSuspectVerificationDetails
+	(*TestCulprit)(nil),                                       // 23: luci.bisection.v1.TestCulprit
+	(*BatchGetTestAnalysesRequest)(nil),                       // 24: luci.bisection.v1.BatchGetTestAnalysesRequest
+	(*BatchGetTestAnalysesResponse)(nil),                      // 25: luci.bisection.v1.BatchGetTestAnalysesResponse
+	(*BatchGetTestAnalysesRequest_TestFailureIdentifier)(nil), // 26: luci.bisection.v1.BatchGetTestAnalysesRequest.TestFailureIdentifier
+	(*BugInfo)(nil),                                           // 27: luci.bisection.v1.BugInfo
+	(AnalysisStatus)(0),                                       // 28: luci.bisection.v1.AnalysisStatus
+	(*timestamppb.Timestamp)(nil),                             // 29: google.protobuf.Timestamp
+	(*HeuristicAnalysisResult)(nil),                           // 30: luci.bisection.v1.HeuristicAnalysisResult
+	(*NthSectionAnalysisResult)(nil),                          // 31: luci.bisection.v1.NthSectionAnalysisResult
+	(*proto.BuilderID)(nil),                                   // 32: buildbucket.v2.BuilderID
+	(*Culprit)(nil),                                           // 33: luci.bisection.v1.Culprit
+	(*GenAiAnalysisResult)(nil),                               // 34: luci.bisection.v1.GenAiAnalysisResult
+	(*fieldmaskpb.FieldMask)(nil),                             // 35: google.protobuf.FieldMask
+	(*proto.GitilesCommit)(nil),                               // 36: buildbucket.v2.GitilesCommit
+	(*Variant)(nil),                                           // 37: luci.bisection.v1.Variant
+	(*RegressionRange)(nil),                                   // 38: luci.bisection.v1.RegressionRange
+	(*BlameList)(nil),                                         // 39: luci.bisection.v1.BlameList
+	(RerunStatus)(0),                                          // 40: luci.bisection.v1.RerunStatus
+	(SuspectVerificationStatus)(0),                            // 41: luci.bisection.v1.SuspectVerificationStatus
+	(*CulpritAction)(nil),                                     // 42: luci.bisection.v1.CulpritAction
 }
 var file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_depIdxs = []int32{
 	11, // 0: luci.bisection.v1.QueryAnalysisRequest.build_failure:type_name -> luci.bisection.v1.BuildFailure
 	10, // 1: luci.bisection.v1.QueryAnalysisResponse.analyses:type_name -> luci.bisection.v1.Analysis
 	10, // 2: luci.bisection.v1.ListAnalysesResponse.analyses:type_name -> luci.bisection.v1.Analysis
 	11, // 3: luci.bisection.v1.TriggerAnalysisRequest.build_failure:type_name -> luci.bisection.v1.BuildFailure
-	26, // 4: luci.bisection.v1.TriggerAnalysisRequest.bug_info:type_name -> luci.bisection.v1.BugInfo
+	27, // 4: luci.bisection.v1.TriggerAnalysisRequest.bug_info:type_name -> luci.bisection.v1.BugInfo
 	10, // 5: luci.bisection.v1.TriggerAnalysisResponse.result:type_name -> luci.bisection.v1.Analysis
-	26, // 6: luci.bisection.v1.UpdateAnalysisRequest.bug_info:type_name -> luci.bisection.v1.BugInfo
+	27, // 6: luci.bisection.v1.UpdateAnalysisRequest.bug_info:type_name -> luci.bisection.v1.BugInfo
 	11, // 7: luci.bisection.v1.Analysis.build_failure:type_name -> luci.bisection.v1.BuildFailure
-	27, // 8: luci.bisection.v1.Analysis.status:type_name -> luci.bisection.v1.AnalysisStatus
+	28, // 8: luci.bisection.v1.Analysis.status:type_name -> luci.bisection.v1.AnalysisStatus
 	0,  // 9: luci.bisection.v1.Analysis.run_status:type_name -> luci.bisection.v1.AnalysisRunStatus
-	28, // 10: luci.bisection.v1.Analysis.created_time:type_name -> google.protobuf.Timestamp
-	28, // 11: luci.bisection.v1.Analysis.last_updated_time:type_name -> google.protobuf.Timestamp
-	28, // 12: luci.bisection.v1.Analysis.end_time:type_name -> google.protobuf.Timestamp
-	29, // 13: luci.bisection.v1.Analysis.heuristic_result:type_name -> luci.bisection.v1.HeuristicAnalysisResult
-	30, // 14: luci.bisection.v1.Analysis.nth_section_result:type_name -> luci.bisection.v1.NthSectionAnalysisResult
-	31, // 15: luci.bisection.v1.Analysis.builder:type_name -> buildbucket.v2.BuilderID
+	29, // 10: luci.bisection.v1.Analysis.created_time:type_name -> google.protobuf.Timestamp
+	29, // 11: luci.bisection.v1.Analysis.last_updated_time:type_name -> google.protobuf.Timestamp
+	29, // 12: luci.bisection.v1.Analysis.end_time:type_name -> google.protobuf.Timestamp
+	30, // 13: luci.bisection.v1.Analysis.heuristic_result:type_name -> luci.bisection.v1.HeuristicAnalysisResult
+	31, // 14: luci.bisection.v1.Analysis.nth_section_result:type_name -> luci.bisection.v1.NthSectionAnalysisResult
+	32, // 15: luci.bisection.v1.Analysis.builder:type_name -> buildbucket.v2.BuilderID
 	1,  // 16: luci.bisection.v1.Analysis.build_failure_type:type_name -> luci.bisection.v1.BuildFailureType
-	32, // 17: luci.bisection.v1.Analysis.culprits:type_name -> luci.bisection.v1.Culprit
-	33, // 18: luci.bisection.v1.Analysis.gen_ai_result:type_name -> luci.bisection.v1.GenAiAnalysisResult
-	34, // 19: luci.bisection.v1.ListTestAnalysesRequest.fields:type_name -> google.protobuf.FieldMask
+	33, // 17: luci.bisection.v1.Analysis.culprits:type_name -> luci.bisection.v1.Culprit
+	34, // 18: luci.bisection.v1.Analysis.gen_ai_result:type_name -> luci.bisection.v1.GenAiAnalysisResult
+	35, // 19: luci.bisection.v1.ListTestAnalysesRequest.fields:type_name -> google.protobuf.FieldMask
 	15, // 20: luci.bisection.v1.ListTestAnalysesResponse.analyses:type_name -> luci.bisection.v1.TestAnalysis
-	34, // 21: luci.bisection.v1.GetTestAnalysisRequest.fields:type_name -> google.protobuf.FieldMask
-	28, // 22: luci.bisection.v1.TestAnalysis.created_time:type_name -> google.protobuf.Timestamp
-	28, // 23: luci.bisection.v1.TestAnalysis.start_time:type_name -> google.protobuf.Timestamp
-	28, // 24: luci.bisection.v1.TestAnalysis.end_time:type_name -> google.protobuf.Timestamp
-	27, // 25: luci.bisection.v1.TestAnalysis.status:type_name -> luci.bisection.v1.AnalysisStatus
+	35, // 21: luci.bisection.v1.GetTestAnalysisRequest.fields:type_name -> google.protobuf.FieldMask
+	29, // 22: luci.bisection.v1.TestAnalysis.created_time:type_name -> google.protobuf.Timestamp
+	29, // 23: luci.bisection.v1.TestAnalysis.start_time:type_name -> google.protobuf.Timestamp
+	29, // 24: luci.bisection.v1.TestAnalysis.end_time:type_name -> google.protobuf.Timestamp
+	28, // 25: luci.bisection.v1.TestAnalysis.status:type_name -> luci.bisection.v1.AnalysisStatus
 	0,  // 26: luci.bisection.v1.TestAnalysis.run_status:type_name -> luci.bisection.v1.AnalysisRunStatus
-	22, // 27: luci.bisection.v1.TestAnalysis.culprit:type_name -> luci.bisection.v1.TestCulprit
-	31, // 28: luci.bisection.v1.TestAnalysis.builder:type_name -> buildbucket.v2.BuilderID
+	23, // 27: luci.bisection.v1.TestAnalysis.culprit:type_name -> luci.bisection.v1.TestCulprit
+	32, // 28: luci.bisection.v1.TestAnalysis.builder:type_name -> buildbucket.v2.BuilderID
 	16, // 29: luci.bisection.v1.TestAnalysis.test_failures:type_name -> luci.bisection.v1.TestFailure
-	35, // 30: luci.bisection.v1.TestAnalysis.start_commit:type_name -> buildbucket.v2.GitilesCommit
-	35, // 31: luci.bisection.v1.TestAnalysis.end_commit:type_name -> buildbucket.v2.GitilesCommit
+	36, // 30: luci.bisection.v1.TestAnalysis.start_commit:type_name -> buildbucket.v2.GitilesCommit
+	36, // 31: luci.bisection.v1.TestAnalysis.end_commit:type_name -> buildbucket.v2.GitilesCommit
 	17, // 32: luci.bisection.v1.TestAnalysis.nth_section_result:type_name -> luci.bisection.v1.TestNthSectionAnalysisResult
-	36, // 33: luci.bisection.v1.TestFailure.variant:type_name -> luci.bisection.v1.Variant
-	28, // 34: luci.bisection.v1.TestFailure.start_hour:type_name -> google.protobuf.Timestamp
-	27, // 35: luci.bisection.v1.TestNthSectionAnalysisResult.status:type_name -> luci.bisection.v1.AnalysisStatus
-	0,  // 36: luci.bisection.v1.TestNthSectionAnalysisResult.run_status:type_name -> luci.bisection.v1.AnalysisRunStatus
-	28, // 37: luci.bisection.v1.TestNthSectionAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
-	28, // 38: luci.bisection.v1.TestNthSectionAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
-	37, // 39: luci.bisection.v1.TestNthSectionAnalysisResult.remaining_nth_section_range:type_name -> luci.bisection.v1.RegressionRange
-	18, // 40: luci.bisection.v1.TestNthSectionAnalysisResult.reruns:type_name -> luci.bisection.v1.TestSingleRerun
-	38, // 41: luci.bisection.v1.TestNthSectionAnalysisResult.blame_list:type_name -> luci.bisection.v1.BlameList
-	22, // 42: luci.bisection.v1.TestNthSectionAnalysisResult.suspect:type_name -> luci.bisection.v1.TestCulprit
-	28, // 43: luci.bisection.v1.TestSingleRerun.create_time:type_name -> google.protobuf.Timestamp
-	28, // 44: luci.bisection.v1.TestSingleRerun.start_time:type_name -> google.protobuf.Timestamp
-	28, // 45: luci.bisection.v1.TestSingleRerun.end_time:type_name -> google.protobuf.Timestamp
-	28, // 46: luci.bisection.v1.TestSingleRerun.report_time:type_name -> google.protobuf.Timestamp
-	19, // 47: luci.bisection.v1.TestSingleRerun.rerun_result:type_name -> luci.bisection.v1.RerunTestResults
-	35, // 48: luci.bisection.v1.TestSingleRerun.commit:type_name -> buildbucket.v2.GitilesCommit
-	20, // 49: luci.bisection.v1.RerunTestResults.results:type_name -> luci.bisection.v1.RerunTestSingleResult
-	39, // 50: luci.bisection.v1.RerunTestResults.rerun_status:type_name -> luci.bisection.v1.RerunStatus
-	40, // 51: luci.bisection.v1.TestSuspectVerificationDetails.status:type_name -> luci.bisection.v1.SuspectVerificationStatus
-	18, // 52: luci.bisection.v1.TestSuspectVerificationDetails.suspect_rerun:type_name -> luci.bisection.v1.TestSingleRerun
-	18, // 53: luci.bisection.v1.TestSuspectVerificationDetails.parent_rerun:type_name -> luci.bisection.v1.TestSingleRerun
-	35, // 54: luci.bisection.v1.TestCulprit.commit:type_name -> buildbucket.v2.GitilesCommit
-	41, // 55: luci.bisection.v1.TestCulprit.culprit_action:type_name -> luci.bisection.v1.CulpritAction
-	21, // 56: luci.bisection.v1.TestCulprit.verification_details:type_name -> luci.bisection.v1.TestSuspectVerificationDetails
-	25, // 57: luci.bisection.v1.BatchGetTestAnalysesRequest.test_failures:type_name -> luci.bisection.v1.BatchGetTestAnalysesRequest.TestFailureIdentifier
-	34, // 58: luci.bisection.v1.BatchGetTestAnalysesRequest.fields:type_name -> google.protobuf.FieldMask
-	15, // 59: luci.bisection.v1.BatchGetTestAnalysesResponse.test_analyses:type_name -> luci.bisection.v1.TestAnalysis
-	2,  // 60: luci.bisection.v1.Analyses.GetAnalysis:input_type -> luci.bisection.v1.GetAnalysisRequest
-	3,  // 61: luci.bisection.v1.Analyses.QueryAnalysis:input_type -> luci.bisection.v1.QueryAnalysisRequest
-	5,  // 62: luci.bisection.v1.Analyses.ListAnalyses:input_type -> luci.bisection.v1.ListAnalysesRequest
-	7,  // 63: luci.bisection.v1.Analyses.TriggerAnalysis:input_type -> luci.bisection.v1.TriggerAnalysisRequest
-	9,  // 64: luci.bisection.v1.Analyses.UpdateAnalysis:input_type -> luci.bisection.v1.UpdateAnalysisRequest
-	12, // 65: luci.bisection.v1.Analyses.ListTestAnalyses:input_type -> luci.bisection.v1.ListTestAnalysesRequest
-	14, // 66: luci.bisection.v1.Analyses.GetTestAnalysis:input_type -> luci.bisection.v1.GetTestAnalysisRequest
-	23, // 67: luci.bisection.v1.Analyses.BatchGetTestAnalyses:input_type -> luci.bisection.v1.BatchGetTestAnalysesRequest
-	10, // 68: luci.bisection.v1.Analyses.GetAnalysis:output_type -> luci.bisection.v1.Analysis
-	4,  // 69: luci.bisection.v1.Analyses.QueryAnalysis:output_type -> luci.bisection.v1.QueryAnalysisResponse
-	6,  // 70: luci.bisection.v1.Analyses.ListAnalyses:output_type -> luci.bisection.v1.ListAnalysesResponse
-	8,  // 71: luci.bisection.v1.Analyses.TriggerAnalysis:output_type -> luci.bisection.v1.TriggerAnalysisResponse
-	10, // 72: luci.bisection.v1.Analyses.UpdateAnalysis:output_type -> luci.bisection.v1.Analysis
-	13, // 73: luci.bisection.v1.Analyses.ListTestAnalyses:output_type -> luci.bisection.v1.ListTestAnalysesResponse
-	15, // 74: luci.bisection.v1.Analyses.GetTestAnalysis:output_type -> luci.bisection.v1.TestAnalysis
-	24, // 75: luci.bisection.v1.Analyses.BatchGetTestAnalyses:output_type -> luci.bisection.v1.BatchGetTestAnalysesResponse
-	68, // [68:76] is the sub-list for method output_type
-	60, // [60:68] is the sub-list for method input_type
-	60, // [60:60] is the sub-list for extension type_name
-	60, // [60:60] is the sub-list for extension extendee
-	0,  // [0:60] is the sub-list for field type_name
+	18, // 33: luci.bisection.v1.TestAnalysis.gen_ai_result:type_name -> luci.bisection.v1.TestGenAiAnalysisResult
+	37, // 34: luci.bisection.v1.TestFailure.variant:type_name -> luci.bisection.v1.Variant
+	29, // 35: luci.bisection.v1.TestFailure.start_hour:type_name -> google.protobuf.Timestamp
+	28, // 36: luci.bisection.v1.TestNthSectionAnalysisResult.status:type_name -> luci.bisection.v1.AnalysisStatus
+	0,  // 37: luci.bisection.v1.TestNthSectionAnalysisResult.run_status:type_name -> luci.bisection.v1.AnalysisRunStatus
+	29, // 38: luci.bisection.v1.TestNthSectionAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
+	29, // 39: luci.bisection.v1.TestNthSectionAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
+	38, // 40: luci.bisection.v1.TestNthSectionAnalysisResult.remaining_nth_section_range:type_name -> luci.bisection.v1.RegressionRange
+	19, // 41: luci.bisection.v1.TestNthSectionAnalysisResult.reruns:type_name -> luci.bisection.v1.TestSingleRerun
+	39, // 42: luci.bisection.v1.TestNthSectionAnalysisResult.blame_list:type_name -> luci.bisection.v1.BlameList
+	23, // 43: luci.bisection.v1.TestNthSectionAnalysisResult.suspect:type_name -> luci.bisection.v1.TestCulprit
+	28, // 44: luci.bisection.v1.TestGenAiAnalysisResult.status:type_name -> luci.bisection.v1.AnalysisStatus
+	0,  // 45: luci.bisection.v1.TestGenAiAnalysisResult.run_status:type_name -> luci.bisection.v1.AnalysisRunStatus
+	29, // 46: luci.bisection.v1.TestGenAiAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
+	29, // 47: luci.bisection.v1.TestGenAiAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
+	23, // 48: luci.bisection.v1.TestGenAiAnalysisResult.suspects:type_name -> luci.bisection.v1.TestCulprit
+	29, // 49: luci.bisection.v1.TestSingleRerun.create_time:type_name -> google.protobuf.Timestamp
+	29, // 50: luci.bisection.v1.TestSingleRerun.start_time:type_name -> google.protobuf.Timestamp
+	29, // 51: luci.bisection.v1.TestSingleRerun.end_time:type_name -> google.protobuf.Timestamp
+	29, // 52: luci.bisection.v1.TestSingleRerun.report_time:type_name -> google.protobuf.Timestamp
+	20, // 53: luci.bisection.v1.TestSingleRerun.rerun_result:type_name -> luci.bisection.v1.RerunTestResults
+	36, // 54: luci.bisection.v1.TestSingleRerun.commit:type_name -> buildbucket.v2.GitilesCommit
+	21, // 55: luci.bisection.v1.RerunTestResults.results:type_name -> luci.bisection.v1.RerunTestSingleResult
+	40, // 56: luci.bisection.v1.RerunTestResults.rerun_status:type_name -> luci.bisection.v1.RerunStatus
+	41, // 57: luci.bisection.v1.TestSuspectVerificationDetails.status:type_name -> luci.bisection.v1.SuspectVerificationStatus
+	19, // 58: luci.bisection.v1.TestSuspectVerificationDetails.suspect_rerun:type_name -> luci.bisection.v1.TestSingleRerun
+	19, // 59: luci.bisection.v1.TestSuspectVerificationDetails.parent_rerun:type_name -> luci.bisection.v1.TestSingleRerun
+	36, // 60: luci.bisection.v1.TestCulprit.commit:type_name -> buildbucket.v2.GitilesCommit
+	42, // 61: luci.bisection.v1.TestCulprit.culprit_action:type_name -> luci.bisection.v1.CulpritAction
+	22, // 62: luci.bisection.v1.TestCulprit.verification_details:type_name -> luci.bisection.v1.TestSuspectVerificationDetails
+	26, // 63: luci.bisection.v1.BatchGetTestAnalysesRequest.test_failures:type_name -> luci.bisection.v1.BatchGetTestAnalysesRequest.TestFailureIdentifier
+	35, // 64: luci.bisection.v1.BatchGetTestAnalysesRequest.fields:type_name -> google.protobuf.FieldMask
+	15, // 65: luci.bisection.v1.BatchGetTestAnalysesResponse.test_analyses:type_name -> luci.bisection.v1.TestAnalysis
+	2,  // 66: luci.bisection.v1.Analyses.GetAnalysis:input_type -> luci.bisection.v1.GetAnalysisRequest
+	3,  // 67: luci.bisection.v1.Analyses.QueryAnalysis:input_type -> luci.bisection.v1.QueryAnalysisRequest
+	5,  // 68: luci.bisection.v1.Analyses.ListAnalyses:input_type -> luci.bisection.v1.ListAnalysesRequest
+	7,  // 69: luci.bisection.v1.Analyses.TriggerAnalysis:input_type -> luci.bisection.v1.TriggerAnalysisRequest
+	9,  // 70: luci.bisection.v1.Analyses.UpdateAnalysis:input_type -> luci.bisection.v1.UpdateAnalysisRequest
+	12, // 71: luci.bisection.v1.Analyses.ListTestAnalyses:input_type -> luci.bisection.v1.ListTestAnalysesRequest
+	14, // 72: luci.bisection.v1.Analyses.GetTestAnalysis:input_type -> luci.bisection.v1.GetTestAnalysisRequest
+	24, // 73: luci.bisection.v1.Analyses.BatchGetTestAnalyses:input_type -> luci.bisection.v1.BatchGetTestAnalysesRequest
+	10, // 74: luci.bisection.v1.Analyses.GetAnalysis:output_type -> luci.bisection.v1.Analysis
+	4,  // 75: luci.bisection.v1.Analyses.QueryAnalysis:output_type -> luci.bisection.v1.QueryAnalysisResponse
+	6,  // 76: luci.bisection.v1.Analyses.ListAnalyses:output_type -> luci.bisection.v1.ListAnalysesResponse
+	8,  // 77: luci.bisection.v1.Analyses.TriggerAnalysis:output_type -> luci.bisection.v1.TriggerAnalysisResponse
+	10, // 78: luci.bisection.v1.Analyses.UpdateAnalysis:output_type -> luci.bisection.v1.Analysis
+	13, // 79: luci.bisection.v1.Analyses.ListTestAnalyses:output_type -> luci.bisection.v1.ListTestAnalysesResponse
+	15, // 80: luci.bisection.v1.Analyses.GetTestAnalysis:output_type -> luci.bisection.v1.TestAnalysis
+	25, // 81: luci.bisection.v1.Analyses.BatchGetTestAnalyses:output_type -> luci.bisection.v1.BatchGetTestAnalysesResponse
+	74, // [74:82] is the sub-list for method output_type
+	66, // [66:74] is the sub-list for method input_type
+	66, // [66:66] is the sub-list for extension type_name
+	66, // [66:66] is the sub-list for extension extendee
+	0,  // [0:66] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_init() }
@@ -2291,7 +2420,7 @@ func file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDesc), len(file_go_chromium_org_luci_bisection_proto_v1_analyses_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   24,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

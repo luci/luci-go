@@ -32,9 +32,7 @@ type GenAiAnalysisResult struct {
 	// Start time of gen AI analysis.
 	StartTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// End time of gen AI analysis.
-	EndTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
-	// Suspects found by the gen AI analysis for test analysis (up to 3).
-	TestSuspects  []*GenAiSuspect `protobuf:"bytes,5,rep,name=test_suspects,json=testSuspects,proto3" json:"test_suspects,omitempty"`
+	EndTime       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -93,13 +91,6 @@ func (x *GenAiAnalysisResult) GetStartTime() *timestamppb.Timestamp {
 func (x *GenAiAnalysisResult) GetEndTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.EndTime
-	}
-	return nil
-}
-
-func (x *GenAiAnalysisResult) GetTestSuspects() []*GenAiSuspect {
-	if x != nil {
-		return x.TestSuspects
 	}
 	return nil
 }
@@ -207,14 +198,13 @@ var File_go_chromium_org_luci_bisection_proto_v1_genai_proto protoreflect.FileDe
 
 const file_go_chromium_org_luci_bisection_proto_v1_genai_proto_rawDesc = "" +
 	"\n" +
-	"3go.chromium.org/luci/bisection/proto/v1/genai.proto\x12\x11luci.bisection.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a4go.chromium.org/luci/bisection/proto/v1/common.proto\x1a3go.chromium.org/luci/buildbucket/proto/common.proto\"\xc3\x02\n" +
+	"3go.chromium.org/luci/bisection/proto/v1/genai.proto\x12\x11luci.bisection.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a4go.chromium.org/luci/bisection/proto/v1/common.proto\x1a3go.chromium.org/luci/buildbucket/proto/common.proto\"\xfd\x01\n" +
 	"\x13GenAiAnalysisResult\x129\n" +
 	"\x06status\x18\x01 \x01(\x0e2!.luci.bisection.v1.AnalysisStatusR\x06status\x129\n" +
 	"\asuspect\x18\x02 \x01(\v2\x1f.luci.bisection.v1.GenAiSuspectR\asuspect\x129\n" +
 	"\n" +
 	"start_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x125\n" +
-	"\bend_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\x12D\n" +
-	"\rtest_suspects\x18\x05 \x03(\v2\x1f.luci.bisection.v1.GenAiSuspectR\ftestSuspects\"\xd4\x02\n" +
+	"\bend_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\"\xd4\x02\n" +
 	"\fGenAiSuspect\x125\n" +
 	"\x06commit\x18\x01 \x01(\v2\x1d.buildbucket.v2.GitilesCommitR\x06commit\x12\x1c\n" +
 	"\treviewUrl\x18\x02 \x01(\tR\treviewUrl\x12 \n" +
@@ -250,14 +240,13 @@ var file_go_chromium_org_luci_bisection_proto_v1_genai_proto_depIdxs = []int32{
 	1, // 1: luci.bisection.v1.GenAiAnalysisResult.suspect:type_name -> luci.bisection.v1.GenAiSuspect
 	3, // 2: luci.bisection.v1.GenAiAnalysisResult.start_time:type_name -> google.protobuf.Timestamp
 	3, // 3: luci.bisection.v1.GenAiAnalysisResult.end_time:type_name -> google.protobuf.Timestamp
-	1, // 4: luci.bisection.v1.GenAiAnalysisResult.test_suspects:type_name -> luci.bisection.v1.GenAiSuspect
-	4, // 5: luci.bisection.v1.GenAiSuspect.commit:type_name -> buildbucket.v2.GitilesCommit
-	5, // 6: luci.bisection.v1.GenAiSuspect.verification_details:type_name -> luci.bisection.v1.SuspectVerificationDetails
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	4, // 4: luci.bisection.v1.GenAiSuspect.commit:type_name -> buildbucket.v2.GitilesCommit
+	5, // 5: luci.bisection.v1.GenAiSuspect.verification_details:type_name -> luci.bisection.v1.SuspectVerificationDetails
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_bisection_proto_v1_genai_proto_init() }

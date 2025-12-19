@@ -144,6 +144,24 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 			}
 		}
 	}
+
+	// Get GenAI analysis result
+	genaiAnalysis, err := datastoreutil.GetTestGenAIAnalysisForAnalysis(ctx, tfa)
+	if err != nil {
+		return nil, errors.Fmt("get test genai analysis: %w", err)
+	}
+	if genaiAnalysis != nil {
+		includeGenai := tfaMask.MustIncludes("gen_ai_result")
+		if includeGenai == mask.IncludeEntirely || includeGenai == mask.IncludePartially {
+			genaiMask := tfaMask.MustSubmask("gen_ai_result")
+			genaiResult, err := TestGenAiAnalysisToPb(ctx, genaiAnalysis, genaiMask)
+			if err != nil {
+				return nil, errors.Fmt("genai analysis to pb: %w", err)
+			}
+			result.GenAiResult = genaiResult
+		}
+	}
+
 	return result, nil
 }
 
@@ -390,6 +408,84 @@ func verificationStatusToPb(status model.SuspectVerificationStatus) pb.SuspectVe
 	default:
 		return pb.SuspectVerificationStatus_SUSPECT_VERIFICATION_STATUS_UNSPECIFIED
 	}
+}
+
+// TestGenAiAnalysisToPb converts model.TestGenAIAnalysis to pb.TestGenAiAnalysisResult
+func TestGenAiAnalysisToPb(ctx context.Context, genaiAnalysis *model.TestGenAIAnalysis, genaiMask *mask.Mask) (*pb.TestGenAiAnalysisResult, error) {
+	result := &pb.TestGenAiAnalysisResult{}
+
+	if genaiMask.MustIncludes("status") == mask.IncludeEntirely {
+		result.Status = genaiAnalysis.Status
+	}
+	if genaiMask.MustIncludes("run_status") == mask.IncludeEntirely {
+		result.RunStatus = genaiAnalysis.RunStatus
+	}
+	if genaiMask.MustIncludes("start_time") == mask.IncludeEntirely {
+		result.StartTime = timestamppb.New(genaiAnalysis.StartTime)
+	}
+	if genaiMask.MustIncludes("end_time") == mask.IncludeEntirely && genaiAnalysis.HasEnded() {
+		result.EndTime = timestamppb.New(genaiAnalysis.EndTime)
+	}
+
+	// Get suspects
+	includeSuspects := genaiMask.MustIncludes("suspects")
+	if includeSuspects == mask.IncludeEntirely || includeSuspects == mask.IncludePartially {
+		suspects, err := datastoreutil.GetSuspectsForTestGenAIAnalysis(ctx, genaiAnalysis)
+		if err != nil {
+			return nil, errors.Fmt("get suspects for genai analysis: %w", err)
+		}
+
+		suspectMask := genaiMask.MustSubmask("suspects.*")
+		for _, suspect := range suspects {
+			suspectPb, err := testGenAiSuspectToPb(ctx, suspect, suspectMask)
+			if err != nil {
+				return nil, errors.Fmt("convert suspect to pb: %w", err)
+			}
+			result.Suspects = append(result.Suspects, suspectPb)
+		}
+	}
+
+	return result, nil
+}
+
+// testGenAiSuspectToPb converts model.Suspect (GenAI type) to pb.TestCulprit
+func testGenAiSuspectToPb(ctx context.Context, suspect *model.Suspect, suspectMask *mask.Mask) (*pb.TestCulprit, error) {
+	result := &pb.TestCulprit{}
+
+	if suspectMask.MustIncludes("commit") == mask.IncludeEntirely {
+		result.Commit = &suspect.GitilesCommit
+	}
+	if suspectMask.MustIncludes("review_url") == mask.IncludeEntirely {
+		result.ReviewUrl = suspect.ReviewUrl
+	}
+	if suspectMask.MustIncludes("review_title") == mask.IncludeEntirely {
+		result.ReviewTitle = suspect.ReviewTitle
+	}
+	if suspectMask.MustIncludes("justification") == mask.IncludeEntirely {
+		result.Justification = suspect.Justification
+	}
+	if suspectMask.MustIncludes("confidence_score") == mask.IncludeEntirely {
+		result.ConfidenceScore = int32(suspect.Score)
+	}
+
+	// Get verification details using existing function
+	includeVerification := suspectMask.MustIncludes("verification_details")
+	if includeVerification == mask.IncludeEntirely || includeVerification == mask.IncludePartially {
+		verificationMask := suspectMask.MustSubmask("verification_details")
+		verificationDetails, err := testVerificationDetails(ctx, suspect, nil, verificationMask)
+		if err != nil {
+			return nil, errors.Fmt("get verification details: %w", err)
+		}
+		result.VerificationDetails = verificationDetails
+	}
+
+	// Get culprit actions
+	includeCulpritAction := suspectMask.MustIncludes("culprit_action")
+	if includeCulpritAction == mask.IncludeEntirely || includeCulpritAction == mask.IncludePartially {
+		result.CulpritAction = CulpritActionsForSuspect(suspect)
+	}
+
+	return result, nil
 }
 
 func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa *model.TestNthSectionAnalysis) (*pb.TestSingleRerun, error) {

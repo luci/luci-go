@@ -165,6 +165,11 @@ func fetchSuspectsForParentKey(c context.Context, parentKey *datastore.Key) ([]*
 	return suspects, nil
 }
 
+// GetSuspectsForTestGenAIAnalysis returns all GenAI suspects for a test GenAI analysis.
+func GetSuspectsForTestGenAIAnalysis(ctx context.Context, genaiAnalysis *model.TestGenAIAnalysis) ([]*model.Suspect, error) {
+	return fetchSuspectsForParentKey(ctx, datastore.KeyForObj(ctx, genaiAnalysis))
+}
+
 func FetchTestFailuresForSuspect(c context.Context, suspect *model.Suspect) (*model.TestFailureBundle, error) {
 	nsa, err := getTestNthSectionAnalysisForSuspect(c, suspect)
 	if err != nil {
