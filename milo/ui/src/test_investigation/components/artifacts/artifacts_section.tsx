@@ -19,13 +19,16 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { parseWorkUnitTestResultName } from '@/common/tools/test_result_utils';
 import { useTestVariant } from '@/test_investigation/context';
 
-import { ArtifactSummaryView } from './artifact_content';
-import { ArtifactContentView } from './artifact_content/artifact_content_view';
-import { ArtifactsTreeLayout } from './artifact_tree/artifact_tree_layout';
-import { ArtifactTreeView } from './artifact_tree/artifact_tree_view';
-import { ArtifactFilterProvider } from './artifact_tree/context/provider';
-import { WorkUnitArtifactsTreeView } from './artifact_tree/work_unit_artifacts_tree_view';
+import { ArtifactContentView } from '../common/artifacts/content/artifact_content_view';
+import { ArtifactsTreeLayout } from '../common/artifacts/tree/artifact_tree_layout';
+import { ArtifactTreeView } from '../common/artifacts/tree/artifact_tree_view/artifact_tree_view';
+import { ArtifactFilterProvider } from '../common/artifacts/tree/context/provider';
+
+import { ArtifactSummaryView } from './artifact_summary/artifact_summary_view';
+import { ArtifactsLoader } from './artifacts_loader';
+import { ClusteringControls } from './clustering_controls';
 import { ArtifactsProvider, useArtifactsContext } from './context';
+import { WorkUnitArtifactsTreeView } from './work_unit_tree/work_unit_artifacts_tree_view';
 
 interface ArtifactsExplorerProps {
   rootInvocationId?: string;
@@ -36,8 +39,13 @@ function ArtifactsExplorer({
   rootInvocationId,
   workUnitId,
 }: ArtifactsExplorerProps) {
-  const { currentResult, selectedAttemptIndex, selectedArtifact } =
-    useArtifactsContext();
+  const {
+    currentResult,
+    selectedAttemptIndex,
+    selectedArtifact,
+    hasRenderableResults,
+    clusteredFailures,
+  } = useArtifactsContext();
   const [viewMode, setViewMode] = useState<'artifacts' | 'work-units'>(
     'artifacts',
   );
@@ -48,70 +56,89 @@ function ArtifactsExplorer({
 
   return (
     <ArtifactFilterProvider>
-      <PanelGroup
-        direction="horizontal"
-        // overflow: visible here and below is required to enable sticky headers within the panels.
-        style={{
-          overflowY: 'visible',
-          overflowX: 'clip',
-        }}
-        // This will make the panel size stored in local storage.
-        autoSaveId="artifacts-panel-group-size"
-      >
-        <Panel
-          defaultSize={30}
-          minSize={20}
-          style={{ overflowY: 'visible', overflowX: 'clip' }}
+      <ArtifactsLoader>
+        <PanelGroup
+          direction="horizontal"
+          // overflow: visible here and below is required to enable sticky headers within the panels.
+          style={{
+            overflowY: 'visible',
+            overflowX: 'clip',
+          }}
+          // This will make the panel size stored in local storage.
+          autoSaveId="artifacts-panel-group-size"
         >
-          <ArtifactsTreeLayout
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
+          <Panel
+            defaultSize={30}
+            minSize={20}
+            style={{ overflowY: 'visible', overflowX: 'clip' }}
           >
-            {viewMode === 'artifacts' ? (
-              <ArtifactTreeView />
-            ) : (
-              <WorkUnitArtifactsTreeView
-                rootInvocationId={rootInvocationId || ''}
-                workUnitId={workUnitId || ''}
-              />
-            )}
-          </ArtifactsTreeLayout>
-        </Panel>
-        <PanelResizeHandle>
-          <Box
-            sx={{
-              width: '8px',
-              height: '100%',
-              cursor: 'col-resize',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'action.hover',
-              '&:hover': { bgcolor: 'action.selected' },
-            }}
-          >
-            <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
-          </Box>
-        </PanelResizeHandle>
-        <Panel
-          defaultSize={70}
-          minSize={30}
-          style={{ overflowY: 'visible', overflowX: 'clip', minWidth: 0 }}
-        >
-          <Box
-            sx={{
-              p: 2,
-              width: '100%',
-            }}
-          >
-            {selectedArtifact ? (
-              selectedArtifact.isSummary ? (
-                <ArtifactSummaryView
-                  currentResult={currentResult}
-                  selectedAttemptIndex={selectedAttemptIndex}
+            <ArtifactsTreeLayout
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              headerControls={
+                hasRenderableResults && clusteredFailures ? (
+                  <ClusteringControls />
+                ) : null
+              }
+            >
+              {viewMode === 'artifacts' ? (
+                <ArtifactTreeView />
+              ) : (
+                <WorkUnitArtifactsTreeView
+                  rootInvocationId={rootInvocationId || ''}
+                  workUnitId={workUnitId || ''}
                 />
-              ) : selectedArtifact.artifact ? (
-                <ArtifactContentView artifact={selectedArtifact.artifact} />
+              )}
+            </ArtifactsTreeLayout>
+          </Panel>
+          <PanelResizeHandle>
+            <Box
+              sx={{
+                width: '8px',
+                height: '100%',
+                cursor: 'col-resize',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'action.hover',
+                '&:hover': { bgcolor: 'action.selected' },
+              }}
+            >
+              <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
+            </Box>
+          </PanelResizeHandle>
+          <Panel
+            defaultSize={70}
+            minSize={30}
+            style={{ overflowY: 'visible', overflowX: 'clip', minWidth: 0 }}
+          >
+            <Box
+              sx={{
+                p: 2,
+                width: '100%',
+              }}
+            >
+              {selectedArtifact ? (
+                selectedArtifact.isSummary ? (
+                  <ArtifactSummaryView
+                    currentResult={currentResult}
+                    selectedAttemptIndex={selectedAttemptIndex}
+                  />
+                ) : selectedArtifact.artifact ? (
+                  <ArtifactContentView artifact={selectedArtifact.artifact} />
+                ) : (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '100%',
+                      color: 'text.secondary',
+                    }}
+                  >
+                    <Typography>Select an artifact to view.</Typography>
+                  </Box>
+                )
               ) : (
                 <Box
                   sx={{
@@ -124,23 +151,11 @@ function ArtifactsExplorer({
                 >
                   <Typography>Select an artifact to view.</Typography>
                 </Box>
-              )
-            ) : (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                  color: 'text.secondary',
-                }}
-              >
-                <Typography>Select an artifact to view.</Typography>
-              </Box>
-            )}
-          </Box>
-        </Panel>
-      </PanelGroup>
+              )}
+            </Box>
+          </Panel>
+        </PanelGroup>
+      </ArtifactsLoader>
     </ArtifactFilterProvider>
   );
 }

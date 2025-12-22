@@ -16,7 +16,7 @@ import { useState, useMemo, useEffect, ChangeEvent } from 'react';
 
 import { CompareArtifactLinesResponse_FailureOnlyRange } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
-import { Highlight } from './text_line';
+import { Highlight } from './virtualized';
 
 export interface Match {
   lineIndex: number;

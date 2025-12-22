@@ -34,9 +34,9 @@ import { ReactNode } from 'react';
 import { TreeData } from '@/common/components/log_viewer/virtual_tree/types';
 import { VirtualTreeNodeActions } from '@/common/components/log_viewer/virtual_tree/virtual_tree';
 import { getAndroidBugToolLink } from '@/common/tools/url_utils';
-import { useInvocation } from '@/test_investigation/context';
 import { isAnTSInvocation } from '@/test_investigation/utils/test_info_utils';
 
+import { useArtifacts } from '../../context/context';
 import { ArtifactTreeNodeData } from '../../types';
 import { getArtifactType } from '../artifact_utils';
 
@@ -79,7 +79,7 @@ function renderHighlightedText(
 }
 
 const getNodeBackground = (
-  context: VirtualTreeNodeActions<any>, // eslint-disable-line @typescript-eslint/no-explicit-any
+  context: VirtualTreeNodeActions<ArtifactTreeNodeData>,
   theme: Theme,
 ): string => {
   if (context.isActiveSelection) {
@@ -155,8 +155,8 @@ export function ArtifactTreeNode({
   const artifactType = isFolder
     ? null
     : row.data.artifact?.artifactType || getArtifactType(row.name);
-  const invocation = useInvocation();
-  const isAnTS = isAnTSInvocation(invocation);
+  const { invocation } = useArtifacts();
+  const isAnTS = invocation ? isAnTSInvocation(invocation) : false;
 
   const totalPaddingLeft =
     row.level * LEVEL_INDENTATION_SIZE + CONTENT_INTERNAL_OFFSET_LEFT;
@@ -301,7 +301,10 @@ export function ArtifactTreeNode({
         <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           {renderActions ? (
             renderActions(row)
-          ) : row.isLeafNode && isAnTS && row.data.artifact?.artifactId ? (
+          ) : row.isLeafNode &&
+            isAnTS &&
+            invocation &&
+            row.data.artifact?.artifactId ? (
             <Tooltip title="Open in Android Bug Tool">
               <IconButton
                 component={Link}

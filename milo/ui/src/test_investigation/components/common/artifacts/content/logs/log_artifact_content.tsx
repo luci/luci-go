@@ -22,7 +22,7 @@ import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifac
 import { CompareArtifactLinesRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { useRecentPasses } from '@/test_investigation/context/context';
 
-import { VirtualizedArtifactContent } from './virtualized_artifact_content';
+import { VirtualizedArtifactContent } from '../virtualized';
 
 interface LogArtifactContentProps {
   artifact: Artifact;

@@ -12,29 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useQueries, useQuery } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQueries,
+  useQuery,
+} from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
+import { RootInvocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import { WorkUnit } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/work_unit.pb';
-import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { useArtifactsContext } from '../../context';
-import { ArtifactFilterProvider } from '../context';
+import { ArtifactsProvider } from '../../common/artifacts/context/provider';
+import { ArtifactFilterProvider } from '../../common/artifacts/tree/context/provider';
+import { useArtifactsContext } from '../context';
 
 import { WorkUnitArtifactsTreeView } from './work_unit_artifacts_tree_view';
 
-jest.mock('../../context', () => ({
+jest.mock(
+  '../../common/artifacts/tree/artifact_tree_node/artifact_tree_node',
+  () => ({
+    ArtifactTreeNode: ({ row }: { row: { name: string } }) => (
+      <div data-testid="artifact-tree-node">{row.name}</div>
+    ),
+  }),
+);
+
+jest.mock('@/common/hooks/prpc_clients', () => ({
+  useResultDbClient: jest.fn(),
+}));
+
+jest.mock('../context', () => ({
   useArtifactsContext: jest.fn(),
   ArtifactsProvider: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
-}));
-
-jest.mock('@/common/hooks/prpc_clients', () => ({
-  useResultDbClient: jest.fn(),
 }));
 
 jest.mock('@tanstack/react-query', () => ({
@@ -43,39 +58,38 @@ jest.mock('@tanstack/react-query', () => ({
   useQueries: jest.fn(),
 }));
 
-jest.mock('@/test_investigation/context', () => ({
-  useInvocation: jest.fn().mockReturnValue({ name: 'invocations/inv' }),
-}));
-
 describe('<WorkUnitArtifactsTreeView />', () => {
+  let queryClient: QueryClient;
+
   const mockWorkUnits: WorkUnit[] = [
     WorkUnit.fromPartial({
-      name: 'invocations/inv/workUnits/wu0',
+      name: 'rootInvocations/inv/workUnits/wu0',
       workUnitId: 'wu0',
     }),
   ];
 
   const mockArtifacts: Artifact[] = [
     Artifact.fromPartial({
-      name: 'invocations/inv/workUnits/wu0/artifacts/log.txt',
+      name: 'rootInvocations/inv/workUnits/wu0/artifacts/log.txt',
       artifactId: 'log.txt',
     }),
   ];
 
   const mockTargetArtifacts: Artifact[] = [
     Artifact.fromPartial({
-      name: 'invocations/inv/workUnits/wu1/artifacts/result.txt',
+      name: 'rootInvocations/inv/workUnits/wu1/artifacts/result.txt',
       artifactId: 'result.txt',
       hasLines: true,
     }),
   ];
 
   beforeEach(() => {
-    (useArtifactsContext as jest.Mock).mockReturnValue({
-      selectedArtifact: null,
-      setSelectedArtifact: jest.fn(),
-      clusteredFailures: [],
-      hasRenderableResults: false,
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
     });
 
     (useResultDbClient as jest.Mock).mockReturnValue({
@@ -98,9 +112,9 @@ describe('<WorkUnitArtifactsTreeView />', () => {
       if (query.name && query.name.includes('GetWorkUnit')) {
         return {
           data: WorkUnit.fromPartial({
-            name: 'invocations/inv/workUnits/wu1',
+            name: 'rootInvocations/inv/workUnits/wu1',
             workUnitId: 'wu1',
-            kind: 'Test Result', // Mocked kind
+            kind: 'Test Result',
           }),
           isLoading: false,
         };
@@ -163,7 +177,7 @@ describe('<WorkUnitArtifactsTreeView />', () => {
       if (query.name && query.name.includes('GetWorkUnit')) {
         return {
           data: WorkUnit.fromPartial({
-            name: 'invocations/inv/workUnits/wu1',
+            name: 'rootInvocations/inv/workUnits/wu1',
             workUnitId: 'wu1',
             kind: 'Test Result',
           }),
@@ -173,13 +187,15 @@ describe('<WorkUnitArtifactsTreeView />', () => {
       // Mock ListArtifacts for currentResult (Test Result artifacts)
       if (
         query.parent &&
-        query.parent.includes('invocations/inv/tests/test-id/results/result-id')
+        query.parent.includes(
+          'rootInvocations/inv/tests/test-id/results/result-id',
+        )
       ) {
         return {
           data: {
             artifacts: [
               Artifact.fromPartial({
-                name: 'invocations/inv/tests/test-id/results/result-id/artifacts/test_result_artifact.txt',
+                name: 'rootInvocations/inv/tests/test-id/results/result-id/artifacts/test_result_artifact.txt',
                 artifactId: 'test_result_artifact.txt',
                 hasLines: true,
                 artifactType: 'text',
@@ -203,7 +219,7 @@ describe('<WorkUnitArtifactsTreeView />', () => {
       clusteredFailures: [],
       hasRenderableResults: false,
       currentResult: {
-        name: 'invocations/inv/tests/test-id/results/result-id',
+        name: 'rootInvocations/inv/tests/test-id/results/result-id',
       },
     });
 
@@ -211,14 +227,22 @@ describe('<WorkUnitArtifactsTreeView />', () => {
       <VirtuosoMockContext.Provider
         value={{ viewportHeight: 300, itemHeight: 30 }}
       >
-        <FakeContextProvider>
+        <QueryClientProvider client={queryClient}>
           <ArtifactFilterProvider>
-            <WorkUnitArtifactsTreeView
-              rootInvocationId="inv"
-              workUnitId="wu1"
-            />
+            <ArtifactsProvider
+              nodes={[]}
+              invocation={RootInvocation.fromPartial({
+                rootInvocationId: 'inv',
+                name: 'rootInvocations/inv',
+              })}
+            >
+              <WorkUnitArtifactsTreeView
+                rootInvocationId="inv"
+                workUnitId="wu1"
+              />
+            </ArtifactsProvider>
           </ArtifactFilterProvider>
-        </FakeContextProvider>
+        </QueryClientProvider>
       </VirtuosoMockContext.Provider>,
     );
 
@@ -226,7 +250,11 @@ describe('<WorkUnitArtifactsTreeView />', () => {
     expect(screen.getByText('log.txt')).toBeInTheDocument();
 
     // Wait for Test Result artifacts to load
-    expect(await screen.findAllByText('Test Result')).toHaveLength(2);
+    // Expected 2 because:
+    // 1. "Test Result" special node (always added)
+    // 2. "Test Result" work unit (wu1) explicitly pushed as target work unit in component
+    const elements = await screen.findAllByText('Test Result');
+    expect(elements).toHaveLength(2);
     expect(screen.getByText('test_result_artifact.txt')).toBeInTheDocument();
     expect(screen.getByText('result.txt')).toBeInTheDocument();
   });

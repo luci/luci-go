@@ -17,7 +17,10 @@ import { createContext, useContext } from 'react';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
-import { ArtifactTreeNodeData, ClusteredResult } from '../types';
+import {
+  ArtifactTreeNodeData,
+  ClusteredResult,
+} from '../../common/artifacts/types';
 
 export interface ArtifactsContextType {
   clusteredFailures: ClusteredResult[];

@@ -29,11 +29,12 @@ import { CompareArtifactLinesResponse_FailureOnlyRange } from '@/proto/go.chromi
 import { useInvocation } from '@/test_investigation/context';
 import { isAnTSInvocation } from '@/test_investigation/utils/test_info_utils';
 
-import { ArtifactContentHeader } from './artifact_content_header';
-import { ArtifactContentSearchBar } from './artifact_content_search_bar';
-import { ArtifactContentSearchMenu } from './artifact_content_search_menu';
+import { ArtifactContentHeader } from '../header';
+import { ArtifactContentSearchBar } from '../header';
+import { ArtifactContentSearchMenu } from '../header';
+import { useArtifactViewItems, useArtifactSearch } from '../hooks';
+
 import { Divider } from './divider';
-import { useArtifactViewItems, useArtifactSearch } from './hooks';
 import { TextLine } from './text_line';
 
 const LINE_NUMBER_WIDTH = 50;

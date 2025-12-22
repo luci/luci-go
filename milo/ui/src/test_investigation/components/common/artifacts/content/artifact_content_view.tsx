@@ -19,9 +19,9 @@ import { Sticky } from '@/generic_libs/components/queued_sticky';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 
-import { DefaultArtifactContent } from './default_artifact_content';
-import { LogArtifactContent } from './log_artifact_content';
-import { TextDiffArtifactContent } from './text_diff_artifact_content';
+import { DefaultArtifactContent } from './default';
+import { LogArtifactContent } from './logs';
+import { TextDiffArtifactContent } from './text_diff';
 
 interface ArtifactContentViewProps {
   artifact: Artifact;

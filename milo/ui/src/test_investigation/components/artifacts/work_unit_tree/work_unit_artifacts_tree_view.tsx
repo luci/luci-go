@@ -32,11 +32,11 @@ import {
   GetWorkUnitRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/work_unit.pb';
 
-import { useArtifactsContext } from '../../context';
-import { ArtifactTreeNodeData } from '../../types';
-import { ArtifactTreeNode } from '../artifact_tree_node';
-import { useArtifactFilters } from '../context/context';
-import { filterArtifacts } from '../util/tree_util';
+import { ArtifactTreeNode } from '../../common/artifacts/tree/artifact_tree_node/artifact_tree_node';
+import { useArtifactFilters } from '../../common/artifacts/tree/context/context';
+import { filterArtifacts } from '../../common/artifacts/tree/util/tree_util';
+import { ArtifactTreeNodeData } from '../../common/artifacts/types';
+import { useArtifactsContext } from '../context';
 
 function buildWorkUnitTree(
   workUnits: readonly WorkUnit[],

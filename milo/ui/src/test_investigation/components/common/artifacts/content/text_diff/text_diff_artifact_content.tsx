@@ -20,10 +20,11 @@ import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invoc
 import { useInvocation } from '@/test_investigation/context';
 import { isAnTSInvocation } from '@/test_investigation/utils/test_info_utils';
 
-import { ArtifactContentHeader } from './artifact_content_header';
-import { ArtifactContentSearchMenu } from './artifact_content_search_menu';
+import { ArtifactContentHeader } from '../header';
+import { ArtifactContentSearchMenu } from '../header';
+import { VirtualizedArtifactContent } from '../virtualized';
+
 import { TextDiffArtifactView } from './text_diff_artifact_view';
-import { VirtualizedArtifactContent } from './virtualized_artifact_content';
 
 interface TextDiffArtifactContentProps {
   artifact: Artifact;

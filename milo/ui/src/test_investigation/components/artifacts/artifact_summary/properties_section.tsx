@@ -18,7 +18,7 @@ import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { useTestVariant } from '@/test_investigation/context';
 
-import { CollapsibleArtifactSummarySection } from '../artifact_summary/collapsible_artifact_summary_section';
+import { CollapsibleArtifactSummarySection } from './collapsible_artifact_summary_section';
 
 interface PropertiesSectionProps {
   currentResult: TestResult;
@@ -87,7 +87,7 @@ export function PropertiesSection({ currentResult }: PropertiesSectionProps) {
                     whiteSpace: 'pre-wrap',
                   }}
                 >
-                  {value}
+                  {String(value)}
                 </Typography>
               </Box>
             ))}

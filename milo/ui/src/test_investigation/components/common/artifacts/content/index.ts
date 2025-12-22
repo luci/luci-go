@@ -13,4 +13,3 @@
 // limitations under the License.
 
 export * from './artifact_content_view';
-export * from '../artifact_summary/artifact_summary_view';

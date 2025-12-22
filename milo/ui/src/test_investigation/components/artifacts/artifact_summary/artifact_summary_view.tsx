@@ -33,7 +33,7 @@ import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_
 import { useIsLegacyInvocation } from '@/test_investigation/context';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
 
-import { TextDiffArtifactView } from '../artifact_content/text_diff_artifact_view';
+import { TextDiffArtifactView } from '../../common/artifacts/content/text_diff';
 
 import { CollapsibleArtifactSummarySection } from './collapsible_artifact_summary_section';
 import { LegacyInvocationLinks } from './legacy_invocation_links';

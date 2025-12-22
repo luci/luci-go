@@ -26,7 +26,7 @@ import {
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 
-import { ArtifactContentHeader } from './artifact_content_header';
+import { ArtifactContentHeader } from '../header';
 
 interface DefaultArtifactContentProps {
   artifact: Artifact;

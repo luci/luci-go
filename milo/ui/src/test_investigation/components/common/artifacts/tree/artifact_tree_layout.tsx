@@ -27,9 +27,6 @@ import {
 } from '@mui/material';
 import { ReactNode } from 'react';
 
-import { ClusteringControls } from '../clustering_controls';
-import { useArtifactsContext } from '../context';
-
 import { ArtifactFiltersDropdown } from './artifact_filters_dropdown';
 import { useArtifactFilters } from './context/context';
 
@@ -37,15 +34,16 @@ interface ArtifactsTreeLayoutProps {
   children: ReactNode;
   viewMode: 'artifacts' | 'work-units';
   onViewModeChange: (mode: 'artifacts' | 'work-units') => void;
+  // Optional slot for controls like clustering that are specific to test investigation
+  headerControls?: ReactNode;
 }
 
 export function ArtifactsTreeLayout({
   children,
   viewMode,
   onViewModeChange,
+  headerControls,
 }: ArtifactsTreeLayoutProps) {
-  const { clusteredFailures, hasRenderableResults } = useArtifactsContext();
-
   const { isFilterPanelOpen, setIsFilterPanelOpen } = useArtifactFilters();
 
   return (
@@ -59,11 +57,7 @@ export function ArtifactsTreeLayout({
       }}
     >
       <Box sx={{ flexShrink: 0, p: 1 }}>
-        {hasRenderableResults && clusteredFailures && (
-          <Box sx={{ mb: 1 }}>
-            <ClusteringControls />
-          </Box>
-        )}
+        {headerControls && <Box sx={{ mb: 1 }}>{headerControls}</Box>}
 
         <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box

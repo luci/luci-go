@@ -21,9 +21,10 @@ import {
   Typography,
 } from '@mui/material';
 
+import { ClusteredResult } from '../common/artifacts/types';
+
 import { useArtifactsContext } from './context';
 import { StatusKindChip } from './status_kind_chip';
-import { ClusteredResult } from './types';
 
 interface ClusterMenuItemContentProps {
   cluster: ClusteredResult;

@@ -36,7 +36,7 @@ jest.mock('@tanstack/react-virtual', () => ({
   })),
 }));
 
-jest.mock('./artifact_content_header', () => ({
+jest.mock('../header', () => ({
   ArtifactContentHeader: jest.fn(() => <div>ArtifactContentHeader</div>),
 }));
 

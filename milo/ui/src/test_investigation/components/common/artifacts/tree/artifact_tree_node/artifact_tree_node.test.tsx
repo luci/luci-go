@@ -24,6 +24,7 @@ import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invoc
 import { InvocationProvider } from '@/test_investigation/context';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import { ArtifactsProvider } from '../../context/provider';
 import { ArtifactTreeNodeData } from '../../types';
 
 import { ArtifactTreeNode } from './artifact_tree_node';
@@ -61,11 +62,13 @@ describe('<ArtifactTreeNode />', () => {
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
           isLegacyInvocation
         >
-          <ArtifactTreeNode
-            index={0}
-            row={fakeTreeData}
-            context={mockTreeContext}
-          />
+          <ArtifactsProvider nodes={[]} invocation={inv}>
+            <ArtifactTreeNode
+              index={0}
+              row={fakeTreeData}
+              context={mockTreeContext}
+            />
+          </ArtifactsProvider>
         </InvocationProvider>
       </FakeContextProvider>,
     );
@@ -248,12 +251,14 @@ describe('<ArtifactTreeNode />', () => {
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
           isLegacyInvocation
         >
-          <ArtifactTreeNode
-            index={0}
-            row={fakeTreeData}
-            context={fakeTreeContext}
-            highlightText={highlightTerm}
-          />
+          <ArtifactsProvider nodes={[]} invocation={mockInvocation}>
+            <ArtifactTreeNode
+              index={0}
+              row={fakeTreeData}
+              context={fakeTreeContext}
+              highlightText={highlightTerm}
+            />
+          </ArtifactsProvider>
         </InvocationProvider>
       </FakeContextProvider>,
     );
@@ -291,11 +296,13 @@ describe('<ArtifactTreeNode />', () => {
           rawInvocationId={MOCK_RAW_INVOCATION_ID}
           isLegacyInvocation
         >
-          <ArtifactTreeNode
-            index={0}
-            row={fakeTreeData}
-            context={fakeTreeContext}
-          />
+          <ArtifactsProvider nodes={[]} invocation={mockInvocation}>
+            <ArtifactTreeNode
+              index={0}
+              row={fakeTreeData}
+              context={fakeTreeContext}
+            />
+          </ArtifactsProvider>
         </InvocationProvider>
       </FakeContextProvider>,
     );
