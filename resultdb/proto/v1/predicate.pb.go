@@ -673,6 +673,12 @@ type TestAggregationPredicate struct {
 	// sufficient as its use has less sharp edges (e.g. no need to escape test ID
 	// components when injecting them into filter strings, filtering on a variant is exact
 	// and not simply checking for presence of a subset of key/value pairs).
+	//
+	// N.B. Setting this to a filter that will always evaluate to true yields
+	// different results to leaving this filter unset, in that the former filters to
+	// only aggregations with test results and the latter returns any test aggregation.
+	// Aggregations without test results can occur for module and invocation-level
+	// aggregations.
 	ContainsTestResultFilter string `protobuf:"bytes,3,opt,name=contains_test_result_filter,json=containsTestResultFilter,proto3" json:"contains_test_result_filter,omitempty"`
 }
 

@@ -178,6 +178,10 @@ type TestAggregation struct {
 	//
 	// This reflects the success running and uploading test results to ResultDB,
 	// not the success of the test cases themselves.
+	//
+	// In case of the modules with the module name "legacy", it is possible that
+	// no work unit has reported a status for this module; in that case, the status
+	// here will be MODULE_STATUS_UNSPECIFIED.
 	ModuleStatus TestAggregation_ModuleStatus `protobuf:"varint,4,opt,name=module_status,json=moduleStatus,proto3,enum=luci.resultdb.v1.TestAggregation_ModuleStatus" json:"module_status,omitempty"`
 	// The module status counts. Set only for invocation-level aggregations.
 	ModuleStatusCounts *TestAggregation_ModuleStatusCounts `protobuf:"bytes,5,opt,name=module_status_counts,json=moduleStatusCounts,proto3" json:"module_status_counts,omitempty"`

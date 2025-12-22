@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testaggregations"
+	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -59,12 +60,13 @@ func (s *resultDBServer) QueryTestAggregations(ctx context.Context, req *pb.Quer
 	}
 	// Execute the query.
 	q := &testaggregations.SingleLevelQuery{
-		RootInvocationID: rootInvID,
-		Level:            req.Predicate.AggregationLevel,
-		TestPrefixFilter: req.Predicate.TestPrefixFilter,
-		Access:           access,
-		PageSize:         pageSize,
-		Order:            order,
+		RootInvocationID:         rootInvID,
+		Level:                    req.Predicate.AggregationLevel,
+		TestPrefixFilter:         req.Predicate.TestPrefixFilter,
+		ContainsTestResultFilter: req.Predicate.ContainsTestResultFilter,
+		Access:                   access,
+		PageSize:                 pageSize,
+		Order:                    order,
 	}
 
 	aggregations, nextPageToken, err := q.Fetch(ctx, req.PageToken)
@@ -135,6 +137,11 @@ func validateQueryTestAggregationsPredicate(predicate *pb.TestAggregationPredica
 		// A greater value means a finer aggregation. We expect predicate.AggregationLevel >= predicate.TestPrefixFilter.Level.
 		if predicate.AggregationLevel < predicate.TestPrefixFilter.Level {
 			return errors.Fmt("test_prefix_filter: level: must be equal to, or coarser than, the requested aggregation_level (%s)", predicate.AggregationLevel)
+		}
+	}
+	if predicate.ContainsTestResultFilter != "" {
+		if err := testresultsv2.ValidateFilter(predicate.ContainsTestResultFilter); err != nil {
+			return errors.Fmt("contains_test_result_filter: %w", err)
 		}
 	}
 	return nil

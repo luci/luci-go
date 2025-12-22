@@ -89,14 +89,29 @@ func TestQuery(t *testing.T) {
 				aggs, nextToken, err := query.Fetch(span.Single(ctx), "")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, nextToken, should.Equal(""))
-				assert.Loosely(t, aggs, should.HaveLength(1))
-				assert.Loosely(t, aggs[0], should.Match(expected))
+				assert.Loosely(t, aggs, should.Match(expected))
+			})
+			t.Run("With contains test result filter", func(t *ftt.Test) {
+				t.Run("With matching filter", func(t *ftt.Test) {
+					// All test results have the tag "mytag:myvalue" so this part of the filter
+					// should have no effect.
+					query.ContainsTestResultFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
+						` AND tags.mytag = "myvalue"`
+
+					assert.Loosely(t, fetchAll(query), should.Match(expected))
+				})
+				t.Run("With non-matching filter", func(t *ftt.Test) {
+					query.ContainsTestResultFilter = `tags.mytag = "not-found-value"`
+
+					// No test results in the invocation matches the filter.
+					assert.Loosely(t, fetchAll(query), should.HaveLength(0))
+				})
 			})
 			t.Run("Limited access", func(t *ftt.Test) {
 				// Should make no difference as this only relies on information
 				// that is visible to limited users.
 				query.Access.Level = permissions.LimitedAccess
-				assert.Loosely(t, fetchAll(query), should.Match([]*pb.TestAggregation{expected}))
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 		})
 
@@ -135,7 +150,7 @@ func TestQuery(t *testing.T) {
 					assert.Loosely(t, all, should.Match(expected))
 				})
 			})
-			t.Run("With module-level filter", func(t *ftt.Test) {
+			t.Run("With prefix filter", func(t *ftt.Test) {
 				query.TestPrefixFilter = &pb.TestIdentifierPrefix{
 					Level: pb.AggregationLevel_MODULE,
 					Id: &pb.TestIdentifier{
@@ -154,6 +169,16 @@ func TestQuery(t *testing.T) {
 				t.Run("With module variant hash", func(t *ftt.Test) {
 					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
+			})
+			t.Run("With contains test result filter", func(t *ftt.Test) {
+				// All test results have the tag "mytag:myvalue" so this part of the filter
+				// should have no effect.
+				query.ContainsTestResultFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
+					` AND tags.mytag = "myvalue"`
+
+				expected := ExpectedModuleAggregationsIDOrder()
+				expected = expected[0:1]
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 			t.Run("With limited access", func(t *ftt.Test) {
 				query.Access.Level = permissions.LimitedAccess
@@ -201,7 +226,7 @@ func TestQuery(t *testing.T) {
 					assert.Loosely(t, all, should.Match(expected))
 				})
 			})
-			t.Run("With filters", func(t *ftt.Test) {
+			t.Run("With prefix filter", func(t *ftt.Test) {
 				query.TestPrefixFilter = &pb.TestIdentifierPrefix{
 					Level: pb.AggregationLevel_MODULE,
 					Id: &pb.TestIdentifier{
@@ -222,6 +247,16 @@ func TestQuery(t *testing.T) {
 					expected = expected[1:2]
 					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
+			})
+			t.Run("With contains test result filter", func(t *ftt.Test) {
+				// All test results have the tag "mytag:myvalue" so this part of the filter
+				// should have no effect.
+				query.ContainsTestResultFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
+					` AND tags.mytag = "myvalue"`
+
+				expected := ExpectedCoarseAggregationsIDOrder()
+				expected = expected[0:2]
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 			t.Run("With limited access", func(t *ftt.Test) {
 				query.Access.Level = permissions.LimitedAccess
@@ -269,7 +304,7 @@ func TestQuery(t *testing.T) {
 					assert.Loosely(t, all, should.Match(expected))
 				})
 			})
-			t.Run("With filters", func(t *ftt.Test) {
+			t.Run("With prefix filter", func(t *ftt.Test) {
 				query.TestPrefixFilter = &pb.TestIdentifierPrefix{
 					Level: pb.AggregationLevel_MODULE,
 					Id: &pb.TestIdentifier{
@@ -298,6 +333,16 @@ func TestQuery(t *testing.T) {
 					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
 			})
+			t.Run("With contains test result filter", func(t *ftt.Test) {
+				// All test results have the tag "mytag:myvalue" so this part of the filter
+				// should have no effect.
+				query.ContainsTestResultFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
+					` AND tags.mytag = "myvalue"`
+
+				expected := ExpectedFineAggregationsIDOrder()
+				expected = expected[0:4]
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
+			})
 			t.Run("With limited access", func(t *ftt.Test) {
 				query.Access.Level = permissions.LimitedAccess
 				query.Access.Realms = []string{"testdata:m3-s2"}
@@ -306,6 +351,57 @@ func TestQuery(t *testing.T) {
 						item.Id.Id.ModuleVariant = nil
 					}
 				}
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
+			})
+		})
+		t.Run("AIP-160 test result filter integration", func(t *ftt.Test) {
+			expected := ExpectedFineAggregationsIDOrder()
+			query.Level = pb.AggregationLevel_FINE
+
+			// These tests do not seek to comprehensively validate filter semantics (the
+			// parser-generator library does most of that), they validate the AIP-160 filter
+			// from `testresultsv2` package is correctly integrated and all required columns exist
+			// (no invalid SQL is generated).
+			query.ContainsTestResultFilter = `test_id_structured.module_name != "module"` +
+				` AND test_id_structured.module_scheme != "scheme"` +
+				` AND test_id_structured.module_variant.key = "value"` +
+				` AND test_id_structured.module_variant_hash != "varianthash"` +
+				` AND test_id_structured.coarse_name != "coarse"` +
+				` AND test_id_structured.fine_name != "fine"` +
+				` AND test_id_structured.case_name != "case"` +
+				` AND test_metadata.name != "somename"` +
+				` AND tags.mytag = "myvalue"` +
+				` AND test_metadata.location.repo != "repo"` +
+				` AND test_metadata.location.file_name != "filename"` +
+				` AND (status != PRECLUDED OR status = PRECLUDED)` +
+				` AND duration < 100s`
+
+			t.Run("With full access", func(t *ftt.Test) {
+				query.Access.Level = permissions.FullAccess
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
+			})
+			t.Run("With limited access (some upgraded to full)", func(t *ftt.Test) {
+				// Some results should match, but not all, because we filter on
+				// tags and variant and these fields are only visible to us on those
+				// results we have full access to.
+				query.Access.Level = permissions.LimitedAccess
+				query.Access.Realms = []string{"testdata:m3-s2"}
+				results := fetchAll(query)
+				expected = expected[5:6]
+				assert.Loosely(t, results, should.Match(expected))
+			})
+			t.Run("With limited access only", func(t *ftt.Test) {
+				// No results should match because we filter on tags and variant and
+				// these fields are only visible to us if we have full access to them.
+				query.Access.Level = permissions.LimitedAccess
+				query.Access.Realms = []string{}
+				results := fetchAll(query)
+				assert.Loosely(t, results, should.HaveLength(0))
+			})
+			t.Run("With implicit filter", func(t *ftt.Test) {
+				// Check an aip.dev/160 implicit filter.
+				query.ContainsTestResultFilter = `exonerated_test`
+				expected = expected[1:2]
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 		})

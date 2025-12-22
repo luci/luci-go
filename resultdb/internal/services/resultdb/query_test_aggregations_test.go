@@ -251,7 +251,7 @@ func TestQueryTestAggregations(t *testing.T) {
 					{
 						name:     "Invocation-level",
 						level:    pb.AggregationLevel_INVOCATION,
-						expected: []*pb.TestAggregation{testaggregations.ExpectedRootInvocationAggregation()},
+						expected: testaggregations.ExpectedRootInvocationAggregation(),
 					},
 					{
 						name:     "Module-level",
@@ -297,6 +297,17 @@ func TestQueryTestAggregations(t *testing.T) {
 						ModuleVariant: pbutil.Variant("key", "value"),
 					},
 				}
+
+				expected := testaggregations.ExpectedCoarseAggregationsIDOrder()
+				expected = expected[0:2]
+
+				res, err := srv.QueryTestAggregations(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Aggregations, should.Match(expected))
+			})
+			t.Run(`With contains test results filter`, func(t *ftt.Test) {
+				req.Predicate.AggregationLevel = pb.AggregationLevel_COARSE
+				req.Predicate.ContainsTestResultFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key="value"`
 
 				expected := testaggregations.ExpectedCoarseAggregationsIDOrder()
 				expected = expected[0:2]

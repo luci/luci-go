@@ -74,7 +74,7 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	shard2 := rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 11}
 	baseBuilder := func() *testresultsv2.Builder {
 		return testresultsv2.NewBuilder().WithRootInvocationShardID(shard).
-			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).WithCoarseName("c1").WithFineName("f1").WithCaseName("t1")
+			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).WithCoarseName("c1").WithFineName("f1").WithCaseName("t1").WithTags(pbutil.StringPairs("mytag", "myvalue"))
 	}
 	baseExonerationBuilder := func() *testexonerationsv2.Builder {
 		return testexonerationsv2.NewBuilder().WithRootInvocationShardID(shard).
@@ -118,8 +118,8 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	return ms
 }
 
-func ExpectedRootInvocationAggregation() *pb.TestAggregation {
-	return &pb.TestAggregation{
+func ExpectedRootInvocationAggregation() []*pb.TestAggregation {
+	result := &pb.TestAggregation{
 		Id: &pb.TestIdentifierPrefix{
 			Level: pb.AggregationLevel_INVOCATION,
 			Id:    &pb.TestIdentifier{},
@@ -149,6 +149,7 @@ func ExpectedRootInvocationAggregation() *pb.TestAggregation {
 			Skipped:   1,
 		},
 	}
+	return []*pb.TestAggregation{result}
 }
 
 func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
