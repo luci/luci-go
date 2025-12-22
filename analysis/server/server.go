@@ -193,7 +193,7 @@ func RegisterPubSubHandlers() {
 	pubsub.RegisterJSONPBHandler("cvrun", app.NewCVRunHandler().Handle)
 	pubsub.RegisterJSONPBHandler("invocation-finalized", app.NewInvocationFinalizedHandler().Handle)
 	pubsub.RegisterJSONPBHandler("invocation-ready-for-export", app.NewInvocationReadyForExportHandler().Handle)
-	pubsub.RegisterJSONPBHandler("root-invocation-finalized", app.NewRootInvocationFinalizedHandler().Handle)
+	pubsub.RegisterWirePBHandler("root-invocation-finalized", app.NewRootInvocationFinalizedHandler().Handle)
 	pubsub.RegisterWirePBHandler("test-results", app.NewTestResultsPubSubHandler().Handle)
 }
 
