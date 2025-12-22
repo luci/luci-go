@@ -31,17 +31,28 @@ export const DeviceDimensions = ({ device }: DeviceDimensionsProps) => {
     return <></>;
   }
 
-  const labelRows = Object.keys(device.deviceSpec.labels).map((label) => {
-    return {
-      id: label,
-      value: labelValuesToString(device!.deviceSpec!.labels[label].values),
-    };
-  });
-  const rows = [
+  const customRows = [
     { id: 'dut_id', value: device.dutId },
     { id: 'lease_state', value: getDeviceStateString(device) },
-    ...labelRows,
+    {
+      id: 'dut_state',
+      value:
+        device.deviceSpec?.labels['dut_state']?.values?.[0]?.toUpperCase() ??
+        '',
+    },
   ];
+
+  const customRowsId = customRows.map((r) => r.id);
+
+  const labelRows = Object.keys(device.deviceSpec.labels)
+    .filter((key) => !customRowsId.includes(key))
+    .map((label) => {
+      return {
+        id: label,
+        value: labelValuesToString(device!.deviceSpec!.labels[label].values),
+      };
+    });
+  const rows = [...customRows, ...labelRows];
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'Key', flex: 1 },
