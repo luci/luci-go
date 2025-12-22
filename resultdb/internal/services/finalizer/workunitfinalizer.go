@@ -268,10 +268,11 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/finalizer.applyFinalizationUpdates",
 		attribute.Int("count", len(workUnitsToFinalize)))
 	defer func() { tracing.End(ts, err) }()
-	// Batching is necessary because spanner has a limit of 80,000 for the number of mutations per commit.
-	// See https://cloud.google.com/spanner/quotas#limits-for.
-	// Default batch size is 2000 work units per transaction, this allows 40 mutations per work unit.
-	defaultBatchSize := 2000
+	// Batching is necessary because
+	// * spanner has a limit of 80,000 for the number of mutations per commit. See https://cloud.google.com/spanner/quotas#limits-for.
+	//   Default batch size is 1000 work units per transaction, this allows 80 mutations per work unit.
+	// * transactionally scheduled cloud task has a payload size limit of 102400 bytes. This is ~1000 work unit IDs, given each work unit id is at maximum size.
+	defaultBatchSize := 1000
 	if opts.batchSizeOverride < 0 || opts.batchSizeOverride > defaultBatchSize {
 		return errors.New(fmt.Sprintf("batchSize must be between 0 and %d, got %d", defaultBatchSize, opts.batchSizeOverride))
 	}
