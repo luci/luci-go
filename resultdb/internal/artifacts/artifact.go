@@ -221,15 +221,9 @@ func VerifyReadArtifactPermission(ctx context.Context, name string) error {
 			return appstatus.BadRequest(errors.Fmt("invalid artifact name: %w", err))
 		}
 		wuID := workunits.ID{RootInvocationID: rootinvocations.ID(parts.RootInvocationID), WorkUnitID: parts.WorkUnitID}
-		accessLevel, err := permissions.QueryWorkUnitAccess(ctx, wuID, permissions.GetArtifactsAccessModel)
+		_, err = permissions.VerifyWorkUnitAccess(ctx, wuID, permissions.GetArtifactsAccessModel, permissions.FullAccess)
 		if err != nil {
 			return err
-		}
-		if accessLevel == permissions.NoAccess {
-			return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s or %s in realm of %q", rdbperms.PermGetArtifact, rdbperms.PermListLimitedArtifacts, wuID.RootInvocationID.Name())
-		}
-		if accessLevel != permissions.FullAccess {
-			return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s in the realm of %q (trying to upgrade limited artifact access to full access)", rdbperms.PermGetArtifact, wuID.Name())
 		}
 		return nil
 	}

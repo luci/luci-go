@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -123,8 +124,8 @@ func TestVerifyInvocations(t *testing.T) {
 	})
 }
 
-func TestQueryWorkUnitAccess(t *testing.T) {
-	ftt.Run(`QueryWorkUnitAccess`, t, func(t *ftt.Test) {
+func TestVerifyWorkUnitAccess(t *testing.T) {
+	ftt.Run(`VerifyWorkUnitAccess`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		rootInvID := rootinvocations.ID("root-inv")
@@ -143,10 +144,10 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 		)...)
 		testutil.MustApply(ctx, t, ms...)
 
-		opts := QueryWorkUnitAccessOptions{
-			Full:                 rdbperms.PermListWorkUnits,
-			Limited:              rdbperms.PermListLimitedWorkUnits,
-			UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,
+		opts := VerifyWorkUnitAccessOptions{
+			Full:                 []realms.Permission{rdbperms.PermListTestResults, rdbperms.PermListTestExonerations},
+			Limited:              []realms.Permission{rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations},
+			UpgradeLimitedToFull: []realms.Permission{rdbperms.PermGetTestResult, rdbperms.PermGetTestExoneration},
 		}
 
 		authState := &authtest.FakeState{
@@ -159,60 +160,115 @@ func TestQueryWorkUnitAccess(t *testing.T) {
 
 		t.Run("root invocation not found", func(t *ftt.Test) {
 			workUnitID.RootInvocationID = rootinvocations.ID("not-exists")
-			_, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
+			_, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, NoAccess)
 			st, ok := appstatus.Get(err)
 			assert.That(t, ok, should.BeTrue)
 			assert.That(t, st.Code(), should.Equal(codes.NotFound))
 			assert.That(t, st.Message(), should.ContainSubstring(`"rootInvocations/not-exists" not found`))
 		})
 		t.Run("no access on root invocation", func(t *ftt.Test) {
-			level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
+			authState.IdentityPermissions = nil
+			level, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, NoAccess)
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, level, should.Equal(NoAccess))
 		})
 		t.Run("full access on root invocation", func(t *ftt.Test) {
-			authState.IdentityPermissions = []authtest.RealmPermission{
-				{Realm: "testproject:root", Permission: rdbperms.PermListWorkUnits},
-			}
-			level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
-			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, level, should.Equal(FullAccess))
-		})
-		t.Run("limited access on root invocation", func(t *ftt.Test) {
-			t.Run("baseline (no upgrade permission)", func(t *ftt.Test) {
+			t.Run("baseline", func(t *ftt.Test) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
-					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedWorkUnits},
+					{Realm: "testproject:root", Permission: rdbperms.PermListTestResults},
+					{Realm: "testproject:root", Permission: rdbperms.PermListTestExonerations},
 				}
-				level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, level, should.Equal(LimitedAccess))
-			})
-			t.Run("upgrade to full access", func(t *ftt.Test) {
-				authState.IdentityPermissions = []authtest.RealmPermission{
-					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedWorkUnits},
-					{Realm: "testproject:workunit", Permission: rdbperms.PermGetWorkUnit},
-				}
-				level, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
+				level, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, NoAccess)
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, level, should.Equal(FullAccess))
 			})
+			t.Run("missing one permission", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: "testproject:root", Permission: rdbperms.PermListTestResults},
+				}
+				level, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, NoAccess)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, level, should.Equal(NoAccess))
+			})
+		})
+		t.Run("limited access on root invocation", func(t *ftt.Test) {
+			t.Run("no upgrade permission", func(t *ftt.Test) {
+				t.Run("baseline", func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
+					}
+					level, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, level, should.Equal(LimitedAccess))
+				})
+				t.Run("missing one permission", func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+					}
+					level, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, level, should.Equal(NoAccess))
+				})
+			})
+			t.Run("upgrade to full access", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
+					{Realm: "testproject:workunit", Permission: rdbperms.PermGetTestResult},
+					{Realm: "testproject:workunit", Permission: rdbperms.PermGetTestExoneration},
+				}
+				t.Run("baseline", func(t *ftt.Test) {
+					level, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, level, should.Equal(FullAccess))
+				})
+				t.Run("missing one upgrade permission", func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
+						{Realm: "testproject:workunit", Permission: rdbperms.PermGetTestResult},
+					}
+					level, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, level, should.Equal(LimitedAccess))
+				})
+			})
 			t.Run("work unit not found", func(t *ftt.Test) {
 				authState.IdentityPermissions = []authtest.RealmPermission{
-					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedWorkUnits},
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
 				}
 				workUnitID.WorkUnitID = "not-exists"
-				_, err := QueryWorkUnitAccess(ctx, workUnitID, opts)
+				_, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, NoAccess)
 				st, ok := appstatus.Get(err)
 				assert.That(t, ok, should.BeTrue)
 				assert.That(t, st.Code(), should.Equal(codes.NotFound))
 				assert.That(t, st.Message(), should.ContainSubstring(`"rootInvocations/root-inv/workUnits/not-exists" not found`))
 			})
 		})
+		t.Run("minimum access level enforcement", func(t *ftt.Test) {
+			t.Run("required FullAccess, have LimitedAccess", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
+				}
+				_, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, FullAccess)
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.get, resultdb.testExonerations.get] in realm \"testproject:workunit\" of work unit \"rootInvocations/root-inv/workUnits/work-unit\" (trying to upgrade limited access to full access)"))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+			})
+			t.Run("required LimitedAccess, have NoAccess", func(t *ftt.Test) {
+				authState.IdentityPermissions = nil
+				_, err := VerifyWorkUnitAccess(ctx, workUnitID, opts, LimitedAccess)
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.listLimited, resultdb.testExonerations.listLimited] (or [resultdb.testResults.list, resultdb.testExonerations.list]) in realm of root invocation \"rootInvocations/root-inv\""))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+			})
+		})
 	})
 }
 
-func TestQueryWorkUnitsAccess(t *testing.T) {
-	ftt.Run(`QueryWorkUnitsAccess`, t, func(t *ftt.Test) {
+func TestVerifyWorkUnitsAccess(t *testing.T) {
+	ftt.Run(`VerifyWorkUnitsAccess`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		rootInvID := rootinvocations.ID("root-inv")
@@ -234,10 +290,10 @@ func TestQueryWorkUnitsAccess(t *testing.T) {
 		)...)
 		testutil.MustApply(ctx, t, ms...)
 
-		opts := QueryWorkUnitAccessOptions{
-			Full:                 rdbperms.PermListWorkUnits,
-			Limited:              rdbperms.PermListLimitedWorkUnits,
-			UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,
+		opts := VerifyWorkUnitAccessOptions{
+			Full:                 []realms.Permission{rdbperms.PermListTestResults, rdbperms.PermListTestExonerations},
+			Limited:              []realms.Permission{rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations},
+			UpgradeLimitedToFull: []realms.Permission{rdbperms.PermGetTestResult, rdbperms.PermGetTestExoneration},
 		}
 
 		authState := &authtest.FakeState{
@@ -250,14 +306,14 @@ func TestQueryWorkUnitsAccess(t *testing.T) {
 
 		t.Run("work units in different root invocation", func(t *ftt.Test) {
 			workUnitIDs[1] = workunits.ID{RootInvocationID: rootinvocations.ID("other-root"), WorkUnitID: "work-unit-1"}
-			_, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+			_, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
 			assert.That(t, err, should.ErrLike("all work units must belong to the same root invocation"))
 		})
 		t.Run("root invocation not found", func(t *ftt.Test) {
 			workUnitIDs = []workunits.ID{
 				{RootInvocationID: rootinvocations.ID("not-exists"), WorkUnitID: "work-unit-1"},
 			}
-			_, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+			_, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
 			st, ok := appstatus.Get(err)
 			assert.That(t, ok, should.BeTrue)
 			assert.That(t, st.Code(), should.Equal(codes.NotFound))
@@ -265,42 +321,225 @@ func TestQueryWorkUnitsAccess(t *testing.T) {
 		})
 		t.Run("no access on root invocation", func(t *ftt.Test) {
 			authState.IdentityPermissions = nil
-			levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+			levels, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, levels, should.Match([]AccessLevel{NoAccess, NoAccess}))
 		})
 		t.Run("full access on root invocation", func(t *ftt.Test) {
-			authState.IdentityPermissions = []authtest.RealmPermission{
-				{Realm: "testproject:root", Permission: rdbperms.PermListWorkUnits},
-			}
-			levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
-			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, levels, should.Match([]AccessLevel{FullAccess, FullAccess}))
+			t.Run("baseline", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: "testproject:root", Permission: rdbperms.PermListTestResults},
+					{Realm: "testproject:root", Permission: rdbperms.PermListTestExonerations},
+				}
+				levels, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, levels, should.Match([]AccessLevel{FullAccess, FullAccess}))
+			})
+			t.Run("missing one permission", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: "testproject:root", Permission: rdbperms.PermListTestResults},
+				}
+				levels, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, levels, should.Match([]AccessLevel{NoAccess, NoAccess}))
+			})
 		})
 		t.Run("limited access on root invocation", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
-				{Realm: "testproject:root", Permission: rdbperms.PermListLimitedWorkUnits},
+				{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+				{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
 			}
-			t.Run("baseline (no upgrade permission)", func(t *ftt.Test) {
-				levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, levels, should.Match([]AccessLevel{LimitedAccess, LimitedAccess}))
+			t.Run("no upgrade permission", func(t *ftt.Test) {
+				t.Run("baseline", func(t *ftt.Test) {
+					levels, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, levels, should.Match([]AccessLevel{LimitedAccess, LimitedAccess}))
+				})
+				t.Run("missing one permission", func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+					}
+					levels, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, levels, should.Match([]AccessLevel{NoAccess, NoAccess}))
+				})
 			})
 			t.Run("upgrade to full access for some", func(t *ftt.Test) {
 				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
-					Realm: "testproject:workunit1", Permission: rdbperms.PermGetWorkUnit,
+					Realm: "testproject:workunit1", Permission: rdbperms.PermGetTestResult,
 				})
-				levels, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
-				assert.Loosely(t, err, should.BeNil)
-				assert.That(t, levels, should.Match([]AccessLevel{FullAccess, LimitedAccess}))
+				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+					Realm: "testproject:workunit1", Permission: rdbperms.PermGetTestExoneration,
+				})
+				t.Run("baseline", func(t *ftt.Test) {
+					levels, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, levels, should.Match([]AccessLevel{FullAccess, LimitedAccess}))
+				})
+				t.Run("missing one upgrade permission", func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
+						{Realm: "testproject:workunit1", Permission: rdbperms.PermGetTestResult},
+					}
+					levels, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, levels, should.Match([]AccessLevel{LimitedAccess, LimitedAccess}))
+				})
 			})
 			t.Run("work unit not found", func(t *ftt.Test) {
 				workUnitIDs[1] = workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "not-exists"}
-				_, err := QueryWorkUnitsAccess(ctx, workUnitIDs, opts)
+				_, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, NoAccess)
 				st, ok := appstatus.Get(err)
 				assert.That(t, ok, should.BeTrue)
 				assert.That(t, st.Code(), should.Equal(codes.NotFound))
 				assert.That(t, st.Message(), should.ContainSubstring(`"rootInvocations/root-inv/workUnits/not-exists" not found`))
+			})
+		})
+		t.Run("minimum access level enforcement", func(t *ftt.Test) {
+			t.Run("required FullAccess, have LimitedAccess", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
+				}
+				_, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, FullAccess)
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.get, resultdb.testExonerations.get] in realm \"testproject:workunit1\" of work unit \"rootInvocations/root-inv/workUnits/work-unit-1\" (trying to upgrade limited access to full access)"))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+			})
+			t.Run("required LimitedAccess, have NoAccess", func(t *ftt.Test) {
+				authState.IdentityPermissions = nil
+				_, err := VerifyWorkUnitsAccess(ctx, workUnitIDs, opts, LimitedAccess)
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.listLimited, resultdb.testExonerations.listLimited] (or [resultdb.testResults.list, resultdb.testExonerations.list]) in realm of root invocation \"rootInvocations/root-inv\""))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+			})
+		})
+	})
+}
+
+func TestVerifyAllWorkUnitsAccess(t *testing.T) {
+	ftt.Run(`VerifyAllWorkUnitsAccess`, t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		rootInvID := rootinvocations.ID("root-inv")
+
+		// Insert root invocation and work units for subsequent tests.
+		var ms []*spanner.Mutation
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(
+			rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:root").Build(),
+		)...)
+		ms = append(ms, insert.WorkUnit(
+			workunits.NewBuilder(rootInvID, "work-unit-1").WithRealm("testproject:workunit1").Build(),
+		)...)
+		ms = append(ms, insert.WorkUnit(
+			workunits.NewBuilder(rootInvID, "work-unit-2").WithRealm("testproject:workunit2").Build(),
+		)...)
+		testutil.MustApply(ctx, t, ms...)
+
+		opts := VerifyWorkUnitAccessOptions{
+			Full:                 []realms.Permission{rdbperms.PermListTestResults, rdbperms.PermListTestExonerations},
+			Limited:              []realms.Permission{rdbperms.PermListLimitedTestResults, rdbperms.PermListLimitedTestExonerations},
+			UpgradeLimitedToFull: []realms.Permission{rdbperms.PermGetTestResult, rdbperms.PermGetTestExoneration},
+		}
+
+		authState := &authtest.FakeState{
+			Identity: "user:someone@example.com",
+		}
+		ctx = auth.WithState(ctx, authState)
+
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
+
+		t.Run("root invocation not found", func(t *ftt.Test) {
+			_, err := VerifyAllWorkUnitsAccess(ctx, rootinvocations.ID("not-exists"), opts, NoAccess)
+			st, ok := appstatus.Get(err)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, st.Code(), should.Equal(codes.NotFound))
+			assert.That(t, st.Message(), should.ContainSubstring(`"rootInvocations/not-exists" not found`))
+		})
+		t.Run("no access on root invocation", func(t *ftt.Test) {
+			authState.IdentityPermissions = nil
+			result, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, NoAccess)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, result, should.Match(RootInvocationAccess{Level: NoAccess}))
+		})
+		t.Run("full access on root invocation", func(t *ftt.Test) {
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{Realm: "testproject:root", Permission: rdbperms.PermListTestResults},
+				{Realm: "testproject:root", Permission: rdbperms.PermListTestExonerations},
+			}
+			t.Run("baseline", func(t *ftt.Test) {
+				result, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, NoAccess)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, result, should.Match(RootInvocationAccess{Level: FullAccess}))
+			})
+			t.Run("missing one permission", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: "testproject:root", Permission: rdbperms.PermListTestResults},
+				}
+				result, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, NoAccess)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, result, should.Match(RootInvocationAccess{Level: NoAccess}))
+			})
+		})
+		t.Run("limited access on root invocation", func(t *ftt.Test) {
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+				{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
+			}
+			t.Run("no upgrade permission", func(t *ftt.Test) {
+				t.Run("baseline", func(t *ftt.Test) {
+					result, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, result, should.Match(RootInvocationAccess{Level: LimitedAccess, Realms: []string{}}))
+				})
+				t.Run("missing one permission", func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+					}
+					result, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, result, should.Match(RootInvocationAccess{Level: NoAccess}))
+				})
+			})
+			t.Run("upgrade to full access for some", func(t *ftt.Test) {
+				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+					Realm: "testproject:workunit1", Permission: rdbperms.PermGetTestResult,
+				})
+				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+					Realm: "testproject:workunit1", Permission: rdbperms.PermGetTestExoneration,
+				})
+				t.Run("baseline", func(t *ftt.Test) {
+					result, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, result, should.Match(RootInvocationAccess{Level: LimitedAccess, Realms: []string{"testproject:workunit1"}}))
+				})
+				t.Run("missing one upgrade permission", func(t *ftt.Test) {
+					authState.IdentityPermissions = []authtest.RealmPermission{
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+						{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
+						{Realm: "testproject:workunit1", Permission: rdbperms.PermGetTestResult},
+					}
+					result, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, NoAccess)
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, result, should.Match(RootInvocationAccess{Level: LimitedAccess, Realms: []string{}}))
+				})
+			})
+		})
+		t.Run("minimum access level enforcement", func(t *ftt.Test) {
+			t.Run("required FullAccess, have LimitedAccess", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestResults},
+					{Realm: "testproject:root", Permission: rdbperms.PermListLimitedTestExonerations},
+				}
+				_, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, FullAccess)
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list, resultdb.testExonerations.list] in realm of root invocation \"rootInvocations/root-inv\""))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+			})
+			t.Run("required LimitedAccess, have NoAccess", func(t *ftt.Test) {
+				authState.IdentityPermissions = nil
+				_, err := VerifyAllWorkUnitsAccess(ctx, rootInvID, opts, LimitedAccess)
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.listLimited, resultdb.testExonerations.listLimited] (or [resultdb.testResults.list, resultdb.testExonerations.list]) in realm of root invocation \"rootInvocations/root-inv\""))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			})
 		})
 	})

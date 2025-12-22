@@ -220,7 +220,7 @@ func TestGetWorkUnit(t *testing.T) {
 			authState.IdentityPermissions = nil
 			_, err := srv.GetWorkUnit(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike(`desc = caller does not have permission resultdb.workUnits.get (or resultdb.workUnits.listLimited) on root invocation "rootInvocations/root-inv-id"`))
+			assert.That(t, err, should.ErrLike(`desc = caller does not have permission resultdb.workUnits.get (or resultdb.workUnits.listLimited) in realm of root invocation "rootInvocations/root-inv-id"`))
 		})
 
 		t.Run("request validation", func(t *ftt.Test) {

@@ -672,6 +672,50 @@ func TestReadFunctions(t *testing.T) {
 				assert.That(t, err, should.ErrLike("ids[0]: workUnitID: unspecified"))
 			})
 		})
+
+		t.Run("ReadAllRealms", func(t *ftt.Test) {
+			t.Run("happy path", func(t *ftt.Test) {
+				// Create a new root invocation.
+				rootInvID := rootinvocations.ID("read-all-realms-inv")
+				rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:root").Build()
+				ms := rootinvocations.InsertForTesting(rootInv)
+
+				// Insert work units in different realms.
+				rootWU := NewBuilder(rootInvID, "root").WithRealm("testproject:root").Build()
+				wu1 := NewBuilder(rootInvID, "wu1").WithRealm("testproject:realm-a").Build()
+				wu2 := NewBuilder(rootInvID, "wu2").WithRealm("testproject:realm-b").Build()
+				wu3 := NewBuilder(rootInvID, "wu3").WithRealm("testproject:realm-a").Build() // Duplicate realm
+				wu4 := NewBuilder(rootInvID, "wu4").WithRealm("testproject:realm-c").Build()
+
+				ms = append(ms, InsertForTesting(rootWU)...)
+				ms = append(ms, InsertForTesting(wu1)...)
+				ms = append(ms, InsertForTesting(wu2)...)
+				ms = append(ms, InsertForTesting(wu3)...)
+				ms = append(ms, InsertForTesting(wu4)...)
+
+				testutil.MustApply(ctx, t, ms...)
+
+				realms, err := ReadAllRealms(span.Single(ctx), rootInvID)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, realms, should.Match([]string{
+					"testproject:realm-a",
+					"testproject:realm-b",
+					"testproject:realm-c",
+					"testproject:root",
+				}))
+			})
+
+			t.Run("no work units", func(t *ftt.Test) {
+				rootInvID := rootinvocations.ID("read-all-realms-empty-inv")
+				rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:root").Build()
+				ms := rootinvocations.InsertForTesting(rootInv)
+				testutil.MustApply(ctx, t, ms...)
+
+				realms, err := ReadAllRealms(span.Single(ctx), rootInvID)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, realms, should.HaveLength(0))
+			})
+		})
 	})
 }
 

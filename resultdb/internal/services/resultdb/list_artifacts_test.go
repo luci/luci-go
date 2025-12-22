@@ -125,7 +125,7 @@ func TestListArtifacts(t *testing.T) {
 
 					_, err := srv.ListArtifacts(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.list or resultdb.artifacts.listLimited in realm of "rootInvocations/root-inv1"`))
+					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.list (or resultdb.artifacts.listLimited) in realm of root invocation "rootInvocations/root-inv1"`))
 				})
 				t.Run(`with limited list access only`, func(t *ftt.Test) {
 					authState.IdentityPermissions = []authtest.RealmPermission{
@@ -134,7 +134,7 @@ func TestListArtifacts(t *testing.T) {
 
 					_, err := srv.ListArtifacts(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.get in the realm of "rootInvocations/root-inv1/workUnits/wu1" (trying to upgrade limited artifact access to full access)`))
+					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.get in realm "testproject:wurealm" of work unit "rootInvocations/root-inv1/workUnits/wu1" (trying to upgrade limited access to full access)`))
 				})
 				t.Run(`with limited list access upgraded to full access`, func(t *ftt.Test) {
 					authState.IdentityPermissions = []authtest.RealmPermission{
@@ -310,8 +310,6 @@ func TestListArtifacts(t *testing.T) {
 				assert.Loosely(t, actual, should.HaveLength(1))
 				assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), should.BeTrue)
 			})
-
-
 		})
 	})
 }

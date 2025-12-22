@@ -17,8 +17,6 @@ package resultdb
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -30,7 +28,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error) {
@@ -40,17 +37,13 @@ func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetW
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	ids, accessLevels, err := queryBatchGetWorkUnitAccess(ctx, in)
+	ids, accessLevels, err := verifyBatchGetWorkUnitAccess(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 
 	anyHasFullAccess := false
-	for i, level := range accessLevels {
-		if level == permissions.NoAccess {
-			return nil, appstatus.Errorf(codes.PermissionDenied, `caller does not have permission %s (or %s) on root invocation %q`,
-				rdbperms.PermGetWorkUnit, rdbperms.PermListLimitedWorkUnits, ids[i].RootInvocationID.Name())
-		}
+	for _, level := range accessLevels {
 		if level == permissions.FullAccess {
 			anyHasFullAccess = true
 		}
@@ -86,7 +79,7 @@ func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetW
 	}, nil
 }
 
-func queryBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (ids []workunits.ID, accessLevels []permissions.AccessLevel, err error) {
+func verifyBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (ids []workunits.ID, accessLevels []permissions.AccessLevel, err error) {
 	// While google.aip.dev/211 prescribes request validation should occur after
 	// authorisation, these initial validation checks are important to the integrity
 	// of authorisation.
@@ -112,10 +105,11 @@ func queryBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsRe
 		ids = append(ids, wuID)
 	}
 
-	// Check permissions.
-	accessLevels, err = permissions.QueryWorkUnitsAccess(ctx, ids, permissions.GetWorkUnitsAccessModel)
+	// Check permissions. Verifies we have at least limited access.
+	accessLevels, err = permissions.VerifyWorkUnitsAccess(ctx, ids, permissions.GetWorkUnitsAccessModel, permissions.LimitedAccess)
 	if err != nil {
 		// Returns NotFound appstatus error if one of the work units was not found,
+		// PermissionDenied if sufficient access was not attained,
 		// or an internal error.
 		return nil, nil, err
 	}

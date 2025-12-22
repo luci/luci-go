@@ -93,7 +93,7 @@ func (s *resultDBServer) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUni
 	for i, row := range wus {
 		ids[i] = row.ID
 	}
-	accessLevels, err := permissions.QueryWorkUnitsAccess(ctx, ids, permissions.GetWorkUnitsAccessModel)
+	accessLevels, err := permissions.VerifyWorkUnitsAccess(ctx, ids, permissions.GetWorkUnitsAccessModel, permissions.LimitedAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -107,9 +107,6 @@ func (s *resultDBServer) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUni
 	resWUs := make([]*pb.WorkUnit, 0, len(wus))
 	for i, row := range wus {
 		level := accessLevels[i]
-		if level == permissions.NoAccess {
-			return nil, errors.New("logic error: user had at least limited access to all work units at start of request but no longer has access")
-		}
 		resWUs = append(resWUs, masking.WorkUnit(row, level, in.View, cfg))
 	}
 

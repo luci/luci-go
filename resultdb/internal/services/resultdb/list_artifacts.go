@@ -20,8 +20,6 @@ import (
 	"regexp"
 	"strings"
 
-	"google.golang.org/grpc/codes"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -104,15 +102,9 @@ func (s *resultDBServer) ListArtifacts(ctx context.Context, in *pb.ListArtifacts
 		}
 		queryInvocationID = invID
 	} else {
-		accessLevel, err := permissions.QueryWorkUnitAccess(ctx, wuID, permissions.ListArtifactsAccessModel)
+		_, err := permissions.VerifyWorkUnitAccess(ctx, wuID, permissions.ListArtifactsAccessModel, permissions.FullAccess)
 		if err != nil {
 			return nil, err
-		}
-		if accessLevel == permissions.NoAccess {
-			return nil, appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s or %s in realm of %q", rdbperms.PermListArtifacts, rdbperms.PermListLimitedArtifacts, wuID.RootInvocationID.Name())
-		}
-		if accessLevel != permissions.FullAccess {
-			return nil, appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s in the realm of %q (trying to upgrade limited artifact access to full access)", rdbperms.PermGetArtifact, wuID.Name())
 		}
 		queryInvocationID = wuID.LegacyInvocationID()
 	}

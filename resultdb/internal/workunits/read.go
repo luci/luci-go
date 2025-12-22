@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"slices"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -159,6 +160,47 @@ func ReadRealms(ctx context.Context, ids []ID) (realms map[ID]string, err error)
 		return nil, err
 	}
 	return resultMap, nil
+}
+
+// ReadAllRealms reads all distinct work unit realms in the given root invocation.
+//
+// The returned list can be intersected with the realms the user has full access to when
+// querying a root invocation, to minimise the size of the realm list passed down to Spanner.
+// This makes it very unlikely the 10,000 values in an `IN` operator limit will be exceeded:
+// https://docs.cloud.google.com/spanner/quotas#query-limits
+//
+// Realms are returned in sorted order.
+func ReadAllRealms(ctx context.Context, rootID rootinvocations.ID) (uniqueRealms []string, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadAllRealms")
+	defer func() { tracing.End(ts, err) }()
+
+	stmt := spanner.NewStatement(`
+		SELECT DISTINCT
+			w.Realm
+		FROM WorkUnits w
+		WHERE w.RootInvocationShardId IN UNNEST(@shards)
+	`)
+
+	stmt.Params = map[string]any{
+		"shards": rootID.AllShardIDs().ToSpanner(),
+	}
+
+	var results []string
+	err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
+		var realm string
+		err := row.Columns(&realm)
+		if err != nil {
+			return err
+		}
+		results = append(results, realm)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	// Return results in a deterministic order.
+	slices.Sort(results)
+	return results, nil
 }
 
 // ReadFinalizationStates reads the finalization state of the given work units.

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 
@@ -106,67 +107,107 @@ const (
 	FullAccess
 )
 
-// QueryWorkUnitAccessOptions defines the permissions required to reach a certain access level
+// VerifyWorkUnitAccessOptions defines the permissions required to reach a certain access level
 // on the work unit.
-type QueryWorkUnitAccessOptions struct {
-	// The permission required on the *root invocation*'s realm to reach
+type VerifyWorkUnitAccessOptions struct {
+	// The permission(s) required on the *root invocation*'s realm to reach
 	// FullAccess access level.
-	Full realms.Permission
-	// The permission required on the *root invocation*'s realm to reach
+	Full []realms.Permission
+	// The permission(s) required on the *root invocation*'s realm to reach
 	// LimitedAccess access level.
-	Limited realms.Permission
-	// The permission required on the *work unit*'s realm to upgrade limited
+	Limited []realms.Permission
+	// The permission(s) required on the *work unit*'s realm to upgrade limited
 	// access to full access.
-	UpgradeLimitedToFull realms.Permission
+	UpgradeLimitedToFull []realms.Permission
 }
 
 // GetWorkUnitsAccessModel defines the permissions used to authorize access
 // when getting work units (e.g. Get or BatchGetWorkUnits).
-var GetWorkUnitsAccessModel = QueryWorkUnitAccessOptions{
-	Full:                 rdbperms.PermGetWorkUnit,          // At root invocation level
-	Limited:              rdbperms.PermListLimitedWorkUnits, // At root invocation level
-	UpgradeLimitedToFull: rdbperms.PermGetWorkUnit,          // At work unit level
+var GetWorkUnitsAccessModel = VerifyWorkUnitAccessOptions{
+	Full:                 []realms.Permission{rdbperms.PermGetWorkUnit},          // At root invocation level
+	Limited:              []realms.Permission{rdbperms.PermListLimitedWorkUnits}, // At root invocation level
+	UpgradeLimitedToFull: []realms.Permission{rdbperms.PermGetWorkUnit},          // At work unit level
 }
 
 // GetArtifactsAccessModel defines the permissions used to authorize access
 // when getting artifacts (e.g. GetArtifact).
-var GetArtifactsAccessModel = QueryWorkUnitAccessOptions{
-	Full:                 rdbperms.PermGetArtifact,          // At root invocation level
-	Limited:              rdbperms.PermListLimitedArtifacts, // At root invocation level
-	UpgradeLimitedToFull: rdbperms.PermGetArtifact,          // At work unit level
+var GetArtifactsAccessModel = VerifyWorkUnitAccessOptions{
+	Full:                 []realms.Permission{rdbperms.PermGetArtifact},          // At root invocation level
+	Limited:              []realms.Permission{rdbperms.PermListLimitedArtifacts}, // At root invocation level
+	UpgradeLimitedToFull: []realms.Permission{rdbperms.PermGetArtifact},          // At work unit level
 }
 
 // ListArtifactsAccessModel defines the permissions used to authorize access
 // when listing artifacts (e.g. ListArtifacts).
-var ListArtifactsAccessModel = QueryWorkUnitAccessOptions{
-	Full:                 rdbperms.PermListArtifacts,        // At root invocation level
-	Limited:              rdbperms.PermListLimitedArtifacts, // At root invocation level
-	UpgradeLimitedToFull: rdbperms.PermGetArtifact,          // At work unit level
+var ListArtifactsAccessModel = VerifyWorkUnitAccessOptions{
+	Full:                 []realms.Permission{rdbperms.PermListArtifacts},        // At root invocation level
+	Limited:              []realms.Permission{rdbperms.PermListLimitedArtifacts}, // At root invocation level
+	UpgradeLimitedToFull: []realms.Permission{rdbperms.PermGetArtifact},          // At work unit level
 }
 
-// QueryWorkUnitAccess determines the access the user has to the given work unit.
+// ListAggregatesAccessModel defines the permissions used to authorize access
+// when listing test aggregations (e.g. QueryTestAggregations).
+var ListAggregatesAccessModel = VerifyWorkUnitAccessOptions{
+	// Need ListWorkUnits because test aggregations include module aggregations,
+	// which rely on the work unit's module and status fields.
+	Full: []realms.Permission{ // At root invocation level
+		rdbperms.PermListWorkUnits,
+		rdbperms.PermListTestResults,
+		rdbperms.PermListTestExonerations,
+	},
+	Limited: []realms.Permission{ // At root invocation level
+		rdbperms.PermListLimitedWorkUnits,
+		rdbperms.PermListLimitedTestResults,
+		rdbperms.PermListLimitedTestExonerations,
+	},
+	UpgradeLimitedToFull: []realms.Permission{ // At work unit level
+		rdbperms.PermGetWorkUnit,
+		rdbperms.PermGetTestResult,
+		rdbperms.PermGetTestExoneration,
+	},
+}
+
+// VerifyWorkUnitAccess determines the access the user has to a work unit or work
+// unit-scoped resource, such as test results, test artifacts or test exonerations.
+// It further verifies that the user has at least the `minimumAccessLevel` specified.
 //
 // A NotFound appstatus error is returned if the root invocation is not found (thereby
 // disclosing its existence, even to unauthenticated callers). A NotFound appstatus error
 // may also be returned if the work unit is not found, if it was necessary to check the
 // work unit realm.
-func QueryWorkUnitAccess(ctx context.Context, id workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevel AccessLevel, err error) {
-	result, err := QueryWorkUnitsAccess(ctx, []workunits.ID{id}, opts)
+//
+// If the required permission level is not attained for each work unit, a PermissionDenied
+// appstatus error is returned.
+func VerifyWorkUnitAccess(ctx context.Context, id workunits.ID, opts VerifyWorkUnitAccessOptions, minimumAccessLevel AccessLevel) (accessLevel AccessLevel, err error) {
+	result, err := VerifyWorkUnitsAccess(ctx, []workunits.ID{id}, opts, minimumAccessLevel)
 	if err != nil {
 		return NoAccess, err
 	}
 	return result[0], nil
 }
 
-// QueryWorkUnitsAccess determines the access the user has to the given work units.
-// All work units must belong to the same root invocation.
+// VerifyWorkUnitsAccess determines the access the user has to work units or work
+// unit-scoped resources, such as test results, test artifacts or test exonerations.
+// It further verifies that for each work unit, this access is at least the
+// `minimumAccessLevel` specified.
+//
+// All work units IDs specified must belong to the same root invocation. As the user
+// needs access to the root invocation to access its work units, this method also checks
+// access to the root invocation.
+//
+// To operate correctly, this method requires the correct permission set to be specified
+// via `opts`, according to the resource for which access is ultimately being verified
+// (e.g. test results, test artifacts, test exonerations, work units...).
 //
 // A NotFound appstatus error is returned if the root invocation is not found (thereby
 // disclosing its existence, even to unauthenticated callers). A NotFound appstatus error
 // may also be returned if any work unit is not found, if it was necessary to check the
 // work unit realm.
-func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWorkUnitAccessOptions) (accessLevels []AccessLevel, err error) {
-	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/permissions.QueryWorkUnitsAccess")
+//
+// If the required permission level is not attained for each work unit, a PermissionDenied
+// appstatus error is returned.
+func VerifyWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts VerifyWorkUnitAccessOptions, minimumAccessLevel AccessLevel) (accessLevels []AccessLevel, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/permissions.VerifyWorkUnitsAccess")
 	defer func() { tracing.End(ts, err) }()
 
 	if len(ids) == 0 {
@@ -191,7 +232,7 @@ func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWor
 	}
 
 	// Note: HasPermission does not make RPCs.
-	allowed, err := auth.HasPermission(ctx, opts.Full, rootInvRealm, nil)
+	allowed, err := hasAllPermissions(ctx, rootInvRealm, opts.Full...)
 	if err != nil {
 		// Some sort of internal error doing the permission check.
 		return nil, err
@@ -200,35 +241,211 @@ func QueryWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts QueryWor
 		// Break out early, we have full access to all work units.
 		return repeatAccessLevel(FullAccess, len(ids)), nil
 	}
-	allowed, err = auth.HasPermission(ctx, opts.Limited, rootInvRealm, nil)
+
+	allowed, err = hasAllPermissions(ctx, rootInvRealm, opts.Limited...)
 	if err != nil {
 		// Some sort of internal error doing the permission check.
 		return nil, err
 	}
-	if allowed {
-		// We have limited access. Try to see if we can upgrade it to full access.
-		workUnitRealms, err := workunits.ReadRealms(ctx, ids)
+	if !allowed {
+		if minimumAccessLevel != NoAccess {
+			return nil, noRootInvocationAccessError(ids[0].RootInvocationID, opts)
+		}
+		return repeatAccessLevel(NoAccess, len(ids)), nil
+	}
+	// We have limited access. Try to see if we can upgrade it to full access.
+	workUnitRealms, err := workunits.ReadRealms(ctx, ids)
+	if err != nil {
+		// If any work unit is not found, returns NotFound appstatus error.
+		return nil, err
+	}
+
+	accessLevels = make([]AccessLevel, len(ids))
+	for i, id := range ids {
+		allowed, err := hasAllPermissions(ctx, workUnitRealms[id], opts.UpgradeLimitedToFull...)
 		if err != nil {
-			// If any work unit is not found, returns NotFound appstatus error.
+			// Some sort of internal error doing the permission check.
 			return nil, err
 		}
-
-		accessLevels = make([]AccessLevel, len(ids))
-		for i, id := range ids {
-			allowed, err := auth.HasPermission(ctx, opts.UpgradeLimitedToFull, workUnitRealms[id], nil)
-			if err != nil {
-				// Some sort of internal error doing the permission check.
-				return nil, err
+		if allowed {
+			accessLevels[i] = FullAccess
+		} else {
+			if minimumAccessLevel == FullAccess {
+				return nil, noUpgradeAccessError(id, workUnitRealms[id], opts)
 			}
-			if allowed {
-				accessLevels[i] = FullAccess
-			} else {
-				accessLevels[i] = LimitedAccess
-			}
+			accessLevels[i] = LimitedAccess
 		}
-		return accessLevels, nil
 	}
-	return repeatAccessLevel(NoAccess, len(ids)), nil
+	return accessLevels, nil
+}
+
+// RootInvocationAccess represents the access level of the user has to
+// the requested work unit-scoped resources (test results, artifacts,
+// exonerations, etc.) in a root invocation.
+//
+// This can be passed to test aggregation and test verdict queries
+// to inform the result masking that needs to occur.
+type RootInvocationAccess struct {
+	// The level of access to the root invocation.
+	//
+	// If this is Full, the user has full access to all (test
+	// results / artifacts / exonerations) in the root invocation.
+	//
+	// If this is Limited, the user has limited access to all (test
+	// results / artifacts / exonerations), upgraded to full access only
+	// for resources in a work unit that has a realm listed under `Realms`.
+	Level AccessLevel
+	// The work unit realms the user has full access to.
+	// IMPORTANT: This is only set if `Level` is Limited.
+	Realms []string
+}
+
+// VerifyAllWorkUnitsAccess determines the access the user has a work unit-scoped
+// resource (e.g. test results, test artifacts, test exonerations)
+// in a root invocation. It further verifies that this access is at least the
+// `minimumAccessLevel` specified.
+//
+// As the user needs access to the root invocation to access its work units, this
+// method also checks access to the root invocation.
+//
+// To operate correctly, this method requires the correct permission set to be specified
+// via `opts`, according to the resource for which access is ultimately being verified
+// (e.g. test results, test artifacts, work units...).
+//
+// A NotFound appstatus error is returned if the root invocation is not found (thereby
+// disclosing its existence, even to unauthenticated callers).
+//
+// If the required permission level is not attained for each work unit, a PermissionDenied
+// appstatus error is returned.
+func VerifyAllWorkUnitsAccess(ctx context.Context, id rootinvocations.ID, opts VerifyWorkUnitAccessOptions, minimumAccessLevel AccessLevel) (result RootInvocationAccess, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/permissions.VerifyAllWorkUnitsAccess")
+	defer func() { tracing.End(ts, err) }()
+
+	rootInvRealm, err := rootinvocations.ReadRealm(ctx, id)
+	if err != nil {
+		// If the root invocation is not found, returns NotFound appstatus error.
+		return RootInvocationAccess{}, err
+	}
+
+	// Note: HasPermission does not make RPCs.
+	allowed, err := hasAllPermissions(ctx, rootInvRealm, opts.Full...)
+	if err != nil {
+		// Some sort of internal error doing the permission check.
+		return RootInvocationAccess{}, err
+	}
+	if allowed {
+		// Break out early, we have full access to the root invocation
+		// and its work units.
+		return RootInvocationAccess{Level: FullAccess}, nil
+	}
+
+	if minimumAccessLevel == FullAccess {
+		// We required full access and we don't have it. Break out early.
+		//
+		// The approach we take in VerifyWorkUnitsAccess where we try
+		// to see if we have limited access to the root invocation and can
+		// upgrade limited access to full access for given work units
+		// is not viable here, as it is not data-race safe (new work units
+		// may be added after we queried all work units realms above).
+		return RootInvocationAccess{}, noFullRootInvocationAccessError(id, opts)
+	}
+
+	// At this point the user does not have full access, could they have
+	// limited access?
+	allowed, err = hasAllPermissions(ctx, rootInvRealm, opts.Limited...)
+	if err != nil {
+		// Some sort of internal error doing the permission check.
+		return RootInvocationAccess{}, err
+	}
+	if !allowed {
+		// Break out early, we have no access to the root invocation or
+		// its work units.
+		if minimumAccessLevel != NoAccess {
+			return RootInvocationAccess{}, noRootInvocationAccessError(id, opts)
+		}
+		return RootInvocationAccess{Level: NoAccess}, nil
+	}
+
+	// The user has limited access to the root invocation.
+	uniqueRealms, err := workunits.ReadAllRealms(ctx, id)
+	if err != nil {
+		return RootInvocationAccess{}, err
+	}
+	allowedRealms := make([]string, 0, len(uniqueRealms))
+	// Check if the user has full access to any of the work units.
+	for _, realm := range uniqueRealms {
+		allowed, err := hasAllPermissions(ctx, realm, opts.UpgradeLimitedToFull...)
+		if err != nil {
+			// Some sort of internal error doing the permission check.
+			return RootInvocationAccess{}, err
+		}
+		if allowed {
+			allowedRealms = append(allowedRealms, realm)
+		}
+	}
+	return RootInvocationAccess{Level: LimitedAccess, Realms: allowedRealms}, nil
+}
+
+// noRootInvocationAccessError returns a PermissionDenied appstatus error
+// indicating that the user has no access to a root invocation.
+func noRootInvocationAccessError(id rootinvocations.ID, opts VerifyWorkUnitAccessOptions) error {
+	// There are two access paths: limited access and full access. Neither were satisfied.
+	if len(opts.Full) == 1 && len(opts.Limited) == 1 {
+		return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s (or %s) in realm of root invocation %q", opts.Full[0], opts.Limited[0], id.Name())
+	}
+	return appstatus.Errorf(codes.PermissionDenied, "caller does not have permissions %s (or %s) in realm of root invocation %q",
+		permissionsList(opts.Limited...), permissionsList(opts.Full...), id.Name())
+}
+
+// noFullRootInvocationAccessError returns a PermissionDenied appstatus error
+// indicating that the user does not have full access to a root invocation.
+func noFullRootInvocationAccessError(id rootinvocations.ID, opts VerifyWorkUnitAccessOptions) error {
+	// There are two access paths: limited access and full access. Neither were satisfied.
+	if len(opts.Full) == 1 {
+		return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s in realm of root invocation %q", opts.Full[0], id.Name())
+	}
+	return appstatus.Errorf(codes.PermissionDenied, "caller does not have permissions %s in realm of root invocation %q",
+		permissionsList(opts.Full...), id.Name())
+}
+
+// noUpgradeAccessError returns a PermissionDenied appstatus error
+// indicating the user does not have permission to upgrade limited access to
+// full access.
+func noUpgradeAccessError(id workunits.ID, realm string, opts VerifyWorkUnitAccessOptions) error {
+	// Unlike root invocation errors, where we do not disclose the realm, this permission
+	// error is only returned if the user already has limited access to the root invocation.
+	// This is sufficient to allow us to disclose the realm of the work unit.
+	if len(opts.UpgradeLimitedToFull) == 1 {
+		return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s in realm %q of work unit %q (trying to upgrade limited access to full access)", opts.UpgradeLimitedToFull[0], realm, id.Name())
+	}
+	return appstatus.Errorf(codes.PermissionDenied, "caller does not have permissions %s in realm %q of work unit %q (trying to upgrade limited access to full access)", permissionsList(opts.UpgradeLimitedToFull...), realm, id.Name())
+}
+
+// permissionsList returns a string representation of the given list of permissions.
+func permissionsList(permissions ...realms.Permission) string {
+	var permissionList strings.Builder
+	for i, permission := range permissions {
+		if i > 0 {
+			permissionList.WriteString(", ")
+		}
+		permissionList.WriteString(permission.String())
+	}
+	return fmt.Sprintf("[%s]", permissionList.String())
+}
+
+// hasAllPermissions checks if the user has all the given permissions in the given realm.
+func hasAllPermissions(ctx context.Context, realm string, permissions ...realms.Permission) (bool, error) {
+	for _, permission := range permissions {
+		allowed, err := auth.HasPermission(ctx, permission, realm, nil)
+		if err != nil {
+			// Some sort of internal error doing the permission check.
+			return false, err
+		}
+		if !allowed {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func repeatAccessLevel(accessLevel AccessLevel, n int) []AccessLevel {
@@ -243,6 +460,11 @@ func repeatAccessLevel(accessLevel AccessLevel, n int) []AccessLevel {
 // invocation names instead of an invocations.IDSet.
 // There must must be a valid Spanner transaction in the given context, which
 // may be a span.Single().
+//
+// Deprecated: this method does not produce good quality error messages as
+// the request field name corresponding to `invNames` is not known. Callers
+// should parse the invocation names themselves and call VerifyInvocations
+// directly.
 func VerifyInvocationsByName(ctx context.Context, invNames []string, permissions ...realms.Permission) error {
 	ids, err := invocations.ParseNames(invNames)
 	if err != nil {
@@ -255,6 +477,11 @@ func VerifyInvocationsByName(ctx context.Context, invNames []string, permissions
 // an invocation name instead of an invocations.ID.
 // There must must be a valid Spanner transaction in the given context, which
 // may be a span.Single().
+//
+// Deprecated: this method does not produce good quality error messages as
+// the request field name corresponding to `invName` is not known. Callers
+// should parse the invocation names themselves and call VerifyInvocation
+// directly.
 func VerifyInvocationByName(ctx context.Context, invName string, permissions ...realms.Permission) error {
 	return VerifyInvocationsByName(ctx, []string{invName}, permissions...)
 }

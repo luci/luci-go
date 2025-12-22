@@ -231,7 +231,7 @@ func TestGetArtifact(t *testing.T) {
 			req := &pb.GetArtifactRequest{Name: "rootInvocations/inv-v2-secret/workUnits/root/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.get or resultdb.artifacts.listLimited"))
+			assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.artifacts.get (or resultdb.artifacts.listLimited) in realm of root invocation "rootInvocations/inv-v2-secret"`))
 		})
 
 		t.Run(`Not found V2`, func(t *ftt.Test) {
