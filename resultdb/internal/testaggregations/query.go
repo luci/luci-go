@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -46,6 +47,8 @@ type SingleLevelQuery struct {
 	Level pb.AggregationLevel
 	// The prefix of test identifiers to filter by. Optional.
 	TestPrefixFilter *pb.TestIdentifierPrefix
+	// The access the caller has to the root invocation.
+	Access permissions.RootInvocationAccess
 	// The number of test aggregations to return per page.
 	PageSize int
 	// Whether to use UI sort order, i.e. by ui_priority first, instead of by test ID.
@@ -93,6 +96,10 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 			Level: q.Level,
 			Id:    &pb.TestIdentifier{},
 		}
+		// Preserve the original variant slice, to distinguish nil (masked) from empty.
+		// b.FromSpanner treats both the same, in part because legacy writes prior to
+		// the introduction of the TestResultsV2 and WorkUnits data model might do either.
+		var variant []string
 		var uiPriority int64
 		var moduleStatus int64
 		var moduleStatusCounts moduleStatusCounts
@@ -114,7 +121,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 				&prefix.Id.ModuleName,
 				&prefix.Id.ModuleScheme,
 				&prefix.Id.ModuleVariantHash,
-				&prefix.Id.ModuleVariant,
+				&variant,
 				&uiPriority,
 				&moduleStatus,
 			}
@@ -130,7 +137,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 				&prefix.Id.ModuleScheme,
 				&prefix.Id.ModuleVariantHash,
 				&prefix.Id.CoarseName,
-				&prefix.Id.ModuleVariant,
+				&variant,
 				&uiPriority,
 			}
 			columns = append(columns, columnsForVerdictCounts(&verdictCounts)...)
@@ -146,7 +153,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 				&prefix.Id.ModuleVariantHash,
 				&prefix.Id.CoarseName,
 				&prefix.Id.FineName,
-				&prefix.Id.ModuleVariant,
+				&variant,
 				&uiPriority,
 			}
 			columns = append(columns, columnsForVerdictCounts(&verdictCounts)...)
@@ -157,6 +164,13 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 			nextFinerLevel = pb.AggregationLevel_CASE
 		default:
 			return fmt.Errorf("unknown aggregation level: %v", q.Level)
+		}
+
+		if variant != nil {
+			prefix.Id.ModuleVariant, err = pbutil.VariantFromStrings(variant)
+			if err != nil {
+				return err
+			}
 		}
 
 		agg := &pb.TestAggregation{
@@ -251,8 +265,9 @@ func findNextFinerLevel(cfg *config.CompiledServiceConfig, scheme string, curren
 
 func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, error) {
 	params := map[string]any{
-		"shards":   q.RootInvocationID.AllShardIDs(),
-		"pageSize": q.PageSize,
+		"shards":        q.RootInvocationID.AllShardIDs(),
+		"pageSize":      q.PageSize,
+		"upgradeRealms": q.Access.Realms,
 	}
 
 	whereClause := "TRUE"
@@ -281,6 +296,7 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 		OrderByColumns:   orderByColumns(q.Order, q.Level),
 		WhereClause:      whereClause,
 		PaginationClause: paginationClause,
+		FullAccess:       q.Access.Level == permissions.FullAccess,
 		ResultStatuses: testResultStatusDefinitions{
 			Passed:           int64(pb.TestResult_PASSED),
 			Failed:           int64(pb.TestResult_FAILED),
@@ -348,12 +364,36 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				-- in the group by to improve performance (this makes the GROUP BY columns a primary key prefix).
 				GROUP BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
 {{end}}
+{{define "TestResults"}}
+				-- Test Results.
+				SELECT
+					*,
+				-- Provide masked versions of fields to support filtering on them in the query one level up.
+				{{if eq .FullAccess true}}
+					-- Directly alias the columns if full access is granted. This can provide
+					-- a performance boost as predicates can be pushed down to the storage layer.
+					ModuleVariant AS ModuleVariantMasked,
+					Tags AS TagsMasked,
+					TestMetadataName AS TestMetadataNameMasked,
+					TestMetadataLocationRepo AS TestMetadataLocationRepoMasked,
+					TestMetadataLocationFileName AS TestMetadataLocationFileNameMasked,
+				{{else}}
+					-- User has limited acccess by default.
+					IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL) AS ModuleVariantMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), Tags, NULL) AS TagsMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataName, NULL) AS TestMetadataNameMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataLocationRepo, NULL) AS TestMetadataLocationRepoMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataLocationFileName, NULL) AS TestMetadataLocationFileNameMasked,
+				{{end}}
+				FROM TestResultsV2
+				WHERE (RootInvocationShardId IN UNNEST(@shards)) AND {{.WhereClause}}
+{{end}}
 {{define "Verdicts"}}
 			-- Verdicts.
 			SELECT
 				RootInvocationShardId,
 				ModuleName,	ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName,
-				ANY_VALUE(TR.ModuleVariant) AS ModuleVariant,
+				ANY_VALUE(ModuleVariantMasked) AS ModuleVariantMasked,
 				(CASE
 					WHEN COUNTIF(TR.StatusV2 = {{.ResultStatuses.Passed}}) = 0 AND COUNTIF(TR.StatusV2 = {{.ResultStatuses.Failed}}) > 0 THEN {{.VerdictStatuses.Failed}} -- Failed
 					WHEN COUNTIF(TR.StatusV2 = {{.ResultStatuses.Passed}}) > 0 AND COUNTIF(TR.StatusV2 = {{.ResultStatuses.Failed}}) > 0 THEN {{.VerdictStatuses.Flaky}} -- Flaky
@@ -367,12 +407,12 @@ var queryTmpl = template.Must(template.New("").Parse(`
 					ELSE {{.VerdictStatuses.Precluded}} -- Precluded
 					END) AS VerdictStatus,
 				ANY_VALUE(E.T3CaseName IS NOT NULL) AS IsExonerated
-			FROM TestResultsV2 TR
+			FROM ({{template "TestResults" .}}
+			) TR
 			LEFT JOIN@{JOIN_METHOD=MERGE_JOIN} ({{template "Exonerations" .}}
 			-- A given full test identifier will only appear in one shard, so we include RootInvocationShardId
 			-- in the join key to improve performance.
 			) E USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
-			WHERE (RootInvocationShardId IN UNNEST(@shards)) AND {{.WhereClause}}
 			-- A given full test identifier will only appear in one shard, so we include RootInvocationShardId
 			-- in the group by to improve performance (this makes the GROUP BY columns a primary key prefix).
 			GROUP BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
@@ -382,10 +422,10 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		-- shard before before the results are combined via a distributed union.
 		SELECT
 			RootInvocationShardId,
-			{{if ne .AggregateColumns ""}}
+		{{if ne .AggregateColumns ""}}
 			{{.AggregateColumns}},
-			ANY_VALUE(ModuleVariant) AS ModuleVariant,
-			{{end}}
+			ANY_VALUE(ModuleVariantMasked) AS ModuleVariantMasked,
+		{{end}}
 			COUNTIF(VerdictStatus = {{.VerdictStatuses.Passed}}) AS Passed,
 			COUNTIF(VerdictStatus = {{.VerdictStatuses.Failed}} AND NOT IsExonerated) AS Failed,
 			COUNTIF(VerdictStatus = {{.VerdictStatuses.Flaky}} AND NOT IsExonerated) AS Flaky,
@@ -417,10 +457,10 @@ var queryTmpl = template.Must(template.New("").Parse(`
 {{define "TestAggregations"}}
 	-- Test aggregations.
 	SELECT
-		{{if ne .AggregateColumns ""}}
+	{{if ne .AggregateColumns ""}}
 		{{.AggregateColumns}},
-		ANY_VALUE(ModuleVariant) AS ModuleVariant,
-		{{end}}
+		ANY_VALUE(ModuleVariantMasked) AS ModuleVariantMasked,
+	{{end}}
 		MAX(UIPriority) AS UIPriority,
 		SUM(Passed) AS Passed,
 		SUM(Failed) AS Failed,
@@ -442,7 +482,12 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				ModuleName,
 				ModuleScheme,
 				ModuleVariantHash,
-				ANY_VALUE(ModuleVariant) AS ModuleVariant,
+			{{if eq .FullAccess true}}
+				ANY_VALUE(ModuleVariant) AS ModuleVariantMasked,
+			{{else}}
+				-- User has limited acccess by default.
+				ANY_VALUE(IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL)) AS ModuleVariantMasked,
+			{{end}}
 				ModuleShardKey,
 				-- Aggregate from root work units to shards.
 				-- SUCCEEDED > RUNNING > PENDING > SKIPPED > FAILED > CANCELLED.
@@ -466,7 +511,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			ModuleName,
 			ModuleScheme,
 			ModuleVariantHash,
-			ANY_VALUE(ModuleVariant) AS ModuleVariant,
+			ANY_VALUE(ModuleVariantMasked) AS ModuleVariantMasked,
 			-- Aggregate from shards to modules.
 			-- FAILED > RUNNING > PENDING > CANCELLED > SUCCEEDED > SKIPPED.
 			(CASE
@@ -499,7 +544,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		M.ModuleName,
 		M.ModuleScheme,
 		M.ModuleVariantHash,
-		M.ModuleVariant,
+		M.ModuleVariantMasked,
 		GREATEST(M.UIPriority, COALESCE(TA.UIPriority, 0)) AS UIPriority,
 		M.ModuleStatus,
 		COALESCE(TA.Passed, 0) AS Passed,
@@ -636,6 +681,9 @@ type templateParameters struct {
 	WhereClause string
 	// The WHERE clause to apply to the final query for pagination purposes.
 	PaginationClause string
+	// Whether the user has full access to the test results, exonerations and work units.
+	// If this is false, it is assumed the user has at least limited (masked) access to all of them.
+	FullAccess bool
 
 	ResultStatuses   testResultStatusDefinitions
 	VerdictStatuses  verdictStatusDefinitions

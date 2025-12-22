@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -51,7 +52,10 @@ func TestQuery(t *testing.T) {
 		query := &SingleLevelQuery{
 			RootInvocationID: rootInvID,
 			Level:            pb.AggregationLevel_FINE,
-			PageSize:         100,
+			Access: permissions.RootInvocationAccess{
+				Level: permissions.FullAccess,
+			},
+			PageSize: 100,
 		}
 
 		fetchAll := func(query *SingleLevelQuery) []*pb.TestAggregation {
@@ -77,21 +81,30 @@ func TestQuery(t *testing.T) {
 		}
 
 		t.Run("Root Invocation Level", func(t *ftt.Test) {
+			query.Level = pb.AggregationLevel_INVOCATION
+
 			expected := ExpectedRootInvocationAggregation()
 
-			query.Level = pb.AggregationLevel_INVOCATION
-			aggs, nextToken, err := query.Fetch(span.Single(ctx), "")
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, nextToken, should.Equal(""))
-			assert.Loosely(t, aggs, should.HaveLength(1))
-			assert.Loosely(t, aggs[0], should.Match(expected))
+			t.Run("Baseline", func(t *ftt.Test) {
+				aggs, nextToken, err := query.Fetch(span.Single(ctx), "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, nextToken, should.Equal(""))
+				assert.Loosely(t, aggs, should.HaveLength(1))
+				assert.Loosely(t, aggs[0], should.Match(expected))
+			})
+			t.Run("Limited access", func(t *ftt.Test) {
+				// Should make no difference as this only relies on information
+				// that is visible to limited users.
+				query.Access.Level = permissions.LimitedAccess
+				assert.Loosely(t, fetchAll(query), should.Match([]*pb.TestAggregation{expected}))
+			})
 		})
 
 		t.Run("Module Level", func(t *ftt.Test) {
 			query.Level = pb.AggregationLevel_MODULE
 
-			t.Run("Default sorting", func(t *ftt.Test) {
-				expected := ExpectedModuleAggregationsIDOrder()
+			expected := ExpectedModuleAggregationsIDOrder()
+			t.Run("Baseline", func(t *ftt.Test) {
 				t.Run("Without pagination", func(t *ftt.Test) {
 					query.PageSize = 7 // More than large enough for all modules.
 					aggs, nextToken, err := query.Fetch(span.Single(ctx), "")
@@ -142,13 +155,23 @@ func TestQuery(t *testing.T) {
 					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
 			})
+			t.Run("With limited access", func(t *ftt.Test) {
+				query.Access.Level = permissions.LimitedAccess
+				query.Access.Realms = []string{"testdata:m3-s2"}
+				for _, item := range expected {
+					if item.Id.Id.ModuleName != "m3" {
+						item.Id.Id.ModuleVariant = nil
+					}
+				}
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
+			})
 		})
 
 		t.Run("Coarse Level", func(t *ftt.Test) {
 			query.Level = pb.AggregationLevel_COARSE
+			expected := ExpectedCoarseAggregationsIDOrder()
 
-			t.Run("Default sorting", func(t *ftt.Test) {
-				expected := ExpectedCoarseAggregationsIDOrder()
+			t.Run("Baseline", func(t *ftt.Test) {
 				t.Run("Without pagination", func(t *ftt.Test) {
 					query.PageSize = 5 // Enough for all items, plus one.
 					aggs, nextToken, err := query.Fetch(span.Single(ctx), "")
@@ -200,13 +223,23 @@ func TestQuery(t *testing.T) {
 					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
 			})
+			t.Run("With limited access", func(t *ftt.Test) {
+				query.Access.Level = permissions.LimitedAccess
+				query.Access.Realms = []string{"testdata:m3-s2"}
+				for _, item := range expected {
+					if item.Id.Id.ModuleName != "m3" {
+						item.Id.Id.ModuleVariant = nil
+					}
+				}
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
+			})
 		})
 
 		t.Run("Fine level", func(t *ftt.Test) {
 			query.Level = pb.AggregationLevel_FINE
+			expected := ExpectedFineAggregationsIDOrder()
 
-			t.Run("Default sorting", func(t *ftt.Test) {
-				expected := ExpectedFineAggregationsIDOrder()
+			t.Run("Baseline", func(t *ftt.Test) {
 				t.Run("Without pagination", func(t *ftt.Test) {
 					query.PageSize = 7 // More than large enough for all items.
 					aggs, nextToken, err := query.Fetch(span.Single(ctx), "")
@@ -264,6 +297,16 @@ func TestQuery(t *testing.T) {
 					expected = expected[1:2]
 					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
+			})
+			t.Run("With limited access", func(t *ftt.Test) {
+				query.Access.Level = permissions.LimitedAccess
+				query.Access.Realms = []string{"testdata:m3-s2"}
+				for _, item := range expected {
+					if item.Id.Id.ModuleName != "m3" {
+						item.Id.Id.ModuleVariant = nil
+					}
+				}
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 		})
 	})

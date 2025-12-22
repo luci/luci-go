@@ -51,12 +51,12 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 		// M3: Should be marked failed since one shard failed. This is despite one succeeding,
 		// another still being in progress, one being cancelled, one being pending, and one
 		// being skipped.
-		workunits.NewBuilder(rootInvID, "wu-m3-s1").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s1").WithState(pb.WorkUnit_FAILED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s2").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s2").WithState(pb.WorkUnit_RUNNING).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s3").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s3").WithState(pb.WorkUnit_SKIPPED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s4").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s4").WithState(pb.WorkUnit_SUCCEEDED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s5").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s5").WithState(pb.WorkUnit_CANCELLED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m3-s6").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s6").WithState(pb.WorkUnit_PENDING).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s1").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s1").WithState(pb.WorkUnit_FAILED).WithRealm("testdata:m3-s1").Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s2").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s2").WithState(pb.WorkUnit_RUNNING).WithRealm("testdata:m3-s2").Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s3").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s3").WithState(pb.WorkUnit_SKIPPED).WithRealm("testdata:m3-s3").Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s4").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s4").WithState(pb.WorkUnit_SUCCEEDED).WithRealm("testdata:m3-s4").Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s5").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s5").WithState(pb.WorkUnit_CANCELLED).WithRealm("testdata:m3-s5").Build(),
+		workunits.NewBuilder(rootInvID, "wu-m3-s6").WithModuleID(moduleID("m3", "flat")).WithModuleShardKey("s6").WithState(pb.WorkUnit_PENDING).WithRealm("testdata:m3-s6").Build(),
 		// M4: Should be marked pending, despite an earlier failure.
 		workunits.NewBuilder(rootInvID, "wu-m4-a1").WithModuleID(moduleID("m4", "junit")).WithState(pb.WorkUnit_PENDING).Build(),
 		workunits.NewBuilder(rootInvID, "wu-m4-a2").WithModuleID(moduleID("m4", "junit")).WithState(pb.WorkUnit_FAILED).Build(),
@@ -97,7 +97,7 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 		// Execution Errored
 		baseBuilder().WithModuleName("m2").WithModuleScheme("noconfig").WithCaseName("execution_errored_test").WithStatusV2(pb.TestResult_EXECUTION_ERRORED).Build(),
 		// Precluded
-		baseBuilder().WithModuleName("m3").WithModuleScheme("flat").WithCoarseName("").WithFineName("").WithCaseName("precluded_test").WithStatusV2(pb.TestResult_PRECLUDED).Build(),
+		baseBuilder().WithModuleName("m3").WithModuleScheme("flat").WithCoarseName("").WithFineName("").WithCaseName("precluded_test").WithStatusV2(pb.TestResult_PRECLUDED).WithRealm("testdata:m3-s2").Build(),
 	}
 	exonerations := []*testexonerationsv2.TestExonerationRow{
 		// Exonerate one of the failed tests

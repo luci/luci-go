@@ -22,16 +22,14 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testaggregations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 // QueryTestAggregations implements pb.ResultDBServer. Refer to
@@ -42,7 +40,8 @@ func (s *resultDBServer) QueryTestAggregations(ctx context.Context, req *pb.Quer
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	if err := verifyQueryTestAggregationsAccess(ctx, req); err != nil {
+	access, err := verifyQueryTestAggregationsAccess(ctx, req)
+	if err != nil {
 		// Already returns appropriate appstatus-annotated error.
 		return nil, err
 	}
@@ -63,6 +62,7 @@ func (s *resultDBServer) QueryTestAggregations(ctx context.Context, req *pb.Quer
 		RootInvocationID: rootInvID,
 		Level:            req.Predicate.AggregationLevel,
 		TestPrefixFilter: req.Predicate.TestPrefixFilter,
+		Access:           access,
 		PageSize:         pageSize,
 		Order:            order,
 	}
@@ -81,34 +81,17 @@ func (s *resultDBServer) QueryTestAggregations(ctx context.Context, req *pb.Quer
 // verifyQueryTestAggregationsAccess validates the caller has permission
 // to list work units, test results and test exonerations in the realm
 // of the root invocation.
-func verifyQueryTestAggregationsAccess(ctx context.Context, req *pb.QueryTestAggregationsRequest) error {
+func verifyQueryTestAggregationsAccess(ctx context.Context, req *pb.QueryTestAggregationsRequest) (permissions.RootInvocationAccess, error) {
 	rootInvID, err := rootinvocations.ParseName(req.Parent)
 	if err != nil {
-		return appstatus.Errorf(codes.InvalidArgument, "parent: %s", err)
+		return permissions.RootInvocationAccess{}, appstatus.Errorf(codes.InvalidArgument, "parent: %s", err)
 	}
-
-	realm, err := rootinvocations.ReadRealm(ctx, rootInvID)
+	result, err := permissions.VerifyAllWorkUnitsAccess(ctx, rootInvID, permissions.ListAggregatesAccessModel, permissions.LimitedAccess)
 	if err != nil {
-		return err
+		// PermissionDenied appstatus error or internal error.
+		return permissions.RootInvocationAccess{}, err
 	}
-
-	// For now, always require full access to the root invocation.
-	// TODO(b/467143483): support limited access with masking of the returned module variants.
-	permissions := []realms.Permission{
-		rdbperms.PermListWorkUnits,
-		rdbperms.PermListTestResults,
-		rdbperms.PermListTestExonerations,
-	}
-	for _, perm := range permissions {
-		allowed, err := auth.HasPermission(ctx, perm, realm, nil)
-		if err != nil {
-			return err
-		}
-		if !allowed {
-			return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %q in realm %q", perm, realm)
-		}
-	}
-	return nil
+	return result, nil
 }
 
 // validateQueryTestAggregationsRequest

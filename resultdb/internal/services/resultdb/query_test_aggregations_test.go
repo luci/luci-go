@@ -215,19 +215,26 @@ func TestQueryTestAggregations(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListWorkUnits)
 				_, err := srv.QueryTestAggregations(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`caller does not have permission "resultdb.workUnits.list" in realm "testproject:testrealm"`))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permissions [resultdb.workUnits.listLimited, resultdb.testResults.listLimited,`+
+					` resultdb.testExonerations.listLimited] (or [resultdb.workUnits.list, resultdb.testResults.list, resultdb.testExonerations.list])`+
+					` in realm of root invocation "rootInvocations/root-inv1"`))
 			})
 			t.Run(`Without list test results permission`, func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 				_, err := srv.QueryTestAggregations(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`caller does not have permission "resultdb.testResults.list" in realm "testproject:testrealm"`))
+
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permissions [resultdb.workUnits.listLimited, resultdb.testResults.listLimited,`+
+					` resultdb.testExonerations.listLimited] (or [resultdb.workUnits.list, resultdb.testResults.list, resultdb.testExonerations.list])`+
+					` in realm of root invocation "rootInvocations/root-inv1"`))
 			})
 			t.Run(`Without list test exonerations permission`, func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
 				_, err := srv.QueryTestAggregations(ctx, req)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`caller does not have permission "resultdb.testExonerations.list" in realm "testproject:testrealm"`))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permissions [resultdb.workUnits.listLimited, resultdb.testResults.listLimited,`+
+					` resultdb.testExonerations.listLimited] (or [resultdb.workUnits.list, resultdb.testResults.list, resultdb.testExonerations.list])`+
+					` in realm of root invocation "rootInvocations/root-inv1"`))
 			})
 		})
 
@@ -316,6 +323,42 @@ func TestQueryTestAggregations(t *testing.T) {
 				res, err = srv.QueryTestAggregations(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.Aggregations, should.Match(expected[4:]))
+			})
+			t.Run(`With limited access`, func(t *ftt.Test) {
+				authState := &authtest.FakeState{
+					Identity: "user:someone@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						// Limited access to the root invocation.
+						{Realm: "testproject:testrealm", Permission: rdbperms.PermListLimitedWorkUnits},
+						{Realm: "testproject:testrealm", Permission: rdbperms.PermListLimitedTestResults},
+						{Realm: "testproject:testrealm", Permission: rdbperms.PermListLimitedTestExonerations},
+
+						// Ability to upgrade to full access in a realm used by a work unit contributing to module m3.
+						{Realm: "testdata:m3-s2", Permission: rdbperms.PermGetWorkUnit},
+						{Realm: "testdata:m3-s2", Permission: rdbperms.PermGetTestResult},
+						{Realm: "testdata:m3-s2", Permission: rdbperms.PermGetTestExoneration},
+					},
+				}
+				ctx = auth.WithState(ctx, authState)
+
+				res, err := srv.QueryTestAggregations(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+
+				expected := testaggregations.ExpectedModuleAggregationsIDOrder()
+				maskedResults := 0
+				unmaskedResults := 0
+				for _, a := range expected {
+					if a.Id.Id.ModuleName != "m3" {
+						a.Id.Id.ModuleVariant = nil
+						maskedResults++
+					} else {
+						unmaskedResults++
+					}
+				}
+				// For a valid test, expected some masked and some unmasked results.
+				assert.Loosely(t, maskedResults, should.BeGreaterThanOrEqual(1))
+				assert.Loosely(t, unmaskedResults, should.BeGreaterThanOrEqual(1))
+				assert.Loosely(t, res.Aggregations, should.Match(expected))
 			})
 		})
 	})
