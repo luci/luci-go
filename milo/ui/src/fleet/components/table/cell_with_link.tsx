@@ -16,8 +16,6 @@ import { GridRenderCellParams, GridValidRowModel } from '@mui/x-data-grid';
 import React from 'react';
 import { Link } from 'react-router';
 
-import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
-
 import { CellWithTooltip } from './cell_with_tooltip';
 
 const getPathnameWithParams = () => {
@@ -34,29 +32,25 @@ const getPathnameWithParams = () => {
 export function renderCellWithLink<R extends GridValidRowModel = any>(
   linkGenerator: (value: string, props: GridRenderCellParams<R>) => string,
   newTab: boolean = true,
-): (props: GridRenderCellParams) => React.ReactElement {
-  const CellWithLink = (props: GridRenderCellParams) => {
+): (props: GridRenderCellParams<R>) => React.ReactElement {
+  const CellWithLink = (props: GridRenderCellParams<R>) => {
     const { value = '' } = props;
-    const links: string[] = value.split(DIMENSION_SEPARATOR);
 
     return (
       <CellWithTooltip
         {...props}
-        value={links.map((v: string, i: number) => (
-          <React.Fragment key={v}>
-            <Link
-              key={v}
-              to={linkGenerator(v, props)}
-              state={{
-                navigatedFromLink: getPathnameWithParams(),
-              }}
-              target={newTab ? '_blank' : '_self'}
-            >
-              {v}
-            </Link>
-            {i < links.length - 1 ? DIMENSION_SEPARATOR : ''}
-          </React.Fragment>
-        ))}
+        value={
+          <Link
+            key={value}
+            to={linkGenerator(value, props)}
+            state={{
+              navigatedFromLink: getPathnameWithParams(),
+            }}
+            target={newTab ? '_blank' : '_self'}
+          >
+            {value}
+          </Link>
+        }
         tooltipTitle={value}
       />
     );

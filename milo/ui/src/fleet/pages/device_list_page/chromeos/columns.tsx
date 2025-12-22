@@ -15,10 +15,12 @@ import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_ta
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { CellWithTooltip } from '@/fleet/components/table';
+import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
+import { getStatusColor } from '@/fleet/pages/device_list_page/chromeos/dut_state';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import {
@@ -120,7 +122,7 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<
   dut_state: {
     valueGetter: (_, device) =>
       device.deviceSpec?.labels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
-    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
+    renderCell: renderChipCell(getSwarmingStateDocLinkForLabel, getStatusColor),
   },
   'label-servo_state': {
     renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),

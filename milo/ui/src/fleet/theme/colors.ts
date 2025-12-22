@@ -106,6 +106,13 @@ export const purple = {
   900: 'hsl(272, 71%, 39%)',
 } as const;
 
+export const purpleA = {
+  100: 'hsl(291, 95%, 75%)',
+  200: 'hsl(291, 96%, 62%)',
+  400: 'hsl(291, 100%, 49%)',
+  700: 'hsl(280, 100%, 50%)',
+};
+
 export const red = {
   50: 'hsl(5, 79%, 95%)',
   100: 'hsl(4, 81%, 90%)',
@@ -118,6 +125,13 @@ export const red = {
   800: 'hsl(1, 82%, 39%)',
   900: 'hsl(0, 84%, 35%)',
 } as const;
+
+export const redA = {
+  100: 'hsl(5, 100%, 75%)',
+  200: 'hsl(0, 100%, 66%)',
+  400: 'hsl(348, 100%, 55%)',
+  700: 'hsl(0, 100%, 42%)',
+};
 
 export const yellow = {
   50: 'hsl(46, 94%, 94%)',
@@ -132,6 +146,15 @@ export const yellow = {
   900: 'hsl(31, 100%, 45%)',
 } as const;
 
+export const yellowA = {
+  100: 'hsl(60, 100%, 78%)',
+  200: 'hsl(60, 100%, 50%)',
+  400: 'hsl(55, 100%, 50%)',
+  700: 'hsl(50, 100%, 50%)',
+};
+
+export const transparent = 'hsla(0, 100%, 50%, 0)';
+
 export const colors = {
   black,
   white,
@@ -144,4 +167,5 @@ export const colors = {
   grey,
   cyan,
   green,
+  transparent,
 } as const;
