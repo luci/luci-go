@@ -195,7 +195,7 @@ func Analyze(ctx context.Context, tfa *model.TestFailureAnalysis, client llm.Cli
 
 	// Schedule Test Failure verification for all GenAI suspects
 	for _, suspect := range suspectsModel {
-		if err := task.ScheduleTestFailureTask(ctx, tfa.ID, suspect.Id, datastore.KeyForObj(ctx, tfa).Encode()); err != nil {
+		if err := task.ScheduleTestFailureTask(ctx, tfa.ID, suspect.Id, datastore.KeyForObj(ctx, genaiAnalysis).Encode()); err != nil {
 			// Non-critical, just log the error
 			logging.Errorf(ctx, "Failed to schedule culprit verification task for suspect %d: %v", suspect.Id, err)
 		}
