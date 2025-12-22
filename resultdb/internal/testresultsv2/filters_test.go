@@ -29,6 +29,12 @@ func TestWhereClause(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, result, should.Equal("(TRUE)"))
 		})
+		t.Run("Test ID", func(t *ftt.Test) {
+			filter := `test_id=":module!scheme:coarse_name:fine_name#case_name"`
+			result, _, err := WhereClause(filter, "T", "tr")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal(`(ModuleName = @tr0 AND ModuleScheme = @tr1 AND T1CoarseName = @tr2 AND T2FineName = @tr3 AND T3CaseName = @tr4)`))
+		})
 		t.Run("Test ID structured", func(t *ftt.Test) {
 			filter := `test_id_structured.module_name="modulename"` +
 				` AND test_id_structured.module_scheme="modulescheme"` +
