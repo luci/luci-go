@@ -57,6 +57,10 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { WorkflowType } from '../fake_turboci_graph';
 import { ChronicleNode } from '../utils/graph_builder';
+// ?worker&url is special vite syntax to import a web worker script
+// and retrieve the URL to the script.
+// eslint-disable-next-line import/default
+import graphWorkerUrl from '../utils/graph_worker?worker&url';
 
 import { ChronicleContext } from './chronicle_context';
 import {
@@ -89,7 +93,7 @@ let graphWorkerPolicy: TrustedTypePolicy;
  * Web Workers require a sanitized script URL via the Trusted Types API
  * in order to protect against things like XSS.
  */
-function getTrustedWorkerURL(url: URL): TrustedScriptURL | URL {
+function getTrustedWorkerURL(url: string): TrustedScriptURL | URL | string {
   if (typeof window === 'undefined') return url;
 
   const tt = window.trustedTypes;
@@ -176,8 +180,7 @@ function Graph() {
     }
 
     setIsLoading(true);
-    const workerUrl = new URL('../utils/graph_worker.ts', import.meta.url);
-    const worker = new Worker(getTrustedWorkerURL(workerUrl) as URL, {
+    const worker = new Worker(getTrustedWorkerURL(graphWorkerUrl) as URL, {
       type: 'module',
     });
 

@@ -58,6 +58,14 @@ export default defineConfig(({ mode }) => {
       'process.env.BABEL_8_BREAKING': 'false',
       'process.env.BABEL_TYPES_8_BREAKING': 'false',
     },
+    // When Vite bundles imported web workers, it fails to inherit the aliases defined
+    // in tsconfig.json so we must explicitly define them again here.
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+        '@root': path.resolve(__dirname, './'),
+      },
+    },
     build: {
       outDir: path.join(baseOutDir, '/ui'),
       assetsDir: 'immutable',
