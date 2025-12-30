@@ -19,7 +19,11 @@ import {
 } from '@mui/x-data-grid';
 import { useMemo } from 'react';
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { extractDutLabel, extractDutState } from '@/fleet/utils/devices';
+import {
+  Device,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { RunAutorepair } from '../actions/autorepair/run_autorepair';
 import { CopyButton } from '../actions/copy/copy_button';
@@ -48,34 +52,37 @@ export function FleetToolbar({
   addUserVisibleColumn,
   platform,
 }: FleetToolbarProps) {
-  const selectedDuts = selectedRows.map((row) => ({
-    name: `${row.dut_name}`,
-    dutId: `${row.dut_id}`,
-    state: row.dut_state,
-    pool: row['label-pool'],
-    board: row['label-board'],
-    model: row['label-model'],
-  }));
-
   const tools: Partial<Record<Platform, React.ReactNode>> = useMemo(
     () => ({
-      [Platform.CHROMEOS]: (
-        <>
-          {selectedRows.length > 0 && (
-            <>
-              <RunAutorepair selectedDuts={selectedDuts} />
-              <CopyButton />
-              <RequestRepair selectedDuts={selectedDuts} />
-            </>
-          )}
-          <ExportButton
-            selectedRowIds={selectedRows.map((row) => `${row.id}`)}
-          />
-        </>
-      ),
+      [Platform.CHROMEOS]: (() => {
+        if (selectedRows.length === 0) {
+          return <ExportButton selectedRowIds={[]} />;
+        }
+
+        const selectedDuts = selectedRows.map((row) => ({
+          name: `${row.id}`,
+          dutId: `${row.dutId}`,
+          state: extractDutState(row as Device),
+          pool: extractDutLabel('label-pool', row as Device),
+          board: extractDutLabel('label-board', row as Device),
+          model: extractDutLabel('label-model', row as Device),
+        }));
+
+        return (
+          <>
+            <RunAutorepair selectedDuts={selectedDuts} />
+            <CopyButton />
+            <RequestRepair selectedDuts={selectedDuts} />
+            <ExportButton
+              selectedRowIds={selectedRows.map((row) => `${row.id}`)}
+            />
+          </>
+        );
+      })(),
+
       [Platform.ANDROID]: selectedRows.length > 0 && <CopyButton />,
     }),
-    [selectedDuts, selectedRows],
+    [selectedRows],
   );
 
   return (
