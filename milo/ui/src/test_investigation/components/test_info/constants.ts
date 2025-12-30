@@ -20,3 +20,25 @@ export const BISECTION_NO_ANALYSIS_TEXT =
   'No bisection analysis run for this failure.';
 export const BISECTION_DATA_INCOMPLETE_TEXT =
   'Bisection data incomplete or not started.';
+export const VIRTUAL_TARGET_PREFIXES = [
+  'aosp_cf_',
+  'cf_',
+  'cuttlestone_',
+  'gce_',
+  'widevine_rikers_devWb_protected_cf_',
+  'widevine_rikers_devWb_unprotected_cf_',
+  'widevine_rikers_dev_protected_cf_',
+  'widevine_rikers_dev_unprotected_cf_',
+  'widevine_rikers_dogfood_protected_cf_',
+  'widevine_rikers_dogfood_unprotected_cf_',
+  'widevine_rikers_release_protected_cf_',
+  'widevine_rikers_release_unprotected_cf_',
+  'wvr_devWb_protected_cf_',
+  'wvr_devWb_unprotected_cf_',
+  'wvr_dev_protected_cf_',
+  'wvr_dev_unprotected_cf_',
+  'wvr_dogfood_protected_cf_',
+  'wvr_dogfood_unprotected_cf_',
+  'wvr_release_protected_cf_',
+  'wvr_release_unprotected_cf_',
+];

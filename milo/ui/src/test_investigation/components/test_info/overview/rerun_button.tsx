@@ -30,11 +30,32 @@ import { InstructionDialog } from '@/common/components/instruction_hint/instruct
 import { pairsToPlaceholderDict } from '@/common/tools/instruction/instruction_utils';
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
+import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
 
 import {
   isAnTSInvocation,
   getInvocationTag,
 } from '../../../utils/test_info_utils';
+import { VIRTUAL_TARGET_PREFIXES } from '../constants';
+
+/**
+ * Determines if the target passed can be booted on acloud or not.
+ */
+function isVirtualTarget(targetName: string | null | undefined): boolean {
+  if (!targetName) {
+    return false;
+  }
+
+  return VIRTUAL_TARGET_PREFIXES.some((prefix) =>
+    targetName.startsWith(prefix),
+  );
+}
+
+interface AndroidBuild {
+  buildId: string;
+  buildTarget: string;
+  branch?: string;
+}
 
 function getAtestCommand(
   testVariant: OutputTestVerdict,
@@ -42,6 +63,7 @@ function getAtestCommand(
     moduleOnly?: boolean;
     omitAtest?: boolean;
     omitExtraArgs?: boolean;
+    acloudBuild?: AndroidBuild;
   },
 ): string | null {
   const moduleName = testVariant?.testIdStructured?.moduleName || undefined;
@@ -61,6 +83,22 @@ function getAtestCommand(
         command = `${command}#${testMethod}`;
       }
     }
+  }
+  const build = params?.acloudBuild;
+  if (build) {
+    if (
+      build.branch === null ||
+      build.buildTarget === null ||
+      build.buildId === null ||
+      !isVirtualTarget(build.buildTarget)
+    ) {
+      return null;
+    }
+    command =
+      `${command} --acloud-create "` +
+      `--branch ${build.branch} ` +
+      `--build-target ${build.buildTarget} ` +
+      `--build-id ${build.buildId}"`;
   }
   if (!params?.omitExtraArgs) {
     const extraArgs: string[] = [];
@@ -135,13 +173,18 @@ export function RerunButton() {
     return true;
   }, []);
 
-  // TODO(b/445811111): Add this functionality when invocation data has been migrated. For now, don't show the button option.
   /**
    * Determines whether to show the atest command for acloud. If the target is a
    * virtual target, then show the command.
    */
   const showAtestAcloudRerun = () => {
-    return false;
+    if (!showAtestRerun) {
+      return false;
+    }
+    const buildTarget = isRootInvocation(invocation)
+      ? invocation?.primaryBuild?.androidBuild?.buildTarget
+      : invocation?.properties?.primaryBuild?.buildTarget;
+    return isVirtualTarget(buildTarget);
   };
 
   const copyRerunTest = () => {
@@ -155,6 +198,18 @@ export function RerunButton() {
 
   const copyRerunModule = () => {
     const text = getAtestCommand(testVariant, { moduleOnly: true });
+    if (text) {
+      copy(text);
+    }
+    setSnackbarOpen(true);
+    handleCloseMenu();
+  };
+
+  const copyAcloudCommand = () => {
+    const primaryBuild: AndroidBuild = isRootInvocation(invocation)
+      ? invocation?.primaryBuild?.androidBuild
+      : invocation?.properties?.primaryBuild;
+    const text = getAtestCommand(testVariant, { acloudBuild: primaryBuild });
     if (text) {
       copy(text);
     }
@@ -210,7 +265,7 @@ export function RerunButton() {
                 </MenuItem>
               )}
               {showAtestAcloudRerun() && (
-                <MenuItem>
+                <MenuItem onClick={copyAcloudCommand}>
                   <Typography
                     variant="body2"
                     sx={{ fontWeight: 'bold', color: 'primary.main' }}
