@@ -67,17 +67,9 @@ export interface RriGridRow {
 }
 
 const getDateWithOverdueData = (
-  resourceRequest: ResourceRequest,
   actualDeliveryDate?: DateOnly,
   targetDeliveryDate?: DateOnly,
 ): DateWithOverdueData => {
-  if (resourceRequest.fulfillmentStatus === ResourceRequest_Status.COMPLETE) {
-    return {
-      value: toIsoString(actualDeliveryDate),
-      overdue: Duration.fromObject({ days: 0 }),
-    };
-  }
-
   const overdue =
     actualDeliveryDate && targetDeliveryDate
       ? toLuxonDateTime(actualDeliveryDate)!.diff(
@@ -205,7 +197,6 @@ export const RRI_COLUMNS = [
     },
     assignValue: (rr, row) =>
       (row.resource_request_actual_delivery_date = getDateWithOverdueData(
-        rr,
         rr.resourceRequestActualDeliveryDate,
         rr.resourceRequestTargetDeliveryDate,
       )),
@@ -225,7 +216,6 @@ export const RRI_COLUMNS = [
     },
     assignValue: (rr, row) => {
       const dateWithOverdueData = getDateWithOverdueData(
-        rr,
         rr.resourceRequestActualDeliveryDate,
         rr.resourceRequestTargetDeliveryDate,
       );
@@ -293,7 +283,6 @@ export const RRI_COLUMNS = [
     },
     assignValue: (rr, row) =>
       (row.material_sourcing_actual_delivery_date = getDateWithOverdueData(
-        rr,
         rr.procurementActualDeliveryDate,
         rr.procurementTargetDeliveryDate,
       )),
@@ -312,7 +301,6 @@ export const RRI_COLUMNS = [
     },
     assignValue: (rr, row) => {
       row.build_actual_delivery_date = getDateWithOverdueData(
-        rr,
         rr.buildActualDeliveryDate,
         rr.buildTargetDeliveryDate,
       );
@@ -332,7 +320,6 @@ export const RRI_COLUMNS = [
     },
     assignValue: (rr, row) =>
       (row.qa_actual_delivery_date = getDateWithOverdueData(
-        rr,
         rr.qaActualDeliveryDate,
         rr.qaTargetDeliveryDate,
       )),
@@ -351,7 +338,6 @@ export const RRI_COLUMNS = [
     },
     assignValue: (rr, row) =>
       (row.config_actual_delivery_date = getDateWithOverdueData(
-        rr,
         rr.configActualDeliveryDate,
         rr.configTargetDeliveryDate,
       )),
