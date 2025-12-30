@@ -111,4 +111,57 @@ describe('TestSearch', () => {
     await screen.findByText('test_id_2');
     expect(screen.queryByText('test_id_1')).not.toBeInTheDocument();
   });
+
+  it('should be resilient to errors and recover', async () => {
+    let shouldError = false;
+    jest
+      .spyOn(TestHistoryClientImpl.prototype, 'QueryTests')
+      .mockImplementation((req: QueryTestsRequest) => {
+        if (shouldError) {
+          return Promise.reject(new Error('search error'));
+        }
+        return Promise.resolve(
+          QueryTestsResponse.fromPartial({
+            testIds: [req.testIdSubstring],
+          }),
+        );
+      });
+
+    render(
+      <FakeContextProvider>
+        <TestSearch />
+      </FakeContextProvider>,
+    );
+
+    // Initial valid search
+    fireEvent.change(screen.getByTestId('search-input'), {
+      target: { value: 'test_1' },
+    });
+    act(() => jest.advanceTimersByTime(600));
+    await screen.findByText('test_1');
+
+    // Search that triggers error
+    shouldError = true;
+    fireEvent.change(screen.getByTestId('search-input'), {
+      target: { value: 'error_triggered' },
+    });
+    act(() => jest.advanceTimersByTime(600));
+
+    // Should still show 'test_1' due to placeholderData
+    await screen.findByText('test_1');
+    // Should show error message inline
+    await screen.findByText(/Error: search error/);
+    // Search input should still be visible
+    expect(screen.getByTestId('search-input')).toBeVisible();
+
+    // Recover from error
+    shouldError = false;
+    fireEvent.change(screen.getByTestId('search-input'), {
+      target: { value: 'test_2' },
+    });
+    act(() => jest.advanceTimersByTime(600));
+
+    await screen.findByText('test_2');
+    expect(screen.queryByText(/Error: search error/)).not.toBeInTheDocument();
+  });
 });

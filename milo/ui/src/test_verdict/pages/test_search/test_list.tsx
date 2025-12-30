@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Link, Typography } from '@mui/material';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { useTestHistoryClient } from '@/common/hooks/prpc_clients';
@@ -37,16 +37,13 @@ export function TestList({ project, searchQuery }: Props) {
         }),
       ),
       enabled: searchQuery !== '',
+      placeholderData: keepPreviousData,
     });
 
   const testIds = useMemo(() => {
     const testIds = data?.pages.flatMap((p) => p.testIds) || [];
     return testIds;
   }, [data]);
-
-  if (isError) {
-    throw error;
-  }
 
   return (
     <>
@@ -74,6 +71,14 @@ export function TestList({ project, searchQuery }: Props) {
       {testIds.length === 0 && searchQuery !== '' && !isPending && (
         <Typography component="span">
           No tests found with case insensitive substring search.
+        </Typography>
+      )}
+      {isError && (
+        <Typography color="error">
+          Error:{' '}
+          {(error as unknown) instanceof Error
+            ? (error as Error).message
+            : `${error}`}
         </Typography>
       )}
     </>

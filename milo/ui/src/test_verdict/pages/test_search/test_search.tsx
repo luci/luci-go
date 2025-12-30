@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import Box from '@mui/material/Box';
-import { useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -59,7 +59,15 @@ export const TestSearch = () => {
         />
       </Box>
       <Box sx={{ mt: 5 }}>
-        <TestList searchQuery={searchQuery.trim()} project={selectedProject} />
+        <RecoverableErrorBoundary
+          key="test-list"
+          resetKeys={[searchQuery, selectedProject]}
+        >
+          <TestList
+            searchQuery={searchQuery.trim()}
+            project={selectedProject}
+          />
+        </RecoverableErrorBoundary>
       </Box>
     </Box>
   );
@@ -67,6 +75,7 @@ export const TestSearch = () => {
 
 export function Component() {
   useDeclarePageId(UiPage.TestHistory);
+  const location = useLocation();
 
   return (
     <TrackLeafRoutePageView contentGroup="test-search">
@@ -75,6 +84,7 @@ export function Component() {
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.
         key="test-search"
+        resetKeys={[location.search]}
       >
         <TestSearch />
       </RecoverableErrorBoundary>
