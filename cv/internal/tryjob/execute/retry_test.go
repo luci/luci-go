@@ -15,7 +15,6 @@
 package execute
 
 import (
-	"context"
 	"math"
 	"testing"
 
@@ -34,7 +33,7 @@ import (
 
 func TestCanRetryAll(t *testing.T) {
 	ftt.Run("CanRetryAll", t, func(t *ftt.Test) {
-		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		ctx, _ := testclock.UseTime(t.Context(), testclock.TestRecentTimeUTC)
 		const builderZero = "builder-zero"
 		const builderOne = "builder-one"
 		execState := newExecStateBuilder().
@@ -187,8 +186,9 @@ func TestCanRetryAll(t *testing.T) {
 						appendAttempt(builderZero, makeAttempt(345, tryjob.Status_ENDED, tryjob.Result_FAILED_TRANSIENTLY)).
 						build()
 					execState.GetExecutions()[0].Attempts[0].Result.Output = &recipe.Output{Retry: recipe.Output_OUTPUT_RETRY_DENIED}
+					execState.GetExecutions()[0].Attempts[0].Reused = true
 					ok := executor.canRetryAll(ctx, execState, []int{0})
-					assert.Loosely(t, ok, should.BeFalse)
+					assert.That(t, ok, should.BeFalse)
 					assert.That(t, executor.logEntries, should.Match([]*tryjob.ExecutionLogEntry{
 						{
 							Time: timestamppb.New(clock.Now(ctx).UTC()),
@@ -200,6 +200,7 @@ func TestCanRetryAll(t *testing.T) {
 											Id:         345,
 											ExternalId: string(tryjob.MustBuildbucketID("buildbucket.example.com", math.MaxInt64-345)),
 											Status:     tryjob.Status_ENDED,
+											Reused:     true,
 											Result: &tryjob.Result{
 												Status: tryjob.Result_FAILED_TRANSIENTLY,
 												Output: &recipe.Output{

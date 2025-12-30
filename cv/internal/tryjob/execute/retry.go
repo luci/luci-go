@@ -117,13 +117,13 @@ func ensureTryjobCriticalAndFailed(def *tryjob.Definition, attempt *tryjob.Execu
 // canRetry determines whether an individual attempt can be retried.
 func canRetry(attempt *tryjob.ExecutionState_Execution_Attempt) retriability {
 	switch {
+	// Check if the tryjob forbids retry.
+	case attempt.Result.GetOutput().GetRetry() == recipe.Output_OUTPUT_RETRY_DENIED:
+		return retryDenied
 	// If this run did not trigger the tryjob, do not count its failure
 	// towards retry quota. Also ignores the output_retry_denied property.
 	case attempt.Reused:
 		return retryAllowedIgnoreQuota
-	// Check if the tryjob forbids retry.
-	case attempt.Result.GetOutput().GetRetry() == recipe.Output_OUTPUT_RETRY_DENIED:
-		return retryDenied
 	default:
 		return retryAllowed
 	}
