@@ -51,16 +51,9 @@ const (
 // - Returns nil after triggering reruns for further analysis
 // - Returns an error if something went wrong
 func Analyze(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) error {
-	// Get project-specific bisector for this analysis.
 	projectBisector, err := GetProjectBisector(ctx, tfa)
 	if err != nil {
 		return errors.Fmt("get project bisector: %w", err)
-	}
-
-	// Prepare data for bisection (populates test names and suite names).
-	err = projectBisector.Prepare(ctx, tfa, luciAnalysis)
-	if err != nil {
-		return errors.Fmt("prepare bisection: %w", err)
 	}
 
 	// Create nthsection model.

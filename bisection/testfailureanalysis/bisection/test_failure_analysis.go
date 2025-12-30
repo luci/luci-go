@@ -156,6 +156,17 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		return errors.Fmt("update status: %w", err)
 	}
 
+	// Prepare data for bisection (populates test names and suite names).
+	// This must be done before any analysis that may trigger verification reruns.
+	projectBisector, err := nthsection.GetProjectBisector(ctx, tfa)
+	if err != nil {
+		return errors.Fmt("get project bisector: %w", err)
+	}
+	err = projectBisector.Prepare(ctx, tfa, luciAnalysis)
+	if err != nil {
+		return errors.Fmt("prepare bisection: %w", err)
+	}
+
 	// Run GenAI analysis first
 	err = genai.Analyze(ctx, tfa, llmClient, rdbClient)
 	if err != nil {
