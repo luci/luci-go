@@ -23,6 +23,7 @@ General React development guides should not be placed in this directory
 * [Make non-overlapping sticky elements](./make_non_overlapping_sticky_elements.md)
 * [Working with Lit](./working_with_lit.md)
 * [Feature flagging your changes](./using_feature_flags.md).
+* [Generic Libraries](./generic_libs/index.md) - Documentation for reusable components, hooks, and tools in `milo/ui/src/generic_libs`.
 
 ## Maintenance / Operation
 
