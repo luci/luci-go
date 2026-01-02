@@ -33,8 +33,30 @@ function AndroidHistorySegmentTooltip({
 }: AndroidHistorySegmentTooltipProps) {
   const formattedRate = getFormattedFailureRate(segment);
   const style = getStatusStyle(getFailureRateStatusType(segment));
-  const startBuildId = segment.start_result?.build_id || 'Unknown';
-  const endBuildId = segment.end_result?.build_id || 'Unknown';
+  const health = segment.health;
+  const startBuildId = segment.startResult?.buildId;
+  const endBuildId = segment.endResult?.buildId;
+
+  const renderRate = (
+    label: string,
+    rateObj?: { failures: string; total: string; rate: number },
+  ) => {
+    if (!rateObj) return null;
+    const percentage = `${Math.floor(rateObj.rate * 100)}%`;
+    return (
+      <tr key={label}>
+        <td
+          style={{ padding: '2px 8px', textAlign: 'left', fontWeight: 'bold' }}
+        >
+          {label}:
+        </td>
+        <td style={{ padding: '2px 8px', textAlign: 'right' }}>{percentage}</td>
+        <td style={{ padding: '2px 8px', textAlign: 'right' }}>
+          ({rateObj.failures}/{rateObj.total})
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <Box sx={{ p: 1 }}>
@@ -44,7 +66,7 @@ function AndroidHistorySegmentTooltip({
           flexDirection: 'column',
           alignItems: 'center',
           width: '100%',
-          mb: 3,
+          mb: 2,
         }}
       >
         <Box
@@ -58,47 +80,89 @@ function AndroidHistorySegmentTooltip({
             textAlign: 'center',
           }}
         >
-          <Typography variant="body2">
+          <Typography variant="subtitle1" component="div">
             Failure Rate: {formattedRate}
-            {segment.health?.fail_rate &&
-              ` (${segment.health.fail_rate.failures} / ${segment.health.fail_rate.total} failed)`}
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            width: '100%',
-            gap: 2,
-          }}
-        >
-          <Box sx={{ textAlign: 'left' }}>
+        <Box sx={{ width: '100%', mb: 2, textAlign: 'center' }}>
+          {startBuildId && endBuildId && (
             <Typography variant="caption" display="block">
-              End Build: {endBuildId}
+              <a
+                href={`https://android-build.corp.google.com/range_search/cls/from_id/${startBuildId}/to_id/${endBuildId}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'inherit', textDecoration: 'underline' }}
+              >
+                View Changelist
+              </a>
             </Typography>
-          </Box>
-          <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="caption" display="block">
-              Start Build: {startBuildId}
-            </Typography>
-          </Box>
+          )}
         </Box>
+
+        {health && (
+          <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+            <tbody>
+              {renderRate('Overall', health.failRate)}
+              {renderRate('Before Retries', health.failRateBeforeRetries)}
+              {renderRate('After Retries', health.failRateAfterRetries)}
+            </tbody>
+          </table>
+        )}
+
+        {health && (
+          <Box
+            sx={{
+              mt: 2,
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 1,
+              justifyContent: 'center',
+            }}
+          >
+            {health.droidGardener && (
+              <Typography
+                variant="caption"
+                sx={{
+                  bgcolor: 'warning.light',
+                  color: 'warning.contrastText',
+                  px: 1,
+                  borderRadius: 1,
+                }}
+              >
+                Droid Gardener
+              </Typography>
+            )}
+            {health.demoted && (
+              <Typography
+                variant="caption"
+                sx={{
+                  bgcolor: 'error.light',
+                  color: 'error.contrastText',
+                  px: 1,
+                  borderRadius: 1,
+                }}
+              >
+                Demoted
+              </Typography>
+            )}
+          </Box>
+        )}
       </Box>
 
       {segmentContextType === 'invocation' && (
-        <Typography variant="subtitle2" gutterBottom>
-          This segment contains the current test result
+        <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
+          Current Invocation
         </Typography>
       )}
       {segmentContextType === 'afterInvocation' && (
-        <Typography variant="subtitle2" gutterBottom>
-          This segment is newer than the current test result
+        <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
+          Newer Segment
         </Typography>
       )}
       {segmentContextType === 'beforeInvocation' && (
-        <Typography variant="subtitle2" gutterBottom>
-          This segment is older than the current test result
+        <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 1 }}>
+          Older Segment
         </Typography>
       )}
     </Box>
@@ -170,18 +234,18 @@ export const AndroidHistorySegment = memo(function AndroidHistorySegment({
 });
 
 function getFormattedFailureRate(segment: SegmentSummary): string {
-  if (!segment.health?.fail_rate) {
+  if (!segment.health?.failRate) {
     return 'N/A';
   }
-  const rate = segment.health.fail_rate.rate || 0;
+  const rate = segment.health.failRate.rate || 0;
   return `${(rate * 100).toFixed(0)}%`;
 }
 
 function getFailureRateStatusType(segment: SegmentSummary): SemanticStatusType {
-  if (!segment.health?.fail_rate) {
+  if (!segment.health?.failRate) {
     return 'unknown';
   }
-  const rate = segment.health.fail_rate.rate || 0;
+  const rate = segment.health.failRate.rate || 0;
   const ratePercent = rate * 100;
 
   if (ratePercent <= 5) return 'passed';

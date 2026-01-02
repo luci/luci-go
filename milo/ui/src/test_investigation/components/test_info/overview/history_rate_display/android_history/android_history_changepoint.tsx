@@ -13,70 +13,45 @@
 // limitations under the License.
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import { memo } from 'react';
 
 import { SegmentSummary } from '@/common/hooks/gapi_query/android_fluxgate/android_fluxgate';
 
-interface AndroidHistoryChangepointProps {
+export interface AndroidHistoryChangepointProps {
   pointingToSegment: SegmentSummary;
-  olderSegment?: SegmentSummary;
+  olderSegment: SegmentSummary;
 }
 
-/** Renders a changepoint in the history rate display. Renders as an arrow. */
+/** Renders as an arrow. */
 export const AndroidHistoryChangepoint = memo(
   function AndroidHistoryChangepoint({
     pointingToSegment,
     olderSegment,
   }: AndroidHistoryChangepointProps) {
-    const startBuildId = pointingToSegment.start_result?.build_id;
+    const fromId = olderSegment.startResult?.buildId;
+    const toId = pointingToSegment.endResult?.buildId;
 
-    // Fluxgate segments don't have "startHour" easily accessible for duration display
-    // without fetching build details. For now, we omit the duration text.
-
-    const fromId = olderSegment?.start_result?.build_id;
-    const toId = pointingToSegment.end_result?.build_id;
-    const blamelistUrl =
+    const url =
       fromId && toId
         ? `https://android-build.corp.google.com/range_search/cls/from_id/${fromId}/to_id/${toId}/`
-        : undefined;
+        : null;
 
     return (
       <Box
         sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
       >
-        <Box sx={{ height: 'calc(1em * 1.2)' }}>
-          {startBuildId && (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                lineHeight: 'normal',
-                textAlign: 'center',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {startBuildId}
-            </Typography>
-          )}
-        </Box>
-        {blamelistUrl ? (
+        {url ? (
           <a
-            href={blamelistUrl}
+            href={url}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ display: 'flex' }}
             title="View Blamelist"
+            style={{ display: 'flex', alignItems: 'center' }}
           >
             <ArrowBackIcon
               data-testid="ArrowBackIcon"
-              sx={{
-                color: 'text.disabled',
-                my: 0.25,
-                fontSize: '20px',
-                cursor: 'pointer',
-                '&:hover': { color: 'primary.main' },
-              }}
+              sx={{ color: 'action.active', my: 0.25, fontSize: '20px' }}
             />
           </a>
         ) : (

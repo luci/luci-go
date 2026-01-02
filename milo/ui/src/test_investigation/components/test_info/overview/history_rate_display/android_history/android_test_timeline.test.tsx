@@ -155,33 +155,33 @@ describe('<AndroidTestTimeline />', () => {
     const summaries = [
       {
         // Newer 2 (Index 0)
-        start_result: { build_id: '999999' },
-        end_result: { build_id: '990000' },
-        health: { fail_rate: { rate: 0.1 } },
+        startResult: { buildId: '999999' },
+        endResult: { buildId: '990000' },
+        health: { failRate: { rate: 0.1 } },
       },
       {
         // Newer 1 (Index 1)
-        start_result: { build_id: '989999' },
-        end_result: { build_id: '900000' },
-        health: { fail_rate: { rate: 0.2 } },
+        startResult: { buildId: '989999' },
+        endResult: { buildId: '900000' },
+        health: { failRate: { rate: 0.2 } },
       },
       {
         // Current (Index 2)
-        start_result: { build_id: '899999' },
-        end_result: { build_id: '888888' }, // Contains 888888
-        health: { fail_rate: { rate: 0.5 } },
+        startResult: { buildId: '899999' },
+        endResult: { buildId: '888888' }, // Contains 888888
+        health: { failRate: { rate: 0.5 } },
       },
       {
         // Older 1 (Index 3)
-        start_result: { build_id: '888887' },
-        end_result: { build_id: '800000' },
-        health: { fail_rate: { rate: 0.8 } },
+        startResult: { buildId: '888887' },
+        endResult: { buildId: '800000' },
+        health: { failRate: { rate: 0.8 } },
       },
       {
         // Older 2 (Index 4)
-        start_result: { build_id: '799999' },
-        end_result: { build_id: '700000' },
-        health: { fail_rate: { rate: 0.9 } },
+        startResult: { buildId: '799999' },
+        endResult: { buildId: '700000' },
+        health: { failRate: { rate: 0.9 } },
       },
     ];
 
@@ -227,9 +227,9 @@ describe('<AndroidTestTimeline />', () => {
 
     const summaries = [
       {
-        start_result: { build_id: '777780' },
-        end_result: { build_id: '777770' }, // Covers 777777
-        health: { fail_rate: { rate: 0.6 } },
+        startResult: { buildId: '777780' },
+        endResult: { buildId: '777770' }, // Covers 777777
+        health: { failRate: { rate: 0.6 } },
       },
     ];
 
@@ -273,9 +273,9 @@ describe('<AndroidTestTimeline />', () => {
 
     const summaries = [
       {
-        start_result: { build_id: 'P111226950' },
-        end_result: { build_id: 'P111226930' },
-        health: { fail_rate: { rate: 0.5 } },
+        startResult: { buildId: 'P111226950' },
+        endResult: { buildId: 'P111226930' },
+        health: { failRate: { rate: 0.5 } },
       },
     ];
 
@@ -369,15 +369,15 @@ describe('<AndroidTestTimeline />', () => {
     const summaries = [
       {
         // Current (Index 0)
-        start_result: { build_id: '1000' },
-        end_result: { build_id: '900' },
-        health: { fail_rate: { rate: 0.1 } },
+        startResult: { buildId: '1000' },
+        endResult: { buildId: '900' },
+        health: { failRate: { rate: 0.1 } },
       },
       {
         // Older (Index 1)
-        start_result: { build_id: '800' },
-        end_result: { build_id: '700' },
-        health: { fail_rate: { rate: 0.8 } },
+        startResult: { buildId: '800' },
+        endResult: { buildId: '700' },
+        health: { failRate: { rate: 0.8 } },
       },
     ];
 

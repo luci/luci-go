@@ -31,19 +31,23 @@ export function findInvocationSegmentIndex(
 
   for (let i = 0; i < summaries.length; i++) {
     const s = summaries[i];
-    const startId = s.start_result?.build_id;
-    const endId = s.end_result?.build_id;
+    const startId = s.startResult?.buildId;
+    const endId = s.endResult?.buildId;
 
     if (!startId || !endId) continue;
 
-    // Assuming segments are sorted descending (Newest -> Oldest)
-    // startId is the "newest" build in the segment, endId is the "oldest"
-    // So range is [endId, startId]
-    // We use localeCompare with numeric: true to handle alphanumeric build IDs (e.g. P123) correctly.
-    // This correctly sorts "P2" < "P10", and handles standard numeric IDs as well.
+    // We need to handle both cases: Start > End (Newest -> Oldest) and Start < End (Oldest -> Newest)
+    // We just want to check if currentBuildId is between them.
+    // We use localeCompare with numeric: true to handle alphanumeric build IDs.
+
+    // Sort identifiers to ensure we have [low, high]
+    const [low, high] = [startId, endId].sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true }),
+    );
+
     const inRange =
-      currentBuildId.localeCompare(endId, undefined, { numeric: true }) >= 0 &&
-      currentBuildId.localeCompare(startId, undefined, { numeric: true }) <= 0;
+      currentBuildId.localeCompare(low, undefined, { numeric: true }) >= 0 &&
+      currentBuildId.localeCompare(high, undefined, { numeric: true }) <= 0;
 
     if (inRange) {
       return i;
@@ -92,60 +96,69 @@ export function getOrSynthesizeSummaries(
   currentBuildId: string | undefined,
   testVariant: OutputTestVerdict,
 ): SegmentSummary[] {
-  const loadedSummaries = summariesData?.summaries?.[0]?.summaries || [];
+  let loadedSummaries = summariesData?.summaries?.[0]?.summaries || [];
 
-  if (loadedSummaries.length > 0) {
-    return loadedSummaries;
-  }
-
-  // If no history found, synthetic segment for current invocation
   if (currentBuildId && testVariant) {
-    // Crude mapping from status -> approximate rate
-    // EXPECTED -> 0%
-    // UNEXPECTED -> 100%
-    // FLAKY -> 50%
-    let rate = 0;
-    let failures = '0';
-    let total = '1';
+    const currentIndex = findInvocationSegmentIndex(
+      loadedSummaries,
+      currentBuildId,
+    );
 
-    const status = testVariant.statusV2 || testVariant.status;
+    if (currentIndex === -1) {
+      // Crude mapping from status -> approximate rate
+      // EXPECTED -> 0%
+      // UNEXPECTED -> 100%
+      // FLAKY -> 50%
+      let rate = 0;
+      let failures = '0';
+      let total = '1';
 
-    if (
-      status === TestVerdict_Status.FAILED ||
-      status === TestVerdict_Status.EXECUTION_ERRORED
-    ) {
-      rate = 1;
-      failures = '1';
-    } else if (status === TestVerdict_Status.FLAKY) {
-      rate = 0.5;
-      failures = '1';
-      total = '2';
-    }
+      const status = testVariant.statusV2 || testVariant.status;
 
-    const syntheticSegment: SegmentSummary = {
-      start_result: {
-        test_result_id: '',
-        build_id: currentBuildId,
-        invocation_id: '',
-      },
-      end_result: {
-        test_result_id: '',
-        build_id: currentBuildId,
-        invocation_id: '',
-      },
-      clusters: [],
-      health: {
-        fail_rate: {
-          rate,
-          failures,
-          total,
+      if (
+        status === TestVerdict_Status.FAILED ||
+        status === TestVerdict_Status.EXECUTION_ERRORED
+      ) {
+        rate = 1;
+        failures = '1';
+      } else if (status === TestVerdict_Status.FLAKY) {
+        rate = 0.5;
+        failures = '1';
+        total = '2';
+      }
+
+      const syntheticSegment: SegmentSummary = {
+        startResult: {
+          testResultId: '',
+          buildId: currentBuildId,
+          invocationId: '',
         },
-      },
-    };
-    return [syntheticSegment];
+        endResult: {
+          testResultId: '',
+          buildId: currentBuildId,
+          invocationId: '',
+        },
+        clusters: [],
+        health: {
+          failRate: {
+            rate,
+            failures,
+            total,
+          },
+        },
+      };
+
+      // Add to list and resort
+      loadedSummaries = [...loadedSummaries, syntheticSegment].sort((a, b) => {
+        const idA = a.startResult?.buildId || '';
+        const idB = b.startResult?.buildId || '';
+        // Newest first (Descending)
+        return idB.localeCompare(idA, undefined, { numeric: true });
+      });
+    }
   }
 
-  return [];
+  return loadedSummaries;
 }
 
 export interface VisibleSegmentsResult {

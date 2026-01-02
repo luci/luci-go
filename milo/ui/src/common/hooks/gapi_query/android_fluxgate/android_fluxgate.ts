@@ -31,16 +31,16 @@ const API_BASE_PATH_ROOT =
 // ===================================================================
 
 export interface TestResultIdInfo {
-  test_result_id: string;
-  build_id: string;
-  invocation_id: string;
+  testResultId: string;
+  buildId: string;
+  invocationId: string;
 }
 
 export interface AggregatedCluster {
-  cluster_id: string;
+  clusterId: string;
   count: string; // Proto is uint64
-  exemplar_result?: TestResultIdInfo;
-  first_seen_result?: TestResultIdInfo;
+  exemplarResult?: TestResultIdInfo;
+  firstSeenResult?: TestResultIdInfo;
 }
 
 export enum PresubmitBlockingStatus {
@@ -69,13 +69,13 @@ export interface FailRate {
 }
 
 export interface TestHealth {
-  fail_rate?: FailRate;
-  fail_rate_before_retries?: FailRate;
-  fail_rate_after_retries?: FailRate;
-  droid_gardener?: boolean;
+  failRate?: FailRate;
+  failRateBeforeRetries?: FailRate;
+  failRateAfterRetries?: FailRate;
+  droidGardener?: boolean;
   demoted?: boolean;
-  blocking_status?: PresubmitBlockingStatus;
-  flake_slo?: SLOStatus;
+  blockingStatus?: PresubmitBlockingStatus;
+  flakeSlo?: SLOStatus;
 }
 
 export interface TransitionInterval {
@@ -88,46 +88,46 @@ export interface TransitionInterval {
 export interface SegmentSummary {
   health?: TestHealth;
   clusters: AggregatedCluster[];
-  start_result?: TestResultIdInfo;
-  end_result?: TestResultIdInfo;
-  start_exemplar_result?: TestResultIdInfo;
-  end_exemplar_result?: TestResultIdInfo;
-  transition_interval?: TransitionInterval;
+  startResult?: TestResultIdInfo;
+  endResult?: TestResultIdInfo;
+  startExemplarResult?: TestResultIdInfo;
+  endExemplarResult?: TestResultIdInfo;
+  transitionInterval?: TransitionInterval;
 }
 
 export interface Changepoint {
-  before_segment?: SegmentSummary;
-  after_segment?: SegmentSummary;
-  last_week_presubmit_metrics?: TestHealth;
+  beforeSegment?: SegmentSummary;
+  afterSegment?: SegmentSummary;
+  lastWeekPresubmitMetrics?: TestHealth;
 }
 
 export interface FluxgateSequence {
   start: string; // Proto is uint64
   end: string; // Proto is uint64
-  start_exemplar?: string; // Proto is uint64
-  end_exemplar?: string; // Proto is uint64
+  startExemplar?: string; // Proto is uint64
+  endExemplar?: string; // Proto is uint64
   passes: string; // Proto is uint64
-  build_count: string; // Proto is uint64
-  num_passes_on_retry?: string; // Proto is uint64
-  incomplete_fails?: string; // Proto is uint64
+  buildCount: string; // Proto is uint64
+  numPassesOnRetry?: string; // Proto is uint64
+  incompleteFails?: string; // Proto is uint64
   clusters: AggregatedCluster[];
-  start_result?: TestResultIdInfo;
-  end_result?: TestResultIdInfo;
-  start_exemplar_result?: TestResultIdInfo;
-  end_exemplar_result?: TestResultIdInfo;
+  startResult?: TestResultIdInfo;
+  endResult?: TestResultIdInfo;
+  startExemplarResult?: TestResultIdInfo;
+  endExemplarResult?: TestResultIdInfo;
 }
 
 export interface FluxgateSequences {
   sequences: FluxgateSequence[];
-  build_before_changepoint: string; // Proto is uint64
+  buildBeforeChangepoint: string; // Proto is uint64
   previous: FluxgateSequence[];
-  changepoint_uncertainty_interval?: {
+  changepointUncertaintyInterval?: {
     percentile: number;
     result?: TestResultIdInfo;
   }[];
   significance: number;
   threshold: number;
-  presubmit_blocking_status?: PresubmitBlockingStatus;
+  presubmitBlockingStatus?: PresubmitBlockingStatus;
 }
 
 export interface TestResultFluxgateStatus {
@@ -135,16 +135,16 @@ export interface TestResultFluxgateStatus {
   branch: string;
   target: string;
   // TestDefinition and TestIdentifier omitted as they are complex and not fully defined
-  updated_timestamp_ms: string; // Proto is uint64
+  updatedTimestampMs: string; // Proto is uint64
   // Status omitted
-  test_identifier_id: string;
+  testIdentifierId: string;
   changepoint?: Changepoint;
 }
 
 export interface SegmentSummaries {
-  test_identifier_id: string;
+  testIdentifierId: string;
   summaries: SegmentSummary[];
-  combination_result?:
+  combinationResult?:
     | 'COMBINATION_RESULT_UNSPECIFIED'
     | 'NO_COMBINATION'
     | 'COMBINATION_APPLIED'
