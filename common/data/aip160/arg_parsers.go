@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -194,6 +195,33 @@ func CoarceArgToEnumConstant(arg *Arg, def *EnumDefinition) (int32, error) {
 		return 0, fmt.Errorf("%q is not allowed for this enum, expected one of [%s]", valueToParse, def.allowedValues())
 	}
 	return argValue, nil
+}
+
+// CoarceArgToIntegerConstant attempts to extract an integer constant from
+// an Arg AST node. The AST node must be the unquoted integer value.
+func CoarceArgToIntegerConstant(arg *Arg) (int64, error) {
+	// Limitation: at present, this implementation does not handle negative numbers.
+	// This was not a priority, but it can be added by handling composite expressions
+	// (arg.Composite).
+	cmp, err := coerceArgToComparable(arg)
+	if err != nil {
+		return 0, err
+	}
+	if cmp.Member == nil {
+		return 0, fmt.Errorf("invalid comparable")
+	}
+	// As per go/ccfe-aip-160#literals, we expect integers to be unquoted.
+	if cmp.Member.Value.Quoted {
+		return 0, fmt.Errorf("expected an unquoted integer literal but found double-quoted string %q", cmp.Member.Value.Value)
+	}
+	if len(cmp.Member.Fields) > 0 {
+		return 0, fmt.Errorf("field navigation (using '.') is not supported")
+	}
+	val, err := strconv.ParseInt(cmp.Member.Value.Value, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("expected an integer literal but found %q", cmp.Member.Value.Value)
+	}
+	return val, nil
 }
 
 // CoerceArgToStringConstant attempts to extract a string constant from

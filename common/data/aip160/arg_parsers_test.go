@@ -171,6 +171,51 @@ func TestArgParsers(t *testing.T) {
 			}
 		})
 
+		t.Run("CoarceArgToIntegerConstant", func(t *ftt.Test) {
+			cases := []struct {
+				name      string
+				filter    string
+				expected  int64
+				errString string
+			}{
+				{
+					name:     "positive integer",
+					filter:   "foo = 123",
+					expected: 123,
+				},
+				{
+					name:     "zero",
+					filter:   "foo = 0",
+					expected: 0,
+				},
+				{
+					name:      "quoted integer",
+					filter:    `foo = "123"`,
+					errString: `expected an unquoted integer literal but found double-quoted string "123"`,
+				},
+				{
+					name:      "invalid integer",
+					filter:    "foo = bar",
+					errString: `expected an integer literal but found "bar"`,
+				},
+			}
+
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *ftt.Test) {
+					filter, err := ParseFilter(tc.filter)
+					assert.Loosely(t, err, should.BeNil)
+					arg := filter.Expression.Sequences[0].Factors[0].Terms[0].Simple.Restriction.Arg
+					val, err := CoarceArgToIntegerConstant(arg)
+					if tc.errString != "" {
+						assert.Loosely(t, err, should.ErrLike(tc.errString))
+					} else {
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, val, should.Equal(tc.expected))
+					}
+				})
+			}
+		})
+
 		t.Run("CoerceArgToStringConstant", func(t *ftt.Test) {
 			cases := []struct {
 				name      string
