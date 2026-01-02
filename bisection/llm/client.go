@@ -60,7 +60,7 @@ func (c *clientImpl) GenerateContent(ctx context.Context, prompt string) (string
 	}
 
 	// Generate content
-	response, err := c.client.Models.GenerateContent(ctx, "gemini-2.5-pro", contents, nil)
+	response, err := c.client.Models.GenerateContent(ctx, "gemini-3-pro-preview", contents, nil)
 	if err != nil {
 		return "", errors.Fmt("failed to generate content: %w", err)
 	}
@@ -84,7 +84,7 @@ func (c *clientImpl) GenerateContentWithSchema(ctx context.Context, prompt strin
 	}
 
 	// Generate content with structured output
-	response, err := c.client.Models.GenerateContent(ctx, "gemini-2.5-pro", contents, config)
+	response, err := c.client.Models.GenerateContent(ctx, "gemini-3-pro-preview", contents, config)
 	if err != nil {
 		return "", errors.Fmt("failed to generate content with schema: %w", err)
 	}
