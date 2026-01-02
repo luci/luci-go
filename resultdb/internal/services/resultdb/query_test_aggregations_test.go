@@ -159,6 +159,20 @@ func TestQueryTestAggregations(t *testing.T) {
 						assert.Loosely(t, err, should.ErrLike("predicate: test_prefix_filter: level: must be equal to, or coarser than, the requested aggregation_level (MODULE)"))
 					})
 				})
+				t.Run(`Filter`, func(t *ftt.Test) {
+					t.Run(`Invalid syntax`, func(t *ftt.Test) {
+						req.Predicate.Filter = "verdict_counts.passed ="
+						_, err := srv.QueryTestAggregations(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("predicate: filter: expected arg after ="))
+					})
+					t.Run(`Invalid column`, func(t *ftt.Test) {
+						req.Predicate.Filter = "invalid_column = 1"
+						_, err := srv.QueryTestAggregations(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("predicate: filter: no filterable field \"invalid_column\""))
+					})
+				})
 			})
 			t.Run(`Order by`, func(t *ftt.Test) {
 				t.Run(`Empty`, func(t *ftt.Test) {
@@ -315,6 +329,18 @@ func TestQueryTestAggregations(t *testing.T) {
 				res, err := srv.QueryTestAggregations(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.Aggregations, should.Match(expected))
+			})
+			t.Run(`With filter`, func(t *ftt.Test) {
+				req.Predicate.AggregationLevel = pb.AggregationLevel_FINE
+				// The filter for module_status does not contribute to the results in this example,
+				// but we test it does not blow up for this aggregation level
+				// (module_status is UNSPECIFIED for this aggregation level).
+				req.Predicate.Filter = "verdict_counts.failed > 0 OR module_status = ERRORED"
+				expected := testaggregations.ExpectedFineAggregationsIDOrder()
+
+				res, err := srv.QueryTestAggregations(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Aggregations, should.Match(expected[0:1]))
 			})
 			t.Run(`With pagination`, func(t *ftt.Test) {
 				req.PageSize = 2

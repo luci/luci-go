@@ -64,6 +64,7 @@ func (s *resultDBServer) QueryTestAggregations(ctx context.Context, req *pb.Quer
 		Level:                    req.Predicate.AggregationLevel,
 		TestPrefixFilter:         req.Predicate.TestPrefixFilter,
 		ContainsTestResultFilter: req.Predicate.ContainsTestResultFilter,
+		Filter:                   req.Predicate.Filter,
 		Access:                   access,
 		PageSize:                 pageSize,
 		Order:                    order,
@@ -142,6 +143,11 @@ func validateQueryTestAggregationsPredicate(predicate *pb.TestAggregationPredica
 	if predicate.ContainsTestResultFilter != "" {
 		if err := testresultsv2.ValidateFilter(predicate.ContainsTestResultFilter); err != nil {
 			return errors.Fmt("contains_test_result_filter: %w", err)
+		}
+	}
+	if predicate.Filter != "" {
+		if err := testaggregations.ValidateFilter(predicate.Filter); err != nil {
+			return errors.Fmt("filter: %w", err)
 		}
 	}
 	return nil

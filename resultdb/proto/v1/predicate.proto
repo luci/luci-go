@@ -239,4 +239,21 @@ message TestAggregationPredicate {
   // Aggregations without test results can occur for module and invocation-level
   // aggregations.
   string contains_test_result_filter = 3;
+
+  // A free-form filter on the returned `TestAggregation`s.
+  //
+  // The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
+  // with the following fields available:
+  // - verdict_counts.failed (number)
+  // - verdict_counts.flaky (number)
+  // - verdict_counts.passed (number)
+  // - verdict_counts.skipped (number)
+  // - verdict_counts.execution_errored (number)
+  // - verdict_counts.precluded (number)
+  // - verdict_counts.exonerated (number)
+  // - module_status (luci.resultdb.v1.TestAggregation.ModuleStatus):
+  //   for aggregations at Invocation, Coarse and Fine levels, this field is
+  //   be MODULE_STATUS_UNSPECIFIED, so is only useful for filtering Module-level
+  //   aggregations.
+  string filter = 4;
 }

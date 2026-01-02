@@ -405,5 +405,82 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 		})
+
+		t.Run("Top-level filter", func(t *ftt.Test) {
+			t.Run("verdict_counts", func(t *ftt.Test) {
+				query.Level = pb.AggregationLevel_FINE
+				expected := ExpectedFineAggregationsIDOrder()
+
+				t.Run("passed", func(t *ftt.Test) {
+					query.Filter = "verdict_counts.passed > 0"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[0:1]))
+				})
+				t.Run("failed", func(t *ftt.Test) {
+					query.Filter = "verdict_counts.failed > 0"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[0:1]))
+				})
+				t.Run("exonerated", func(t *ftt.Test) {
+					query.Filter = "verdict_counts.exonerated > 0"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[1:2]))
+				})
+				t.Run("flaky", func(t *ftt.Test) {
+					query.Filter = "verdict_counts.flaky > 0"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[2:3]))
+				})
+				t.Run("skipped", func(t *ftt.Test) {
+					query.Filter = "verdict_counts.skipped > 0"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[3:4]))
+				})
+				t.Run("execution_errored", func(t *ftt.Test) {
+					query.Filter = "verdict_counts.execution_errored > 0"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[4:5]))
+				})
+				t.Run("precluded", func(t *ftt.Test) {
+					query.Filter = "verdict_counts.precluded > 0"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[5:6]))
+				})
+			})
+			t.Run("module_status", func(t *ftt.Test) {
+				query.Level = pb.AggregationLevel_MODULE
+				expected := ExpectedModuleAggregationsIDOrder()
+
+				t.Run("ERRORED", func(t *ftt.Test) {
+					query.Filter = "module_status = ERRORED"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[2:3]))
+				})
+				t.Run("RUNNING", func(t *ftt.Test) {
+					query.Filter = "module_status = RUNNING"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[1:2]))
+				})
+			})
+			t.Run("All fields supported at all levels", func(t *ftt.Test) {
+				// For fine, coarse and invocation levels, the module_status should be treated as always UNSPECIFIED,
+				// as this is what is on the response row.
+				query.Filter = "verdict_counts.passed > 0 OR verdict_counts.flaky > 0 OR verdict_counts.failed > 0" +
+					" OR verdict_counts.skipped > 0 OR verdict_counts.execution_errored > 0 OR verdict_counts.precluded > 0" +
+					" OR verdict_counts.exonerated > 0 OR module_status = ERRORED"
+
+				t.Run("At fine-level", func(t *ftt.Test) {
+					query.Level = pb.AggregationLevel_FINE
+					expected := ExpectedFineAggregationsIDOrder()
+					assert.Loosely(t, fetchAll(query), should.Match(expected))
+				})
+				t.Run("At coarse-level", func(t *ftt.Test) {
+					query.Level = pb.AggregationLevel_COARSE
+					expected := ExpectedCoarseAggregationsIDOrder()
+					assert.Loosely(t, fetchAll(query), should.Match(expected))
+				})
+				t.Run("At module-level", func(t *ftt.Test) {
+					query.Level = pb.AggregationLevel_MODULE
+					expected := ExpectedModuleAggregationsIDOrder()
+					assert.Loosely(t, fetchAll(query), should.Match(expected[0:3]))
+				})
+				t.Run("At invocation-level", func(t *ftt.Test) {
+					query.Level = pb.AggregationLevel_INVOCATION
+					expected := ExpectedRootInvocationAggregation()
+					assert.Loosely(t, fetchAll(query), should.Match(expected))
+				})
+			})
+		})
 	})
 }

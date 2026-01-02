@@ -175,6 +175,10 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 				clauses = append(clauses, clause)
 			}
 		}
+		if len(clauses) == 0 {
+			// No columns support implicit filtering.
+			return "", fmt.Errorf("no fields are configured to match the bare value %q", arg)
+		}
 		return "(" + strings.Join(clauses, " OR ") + ")", nil
 	}
 	fieldPath, err := coerceMemberToFieldPath(restriction.Comparable.Member)

@@ -61,6 +61,9 @@ type SingleLevelQuery struct {
 	// Whether to use UI sort order, i.e. by ui_priority first, instead of by test ID.
 	// This incurs a performance penalty, as results are not returned in table order.
 	Order Ordering
+	// A filter on the test aggregations. Optional.
+	// See pb.TestAggregationPredicate.Filter for details.
+	Filter string
 }
 
 // Fetch fetches a page of test aggregations.
@@ -288,7 +291,7 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 
 	containsTestResultFilterClause := ""
 	if q.ContainsTestResultFilter != "" {
-		clause, additionalParams, err := testresultsv2.WhereClause(q.ContainsTestResultFilter, "TR", "ctrf")
+		clause, additionalParams, err := testresultsv2.WhereClause(q.ContainsTestResultFilter, "TR", "ctrf_")
 		if err != nil {
 			return spanner.Statement{}, errors.Fmt("contains_test_result_filter: %w", err)
 		}
@@ -308,12 +311,25 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 		paginationClause = "(" + clause + ")"
 	}
 
+	filterClause := "TRUE"
+	if q.Filter != "" {
+		clause, additionalParams, err := whereClause(q.Filter, "", "f_")
+		if err != nil {
+			return spanner.Statement{}, errors.Fmt("filter: %w", err)
+		}
+		for _, p := range additionalParams {
+			params[p.Name] = p.Value
+		}
+		filterClause = "(" + clause + ")"
+	}
+
 	templateParams := templateParameters{
 		AggregateColumns:               groupingColumns(q.Level),
 		OrderByColumns:                 orderByColumns(q.Order, q.Level),
 		WherePrefixClause:              wherePrefixClause,
 		ContainsTestResultFilterClause: containsTestResultFilterClause,
 		PaginationClause:               paginationClause,
+		FilterClause:                   filterClause,
 		FullAccess:                     q.Access.Level == permissions.FullAccess,
 		ResultStatuses: testResultStatusDefinitions{
 			Passed:           int64(pb.TestResult_PASSED),
@@ -487,6 +503,9 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		ANY_VALUE(ModuleVariantMasked) AS ModuleVariantMasked,
 	{{end}}
 		MAX(UIPriority) AS UIPriority,
+		-- This field is used to ensure filters on module_status for FINE and COARSE levels are not rejected.
+		-- It is always UNSPECIFIED for these levels.
+		{{.ModuleStatuses.Unspecified}} AS ModuleStatus,
 		SUM(Passed) AS TestsPassed,
 		SUM(Failed) AS TestsFailed,
 		SUM(Flaky) AS TestsFlaky,
@@ -497,6 +516,8 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		SUM(FlakyExonerated) AS TestsFlakyExonerated,
 		SUM(ExecutionErroredExonerated) AS TestsExecutionErroredExonerated,
 		SUM(PrecludedExonerated) AS TestsPrecludedExonerated,
+		-- This field is used to support filtering on verdict_counts.exonerated.
+		(SUM(FailedExonerated) + SUM(FlakyExonerated) + SUM(ExecutionErroredExonerated) + SUM(PrecludedExonerated)) AS TestsExonerated,
 	{{if ne .ContainsTestResultFilterClause ""}}
 		LOGICAL_OR(ContainsTestResultMatchingFilter) AS ContainsTestResultMatchingFilter,
 	{{end}}
@@ -589,6 +610,8 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		COALESCE(TA.TestsFlakyExonerated, 0) AS TestsFlakyExonerated,
 		COALESCE(TA.TestsExecutionErroredExonerated, 0) AS TestsExecutionErroredExonerated,
 		COALESCE(TA.TestsPrecludedExonerated, 0) AS TestsPrecludedExonerated,
+		-- This field is used to support filtering on verdict_counts.exonerated.
+		COALESCE(TA.TestsExonerated, 0) AS TestsExonerated,
 	{{if ne .ContainsTestResultFilterClause ""}}
 		COALESCE(TA.ContainsTestResultMatchingFilter, FALSE) AS ContainsTestResultMatchingFilter,
 	{{end}}
@@ -630,7 +653,7 @@ SELECT
 	TestsPrecludedExonerated,
 FROM ({{template "TestAggregations" .}}
 )
-WHERE {{.PaginationClause}}
+WHERE {{.PaginationClause}} AND {{.FilterClause}}
 {{if ne .ContainsTestResultFilterClause ""}} AND ContainsTestResultMatchingFilter{{end}}
 ORDER BY {{.OrderByColumns}}
 LIMIT @pageSize
@@ -656,7 +679,7 @@ SELECT
 	TestsPrecludedExonerated,
 FROM ({{template "ModulesWithResults" .}}
 )
-WHERE {{.PaginationClause}}
+WHERE {{.PaginationClause}} AND {{.FilterClause}}
 {{if ne .ContainsTestResultFilterClause ""}} AND ContainsTestResultMatchingFilter{{end}}
 ORDER BY {{.OrderByColumns}}
 LIMIT @pageSize
@@ -686,8 +709,9 @@ FROM ({{template "TestAggregations" .}}
 ) TA
 CROSS JOIN@{JOIN_TYPE=HASH_JOIN} ({{template "ModuleAggregations" .}}
 ) MA
+WHERE {{.FilterClause}}
 {{if ne .ContainsTestResultFilterClause ""}}
-WHERE ContainsTestResultMatchingFilter
+ AND ContainsTestResultMatchingFilter
 {{end}}
 {{end}}
 `))
@@ -763,6 +787,8 @@ type templateParameters struct {
 	ContainsTestResultFilterClause string
 	// The WHERE clause to apply to the final query for pagination purposes.
 	PaginationClause string
+	// The WHERE clause to apply to the final query for filtering purposes.
+	FilterClause string
 	// Whether the user has full access to the test results, exonerations and work units.
 	// If this is false, it is assumed the user has at least limited (masked) access to all of them.
 	FullAccess bool
