@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/bisection/rerun"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
-	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/chromium"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
@@ -50,12 +49,7 @@ const (
 // - Returns nil with a found culprit (triggers verification)
 // - Returns nil after triggering reruns for further analysis
 // - Returns an error if something went wrong
-func Analyze(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) error {
-	projectBisector, err := GetProjectBisector(ctx, tfa)
-	if err != nil {
-		return errors.Fmt("get project bisector: %w", err)
-	}
-
+func Analyze(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient, projectBisector projectbisector.ProjectBisector) error {
 	// Create nthsection model.
 	primaryFailure, err := datastoreutil.GetPrimaryTestFailure(ctx, tfa)
 	if err != nil {
@@ -274,16 +268,6 @@ func saveSuspectAndUpdateNthSection(ctx context.Context, tfa *model.TestFailureA
 	}
 
 	return suspect, nil
-}
-
-// GetProjectBisector returns the appropriate project-specific bisector.
-func GetProjectBisector(ctx context.Context, tfa *model.TestFailureAnalysis) (projectbisector.ProjectBisector, error) {
-	switch tfa.Project {
-	case "chromium":
-		return &chromium.Bisector{}, nil
-	default:
-		return nil, errors.Fmt("no bisector for project %s", tfa.Project)
-	}
 }
 
 // TriggerRerunBuildForCommits triggers rerun builds for the given commits.

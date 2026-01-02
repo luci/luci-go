@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/rerun"
 	tpb "go.chromium.org/luci/bisection/task/proto"
-	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/nthsection"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
@@ -61,7 +61,7 @@ func processTestFailureTask(ctx context.Context, task *tpb.TestFailureCulpritVer
 }
 
 func verifyTestFailureSuspect(ctx context.Context, tfa *model.TestFailureAnalysis, suspect *model.Suspect) error {
-	projectBisector, err := nthsection.GetProjectBisector(ctx, tfa)
+	projectBisector, err := bisection.GetProjectBisector(ctx, tfa)
 	if err != nil {
 		return errors.Fmt("get project bisector: %w", err)
 	}

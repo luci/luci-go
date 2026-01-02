@@ -283,7 +283,7 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 		return nil
 	}
 
-	projectBisector, err := nthsection.GetProjectBisector(ctx, tfa)
+	projectBisector, err := bisection.GetProjectBisector(ctx, tfa)
 	if err != nil {
 		return errors.Fmt("get project bisector: %w", err)
 	}
