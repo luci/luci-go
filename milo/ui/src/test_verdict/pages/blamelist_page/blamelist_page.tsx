@@ -50,7 +50,12 @@ export function BlamelistPage() {
   };
 
   const client = useTestVariantBranchesClient();
-  const { data, isPending, isError, error } = useQuery({
+  const {
+    data: tvb,
+    isPending,
+    isError,
+    error,
+  } = useQuery({
     ...client.BatchGet.query(
       BatchGetTestVariantBranchRequest.fromPartial({
         names: [ParsedTestVariantBranchName.toString(testVariantBranch)],
@@ -70,8 +75,8 @@ export function BlamelistPage() {
     );
   }
 
-  const lastCommitPosition = data.segments[0].endPosition;
-  const firstSegment = data.segments[data.segments.length - 1];
+  const lastCommitPosition = tvb.segments[0].endPosition;
+  const firstSegment = tvb.segments[tvb.segments.length - 1];
   const firstCommitPosition = firstSegment.hasStartChangepoint
     ? firstSegment.startPositionLowerBound99th
     : firstSegment.startPosition;
@@ -87,9 +92,20 @@ export function BlamelistPage() {
       )
     : undefined;
 
-  const expandParam = new URLSearchParams(search).get('expand');
+  const queryParams = new URLSearchParams(search);
+  const expandParam = queryParams.get('expand');
   const expandCommitPosition = expandParam?.match(/^CP-\d+$/)
     ? expandParam.slice('CP-'.length)
+    : undefined;
+
+  const startCpParam = queryParams.get('start_cp');
+  const startCommitPosition = startCpParam?.match(/^CP-\d+$/)
+    ? startCpParam.slice('CP-'.length)
+    : undefined;
+
+  const endCpParam = queryParams.get('end_cp');
+  const endCommitPosition = endCpParam?.match(/^CP-\d+$/)
+    ? endCpParam.slice('CP-'.length)
     : undefined;
 
   return (
@@ -102,16 +118,18 @@ export function BlamelistPage() {
         }}
       >
         <TestVariantBranchId
-          gitilesRef={data.ref.gitiles}
-          testId={data.testId}
-          variant={data.variant}
+          gitilesRef={tvb.ref.gitiles}
+          testId={tvb.testId}
+          variant={tvb.variant}
         />
       </Box>
       <BlamelistTable
-        lastCommitPosition={lastCommitPosition}
-        firstCommitPosition={firstCommitPosition}
-        testVariantBranch={data}
+        latestAnalyzedCommit={lastCommitPosition}
+        earliestAnalyzedCommit={firstCommitPosition}
+        testVariantBranch={tvb}
         focusCommitPosition={focusCommitPosition}
+        initialNewestCommitPosition={startCommitPosition}
+        initialOldestCommitPosition={endCommitPosition}
         defaultExpandedCommitPosition={expandCommitPosition}
         useWindowScroll
       />

@@ -54,7 +54,7 @@ function HistorySegmentTooltip({
   const style = getStatusStyle(getFailureRateStatusTypeFromSegment(segment));
 
   const createBlamelistLink = (position: string) => {
-    return `${blamelistBaseUrl}?expand=${`CP-${position}`}#CP-${position}`;
+    return `${blamelistBaseUrl}?start_cp=${`CP-${position}`}#CP-${position}`;
   };
 
   return (

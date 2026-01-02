@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box, Button } from '@mui/material';
+import { useState } from 'react';
 import { ListRange } from 'react-virtuoso';
 
 import {
@@ -41,7 +43,7 @@ import { LogResponse } from '@/proto/go.chromium.org/luci/common/proto/gitiles/g
 import { BlamelistContextProvider } from './context';
 import { BlamelistTableRow, BlamelistTableHeaderContent } from './row';
 
-const PAGE_SIZE = 200;
+const PAGE_SIZE = 50;
 const DELAY_MS = 500;
 
 function getOffset(lastPosition: string, position: string) {
@@ -63,21 +65,63 @@ export interface BlamelistTableProps
     | 'itemContent'
     | 'sx'
   > {
-  readonly lastCommitPosition: string;
-  readonly firstCommitPosition: string;
   readonly testVariantBranch: OutputTestVariantBranch;
+  /**
+   * The most recent commit position that is part of the analyzed history for this test variant.
+   * This typically defines the "start" of the known history from the backend's perspective.
+   */
+  readonly latestAnalyzedCommit: string;
+  /**
+   * The oldest commit position that is part of the analyzed history for this test variant.
+   * This defines the "end" of the known history from the backend's perspective.
+   */
+  readonly earliestAnalyzedCommit: string;
+  /**
+   * The commit position to focus on (highlight/scroll to) initially.
+   */
   readonly focusCommitPosition?: string;
+  /**
+   * The newest commit position to display in the list initially.
+   * User can load newer commits than this (up to `latestAnalyzedCommit`).
+   */
+  readonly initialNewestCommitPosition?: string;
+  /**
+   * The oldest commit position to display in the list initially.
+   * User can load older commits than this.
+   */
+  readonly initialOldestCommitPosition?: string;
+  /**
+   * The commit position to expand by default.
+   */
   readonly defaultExpandedCommitPosition?: string;
 }
 
 export function BlamelistTable({
-  lastCommitPosition,
-  firstCommitPosition,
+  latestAnalyzedCommit,
+  earliestAnalyzedCommit,
   testVariantBranch,
-  focusCommitPosition = lastCommitPosition,
+  focusCommitPosition = latestAnalyzedCommit,
+  initialNewestCommitPosition,
+  initialOldestCommitPosition,
   defaultExpandedCommitPosition,
   ...props
 }: BlamelistTableProps) {
+  // Initialize current range based on props or defaults.
+  // We use state to allow the user to load more "newer" or "older" commits.
+  const [currentStart, setCurrentStart] = useState(() =>
+    initialNewestCommitPosition
+      ? Math.min(
+          parseInt(initialNewestCommitPosition),
+          parseInt(latestAnalyzedCommit),
+        )
+      : parseInt(latestAnalyzedCommit),
+  );
+  const [currentEnd, setCurrentEnd] = useState(() =>
+    initialOldestCommitPosition
+      ? parseInt(initialOldestCommitPosition)
+      : parseInt(earliestAnalyzedCommit),
+  );
+
   // Note that we use a negative index so commits are sorted by their commit
   // position in descending order.
   //
@@ -88,10 +132,7 @@ export function BlamelistTable({
     UseVirtualizedQueryOption<unknown, unknown>,
     'genQuery'
   > = {
-    rangeBoundary: [
-      -parseInt(lastCommitPosition),
-      -parseInt(firstCommitPosition) + 1,
-    ],
+    rangeBoundary: [-currentStart, -currentEnd + 1],
     interval: PAGE_SIZE,
     initRange: [
       -parseInt(focusCommitPosition),
@@ -149,28 +190,47 @@ export function BlamelistTable({
 
   function handleRangeChanged(range: ListRange) {
     const mappedRange = [
-      -parseInt(getPosition(lastCommitPosition, range.startIndex)),
-      -parseInt(getPosition(lastCommitPosition, range.endIndex)) + 1,
+      -parseInt(getPosition(currentStart.toString(), range.startIndex)),
+      -parseInt(getPosition(currentStart.toString(), range.endIndex)) + 1,
     ] as const;
     gitilesQueries.setRange(mappedRange);
     verdictQueries.setRange(mappedRange);
   }
 
+  const loadNewer = () => {
+    setCurrentStart((prev) =>
+      Math.min(prev + PAGE_SIZE, parseInt(latestAnalyzedCommit)),
+    );
+  };
+
+  const loadOlder = () => {
+    setCurrentEnd((prev) => Math.max(prev - PAGE_SIZE, 0));
+  };
+
   return (
     <BlamelistContextProvider testVariantBranch={testVariantBranch}>
+      {currentStart < parseInt(latestAnalyzedCommit) && (
+        <Box sx={{ p: 1, display: 'flex', justifyContent: 'center' }}>
+          <Button onClick={loadNewer} variant="outlined" size="small">
+            Load Newer Commits
+          </Button>
+        </Box>
+      )}
       <VirtualizedCommitTable
         increaseViewportBy={1000}
         {...props}
         repoUrl={getGitilesRepoURL(testVariantBranch.ref.gitiles)}
         rangeChanged={handleRangeChanged}
-        initialTopMostItemIndex={getOffset(
-          lastCommitPosition,
-          focusCommitPosition,
+        initialTopMostItemIndex={Math.max(
+          0,
+          getOffset(currentStart.toString(), focusCommitPosition),
         )}
-        totalCount={getOffset(lastCommitPosition, firstCommitPosition) + 1}
+        totalCount={
+          getOffset(currentStart.toString(), currentEnd.toString()) + 1
+        }
         fixedHeaderContent={() => <BlamelistTableHeaderContent />}
         itemContent={(i) => {
-          const position = getPosition(lastCommitPosition, i);
+          const position = getPosition(currentStart.toString(), i);
           const cpIndex = -parseInt(position);
           const commitQuery = gitilesQueries.get(cpIndex);
           if (commitQuery.isError) {
@@ -195,6 +255,13 @@ export function BlamelistTable({
         }}
         sx={{ '& td:last-of-type': { flexGrow: 0 } }}
       />
+      {currentEnd > 0 && (
+        <Box sx={{ p: 1, display: 'flex', justifyContent: 'center' }}>
+          <Button onClick={loadOlder} variant="outlined" size="small">
+            Load Older Commits
+          </Button>
+        </Box>
+      )}
     </BlamelistContextProvider>
   );
 }

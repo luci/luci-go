@@ -44,7 +44,31 @@ describe('<HistoryChangepoint />', () => {
     expect(blamelistLink).toBeInTheDocument();
     expect(blamelistLink).toHaveAttribute(
       'href',
-      '/blamelist/base/url#CP-12345',
+      '/blamelist/base/url?start_cp=CP-12345#CP-12345',
+    );
+  });
+
+  it('should render with start and end commit positions when both are available', () => {
+    const mockSegment = Segment.fromPartial({
+      startPosition: '12345',
+      startPositionLowerBound99th: '12300',
+      startHour: '2024-01-01T10:00:00Z',
+    });
+    const mockNow = DateTime.fromISO('2024-01-01T12:00:00Z');
+    const mockBlamelistBaseUrl = '/blamelist/base/url';
+
+    render(
+      <HistoryChangepoint
+        pointingToSegment={mockSegment}
+        nowDtForFormatting={mockNow}
+        blamelistBaseUrl={mockBlamelistBaseUrl}
+      />,
+    );
+
+    const blamelistLink = screen.getByRole('link', { name: 'blamelist' });
+    expect(blamelistLink).toHaveAttribute(
+      'href',
+      '/blamelist/base/url?start_cp=CP-12345&end_cp=CP-12300#CP-12345',
     );
   });
 

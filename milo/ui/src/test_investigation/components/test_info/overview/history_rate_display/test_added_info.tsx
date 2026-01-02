@@ -40,7 +40,8 @@ export const TestAddedInfo = memo(function TestAddedDisplay({
     segment.startHour,
     nowDtForFormatting,
   );
-  const blamelistLink = `${blamelistBaseUrl}#CP-${segment.startPosition}`;
+  const endCp = Math.max(0, Number(segment.startPosition) - 30);
+  const blamelistLink = `${blamelistBaseUrl}?start_cp=${`CP-${segment.startPosition}`}&end_cp=${`CP-${endCp}`}#CP-${segment.startPosition}`;
 
   return (
     <Box
