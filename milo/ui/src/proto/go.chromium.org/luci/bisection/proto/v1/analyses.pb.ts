@@ -363,7 +363,11 @@ export interface TestAnalysis {
   /** Sample build bucket ID where the primary test failure failed. */
   readonly sampleBbid: string;
   /** Nthsection result. */
-  readonly nthSectionResult: TestNthSectionAnalysisResult | undefined;
+  readonly nthSectionResult:
+    | TestNthSectionAnalysisResult
+    | undefined;
+  /** GenAI analysis result. */
+  readonly genAiResult: TestGenAiAnalysisResult | undefined;
 }
 
 export interface TestFailure {
@@ -429,6 +433,26 @@ export interface TestNthSectionAnalysisResult {
     | undefined;
   /** Optional, when nth-section has found a culprit. */
   readonly suspect: TestCulprit | undefined;
+}
+
+export interface TestGenAiAnalysisResult {
+  /** The status of the GenAI analysis. */
+  readonly status: AnalysisStatus;
+  /** The run status of the GenAI analysis. */
+  readonly runStatus: AnalysisRunStatus;
+  /** Timestamp for the start time of the GenAI analysis. */
+  readonly startTime:
+    | string
+    | undefined;
+  /** Timestamp for the end time of the GenAI analysis. */
+  readonly endTime:
+    | string
+    | undefined;
+  /**
+   * Suspects found by GenAI analysis (up to 3).
+   * Sorted by confidence score in descending order.
+   */
+  readonly suspects: readonly TestCulprit[];
 }
 
 export interface TestSingleRerun {
@@ -517,7 +541,19 @@ export interface TestCulprit {
    */
   readonly culpritAction: readonly CulpritAction[];
   /** The details of suspect verification for the culprit. */
-  readonly verificationDetails: TestSuspectVerificationDetails | undefined;
+  readonly verificationDetails:
+    | TestSuspectVerificationDetails
+    | undefined;
+  /**
+   * Justification for why this commit was chosen as a suspect.
+   * Only populated for GenAI suspects.
+   */
+  readonly justification: string;
+  /**
+   * Confidence score for this suspect (0-10).
+   * Only populated for GenAI suspects.
+   */
+  readonly confidenceScore: number;
 }
 
 export interface BatchGetTestAnalysesRequest {
@@ -1791,6 +1827,7 @@ function createBaseTestAnalysis(): TestAnalysis {
     endCommit: undefined,
     sampleBbid: "0",
     nthSectionResult: undefined,
+    genAiResult: undefined,
   };
 }
 
@@ -1834,6 +1871,9 @@ export const TestAnalysis: MessageFns<TestAnalysis> = {
     }
     if (message.nthSectionResult !== undefined) {
       TestNthSectionAnalysisResult.encode(message.nthSectionResult, writer.uint32(122).fork()).join();
+    }
+    if (message.genAiResult !== undefined) {
+      TestGenAiAnalysisResult.encode(message.genAiResult, writer.uint32(130).fork()).join();
     }
     return writer;
   },
@@ -1949,6 +1989,14 @@ export const TestAnalysis: MessageFns<TestAnalysis> = {
           message.nthSectionResult = TestNthSectionAnalysisResult.decode(reader, reader.uint32());
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.genAiResult = TestGenAiAnalysisResult.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1977,6 +2025,7 @@ export const TestAnalysis: MessageFns<TestAnalysis> = {
       nthSectionResult: isSet(object.nthSectionResult)
         ? TestNthSectionAnalysisResult.fromJSON(object.nthSectionResult)
         : undefined,
+      genAiResult: isSet(object.genAiResult) ? TestGenAiAnalysisResult.fromJSON(object.genAiResult) : undefined,
     };
   },
 
@@ -2021,6 +2070,9 @@ export const TestAnalysis: MessageFns<TestAnalysis> = {
     if (message.nthSectionResult !== undefined) {
       obj.nthSectionResult = TestNthSectionAnalysisResult.toJSON(message.nthSectionResult);
     }
+    if (message.genAiResult !== undefined) {
+      obj.genAiResult = TestGenAiAnalysisResult.toJSON(message.genAiResult);
+    }
     return obj;
   },
 
@@ -2051,6 +2103,9 @@ export const TestAnalysis: MessageFns<TestAnalysis> = {
     message.sampleBbid = object.sampleBbid ?? "0";
     message.nthSectionResult = (object.nthSectionResult !== undefined && object.nthSectionResult !== null)
       ? TestNthSectionAnalysisResult.fromPartial(object.nthSectionResult)
+      : undefined;
+    message.genAiResult = (object.genAiResult !== undefined && object.genAiResult !== null)
+      ? TestGenAiAnalysisResult.fromPartial(object.genAiResult)
       : undefined;
     return message;
   },
@@ -2448,6 +2503,132 @@ export const TestNthSectionAnalysisResult: MessageFns<TestNthSectionAnalysisResu
     message.suspect = (object.suspect !== undefined && object.suspect !== null)
       ? TestCulprit.fromPartial(object.suspect)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseTestGenAiAnalysisResult(): TestGenAiAnalysisResult {
+  return { status: 0, runStatus: 0, startTime: undefined, endTime: undefined, suspects: [] };
+}
+
+export const TestGenAiAnalysisResult: MessageFns<TestGenAiAnalysisResult> = {
+  encode(message: TestGenAiAnalysisResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.status !== 0) {
+      writer.uint32(8).int32(message.status);
+    }
+    if (message.runStatus !== 0) {
+      writer.uint32(16).int32(message.runStatus);
+    }
+    if (message.startTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.startTime), writer.uint32(26).fork()).join();
+    }
+    if (message.endTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.endTime), writer.uint32(34).fork()).join();
+    }
+    for (const v of message.suspects) {
+      TestCulprit.encode(v!, writer.uint32(42).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TestGenAiAnalysisResult {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestGenAiAnalysisResult() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.status = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.runStatus = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.startTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.endTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.suspects.push(TestCulprit.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestGenAiAnalysisResult {
+    return {
+      status: isSet(object.status) ? analysisStatusFromJSON(object.status) : 0,
+      runStatus: isSet(object.runStatus) ? analysisRunStatusFromJSON(object.runStatus) : 0,
+      startTime: isSet(object.startTime) ? globalThis.String(object.startTime) : undefined,
+      endTime: isSet(object.endTime) ? globalThis.String(object.endTime) : undefined,
+      suspects: globalThis.Array.isArray(object?.suspects)
+        ? object.suspects.map((e: any) => TestCulprit.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TestGenAiAnalysisResult): unknown {
+    const obj: any = {};
+    if (message.status !== 0) {
+      obj.status = analysisStatusToJSON(message.status);
+    }
+    if (message.runStatus !== 0) {
+      obj.runStatus = analysisRunStatusToJSON(message.runStatus);
+    }
+    if (message.startTime !== undefined) {
+      obj.startTime = message.startTime;
+    }
+    if (message.endTime !== undefined) {
+      obj.endTime = message.endTime;
+    }
+    if (message.suspects?.length) {
+      obj.suspects = message.suspects.map((e) => TestCulprit.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TestGenAiAnalysisResult>): TestGenAiAnalysisResult {
+    return TestGenAiAnalysisResult.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TestGenAiAnalysisResult>): TestGenAiAnalysisResult {
+    const message = createBaseTestGenAiAnalysisResult() as any;
+    message.status = object.status ?? 0;
+    message.runStatus = object.runStatus ?? 0;
+    message.startTime = object.startTime ?? undefined;
+    message.endTime = object.endTime ?? undefined;
+    message.suspects = object.suspects?.map((e) => TestCulprit.fromPartial(e)) || [];
     return message;
   },
 };
@@ -2937,7 +3118,15 @@ export const TestSuspectVerificationDetails: MessageFns<TestSuspectVerificationD
 };
 
 function createBaseTestCulprit(): TestCulprit {
-  return { commit: undefined, reviewUrl: "", reviewTitle: "", culpritAction: [], verificationDetails: undefined };
+  return {
+    commit: undefined,
+    reviewUrl: "",
+    reviewTitle: "",
+    culpritAction: [],
+    verificationDetails: undefined,
+    justification: "",
+    confidenceScore: 0,
+  };
 }
 
 export const TestCulprit: MessageFns<TestCulprit> = {
@@ -2956,6 +3145,12 @@ export const TestCulprit: MessageFns<TestCulprit> = {
     }
     if (message.verificationDetails !== undefined) {
       TestSuspectVerificationDetails.encode(message.verificationDetails, writer.uint32(42).fork()).join();
+    }
+    if (message.justification !== "") {
+      writer.uint32(50).string(message.justification);
+    }
+    if (message.confidenceScore !== 0) {
+      writer.uint32(56).int32(message.confidenceScore);
     }
     return writer;
   },
@@ -3007,6 +3202,22 @@ export const TestCulprit: MessageFns<TestCulprit> = {
           message.verificationDetails = TestSuspectVerificationDetails.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.justification = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.confidenceScore = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3027,6 +3238,8 @@ export const TestCulprit: MessageFns<TestCulprit> = {
       verificationDetails: isSet(object.verificationDetails)
         ? TestSuspectVerificationDetails.fromJSON(object.verificationDetails)
         : undefined,
+      justification: isSet(object.justification) ? globalThis.String(object.justification) : "",
+      confidenceScore: isSet(object.confidenceScore) ? globalThis.Number(object.confidenceScore) : 0,
     };
   },
 
@@ -3047,6 +3260,12 @@ export const TestCulprit: MessageFns<TestCulprit> = {
     if (message.verificationDetails !== undefined) {
       obj.verificationDetails = TestSuspectVerificationDetails.toJSON(message.verificationDetails);
     }
+    if (message.justification !== "") {
+      obj.justification = message.justification;
+    }
+    if (message.confidenceScore !== 0) {
+      obj.confidenceScore = Math.round(message.confidenceScore);
+    }
     return obj;
   },
 
@@ -3064,6 +3283,8 @@ export const TestCulprit: MessageFns<TestCulprit> = {
     message.verificationDetails = (object.verificationDetails !== undefined && object.verificationDetails !== null)
       ? TestSuspectVerificationDetails.fromPartial(object.verificationDetails)
       : undefined;
+    message.justification = object.justification ?? "";
+    message.confidenceScore = object.confidenceScore ?? 0;
     return message;
   },
 };

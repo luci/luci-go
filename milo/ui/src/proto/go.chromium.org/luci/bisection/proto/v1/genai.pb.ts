@@ -15,7 +15,7 @@ export const protobufPackage = "luci.bisection.v1";
 export interface GenAiAnalysisResult {
   /** The status of the gen AI analysis. */
   readonly status: AnalysisStatus;
-  /** Suspects found by the gen AI analysis. */
+  /** Suspect found by the gen AI analysis for compile analysis. */
   readonly suspect:
     | GenAiSuspect
     | undefined;
@@ -44,6 +44,8 @@ export interface GenAiSuspect {
     | undefined;
   /** Justification for why the commit was chosen as a suspect. */
   readonly justification: string;
+  /** Confidence score for this suspect (0-10). */
+  readonly confidenceScore: number;
 }
 
 function createBaseGenAiAnalysisResult(): GenAiAnalysisResult {
@@ -164,6 +166,7 @@ function createBaseGenAiSuspect(): GenAiSuspect {
     verified: false,
     verificationDetails: undefined,
     justification: "",
+    confidenceScore: 0,
   };
 }
 
@@ -186,6 +189,9 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
     }
     if (message.justification !== "") {
       writer.uint32(50).string(message.justification);
+    }
+    if (message.confidenceScore !== 0) {
+      writer.uint32(56).int32(message.confidenceScore);
     }
     return writer;
   },
@@ -245,6 +251,14 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
           message.justification = reader.string();
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.confidenceScore = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -264,6 +278,7 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
         ? SuspectVerificationDetails.fromJSON(object.verificationDetails)
         : undefined,
       justification: isSet(object.justification) ? globalThis.String(object.justification) : "",
+      confidenceScore: isSet(object.confidenceScore) ? globalThis.Number(object.confidenceScore) : 0,
     };
   },
 
@@ -287,6 +302,9 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
     if (message.justification !== "") {
       obj.justification = message.justification;
     }
+    if (message.confidenceScore !== 0) {
+      obj.confidenceScore = Math.round(message.confidenceScore);
+    }
     return obj;
   },
 
@@ -305,6 +323,7 @@ export const GenAiSuspect: MessageFns<GenAiSuspect> = {
       ? SuspectVerificationDetails.fromPartial(object.verificationDetails)
       : undefined;
     message.justification = object.justification ?? "";
+    message.confidenceScore = object.confidenceScore ?? 0;
     return message;
   },
 };

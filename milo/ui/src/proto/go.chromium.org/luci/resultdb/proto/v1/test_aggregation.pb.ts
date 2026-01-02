@@ -37,6 +37,10 @@ export interface TestAggregation {
    *
    * This reflects the success running and uploading test results to ResultDB,
    * not the success of the test cases themselves.
+   *
+   * In case of the modules with the module name "legacy", it is possible that
+   * no work unit has reported a status for this module; in that case, the status
+   * here will be MODULE_STATUS_UNSPECIFIED.
    */
   readonly moduleStatus: TestAggregation_ModuleStatus;
   /** The module status counts. Set only for invocation-level aggregations. */

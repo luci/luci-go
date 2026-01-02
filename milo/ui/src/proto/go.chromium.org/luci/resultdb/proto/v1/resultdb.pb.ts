@@ -69,7 +69,8 @@ export interface QueryRootInvocationNamesResponse {
    * the root_invocation_names will only contains the invocation in the request
    * (i.e. a invocation can be its own root).
    *
-   * root_invocation_names can be empty when no root is found (in the presence of cycles).
+   * root_invocation_names can be empty when no root is found (in the presence
+   * of cycles).
    */
   readonly rootInvocationNames: readonly string[];
 }
@@ -196,10 +197,9 @@ export interface QueryTestResultsRequest {
   readonly pageToken: string;
   /**
    * Fields to include in the response.
-   * If not set, the default mask is used where summary_html, properties and tags are
-   * excluded.
-   * Test result names will always be included even if "name" is not a part of
-   * the mask.
+   * If not set, the default mask is used where summary_html, properties and
+   * tags are excluded. Test result names will always be included even if "name"
+   * is not a part of the mask.
    */
   readonly readMask: readonly string[] | undefined;
 }
@@ -384,8 +384,9 @@ export interface QueryArtifactsRequest {
    * Fields to include in the response.
    * If not set, the default mask is used where all fields are included.
    *
-   * In particular, the fetch_url field can slow down the request or in some cases introduce
-   * quota errors, so it is encouraged to not read the fetch_url field unless necessary.
+   * In particular, the fetch_url field can slow down the request or in some
+   * cases introduce quota errors, so it is encouraged to not read the fetch_url
+   * field unless necessary.
    */
   readonly readMask: readonly string[] | undefined;
 }
@@ -438,16 +439,16 @@ export interface ListArtifactLinesResponse {
 /** A request for the CompareArtifactLines RPC. */
 export interface CompareArtifactLinesRequest {
   /**
-   * Required. The name of the artifact from a failing test result to be analyzed.
-   * Format:
+   * Required. The name of the artifact from a failing test result to be
+   * analyzed. Format:
    * "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
    */
   readonly name: string;
   /**
    * Required. A list of names of passing test results to compare against.
-   * These should be for the same test_id and variant_hash as the failing result.
-   * The names are in the ResultDB test result name format, as returned by
-   * the TestHistory.QueryRecentPasses RPC.
+   * These should be for the same test_id and variant_hash as the failing
+   * result. The names are in the ResultDB test result name format, as returned
+   * by the TestHistory.QueryRecentPasses RPC.
    */
   readonly passingResults: readonly string[];
   /** Optional. The view to control which fields are returned in the response. */
@@ -460,10 +461,10 @@ export interface CompareArtifactLinesRequest {
    */
   readonly pageSize: number;
   /**
-   * Optional. A page token, received from a previous `CompareArtifactLines` call.
-   * Provide this to retrieve the subsequent page.
-   * When paginating, all other parameters provided to `CompareArtifactLines` MUST
-   * match the call that provided the page token.
+   * Optional. A page token, received from a previous `CompareArtifactLines`
+   * call. Provide this to retrieve the subsequent page. When paginating, all
+   * other parameters provided to `CompareArtifactLines` MUST match the call
+   * that provided the page token.
    */
   readonly pageToken: string;
 }
@@ -528,6 +529,15 @@ export interface CompareArtifactLinesResponse {
    * request.
    */
   readonly nextPageToken: string;
+  /**
+   * The names of the actual artifacts from passing results that were used
+   * for the comparison.  There may be fewer than passing_results from the
+   * request if the caller did not have permission to some results, or some
+   * results did not contain a corresponding artifact.
+   * Note that if there are no names in this field then no comparison was
+   * performed.
+   */
+  readonly usedPassingArtifacts: readonly string[];
 }
 
 /**
@@ -559,13 +569,13 @@ export interface CompareArtifactLinesResponse_FailureOnlyRange {
  */
 export interface QueryTestVariantsRequest {
   /**
-   * The name of the root invocation to retrieve test variants from, see RootInvocation.name.
-   * Should be empty if invocations field is specified.
+   * The name of the root invocation to retrieve test variants from, see
+   * RootInvocation.name. Should be empty if invocations field is specified.
    */
   readonly parent: string;
   /**
-   * Retrieve test verdicts included in these invocations, directly or indirectly
-   * (via Invocation.included_invocations).
+   * Retrieve test verdicts included in these invocations, directly or
+   * indirectly (via Invocation.included_invocations).
    *
    * As of April 2024, a maximum of one invocation may be specified.
    * DEPRECATED: Use parent instead.
@@ -630,17 +640,21 @@ export interface QueryTestVariantsRequest {
    * For performance reasons, only two sort orders are supported:
    * - verdict status v1 ascending (order is UNEXPECTED, UNEXPECTEDLY_SKIPPED,
    *   FLAKY, EXONERATED, EXPECTED).
-   *   This is the default. It can be explicitly requested by "status" or "status asc".
-   * - effective verdict status v2 ascending (by verdict status v2 including any status overrides,
-   *   order is FAILED, EXECUTION_ERRORED, PRECLUDED, FLAKY, EXONERATED, SKIPPED & PASSED).
-   *   It can be requested by "status_v2_effective" or "status_v2_effective asc"
-   *   where status_v2_effective is a virtual field representing the above sort order.
+   *   This is the default. It can be explicitly requested by "status" or
+   *   "status asc".
+   * - effective verdict status v2 ascending (by verdict status v2 including any
+   * status overrides,
+   *   order is FAILED, EXECUTION_ERRORED, PRECLUDED, FLAKY, EXONERATED, SKIPPED
+   *   & PASSED). It can be requested by "status_v2_effective" or
+   *   "status_v2_effective asc" where status_v2_effective is a virtual field
+   *   representing the above sort order.
    */
   readonly orderBy: string;
   /**
    * An AIP-160 style filter to select test variants to return.
    *
-   * Filtering supports a subset of [AIP-160 filtering](https://google.aip.dev/160).
+   * Filtering supports a subset of [AIP-160
+   * filtering](https://google.aip.dev/160).
    *
    * All values are case-sensitive.
    *
@@ -684,13 +698,15 @@ export interface QueryTestVariantsResponse {
    */
   readonly nextPageToken: string;
   /**
-   * The code sources tested by the returned test variants. The sources are keyed
-   * by an ID which allows them to be cross-referenced from TestVariant.sources_id.
+   * The code sources tested by the returned test variants. The sources are
+   * keyed by an ID which allows them to be cross-referenced from
+   * TestVariant.sources_id.
    *
-   * The sources are returned via this map instead of directly on the TestVariant
-   * to avoid excessive response size. Each source message could be up to a few
-   * kilobytes and there are usually no more than a handful of different sources
-   * tested in an invocation, so deduplicating them here reduces response size.
+   * The sources are returned via this map instead of directly on the
+   * TestVariant to avoid excessive response size. Each source message could be
+   * up to a few kilobytes and there are usually no more than a handful of
+   * different sources tested in an invocation, so deduplicating them here
+   * reduces response size.
    */
   readonly sources: { [key: string]: Sources };
 }
@@ -760,8 +776,8 @@ export interface QueryRunTestVerdictsResponse {
  */
 export interface BatchGetTestVariantsRequest {
   /**
-   * Name of the root invocation that the test variants are in, see RootInvocation.name.
-   * Should be empty if invocation is specified.
+   * Name of the root invocation that the test variants are in, see
+   * RootInvocation.name. Should be empty if invocation is specified.
    */
   readonly parent: string;
   /**
@@ -819,13 +835,15 @@ export interface BatchGetTestVariantsResponse {
    */
   readonly testVariants: readonly TestVariant[];
   /**
-   * The code sources tested by the returned test variants. The sources are keyed
-   * by an ID which allows them to be cross-referenced from TestVariant.sources_id.
+   * The code sources tested by the returned test variants. The sources are
+   * keyed by an ID which allows them to be cross-referenced from
+   * TestVariant.sources_id.
    *
-   * The sources are returned via this map instead of directly on the TestVariant
-   * to avoid excessive response size. Each source message could be up to a few
-   * kilobytes and there are usually no more than a handful of different sources
-   * tested in an invocation, so deduplicating them here reduces response size.
+   * The sources are returned via this map instead of directly on the
+   * TestVariant to avoid excessive response size. Each source message could be
+   * up to a few kilobytes and there are usually no more than a handful of
+   * different sources tested in an invocation, so deduplicating them here
+   * reduces response size.
    */
   readonly sources: { [key: string]: Sources };
 }
@@ -885,10 +903,9 @@ export interface QueryNewTestVariantsRequest {
   /** Name of the invocation, e.g. "invocations/{id}". */
   readonly invocation: string;
   /**
-   * The baseline to compare test variants against, to determine if they are new.
-   * e.g. “projects/{project}/baselines/{baseline_id}”.
-   * For example, in the project "chromium", the baseline_id may be
-   * "try:linux-rel".
+   * The baseline to compare test variants against, to determine if they are
+   * new. e.g. “projects/{project}/baselines/{baseline_id}”. For example, in the
+   * project "chromium", the baseline_id may be "try:linux-rel".
    */
   readonly baseline: string;
 }
@@ -907,7 +924,10 @@ export interface QueryNewTestVariantsResponse {
   readonly newTestVariants: readonly QueryNewTestVariantsResponse_NewTestVariant[];
 }
 
-/** Represents a new test, which contains minimal information to uniquely identify a TestVariant. */
+/**
+ * Represents a new test, which contains minimal information to uniquely
+ * identify a TestVariant.
+ */
 export interface QueryNewTestVariantsResponse_NewTestVariant {
   /**
    * A unique identifier of the test in a LUCI project.
@@ -940,8 +960,8 @@ export interface QueryInstructionRequest {
   readonly name: string;
   /**
    * The maximum depth to traverse the dependency chain. Default is 5.
-   * The maximum value we support is 10, value bigger than 10 will be adjusted to 10.
-   * Non-positive value will be adjusted to the default.
+   * The maximum value we support is 10, value bigger than 10 will be adjusted
+   * to 10. Non-positive value will be adjusted to the default.
    */
   readonly dependencyMaxDepth: number;
 }
@@ -964,7 +984,8 @@ export interface InstructionDependencyChain {
    * List of dependencies.
    * The list will be sorted by the position in the dependency chain.
    * The direct dependency will be at position 0.
-   * If the dependency traversing encounters an error, the last node will contain the error.
+   * If the dependency traversing encounters an error, the last node will
+   * contain the error.
    */
   readonly nodes: readonly InstructionDependencyChain_Node[];
 }
@@ -984,15 +1005,16 @@ export interface InstructionDependencyChain_Node {
    */
   readonly content: string;
   /**
-   * In case the traversal encounters an error, the error will be returned in this field.
-   * If an error is returned, it will only be returned in the last dependency node,
-   * after that, the chain will stop.
+   * In case the traversal encounters an error, the error will be returned in
+   * this field. If an error is returned, it will only be returned in the last
+   * dependency node, after that, the chain will stop.
    */
   readonly error: string;
   /**
    * The descriptive name of the instruction that the dependency belongs to.
    * In the following cases, the descriptive name will not be set:
-   * - If the user does not have the permission to access the instruction for the node, or
+   * - If the user does not have the permission to access the instruction for
+   * the node, or
    * - If the instruction cannot be found.
    */
   readonly descriptiveName: string;
@@ -1017,39 +1039,43 @@ export interface QueryTestVariantArtifactGroupsRequest {
     | IDMatcher
     | undefined;
   /**
-   * The lower bound of the time range to search in UTC time (exclusive) (required).
-   * start_time must not be before 20 July 2024 UTC.
-   * start_time must be less than the end time.
-   * The duration between start_time and end_time must not be greater than 7 days.
+   * The lower bound of the time range to search in UTC time (exclusive)
+   * (required). start_time must not be before 20 July 2024 UTC. start_time must
+   * be less than the end time. The duration between start_time and end_time
+   * must not be greater than 7 days.
    */
   readonly startTime:
     | string
     | undefined;
-  /** The upper bound of the time range to search in UTC time (inclusive) (required). */
+  /**
+   * The upper bound of the time range to search in UTC time (inclusive)
+   * (required).
+   */
   readonly endTime:
     | string
     | undefined;
   /**
-   * The maximum number of match groups to return. The service may return fewer than
-   * this value.
-   * If unspecified, at most 100 items will be returned.
-   * The maximum value is 100; values above 100 will be coerced to 100.
+   * The maximum number of match groups to return. The service may return fewer
+   * than this value. If unspecified, at most 100 items will be returned. The
+   * maximum value is 100; values above 100 will be coerced to 100.
    */
   readonly pageSize: number;
   /**
-   * A page token, received from a previous `QueryTestVariantArtifactGroups` call.
-   * Provide this to retrieve the subsequent page.
+   * A page token, received from a previous `QueryTestVariantArtifactGroups`
+   * call. Provide this to retrieve the subsequent page.
    *
-   * When paginating, all other parameters provided to `QueryTestVariantArtifactGroups` must
-   * match the call that provided the page token.
+   * When paginating, all other parameters provided to
+   * `QueryTestVariantArtifactGroups` must match the call that provided the page
+   * token.
    */
   readonly pageToken: string;
 }
 
 export interface QueryTestVariantArtifactGroupsResponse {
   /**
-   * Test variant artifacts are grouped by test_id, variant_hash and artifact_id.
-   * Groups are ordered by partition_time of the most recent artifact DESC in the group, test id, variant hash, artifact id.
+   * Test variant artifacts are grouped by test_id, variant_hash and
+   * artifact_id. Groups are ordered by partition_time of the most recent
+   * artifact DESC in the group, test id, variant hash, artifact id.
    */
   readonly groups: readonly QueryTestVariantArtifactGroupsResponse_MatchGroup[];
   /**
@@ -1079,11 +1105,15 @@ export interface QueryTestVariantArtifactGroupsResponse_MatchGroup {
   /** ID of the artifact. */
   readonly artifactId: string;
   /**
-   * Artifacts that matches the search for this (test id, variant_hash, artifact id) combination.
-   * Return at most 3 items, ordered by partition time DESC, artifact name ASC.
+   * Artifacts that matches the search for this (test id, variant_hash,
+   * artifact id) combination. Return at most 3 items, ordered by partition
+   * time DESC, artifact name ASC.
    */
   readonly artifacts: readonly ArtifactMatchingContent[];
-  /** The total number of matching artifacts for this (test id, variant_hash, artifact id) combination. */
+  /**
+   * The total number of matching artifacts for this (test id, variant_hash,
+   * artifact id) combination.
+   */
   readonly matchingCount: number;
 }
 
@@ -1104,15 +1134,18 @@ export interface QueryTestVariantArtifactsRequest {
   /** The artifact id (required). */
   readonly artifactId: string;
   /**
-   * The lower bound of the time range to search in UTC time (exclusive) (required).
-   * start_time must not be before 20 July 2024 UTC.
-   * start_time must be less than the end time.
-   * The duration between start_time and end_time must not be greater than 7 days.
+   * The lower bound of the time range to search in UTC time (exclusive)
+   * (required). start_time must not be before 20 July 2024 UTC. start_time must
+   * be less than the end time. The duration between start_time and end_time
+   * must not be greater than 7 days.
    */
   readonly startTime:
     | string
     | undefined;
-  /** The upper bound of the time range to search in UTC time (inclusive) (required). */
+  /**
+   * The upper bound of the time range to search in UTC time (inclusive)
+   * (required).
+   */
   readonly endTime:
     | string
     | undefined;
@@ -1127,8 +1160,9 @@ export interface QueryTestVariantArtifactsRequest {
    * A page token, received from a previous `QueryTestVariantArtifacts` call.
    * Provide this to retrieve the subsequent page.
    *
-   * When paginating, all other parameters provided to `QueryTestVariantArtifacts` must
-   * match the call that provided the page token.
+   * When paginating, all other parameters provided to
+   * `QueryTestVariantArtifacts` must match the call that provided the page
+   * token.
    */
   readonly pageToken: string;
 }
@@ -1161,39 +1195,44 @@ export interface QueryInvocationVariantArtifactGroupsRequest {
     | IDMatcher
     | undefined;
   /**
-   * The lower bound of the time range to search in UTC time (exclusive) (required).
-   * start_time must not be before 20 July 2024 UTC.
-   * start_time must be less than the end time.
-   * The duration between start_time and end_time must not be greater than 7 days.
+   * The lower bound of the time range to search in UTC time (exclusive)
+   * (required). start_time must not be before 20 July 2024 UTC. start_time must
+   * be less than the end time. The duration between start_time and end_time
+   * must not be greater than 7 days.
    */
   readonly startTime:
     | string
     | undefined;
-  /** The upper bound of the time range to search in UTC time (inclusive) (required). */
+  /**
+   * The upper bound of the time range to search in UTC time (inclusive)
+   * (required).
+   */
   readonly endTime:
     | string
     | undefined;
   /**
-   * The maximum number of match groups to return. The service may return fewer than
-   * this value.
-   * If unspecified, at most 100 items will be returned.
-   * The maximum value is 100; values above 100 will be coerced to 100.
+   * The maximum number of match groups to return. The service may return fewer
+   * than this value. If unspecified, at most 100 items will be returned. The
+   * maximum value is 100; values above 100 will be coerced to 100.
    */
   readonly pageSize: number;
   /**
-   * A page token, received from a previous `QueryInvocationVariantArtifactGroups` call.
-   * Provide this to retrieve the subsequent page.
+   * A page token, received from a previous
+   * `QueryInvocationVariantArtifactGroups` call. Provide this to retrieve the
+   * subsequent page.
    *
-   * When paginating, all other parameters provided to `QueryInvocationVariantArtifactGroups` must
-   * match the call that provided the page token.
+   * When paginating, all other parameters provided to
+   * `QueryInvocationVariantArtifactGroups` must match the call that provided
+   * the page token.
    */
   readonly pageToken: string;
 }
 
 export interface QueryInvocationVariantArtifactGroupsResponse {
   /**
-   * Invocation variant artifacts  are grouped by variant_union_hash and artifact_id.
-   * Ordered by partition_time of the most recent artifact DESC in the group, variant_union_hash, artifact id.
+   * Invocation variant artifacts  are grouped by variant_union_hash and
+   * artifact_id. Ordered by partition_time of the most recent artifact DESC in
+   * the group, variant_union_hash, artifact id.
    */
   readonly groups: readonly QueryInvocationVariantArtifactGroupsResponse_MatchGroup[];
   /**
@@ -1208,11 +1247,14 @@ export interface QueryInvocationVariantArtifactGroupsResponse {
  * variant_union_hash and artifact_id form the group key.
  */
 export interface QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
-  /** Hash of the union of all variants of test results directly included by the invocation. */
+  /**
+   * Hash of the union of all variants of test results directly included by
+   * the invocation.
+   */
   readonly variantUnionHash: string;
   /**
-   * Union of all variants of test results directly included by the invocation.
-   * Roughly defines a specific way to run an invocation.
+   * Union of all variants of test results directly included by the
+   * invocation. Roughly defines a specific way to run an invocation.
    */
   readonly variantUnion:
     | Variant
@@ -1220,11 +1262,15 @@ export interface QueryInvocationVariantArtifactGroupsResponse_MatchGroup {
   /** ID of the artifact. */
   readonly artifactId: string;
   /**
-   * Artifacts that matches the search for this (variant_union_hash, artifact id) combination.
-   * Return at most 3 items, ordered by partition time DESC, artifact name ASC.
+   * Artifacts that matches the search for this (variant_union_hash, artifact
+   * id) combination. Return at most 3 items, ordered by partition time DESC,
+   * artifact name ASC.
    */
   readonly artifacts: readonly ArtifactMatchingContent[];
-  /** The total number of matching artifacts for this (variant_union_hash, artifact id) combination. */
+  /**
+   * The total number of matching artifacts for this (variant_union_hash,
+   * artifact id) combination.
+   */
   readonly matchingCount: number;
 }
 
@@ -1238,20 +1284,26 @@ export interface QueryInvocationVariantArtifactsRequest {
   readonly searchString:
     | ArtifactContentMatcher
     | undefined;
-  /** Hash of the union of all variants of test results directly included by the invocation (required). */
+  /**
+   * Hash of the union of all variants of test results directly included by the
+   * invocation (required).
+   */
   readonly variantUnionHash: string;
   /** The artifact id (required). */
   readonly artifactId: string;
   /**
-   * The lower bound of the time range to search in UTC time (exclusive) (required).
-   * start_time must not be before 20 July 2024 UTC.
-   * start_time must be less than the end time.
-   * The duration between start_time and end_time must not be greater than 7 days.
+   * The lower bound of the time range to search in UTC time (exclusive)
+   * (required). start_time must not be before 20 July 2024 UTC. start_time must
+   * be less than the end time. The duration between start_time and end_time
+   * must not be greater than 7 days.
    */
   readonly startTime:
     | string
     | undefined;
-  /** The upper bound of the time range to search in UTC time (inclusive) (required). */
+  /**
+   * The upper bound of the time range to search in UTC time (inclusive)
+   * (required).
+   */
   readonly endTime:
     | string
     | undefined;
@@ -1263,11 +1315,12 @@ export interface QueryInvocationVariantArtifactsRequest {
    */
   readonly pageSize: number;
   /**
-   * A page token, received from a previous `QueryInvocationVariantArtifacts` call.
-   * Provide this to retrieve the subsequent page.
+   * A page token, received from a previous `QueryInvocationVariantArtifacts`
+   * call. Provide this to retrieve the subsequent page.
    *
-   * When paginating, all other parameters provided to `QueryInvocationVariantArtifacts` must
-   * match the call that provided the page token.
+   * When paginating, all other parameters provided to
+   * `QueryInvocationVariantArtifacts` must match the call that provided the
+   * page token.
    */
   readonly pageToken: string;
 }
@@ -1309,18 +1362,24 @@ export interface ArtifactMatchingContent {
    * @deprecated
    */
   readonly testStatus: TestStatus;
-  /** The test result status (v2), only populated if it is a result level artifact. */
+  /**
+   * The test result status (v2), only populated if it is a result level
+   * artifact.
+   */
   readonly testStatusV2: TestResult_Status;
   /**
-   * Part of the artifact content that contains the first occurrence of the match.
-   * The snippet is at most 10 KiB.
-   * Prioritize fiting first match into the 10KiB first, divided the remaining bytes equally
-   * to fit content immediately before and after the first match, including at most one more line above and below.
-   * If the first match is more than 10KiB, it will be truncated.
-   * Ellipsis ("...") are added, if the snippet is truncated.
+   * Part of the artifact content that contains the first occurrence of the
+   * match. The snippet is at most 10 KiB. Prioritize fiting first match into
+   * the 10KiB first, divided the remaining bytes equally to fit content
+   * immediately before and after the first match, including at most one more
+   * line above and below. If the first match is more than 10KiB, it will be
+   * truncated. Ellipsis ("...") are added, if the snippet is truncated.
    */
   readonly snippet: string;
-  /** All non-overlapping matches exists in the snippet from front to end in order (i.e. matches[i].end_index <= matches[i+1].start_index). */
+  /**
+   * All non-overlapping matches exists in the snippet from front to end in
+   * order (i.e. matches[i].end_index <= matches[i+1].start_index).
+   */
   readonly matches: readonly ArtifactMatchingContent_Match[];
 }
 
@@ -1334,11 +1393,17 @@ export interface ArtifactMatchingContent_Match {
 
 /** Used to match a artifact content. */
 export interface ArtifactContentMatcher {
-  /** The string is a regex expression. Use regex match to find matching artifact content. */
+  /**
+   * The string is a regex expression. Use regex match to find matching
+   * artifact content.
+   */
   readonly regexContain?:
     | string
     | undefined;
-  /** Use case insensitive equality match with this string to find matching artifact content. */
+  /**
+   * Use case insensitive equality match with this string to find matching
+   * artifact content.
+   */
   readonly contain?: string | undefined;
 }
 
@@ -1390,8 +1455,9 @@ export interface QueryTestAggregationsRequest {
    * A page token, received from a previous `QueryTestAggregations` call.
    * Provide this to retrieve the subsequent page.
    *
-   * When paginating, all other parameters provided to `QueryTestAggregationsRequest` must
-   * match the call that provided the page token.
+   * When paginating, all other parameters provided to
+   * `QueryTestAggregationsRequest` must match the call that provided the page
+   * token.
    */
   readonly pageToken: string;
 }
@@ -1403,8 +1469,9 @@ export interface QueryTestAggregationsRequest {
 export interface QueryTestAggregationsResponse {
   /**
    * The test aggregations.
-   * Results are sorted by structured test identifier, lexicographically over the tuple
-   * (module_name, module_variant_hash, module_scheme, coarse_name, fine_name, case_name).
+   * Results are sorted by structured test identifier, lexicographically over
+   * the tuple (module_name, module_variant_hash, module_scheme, coarse_name,
+   * fine_name, case_name).
    *
    * Note: When querying invocations that are not yet finalized, aggregations
    * may be incomplete.
@@ -1435,12 +1502,14 @@ export interface QueryTestVerdictsRequest {
    * The test prefix may have:
    * - No fields set, to return all aggregates in the invocation.
    * - Only module set, to return all aggregates within a module.
-   * - Module and coarse name set, to return aggregates with a coarse-level aggregation.
-   * - Module, coarse name and fine name set, to return aggregates within a fine-level aggregation.
+   * - Module and coarse name set, to return aggregates with a coarse-level
+   * aggregation.
+   * - Module, coarse name and fine name set, to return aggregates within a
+   * fine-level aggregation.
    *
-   * The test prefix should not be more precise than the requested aggregation_level.
-   * For example, if asking for a coarse-level aggregation, do not include a fine name in the
-   * test prefix filter.
+   * The test prefix should not be more precise than the requested
+   * aggregation_level. For example, if asking for a coarse-level aggregation,
+   * do not include a fine name in the test prefix filter.
    */
   readonly testPrefixFilter:
     | TestIdentifierPrefix
@@ -1456,8 +1525,9 @@ export interface QueryTestVerdictsRequest {
    * A page token, received from a previous `QueryTestVerdicts` call.
    * Provide this to retrieve the subsequent page.
    *
-   * When paginating, all other parameters provided to `QueryTestVerdictsRequest` must
-   * match the call that provided the page token.
+   * When paginating, all other parameters provided to
+   * `QueryTestVerdictsRequest` must match the call that provided the page
+   * token.
    */
   readonly pageToken: string;
 }
@@ -1469,8 +1539,9 @@ export interface QueryTestVerdictsRequest {
 export interface QueryTestVerdictsResponse {
   /**
    * The test verdicts.
-   * Results are sorted by structured test identifier, lexicographically over the tuple
-   * (module_name, module_scheme, module_variant_hash, coarse_name, fine_name, case_name).
+   * Results are sorted by structured test identifier, lexicographically over
+   * the tuple (module_name, module_scheme, module_variant_hash, coarse_name,
+   * fine_name, case_name).
    */
   readonly testVerdicts: readonly TestVerdict[];
   /**
@@ -3375,7 +3446,7 @@ export const CompareArtifactLinesRequest: MessageFns<CompareArtifactLinesRequest
 };
 
 function createBaseCompareArtifactLinesResponse(): CompareArtifactLinesResponse {
-  return { failureOnlyRanges: [], nextPageToken: "" };
+  return { failureOnlyRanges: [], nextPageToken: "", usedPassingArtifacts: [] };
 }
 
 export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesResponse> = {
@@ -3385,6 +3456,9 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
     }
     if (message.nextPageToken !== "") {
       writer.uint32(18).string(message.nextPageToken);
+    }
+    for (const v of message.usedPassingArtifacts) {
+      writer.uint32(26).string(v!);
     }
     return writer;
   },
@@ -3412,6 +3486,14 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
           message.nextPageToken = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.usedPassingArtifacts.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3427,6 +3509,9 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
         ? object.failureOnlyRanges.map((e: any) => CompareArtifactLinesResponse_FailureOnlyRange.fromJSON(e))
         : [],
       nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+      usedPassingArtifacts: globalThis.Array.isArray(object?.usedPassingArtifacts)
+        ? object.usedPassingArtifacts.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -3440,6 +3525,9 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
     if (message.nextPageToken !== "") {
       obj.nextPageToken = message.nextPageToken;
     }
+    if (message.usedPassingArtifacts?.length) {
+      obj.usedPassingArtifacts = message.usedPassingArtifacts;
+    }
     return obj;
   },
 
@@ -3451,6 +3539,7 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
     message.failureOnlyRanges =
       object.failureOnlyRanges?.map((e) => CompareArtifactLinesResponse_FailureOnlyRange.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
+    message.usedPassingArtifacts = object.usedPassingArtifacts?.map((e) => e) || [];
     return message;
   },
 };
@@ -7501,8 +7590,9 @@ export const QueryTestVerdictsResponse: MessageFns<QueryTestVerdictsResponse> = 
 /**
  * Service to read test results.
  *
- * Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
- * and [Privacy Policy](https://policies.google.com/privacy).
+ * Use of LUCI is subject to the Google [Terms of
+ * Service](https://policies.google.com/terms) and [Privacy
+ * Policy](https://policies.google.com/privacy).
  */
 export interface ResultDB {
   /**
@@ -7601,35 +7691,38 @@ export interface ResultDB {
   /**
    * Retrieves an instruction for step or test result.
    * If the instruction contains placeholders, they will not be replaced.
-   * The callers of this RPC are responsible to populate the placeholders with real data.
+   * The callers of this RPC are responsible to populate the placeholders with
+   * real data.
    */
   GetInstruction(request: GetInstructionRequest): Promise<Instruction>;
   /**
    * Retrieves the instruction and the dependency chain for all targets.
-   * A maximum depth can be specified for the maximum number of dependency nodes to be returned.
-   * If an error occurs while traversing a chain (e.g. circular dependency, permission, not found...),
-   * the chain will stop and the rpc will return whatever it has found so far.
+   * A maximum depth can be specified for the maximum number of dependency nodes
+   * to be returned. If an error occurs while traversing a chain (e.g. circular
+   * dependency, permission, not found...), the chain will stop and the rpc will
+   * return whatever it has found so far.
    */
   QueryInstruction(request: QueryInstructionRequest): Promise<QueryInstructionResponse>;
   /**
-   * UNSTABLE (until launched): This RPC is in development and API may change without notice.
+   * UNSTABLE (until launched): This RPC is in development and API may change
+   * without notice.
    *
    * Retrieves test aggregations for a single root invocation.
    *
-   * Unlike QueryTestResults and QueryTestVariants which are guaranteed to read all test results
-   * uploaded to Recorder service up to the time of query, this RPC only guarantees eventual
-   * consistency (i.e. there may be a lag). Once an invocation is finalized, data is
-   * guaranteed to be consistent.
+   * Unlike QueryTestResults and QueryTestVariants which are guaranteed to read
+   * all test results uploaded to Recorder service up to the time of query, this
+   * RPC only guarantees eventual consistency (i.e. there may be a lag). Once an
+   * invocation is finalized, data is guaranteed to be consistent.
    */
   QueryTestAggregations(request: QueryTestAggregationsRequest): Promise<QueryTestAggregationsResponse>;
   /**
-   * UNSTABLE (until launched): This RPC is in development and API may change without notice.
-   * Retrieves test verdicts for a single root invocation.
+   * UNSTABLE (until launched): This RPC is in development and API may change
+   * without notice. Retrieves test verdicts for a single root invocation.
    *
-   * Unlike QueryTestResults and QueryTestVariants which are guaranteed to read all test results
-   * uploaded to Recorder service up to the time of query, this RPC only guarantees eventual
-   * consistency (i.e. there may be a lag). Once an invocation is finalized, data is
-   * guaranteed to be consistent.
+   * Unlike QueryTestResults and QueryTestVariants which are guaranteed to read
+   * all test results uploaded to Recorder service up to the time of query, this
+   * RPC only guarantees eventual consistency (i.e. there may be a lag). Once an
+   * invocation is finalized, data is guaranteed to be consistent.
    */
   QueryTestVerdicts(request: QueryTestVerdictsRequest): Promise<QueryTestVerdictsResponse>;
   /** Retrieves an artifact. */
@@ -7669,26 +7762,34 @@ export interface ResultDB {
    */
   CompareArtifactLines(request: CompareArtifactLinesRequest): Promise<CompareArtifactLinesResponse>;
   /**
-   * Queries result level artifacts that matches a search_string. Support regex or exact match.
-   * Results are grouped by test_id, variant_hash, artifact_id.
-   * Within each group, artifacts are sorted by recency and at most 3 are returned.
-   * To obtain more matching artifacts of a particular group, uses QueryTestVariantArtifacts.
+   * Queries result level artifacts that matches a search_string. Support regex
+   * or exact match. Results are grouped by test_id, variant_hash, artifact_id.
+   * Within each group, artifacts are sorted by recency and at most 3 are
+   * returned. To obtain more matching artifacts of a particular group, uses
+   * QueryTestVariantArtifacts.
    */
   QueryTestVariantArtifactGroups(
     request: QueryTestVariantArtifactGroupsRequest,
   ): Promise<QueryTestVariantArtifactGroupsResponse>;
-  /** Queries test result artifacts that match a search_string for given test_id, variant_hash and artifact_id. */
+  /**
+   * Queries test result artifacts that match a search_string for given test_id,
+   * variant_hash and artifact_id.
+   */
   QueryTestVariantArtifacts(request: QueryTestVariantArtifactsRequest): Promise<QueryTestVariantArtifactsResponse>;
   /**
-   * Queries invocation level artifacts that matches a search_string. Support regex or exact match.
-   * Results are grouped by variant_union_hash, artifact_id.
-   * Within each group, artifacts are sorted by recency and at most 3 are returned.
-   * To obtain more matching artifacts of a particular group, uses QueryInvocationVariantArtifacts.
+   * Queries invocation level artifacts that matches a search_string. Support
+   * regex or exact match. Results are grouped by variant_union_hash,
+   * artifact_id. Within each group, artifacts are sorted by recency and at most
+   * 3 are returned. To obtain more matching artifacts of a particular group,
+   * uses QueryInvocationVariantArtifacts.
    */
   QueryInvocationVariantArtifactGroups(
     request: QueryInvocationVariantArtifactGroupsRequest,
   ): Promise<QueryInvocationVariantArtifactGroupsResponse>;
-  /** Queries invocation artifacts that match a search_string for given variant_union_hash and artifact_id. */
+  /**
+   * Queries invocation artifacts that match a search_string for given
+   * variant_union_hash and artifact_id.
+   */
   QueryInvocationVariantArtifacts(
     request: QueryInvocationVariantArtifactsRequest,
   ): Promise<QueryInvocationVariantArtifactsResponse>;

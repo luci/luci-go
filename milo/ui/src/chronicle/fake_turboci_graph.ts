@@ -691,7 +691,7 @@ export class FakeGraphGenerator {
     // 1. Creation Edit (PLANNED)
     edits.push(
       this.createEdit({ stage: stageId }, realm, createRev, 'Creation', {
-        stage: { state: StageState.STAGE_STATE_PLANNED, executionPolicies: [] },
+        stage: { state: StageState.STAGE_STATE_PLANNED, attempts: [] },
       }),
     );
 
@@ -705,7 +705,7 @@ export class FakeGraphGenerator {
         {
           stage: {
             state: StageState.STAGE_STATE_ATTEMPTING,
-            executionPolicies: [],
+            attempts: [],
           },
         },
       ),
@@ -725,7 +725,7 @@ export class FakeGraphGenerator {
         finalRev,
         'Execution completed',
         {
-          stage: { state: StageState.STAGE_STATE_FINAL, executionPolicies: [] },
+          stage: { state: StageState.STAGE_STATE_FINAL, attempts: [] },
         },
       ),
     );
@@ -1245,9 +1245,9 @@ export class FakeGraphGenerator {
           ),
         ],
         progress: [
-          { msg: 'Scheduled', version: currentStartRev, details: [] },
-          { msg: 'Running', version: currentStartRev, details: [] },
-          { msg: msg, version: endRev, details: [] },
+          { message: 'Scheduled', version: currentStartRev, details: [] },
+          { message: 'Running', version: currentStartRev, details: [] },
+          { message: msg, version: endRev, details: [] },
         ],
         stateHistory: [], // Simplified for fake data
       };
@@ -1304,12 +1304,12 @@ export class FakeGraphGenerator {
       expireAt: expireStr, // Roughly +180 days
       dataExpireAt: expireStr, // Roughly +30 days
       realm: realm,
-      editor: editor || this.getOrchestratorActor(),
+      createdBy: editor || this.getOrchestratorActor(),
       transactionalSet: [forNode],
       reasons: [
         {
           realm: realm,
-          reason: reasonMsg,
+          message: reasonMsg,
           details: [],
         },
       ],
