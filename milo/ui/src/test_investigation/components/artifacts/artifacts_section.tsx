@@ -114,7 +114,6 @@ function ArtifactsExplorer({
           >
             <Box
               sx={{
-                p: 2,
                 width: '100%',
               }}
             >

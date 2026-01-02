@@ -17,6 +17,8 @@ import {
   generateTestInvestigateUrl,
   generateTestInvestigateUrlForLegacyInvocations,
 } from '@/common/tools/url_utils';
+import { OutputTestVerdict } from '@/common/types/verdict';
+import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import {
   StringPair,
   GerritChange,
@@ -418,4 +420,31 @@ export function getBuildDetailsUrl(buildId: string, target: string) {
     `${ANDROID_BUILD_CORP_HOST}` +
     `/builds/build-details/${encodeURIComponent(buildId)}/targets/${encodeURIComponent(target)}`
   );
+}
+
+export function constructBlamelistCommitLink(
+  project: string | undefined,
+  testVariant: OutputTestVerdict,
+  testVariantBranch: TestVariantBranch | null | undefined,
+  invocation: AnyInvocation,
+): string | undefined {
+  // TODO: get this refhash from the invocation rather than the testVariantBranch once it is populated by the backend.
+  const refHash = testVariantBranch?.refHash;
+
+  const sources = getSourcesFromInvocation(invocation);
+
+  const commitPosition = sources?.gitilesCommit?.position;
+
+  if (
+    project &&
+    testVariant.testId &&
+    testVariant.variantHash &&
+    refHash &&
+    commitPosition
+  ) {
+    const encodedTestId = encodeURIComponent(testVariant.testId);
+    const baseUrl = `/ui/labs/p/${project}/tests/${encodedTestId}/variants/${testVariant.variantHash}/refs/${refHash}/blamelist`;
+    return `${baseUrl}?expand=CP-${commitPosition}#CP-${commitPosition}`;
+  }
+  return undefined;
 }

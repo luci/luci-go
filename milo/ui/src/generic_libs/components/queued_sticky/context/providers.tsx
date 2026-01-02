@@ -57,7 +57,7 @@ export function QueuedStickyContextProvider({
           directionStickies.set(componentRef, size);
         }
         setOffsets((prev) => {
-          const updated = Math.max(...directionStickies.values());
+          const updated = Math.max(0, ...directionStickies.values());
           if (prev[direction] === updated) {
             return prev;
           }
@@ -71,7 +71,7 @@ export function QueuedStickyContextProvider({
         for (const [direction, directionStickies] of Object.entries(stickies)) {
           directionStickies.delete(componentRef);
           setOffsets((prev) => {
-            const updated = Math.max(...directionStickies.values());
+            const updated = Math.max(0, ...directionStickies.values());
             if (prev[direction as Direction] === updated) {
               return prev;
             }

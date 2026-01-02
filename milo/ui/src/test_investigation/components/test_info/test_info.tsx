@@ -15,26 +15,22 @@
 import { Box } from '@mui/material';
 import { useState } from 'react';
 
-import { TestInfoProvider } from './context/provider';
 import { OverviewSection } from './overview';
 import { RecommendationsSection } from './recommendation';
-import { TestInfoHeader } from './test_info_header';
 
 export function TestInfo() {
   const [expanded, setExpanded] = useState(false);
   return (
-    <TestInfoProvider>
-      <TestInfoHeader />
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          gap: 4,
-        }}
-      >
-        <OverviewSection expanded={expanded} />
-        <RecommendationsSection expanded={expanded} setExpanded={setExpanded} />
-      </Box>
-    </TestInfoProvider>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: 4,
+        px: 3,
+      }}
+    >
+      <OverviewSection expanded={expanded} />
+      <RecommendationsSection expanded={expanded} setExpanded={setExpanded} />
+    </Box>
   );
 }

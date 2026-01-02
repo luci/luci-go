@@ -50,6 +50,7 @@ import {
   TrackLeafRoutePageView,
   useGoogleAnalytics,
 } from '@/generic_libs/components/google_analytics';
+import { Sticky, StickyOffset } from '@/generic_libs/components/queued_sticky';
 import { QueryRecentPassesRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import {
   TestIdentifier,
@@ -61,6 +62,9 @@ import { ArtifactsSection } from '@/test_investigation/components/artifacts/arti
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { RedirectATIBanner } from '@/test_investigation/components/redirect_back_banner/redirect_ati_banner';
 import { TestInfo } from '@/test_investigation/components/test_info';
+import { CollapsedTestInfoHeader } from '@/test_investigation/components/test_info/collapsed_test_info_header';
+import { TestInfoProvider } from '@/test_investigation/components/test_info/context/provider';
+import { TestInfoHeader } from '@/test_investigation/components/test_info/test_info_header';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
 import { TestDrawerProvider } from '@/test_investigation/components/test_navigation_drawer/context';
 import {
@@ -383,17 +387,33 @@ export function TestInvestigatePage() {
             <Box component="main" sx={{ height: '100%' }}>
               <Box
                 sx={{
-                  padding: { xs: 1, sm: 2 },
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 3,
-                  maxWidth: `calc(100vw - 16px)`,
+                  maxWidth: '100vw',
                   boxSizing: 'border-box',
                   height: '100%',
                 }}
               >
-                <TestInfo />
-                <ArtifactsSection />
+                <TestInfoProvider>
+                  <Sticky
+                    top
+                    sx={{ backgroundColor: '#fff', zIndex: 20 }}
+                    collapsedContent={<CollapsedTestInfoHeader />}
+                  >
+                    <TestInfoHeader />
+                  </Sticky>
+                  <StickyOffset
+                    sx={{
+                      mt: 3,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 3,
+                    }}
+                  >
+                    <TestInfo />
+                    <ArtifactsSection />
+                  </StickyOffset>
+                </TestInfoProvider>
               </Box>
             </Box>
             <TestDrawerProvider isDrawerOpen={isDrawerOpen}>

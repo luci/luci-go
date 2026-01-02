@@ -56,7 +56,7 @@ export function ArtifactsTreeLayout({
         overflow: 'hidden',
       }}
     >
-      <Box sx={{ flexShrink: 0, p: 1 }}>
+      <Box sx={{ flexShrink: 0, p: 1, px: 3 }}>
         {headerControls && <Box sx={{ mb: 1 }}>{headerControls}</Box>}
 
         <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -115,7 +115,9 @@ export function ArtifactsTreeLayout({
 
       <Divider />
 
-      <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative' }}>
+      <Box
+        sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative', px: 3 }}
+      >
         {children}
       </Box>
     </Box>

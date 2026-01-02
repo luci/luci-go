@@ -13,17 +13,24 @@
 // limitations under the License.
 
 import { Box, Typography } from '@mui/material';
-import { Children, Fragment } from 'react';
+import { SxProps, Theme } from '@mui/material/styles';
+import { Children, Fragment, ReactNode } from 'react';
 
-interface PageSummaryLineProps {
-  children: React.ReactNode;
+export interface PageSummaryLineProps {
+  children?: ReactNode;
+  noWrap?: boolean;
+  sx?: SxProps<Theme>;
 }
 
 /**
  * Renders a line of summary items for a page, intended to be a line below the PageTitle component.
  * Each item is separated by dividers.
  */
-export function PageSummaryLine({ children }: PageSummaryLineProps) {
+export function PageSummaryLine({
+  children,
+  noWrap,
+  sx,
+}: PageSummaryLineProps) {
   const validChildren = Children.toArray(children).filter(Boolean);
 
   return (
@@ -32,9 +39,10 @@ export function PageSummaryLine({ children }: PageSummaryLineProps) {
       variant="body2"
       sx={{
         display: 'flex',
-        flexWrap: 'wrap',
+        flexWrap: noWrap ? 'nowrap' : 'wrap',
         alignItems: 'center',
         rowGap: '4px',
+        ...sx,
       }}
     >
       {validChildren.map((child, index) => (
@@ -74,7 +82,7 @@ export function SummaryLineItem({ label, children }: SummaryLineItemProps) {
   );
 }
 
-function SummaryLineDivider() {
+export function SummaryLineDivider() {
   return (
     <Box
       component="span"
@@ -83,6 +91,8 @@ function SummaryLineDivider() {
         color: 'text.disabled',
         alignSelf: 'center',
         lineHeight: 'initial',
+        userSelect: 'none',
+        flexShrink: 0,
       }}
     >
       |

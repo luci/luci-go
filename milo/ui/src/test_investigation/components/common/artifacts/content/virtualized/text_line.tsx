@@ -72,8 +72,8 @@ export const TextLine = memo(function TextLine({
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-all',
         p: 0,
-        pl: 1, // Add a small padding to separate from the gutter or start helper
-        pr: 2,
+        pl: 2, // Add a small padding to separate from the gutter or start helper
+        pr: 3,
         m: 0,
         fontSize: '0.8rem',
         lineHeight: '1.15rem',

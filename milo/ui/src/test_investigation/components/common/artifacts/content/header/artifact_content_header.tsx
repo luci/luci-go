@@ -178,14 +178,14 @@ export function ArtifactContentHeader({
         top
         sx={{
           zIndex: 100,
-          p: 1.5,
           backgroundColor: 'background.paper',
           borderBottom: '1px solid',
           borderColor: 'divider',
           minWidth: 0,
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         }}
       >
-        {content}
+        <Box sx={{ px: 3, py: 1.5 }}>{content}</Box>
       </Sticky>
     );
   }
@@ -195,13 +195,12 @@ export function ArtifactContentHeader({
       square
       elevation={0}
       sx={{
-        p: 2,
         borderBottom: '1px solid',
         borderColor: 'divider',
         zIndex: 1,
       }}
     >
-      {content}
+      <Box sx={{ p: 3 }}>{content}</Box>
     </Paper>
   );
 }

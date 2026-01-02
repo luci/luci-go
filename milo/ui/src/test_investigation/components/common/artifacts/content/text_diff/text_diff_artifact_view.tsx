@@ -56,7 +56,7 @@ export function TextDiffArtifactView({ content }: TextDiffArtifactViewProps) {
           precedence="default"
         />
       )}
-      <Box sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+      <Box sx={{ fontFamily: 'monospace', fontSize: '0.8rem', px: 3 }}>
         <SanitizedHtml html={diffHtml} />
       </Box>
     </>

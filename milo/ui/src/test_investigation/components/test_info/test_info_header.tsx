@@ -12,36 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
-import { HtmlTooltip } from '@/common/components/html_tooltip';
-import {
-  PageSummaryLine,
-  SummaryLineItem,
-} from '@/common/components/page_summary_line';
+import { PageSummaryLine } from '@/common/components/page_summary_line';
 import { PageTitle } from '@/common/components/page_title';
-import { OutputTestVerdict } from '@/common/types/verdict';
 import { CopyToClipboard } from '@/generic_libs/components/copy_to_clipboard';
-import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import {
   useInvocation,
   useProject,
   useTestVariant,
 } from '@/test_investigation/context';
-import {
-  AnyInvocation,
-  isRootInvocation,
-} from '@/test_investigation/utils/invocation_utils';
-import {
-  getBuildDetailsUrl,
-  getCommitGitilesUrlFromInvocation,
-  getCommitInfoFromInvocation,
-  getFullMethodName,
-  getSourcesFromInvocation,
-} from '@/test_investigation/utils/test_info_utils';
+import { getFullMethodName } from '@/test_investigation/utils/test_info_utils';
 
 import { useTestVariantBranch } from './context';
 import { TestInfoBreadcrumbs } from './test_info_breadcrumbs';
+import { TestInfoMarkers } from './test_info_markers';
+import { VariantDisplay } from './variant_display';
 
 export function TestInfoHeader() {
   const testVariant = useTestVariant();
@@ -53,199 +39,35 @@ export function TestInfoHeader() {
     testVariant?.testIdStructured?.caseName ||
     testVariant.testMetadata?.name ||
     testVariant.testId;
-  const commitInfo = getCommitInfoFromInvocation(invocation);
-  const originalCommitLink = getCommitGitilesUrlFromInvocation(invocation);
-
-  const blamelistCommitLink = constructBlamelistCommitLink(
-    project,
-    testVariant,
-    testVariantBranch,
-    invocation,
-  );
-
-  const isJunit =
-    testVariant?.testIdStructured?.moduleScheme === 'junit' || false;
-
-  // TODO(b/445559255): update copied text when module page is available.
-  const fullMethodName = getFullMethodName(testVariant);
-
-  let primaryBuild;
-  let extraBuilds;
-  let extraBuildId;
-  let extraBuildTarget;
-  let extraBuildBranch;
-
-  if (isRootInvocation(invocation)) {
-    primaryBuild = invocation?.primaryBuild?.androidBuild;
-    extraBuilds = invocation?.extraBuilds;
-  } else {
-    primaryBuild = invocation?.properties?.primaryBuild;
-    extraBuilds = invocation.properties?.extraBuilds;
-  }
-  const primaryBuildId = primaryBuild?.buildId;
-  const primaryBuildTarget = primaryBuild?.buildTarget;
-  const primaryBuildBranch = primaryBuild?.branch;
-  const extraBuildCount = extraBuilds?.length;
-  if (extraBuildCount && extraBuildCount > 0) {
-    extraBuildId = isRootInvocation(invocation)
-      ? extraBuilds[0].androidBuild?.buildId
-      : extraBuilds[0].buildId;
-    extraBuildTarget = isRootInvocation(invocation)
-      ? extraBuilds[0].androidBuild?.buildTarget
-      : extraBuilds[0].buildTarget;
-    extraBuildBranch = isRootInvocation(invocation)
-      ? extraBuilds[0].androidBuild?.branch
-      : extraBuilds[0].branch;
-  }
-  interface BuildInfoTooltipProps {
-    buildId: string;
-    buildBranch: string;
-    buildTarget: string;
-  }
-
-  function BuildInfoTooltip({
-    buildId,
-    buildBranch,
-    buildTarget,
-  }: BuildInfoTooltipProps) {
-    return (
-      <Box sx={{ padding: 1.5 }}>
-        <Box sx={{ display: 'flex' }}>
-          <Typography variant="subtitle2">Build: {buildId}</Typography>
-          <CopyToClipboard textToCopy={buildId} aria-label="Copy build ID" />
-        </Box>
-        <Typography
-          variant="caption"
-          fontStyle="italic"
-          sx={{ display: 'block' }}
-        >
-          {buildBranch}
-        </Typography>
-        <Typography variant="caption" fontStyle="italic">
-          {buildTarget}
-        </Typography>
-      </Box>
-    );
-  }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, pl: 3 }}>
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 3, py: 2 }}
+    >
       <TestInfoBreadcrumbs
         invocation={invocation.name}
         testIdStructured={testVariant?.testIdStructured || undefined}
       />
       <PageTitle viewName="Test case" resourceName={testDisplayName} />
-      {isJunit && (
+      {testVariant?.testIdStructured?.moduleScheme === 'junit' && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pt: 0 }}>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            {fullMethodName}
+            {getFullMethodName(testVariant)}
           </Typography>
-          <CopyToClipboard textToCopy={fullMethodName}></CopyToClipboard>
+          <CopyToClipboard
+            textToCopy={getFullMethodName(testVariant)}
+          ></CopyToClipboard>
         </Box>
       )}
       <PageSummaryLine>
-        {Object.entries(testVariant.variant?.def || {}).map(([key, value]) => (
-          <SummaryLineItem key={key} label={key}>
-            {value}
-          </SummaryLineItem>
-        ))}
-        {commitInfo && (
-          <SummaryLineItem label="Commit">
-            <Link
-              href={blamelistCommitLink || originalCommitLink}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {commitInfo}
-            </Link>
-          </SummaryLineItem>
-        )}
-        {primaryBuildId && primaryBuildTarget && (
-          <SummaryLineItem label="Build">
-            <HtmlTooltip
-              title={BuildInfoTooltip({
-                buildId: primaryBuildId,
-                buildBranch: primaryBuildBranch,
-                buildTarget: primaryBuildTarget,
-              })}
-            >
-              <Link
-                href={getBuildDetailsUrl(primaryBuildId, primaryBuildTarget)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {primaryBuildId}
-              </Link>
-            </HtmlTooltip>
-          </SummaryLineItem>
-        )}
-        {extraBuildId &&
-          extraBuildTarget &&
-          (extraBuildCount === 1 ? (
-            <SummaryLineItem label="Extra build">
-              <HtmlTooltip
-                title={BuildInfoTooltip({
-                  buildId: extraBuildId,
-                  buildBranch: extraBuildBranch,
-                  buildTarget: extraBuildTarget,
-                })}
-              >
-                <Link
-                  href={getBuildDetailsUrl(extraBuildId, extraBuildTarget)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {extraBuildId}
-                </Link>
-              </HtmlTooltip>
-            </SummaryLineItem>
-          ) : (
-            <Typography variant="body2" component="span" color="text.secondary">
-              <HtmlTooltip
-                title={BuildInfoTooltip({
-                  buildId: extraBuildId,
-                  buildBranch: extraBuildBranch,
-                  buildTarget: extraBuildTarget,
-                })}
-              >
-                <Link
-                  href={getBuildDetailsUrl(extraBuildId, extraBuildTarget)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {`${extraBuildCount} extra builds`}
-                </Link>
-              </HtmlTooltip>
-            </Typography>
-          ))}
+        <TestInfoMarkers
+          invocation={invocation}
+          project={project}
+          testVariant={testVariant}
+          testVariantBranch={testVariantBranch}
+        />
+        <VariantDisplay variantDef={testVariant.variant?.def} />
       </PageSummaryLine>
     </Box>
   );
-}
-
-function constructBlamelistCommitLink(
-  project: string | undefined,
-  testVariant: OutputTestVerdict,
-  testVariantBranch: TestVariantBranch | null | undefined,
-  invocation: AnyInvocation,
-): string | undefined {
-  // TODO: get this refhash from the invocation rather than the testVariantBranch once it is populated by the backend.
-  const refHash = testVariantBranch?.refHash;
-
-  const sources = getSourcesFromInvocation(invocation);
-
-  const commitPosition = sources?.gitilesCommit?.position;
-
-  if (
-    project &&
-    testVariant.testId &&
-    testVariant.variantHash &&
-    refHash &&
-    commitPosition
-  ) {
-    const encodedTestId = encodeURIComponent(testVariant.testId);
-    const baseUrl = `/ui/labs/p/${project}/tests/${encodedTestId}/variants/${testVariant.variantHash}/refs/${refHash}/blamelist`;
-    return `${baseUrl}?expand=CP-${commitPosition}#CP-${commitPosition}`;
-  }
-  return undefined;
 }

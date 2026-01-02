@@ -43,6 +43,7 @@ const LineGutter = styled(Box)(({ theme }) => ({
   width: `${LINE_NUMBER_WIDTH}px`,
   minWidth: `${LINE_NUMBER_WIDTH}px`,
   textAlign: 'right',
+  paddingLeft: theme.spacing(3),
   paddingRight: theme.spacing(2),
   color: theme.palette.text.secondary,
   userSelect: 'none',

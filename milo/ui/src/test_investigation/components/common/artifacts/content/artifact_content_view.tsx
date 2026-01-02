@@ -101,7 +101,6 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
             alignItems: 'center',
             justifyContent: 'center',
             boxShadow: 2,
-            mx: 2,
           }}
         >
           <CircularProgress size={20} color="inherit" sx={{ mr: 2 }} />
