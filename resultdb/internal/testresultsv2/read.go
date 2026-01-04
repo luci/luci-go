@@ -16,12 +16,8 @@ package testresultsv2
 
 import (
 	"context"
-	"time"
 
 	"cloud.google.com/go/spanner"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -73,11 +69,12 @@ func ReadAllForTesting(ctx context.Context) (rows []*TestResultRow, err error) {
 	`)
 
 	var b spanutil.Buffer
+	decoder := &Decoder{}
 	err = span.Query(ctx, stmt).Do(func(r *spanner.Row) error {
 		var row TestResultRow
-		var summaryHTML, testMetadata, failureReason, properties, skippedReason, frameworkExtensions spanutil.Compressed
+		var summaryHTML, testMetadata, failureReason, properties, skippedReason, frameworkExtensions []byte
 		var testMetadataName, testMetadataLocationRepo, testMetadataLocationFileName spanner.NullString
-		var skipReason int64
+		var skipReason spanner.NullInt64
 		var statusV2 int64
 
 		err := b.FromSpanner(r,
@@ -112,52 +109,30 @@ func ReadAllForTesting(ctx context.Context) (rows []*TestResultRow, err error) {
 			return err
 		}
 		row.StatusV2 = pb.TestResult_Status(statusV2)
-		row.SkipReason = pb.SkipReason(skipReason)
-		row.SummaryHTML = string(summaryHTML)
+		row.SkipReason = DecodeSkipReason(skipReason)
 
-		if len(testMetadata) > 0 || testMetadataName.Valid {
-			row.TestMetadata = &pb.TestMetadata{}
-			if len(testMetadata) > 0 {
-				if err := proto.Unmarshal(testMetadata, row.TestMetadata); err != nil {
-					return errors.Fmt("unmarshal TestMetadata: %w", err)
-				}
-			}
-			if testMetadataName.Valid {
-				row.TestMetadata.Name = testMetadataName.StringVal
-			}
-			if row.TestMetadata.Location != nil {
-				if testMetadataLocationRepo.Valid {
-					row.TestMetadata.Location.Repo = testMetadataLocationRepo.StringVal
-				}
-				if testMetadataLocationFileName.Valid {
-					row.TestMetadata.Location.FileName = testMetadataLocationFileName.StringVal
-				}
-			}
+		if row.SummaryHTML, err = decoder.DecompressText(summaryHTML); err != nil {
+			return errors.Fmt("decompress SummaryHTML: %w", err)
 		}
-		if len(failureReason) > 0 {
-			row.FailureReason = &pb.FailureReason{}
-			if err := proto.Unmarshal(failureReason, row.FailureReason); err != nil {
-				return errors.Fmt("unmarshal FailureReason: %w", err)
-			}
-			PopulateFailureReasonOutputOnlyFields(row.FailureReason)
+
+		if row.TestMetadata, err = decoder.DecodeTestMetadata(testMetadata, testMetadataName, testMetadataLocationRepo, testMetadataLocationFileName); err != nil {
+			return errors.Fmt("decode TestMetadata: %w", err)
 		}
-		if len(properties) > 0 {
-			row.Properties = &structpb.Struct{}
-			if err := proto.Unmarshal(properties, row.Properties); err != nil {
-				return errors.Fmt("unmarshal Properties: %w", err)
-			}
+
+		if row.FailureReason, err = decoder.DecodeFailureReason(failureReason); err != nil {
+			return errors.Fmt("decode FailureReason: %w", err)
 		}
-		if len(skippedReason) > 0 {
-			row.SkippedReason = &pb.SkippedReason{}
-			if err := proto.Unmarshal(skippedReason, row.SkippedReason); err != nil {
-				return errors.Fmt("unmarshal SkippedReason: %w", err)
-			}
+
+		if row.Properties, err = decoder.DecodeProperties(properties); err != nil {
+			return errors.Fmt("decode Properties: %w", err)
 		}
-		if len(frameworkExtensions) > 0 {
-			row.FrameworkExtensions = &pb.FrameworkExtensions{}
-			if err := proto.Unmarshal(frameworkExtensions, row.FrameworkExtensions); err != nil {
-				return errors.Fmt("unmarshal FrameworkExtensions: %w", err)
-			}
+
+		if row.SkippedReason, err = decoder.DecodeSkippedReason(skippedReason); err != nil {
+			return errors.Fmt("decode SkippedReason: %w", err)
+		}
+
+		if row.FrameworkExtensions, err = decoder.DecodeFrameworkExtensions(frameworkExtensions); err != nil {
+			return errors.Fmt("decode FrameworkExtensions: %w", err)
 		}
 
 		rows = append(rows, &row)
@@ -167,17 +142,6 @@ func ReadAllForTesting(ctx context.Context) (rows []*TestResultRow, err error) {
 		return nil, err
 	}
 	return rows, nil
-}
-
-// PopulateFailureReasonOutputOnlyFields populates output only fields
-// for a normalised test result.
-func PopulateFailureReasonOutputOnlyFields(fr *pb.FailureReason) {
-	if len(fr.Errors) > 0 {
-		// Populate PrimaryErrorMessage from Errors collection.
-		fr.PrimaryErrorMessage = fr.Errors[0].Message
-	} else {
-		fr.PrimaryErrorMessage = ""
-	}
 }
 
 // ToProto converts the TestResultRow to a TestResult proto.
@@ -194,11 +158,6 @@ func (r *TestResultRow) ToProto() *pb.TestResult {
 	var startTime *timestamppb.Timestamp
 	if r.StartTime.Valid {
 		startTime = timestamppb.New(r.StartTime.Time)
-	}
-
-	var duration *durationpb.Duration
-	if r.RunDurationNanos.Valid {
-		duration = durationpb.New(time.Duration(r.RunDurationNanos.Int64))
 	}
 
 	statusV1, expected := pbutil.TestStatusV1FromV2(r.StatusV2, r.FailureReason.GetKind(), r.FrameworkExtensions.GetWebTest())
@@ -222,7 +181,7 @@ func (r *TestResultRow) ToProto() *pb.TestResult {
 		StatusV2:            r.StatusV2,
 		SummaryHtml:         r.SummaryHTML,
 		StartTime:           startTime,
-		Duration:            duration,
+		Duration:            ToProtoDuration(r.RunDurationNanos),
 		Tags:                r.Tags,
 		VariantHash:         r.ID.ModuleVariantHash,
 		TestMetadata:        r.TestMetadata,

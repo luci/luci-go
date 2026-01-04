@@ -236,7 +236,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 
 	var nextPageToken string
 	if lastResult != nil {
-		nextPageToken = makePageToken(q.Order, lastResult, lastUIPriority)
+		nextPageToken = q.makePageToken(lastResult, lastUIPriority)
 	} else {
 		// If there are no more groups, the page token is empty to signal end of iteration.
 		nextPageToken = ""
@@ -849,7 +849,7 @@ func genStatement(templateName string, templateParams templateParameters, params
 	return spanner.Statement{SQL: sql.String(), Params: spanutil.ToSpannerMap(params)}, nil
 }
 
-func makePageToken(order Ordering, lastResult *pb.TestAggregation, lastUIPriority int64) string {
+func (q *SingleLevelQuery) makePageToken(lastResult *pb.TestAggregation, lastUIPriority int64) string {
 	var components []string
 	lastPrefix := lastResult.Id
 	if lastPrefix.Level == pb.AggregationLevel_INVOCATION {
@@ -857,7 +857,7 @@ func makePageToken(order Ordering, lastResult *pb.TestAggregation, lastUIPriorit
 		// to signal end of iteration.
 		return ""
 	}
-	if order.ByUIPriority {
+	if q.Order.ByUIPriority {
 		components = append(components, fmt.Sprintf("%d", lastUIPriority))
 	}
 	components = append(components, lastPrefix.Id.ModuleName)
