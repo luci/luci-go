@@ -56,6 +56,7 @@ require (
 	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/s2a-go v0.1.9
+	github.com/google/safeopen v0.0.0-20240125081138-66b54d5181c6
 	github.com/google/tink/go v1.7.0
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.15.0

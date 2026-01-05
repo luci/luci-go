@@ -29,6 +29,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/client"
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/digest"
 	repb "github.com/bazelbuild/remote-apis/build/bazel/remote/execution/v2"
+	"github.com/google/safeopen"
 	"github.com/maruel/subcommands"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
@@ -98,6 +99,11 @@ func (r *downloadRun) parse(a subcommands.Application, args []string) error {
 	}
 
 	r.dir = filepath.Clean(r.dir)
+	absDir, err := filepath.Abs(r.dir)
+	if err != nil {
+		return errors.Fmt("failed to get absolute path for -dir: %w", err)
+	}
+	r.dir = absDir
 
 	return nil
 }
@@ -136,7 +142,7 @@ func createDirectories(ctx context.Context, root string, outputs map[string]*cli
 			dir = filepath.Dir(path)
 		}
 
-		for dir != root {
+		for dir != "." {
 			if _, ok := dirset[dir]; ok {
 				break
 			}
@@ -160,7 +166,7 @@ func createDirectories(ctx context.Context, root string, outputs map[string]*cli
 	}
 
 	for _, dir := range dirs {
-		if err := os.Mkdir(dir, 0o700); err != nil && !os.IsExist(err) {
+		if err := os.Mkdir(filepath.Join(root, dir), 0o700); err != nil && !os.IsExist(err) {
 			return errors.Fmt("failed to create directory: %w", err)
 		}
 	}
@@ -170,7 +176,7 @@ func createDirectories(ctx context.Context, root string, outputs map[string]*cli
 	return nil
 }
 
-func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.Digest]*client.TreeOutput) error {
+func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.Digest]*client.TreeOutput, root string) error {
 	eg, _ := errgroup.WithContext(ctx)
 
 	// limit the number of concurrent I/O operations.
@@ -186,7 +192,7 @@ func copyFiles(ctx context.Context, dsts []*client.TreeOutput, srcs map[digest.D
 				mode = 0o700
 			}
 
-			if err := filesystem.Copy(dst.Path, src.Path, os.FileMode(mode)); err != nil {
+			if err := filesystem.Copy(filepath.Join(root, dst.Path), filepath.Join(root, src.Path), os.FileMode(mode)); err != nil {
 				return errors.Fmt("failed to copy file from '%s' to '%s': %w", src.Path, dst.Path, err)
 			}
 
@@ -205,7 +211,7 @@ type smallFileCache interface {
 
 var newSmallFileCache func(context.Context, string) (smallFileCache, error)
 
-func copySmallFilesFromCache(ctx context.Context, kvs smallFileCache, smallFiles map[string][]*client.TreeOutput) error {
+func copySmallFilesFromCache(ctx context.Context, kvs smallFileCache, smallFiles map[string][]*client.TreeOutput, root string) error {
 	smallFileHashes := make([]string, 0, len(smallFiles))
 	for smallFile := range smallFiles {
 		smallFileHashes = append(smallFileHashes, smallFile)
@@ -238,7 +244,7 @@ func copySmallFilesFromCache(ctx context.Context, kvs smallFileCache, smallFiles
 			if file.IsExecutable {
 				mode = 0o700
 			}
-			if err := os.WriteFile(file.Path, value, os.FileMode(mode)); err != nil {
+			if err := safeopen.WriteFileBeneath(root, file.Path, value, os.FileMode(mode)); err != nil {
 				return errors.Fmt("failed to write file: %w", err)
 			}
 		}
@@ -247,7 +253,7 @@ func copySmallFilesFromCache(ctx context.Context, kvs smallFileCache, smallFiles
 	})
 }
 
-func cacheSmallFiles(ctx context.Context, kvs smallFileCache, outputs []*client.TreeOutput) error {
+func cacheSmallFiles(ctx context.Context, kvs smallFileCache, rootDir string, outputs []*client.TreeOutput) error {
 	// limit the number of concurrent I/O operations.
 	ch := make(chan struct{}, runtime.NumCPU())
 
@@ -259,7 +265,7 @@ func cacheSmallFiles(ctx context.Context, kvs smallFileCache, outputs []*client.
 				b, err := func() ([]byte, error) {
 					ch <- struct{}{}
 					defer func() { <-ch }()
-					return os.ReadFile(output.Path)
+					return os.ReadFile(filepath.Join(rootDir, output.Path))
 				}()
 
 				if err != nil {
@@ -273,7 +279,7 @@ func cacheSmallFiles(ctx context.Context, kvs smallFileCache, outputs []*client.
 	})
 }
 
-func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFileCache, outputs map[digest.Digest]*client.TreeOutput) error {
+func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFileCache, rootDir string, outputs map[digest.Digest]*client.TreeOutput) error {
 	var smallOutputs, largeOutputs []*client.TreeOutput
 
 	for _, output := range outputs {
@@ -297,7 +303,7 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFile
 
 	if kvs != nil {
 		start := time.Now()
-		if err := cacheSmallFiles(ctx, kvs, smallOutputs); err != nil {
+		if err := cacheSmallFiles(ctx, kvs, rootDir, smallOutputs); err != nil {
 			return err
 		}
 		logger.Infof("finished cacheSmallFiles %d, took %s", len(smallOutputs), time.Since(start))
@@ -305,7 +311,7 @@ func cacheOutputFiles(ctx context.Context, diskcache *cache.Cache, kvs smallFile
 
 	start := time.Now()
 	for _, output := range largeOutputs {
-		if err := diskcache.AddFileWithoutValidation(ctx, cache.HexDigest(output.Digest.Hash), output.Path); err != nil {
+		if err := diskcache.AddFileWithoutValidation(ctx, cache.HexDigest(output.Digest.Hash), filepath.Join(rootDir, output.Path)); err != nil {
 			return errors.Fmt("failed to add cache; path=%s digest=%s: %w", output.Path, output.Digest, err)
 		}
 	}
@@ -365,7 +371,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		Children: dirs,
 	}
 
-	outputs, err := c.FlattenTree(t, r.dir)
+	outputs, err := c.FlattenTree(t, "")
 	if err != nil {
 		errorCode, digest := extractErrorCode(err)
 		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
@@ -441,7 +447,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 		}
 
 		if output.SymlinkTarget != "" {
-			if err := os.Symlink(output.SymlinkTarget, path); err != nil {
+			if err := os.Symlink(output.SymlinkTarget, filepath.Join(r.dir, path)); err != nil {
 				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 					return errors.Fmt("failed to write json file: %w", err)
 				}
@@ -461,7 +467,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 				mode = 0o700
 			}
 
-			if err := diskcache.Hardlink(cache.HexDigest(output.Digest.Hash), path, os.FileMode(mode)); err != nil {
+			if err := diskcache.Hardlink(cache.HexDigest(output.Digest.Hash), filepath.Join(r.dir, path), os.FileMode(mode)); err != nil {
 				if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 					return errors.Fmt("failed to write json file: %w", err)
 				}
@@ -482,7 +488,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	if kvs != nil {
 		start := time.Now()
 
-		if err := copySmallFilesFromCache(ctx, kvs, smallFiles); err != nil {
+		if err := copySmallFilesFromCache(ctx, kvs, smallFiles, r.dir); err != nil {
 			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 				return errors.Fmt("failed to write json file: %w", err)
 			}
@@ -504,7 +510,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	}
 
 	start = time.Now()
-	if _, err := c.DownloadFiles(ctx, "", to); err != nil {
+	if _, err := c.DownloadFiles(ctx, r.dir, to); err != nil {
 		errorCode, digest := extractErrorCode(err)
 		if err := writeExitResult(r.dumpJSON, errorCode, digest); err != nil {
 			return errors.Fmt("failed to write json file: %w", err)
@@ -515,7 +521,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 
 	if diskcache != nil {
 		start = time.Now()
-		if err := cacheOutputFiles(ctx, diskcache, kvs, to); err != nil {
+		if err := cacheOutputFiles(ctx, diskcache, kvs, r.dir, to); err != nil {
 			if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 				return errors.Fmt("failed to write json file: %w", err)
 			}
@@ -525,7 +531,7 @@ func (r *downloadRun) doDownload(ctx context.Context) (rerr error) {
 	}
 
 	start = time.Now()
-	if err := copyFiles(ctx, dups, to); err != nil {
+	if err := copyFiles(ctx, dups, to, r.dir); err != nil {
 		if err := writeExitResult(r.dumpJSON, IOError, ""); err != nil {
 			return errors.Fmt("failed to write json file: %w", err)
 		}
