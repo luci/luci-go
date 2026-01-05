@@ -141,7 +141,7 @@ func TestQuery(t *testing.T) {
 			})
 		})
 
-		t.Run("ResultLimit", func(t *ftt.Test) {
+		t.Run("With result limit", func(t *ftt.Test) {
 			// Because test status is computed at the database side, reducing the
 			// number of results should not result in changes to test status (e.g.
 			// from flaky to failed).
@@ -157,6 +157,38 @@ func TestQuery(t *testing.T) {
 
 			results := fetchAll(q)
 			assert.Loosely(t, results, should.Match(expected))
+		})
+
+		t.Run("With contains test result filter", func(t *ftt.Test) {
+			expected := ExpectedVerdicts(rootInvID)
+
+			// These tests do not seek to comprehensively validate filter semantics (the
+			// parser-generator library does most of that), they validate the AIP-160 filter
+			// from `testresultsv2` package is correctly integrated and all required columns exist
+			// (no invalid SQL is generated).
+			q.ContainsTestResultFilter = `test_id_structured.module_name != "module"` +
+				` AND test_id_structured.module_scheme != "scheme"` +
+				` AND test_id_structured.module_variant.key = "value"` +
+				` AND test_id_structured.module_variant_hash != "varianthash"` +
+				` AND test_id_structured.coarse_name != "coarse"` +
+				` AND test_id_structured.fine_name != "fine"` +
+				` AND test_id_structured.case_name != "case"` +
+				` AND test_metadata.name != "somename"` +
+				` AND tags.mytag = "myvalue"` +
+				` AND test_metadata.location.repo != "repo"` +
+				` AND test_metadata.location.file_name != "filename"` +
+				` AND (status != PRECLUDED OR status = PRECLUDED)` +
+				` AND duration < 100s`
+
+			t.Run("With full access", func(t *ftt.Test) {
+				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
+			t.Run("With implicit filter", func(t *ftt.Test) {
+				// Check an aip.dev/160 implicit filter.
+				q.ContainsTestResultFilter = `t2`
+				expected = expected[1:2]
+				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
 		})
 	})
 }

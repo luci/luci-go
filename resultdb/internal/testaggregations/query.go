@@ -402,7 +402,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 {{define "TestResults"}}
 				-- Test Results.
 				SELECT
-					*,
+					* EXCEPT (ModuleVariant, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName),
 				-- Provide masked versions of fields to support filtering on them in the query one level up.
 				{{if eq .FullAccess true}}
 					-- Directly alias the columns if full access is granted. This can provide

@@ -50,6 +50,11 @@ type Query struct {
 	// Whether to use UI sort order, i.e. by ui_priority first, instead of by test ID.
 	// This incurs a performance penalty, as results are not returned in table order.
 	Order Ordering
+	// An AIP-160 filter expression for test results to filter by. Optional.
+	// See filtering implementation in the `testresultsv2` package for details.
+	// If this is set, a verdict will only be returned if this filter expression matches
+	// at least one test result in the verdict.
+	ContainsTestResultFilter string
 	// Shared decoding buffer to avoid a new memory allocation for each decompression.
 	decoder testresultsv2.Decoder
 }
@@ -258,8 +263,8 @@ func (q *Query) toResult(r tvTestResult, testID string) (*pb.TestResult, error) 
 	result.Duration = testresultsv2.ToProtoDuration(r.RunDurationNanos)
 
 	// Populate Tags.
-	result.Tags = make([]*pb.StringPair, len(r.Tags))
-	for i, p := range r.Tags {
+	result.Tags = make([]*pb.StringPair, len(r.TagsMasked))
+	for i, p := range r.TagsMasked {
 		result.Tags[i] = pbutil.StringPairFromStringUnvalidated(p)
 	}
 	result.FailureReason, err = q.decoder.DecodeFailureReason(r.FailureReason)
@@ -300,22 +305,36 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 		}
 	}
 
+	containsTestResultFilterClause := ""
+	if q.ContainsTestResultFilter != "" {
+		clause, additionalParams, err := testresultsv2.WhereClause(q.ContainsTestResultFilter, "TR", "ctrf_")
+		if err != nil {
+			return spanner.Statement{}, errors.Fmt("contains_test_result_filter: %w", err)
+		}
+		for _, p := range additionalParams {
+			// All parameters should be prefixed by "ctrf" so should not conflict with existing parameters.
+			params[p.Name] = p.Value
+		}
+		containsTestResultFilterClause = "(" + clause + ")"
+	}
+
 	tmplInput := map[string]any{
-		"PaginationClause":        paginationClause,
-		"OrderingByUIPriority":    q.Order == OrderingByUIPriority,
-		"ResultPassed":            int64(pb.TestResult_PASSED),
-		"ResultFailed":            int64(pb.TestResult_FAILED),
-		"ResultSkipped":           int64(pb.TestResult_SKIPPED),
-		"ResultExecutionErrored":  int64(pb.TestResult_EXECUTION_ERRORED),
-		"ResultPrecluded":         int64(pb.TestResult_PRECLUDED),
-		"VerdictPassed":           int64(pb.TestVerdict_PASSED),
-		"VerdictFailed":           int64(pb.TestVerdict_FAILED),
-		"VerdictSkipped":          int64(pb.TestVerdict_SKIPPED),
-		"VerdictExecutionErrored": int64(pb.TestVerdict_EXECUTION_ERRORED),
-		"VerdictPrecluded":        int64(pb.TestVerdict_PRECLUDED),
-		"VerdictFlaky":            int64(pb.TestVerdict_FLAKY),
-		"VerdictExonerated":       int64(pb.TestVerdict_EXONERATED),
-		"VerdictNotOverridden":    int64(pb.TestVerdict_NOT_OVERRIDDEN),
+		"PaginationClause":               paginationClause,
+		"OrderingByUIPriority":           q.Order == OrderingByUIPriority,
+		"ResultPassed":                   int64(pb.TestResult_PASSED),
+		"ResultFailed":                   int64(pb.TestResult_FAILED),
+		"ResultSkipped":                  int64(pb.TestResult_SKIPPED),
+		"ResultExecutionErrored":         int64(pb.TestResult_EXECUTION_ERRORED),
+		"ResultPrecluded":                int64(pb.TestResult_PRECLUDED),
+		"VerdictPassed":                  int64(pb.TestVerdict_PASSED),
+		"VerdictFailed":                  int64(pb.TestVerdict_FAILED),
+		"VerdictSkipped":                 int64(pb.TestVerdict_SKIPPED),
+		"VerdictExecutionErrored":        int64(pb.TestVerdict_EXECUTION_ERRORED),
+		"VerdictPrecluded":               int64(pb.TestVerdict_PRECLUDED),
+		"VerdictFlaky":                   int64(pb.TestVerdict_FLAKY),
+		"VerdictExonerated":              int64(pb.TestVerdict_EXONERATED),
+		"VerdictNotOverridden":           int64(pb.TestVerdict_NOT_OVERRIDDEN),
+		"ContainsTestResultFilterClause": containsTestResultFilterClause,
 	}
 
 	st, err := spanutil.GenerateStatement(queryTmpl, tmplInput)
@@ -400,7 +419,7 @@ type tvTestResult struct {
 	SummaryHTML         []byte // zstd-compressed string
 	StartTime           spanner.NullTime
 	RunDurationNanos    spanner.NullInt64
-	Tags                []string          // key-vale pairs stored as ["key1:value1", "key2:value2"]
+	TagsMasked          []string          // key-vale pairs stored as ["key1:value1", "key2:value2"]
 	FailureReason       []byte            // zstd-compressed luci.resultdb.v1.FailureReason
 	Properties          []byte            // zstd-compressed google.protobuf.Struct
 	SkipReason          spanner.NullInt64 // pb.SkipReason
@@ -421,6 +440,20 @@ var queryTmpl = template.Must(template.New("").Parse(`
 -- We do not use WITH clauses below as Spanner query optimizer does not optimize
 -- across WITH clause/CTE boundaries and this results in suboptimal query plans. Instead
 -- we use templates to include the nested SQL statements.
+{{define "TestResults"}}
+			-- Test results.
+			SELECT
+				* EXCEPT (ModuleVariant, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName),
+				-- Provide masked versions of fields to support filtering on them in the query one level up.
+				-- Currently the user always has full access, so no masking is needed.
+				ModuleVariant AS ModuleVariantMasked,
+				Tags AS TagsMasked,
+				TestMetadata as TestMetadataMasked,
+				TestMetadataName AS TestMetadataNameMasked,
+				TestMetadataLocationRepo AS TestMetadataLocationRepoMasked,
+				TestMetadataLocationFileName AS TestMetadataLocationFileNameMasked
+			FROM TestResultsV2
+{{end}}
 {{define "TestExonerations"}}
 			-- Test Exonerations.
 			SELECT
@@ -444,7 +477,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		SELECT
 			TR.RootInvocationShardId,
 			TR.ModuleName, TR.ModuleScheme, TR.ModuleVariantHash, TR.T1CoarseName, TR.T2FineName, TR.T3CaseName,
-			ANY_VALUE(TR.ModuleVariant) AS ModuleVariant,
+			ANY_VALUE(TR.ModuleVariantMasked) AS ModuleVariantMasked,
 			(CASE
 				WHEN COUNTIF(TR.StatusV2 = {{.ResultPassed}}) = 0 AND COUNTIF(TR.StatusV2 = {{.ResultFailed}}) > 0 THEN {{.VerdictFailed}}
 				WHEN COUNTIF(TR.StatusV2 = {{.ResultPassed}}) > 0 AND COUNTIF(TR.StatusV2 = {{.ResultFailed}}) > 0 THEN {{.VerdictFlaky}}
@@ -463,7 +496,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				SummaryHTML,
 				StartTime,
 				RunDurationNanos,
-				Tags,
+				TagsMasked,
 				FailureReason,
 				Properties,
 				SkipReason,
@@ -472,11 +505,12 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			)) AS Results,
 			ANY_VALUE(E.Exonerations) AS Exonerations,
 			COALESCE(ANY_VALUE(E.HasExonerations), FALSE) AS HasExonerations,
-			ANY_VALUE(TR.TestMetadata) AS TestMetadata,
-			ANY_VALUE(TR.TestMetadataName) AS TestMetadataName,
-			ANY_VALUE(TR.TestMetadataLocationRepo) AS TestMetadataLocationRepo,
-			ANY_VALUE(TR.TestMetadataLocationFileName) AS TestMetadataLocationFileName,
-		FROM TestResultsV2 TR
+			ANY_VALUE(TR.TestMetadataMasked) AS TestMetadataMasked,
+			ANY_VALUE(TR.TestMetadataNameMasked) AS TestMetadataNameMasked,
+			ANY_VALUE(TR.TestMetadataLocationRepoMasked) AS TestMetadataLocationRepoMasked,
+			ANY_VALUE(TR.TestMetadataLocationFileNameMasked) AS TestMetadataLocationFileNameMasked,
+		FROM ({{template "TestResults" .}}
+		) TR
 		LEFT JOIN@{JOIN_METHOD=MERGE_JOIN} ({{template "TestExonerations" .}}
 		) E USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
 		-- A given full test identifier will only appear in one shard, so we include RootInvocationShardId
@@ -484,12 +518,15 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		-- This allows use of a merge join and streaming aggregate.
 		WHERE TR.RootInvocationShardId IN UNNEST(@shards)
 		GROUP BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
+		{{if ne .ContainsTestResultFilterClause ""}}
+			HAVING LOGICAL_OR({{.ContainsTestResultFilterClause}})
+		{{end}}
 {{end}}
 {{define "Verdicts"}}
 	-- Verdicts.
 	SELECT
 		ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName,
-		ModuleVariant,
+		ModuleVariantMasked,
 		Status,
 		(CASE
 			WHEN HasExonerations AND (Status = {{.VerdictFailed}} OR Status = {{.VerdictExecutionErrored}} OR Status = {{.VerdictPrecluded}} OR Status = {{.VerdictFlaky}}) THEN {{.VerdictExonerated}}
@@ -513,10 +550,10 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				LIMIT @resultLimit
 			),
 			NULL) as Exonerations,
-		TestMetadata,
-		TestMetadataName,
-		TestMetadataLocationRepo,
-		TestMetadataLocationFileName,
+		TestMetadataMasked,
+		TestMetadataNameMasked,
+		TestMetadataLocationRepoMasked,
+		TestMetadataLocationFileNameMasked,
 		-- UI Priority Calculation
 		(CASE
 			-- Has blocking failures: priority 100
@@ -543,15 +580,15 @@ SELECT
 	T1CoarseName,
 	T2FineName,
 	T3CaseName,
-	ModuleVariant,
+	ModuleVariantMasked,
 	Status,
 	StatusOverride,
 	Results,
 	Exonerations,
-	TestMetadata,
-	TestMetadataName,
-	TestMetadataLocationRepo,
-	TestMetadataLocationFileName,
+	TestMetadataMasked,
+	TestMetadataNameMasked,
+	TestMetadataLocationRepoMasked,
+	TestMetadataLocationFileNameMasked,
 	UIPriority
 FROM (
 	{{template "Verdicts" .}}
