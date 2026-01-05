@@ -21,6 +21,13 @@ import (
 )
 
 var statusEnumDef = aip160.NewEnumDefinition("pb.TestResult.Status", pb.TestResult_Status_value, int32(pb.TestResult_STATUS_UNSPECIFIED))
+var testIDColumnDefs = StructuredTestIDColumnNames{
+	ModuleName:   "ModuleName",
+	ModuleScheme: "ModuleScheme",
+	CoarseName:   "T1CoarseName",
+	FineName:     "T2FineName",
+	CaseName:     "T3CaseName",
+}
 
 // Security: filters on a column that a user does not have access to can leak information. With
 // certain filter types, this can be done rather quickly.
@@ -42,7 +49,7 @@ var statusEnumDef = aip160.NewEnumDefinition("pb.TestResult.Status", pb.TestResu
 // accidental security bugs if this comment is not followed, as the filters
 // will simply not work.
 var filterSchema = aip160.NewDatabaseTable().WithFields(
-	aip160.NewField().WithFieldPath("test_id").WithBackend(newFlatTestIDFieldBackend()).Filterable().Build(),
+	aip160.NewField().WithFieldPath("test_id").WithBackend(NewFlatTestIDFieldBackend(testIDColumnDefs)).Filterable().Build(),
 	aip160.NewField().WithFieldPath("test_id_structured", "module_name").WithBackend(aip160.NewStringColumn("ModuleName")).FilterableImplicitly().Build(),
 	aip160.NewField().WithFieldPath("test_id_structured", "module_scheme").WithBackend(aip160.NewStringColumn("ModuleScheme")).Filterable().Build(),
 	aip160.NewField().WithFieldPath("test_id_structured", "module_variant").WithBackend(aip160.NewKeyValueColumn("ModuleVariantMasked").WithStringArray().Build()).Filterable().Build(),

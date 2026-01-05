@@ -210,10 +210,10 @@ func coerceMemberToFieldPath(member *Member) (aip132.FieldPath, error) {
 	return aip132.NewFieldPath(parts...), nil
 }
 
-// quoteLike turns a literal string into an escaped like expression.
+// QuoteLike turns a literal string into an escaped like expression.
 // This means strings like test_name will only match as expected, rather than
 // also matching test3name.
-func quoteLike(value string) string {
+func QuoteLike(value string) string {
 	value = strings.ReplaceAll(value, "\\", "\\\\")
 	value = strings.ReplaceAll(value, "%", "\\%")
 	value = strings.ReplaceAll(value, "_", "\\_")

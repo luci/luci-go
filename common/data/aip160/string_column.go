@@ -38,7 +38,7 @@ func (s *StringColumn) RestrictionQuery(restriction RestrictionContext, g Genera
 	case "!=":
 		return fmt.Sprintf("(%s <> %s)", g.ColumnReference(s.databaseName), g.BindString(argValueUnsafe)), nil
 	case ":":
-		return fmt.Sprintf("(%s LIKE %s)", g.ColumnReference(s.databaseName), g.BindString("%"+quoteLike(argValueUnsafe)+"%")), nil
+		return fmt.Sprintf("(%s LIKE %s)", g.ColumnReference(s.databaseName), g.BindString("%"+QuoteLike(argValueUnsafe)+"%")), nil
 	default:
 		return "", OperatorNotImplementedError(restriction.Comparator, restriction.FieldPath, "STRING")
 	}
@@ -46,7 +46,7 @@ func (s *StringColumn) RestrictionQuery(restriction RestrictionContext, g Genera
 
 // ImplicitRestrictionQuery implements FieldBackend.
 func (s *StringColumn) ImplicitRestrictionQuery(ir ImplicitRestrictionContext, g Generator) (string, error) {
-	return fmt.Sprintf("(%s LIKE %s)", g.ColumnReference(s.databaseName), g.BindString("%"+quoteLike(ir.ArgValueUnsafe)+"%")), nil
+	return fmt.Sprintf("(%s LIKE %s)", g.ColumnReference(s.databaseName), g.BindString("%"+QuoteLike(ir.ArgValueUnsafe)+"%")), nil
 }
 
 // NewStringColumn returns a new StringColumn.

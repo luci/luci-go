@@ -33,7 +33,7 @@ func TestWhereClause(t *testing.T) {
 			filter := `test_id=":module!scheme:coarse_name:fine_name#case_name"`
 			result, _, err := WhereClause(filter, "T", "tr")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Equal(`(ModuleName = @tr0 AND ModuleScheme = @tr1 AND T1CoarseName = @tr2 AND T2FineName = @tr3 AND T3CaseName = @tr4)`))
+			assert.Loosely(t, result, should.Equal(`(T.ModuleName = @tr0 AND T.ModuleScheme = @tr1 AND T.T1CoarseName = @tr2 AND T.T2FineName = @tr3 AND T.T3CaseName = @tr4)`))
 		})
 		t.Run("Test ID structured", func(t *ftt.Test) {
 			filter := `test_id_structured.module_name="modulename"` +

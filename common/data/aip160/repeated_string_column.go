@@ -34,7 +34,7 @@ func (r *RepeatedStringColumn) RestrictionQuery(restriction RestrictionContext, 
 
 	if restriction.Comparator == ":" {
 		return fmt.Sprintf("(EXISTS (SELECT value FROM UNNEST(%s) as value WHERE value LIKE %s))",
-			g.ColumnReference(r.databaseName), g.BindString("%"+quoteLike(argValueUnsafe)+"%")), nil
+			g.ColumnReference(r.databaseName), g.BindString("%"+QuoteLike(argValueUnsafe)+"%")), nil
 	} else {
 		return "", OperatorNotImplementedError(restriction.Comparator, restriction.FieldPath, "REPEATED STRING")
 	}

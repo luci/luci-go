@@ -53,7 +53,7 @@ func (k *KeyValueColumn) RestrictionQuery(restriction RestrictionContext, g Gene
 
 	if k.IsUsingStringArray {
 		if restriction.Comparator == ":" {
-			boundVal := g.BindString(keyUnsafe + ":" + "%" + quoteLike(argValueUnsafe) + "%")
+			boundVal := g.BindString(keyUnsafe + ":" + "%" + QuoteLike(argValueUnsafe) + "%")
 			return fmt.Sprintf("(EXISTS (SELECT 1 FROM UNNEST(%s) as _v WHERE _v LIKE %s))", columnDatabaseName, boundVal), nil
 		}
 
@@ -70,7 +70,7 @@ func (k *KeyValueColumn) RestrictionQuery(restriction RestrictionContext, g Gene
 	} else if k.IsUsingRepeatedStruct {
 		key := g.BindString(keyUnsafe)
 		if restriction.Comparator == ":" {
-			boundVal := g.BindString("%" + quoteLike(argValueUnsafe) + "%")
+			boundVal := g.BindString("%" + QuoteLike(argValueUnsafe) + "%")
 			return fmt.Sprintf("(EXISTS (SELECT _v.key, _v.value FROM UNNEST(%s) as _v WHERE _v.key = %s AND _v.value LIKE %s))", columnDatabaseName, key, boundVal), nil
 		}
 		boundVal := g.BindString(argValueUnsafe)
