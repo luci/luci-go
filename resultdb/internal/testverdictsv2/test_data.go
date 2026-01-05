@@ -77,8 +77,9 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	}
 
 	exonerations := []*testexonerationsv2.TestExonerationRow{
-		// Exonerate t5
+		// Exonerate t5 (twice)
 		baseExonerationBuilder().WithCaseName("t5").WithExonerationID("e1").WithReason(pb.ExonerationReason_OCCURS_ON_OTHER_CLS).Build(),
+		baseExonerationBuilder().WithCaseName("t5").WithExonerationID("e2").WithReason(pb.ExonerationReason_NOT_CRITICAL).Build(),
 	}
 
 	// Prepare mutations.
@@ -203,13 +204,19 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 
 	// Exonerated (Failed + Exoneration).
 	r5 := makeResult("t5", "r1", pb.TestResult_FAILED)
-	e5 := &pb.TestExoneration{
+	e1 := &pb.TestExoneration{
 		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", flatTestID(rootInvID, "t5"), "e1"),
 		ExonerationId:   "e1",
 		ExplanationHtml: "<b>explanation</b>",
 		Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 	}
-	v5 := makeVerdict("t5", pb.TestVerdict_FAILED, []*pb.TestResult{r5}, []*pb.TestExoneration{e5})
+	e2 := &pb.TestExoneration{
+		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", flatTestID(rootInvID, "t5"), "e2"),
+		ExonerationId:   "e2",
+		ExplanationHtml: "<b>explanation</b>",
+		Reason:          pb.ExonerationReason_NOT_CRITICAL,
+	}
+	v5 := makeVerdict("t5", pb.TestVerdict_FAILED, []*pb.TestResult{r5}, []*pb.TestExoneration{e1, e2})
 
 	// Precluded.
 	r6 := makeResult("t6", "r1", pb.TestResult_PRECLUDED)

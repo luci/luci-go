@@ -44,6 +44,9 @@ type Query struct {
 	RootInvocationID rootinvocations.ID
 	// The number of test verdicts to return per page.
 	PageSize int
+	// The maximum number of test results and exonerations to return per verdict.
+	// The limit is applied independently to test results and exonerations.
+	ResultLimit int
 	// Whether to use UI sort order, i.e. by ui_priority first, instead of by test ID.
 	// This incurs a performance penalty, as results are not returned in table order.
 	Order Ordering
@@ -86,6 +89,9 @@ func (q *Query) Fetch(ctx context.Context, pageToken string) ([]*pb.TestVerdict,
 func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.TestVerdict) error) (string, error) {
 	if q.PageSize <= 0 {
 		return "", errors.New("page size must be positive")
+	}
+	if q.ResultLimit <= 0 {
+		return "", errors.New("result limit must be positive")
 	}
 
 	st, err := q.buildQuery(pageToken)
@@ -280,8 +286,9 @@ func (q *Query) toResult(r tvTestResult, testID string) (*pb.TestResult, error) 
 
 func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 	params := map[string]any{
-		"shards": q.RootInvocationID.AllShardIDs().ToSpanner(),
-		"limit":  q.PageSize,
+		"shards":      q.RootInvocationID.AllShardIDs().ToSpanner(),
+		"limit":       q.PageSize,
+		"resultLimit": q.ResultLimit,
 	}
 
 	paginationClause := "TRUE"
@@ -494,6 +501,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			-- Order results by status first (putting failed first, then passed, skipped, execution errored, precluded).
 			-- Use a secondary sort order to keep the query results deterministic.
 			ORDER BY IF(StatusV2 = {{.ResultFailed}}, 0, StatusV2) ASC, WorkUnitId, ResultId
+			LIMIT @resultLimit
 		) AS Results,
 		-- To avoid confusion, exonerations are only returned if the status is one that can be exonerated.
 		IF(Status = {{.VerdictFailed}} OR Status = {{.VerdictExecutionErrored}} OR Status = {{.VerdictPrecluded}} OR Status = {{.VerdictFlaky}},
@@ -502,6 +510,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				FROM UNNEST(Exonerations) E
 				-- Use a sort to keep the query results deterministic.
 				ORDER BY WorkUnitId, ExonerationId
+				LIMIT @resultLimit
 			),
 			NULL) as Exonerations,
 		TestMetadata,

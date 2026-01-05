@@ -43,6 +43,7 @@ func TestQuery(t *testing.T) {
 		q := &Query{
 			RootInvocationID: rootInvID,
 			PageSize:         100,
+			ResultLimit:      10,
 			Order:            OrderingByID,
 		}
 
@@ -101,22 +102,30 @@ func TestQuery(t *testing.T) {
 		})
 		t.Run("Ordering by UI Priority", func(t *ftt.Test) {
 			q.Order = OrderingByUIPriority
+			// Expected order:
+			// 1. Failed (t2) - Priority 100
+			// 2. Execution Errored (t7) - Priority 70
+			// 3. Precluded (t6) - Priority 70
+			// 4. Flaky (t3) - Priority 30
+			// 5. Exonerated (t5) - Priority 10
+			// 6. Passed (t1) - Priority 0
+			// 7. Skipped (t4) - Priority 0
+			// Note: Within same priority, sort by TestID (module, scheme, variant, coarse, fine, case).
 
-			// Map expected items to map for easy retrieval.
+			// Map expected items to map for easy retrieval
 			m := make(map[string]*pb.TestVerdict)
 			for _, v := range expected {
 				m[v.TestId] = v
 			}
 
-			// Note: Within same priority, sort by TestID (module, scheme, variant, coarse, fine, case).
 			expectedUIOrder := []*pb.TestVerdict{
-				m[flatTestID(rootInvID, "t2")], // Failed (priority 100)
-				m[flatTestID(rootInvID, "t6")], // Precluded (priority 70)
-				m[flatTestID(rootInvID, "t7")], // Execution Errored (priority 70)
-				m[flatTestID(rootInvID, "t3")], // Flaky (priority 30)
-				m[flatTestID(rootInvID, "t5")], // Exonerated (priority 10)
-				m[flatTestID(rootInvID, "t1")], // Passed (priority 0)
-				m[flatTestID(rootInvID, "t4")], // Skipped (priority 0)
+				m[flatTestID(rootInvID, "t2")], // Failed
+				m[flatTestID(rootInvID, "t6")], // Precluded
+				m[flatTestID(rootInvID, "t7")], // Execution Errored
+				m[flatTestID(rootInvID, "t3")], // Flaky
+				m[flatTestID(rootInvID, "t5")], // Exonerated
+				m[flatTestID(rootInvID, "t1")], // Passed
+				m[flatTestID(rootInvID, "t4")], // Skipped
 			}
 
 			t.Run("Without pagination", func(t *ftt.Test) {
@@ -130,6 +139,24 @@ func TestQuery(t *testing.T) {
 				results := fetchAll(q)
 				assert.Loosely(t, results, should.Match(expectedUIOrder))
 			})
+		})
+
+		t.Run("ResultLimit", func(t *ftt.Test) {
+			// Because test status is computed at the database side, reducing the
+			// number of results should not result in changes to test status (e.g.
+			// from flaky to failed).
+			q.ResultLimit = 1
+
+			expected := ExpectedVerdicts(rootInvID)
+			for _, tv := range expected {
+				tv.Results = tv.Results[:1]
+				if len(tv.Exonerations) > 0 {
+					tv.Exonerations = tv.Exonerations[:1]
+				}
+			}
+
+			results := fetchAll(q)
+			assert.Loosely(t, results, should.Match(expected))
 		})
 	})
 }
