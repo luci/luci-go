@@ -43,6 +43,7 @@ func TestQuery(t *testing.T) {
 		q := &Query{
 			RootInvocationID: rootInvID,
 			PageSize:         100,
+			Order:            OrderingByID,
 		}
 
 		fetchAll := func(q *Query) []*pb.TestVerdict {
@@ -84,10 +85,8 @@ func TestQuery(t *testing.T) {
 			emptyInvRow := rootinvocations.NewBuilder(emptyInvID).Build()
 			ms := insert.RootInvocationWithRootWorkUnit(emptyInvRow)
 			testutil.MustApply(ctx, t, ms...)
-			q := &Query{
-				RootInvocationID: emptyInvID,
-				PageSize:         100,
-			}
+			q.RootInvocationID = emptyInvID
+
 			verdicts, token, err := q.Fetch(span.Single(ctx), "")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, token, should.Equal(""))
@@ -99,6 +98,38 @@ func TestQuery(t *testing.T) {
 			assert.Loosely(t, ok, should.BeTrue)
 			assert.Loosely(t, st.Err(), should.ErrLike("page_token: invalid page token"))
 			assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
+		})
+		t.Run("Ordering by UI Priority", func(t *ftt.Test) {
+			q.Order = OrderingByUIPriority
+
+			// Map expected items to map for easy retrieval.
+			m := make(map[string]*pb.TestVerdict)
+			for _, v := range expected {
+				m[v.TestId] = v
+			}
+
+			// Note: Within same priority, sort by TestID (module, scheme, variant, coarse, fine, case).
+			expectedUIOrder := []*pb.TestVerdict{
+				m[flatTestID(rootInvID, "t2")], // Failed (priority 100)
+				m[flatTestID(rootInvID, "t6")], // Precluded (priority 70)
+				m[flatTestID(rootInvID, "t7")], // Execution Errored (priority 70)
+				m[flatTestID(rootInvID, "t3")], // Flaky (priority 30)
+				m[flatTestID(rootInvID, "t5")], // Exonerated (priority 10)
+				m[flatTestID(rootInvID, "t1")], // Passed (priority 0)
+				m[flatTestID(rootInvID, "t4")], // Skipped (priority 0)
+			}
+
+			t.Run("Without pagination", func(t *ftt.Test) {
+				verdicts, token, err := q.Fetch(span.Single(ctx), "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.Equal(""))
+				assert.Loosely(t, verdicts, should.Match(expectedUIOrder))
+			})
+			t.Run("With pagination", func(t *ftt.Test) {
+				q.PageSize = 1
+				results := fetchAll(q)
+				assert.Loosely(t, results, should.Match(expectedUIOrder))
+			})
 		})
 	})
 }
