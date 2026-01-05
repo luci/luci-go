@@ -35,7 +35,7 @@ type clientImpl struct {
 }
 
 func NewClient(ctx context.Context, cloudProject string) (Client, error) {
-	location := "us-central1" // Default location for Vertex AI
+	location := "global" // Use global for Gemini 3 access
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		Project:  cloudProject,
 		Location: location,
