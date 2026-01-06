@@ -11,10 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Link } from 'react-router';
+
 import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
+import {
+  generateDeviceDetailsURL,
+  ANDROID_PLATFORM,
+} from '@/fleet/constants/paths';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { RunTargetColumnHeader } from './run_target_column_header';
@@ -56,27 +63,47 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
     valueGetter: (_, device) => device.id,
 
     renderCell: (props) => {
-      return renderCellWithLink<AndroidDevice>((_, { row: d }) => {
-        const type = d.omnilabSpec?.labels['fc_machine_type']?.values?.[0];
-        const hostname = d.omnilabSpec?.labels['hostname']?.values?.[0];
-        const hostIp = d.omnilabSpec?.labels['host_ip']?.values?.[0];
+      const d = props.row;
+      const internalLink = generateDeviceDetailsURL(ANDROID_PLATFORM, d.id);
 
-        if (type === 'host') {
-          if (hostname && hostIp)
-            return `https://mobileharness-fe.corp.google.com/labdetailview/${hostname}/${hostIp}`;
+      const type = d.omnilabSpec?.labels['fc_machine_type']?.values?.[0];
+      const hostname = d.omnilabSpec?.labels['hostname']?.values?.[0];
+      const hostIp = d.omnilabSpec?.labels['host_ip']?.values?.[0];
 
+      let mhLink = '';
+      if (type === 'host') {
+        if (hostname && hostIp) {
+          mhLink = `https://mobileharness-fe.corp.google.com/labdetailview/${hostname}/${hostIp}`;
+        } else {
           const params = new URLSearchParams();
           params.append('filter', `"host_name":("${d.id}")`);
-          return `https://mobileharness-fe.corp.google.com/lablistview?${params.toString()}`;
+          mhLink = `https://mobileharness-fe.corp.google.com/lablistview?${params.toString()}`;
         }
+      } else {
+        if (hostname && hostIp) {
+          mhLink = `https://mobileharness-fe.corp.google.com/devicedetailview/${hostname}/${hostIp}/${d.id}`;
+        } else {
+          const params = new URLSearchParams();
+          params.append('filter', `"id":("${d.id}")`);
+          mhLink = `https://mobileharness-fe.corp.google.com/devicelistview?${params.toString()}`;
+        }
+      }
 
-        if (hostname && hostIp)
-          return `https://mobileharness-fe.corp.google.com/devicedetailview/${hostname}/${hostIp}/${d.id}`;
-
-        const params = new URLSearchParams();
-        params.append('filter', `"id":("${d.id}")`);
-        return `https://mobileharness-fe.corp.google.com/devicelistview?${params.toString()}`;
-      })(props);
+      return (
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Link to={internalLink} style={{ marginRight: '8px' }}>
+            {d.id}
+          </Link>
+          <a
+            href={mhLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center' }}
+          >
+            <OpenInNewIcon fontSize="small" />
+          </a>
+        </div>
+      );
     },
   },
   host_group: {
