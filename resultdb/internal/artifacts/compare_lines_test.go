@@ -20,12 +20,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"strings"
 	"testing"
-
-	"google.golang.org/genproto/googleapis/bytestream"
-	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -34,40 +30,13 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// mockReadClient simulates a bytestream.ByteStream_ReadClient for testing.
-type mockReadClient struct {
-	chunks [][]byte
-	pos    int
-}
-
-func (m *mockReadClient) Recv() (*bytestream.ReadResponse, error) {
-	if m.pos < len(m.chunks) {
-		chunk := m.chunks[m.pos]
-		m.pos++
-		return &bytestream.ReadResponse{Data: chunk}, nil
-	}
-	return nil, io.EOF
-}
-
-func (m *mockReadClient) Header() (metadata.MD, error) { return nil, nil }
-func (m *mockReadClient) Trailer() metadata.MD         { return nil }
-func (m *mockReadClient) CloseSend() error             { return nil }
-func (m *mockReadClient) Context() context.Context     { return nil }
-func (m *mockReadClient) SendMsg(v any) error          { return nil }
-func (m *mockReadClient) RecvMsg(v any) error          { return nil }
-
-func TestProcessPassingStream(t *testing.T) {
+func TestProcessComparisonReader(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("ProcessPassingStream", t, func(t *ftt.Test) {
-		t.Run("with simple stream", func(t *ftt.Test) {
-			stream := &mockReadClient{
-				chunks: [][]byte{
-					[]byte("line 1\nline 2\n"),
-					[]byte("line 3\nline 4"),
-				},
-			}
-			hashes, err := ProcessPassingStream(context.Background(), stream)
+	ftt.Run("ProcessComparisonReader", t, func(t *ftt.Test) {
+		t.Run("with simple reader", func(t *ftt.Test) {
+			reader := bytes.NewReader([]byte("line 1\nline 2\nline 3\nline 4"))
+			hashes, err := ProcessComparisonReader(context.Background(), reader)
 			assert.Loosely(t, err, should.BeNil)
 
 			expectedHashes := make(map[int64]struct{})
@@ -78,15 +47,9 @@ func TestProcessPassingStream(t *testing.T) {
 			assert.Loosely(t, hashes, should.Resemble(expectedHashes))
 		})
 
-		t.Run("with line split across chunks", func(t *ftt.Test) {
-			stream := &mockReadClient{
-				chunks: [][]byte{
-					[]byte("line 1\nli"),   // "li" is a remainder
-					[]byte("ne 2\nline 3"), // prepended -> "line 2\nline 3", "line 3" is a remainder
-					[]byte("\nline 4"),     // prepended -> "line 3\nline 4", no remainder
-				},
-			}
-			hashes, err := ProcessPassingStream(context.Background(), stream)
+		t.Run("with line split across reads", func(t *ftt.Test) {
+			reader := bytes.NewReader([]byte("line 1\nline 2\nline 3\nline 4"))
+			hashes, err := ProcessComparisonReader(context.Background(), reader)
 			assert.Loosely(t, err, should.BeNil)
 
 			expectedHashes := make(map[int64]struct{})
@@ -98,29 +61,20 @@ func TestProcessPassingStream(t *testing.T) {
 		})
 
 		t.Run("detects long line", func(t *ftt.Test) {
-			stream := &mockReadClient{
-				chunks: [][]byte{
-					bytes.Repeat([]byte("a"), maxLineLengthBytes+1),
-				},
-			}
-			_, err := ProcessPassingStream(context.Background(), stream)
+			reader := bytes.NewReader(bytes.Repeat([]byte("a"), maxLineLengthBytes+1))
+			_, err := ProcessComparisonReader(context.Background(), reader)
 			assert.Loosely(t, err, should.Equal(errBinaryFileDetected))
 		})
 
 		t.Run("detects invalid utf8", func(t *ftt.Test) {
-			stream := &mockReadClient{
-				chunks: [][]byte{
-					[]byte("valid line\n"),
-					{0xff, 0xfe, 0xfd}, // Invalid UTF-8 sequence
-				},
-			}
-			_, err := ProcessPassingStream(context.Background(), stream)
+			reader := bytes.NewReader(append([]byte("valid line\n"), 0xff, 0xfe, 0xfd))
+			_, err := ProcessComparisonReader(context.Background(), reader)
 			assert.Loosely(t, err, should.Equal(errBinaryFileDetected))
 		})
 	})
 }
 
-func TestProcessFailingStream(t *testing.T) {
+func TestProcessFailingReader(t *testing.T) {
 	t.Parallel()
 
 	passingContent := `line a
@@ -140,10 +94,10 @@ line d2
 line e
 line f`
 
-	ftt.Run("ProcessFailingStream", t, func(t *ftt.Test) {
+	ftt.Run("ProcessFailingReader", t, func(t *ftt.Test) {
 		t.Run("identifies failure ranges correctly, ranges only", func(t *ftt.Test) {
-			stream := &mockReadClient{chunks: [][]byte{[]byte(failingContent)}}
-			resp, err := ProcessFailingStream(context.Background(), stream, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
+			reader := strings.NewReader(failingContent)
+			resp, err := ProcessFailingReader(context.Background(), reader, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
@@ -156,8 +110,8 @@ line f`
 		})
 
 		t.Run("identifies failure ranges correctly, with content", func(t *ftt.Test) {
-			stream := &mockReadClient{chunks: [][]byte{[]byte(failingContent)}}
-			resp, err := ProcessFailingStream(context.Background(), stream, passingHashes, pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT, 1000, 0, 0)
+			reader := strings.NewReader(failingContent)
+			resp, err := ProcessFailingReader(context.Background(), reader, passingHashes, pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT, 1000, 0, 0)
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
@@ -169,9 +123,9 @@ line f`
 		})
 
 		t.Run("paginates by page size", func(t *ftt.Test) {
-			stream := &mockReadClient{chunks: [][]byte{[]byte(failingContent)}}
+			reader := strings.NewReader(failingContent)
 			// Page size of 2 should return the first two failure ranges.
-			resp, err := ProcessFailingStream(context.Background(), stream, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 2, 0, 0)
+			resp, err := ProcessFailingReader(context.Background(), reader, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 2, 0, 0)
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.NextPageToken, should.NotBeEmpty)
@@ -214,8 +168,8 @@ line f`
 			localPassingHashes := make(map[int64]struct{})
 			localPassingHashes[mustHash(passingLine)] = struct{}{}
 
-			stream := &mockReadClient{chunks: [][]byte{[]byte(content.String())}}
-			resp, err := ProcessFailingStream(context.Background(), stream, localPassingHashes, pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT, 1000, 0, 0)
+			reader := strings.NewReader(content.String())
+			resp, err := ProcessFailingReader(context.Background(), reader, localPassingHashes, pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT, 1000, 0, 0)
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.NextPageToken, should.NotBeEmpty)
@@ -233,8 +187,8 @@ line f`
 		t.Run("File ends without a trailing newline", func(t *ftt.Test) {
 			// This tests that the final `remainder` buffer is processed correctly.
 			failingContentNoNewline := strings.TrimSuffix(failingContent, "\n")
-			stream := &mockReadClient{chunks: [][]byte{[]byte(failingContentNoNewline)}}
-			resp, err := ProcessFailingStream(context.Background(), stream, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
+			reader := strings.NewReader(failingContentNoNewline)
+			resp, err := ProcessFailingReader(context.Background(), reader, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
 
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
@@ -250,8 +204,8 @@ line f`
 			content := `FAILING LINE
 line a
 line c`
-			stream := &mockReadClient{chunks: [][]byte{[]byte(content)}}
-			resp, err := ProcessFailingStream(context.Background(), stream, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
+			reader := strings.NewReader(content)
+			resp, err := ProcessFailingReader(context.Background(), reader, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(resp.FailureOnlyRanges), should.Equal(1))
 			assert.Loosely(t, resp.FailureOnlyRanges[0], should.Resemble(&pb.CompareArtifactLinesResponse_FailureOnlyRange{
@@ -261,9 +215,9 @@ line c`
 
 		t.Run("File with only failing lines", func(t *ftt.Test) {
 			content := "line 1\nline 2\nline 3"
-			stream := &mockReadClient{chunks: [][]byte{[]byte(content)}}
+			reader := strings.NewReader(content)
 			// Use an empty passingHashes map.
-			resp, err := ProcessFailingStream(context.Background(), stream, make(map[int64]struct{}), pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
+			resp, err := ProcessFailingReader(context.Background(), reader, make(map[int64]struct{}), pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
 			assert.Loosely(t, err, should.BeNil)
 			// Should produce one single range spanning the whole file.
 			assert.Loosely(t, len(resp.FailureOnlyRanges), should.Equal(1))
@@ -273,8 +227,8 @@ line c`
 		})
 
 		t.Run("Empty file", func(t *ftt.Test) {
-			stream := &mockReadClient{chunks: [][]byte{[]byte("")}}
-			resp, err := ProcessFailingStream(context.Background(), stream, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
+			reader := strings.NewReader("")
+			resp, err := ProcessFailingReader(context.Background(), reader, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.FailureOnlyRanges, should.BeEmpty)
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
@@ -282,8 +236,8 @@ line c`
 
 		t.Run("File with only passing lines", func(t *ftt.Test) {
 			content := "line a\nline c\nline e"
-			stream := &mockReadClient{chunks: [][]byte{[]byte(content)}}
-			resp, err := ProcessFailingStream(context.Background(), stream, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
+			reader := strings.NewReader(content)
+			resp, err := ProcessFailingReader(context.Background(), reader, passingHashes, pb.CompareArtifactLinesRequest_RANGES_ONLY, 1000, 0, 0)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp.FailureOnlyRanges, should.BeEmpty)
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)

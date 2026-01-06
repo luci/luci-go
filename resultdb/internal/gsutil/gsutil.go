@@ -18,6 +18,7 @@ package gsutil
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 
 type Client interface {
 	GenerateSignedURL(ctx context.Context, bucket, object string, expiration time.Time) (string, error)
+	NewReader(ctx context.Context, bucket, object string, offset int64) (io.ReadCloser, error)
 	Close()
 }
 
@@ -94,6 +96,11 @@ func (c *StorageClient) GenerateSignedURL(ctx context.Context, bucket, object st
 		return "", errors.Fmt("GenerateSignedURL(%q/%q): %v", bucket, object, err)
 	}
 	return url, nil
+}
+
+// NewReader creates a new reader for a GCS object starting at offset.
+func (c *StorageClient) NewReader(ctx context.Context, bucket, object string, offset int64) (io.ReadCloser, error) {
+	return c.gsClient.Bucket(bucket).Object(object).NewRangeReader(ctx, offset, -1)
 }
 
 // Close releases resources associated with the client.

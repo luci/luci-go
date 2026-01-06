@@ -24,7 +24,6 @@ import (
 	"unicode/utf8"
 
 	"google.golang.org/api/iterator"
-	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc/codes"
 
 	farm "github.com/leemcloughlin/gofarmhash"
@@ -61,12 +60,22 @@ type streamChunk struct {
 // To stop iteration early, it can return a sentinel error, such as iterator.Done.
 type lineProcessor func(line []byte, lineNumber int32, byteOffset int64) error
 
-// fetchChunks reads from the bytestream and sends data/errors to a channel.
+// fetchChunks reads from the reader and sends data/errors to a channel.
 // This function is intended to be run in a separate goroutine.
-func fetchChunks(ctx context.Context, stream bytestream.ByteStream_ReadClient, chunks chan<- streamChunk) {
+func fetchChunks(ctx context.Context, r io.Reader, chunks chan<- streamChunk) {
 	defer close(chunks)
 	for {
-		resp, err := stream.Recv()
+		buf := make([]byte, 32*1024)
+		n, err := r.Read(buf)
+		// Always process the n > 0 bytes returned before considering the error err.
+		// See https://pkg.go.dev/io#Reader.
+		if n > 0 {
+			select {
+			case <-ctx.Done():
+				return
+			case chunks <- streamChunk{Data: buf[:n]}:
+			}
+		}
 		if err != nil {
 			if err != io.EOF {
 				select {
@@ -75,27 +84,22 @@ func fetchChunks(ctx context.Context, stream bytestream.ByteStream_ReadClient, c
 				case chunks <- streamChunk{Err: err}:
 				}
 			}
-			return // End of stream or a real error.
-		}
-		select {
-		case <-ctx.Done():
 			return
-		case chunks <- streamChunk{Data: resp.Data}:
 		}
 	}
 }
 
-// processStreamByLine reads from the given bytestream and calls the provided
+// processStreamByLine reads from the given reader and calls the provided
 // line processor for each line. It handles goroutine management for fetching,
 // buffering, and error handling.
 // If processor returns iterator.Done for a line, that line is considered not to have been processed, and the iterator.Done error will be propogated back to the caller.
-func processStreamByLine(ctx context.Context, stream bytestream.ByteStream_ReadClient, startLine int32, startByte int64, processor lineProcessor) (lastProcessedLine int32, lastProcessedByte int64, err error) {
+func processStreamByLine(ctx context.Context, r io.Reader, startLine int32, startByte int64, processor lineProcessor) (lastProcessedLine int32, lastProcessedByte int64, err error) {
 	var buffer []byte
 	currentLine := startLine
 	currentByte := startByte
 
 	chunks := make(chan streamChunk, 1)
-	go fetchChunks(ctx, stream, chunks)
+	go fetchChunks(ctx, r, chunks)
 
 	for chunk := range chunks {
 		if chunk.Err != nil {
@@ -143,8 +147,8 @@ func processStreamByLine(ctx context.Context, stream bytestream.ByteStream_ReadC
 	return currentLine, currentByte + int64(len(buffer)), ctx.Err()
 }
 
-// ProcessPassingStream reads a passing artifact's stream to populate a set of line hashes.
-func ProcessPassingStream(ctx context.Context, stream bytestream.ByteStream_ReadClient) (map[int64]struct{}, error) {
+// ProcessComparisonReader reads an artifact's content to populate a set of line hashes.
+func ProcessComparisonReader(ctx context.Context, r io.Reader) (map[int64]struct{}, error) {
 	hashes := make(map[int64]struct{})
 
 	processor := func(line []byte, _, _ int64) error {
@@ -156,7 +160,7 @@ func ProcessPassingStream(ctx context.Context, stream bytestream.ByteStream_Read
 		return nil
 	}
 
-	_, _, err := processStreamByLine(ctx, stream, 0, 0, func(line []byte, lineNumber int32, byteOffset int64) error {
+	_, _, err := processStreamByLine(ctx, r, 0, 0, func(line []byte, lineNumber int32, byteOffset int64) error {
 		return processor(line, int64(lineNumber), byteOffset)
 	})
 
@@ -166,8 +170,8 @@ func ProcessPassingStream(ctx context.Context, stream bytestream.ByteStream_Read
 	return hashes, nil
 }
 
-// ProcessFailingStream reads the failing artifact's stream and compares it to the passing hashes.
-func ProcessFailingStream(ctx context.Context, stream bytestream.ByteStream_ReadClient, passingHashes map[int64]struct{}, view pb.CompareArtifactLinesRequest_View, pageSize int32, startByte int64, startLine int32) (*pb.CompareArtifactLinesResponse, error) {
+// ProcessFailingReader reads the failing artifact's content and compares it to the hashes from the comparison file(s).
+func ProcessFailingReader(ctx context.Context, r io.Reader, comparisonHashes map[int64]struct{}, view pb.CompareArtifactLinesRequest_View, pageSize int32, startByte int64, startLine int32) (*pb.CompareArtifactLinesResponse, error) {
 	var ranges []*pb.CompareArtifactLinesResponse_FailureOnlyRange
 	var currentRangeContent bytes.Buffer
 	var nextPageToken string
@@ -183,7 +187,7 @@ func ProcessFailingStream(ctx context.Context, stream bytestream.ByteStream_Read
 		if hashErr != nil {
 			return hashErr
 		}
-		_, present := passingHashes[h]
+		_, present := comparisonHashes[h]
 
 		if !present { // This is a failure-only line.
 			if rangeStartLine == -1 {
@@ -201,7 +205,7 @@ func ProcessFailingStream(ctx context.Context, stream bytestream.ByteStream_Read
 				currentRangeContent.Write(line)
 				totalContentBytesInResponse += int64(len(line))
 			}
-		} else { // This is a passing line.
+		} else { // This is a line present in the comparison files.
 			if rangeStartLine != -1 { // Close the open range.
 				r := &pb.CompareArtifactLinesResponse_FailureOnlyRange{
 					StartLine: rangeStartLine, EndLine: currentLine,
@@ -222,7 +226,7 @@ func ProcessFailingStream(ctx context.Context, stream bytestream.ByteStream_Read
 		return nil
 	}
 
-	lastProcessedLine, lastProcessedByte, err := processStreamByLine(ctx, stream, startLine, startByte, processor)
+	lastProcessedLine, lastProcessedByte, err := processStreamByLine(ctx, r, startLine, startByte, processor)
 	if err != nil && err != iterator.Done {
 		return nil, err
 	}

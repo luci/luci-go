@@ -612,13 +612,23 @@ message CompareArtifactLinesRequest {
   // Required. The name of the artifact from a failing test result to be
   // analyzed. Format:
   // "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+  //
+  // Note that this is typically used for a failing test artifact, but
+  // this is not a requirement, any artifact can be used here.  The
+  // failing vs comparison names are used to improve the readability
+  // of the documentation only.
   string name = 1 [(google.api.field_behavior) = REQUIRED];
 
-  // Required. A list of names of passing test results to compare against.
+  // Required exactly one of `passing_results` or`artifacts` must be specified (not both).
+  // A list of names of passing test results to compare against.
   // These should be for the same test_id and variant_hash as the failing
   // result. The names are in the ResultDB test result name format, as returned
   // by the TestHistory.QueryRecentPasses RPC.
-  repeated string passing_results = 2 [(google.api.field_behavior) = REQUIRED];
+  repeated string passing_results = 2;
+
+  // Required exactly one of `passing_results` or`artifacts` must be specified (not both).
+  // A list of artifact names to compare against.
+  repeated string artifacts = 6;
 
   // Optional. The view to control which fields are returned in the response.
   View view = 3;
@@ -660,8 +670,8 @@ message CompareArtifactLinesResponse {
   }
 
   // Contiguous ranges in the requested artifact that do not appear in the
-  // corresponding artifacts from the provided passing test results.
-  // The ranges are sorted in ascending order by their starting position.
+  // corresponding artifacts from the provided passing test results or comparison
+  // artifacts. The ranges are sorted in ascending order by their starting position.
   repeated FailureOnlyRange failure_only_ranges = 1;
 
   // A token, which can be sent as `page_token` to retrieve the next page.
@@ -669,13 +679,17 @@ message CompareArtifactLinesResponse {
   // request.
   string next_page_token = 2;
 
-  // The names of the actual artifacts from passing results that were used
-  // for the comparison.  There may be fewer than passing_results from the
-  // request if the caller did not have permission to some results, or some
-  // results did not contain a corresponding artifact.
-  // Note that if there are no names in this field then no comparison was
-  // performed.
-  repeated string used_passing_artifacts = 3;
+  // DEPRECATED: Use `artifacts` instead.  This field is now empty, but left
+  //present temporarily for code compatibility.
+  repeated string used_passing_artifacts = 3 [deprecated = true];
+
+  // The names of the artifacts that were used for the comparison (either from
+  // passing results or from the artifacts field).
+  // There may be fewer than the artifacts/passing_results from the request if
+  // the caller did not have permission to some artifacts, or some results did
+  // not contain a corresponding artifact.
+  // Note that if this field is empty then no comparison was performed.
+  repeated string artifacts = 4;
 }
 
 // A request message for QueryTestVariants RPC.

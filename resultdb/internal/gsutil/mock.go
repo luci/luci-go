@@ -15,14 +15,17 @@
 package gsutil
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"time"
 )
 
 // MockClient is a mock implementation of the Client interface for testing.
 type MockClient struct {
 	luciProject string
+	Content     map[string][]byte
 }
 
 // GenerateSignedURL implements the Client interface for MockClient.
@@ -33,4 +36,17 @@ func (m *MockClient) GenerateSignedURL(ctx context.Context, bucket, object strin
 // Close implements the Client interface for MockClient.
 func (m *MockClient) Close() {
 	// No-op for mock client.
+}
+
+// NewReader implements the Client interface for MockClient.
+func (m *MockClient) NewReader(ctx context.Context, bucket, object string, offset int64) (io.ReadCloser, error) {
+	key := fmt.Sprintf("gs://%s/%s", bucket, object)
+	content, ok := m.Content[key]
+	if !ok {
+		return nil, fmt.Errorf("GCS object %q not found in mock content", key)
+	}
+	if offset > int64(len(content)) {
+		offset = int64(len(content))
+	}
+	return io.NopCloser(bytes.NewReader(content[offset:])), nil
 }

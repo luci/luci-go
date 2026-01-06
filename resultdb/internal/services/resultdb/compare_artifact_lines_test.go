@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
+	"go.chromium.org/luci/resultdb/internal/gsutil"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -121,12 +122,20 @@ func TestValidateCompareArtifactLinesRequest(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`name: invalid artifact name`))
 		})
 
-		t.Run(`No passing results`, func(t *ftt.Test) {
+		t.Run(`No passing results or artifacts`, func(t *ftt.Test) {
 			err := validateCompareArtifactLinesRequest(&pb.CompareArtifactLinesRequest{
 				Name:           "invocations/inv/tests/t/results/r/artifacts/a",
 				PassingResults: []string{},
 			})
-			assert.Loosely(t, err, should.ErrLike(`passing_result_names: must provide at least one`))
+			assert.Loosely(t, err, should.ErrLike(`must provide at least one passing result OR artifact`))
+		})
+
+		t.Run(`Valid, manual artifacts`, func(t *ftt.Test) {
+			err := validateCompareArtifactLinesRequest(&pb.CompareArtifactLinesRequest{
+				Name:      "invocations/inv/tests/t/results/r/artifacts/a",
+				Artifacts: []string{"invocations/inv-pass/artifacts/a"},
+			})
+			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run(`Invalid passing result name`, func(t *ftt.Test) {
@@ -134,7 +143,16 @@ func TestValidateCompareArtifactLinesRequest(t *testing.T) {
 				Name:           "invocations/inv/tests/t/results/r/artifacts/a",
 				PassingResults: []string{"bad-passing-name"},
 			})
-			assert.Loosely(t, err, should.ErrLike(`passing_result_names[0]: invalid test result name`))
+			assert.Loosely(t, err, should.ErrLike(`passing_results[0]: invalid test result name`))
+		})
+
+		t.Run(`passing_results and artifacts both specified`, func(t *ftt.Test) {
+			err := validateCompareArtifactLinesRequest(&pb.CompareArtifactLinesRequest{
+				Name:           "invocations/inv/tests/t/results/r/artifacts/a",
+				PassingResults: []string{"invocations/inv-pass/tests/t/results/r"},
+				Artifacts:      []string{"invocations/inv-pass/artifacts/a"},
+			})
+			assert.Loosely(t, err, should.ErrLike(`only one of passing_results and artifacts may be set`))
 		})
 
 		t.Run(`Invalid page size`, func(t *ftt.Test) {
@@ -157,6 +175,13 @@ func TestCompareArtifactLines(t *testing.T) {
 				{Realm: "testproject:testrealm", Permission: rdbperms.PermListArtifacts},
 			},
 		})
+		mockGS := &gsutil.MockClient{
+			Content: map[string][]byte{
+				"gs://testbucket/fail.log": []byte("failing line"),
+				"gs://testbucket/pass.log": []byte("passing line"),
+			},
+		}
+		ctx = context.WithValue(ctx, &gsutil.MockedGSClientKey, mockGS)
 
 		contentMap := map[string][]byte{
 			"rbscas-hash-pass": []byte("passing line"),
@@ -265,7 +290,30 @@ func TestCompareArtifactLines(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.NotBeNil)
 			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
-			assert.Loosely(t, res.UsedPassingArtifacts, should.Match([]string{"rootInvocations/inv-pass/workUnits/root/tests/t/results/r-pass/artifacts/a"}))
+			assert.Loosely(t, res.Artifacts, should.HaveLength(1))
+			assert.Loosely(t, res.Artifacts[0], should.Equal("rootInvocations/inv-pass/workUnits/root/tests/t/results/r-pass/artifacts/a"))
+		})
+
+		t.Run("Happy path - manual artifact selection", func(t *ftt.Test) {
+			muts := []*spanner.Mutation{
+				insert.Invocation("inv-fail", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-fail", "tr/t/r-fail", "a", map[string]any{"RBECASHash": "rbscas-hash-fail"}),
+				insert.Invocation("inv-manual", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-manual", "tr/t/r-manual", "a", map[string]any{"RBECASHash": "rbscas-hash-pass"}),
+			}
+			muts = append(muts, insertTestResultLegacy(t, "inv-fail", "t", "r-fail", pb.TestStatus_FAIL)...)
+			testutil.MustApply(ctx, t, muts...)
+
+			req := &pb.CompareArtifactLinesRequest{
+				Name:      "invocations/inv-fail/tests/t/results/r-fail/artifacts/a",
+				Artifacts: []string{"invocations/inv-manual/tests/t/results/r-manual/artifacts/a"},
+			}
+			res, err := srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
+			assert.Loosely(t, res.Artifacts, should.HaveLength(1))
+			assert.Loosely(t, res.Artifacts[0], should.Equal("invocations/inv-manual/tests/t/results/r-manual/artifacts/a"))
 		})
 
 		t.Run("Passing artifact not found", func(t *ftt.Test) {
@@ -284,9 +332,8 @@ func TestCompareArtifactLines(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.NotBeNil)
 			// Should treat as if there are no passing artifacts, so everything is failure-only.
-			// Since we have one line "failing line", it should be failure-only.
 			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
-			assert.Loosely(t, res.UsedPassingArtifacts, should.BeEmpty)
+			assert.Loosely(t, res.Artifacts, should.BeEmpty)
 		})
 
 		t.Run("Passing artifact permission denied", func(t *ftt.Test) {
@@ -308,7 +355,30 @@ func TestCompareArtifactLines(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.NotBeNil)
 			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
-			assert.Loosely(t, res.UsedPassingArtifacts, should.BeEmpty)
+			assert.Loosely(t, res.Artifacts, should.BeEmpty)
+		})
+
+		t.Run("Happy path - GCS artifact", func(t *ftt.Test) {
+			muts := []*spanner.Mutation{
+				insert.Invocation("inv-fail-gcs", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-fail-gcs", "tr/t/r-fail", "a", map[string]any{"GcsURI": "gs://testbucket/fail.log"}),
+				insert.Invocation("inv-pass-gcs", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+				insert.Artifact("inv-pass-gcs", "tr/t/r-pass", "a", map[string]any{"GcsURI": "gs://testbucket/pass.log"}),
+			}
+			muts = append(muts, insertTestResultLegacy(t, "inv-fail-gcs", "t", "r-fail", pb.TestStatus_FAIL)...)
+			muts = append(muts, insertTestResultLegacy(t, "inv-pass-gcs", "t", "r-pass", pb.TestStatus_PASS)...)
+			testutil.MustApply(ctx, t, muts...)
+
+			req := &pb.CompareArtifactLinesRequest{
+				Name:           "invocations/inv-fail-gcs/tests/t/results/r-fail/artifacts/a",
+				PassingResults: []string{"invocations/inv-pass-gcs/tests/t/results/r-pass"},
+			}
+			res, err := srv.CompareArtifactLines(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
+			assert.Loosely(t, res.Artifacts, should.HaveLength(1))
+			assert.Loosely(t, res.Artifacts[0], should.Equal("invocations/inv-pass-gcs/tests/t/results/r-pass/artifacts/a"))
 		})
 	})
 }
