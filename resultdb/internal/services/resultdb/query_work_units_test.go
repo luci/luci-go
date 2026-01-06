@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -31,6 +32,8 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/resultdb/internal/config"
+	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -47,10 +50,6 @@ func TestQueryWorkUnits(t *testing.T) {
 			limitedRealm = "testproject:limited_access"
 		)
 		rootInvID := rootinvocations.ID("root-inv-id")
-		rootWuID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "root"}
-		gpWuID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "grandparent"}
-		pWuID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "parent"}
-		cWuID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "child"}
 
 		ctx := testutil.SpannerTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
@@ -61,45 +60,29 @@ func TestQueryWorkUnits(t *testing.T) {
 		err := config.SetServiceConfigForTesting(ctx, cfg)
 		assert.Loosely(t, err, should.BeNil)
 
-		// Insert a root invocation and hierarchy of work units.
-		// Root -> Grandparent -> Parent -> Child
+		compiledCfg, err := config.NewCompiledServiceConfig(config.CreatePlaceholderServiceConfig(), "revision")
+		assert.NoErr(t, err)
+
+		// Insert a root invocation.
 		rootInv := rootinvocations.NewBuilder(rootInvID).WithRealm(rootInvRealm).Build()
-
-		// Root WU gets FULL access realm.
-		rootWu := workunits.NewBuilder(rootInvID, rootWuID.WorkUnitID).WithRealm(fullRealm).Build()
-
-		extraProps, _ := structpb.NewStruct(map[string]any{"key": "value"})
-		// Grandparent gets LIMITED access realm.
-		gpWu := workunits.NewBuilder(rootInvID, gpWuID.WorkUnitID).
-			WithRealm(limitedRealm).
-			WithParentWorkUnitID(rootWuID.WorkUnitID).
-			WithExtendedProperties(map[string]*structpb.Struct{"ns": extraProps}).
-			Build()
-		// Parent gets LIMITED access realm.
-		pWu := workunits.NewBuilder(rootInvID, pWuID.WorkUnitID).
-			WithRealm(limitedRealm).
-			WithParentWorkUnitID(gpWuID.WorkUnitID).
-			Build()
-		// Child gets LIMITED access realm.
-		cWu := workunits.NewBuilder(rootInvID, cWuID.WorkUnitID).
-			WithRealm(limitedRealm).
-			WithParentWorkUnitID(pWuID.WorkUnitID).
-			Build()
-
 		testutil.MustApply(ctx, t, insert.RootInvocationOnly(rootInv)...)
-		testutil.MustApply(ctx, t, testutil.CombineMutations(
-			insert.WorkUnit(rootWu),
-			insert.WorkUnit(gpWu),
-			insert.WorkUnit(pWu),
-			insert.WorkUnit(cWu),
-		)...)
+
+		// Insert some work units
+		rootWu := workunits.NewBuilder(rootInvID, "root").WithRealm(fullRealm).Build()
+		extraProps, _ := structpb.NewStruct(map[string]any{"key": "value"})
+		ep := map[string]*structpb.Struct{"mykey": extraProps}
+		wu1 := workunits.NewBuilder(rootInvID, "wu1").WithRealm(limitedRealm).WithExtendedProperties(ep).Build()
+		rootWu.ChildWorkUnits = []workunits.ID{wu1.ID}
+
+		testutil.MustApply(ctx, t, workunits.InsertForTesting(rootWu)...)
+		testutil.MustApply(ctx, t, workunits.InsertForTesting(wu1)...)
 
 		// Default authorisation: Full access to everything via Root Invocation realm.
 		authState := &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
 				{Realm: rootInvRealm, Permission: rdbperms.PermListLimitedWorkUnits},
-				{Realm: rootInvRealm, Permission: rdbperms.PermGetWorkUnit},
+				{Realm: rootInvRealm, Permission: rdbperms.PermListWorkUnits},
 			},
 		}
 		ctx = auth.WithState(ctx, authState)
@@ -107,116 +90,216 @@ func TestQueryWorkUnits(t *testing.T) {
 		srv := newTestResultDBService()
 		baseReq := &pb.QueryWorkUnitsRequest{
 			Parent: rootInvID.Name(),
-			Predicate: &pb.WorkUnitPredicate{
-				AncestorsOf: cWuID.Name(),
-			},
 		}
 
+		expectedRootWU := masking.WorkUnit(rootWu, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg)
+		expectedWU1 := masking.WorkUnit(wu1, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg)
+
 		t.Run("happy path", func(t *ftt.Test) {
+			expectedRootWUMasked := proto.Clone(expectedRootWU).(*pb.WorkUnit)
+			expectedRootWUMasked.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
+			expectedRootWUMasked.ModuleId.ModuleVariant = nil
+			expectedRootWUMasked.Tags = nil
+			expectedRootWUMasked.Properties = nil
+			expectedRootWUMasked.Instructions = nil
+			expectedRootWUMasked.ExtendedProperties = nil
+			expectedRootWUMasked.IsMasked = true
+
+			expectedWU1Masked := proto.Clone(expectedWU1).(*pb.WorkUnit)
+			expectedWU1Masked.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
+			expectedWU1Masked.ModuleId.ModuleVariant = nil
+			expectedWU1Masked.Tags = nil
+			expectedWU1Masked.Properties = nil
+			expectedWU1Masked.Instructions = nil
+			expectedWU1Masked.ExtendedProperties = nil
+			expectedWU1Masked.IsMasked = true
 			t.Run("full access", func(t *ftt.Test) {
-				req := baseReq
 				t.Run("default view", func(t *ftt.Test) {
-					rsp, err := srv.QueryWorkUnits(ctx, req)
+					rsp, err := srv.QueryWorkUnits(ctx, baseReq)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp.WorkUnits, should.HaveLength(3))
-					// Order: Parent, Grandparent, Root
-					assert.Loosely(t, rsp.WorkUnits[0].Name, should.Equal(pWuID.Name()))
-					assert.Loosely(t, rsp.WorkUnits[1].Name, should.Equal(gpWuID.Name()))
-					assert.Loosely(t, rsp.WorkUnits[2].Name, should.Equal(rootWuID.Name()))
+					assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWU1, expectedRootWU}))
 				})
-
 				t.Run("basic view", func(t *ftt.Test) {
-					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_BASIC
-					rsp, err := srv.QueryWorkUnits(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp.WorkUnits, should.HaveLength(3))
-					// Grandparent has ExtendedProperties, verify they are masked in Basic view.
-					assert.Loosely(t, rsp.WorkUnits[1].Name, should.Equal(gpWuID.Name()))
-					assert.Loosely(t, rsp.WorkUnits[1].ExtendedProperties, should.BeNil)
-				})
+					baseReq.View = pb.WorkUnitView_WORK_UNIT_VIEW_BASIC
 
+					rsp, err := srv.QueryWorkUnits(ctx, baseReq)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWU1, expectedRootWU}))
+				})
 				t.Run("full view", func(t *ftt.Test) {
-					req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
-					rsp, err := srv.QueryWorkUnits(ctx, req)
+					baseReq.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
+					expectedRootWU.ExtendedProperties = rootWu.ExtendedProperties
+					expectedRootWU.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
+					expectedWU1.ExtendedProperties = wu1.ExtendedProperties
+					expectedWU1.Etag = `W/"+f/2025-04-26T01:02:03.000004Z"`
+
+					rsp, err := srv.QueryWorkUnits(ctx, baseReq)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, rsp.WorkUnits, should.HaveLength(3))
-					// Grandparent has ExtendedProperties, verify they are present in Full view.
-					assert.Loosely(t, rsp.WorkUnits[1].Name, should.Equal(gpWuID.Name()))
-					assert.Loosely(t, rsp.WorkUnits[1].ExtendedProperties, should.NotBeNil)
+					assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWU1, expectedRootWU}))
+				})
+
+				t.Run("masked access upgraded to full", func(t *ftt.Test) {
+					ctx := auth.WithState(ctx, &authtest.FakeState{
+						Identity: "user:someone@example.com",
+						IdentityPermissions: []authtest.RealmPermission{
+							// Only root work unit is upgraded to full access.
+							{Realm: rootWu.Realm, Permission: rdbperms.PermGetWorkUnit},
+							{Realm: rootInvRealm, Permission: rdbperms.PermListLimitedWorkUnits},
+						},
+					})
+
+					rsp, err := srv.QueryWorkUnits(ctx, baseReq)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWU1Masked, expectedRootWU}))
+				})
+			})
+			t.Run("limited access", func(t *ftt.Test) {
+				ctx := auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+					IdentityPermissions: []authtest.RealmPermission{
+						{Realm: rootInvRealm, Permission: rdbperms.PermListLimitedWorkUnits},
+					},
+				})
+				t.Run("default view", func(t *ftt.Test) {
+					rsp, err := srv.QueryWorkUnits(ctx, baseReq)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWU1Masked, expectedRootWUMasked}))
+				})
+				t.Run("basic view", func(t *ftt.Test) {
+					baseReq.View = pb.WorkUnitView_WORK_UNIT_VIEW_BASIC
+
+					rsp, err := srv.QueryWorkUnits(ctx, baseReq)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWU1Masked, expectedRootWUMasked}))
+				})
+				t.Run("full view", func(t *ftt.Test) {
+					baseReq.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
+					expectedRootWUMasked.Etag = `W/"+l+f/2025-04-26T01:02:03.000004Z"`
+					expectedWU1Masked.Etag = `W/"+l+f/2025-04-26T01:02:03.000004Z"`
+
+					rsp, err := srv.QueryWorkUnits(ctx, baseReq)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWU1Masked, expectedRootWUMasked}))
 				})
 			})
 
-			t.Run("limited access", func(t *ftt.Test) {
-				// Remove PermGetWorkUnit from rootInvRealm so individual WU realms matter.
-				authState.IdentityPermissions = []authtest.RealmPermission{
-					{Realm: rootInvRealm, Permission: rdbperms.PermListLimitedWorkUnits},
-					{Realm: fullRealm, Permission: rdbperms.PermGetWorkUnit},
-					// No PermGetWorkUnit for limitedRealm.
+			t.Run("with ancestors_of predicate", func(t *ftt.Test) {
+				baseReq.Predicate = &pb.WorkUnitPredicate{
+					AncestorsOf: wu1.ID.Name(),
 				}
-				ctx = auth.WithState(ctx, authState)
 
-				req := baseReq
-				req.View = pb.WorkUnitView_WORK_UNIT_VIEW_FULL
-				rsp, err := srv.QueryWorkUnits(ctx, req)
+				rsp, err := srv.QueryWorkUnits(ctx, baseReq)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, rsp.WorkUnits, should.HaveLength(3))
-
-				// Parent (index 0) is in limitedRealm. Masked even if Full view requested.
-				assert.Loosely(t, rsp.WorkUnits[0].Name, should.Equal(pWuID.Name()))
-				assert.Loosely(t, rsp.WorkUnits[0].IsMasked, should.BeTrue)
-
-				// Grandparent (index 1) is in limitedRealm. ExtendedProperties masked.
-				assert.Loosely(t, rsp.WorkUnits[1].Name, should.Equal(gpWuID.Name()))
-				assert.Loosely(t, rsp.WorkUnits[1].IsMasked, should.BeTrue)
-				assert.Loosely(t, rsp.WorkUnits[1].ExtendedProperties, should.BeNil)
-
-				// Root (index 2) is in fullRealm. Not masked.
-				assert.Loosely(t, rsp.WorkUnits[2].Name, should.Equal(rootWuID.Name()))
-				assert.Loosely(t, rsp.WorkUnits[2].IsMasked, should.BeFalse)
-			})
-
-			t.Run("summary markdown truncation", func(t *ftt.Test) {
-				// Use new hierarchy dedicated to this test to avoid conflicts.
-				longParentID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "long-parent"}
-				longParent := workunits.NewBuilder(rootInvID, longParentID.WorkUnitID).
-					WithRealm(limitedRealm). // Limited realm to trigger masking
-					WithParentWorkUnitID(rootWuID.WorkUnitID).
-					WithSummaryMarkdown(strings.Repeat("a", 4096)). // Long enough to be truncated
-					Build()
-				childID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "child-of-long"}
-				child := workunits.NewBuilder(rootInvID, childID.WorkUnitID).
-					WithRealm(limitedRealm).
-					WithParentWorkUnitID(longParentID.WorkUnitID).
-					Build()
-
-				testutil.MustApply(ctx, t, testutil.CombineMutations(
-					insert.WorkUnit(longParent),
-					insert.WorkUnit(child),
-				)...)
-
-				req := baseReq
-				req.Predicate.AncestorsOf = childID.Name()
-				// Set Limited access to trigger truncation logic.
-				authState.IdentityPermissions = []authtest.RealmPermission{
-					{Realm: rootInvRealm, Permission: rdbperms.PermListLimitedWorkUnits},
-					{Realm: limitedRealm, Permission: rdbperms.PermListLimitedWorkUnits},
-				}
-				ctx = auth.WithState(ctx, authState)
-
-				rsp, err := srv.QueryWorkUnits(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-
-				// Verify long parent is truncated and masked.
-				assert.Loosely(t, rsp.WorkUnits[0].Name, should.Equal(longParentID.Name()))
-				assert.Loosely(t, rsp.WorkUnits[0].IsMasked, should.BeTrue)
-				assert.Loosely(t, len(rsp.WorkUnits[0].SummaryMarkdown), should.BeLessThan(4096))
-				assert.Loosely(t, rsp.WorkUnits[0].SummaryMarkdown, should.HaveSuffix("..."))
+				assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedRootWU}))
 			})
 		})
 
-		t.Run("start node does not exist", func(t *ftt.Test) {
+		t.Run("pagination", func(t *ftt.Test) {
+			t.Run("by page size", func(t *ftt.Test) {
+				baseReq.PageSize = 1
+				rsp, err := srv.QueryWorkUnits(ctx, baseReq)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
+				assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedWU1}))
+
+				// Next page.
+				baseReq.PageToken = rsp.NextPageToken
+				rsp, err = srv.QueryWorkUnits(ctx, baseReq)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
+				assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedRootWU}))
+
+				// Last page
+				baseReq.PageToken = rsp.NextPageToken
+				rsp, err = srv.QueryWorkUnits(ctx, baseReq)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, rsp.WorkUnits, should.BeNil)
+			})
+
+			t.Run("by response size limit", func(t *ftt.Test) {
+				largeRootInvID := rootinvocations.ID("large-inv-id")
+				rootInv := rootinvocations.NewBuilder(largeRootInvID).WithRealm(rootInvRealm).Build()
+				testutil.MustApply(ctx, t, insert.RootInvocationOnly(rootInv)...)
+
+				// Create work units with large extended properties.
+				largeValue := strings.Repeat("a", 20*1000*1000+1)
+				largeEP, _ := structpb.NewStruct(map[string]any{"key": largeValue})
+				largeEPMap := map[string]*structpb.Struct{"large": largeEP}
+
+				largeWU1 := workunits.NewBuilder(largeRootInvID, "root").
+					WithRealm(fullRealm).
+					WithExtendedProperties(largeEPMap).
+					Build()
+
+				largeWU2 := workunits.NewBuilder(largeRootInvID, "large-wu-2").
+					WithRealm(fullRealm).
+					WithExtendedProperties(largeEPMap).
+					Build()
+				largeWU1.ChildWorkUnits = []workunits.ID{largeWU2.ID}
+				expectedLargeWU1 := masking.WorkUnit(largeWU1, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL, compiledCfg)
+				expectedLargeWU2 := masking.WorkUnit(largeWU2, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL, compiledCfg)
+
+				testutil.MustApply(ctx, t, workunits.InsertForTesting(largeWU1)...)
+				testutil.MustApply(ctx, t, workunits.InsertForTesting(largeWU2)...)
+
+				req := &pb.QueryWorkUnitsRequest{
+					Parent: largeRootInvID.Name(),
+					View:   pb.WorkUnitView_WORK_UNIT_VIEW_FULL,
+				}
+				t.Run("paginate supported", func(t *ftt.Test) {
+					rsp, err := srv.QueryWorkUnits(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedLargeWU1}))
+
+					// Next page
+					req.PageToken = rsp.NextPageToken
+					rsp, err = srv.QueryWorkUnits(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.Match([]*pb.WorkUnit{expectedLargeWU2}))
+
+					// Next page
+					req.PageToken = rsp.NextPageToken
+					rsp, err = srv.QueryWorkUnits(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+					assert.Loosely(t, rsp.WorkUnits, should.BeNil)
+				})
+
+				t.Run("with ancestor_of predicate", func(t *ftt.Test) {
+					req.Predicate = &pb.WorkUnitPredicate{AncestorsOf: largeWU2.ID.Name()}
+					_, err := srv.QueryWorkUnits(ctx, req)
+					assert.Loosely(t, err, should.NotBeNil)
+					assert.That(t, err, grpccode.ShouldBe(codes.Unimplemented))
+					assert.That(t, err, should.ErrLike("pagination is not supported for ancestors_of queries"))
+				})
+			})
+		})
+
+		t.Run("root invocation doesn't exist", func(t *ftt.Test) {
+			baseReq.Parent = "rootInvocations/non-existent"
+
+			_, err := srv.QueryWorkUnits(ctx, baseReq)
+			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.That(t, err, should.ErrLike("desc = \"rootInvocations/non-existent\" not found"))
+		})
+
+		t.Run("with predicate - start node does not exist", func(t *ftt.Test) {
 			req := baseReq
-			req.Predicate.AncestorsOf = workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "non-existent"}.Name()
+			req.Predicate = &pb.WorkUnitPredicate{
+				AncestorsOf: workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "non-existent"}.Name(),
+			}
+
 			_, err := srv.QueryWorkUnits(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.That(t, err, should.ErrLike(`"rootInvocations/root-inv-id/workUnits/non-existent" not found`))
@@ -228,7 +311,7 @@ func TestQueryWorkUnits(t *testing.T) {
 			ctx = auth.WithState(ctx, authState)
 			_, err := srv.QueryWorkUnits(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike(`caller does not have permission resultdb.workUnits.listLimited in realm of root invocation "rootInvocations/root-inv-id"`))
+			assert.That(t, err, should.ErrLike(`caller does not have permission resultdb.workUnits.list (or resultdb.workUnits.listLimited) in realm of root invocation "rootInvocations/root-inv-id"`))
 		})
 
 		t.Run("request validation", func(t *ftt.Test) {
@@ -257,14 +340,24 @@ func TestQueryWorkUnits(t *testing.T) {
 				assert.That(t, err, should.ErrLike("view: unrecognized view"))
 			})
 
+			t.Run("page size", func(t *ftt.Test) {
+				baseReq.PageSize = -1
+
+				_, err := srv.QueryWorkUnits(ctx, baseReq)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("page_size: negative"))
+			})
+
+			t.Run("page token", func(t *ftt.Test) {
+				baseReq.PageToken = "invalid"
+
+				_, err := srv.QueryWorkUnits(ctx, baseReq)
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("invalid page_token"))
+			})
+
 			t.Run("predicate", func(t *ftt.Test) {
 				req := baseReq
-				t.Run("nil", func(t *ftt.Test) {
-					req.Predicate = nil
-					_, err := srv.QueryWorkUnits(ctx, req)
-					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.That(t, err, should.ErrLike("predicate: unspecified"))
-				})
 				t.Run("ancestors_of unspecified", func(t *ftt.Test) {
 					req.Predicate = &pb.WorkUnitPredicate{}
 					_, err := srv.QueryWorkUnits(ctx, req)

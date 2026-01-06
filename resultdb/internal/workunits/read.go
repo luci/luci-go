@@ -511,51 +511,11 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 		return nil
 	}
 
-	extraCols := ""
-	if mask == AllFields {
-		extraCols = "			ExtendedProperties,\n"
-	}
-
-	stmt := spanner.NewStatement(`
-		SELECT
-			w.RootInvocationShardId,
-			w.WorkUnitId,
-			w.ParentWorkUnitId,
-			w.SecondaryIndexShardId,
-			w.Kind,
-			w.State,
-			w.SummaryMarkdown,
-			w.FinalizationState,
-			w.Realm,
-			w.CreateTime,
-			w.CreatedBy,
-			w.LastUpdated,
-			w.FinalizeStartTime,
-			w.FinalizeTime,
-			w.FinalizerCandidateTime,
-			w.Deadline,
-			w.CreateRequestId,
-			w.ModuleName,
-			w.ModuleScheme,
-			w.ModuleVariant,
-			w.ModuleShardKey,
-			w.ModuleInheritanceStatus,
-			w.ProducerResource,
-			w.Tags,
-			w.Properties,
-			w.Instructions,` + extraCols + `
-			ARRAY(
-				SELECT c.ChildWorkUnitId
-				FROM ChildWorkUnits c WHERE c.RootInvocationShardId = w.RootInvocationShardId AND c.WorkUnitId = w.WorkUnitId
-				ORDER BY c.ChildWorkUnitId
-			) as ChildWorkUnits,
-			ARRAY(
-				SELECT c.ChildInvocationId
-				FROM ChildInvocations c WHERE c.RootInvocationShardId = w.RootInvocationShardId AND c.WorkUnitId = w.WorkUnitId
-			) as ChildInvocations
+	stmt := spanner.NewStatement(fmt.Sprintf(`
+		SELECT %s
 		FROM WorkUnits w
 		WHERE STRUCT(w.RootInvocationShardId, w.WorkUnitId) IN UNNEST(@ids)
-	`)
+	`, columnsToRead("w", mask)))
 
 	// Struct to use as Spanner Query Parameter.
 	type workUnitID struct {
@@ -576,120 +536,175 @@ func readBatchInternal(ctx context.Context, ids []ID, mask ReadMask, f func(wu *
 
 	var b spanutil.Buffer
 	return span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
-		wu := &WorkUnitRow{}
-
-		var (
-			rootInvocationShardID string
-			workUnitID            string
-			producerResource      spanutil.Compressed
-			properties            spanutil.Compressed
-			instructions          spanutil.Compressed
-			extendedProperties    spanutil.Compressed
-			childWorkUnitIDs      []string
-			childInvocations      invocations.IDSet
-			moduleName            spanner.NullString
-			moduleScheme          spanner.NullString
-			moduleVariant         *pb.Variant
-			moduleShardKey        spanner.NullString
-		)
-
-		dest := []any{
-			&rootInvocationShardID,
-			&workUnitID,
-			&wu.ParentWorkUnitID,
-			&wu.SecondaryIndexShardID,
-			&wu.Kind,
-			&wu.State,
-			&wu.SummaryMarkdown,
-			&wu.FinalizationState,
-			&wu.Realm,
-			&wu.CreateTime,
-			&wu.CreatedBy,
-			&wu.LastUpdated,
-			&wu.FinalizeStartTime,
-			&wu.FinalizeTime,
-			&wu.FinalizerCandidateTime,
-			&wu.Deadline,
-			&wu.CreateRequestID,
-			&moduleName,
-			&moduleScheme,
-			&moduleVariant,
-			&moduleShardKey,
-			&wu.ModuleInheritanceStatus,
-			&producerResource,
-			&wu.Tags,
-			&properties,
-			&instructions,
+		wu, err := readRow(row, mask, b)
+		if err != nil {
+			return err
 		}
-		if mask == AllFields {
-			dest = append(dest, &extendedProperties)
-		}
-		dest = append(dest,
-			&childWorkUnitIDs,
-			&childInvocations)
-
-		if err := b.FromSpanner(row, dest...); err != nil {
-			return errors.Fmt("read spanner row for work unit: %w", err)
-		}
-		wu.ID = IDFromRowID(rootInvocationShardID, workUnitID)
-
-		if moduleName.Valid != moduleScheme.Valid {
-			panic("invariant violated: moduleName.Valid == moduleScheme.Valid, is there data corruption?")
-		}
-		if moduleName.Valid {
-			wu.ModuleID = &pb.ModuleIdentifier{
-				ModuleName:    moduleName.StringVal,
-				ModuleScheme:  moduleScheme.StringVal,
-				ModuleVariant: moduleVariant,
-			}
-			pbutil.PopulateModuleIdentifierHashes(wu.ModuleID)
-			wu.ModuleShardKey = moduleShardKey.StringVal
-		}
-
-		if len(producerResource) > 0 {
-			wu.ProducerResource = &pb.ProducerResource{}
-			if err := proto.Unmarshal(producerResource, wu.ProducerResource); err != nil {
-				return errors.Fmt("unmarshal producer resource for work unit %q: %w", wu.ID.Name(), err)
-			}
-		}
-
-		if len(properties) > 0 {
-			wu.Properties = &structpb.Struct{}
-			if err := proto.Unmarshal(properties, wu.Properties); err != nil {
-				return errors.Fmt("unmarshal properties for work unit %q: %w", wu.ID.Name(), err)
-			}
-		}
-
-		if len(instructions) > 0 {
-			wu.Instructions = &pb.Instructions{}
-			if err := proto.Unmarshal(instructions, wu.Instructions); err != nil {
-				return errors.Fmt("unmarshal instructions for work unit %q: %w", wu.ID.Name(), err)
-			}
-			// Populate output-only fields.
-			wu.Instructions = instructionutil.InstructionsWithNames(wu.Instructions, wu.ID.Name())
-		}
-
-		if len(extendedProperties) > 0 {
-			internalExtendedProperties := &invocationspb.ExtendedProperties{}
-			if err := proto.Unmarshal(extendedProperties, internalExtendedProperties); err != nil {
-				return errors.Fmt("unmarshal extended properties for work unit %q: %w", wu.ID.Name(), err)
-			}
-			wu.ExtendedProperties = internalExtendedProperties.ExtendedProperties
-		}
-
-		if len(childWorkUnitIDs) > 0 {
-			wu.ChildWorkUnits = make([]ID, len(childWorkUnitIDs))
-			for i, childWorkUnitID := range childWorkUnitIDs {
-				wu.ChildWorkUnits[i] = ID{RootInvocationID: wu.ID.RootInvocationID, WorkUnitID: childWorkUnitID}
-			}
-		}
-
-		if len(childInvocations) > 0 {
-			wu.ChildInvocations = childInvocations.SortedByID()
-		}
-
 		return f(wu)
 	})
+}
+
+// columnsToRead returns the columns to read for a work unit.
+// Queries using this should use readRow to parse the results.
+func columnsToRead(tableAlias string, mask ReadMask) string {
+	extraCols := ""
+	if mask == AllFields {
+		extraCols = fmt.Sprintf("\t\t\t%s.ExtendedProperties,\n", tableAlias)
+	}
+
+	return fmt.Sprintf(`
+			%[1]s.RootInvocationShardId,
+			%[1]s.WorkUnitId,
+			%[1]s.ParentWorkUnitId,
+			%[1]s.SecondaryIndexShardId,
+			%[1]s.Kind,
+			%[1]s.State,
+			%[1]s.SummaryMarkdown,
+			%[1]s.FinalizationState,
+			%[1]s.Realm,
+			%[1]s.CreateTime,
+			%[1]s.CreatedBy,
+			%[1]s.LastUpdated,
+			%[1]s.FinalizeStartTime,
+			%[1]s.FinalizeTime,
+			%[1]s.FinalizerCandidateTime,
+			%[1]s.Deadline,
+			%[1]s.CreateRequestId,
+			%[1]s.ModuleName,
+			%[1]s.ModuleScheme,
+			%[1]s.ModuleVariant,
+			%[1]s.ModuleShardKey,
+			%[1]s.ModuleInheritanceStatus,
+			%[1]s.ProducerResource,
+			%[1]s.Tags,
+			%[1]s.Properties,
+			%[1]s.Instructions,
+			%[2]s
+			ARRAY(
+				SELECT c.ChildWorkUnitId
+				FROM ChildWorkUnits c WHERE c.RootInvocationShardId = %[1]s.RootInvocationShardId AND c.WorkUnitId = %[1]s.WorkUnitId
+				ORDER BY c.ChildWorkUnitId
+			) as ChildWorkUnits,
+			ARRAY(
+				SELECT c.ChildInvocationId
+				FROM ChildInvocations c WHERE c.RootInvocationShardId = %[1]s.RootInvocationShardId AND c.WorkUnitId = %[1]s.WorkUnitId
+			) as ChildInvocations`, tableAlias, extraCols)
+}
+
+func readRow(row *spanner.Row, mask ReadMask, b spanutil.Buffer) (*WorkUnitRow, error) {
+	wu := &WorkUnitRow{}
+
+	var (
+		rootInvocationShardID string
+		workUnitID            string
+		producerResource      spanutil.Compressed
+		properties            spanutil.Compressed
+		instructions          spanutil.Compressed
+		extendedProperties    spanutil.Compressed
+		childWorkUnitIDs      []string
+		childInvocations      invocations.IDSet
+		moduleName            spanner.NullString
+		moduleScheme          spanner.NullString
+		moduleVariant         *pb.Variant
+		moduleShardKey        spanner.NullString
+	)
+
+	dest := []any{
+		&rootInvocationShardID,
+		&workUnitID,
+		&wu.ParentWorkUnitID,
+		&wu.SecondaryIndexShardID,
+		&wu.Kind,
+		&wu.State,
+		&wu.SummaryMarkdown,
+		&wu.FinalizationState,
+		&wu.Realm,
+		&wu.CreateTime,
+		&wu.CreatedBy,
+		&wu.LastUpdated,
+		&wu.FinalizeStartTime,
+		&wu.FinalizeTime,
+		&wu.FinalizerCandidateTime,
+		&wu.Deadline,
+		&wu.CreateRequestID,
+		&moduleName,
+		&moduleScheme,
+		&moduleVariant,
+		&moduleShardKey,
+		&wu.ModuleInheritanceStatus,
+		&producerResource,
+		&wu.Tags,
+		&properties,
+		&instructions,
+	}
+	if mask == AllFields {
+		dest = append(dest, &extendedProperties)
+	}
+	dest = append(dest,
+		&childWorkUnitIDs,
+		&childInvocations)
+
+	if err := b.FromSpanner(row, dest...); err != nil {
+		return nil, errors.Fmt("read spanner row for work unit: %w", err)
+	}
+	wu.ID = IDFromRowID(rootInvocationShardID, workUnitID)
+
+	if moduleName.Valid != moduleScheme.Valid {
+		panic("invariant violated: moduleName.Valid == moduleScheme.Valid, is there data corruption?")
+	}
+	if moduleName.Valid {
+		wu.ModuleID = &pb.ModuleIdentifier{
+			ModuleName:    moduleName.StringVal,
+			ModuleScheme:  moduleScheme.StringVal,
+			ModuleVariant: moduleVariant,
+		}
+		pbutil.PopulateModuleIdentifierHashes(wu.ModuleID)
+		wu.ModuleShardKey = moduleShardKey.StringVal
+	}
+
+	if len(producerResource) > 0 {
+		wu.ProducerResource = &pb.ProducerResource{}
+		if err := proto.Unmarshal(producerResource, wu.ProducerResource); err != nil {
+			return nil, errors.Fmt("unmarshal producer resource for work unit %q: %w", wu.ID.Name(), err)
+		}
+	}
+
+	if len(properties) > 0 {
+		wu.Properties = &structpb.Struct{}
+		if err := proto.Unmarshal(properties, wu.Properties); err != nil {
+			return nil, errors.Fmt("unmarshal properties for work unit %q: %w", wu.ID.Name(), err)
+		}
+	}
+
+	if len(instructions) > 0 {
+		wu.Instructions = &pb.Instructions{}
+		if err := proto.Unmarshal(instructions, wu.Instructions); err != nil {
+			return nil, errors.Fmt("unmarshal instructions for work unit %q: %w", wu.ID.Name(), err)
+		}
+		// Populate output-only fields.
+		wu.Instructions = instructionutil.InstructionsWithNames(wu.Instructions, wu.ID.Name())
+	}
+
+	if len(extendedProperties) > 0 {
+		internalExtendedProperties := &invocationspb.ExtendedProperties{}
+		if err := proto.Unmarshal(extendedProperties, internalExtendedProperties); err != nil {
+			return nil, errors.Fmt("unmarshal extended properties for work unit %q: %w", wu.ID.Name(), err)
+		}
+		wu.ExtendedProperties = internalExtendedProperties.ExtendedProperties
+	}
+
+	if len(childWorkUnitIDs) > 0 {
+		wu.ChildWorkUnits = make([]ID, len(childWorkUnitIDs))
+		for i, childWorkUnitID := range childWorkUnitIDs {
+			wu.ChildWorkUnits[i] = ID{RootInvocationID: wu.ID.RootInvocationID, WorkUnitID: childWorkUnitID}
+		}
+	}
+
+	if len(childInvocations) > 0 {
+		wu.ChildInvocations = childInvocations.SortedByID()
+	}
+
+	return wu, nil
 }
 
 // Read reads one work unit from Spanner.

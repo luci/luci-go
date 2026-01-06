@@ -121,6 +121,14 @@ type VerifyWorkUnitAccessOptions struct {
 	UpgradeLimitedToFull []realms.Permission
 }
 
+// ListWorkUnitsAccessModel defines the permissions used to authorize access
+// when listing work units (e.g. QueryWorkUnits).
+var ListWorkUnitsAccessModel = VerifyWorkUnitAccessOptions{
+	Full:                 []realms.Permission{rdbperms.PermListWorkUnits},        // At root invocation level
+	Limited:              []realms.Permission{rdbperms.PermListLimitedWorkUnits}, // At root invocation level
+	UpgradeLimitedToFull: []realms.Permission{rdbperms.PermGetWorkUnit},          // At work unit level
+}
+
 // GetWorkUnitsAccessModel defines the permissions used to authorize access
 // when getting work units (e.g. Get or BatchGetWorkUnits).
 var GetWorkUnitsAccessModel = VerifyWorkUnitAccessOptions{
@@ -249,7 +257,7 @@ func VerifyWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts VerifyW
 	}
 	if !allowed {
 		if minimumAccessLevel != NoAccess {
-			return nil, noRootInvocationAccessError(ids[0].RootInvocationID, opts)
+			return nil, NoRootInvocationAccessError(ids[0].RootInvocationID, opts)
 		}
 		return repeatAccessLevel(NoAccess, len(ids)), nil
 	}
@@ -361,7 +369,7 @@ func VerifyAllWorkUnitsAccess(ctx context.Context, id rootinvocations.ID, opts V
 		// Break out early, we have no access to the root invocation or
 		// its work units.
 		if minimumAccessLevel != NoAccess {
-			return RootInvocationAccess{}, noRootInvocationAccessError(id, opts)
+			return RootInvocationAccess{}, NoRootInvocationAccessError(id, opts)
 		}
 		return RootInvocationAccess{Level: NoAccess}, nil
 	}
@@ -386,9 +394,9 @@ func VerifyAllWorkUnitsAccess(ctx context.Context, id rootinvocations.ID, opts V
 	return RootInvocationAccess{Level: LimitedAccess, Realms: allowedRealms}, nil
 }
 
-// noRootInvocationAccessError returns a PermissionDenied appstatus error
+// NoRootInvocationAccessError returns a PermissionDenied appstatus error
 // indicating that the user has no access to a root invocation.
-func noRootInvocationAccessError(id rootinvocations.ID, opts VerifyWorkUnitAccessOptions) error {
+func NoRootInvocationAccessError(id rootinvocations.ID, opts VerifyWorkUnitAccessOptions) error {
 	// There are two access paths: limited access and full access. Neither were satisfied.
 	if len(opts.Full) == 1 && len(opts.Limited) == 1 {
 		return appstatus.Errorf(codes.PermissionDenied, "caller does not have permission %s (or %s) in realm of root invocation %q", opts.Full[0], opts.Limited[0], id.Name())

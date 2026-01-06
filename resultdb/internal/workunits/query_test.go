@@ -15,6 +15,7 @@
 package workunits
 
 import (
+	"sort"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -61,18 +62,26 @@ func TestQuery(t *testing.T) {
 			Mask:             AllFields,
 		}
 
-		mustQuery := func(q *Query) ([]*WorkUnitRow, error) {
+		mustQuery := func(q *Query) ([]*WorkUnitRow, string, error) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
-			res, err := q.Query(ctx)
-			return res, err
+			results := make([]*WorkUnitRow, 0, q.PageSize)
+			token, err := q.Query(ctx, func(wur *WorkUnitRow) error {
+				results = append(results, wur)
+				return nil
+			})
+			if err != nil {
+				return nil, "", err
+			}
+			return results, token, nil
 		}
 
 		t.Run("AncestorsOf", func(t *ftt.Test) {
 			t.Run("happy path", func(t *ftt.Test) {
 				q.Predicate.AncestorsOf = wuChild.ID.Name()
-				wus, err := mustQuery(q)
+				wus, token, err := mustQuery(q)
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.BeEmpty)
 
 				assert.That(t, wus, should.Match([]*WorkUnitRow{
 					wuParent,      // Closest parent
@@ -83,17 +92,19 @@ func TestQuery(t *testing.T) {
 
 			t.Run("start at root", func(t *ftt.Test) {
 				q.Predicate.AncestorsOf = wuRoot.ID.Name()
-				wus, err := mustQuery(q)
+				wus, token, err := mustQuery(q)
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.BeEmpty)
 				assert.Loosely(t, wus, should.BeEmpty)
 			})
 
 			t.Run("start at non-existent", func(t *ftt.Test) {
 				q.Predicate.AncestorsOf = ID{RootInvocationID: rootInvID, WorkUnitID: "non-existent"}.Name()
-				wus, err := mustQuery(q)
+				wus, token, err := mustQuery(q)
 				assert.That(t, appstatus.Code(err), should.Equal(codes.NotFound))
 				assert.That(t, err, should.ErrLike(`"rootInvocations/test-root-inv/workUnits/non-existent" not found`))
 				assert.Loosely(t, wus, should.BeNil)
+				assert.Loosely(t, token, should.BeEmpty)
 			})
 
 			t.Run("masking works", func(t *ftt.Test) {
@@ -109,22 +120,133 @@ func TestQuery(t *testing.T) {
 
 				q.Predicate.AncestorsOf = wuExpensive.ID.Name()
 				q.Mask = ExcludeExtendedProperties
-				wus, err := mustQuery(q)
+				wus, token, err := mustQuery(q)
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.BeEmpty)
 
 				// Ancestor is wuRoot. Check that extended properties are nil due to mask.
 				assert.Loosely(t, wus, should.HaveLength(1))
 				assert.Loosely(t, wus[0].ID, should.Equal(wuRoot.ID))
 				assert.Loosely(t, wus[0].ExtendedProperties, should.BeNil)
 			})
+
+			t.Run("ResponseLimitReachedErr", func(t *ftt.Test) {
+				q.Predicate.AncestorsOf = wuChild.ID.Name()
+				ctx, cancel := span.ReadOnlyTransaction(ctx)
+				defer cancel()
+				token, err := q.Query(ctx, func(wur *WorkUnitRow) error {
+					return ResponseLimitReachedErr
+				})
+				assert.That(t, appstatus.Code(err), should.Equal(codes.Unimplemented))
+				assert.That(t, err, should.ErrLike("pagination is not supported for ancestors_of queries"))
+				assert.Loosely(t, token, should.BeEmpty)
+			})
 		})
 
-		t.Run("Unimplemented predicate", func(t *ftt.Test) {
-			q.Predicate = &pb.WorkUnitPredicate{}
-			ctx, cancel := span.ReadOnlyTransaction(ctx)
-			defer cancel()
-			_, err := q.Query(ctx)
-			assert.That(t, err, should.ErrLike("predicate not implemented"))
+		t.Run("FetchAll", func(t *ftt.Test) {
+			q.Predicate = nil
+			q.PageSize = 100
+
+			// Add more work units to fetch.
+			extraProps, _ := structpb.NewStruct(map[string]any{"key": "value"})
+			wu1 := NewBuilder(rootInvID, "wux1").WithParentWorkUnitID("parent").WithExtendedProperties(map[string]*structpb.Struct{"ns": extraProps}).Build()
+			wu2 := NewBuilder(rootInvID, "wux2").WithParentWorkUnitID("parent").Build()
+			wu3 := NewBuilder(rootInvID, "wux3").WithParentWorkUnitID("parent").Build()
+
+			ms := InsertForTesting(wu1)
+			ms = append(ms, InsertForTesting(wu2)...)
+			ms = append(ms, InsertForTesting(wu3)...)
+			testutil.MustApply(ctx, t, ms...)
+
+			// Update wuParent with new children
+			wuParent.ChildWorkUnits = append(wuParent.ChildWorkUnits, wu1.ID, wu2.ID, wu3.ID)
+
+			expectedWUs := []*WorkUnitRow{
+				wu1, wu2, wu3,
+				wuChild,
+				wuParent,
+				wuGrandparent,
+				wuRoot,
+			}
+			sort.Slice(expectedWUs, func(i, j int) bool {
+				shardI := expectedWUs[i].ID.RootInvocationShardID().RowID()
+				shardJ := expectedWUs[j].ID.RootInvocationShardID().RowID()
+				if shardI != shardJ {
+					return shardI < shardJ
+				}
+				return expectedWUs[i].ID.WorkUnitID < expectedWUs[j].ID.WorkUnitID
+			})
+			t.Run("happy path", func(t *ftt.Test) {
+				wus, token, err := mustQuery(q)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.BeEmpty)
+				assert.That(t, wus, should.Match(expectedWUs))
+			})
+
+			t.Run("pagination", func(t *ftt.Test) {
+				q.PageSize = 3
+				wus, token, err := mustQuery(q)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, wus, should.Match(expectedWUs[:3]))
+				assert.Loosely(t, token, should.NotBeEmpty)
+
+				// Next page.
+				q.PageToken = token
+				wus, token, err = mustQuery(q)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.NotBeEmpty)
+				assert.That(t, wus, should.Match(expectedWUs[3:6]))
+
+				// Last page
+				q.PageToken = token
+				wus, token, err = mustQuery(q)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, wus, should.Match(expectedWUs[6:]))
+				assert.Loosely(t, token, should.BeEmpty)
+			})
+
+			t.Run("invalid page token", func(t *ftt.Test) {
+				q.PageToken = "invalid"
+				_, _, err := mustQuery(q)
+				assert.That(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("illegal base64 data at input byte"))
+			})
+
+			t.Run("mask works", func(t *ftt.Test) {
+				q.Mask = ExcludeExtendedProperties
+				wus, token, err := mustQuery(q)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.BeEmpty)
+				// Remove the extended properties from work units.
+				for _, wu := range expectedWUs {
+					wu.ExtendedProperties = nil
+				}
+				assert.That(t, wus, should.Match(expectedWUs))
+			})
+
+			t.Run("ResponseLimitReachedErr", func(t *ftt.Test) {
+				ctx, cancel := span.ReadOnlyTransaction(ctx)
+				defer cancel()
+				results := make([]*WorkUnitRow, 0, q.PageSize)
+				token, err := q.Query(ctx, func(wur *WorkUnitRow) error {
+					results = append(results, wur)
+					return ResponseLimitReachedErr
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.NotBeEmpty)
+				assert.That(t, results, should.Match(expectedWUs[:1]))
+
+				// Next page
+				q.PageToken = token
+				results = make([]*WorkUnitRow, 0, q.PageSize)
+				token, err = q.Query(ctx, func(wur *WorkUnitRow) error {
+					results = append(results, wur)
+					return nil
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.BeEmpty)
+				assert.That(t, results, should.Match(expectedWUs[1:]))
+			})
 		})
 	})
 }
