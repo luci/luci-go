@@ -17,25 +17,34 @@ import { useMemo } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
-import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
-import { useInvocation } from '@/test_investigation/context/context';
+import { useArtifacts } from '@/test_investigation/components/common/artifacts/context/context';
 import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
 
-export function SummaryTab() {
-  useDeclareTabId('summary');
-  const invocation = useInvocation();
+export function InvocationArtifactSummary() {
+  const { selectedNode, invocation } = useArtifacts();
 
   const summaryHtml = useMemo(() => {
-    if (isRootInvocation(invocation) && invocation.summaryMarkdown) {
+    if (
+      selectedNode?.isSummary &&
+      isRootInvocation(invocation) &&
+      invocation.summaryMarkdown
+    ) {
       return renderMarkdown(invocation.summaryMarkdown);
     }
     return null;
-  }, [invocation]);
+  }, [selectedNode, invocation]);
 
   if (!summaryHtml) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Typography>No summary available.</Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+        }}
+      >
+        <Typography variant="body1">No summary available.</Typography>
       </Box>
     );
   }
@@ -43,6 +52,9 @@ export function SummaryTab() {
   return (
     <Box
       sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
         p: 2,
         '& pre': {
           whiteSpace: 'pre-wrap',

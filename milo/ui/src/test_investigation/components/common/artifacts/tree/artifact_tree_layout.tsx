@@ -36,6 +36,7 @@ interface ArtifactsTreeLayoutProps {
   onViewModeChange: (mode: 'artifacts' | 'work-units') => void;
   // Optional slot for controls like clustering that are specific to test investigation
   headerControls?: ReactNode;
+  hideViewModeToggle?: boolean;
 }
 
 export function ArtifactsTreeLayout({
@@ -43,6 +44,7 @@ export function ArtifactsTreeLayout({
   viewMode,
   onViewModeChange,
   headerControls,
+  hideViewModeToggle,
 }: ArtifactsTreeLayoutProps) {
   const { isFilterPanelOpen, setIsFilterPanelOpen } = useArtifactFilters();
 
@@ -59,53 +61,55 @@ export function ArtifactsTreeLayout({
       <Box sx={{ flexShrink: 0, p: 1, px: 3 }}>
         {headerControls && <Box sx={{ mb: 1 }}>{headerControls}</Box>}
 
-        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              flexShrink: 0,
-            }}
-          >
-            <Typography variant="caption" color="text.secondary">
-              View Mode
-            </Typography>
-            <Tooltip title="Switch between viewing artifacts as a directory structure or grouped by work units">
-              <HelpOutline
-                sx={{ fontSize: 14, color: 'text.secondary', cursor: 'help' }}
-              />
-            </Tooltip>
+        {!hideViewModeToggle && (
+          <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                flexShrink: 0,
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                View Mode
+              </Typography>
+              <Tooltip title="Switch between viewing artifacts as a directory structure or grouped by work units">
+                <HelpOutline
+                  sx={{ fontSize: 14, color: 'text.secondary', cursor: 'help' }}
+                />
+              </Tooltip>
+            </Box>
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(_, newMode) => {
+                if (newMode) onViewModeChange(newMode);
+              }}
+              size="small"
+              fullWidth
+              sx={{ flex: 1 }}
+              aria-label="artifact view mode"
+            >
+              <ToggleButton value="artifacts" aria-label="artifacts view">
+                <Tooltip title="View raw artifacts as a directory structure">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <DescriptionIcon fontSize="small" />
+                    Directory
+                  </Box>
+                </Tooltip>
+              </ToggleButton>
+              <ToggleButton value="work-units" aria-label="work units view">
+                <Tooltip title="View artifacts grouped by work units">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AccountTreeIcon fontSize="small" />
+                    Work Units
+                  </Box>
+                </Tooltip>
+              </ToggleButton>
+            </ToggleButtonGroup>
           </Box>
-          <ToggleButtonGroup
-            value={viewMode}
-            exclusive
-            onChange={(_, newMode) => {
-              if (newMode) onViewModeChange(newMode);
-            }}
-            size="small"
-            fullWidth
-            sx={{ flex: 1 }}
-            aria-label="artifact view mode"
-          >
-            <ToggleButton value="artifacts" aria-label="artifacts view">
-              <Tooltip title="View raw artifacts as a directory structure">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <DescriptionIcon fontSize="small" />
-                  Directory
-                </Box>
-              </Tooltip>
-            </ToggleButton>
-            <ToggleButton value="work-units" aria-label="work units view">
-              <Tooltip title="View artifacts grouped by work units">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <AccountTreeIcon fontSize="small" />
-                  Work Units
-                </Box>
-              </Tooltip>
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
+        )}
 
         <ArtifactFiltersDropdown
           isOpen={isFilterPanelOpen}

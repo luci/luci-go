@@ -45,21 +45,21 @@ export const testInvestigationRoutes: RouteObject[] = [
         },
       },
       {
-        path: 'summary',
-        lazy: async () => {
-          const { SummaryTab } = await import(
-            '@/test_investigation/components/invocation_page/tabs'
-          );
-          return { Component: SummaryTab };
-        },
-      },
-      {
         path: 'details',
         lazy: async () => {
           const { DetailsTab } = await import(
             '@/test_investigation/components/invocation_page/tabs'
           );
           return { Component: DetailsTab };
+        },
+      },
+      {
+        path: 'artifacts',
+        lazy: async () => {
+          const { ArtifactsTab } = await import(
+            '@/test_investigation/components/invocation_page/tabs'
+          );
+          return { Component: ArtifactsTab };
         },
       },
     ],

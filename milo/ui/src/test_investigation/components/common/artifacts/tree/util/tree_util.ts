@@ -82,15 +82,18 @@ export function addArtifactsToTree(
 export function buildArtifactsTree(
   resultArtifacts: readonly Artifact[],
   invocationArtifacts: readonly Artifact[],
+  options: { includeSummary?: boolean } = {},
 ): ArtifactTreeNodeData[] {
   const result: ArtifactTreeNodeData[] = [];
 
-  result.push({
-    id: 'summary_node',
-    name: 'Summary',
-    isSummary: true,
-    children: [],
-  });
+  if (options.includeSummary ?? true) {
+    result.push({
+      id: 'summary_node',
+      name: 'Summary',
+      isSummary: true,
+      children: [],
+    });
+  }
   let lastInsertedId = 0;
 
   if (resultArtifacts.length > 0) {

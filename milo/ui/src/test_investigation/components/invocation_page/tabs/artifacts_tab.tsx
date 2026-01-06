@@ -14,15 +14,16 @@
 
 import { Box } from '@mui/material';
 
-import { RoutedTab, RoutedTabs } from '@/generic_libs/components/routed_tabs';
-export function InvocationTabs() {
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
+
+import { InvocationArtifactsExplorer } from '../artifacts/invocation_artifacts_explorer';
+
+export function ArtifactsTab() {
+  useDeclareTabId('artifacts');
+
   return (
-    <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-      <RoutedTabs sx={{ mb: 1 }}>
-        <RoutedTab label="Tests" value="tests" to="tests" />
-        <RoutedTab label="Details" value="details" to="details" />
-        <RoutedTab label="Artifacts" value="artifacts" to="artifacts" />
-      </RoutedTabs>
+    <Box sx={{ flexGrow: 1, minHeight: 0, height: '80vh' }}>
+      <InvocationArtifactsExplorer />
     </Box>
   );
 }

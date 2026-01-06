@@ -14,5 +14,5 @@
 
 export * from './invocation_tabs';
 export * from './details_tab';
-export * from './summary_tab';
 export * from './test_tab';
+export * from './artifacts_tab';
