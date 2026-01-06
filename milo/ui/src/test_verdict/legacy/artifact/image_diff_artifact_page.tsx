@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import '@/common/components/image_diff_viewer';
-import '@/common/components/status_bar';
+import '@/common/components/status_bar_lit';
 import '@/generic_libs/components/dot_spinner';
 
 import { MobxLitElement } from '@adobe/lit-mobx';

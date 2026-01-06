@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import '@/common/components/status_bar';
+import '@/common/components/status_bar_lit';
 import '@/common/components/sanitized_html';
 import '@/generic_libs/components/dot_spinner';
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import '@/common/components/image_diff_viewer';
-import '@/common/components/status_bar';
+import '@/common/components/status_bar_lit';
 
 import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';

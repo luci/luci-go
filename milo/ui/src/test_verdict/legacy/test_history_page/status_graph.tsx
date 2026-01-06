@@ -17,7 +17,7 @@ import { css, html, svg, SVGTemplateResult } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import '@/common/components/status_bar';
+import '@/common/components/status_bar_lit';
 import '@/generic_libs/components/dot_spinner';
 import './graph_config';
 import checkCircle from '@/common/assets/svgs/check_circle_24dp.svg';
