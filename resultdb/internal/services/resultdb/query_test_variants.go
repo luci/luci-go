@@ -24,6 +24,8 @@ import (
 	"go.chromium.org/luci/common/data/aip132"
 	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
@@ -36,6 +38,17 @@ import (
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
+)
+
+var (
+	// queryTestVariantsPredicateUsage tracks the use of query test variants with predicates.
+	queryTestVariantsPredicateUsage = metric.NewCounter(
+		"resultdb/rpc/query_test_variants_predicate_usage",
+		"The number of calls to QueryTestVariants using a predicate",
+		nil,
+		// The status predicate being used, e.g. "UNEXPECTED_MASK".
+		field.String("status"),
+	)
 )
 
 var (
@@ -145,8 +158,9 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		verdictOrder = testvariants.SortOrderStatusV2Effective
 	}
 
-	// Query is valid - increment the queryInvocationsCount metric
-	queryInvocationsCount.Add(ctx, 1, "QueryTestVariants", len(in.Invocations))
+	if in.Predicate != nil {
+		queryTestVariantsPredicateUsage.Add(ctx, 1, in.Predicate.Status.String())
+	}
 
 	var requestedLegacyInvID invocations.ID
 	if in.Parent != "" {
