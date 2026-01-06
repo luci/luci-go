@@ -19,6 +19,7 @@ package luci.resultdb.v1;
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_aggregation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
@@ -65,7 +66,7 @@ message InvocationFinalizedNotification {
 // safe to be exported.
 //
 // The message is sent over the `v1.root_invocation_finalized` Cloud Pub/Sub
-// topic in JSON-serialized form.
+// topic in binary-serialized form.
 //
 // Next id: 3
 message RootInvocationFinalizedNotification {
@@ -137,7 +138,7 @@ message InvocationReadyForExportNotification {
 // within the same root invocation.
 //
 // The message is sent over the `v1.test_results` Cloud Pub/Sub topic in
-// JSON-serialized form. The size limit of the message is 10MB.
+// binary-serialized form. The size limit of the message is 10MB.
 //
 // Next id: 5
 message TestResultsNotification {
@@ -173,7 +174,7 @@ message TestResultsNotification {
 // A message notifying that work units have been finalized.
 //
 // The message is sent over the `v1.work_units` Cloud Pub/Sub topic in
-// JSON-serialized form.
+// binary-serialized form.
 //
 // Next id: 4
 message WorkUnitsNotification {
@@ -195,4 +196,28 @@ message WorkUnitsNotification {
     // The hostname of the luci.resultdb.v1.ResultDB service which can be used
     // to query more information about the work units notified in this message.
     string resultdb_host = 2;
+}
+
+// A message notifying that test aggregations are available.
+//
+// The message is sent over the `v1.test_aggregations` Cloud Pub/Sub topic in
+// binary-serialized form.
+//
+// Note: test aggregations for one root invocation may be split over multiple
+// messages as each message is limited to 10,000 aggregations or 10 MB
+// (whichever is less).
+//
+// Next id: 4.
+message TestAggregationsNotification {
+    // The root invocation that the aggregations belong to.
+    // Format: invocations/{ROOT_INVOCATION_ID}.
+    string root_invocation = 1;
+
+    // A batch of test aggregations.
+    repeated luci.resultdb.v1.TestAggregation test_aggregations = 2;
+
+    // The hostname of the luci.resultdb.v1.ResultDB service which can be used
+    // to query more information about the test aggregations notified in this
+    // message.
+    string resultdb_host = 3;
 }
