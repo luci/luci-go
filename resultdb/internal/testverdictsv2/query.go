@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
@@ -55,6 +56,8 @@ type Query struct {
 	// If this is set, a verdict will only be returned if this filter expression matches
 	// at least one test result in the verdict.
 	ContainsTestResultFilter string
+	// The access the caller has to the root invocation.
+	Access permissions.RootInvocationAccess
 	// Shared decoding buffer to avoid a new memory allocation for each decompression.
 	decoder testresultsv2.Decoder
 }
@@ -116,11 +119,12 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 		var variant []string
 		var results []*tvTestResult
 		var exonerations []*tvExoneration
-		var uiPriority int64
 		var testMetadata []byte
 		var testMetadataName spanner.NullString
 		var testMetadataLocationRepo spanner.NullString
 		var testMetadataLocationFileName spanner.NullString
+		var isMasked bool
+		var uiPriority int64
 
 		err := b.FromSpanner(row,
 			&tv.TestIdStructured.ModuleName,
@@ -138,6 +142,7 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 			&testMetadataName,
 			&testMetadataLocationRepo,
 			&testMetadataLocationFileName,
+			&isMasked,
 			&uiPriority,
 		)
 		if err != nil {
@@ -174,6 +179,8 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 		if err != nil {
 			return errors.Fmt("test metadata: %w", err)
 		}
+
+		tv.IsMasked = isMasked
 
 		lastTV = tv
 		lastUIPriority = uiPriority
@@ -252,7 +259,7 @@ func (q *Query) toResult(r tvTestResult, testID string) (*pb.TestResult, error) 
 	// as it is already set on the parent TestVerdict record.
 
 	var err error
-	result.SummaryHtml, err = q.decoder.DecompressText(r.SummaryHTML)
+	result.SummaryHtml, err = q.decoder.DecompressText(r.SummaryHTMLMasked)
 	if err != nil {
 		return nil, errors.Fmt("summary html: %w", err)
 	}
@@ -271,7 +278,7 @@ func (q *Query) toResult(r tvTestResult, testID string) (*pb.TestResult, error) 
 	if err != nil {
 		return nil, errors.Fmt("failure reason: %w", err)
 	}
-	result.Properties, err = q.decoder.DecodeProperties(r.Properties)
+	result.Properties, err = q.decoder.DecodeProperties(r.PropertiesMasked)
 	if err != nil {
 		return nil, errors.Fmt("properties: %w", err)
 	}
@@ -286,14 +293,34 @@ func (q *Query) toResult(r tvTestResult, testID string) (*pb.TestResult, error) 
 	}
 	// Populate status v1 fields from status v2.
 	result.Status, result.Expected = pbutil.TestStatusV1FromV2(result.StatusV2, result.FailureReason.GetKind(), result.FrameworkExtensions.GetWebTest())
+
+	if !r.HasAccess {
+		// Mask fields that are not allowed for limited access.
+		// Note: Masking of ModuleVariant, Tags, TestMetadata, Properties is done in SQL.
+		// FailureReason and SkippedReason are truncated here.
+		const maxReasonLength = 140
+		if result.FailureReason != nil {
+			result.FailureReason.PrimaryErrorMessage = pbutil.TruncateString(result.FailureReason.PrimaryErrorMessage, maxReasonLength)
+			for _, e := range result.FailureReason.Errors {
+				e.Message = pbutil.TruncateString(e.Message, maxReasonLength)
+				e.Trace = ""
+			}
+		}
+		if result.SkippedReason != nil {
+			result.SkippedReason.ReasonMessage = pbutil.TruncateString(result.SkippedReason.ReasonMessage, maxReasonLength)
+		}
+		result.IsMasked = true
+	}
+
 	return result, nil
 }
 
 func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 	params := map[string]any{
-		"shards":      q.RootInvocationID.AllShardIDs().ToSpanner(),
-		"limit":       q.PageSize,
-		"resultLimit": q.ResultLimit,
+		"shards":        q.RootInvocationID.AllShardIDs().ToSpanner(),
+		"limit":         q.PageSize,
+		"resultLimit":   q.ResultLimit,
+		"upgradeRealms": q.Access.Realms,
 	}
 
 	paginationClause := "TRUE"
@@ -335,6 +362,7 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 		"VerdictExonerated":              int64(pb.TestVerdict_EXONERATED),
 		"VerdictNotOverridden":           int64(pb.TestVerdict_NOT_OVERRIDDEN),
 		"ContainsTestResultFilterClause": containsTestResultFilterClause,
+		"FullAccess":                     q.Access.Level == permissions.FullAccess,
 	}
 
 	st, err := spanutil.GenerateStatement(queryTmpl, tmplInput)
@@ -416,15 +444,16 @@ type tvTestResult struct {
 	WorkUnitID          string
 	ResultID            string
 	StatusV2            int64  // pb.TestResult_Status
-	SummaryHTML         []byte // zstd-compressed string
+	SummaryHTMLMasked   []byte // zstd-compressed string
 	StartTime           spanner.NullTime
 	RunDurationNanos    spanner.NullInt64
 	TagsMasked          []string          // key-vale pairs stored as ["key1:value1", "key2:value2"]
 	FailureReason       []byte            // zstd-compressed luci.resultdb.v1.FailureReason
-	Properties          []byte            // zstd-compressed google.protobuf.Struct
+	PropertiesMasked    []byte            // zstd-compressed google.protobuf.Struct
 	SkipReason          spanner.NullInt64 // pb.SkipReason
 	SkippedReason       []byte            // zstd-compressed SkippedReason
 	FrameworkExtensions []byte            // zstd-compressed FrameworkExtensions
+	HasAccess           bool
 }
 
 // tvTestResult describes a nested test exoneration record retrieved from Spanner.
@@ -443,15 +472,32 @@ var queryTmpl = template.Must(template.New("").Parse(`
 {{define "TestResults"}}
 			-- Test results.
 			SELECT
-				* EXCEPT (ModuleVariant, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName),
+				* EXCEPT (ModuleVariant, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName, Properties),
 				-- Provide masked versions of fields to support filtering on them in the query one level up.
-				-- Currently the user always has full access, so no masking is needed.
-				ModuleVariant AS ModuleVariantMasked,
-				Tags AS TagsMasked,
-				TestMetadata as TestMetadataMasked,
-				TestMetadataName AS TestMetadataNameMasked,
-				TestMetadataLocationRepo AS TestMetadataLocationRepoMasked,
-				TestMetadataLocationFileName AS TestMetadataLocationFileNameMasked
+				{{if eq .FullAccess true}}
+					-- Directly alias the columns if full access is granted. This can provide
+					-- a performance boost as predicates can be pushed down to the storage layer.
+					ModuleVariant AS ModuleVariantMasked,
+					SummaryHTML AS SummaryHTMLMasked,
+					Tags AS TagsMasked,
+					TestMetadata as TestMetadataMasked,
+					TestMetadataName AS TestMetadataNameMasked,
+					TestMetadataLocationRepo AS TestMetadataLocationRepoMasked,
+					TestMetadataLocationFileName AS TestMetadataLocationFileNameMasked,
+					Properties AS PropertiesMasked,
+					TRUE AS HasAccess,
+				{{else}}
+					-- User has limited acccess by default.
+					IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL) AS ModuleVariantMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), SummaryHTML, NULL) AS SummaryHTMLMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), Tags, NULL) AS TagsMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), TestMetadata, NULL) AS TestMetadataMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataName, NULL) AS TestMetadataNameMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataLocationRepo, NULL) AS TestMetadataLocationRepoMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataLocationFileName, NULL) AS TestMetadataLocationFileNameMasked,
+					IF(Realm IN UNNEST(@upgradeRealms), Properties, NULL) AS PropertiesMasked,
+					(Realm IN UNNEST(@upgradeRealms)) AS HasAccess,
+				{{end}}
 			FROM TestResultsV2
 {{end}}
 {{define "TestExonerations"}}
@@ -493,15 +539,16 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				WorkUnitId,
 				ResultId,
 				StatusV2,
-				SummaryHTML,
+				SummaryHTMLMasked,
 				StartTime,
 				RunDurationNanos,
 				TagsMasked,
 				FailureReason,
-				Properties,
+				PropertiesMasked,
 				SkipReason,
 				SkippedReason,
-				FrameworkExtensions
+				FrameworkExtensions,
+				HasAccess
 			)) AS Results,
 			ANY_VALUE(E.Exonerations) AS Exonerations,
 			COALESCE(ANY_VALUE(E.HasExonerations), FALSE) AS HasExonerations,
@@ -509,6 +556,11 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			ANY_VALUE(TR.TestMetadataNameMasked) AS TestMetadataNameMasked,
 			ANY_VALUE(TR.TestMetadataLocationRepoMasked) AS TestMetadataLocationRepoMasked,
 			ANY_VALUE(TR.TestMetadataLocationFileNameMasked) AS TestMetadataLocationFileNameMasked,
+			-- The test verdict is reported as masked if we do not have access to any of
+			-- its results. In this case, the verdict's module_variant is unavailable
+			-- and the test metadata (which should be the same on all results) is
+			-- also unavailable.
+			NOT LOGICAL_OR(TR.HasAccess) AS IsMasked,
 		FROM ({{template "TestResults" .}}
 		) TR
 		LEFT JOIN@{JOIN_METHOD=MERGE_JOIN} ({{template "TestExonerations" .}}
@@ -554,6 +606,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		TestMetadataNameMasked,
 		TestMetadataLocationRepoMasked,
 		TestMetadataLocationFileNameMasked,
+		IsMasked,
 		-- UI Priority Calculation
 		(CASE
 			-- Has blocking failures: priority 100
@@ -589,6 +642,7 @@ SELECT
 	TestMetadataNameMasked,
 	TestMetadataLocationRepoMasked,
 	TestMetadataLocationFileNameMasked,
+	IsMasked,
 	UIPriority
 FROM (
 	{{template "Verdicts" .}}

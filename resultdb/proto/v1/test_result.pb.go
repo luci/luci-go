@@ -511,22 +511,21 @@ type TestResult struct {
 	Properties *structpb.Struct `protobuf:"bytes,15,opt,name=properties,proto3" json:"properties,omitempty"`
 	// Whether the test result has been masked so that it includes only metadata.
 	// The metadata fields for a TestResult are:
-	// * name
-	// * test_id_structured
-	// * test_id
-	// * variant
-	// * result_id
-	// * status_v2
-	// * start_time
-	// * duration
-	// * variant_hash
-	// * failure_reason.kind
-	// * summary_html
-	// * failure_reason.primary_error_message (truncated to 140 characters)
-	// * skipped_reason
-	// * skip_reason (deprecated)
-	// * expected (deprecated)
-	// * status (deprecated)
+	//   - name
+	//   - test_id
+	//   - test_id_structured (all fields except module_variant)
+	//   - result_id
+	//   - status_v2
+	//   - start_time
+	//   - duration
+	//   - variant_hash
+	//   - failure_reason (primary_error_message and each error[i].message truncated to 140 characters,
+	//     all error[i].trace elided).
+	//   - skipped_reason (reason_message truncated to 140 characters)
+	//   - framework_extensions
+	//   - skip_reason (deprecated)
+	//   - expected (deprecated)
+	//   - status (deprecated)
 	//
 	// This field is output only.
 	IsMasked bool `protobuf:"varint,16,opt,name=is_masked,json=isMasked,proto3" json:"is_masked,omitempty"`

@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.v1;
 
+import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_exoneration.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_metadata.proto";
@@ -113,4 +114,12 @@ message TestVerdict {
   // metadata. This RPC relies on this rule and returns test metadata from
   // *arbitrary* result of the test variant.
   TestMetadata test_metadata = 9;
+
+  // Whether the
+  //    - test metadata; and/or
+  //    - test_id_structured.module_definition
+  // have been masked from the test variant, due to limited access of the caller.
+  //
+  // Output only.
+  bool is_masked = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

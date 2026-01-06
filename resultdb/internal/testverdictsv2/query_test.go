@@ -17,14 +17,16 @@ package testverdictsv2
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -45,6 +47,9 @@ func TestQuery(t *testing.T) {
 			PageSize:         100,
 			ResultLimit:      10,
 			Order:            OrderingByID,
+			Access: permissions.RootInvocationAccess{
+				Level: permissions.FullAccess,
+			},
 		}
 
 		fetchAll := func(q *Query) []*pb.TestVerdict {
@@ -119,13 +124,13 @@ func TestQuery(t *testing.T) {
 			}
 
 			expectedUIOrder := []*pb.TestVerdict{
-				m[flatTestID(rootInvID, "t2")], // Failed
-				m[flatTestID(rootInvID, "t6")], // Precluded
-				m[flatTestID(rootInvID, "t7")], // Execution Errored
-				m[flatTestID(rootInvID, "t3")], // Flaky
-				m[flatTestID(rootInvID, "t5")], // Exonerated
-				m[flatTestID(rootInvID, "t1")], // Passed
-				m[flatTestID(rootInvID, "t4")], // Skipped
+				m[flatTestID("t2")], // Failed
+				m[flatTestID("t6")], // Precluded
+				m[flatTestID("t7")], // Execution Errored
+				m[flatTestID("t3")], // Flaky
+				m[flatTestID("t5")], // Exonerated
+				m[flatTestID("t1")], // Passed
+				m[flatTestID("t4")], // Skipped
 			}
 
 			t.Run("Without pagination", func(t *ftt.Test) {
@@ -181,13 +186,39 @@ func TestQuery(t *testing.T) {
 				` AND duration < 100s`
 
 			t.Run("With full access", func(t *ftt.Test) {
+				q.Access.Level = permissions.FullAccess
 				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
+			t.Run("With limited access (some upgraded to full)", func(t *ftt.Test) {
+				// Only some results should match, because we filter on
+				// tags and variant and these fields are only visible to us on those
+				// results we have full access to.
+				q.Access.Level = permissions.LimitedAccess
+				q.Access.Realms = []string{"testproject:t4-r1"}
+				expectedLimited := ExpectedVerdictsMasked(rootInvID, q.Access.Realms)
+				expectedLimited = expectedLimited[3:4]
+				assert.Loosely(t, fetchAll(q), should.Match(expectedLimited))
 			})
 			t.Run("With implicit filter", func(t *ftt.Test) {
 				// Check an aip.dev/160 implicit filter.
 				q.ContainsTestResultFilter = `t2`
 				expected = expected[1:2]
 				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
+		})
+
+		t.Run("With limited access", func(t *ftt.Test) {
+			q.Access.Level = permissions.LimitedAccess
+
+			t.Run("Baseline", func(t *ftt.Test) {
+				expectedLimited := ExpectedVerdictsMasked(rootInvID, nil)
+				assert.Loosely(t, fetchAll(q), should.Match(expectedLimited))
+			})
+
+			t.Run("With upgraded realms", func(t *ftt.Test) {
+				q.Access.Realms = []string{"testproject:t3-r1", "testproject:t4-r1"}
+				expectedLimited := ExpectedVerdictsMasked(rootInvID, q.Access.Realms)
+				assert.Loosely(t, fetchAll(q), should.Match(expectedLimited))
 			})
 		})
 	})

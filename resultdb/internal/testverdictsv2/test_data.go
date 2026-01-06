@@ -15,6 +15,9 @@
 package testverdictsv2
 
 import (
+	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -38,42 +41,40 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 		return testresultsv2.NewBuilder().WithRootInvocationShardID(shard).
 			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).
 			WithCoarseName("c1").WithFineName("f1").WithCaseName("t1").WithTags(pbutil.StringPairs("mytag", "myvalue")).
-			WithTestMetadata(&pb.TestMetadata{Name: "tmd", Location: &pb.TestLocation{Repo: "https://repo", FileName: "file"}})
+			WithTestMetadata(&pb.TestMetadata{Name: "tmd", Location: &pb.TestLocation{Repo: "https://repo", FileName: "file"}}).
+			WithProperties(&structpb.Struct{Fields: map[string]*structpb.Value{"key": structpb.NewStringValue("value")}})
 	}
 	baseExonerationBuilder := func() *testexonerationsv2.Builder {
 		return testexonerationsv2.NewBuilder().WithRootInvocationShardID(shard).
 			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).WithCoarseName("c1").WithFineName("f1").WithCaseName("t1")
 	}
 
+	// Typically, each result is not in its own realm as it inherits its realm from the
+	// work unit, but for testing purposes we put each in its own realm as it makes life easier.
 	results := []*testresultsv2.TestResultRow{
 		// Verdict 1: Passed
-		// t1
-		baseBuilder().WithResultID("r1").WithCaseName("t1").WithStatusV2(pb.TestResult_PASSED).Build(),
+		baseBuilder().WithResultID("r1").WithCaseName("t1").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t1-r1").Build(),
 
 		// Verdict 2: Failed
-		// t2
-		baseBuilder().WithResultID("r1").WithCaseName("t2").WithStatusV2(pb.TestResult_FAILED).Build(),
+		baseBuilder().WithResultID("r1").WithCaseName("t2").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t2-r1").
+			WithFailureReason(longFailureReason()).Build(),
 
 		// Verdict 3: Flaky (Pass + Fail)
-		// t3
-		baseBuilder().WithResultID("r1").WithCaseName("t3").WithStatusV2(pb.TestResult_FAILED).Build(),
-		baseBuilder().WithResultID("r2").WithCaseName("t3").WithStatusV2(pb.TestResult_PASSED).Build(),
+		baseBuilder().WithResultID("r1").WithCaseName("t3").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t3-r1").Build(),
+		baseBuilder().WithResultID("r2").WithCaseName("t3").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t3-r2").Build(),
 
 		// Verdict 4: Skipped
-		// t4
-		baseBuilder().WithResultID("r1").WithCaseName("t4").WithStatusV2(pb.TestResult_SKIPPED).Build(),
+		baseBuilder().WithResultID("r1").WithCaseName("t4").WithStatusV2(pb.TestResult_SKIPPED).WithRealm("testproject:t4-r1").
+			WithSkippedReason(longSkippedReason()).Build(),
 
 		// Verdict 5: Exonerated (Fail + Exoneration)
-		// t5
-		baseBuilder().WithResultID("r1").WithCaseName("t5").WithStatusV2(pb.TestResult_FAILED).Build(),
+		baseBuilder().WithResultID("r1").WithCaseName("t5").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t5-r1").Build(),
 
 		// Verdict 6: Precluded
-		// t6
-		baseBuilder().WithResultID("r1").WithCaseName("t6").WithStatusV2(pb.TestResult_PRECLUDED).Build(),
+		baseBuilder().WithResultID("r1").WithCaseName("t6").WithStatusV2(pb.TestResult_PRECLUDED).WithRealm("testproject:t6-r1").Build(),
 
 		// Verdict 7: Execution Errored
-		// t7
-		baseBuilder().WithResultID("r1").WithCaseName("t7").WithStatusV2(pb.TestResult_EXECUTION_ERRORED).Build(),
+		baseBuilder().WithResultID("r1").WithCaseName("t7").WithStatusV2(pb.TestResult_EXECUTION_ERRORED).WithRealm("testproject:t7-r1").Build(),
 	}
 
 	exonerations := []*testexonerationsv2.TestExonerationRow{
@@ -95,7 +96,7 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 
 // flatTestID returns the test ID of the given case name. It matches
 // CreateTestData logic.
-func flatTestID(rootInvID rootinvocations.ID, caseName string) string {
+func flatTestID(caseName string) string {
 	return pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(&pb.TestIdentifier{
 		ModuleName:   "m1",
 		ModuleScheme: "junit",
@@ -106,6 +107,34 @@ func flatTestID(rootInvID rootinvocations.ID, caseName string) string {
 		FineName:   "f1",
 		CaseName:   caseName,
 	}))
+}
+
+// longFailureReason creates a long failure reason, to allow testing truncation for users
+// with limited access.
+func longFailureReason() *pb.FailureReason {
+	return &pb.FailureReason{
+		Kind:                pb.FailureReason_CRASH,
+		PrimaryErrorMessage: strings.Repeat("a", 150),
+		Errors: []*pb.FailureReason_Error{
+			{
+				Message: strings.Repeat("a", 150),
+				Trace:   "some trace",
+			},
+			{
+				Message: strings.Repeat("b", 150),
+				Trace:   "some trace2",
+			},
+		},
+	}
+}
+
+// longSkippedReason creates a long skipped reason, to allow testing truncation for users
+// with limited access.
+func longSkippedReason() *pb.SkippedReason {
+	return &pb.SkippedReason{
+		Kind:          pb.SkippedReason_DISABLED_AT_DECLARATION,
+		ReasonMessage: strings.Repeat("c", 150),
+	}
 }
 
 // ExpectedVerdicts returns the expected test verdicts corresponding
@@ -121,7 +150,7 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 
 	makeVerdict := func(caseName string, status pb.TestVerdict_Status, results []*pb.TestResult, exonerations []*pb.TestExoneration) *pb.TestVerdict {
 		tv := &pb.TestVerdict{
-			TestId: flatTestID(rootInvID, caseName),
+			TestId: flatTestID(caseName),
 			TestIdStructured: &pb.TestIdentifier{
 				ModuleName:        moduleName,
 				ModuleScheme:      moduleScheme,
@@ -155,7 +184,7 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 	// All results have common properties.
 	makeResult := func(caseName, resultID string, status pb.TestResult_Status) *pb.TestResult {
 		r := &pb.TestResult{
-			Name:                pbutil.TestResultName(string(rootInvID), "work-unit-id", flatTestID(rootInvID, caseName), resultID),
+			Name:                pbutil.TestResultName(string(rootInvID), "work-unit-id", flatTestID(caseName), resultID),
 			ResultId:            resultID,
 			StatusV2:            status,
 			StartTime:           startTime,
@@ -191,6 +220,7 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 
 	// Failed.
 	r2 := makeResult("t2", "r1", pb.TestResult_FAILED)
+	r2.FailureReason = longFailureReason()
 	v2 := makeVerdict("t2", pb.TestVerdict_FAILED, []*pb.TestResult{r2}, nil)
 
 	// Flaky.
@@ -200,18 +230,19 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 
 	// Skipped.
 	r4 := makeResult("t4", "r1", pb.TestResult_SKIPPED)
+	r4.SkippedReason = longSkippedReason()
 	v4 := makeVerdict("t4", pb.TestVerdict_SKIPPED, []*pb.TestResult{r4}, nil)
 
 	// Exonerated (Failed + Exoneration).
 	r5 := makeResult("t5", "r1", pb.TestResult_FAILED)
 	e1 := &pb.TestExoneration{
-		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", flatTestID(rootInvID, "t5"), "e1"),
+		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", flatTestID("t5"), "e1"),
 		ExonerationId:   "e1",
 		ExplanationHtml: "<b>explanation</b>",
 		Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 	}
 	e2 := &pb.TestExoneration{
-		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", flatTestID(rootInvID, "t5"), "e2"),
+		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", flatTestID("t5"), "e2"),
 		ExonerationId:   "e2",
 		ExplanationHtml: "<b>explanation</b>",
 		Reason:          pb.ExonerationReason_NOT_CRITICAL,
@@ -227,4 +258,46 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 	v7 := makeVerdict("t7", pb.TestVerdict_EXECUTION_ERRORED, []*pb.TestResult{r7}, nil)
 
 	return []*pb.TestVerdict{v1, v2, v3, v4, v5, v6, v7}
+}
+
+// ExpectedVerdictsMasked returns the expected test verdicts corresponding
+// to the test data created by CreateTestData(), with the user having full
+// access only to the given realms.
+func ExpectedVerdictsMasked(rootInvID rootinvocations.ID, realms []string) []*pb.TestVerdict {
+	result := ExpectedVerdicts(rootInvID)
+	for _, tv := range result {
+		hasFullAccessToAny := false
+		for _, r := range tv.Results {
+			resultRealm := fmt.Sprintf("testproject:%s-%s", tv.TestIdStructured.CaseName, r.ResultId)
+			if slices.Contains(realms, resultRealm) {
+				hasFullAccessToAny = true
+				continue
+			}
+
+			r.Tags = nil
+			r.Properties = nil
+			r.SummaryHtml = ""
+
+			// Truncate FailureReason.
+			if r.FailureReason != nil {
+				r.FailureReason.PrimaryErrorMessage = pbutil.TruncateString(r.FailureReason.PrimaryErrorMessage, 140)
+				for _, e := range r.FailureReason.Errors {
+					e.Message = pbutil.TruncateString(e.Message, 140)
+					e.Trace = ""
+				}
+			}
+			// Truncate SkippedReason.
+			if r.SkippedReason != nil {
+				r.SkippedReason.ReasonMessage = pbutil.TruncateString(r.SkippedReason.ReasonMessage, 140)
+				r.SkippedReason.Trace = ""
+			}
+			r.IsMasked = true
+		}
+		if !hasFullAccessToAny {
+			tv.TestIdStructured.ModuleVariant = nil
+			tv.TestMetadata = nil
+			tv.IsMasked = true
+		}
+	}
+	return result
 }

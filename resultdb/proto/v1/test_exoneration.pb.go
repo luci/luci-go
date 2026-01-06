@@ -159,13 +159,12 @@ type TestExoneration struct {
 	// Whether the test exoneration has been masked so that it includes only
 	// metadata. The metadata fields for a TestExoneration are:
 	// * name
-	// * test_id_structured
+	// * test_id
+	// * test_id_structured (all fields except module_variant)
 	// * exoneration_id
 	// * variant_hash
 	// * explanation_html
 	// * reason
-	// * test_id (deprecated)
-	// * variant (deprecated)
 	//
 	// This field is output only.
 	IsMasked bool `protobuf:"varint,8,opt,name=is_masked,json=isMasked,proto3" json:"is_masked,omitempty"`
