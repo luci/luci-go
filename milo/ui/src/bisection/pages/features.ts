@@ -12,5 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './gen_ai_analysis_table';
-export * from './gen_ai_test_analysis_table';
+import { createFeatureFlag } from '@/common/feature_flags/context';
+
+export const SHOW_GEN_AI_TEST_ANALYSIS_BISECTION = createFeatureFlag({
+  namespace: 'gardener-ai',
+  name: 'show-gen-ai-test-culprits-on-bisection',
+  percentage: 0,
+  description:
+    'Show suspected culprit found by AI analysis as part of the bisection analysis details.',
+  trackingBug: 'b/457846656',
+});

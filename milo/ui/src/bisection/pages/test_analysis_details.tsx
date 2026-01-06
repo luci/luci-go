@@ -28,6 +28,7 @@ import { useParams } from 'react-router';
 import { TestAnalysisOverview } from '@/bisection/components/analysis_overview';
 import { CulpritVerificationTable } from '@/bisection/components/culprit_verification_table';
 import { CulpritsTable } from '@/bisection/components/culprits_table/culprits_table';
+import { GenAiTestAnalysisTable } from '@/bisection/components/gen_ai_analysis_table';
 import { NthSectionAnalysisTable } from '@/bisection/components/nthsection_analysis_table/nthsection_analysis_table';
 import { TestFailuresTable } from '@/bisection/components/test_table';
 import {
@@ -36,15 +37,18 @@ import {
   GenericSuspect,
 } from '@/bisection/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useFeatureFlag } from '@/common/feature_flags/context';
 import { useAnalysesClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { GetTestAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
 import { TabPanel } from './analysis_details';
+import { SHOW_GEN_AI_TEST_ANALYSIS_BISECTION } from './features';
 
 enum AnalysisComponentTabs {
   NTH_SECTION = 'Nth section analysis',
   CULPRIT_VERIFICATION = 'Culprit verification',
+  GENAI_ANALYSIS = 'GenAI analysis',
 }
 
 export function TestAnalysisDetailsPage() {
@@ -53,8 +57,13 @@ export function TestAnalysisDetailsPage() {
     // The page should always be mounted to a path where id is set.
     throw new Error('invariant violated: id must be set');
   }
+  const showGenAiTestAnalysis = useFeatureFlag(
+    SHOW_GEN_AI_TEST_ANALYSIS_BISECTION,
+  );
   const [currentTab, setCurrentTab] = useState(
-    AnalysisComponentTabs.NTH_SECTION,
+    showGenAiTestAnalysis
+      ? AnalysisComponentTabs.GENAI_ANALYSIS
+      : AnalysisComponentTabs.NTH_SECTION,
   );
 
   const handleTabChange = (
@@ -136,6 +145,13 @@ export function TestAnalysisDetailsPage() {
           aria-label="Analysis components tabs"
           className="rounded-tabs"
         >
+          {showGenAiTestAnalysis && (
+            <Tab
+              className="rounded-tab"
+              value={AnalysisComponentTabs.GENAI_ANALYSIS}
+              label={AnalysisComponentTabs.GENAI_ANALYSIS}
+            />
+          )}
           <Tab
             className="rounded-tab"
             value={AnalysisComponentTabs.NTH_SECTION}
@@ -147,6 +163,14 @@ export function TestAnalysisDetailsPage() {
             label={AnalysisComponentTabs.CULPRIT_VERIFICATION}
           />
         </Tabs>
+        {showGenAiTestAnalysis && (
+          <TabPanel
+            value={currentTab}
+            name={AnalysisComponentTabs.GENAI_ANALYSIS}
+          >
+            <GenAiTestAnalysisTable result={analysis.genAiResult} />
+          </TabPanel>
+        )}
         <TabPanel value={currentTab} name={AnalysisComponentTabs.NTH_SECTION}>
           <NthSectionAnalysisTable
             result={

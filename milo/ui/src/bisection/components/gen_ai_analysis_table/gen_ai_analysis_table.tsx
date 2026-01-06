@@ -25,15 +25,18 @@ import { AnalysisStatusInfo } from '@/bisection/components/status_info';
 import { getFormattedTimestamp } from '@/bisection/tools/timestamp_formatters';
 import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 import { GenAiAnalysisResult } from '@/proto/go.chromium.org/luci/bisection/proto/v1/genai.pb';
+
 export interface GenAiAnalysisTableProps {
   readonly result?: GenAiAnalysisResult;
 }
 
 export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
+  const compileCheckResult = result;
+
   if (
-    !result ||
+    !compileCheckResult ||
     [AnalysisStatus.DISABLED, AnalysisStatus.UNSUPPORTED].includes(
-      result.status,
+      compileCheckResult.status,
     )
   ) {
     return (
@@ -42,7 +45,7 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
       </span>
     );
   }
-  const { status, suspect, startTime, endTime } = result;
+  const { status, suspect, startTime, endTime } = compileCheckResult;
   if ([AnalysisStatus.CREATED, AnalysisStatus.RUNNING].includes(status)) {
     return (
       <span className="data-placeholder" data-testid="genai-analysis-table">
@@ -89,7 +92,9 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
               </Link>
             </TableCell>
             <TableCell sx={{ whiteSpace: 'nowrap' }}>
-              <AnalysisStatusInfo status={result.status}></AnalysisStatusInfo>
+              <AnalysisStatusInfo
+                status={compileCheckResult.status}
+              ></AnalysisStatusInfo>
             </TableCell>
             <TableCell sx={{ whiteSpace: 'nowrap' }}>
               {getFormattedTimestamp(startTime)}
