@@ -320,6 +320,95 @@ func (x *IngestArtifacts) GetTaskIndex() int64 {
 	return 0
 }
 
+// Payload of IngestWorkUnits task.
+type IngestWorkUnits struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The name of the root invocation for this ingestion.
+	// Format: rootInvocations/{ROOT_INVOCATION_ID}.
+	RootInvocation string `protobuf:"bytes,1,opt,name=root_invocation,json=rootInvocation,proto3" json:"root_invocation,omitempty"`
+	// The LUCI realm that owns the root invocation.
+	// E.g. "chromium:ci".
+	Realm string `protobuf:"bytes,2,opt,name=realm,proto3" json:"realm,omitempty"`
+	// The hostname of the luci.resultdb.v1.ResultDB service which
+	// can be used to query more information about the root invocation in this message.
+	ResultdbHost string `protobuf:"bytes,3,opt,name=resultdb_host,json=resultdbHost,proto3" json:"resultdb_host,omitempty"`
+	// The page token value to use when calling QueryWorkUnits.
+	// For the first task, this should be "". For subsequent tasks,
+	// this is the next_page_token value returned by the last call.
+	PageToken string `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	// The task number of work unit task. 1 for the first
+	// task, 2 for the second task, and so on. Used to avoid creating
+	// duplicate tasks.
+	TaskIndex     int64 `protobuf:"varint,5,opt,name=task_index,json=taskIndex,proto3" json:"task_index,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IngestWorkUnits) Reset() {
+	*x = IngestWorkUnits{}
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IngestWorkUnits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IngestWorkUnits) ProtoMessage() {}
+
+func (x *IngestWorkUnits) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IngestWorkUnits.ProtoReflect.Descriptor instead.
+func (*IngestWorkUnits) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *IngestWorkUnits) GetRootInvocation() string {
+	if x != nil {
+		return x.RootInvocation
+	}
+	return ""
+}
+
+func (x *IngestWorkUnits) GetRealm() string {
+	if x != nil {
+		return x.Realm
+	}
+	return ""
+}
+
+func (x *IngestWorkUnits) GetResultdbHost() string {
+	if x != nil {
+		return x.ResultdbHost
+	}
+	return ""
+}
+
+func (x *IngestWorkUnits) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *IngestWorkUnits) GetTaskIndex() int64 {
+	if x != nil {
+		return x.TaskIndex
+	}
+	return 0
+}
+
 // Payload of the ReclusterChunks task.
 type ReclusterChunks struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -359,7 +448,7 @@ type ReclusterChunks struct {
 
 func (x *ReclusterChunks) Reset() {
 	*x = ReclusterChunks{}
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -371,7 +460,7 @@ func (x *ReclusterChunks) String() string {
 func (*ReclusterChunks) ProtoMessage() {}
 
 func (x *ReclusterChunks) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -384,7 +473,7 @@ func (x *ReclusterChunks) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReclusterChunks.ProtoReflect.Descriptor instead.
 func (*ReclusterChunks) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReclusterChunks) GetShardNumber() int64 {
@@ -464,7 +553,7 @@ type ReclusterChunkState struct {
 
 func (x *ReclusterChunkState) Reset() {
 	*x = ReclusterChunkState{}
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -476,7 +565,7 @@ func (x *ReclusterChunkState) String() string {
 func (*ReclusterChunkState) ProtoMessage() {}
 
 func (x *ReclusterChunkState) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -489,7 +578,7 @@ func (x *ReclusterChunkState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReclusterChunkState.ProtoReflect.Descriptor instead.
 func (*ReclusterChunkState) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ReclusterChunkState) GetCurrentChunkId() string {
@@ -521,7 +610,7 @@ type JoinBuild struct {
 
 func (x *JoinBuild) Reset() {
 	*x = JoinBuild{}
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -533,7 +622,7 @@ func (x *JoinBuild) String() string {
 func (*JoinBuild) ProtoMessage() {}
 
 func (x *JoinBuild) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -546,7 +635,7 @@ func (x *JoinBuild) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinBuild.ProtoReflect.Descriptor instead.
 func (*JoinBuild) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *JoinBuild) GetId() int64 {
@@ -607,7 +696,7 @@ type UpdateBugs struct {
 
 func (x *UpdateBugs) Reset() {
 	*x = UpdateBugs{}
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -619,7 +708,7 @@ func (x *UpdateBugs) String() string {
 func (*UpdateBugs) ProtoMessage() {}
 
 func (x *UpdateBugs) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -632,7 +721,7 @@ func (x *UpdateBugs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateBugs.ProtoReflect.Descriptor instead.
 func (*UpdateBugs) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *UpdateBugs) GetProject() string {
@@ -668,7 +757,7 @@ type Backfill struct {
 
 func (x *Backfill) Reset() {
 	*x = Backfill{}
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -680,7 +769,7 @@ func (x *Backfill) String() string {
 func (*Backfill) ProtoMessage() {}
 
 func (x *Backfill) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -693,7 +782,7 @@ func (x *Backfill) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Backfill.ProtoReflect.Descriptor instead.
 func (*Backfill) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{7}
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Backfill) GetDay() *timestamppb.Timestamp {
@@ -724,7 +813,7 @@ type GroupChangepoints struct {
 
 func (x *GroupChangepoints) Reset() {
 	*x = GroupChangepoints{}
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -736,7 +825,7 @@ func (x *GroupChangepoints) String() string {
 func (*GroupChangepoints) ProtoMessage() {}
 
 func (x *GroupChangepoints) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -749,7 +838,7 @@ func (x *GroupChangepoints) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupChangepoints.ProtoReflect.Descriptor instead.
 func (*GroupChangepoints) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{8}
+	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GroupChangepoints) GetWeek() *timestamppb.Timestamp {
@@ -798,7 +887,15 @@ const file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawD
 	"\n" +
 	"page_token\x18\x02 \x01(\tR\tpageToken\x12\x1d\n" +
 	"\n" +
-	"task_index\x18\x03 \x01(\x03R\ttaskIndex\"\xd1\x03\n" +
+	"task_index\x18\x03 \x01(\x03R\ttaskIndex\"\xb3\x01\n" +
+	"\x0fIngestWorkUnits\x12'\n" +
+	"\x0froot_invocation\x18\x01 \x01(\tR\x0erootInvocation\x12\x14\n" +
+	"\x05realm\x18\x02 \x01(\tR\x05realm\x12#\n" +
+	"\rresultdb_host\x18\x03 \x01(\tR\fresultdbHost\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\x12\x1d\n" +
+	"\n" +
+	"task_index\x18\x05 \x01(\x03R\ttaskIndex\"\xd1\x03\n" +
 	"\x0fReclusterChunks\x12!\n" +
 	"\fshard_number\x18\x06 \x01(\x03R\vshardNumber\x12\x18\n" +
 	"\aproject\x18\x01 \x01(\tR\aproject\x12=\n" +
@@ -840,43 +937,44 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDe
 	return file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_goTypes = []any{
 	(*IngestTestVerdicts)(nil),                      // 0: luci.analysis.internal.tasks.IngestTestVerdicts
 	(*IngestTestResults)(nil),                       // 1: luci.analysis.internal.tasks.IngestTestResults
 	(*IngestArtifacts)(nil),                         // 2: luci.analysis.internal.tasks.IngestArtifacts
-	(*ReclusterChunks)(nil),                         // 3: luci.analysis.internal.tasks.ReclusterChunks
-	(*ReclusterChunkState)(nil),                     // 4: luci.analysis.internal.tasks.ReclusterChunkState
-	(*JoinBuild)(nil),                               // 5: luci.analysis.internal.tasks.JoinBuild
-	(*UpdateBugs)(nil),                              // 6: luci.analysis.internal.tasks.UpdateBugs
-	(*Backfill)(nil),                                // 7: luci.analysis.internal.tasks.Backfill
-	(*GroupChangepoints)(nil),                       // 8: luci.analysis.internal.tasks.GroupChangepoints
-	(*timestamppb.Timestamp)(nil),                   // 9: google.protobuf.Timestamp
-	(*proto.InvocationResult)(nil),                  // 10: luci.analysis.internal.ingestion.control.InvocationResult
-	(*proto.RootInvocationResult)(nil),              // 11: luci.analysis.internal.ingestion.control.RootInvocationResult
-	(*proto.BuildResult)(nil),                       // 12: luci.analysis.internal.ingestion.control.BuildResult
-	(*proto.PresubmitResult)(nil),                   // 13: luci.analysis.internal.ingestion.control.PresubmitResult
-	(*v1.InvocationReadyForExportNotification)(nil), // 14: luci.resultdb.v1.InvocationReadyForExportNotification
-	(*v1.InvocationFinalizedNotification)(nil),      // 15: luci.resultdb.v1.InvocationFinalizedNotification
+	(*IngestWorkUnits)(nil),                         // 3: luci.analysis.internal.tasks.IngestWorkUnits
+	(*ReclusterChunks)(nil),                         // 4: luci.analysis.internal.tasks.ReclusterChunks
+	(*ReclusterChunkState)(nil),                     // 5: luci.analysis.internal.tasks.ReclusterChunkState
+	(*JoinBuild)(nil),                               // 6: luci.analysis.internal.tasks.JoinBuild
+	(*UpdateBugs)(nil),                              // 7: luci.analysis.internal.tasks.UpdateBugs
+	(*Backfill)(nil),                                // 8: luci.analysis.internal.tasks.Backfill
+	(*GroupChangepoints)(nil),                       // 9: luci.analysis.internal.tasks.GroupChangepoints
+	(*timestamppb.Timestamp)(nil),                   // 10: google.protobuf.Timestamp
+	(*proto.InvocationResult)(nil),                  // 11: luci.analysis.internal.ingestion.control.InvocationResult
+	(*proto.RootInvocationResult)(nil),              // 12: luci.analysis.internal.ingestion.control.RootInvocationResult
+	(*proto.BuildResult)(nil),                       // 13: luci.analysis.internal.ingestion.control.BuildResult
+	(*proto.PresubmitResult)(nil),                   // 14: luci.analysis.internal.ingestion.control.PresubmitResult
+	(*v1.InvocationReadyForExportNotification)(nil), // 15: luci.resultdb.v1.InvocationReadyForExportNotification
+	(*v1.InvocationFinalizedNotification)(nil),      // 16: luci.resultdb.v1.InvocationFinalizedNotification
 }
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_depIdxs = []int32{
-	9,  // 0: luci.analysis.internal.tasks.IngestTestVerdicts.partition_time:type_name -> google.protobuf.Timestamp
-	10, // 1: luci.analysis.internal.tasks.IngestTestVerdicts.invocation:type_name -> luci.analysis.internal.ingestion.control.InvocationResult
-	11, // 2: luci.analysis.internal.tasks.IngestTestVerdicts.root_invocation:type_name -> luci.analysis.internal.ingestion.control.RootInvocationResult
-	12, // 3: luci.analysis.internal.tasks.IngestTestVerdicts.build:type_name -> luci.analysis.internal.ingestion.control.BuildResult
-	13, // 4: luci.analysis.internal.tasks.IngestTestVerdicts.presubmit_run:type_name -> luci.analysis.internal.ingestion.control.PresubmitResult
-	14, // 5: luci.analysis.internal.tasks.IngestTestResults.notification:type_name -> luci.resultdb.v1.InvocationReadyForExportNotification
-	15, // 6: luci.analysis.internal.tasks.IngestArtifacts.notification:type_name -> luci.resultdb.v1.InvocationFinalizedNotification
-	9,  // 7: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
-	9,  // 8: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
-	9,  // 9: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
-	4,  // 10: luci.analysis.internal.tasks.ReclusterChunks.state:type_name -> luci.analysis.internal.tasks.ReclusterChunkState
-	9,  // 11: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
-	9,  // 12: luci.analysis.internal.tasks.UpdateBugs.reclustering_attempt_minute:type_name -> google.protobuf.Timestamp
-	9,  // 13: luci.analysis.internal.tasks.UpdateBugs.deadline:type_name -> google.protobuf.Timestamp
-	9,  // 14: luci.analysis.internal.tasks.Backfill.day:type_name -> google.protobuf.Timestamp
-	9,  // 15: luci.analysis.internal.tasks.GroupChangepoints.week:type_name -> google.protobuf.Timestamp
-	9,  // 16: luci.analysis.internal.tasks.GroupChangepoints.schedule_time:type_name -> google.protobuf.Timestamp
+	10, // 0: luci.analysis.internal.tasks.IngestTestVerdicts.partition_time:type_name -> google.protobuf.Timestamp
+	11, // 1: luci.analysis.internal.tasks.IngestTestVerdicts.invocation:type_name -> luci.analysis.internal.ingestion.control.InvocationResult
+	12, // 2: luci.analysis.internal.tasks.IngestTestVerdicts.root_invocation:type_name -> luci.analysis.internal.ingestion.control.RootInvocationResult
+	13, // 3: luci.analysis.internal.tasks.IngestTestVerdicts.build:type_name -> luci.analysis.internal.ingestion.control.BuildResult
+	14, // 4: luci.analysis.internal.tasks.IngestTestVerdicts.presubmit_run:type_name -> luci.analysis.internal.ingestion.control.PresubmitResult
+	15, // 5: luci.analysis.internal.tasks.IngestTestResults.notification:type_name -> luci.resultdb.v1.InvocationReadyForExportNotification
+	16, // 6: luci.analysis.internal.tasks.IngestArtifacts.notification:type_name -> luci.resultdb.v1.InvocationFinalizedNotification
+	10, // 7: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
+	10, // 8: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
+	10, // 9: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
+	5,  // 10: luci.analysis.internal.tasks.ReclusterChunks.state:type_name -> luci.analysis.internal.tasks.ReclusterChunkState
+	10, // 11: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
+	10, // 12: luci.analysis.internal.tasks.UpdateBugs.reclustering_attempt_minute:type_name -> google.protobuf.Timestamp
+	10, // 13: luci.analysis.internal.tasks.UpdateBugs.deadline:type_name -> google.protobuf.Timestamp
+	10, // 14: luci.analysis.internal.tasks.Backfill.day:type_name -> google.protobuf.Timestamp
+	10, // 15: luci.analysis.internal.tasks.GroupChangepoints.week:type_name -> google.protobuf.Timestamp
+	10, // 16: luci.analysis.internal.tasks.GroupChangepoints.schedule_time:type_name -> google.protobuf.Timestamp
 	17, // [17:17] is the sub-list for method output_type
 	17, // [17:17] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
@@ -895,7 +993,7 @@ func file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init(
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDesc), len(file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/reclustering"
 	"go.chromium.org/luci/analysis/internal/services/resultingester"
 	"go.chromium.org/luci/analysis/internal/services/verdictingester"
+	"go.chromium.org/luci/analysis/internal/services/workunitingester"
 	"go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testrealms"
 	"go.chromium.org/luci/analysis/internal/testresults"
@@ -227,6 +228,10 @@ func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 
 	if err := artifactingester.RegisterTaskHandler(srv); err != nil {
 		return errors.Fmt("register artifact ingester: %w", err)
+	}
+
+	if err := workunitingester.RegisterTaskHandler(srv); err != nil {
+		return errors.Fmt("register work unit ingester: %w", err)
 	}
 	return nil
 }

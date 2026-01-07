@@ -128,3 +128,8 @@ func (mc *MockedClient) BatchGetTestVariants(req *rdbpb.BatchGetTestVariantsRequ
 	mc.Client.EXPECT().BatchGetTestVariants(gomock.Any(), proto.MatcherEqual(req),
 		gomock.Any()).Return(res, nil)
 }
+// QueryWorkUnits mocks the QueryWorkUnits RPC.
+func (mc *MockedClient) QueryWorkUnits(req *rdbpb.QueryWorkUnitsRequest, res *rdbpb.QueryWorkUnitsResponse) {
+	mc.Client.EXPECT().QueryWorkUnits(gomock.Any(), proto.MatcherEqual(req),
+		gomock.Any()).Return(res, nil)
+}

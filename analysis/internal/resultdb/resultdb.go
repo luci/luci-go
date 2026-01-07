@@ -148,3 +148,7 @@ func (c *Client) GetRootInvocation(ctx context.Context, name string) (*rdbpb.Roo
 		Name: name,
 	})
 }
+// QueryWorkUnits queries work units.
+func (c *Client) QueryWorkUnits(ctx context.Context, req *rdbpb.QueryWorkUnitsRequest) (*rdbpb.QueryWorkUnitsResponse, error) {
+	return c.client.QueryWorkUnits(ctx, req)
+}
