@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testexonerationsv2"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
+	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -47,6 +48,14 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	baseExonerationBuilder := func() *testexonerationsv2.Builder {
 		return testexonerationsv2.NewBuilder().WithRootInvocationShardID(shard).
 			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).WithCoarseName("c1").WithFineName("f1").WithCaseName("t1")
+	}
+	workUnitBuilder := func(workUnitID string) *workunits.Builder {
+		id := &pb.ModuleIdentifier{
+			ModuleName:    "m1",
+			ModuleScheme:  "junit",
+			ModuleVariant: pbutil.Variant("key", "value"),
+		}
+		return workunits.NewBuilder(rootInvID, workUnitID).WithModuleID(id)
 	}
 
 	// Typically, each result is not in its own realm as it inherits its realm from the
@@ -83,6 +92,19 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 		baseExonerationBuilder().WithFineName("f2").WithCaseName("t5").WithExonerationID("e2").WithReason(pb.ExonerationReason_NOT_CRITICAL).Build(),
 	}
 
+	// Define work units with realms corresponding to the test results. QueryTestVerdicts RPC
+	// relies upon this to identify all realms used in the root invocation.
+	wus := []*workunits.WorkUnitRow{
+		workUnitBuilder("t1-r1-wu").WithRealm("testproject:t1-r1").Build(),
+		workUnitBuilder("t2-r1-wu").WithRealm("testproject:t2-r1").Build(),
+		workUnitBuilder("t3-r1-wu").WithRealm("testproject:t3-r1").Build(),
+		workUnitBuilder("t3-r2-wu").WithRealm("testproject:t3-r2").Build(),
+		workUnitBuilder("t4-r1-wu").WithRealm("testproject:t4-r1").Build(),
+		workUnitBuilder("t5-r1-wu").WithRealm("testproject:t5-r1").Build(),
+		workUnitBuilder("t6-r1-wu").WithRealm("testproject:t6-r1").Build(),
+		workUnitBuilder("t7-r1-wu").WithRealm("testproject:t7-r1").Build(),
+	}
+
 	// Prepare mutations.
 	var ms []*spanner.Mutation
 	for _, r := range results {
@@ -90,6 +112,9 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	}
 	for _, e := range exonerations {
 		ms = append(ms, testexonerationsv2.InsertForTesting(e))
+	}
+	for _, wu := range wus {
+		ms = append(ms, workunits.InsertForTesting(wu)...)
 	}
 	return ms
 }
