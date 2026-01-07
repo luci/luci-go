@@ -60,6 +60,9 @@ type Query struct {
 	TestPrefixFilter *pb.TestIdentifierPrefix
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
+	// An AIP-160 filter on the test verdicts returned. Optional.
+	// See filter.go for details.
+	Filter string
 	// Shared decoding buffer to avoid a new memory allocation for each decompression.
 	decoder testresultsv2.Decoder
 }
@@ -341,7 +344,7 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 			return spanner.Statement{}, errors.Fmt("contains_test_result_filter: %w", err)
 		}
 		for _, p := range additionalParams {
-			// All parameters should be prefixed by "ctrf" so should not conflict with existing parameters.
+			// All parameters should be prefixed by "ctrf_" so should not conflict with existing parameters.
 			params[p.Name] = p.Value
 		}
 		containsTestResultFilterClause = "(" + clause + ")"
@@ -354,6 +357,19 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 			return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
 		}
 		wherePrefixClause = "(" + clause + ")"
+	}
+
+	filterClause := "TRUE"
+	if q.Filter != "" {
+		clause, additionalParams, err := whereClause(q.Filter, "", "f_")
+		if err != nil {
+			return spanner.Statement{}, errors.Fmt("filter: %w", err)
+		}
+		for _, p := range additionalParams {
+			// All parameters should be prefixed by "f_" so should not conflict with existing parameters.
+			params[p.Name] = p.Value
+		}
+		filterClause = "(" + clause + ")"
 	}
 
 	tmplInput := map[string]any{
@@ -374,6 +390,7 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 		"VerdictNotOverridden":           int64(pb.TestVerdict_NOT_OVERRIDDEN),
 		"ContainsTestResultFilterClause": containsTestResultFilterClause,
 		"WherePrefixClause":              wherePrefixClause,
+		"FilterClause":                   filterClause,
 		"FullAccess":                     q.Access.Level == permissions.FullAccess,
 	}
 
@@ -687,7 +704,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		END) AS UIPriority
 	FROM (
 		{{template "VerdictsByShard" .}}
-	) AS Verdicts
+	) Verdicts
 {{end}}
 SELECT
 	ModuleName,
@@ -710,7 +727,7 @@ SELECT
 FROM (
 	{{template "Verdicts" .}}
 )
-WHERE {{.PaginationClause}}
+WHERE {{.PaginationClause}} AND {{.FilterClause}}
 ORDER BY {{if .OrderingByUIPriority}}
 	UIPriority DESC, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
 {{else}}

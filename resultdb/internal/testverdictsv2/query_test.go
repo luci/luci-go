@@ -260,5 +260,22 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, fetchAll(q), should.Match(expectedLimited))
 			})
 		})
+
+		t.Run("With verdict filter", func(t *ftt.Test) {
+			t.Run("status", func(t *ftt.Test) {
+				q.Filter = "status = FAILED"
+				expected := ExpectedVerdicts(rootInvID)
+				// t2 is FAILED and t5 is FAILED (but exonerated).
+				expected = []*pb.TestVerdict{expected[1], expected[4]}
+				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
+			t.Run("status_override", func(t *ftt.Test) {
+				q.Filter = "status_override = EXONERATED"
+				expected := ExpectedVerdicts(rootInvID)
+				// Only t5 is EXONERATED.
+				expected = expected[4:5]
+				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
+		})
 	})
 }
