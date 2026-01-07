@@ -15,6 +15,7 @@
 import { Box, Typography } from '@mui/material';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { ArtifactContentView } from '@/test_investigation/components/common/artifacts/content/artifact_content_view';
 import { useArtifacts } from '@/test_investigation/components/common/artifacts/context/context';
 import { ArtifactsTreeLayout } from '@/test_investigation/components/common/artifacts/tree/artifact_tree_layout';
@@ -36,7 +37,18 @@ export function InvocationArtifactsExplorer() {
 
 function ExplorerContent() {
   const { selectedNode, nodes } = useArtifacts();
-  const viewMode = 'artifacts';
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const viewMode =
+    (searchParams.get('view') as 'artifacts' | 'work-units') || 'artifacts';
+  const setViewMode = (mode: 'artifacts' | 'work-units') => {
+    setSearchParams(
+      (params) => {
+        params.set('view', mode);
+        return params;
+      },
+      { replace: true },
+    );
+  };
 
   if (nodes.length === 0) {
     return (
@@ -71,7 +83,7 @@ function ExplorerContent() {
       >
         <ArtifactsTreeLayout
           viewMode={viewMode}
-          onViewModeChange={() => {}}
+          onViewModeChange={setViewMode}
           hideViewModeToggle
         >
           <ArtifactTreeView />

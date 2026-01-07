@@ -16,6 +16,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { useArtifactFilters } from '@/test_investigation/components/common/artifacts/tree/context/context';
 import { useInvocation } from '@/test_investigation/context';
@@ -25,6 +26,10 @@ import { InvocationArtifactsLoader } from './invocation_artifacts_loader';
 jest.mock('@tanstack/react-query', () => ({
   useInfiniteQuery: jest.fn(),
   InfiniteData: jest.requireActual('@tanstack/react-query').InfiniteData,
+}));
+
+jest.mock('@/generic_libs/hooks/synced_search_params', () => ({
+  useSyncedSearchParams: jest.fn(),
 }));
 
 jest.mock('@/common/hooks/prpc_clients');
@@ -53,9 +58,15 @@ const mockUseResultDbClient = useResultDbClient as jest.Mock;
 const mockUseInvocation = useInvocation as jest.Mock;
 const mockUseArtifactFilters = useArtifactFilters as jest.Mock;
 const mockUseInfiniteQuery = useInfiniteQuery as jest.Mock;
+const mockUseSyncedSearchParams = useSyncedSearchParams as jest.Mock;
 
 describe('InvocationArtifactsLoader', () => {
   beforeEach(() => {
+    mockUseSyncedSearchParams.mockReturnValue([
+      new URLSearchParams(),
+      jest.fn(),
+    ]);
+
     mockUseResultDbClient.mockReturnValue({
       ListArtifacts: {
         queryPaged: jest.fn(() => ({})),

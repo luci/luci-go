@@ -80,7 +80,7 @@ export function TestTab() {
   const invocationId = useRawInvocationId();
   const isLegacyInvocation = useIsLegacyInvocation();
   const navigate = useNavigate();
-  const [searchParams] = useSyncedSearchParams();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
   const hasPerformedInitialRedirect = useRef(false);
   const resultDbClient = useResultDbClient();
 
@@ -105,12 +105,48 @@ export function TestTab() {
   const [selectedStatuses, setSelectedStatuses] = useState<
     Set<SemanticStatusType>
   >(() => {
-    // Initialize with default filters only no other filters are set.
+    const statusParam = searchParams.get('status');
+    if (statusParam !== null) {
+      if (statusParam === '') {
+        return new Set();
+      }
+      return new Set(
+        statusParam.split(',').filter((s) => s) as SemanticStatusType[],
+      );
+    }
+
+    // Initialize with default filters only if no other filters are set.
     if (parsedTestId || parsedVariantDef) {
       return new Set();
     }
     return new Set(['failed', 'execution_errored']);
   });
+
+  const handleSelectedStatusesChange = (
+    newStatuses: Set<SemanticStatusType>,
+  ) => {
+    setSelectedStatuses(newStatuses);
+    setSearchParams(
+      (params) => {
+        const hasFilter = params.has('testId') || params.getAll('v').length > 0;
+        // If filters are present, default is "Show All" (size 0).
+        // If filters are absent, default is "Failed + Error".
+        const isDefault = hasFilter
+          ? newStatuses.size === 0
+          : newStatuses.size === 2 &&
+            newStatuses.has('failed') &&
+            newStatuses.has('execution_errored');
+
+        if (isDefault) {
+          params.delete('status');
+        } else {
+          params.set('status', Array.from(newStatuses).join(','));
+        }
+        return params;
+      },
+      { replace: true },
+    );
+  };
 
   const queryRequest = useMemo(() => {
     const filterParts: string[] = [];
@@ -303,7 +339,7 @@ export function TestTab() {
           parsedTestId={parsedTestId}
           parsedVariantDef={parsedVariantDef}
           selectedStatuses={selectedStatuses}
-          setSelectedStatuses={setSelectedStatuses}
+          setSelectedStatuses={handleSelectedStatusesChange}
           isLegacyInvocation={isLegacyInvocation}
         />
       </Box>

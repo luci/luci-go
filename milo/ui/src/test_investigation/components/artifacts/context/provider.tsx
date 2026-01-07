@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   FailureReason_Kind,
   failureReason_KindToJSON,
@@ -128,10 +129,64 @@ export function ArtifactsProvider({
   results,
   children,
 }: ArtifactsProviderProps) {
-  const [selectedClusterIndex, setSelectedClusterIndex] = useState<number>(0);
-  const [selectedAttemptIndex, setSelectedAttemptIndex] = useState<number>(0);
-  const [selectedArtifact, setSelectedArtifact] =
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+
+  const selectedClusterIndex = parseInt(searchParams.get('cluster') || '0', 10);
+  const selectedAttemptIndex = parseInt(searchParams.get('attempt') || '0', 10);
+
+  const setSelectedClusterIndex = useCallback(
+    (index: number) => {
+      setSearchParams(
+        (params) => {
+          if (index === 0) {
+            params.delete('cluster');
+          } else {
+            params.set('cluster', index.toString());
+          }
+          params.set('attempt', '0');
+          params.delete('artifact');
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const setSelectedAttemptIndex = useCallback(
+    (index: number) => {
+      setSearchParams(
+        (params) => {
+          params.set('attempt', index.toString());
+          params.delete('artifact');
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const [selectedArtifact, setSelectedArtifactInternal] =
     useState<ArtifactTreeNodeData | null>(null);
+
+  const setSelectedArtifact = useCallback(
+    (node: ArtifactTreeNodeData | null) => {
+      setSelectedArtifactInternal(node);
+      setSearchParams(
+        (params) => {
+          if (node) {
+            params.set('artifact', node.id);
+          } else {
+            params.delete('artifact');
+          }
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const clusteredFailures = useMemo(
     () => clusterAndSortResults(results),
@@ -139,13 +194,17 @@ export function ArtifactsProvider({
   );
 
   useEffect(() => {
-    setSelectedClusterIndex(0);
-    setSelectedAttemptIndex(0);
-    setSelectedArtifact(null);
-  }, [clusteredFailures]);
+    // If indices are out of bounds, reset them (and URL).
+    if (
+      selectedClusterIndex >= clusteredFailures.length &&
+      clusteredFailures.length > 0
+    ) {
+      setSelectedClusterIndex(0);
+    }
+  }, [clusteredFailures, selectedClusterIndex, setSelectedClusterIndex]);
 
   const currentCluster = useMemo(
-    () => clusteredFailures[selectedClusterIndex],
+    () => clusteredFailures[selectedClusterIndex] || clusteredFailures[0],
     [clusteredFailures, selectedClusterIndex],
   );
 
@@ -154,8 +213,17 @@ export function ArtifactsProvider({
     [currentCluster],
   );
 
+  useEffect(() => {
+    if (
+      selectedAttemptIndex >= currentAttempts.length &&
+      currentAttempts.length > 0
+    ) {
+      setSelectedAttemptIndex(0);
+    }
+  }, [currentAttempts, selectedAttemptIndex, setSelectedAttemptIndex]);
+
   const currentAttemptBundle = useMemo(
-    () => currentAttempts[selectedAttemptIndex],
+    () => currentAttempts[selectedAttemptIndex] || currentAttempts[0],
     [currentAttempts, selectedAttemptIndex],
   );
 
@@ -166,8 +234,6 @@ export function ArtifactsProvider({
 
   const handleSetSelectedClusterIndex = (index: number) => {
     setSelectedClusterIndex(index);
-    setSelectedAttemptIndex(0);
-    setSelectedArtifact(null);
   };
 
   const hasRenderableResults = results && results.length > 0;

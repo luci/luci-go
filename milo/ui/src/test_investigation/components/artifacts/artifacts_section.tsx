@@ -13,10 +13,11 @@
 // limitations under the License.
 
 import { Box, Typography } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 import { parseWorkUnitTestResultName } from '@/common/tools/test_result_utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { useTestVariant } from '@/test_investigation/context';
 
 import { ArtifactContentView } from '../common/artifacts/content/artifact_content_view';
@@ -35,6 +36,8 @@ interface ArtifactsExplorerProps {
   workUnitId?: string;
 }
 
+export type ArtifactsViewMode = 'artifacts' | 'work-units';
+
 function ArtifactsExplorer({
   rootInvocationId,
   workUnitId,
@@ -46,9 +49,19 @@ function ArtifactsExplorer({
     hasRenderableResults,
     clusteredFailures,
   } = useArtifactsContext();
-  const [viewMode, setViewMode] = useState<'artifacts' | 'work-units'>(
-    'artifacts',
-  );
+
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const viewMode =
+    (searchParams.get('view') as ArtifactsViewMode) || 'artifacts';
+  const setViewMode = (mode: ArtifactsViewMode) => {
+    setSearchParams(
+      (params) => {
+        params.set('view', mode);
+        return params;
+      },
+      { replace: true },
+    );
+  };
 
   if (!currentResult) {
     return null;

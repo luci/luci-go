@@ -19,6 +19,7 @@ import { ReactNode, useEffect, useMemo } from 'react';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { parseTestResultName } from '@/common/tools/test_result_utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import {
   ListArtifactsRequest,
@@ -35,6 +36,7 @@ import {
   buildArtifactsTree,
   filterArtifacts,
   findFirstLeafRecursive,
+  findNode,
   pruneEmptyFolders,
 } from '../common/artifacts/tree/util/tree_util';
 
@@ -54,6 +56,9 @@ export function ArtifactsLoader({ children }: ArtifactsLoaderProps) {
   const { currentResult } = useArtifactsContext();
   const isLegacyInvocation = useIsLegacyInvocation();
   const invocation = useInvocation();
+
+  const [searchParams] = useSyncedSearchParams();
+  const selectedArtifactId = searchParams.get('artifact');
 
   const {
     debouncedSearchTerm,
@@ -128,7 +133,6 @@ export function ArtifactsLoader({ children }: ArtifactsLoaderProps) {
   const resultArtifacts = testResultArtifactsData || EMPTY_ARRAY;
   const invArtifacts = invocationScopeArtifactsData || EMPTY_ARRAY;
 
-  // Sync available artifact types to context
   useEffect(() => {
     const allArtifacts = [...resultArtifacts, ...invArtifacts];
     const types = new Set<string>();
@@ -174,6 +178,14 @@ export function ArtifactsLoader({ children }: ArtifactsLoaderProps) {
     if (debouncedSearchTerm) return;
     if (selectedArtifact) return;
 
+    if (selectedArtifactId) {
+      const node = findNode(finalArtifactsTree, selectedArtifactId);
+      if (node) {
+        setSelectedArtifact(node);
+      }
+      return;
+    }
+
     const summaryNode = finalArtifactsTree.find((node) => node.isSummary);
     if (summaryNode) {
       setSelectedArtifact(summaryNode);
@@ -188,6 +200,7 @@ export function ArtifactsLoader({ children }: ArtifactsLoaderProps) {
     selectedArtifact,
     setSelectedArtifact,
     debouncedSearchTerm,
+    selectedArtifactId,
   ]);
 
   const isOverallArtifactListsLoading =

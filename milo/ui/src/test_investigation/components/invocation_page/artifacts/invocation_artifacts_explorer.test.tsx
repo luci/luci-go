@@ -14,9 +14,14 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+
 import { InvocationArtifactsExplorer } from './invocation_artifacts_explorer';
 
 // Mock dependencies
+jest.mock('@/generic_libs/hooks/synced_search_params', () => ({
+  useSyncedSearchParams: jest.fn(),
+}));
 jest.mock('./invocation_artifacts_loader', () => ({
   InvocationArtifactsLoader: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -83,8 +88,15 @@ jest.mock(
   }),
 );
 
+const mockUseSyncedSearchParams = useSyncedSearchParams as jest.Mock;
+
 describe('InvocationArtifactsExplorer', () => {
   beforeEach(() => {
+    mockUseSyncedSearchParams.mockReturnValue([
+      new URLSearchParams(),
+      jest.fn(),
+    ]);
+
     mockUseArtifacts.mockReturnValue({
       selectedNode: null,
       invocation: { name: 'invocations/inv-1' },

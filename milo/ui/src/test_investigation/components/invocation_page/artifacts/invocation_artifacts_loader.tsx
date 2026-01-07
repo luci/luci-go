@@ -14,9 +14,10 @@
 
 import { CircularProgress, Box, Typography } from '@mui/material';
 import { useInfiniteQuery, InfiniteData } from '@tanstack/react-query';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo } from 'react';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import {
   ListArtifactsRequest,
@@ -165,14 +166,30 @@ function ArtifactsProviderStateManager({
   children: ReactNode;
   debouncedSearchTerm: string;
 }) {
-  const [selectedNode, setSelectedNode] = useState<ArtifactTreeNodeData | null>(
-    null,
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const selectedNodeId = searchParams.get('artifact') || undefined;
+
+  const setSelectedNode = useCallback(
+    (node: ArtifactTreeNodeData | null) => {
+      setSearchParams(
+        (params) => {
+          if (node) {
+            params.set('artifact', node.id);
+          } else {
+            params.delete('artifact');
+          }
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
   );
 
   // Auto-selection logic
   useEffect(() => {
     if (debouncedSearchTerm) return;
-    if (selectedNode) return;
+    if (selectedNodeId) return;
 
     const summaryNode = nodes.find((node) => node.isSummary);
     if (summaryNode) {
@@ -183,12 +200,12 @@ function ArtifactsProviderStateManager({
     if (firstLeaf) {
       setSelectedNode(firstLeaf);
     }
-  }, [nodes, selectedNode, debouncedSearchTerm]);
+  }, [nodes, selectedNodeId, debouncedSearchTerm, setSelectedNode]);
 
   return (
     <ArtifactsProvider
       nodes={nodes}
-      selectedNodeId={selectedNode?.id}
+      selectedNodeId={selectedNodeId}
       onSelect={setSelectedNode}
       invocation={invocation}
     >

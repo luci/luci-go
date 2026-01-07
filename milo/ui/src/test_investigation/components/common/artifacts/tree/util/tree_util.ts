@@ -163,3 +163,21 @@ export function findFirstLeafRecursive(
   }
   return null;
 }
+
+export function findNode(
+  nodes: readonly ArtifactTreeNodeData[],
+  id: string,
+): ArtifactTreeNodeData | null {
+  for (const node of nodes) {
+    if (node.id === id) {
+      return node;
+    }
+    if (node.children) {
+      const found = findNode(node.children, id);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return null;
+}

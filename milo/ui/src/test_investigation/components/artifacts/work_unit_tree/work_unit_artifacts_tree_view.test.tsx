@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQueries,
-  useQuery,
-} from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
@@ -25,6 +20,7 @@ import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { RootInvocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import { WorkUnit } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/work_unit.pb';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ArtifactsProvider } from '../../common/artifacts/context/provider';
 import { ArtifactFilterProvider } from '../../common/artifacts/tree/context/provider';
@@ -59,8 +55,6 @@ jest.mock('@tanstack/react-query', () => ({
 }));
 
 describe('<WorkUnitArtifactsTreeView />', () => {
-  let queryClient: QueryClient;
-
   const mockWorkUnits: WorkUnit[] = [
     WorkUnit.fromPartial({
       name: 'rootInvocations/inv/workUnits/wu0',
@@ -84,14 +78,6 @@ describe('<WorkUnitArtifactsTreeView />', () => {
   ];
 
   beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
-
     (useResultDbClient as jest.Mock).mockReturnValue({
       QueryWorkUnits: {
         query: jest.fn().mockReturnValue({}),
@@ -224,10 +210,10 @@ describe('<WorkUnitArtifactsTreeView />', () => {
     });
 
     render(
-      <VirtuosoMockContext.Provider
-        value={{ viewportHeight: 300, itemHeight: 30 }}
-      >
-        <QueryClientProvider client={queryClient}>
+      <FakeContextProvider>
+        <VirtuosoMockContext.Provider
+          value={{ viewportHeight: 300, itemHeight: 30 }}
+        >
           <ArtifactFilterProvider>
             <ArtifactsProvider
               nodes={[]}
@@ -242,8 +228,8 @@ describe('<WorkUnitArtifactsTreeView />', () => {
               />
             </ArtifactsProvider>
           </ArtifactFilterProvider>
-        </QueryClientProvider>
-      </VirtuosoMockContext.Provider>,
+        </VirtuosoMockContext.Provider>
+      </FakeContextProvider>,
     );
 
     await screen.findByText('wu0');

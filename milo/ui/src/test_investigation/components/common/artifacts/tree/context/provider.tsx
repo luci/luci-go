@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ArtifactFiltersContext } from './context';
 
@@ -23,30 +25,145 @@ interface ArtifactFilterProviderProps {
 export function ArtifactFilterProvider({
   children,
 }: ArtifactFilterProviderProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
 
-  const [artifactTypes, setArtifactTypes] = useState<string[]>([]);
-  const [crashTypes, setCrashTypes] = useState<string[]>([]);
-  const [showCriticalCrashes, setShowCriticalCrashes] = useState(false);
-  const [hideAutomationFiles, setHideAutomationFiles] = useState(false);
-  const [hideEmptyFolders, setHideEmptyFolders] = useState(false);
-  const [showOnlyFoldersWithError, setShowOnlyFoldersWithError] =
-    useState(false);
+  // Search Param mapping:
+  // q: searchTerm
+  // types: artifactTypes (comma separated)
+  // crash: crashTypes (comma separated)
+  // critical: showCriticalCrashes (bool)
+  // no_auto: hideAutomationFiles (bool)
+  // no_empty: hideEmptyFolders (bool)
+  // err_only: showOnlyFoldersWithError (bool)
+  const searchTerm = searchParams.get('q') || '';
+  const setSearchTerm = useCallback(
+    (term: string) => {
+      setSearchParams((params) => {
+        if (term) {
+          params.set('q', term);
+        } else {
+          params.delete('q');
+        }
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+  const artifactTypes = useMemo(
+    () => searchParams.get('types')?.split(',').filter(Boolean) || [],
+    [searchParams],
+  );
+  const setArtifactTypes = useCallback(
+    (types: string[]) => {
+      setSearchParams((params) => {
+        if (types.length > 0) {
+          params.set('types', types.join(','));
+        } else {
+          params.delete('types');
+        }
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const crashTypes = useMemo(
+    () => searchParams.get('crash')?.split(',').filter(Boolean) || [],
+    [searchParams],
+  );
+  const setCrashTypes = useCallback(
+    (types: string[]) => {
+      setSearchParams((params) => {
+        if (types.length > 0) {
+          params.set('crash', types.join(','));
+        } else {
+          params.delete('crash');
+        }
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const showCriticalCrashes = searchParams.get('critical') === 'true';
+  const setShowCriticalCrashes = useCallback(
+    (show: boolean) => {
+      setSearchParams((params) => {
+        if (show) {
+          params.set('critical', 'true');
+        } else {
+          params.delete('critical');
+        }
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const hideAutomationFiles = searchParams.get('no_auto') === 'true';
+  const setHideAutomationFiles = useCallback(
+    (hide: boolean) => {
+      setSearchParams((params) => {
+        if (hide) {
+          params.set('no_auto', 'true');
+        } else {
+          params.delete('no_auto');
+        }
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const hideEmptyFolders = searchParams.get('no_empty') === 'true';
+  const setHideEmptyFolders = useCallback(
+    (hide: boolean) => {
+      setSearchParams((params) => {
+        if (hide) {
+          params.set('no_empty', 'true');
+        } else {
+          params.delete('no_empty');
+        }
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
+
+  const showOnlyFoldersWithError = searchParams.get('err_only') === 'true';
+  const setShowOnlyFoldersWithError = useCallback(
+    (show: boolean) => {
+      setSearchParams((params) => {
+        if (show) {
+          params.set('err_only', 'true');
+        } else {
+          params.delete('err_only');
+        }
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
 
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [availableArtifactTypes, setAvailableArtifactTypes] = useState<
     readonly string[]
   >([]);
 
-  const handleClearFilters = () => {
-    setArtifactTypes([]);
-    setCrashTypes([]);
-    setShowCriticalCrashes(false);
-    setHideAutomationFiles(false);
-    setHideEmptyFolders(false);
-    setShowOnlyFoldersWithError(false);
-  };
+  const handleClearFilters = useCallback(() => {
+    setSearchParams((params) => {
+      params.delete('types');
+      params.delete('crash');
+      params.delete('critical');
+      params.delete('no_auto');
+      params.delete('no_empty');
+      params.delete('err_only');
+      return params;
+    });
+  }, [setSearchParams]);
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -83,13 +200,21 @@ export function ArtifactFilterProvider({
     }),
     [
       searchTerm,
+      setSearchTerm,
       debouncedSearchTerm,
       artifactTypes,
+      setArtifactTypes,
       crashTypes,
+      setCrashTypes,
       showCriticalCrashes,
+      setShowCriticalCrashes,
       hideAutomationFiles,
+      setHideAutomationFiles,
       hideEmptyFolders,
+      setHideEmptyFolders,
       showOnlyFoldersWithError,
+      setShowOnlyFoldersWithError,
+      handleClearFilters,
       availableArtifactTypes,
       isFilterPanelOpen,
     ],
