@@ -36,6 +36,7 @@ const (
 	v1NotifyFinalizedTopic               = "v1.invocation_finalized"
 	v1NotifyRootInvocationFinalizedTopic = "v1.root_invocation_finalized"
 	V1NotifyTestResultsTopic             = "v1.test_results"
+	V1NotifyTestAggregationsTopic        = "v1.test_aggregations"
 
 	// Pubsub message attributes
 	androidBranchFilter = "primary_build_android_branch"
@@ -159,6 +160,31 @@ var NotifyTestResultsPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	},
 })
 
+// NotifyTestAggregationsPublisher describes how to publish to cloud pub/sub
+// notifications for test aggregations.
+var NotifyTestAggregationsPublisher = tq.RegisterTaskClass(tq.TaskClass{
+	ID:        "notify-test-aggregations",
+	Topic:     V1NotifyTestAggregationsTopic,
+	Prototype: &taskspb.PublishTestAggregations{},
+	Kind:      tq.NonTransactional,
+	Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
+		// Custom serialisation handler needed to control how the message is
+		// sent, as the backend is Cloud Pub/Sub and not Cloud Tasks.
+		t := m.(*taskspb.PublishTestAggregations)
+		notification := t.GetMessage()
+		blob, err := proto.Marshal(notification)
+		if err != nil {
+			return nil, err
+		}
+		return &tq.CustomPayload{
+			// Attributes can be used by subscribers to filter the messages they
+			// receive.
+			Meta: t.GetAttributes(),
+			Body: blob,
+		}, nil
+	},
+})
+
 // attributes return the message attributes for subscribers to filter messages.
 func attributes(rootInvocation *pb.RootInvocation) map[string]string {
 	attrs := make(map[string]string)
@@ -213,5 +239,13 @@ func NotifyWorkUnits(ctx context.Context, message *pb.WorkUnitsNotification, att
 func NotifyTestResults(ctx context.Context, message *pb.TestResultsNotification, attrs map[string]string) {
 	tq.MustAddTask(ctx, &tq.Task{
 		Payload: &taskspb.PublishTestResults{Message: message, Attributes: attrs},
+	})
+}
+
+// NotifyTestAggregations transactionally enqueues a task to publish test
+// aggregations.
+func NotifyTestAggregations(ctx context.Context, message *pb.TestAggregationsNotification, attrs map[string]string) {
+	tq.MustAddTask(ctx, &tq.Task{
+		Payload: &taskspb.PublishTestAggregations{Message: message, Attributes: attrs},
 	})
 }

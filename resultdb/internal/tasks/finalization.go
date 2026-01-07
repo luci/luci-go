@@ -56,6 +56,15 @@ var FinalizeWorkUnitsTask = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/finalizer", // for routing to "finalizer" service
 })
 
+// WorkUnitPublisher defines the task to publish work units.
+var WorkUnitPublisher = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "publish-work-units",
+	Prototype:     &taskspb.PublishWorkUnitsTask{},
+	Queue:         "workunitpublisher",
+	Kind:          tq.Transactional,
+	RoutingPrefix: "/internal/tasks/pubsub", // for routing to "pubsub" service
+})
+
 // TestResultsPublisher describes how to route tasks to publish test results.
 //
 // The handler is implemented in internal/services/pubsub.
@@ -68,11 +77,11 @@ var TestResultsPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/pubsub", // for routing to "pubsub" service
 })
 
-// WorkUnitPublisher defines the task to publish work units.
-var WorkUnitPublisher = tq.RegisterTaskClass(tq.TaskClass{
-	ID:            "publish-work-units",
-	Prototype:     &taskspb.PublishWorkUnitsTask{},
-	Queue:         "workunitpublisher",
+// TestAggregationsPublisher describes how to publish test aggregations.
+var TestAggregationsPublisher = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "publish-test-aggregations",
+	Prototype:     &taskspb.PublishTestAggregationsTask{},
+	Queue:         "testaggregationspublisher",
 	Kind:          tq.Transactional,
 	RoutingPrefix: "/internal/tasks/pubsub", // for routing to "pubsub" service
 })

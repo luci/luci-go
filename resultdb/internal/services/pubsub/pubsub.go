@@ -34,6 +34,14 @@ type Options struct {
 
 // InitServer initializes a exportnotifier server.
 func InitServer(srv *server.Server, opts Options) {
+	tasks.WorkUnitPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		p := &workUnitPublisher{
+			resultDBHostname: opts.ResultDBHostname,
+			task:             msg.(*taskspb.PublishWorkUnitsTask),
+		}
+		return p.handleWorkUnitPublisher(ctx)
+	})
+
 	tasks.TestResultsPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		p := &testResultsPublisher{
 			resultDBHostname: opts.ResultDBHostname,
@@ -42,11 +50,12 @@ func InitServer(srv *server.Server, opts Options) {
 		}
 		return p.handleTestResultsPublisher(ctx)
 	})
-	tasks.WorkUnitPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
-		p := &workUnitPublisher{
+
+	tasks.TestAggregationsPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		p := &testAggregationsPublisher{
 			resultDBHostname: opts.ResultDBHostname,
-			task:             msg.(*taskspb.PublishWorkUnitsTask),
+			task:             msg.(*taskspb.PublishTestAggregationsTask),
 		}
-		return p.handleWorkUnitPublisher(ctx)
+		return p.handleTestAggregationsPublisher(ctx)
 	})
 }

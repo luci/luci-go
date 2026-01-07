@@ -92,6 +92,24 @@ message PublishWorkUnitsTask {
   repeated string work_unit_ids = 2;
 }
 
+// PublishTestAggregations defines a task to publish a batch of test
+// aggregations to the Cloud Pub/Sub.
+// Next id: 3
+message PublishTestAggregations {
+  // The message to publish to Cloud Pub/Sub.
+  luci.resultdb.v1.TestAggregationsNotification message = 1;
+
+  // The attributes to set on the Pub/Sub message.
+  map<string, string> attributes = 2;
+}
+
+// PublishTestAggregationsTask defines a task to query and publish test
+// aggregations for a root invocation.
+// Next id: 2
+message PublishTestAggregationsTask {
+  string root_invocation_id = 1;
+}
+
 message ExportInvocationTestResultsToBQ {
   string invocation_id = 1;
   luci.resultdb.v1.BigQueryExport bq_export = 2;
