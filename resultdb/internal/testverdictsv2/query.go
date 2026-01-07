@@ -56,6 +56,8 @@ type Query struct {
 	// If this is set, a verdict will only be returned if this filter expression matches
 	// at least one test result in the verdict.
 	ContainsTestResultFilter string
+	// The prefix of test identifiers to filter by. Optional.
+	TestPrefixFilter *pb.TestIdentifierPrefix
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
 	// Shared decoding buffer to avoid a new memory allocation for each decompression.
@@ -345,6 +347,15 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 		containsTestResultFilterClause = "(" + clause + ")"
 	}
 
+	wherePrefixClause := "TRUE"
+	if q.TestPrefixFilter != nil {
+		clause, err := prefixWhereClause(q.TestPrefixFilter, params)
+		if err != nil {
+			return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
+		}
+		wherePrefixClause = "(" + clause + ")"
+	}
+
 	tmplInput := map[string]any{
 		"PaginationClause":               paginationClause,
 		"OrderingByUIPriority":           q.Order == OrderingByUIPriority,
@@ -362,6 +373,7 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 		"VerdictExonerated":              int64(pb.TestVerdict_EXONERATED),
 		"VerdictNotOverridden":           int64(pb.TestVerdict_NOT_OVERRIDDEN),
 		"ContainsTestResultFilterClause": containsTestResultFilterClause,
+		"WherePrefixClause":              wherePrefixClause,
 		"FullAccess":                     q.Access.Level == permissions.FullAccess,
 	}
 
@@ -371,6 +383,56 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 	}
 	st.Params = params
 	return st, nil
+}
+
+// prefixWhereClause returns a WHERE clause that matches the given test ID prefix.
+// The WHERE clause will be used to filter the TestResultsV2 and TestExonerationsV2 tables.
+func prefixWhereClause(prefix *pb.TestIdentifierPrefix, params map[string]any) (predicate string, err error) {
+	// This should have been validated by the user of the Query type,
+	// but verify again for robustness.
+	if err := pbutil.ValidateTestIdentifierPrefixForQuery(prefix); err != nil {
+		return "", err
+	}
+	if prefix.Level == pb.AggregationLevel_INVOCATION {
+		// No prefix filter or prefix captures all test results in the invocation.
+		return "TRUE", nil
+	}
+
+	var predicateBuilder strings.Builder
+	predicateBuilder.WriteString("ModuleName = @prefixModuleName AND ModuleScheme = @prefixModuleScheme AND ModuleVariantHash = @prefixModuleVariantHash")
+	var moduleVariantHash string
+	if prefix.Id.ModuleVariant != nil {
+		// Module variant was specified as a variant proto.
+		moduleVariantHash = pbutil.VariantHash(prefix.Id.ModuleVariant)
+	} else if prefix.Id.ModuleVariantHash != "" {
+		// Module variant was specified as a hash.
+		moduleVariantHash = prefix.Id.ModuleVariantHash
+	} else {
+		return "", errors.Fmt("prefix filter must specify Variant or VariantHash for a level of MODULE and below")
+	}
+	params["prefixModuleName"] = prefix.Id.ModuleName
+	params["prefixModuleScheme"] = prefix.Id.ModuleScheme
+	params["prefixModuleVariantHash"] = moduleVariantHash
+
+	if prefix.Level == pb.AggregationLevel_MODULE {
+		return predicateBuilder.String(), nil
+	}
+
+	predicateBuilder.WriteString(" AND T1CoarseName = @prefixCoarseName")
+	params["prefixCoarseName"] = prefix.Id.CoarseName
+	if prefix.Level == pb.AggregationLevel_COARSE {
+		return predicateBuilder.String(), nil
+	}
+
+	predicateBuilder.WriteString(" AND T2FineName = @prefixFineName")
+	params["prefixFineName"] = prefix.Id.FineName
+	if prefix.Level == pb.AggregationLevel_FINE {
+		return predicateBuilder.String(), nil
+	}
+
+	predicateBuilder.WriteString(" AND T3CaseName = @prefixCaseName")
+	params["prefixCaseName"] = prefix.Id.CaseName
+	return predicateBuilder.String(), nil
 }
 
 func (q *Query) makePageToken(last *pb.TestVerdict, lastUIPriority int64) string {
@@ -499,6 +561,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 					(Realm IN UNNEST(@upgradeRealms)) AS HasAccess,
 				{{end}}
 			FROM TestResultsV2
+			WHERE RootInvocationShardId IN UNNEST(@shards) AND {{.WherePrefixClause}}
 {{end}}
 {{define "TestExonerations"}}
 			-- Test Exonerations.
@@ -513,7 +576,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				)) AS Exonerations,
 				TRUE AS HasExonerations
 				FROM TestExonerationsV2
-				WHERE RootInvocationShardId IN UNNEST(@shards)
+				WHERE RootInvocationShardId IN UNNEST(@shards) AND {{.WherePrefixClause}}
 			-- A given full test identifier will only appear in one shard, so we include RootInvocationShardId
 			-- in the group by key to improve performance (this allows use of streaming aggregates).
 			GROUP BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName

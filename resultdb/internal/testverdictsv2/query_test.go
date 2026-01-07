@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -124,13 +125,13 @@ func TestQuery(t *testing.T) {
 			}
 
 			expectedUIOrder := []*pb.TestVerdict{
-				m[flatTestID("t2")], // Failed
-				m[flatTestID("t6")], // Precluded
-				m[flatTestID("t7")], // Execution Errored
-				m[flatTestID("t3")], // Flaky
-				m[flatTestID("t5")], // Exonerated
-				m[flatTestID("t1")], // Passed
-				m[flatTestID("t4")], // Skipped
+				m[flatTestID("m1", "c1", "f1", "t2")], // Failed
+				m[flatTestID("m1", "c2", "f1", "t6")], // Precluded
+				m[flatTestID("m2", "c1", "f1", "t7")], // Execution Errored
+				m[flatTestID("m1", "c1", "f1", "t3")], // Flaky
+				m[flatTestID("m1", "c1", "f2", "t5")], // Exonerated
+				m[flatTestID("m1", "c1", "f1", "t1")], // Passed
+				m[flatTestID("m1", "c1", "f1", "t4")], // Skipped
 			}
 
 			t.Run("Without pagination", func(t *ftt.Test) {
@@ -202,6 +203,44 @@ func TestQuery(t *testing.T) {
 			t.Run("With implicit filter", func(t *ftt.Test) {
 				// Check an aip.dev/160 implicit filter.
 				q.ContainsTestResultFilter = `t2`
+				expected = expected[1:2]
+				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
+		})
+
+		t.Run("With prefix filter", func(t *ftt.Test) {
+			q.TestPrefixFilter = &pb.TestIdentifierPrefix{
+				Level: pb.AggregationLevel_MODULE,
+				Id: &pb.TestIdentifier{
+					ModuleName:        "m1",
+					ModuleScheme:      "junit",
+					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
+				},
+			}
+
+			expected := ExpectedVerdicts(rootInvID)
+			t.Run("module-level filter", func(t *ftt.Test) {
+				expected = expected[0:6]
+				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
+			t.Run("coarse name-level filter", func(t *ftt.Test) {
+				q.TestPrefixFilter.Level = pb.AggregationLevel_COARSE
+				q.TestPrefixFilter.Id.CoarseName = "c1"
+				expected = expected[0:5]
+				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
+			t.Run("fine name-level filter", func(t *ftt.Test) {
+				q.TestPrefixFilter.Level = pb.AggregationLevel_FINE
+				q.TestPrefixFilter.Id.CoarseName = "c1"
+				q.TestPrefixFilter.Id.FineName = "f1"
+				expected = expected[0:4]
+				assert.Loosely(t, fetchAll(q), should.Match(expected))
+			})
+			t.Run("case name-level filter", func(t *ftt.Test) {
+				q.TestPrefixFilter.Level = pb.AggregationLevel_CASE
+				q.TestPrefixFilter.Id.CoarseName = "c1"
+				q.TestPrefixFilter.Id.FineName = "f1"
+				q.TestPrefixFilter.Id.CaseName = "t2"
 				expected = expected[1:2]
 				assert.Loosely(t, fetchAll(q), should.Match(expected))
 			})

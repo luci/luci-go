@@ -53,34 +53,34 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	// work unit, but for testing purposes we put each in its own realm as it makes life easier.
 	results := []*testresultsv2.TestResultRow{
 		// Verdict 1: Passed
-		baseBuilder().WithResultID("r1").WithCaseName("t1").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t1-r1").Build(),
+		baseBuilder().WithCaseName("t1").WithResultID("r1").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t1-r1").Build(),
 
 		// Verdict 2: Failed
-		baseBuilder().WithResultID("r1").WithCaseName("t2").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t2-r1").
+		baseBuilder().WithCaseName("t2").WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t2-r1").
 			WithFailureReason(longFailureReason()).Build(),
 
 		// Verdict 3: Flaky (Pass + Fail)
-		baseBuilder().WithResultID("r1").WithCaseName("t3").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t3-r1").Build(),
-		baseBuilder().WithResultID("r2").WithCaseName("t3").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t3-r2").Build(),
+		baseBuilder().WithCaseName("t3").WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t3-r1").Build(),
+		baseBuilder().WithCaseName("t3").WithResultID("r2").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t3-r2").Build(),
 
 		// Verdict 4: Skipped
-		baseBuilder().WithResultID("r1").WithCaseName("t4").WithStatusV2(pb.TestResult_SKIPPED).WithRealm("testproject:t4-r1").
+		baseBuilder().WithCaseName("t4").WithResultID("r1").WithStatusV2(pb.TestResult_SKIPPED).WithRealm("testproject:t4-r1").
 			WithSkippedReason(longSkippedReason()).Build(),
 
 		// Verdict 5: Exonerated (Fail + Exoneration)
-		baseBuilder().WithResultID("r1").WithCaseName("t5").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t5-r1").Build(),
+		baseBuilder().WithCaseName("t5").WithFineName("f2").WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t5-r1").Build(),
 
 		// Verdict 6: Precluded
-		baseBuilder().WithResultID("r1").WithCaseName("t6").WithStatusV2(pb.TestResult_PRECLUDED).WithRealm("testproject:t6-r1").Build(),
+		baseBuilder().WithCaseName("t6").WithCoarseName("c2").WithResultID("r1").WithStatusV2(pb.TestResult_PRECLUDED).WithRealm("testproject:t6-r1").Build(),
 
 		// Verdict 7: Execution Errored
-		baseBuilder().WithResultID("r1").WithCaseName("t7").WithStatusV2(pb.TestResult_EXECUTION_ERRORED).WithRealm("testproject:t7-r1").Build(),
+		baseBuilder().WithCaseName("t7").WithModuleName("m2").WithResultID("r1").WithStatusV2(pb.TestResult_EXECUTION_ERRORED).WithRealm("testproject:t7-r1").Build(),
 	}
 
 	exonerations := []*testexonerationsv2.TestExonerationRow{
 		// Exonerate t5 (twice)
-		baseExonerationBuilder().WithCaseName("t5").WithExonerationID("e1").WithReason(pb.ExonerationReason_OCCURS_ON_OTHER_CLS).Build(),
-		baseExonerationBuilder().WithCaseName("t5").WithExonerationID("e2").WithReason(pb.ExonerationReason_NOT_CRITICAL).Build(),
+		baseExonerationBuilder().WithFineName("f2").WithCaseName("t5").WithExonerationID("e1").WithReason(pb.ExonerationReason_OCCURS_ON_OTHER_CLS).Build(),
+		baseExonerationBuilder().WithFineName("f2").WithCaseName("t5").WithExonerationID("e2").WithReason(pb.ExonerationReason_NOT_CRITICAL).Build(),
 	}
 
 	// Prepare mutations.
@@ -96,17 +96,24 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 
 // flatTestID returns the test ID of the given case name. It matches
 // CreateTestData logic.
-func flatTestID(caseName string) string {
-	return pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(&pb.TestIdentifier{
-		ModuleName:   "m1",
+func flatTestID(moduleName, coarseName, fineName, caseName string) string {
+	return pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(testID(moduleName, coarseName, fineName, caseName)))
+}
+
+// testID returns a test identifier used for testing.
+func testID(moduleName, coarseName, fineName, caseName string) *pb.TestIdentifier {
+	result := &pb.TestIdentifier{
+		ModuleName:   moduleName,
 		ModuleScheme: "junit",
 		ModuleVariant: &pb.Variant{
 			Def: map[string]string{"key": "value"},
 		},
-		CoarseName: "c1",
-		FineName:   "f1",
+		CoarseName: coarseName,
+		FineName:   fineName,
 		CaseName:   caseName,
-	}))
+	}
+	pbutil.PopulateStructuredTestIdentifierHashes(result)
+	return result
 }
 
 // longFailureReason creates a long failure reason, to allow testing truncation for users
@@ -140,29 +147,13 @@ func longSkippedReason() *pb.SkippedReason {
 // ExpectedVerdicts returns the expected test verdicts corresponding
 // to the test data created by CreateTestData().
 func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
-	// Base values matching test_data.go defaults
-	moduleName := "m1"
-	moduleScheme := "junit"
-	moduleVariant := pbutil.Variant("key", "value")
-	moduleVariantHash := pbutil.VariantHash(moduleVariant)
-	coarseName := "c1"
-	fineName := "f1"
-
-	makeVerdict := func(caseName string, status pb.TestVerdict_Status, results []*pb.TestResult, exonerations []*pb.TestExoneration) *pb.TestVerdict {
+	makeVerdict := func(testID *pb.TestIdentifier, status pb.TestVerdict_Status, results []*pb.TestResult, exonerations []*pb.TestExoneration) *pb.TestVerdict {
 		tv := &pb.TestVerdict{
-			TestId: flatTestID(caseName),
-			TestIdStructured: &pb.TestIdentifier{
-				ModuleName:        moduleName,
-				ModuleScheme:      moduleScheme,
-				ModuleVariant:     moduleVariant,
-				ModuleVariantHash: moduleVariantHash,
-				CoarseName:        coarseName,
-				FineName:          fineName,
-				CaseName:          caseName,
-			},
-			Status:       status,
-			Results:      results,
-			Exonerations: exonerations,
+			TestId:           pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier((testID))),
+			TestIdStructured: testID,
+			Status:           status,
+			Results:          results,
+			Exonerations:     exonerations,
 			TestMetadata: &pb.TestMetadata{
 				Name:     "tmd",
 				Location: &pb.TestLocation{Repo: "https://repo", FileName: "file"},
@@ -182,9 +173,9 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 
 	// Makes common test result parts.
 	// All results have common properties.
-	makeResult := func(caseName, resultID string, status pb.TestResult_Status) *pb.TestResult {
+	makeResult := func(testID *pb.TestIdentifier, resultID string, status pb.TestResult_Status) *pb.TestResult {
 		r := &pb.TestResult{
-			Name:                pbutil.TestResultName(string(rootInvID), "work-unit-id", flatTestID(caseName), resultID),
+			Name:                pbutil.TestResultName(string(rootInvID), "work-unit-id", pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(testID)), resultID),
 			ResultId:            resultID,
 			StatusV2:            status,
 			StartTime:           startTime,
@@ -215,47 +206,54 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 	}
 
 	// Passed.
-	r1 := makeResult("t1", "r1", pb.TestResult_PASSED)
-	v1 := makeVerdict("t1", pb.TestVerdict_PASSED, []*pb.TestResult{r1}, nil)
+	testID1 := testID("m1", "c1", "f1", "t1")
+	r1 := makeResult(testID1, "r1", pb.TestResult_PASSED)
+	v1 := makeVerdict(testID1, pb.TestVerdict_PASSED, []*pb.TestResult{r1}, nil)
 
 	// Failed.
-	r2 := makeResult("t2", "r1", pb.TestResult_FAILED)
+	testID2 := testID("m1", "c1", "f1", "t2")
+	r2 := makeResult(testID2, "r1", pb.TestResult_FAILED)
 	r2.FailureReason = longFailureReason()
-	v2 := makeVerdict("t2", pb.TestVerdict_FAILED, []*pb.TestResult{r2}, nil)
+	v2 := makeVerdict(testID2, pb.TestVerdict_FAILED, []*pb.TestResult{r2}, nil)
 
 	// Flaky.
-	r3a := makeResult("t3", "r1", pb.TestResult_FAILED)
-	r3b := makeResult("t3", "r2", pb.TestResult_PASSED)
-	v3 := makeVerdict("t3", pb.TestVerdict_FLAKY, []*pb.TestResult{r3a, r3b}, nil)
+	testID3 := testID("m1", "c1", "f1", "t3")
+	r3a := makeResult(testID3, "r1", pb.TestResult_FAILED)
+	r3b := makeResult(testID3, "r2", pb.TestResult_PASSED)
+	v3 := makeVerdict(testID3, pb.TestVerdict_FLAKY, []*pb.TestResult{r3a, r3b}, nil)
 
 	// Skipped.
-	r4 := makeResult("t4", "r1", pb.TestResult_SKIPPED)
+	testID4 := testID("m1", "c1", "f1", "t4")
+	r4 := makeResult(testID4, "r1", pb.TestResult_SKIPPED)
 	r4.SkippedReason = longSkippedReason()
-	v4 := makeVerdict("t4", pb.TestVerdict_SKIPPED, []*pb.TestResult{r4}, nil)
+	v4 := makeVerdict(testID4, pb.TestVerdict_SKIPPED, []*pb.TestResult{r4}, nil)
 
 	// Exonerated (Failed + Exoneration).
-	r5 := makeResult("t5", "r1", pb.TestResult_FAILED)
+	testID5 := testID("m1", "c1", "f2", "t5")
+	r5 := makeResult(testID5, "r1", pb.TestResult_FAILED)
 	e1 := &pb.TestExoneration{
-		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", flatTestID("t5"), "e1"),
+		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(testID5)), "e1"),
 		ExonerationId:   "e1",
 		ExplanationHtml: "<b>explanation</b>",
 		Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 	}
 	e2 := &pb.TestExoneration{
-		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", flatTestID("t5"), "e2"),
+		Name:            pbutil.TestExonerationName(string(rootInvID), "testworkunit-id", pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(testID5)), "e2"),
 		ExonerationId:   "e2",
 		ExplanationHtml: "<b>explanation</b>",
 		Reason:          pb.ExonerationReason_NOT_CRITICAL,
 	}
-	v5 := makeVerdict("t5", pb.TestVerdict_FAILED, []*pb.TestResult{r5}, []*pb.TestExoneration{e1, e2})
+	v5 := makeVerdict(testID5, pb.TestVerdict_FAILED, []*pb.TestResult{r5}, []*pb.TestExoneration{e1, e2})
 
 	// Precluded.
-	r6 := makeResult("t6", "r1", pb.TestResult_PRECLUDED)
-	v6 := makeVerdict("t6", pb.TestVerdict_PRECLUDED, []*pb.TestResult{r6}, nil)
+	testID6 := testID("m1", "c2", "f1", "t6")
+	r6 := makeResult(testID6, "r1", pb.TestResult_PRECLUDED)
+	v6 := makeVerdict(testID6, pb.TestVerdict_PRECLUDED, []*pb.TestResult{r6}, nil)
 
 	// Execution Errored.
-	r7 := makeResult("t7", "r1", pb.TestResult_EXECUTION_ERRORED)
-	v7 := makeVerdict("t7", pb.TestVerdict_EXECUTION_ERRORED, []*pb.TestResult{r7}, nil)
+	testID7 := testID("m2", "c1", "f1", "t7")
+	r7 := makeResult(testID7, "r1", pb.TestResult_EXECUTION_ERRORED)
+	v7 := makeVerdict(testID7, pb.TestVerdict_EXECUTION_ERRORED, []*pb.TestResult{r7}, nil)
 
 	return []*pb.TestVerdict{v1, v2, v3, v4, v5, v6, v7}
 }
