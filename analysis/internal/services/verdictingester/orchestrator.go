@@ -338,15 +338,13 @@ func (o *orchestrator) run(ctx context.Context, payload *taskspb.IngestTestVerdi
 		ResultLimit: 100,
 		PageSize:    10000,
 		ReadMask:    testVariantReadMask,
+		OrderBy:     `status_v2_effective`,
 		PageToken:   payload.PageToken,
 	}
 	if inv != nil {
 		req.Invocations = []string{inv.Name}
 	} else {
 		req.Parent = rootInv.Name
-	}
-	if payload.UseNewIngestionOrder {
-		req.OrderBy = `status_v2_effective`
 	}
 
 	rsp, err := rc.QueryTestVariants(ctx, req)

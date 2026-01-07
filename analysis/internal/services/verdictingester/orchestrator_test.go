@@ -62,7 +62,6 @@ func TestSchedule(t *testing.T) {
 			Project:              "test-project",
 			Build:                &ctrlpb.BuildResult{},
 			PartitionTime:        timestamppb.New(time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC)),
-			UseNewIngestionOrder: true,
 		}
 		expected := proto.Clone(task).(*taskspb.IngestTestVerdicts)
 
@@ -254,7 +253,6 @@ func TestIngestTestVerdicts(t *testing.T) {
 				},
 				PageToken:            "expected_token",
 				TaskIndex:            1,
-				UseNewIngestionOrder: true,
 			}
 
 			sourcesByID := map[string]*pb.Sources{

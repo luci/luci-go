@@ -52,7 +52,6 @@ var (
 )
 
 var (
-	StatusFieldPath            = aip132.NewFieldPath("status")
 	StatusV2EffectiveFieldPath = aip132.NewFieldPath("status_v2_effective")
 )
 
@@ -146,18 +145,6 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		return nil, appstatus.BadRequest(errors.Fmt("filter: %w", err))
 	}
 
-	orderByClause, err := aip132.ParseOrderBy(in.OrderBy)
-	if err != nil {
-		// This shouldn't happen, it should already be validated in
-		// validateQueryTestVariantsRequest.
-		return nil, err
-	}
-
-	verdictOrder := testvariants.SortOrderLegacyStatus
-	if len(orderByClause) == 1 && orderByClause[0].FieldPath.Equals(StatusV2EffectiveFieldPath) {
-		verdictOrder = testvariants.SortOrderStatusV2Effective
-	}
-
 	if in.Predicate != nil {
 		queryTestVariantsPredicateUsage.Add(ctx, 1, in.Predicate.Status.String())
 	}
@@ -186,7 +173,7 @@ func (s *resultDBServer) QueryTestVariants(ctx context.Context, in *pb.QueryTest
 		PageToken:            in.PageToken,
 		Mask:                 readMask,
 		AccessLevel:          accessLevel,
-		OrderBy:              verdictOrder,
+		OrderBy:              testvariants.SortOrderStatusV2Effective,
 	}
 
 	var result testvariants.Page
@@ -230,8 +217,7 @@ func validateQueryTestVariantsRequest(in *pb.QueryTestVariantsRequest) error {
 		return errors.Fmt("page_size: %w", err)
 	}
 
-	// We support a limited subset of AIP-132 order by syntax, so as to specify
-	// sorting by status or status_v2_effective only.
+	// We support sorting by status_v2_effective only.
 	orderBy, err := aip132.ParseOrderBy(in.OrderBy)
 	if err != nil {
 		return errors.Fmt("order_by: %w", err)
@@ -241,8 +227,8 @@ func validateQueryTestVariantsRequest(in *pb.QueryTestVariantsRequest) error {
 	}
 	if len(orderBy) == 1 {
 		orderByItem := orderBy[0]
-		if !orderByItem.FieldPath.Equals(StatusFieldPath) && !orderByItem.FieldPath.Equals(StatusV2EffectiveFieldPath) {
-			return errors.Fmt("order_by: order by field must be one of %q or %q", StatusFieldPath, StatusV2EffectiveFieldPath)
+		if !orderByItem.FieldPath.Equals(StatusV2EffectiveFieldPath) {
+			return errors.Fmt("order_by: if set, order by field must be %q", StatusV2EffectiveFieldPath)
 		}
 		if orderByItem.Descending {
 			return errors.New("order_by: descending order is not supported")

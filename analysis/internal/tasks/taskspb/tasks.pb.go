@@ -74,9 +74,9 @@ type IngestTestVerdicts struct {
 	// task, 2 for the second task, and so on. Used to avoid creating
 	// duplicate tasks.
 	TaskIndex int64 `protobuf:"varint,5,opt,name=task_index,json=taskIndex,proto3" json:"task_index,omitempty"`
-	// If set, enables the ingesting results in verdict status v2 (effective)
-	// order instead of verdict status v1 order. An ingestion for a build needs
-	// to apply this consistently to avoid breaking page tokens / missing data.
+	// This field is now ignored. The new ingestion order is always used.
+	//
+	// Deprecated: Marked as deprecated in go.chromium.org/luci/analysis/internal/tasks/taskspb/tasks.proto.
 	UseNewIngestionOrder bool `protobuf:"varint,9,opt,name=use_new_ingestion_order,json=useNewIngestionOrder,proto3" json:"use_new_ingestion_order,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -175,6 +175,7 @@ func (x *IngestTestVerdicts) GetTaskIndex() int64 {
 	return 0
 }
 
+// Deprecated: Marked as deprecated in go.chromium.org/luci/analysis/internal/tasks/taskspb/tasks.proto.
 func (x *IngestTestVerdicts) GetUseNewIngestionOrder() bool {
 	if x != nil {
 		return x.UseNewIngestionOrder
@@ -859,7 +860,7 @@ var File_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto protor
 
 const file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawDesc = "" +
 	"\n" +
-	"@go.chromium.org/luci/analysis/internal/tasks/taskspb/tasks.proto\x12\x1cluci.analysis.internal.tasks\x1a\x1fgoogle/protobuf/timestamp.proto\x1aLgo.chromium.org/luci/analysis/internal/ingestion/control/proto/control.proto\x1a9go.chromium.org/luci/resultdb/proto/v1/notification.proto\"\xfb\x04\n" +
+	"@go.chromium.org/luci/analysis/internal/tasks/taskspb/tasks.proto\x12\x1cluci.analysis.internal.tasks\x1a\x1fgoogle/protobuf/timestamp.proto\x1aLgo.chromium.org/luci/analysis/internal/ingestion/control/proto/control.proto\x1a9go.chromium.org/luci/resultdb/proto/v1/notification.proto\"\xff\x04\n" +
 	"\x12IngestTestVerdicts\x12\x18\n" +
 	"\aproject\x18\x06 \x01(\tR\aproject\x12A\n" +
 	"\x0epartition_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\rpartitionTime\x12!\n" +
@@ -874,8 +875,8 @@ const file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawD
 	"\n" +
 	"page_token\x18\x04 \x01(\tR\tpageToken\x12\x1d\n" +
 	"\n" +
-	"task_index\x18\x05 \x01(\x03R\ttaskIndex\x125\n" +
-	"\x17use_new_ingestion_order\x18\t \x01(\bR\x14useNewIngestionOrder\"\xad\x01\n" +
+	"task_index\x18\x05 \x01(\x03R\ttaskIndex\x129\n" +
+	"\x17use_new_ingestion_order\x18\t \x01(\bB\x02\x18\x01R\x14useNewIngestionOrder\"\xad\x01\n" +
 	"\x11IngestTestResults\x12Z\n" +
 	"\fnotification\x18\x01 \x01(\v26.luci.resultdb.v1.InvocationReadyForExportNotificationR\fnotification\x12\x1d\n" +
 	"\n" +

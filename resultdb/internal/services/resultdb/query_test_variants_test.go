@@ -208,7 +208,7 @@ func TestQueryTestVariants(t *testing.T) {
 				// Check token
 				tokenParts, err := pagination.ParseToken(res.NextPageToken)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tokenParts, should.Match([]string{"EXPECTED", "", ""}))
+				assert.Loosely(t, tokenParts, should.Match([]string{"PASSED_OR_SKIPPED", "", ""}))
 			})
 
 			t.Run(`limited access`, func(t *ftt.Test) {
@@ -264,7 +264,7 @@ func TestQueryTestVariants(t *testing.T) {
 				// verify token
 				tokenParts, err := pagination.ParseToken(res.NextPageToken)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tokenParts, should.Match([]string{"EXPECTED", "", ""}))
+				assert.Loosely(t, tokenParts, should.Match([]string{"PASSED_OR_SKIPPED", "", ""}))
 			})
 			t.Run(`valid with status v2 sort order`, func(t *ftt.Test) {
 				req.OrderBy = "status_v2_effective"
@@ -576,7 +576,7 @@ func TestQueryTestVariants(t *testing.T) {
 					Invocations: []string{"invocations/inv0"},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, page.NextPageToken, should.Equal(pagination.Token("EXPECTED", "", "")))
+				assert.Loosely(t, page.NextPageToken, should.Equal(pagination.Token("PASSED_OR_SKIPPED", "", "")))
 
 				assert.Loosely(t, len(page.TestVariants), should.Equal(3))
 				assert.Loosely(t, tvStrings(page.TestVariants), should.Match([]string{
@@ -620,7 +620,7 @@ func TestQueryTestVariants(t *testing.T) {
 					Invocations: []string{"invocations/inv1"},
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res.NextPageToken, should.Equal(pagination.Token("EXPECTED", "", "")))
+				assert.Loosely(t, res.NextPageToken, should.Equal(pagination.Token("PASSED_OR_SKIPPED", "", "")))
 
 				assert.Loosely(t, len(res.TestVariants), should.Equal(1))
 				assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
@@ -673,7 +673,7 @@ func TestQueryTestVariants(t *testing.T) {
 				res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 					Invocations: []string{"invocations/inv0"},
 					PageSize:    3,
-					PageToken:   pagination.Token("EXPECTED", "", ""),
+					PageToken:   pagination.Token("PASSED_OR_SKIPPED", "", ""),
 				})
 
 				assert.Loosely(t, err, should.BeNil)
@@ -751,10 +751,10 @@ func TestValidateQueryTestVariantsRequest(t *testing.T) {
 			t.Run(`invalid order by field`, func(t *ftt.Test) {
 				request.OrderBy = "test_id"
 				err := validateQueryTestVariantsRequest(request)
-				assert.Loosely(t, err, should.ErrLike(`order_by: order by field must be one of "status" or "status_v2_effective"`))
+				assert.Loosely(t, err, should.ErrLike(`order_by: if set, order by field must be "status_v2_effective"`))
 			})
 			t.Run(`descending order`, func(t *ftt.Test) {
-				request.OrderBy = "status desc"
+				request.OrderBy = "status_v2_effective desc"
 				err := validateQueryTestVariantsRequest(request)
 				assert.Loosely(t, err, should.ErrLike(`order_by: descending order is not supported`))
 			})

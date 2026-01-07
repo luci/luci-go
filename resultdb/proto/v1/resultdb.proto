@@ -752,17 +752,10 @@ message QueryTestVariantsRequest {
   //
   // See https://google.aip.dev/132 for syntax.
   //
-  // For performance reasons, only two sort orders are supported:
-  // - verdict status v1 ascending (order is UNEXPECTED, UNEXPECTEDLY_SKIPPED,
-  //   FLAKY, EXONERATED, EXPECTED).
-  //   This is the default. It can be explicitly requested by "status" or
-  //   "status asc".
-  // - effective verdict status v2 ascending (by verdict status v2 including any
-  // status overrides,
-  //   order is FAILED, EXECUTION_ERRORED, PRECLUDED, FLAKY, EXONERATED, SKIPPED
-  //   & PASSED). It can be requested by "status_v2_effective" or
-  //   "status_v2_effective asc" where status_v2_effective is a virtual field
-  //   representing the above sort order.
+  // The only supported sort order is "status_v2_effective", which is also the
+  // default. It sorts by verdict status v2 including any status overrides,
+  // ordering results by FAILED, EXECUTION_ERRORED, PRECLUDED, FLAKY, EXONERATED,
+  // (SKIPPED & PASSED).
   string order_by = 9;
 
   // An AIP-160 style filter to select test variants to return.
