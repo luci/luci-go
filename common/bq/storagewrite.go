@@ -114,12 +114,17 @@ func (s *Writer) AppendRowsWithDefaultStream(ctx context.Context, rows []proto.M
 }
 
 // AppendRowsWithPendingStream append rows to BigQuery table via the pending stream.
-// This provides all-or-nothing semantics for insertion.
-func (s *Writer) AppendRowsWithPendingStream(ctx context.Context, rows []proto.Message) error {
-	ms, err := s.client.NewManagedStream(ctx,
+// This provides all(exactly-once)-or-nothing semantics for insertion by default, this might change to all(at-least-once)-or-nothing if you enable retries in the extraOpts.
+func (s *Writer) AppendRowsWithPendingStream(ctx context.Context, rows []proto.Message, extraOpts ...managedwriter.WriterOption) error {
+	opts := []managedwriter.WriterOption{
 		managedwriter.WithType(managedwriter.PendingStream),
 		managedwriter.WithSchemaDescriptor(s.tableSchemaDescriptor),
-		managedwriter.WithDestinationTable(s.tableName))
+		managedwriter.WithDestinationTable(s.tableName),
+	}
+	for _, opt := range extraOpts {
+		opts = append(opts, opt)
+	}
+	ms, err := s.client.NewManagedStream(ctx, opts...)
 	if err != nil {
 		return err
 	}

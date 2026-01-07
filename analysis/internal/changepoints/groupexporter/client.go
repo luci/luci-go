@@ -101,5 +101,5 @@ func (s *Client) Insert(ctx context.Context, rows []*bqpb.GroupedChangepointRow)
 		payload[i] = r
 	}
 	// Use pending stream, so that the entire batch becomes available for reading at the same time.
-	return writer.AppendRowsWithPendingStream(ctx, payload)
+	return writer.AppendRowsWithPendingStream(ctx, payload, managedwriter.EnableWriteRetries(true))
 }
