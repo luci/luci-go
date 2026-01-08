@@ -156,3 +156,41 @@ message Test {
   // For example 'cluster_id' and 'run_target' for ATP (http://go/consistent-test-identifiers).
   repeated StringPair properties = 2;
 }
+
+// AconfigFlagOverrides replicates the AconfigFlags in AnTS codebase.
+message AconfigFlagOverrides {
+  repeated AconfigFlag aconfig_flags = 1;
+}
+
+message AconfigFlag {
+  // Fields that together uniquely identify the flags. Package groups related flags together.
+  string flag_package = 1;
+  // Name of the flag
+  string flag_name = 2;
+  // Namespace used to group team's flags.
+  string flag_namespace = 3;
+
+  // State indicates if the flag is enabled or disabled.
+  enum State {
+      FLAG_STATE_UNSPECIFIED = 0;
+      FLAG_STATE_ENABLED = 1;
+      FLAG_STATE_DISABLED = 2;
+  }
+  State state = 4;
+
+  // Permission indicates if the flag's value is fixed at build time or can be overridden at runtime.
+  enum Permission {
+      FLAG_PERMISSION_UNSPECIFIED = 0;
+      // Indicates that flag value is set at build time and can't be changed.
+      FLAG_PERMISSION_READ_ONLY = 1;
+      // Indicates that flag value can be overwritten on device.
+      FLAG_PERMISSION_READ_WRITE = 2;
+  }
+  Permission permission = 5;
+
+  // Description of what a flag might control
+  string description = 6;
+
+  // Buganizer id of the bug for the feature controlled by this flag.
+  string bug = 7;
+}

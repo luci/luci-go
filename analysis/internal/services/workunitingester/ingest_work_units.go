@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
+	antsexporter "go.chromium.org/luci/analysis/internal/ants/workunits/exporter"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/resultdb"
@@ -63,7 +64,22 @@ var taskClass = tq.RegisterTaskClass(tq.TaskClass{
 
 // RegisterTaskHandler registers the task handler for ingesting work units.
 func RegisterTaskHandler(srv *server.Server) error {
-	ingester := &workUnitIngester{}
+	ctx := srv.Context
+	bqClient, err := antsexporter.NewClient(ctx, srv.Options.CloudProject)
+	if err != nil {
+		return err
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		err := bqClient.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up AnTS Work Units BQ exporter client: %s", err)
+		}
+	})
+
+	ingester := &workUnitIngester{
+		exporter: antsexporter.NewExporter(bqClient),
+	}
+
 	taskClass.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskspb.IngestWorkUnits)
 		return ingester.run(ctx, task)
@@ -86,7 +102,9 @@ func Schedule(ctx context.Context, payload *taskspb.IngestWorkUnits) error {
 }
 
 // workUnitIngester ingests work units from ResultDB.
-type workUnitIngester struct{}
+type workUnitIngester struct {
+	exporter *antsexporter.Exporter
+}
 
 func (i *workUnitIngester) run(ctx context.Context, task *taskspb.IngestWorkUnits) error {
 	if err := validatePayload(task); err != nil {
@@ -156,7 +174,32 @@ func (i *workUnitIngester) run(ctx context.Context, task *taskspb.IngestWorkUnit
 			return transient.Tag.Apply(errors.Fmt("schedule next work unit task: %w", err))
 		}
 	}
-	// TODO: Export work units.
+	// Export work units.
+	if len(rsp.WorkUnits) > 0 {
+		if err := ingestAnTSWorkUnits(ctx, project, rsp.WorkUnits, rootInvocation, i.exporter); err != nil {
+			return transient.Tag.Apply(errors.Fmt("ingestAnTSWorkUnits: %w", err))
+		}
+	}
+
+	return nil
+}
+
+func ingestAnTSWorkUnits(ctx context.Context, project string, workUnits []*rdbpb.WorkUnit, rootInv *rdbpb.RootInvocation, antsExporter *antsexporter.Exporter) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/workunitingester.ingestAnTSWorkUnits")
+	defer func() { tracing.End(s, err) }()
+
+	// Only ingest for android project.
+	if project != "android" {
+		return nil
+	}
+	exportOptions := antsexporter.ExportOptions{
+		RootInvocation: rootInv,
+	}
+	err = antsExporter.Export(ctx, workUnits, exportOptions)
+	if err != nil {
+		return errors.Fmt("export: %w", err)
+	}
+
 	return nil
 }
 

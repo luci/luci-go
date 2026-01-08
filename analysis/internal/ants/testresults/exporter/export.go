@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -28,6 +27,7 @@ import (
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
+	"go.chromium.org/luci/analysis/internal/ants/utils"
 	"go.chromium.org/luci/analysis/internal/bqutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 )
@@ -128,17 +128,7 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 		if err != nil {
 			return nil, errors.Fmt("test_id_structured: %w", err)
 		}
-		moduleParameters := make([]*bqpb.StringPair, 0, len(tv.Variant.GetDef()))
-		for key, val := range tv.Variant.GetDef() {
-			// Module parameters should only contain module-abi and module-param.
-			if key == "module_abi" || key == "module_param" {
-				moduleParameters = append(moduleParameters, &bqpb.StringPair{
-					// AnTS keys are module-abi and module-param (dash instead of underscore).
-					Name:  strings.ReplaceAll(key, "_", "-"),
-					Value: val,
-				})
-			}
-		}
+		moduleParameters := utils.ModuleParametersFromVariants(tv.Variant)
 		moduleParametersHash := ""
 		if len(moduleParameters) > 0 {
 			moduleParametersHash = hashParameters(moduleParameters)
@@ -208,7 +198,7 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 			}
 
 			// Find AnTS properties.
-			properties := convertToAnTSStringPair(tr.Tags)
+			properties := utils.ConvertToAnTSStringPair(tr.Tags)
 
 			workUnitID := ""
 			if opts.RootInvocation != nil {
@@ -253,28 +243,16 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 func populateFromRootInvocation(antsTR *bqpb.AntsTestResultRow, rootInv *rdbpb.RootInvocation) {
 	buildDesc := rootInv.PrimaryBuild.GetAndroidBuild()
 	definition := rootInv.Definition
-	var buildType bqpb.BuildType
-	if strings.HasPrefix(buildDesc.BuildId, "P") {
-		buildType = bqpb.BuildType_PENDING
-	} else if strings.HasPrefix(buildDesc.BuildId, "L") {
-		buildType = bqpb.BuildType_LOCAL
-	} else if strings.HasPrefix(buildDesc.BuildId, "T") {
-		buildType = bqpb.BuildType_TRAIN
-	} else if strings.HasPrefix(buildDesc.BuildId, "E") {
-		buildType = bqpb.BuildType_EXTERNAL
-	} else {
-		buildType = bqpb.BuildType_SUBMITTED
-	}
 
 	tr := &bqpb.AntsTestResultRow{
-		BuildType:     buildType,
+		BuildType:     utils.BuildTypeFromBuildID(buildDesc.BuildId),
 		BuildId:       buildDesc.BuildId,
 		BuildProvider: "androidbuild",
 		Branch:        buildDesc.Branch,
 		BuildTarget:   buildDesc.BuildTarget,
 		Test: &bqpb.Test{
 			Name:       definition.Name,
-			Properties: convertMapToAnTSStringPair(definition.Properties.Def),
+			Properties: utils.ConvertMapToAnTSStringPair(definition.Properties.Def),
 		},
 	}
 	proto.Merge(antsTR, tr)
@@ -322,26 +300,4 @@ func findKeyFromTags(key string, tags []*rdbpb.StringPair) string {
 		}
 	}
 	return ""
-}
-
-func convertMapToAnTSStringPair(pairs map[string]string) []*bqpb.StringPair {
-	result := make([]*bqpb.StringPair, 0, len(pairs))
-	for k, v := range pairs {
-		result = append(result, &bqpb.StringPair{
-			Name:  k,
-			Value: v,
-		})
-	}
-	return result
-}
-
-func convertToAnTSStringPair(pairs []*rdbpb.StringPair) []*bqpb.StringPair {
-	result := make([]*bqpb.StringPair, 0, len(pairs))
-	for _, pair := range pairs {
-		result = append(result, &bqpb.StringPair{
-			Name:  pair.Key,
-			Value: pair.Value,
-		})
-	}
-	return result
 }

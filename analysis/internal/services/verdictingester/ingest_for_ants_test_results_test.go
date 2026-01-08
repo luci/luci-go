@@ -46,7 +46,7 @@ func TestExportAntsTestResults(t *testing.T) {
 		verdicts := []*rdbpb.TestVariant{
 			{
 				TestId:   ":module!junit:package:class#test1",
-				Variant:  pbutil.Variant("k1", "v1"),
+				Variant:  pbutil.Variant("module_abi", "v1", "atp_test", "test"),
 				StatusV2: rdbpb.TestVerdict_PASSED,
 				Results: []*rdbpb.TestResultBundle{
 					{
@@ -125,13 +125,15 @@ func TestExportAntsTestResults(t *testing.T) {
 				TestResultId: "result-1",
 				InvocationId: invocationID,
 				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
-					Module:      "module",
-					TestClass:   "package.class",
-					ClassName:   "class",
-					PackageName: "package",
-					Method:      "test1",
+					Module:               "module",
+					ModuleParameters:     []*bqpblegacy.StringPair{{Name: "module-abi", Value: "v1"}},
+					ModuleParametersHash: "a97a3e62fb4fa57e2d30c1d1ace158eca3c87afb9f3e2d097587c6dc993b44c6",
+					TestClass:            "package.class",
+					ClassName:            "class",
+					PackageName:          "package",
+					Method:               "test1",
 				},
-				TestIdentifierHash: "95bfcb5e4dda87194eaf93c613a695fca27ba5575217f40a6877e51fc698e5a4",
+				TestIdentifierHash: "d064bad880712fc5b11b048f5075f52d23d7a470a770f4fb914c03560cfe4c16",
 				TestStatus:         bqpblegacy.AntsTestResultRow_PASS,
 				Timing: &bqpblegacy.Timing{
 					CreationTimestamp: 1735693200000, // 2025-01-01 01:00:00 UTC
@@ -145,13 +147,15 @@ func TestExportAntsTestResults(t *testing.T) {
 				TestResultId: "result-2",
 				InvocationId: invocationID,
 				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
-					Module:      "module",
-					TestClass:   "package.class",
-					ClassName:   "class",
-					PackageName: "package",
-					Method:      "test2",
+					Module:               "module",
+					ModuleParameters:     []*bqpblegacy.StringPair{{Name: "k1", Value: "v2"}},
+					ModuleParametersHash: "f0adb88aadb2678fe69caf81773cd3a19a28d7fd41f15ff4bd3f7592a08a79ae",
+					TestClass:            "package.class",
+					ClassName:            "class",
+					PackageName:          "package",
+					Method:               "test2",
 				},
-				TestIdentifierHash: "5ad34566c36f69110005474feea4ed5d58c3c85240265eede054cdac45216751",
+				TestIdentifierHash: "49a5f3b27583ccf99c7c32e4d69420b77c9480f1687a4f9325f6a7220bf01836",
 				TestStatus:         bqpblegacy.AntsTestResultRow_ASSUMPTION_FAILURE,
 				DebugInfo: &bqpblegacy.DebugInfo{
 					ErrorMessage: "assumption failure message",
@@ -169,13 +173,15 @@ func TestExportAntsTestResults(t *testing.T) {
 				TestResultId: "result-3",
 				InvocationId: invocationID,
 				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
-					Module:      "module",
-					TestClass:   "package.class",
-					ClassName:   "class",
-					PackageName: "package",
-					Method:      "test2",
+					Module:               "module",
+					ModuleParameters:     []*bqpblegacy.StringPair{{Name: "k1", Value: "v2"}},
+					ModuleParametersHash: "f0adb88aadb2678fe69caf81773cd3a19a28d7fd41f15ff4bd3f7592a08a79ae",
+					TestClass:            "package.class",
+					ClassName:            "class",
+					PackageName:          "package",
+					Method:               "test2",
 				},
-				TestIdentifierHash: "5ad34566c36f69110005474feea4ed5d58c3c85240265eede054cdac45216751",
+				TestIdentifierHash: "49a5f3b27583ccf99c7c32e4d69420b77c9480f1687a4f9325f6a7220bf01836",
 				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,
 				DebugInfo: &bqpblegacy.DebugInfo{
 					ErrorMessage: "failure message",

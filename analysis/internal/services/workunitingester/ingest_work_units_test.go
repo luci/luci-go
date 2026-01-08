@@ -21,7 +21,9 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -34,11 +36,13 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	antsexporter "go.chromium.org/luci/analysis/internal/ants/workunits/exporter"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
+	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
@@ -84,7 +88,12 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 		ctx, skdr := tq.TestingContext(ctx, nil)
 		ctx = memory.Use(ctx) // Use in-memory datastore for checkpoints
 
-		ingester := &workUnitIngester{}
+		// Mock the AnTS exporter.
+		fakeInsertClient := antsexporter.NewFakeClient()
+		ingester := &workUnitIngester{
+			exporter: antsexporter.NewExporter(fakeInsertClient),
+		}
+
 		basePayload := &taskspb.IngestWorkUnits{
 			RootInvocation: testRootInvocation,
 			Realm:          testRealm,
@@ -100,7 +109,7 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 			mrc := resultdb.NewMockedClient(ctx, ctl)
 			ctx = mrc.Ctx
 
-			finalizeTime := timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC))
+			rootInvFinalizeTime := timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC))
 			setupGetRootInvocationMock := func(modifiers ...func(*rdbpb.RootInvocation)) {
 				invReq := &rdbpb.GetRootInvocationRequest{
 					Name: testRootInvocation,
@@ -109,7 +118,7 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 					Name:             testRootInvocation,
 					Realm:            testRealm,
 					RootInvocationId: testRootInvocationID,
-					FinalizeTime:     finalizeTime,
+					FinalizeTime:     rootInvFinalizeTime,
 					PrimaryBuild: &rdbpb.BuildDescriptor{
 						Definition: &rdbpb.BuildDescriptor_AndroidBuild{
 							AndroidBuild: &rdbpb.AndroidBuildDescriptor{
@@ -125,6 +134,113 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 				}
 				mrc.GetRootInvocation(invReq, invRes)
 			}
+
+			aconfigFlagOverrides := &bqpb.AconfigFlagOverrides{
+				AconfigFlags: []*bqpb.AconfigFlag{
+					{
+						FlagPackage: "com.android.flags",
+						FlagName:    "my_flag",
+						State:       bqpb.AconfigFlag_FLAG_STATE_ENABLED,
+					},
+				},
+			}
+			workUnitProperties := &bqpb.WorkUnitProperties{
+				AconfigFlagOverrides: aconfigFlagOverrides,
+			}
+			protoJSON, err := protojson.Marshal(workUnitProperties)
+			assert.Loosely(t, err, should.BeNil)
+			properties := &structpb.Struct{}
+			err = protojson.Unmarshal(protoJSON, properties)
+			assert.Loosely(t, err, should.BeNil)
+
+			wuCreateTime := timestamppb.New(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
+			wuFinalizeTime := timestamppb.New(time.Date(2025, 1, 1, 20, 0, 0, 0, time.UTC))
+			minimalWorkUnit := &rdbpb.WorkUnit{
+				Name:         fmt.Sprintf("%s/workUnits/wu-1", testRootInvocation),
+				WorkUnitId:   "wu-1",
+				State:        rdbpb.WorkUnit_SUCCEEDED,
+				CreateTime:   wuCreateTime,
+				FinalizeTime: wuFinalizeTime,
+			}
+
+			complexWorkUnit := &rdbpb.WorkUnit{
+				Name:         fmt.Sprintf("%s/workUnits/wu-complex", testRootInvocation),
+				WorkUnitId:   "wu-complex",
+				Parent:       fmt.Sprintf("%s/workUnits/wu-1", testRootInvocation),
+				State:        rdbpb.WorkUnit_FAILED,
+				Kind:         "TEST_KIND",
+				CreateTime:   wuCreateTime,
+				FinalizeTime: wuFinalizeTime,
+				ModuleId: &rdbpb.ModuleIdentifier{
+					ModuleName: "test-module-name",
+					ModuleVariant: &rdbpb.Variant{
+						Def: map[string]string{
+							"module_abi":    "test-abi",
+							"module_param":  "test-param",
+							"platform_name": "test-platform",
+						},
+					},
+				},
+				Tags: []*rdbpb.StringPair{
+					{Key: "key1", Value: "value1"},
+				},
+				SummaryMarkdown: "test summary markdown",
+				Properties:      properties,
+			}
+
+			mockWorkUnits := []*rdbpb.WorkUnit{minimalWorkUnit, complexWorkUnit}
+			expectedAntsWorkUnitRows := []*bqpb.AntsWorkUnitRow{
+				{
+					Name:          "wu-1",
+					Id:            "wu-1",
+					InvocationId:  testRootInvocationID,
+					Branch:        "main",
+					BuildId:       "123",
+					BuildProvider: "androidbuild",
+					BuildTarget:   "test-target",
+					BuildType:     bqpb.BuildType_SUBMITTED,
+					State:         bqpb.SchedulerState_COMPLETED,
+					Timing: &bqpb.Timing{
+						CreationTimestamp: wuCreateTime.AsTime().UnixMilli(),
+						CompleteTimestamp: wuFinalizeTime.AsTime().UnixMilli(),
+						CreationMonth:     "2025-01",
+					},
+					CompletionTime: rootInvFinalizeTime,
+				},
+				{
+					Name:          "wu-complex",
+					Id:            "wu-complex",
+					InvocationId:  testRootInvocationID,
+					Type:          "TEST_KIND",
+					Branch:        "main",
+					BuildId:       "123",
+					BuildProvider: "androidbuild",
+					BuildTarget:   "test-target",
+					BuildType:     bqpb.BuildType_SUBMITTED,
+					ParentId:      "wu-1",
+					State:         bqpb.SchedulerState_ERROR,
+					Timing: &bqpb.Timing{
+						CreationTimestamp: wuCreateTime.AsTime().UnixMilli(),
+						CompleteTimestamp: wuFinalizeTime.AsTime().UnixMilli(),
+						CreationMonth:     "2025-01",
+					},
+					DebugInfo:      &bqpb.DebugInfo{ErrorMessage: "test summary markdown"},
+					CompletionTime: rootInvFinalizeTime,
+					ModuleInfo: &bqpb.AntsWorkUnitRow_ModuleInfo{
+						Name: "test-module-name",
+						ModuleParameters: []*bqpb.StringPair{
+							{Name: "module-abi", Value: "test-abi"},
+							{Name: "module-param", Value: "test-param"},
+							{Name: "platform_name", Value: "test-platform"},
+						},
+					},
+					Properties: []*bqpb.StringPair{
+						{Name: "key1", Value: "value1"},
+					},
+					AconfigFlagOverrides: aconfigFlagOverrides,
+				},
+			}
+
 			setupQueryWorkUnitsMock := func(modifiers ...func(*rdbpb.QueryWorkUnitsResponse)) {
 				wuReq := &rdbpb.QueryWorkUnitsRequest{
 					Parent:    testRootInvocation,
@@ -133,7 +249,7 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 					View:      rdbpb.WorkUnitView_WORK_UNIT_VIEW_BASIC,
 				}
 				wuRes := &rdbpb.QueryWorkUnitsResponse{
-					WorkUnits:     []*rdbpb.WorkUnit{},
+					WorkUnits:     mockWorkUnits,
 					NextPageToken: "continuation-token",
 				}
 				for _, modifier := range modifiers {
@@ -149,7 +265,7 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 					ProjectAllowlist:        []string{testProject},
 				},
 			}
-			err := config.SetTestConfig(ctx, cfg)
+			err = config.SetTestConfig(ctx, cfg)
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run(`with next page`, func(t *ftt.Test) {
@@ -177,6 +293,8 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 					},
 				}
 				verifyCheckpoints(ctx, t, expectedCheckpoints)
+				// Check exported work units.
+				assert.Loosely(t, fakeInsertClient.Insertions, should.Match(expectedAntsWorkUnitRows))
 			})
 
 			t.Run(`last page`, func(t *ftt.Test) {
@@ -191,6 +309,8 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 				assert.Loosely(t, skdr.Tasks().Payloads(), should.BeEmpty)
 				// No checkpoints should be created.
 				verifyCheckpoints(ctx, t, []checkpoints.Checkpoint{})
+				// Check exported work units.
+				assert.Loosely(t, fakeInsertClient.Insertions, should.Match(expectedAntsWorkUnitRows))
 			})
 
 			t.Run(`Retry Task After Continuation Task Already Created`, func(t *ftt.Test) {
@@ -217,6 +337,8 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 				assert.Loosely(t, skdr.Tasks().Payloads(), should.BeEmpty)
 				// The checkpoint should still exist.
 				verifyCheckpoints(ctx, t, []checkpoints.Checkpoint{existingCheckpoint})
+				// Check exported work units.
+				assert.Loosely(t, fakeInsertClient.Insertions, should.Match(expectedAntsWorkUnitRows))
 			})
 			t.Run(`Project not allowlisted for ingestion`, func(t *ftt.Test) {
 				cfg.Ingestion = &configpb.Ingestion{

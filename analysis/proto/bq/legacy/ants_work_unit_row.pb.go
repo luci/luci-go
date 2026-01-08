@@ -37,108 +37,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// State indicates if the flag is enabled or disabled.
-type AntsWorkUnitRow_AconfigFlag_State int32
-
-const (
-	AntsWorkUnitRow_AconfigFlag_FLAG_STATE_UNSPECIFIED AntsWorkUnitRow_AconfigFlag_State = 0
-	AntsWorkUnitRow_AconfigFlag_FLAG_STATE_ENABLED     AntsWorkUnitRow_AconfigFlag_State = 1
-	AntsWorkUnitRow_AconfigFlag_FLAG_STATE_DISABLED    AntsWorkUnitRow_AconfigFlag_State = 2
-)
-
-// Enum value maps for AntsWorkUnitRow_AconfigFlag_State.
-var (
-	AntsWorkUnitRow_AconfigFlag_State_name = map[int32]string{
-		0: "FLAG_STATE_UNSPECIFIED",
-		1: "FLAG_STATE_ENABLED",
-		2: "FLAG_STATE_DISABLED",
-	}
-	AntsWorkUnitRow_AconfigFlag_State_value = map[string]int32{
-		"FLAG_STATE_UNSPECIFIED": 0,
-		"FLAG_STATE_ENABLED":     1,
-		"FLAG_STATE_DISABLED":    2,
-	}
-)
-
-func (x AntsWorkUnitRow_AconfigFlag_State) Enum() *AntsWorkUnitRow_AconfigFlag_State {
-	p := new(AntsWorkUnitRow_AconfigFlag_State)
-	*p = x
-	return p
-}
-
-func (x AntsWorkUnitRow_AconfigFlag_State) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (AntsWorkUnitRow_AconfigFlag_State) Descriptor() protoreflect.EnumDescriptor {
-	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_enumTypes[0].Descriptor()
-}
-
-func (AntsWorkUnitRow_AconfigFlag_State) Type() protoreflect.EnumType {
-	return &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_enumTypes[0]
-}
-
-func (x AntsWorkUnitRow_AconfigFlag_State) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use AntsWorkUnitRow_AconfigFlag_State.Descriptor instead.
-func (AntsWorkUnitRow_AconfigFlag_State) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_rawDescGZIP(), []int{0, 2, 0}
-}
-
-// Permission indicates if the flag's value is fixed at build time or can be overridden at runtime.
-type AntsWorkUnitRow_AconfigFlag_Permission int32
-
-const (
-	AntsWorkUnitRow_AconfigFlag_FLAG_PERMISSION_UNSPECIFIED AntsWorkUnitRow_AconfigFlag_Permission = 0
-	// Indicates that flag value is set at build time and can't be changed.
-	AntsWorkUnitRow_AconfigFlag_FLAG_PERMISSION_READ_ONLY AntsWorkUnitRow_AconfigFlag_Permission = 1
-	// Indicates that flag value can be overwritten on device.
-	AntsWorkUnitRow_AconfigFlag_FLAG_PERMISSION_READ_WRITE AntsWorkUnitRow_AconfigFlag_Permission = 2
-)
-
-// Enum value maps for AntsWorkUnitRow_AconfigFlag_Permission.
-var (
-	AntsWorkUnitRow_AconfigFlag_Permission_name = map[int32]string{
-		0: "FLAG_PERMISSION_UNSPECIFIED",
-		1: "FLAG_PERMISSION_READ_ONLY",
-		2: "FLAG_PERMISSION_READ_WRITE",
-	}
-	AntsWorkUnitRow_AconfigFlag_Permission_value = map[string]int32{
-		"FLAG_PERMISSION_UNSPECIFIED": 0,
-		"FLAG_PERMISSION_READ_ONLY":   1,
-		"FLAG_PERMISSION_READ_WRITE":  2,
-	}
-)
-
-func (x AntsWorkUnitRow_AconfigFlag_Permission) Enum() *AntsWorkUnitRow_AconfigFlag_Permission {
-	p := new(AntsWorkUnitRow_AconfigFlag_Permission)
-	*p = x
-	return p
-}
-
-func (x AntsWorkUnitRow_AconfigFlag_Permission) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (AntsWorkUnitRow_AconfigFlag_Permission) Descriptor() protoreflect.EnumDescriptor {
-	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_enumTypes[1].Descriptor()
-}
-
-func (AntsWorkUnitRow_AconfigFlag_Permission) Type() protoreflect.EnumType {
-	return &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_enumTypes[1]
-}
-
-func (x AntsWorkUnitRow_AconfigFlag_Permission) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use AntsWorkUnitRow_AconfigFlag_Permission.Descriptor instead.
-func (AntsWorkUnitRow_AconfigFlag_Permission) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_rawDescGZIP(), []int{0, 2, 1}
-}
-
 // AntsWorkUnitRow represents a row in a BigQuery table for an AnTS work unit.
 // Next ID: 30.
 type AntsWorkUnitRow struct {
@@ -176,7 +74,7 @@ type AntsWorkUnitRow struct {
 	// Message explaining why a test was skipped.
 	SkippedReason *SkippedReason `protobuf:"bytes,17,opt,name=skipped_reason,json=skippedReason,proto3" json:"skipped_reason,omitempty"`
 	// Aconfig flag overrides.
-	AconfigFlagOverrides *AntsWorkUnitRow_AconfigFlagOverrides `protobuf:"bytes,18,opt,name=aconfig_flag_overrides,json=aconfigFlagOverrides,proto3" json:"aconfig_flag_overrides,omitempty"`
+	AconfigFlagOverrides *AconfigFlagOverrides `protobuf:"bytes,18,opt,name=aconfig_flag_overrides,json=aconfigFlagOverrides,proto3" json:"aconfig_flag_overrides,omitempty"`
 	// The completion time of the work unit.
 	// Use to partition the BigQuery table.
 	CompletionTime *timestamppb.Timestamp `protobuf:"bytes,19,opt,name=completion_time,json=completionTime,proto3" json:"completion_time,omitempty"`
@@ -336,7 +234,7 @@ func (x *AntsWorkUnitRow) GetSkippedReason() *SkippedReason {
 	return nil
 }
 
-func (x *AntsWorkUnitRow) GetAconfigFlagOverrides() *AntsWorkUnitRow_AconfigFlagOverrides {
+func (x *AntsWorkUnitRow) GetAconfigFlagOverrides() *AconfigFlagOverrides {
 	if x != nil {
 		return x.AconfigFlagOverrides
 	}
@@ -412,152 +310,11 @@ func (x *AntsWorkUnitRow_ModuleInfo) GetModuleParameters() []*StringPair {
 	return nil
 }
 
-type AntsWorkUnitRow_AconfigFlagOverrides struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
-	AconfigFlags  []*AntsWorkUnitRow_AconfigFlag `protobuf:"bytes,1,rep,name=aconfig_flags,json=aconfigFlags,proto3" json:"aconfig_flags,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AntsWorkUnitRow_AconfigFlagOverrides) Reset() {
-	*x = AntsWorkUnitRow_AconfigFlagOverrides{}
-	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AntsWorkUnitRow_AconfigFlagOverrides) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AntsWorkUnitRow_AconfigFlagOverrides) ProtoMessage() {}
-
-func (x *AntsWorkUnitRow_AconfigFlagOverrides) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AntsWorkUnitRow_AconfigFlagOverrides.ProtoReflect.Descriptor instead.
-func (*AntsWorkUnitRow_AconfigFlagOverrides) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_rawDescGZIP(), []int{0, 1}
-}
-
-func (x *AntsWorkUnitRow_AconfigFlagOverrides) GetAconfigFlags() []*AntsWorkUnitRow_AconfigFlag {
-	if x != nil {
-		return x.AconfigFlags
-	}
-	return nil
-}
-
-type AntsWorkUnitRow_AconfigFlag struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Fields that together uniquely identify the flags. Package groups related flags together.
-	FlagPackage string `protobuf:"bytes,1,opt,name=flag_package,json=flagPackage,proto3" json:"flag_package,omitempty"`
-	// Name of the flag
-	FlagName string `protobuf:"bytes,2,opt,name=flag_name,json=flagName,proto3" json:"flag_name,omitempty"`
-	// Namespace used to group team's flags.
-	FlagNamespace string                                 `protobuf:"bytes,3,opt,name=flag_namespace,json=flagNamespace,proto3" json:"flag_namespace,omitempty"`
-	State         AntsWorkUnitRow_AconfigFlag_State      `protobuf:"varint,4,opt,name=state,proto3,enum=luci.analysis.bq.legacy.AntsWorkUnitRow_AconfigFlag_State" json:"state,omitempty"`
-	Permission    AntsWorkUnitRow_AconfigFlag_Permission `protobuf:"varint,5,opt,name=permission,proto3,enum=luci.analysis.bq.legacy.AntsWorkUnitRow_AconfigFlag_Permission" json:"permission,omitempty"`
-	// Description of what a flag might control
-	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
-	// Buganizer id of the bug for the feature controlled by this flag.
-	Bug           string `protobuf:"bytes,7,opt,name=bug,proto3" json:"bug,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AntsWorkUnitRow_AconfigFlag) Reset() {
-	*x = AntsWorkUnitRow_AconfigFlag{}
-	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AntsWorkUnitRow_AconfigFlag) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AntsWorkUnitRow_AconfigFlag) ProtoMessage() {}
-
-func (x *AntsWorkUnitRow_AconfigFlag) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AntsWorkUnitRow_AconfigFlag.ProtoReflect.Descriptor instead.
-func (*AntsWorkUnitRow_AconfigFlag) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_rawDescGZIP(), []int{0, 2}
-}
-
-func (x *AntsWorkUnitRow_AconfigFlag) GetFlagPackage() string {
-	if x != nil {
-		return x.FlagPackage
-	}
-	return ""
-}
-
-func (x *AntsWorkUnitRow_AconfigFlag) GetFlagName() string {
-	if x != nil {
-		return x.FlagName
-	}
-	return ""
-}
-
-func (x *AntsWorkUnitRow_AconfigFlag) GetFlagNamespace() string {
-	if x != nil {
-		return x.FlagNamespace
-	}
-	return ""
-}
-
-func (x *AntsWorkUnitRow_AconfigFlag) GetState() AntsWorkUnitRow_AconfigFlag_State {
-	if x != nil {
-		return x.State
-	}
-	return AntsWorkUnitRow_AconfigFlag_FLAG_STATE_UNSPECIFIED
-}
-
-func (x *AntsWorkUnitRow_AconfigFlag) GetPermission() AntsWorkUnitRow_AconfigFlag_Permission {
-	if x != nil {
-		return x.Permission
-	}
-	return AntsWorkUnitRow_AconfigFlag_FLAG_PERMISSION_UNSPECIFIED
-}
-
-func (x *AntsWorkUnitRow_AconfigFlag) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-func (x *AntsWorkUnitRow_AconfigFlag) GetBug() string {
-	if x != nil {
-		return x.Bug
-	}
-	return ""
-}
-
 var File_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_rawDesc = "" +
 	"\n" +
-	"Fgo.chromium.org/luci/analysis/proto/bq/legacy/ants_work_unit_row.proto\x12\x17luci.analysis.bq.legacy\x1a\x1fgoogle/protobuf/timestamp.proto\x1a/go.chromium.org/luci/common/bq/pb/options.proto\x1a?go.chromium.org/luci/analysis/proto/bq/legacy/ants_common.proto\"\xa3\x0e\n" +
+	"Fgo.chromium.org/luci/analysis/proto/bq/legacy/ants_work_unit_row.proto\x12\x17luci.analysis.bq.legacy\x1a\x1fgoogle/protobuf/timestamp.proto\x1a/go.chromium.org/luci/common/bq/pb/options.proto\x1a?go.chromium.org/luci/analysis/proto/bq/legacy/ants_common.proto\"\xfe\b\n" +
 	"\x0fAntsWorkUnitRow\x12A\n" +
 	"\n" +
 	"build_type\x18\x01 \x01(\x0e2\".luci.analysis.bq.legacy.BuildTypeR\tbuildType\x12\x19\n" +
@@ -581,36 +338,15 @@ const file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_prot
 	"\x04type\x18\x0f \x01(\tR\x04type\x12T\n" +
 	"\vmodule_info\x18\x10 \x01(\v23.luci.analysis.bq.legacy.AntsWorkUnitRow.ModuleInfoR\n" +
 	"moduleInfo\x12M\n" +
-	"\x0eskipped_reason\x18\x11 \x01(\v2&.luci.analysis.bq.legacy.SkippedReasonR\rskippedReason\x12s\n" +
-	"\x16aconfig_flag_overrides\x18\x12 \x01(\v2=.luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlagOverridesR\x14aconfigFlagOverrides\x12C\n" +
+	"\x0eskipped_reason\x18\x11 \x01(\v2&.luci.analysis.bq.legacy.SkippedReasonR\rskippedReason\x12c\n" +
+	"\x16aconfig_flag_overrides\x18\x12 \x01(\v2-.luci.analysis.bq.legacy.AconfigFlagOverridesR\x14aconfigFlagOverrides\x12C\n" +
 	"\x0fcompletion_time\x18\x13 \x01(\v2\x1a.google.protobuf.TimestampR\x0ecompletionTime\x12V\n" +
 	"\vinsert_time\x18\x14 \x01(\v2\x1a.google.protobuf.TimestampB\x19\xe2\xbc$\x15\x12\x13CURRENT_TIMESTAMP()R\n" +
 	"insertTime\x1ar\n" +
 	"\n" +
 	"ModuleInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12P\n" +
-	"\x11module_parameters\x18\x02 \x03(\v2#.luci.analysis.bq.legacy.StringPairR\x10moduleParameters\x1aq\n" +
-	"\x14AconfigFlagOverrides\x12Y\n" +
-	"\raconfig_flags\x18\x01 \x03(\v24.luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlagR\faconfigFlags\x1a\x9f\x04\n" +
-	"\vAconfigFlag\x12!\n" +
-	"\fflag_package\x18\x01 \x01(\tR\vflagPackage\x12\x1b\n" +
-	"\tflag_name\x18\x02 \x01(\tR\bflagName\x12%\n" +
-	"\x0eflag_namespace\x18\x03 \x01(\tR\rflagNamespace\x12P\n" +
-	"\x05state\x18\x04 \x01(\x0e2:.luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag.StateR\x05state\x12_\n" +
-	"\n" +
-	"permission\x18\x05 \x01(\x0e2?.luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag.PermissionR\n" +
-	"permission\x12 \n" +
-	"\vdescription\x18\x06 \x01(\tR\vdescription\x12\x10\n" +
-	"\x03bug\x18\a \x01(\tR\x03bug\"T\n" +
-	"\x05State\x12\x1a\n" +
-	"\x16FLAG_STATE_UNSPECIFIED\x10\x00\x12\x16\n" +
-	"\x12FLAG_STATE_ENABLED\x10\x01\x12\x17\n" +
-	"\x13FLAG_STATE_DISABLED\x10\x02\"l\n" +
-	"\n" +
-	"Permission\x12\x1f\n" +
-	"\x1bFLAG_PERMISSION_UNSPECIFIED\x10\x00\x12\x1d\n" +
-	"\x19FLAG_PERMISSION_READ_ONLY\x10\x01\x12\x1e\n" +
-	"\x1aFLAG_PERMISSION_READ_WRITE\x10\x02B4Z2go.chromium.org/luci/analysis/proto/bq/legacy;bqpbb\x06proto3"
+	"\x11module_parameters\x18\x02 \x03(\v2#.luci.analysis.bq.legacy.StringPairR\x10moduleParametersB4Z2go.chromium.org/luci/analysis/proto/bq/legacy;bqpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_rawDescOnce sync.Once
@@ -624,43 +360,36 @@ func file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto
 	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_goTypes = []any{
-	(AntsWorkUnitRow_AconfigFlag_State)(0),       // 0: luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag.State
-	(AntsWorkUnitRow_AconfigFlag_Permission)(0),  // 1: luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag.Permission
-	(*AntsWorkUnitRow)(nil),                      // 2: luci.analysis.bq.legacy.AntsWorkUnitRow
-	(*AntsWorkUnitRow_ModuleInfo)(nil),           // 3: luci.analysis.bq.legacy.AntsWorkUnitRow.ModuleInfo
-	(*AntsWorkUnitRow_AconfigFlagOverrides)(nil), // 4: luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlagOverrides
-	(*AntsWorkUnitRow_AconfigFlag)(nil),          // 5: luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag
-	(BuildType)(0),                               // 6: luci.analysis.bq.legacy.BuildType
-	(*Timing)(nil),                               // 7: luci.analysis.bq.legacy.Timing
-	(*StringPair)(nil),                           // 8: luci.analysis.bq.legacy.StringPair
-	(SchedulerState)(0),                          // 9: luci.analysis.bq.legacy.SchedulerState
-	(*DebugInfo)(nil),                            // 10: luci.analysis.bq.legacy.DebugInfo
-	(*SkippedReason)(nil),                        // 11: luci.analysis.bq.legacy.SkippedReason
-	(*timestamppb.Timestamp)(nil),                // 12: google.protobuf.Timestamp
+	(*AntsWorkUnitRow)(nil),            // 0: luci.analysis.bq.legacy.AntsWorkUnitRow
+	(*AntsWorkUnitRow_ModuleInfo)(nil), // 1: luci.analysis.bq.legacy.AntsWorkUnitRow.ModuleInfo
+	(BuildType)(0),                     // 2: luci.analysis.bq.legacy.BuildType
+	(*Timing)(nil),                     // 3: luci.analysis.bq.legacy.Timing
+	(*StringPair)(nil),                 // 4: luci.analysis.bq.legacy.StringPair
+	(SchedulerState)(0),                // 5: luci.analysis.bq.legacy.SchedulerState
+	(*DebugInfo)(nil),                  // 6: luci.analysis.bq.legacy.DebugInfo
+	(*SkippedReason)(nil),              // 7: luci.analysis.bq.legacy.SkippedReason
+	(*AconfigFlagOverrides)(nil),       // 8: luci.analysis.bq.legacy.AconfigFlagOverrides
+	(*timestamppb.Timestamp)(nil),      // 9: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_depIdxs = []int32{
-	6,  // 0: luci.analysis.bq.legacy.AntsWorkUnitRow.build_type:type_name -> luci.analysis.bq.legacy.BuildType
-	7,  // 1: luci.analysis.bq.legacy.AntsWorkUnitRow.timing:type_name -> luci.analysis.bq.legacy.Timing
-	8,  // 2: luci.analysis.bq.legacy.AntsWorkUnitRow.properties:type_name -> luci.analysis.bq.legacy.StringPair
-	9,  // 3: luci.analysis.bq.legacy.AntsWorkUnitRow.state:type_name -> luci.analysis.bq.legacy.SchedulerState
-	10, // 4: luci.analysis.bq.legacy.AntsWorkUnitRow.debug_info:type_name -> luci.analysis.bq.legacy.DebugInfo
-	3,  // 5: luci.analysis.bq.legacy.AntsWorkUnitRow.module_info:type_name -> luci.analysis.bq.legacy.AntsWorkUnitRow.ModuleInfo
-	11, // 6: luci.analysis.bq.legacy.AntsWorkUnitRow.skipped_reason:type_name -> luci.analysis.bq.legacy.SkippedReason
-	4,  // 7: luci.analysis.bq.legacy.AntsWorkUnitRow.aconfig_flag_overrides:type_name -> luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlagOverrides
-	12, // 8: luci.analysis.bq.legacy.AntsWorkUnitRow.completion_time:type_name -> google.protobuf.Timestamp
-	12, // 9: luci.analysis.bq.legacy.AntsWorkUnitRow.insert_time:type_name -> google.protobuf.Timestamp
-	8,  // 10: luci.analysis.bq.legacy.AntsWorkUnitRow.ModuleInfo.module_parameters:type_name -> luci.analysis.bq.legacy.StringPair
-	5,  // 11: luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlagOverrides.aconfig_flags:type_name -> luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag
-	0,  // 12: luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag.state:type_name -> luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag.State
-	1,  // 13: luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag.permission:type_name -> luci.analysis.bq.legacy.AntsWorkUnitRow.AconfigFlag.Permission
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	2,  // 0: luci.analysis.bq.legacy.AntsWorkUnitRow.build_type:type_name -> luci.analysis.bq.legacy.BuildType
+	3,  // 1: luci.analysis.bq.legacy.AntsWorkUnitRow.timing:type_name -> luci.analysis.bq.legacy.Timing
+	4,  // 2: luci.analysis.bq.legacy.AntsWorkUnitRow.properties:type_name -> luci.analysis.bq.legacy.StringPair
+	5,  // 3: luci.analysis.bq.legacy.AntsWorkUnitRow.state:type_name -> luci.analysis.bq.legacy.SchedulerState
+	6,  // 4: luci.analysis.bq.legacy.AntsWorkUnitRow.debug_info:type_name -> luci.analysis.bq.legacy.DebugInfo
+	1,  // 5: luci.analysis.bq.legacy.AntsWorkUnitRow.module_info:type_name -> luci.analysis.bq.legacy.AntsWorkUnitRow.ModuleInfo
+	7,  // 6: luci.analysis.bq.legacy.AntsWorkUnitRow.skipped_reason:type_name -> luci.analysis.bq.legacy.SkippedReason
+	8,  // 7: luci.analysis.bq.legacy.AntsWorkUnitRow.aconfig_flag_overrides:type_name -> luci.analysis.bq.legacy.AconfigFlagOverrides
+	9,  // 8: luci.analysis.bq.legacy.AntsWorkUnitRow.completion_time:type_name -> google.protobuf.Timestamp
+	9,  // 9: luci.analysis.bq.legacy.AntsWorkUnitRow.insert_time:type_name -> google.protobuf.Timestamp
+	4,  // 10: luci.analysis.bq.legacy.AntsWorkUnitRow.ModuleInfo.module_parameters:type_name -> luci.analysis.bq.legacy.StringPair
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_init() }
@@ -674,14 +403,13 @@ func file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   4,
+			NumEnums:      0,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_goTypes,
 		DependencyIndexes: file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_depIdxs,
-		EnumInfos:         file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_enumTypes,
 		MessageInfos:      file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto_msgTypes,
 	}.Build()
 	File_go_chromium_org_luci_analysis_proto_bq_legacy_ants_work_unit_row_proto = out.File

@@ -302,6 +302,108 @@ func (ReasonType) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDescGZIP(), []int{3}
 }
 
+// State indicates if the flag is enabled or disabled.
+type AconfigFlag_State int32
+
+const (
+	AconfigFlag_FLAG_STATE_UNSPECIFIED AconfigFlag_State = 0
+	AconfigFlag_FLAG_STATE_ENABLED     AconfigFlag_State = 1
+	AconfigFlag_FLAG_STATE_DISABLED    AconfigFlag_State = 2
+)
+
+// Enum value maps for AconfigFlag_State.
+var (
+	AconfigFlag_State_name = map[int32]string{
+		0: "FLAG_STATE_UNSPECIFIED",
+		1: "FLAG_STATE_ENABLED",
+		2: "FLAG_STATE_DISABLED",
+	}
+	AconfigFlag_State_value = map[string]int32{
+		"FLAG_STATE_UNSPECIFIED": 0,
+		"FLAG_STATE_ENABLED":     1,
+		"FLAG_STATE_DISABLED":    2,
+	}
+)
+
+func (x AconfigFlag_State) Enum() *AconfigFlag_State {
+	p := new(AconfigFlag_State)
+	*p = x
+	return p
+}
+
+func (x AconfigFlag_State) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AconfigFlag_State) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_enumTypes[4].Descriptor()
+}
+
+func (AconfigFlag_State) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_enumTypes[4]
+}
+
+func (x AconfigFlag_State) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AconfigFlag_State.Descriptor instead.
+func (AconfigFlag_State) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDescGZIP(), []int{6, 0}
+}
+
+// Permission indicates if the flag's value is fixed at build time or can be overridden at runtime.
+type AconfigFlag_Permission int32
+
+const (
+	AconfigFlag_FLAG_PERMISSION_UNSPECIFIED AconfigFlag_Permission = 0
+	// Indicates that flag value is set at build time and can't be changed.
+	AconfigFlag_FLAG_PERMISSION_READ_ONLY AconfigFlag_Permission = 1
+	// Indicates that flag value can be overwritten on device.
+	AconfigFlag_FLAG_PERMISSION_READ_WRITE AconfigFlag_Permission = 2
+)
+
+// Enum value maps for AconfigFlag_Permission.
+var (
+	AconfigFlag_Permission_name = map[int32]string{
+		0: "FLAG_PERMISSION_UNSPECIFIED",
+		1: "FLAG_PERMISSION_READ_ONLY",
+		2: "FLAG_PERMISSION_READ_WRITE",
+	}
+	AconfigFlag_Permission_value = map[string]int32{
+		"FLAG_PERMISSION_UNSPECIFIED": 0,
+		"FLAG_PERMISSION_READ_ONLY":   1,
+		"FLAG_PERMISSION_READ_WRITE":  2,
+	}
+)
+
+func (x AconfigFlag_Permission) Enum() *AconfigFlag_Permission {
+	p := new(AconfigFlag_Permission)
+	*p = x
+	return p
+}
+
+func (x AconfigFlag_Permission) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AconfigFlag_Permission) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_enumTypes[5].Descriptor()
+}
+
+func (AconfigFlag_Permission) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_enumTypes[5]
+}
+
+func (x AconfigFlag_Permission) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AconfigFlag_Permission.Descriptor instead.
+func (AconfigFlag_Permission) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDescGZIP(), []int{6, 1}
+}
+
 // A generic key-value property definition.
 // Next ID: 3
 type StringPair struct {
@@ -655,6 +757,148 @@ func (x *Test) GetProperties() []*StringPair {
 	return nil
 }
 
+// AconfigFlagOverrides replicates the AconfigFlags in AnTS codebase.
+type AconfigFlagOverrides struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AconfigFlags  []*AconfigFlag         `protobuf:"bytes,1,rep,name=aconfig_flags,json=aconfigFlags,proto3" json:"aconfig_flags,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AconfigFlagOverrides) Reset() {
+	*x = AconfigFlagOverrides{}
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AconfigFlagOverrides) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AconfigFlagOverrides) ProtoMessage() {}
+
+func (x *AconfigFlagOverrides) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AconfigFlagOverrides.ProtoReflect.Descriptor instead.
+func (*AconfigFlagOverrides) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *AconfigFlagOverrides) GetAconfigFlags() []*AconfigFlag {
+	if x != nil {
+		return x.AconfigFlags
+	}
+	return nil
+}
+
+type AconfigFlag struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Fields that together uniquely identify the flags. Package groups related flags together.
+	FlagPackage string `protobuf:"bytes,1,opt,name=flag_package,json=flagPackage,proto3" json:"flag_package,omitempty"`
+	// Name of the flag
+	FlagName string `protobuf:"bytes,2,opt,name=flag_name,json=flagName,proto3" json:"flag_name,omitempty"`
+	// Namespace used to group team's flags.
+	FlagNamespace string                 `protobuf:"bytes,3,opt,name=flag_namespace,json=flagNamespace,proto3" json:"flag_namespace,omitempty"`
+	State         AconfigFlag_State      `protobuf:"varint,4,opt,name=state,proto3,enum=luci.analysis.bq.legacy.AconfigFlag_State" json:"state,omitempty"`
+	Permission    AconfigFlag_Permission `protobuf:"varint,5,opt,name=permission,proto3,enum=luci.analysis.bq.legacy.AconfigFlag_Permission" json:"permission,omitempty"`
+	// Description of what a flag might control
+	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	// Buganizer id of the bug for the feature controlled by this flag.
+	Bug           string `protobuf:"bytes,7,opt,name=bug,proto3" json:"bug,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AconfigFlag) Reset() {
+	*x = AconfigFlag{}
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AconfigFlag) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AconfigFlag) ProtoMessage() {}
+
+func (x *AconfigFlag) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AconfigFlag.ProtoReflect.Descriptor instead.
+func (*AconfigFlag) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *AconfigFlag) GetFlagPackage() string {
+	if x != nil {
+		return x.FlagPackage
+	}
+	return ""
+}
+
+func (x *AconfigFlag) GetFlagName() string {
+	if x != nil {
+		return x.FlagName
+	}
+	return ""
+}
+
+func (x *AconfigFlag) GetFlagNamespace() string {
+	if x != nil {
+		return x.FlagNamespace
+	}
+	return ""
+}
+
+func (x *AconfigFlag) GetState() AconfigFlag_State {
+	if x != nil {
+		return x.State
+	}
+	return AconfigFlag_FLAG_STATE_UNSPECIFIED
+}
+
+func (x *AconfigFlag) GetPermission() AconfigFlag_Permission {
+	if x != nil {
+		return x.Permission
+	}
+	return AconfigFlag_FLAG_PERMISSION_UNSPECIFIED
+}
+
+func (x *AconfigFlag) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *AconfigFlag) GetBug() string {
+	if x != nil {
+		return x.Bug
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDesc = "" +
@@ -689,7 +933,28 @@ const file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDe
 	"\x04name\x18\x01 \x01(\tR\x04name\x12C\n" +
 	"\n" +
 	"properties\x18\x02 \x03(\v2#.luci.analysis.bq.legacy.StringPairR\n" +
-	"properties*g\n" +
+	"properties\"a\n" +
+	"\x14AconfigFlagOverrides\x12I\n" +
+	"\raconfig_flags\x18\x01 \x03(\v2$.luci.analysis.bq.legacy.AconfigFlagR\faconfigFlags\"\xff\x03\n" +
+	"\vAconfigFlag\x12!\n" +
+	"\fflag_package\x18\x01 \x01(\tR\vflagPackage\x12\x1b\n" +
+	"\tflag_name\x18\x02 \x01(\tR\bflagName\x12%\n" +
+	"\x0eflag_namespace\x18\x03 \x01(\tR\rflagNamespace\x12@\n" +
+	"\x05state\x18\x04 \x01(\x0e2*.luci.analysis.bq.legacy.AconfigFlag.StateR\x05state\x12O\n" +
+	"\n" +
+	"permission\x18\x05 \x01(\x0e2/.luci.analysis.bq.legacy.AconfigFlag.PermissionR\n" +
+	"permission\x12 \n" +
+	"\vdescription\x18\x06 \x01(\tR\vdescription\x12\x10\n" +
+	"\x03bug\x18\a \x01(\tR\x03bug\"T\n" +
+	"\x05State\x12\x1a\n" +
+	"\x16FLAG_STATE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12FLAG_STATE_ENABLED\x10\x01\x12\x17\n" +
+	"\x13FLAG_STATE_DISABLED\x10\x02\"l\n" +
+	"\n" +
+	"Permission\x12\x1f\n" +
+	"\x1bFLAG_PERMISSION_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19FLAG_PERMISSION_READ_ONLY\x10\x01\x12\x1e\n" +
+	"\x1aFLAG_PERMISSION_READ_WRITE\x10\x02*g\n" +
 	"\tBuildType\x12\x1a\n" +
 	"\x16BUILD_TYPE_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tSUBMITTED\x10\x01\x12\v\n" +
@@ -735,28 +1000,35 @@ func file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDes
 	return file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_goTypes = []any{
-	(BuildType)(0),        // 0: luci.analysis.bq.legacy.BuildType
-	(SchedulerState)(0),   // 1: luci.analysis.bq.legacy.SchedulerState
-	(ErrorType)(0),        // 2: luci.analysis.bq.legacy.ErrorType
-	(ReasonType)(0),       // 3: luci.analysis.bq.legacy.ReasonType
-	(*StringPair)(nil),    // 4: luci.analysis.bq.legacy.StringPair
-	(*Timing)(nil),        // 5: luci.analysis.bq.legacy.Timing
-	(*DebugInfo)(nil),     // 6: luci.analysis.bq.legacy.DebugInfo
-	(*SkippedReason)(nil), // 7: luci.analysis.bq.legacy.SkippedReason
-	(*Test)(nil),          // 8: luci.analysis.bq.legacy.Test
+	(BuildType)(0),               // 0: luci.analysis.bq.legacy.BuildType
+	(SchedulerState)(0),          // 1: luci.analysis.bq.legacy.SchedulerState
+	(ErrorType)(0),               // 2: luci.analysis.bq.legacy.ErrorType
+	(ReasonType)(0),              // 3: luci.analysis.bq.legacy.ReasonType
+	(AconfigFlag_State)(0),       // 4: luci.analysis.bq.legacy.AconfigFlag.State
+	(AconfigFlag_Permission)(0),  // 5: luci.analysis.bq.legacy.AconfigFlag.Permission
+	(*StringPair)(nil),           // 6: luci.analysis.bq.legacy.StringPair
+	(*Timing)(nil),               // 7: luci.analysis.bq.legacy.Timing
+	(*DebugInfo)(nil),            // 8: luci.analysis.bq.legacy.DebugInfo
+	(*SkippedReason)(nil),        // 9: luci.analysis.bq.legacy.SkippedReason
+	(*Test)(nil),                 // 10: luci.analysis.bq.legacy.Test
+	(*AconfigFlagOverrides)(nil), // 11: luci.analysis.bq.legacy.AconfigFlagOverrides
+	(*AconfigFlag)(nil),          // 12: luci.analysis.bq.legacy.AconfigFlag
 }
 var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_depIdxs = []int32{
-	2, // 0: luci.analysis.bq.legacy.DebugInfo.error_type:type_name -> luci.analysis.bq.legacy.ErrorType
-	3, // 1: luci.analysis.bq.legacy.SkippedReason.reason_type:type_name -> luci.analysis.bq.legacy.ReasonType
-	4, // 2: luci.analysis.bq.legacy.Test.properties:type_name -> luci.analysis.bq.legacy.StringPair
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	2,  // 0: luci.analysis.bq.legacy.DebugInfo.error_type:type_name -> luci.analysis.bq.legacy.ErrorType
+	3,  // 1: luci.analysis.bq.legacy.SkippedReason.reason_type:type_name -> luci.analysis.bq.legacy.ReasonType
+	6,  // 2: luci.analysis.bq.legacy.Test.properties:type_name -> luci.analysis.bq.legacy.StringPair
+	12, // 3: luci.analysis.bq.legacy.AconfigFlagOverrides.aconfig_flags:type_name -> luci.analysis.bq.legacy.AconfigFlag
+	4,  // 4: luci.analysis.bq.legacy.AconfigFlag.state:type_name -> luci.analysis.bq.legacy.AconfigFlag.State
+	5,  // 5: luci.analysis.bq.legacy.AconfigFlag.permission:type_name -> luci.analysis.bq.legacy.AconfigFlag.Permission
+	6,  // [6:6] is the sub-list for method output_type
+	6,  // [6:6] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_init() }
@@ -769,8 +1041,8 @@ func file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_init()
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_common_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   5,
+			NumEnums:      6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
