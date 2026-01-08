@@ -233,7 +233,7 @@ message TestAggregationPredicate {
   // components when injecting them into filter strings, filtering on a variant is exact
   // and not simply checking for presence of a subset of key/value pairs).
   //
-  // N.B. Setting this to a filter that will always evaluate to true yields
+  // Note: Setting this to a filter that will always evaluate to true yields
   // different results to leaving this filter unset, in that the former filters to
   // only aggregations with test results and the latter returns any test aggregation.
   // Aggregations without test results can occur for module and invocation-level
@@ -256,4 +256,53 @@ message TestAggregationPredicate {
   //   be MODULE_STATUS_UNSPECIFIED, so is only useful for filtering Module-level
   //   aggregations.
   string filter = 4;
+}
+
+// Represents a function TestVerdict -> bool.
+message TestVerdictPredicate {
+  // The test prefix for which to return verdicts.
+  //
+  // Example: To limit verdicts to those for a given module:
+  // - set the test_prefix_filter.aggregation_level to MODULE, and
+  // - test_prefix_filter.id to the Test ID prefix of that module.
+  TestIdentifierPrefix test_prefix_filter = 1;
+
+  // Limits results to only those test verdicts that *contain* a test result
+  // matching this filter.
+  //
+  // The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
+  // with the following fields available:
+  // - test_id (string) - the flat-form test ID
+  // - test_id_structured.module_name (string) - the structured form test ID
+  // - test_id_structured.module_scheme (string)
+  // - test_id_structured.module_variant (filters behave as if this field is a map<string, string>)
+  // - test_id_structured.module_variant_hash (string)
+  // - test_id_structured.coarse_name (string)
+  // - test_id_structured.fine_name (string)
+  // - test_id_structured.case_name (string)
+  // - test_metadata.name (string)
+  // - tags (repeated (key string, value string))
+  // - test_metadata.location.repo (string)
+  // - test_metadata.location.file_name (string)
+  // - status (enum luci.resultdb.v1.TestResult.Status) - the status_v2 of the test result
+  // - duration (google.protobuf.Duration)
+  //
+  // While this filter generally offers a superset of functionality of the `test_prefix_filter`
+  // field, clients will generally prefer to use `test_prefix_filter` if it is
+  // sufficient as its use has less sharp edges (e.g. no need to escape test ID
+  // components when injecting them into filter strings, filtering on a variant is exact
+  // and not simply checking for presence of a subset of key/value pairs).
+  string contains_test_result_filter = 2;
+
+  // A free-form filter on the returned `TestVerdict`s.
+  //
+  // The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
+  // with the following fields available:
+  // - status (luci.resultdb.v1.TestVerdict.Status)
+  // - status_override (luci.resultdb.v1.TestVerdict.StatusOverride)
+  //
+  // For example, the following filter filters to verdicts with a status of failed
+  // or execution_errored (that were not exonerated):
+  // `(status = FAILED OR status = EXECUTION_ERRORED) AND status_override = NOT_OVERRIDDEN`
+  string filter = 3;
 }

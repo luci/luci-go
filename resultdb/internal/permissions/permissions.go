@@ -175,6 +175,23 @@ var ListAggregatesAccessModel = VerifyWorkUnitAccessOptions{
 	},
 }
 
+// ListVerdictsAccessModel defines the permissions used to authorize access
+// when listing test verdicts (e.g. QueryTestVerdicts).
+var ListVerdictsAccessModel = VerifyWorkUnitAccessOptions{
+	Full: []realms.Permission{ // At root invocation level
+		rdbperms.PermListTestResults,
+		rdbperms.PermListTestExonerations,
+	},
+	Limited: []realms.Permission{ // At root invocation level
+		rdbperms.PermListLimitedTestResults,
+		rdbperms.PermListLimitedTestExonerations,
+	},
+	UpgradeLimitedToFull: []realms.Permission{ // At work unit level
+		rdbperms.PermGetTestResult,
+		rdbperms.PermGetTestExoneration,
+	},
+}
+
 // VerifyWorkUnitAccess determines the access the user has to a work unit or work
 // unit-scoped resource, such as test results, test artifacts or test exonerations.
 // It further verifies that the user has at least the `minimumAccessLevel` specified.
