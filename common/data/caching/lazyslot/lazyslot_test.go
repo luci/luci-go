@@ -15,6 +15,7 @@
 package lazyslot
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"sync"
@@ -22,6 +23,8 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -274,6 +277,91 @@ func TestLazySlot(t *testing.T) {
 		assert.Loosely(conv, val, should.Match(5)) // new copy
 		assert.Loosely(conv, err, should.BeNil)
 		assert.Loosely(conv, fetchCalls, should.Equal(3))
+	})
+
+	ftt.Run("Logs warning on <3 failures and error on >=3", t, func(conv *ftt.Test) {
+		logCfg := gologger.LoggerConfig{
+			Out:    &bytes.Buffer{},
+			Format: `%{level}`, //we only test for severity
+		}
+		c, clk := testclock.UseTime(logCfg.Use(context.Background()), testclock.TestTimeUTC)
+		logging.SetLevel(c, logging.Warning)
+
+		s := Slot{}
+
+		fail := true
+		fetcher := func(prev any) (any, time.Duration, error) {
+			if fail {
+				return nil, 0, errors.New("fetch failed")
+			}
+			return 1, time.Minute, nil
+		}
+
+		// Initial successful fetch.
+		fail = false
+		val, err := s.Get(c, fetcher)
+		assert.Loosely(conv, err, should.BeNil)
+		assert.Loosely(conv, val, should.Equal(1))
+
+		// Expire the cache.
+		clk.Add(2 * time.Minute)
+		fail = true
+
+		// 1st failure -> warning.
+		val, err = s.Get(c, fetcher)
+		assert.Loosely(conv, err, should.BeNil) // Returns stale copy.
+		assert.Loosely(conv, val, should.Equal(1))
+		assert.Loosely(conv, logCfg.Out.(*bytes.Buffer).String(), should.Equal("WARNING\n"))
+		logCfg.Out.(*bytes.Buffer).Reset()
+
+		// Advance clock to trigger another fetch attempt.
+		clk.Add(2 * time.Minute)
+
+		// 2nd failure -> warning.
+		val, err = s.Get(c, fetcher)
+		assert.Loosely(conv, err, should.BeNil)
+		assert.Loosely(conv, val, should.Equal(1))
+		assert.Loosely(conv, logCfg.Out.(*bytes.Buffer).String(), should.Equal("WARNING\n"))
+		logCfg.Out.(*bytes.Buffer).Reset()
+
+		// Advance clock.
+		clk.Add(2 * time.Minute)
+
+		// 3rd failure -> error.
+		val, err = s.Get(c, fetcher)
+		assert.Loosely(conv, err, should.BeNil)
+		assert.Loosely(conv, val, should.Equal(1))
+		assert.Loosely(conv, logCfg.Out.(*bytes.Buffer).String(), should.Equal("ERROR\n"))
+		logCfg.Out.(*bytes.Buffer).Reset()
+
+		// Advance clock.
+		clk.Add(2 * time.Minute)
+
+		// 4th failure -> error.
+		val, err = s.Get(c, fetcher)
+		assert.Loosely(conv, err, should.BeNil)
+		assert.Loosely(conv, val, should.Equal(1))
+		assert.Loosely(conv, logCfg.Out.(*bytes.Buffer).String(), should.Equal("ERROR\n"))
+		logCfg.Out.(*bytes.Buffer).Reset()
+
+		// Advance clock.
+		clk.Add(2 * time.Minute)
+
+		// A successful fetch should reset the counter.
+		fail = false
+		val, err = s.Get(c, fetcher)
+		assert.Loosely(conv, err, should.BeNil)
+		assert.Loosely(conv, val, should.Equal(1))
+		assert.Loosely(conv, logCfg.Out.(*bytes.Buffer).String(), should.BeEmpty)
+
+		clk.Add(2 * time.Minute)
+
+		// Fail again, should be a warning.
+		fail = true
+		val, err = s.Get(c, fetcher)
+		assert.Loosely(conv, err, should.BeNil)
+		assert.Loosely(conv, val, should.Equal(1))
+		assert.Loosely(conv, logCfg.Out.(*bytes.Buffer).String(), should.Equal("WARNING\n"))
 	})
 }
 

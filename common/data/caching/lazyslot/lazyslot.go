@@ -52,12 +52,15 @@ type Fetcher func(prev any) (updated any, exp time.Duration, err error)
 type Slot struct {
 	RetryDelay time.Duration // how long to wait before fetching after a failure, 5 sec by default
 
-	lock        sync.RWMutex // protects the guts below
-	initialized bool         // true if fetched the initial value already
-	current     any          // currently known value (may be nil)
-	exp         time.Time    // when the currently known value expires or time.Time{} if never
-	fetching    bool         // true if some goroutine is fetching the value now
+	lock                sync.RWMutex // protects the guts below
+	initialized         bool         // true if fetched the initial value already
+	current             any          // currently known value (may be nil)
+	exp                 time.Time    // when the currently known value expires or time.Time{} if never
+	fetching            bool         // true if some goroutine is fetching the value now
+	consecutiveFailures int          // counts consecutive failures to distinguish transient from persistent errors
 }
+
+const consecutiveFailuresErrThreshold = 3
 
 // Get returns stored value if it is still fresh or refetches it if it's stale.
 //
@@ -108,16 +111,27 @@ func (s *Slot) Get(ctx context.Context, fetcher Fetcher) (value any, err error) 
 	// The current goroutine won the contest and now is responsible for refetching
 	// the value. Do it, but be cautious to fix the state in case of a panic.
 	var completed bool
+	var isFailure bool
 	var exp time.Duration
-	defer func() { s.finishFetch(completed, value, setExpiry(ctx, exp)) }()
+	var fetchErr error
 
-	value, exp, err = fetcher(prevValue)
+	defer func() {
+		consecutiveFailures := s.finishFetch(completed, isFailure, value, setExpiry(ctx, exp))
+
+		if consecutiveFailures >= consecutiveFailuresErrThreshold {
+			logging.WithError(fetchErr).Errorf(ctx, "lazyslot: failed %d times to update instance of %T", consecutiveFailures, prevValue)
+		} else if consecutiveFailures > 0 {
+			logging.WithError(fetchErr).Warningf(ctx, "lazyslot: failed to update instance of %T", prevValue)
+		}
+	}()
+
+	value, exp, fetchErr = fetcher(prevValue)
 	completed = true // we didn't panic!
 
-	// Log the error and return the previous value, bumping its expiration time by
+	// Return the previous value, bumping its expiration time by
 	// retryDelay to trigger a retry at some later time.
-	if err != nil {
-		logging.WithError(err).Errorf(ctx, "lazyslot: failed to update instance of %T", prevValue)
+	if fetchErr != nil {
+		isFailure = true
 		value = prevValue
 		exp = s.retryDelay()
 		err = nil
@@ -174,7 +188,7 @@ func (s *Slot) initiateFetch(ctx context.Context, fetcher Fetcher, now time.Time
 // fetched value.
 //
 // 'completed' is false if the fetch panicked.
-func (s *Slot) finishFetch(completed bool, result any, exp time.Time) {
+func (s *Slot) finishFetch(completed bool, isFailure bool, result any, exp time.Time) int {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.fetching = false
@@ -182,6 +196,14 @@ func (s *Slot) finishFetch(completed bool, result any, exp time.Time) {
 		s.current = result
 		s.exp = exp
 	}
+
+	if isFailure {
+		s.consecutiveFailures++
+	} else {
+		s.consecutiveFailures = 0
+	}
+
+	return s.consecutiveFailures
 }
 
 func (s *Slot) retryDelay() time.Duration {
