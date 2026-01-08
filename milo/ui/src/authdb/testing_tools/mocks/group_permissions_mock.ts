@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import { PrincipalPermissions } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/authdb.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function createMockPrincipalPermissions(name: string) {
   const principalPermissions: PrincipalPermissions = {
@@ -36,31 +35,26 @@ export function createMockPrincipalPermissions(name: string) {
 export function mockFetchGetPrincipalPermissions(
   mockPermissions: PrincipalPermissions,
 ) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.authService.host +
-      '/prpc/auth.service.AuthDB/GetPrincipalPermissions',
+  mockFetchRaw(
+    (url) => url.includes('auth.service.AuthDB/GetPrincipalPermissions'),
+    ")]}'\n" + JSON.stringify(PrincipalPermissions.toJSON(mockPermissions)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" + JSON.stringify(PrincipalPermissions.toJSON(mockPermissions)),
     },
-    { overwriteRoutes: true },
   );
 }
 
 export function mockErrorFetchingGetPermissions() {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.authService.host +
-      '/prpc/auth.service.AuthDB/GetPrincipalPermissions',
+  mockFetchRaw(
+    (url) => url.includes('auth.service.AuthDB/GetPrincipalPermissions'),
+    '',
     {
       headers: {
         'X-Prpc-Grpc-Code': '2',
       },
     },
-    { overwriteRoutes: true },
   );
 }

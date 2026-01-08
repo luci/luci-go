@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import { ListChangeLogsResponse } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/changelogs.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function createMockGroupHistory(name: string) {
   const changeLogs: ListChangeLogsResponse = {
@@ -251,17 +250,14 @@ export function createMockFilteredGroupHistory(name: string) {
 }
 
 export function mockFetchGetHistory(mockHistory: ListChangeLogsResponse) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.authService.host +
-      '/prpc/auth.service.ChangeLogs/ListChangeLogs',
+  mockFetchRaw(
+    (url) => url.includes('auth.service.ChangeLogs/ListChangeLogs'),
+    ")]}'\n" + JSON.stringify(ListChangeLogsResponse.toJSON(mockHistory)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" + JSON.stringify(ListChangeLogsResponse.toJSON(mockHistory)),
     },
-    { overwriteRoutes: true },
   );
 }

@@ -15,7 +15,6 @@
 import '@testing-library/jest-dom';
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 import { DateTime, Settings } from 'luxon';
 
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
@@ -35,6 +34,7 @@ import {
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { TimeRange } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import ClustersTable from './clusters_table';
 
@@ -54,13 +54,15 @@ describe('Test ClustersTable component', () => {
     jest.useFakeTimers().setSystemTime(new Date(testNow));
     Settings.now = () => new Date(testNow).valueOf();
   });
+
   beforeEach(() => {
     mockFetchAuthState();
   });
+
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
+
   afterAll(() => {
     jest.useRealTimers();
     Settings.now = originalNow;

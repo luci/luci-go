@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import {
   Analysis,
   AnalysisRunStatus,
@@ -22,6 +20,7 @@ import {
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
+import { mockFetchHandler, mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function createMockAnalysis(id: string) {
   return Analysis.fromPartial({
@@ -74,88 +73,71 @@ function createMockQueryAnalysisResponse(analyses: readonly Analysis[]) {
 }
 
 export function mockQueryAnalysis(mockAnalyses: readonly Analysis[]) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.luciBisection.host +
-      '/prpc/luci.bisection.v1.Analyses/QueryAnalysis',
+  mockFetchRaw(
+    (url) => url.includes('luci.bisection.v1.Analyses/QueryAnalysis'),
+    ")]}'\n" +
+      JSON.stringify(
+        QueryAnalysisResponse.toJSON(
+          createMockQueryAnalysisResponse(mockAnalyses),
+        ),
+      ),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" +
-        JSON.stringify(
-          QueryAnalysisResponse.toJSON(
-            createMockQueryAnalysisResponse(mockAnalyses),
-          ),
-        ),
     },
-    { overwriteRoutes: true },
   );
 }
 
 export function mockErrorQueryingAnalysis() {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.luciBisection.host +
-      '/prpc/luci.bisection.v1.Analyses/QueryAnalysis',
+  mockFetchRaw(
+    (url) => url.includes('luci.bisection.v1.Analyses/QueryAnalysis'),
+    '',
     {
       headers: {
         'X-Prpc-Grpc-Code': '2',
       },
     },
-    { overwriteRoutes: true },
   );
 }
 
 export function mockGetBuild(bbid: string, build: Build) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.buildbucket.host +
-      '/prpc/buildbucket.v2.Builds/GetBuild',
-    (_, opts) => {
-      if (opts.body && JSON.parse(opts.body as string).id === bbid) {
-        return {
+  mockFetchHandler(
+    (url) => url.includes('buildbucket.v2.Builds/GetBuild'),
+    async (_url, init) => {
+      const bodyStr = init?.body?.toString();
+      if (bodyStr && JSON.parse(bodyStr).id === bbid) {
+        return new Response(")]}'\n" + JSON.stringify(Build.toJSON(build)), {
+          status: 200,
           headers: {
             'X-Prpc-Grpc-Code': '0',
+            'Content-Type': 'application/json',
           },
-          body: ")]}'\n" + JSON.stringify(Build.toJSON(build)),
-        };
+        });
       }
-      return {
+      return new Response(null, {
+        status: 200,
         headers: {
           'X-Prpc-Grpc-Code': '5' /* NOT_FOUND */,
         },
-      };
+      });
     },
-    { overwriteRoutes: true },
   );
 }
 
 export function mockErrorQueryingBuild() {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.buildbucket.host +
-      '/prpc/buildbucket.v2.Builds/GetBuild',
-    {
-      headers: {
-        'X-Prpc-Grpc-Code': '2',
-      },
+  mockFetchRaw((url) => url.includes('buildbucket.v2.Builds/GetBuild'), '', {
+    headers: {
+      'X-Prpc-Grpc-Code': '2',
     },
-    { overwriteRoutes: true },
-  );
+  });
 }
 
 export function mockNoBuild() {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.buildbucket.host +
-      '/prpc/buildbucket.v2.Builds/GetBuild',
-    {
-      headers: {
-        'X-Prpc-Grpc-Code': '5' /* NOT_FOUND */,
-      },
+  mockFetchRaw((url) => url.includes('buildbucket.v2.Builds/GetBuild'), '', {
+    headers: {
+      'X-Prpc-Grpc-Code': '5' /* NOT_FOUND */,
     },
-    { overwriteRoutes: true },
-  );
+  });
 }

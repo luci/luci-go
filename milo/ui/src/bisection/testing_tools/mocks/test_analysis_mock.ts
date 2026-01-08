@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import {
   AnalysisRunStatus,
   ListTestAnalysesResponse,
   TestAnalysis,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { AnalysisStatus } from '@/proto/go.chromium.org/luci/bisection/proto/v1/common.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function createMockTestAnalysis(id: string) {
   return TestAnalysis.fromPartial({
@@ -85,31 +84,27 @@ export function mockListTestAnalyses(
   mockAnalyses: readonly TestAnalysis[],
   nextPageToken: string,
 ) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.luciBisection.host +
-      '/prpc/luci.bisection.v1.Analyses/ListTestAnalyses',
+  mockFetchRaw(
+    (url) => url.includes('luci.bisection.v1.Analyses/ListTestAnalyses'),
+    ")]}'\n" +
+      JSON.stringify(
+        ListTestAnalysesResponse.toJSON(
+          createMockListTestAnalysesResponse(mockAnalyses, nextPageToken),
+        ),
+      ),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" +
-        JSON.stringify(
-          ListTestAnalysesResponse.toJSON(
-            createMockListTestAnalysesResponse(mockAnalyses, nextPageToken),
-          ),
-        ),
     },
-    { overwriteRoutes: true },
   );
 }
 
 export function mockErrorListTestAnalyses() {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.luciBisection.host +
-      '/prpc/luci.bisection.v1.Analyses/ListTestAnalyses',
+  mockFetchRaw(
+    (url) => url.includes('luci.bisection.v1.Analyses/ListTestAnalyses'),
+    '',
     {
       headers: {
         'X-Prpc-Grpc-Code': '2',
@@ -119,28 +114,25 @@ export function mockErrorListTestAnalyses() {
 }
 
 export function mockGetTestAnalysis(mockAnalysis: TestAnalysis) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.luciBisection.host +
-      '/prpc/luci.bisection.v1.Analyses/GetTestAnalysis',
+  mockFetchRaw(
+    (url) => url.includes('luci.bisection.v1.Analyses/GetTestAnalysis'),
+    ")]}'\n" + JSON.stringify(TestAnalysis.toJSON(mockAnalysis)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body: ")]}'\n" + JSON.stringify(TestAnalysis.toJSON(mockAnalysis)),
     },
-    { overwriteRoutes: true },
   );
 }
 
 export function mockErrorGetTestAnalysis(rpcCode: number) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.luciBisection.host +
-      '/prpc/luci.bisection.v1.Analyses/GetTestAnalysis',
+  mockFetchRaw(
+    (url) => url.includes('luci.bisection.v1.Analyses/GetTestAnalysis'),
+    '',
     {
       headers: {
-        'X-Prpc-Grpc-Code': rpcCode,
+        'X-Prpc-Grpc-Code': rpcCode.toString(),
       },
     },
   );

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-import 'node-fetch';
 
 import { screen } from '@testing-library/react';
 

@@ -15,7 +15,6 @@
 import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
 import { renderTabWithRouterAndClient } from '@/clusters/testing_tools/libs/render_tab';
@@ -38,6 +37,7 @@ import {
   mockFetchRule,
 } from '@/clusters/testing_tools/mocks/rule_mock';
 import { QueryClusterHistoryResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import OverviewTab from './overview_tab';
 
@@ -51,8 +51,7 @@ describe('Test OverviewTab component', () => {
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('given a project and cluster ID, should show problems and cluster history for that cluster', async () => {

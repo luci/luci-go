@@ -13,8 +13,6 @@
 // limitations under the License.
 
 import { renderHook, waitFor } from '@testing-library/react';
-import type { MockOptionsMethodPost } from 'fetch-mock';
-import fetchMock from 'fetch-mock-jest';
 
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -23,6 +21,11 @@ import {
   BotInfoListResponse,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import {
+  mockFetchHandler,
+  mockFetchRaw,
+  resetMockFetch,
+} from '@/testing_tools/jest_utils';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 import { useCurrentTasks } from './use_current_tasks';
@@ -32,37 +35,30 @@ const LIST_BOTS_ENDPOINT = `https://${DEVICE_TASKS_SWARMING_HOST}/prpc/swarming.
 const createDevice = (dutId: string): Device =>
   Device.fromPartial({ dutId: dutId });
 
-function mockSwarmingListBotsSuccess(
-  bots: BotInfo[],
-  options: MockOptionsMethodPost = {},
-) {
+function mockSwarmingListBotsSuccess(bots: BotInfo[]) {
   const response = BotInfoListResponse.fromPartial({ items: bots });
-  fetchMock.post(
-    LIST_BOTS_ENDPOINT,
+  mockFetchRaw(
+    (url) => url === LIST_BOTS_ENDPOINT,
+    ")]}'\n" + JSON.stringify(BotInfoListResponse.toJSON(response)),
     {
       headers: { 'X-Prpc-Grpc-Code': '0' },
-      body: ")]}'\n" + JSON.stringify(BotInfoListResponse.toJSON(response)),
     },
-    options,
   );
 }
 
 function mockSwarmingListBotsError(errorMessage: string) {
-  fetchMock.post(LIST_BOTS_ENDPOINT, {
+  mockFetchRaw((url) => url === LIST_BOTS_ENDPOINT, errorMessage, {
     headers: { 'X-Prpc-Grpc-Code': '2' },
-    body: errorMessage,
   });
 }
 
 describe('useCurrentTasks', () => {
   beforeEach(() => {
-    fetchMock.mockClear();
     mockFetchAuthState();
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('should return an empty map and no error for no devices', async () => {
@@ -74,7 +70,11 @@ describe('useCurrentTasks', () => {
     expect(result.current.isPending).toBe(false);
     expect(result.current.map.size).toBe(0);
     expect(result.current.isError).toBe(false);
-    expect(fetchMock.calls(LIST_BOTS_ENDPOINT).length).toBe(0);
+    expect(
+      (global.fetch as jest.Mock).mock.calls.filter((args) =>
+        (args[0] as string).includes(LIST_BOTS_ENDPOINT),
+      ).length,
+    ).toBe(0);
   });
 
   it('should fetch task for a single device successfully', async () => {
@@ -122,16 +122,20 @@ describe('useCurrentTasks', () => {
     });
 
     // Use a function matcher to inspect the request body for the first chunk.
-    fetchMock.post(
-      (url, opts) =>
+    mockFetchHandler(
+      (url, init) =>
         url === LIST_BOTS_ENDPOINT &&
-        (opts.body as string).includes('"value":"dut-1|dut-2"'),
-      {
-        headers: { 'X-Prpc-Grpc-Code': '0' },
-        body:
+        (init?.body as string | undefined)?.includes(
+          '"value":"dut-1|dut-2"',
+        ) === true,
+      async () =>
+        new Response(
           ")]}'\n" +
-          JSON.stringify(BotInfoListResponse.toJSON(firstChunkResponse)),
-      },
+            JSON.stringify(BotInfoListResponse.toJSON(firstChunkResponse)),
+          {
+            headers: { 'X-Prpc-Grpc-Code': '0' },
+          },
+        ),
     );
 
     const secondChunkResponse = BotInfoListResponse.fromPartial({
@@ -145,16 +149,19 @@ describe('useCurrentTasks', () => {
     });
 
     // Use a function matcher for the second chunk.
-    fetchMock.post(
-      (url, opts) =>
+    mockFetchHandler(
+      (url, init) =>
         url === LIST_BOTS_ENDPOINT &&
-        (opts.body as string).includes('"value":"dut-3"'),
-      {
-        headers: { 'X-Prpc-Grpc-Code': '0' },
-        body:
+        (init?.body as string | undefined)?.includes('"value":"dut-3"') ===
+          true,
+      async () =>
+        new Response(
           ")]}'\n" +
-          JSON.stringify(BotInfoListResponse.toJSON(secondChunkResponse)),
-      },
+            JSON.stringify(BotInfoListResponse.toJSON(secondChunkResponse)),
+          {
+            headers: { 'X-Prpc-Grpc-Code': '0' },
+          },
+        ),
     );
 
     const { result } = renderHook(
@@ -166,8 +173,11 @@ describe('useCurrentTasks', () => {
 
     await waitFor(() => expect(result.current.isPending).toBe(false));
 
+    const calls = (global.fetch as jest.Mock).mock.calls.filter((args) =>
+      (args[0] as string).includes(LIST_BOTS_ENDPOINT),
+    );
     // Ensure two separate calls were made, since the hook can run multiple times we just check that it runs twice on each re-render
-    expect(fetchMock.calls().length % 2).toBe(0);
+    expect(calls.length % 2).toBe(0);
     expect(result.current.error).toBeNull();
     expect(result.current.isError).toBe(false);
     expect(result.current.map.size).toBe(3);

@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import { DeepMutable } from '@/clusters/types/types';
 import { ListRulesResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 import { createDefaultMockRule } from './rule_mock';
 
@@ -68,13 +67,17 @@ export const createDefaultMockListRulesResponse =
   };
 
 export const mockFetchRules = (response: ListRulesResponse) => {
-  fetchMock.post(
-    'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Rules/List',
+  mockFetchRaw(
+    (url) =>
+      url.includes(
+        'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Rules/List',
+      ),
+    ")]}'\n" + JSON.stringify(ListRulesResponse.toJSON(response)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body: ")]}'\n" + JSON.stringify(ListRulesResponse.toJSON(response)),
     },
   );
 };

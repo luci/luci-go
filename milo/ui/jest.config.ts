@@ -25,7 +25,8 @@ const config: Config = {
   // toolchain as we build production code (i.e. Vite). However, there's no
   // plugin supporting that yet.
   preset: 'ts-jest/presets/js-with-babel',
-  testEnvironment: 'jsdom',
+  // Patches the JSDOM environment to include the native Node.js Fetch API.
+  testEnvironment: '<rootDir>/src/testing_tools/jsdom_with_fetch.ts',
   // Match all JS/TS files under `**/__tests__/**` and all JS/TS files with
   // extension `.test` before the JS/TS extension. Unlike the default patterns,
   // `test.ts` is not treated as a test file since `test` in `test.ts` is not an

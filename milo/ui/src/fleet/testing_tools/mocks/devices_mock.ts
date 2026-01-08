@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import {
   Device,
   ListDevicesResponse,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
-
-const LIST_DEVICES_ENDPOINT = `https://${SETTINGS.fleetConsole.host}/prpc/fleetconsole.FleetConsole/ListDevices`;
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export const MOCK_DEVICE_1 = Device.fromPartial({
   id: 'test-device-1',
@@ -47,24 +44,31 @@ export function mockListDevices(
   devices: readonly Device[],
   nextPageToken: string,
 ) {
-  fetchMock.post(LIST_DEVICES_ENDPOINT, {
-    headers: {
-      'X-Prpc-Grpc-Code': '0',
-    },
-    body:
-      ")]}'\n" +
+  mockFetchRaw(
+    (url) => url.includes('fleetconsole.FleetConsole/ListDevices'),
+    ")]}'\n" +
       JSON.stringify(
         ListDevicesResponse.toJSON(
           createMockListDevicesResponse(devices, nextPageToken),
         ),
       ),
-  });
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
+      },
+    },
+  );
 }
 
 export function mockErrorListingDevices() {
-  fetchMock.post(LIST_DEVICES_ENDPOINT, {
-    headers: {
-      'X-Prpc-Grpc-Code': '2',
+  mockFetchRaw(
+    (url) => url.includes('fleetconsole.FleetConsole/ListDevices'),
+    '',
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '2',
+      },
     },
-  });
+  );
 }

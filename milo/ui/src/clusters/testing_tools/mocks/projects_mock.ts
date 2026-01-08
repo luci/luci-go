@@ -1,4 +1,4 @@
-// Copyright 2022 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import { DeepMutable } from '@/clusters/types/types';
 import { BuganizerPriority } from '@/proto/go.chromium.org/luci/analysis/proto/v1/issue_tracking.pb';
 import {
   BugManagementPolicy,
   ProjectConfig,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export const createMockExonerationsPolicy =
   (): DeepMutable<BugManagementPolicy> => {
@@ -99,13 +98,23 @@ export const mockFetchProjectConfig = (projectConfig?: ProjectConfig) => {
   if (projectConfig === undefined) {
     projectConfig = createMockProjectConfig();
   }
-  fetchMock.post(
-    'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Projects/GetConfig',
+  mockFetchRaw(
+    (url) => {
+      if (
+        !url.includes(
+          'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Projects/GetConfig',
+        )
+      ) {
+        return false;
+      }
+      return true;
+    },
+    ")]}'\n" + JSON.stringify(ProjectConfig.toJSON(projectConfig)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body: ")]}'\n" + JSON.stringify(ProjectConfig.toJSON(projectConfig)),
     },
   );
 };

@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function mockFetchTextArtifact(
   artifactName: string,
@@ -22,22 +21,16 @@ export function mockFetchTextArtifact(
   contentType = 'text/plain',
   contentLength = content.length,
 ) {
-  fetchMock.get(
-    (urlStr) => {
-      const url = new URL(urlStr);
-      return (
-        url.host === location.host &&
-        url.pathname === getRawArtifactURLPath(artifactName)
-      );
-    },
+  mockFetchRaw(
+    (url) => url.includes(getRawArtifactURLPath(artifactName)),
+    content,
     {
+      status: 200,
       headers: {
         'X-Prpc-Grpc-Code': '0',
         'Content-Type': contentType,
-        'Content-Length': contentLength,
+        'Content-Length': contentLength.toString(),
       },
-      body: content,
     },
-    { overwriteRoutes: true },
   );
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
+import { mockFetchMatch } from '@/testing_tools/jest_utils';
 
 export const createMockAuthState = () => {
   return {
@@ -27,5 +27,5 @@ export const createMockAuthState = () => {
 };
 
 export const mockFetchAuthState = () => {
-  fetchMock.get('/auth/openid/state', createMockAuthState());
+  mockFetchMatch('/auth/openid/state', createMockAuthState());
 };

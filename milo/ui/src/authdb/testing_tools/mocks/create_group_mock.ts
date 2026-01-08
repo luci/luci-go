@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function createMockGroup(name: string) {
   return AuthGroup.fromPartial({
@@ -31,30 +30,22 @@ export function createMockGroup(name: string) {
 }
 
 export function mockResponseCreateGroup(mockGroup: AuthGroup) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.authService.host +
-      '/prpc/auth.service.Groups/CreateGroup',
+  mockFetchRaw(
+    (url) => url.includes('auth.service.Groups/CreateGroup'),
+    ")]}'\n" + JSON.stringify(AuthGroup.toJSON(mockGroup)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body: ")]}'\n" + JSON.stringify(AuthGroup.toJSON(mockGroup)),
     },
-    { overwriteRoutes: true },
   );
 }
 
 export function mockErrorCreateGroup() {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.authService.host +
-      '/prpc/auth.service.Groups/CreateGroup',
-    {
-      headers: {
-        'X-Prpc-Grpc-Code': '2',
-      },
+  mockFetchRaw((url) => url.includes('auth.service.Groups/CreateGroup'), '', {
+    headers: {
+      'X-Prpc-Grpc-Code': '2',
     },
-    { overwriteRoutes: true },
-  );
+  });
 }

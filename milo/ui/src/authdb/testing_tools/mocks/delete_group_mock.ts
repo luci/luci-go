@@ -12,18 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function mockErrorDeleteGroup() {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.authService.host +
-      '/prpc/auth.service.Groups/DeleteGroup',
-    {
-      headers: {
-        'X-Prpc-Grpc-Code': '2',
-      },
+  mockFetchRaw((url) => url.includes('auth.service.Groups/DeleteGroup'), '', {
+    headers: {
+      'X-Prpc-Grpc-Code': '2',
     },
-    { overwriteRoutes: true },
-  );
+  });
 }

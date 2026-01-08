@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import {
   Analysis,
   ListAnalysesResponse,
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function createMockListAnalysesResponse(
   analyses: readonly Analysis[],
@@ -33,31 +32,27 @@ export function mockFetchAnalyses(
   mockAnalyses: readonly Analysis[],
   nextPageToken: string,
 ) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.luciBisection.host +
-      '/prpc/luci.bisection.v1.Analyses/ListAnalyses',
+  mockFetchRaw(
+    (url) => url.includes('luci.bisection.v1.Analyses/ListAnalyses'),
+    ")]}'\n" +
+      JSON.stringify(
+        ListAnalysesResponse.toJSON(
+          createMockListAnalysesResponse(mockAnalyses, nextPageToken),
+        ),
+      ),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" +
-        JSON.stringify(
-          ListAnalysesResponse.toJSON(
-            createMockListAnalysesResponse(mockAnalyses, nextPageToken),
-          ),
-        ),
     },
-    { overwriteRoutes: true },
   );
 }
 
 export function mockErrorFetchingAnalyses() {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.luciBisection.host +
-      '/prpc/luci.bisection.v1.Analyses/ListAnalyses',
+  mockFetchRaw(
+    (url) => url.includes('luci.bisection.v1.Analyses/ListAnalyses'),
+    '',
     {
       headers: {
         'X-Prpc-Grpc-Code': '2',

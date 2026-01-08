@@ -15,7 +15,6 @@
 import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
 import { renderTabWithRouterAndClient } from '@/clusters/testing_tools/libs/render_tab';
@@ -27,6 +26,7 @@ import {
 import { getMockMetricsList } from '@/clusters/testing_tools/mocks/metrics_mock';
 import { createMockExonerationsPolicy } from '@/clusters/testing_tools/mocks/projects_mock';
 import { Problem } from '@/clusters/tools/problems';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { OverviewTabContextProvider } from '../../overview_tab_context';
 
@@ -48,8 +48,7 @@ describe('Test ProblemExplanationSection component', () => {
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   const metrics = getMockMetricsList('testproject');

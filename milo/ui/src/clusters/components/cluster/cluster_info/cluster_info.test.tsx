@@ -15,7 +15,6 @@
 import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
@@ -23,6 +22,7 @@ import {
   getMockCluster,
   mockGetCluster,
 } from '@/clusters/testing_tools/mocks/cluster_mock';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { ClusterContextProvider } from '../cluster_context';
 
@@ -32,9 +32,9 @@ describe('test ClusterInfo component', () => {
   beforeEach(() => {
     mockFetchAuthState();
   });
+
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('Given reason based cluster then should display the data', async () => {

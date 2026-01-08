@@ -15,12 +15,12 @@
 import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { identityFunction } from '@/clusters/testing_tools/functions';
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
 import { mockFetchProjectConfig } from '@/clusters/testing_tools/mocks/projects_mock';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import BugPicker from './bug_picker';
 
@@ -28,10 +28,8 @@ describe('Test BugPicker component', () => {
   beforeEach(() => {
     mockFetchAuthState();
   });
-
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('given a buganizer bug, should select the bug system correctly', async () => {

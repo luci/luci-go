@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { useUfsClient } from '@/fleet/hooks/prpc_clients';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 import { SandboxPage } from './sandbox_page';
@@ -41,8 +41,7 @@ describe('<SandboxPage />', () => {
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
     jest.clearAllMocks();
   });
 

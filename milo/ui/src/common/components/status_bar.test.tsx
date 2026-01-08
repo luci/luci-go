@@ -19,15 +19,22 @@ import { StatusBar } from './status_bar';
 describe('StatusBar', () => {
   it('should render components correctly', () => {
     const components = [
-      { color: 'red', weight: 1 },
-      { color: 'blue', weight: 2 },
+      { segmentColor: 'red', weight: 1 },
+      { segmentColor: 'blue', weight: 2 },
     ];
     render(<StatusBar components={components} />);
 
     const segments = screen.getAllByTestId('status-bar-segment');
+    screen.debug(segments[0]);
     expect(segments).toHaveLength(2);
-    expect(segments[0]).toHaveStyle({ backgroundColor: 'red' });
-    expect(segments[1]).toHaveStyle({ backgroundColor: 'blue' });
+    expect(segments[0]).toHaveAttribute(
+      'style',
+      expect.stringContaining('background-color: red'),
+    );
+    expect(segments[1]).toHaveAttribute(
+      'style',
+      expect.stringContaining('background-color: blue'),
+    );
   });
 
   it('should render loading state', () => {

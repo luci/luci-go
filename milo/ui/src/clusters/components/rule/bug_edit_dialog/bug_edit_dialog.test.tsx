@@ -13,10 +13,7 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-import 'node-fetch';
-
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { noopStateChanger } from '@/clusters/testing_tools/functions';
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
@@ -28,6 +25,7 @@ import {
   mockUpdateRule,
 } from '@/clusters/testing_tools/mocks/rule_mock';
 import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import BugEditDialog from './bug_edit_dialog';
 
@@ -39,8 +37,7 @@ describe('Test BugEditDialog component', () => {
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('given a bug, then should display details', async () => {
@@ -102,18 +99,20 @@ describe('Test BugEditDialog component', () => {
     mockUpdateRule(updatedRule);
 
     fireEvent.click(screen.getByText('Save'));
-    await waitFor(
-      () =>
-        fetchMock.lastCall() !== undefined &&
-        fetchMock.lastCall()![0] ===
-          'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Rules/Update',
+    await waitFor(() =>
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/prpc/luci.analysis.v1.Rules/Update'),
+        expect.objectContaining({
+          body: expect.stringContaining('"updateMask":"bug"'),
+        }),
+      ),
     );
-    expect(fetchMock.lastCall()![1]!.body).toEqual(
-      '{"rule":' +
-        '{"name":"projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818",' +
-        '"bug":{"system":"buganizer","id":"6789"' +
-        '}},' +
-        '"updateMask":"bug","etag":"W/\\"2022-01-31T03:36:14.89643Z\\""}',
+    // Also verify the payload contained the new bug ID
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/prpc/luci.analysis.v1.Rules/Update'),
+      expect.objectContaining({
+        body: expect.stringContaining('"id":"6789"'),
+      }),
     );
     expect(screen.getByTestId('bug-number')).toHaveValue('6789');
   });

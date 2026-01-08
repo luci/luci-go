@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { render, screen, waitFor } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 import { act } from 'react';
 
 import {
@@ -23,13 +22,13 @@ import {
 import { createMockAnalysis } from '@/bisection/testing_tools/mocks/analysis_mock';
 import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { ListAnalysesTable } from './list_analyses_table';
 
 describe('<AnalysesTable />', () => {
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   test('if analyses are displayed', async () => {

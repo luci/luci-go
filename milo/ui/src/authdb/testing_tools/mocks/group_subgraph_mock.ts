@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import {
   Subgraph,
   PrincipalKind,
 } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function createMockSubgraph(name: string) {
   const subgraph: Subgraph = {
@@ -58,30 +57,22 @@ export function createMockSubgraph(name: string) {
 }
 
 export function mockFetchGetSubgraph(mockSubgraph: Subgraph) {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.authService.host +
-      '/prpc/auth.service.Groups/GetSubgraph',
+  mockFetchRaw(
+    (url) => url.includes('auth.service.Groups/GetSubgraph'),
+    ")]}'\n" + JSON.stringify(Subgraph.toJSON(mockSubgraph)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body: ")]}'\n" + JSON.stringify(Subgraph.toJSON(mockSubgraph)),
     },
-    { overwriteRoutes: true },
   );
 }
 
 export function mockErrorFetchingGetSubgraph() {
-  fetchMock.post(
-    'https://' +
-      SETTINGS.authService.host +
-      '/prpc/auth.service.Groups/GetSubgraph',
-    {
-      headers: {
-        'X-Prpc-Grpc-Code': '2',
-      },
+  mockFetchRaw((url) => url.includes('auth.service.Groups/GetSubgraph'), '', {
+    headers: {
+      'X-Prpc-Grpc-Code': '2',
     },
-    { overwriteRoutes: true },
-  );
+  });
 }

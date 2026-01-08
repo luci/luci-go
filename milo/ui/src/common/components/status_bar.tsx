@@ -15,7 +15,7 @@
 import { Box, LinearProgress, styled } from '@mui/material';
 
 export interface StatusBarComponent {
-  readonly color: string;
+  readonly segmentColor: string;
   readonly weight: number;
 }
 
@@ -28,14 +28,6 @@ const Container = styled(Box)(() => ({
   display: 'flex',
   height: '5px',
   width: '100%',
-}));
-
-const Segment = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'weight' && prop !== 'color',
-})<{ weight: number; color: string }>(({ weight, color }) => ({
-  flexGrow: weight,
-  backgroundColor: color,
-  height: '100%',
 }));
 
 export function StatusBar({ components, loading }: StatusBarProps) {
@@ -56,11 +48,14 @@ export function StatusBar({ components, loading }: StatusBarProps) {
   return (
     <Container data-testid="status-bar-container">
       {components.map((c, i) => (
-        <Segment
+        <Box
           key={i}
-          weight={c.weight}
-          color={c.color}
           data-testid="status-bar-segment"
+          style={{
+            flexGrow: c.weight,
+            backgroundColor: c.segmentColor,
+            height: '100%',
+          }}
         />
       ))}
     </Container>

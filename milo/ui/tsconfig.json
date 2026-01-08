@@ -1,6 +1,11 @@
 {
   "compilerOptions": {
-    "lib": ["es2019", "dom", "dom.iterable", "webworker"],
+    "lib": [
+      "es2019",
+      "dom",
+      "dom.iterable",
+      "webworker"
+    ],
     "allowJs": true,
     "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react",
@@ -21,10 +26,12 @@
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "types": [
+      "node",
+      "jest",
+      "@testing-library/jest-dom",
       "@types/gapi",
       "@types/gtag.js",
-      "@types/jest",
-      "vite/client",
+      "vite/client"
     ],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -49,8 +56,12 @@
     // [4]: https://reactjs.org/blog/2020/10/20/react-v17.html#changes-to-event-delegation
     "useDefineForClassFields": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "@root/*": ["./*"],
+      "@/*": [
+        "./src/*"
+      ],
+      "@root/*": [
+        "./*"
+      ],
     }
   },
   "ts-node": {

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-import 'isomorphic-fetch';
 import 'intersection-observer';
 import '@/proto_utils/duration_patch';
 
@@ -31,9 +30,14 @@ import { assertNonNullable } from '@/generic_libs/tools/utils';
 import {
   createSelectiveMockFromModule,
   createSelectiveSpiesFromModule,
+  resetMockFetch,
 } from './jest_utils';
 
 expect.extend(emotionMatchers);
+
+afterEach(() => {
+  resetMockFetch();
+});
 
 // TODO(crbug/1347294): encloses all state modifying actions in mobx actions
 // then delete this.

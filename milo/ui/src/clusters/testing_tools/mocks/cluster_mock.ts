@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import { DeepMutable } from '@/clusters/types/types';
 import {
   Cluster,
@@ -22,9 +20,7 @@ import {
   ClusterSummary,
   DistinctClusterFailure,
   GetClusterRequest,
-  QueryClusterExoneratedTestVariantBranchesRequest,
   QueryClusterExoneratedTestVariantBranchesResponse,
-  QueryClusterExoneratedTestVariantsRequest,
   QueryClusterExoneratedTestVariantsResponse,
   QueryClusterFailuresRequest,
   QueryClusterFailuresResponse,
@@ -33,6 +29,7 @@ import {
   QueryClusterSummariesResponse,
   ReclusteringProgress,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export const getMockCluster = (
   id: string,
@@ -220,22 +217,39 @@ export const getMockClusterExoneratedTestVariantBranch = (
 export const mockQueryClusterSummaries = (
   request: QueryClusterSummariesRequest,
   response: QueryClusterSummariesResponse,
-  overwriteRoutes = true,
+  _overwriteRoutes = true,
 ) => {
-  fetchMock.post(
-    {
-      url: 'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryClusterSummaries',
-      body: QueryClusterSummariesRequest.toJSON(request) as object,
+  mockFetchRaw(
+    (url, init) => {
+      if (
+        !url.includes(
+          'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryClusterSummaries',
+        )
+      ) {
+        return false;
+      }
+      if (!init?.body || typeof init.body !== 'string') {
+        return false;
+      }
+      const body = JSON.parse(init.body);
+      // We don't implement full deep equality check for request proto here, just checking if it is the intended request.
+      // But multiple calls might differ in filters/orders.
+      // Tests usually expect distinct handling.
+      // Checking for exact match of critical fields might be needed.
+      // For now, let's assume strict JSON equality of the body matches standard usage.
+      // Note: JSON.stringify order might vary, but pRPC client usually produces consistent output.
+      return (
+        JSON.stringify(body) ===
+        JSON.stringify(QueryClusterSummariesRequest.toJSON(request))
+      );
     },
+    ")]}'\n" + JSON.stringify(QueryClusterSummariesResponse.toJSON(response)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" +
-        JSON.stringify(QueryClusterSummariesResponse.toJSON(response)),
     },
-    { overwriteRoutes: overwriteRoutes },
   );
 };
 
@@ -249,18 +263,28 @@ export const mockGetCluster = (
     name: `projects/${encodeURIComponent(project)}/clusters/${encodeURIComponent(algorithm)}/${encodeURIComponent(id)}`,
   };
 
-  fetchMock.post(
-    {
-      url: 'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/Get',
-      body: request,
+  mockFetchRaw(
+    (url, init) => {
+      if (
+        !url.includes(
+          'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/Get',
+        )
+      ) {
+        return false;
+      }
+      if (!init?.body || typeof init.body !== 'string') {
+        return false;
+      }
+      const body = JSON.parse(init.body);
+      return body.name === request.name;
     },
+    ")]}'\n" + JSON.stringify(Cluster.toJSON(response) as object),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body: ")]}'\n" + JSON.stringify(Cluster.toJSON(response) as object),
     },
-    { overwriteRoutes: true },
   );
 };
 
@@ -271,20 +295,32 @@ export const mockQueryClusterFailures = (
   const response: QueryClusterFailuresResponse = {
     failures: failures,
   };
-  fetchMock.post(
-    {
-      url: 'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryClusterFailures',
-      body: QueryClusterFailuresRequest.toJSON(request) as object,
+  mockFetchRaw(
+    (url, init) => {
+      if (
+        !url.includes(
+          'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryClusterFailures',
+        )
+      ) {
+        return false;
+      }
+      if (!init?.body || typeof init.body !== 'string') {
+        return false;
+      }
+      const body = JSON.parse(init.body);
+      return (
+        JSON.stringify(body) ===
+        JSON.stringify(QueryClusterFailuresRequest.toJSON(request))
+      );
     },
+    ")]}'\n" +
+      JSON.stringify(QueryClusterFailuresResponse.toJSON(response) as object),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" +
-        JSON.stringify(QueryClusterFailuresResponse.toJSON(response) as object),
     },
-    { overwriteRoutes: true },
   );
 };
 
@@ -292,28 +328,34 @@ export const mockQueryExoneratedTestVariants = (
   parent: string,
   testVariants: ClusterExoneratedTestVariant[],
 ) => {
-  const request: QueryClusterExoneratedTestVariantsRequest = {
-    parent: parent,
-  };
   const response: QueryClusterExoneratedTestVariantsResponse = {
     testVariants: testVariants,
   };
-  fetchMock.post(
-    {
-      url: 'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryExoneratedTestVariants',
-      body: QueryClusterExoneratedTestVariantsRequest.toJSON(request) as object,
+  mockFetchRaw(
+    (url, init) => {
+      if (
+        !url.includes(
+          'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryExoneratedTestVariants',
+        )
+      ) {
+        return false;
+      }
+      if (!init?.body || typeof init.body !== 'string') {
+        return false;
+      }
+      const body = JSON.parse(init.body);
+      return body.parent === parent;
     },
+    ")]}'\n" +
+      JSON.stringify(
+        QueryClusterExoneratedTestVariantsResponse.toJSON(response),
+      ),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" +
-        JSON.stringify(
-          QueryClusterExoneratedTestVariantsResponse.toJSON(response),
-        ),
     },
-    { overwriteRoutes: true },
   );
 };
 
@@ -321,58 +363,65 @@ export const mockQueryExoneratedTestVariantBranches = (
   parent: string,
   testVariantBranches: ClusterExoneratedTestVariantBranch[],
 ) => {
-  const request: QueryClusterExoneratedTestVariantBranchesRequest = {
-    parent: parent,
-  };
   const response: QueryClusterExoneratedTestVariantBranchesResponse = {
     testVariantBranches: testVariantBranches,
   };
-  fetchMock.post(
-    {
-      url: 'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryExoneratedTestVariantBranches',
-      body: QueryClusterExoneratedTestVariantBranchesRequest.toJSON(
-        request,
-      ) as object,
+  mockFetchRaw(
+    (url, init) => {
+      if (
+        !url.includes(
+          'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryExoneratedTestVariantBranches',
+        )
+      ) {
+        return false;
+      }
+      if (!init?.body || typeof init.body !== 'string') {
+        return false;
+      }
+      const body = JSON.parse(init.body);
+      return body.parent === parent;
     },
+    ")]}'\n" +
+      JSON.stringify(
+        QueryClusterExoneratedTestVariantBranchesResponse.toJSON(response),
+      ),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" +
-        JSON.stringify(
-          QueryClusterExoneratedTestVariantBranchesResponse.toJSON(response),
-        ),
     },
-    { overwriteRoutes: true },
   );
 };
 
 export const mockQueryHistory = (response: QueryClusterHistoryResponse) => {
-  fetchMock.post(
-    {
-      url: 'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryHistory',
-    },
+  mockFetchRaw(
+    (url) =>
+      url.includes(
+        'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/QueryHistory',
+      ),
+    ")]}'\n" + JSON.stringify(QueryClusterHistoryResponse.toJSON(response)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" + JSON.stringify(QueryClusterHistoryResponse.toJSON(response)),
     },
-    { overwriteRoutes: true },
   );
 };
 
 export const mockReclusteringProgress = (response: ReclusteringProgress) => {
-  fetchMock.post(
-    'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress',
+  mockFetchRaw(
+    (url) =>
+      url.includes(
+        'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Clusters/GetReclusteringProgress',
+      ),
+    ")]}'\n" + JSON.stringify(ReclusteringProgress.toJSON(response)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body: ")]}'\n" + JSON.stringify(ReclusteringProgress.toJSON(response)),
     },
-    { overwriteRoutes: true },
   );
 };

@@ -14,7 +14,6 @@
 
 import { RpcCode } from '@chopsui/prpc-client';
 import { render, screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import {
   createMockTestAnalysis,
@@ -23,13 +22,13 @@ import {
 } from '@/bisection/testing_tools/mocks/test_analysis_mock';
 import { TestAnalysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { SearchTestAnalysisTable } from './search_test_analysis_table';
 
 describe('<SearchTestAnalysisTable />', () => {
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   test('if the matching analysis is displayed', async () => {

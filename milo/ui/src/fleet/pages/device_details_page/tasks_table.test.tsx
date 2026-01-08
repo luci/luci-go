@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.n
 import { render, screen, waitFor } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import {
   mockErrorListingBots,
@@ -27,6 +26,7 @@ import {
   TaskResultResponse,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 import { Tasks } from './tasks_table';
@@ -37,8 +37,7 @@ describe('<Tasks />', () => {
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('warns when bot request errors', async () => {

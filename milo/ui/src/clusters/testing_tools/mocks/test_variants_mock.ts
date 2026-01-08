@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import {
   QueryTestVariantFailureRateRequest,
   QueryTestVariantFailureRateRequest_TestVariant,
@@ -25,6 +23,7 @@ import {
   TestVariantFailureRateAnalysis,
   TestVariantStabilityAnalysis,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export const getMockTestVariantIdentifier = (
   id: string,
@@ -129,20 +128,29 @@ export const mockQueryFailureRate = (
   request: QueryTestVariantFailureRateRequest,
   response: QueryTestVariantFailureRateResponse,
 ) => {
-  fetchMock.post(
-    {
-      url: 'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.TestVariants/QueryFailureRate',
-      body: QueryTestVariantFailureRateRequest.toJSON(request) as object,
+  mockFetchRaw(
+    (url, init) => {
+      if (
+        url !==
+        'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.TestVariants/QueryFailureRate'
+      ) {
+        return false;
+      }
+      if (!init?.body || typeof init.body !== 'string') {
+        return false;
+      }
+      return (
+        init.body ===
+        JSON.stringify(QueryTestVariantFailureRateRequest.toJSON(request))
+      );
     },
+    ")]}'\n" +
+      JSON.stringify(QueryTestVariantFailureRateResponse.toJSON(response)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body:
-        ")]}'\n" +
-        JSON.stringify(QueryTestVariantFailureRateResponse.toJSON(response)),
     },
-    { overwriteRoutes: true },
   );
 };
 
@@ -150,19 +158,28 @@ export const mockQueryStability = (
   request: QueryTestVariantStabilityRequest,
   response: QueryTestVariantStabilityResponse,
 ) => {
-  fetchMock.post(
-    {
-      url: 'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.TestVariants/QueryStability',
-      body: QueryTestVariantStabilityRequest.toJSON(request) as object,
+  mockFetchRaw(
+    (url, init) => {
+      if (
+        url !==
+        'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.TestVariants/QueryStability'
+      ) {
+        return false;
+      }
+      if (!init?.body || typeof init.body !== 'string') {
+        return false;
+      }
+      return (
+        init.body ===
+        JSON.stringify(QueryTestVariantStabilityRequest.toJSON(request))
+      );
     },
+    ")]}'\n" +
+      JSON.stringify(QueryTestVariantStabilityResponse.toJSON(response)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body:
-        ")]}'\n" +
-        JSON.stringify(QueryTestVariantStabilityResponse.toJSON(response)),
     },
-    { overwriteRoutes: true },
   );
 };

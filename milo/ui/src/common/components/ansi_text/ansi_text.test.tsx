@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { cleanup, render, screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
+
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { ANSIText } from './ansi_text';
 
@@ -24,8 +25,7 @@ describe('<ANSIText />', () => {
 
   afterEach(() => {
     cleanup();
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
     jest.useRealTimers();
   });
 

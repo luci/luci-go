@@ -15,7 +15,6 @@
 import '@testing-library/jest-dom';
 
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { renderTabWithRouterAndClient } from '@/clusters/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
@@ -26,6 +25,7 @@ import {
 } from '@/clusters/testing_tools/mocks/failures_mock';
 import { mockFetchMetrics } from '@/clusters/testing_tools/mocks/metrics_mock';
 import { QueryClusterFailuresRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { ClusterContextProvider } from '../../cluster_context';
 
@@ -36,9 +36,9 @@ describe('Test FailureTable component', () => {
     mockFetchAuthState();
     mockFetchMetrics('chrome');
   });
+
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('given cluster failures, should group and display them', async () => {

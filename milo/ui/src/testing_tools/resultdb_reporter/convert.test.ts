@@ -107,9 +107,10 @@ describe('toSinkResult', () => {
       }),
     );
     expect(result.artifacts['failure-messages']).toBeDefined();
-    expect(result.artifacts['failure-messages']).not.toContain('/path/to/repo');
-    expect(result.artifacts['failure-messages']).not.toContain(
-      '/node_modules/',
+    const failureMessages = new TextDecoder().decode(
+      result.artifacts['failure-messages'].contents,
     );
+    expect(failureMessages).not.toContain('/path/to/repo');
+    expect(failureMessages).not.toContain('/node_modules/');
   });
 });

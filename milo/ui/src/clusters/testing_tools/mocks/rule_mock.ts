@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
 import { DateTime } from 'luxon';
 
 import { DeepMutable } from '@/clusters/types/types';
 import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export const createDefaultMockRule = (): DeepMutable<Rule> => {
   const now = DateTime.now();
@@ -66,25 +66,25 @@ export const createDefaultMockRule = (): DeepMutable<Rule> => {
 };
 
 export const mockFetchRule = (rule: Rule) => {
-  fetchMock.post(
-    'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Rules/Get',
+  mockFetchRaw(
+    (url) => url.endsWith('/prpc/luci.analysis.v1.Rules/Get'),
+    ")]}'\n" + JSON.stringify(Rule.toJSON(rule)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body: ")]}'\n" + JSON.stringify(Rule.toJSON(rule)),
     },
   );
 };
 
 export const mockUpdateRule = (updatedRule: Rule) => {
-  fetchMock.post(
-    'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Rules/Update',
+  mockFetchRaw(
+    (url) => url.endsWith('/prpc/luci.analysis.v1.Rules/Update'),
+    ")]}'\n" + JSON.stringify(Rule.toJSON(updatedRule)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
       },
-      body: ")]}'\n" + JSON.stringify(Rule.toJSON(updatedRule)),
     },
   );
 };

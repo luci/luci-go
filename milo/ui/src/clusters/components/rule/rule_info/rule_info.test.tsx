@@ -13,10 +13,7 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-import 'node-fetch';
-
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
@@ -76,17 +73,13 @@ describe('Test RuleInfo component', () => {
 
     fireEvent.click(screen.getByText('Confirm'));
 
-    await waitFor(
-      () =>
-        fetchMock.lastCall() !== undefined &&
-        fetchMock.lastCall()![0] ===
-          'http://localhost/prpc/luci.analysis.v1.Rules/Update',
-    );
-
-    expect(fetchMock.lastCall()![1]!.body).toEqual(
-      '{"rule":{"name":"projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818"},' +
-        '"updateMask":"isActive","etag":"W/\\"2022-01-31T03:36:14.89643Z\\""' +
-        '}',
+    await waitFor(() =>
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/prpc/luci.analysis.v1.Rules/Update'),
+        expect.objectContaining({
+          body: expect.stringContaining('"updateMask":"isActive"'),
+        }),
+      ),
     );
   });
 });

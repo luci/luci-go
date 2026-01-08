@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import { cleanup, render, screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 import { act } from 'react';
 
 import { ARTIFACT_LENGTH_LIMIT } from '@/common/constants/verdict';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { ArtifactContextProvider } from '../context';
 
@@ -32,8 +32,7 @@ describe('<TextArtifact />', () => {
 
   afterEach(() => {
     cleanup();
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
     jest.useRealTimers();
   });
 
@@ -52,7 +51,7 @@ describe('<TextArtifact />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    const url = new URL(fetchMock.lastCall()![0]);
+    const url = new URL((global.fetch as jest.Mock).mock.lastCall[0]);
     expect(parseInt(url.searchParams.get('n')!)).toBeGreaterThanOrEqual(
       ARTIFACT_LENGTH_LIMIT,
     );
@@ -78,7 +77,7 @@ describe('<TextArtifact />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    const url = new URL(fetchMock.lastCall()![0]);
+    const url = new URL((global.fetch as jest.Mock).mock.lastCall[0]);
     expect(parseInt(url.searchParams.get('n')!)).toBeGreaterThanOrEqual(
       ARTIFACT_LENGTH_LIMIT,
     );
@@ -107,7 +106,7 @@ describe('<TextArtifact />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    const url = new URL(fetchMock.lastCall()![0]);
+    const url = new URL((global.fetch as jest.Mock).mock.lastCall[0]);
     expect(parseInt(url.searchParams.get('n')!)).toBeGreaterThanOrEqual(
       ARTIFACT_LENGTH_LIMIT,
     );
@@ -134,7 +133,7 @@ describe('<TextArtifact />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    const url = new URL(fetchMock.lastCall()![0]);
+    const url = new URL((global.fetch as jest.Mock).mock.lastCall[0]);
     expect(parseInt(url.searchParams.get('n')!)).toBeGreaterThanOrEqual(
       ARTIFACT_LENGTH_LIMIT,
     );
@@ -165,7 +164,7 @@ describe('<TextArtifact />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    const url = new URL(fetchMock.lastCall()![0]);
+    const url = new URL((global.fetch as jest.Mock).mock.lastCall[0]);
     expect(parseInt(url.searchParams.get('n')!)).toBeGreaterThanOrEqual(
       ARTIFACT_LENGTH_LIMIT,
     );
@@ -174,22 +173,10 @@ describe('<TextArtifact />', () => {
   });
 
   it('shows alert when artifact failed to load', async () => {
-    fetchMock.get(
-      (urlStr) => {
-        const url = new URL(urlStr);
-        return (
-          url.host === location.host &&
-          url.pathname ===
-            getRawArtifactURLPath(
-              'invocations/inv-1/tests/test-1/results/result-1/artifacts/artifact-1',
-            )
-        );
-      },
-      {
-        body: 'failed to load content',
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+      new Response('failed to load content', {
         status: 404,
-      },
-      { overwriteRoutes: true },
+      }),
     );
     render(
       <FakeContextProvider>
@@ -201,7 +188,7 @@ describe('<TextArtifact />', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    const url = new URL(fetchMock.lastCall()![0]);
+    const url = new URL((global.fetch as jest.Mock).mock.lastCall[0]);
     expect(parseInt(url.searchParams.get('n')!)).toBeGreaterThanOrEqual(
       ARTIFACT_LENGTH_LIMIT,
     );

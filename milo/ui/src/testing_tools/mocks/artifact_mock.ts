@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 /**
  * Mocks a successful fetch request for artifact content.
  * @param content The decoded string content to return.
  */
 export function mockFetchArtifactContent(url: string, content: string) {
-  fetchMock.getOnce(url, {
+  mockFetchRaw(url, content, {
     status: 200,
-    body: content,
     headers: { 'Content-Type': 'text/plain' },
   });
 }

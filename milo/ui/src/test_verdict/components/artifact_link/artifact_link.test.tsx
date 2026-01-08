@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import fetchMockJest from 'fetch-mock-jest';
 import { act } from 'react';
 
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { mockFetchTextArtifact } from '../artifact_tags/text_artifact/testing_tools/text_artifact_mock';
 
@@ -30,7 +30,7 @@ describe('<ArtifactLink />', () => {
 
   afterEach(() => {
     jest.useRealTimers();
-    fetchMockJest.reset();
+    resetMockFetch();
   });
 
   it('should render a link to the artifact', () => {

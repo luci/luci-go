@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
 import {
   ListProjectMetricsRequest,
   ListProjectMetricsResponse,
   ProjectMetric,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export const getMockMetricsList = (project: string): ProjectMetric[] => {
   const humanClsFailedPresubmitMetric: ProjectMetric = {
@@ -78,17 +77,27 @@ export const mockFetchMetrics = (
     metrics: metrics,
   };
 
-  fetchMock.post(
-    {
-      url: 'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Metrics/ListForProject',
-      body: ListProjectMetricsRequest.toJSON(request) as object,
+  mockFetchRaw(
+    (url, init) => {
+      if (
+        !url.includes(
+          'https://staging.analysis.api.luci.app/prpc/luci.analysis.v1.Metrics/ListForProject',
+        )
+      ) {
+        return false;
+      }
+      if (!init?.body || typeof init.body !== 'string') {
+        return false;
+      }
+      const body = JSON.parse(init.body);
+      return body.parent === request.parent;
     },
+    ")]}'\n" + JSON.stringify(ListProjectMetricsResponse.toJSON(response)),
     {
       headers: {
         'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
       },
-      body:
-        ")]}'\n" + JSON.stringify(ListProjectMetricsResponse.toJSON(response)),
     },
   );
 };

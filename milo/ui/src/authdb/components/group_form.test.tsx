@@ -30,8 +30,13 @@ import {
   mockErrorUpdateGroup,
 } from '@/authdb/testing_tools/mocks/update_group_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 describe('<GroupForm />', () => {
+  beforeEach(() => {
+    mockFetchAuthState();
+  });
+
   test('if group name, desciption, owners, members, subgroups are displayed', async () => {
     const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
@@ -348,6 +353,9 @@ describe('<GroupForm />', () => {
   });
 
   test('error is shown on invalid owners name', async () => {
+    const mockGroup = createMockGroupIndividual('123', true, true);
+    mockFetchGetGroup(mockGroup);
+
     render(
       <FakeContextProvider>
         <List>

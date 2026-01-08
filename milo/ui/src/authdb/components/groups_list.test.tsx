@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
 import { GroupsList } from '@/authdb/components/groups_list';
@@ -23,11 +22,11 @@ import {
   mockErrorFetchingGroups,
 } from '@/authdb/testing_tools/mocks/groups_list_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 describe('<GroupsList />', () => {
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
   test('if list of groups is displayed', async () => {
     const mockGroups = [

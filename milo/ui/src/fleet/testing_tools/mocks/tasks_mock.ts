@@ -12,15 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import fetchMock from 'fetch-mock-jest';
-
-import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import {
   TaskListResponse,
   TaskResultResponse,
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
-
-const LIST_BOT_TASKS_ENDPOINT = `https://${DEVICE_TASKS_SWARMING_HOST}/prpc/swarming.v2.Bots/ListBotTasks`;
+import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export function createMockTaskListResponse(
   tasks: TaskResultResponse[],
@@ -33,25 +29,31 @@ export function mockListBotTasks(
   tasks: TaskResultResponse[],
   nextPageToken: string | undefined,
 ) {
-  fetchMock.post(LIST_BOT_TASKS_ENDPOINT, {
-    headers: {
-      'X-Prpc-Grpc-Code': '0',
-    },
-    body:
-      ")]}'\n" +
+  mockFetchRaw(
+    (url) => url.includes('swarming.v2.Bots/ListBotTasks'),
+    ")]}'\n" +
       JSON.stringify(
         TaskListResponse.toJSON(
           createMockTaskListResponse(tasks, nextPageToken),
         ),
       ),
-  });
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '0',
+        'Content-Type': 'application/json',
+      },
+    },
+  );
 }
 
 export function mockErrorListingBotTasks(errorMsg: string) {
-  fetchMock.post(LIST_BOT_TASKS_ENDPOINT, {
-    headers: {
-      'X-Prpc-Grpc-Code': '2',
+  mockFetchRaw(
+    (url) => url.includes('swarming.v2.Bots/ListBotTasks'),
+    errorMsg,
+    {
+      headers: {
+        'X-Prpc-Grpc-Code': '2',
+      },
     },
-    body: errorMsg,
-  });
+  );
 }

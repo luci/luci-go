@@ -15,7 +15,6 @@
 import '@testing-library/jest-dom';
 
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
@@ -23,6 +22,7 @@ import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_moc
 import { mockQueryHistory } from '@/clusters/testing_tools/mocks/cluster_mock';
 import { getMockMetricsList } from '@/clusters/testing_tools/mocks/metrics_mock';
 import { QueryClusterHistoryResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { OverviewTabContextProvider } from '../overview_tab_context';
 
@@ -34,8 +34,7 @@ describe('test HistoryChartsSection component', () => {
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   const metrics = getMockMetricsList('testproject');

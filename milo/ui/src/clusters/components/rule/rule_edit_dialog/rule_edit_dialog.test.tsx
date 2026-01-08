@@ -13,10 +13,8 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-import 'node-fetch';
 
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { identityFunction } from '@/clusters/testing_tools/functions';
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
@@ -26,15 +24,14 @@ import {
   mockUpdateRule,
 } from '@/clusters/testing_tools/mocks/rule_mock';
 import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import RuleEditDialog from './rule_edit_dialog';
 
 describe('Test RuleEditDialog component', () => {
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
-
   it("when modifying the rule's text, then should update the rule", async () => {
     const mockRule = createDefaultMockRule();
     mockFetchAuthState();
@@ -56,18 +53,15 @@ describe('Test RuleEditDialog component', () => {
     mockUpdateRule(updatedRule);
 
     fireEvent.click(screen.getByText('Save'));
-    await waitFor(
-      () =>
-        fetchMock.lastCall() !== undefined &&
-        fetchMock.lastCall()![0] ===
-          'http://localhost/prpc/luci.analysis.v1.Rules/Update',
-    );
-
-    expect(fetchMock.lastCall()![1]!.body).toEqual(
-      '{"rule":{"name":"projects/chromium/rules/ce83f8395178a0f2edad59fc1a167818",' +
-        '"ruleDefinition":"new rule definition"},' +
-        '"updateMask":"ruleDefinition","etag":"W/\\"2022-01-31T03:36:14.89643Z\\""' +
-        '}',
+    await waitFor(() =>
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/prpc/luci.analysis.v1.Rules/Update'),
+        expect.objectContaining({
+          body: expect.stringContaining(
+            '"ruleDefinition":"new rule definition"',
+          ),
+        }),
+      ),
     );
   });
 

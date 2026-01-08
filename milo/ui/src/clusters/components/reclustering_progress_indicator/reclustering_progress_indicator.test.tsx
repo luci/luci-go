@@ -13,10 +13,8 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-import 'node-fetch';
 
 import { screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 import { DateTime } from 'luxon';
 
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
@@ -26,15 +24,14 @@ import {
   createMockDoneProgress,
   createMockProgress,
 } from '@/clusters/testing_tools/mocks/progress_mock';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import ReclusteringProgressIndicator from './reclustering_progress_indicator';
 
 describe('Test ReclusteringProgressIndicator component', () => {
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
-
   it('given an finished progress, then should not display', async () => {
     mockFetchAuthState();
     mockReclusteringProgress(createMockDoneProgress());

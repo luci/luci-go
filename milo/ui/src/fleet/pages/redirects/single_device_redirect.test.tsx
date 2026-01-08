@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 import { useParams } from 'react-router';
 
 import { DEVICE_DETAILS_PATH } from '@/fleet/constants/paths';
@@ -24,6 +23,7 @@ import {
   mockListDevices,
 } from '@/fleet/testing_tools/mocks/devices_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 import { SingleDeviceRedirect } from './single_device_redirect';
@@ -39,8 +39,7 @@ describe('<SingleDeviceRedirect />', () => {
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('redirects to first device in search', async () => {

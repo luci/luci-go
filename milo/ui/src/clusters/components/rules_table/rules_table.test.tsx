@@ -13,10 +13,8 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-import 'node-fetch';
 
 import { fireEvent, screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
@@ -25,6 +23,7 @@ import {
   mockFetchRules,
   createDefaultMockListRulesResponse,
 } from '@/clusters/testing_tools/mocks/rules_mock';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import RulesTable from './rules_table';
 
@@ -33,9 +32,9 @@ describe('Test RulesTable component', () => {
     mockFetchAuthState();
     mockFetchProjectConfig();
   });
+
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('given a project, should display the active rules', async () => {

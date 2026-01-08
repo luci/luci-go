@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { QueuedStickyScrollingBase } from '@/generic_libs/components/queued_sticky';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
@@ -21,6 +20,11 @@ import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invoc
 import { RecentPassesProvider } from '@/test_investigation/context';
 import { InvocationProvider } from '@/test_investigation/context';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import {
+  mockFetchHandler,
+  mockFetchRaw,
+  resetMockFetch,
+} from '@/testing_tools/jest_utils';
 import { mockFetchArtifactContent } from '@/testing_tools/mocks/artifact_mock';
 
 import { ArtifactContentView } from './artifact_content_view';
@@ -33,8 +37,7 @@ window.scrollTo = jest.fn();
 
 describe('<ArtifactContentView />', () => {
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('given an artifact, then should display the contents', async () => {
@@ -95,18 +98,16 @@ describe('<ArtifactContentView />', () => {
       sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
     });
 
-    fetchMock.getOnce(MOCK_ARTIFACT_URL + '?n=5000', {
-      body: INITIAL_CONTENT,
+    mockFetchHandler(MOCK_ARTIFACT_URL, async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return new Response(FULL_CONTENT, {
+        headers: { 'Content-Type': 'text/plain' },
+      });
+    });
+
+    mockFetchRaw(MOCK_ARTIFACT_URL + '?n=5000', INITIAL_CONTENT, {
       headers: { 'Content-Type': 'text/plain' },
     });
-    fetchMock.getOnce(
-      MOCK_ARTIFACT_URL,
-      {
-        body: FULL_CONTENT,
-        headers: { 'Content-Type': 'text/plain' },
-      },
-      { delay: 100 },
-    );
 
     render(
       <FakeContextProvider>
@@ -165,27 +166,32 @@ describe('<ArtifactContentView />', () => {
       sourceSpec: { sources: { gitilesCommit: { position: '105' } } },
     });
 
-    fetchMock.getOnce(
-      (url, options) => {
-        const opts = options as RequestInit;
-        return !!(
-          url === MOCK_GCS_URL &&
-          opts.headers &&
-          (opts.headers as Record<string, string>)['Range'] === 'bytes=0-4999'
-        );
-      },
-      {
-        body: INITIAL_CONTENT,
+    mockFetchHandler(MOCK_GCS_URL, async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return new Response(FULL_CONTENT, {
         headers: { 'Content-Type': 'text/plain' },
+      });
+    });
+
+    mockFetchHandler(
+      (url, init) => {
+        const headers = init?.headers;
+        let range: string | null | undefined = null;
+        if (headers instanceof Headers) {
+          range = headers.get('Range') || headers.get('range');
+        } else if (headers && !Array.isArray(headers)) {
+          // Assume Record<string, string>
+          const h = headers as Record<string, string>;
+          range = h['Range'] || h['range'];
+        }
+
+        return url === MOCK_GCS_URL && range === 'bytes=0-4999';
       },
-    );
-    fetchMock.getOnce(
-      MOCK_GCS_URL,
-      {
-        body: FULL_CONTENT,
-        headers: { 'Content-Type': 'text/plain' },
+      async () => {
+        return new Response(INITIAL_CONTENT, {
+          headers: { 'Content-Type': 'text/plain' },
+        });
       },
-      { delay: 100 },
     );
 
     render(
@@ -240,8 +246,7 @@ index 1..2
 
     // Use exact match to avoid issues with function matcher
     // mockFetchArtifactContent uses getOnce, using get here to be safe against refetches
-    fetchMock.get(MOCK_ARTIFACT_URL + '?n=5000', {
-      body: MOCK_CONTENT,
+    mockFetchRaw(MOCK_ARTIFACT_URL + '?n=5000', MOCK_CONTENT, {
       headers: { 'Content-Type': 'text/plain' },
     });
     render(

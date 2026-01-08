@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import {
   mockErrorQueryingAnalysis,
@@ -28,6 +27,7 @@ import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 
 import { SearchAnalysisTable } from './search_analysis_table';
 
@@ -55,8 +55,7 @@ describe('<SearchAnalysisTable />', () => {
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   test('if the matching analysis is displayed', async () => {

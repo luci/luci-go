@@ -13,10 +13,7 @@
 // limitations under the License.
 
 import '@testing-library/jest-dom';
-import 'node-fetch';
-
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import fetchMock from 'fetch-mock-jest';
 
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
 import {
@@ -25,6 +22,7 @@ import {
 } from '@/clusters/testing_tools/mocks/rule_mock';
 import { DeepMutable } from '@/clusters/types/types';
 import { Rule } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
+import { resetMockFetch } from '@/testing_tools/jest_utils';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
 import BugInfo from './bug_info';
@@ -39,8 +37,7 @@ describe('Test BugInfo component', () => {
   });
 
   afterEach(() => {
-    fetchMock.mockClear();
-    fetchMock.reset();
+    resetMockFetch();
   });
 
   it('given a rule with buganizer bug, should display bug only', async () => {
