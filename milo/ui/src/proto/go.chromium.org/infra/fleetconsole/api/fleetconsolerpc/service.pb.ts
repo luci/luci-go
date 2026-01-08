@@ -329,6 +329,10 @@ export interface AndroidCount {
   readonly dyingDevices: number;
   readonly preppingDevices: number;
   readonly missingDevices: number;
+  readonly initDevices: number;
+  readonly lameduckDevices: number;
+  readonly failedDevices: number;
+  readonly dirtyDevices: number;
 }
 
 export interface TaskStateCounts {
@@ -349,6 +353,18 @@ export interface RepopulateCacheRequest {
 }
 
 export interface RepopulateCacheResponse {
+}
+
+export interface RepopulateBrowserCacheRequest {
+}
+
+export interface RepopulateBrowserCacheResponse {
+}
+
+export interface RepopulateAndroidCacheRequest {
+}
+
+export interface RepopulateAndroidCacheResponse {
 }
 
 export interface PingDBRequest {
@@ -2795,7 +2811,18 @@ export const ChromeOSCount: MessageFns<ChromeOSCount> = {
 };
 
 function createBaseAndroidCount(): AndroidCount {
-  return { totalDevices: 0, idleDevices: 0, busyDevices: 0, dyingDevices: 0, preppingDevices: 0, missingDevices: 0 };
+  return {
+    totalDevices: 0,
+    idleDevices: 0,
+    busyDevices: 0,
+    dyingDevices: 0,
+    preppingDevices: 0,
+    missingDevices: 0,
+    initDevices: 0,
+    lameduckDevices: 0,
+    failedDevices: 0,
+    dirtyDevices: 0,
+  };
 }
 
 export const AndroidCount: MessageFns<AndroidCount> = {
@@ -2817,6 +2844,18 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     }
     if (message.missingDevices !== 0) {
       writer.uint32(48).int32(message.missingDevices);
+    }
+    if (message.initDevices !== 0) {
+      writer.uint32(56).int32(message.initDevices);
+    }
+    if (message.lameduckDevices !== 0) {
+      writer.uint32(64).int32(message.lameduckDevices);
+    }
+    if (message.failedDevices !== 0) {
+      writer.uint32(72).int32(message.failedDevices);
+    }
+    if (message.dirtyDevices !== 0) {
+      writer.uint32(80).int32(message.dirtyDevices);
     }
     return writer;
   },
@@ -2876,6 +2915,38 @@ export const AndroidCount: MessageFns<AndroidCount> = {
           message.missingDevices = reader.int32();
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.initDevices = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.lameduckDevices = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.failedDevices = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.dirtyDevices = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2893,6 +2964,10 @@ export const AndroidCount: MessageFns<AndroidCount> = {
       dyingDevices: isSet(object.dyingDevices) ? globalThis.Number(object.dyingDevices) : 0,
       preppingDevices: isSet(object.preppingDevices) ? globalThis.Number(object.preppingDevices) : 0,
       missingDevices: isSet(object.missingDevices) ? globalThis.Number(object.missingDevices) : 0,
+      initDevices: isSet(object.initDevices) ? globalThis.Number(object.initDevices) : 0,
+      lameduckDevices: isSet(object.lameduckDevices) ? globalThis.Number(object.lameduckDevices) : 0,
+      failedDevices: isSet(object.failedDevices) ? globalThis.Number(object.failedDevices) : 0,
+      dirtyDevices: isSet(object.dirtyDevices) ? globalThis.Number(object.dirtyDevices) : 0,
     };
   },
 
@@ -2916,6 +2991,18 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     if (message.missingDevices !== 0) {
       obj.missingDevices = Math.round(message.missingDevices);
     }
+    if (message.initDevices !== 0) {
+      obj.initDevices = Math.round(message.initDevices);
+    }
+    if (message.lameduckDevices !== 0) {
+      obj.lameduckDevices = Math.round(message.lameduckDevices);
+    }
+    if (message.failedDevices !== 0) {
+      obj.failedDevices = Math.round(message.failedDevices);
+    }
+    if (message.dirtyDevices !== 0) {
+      obj.dirtyDevices = Math.round(message.dirtyDevices);
+    }
     return obj;
   },
 
@@ -2930,6 +3017,10 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     message.dyingDevices = object.dyingDevices ?? 0;
     message.preppingDevices = object.preppingDevices ?? 0;
     message.missingDevices = object.missingDevices ?? 0;
+    message.initDevices = object.initDevices ?? 0;
+    message.lameduckDevices = object.lameduckDevices ?? 0;
+    message.failedDevices = object.failedDevices ?? 0;
+    message.dirtyDevices = object.dirtyDevices ?? 0;
     return message;
   },
 };
@@ -3232,6 +3323,178 @@ export const RepopulateCacheResponse: MessageFns<RepopulateCacheResponse> = {
   },
   fromPartial(_: DeepPartial<RepopulateCacheResponse>): RepopulateCacheResponse {
     const message = createBaseRepopulateCacheResponse() as any;
+    return message;
+  },
+};
+
+function createBaseRepopulateBrowserCacheRequest(): RepopulateBrowserCacheRequest {
+  return {};
+}
+
+export const RepopulateBrowserCacheRequest: MessageFns<RepopulateBrowserCacheRequest> = {
+  encode(_: RepopulateBrowserCacheRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RepopulateBrowserCacheRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRepopulateBrowserCacheRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): RepopulateBrowserCacheRequest {
+    return {};
+  },
+
+  toJSON(_: RepopulateBrowserCacheRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<RepopulateBrowserCacheRequest>): RepopulateBrowserCacheRequest {
+    return RepopulateBrowserCacheRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<RepopulateBrowserCacheRequest>): RepopulateBrowserCacheRequest {
+    const message = createBaseRepopulateBrowserCacheRequest() as any;
+    return message;
+  },
+};
+
+function createBaseRepopulateBrowserCacheResponse(): RepopulateBrowserCacheResponse {
+  return {};
+}
+
+export const RepopulateBrowserCacheResponse: MessageFns<RepopulateBrowserCacheResponse> = {
+  encode(_: RepopulateBrowserCacheResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RepopulateBrowserCacheResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRepopulateBrowserCacheResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): RepopulateBrowserCacheResponse {
+    return {};
+  },
+
+  toJSON(_: RepopulateBrowserCacheResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<RepopulateBrowserCacheResponse>): RepopulateBrowserCacheResponse {
+    return RepopulateBrowserCacheResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<RepopulateBrowserCacheResponse>): RepopulateBrowserCacheResponse {
+    const message = createBaseRepopulateBrowserCacheResponse() as any;
+    return message;
+  },
+};
+
+function createBaseRepopulateAndroidCacheRequest(): RepopulateAndroidCacheRequest {
+  return {};
+}
+
+export const RepopulateAndroidCacheRequest: MessageFns<RepopulateAndroidCacheRequest> = {
+  encode(_: RepopulateAndroidCacheRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RepopulateAndroidCacheRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRepopulateAndroidCacheRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): RepopulateAndroidCacheRequest {
+    return {};
+  },
+
+  toJSON(_: RepopulateAndroidCacheRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<RepopulateAndroidCacheRequest>): RepopulateAndroidCacheRequest {
+    return RepopulateAndroidCacheRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<RepopulateAndroidCacheRequest>): RepopulateAndroidCacheRequest {
+    const message = createBaseRepopulateAndroidCacheRequest() as any;
+    return message;
+  },
+};
+
+function createBaseRepopulateAndroidCacheResponse(): RepopulateAndroidCacheResponse {
+  return {};
+}
+
+export const RepopulateAndroidCacheResponse: MessageFns<RepopulateAndroidCacheResponse> = {
+  encode(_: RepopulateAndroidCacheResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RepopulateAndroidCacheResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRepopulateAndroidCacheResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): RepopulateAndroidCacheResponse {
+    return {};
+  },
+
+  toJSON(_: RepopulateAndroidCacheResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<RepopulateAndroidCacheResponse>): RepopulateAndroidCacheResponse {
+    return RepopulateAndroidCacheResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<RepopulateAndroidCacheResponse>): RepopulateAndroidCacheResponse {
+    const message = createBaseRepopulateAndroidCacheResponse() as any;
     return message;
   },
 };
@@ -6993,6 +7256,10 @@ export interface FleetConsole {
   CountDevices(request: CountDevicesRequest): Promise<CountDevicesResponse>;
   /** RepopulateCache repopulates the cache, meant to be triggered by cron. */
   RepopulateCache(request: RepopulateCacheRequest): Promise<RepopulateCacheResponse>;
+  /** RepopulateBrowserCache repopulates browser data, meant to be triggered by cron. */
+  RepopulateBrowserCache(request: RepopulateBrowserCacheRequest): Promise<RepopulateBrowserCacheResponse>;
+  /** RepopulateAndroidCache repopulates android data, meant to be triggered by cron. */
+  RepopulateAndroidCache(request: RepopulateAndroidCacheRequest): Promise<RepopulateAndroidCacheResponse>;
   /**
    * PingDB attempts to establish contact with the database and does nothing
    * else.
@@ -7045,6 +7312,8 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.GetDeviceDimensions = this.GetDeviceDimensions.bind(this);
     this.CountDevices = this.CountDevices.bind(this);
     this.RepopulateCache = this.RepopulateCache.bind(this);
+    this.RepopulateBrowserCache = this.RepopulateBrowserCache.bind(this);
+    this.RepopulateAndroidCache = this.RepopulateAndroidCache.bind(this);
     this.PingDB = this.PingDB.bind(this);
     this.CleanExit = this.CleanExit.bind(this);
     this.ExportDevicesToCSV = this.ExportDevicesToCSV.bind(this);
@@ -7118,6 +7387,18 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = RepopulateCacheRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "RepopulateCache", data);
     return promise.then((data) => RepopulateCacheResponse.fromJSON(data));
+  }
+
+  RepopulateBrowserCache(request: RepopulateBrowserCacheRequest): Promise<RepopulateBrowserCacheResponse> {
+    const data = RepopulateBrowserCacheRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "RepopulateBrowserCache", data);
+    return promise.then((data) => RepopulateBrowserCacheResponse.fromJSON(data));
+  }
+
+  RepopulateAndroidCache(request: RepopulateAndroidCacheRequest): Promise<RepopulateAndroidCacheResponse> {
+    const data = RepopulateAndroidCacheRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "RepopulateAndroidCache", data);
+    return promise.then((data) => RepopulateAndroidCacheResponse.fromJSON(data));
   }
 
   PingDB(request: PingDBRequest): Promise<PingDBResponse> {

@@ -144,6 +144,42 @@ export function AndroidSummaryHeader({
               })}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />
+            <SingleMetric
+              name="Init"
+              value={countQuery.data?.androidCount?.initDevices}
+              total={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['INIT'],
+              })}
+            />
+            <SingleMetric
+              name="Lameduck"
+              value={countQuery.data?.androidCount?.lameduckDevices}
+              total={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['LAMEDUCK'],
+              })}
+            />
+            <SingleMetric
+              name="Failed"
+              value={countQuery.data?.androidCount?.failedDevices}
+              total={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['FAILED'],
+              })}
+            />
+            <SingleMetric
+              name="Dirty"
+              value={countQuery.data?.androidCount?.dirtyDevices}
+              total={countQuery.data?.androidCount?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['DIRTY'],
+              })}
+            />
           </div>
         </div>
       </div>
