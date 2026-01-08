@@ -59,4 +59,6 @@ message TestAnalysisRow {
   int64 sample_bbid = 15;
   // Details of nthsection analysis, including the reruns.
   luci.bisection.v1.TestNthSectionAnalysisResult nth_section_result = 16;
+  // GenAI analysis result.
+  luci.bisection.v1.TestGenAiAnalysisResult gen_ai_result = 17;
 }

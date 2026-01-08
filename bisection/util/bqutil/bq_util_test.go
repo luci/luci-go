@@ -253,6 +253,30 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, tfa), should.BeNil)
 		nsa.CulpritKey = datastore.KeyForObj(ctx, culprit)
 		assert.Loosely(t, datastore.Put(ctx, nsa), should.BeNil)
+
+		// GenAI analysis.
+		genaiAnalysis := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+			StartTime:         time.Unix(int64(110), 0).UTC(),
+			EndTime:           time.Unix(int64(115), 0).UTC(),
+			Status:            pb.AnalysisStatus_SUSPECTFOUND,
+			RunStatus:         pb.AnalysisRunStatus_ENDED,
+		})
+		suspect := &model.Suspect{
+			ParentAnalysis: datastore.KeyForObj(ctx, genaiAnalysis),
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Id:      "genai_commit_id",
+				Ref:     "ref",
+			},
+			ReviewUrl:          "genai_review_url",
+			ReviewTitle:        "genai_review_title",
+			Justification:      "some justification",
+			VerificationStatus: model.SuspectVerificationStatus_Unverified,
+			AnalysisType:       pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+		}
+		assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		tfaProto, err := TestFailureAnalysisToBqRow(ctx, tfa)
@@ -451,6 +475,33 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 				},
 			},
 			Culprit: culpritPb,
+			GenAiResult: &pb.TestGenAiAnalysisResult{
+				Status:    pb.AnalysisStatus_SUSPECTFOUND,
+				RunStatus: pb.AnalysisRunStatus_ENDED,
+				StartTime: timestamppb.New(time.Unix(int64(110), 0).UTC()),
+				EndTime:   timestamppb.New(time.Unix(int64(115), 0).UTC()),
+				Suspects: []*pb.TestCulprit{
+					{
+						Commit: &buildbucketpb.GitilesCommit{
+							Host:    "chromium.googlesource.com",
+							Project: "chromium/src",
+							Ref:     "ref",
+							Id:      "genai_commit_id",
+						},
+						ReviewUrl:     "genai_review_url",
+						ReviewTitle:   "genai_review_title",
+						Justification: "some justification",
+						VerificationDetails: &pb.TestSuspectVerificationDetails{
+							Status: pb.SuspectVerificationStatus_UNVERIFIED,
+						},
+						CulpritAction: []*pb.CulpritAction{
+							{
+								ActionType: pb.CulpritActionType_NO_ACTION,
+							},
+						},
+					},
+				},
+			},
 		}))
 	})
 }

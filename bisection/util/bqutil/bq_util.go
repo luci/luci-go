@@ -203,5 +203,28 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 			result.Culprit = culpritPb
 		}
 	}
+
+	ga, err := datastoreutil.GetTestGenAIAnalysisForAnalysis(ctx, tfa)
+	if err != nil {
+		// If we can't get the genai analysis, log the error and continue.
+		logging.Errorf(ctx, "could not get genai analysis for analysis %d: %v", tfa.ID, err)
+		return result, nil
+	}
+	if ga != nil {
+		// For bq export, we want all fields for GenAi result.
+		genaiMask, err := mask.FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"*"}}, &pb.TestGenAiAnalysisResult{}, mask.AdvancedSemantics())
+		if err != nil {
+			return nil, errors.Fmt("from field mask for genai: %w", err)
+		}
+		genaiResult, err := protoutil.TestGenAiAnalysisToPb(ctx, ga, genaiMask)
+		if err != nil {
+			logging.Errorf(ctx, "could not get genai analysis result for analysis %d: %v", tfa.ID, err)
+		} else {
+			result.GenAiResult = genaiResult
+			if len(result.GenAiResult.Suspects) == 0 {
+				logging.Infof(ctx, "No GenAI suspect for analysis %d", tfa.ID)
+			}
+		}
+	}
 	return result, nil
 }
