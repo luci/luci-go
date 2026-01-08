@@ -198,6 +198,17 @@ export const GenericSuspect = {
       commit: assertNonNullable(culprit.commit),
     };
   },
+  fromTestGenAi(suspect: TestCulprit): GenericSuspect {
+    return {
+      type: 'AI Analysis',
+      reviewUrl: suspect.reviewUrl,
+      reviewTitle: suspect.reviewTitle,
+      verificationDetails: GenericSuspectVerificationDetails.fromTest(
+        assertNonNullable(suspect.verificationDetails),
+      ),
+      commit: assertNonNullable(suspect.commit),
+    };
+  },
 };
 
 export interface GenericNthSectionAnalysisResult {

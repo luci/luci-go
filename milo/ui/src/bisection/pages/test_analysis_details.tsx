@@ -114,9 +114,17 @@ export function TestAnalysisDetailsPage() {
       </Box>
     );
   }
-  const suspect = analysis?.nthSectionResult?.suspect
-    ? [analysis.nthSectionResult.suspect]
-    : [];
+  const suspects: GenericSuspect[] = [];
+  if (analysis.genAiResult?.suspects) {
+    analysis.genAiResult.suspects.forEach((suspect) => {
+      suspects.push(GenericSuspect.fromTestGenAi(suspect));
+    });
+  }
+  if (analysis.nthSectionResult?.suspect) {
+    suspects.push(
+      GenericSuspect.fromTestCulprit(analysis.nthSectionResult.suspect),
+    );
+  }
   return (
     <>
       <div className="section">
@@ -185,9 +193,7 @@ export function TestAnalysisDetailsPage() {
           value={currentTab}
           name={AnalysisComponentTabs.CULPRIT_VERIFICATION}
         >
-          <CulpritVerificationTable
-            suspects={suspect.map(GenericSuspect.fromTestCulprit)}
-          />
+          <CulpritVerificationTable suspects={suspects} />
         </TabPanel>
       </div>
       {/* TODO: list the test failures. */}
