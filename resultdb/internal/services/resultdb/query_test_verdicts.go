@@ -33,6 +33,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// queryTestVerdictsResponseLimitBytes is the soft limit on the number of bytes
+// that should be returned by a Test Verdicts query.
+const queryTestVerdictsResponseLimitBytes = 20 * 1000 * 1000 // 20 MB
+
 // QueryTestVerdicts implements pb.ResultDBServer.
 func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
 	// Use one transaction for the entire RPC so that we work with a
@@ -64,6 +68,7 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 		RootInvocationID:         rootInvID,
 		PageSize:                 pageSize,
 		ResultLimit:              testverdictsv2.DefaultResultLimit(req.ResultLimit),
+		ResponseLimitBytes:       queryTestVerdictsResponseLimitBytes,
 		Order:                    order,
 		ContainsTestResultFilter: req.Predicate.GetContainsTestResultFilter(),
 		TestPrefixFilter:         req.Predicate.GetTestPrefixFilter(),

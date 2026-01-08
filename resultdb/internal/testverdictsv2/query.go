@@ -25,6 +25,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -48,6 +49,10 @@ type Query struct {
 	// The maximum number of test results and exonerations to return per verdict.
 	// The limit is applied independently to test results and exonerations.
 	ResultLimit int
+	// The soft limit on the number of bytes that should be returned by a Test Verdicts query.
+	// Row size is estimated as proto.Size() + 1000 bytes (to allow for alternative encodings
+	// which higher fixed overheads, e.g. protojson). If this is zero, no limit is applied.
+	ResponseLimitBytes int
 	// Whether to use UI sort order, i.e. by ui_priority first, instead of by test ID.
 	// This incurs a performance penalty, as results are not returned in table order.
 	Order Ordering
@@ -106,6 +111,9 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 	if q.ResultLimit <= 0 {
 		return "", errors.New("result limit must be positive")
 	}
+	if q.ResponseLimitBytes < 0 {
+		return "", errors.New("response limit bytes must be non-negative")
+	}
 
 	st, err := q.buildQuery(pageToken)
 	if err != nil {
@@ -116,6 +124,7 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 	var lastUIPriority int64
 	var b spanutil.Buffer
 	rowsSeen := 0
+	totalSize := 0
 
 	err = span.Query(ctx, st).Do(func(row *spanner.Row) error {
 		tv := &pb.TestVerdict{
@@ -190,7 +199,20 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 		lastTV = tv
 		lastUIPriority = uiPriority
 		rowsSeen++
-		return rowCallback(tv)
+
+		// Estimate row size using formula documented on q.ResponseLimitBytes.
+		totalSize += proto.Size(tv) + 1000
+
+		if err := rowCallback(tv); err != nil {
+			return err
+		}
+		// If there is a (soft) response limit, and we have exceeded it, stop reading.
+		// Limits are enforced in a soft way to ensure we return at least one verdict per page,
+		// otherwise we cannot make progress.
+		if q.ResponseLimitBytes != 0 && totalSize >= q.ResponseLimitBytes {
+			return iterator.Done
+		}
+		return nil
 	})
 	if err != nil && !errors.Is(err, iterator.Done) {
 		return "", err

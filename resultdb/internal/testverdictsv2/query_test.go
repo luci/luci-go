@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
@@ -54,7 +55,6 @@ func TestQuery(t *testing.T) {
 		}
 
 		fetchAll := func(q *Query) []*pb.TestVerdict {
-			expectedPageSize := q.PageSize
 			var results []*pb.TestVerdict
 			var token string
 			for {
@@ -62,10 +62,19 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil, truth.LineContext())
 				results = append(results, verdicts...)
 				if nextToken == "" {
-					assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(expectedPageSize))
+					assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(q.PageSize))
 					break
 				} else {
-					assert.Loosely(t, len(verdicts), should.Equal(expectedPageSize))
+					if q.ResponseLimitBytes == 0 {
+						// If there were no secondary constraints on the page size,
+						// verify the page is exactly q.PageSize, not simply less than or equal.
+						assert.Loosely(t, len(verdicts), should.Equal(q.PageSize))
+					} else {
+						// If there was a secondary constraint, there should be between 1
+						// and q.PageSize results.
+						assert.Loosely(t, len(verdicts), should.BeGreaterThan(0))
+						assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(q.PageSize))
+					}
 				}
 				token = nextToken
 			}
@@ -146,7 +155,6 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, results, should.Match(expectedUIOrder))
 			})
 		})
-
 		t.Run("With result limit", func(t *ftt.Test) {
 			// Because test status is computed at the database side, reducing the
 			// number of results should not result in changes to test status (e.g.
@@ -164,7 +172,34 @@ func TestQuery(t *testing.T) {
 			results := fetchAll(q)
 			assert.Loosely(t, results, should.Match(expected))
 		})
+		t.Run("With response limit bytes", func(t *ftt.Test) {
+			t.Run("Makes progress", func(t *ftt.Test) {
+				// While results may be split over multiple pages, they should all be
+				// returned.
+				q.ResponseLimitBytes = 1
+				results := fetchAll(q)
+				assert.Loosely(t, results, should.Match(expected))
+			})
+			t.Run("Minimum limit", func(t *ftt.Test) {
+				// Expect only one row to be returned, because the limit is very low.
+				// One row is the minimum that must be returned to make progress.
+				q.ResponseLimitBytes = 1
+				verdicts, token, err := q.Fetch(span.Single(ctx), "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.NotBeEmpty)
+				assert.Loosely(t, verdicts, should.Match(expected[:1]))
+			})
+			t.Run("Limit is applied correctly", func(t *ftt.Test) {
+				// Should return three rows, as the limit fits more than
+				// the first two rows and the limit is soft.
+				q.ResponseLimitBytes = (proto.Size(expected[0]) + 1000) + (proto.Size(expected[1]) + 1000) + 1
 
+				verdicts, token, err := q.Fetch(span.Single(ctx), "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.NotBeEmpty)
+				assert.Loosely(t, verdicts, should.Match(expected[:3]))
+			})
+		})
 		t.Run("With contains test result filter", func(t *ftt.Test) {
 			expected := ExpectedVerdicts(rootInvID)
 
@@ -207,7 +242,6 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, fetchAll(q), should.Match(expected))
 			})
 		})
-
 		t.Run("With prefix filter", func(t *ftt.Test) {
 			q.TestPrefixFilter = &pb.TestIdentifierPrefix{
 				Level: pb.AggregationLevel_MODULE,
@@ -245,7 +279,6 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, fetchAll(q), should.Match(expected))
 			})
 		})
-
 		t.Run("With limited access", func(t *ftt.Test) {
 			q.Access.Level = permissions.LimitedAccess
 
@@ -260,7 +293,6 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, fetchAll(q), should.Match(expectedLimited))
 			})
 		})
-
 		t.Run("With verdict filter", func(t *ftt.Test) {
 			t.Run("status", func(t *ftt.Test) {
 				q.Filter = "status = FAILED"
