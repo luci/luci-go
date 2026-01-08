@@ -44,13 +44,35 @@ func TestPopPendingBuildTask(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, now)
 
 		t.Run("builder not found", func(t *ftt.Test) {
-			err := PopPendingBuildTask(ctx, 1, &pb.BuilderID{
-				Project: "project",
-				Bucket:  "bucket",
-				Builder: "builder",
+			t.Run("BuilderQueue does not exist", func(t *ftt.Test) {
+				err := PopPendingBuildTask(ctx, 1, &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				})
+				assert.NoErr(t, err)
+
 			})
-			assert.Loosely(t, err, should.ErrLike("no such entity"))
-			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
+
+			t.Run("BuilderQueue is removed", func(t *ftt.Test) {
+				bq := &model.BuilderQueue{
+					ID: "project/bucket/builder",
+					TriggeredBuilds: []int64{
+						1,
+					},
+					PendingBuilds: []int64{
+						2, 3, 4,
+					},
+				}
+				assert.NoErr(t, datastore.Put(ctx, bq))
+				err := PopPendingBuildTask(ctx, 1, &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				})
+				assert.NoErr(t, err)
+				assert.ErrIsLike(t, datastore.Get(ctx, bq), datastore.ErrNoSuchEntity)
+			})
 		})
 
 		t.Run("builderQueue does not exist", func(t *ftt.Test) {

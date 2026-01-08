@@ -46,7 +46,11 @@ func PopPendingBuildTask(ctx context.Context, bID int64, bldrID *pb.BuilderID) e
 		ID:     bldrID.Builder,
 		Parent: model.BucketKey(ctx, bldrID.Project, bldrID.Bucket),
 	}
-	if err := datastore.Get(ctx, bldr); err != nil {
+	switch err := datastore.Get(ctx, bldr); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		logging.Errorf(ctx, "builder %s not found", bldrQID)
+		return deleteBuilderQueue(ctx, bldrQID)
+	case err != nil:
 		return errors.Fmt("failed to get builder: %s: %w", bldrQID, err)
 	}
 	mcb := bldr.Config.GetMaxConcurrentBuilds()
@@ -167,4 +171,17 @@ func popAndTriggerBuilds(ctx context.Context, bldrQ *model.BuilderQueue, mcb uin
 	bldrQ.PendingBuilds = bldrQ.PendingBuilds[toPop:]
 
 	return createBatchCreateBackendBuildTasks(ctx, batchCreateTask, "")
+}
+
+// deleteBuilderQueue deletes the BuilderQueue.
+//
+// It won't clean up the builds in the queue, they will be handled by the
+// expire_builds cron job.
+func deleteBuilderQueue(ctx context.Context, bldrQID string) error {
+	bldrQ := &model.BuilderQueue{ID: bldrQID}
+	if err := datastore.Delete(ctx, bldrQ); err != nil {
+		return errors.Fmt("failed to delete the BuilderQueue: %s: %w", bldrQID, err)
+	}
+
+	return nil
 }
