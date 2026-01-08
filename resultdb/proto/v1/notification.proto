@@ -207,7 +207,7 @@ message WorkUnitsNotification {
 // messages as each message is limited to 10,000 aggregations or 10 MB
 // (whichever is less).
 //
-// Next id: 4.
+// Next id: 5.
 message TestAggregationsNotification {
     // The root invocation that the aggregations belong to.
     // Format: invocations/{ROOT_INVOCATION_ID}.
@@ -220,4 +220,7 @@ message TestAggregationsNotification {
     // to query more information about the test aggregations notified in this
     // message.
     string resultdb_host = 3;
+
+    // The aggregation level of the test aggregations in this message.
+    luci.resultdb.v1.AggregationLevel aggregation_level = 4;
 }
