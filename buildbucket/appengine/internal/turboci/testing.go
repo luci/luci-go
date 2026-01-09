@@ -56,7 +56,7 @@ func (o *FakeOrchestratorClient) CreateWorkPlan(ctx context.Context, in *orchest
 // WriteNodes implements TurboCIOrchestratorClient.
 func (o *FakeOrchestratorClient) WriteNodes(ctx context.Context, in *orchestratorpb.WriteNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.WriteNodesResponse, error) {
 	o.LastWriteNodesCall = proto.Clone(in).(*orchestratorpb.WriteNodesRequest)
-	return &orchestratorpb.WriteNodesResponse{}, nil
+	return &orchestratorpb.WriteNodesResponse{}, o.Err
 }
 
 // QueryNodes implements TurboCIOrchestratorClient.

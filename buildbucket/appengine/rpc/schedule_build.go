@@ -1460,6 +1460,13 @@ type scheduleBuildsParams struct {
 	//
 	// This is used by ValidateStage and RunStage implementation.
 	OverrideParent *model.Build
+
+	// Additional TurboCI Stage attempt info to save with the build.
+	//
+	// They are used by RunStage implementation. There must be only one
+	// build to schedule in this case.
+	StageAttemptID    string
+	StageAttemptToken string
 }
 
 // scheduleBuilds handles requests to schedule a batch of builds.
@@ -1474,6 +1481,10 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest, params
 	}
 	if params == nil {
 		params = &scheduleBuildsParams{}
+	}
+
+	if len(reqs) > 1 && params.StageAttemptID != "" {
+		panic("stage attempt must map to a single build")
 	}
 
 	// When LaunchAsNative is true, we aren't going to touch Turbo CI, don't need
@@ -1512,7 +1523,7 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest, params
 
 	// Prepare *model.Build entities, but do not store them yet.
 	for _, req := range op.Pending() {
-		build, err := prepareNewBuild(ctx, op, req)
+		build, err := prepareNewBuild(ctx, op, params, req)
 		if err != nil {
 			op.Fail(req, err)
 		} else {
@@ -1562,7 +1573,7 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest, params
 //
 // Recognizes dynamic builders and applies shadow bucket adjustments if
 // necessary.
-func prepareNewBuild(ctx context.Context, op *scheduleBuildOp, req *pb.ScheduleBuildRequest) (*model.Build, error) {
+func prepareNewBuild(ctx context.Context, op *scheduleBuildOp, params *scheduleBuildsParams, req *pb.ScheduleBuildRequest) (*model.Build, error) {
 	pBld, err := op.Parents.parentBuildForRequest(req)
 	if err != nil {
 		return nil, errors.Fmt("error getting the parent build: %w", err)
@@ -1628,6 +1639,10 @@ func prepareNewBuild(ctx context.Context, op *scheduleBuildOp, req *pb.ScheduleB
 	if len(exp) > 6 {
 		return nil, appstatus.BadRequest(errors.Fmt("build contains more than 6 unique expirations"))
 	}
+
+	// Set TurboCI stage attempt info.
+	build.StageAttemptID = params.StageAttemptID
+	build.StageAttemptToken = params.StageAttemptToken
 	return build, nil
 }
 

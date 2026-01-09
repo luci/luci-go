@@ -24,8 +24,11 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
@@ -60,6 +63,26 @@ func AdjustTurboCIRPCError(err error) error {
 				"the original error: %s", status.Convert(err).Message())
 	}
 	return err
+}
+
+// ProjectRPCCredentials creates a credential using the provided project.
+func ProjectRPCCredentials(ctx context.Context, project string) (credentials.PerRPCCredentials, error) {
+	if project == "" {
+		return nil, appstatus.Errorf(codes.Unauthenticated, "no project specified")
+	}
+
+	// Regular users usually use BuildbucketScopeSet() to call us. Use the same
+	// set of scopes when acting as a project account for consistency. It
+	// includes the Turbo CI API scope.
+	creds, err := auth.GetPerRPCCredentials(ctx,
+		auth.AsProject,
+		auth.WithProjectNoFallback(project),
+		auth.WithScopes(scopes.BuildbucketScopeSet()...),
+	)
+	if err != nil {
+		return nil, appstatus.Errorf(codes.Internal, "error acting as project account of %q: %s", project, err)
+	}
+	return creds, nil
 }
 
 // WriteStage submits the ScheduleBuildRequest stage under the given ID.
@@ -159,4 +182,30 @@ func (c *Client) QueryStage(ctx context.Context, stageID string) (*pb.BuildStage
 	}
 
 	return nil, nil
+}
+
+// AttemptFailure contains the failure information to report to TurboCI when
+// setting a stage attempt to INCOMPLETE.
+type AttemptFailure struct {
+	// Err is the human-readable error of a failure.
+	Err error
+	// Details is the machine-readable details of a failure, e.g.
+	// ResourceExhaustion or Timeout.
+	Details *pb.StatusDetails
+}
+
+// FailCurrentAttempt sets the current stage attempt (by c.Token as StageAttemptToken)
+// to INCOMPLETE and report the failure.
+func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID string, failure *AttemptFailure) error {
+	logging.Errorf(ctx, "Fail stage attempt: %s: %s", attemptID, failure.Err)
+	writeReq := write.NewRequest()
+	writeReq.Msg.SetToken(c.Token)
+	curWrite := writeReq.GetCurrentAttempt()
+	curWrite.AddProgress(failure.Err.Error(), failure.Details)
+
+	st := curWrite.GetStateTransition()
+	st.SetIncomplete()
+
+	_, err := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
+	return AdjustTurboCIRPCError(err)
 }

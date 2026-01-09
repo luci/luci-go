@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"math"
 	"slices"
 	"time"
@@ -39,6 +40,10 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/turboci/id"
+	"go.chromium.org/luci/turboci/rpc/write"
+	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
+	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
@@ -170,18 +175,7 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 func turboCICreds(ctx context.Context) (credentials.PerRPCCredentials, error) {
 	caller := auth.CurrentIdentity(ctx)
 	if caller.Kind() == identity.Project {
-		// Regular users usually use BuildbucketScopeSet() to call us. Use the same
-		// set of scopes when acting as a project account for consistency. It
-		// includes the Turbo CI API scope.
-		creds, err := auth.GetPerRPCCredentials(ctx,
-			auth.AsProject,
-			auth.WithProjectNoFallback(caller.Value()),
-			auth.WithScopes(scopes.BuildbucketScopeSet()...),
-		)
-		if err != nil {
-			return nil, appstatus.Errorf(codes.Internal, "error acting as project account of %q: %s", caller.Value(), err)
-		}
-		return creds, nil
+		return turboci.ProjectRPCCredentials(ctx, caller.Value())
 	}
 
 	// TODO: We may need to add some hack to make sure the token we've got has
@@ -333,4 +327,43 @@ func pollStage(ctx context.Context, cl *turboci.Client, stageID string) (int64, 
 			}
 		}
 	}
+}
+
+// updateStageAttemptToScheduled sets the current stage attempt (by cl.Token as StageAttemptToken)
+// to SCHEDULED and report the build details (e.g. build ID).
+func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, attemptID *idspb.StageAttempt, bld *pb.Build) error {
+	// This can happen if a previous RunTask created the build but failed to update
+	// TurboCI, so TurboCI retries the RunTask. And after TurboCI sends the retry,
+	// the build starts running.
+	// In this case Buildbucket skips updating TurboCI.
+	if bld.Status != pb.Status_SCHEDULED {
+		logging.Infof(ctx, "Build %d for stage attempt %s has passed SCHEDULED status, skip updating TurboCI", bld.Id, id.ToString(attemptID))
+		return nil
+	}
+
+	writeReq := write.NewRequest()
+	writeReq.Msg.SetToken(cl.Token)
+	curWrite := writeReq.GetCurrentAttempt()
+
+	bldDetails := &pb.BuildStageDetails{
+		Result: &pb.BuildStageDetails_Id{
+			Id: bld.Id,
+		},
+	}
+	commonDetails := stagepb.CommonStageAttemptDetails_builder{
+		ViewUrls: map[string]*stagepb.CommonStageAttemptDetails_UrlDetails{
+			"Buildbucket": stagepb.CommonStageAttemptDetails_UrlDetails_builder{
+				Url: proto.String(fmt.Sprintf("https://%s/build/%d", bld.GetInfra().GetBuildbucket().GetHostname(), bld.Id)),
+			}.Build(),
+		},
+	}.Build()
+	curWrite.AddDetails(bldDetails, commonDetails)
+
+	updatedPolicy := buildToStagetAttemptExecutionPolicy(bld)
+	st := curWrite.GetStateTransition()
+	st.SetScheduled(updatedPolicy)
+
+	// TODO: b/449231057 - handle status mismatch error returned by TurboCI.
+	_, err := turboci.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(cl.Creds))
+	return turboci.AdjustTurboCIRPCError(err)
 }

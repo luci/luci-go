@@ -50,7 +50,7 @@ func getParentViaStage(ctx context.Context, stage *orchestratorpb.Stage) (*model
 			buildIDs[i] = bld.ID
 		}
 		logging.Errorf(ctx, "Expect 1 build by stage_attempt_id %q, but got %d: %v", stageAttemptIDStr, len(blds), buildIDs)
-		return nil, appstatus.Errorf(codes.Internal, "expect 1 build by stage_attempt_id %q, but got %d", stageAttemptIDStr, len(blds))
+		return nil, appstatus.Errorf(codes.FailedPrecondition, "expect 1 build by stage_attempt_id %q, but got %d", stageAttemptIDStr, len(blds))
 	}
 	return blds[0], nil
 }

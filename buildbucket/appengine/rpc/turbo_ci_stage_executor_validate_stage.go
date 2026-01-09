@@ -60,6 +60,10 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage) (*orchestra
 		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset grace_period"))
 	}
 
+	if req.GetDryRun() {
+		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage with dry_run is not supported"))
+	}
+
 	// Fill the timeout fields with requested stage execution policy, so it
 	// could be combined with configuration in schedule_build.setTimeouts.
 	reqPolicy := stage.GetExecutionPolicy().GetRequested()
