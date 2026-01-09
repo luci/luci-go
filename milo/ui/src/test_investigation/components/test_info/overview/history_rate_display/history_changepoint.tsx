@@ -33,18 +33,7 @@ export const HistoryChangepoint = memo(function HistoryChangepoint({
   nowDtForFormatting,
   blamelistBaseUrl,
 }: HistoryChangepointProps) {
-  const queryParams = new URLSearchParams();
-  queryParams.append('start_cp', `CP-${pointingToSegment.startPosition}`);
-  if (
-    pointingToSegment.startPositionLowerBound99th &&
-    pointingToSegment.startPositionLowerBound99th !== '0'
-  ) {
-    queryParams.append(
-      'end_cp',
-      `CP-${pointingToSegment.startPositionLowerBound99th}`,
-    );
-  }
-  const blamelistLink = `${blamelistBaseUrl}?${queryParams.toString()}#CP-${pointingToSegment.startPosition}`;
+  const blamelistLink = `${blamelistBaseUrl}#CP-${pointingToSegment.startPosition}`;
 
   const durationText =
     formatSegmentTimestamp(pointingToSegment.startHour, nowDtForFormatting) ||

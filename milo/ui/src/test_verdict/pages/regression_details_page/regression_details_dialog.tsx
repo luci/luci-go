@@ -90,8 +90,8 @@ export function RegressionDetailsDialog() {
         ref={scrollRef}
       >
         <BlamelistTable
-          latestAnalyzedCommit={state.commitPositionRange.last}
-          earliestAnalyzedCommit={state.commitPositionRange.first}
+          lastCommitPosition={state.commitPositionRange.last}
+          firstCommitPosition={state.commitPositionRange.first}
           testVariantBranch={testVariantBranch}
           focusCommitPosition={state.focusCommitPosition || undefined}
           customScrollParent={scrollRef.current || undefined}
