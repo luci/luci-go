@@ -76,6 +76,7 @@ function ArtifactsExplorer({
           style={{
             overflowY: 'visible',
             overflowX: 'clip',
+            minHeight: '60vh',
           }}
           // This will make the panel size stored in local storage.
           autoSaveId="artifacts-panel-group-size"
