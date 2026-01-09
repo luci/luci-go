@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { DateTime } from 'luxon';
 import { Link } from 'react-router';
 
 import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import {
   generateDeviceDetailsURL,
@@ -160,6 +162,20 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
       if (!labels) return undefined;
 
       return labelValuesToString(labels);
+    },
+  },
+  'ufs.last_sync': {
+    orderByField: 'labels.ufs.last_sync',
+    renderCell: (params) => {
+      const value = params.value as string;
+      if (!value) {
+        return null;
+      }
+      const dt = DateTime.fromISO(value);
+      if (!dt.isValid) {
+        return <>{value}</>;
+      }
+      return <SmartRelativeTimestamp date={dt} />;
     },
   },
 };
