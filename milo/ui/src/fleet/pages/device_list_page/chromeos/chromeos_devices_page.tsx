@@ -51,6 +51,7 @@ import {
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   CountDevicesRequest,
+  Device,
   ListDevicesRequest,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -67,6 +68,21 @@ import { CHROMEOS_COLUMN_OVERRIDES, getColumns } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
+
+type DeviceWithCurrentTask = Device & { current_task?: string };
+
+export const formatDeviceColumn = (
+  value: string,
+  columnName: string,
+): string => {
+  switch (columnName) {
+    case 'current_task':
+      if (value !== undefined && value !== '') return value;
+      else return 'idle';
+    default:
+      return value;
+  }
+};
 
 export const ChromeOsDevicesPage = () => {
   const { trackEvent } = useGoogleAnalytics();
@@ -215,7 +231,7 @@ export const ChromeOsDevicesPage = () => {
 
   const currentTasks = useCurrentTasks(devices);
 
-  const rows = useMemo(() => {
+  const rows: DeviceWithCurrentTask[] = useMemo(() => {
     if (currentTasks.isPending) {
       return devices.map((d) => ({
         ...d,
@@ -301,6 +317,7 @@ export const ChromeOsDevicesPage = () => {
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
+          formatDeviceColumn={formatDeviceColumn}
         />
       </div>
     </div>

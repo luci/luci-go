@@ -18,6 +18,7 @@ import {
   GridRowSelectionModel,
   GridSortModel,
   GridValidRowModel,
+  useGridApiRef,
 } from '@mui/x-data-grid';
 import { useState } from 'react';
 
@@ -81,6 +82,13 @@ const getOrderByFromSortModel = <R extends GridValidRowModel>(
   return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey;
 };
 
+const defaultFormatDeviceColumn = (
+  value: string,
+  _columnName: string,
+): string => {
+  return value;
+};
+
 const getSortModelFromOrderBy = <R extends GridValidRowModel>(
   orderByValue: string,
   availableColumns: DeviceTableGridColDef<R>[],
@@ -120,6 +128,7 @@ interface DeviceTableProps<R extends GridValidRowModel> {
   isLoadingColumns: boolean;
   totalRowCount?: number;
   getRowId?: (row: R) => string;
+  formatDeviceColumn?: (value: string, columnName: string) => string;
 }
 
 export function DeviceTable<R extends GridValidRowModel>({
@@ -135,6 +144,7 @@ export function DeviceTable<R extends GridValidRowModel>({
   isLoadingColumns,
   totalRowCount,
   getRowId,
+  formatDeviceColumn = defaultFormatDeviceColumn,
 }: DeviceTableProps<R>) {
   const { platform } = usePlatform();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -142,6 +152,7 @@ export function DeviceTable<R extends GridValidRowModel>({
   const [rowSelectionModel, setRowSelectionModel] =
     useState<GridRowSelectionModel>([]);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
+  const apiRef = useGridApiRef();
 
   const getFilteredColumnIds = () => {
     const filters = getFilters(searchParams)?.filters;
@@ -241,7 +252,30 @@ export function DeviceTable<R extends GridValidRowModel>({
         columns={columns}
         getRowId={getRowId}
         loading={isLoading}
-        onClipboardCopy={() => setShowCopySuccess(true)}
+        apiRef={apiRef}
+        onClipboardCopy={() => {
+          const visibleColumns = columns.filter(
+            (c) => columnVisibilityModel[c.field],
+          );
+          const headers = visibleColumns
+            .map((c) => c.headerName ?? c.field)
+            .join('\t');
+          const body = rows
+            .filter((row) => rowSelectionModel.find((u) => u === row.id))
+            .map((row) =>
+              visibleColumns
+                .map((c) =>
+                  formatDeviceColumn(
+                    apiRef.current.getCellValue(row.id, c.field),
+                    c.field,
+                  ),
+                )
+                .join('\t'),
+            )
+            .join('\n');
+          navigator.clipboard.writeText(headers + '\n' + body);
+          setShowCopySuccess(true);
+        }}
       />
       <CopySnackbar
         open={showCopySuccess}

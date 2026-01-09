@@ -27,6 +27,7 @@ import {
   getPrevFullRowCount,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { formatDeviceColumn } from '@/fleet/pages/device_list_page/chromeos/chromeos_devices_page';
 import { getColumns } from '@/fleet/pages/device_list_page/chromeos/columns';
 import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -189,6 +190,7 @@ function TestComponent({
       totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
       defaultColumnIds={DEFAULT_COLUMNS}
       localStorageKey={'testLocalStorageKey'}
+      formatDeviceColumn={formatDeviceColumn}
     />
   );
 }
