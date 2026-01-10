@@ -56,18 +56,14 @@ import { useDebounce } from 'react-use';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 
 import { WorkflowType } from '../fake_turboci_graph';
-import { ChronicleNode } from '../utils/graph_builder';
+import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 // ?worker&url is special vite syntax to import a web worker script
 // and retrieve the URL to the script.
 // eslint-disable-next-line import/default
 import graphWorkerUrl from '../utils/graph_worker?worker&url';
 
 import { ChronicleContext } from './chronicle_context';
-import {
-  CollapsibleChildGroup,
-  ContextMenu,
-  ContextMenuState,
-} from './context_menu';
+import { ContextMenu, ContextMenuState } from './context_menu';
 import { useCollapsibleGroups } from './hooks/use_collapsible_groups';
 import { InspectorPanel } from './inspector_panel/inspector_panel';
 
@@ -157,7 +153,7 @@ function Graph() {
   const pendingFitViewOptions = useRef<FitViewOptions | undefined>(undefined);
 
   const {
-    collapsedHashes,
+    groupModes,
     groupData,
     actions: groupActions,
   } = useCollapsibleGroups(graph);
@@ -188,7 +184,7 @@ function Graph() {
       graph,
       options: {
         showAssignmentEdges,
-        collapsedDependencyHashes: collapsedHashes,
+        groupModes,
       },
     });
 
@@ -207,7 +203,7 @@ function Graph() {
     return () => {
       worker.terminate();
     };
-  }, [graph, showAssignmentEdges, collapsedHashes]);
+  }, [graph, showAssignmentEdges, groupModes]);
 
   useDebounce(
     () => {
@@ -357,43 +353,33 @@ function Graph() {
     (event: React.MouseEvent, node: ChronicleNode) => {
       event.preventDefault();
 
-      const isSelfCollapsed = !!(
-        node.data.dependencyHash && node.data.isCollapsed
-      );
+      const isSelfCollapsed = !!node.data.isCollapsed;
+      const selfGroupId = node.data.groupId;
 
-      let parentIds = [node.id];
       // In order to support collapsing children of a node that itself is collapsed,
-      // we must iterate over all the children of each node in the current collapsed
-      // group.
-      if (isSelfCollapsed) {
-        const groupIds = groupData.hashToGroup.get(node.data.dependencyHash!);
-        if (groupIds) {
-          parentIds = groupIds;
+      // we must get one of the check IDs (first one works) from the current group.
+      let representativeId = node.id;
+      if (isSelfCollapsed && selfGroupId !== undefined) {
+        const members = groupData.groupIdToChecks.get(selfGroupId);
+        if (members && members.length > 0) {
+          representativeId = members[0].check!.identifier!.id!;
         }
       }
 
-      const hashesFound = new Set<number>();
-      parentIds.forEach((id) => {
-        const hashes = groupData.parentToGroupHashes.get(id);
-        if (hashes) {
-          hashes.forEach((h) => hashesFound.add(h));
-        }
-      });
-
-      const childGroups: CollapsibleChildGroup[] = Array.from(hashesFound).map(
-        (hash) => ({
-          hash,
-          status: groupData.hashToStatus.get(hash)!,
-        }),
-      );
+      const childGroups = new Set<number>();
+      const groups = groupData.parentToGroupIds.get(representativeId);
+      if (groups) {
+        groups.forEach((g) => childGroups.add(g));
+      }
 
       // Only show menu if this node itself is collapsed or it has collapsible children.
-      if (isSelfCollapsed || childGroups.length > 0) {
+      if (isSelfCollapsed || childGroups.size > 0) {
         setContextMenuState({
           mouseX: event.clientX - 2,
           mouseY: event.clientY - 4,
           node,
-          collapsibleGroups: childGroups,
+          selfGroupId,
+          childGroupIds: Array.from(childGroups),
         });
       } else {
         setContextMenuState(undefined);
@@ -415,47 +401,35 @@ function Graph() {
     setContextMenuState(undefined);
   }, []);
 
-  const handleCollapse = useCallback(
-    (hashes: number[], focusNodeId?: string) => {
-      groupActions.collapse(hashes);
-      // Post-collapse, we want to select/focus on the parent.
-      setSelectedNodeId(focusNodeId);
-    },
-    [groupActions, setSelectedNodeId],
-  );
+  const handleGroupModeChange = useCallback(
+    (groupIds: number[], mode: GroupMode, anchorNodeId?: string) => {
+      groupActions.updateModes(groupIds, mode);
 
-  const handleExpand = useCallback(
-    (hashes: number[]) => {
-      // Calculate which nodes are being expanded to focus on them
-      const nodesToFocus: string[] = [];
-      hashes.forEach((hash) => {
-        const groupNodes = groupData.hashToGroup.get(hash);
-        if (groupNodes) {
-          nodesToFocus.push(...groupNodes);
+      if (mode === GroupMode.EXPANDED) {
+        // When expanding, focus on all the newly expanded nodes.
+        const nodesToFocus: string[] = [];
+        groupIds.forEach((id) => {
+          const checks = groupData.groupIdToChecks.get(id);
+          if (checks) {
+            checks.forEach((c) => {
+              if (c.check?.identifier?.id) {
+                nodesToFocus.push(c.check.identifier.id);
+              }
+            });
+          }
+        });
+
+        if (nodesToFocus.length > 0) {
+          pendingFocusNodes.current = nodesToFocus;
         }
-      });
-
-      if (nodesToFocus.length > 0) {
-        pendingFocusNodes.current = nodesToFocus;
+        setSelectedNodeId(undefined);
+      } else if (anchorNodeId) {
+        // On collapse, focus back to the anchor node (where the action was taken).
+        setSelectedNodeId(anchorNodeId);
       }
-
-      groupActions.expand(hashes);
-      setSelectedNodeId(undefined);
     },
     [groupActions, groupData, setSelectedNodeId],
   );
-
-  const handleCollapseAllSuccessful = useCallback(() => {
-    groupActions.collapseAllSuccessful();
-  }, [groupActions]);
-
-  const handleCollapseAll = useCallback(() => {
-    groupActions.collapseAll();
-  }, [groupActions]);
-
-  const handleExpandAll = useCallback(() => {
-    groupActions.expandAll();
-  }, [groupActions]);
 
   const selectedNode = useMemo(() => {
     if (!nodes || nodes.length === 0) return;
@@ -585,16 +559,16 @@ function Graph() {
                   }
                 />
                 <Button
-                  onClick={handleCollapseAllSuccessful}
+                  onClick={groupActions.collapseAllSuccessful}
                   sx={{ mt: 1 }}
                   size="small"
                 >
                   Collapse Successful
                 </Button>
-                <Button onClick={handleCollapseAll} size="small">
+                <Button onClick={groupActions.collapseAll} size="small">
                   Collapse All
                 </Button>
-                <Button onClick={handleExpandAll} size="small">
+                <Button onClick={groupActions.expandAll} size="small">
                   Expand All
                 </Button>
               </Paper>
@@ -604,8 +578,7 @@ function Graph() {
         <ContextMenu
           contextMenuState={contextMenuState}
           onClose={handleContextMenuClose}
-          onCollapse={handleCollapse}
-          onExpand={handleExpand}
+          onSetGroupMode={handleGroupModeChange}
         />
       </Panel>
       {selectedNodeId &&

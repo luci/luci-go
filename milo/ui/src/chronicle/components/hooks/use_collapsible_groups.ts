@@ -14,11 +14,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { GraphView } from '@/proto/turboci/graph/orchestrator/v1/graph_view.pb';
 
-import { CheckResultStatus } from '../../utils/check_utils';
-import { getCollapsibleGroups } from '../../utils/graph_builder';
-
+import { GroupMode, getTopologyGroups } from '../../utils/graph_builder';
 /**
  * The number of checks in the graph where we opt into collapsing everything by default on page load for performance reasons.
  */
@@ -37,19 +36,20 @@ const NUM_CHECKS_COLLAPSE_ALL = 500;
  * @returns An object containing the current collapsed state, pre-calculated group metadata, and manipulator actions.
  */
 export function useCollapsibleGroups(graph: GraphView | undefined) {
-  const [collapsedHashes, setCollapsedHashes] = useState<Set<number>>(
-    new Set(),
+  // Mapping of group ID -> group mode (expand/collapsed)
+  const [groupModes, setGroupModes] = useState<Map<number, GroupMode>>(
+    new Map(),
   );
 
   const groupData = useMemo(() => {
     if (!graph) {
       return {
-        hashToGroup: new Map<number, string[]>(),
-        hashToStatus: new Map<number, CheckResultStatus>(),
-        parentToGroupHashes: new Map<string, number[]>(),
+        groupIdToChecks: new Map<number, CheckView[]>(),
+        nodeToGroupId: new Map<string, number>(),
+        parentToGroupIds: new Map<string, number[]>(),
       };
     }
-    return getCollapsibleGroups(graph);
+    return getTopologyGroups(graph);
   }, [graph]);
 
   // Track if we have applied the defaults for the current graph instance to avoid
@@ -60,59 +60,62 @@ export function useCollapsibleGroups(graph: GraphView | undefined) {
   useEffect(() => {
     if (graph && initializedGraphRef.current !== graph) {
       const numChecks = Object.keys(graph.checks).length;
-      const initialCollapsed = new Set<number>();
-      groupData.hashToGroup.forEach((_, hash) => {
-        if (
-          numChecks > NUM_CHECKS_COLLAPSE_ALL ||
-          groupData.hashToStatus.get(hash) === CheckResultStatus.SUCCESS
-        ) {
-          initialCollapsed.add(hash);
+      if (numChecks > NUM_CHECKS_COLLAPSE_ALL) {
+        const allModes = new Map<number, GroupMode>();
+        for (const groupId of groupData.groupIdToChecks.keys()) {
+          allModes.set(groupId, GroupMode.COLLAPSE_ALL);
         }
-      });
-      setCollapsedHashes(initialCollapsed);
+        setGroupModes(allModes);
+      } else {
+        setGroupModes(new Map());
+      }
       initializedGraphRef.current = graph;
     }
   }, [graph, groupData]);
 
-  // Create state manipulator callbacks
-  const collapse = (hashes: number[]) => {
-    setCollapsedHashes((prev) => {
-      const next = new Set(prev);
-      hashes.forEach((h) => next.add(h));
+  // Helper to update mode for a list of group IDs
+  const updateModes = (groupIds: number[], mode: GroupMode) => {
+    setGroupModes((prev) => {
+      const next = new Map(prev);
+      groupIds.forEach((id) => next.set(id, mode));
       return next;
     });
   };
 
-  const expand = (hashes: number[]) => {
-    setCollapsedHashes((prev) => {
-      const next = new Set(prev);
-      hashes.forEach((h) => next.delete(h));
-      return next;
-    });
+  const collapse = (groupIds: number[]) => {
+    updateModes(groupIds, GroupMode.COLLAPSE_ALL);
+  };
+
+  const expand = (groupIds: number[]) => {
+    updateModes(groupIds, GroupMode.EXPANDED);
   };
 
   const collapseAllSuccessful = () => {
-    const successHashes = new Set<number>();
-    groupData.hashToGroup.forEach((_, hash) => {
-      if (groupData.hashToStatus.get(hash) === CheckResultStatus.SUCCESS) {
-        successHashes.add(hash);
-      }
-    });
-    setCollapsedHashes(successHashes);
+    updateModes(
+      Array.from(groupData.groupIdToChecks.keys()),
+      GroupMode.COLLAPSE_SUCCESS_ONLY,
+    );
   };
 
   const collapseAll = () => {
-    setCollapsedHashes(new Set(groupData.hashToGroup.keys()));
+    updateModes(
+      Array.from(groupData.groupIdToChecks.keys()),
+      GroupMode.COLLAPSE_ALL,
+    );
   };
 
   const expandAll = () => {
-    setCollapsedHashes(new Set());
+    updateModes(
+      Array.from(groupData.groupIdToChecks.keys()),
+      GroupMode.EXPANDED,
+    );
   };
 
   return {
-    collapsedHashes,
+    groupModes,
     groupData,
     actions: {
+      updateModes,
       collapse,
       expand,
       collapseAllSuccessful,

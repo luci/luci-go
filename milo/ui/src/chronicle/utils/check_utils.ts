@@ -26,6 +26,7 @@ export enum CheckResultStatus {
   UNKNOWN = 'UNKNOWN',
   SUCCESS = 'SUCCESS',
   FAILURE = 'FAILURE',
+  MIXED = 'MIXED',
 }
 
 export const TYPE_URL_BUILD_OPTIONS =

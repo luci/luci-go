@@ -14,61 +14,60 @@
 
 import { Menu, MenuItem } from '@mui/material';
 
-import { CheckResultStatus } from '../utils/check_utils';
-import { ChronicleNode } from '../utils/graph_builder';
-
-/**
- * Information about a collapsible group of children for the current node
- * (on which the context menu is being shown).
- */
-export interface CollapsibleChildGroup {
-  hash: number;
-  status: CheckResultStatus;
-}
+import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 
 export interface ContextMenuState {
   mouseX: number;
   mouseY: number;
   node: ChronicleNode;
-  collapsibleGroups?: CollapsibleChildGroup[];
+  // The group ID this node belongs to (for expanding itself).
+  selfGroupId?: number;
+  // Child group IDs (for collapsing children).
+  childGroupIds?: number[];
 }
 
 export interface ContextMenuProps {
   contextMenuState: ContextMenuState | undefined;
   onClose: () => void;
-  onCollapse: (hashes: number[], focusNodeId?: string) => void;
-  onExpand: (hashes: number[]) => void;
+  onSetGroupMode: (
+    groupIds: number[],
+    mode: GroupMode,
+    anchorNodeId?: string,
+  ) => void;
 }
 
 export function ContextMenu({
   contextMenuState,
   onClose,
-  onCollapse,
-  onExpand,
+  onSetGroupMode,
 }: ContextMenuProps) {
   const isOpen = !!contextMenuState;
 
   const handleExpandSelf = () => {
-    if (contextMenuState?.node.data?.dependencyHash) {
-      onExpand([contextMenuState.node.data.dependencyHash]);
+    if (contextMenuState?.selfGroupId) {
+      onSetGroupMode([contextMenuState.selfGroupId], GroupMode.EXPANDED);
     }
     onClose();
   };
 
-  const childGroups = contextMenuState?.collapsibleGroups || [];
-  const hasChildren = childGroups.length > 0;
+  const childGroupIds = contextMenuState?.childGroupIds || [];
+  const hasChildren = childGroupIds.length > 0;
 
   const handleCollapseAllChildren = () => {
-    const hashes = childGroups.map((g) => g.hash);
-    onCollapse(hashes, contextMenuState?.node.id);
+    onSetGroupMode(
+      childGroupIds,
+      GroupMode.COLLAPSE_ALL,
+      contextMenuState?.node.id,
+    );
     onClose();
   };
 
   const handleCollapseSuccessfulChildren = () => {
-    const hashes = childGroups
-      .filter((g) => g.status === CheckResultStatus.SUCCESS)
-      .map((g) => g.hash);
-    onCollapse(hashes, contextMenuState?.node.id);
+    onSetGroupMode(
+      childGroupIds,
+      GroupMode.COLLAPSE_SUCCESS_ONLY,
+      contextMenuState?.node.id,
+    );
     onClose();
   };
 
