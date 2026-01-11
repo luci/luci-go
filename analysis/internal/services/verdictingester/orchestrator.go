@@ -132,7 +132,7 @@ var verdictIngestion = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        verdictIngestionTaskClass,
 	Prototype: &taskspb.IngestTestVerdicts{},
 	Queue:     verdictIngestionQueue,
-	Kind:      tq.Transactional,
+	Kind:      tq.FollowsContext,
 })
 
 // RegisterTaskHandler registers the handler for result ingestion tasks.

@@ -16,6 +16,7 @@ package join
 
 import (
 	"context"
+	"fmt"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -24,6 +25,8 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	controlpb "go.chromium.org/luci/analysis/internal/ingestion/control/proto"
+	"go.chromium.org/luci/analysis/internal/services/verdictingester"
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
 // JoinRootInvocation notifies ingestion that the given root invocation has
@@ -43,9 +46,24 @@ func JoinRootInvocation(ctx context.Context, notification *rdbpb.RootInvocationF
 	}
 
 	result := &controlpb.RootInvocationResult{
-		ResultdbHost:   rdbHost,
+		ResultdbHost:     notification.ResultdbHost,
 		RootInvocationId: rootInvocation.RootInvocationId,
+		CreationTime:     rootInvocation.CreateTime,
 	}
+
+	// TODO: Schedule the task after joining with Buildbucket builds and Presubmit runs.
+	// Currently, we schedule it directly as sinks supporting root
+	// invocations do not yet require Buildbucket or presubmit information.
+	payload := &taskspb.IngestTestVerdicts{
+		// Synthesize the IngestionId as join has not been implemented for root invocation.
+		IngestionId:    fmt.Sprintf("rootInvocation/%s/%s", notification.ResultdbHost, rootInvocation.RootInvocationId),
+		PartitionTime:  rootInvocation.CreateTime,
+		Project:        project,
+		RootInvocation: result,
+		TaskIndex:      1,
+	}
+	verdictingester.Schedule(ctx, payload)
+
 	// TODO: Implement the actual root invocation join functionality.
 	logging.Infof(ctx, "Successfully joined the root invocation: %v for project: %s", result, project)
 	return true, nil
