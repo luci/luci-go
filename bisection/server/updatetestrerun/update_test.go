@@ -640,6 +640,359 @@ func TestUpdate(t *testing.T) {
 			assert.Loosely(t, tfa.VerifiedCulpritKey, should.BeNil)
 		})
 	})
+
+	ftt.Run("multiple suspects verification with in-progress reruns", t, func(t *ftt.Test) {
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
+
+		// Create analysis with two suspects being verified simultaneously.
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+			ID:             300,
+			TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 3000),
+			Status:         pb.AnalysisStatus_SUSPECTFOUND,
+			RunStatus:      pb.AnalysisRunStatus_STARTED,
+		})
+		testFailure := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
+			ID:          3000,
+			IsPrimary:   true,
+			TestID:      "test0",
+			VariantHash: "hash0",
+			Analysis:    tfa,
+		})
+
+		// Create first suspect.
+		suspect1 := testutil.CreateSuspect(ctx, t, nil)
+		suspectRerun1 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+			ID:          9000,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect1),
+		})
+		parentRerun1 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+			ID:          9001,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect1),
+		})
+		suspect1.SuspectRerunBuild = datastore.KeyForObj(ctx, suspectRerun1)
+		suspect1.ParentRerunBuild = datastore.KeyForObj(ctx, parentRerun1)
+		assert.Loosely(t, datastore.Put(ctx, suspect1), should.BeNil)
+
+		// Create second suspect.
+		suspect2 := testutil.CreateSuspect(ctx, t, nil)
+		suspectRerun2 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+			ID:          9002,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect2),
+		})
+		parentRerun2 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+			ID:          9003,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect2),
+		})
+		suspect2.SuspectRerunBuild = datastore.KeyForObj(ctx, suspectRerun2)
+		suspect2.ParentRerunBuild = datastore.KeyForObj(ctx, parentRerun2)
+		assert.Loosely(t, datastore.Put(ctx, suspect2), should.BeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		t.Run("first suspect rerun completes but parent still in progress", func(t *ftt.Test) {
+			// Complete only the first suspect's suspect rerun, leaving parent rerun in progress.
+			// This means the suspect is still under verification.
+			req := &pb.UpdateTestAnalysisProgressRequest{
+				Bbid:         9000,
+				BotId:        "bot",
+				RunSucceeded: true,
+				Results: []*pb.TestResult{
+					{
+						TestId:      "test0",
+						VariantHash: "hash0",
+						IsExpected:  false,
+						Status:      pb.TestResultStatus_FAIL,
+					},
+				},
+			}
+
+			err := Update(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// First suspect's rerun is complete but parent is still in progress.
+			assert.Loosely(t, datastore.Get(ctx, suspectRerun1), should.BeNil)
+			assert.Loosely(t, suspectRerun1.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
+
+			// Suspect should still be under verification.
+			assert.Loosely(t, datastore.Get(ctx, suspect1), should.BeNil)
+			assert.Loosely(t, suspect1.VerificationStatus, should.Equal(model.SuspectVerificationStatus_UnderVerification))
+
+			// Analysis should remain STARTED with SUSPECTFOUND status.
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
+			assert.Loosely(t, tfa.VerifiedCulpritKey, should.BeNil)
+		})
+
+		t.Run("both suspects confirmed - first one wins", func(t *ftt.Test) {
+			// Complete both suspects' parent reruns.
+			parentRerun1.Status = pb.RerunStatus_RERUN_STATUS_PASSED
+			assert.Loosely(t, datastore.Put(ctx, parentRerun1), should.BeNil)
+			parentRerun2.Status = pb.RerunStatus_RERUN_STATUS_PASSED
+			assert.Loosely(t, datastore.Put(ctx, parentRerun2), should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Complete first suspect.
+			req1 := &pb.UpdateTestAnalysisProgressRequest{
+				Bbid:         9000,
+				BotId:        "bot",
+				RunSucceeded: true,
+				Results: []*pb.TestResult{
+					{
+						TestId:      "test0",
+						VariantHash: "hash0",
+						IsExpected:  false,
+						Status:      pb.TestResultStatus_FAIL,
+					},
+				},
+			}
+			err := Update(ctx, req1)
+			assert.Loosely(t, err, should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Complete second suspect.
+			req2 := &pb.UpdateTestAnalysisProgressRequest{
+				Bbid:         9002,
+				BotId:        "bot",
+				RunSucceeded: true,
+				Results: []*pb.TestResult{
+					{
+						TestId:      "test0",
+						VariantHash: "hash0",
+						IsExpected:  false,
+						Status:      pb.TestResultStatus_FAIL,
+					},
+				},
+			}
+			err = Update(ctx, req2)
+			assert.Loosely(t, err, should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Both suspects should be confirmed.
+			assert.Loosely(t, datastore.Get(ctx, suspect1), should.BeNil)
+			assert.Loosely(t, suspect1.VerificationStatus, should.Equal(model.SuspectVerificationStatus_ConfirmedCulprit))
+			assert.Loosely(t, datastore.Get(ctx, suspect2), should.BeNil)
+			assert.Loosely(t, suspect2.VerificationStatus, should.Equal(model.SuspectVerificationStatus_ConfirmedCulprit))
+
+			// Analysis should be ENDED with FOUND status, and the first culprit wins.
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, tfa.VerifiedCulpritKey, should.Match(datastore.KeyForObj(ctx, suspect1)))
+			// EndTime should now be set.
+			assert.That(t, tfa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
+		})
+	})
+
+	ftt.Run("multiple suspects all vindicated", t, func(t *ftt.Test) {
+		cl := testclock.New(testclock.TestTimeUTC)
+		cl.Set(time.Unix(10000, 0).UTC())
+		ctx = clock.Set(ctx, cl)
+
+		// Create analysis with two suspects, both will be vindicated.
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+			ID:             400,
+			TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 4000),
+			Status:         pb.AnalysisStatus_SUSPECTFOUND,
+			RunStatus:      pb.AnalysisRunStatus_STARTED,
+		})
+		testFailure := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
+			ID:          4000,
+			IsPrimary:   true,
+			TestID:      "test0",
+			VariantHash: "hash0",
+			Analysis:    tfa,
+		})
+
+		// Create first suspect.
+		suspect1 := testutil.CreateSuspect(ctx, t, nil)
+		suspectRerun1 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+			ID:          9100,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect1),
+		})
+		parentRerun1 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+			ID:          9101,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect1),
+		})
+		suspect1.SuspectRerunBuild = datastore.KeyForObj(ctx, suspectRerun1)
+		suspect1.ParentRerunBuild = datastore.KeyForObj(ctx, parentRerun1)
+		assert.Loosely(t, datastore.Put(ctx, suspect1), should.BeNil)
+
+		// Create second suspect.
+		suspect2 := testutil.CreateSuspect(ctx, t, nil)
+		suspectRerun2 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+			ID:          9102,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect2),
+		})
+		parentRerun2 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+			ID:          9103,
+			Status:      pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+			AnalysisKey: datastore.KeyForObj(ctx, tfa),
+			Type:        model.RerunBuildType_CulpritVerification,
+			TestResult: model.RerunTestResults{
+				Results: []model.RerunSingleTestResult{
+					{TestFailureKey: datastore.KeyForObj(ctx, testFailure)},
+				},
+			},
+			CulpritKey: datastore.KeyForObj(ctx, suspect2),
+		})
+		suspect2.SuspectRerunBuild = datastore.KeyForObj(ctx, suspectRerun2)
+		suspect2.ParentRerunBuild = datastore.KeyForObj(ctx, parentRerun2)
+		assert.Loosely(t, datastore.Put(ctx, suspect2), should.BeNil)
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		t.Run("first suspect rerun completes but parent still in progress", func(t *ftt.Test) {
+			// Complete only the first suspect's suspect rerun, leaving parent rerun in progress.
+			req := &pb.UpdateTestAnalysisProgressRequest{
+				Bbid:         9100,
+				BotId:        "bot",
+				RunSucceeded: true,
+				Results: []*pb.TestResult{
+					{
+						TestId:      "test0",
+						VariantHash: "hash0",
+						IsExpected:  false,
+						Status:      pb.TestResultStatus_FAIL,
+					},
+				},
+			}
+
+			err := Update(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// First suspect's rerun is complete but parent is still in progress.
+			assert.Loosely(t, datastore.Get(ctx, suspectRerun1), should.BeNil)
+			assert.Loosely(t, suspectRerun1.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
+
+			// Suspect should still be under verification.
+			assert.Loosely(t, datastore.Get(ctx, suspect1), should.BeNil)
+			assert.Loosely(t, suspect1.VerificationStatus, should.Equal(model.SuspectVerificationStatus_UnderVerification))
+
+			// Analysis should remain STARTED with SUSPECTFOUND status.
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_STARTED))
+			assert.Loosely(t, tfa.VerifiedCulpritKey, should.BeNil)
+		})
+
+		t.Run("all suspects vindicated - analysis ends with SUSPECTFOUND", func(t *ftt.Test) {
+			// Complete both suspects' parent reruns with FAILED.
+			parentRerun1.Status = pb.RerunStatus_RERUN_STATUS_FAILED
+			assert.Loosely(t, datastore.Put(ctx, parentRerun1), should.BeNil)
+			parentRerun2.Status = pb.RerunStatus_RERUN_STATUS_FAILED
+			assert.Loosely(t, datastore.Put(ctx, parentRerun2), should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Complete first suspect.
+			req1 := &pb.UpdateTestAnalysisProgressRequest{
+				Bbid:         9100,
+				BotId:        "bot",
+				RunSucceeded: true,
+				Results: []*pb.TestResult{
+					{
+						TestId:      "test0",
+						VariantHash: "hash0",
+						IsExpected:  false,
+						Status:      pb.TestResultStatus_FAIL,
+					},
+				},
+			}
+			err := Update(ctx, req1)
+			assert.Loosely(t, err, should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Complete second suspect.
+			req2 := &pb.UpdateTestAnalysisProgressRequest{
+				Bbid:         9102,
+				BotId:        "bot",
+				RunSucceeded: true,
+				Results: []*pb.TestResult{
+					{
+						TestId:      "test0",
+						VariantHash: "hash0",
+						IsExpected:  false,
+						Status:      pb.TestResultStatus_FAIL,
+					},
+				},
+			}
+			err = Update(ctx, req2)
+			assert.Loosely(t, err, should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Both suspects should be vindicated.
+			assert.Loosely(t, datastore.Get(ctx, suspect1), should.BeNil)
+			assert.Loosely(t, suspect1.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Vindicated))
+			assert.Loosely(t, datastore.Get(ctx, suspect2), should.BeNil)
+			assert.Loosely(t, suspect2.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Vindicated))
+
+			// Analysis should be ENDED with SUSPECTFOUND status since no culprit was confirmed.
+			assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, tfa.VerifiedCulpritKey, should.BeNil)
+			// EndTime should be set.
+			assert.That(t, tfa.EndTime, should.Match(time.Unix(10000, 0).UTC()))
+		})
+	})
 }
 
 func TestScheduleNewRerun(t *testing.T) {

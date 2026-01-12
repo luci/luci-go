@@ -209,9 +209,37 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 				logging.Errorf(ctx, err.Error())
 			}
 		}
-		return testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
 	}
-	return testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+
+	// Check if there are still reruns in progress before marking analysis as ended.
+	// We need to wait for all verification reruns to complete to get the accurate
+	// end time and final status.
+	//
+	// Note: GetInProgressReruns queries for all reruns with status IN_PROGRESS for this analysis.
+	// This includes both culprit verification reruns and nthsection reruns.
+	reruns, err := datastoreutil.GetInProgressReruns(ctx, tfa)
+	if err != nil {
+		return errors.Fmt("get in progress reruns: %w", err)
+	}
+
+	// If there are still reruns in progress, don't mark as ended yet.
+	// Just update the status without changing RunStatus to ENDED.
+	if len(reruns) > 0 {
+		// Determine the appropriate status based on whether we have a confirmed culprit.
+		status := pb.AnalysisStatus_SUSPECTFOUND
+		if tfa.VerifiedCulpritKey != nil {
+			status = pb.AnalysisStatus_FOUND
+		}
+		return testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, status, pb.AnalysisRunStatus_STARTED)
+	}
+
+	// No more reruns in progress, safe to mark as ended.
+	// Determine the final status based on whether we have a confirmed culprit.
+	finalStatus := pb.AnalysisStatus_SUSPECTFOUND
+	if tfa.VerifiedCulpritKey != nil {
+		finalStatus = pb.AnalysisStatus_FOUND
+	}
+	return testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, finalStatus, pb.AnalysisRunStatus_ENDED)
 }
 
 func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.TestFailureAnalysis, req *pb.UpdateTestAnalysisProgressRequest) (reterr error) {

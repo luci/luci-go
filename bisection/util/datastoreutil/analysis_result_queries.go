@@ -450,7 +450,16 @@ func GetInProgressReruns(ctx context.Context, tfa *model.TestFailureAnalysis) ([
 	if err != nil {
 		return nil, errors.Fmt("get test reruns: %w", err)
 	}
-	return reruns, nil
+	// Filter out reruns that are not actually in progress.
+	// Due to eventual consistency, the query may return entities that were recently
+	// updated to a different status, but the index hasn't caught up yet.
+	filtered := []*model.TestSingleRerun{}
+	for _, r := range reruns {
+		if r.Status == pb.RerunStatus_RERUN_STATUS_IN_PROGRESS {
+			filtered = append(filtered, r)
+		}
+	}
+	return filtered, nil
 }
 
 func GetVerificationRerunsForTestCulprit(ctx context.Context, culprit *model.Suspect) (culpritRerun *model.TestSingleRerun, parentRerun *model.TestSingleRerun, reterr error) {
