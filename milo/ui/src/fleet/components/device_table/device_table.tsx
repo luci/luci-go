@@ -181,6 +181,7 @@ export function DeviceTable<R extends GridValidRowModel>({
   });
 
   const onSortModelChange = (newSortModel: GridSortModel) => {
+    if (isLoadingColumns) return;
     // Update order by param and clear pagination token when the sort model changes.
     setOrderByParam(getOrderByFromSortModel(newSortModel, availableColumns));
     setSearchParams(emptyPageTokenUpdater(pagerCtx));

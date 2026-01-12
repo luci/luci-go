@@ -135,22 +135,24 @@ export const AndroidDevicesPage = () => {
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
   const columnIds = useMemo(() => {
-    if (isDimensionsQueryProperlyLoaded)
-      return _.uniq([
+    const ids: string[] = [];
+    if (isDimensionsQueryProperlyLoaded) {
+      ids.push(
         ...Object.keys(dimensionsQuery.data.baseDimensions).concat(
           Object.keys(dimensionsQuery.data.labels),
         ),
-        ...EXTRA_COLUMN_IDS,
-      ]);
-    if (devicesQuery.data)
-      return _.uniq([
+      );
+    }
+
+    if (devicesQuery.data) {
+      ids.push(
         ...devicesQuery.data.devices.flatMap((d) =>
           Object.keys(d.omnilabSpec?.labels ?? {}),
         ),
-        ...EXTRA_COLUMN_IDS,
-      ]);
+      );
+    }
 
-    return [];
+    return _.uniq([...ids, ...EXTRA_COLUMN_IDS]);
   }, [
     isDimensionsQueryProperlyLoaded,
     dimensionsQuery.data,
@@ -159,19 +161,19 @@ export const AndroidDevicesPage = () => {
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
-    if (dimensionsQuery.isPending) return;
+    if (dimensionsQuery.isPending || devicesQuery.isPending) return;
 
-    const missingParamsColoumns = getWrongColumnsFromParams(
+    const missingParamsColumns = getWrongColumnsFromParams(
       searchParams,
       columnIds,
       ANDROID_DEFAULT_COLUMNS,
     );
-    if (missingParamsColoumns.length === 0) return;
+    if (missingParamsColumns.length === 0) return;
     addWarning(
       'The following columns are not available: ' +
-        missingParamsColoumns?.join(', '),
+        missingParamsColumns?.join(', '),
     );
-    for (const col of missingParamsColoumns) {
+    for (const col of missingParamsColumns) {
       searchParams.delete(COLUMNS_PARAM_KEY, col);
     }
     if (searchParams.getAll(COLUMNS_PARAM_KEY).length <= 1)
@@ -182,6 +184,7 @@ export const AndroidDevicesPage = () => {
     addWarning,
     columnIds,
     dimensionsQuery.isPending,
+    devicesQuery.isPending,
     searchParams,
     setSearchParams,
   ]);
@@ -287,7 +290,7 @@ export const AndroidDevicesPage = () => {
           isError={devicesQuery.isError || dimensionsQuery.isError}
           error={devicesQuery.error || dimensionsQuery.error}
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
-          isLoadingColumns={dimensionsQuery.isPending}
+          isLoadingColumns={dimensionsQuery.isPending || devicesQuery.isPending}
           totalRowCount={countQuery?.data?.total}
           getRowId={(row) =>
             row.id + (row.omnilabSpec?.labels?.fc_machine_type?.values ?? '')

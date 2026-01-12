@@ -154,8 +154,10 @@ const MOCK_DEVICES: Device[] = [
 
 function TestComponent({
   withKnownTotalRowCount = false,
+  isLoadingColumns = false,
 }: {
   withKnownTotalRowCount?: boolean;
+  isLoadingColumns?: boolean;
 }) {
   const pagerCtx = usePagerContext({
     pageSizeOptions: [3, 5, 10],
@@ -186,7 +188,7 @@ function TestComponent({
       isError={false}
       error={null}
       isLoading={false}
-      isLoadingColumns={false}
+      isLoadingColumns={isLoadingColumns}
       totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
       defaultColumnIds={DEFAULT_COLUMNS}
       localStorageKey={'testLocalStorageKey'}
@@ -570,5 +572,25 @@ describe('<DeviceTable />', () => {
         ids: ['5'],
       }),
     );
+  });
+
+  it('should not update order_by param when columns are loading', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/test/:platform"
+        routerOptions={{ initialEntries: ['/test/android'] }}
+      >
+        <TestComponent isLoadingColumns={true} />
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    // Click on 'ID' column header to sort
+    const idHeader = screen.getByRole('columnheader', { name: 'ID' });
+    await act(async () => fireEvent.click(idHeader));
+
+    // Verify header state does not update (proxy for URL not updating)
+    expect(idHeader).not.toHaveAttribute('aria-sort', 'ascending');
   });
 });

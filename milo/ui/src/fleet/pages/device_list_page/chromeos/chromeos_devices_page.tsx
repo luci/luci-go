@@ -144,20 +144,24 @@ export const ChromeOsDevicesPage = () => {
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
   const columnIds = useMemo(() => {
-    if (isDimensionsQueryProperlyLoaded)
-      return _.uniq(
-        Object.keys(dimensionsQuery.data.baseDimensions)
-          .concat(Object.keys(dimensionsQuery.data.labels))
-          .concat('current_task'),
+    const ids: string[] = [];
+    if (isDimensionsQueryProperlyLoaded) {
+      ids.push(
+        ...Object.keys(dimensionsQuery.data.baseDimensions),
+        ...Object.keys(dimensionsQuery.data.labels),
+        'current_task',
       );
-    if (devicesQuery.data)
-      return _.uniq(
-        devicesQuery.data.devices.flatMap((d) =>
+    }
+
+    if (devicesQuery.data) {
+      ids.push(
+        ...devicesQuery.data.devices.flatMap((d) =>
           Object.keys(d.deviceSpec?.labels ?? {}),
         ),
       );
+    }
 
-    return [];
+    return _.uniq(ids);
   }, [
     isDimensionsQueryProperlyLoaded,
     dimensionsQuery.data,
@@ -166,21 +170,22 @@ export const ChromeOsDevicesPage = () => {
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
-    if (dimensionsQuery.isPending) return;
+    if (dimensionsQuery.isPending || devicesQuery.isPending) return;
 
-    const missingParamsColoumns = getWrongColumnsFromParams(
+    const missingParamsColumns = getWrongColumnsFromParams(
       searchParams,
       columnIds,
       CHROMEOS_DEFAULT_COLUMNS,
     );
-    if (missingParamsColoumns.length === 0) return;
+    if (missingParamsColumns.length === 0) return;
     addWarning(
       'The following columns are not available: ' +
-        missingParamsColoumns?.join(', '),
+        missingParamsColumns?.join(', '),
     );
-    for (const col of missingParamsColoumns) {
+    for (const col of missingParamsColumns) {
       searchParams.delete(COLUMNS_PARAM_KEY, col);
     }
+
     if (searchParams.getAll(COLUMNS_PARAM_KEY).length <= 1)
       searchParams.delete(COLUMNS_PARAM_KEY);
 
@@ -189,6 +194,7 @@ export const ChromeOsDevicesPage = () => {
     addWarning,
     columnIds,
     dimensionsQuery.isPending,
+    devicesQuery.isPending,
     searchParams,
     setSearchParams,
   ]);
@@ -315,7 +321,7 @@ export const ChromeOsDevicesPage = () => {
             devicesQuery.error || dimensionsQuery.error || currentTasks.error
           }
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
-          isLoadingColumns={dimensionsQuery.isPending}
+          isLoadingColumns={dimensionsQuery.isPending || devicesQuery.isPending}
           totalRowCount={countQuery?.data?.total}
           formatDeviceColumn={formatDeviceColumn}
         />
