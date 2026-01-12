@@ -30,11 +30,17 @@ import { usePlatform, platformRenderString } from '@/fleet/hooks/usePlatform';
 import { colors } from '@/fleet/theme/colors';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-const PLATFORMS: Platform[] = [Platform.CHROMEOS, Platform.ANDROID];
+import { getFeatureFlag } from '../config/features';
 
 export function PlatformSelector() {
   const platform = usePlatform();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+  const PLATFORMS: Platform[] = [
+    Platform.CHROMEOS,
+    ...(getFeatureFlag('BrowserListDevices') ? [Platform.CHROMIUM] : []),
+    Platform.ANDROID,
+  ];
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);

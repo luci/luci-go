@@ -192,6 +192,22 @@ export interface AndroidDevice {
   readonly runTarget: string;
 }
 
+export interface BrowserDevice {
+  readonly id: string;
+  readonly swarmingLabels: { [key: string]: LabelValues };
+  readonly ufsLabels: { [key: string]: LabelValues };
+}
+
+export interface BrowserDevice_SwarmingLabelsEntry {
+  readonly key: string;
+  readonly value: LabelValues | undefined;
+}
+
+export interface BrowserDevice_UfsLabelsEntry {
+  readonly key: string;
+  readonly value: LabelValues | undefined;
+}
+
 export interface DeviceAddress {
   /**
    * IP address of the device.
@@ -239,10 +255,10 @@ export interface ListAndroidDevicesRequest {
    */
   readonly pageSize: number;
   /**
-   * A page token, received from a previous `ListDevices` call. Provide this to
+   * A page token, received from a previous `ListAndroidDevices` call. Provide this to
    * retrieve the subsequent page. Returns first page if omitted.
    *
-   * When paginating, all other parameters provided to `ListDevices` must match
+   * When paginating, all other parameters provided to `ListAndroidDevices` must match
    * the call that provided the page token.
    */
   readonly pageToken: string;
@@ -254,6 +270,36 @@ export interface ListAndroidDevicesRequest {
 export interface ListAndroidDevicesResponse {
   /** List of devices to be returned. */
   readonly devices: readonly AndroidDevice[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page. If
+   * this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+  readonly totalSize: number;
+}
+
+export interface ListBrowserDevicesRequest {
+  /**
+   * The maximum number of devices to return. The service may return fewer than
+   * this value. If unspecified, at most 1000 devices will be returned.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `ListBrowserDevices` call. Provide this to
+   * retrieve the subsequent page. Returns first page if omitted.
+   *
+   * When paginating, all other parameters provided to `ListBrowserDevices` must match
+   * the call that provided the page token.
+   */
+  readonly pageToken: string;
+  readonly orderBy: string;
+  /** See: AIP-160 (https://google.aip.dev/160) for the syntax */
+  readonly filter: string;
+}
+
+export interface ListBrowserDevicesResponse {
+  /** List of devices to be returned. */
+  readonly devices: readonly BrowserDevice[];
   /**
    * A token, which can be sent as `page_token` to retrieve the next page. If
    * this field is omitted, there are no subsequent pages.
@@ -1454,6 +1500,298 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
   },
 };
 
+function createBaseBrowserDevice(): BrowserDevice {
+  return { id: "", swarmingLabels: {}, ufsLabels: {} };
+}
+
+export const BrowserDevice: MessageFns<BrowserDevice> = {
+  encode(message: BrowserDevice, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    Object.entries(message.swarmingLabels).forEach(([key, value]) => {
+      BrowserDevice_SwarmingLabelsEntry.encode({ key: key as any, value }, writer.uint32(18).fork()).join();
+    });
+    Object.entries(message.ufsLabels).forEach(([key, value]) => {
+      BrowserDevice_UfsLabelsEntry.encode({ key: key as any, value }, writer.uint32(26).fork()).join();
+    });
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BrowserDevice {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBrowserDevice() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          const entry2 = BrowserDevice_SwarmingLabelsEntry.decode(reader, reader.uint32());
+          if (entry2.value !== undefined) {
+            message.swarmingLabels[entry2.key] = entry2.value;
+          }
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          const entry3 = BrowserDevice_UfsLabelsEntry.decode(reader, reader.uint32());
+          if (entry3.value !== undefined) {
+            message.ufsLabels[entry3.key] = entry3.value;
+          }
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BrowserDevice {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      swarmingLabels: isObject(object.swarmingLabels)
+        ? Object.entries(object.swarmingLabels).reduce<{ [key: string]: LabelValues }>((acc, [key, value]) => {
+          acc[key] = LabelValues.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+      ufsLabels: isObject(object.ufsLabels)
+        ? Object.entries(object.ufsLabels).reduce<{ [key: string]: LabelValues }>((acc, [key, value]) => {
+          acc[key] = LabelValues.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: BrowserDevice): unknown {
+    const obj: any = {};
+    if (message.id !== "") {
+      obj.id = message.id;
+    }
+    if (message.swarmingLabels) {
+      const entries = Object.entries(message.swarmingLabels);
+      if (entries.length > 0) {
+        obj.swarmingLabels = {};
+        entries.forEach(([k, v]) => {
+          obj.swarmingLabels[k] = LabelValues.toJSON(v);
+        });
+      }
+    }
+    if (message.ufsLabels) {
+      const entries = Object.entries(message.ufsLabels);
+      if (entries.length > 0) {
+        obj.ufsLabels = {};
+        entries.forEach(([k, v]) => {
+          obj.ufsLabels[k] = LabelValues.toJSON(v);
+        });
+      }
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BrowserDevice>): BrowserDevice {
+    return BrowserDevice.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BrowserDevice>): BrowserDevice {
+    const message = createBaseBrowserDevice() as any;
+    message.id = object.id ?? "";
+    message.swarmingLabels = Object.entries(object.swarmingLabels ?? {}).reduce<{ [key: string]: LabelValues }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = LabelValues.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    message.ufsLabels = Object.entries(object.ufsLabels ?? {}).reduce<{ [key: string]: LabelValues }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = LabelValues.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseBrowserDevice_SwarmingLabelsEntry(): BrowserDevice_SwarmingLabelsEntry {
+  return { key: "", value: undefined };
+}
+
+export const BrowserDevice_SwarmingLabelsEntry: MessageFns<BrowserDevice_SwarmingLabelsEntry> = {
+  encode(message: BrowserDevice_SwarmingLabelsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      LabelValues.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BrowserDevice_SwarmingLabelsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBrowserDevice_SwarmingLabelsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = LabelValues.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BrowserDevice_SwarmingLabelsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? LabelValues.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: BrowserDevice_SwarmingLabelsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = LabelValues.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BrowserDevice_SwarmingLabelsEntry>): BrowserDevice_SwarmingLabelsEntry {
+    return BrowserDevice_SwarmingLabelsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BrowserDevice_SwarmingLabelsEntry>): BrowserDevice_SwarmingLabelsEntry {
+    const message = createBaseBrowserDevice_SwarmingLabelsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? LabelValues.fromPartial(object.value)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseBrowserDevice_UfsLabelsEntry(): BrowserDevice_UfsLabelsEntry {
+  return { key: "", value: undefined };
+}
+
+export const BrowserDevice_UfsLabelsEntry: MessageFns<BrowserDevice_UfsLabelsEntry> = {
+  encode(message: BrowserDevice_UfsLabelsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      LabelValues.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BrowserDevice_UfsLabelsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBrowserDevice_UfsLabelsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = LabelValues.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BrowserDevice_UfsLabelsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? LabelValues.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: BrowserDevice_UfsLabelsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = LabelValues.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BrowserDevice_UfsLabelsEntry>): BrowserDevice_UfsLabelsEntry {
+    return BrowserDevice_UfsLabelsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BrowserDevice_UfsLabelsEntry>): BrowserDevice_UfsLabelsEntry {
+    const message = createBaseBrowserDevice_UfsLabelsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? LabelValues.fromPartial(object.value)
+      : undefined;
+    return message;
+  },
+};
+
 function createBaseDeviceAddress(): DeviceAddress {
   return { host: "", port: 0 };
 }
@@ -1942,6 +2280,208 @@ export const ListAndroidDevicesResponse: MessageFns<ListAndroidDevicesResponse> 
   fromPartial(object: DeepPartial<ListAndroidDevicesResponse>): ListAndroidDevicesResponse {
     const message = createBaseListAndroidDevicesResponse() as any;
     message.devices = object.devices?.map((e) => AndroidDevice.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    message.totalSize = object.totalSize ?? 0;
+    return message;
+  },
+};
+
+function createBaseListBrowserDevicesRequest(): ListBrowserDevicesRequest {
+  return { pageSize: 0, pageToken: "", orderBy: "", filter: "" };
+}
+
+export const ListBrowserDevicesRequest: MessageFns<ListBrowserDevicesRequest> = {
+  encode(message: ListBrowserDevicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.pageSize !== 0) {
+      writer.uint32(8).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(18).string(message.pageToken);
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(26).string(message.orderBy);
+    }
+    if (message.filter !== "") {
+      writer.uint32(34).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListBrowserDevicesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListBrowserDevicesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListBrowserDevicesRequest {
+    return {
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: ListBrowserDevicesRequest): unknown {
+    const obj: any = {};
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListBrowserDevicesRequest>): ListBrowserDevicesRequest {
+    return ListBrowserDevicesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListBrowserDevicesRequest>): ListBrowserDevicesRequest {
+    const message = createBaseListBrowserDevicesRequest() as any;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    message.orderBy = object.orderBy ?? "";
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseListBrowserDevicesResponse(): ListBrowserDevicesResponse {
+  return { devices: [], nextPageToken: "", totalSize: 0 };
+}
+
+export const ListBrowserDevicesResponse: MessageFns<ListBrowserDevicesResponse> = {
+  encode(message: ListBrowserDevicesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.devices) {
+      BrowserDevice.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    if (message.totalSize !== 0) {
+      writer.uint32(24).int32(message.totalSize);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListBrowserDevicesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListBrowserDevicesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.devices.push(BrowserDevice.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.totalSize = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListBrowserDevicesResponse {
+    return {
+      devices: globalThis.Array.isArray(object?.devices)
+        ? object.devices.map((e: any) => BrowserDevice.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+      totalSize: isSet(object.totalSize) ? globalThis.Number(object.totalSize) : 0,
+    };
+  },
+
+  toJSON(message: ListBrowserDevicesResponse): unknown {
+    const obj: any = {};
+    if (message.devices?.length) {
+      obj.devices = message.devices.map((e) => BrowserDevice.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    if (message.totalSize !== 0) {
+      obj.totalSize = Math.round(message.totalSize);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListBrowserDevicesResponse>): ListBrowserDevicesResponse {
+    return ListBrowserDevicesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListBrowserDevicesResponse>): ListBrowserDevicesResponse {
+    const message = createBaseListBrowserDevicesResponse() as any;
+    message.devices = object.devices?.map((e) => BrowserDevice.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
     message.totalSize = object.totalSize ?? 0;
     return message;
@@ -7243,10 +7783,12 @@ export interface FleetConsole {
    * Console. Useful for debugging.
    */
   PingSwarming(request: PingSwarmingRequest): Promise<PingSwarmingResponse>;
-  /** ListDevices for chromeOS. */
+  /** ListDevices provides an rpc to get ChromeOS devices. */
   ListDevices(request: ListDevicesRequest): Promise<ListDevicesResponse>;
-  /** ListDevices managed by Device Manager. */
+  /** ListAndroidDevices provides an rpc to get Android devices. */
   ListAndroidDevices(request: ListAndroidDevicesRequest): Promise<ListAndroidDevicesResponse>;
+  /** ListBrowserDevices provides an rpc to get Browser devices. */
+  ListBrowserDevices(request: ListBrowserDevicesRequest): Promise<ListBrowserDevicesResponse>;
   /**
    * GetDeviceDimensions provides overview of devices dimensions and their
    * values
@@ -7309,6 +7851,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.PingSwarming = this.PingSwarming.bind(this);
     this.ListDevices = this.ListDevices.bind(this);
     this.ListAndroidDevices = this.ListAndroidDevices.bind(this);
+    this.ListBrowserDevices = this.ListBrowserDevices.bind(this);
     this.GetDeviceDimensions = this.GetDeviceDimensions.bind(this);
     this.CountDevices = this.CountDevices.bind(this);
     this.RepopulateCache = this.RepopulateCache.bind(this);
@@ -7369,6 +7912,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ListAndroidDevicesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListAndroidDevices", data);
     return promise.then((data) => ListAndroidDevicesResponse.fromJSON(data));
+  }
+
+  ListBrowserDevices(request: ListBrowserDevicesRequest): Promise<ListBrowserDevicesResponse> {
+    const data = ListBrowserDevicesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListBrowserDevices", data);
+    return promise.then((data) => ListBrowserDevicesResponse.fromJSON(data));
   }
 
   GetDeviceDimensions(request: GetDeviceDimensionsRequest): Promise<GetDeviceDimensionsResponse> {

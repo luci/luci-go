@@ -42,6 +42,20 @@ export const ANDROID_DEFAULT_COLUMNS = [
   'version',
 ];
 
+export const CHROMIUM_DEFAULT_COLUMNS = [
+  'id',
+  'ufs_labels.asset_tag',
+  'ufs_labels.chrome_platform',
+  'ufs_labels.hostname',
+  'ufs_labels.rack',
+  'ufs_labels.resource_state',
+  'ufs_labels.serial_number',
+  'ufs_labels.swarming_instance',
+  'ufs_labels.zone',
+  'ufs_labels.associated_hostname',
+  'ufs_labels.model',
+];
+
 // Define a list of device filters commonly used by FLOPS to show in the
 // filter options for the device.
 // TODO: Hotfix for b/449956551, needs further investigation on quote handling

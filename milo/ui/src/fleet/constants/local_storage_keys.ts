@@ -18,6 +18,9 @@ export const ANDROID_DEVICES_LOCAL_STORAGE_KEY =
 export const CHROMEOS_DEVICES_LOCAL_STORAGE_KEY =
   'fleet-console-devices-columns';
 
+export const BROWSER_DEVICES_LOCAL_STORAGE_KEY =
+  'fleet-console-browser-devices-columns';
+
 export const RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY =
   'fleet-console-rri-columns';
 export const SETTINGS_LOCAL_STORAGE_KEY = 'fleet-console-settings';

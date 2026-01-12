@@ -36,6 +36,7 @@ export const platformToURL = (p: Platform) => {
 
 export const CHROMEOS_PLATFORM = platformToURL(Platform.CHROMEOS);
 export const ANDROID_PLATFORM = platformToURL(Platform.ANDROID);
+export const CHROMIUM_PLATFORM = platformToURL(Platform.CHROMIUM);
 
 export const generateDeviceListURL = (platform: string) => {
   return `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${DEVICES_SUBROUTE}`;

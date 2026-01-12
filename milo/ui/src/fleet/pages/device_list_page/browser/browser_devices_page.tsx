@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Chip } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
 
@@ -32,12 +31,17 @@ import {
   getFilters,
 } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
-import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
-import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
+import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
+import { CHROMIUM_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
+import { getFeatureFlag } from '@/fleet/config/features';
+import {
+  BROWSER_SWARMING_SOURCE,
+  BROWSER_UFS_SOURCE,
+} from '@/fleet/constants/browser';
+import { BROWSER_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
+import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { SelectedOptions } from '@/fleet/types';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
@@ -48,8 +52,7 @@ import {
 } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
-  CountDevicesRequest,
-  ListDevicesRequest,
+  ListBrowserDevicesRequest,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -58,23 +61,14 @@ import {
   dimensionsToFilterOptions,
   filterOptionsPlaceholder,
 } from '../common/helpers';
-import { useDeviceDimensions } from '../common/use_device_dimensions';
 
-import { AndroidSummaryHeader } from './android_summary_header';
-import { ANDROID_COLUMN_OVERRIDES, getColumns } from './columns';
+import { BrowserSummaryHeader } from './browser_summary_header';
+import { BROWSER_COLUMN_OVERRIDES, getColumns } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
-const platform = Platform.ANDROID;
-
-const EXTRA_COLUMN_IDS = [
-  'label-id',
-  'label-run_target',
-  'label-hostname',
-] satisfies (keyof typeof ANDROID_COLUMN_OVERRIDES)[];
-
-export const AndroidDevicesPage = () => {
+export const BrowserDevicesPage = () => {
   const { trackEvent } = useGoogleAnalytics();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
@@ -105,57 +99,54 @@ export const AndroidDevicesPage = () => {
     ? ''
     : stringifyFilters(selectedOptions.filters);
 
-  const client = useFleetConsoleClient();
-  const dimensionsQuery = useDeviceDimensions({ platform });
+  // TODO: b/390013758 - Use the real GetDeviceDimensions RPC once it's ready for CHROMIUM platform.
+  const dimensionsQuery = useMemo(
+    () => ({
+      data: { baseDimensions: {}, labels: {} },
+      isPending: false,
+      isSuccess: true,
+      isError: false,
+      error: null,
+    }),
+    [],
+  );
 
-  // TODO: b/419764393, b/420287987 - In local storage REACT_QUERY_OFFLINE_CACHE can contain empty data object which causes app to crash.
-  const isDimensionsQueryProperlyLoaded =
-    dimensionsQuery.data &&
-    dimensionsQuery.data.baseDimensions &&
-    dimensionsQuery.data.labels;
+  // TODO: b/390013758 - Use the real CountDevices RPC once it's ready for CHROMIUM platform.
+  const countQuery = {
+    data: { total: 0 },
+    isPending: false,
+    isError: false,
+    error: null,
+  };
 
-  const countQuery = useQuery({
-    ...client.CountDevices.query(
-      CountDevicesRequest.fromPartial({
-        filter: stringifiedSelectedOptions,
-        platform: platform,
-      }),
-    ),
-  });
-
-  const request = ListDevicesRequest.fromPartial({
+  const request = ListBrowserDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
     orderBy: orderByParam,
     filter: stringifiedSelectedOptions,
-    platform: platform,
   });
 
-  const devicesQuery = useAndroidDevices(request);
+  const devicesQuery = useBrowserDevices(request);
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
   const columnIds = useMemo(() => {
-    if (isDimensionsQueryProperlyLoaded)
+    //TODO: use useDeviceDimensions once its implemented
+    if (devicesQuery.data) {
       return _.uniq([
-        ...Object.keys(dimensionsQuery.data.baseDimensions).concat(
-          Object.keys(dimensionsQuery.data.labels),
-        ),
-        ...EXTRA_COLUMN_IDS,
+        'id',
+        ...devicesQuery.data.devices.flatMap((d) => [
+          ...Object.keys(d.swarmingLabels ?? {}).map(
+            (l) => BROWSER_SWARMING_SOURCE + '.' + l,
+          ),
+          ...Object.keys(d.ufsLabels ?? {}).map(
+            (l) => BROWSER_UFS_SOURCE + '.' + l,
+          ),
+        ]),
       ]);
-    if (devicesQuery.data)
-      return _.uniq([
-        ...devicesQuery.data.devices.flatMap((d) =>
-          Object.keys(d.omnilabSpec?.labels ?? {}),
-        ),
-        ...EXTRA_COLUMN_IDS,
-      ]);
+    }
 
-    return [];
-  }, [
-    isDimensionsQueryProperlyLoaded,
-    dimensionsQuery.data,
-    devicesQuery.data,
-  ]);
+    return ['id'];
+  }, [devicesQuery.data]);
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
@@ -164,7 +155,7 @@ export const AndroidDevicesPage = () => {
     const missingParamsColoumns = getWrongColumnsFromParams(
       searchParams,
       columnIds,
-      ANDROID_DEFAULT_COLUMNS,
+      CHROMIUM_DEFAULT_COLUMNS,
     );
     if (missingParamsColoumns.length === 0) return;
     addWarning(
@@ -191,13 +182,7 @@ export const AndroidDevicesPage = () => {
     if (!dimensionsQuery.isSuccess) return;
 
     const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
-      (filterKey) =>
-        isDimensionsQueryProperlyLoaded &&
-        // TODO: Hotfix for b/449956551, needs further investigation on quote handling
-        !dimensionsQuery.data.labels[
-          filterKey.replace(/labels\."?([^"]+)"?/, '$1')
-        ] &&
-        !dimensionsQuery.data.baseDimensions[filterKey],
+      (filterKey) => !columnIds.includes(filterKey),
     );
     if (missingParamsFilters.length === 0) return;
     addWarning(
@@ -209,11 +194,11 @@ export const AndroidDevicesPage = () => {
     }
     setSearchParams(filtersUpdater(selectedOptions.filters));
   }, [
-    isDimensionsQueryProperlyLoaded,
     addWarning,
     dimensionsQuery,
     selectedOptions,
     setSearchParams,
+    columnIds,
   ]);
 
   useEffect(() => {
@@ -229,10 +214,7 @@ export const AndroidDevicesPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <AndroidSummaryHeader
-        selectedOptions={selectedOptions.filters || {}}
-        pagerContext={pagerCtx}
-      />
+      <BrowserSummaryHeader selectedOptions={selectedOptions.filters || {}} />
       <AutorepairJobsAlert />
       <div
         css={{
@@ -255,14 +237,14 @@ export const AndroidDevicesPage = () => {
         ) : (
           <DeviceListFilterBar
             filterOptions={
-              isDimensionsQueryProperlyLoaded
+              dimensionsQuery.isSuccess
                 ? dimensionsToFilterOptions(
                     dimensionsQuery.data,
-                    ANDROID_COLUMN_OVERRIDES,
+                    BROWSER_COLUMN_OVERRIDES,
                   )
                 : filterOptionsPlaceholder(
                     selectedOptions.filters,
-                    ANDROID_COLUMN_OVERRIDES,
+                    BROWSER_COLUMN_OVERRIDES,
                   )
             }
             selectedOptions={selectedOptions.filters}
@@ -278,8 +260,8 @@ export const AndroidDevicesPage = () => {
         }}
       >
         <DeviceTable
-          defaultColumnIds={ANDROID_DEFAULT_COLUMNS}
-          localStorageKey={ANDROID_DEVICES_LOCAL_STORAGE_KEY}
+          defaultColumnIds={CHROMIUM_DEFAULT_COLUMNS}
+          localStorageKey={BROWSER_DEVICES_LOCAL_STORAGE_KEY}
           rows={devices}
           availableColumns={getColumns(columnIds)}
           nextPageToken={nextPageToken}
@@ -289,9 +271,6 @@ export const AndroidDevicesPage = () => {
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
           isLoadingColumns={dimensionsQuery.isPending}
           totalRowCount={countQuery?.data?.total}
-          getRowId={(row) =>
-            row.id + (row.omnilabSpec?.labels?.fc_machine_type?.values ?? '')
-          }
         />
       </div>
     </div>
@@ -299,6 +278,8 @@ export const AndroidDevicesPage = () => {
 };
 
 export function Component() {
+  const isSupported = getFeatureFlag('BrowserListDevices');
+
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <FleetHelmet pageTitle="Device List" />
@@ -308,7 +289,13 @@ export function Component() {
         key="fleet-device-list-page"
       >
         <LoggedInBoundary>
-          <AndroidDevicesPage />
+          {isSupported ? (
+            <BrowserDevicesPage />
+          ) : (
+            <PlatformNotAvailable
+              availablePlatforms={[Platform.CHROMEOS, Platform.ANDROID]}
+            />
+          )}
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>

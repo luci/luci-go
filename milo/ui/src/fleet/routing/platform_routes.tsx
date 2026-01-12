@@ -70,6 +70,9 @@ export const platformRoutes: RouteObject[] = [
               [Platform.CHROMEOS]: lazy(
                 () => import('@/fleet/pages/device_list_page/chromeos'),
               ),
+              [Platform.CHROMIUM]: lazy(
+                () => import('@/fleet/pages/device_list_page/browser'),
+              ),
             }}
           />
         ),

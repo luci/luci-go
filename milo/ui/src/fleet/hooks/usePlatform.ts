@@ -30,7 +30,7 @@ export const platformRenderString = (p?: Platform) => {
     case Platform.CHROMEOS:
       return 'Chrome OS';
     case Platform.CHROMIUM:
-      return 'Chromium';
+      return 'Chrome Browser';
     case Platform.UNSPECIFIED:
       return 'Unspecified';
     case undefined:

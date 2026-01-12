@@ -50,7 +50,6 @@ import {
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
-import { getFeatureFlag } from '@/fleet/config/features';
 import {
   ANDROID_PLATFORM,
   generateDeviceListURL,
@@ -567,13 +566,7 @@ export const RepairListPage = () => {
     [pagerCtx, searchParams],
   );
 
-  const columns = useMemo(() => {
-    const allColumns = Object.values(COLUMNS);
-    if (getFeatureFlag('AndroidListDevices')) {
-      return allColumns;
-    }
-    return allColumns.filter((c) => c.accessorKey !== 'static-explore_devices');
-  }, []);
+  const columns = useMemo(() => Object.values(COLUMNS), []);
 
   const table = useFCDataTable({
     positionToolbarAlertBanner: 'none',
@@ -769,14 +762,12 @@ function Metrics({
               value={countQuery.data?.totalHosts}
               loading={countQuery.isPending}
               filterUrl={
-                getFeatureFlag('AndroidListDevices')
-                  ? generateDeviceListURL(ANDROID_PLATFORM) +
-                    getFilterQueryString(
-                      { fc_machine_type: ['host'] },
-                      searchParams,
-                      pagerContext,
-                    )
-                  : undefined
+                generateDeviceListURL(ANDROID_PLATFORM) +
+                getFilterQueryString(
+                  { fc_machine_type: ['host'] },
+                  searchParams,
+                  pagerContext,
+                )
               }
             />
             <SingleMetric
@@ -786,17 +777,15 @@ function Metrics({
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
               filterUrl={
-                getFeatureFlag('AndroidListDevices')
-                  ? generateDeviceListURL(ANDROID_PLATFORM) +
-                    getFilterQueryString(
-                      {
-                        fc_machine_type: ['host'],
-                        state: ['LAB_MISSING'],
-                      },
-                      searchParams,
-                      pagerContext,
-                    )
-                  : undefined
+                generateDeviceListURL(ANDROID_PLATFORM) +
+                getFilterQueryString(
+                  {
+                    fc_machine_type: ['host'],
+                    state: ['LAB_MISSING'],
+                  },
+                  searchParams,
+                  pagerContext,
+                )
               }
             />
             {/* needed to left align content while keeping the correct right spacing*/}
@@ -828,14 +817,12 @@ function Metrics({
               value={countQuery.data?.totalDevices}
               loading={countQuery.isPending}
               filterUrl={
-                getFeatureFlag('AndroidListDevices')
-                  ? generateDeviceListURL(ANDROID_PLATFORM) +
-                    getFilterQueryString(
-                      { fc_machine_type: ['device'] },
-                      searchParams,
-                      pagerContext,
-                    )
-                  : undefined
+                generateDeviceListURL(ANDROID_PLATFORM) +
+                getFilterQueryString(
+                  { fc_machine_type: ['device'] },
+                  searchParams,
+                  pagerContext,
+                )
               }
             />
             <SingleMetric
@@ -850,17 +837,15 @@ function Metrics({
               Icon={<DoneIcon sx={{ color: colors.green[600] }} />}
               loading={countQuery.isPending}
               filterUrl={
-                getFeatureFlag('AndroidListDevices')
-                  ? generateDeviceListURL(ANDROID_PLATFORM) +
-                    getFilterQueryString(
-                      {
-                        fc_machine_type: ['device'],
-                        fc_is_offline: ['false'],
-                      },
-                      searchParams,
-                      pagerContext,
-                    )
-                  : undefined
+                generateDeviceListURL(ANDROID_PLATFORM) +
+                getFilterQueryString(
+                  {
+                    fc_machine_type: ['device'],
+                    fc_is_offline: ['false'],
+                  },
+                  searchParams,
+                  pagerContext,
+                )
               }
             />
             <SingleMetric
@@ -870,17 +855,15 @@ function Metrics({
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
               filterUrl={
-                getFeatureFlag('AndroidListDevices')
-                  ? generateDeviceListURL(ANDROID_PLATFORM) +
-                    getFilterQueryString(
-                      {
-                        fc_machine_type: ['device'],
-                        fc_is_offline: ['true'],
-                      },
-                      searchParams,
-                      pagerContext,
-                    )
-                  : undefined
+                generateDeviceListURL(ANDROID_PLATFORM) +
+                getFilterQueryString(
+                  {
+                    fc_machine_type: ['device'],
+                    fc_is_offline: ['true'],
+                  },
+                  searchParams,
+                  pagerContext,
+                )
               }
             />
             {/* needed to left align content while keeping the correct right spacing*/}

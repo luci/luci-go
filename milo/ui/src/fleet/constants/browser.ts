@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-type FeaturesValueType = boolean | null;
-
-export const features = {
-  UnifiedFilterBar: true,
-  ColumnFilter: true,
-  BrowserListDevices: true,
-} satisfies Record<string, FeaturesValueType>;
-
-export type FeaturesSchema = Record<keyof typeof features, FeaturesValueType>; // makes sure prod flags follow the same schema as dev ones
+export const BROWSER_SWARMING_SOURCE = 'swarming_labels';
+export const BROWSER_UFS_SOURCE = 'ufs_labels';
