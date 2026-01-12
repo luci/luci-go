@@ -140,6 +140,10 @@ export function OptionsDropdown({
               setSearchQuery(e.currentTarget.value);
             }}
             onKeyDown={(e) => {
+              if (['Delete', 'Cancel', 'Backspace'].includes(e.key)) {
+                e.stopPropagation(); //avoids clearing the whole field
+              }
+
               keyboardListNavigationHandler(e, undefined, () => {
                 onClose();
                 e.preventDefault();
