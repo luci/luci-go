@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/nthsection"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
+	"go.chromium.org/luci/bisection/testfailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 )
@@ -186,6 +187,13 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 		if err != nil {
 			return errors.Fmt("update VerifiedCulpritKey of analysis: %w", err)
 		}
+
+		// Schedule cancellation of remaining work
+		if err := cancelanalysis.ScheduleTask(ctx, tfa.ID); err != nil {
+			// Non-critical, just log the error
+			logging.Errorf(ctx, "Failed to schedule cancel analysis task for %d: %v", tfa.ID, err)
+		}
+
 		// TODO(@beining): Schedule this task when suspect is VerificationError too.
 		// According to go/luci-bisection-integrating-gerrit,
 		// we want to also perform gerrit action when suspect is VerificationError.
@@ -249,6 +257,17 @@ func processNthSectionUpdate(ctx context.Context, rerun *model.TestSingleRerun, 
 	}
 	if !enabled {
 		logging.Infof(ctx, "Bisection not enabled")
+		return nil
+	}
+
+	// Re-fetch tfa to check if a culprit has already been confirmed
+	// (it may have been set by a concurrent culprit verification)
+	tfa, err = datastoreutil.GetTestFailureAnalysis(ctx, tfa.ID)
+	if err != nil {
+		return errors.Fmt("get test failure analysis: %w", err)
+	}
+	if tfa.VerifiedCulpritKey != nil {
+		logging.Infof(ctx, "Analysis %d already has a verified culprit, skipping new nth-section reruns", tfa.ID)
 		return nil
 	}
 

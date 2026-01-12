@@ -217,6 +217,18 @@ func SaveSuspectAndTriggerCulpritVerification(ctx context.Context, tfa *model.Te
 	if err != nil {
 		return errors.Fmt("store nthsection culprit to datastore: %w", err)
 	}
+
+	// Re-fetch tfa to check if a culprit has already been confirmed
+	// (it may have been set by a concurrent culprit verification)
+	tfa, err = datastoreutil.GetTestFailureAnalysis(ctx, tfa.ID)
+	if err != nil {
+		return errors.Fmt("get test failure analysis: %w", err)
+	}
+	if tfa.VerifiedCulpritKey != nil {
+		logging.Infof(ctx, "Analysis %d already has a verified culprit, skipping culprit verification for nthsection suspect", tfa.ID)
+		return nil
+	}
+
 	if err := task.ScheduleTestFailureTask(ctx, tfa.ID, suspect.Id, suspect.ParentAnalysis.Encode()); err != nil {
 		// Non-critical, just log the error
 		err := errors.Fmt("schedule culprit verification task %d: %w", tfa.ID, err)

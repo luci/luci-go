@@ -53,6 +53,7 @@ import (
 	bbpubsub "go.chromium.org/luci/bisection/pubsub"
 	"go.chromium.org/luci/bisection/server"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
+	testcancelanalysis "go.chromium.org/luci/bisection/testfailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/testfailuredetection"
 	"go.chromium.org/luci/bisection/throttle"
 )
@@ -163,6 +164,7 @@ func main() {
 			return errors.Fmt("register revert culprit: %w", err)
 		}
 		cancelanalysis.RegisterTaskClass()
+		testcancelanalysis.RegisterTaskClass()
 		culpritverification.RegisterTaskClass()
 		if err := testfailuredetection.RegisterTaskClass(srv, pg.Project); err != nil {
 			return errors.Fmt("register test failure detection: %w", err)

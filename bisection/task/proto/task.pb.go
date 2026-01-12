@@ -137,7 +137,7 @@ func (x *RevertCulpritTask) GetCulpritId() int64 {
 	return 0
 }
 
-// Payload of the CancelAnalysis
+// Payload of the CancelAnalysis (for compile failure analysis)
 type CancelAnalysisTask struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The analysis ID that we need to cancel.
@@ -183,6 +183,52 @@ func (x *CancelAnalysisTask) GetAnalysisId() int64 {
 	return 0
 }
 
+// Payload for canceling test failure analysis
+type CancelTestAnalysisTask struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The analysis ID that we need to cancel.
+	AnalysisId    int64 `protobuf:"varint,1,opt,name=analysis_id,json=analysisId,proto3" json:"analysis_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelTestAnalysisTask) Reset() {
+	*x = CancelTestAnalysisTask{}
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelTestAnalysisTask) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelTestAnalysisTask) ProtoMessage() {}
+
+func (x *CancelTestAnalysisTask) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelTestAnalysisTask.ProtoReflect.Descriptor instead.
+func (*CancelTestAnalysisTask) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CancelTestAnalysisTask) GetAnalysisId() int64 {
+	if x != nil {
+		return x.AnalysisId
+	}
+	return 0
+}
+
 // Payload for Culprit Verification
 type CulpritVerificationTask struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -198,7 +244,7 @@ type CulpritVerificationTask struct {
 
 func (x *CulpritVerificationTask) Reset() {
 	*x = CulpritVerificationTask{}
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +256,7 @@ func (x *CulpritVerificationTask) String() string {
 func (*CulpritVerificationTask) ProtoMessage() {}
 
 func (x *CulpritVerificationTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +269,7 @@ func (x *CulpritVerificationTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CulpritVerificationTask.ProtoReflect.Descriptor instead.
 func (*CulpritVerificationTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CulpritVerificationTask) GetAnalysisId() int64 {
@@ -262,7 +308,7 @@ type TestFailureDetectionTask struct {
 
 func (x *TestFailureDetectionTask) Reset() {
 	*x = TestFailureDetectionTask{}
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -274,7 +320,7 @@ func (x *TestFailureDetectionTask) String() string {
 func (*TestFailureDetectionTask) ProtoMessage() {}
 
 func (x *TestFailureDetectionTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -287,7 +333,7 @@ func (x *TestFailureDetectionTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestFailureDetectionTask.ProtoReflect.Descriptor instead.
 func (*TestFailureDetectionTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TestFailureDetectionTask) GetProject() string {
@@ -315,7 +361,7 @@ type TestFailureBisectionTask struct {
 
 func (x *TestFailureBisectionTask) Reset() {
 	*x = TestFailureBisectionTask{}
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -327,7 +373,7 @@ func (x *TestFailureBisectionTask) String() string {
 func (*TestFailureBisectionTask) ProtoMessage() {}
 
 func (x *TestFailureBisectionTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +386,7 @@ func (x *TestFailureBisectionTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestFailureBisectionTask.ProtoReflect.Descriptor instead.
 func (*TestFailureBisectionTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *TestFailureBisectionTask) GetAnalysisId() int64 {
@@ -365,7 +411,7 @@ type TestFailureCulpritVerificationTask struct {
 
 func (x *TestFailureCulpritVerificationTask) Reset() {
 	*x = TestFailureCulpritVerificationTask{}
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -377,7 +423,7 @@ func (x *TestFailureCulpritVerificationTask) String() string {
 func (*TestFailureCulpritVerificationTask) ProtoMessage() {}
 
 func (x *TestFailureCulpritVerificationTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -390,7 +436,7 @@ func (x *TestFailureCulpritVerificationTask) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use TestFailureCulpritVerificationTask.ProtoReflect.Descriptor instead.
 func (*TestFailureCulpritVerificationTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *TestFailureCulpritVerificationTask) GetAnalysisId() int64 {
@@ -425,7 +471,7 @@ type TestFailureCulpritActionTask struct {
 
 func (x *TestFailureCulpritActionTask) Reset() {
 	*x = TestFailureCulpritActionTask{}
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -437,7 +483,7 @@ func (x *TestFailureCulpritActionTask) String() string {
 func (*TestFailureCulpritActionTask) ProtoMessage() {}
 
 func (x *TestFailureCulpritActionTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -450,7 +496,7 @@ func (x *TestFailureCulpritActionTask) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestFailureCulpritActionTask.ProtoReflect.Descriptor instead.
 func (*TestFailureCulpritActionTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{7}
+	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *TestFailureCulpritActionTask) GetAnalysisId() int64 {
@@ -473,6 +519,9 @@ const file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc = "" +
 	"\n" +
 	"culprit_id\x18\x02 \x01(\x03R\tculpritId\"5\n" +
 	"\x12CancelAnalysisTask\x12\x1f\n" +
+	"\vanalysis_id\x18\x01 \x01(\x03R\n" +
+	"analysisId\"9\n" +
+	"\x16CancelTestAnalysisTask\x12\x1f\n" +
 	"\vanalysis_id\x18\x01 \x01(\x03R\n" +
 	"analysisId\"x\n" +
 	"\x17CulpritVerificationTask\x12\x1f\n" +
@@ -511,20 +560,21 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP() []b
 	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_go_chromium_org_luci_bisection_task_proto_task_proto_goTypes = []any{
 	(*FailedBuildIngestionTask)(nil),           // 0: proto.FailedBuildIngestionTask
 	(*RevertCulpritTask)(nil),                  // 1: proto.RevertCulpritTask
 	(*CancelAnalysisTask)(nil),                 // 2: proto.CancelAnalysisTask
-	(*CulpritVerificationTask)(nil),            // 3: proto.CulpritVerificationTask
-	(*TestFailureDetectionTask)(nil),           // 4: proto.TestFailureDetectionTask
-	(*TestFailureBisectionTask)(nil),           // 5: proto.TestFailureBisectionTask
-	(*TestFailureCulpritVerificationTask)(nil), // 6: proto.TestFailureCulpritVerificationTask
-	(*TestFailureCulpritActionTask)(nil),       // 7: proto.TestFailureCulpritActionTask
-	(*v1.Dimension)(nil),                       // 8: luci.bisection.v1.Dimension
+	(*CancelTestAnalysisTask)(nil),             // 3: proto.CancelTestAnalysisTask
+	(*CulpritVerificationTask)(nil),            // 4: proto.CulpritVerificationTask
+	(*TestFailureDetectionTask)(nil),           // 5: proto.TestFailureDetectionTask
+	(*TestFailureBisectionTask)(nil),           // 6: proto.TestFailureBisectionTask
+	(*TestFailureCulpritVerificationTask)(nil), // 7: proto.TestFailureCulpritVerificationTask
+	(*TestFailureCulpritActionTask)(nil),       // 8: proto.TestFailureCulpritActionTask
+	(*v1.Dimension)(nil),                       // 9: luci.bisection.v1.Dimension
 }
 var file_go_chromium_org_luci_bisection_task_proto_task_proto_depIdxs = []int32{
-	8, // 0: proto.TestFailureDetectionTask.dimension_excludes:type_name -> luci.bisection.v1.Dimension
+	9, // 0: proto.TestFailureDetectionTask.dimension_excludes:type_name -> luci.bisection.v1.Dimension
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -543,7 +593,7 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc), len(file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

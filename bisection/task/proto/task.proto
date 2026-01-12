@@ -35,8 +35,14 @@ message RevertCulpritTask {
   int64 culprit_id = 2;
 }
 
-// Payload of the CancelAnalysis
+// Payload of the CancelAnalysis (for compile failure analysis)
 message CancelAnalysisTask {
+  // The analysis ID that we need to cancel.
+  int64 analysis_id = 1;
+}
+
+// Payload for canceling test failure analysis
+message CancelTestAnalysisTask {
   // The analysis ID that we need to cancel.
   int64 analysis_id = 1;
 }

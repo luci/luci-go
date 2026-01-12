@@ -177,6 +177,18 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		logging.Errorf(ctx, "GenAI analysis failed: %v", err)
 	}
 
+	// Check if we should skip nth-section analysis due to confirmed culprit
+	// Re-fetch the analysis to check for a verified culprit
+	tfa, err = datastoreutil.GetTestFailureAnalysis(ctx, analysisID)
+	if err != nil {
+		return errors.Fmt("get test failure analysis after GenAI: %w", err)
+	}
+
+	if tfa.VerifiedCulpritKey != nil {
+		logging.Infof(ctx, "Skipping nth-section analysis for %d - confirmed culprit found", analysisID)
+		return nil
+	}
+
 	// Run nthsection analysis
 	return nthsection.Analyze(ctx, tfa, luciAnalysis, projectBisector)
 }
