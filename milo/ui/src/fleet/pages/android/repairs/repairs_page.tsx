@@ -584,7 +584,6 @@ export const RepairListPage = () => {
       showAlertBanner: repairMetricsList.isError,
       pagination: pagination,
     },
-    muiTableContainerProps: { sx: { maxWidth: '100%', overflowX: 'hidden' } },
     muiPaginationProps: {
       rowsPerPageOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     },

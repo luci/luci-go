@@ -108,6 +108,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
         },
       },
     }),
+    muiTableContainerProps: { sx: { maxWidth: '100%', overflowX: 'auto' } },
     muiBottomToolbarProps: {
       sx: {
         boxShadow: 'none',
