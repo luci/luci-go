@@ -16,6 +16,7 @@ package turboci
 
 import (
 	"context"
+	"fmt"
 
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
@@ -106,6 +107,7 @@ func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.S
 	if err != nil {
 		return errors.Fmt("writeStage: NewStage: %w", err)
 	}
+	writeReq.AddReason("Submitting stage via Buildbucket")
 	stg.Msg.SetRealm(realm)
 	if timeouts != nil {
 		stg.Msg.SetRequestedStageExecutionPolicy(orchestratorpb.StageExecutionPolicy_builder{
@@ -207,10 +209,11 @@ type AttemptFailure struct {
 
 // FailCurrentAttempt sets the current stage attempt (conveyed by the c.Token
 // as StageAttemptToken) to INCOMPLETE and reports the failure.
-func (c *Client) FailCurrentAttempt(ctx context.Context, failure *AttemptFailure) error {
+func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageAttempt, failure *AttemptFailure) error {
 	logging.Errorf(ctx, "Fail stage attempt: %s", failure.Err)
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(c.Token)
+	writeReq.AddReason(fmt.Sprintf("Set the stage attempt %s to INCOMPLETE due to an error: %s", id.ToString(attemptID), failure.Err))
 	curWrite := writeReq.GetCurrentAttempt()
 	curWrite.AddProgress(failure.Err.Error(), failure.Details)
 

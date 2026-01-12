@@ -337,7 +337,7 @@ func pollStage(ctx context.Context, cl *turboci.Client, stageID *idspb.Stage) (i
 // updateStageAttemptToScheduled sets the current stage attempt (conveyed by
 // cl.Token as StageAttemptToken) to SCHEDULED and report the build details
 // (e.g. build ID).
-func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld *pb.Build) error {
+func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, attemptID *idspb.StageAttempt, bld *pb.Build) error {
 	// This can happen if a previous RunTask created the build but failed to
 	// update TurboCI, so TurboCI retries the RunTask. And after TurboCI sends
 	// the retry, the build starts running.
@@ -349,6 +349,8 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld 
 
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(cl.Token)
+	writeReq.AddReason(fmt.Sprintf("Buildbucket build for stage attempt %s SCHEDULED", id.ToString(attemptID)))
+
 	curWrite := writeReq.GetCurrentAttempt()
 
 	bldDetails := &pb.BuildStageDetails{

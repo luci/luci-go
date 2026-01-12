@@ -144,6 +144,9 @@ func TestRunStage(t *testing.T) {
 			assert.That(t, bld.StageAttemptToken, should.Equal("secret-token"))
 
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))
+			reasons := mockOrch.LastWriteNodesCall.GetReasons()
+			assert.That(t, len(reasons), should.Equal(1))
+			assert.That(t, reasons[0].GetMessage(), should.Equal(`Buildbucket build for stage attempt Lplan-id:Sstage-id:A1 SCHEDULED`))
 			assert.That(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().HasScheduled(), should.BeTrue)
 			assert.That(t, len(mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()), should.Equal(2))
 			bldDetails := &pb.BuildStageDetails{}
@@ -229,6 +232,9 @@ func TestRunStage(t *testing.T) {
 
 			// Check that failCurrentStage was called.
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))
+			reasons := mockOrch.LastWriteNodesCall.GetReasons()
+			assert.That(t, len(reasons), should.Equal(1))
+			assert.That(t, reasons[0].GetMessage(), should.Equal(`Set the stage attempt Lplan-id:Sstage-id:A1 to INCOMPLETE due to an error: rpc error: code = NotFound desc = requested resource not found or "user:test@example.com" does not have permission to view it`))
 			assert.That(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().HasIncomplete(), should.BeTrue)
 			progress := mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetProgress()
 			assert.That(t, len(progress), should.Equal(1))

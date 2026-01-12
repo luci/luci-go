@@ -78,7 +78,7 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 			// Let TurboCI retry on transient errors.
 			return nil, err
 		}
-		err = cl.FailCurrentAttempt(ctx, &turboci.AttemptFailure{Err: err})
+		err = cl.FailCurrentAttempt(ctx, attemptID, &turboci.AttemptFailure{Err: err})
 		if err != nil {
 			return nil, err
 		}
@@ -112,14 +112,14 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 			// Let TurboCI retry on transient errors.
 			return nil, err
 		}
-		err = cl.FailCurrentAttempt(ctx, &turboci.AttemptFailure{Err: err})
+		err = cl.FailCurrentAttempt(ctx, attemptID, &turboci.AttemptFailure{Err: err})
 		if err != nil {
 			return nil, err
 		}
 		return &executorpb.RunStageResponse{}, nil
 	}
 
-	return &executorpb.RunStageResponse{}, updateStageAttemptToScheduled(ctx, cl, blds[0])
+	return &executorpb.RunStageResponse{}, updateStageAttemptToScheduled(ctx, cl, attemptID, blds[0])
 }
 
 func sha256hex(str string) string {
