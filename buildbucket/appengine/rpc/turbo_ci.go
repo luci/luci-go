@@ -105,14 +105,13 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 		logging.Errorf(ctx, "turbo-ci: CreateWorkPlan call failed: %s", err)
 		return appstatus.ToError(status.Convert(turboci.AdjustTurboCIRPCError(err)))
 	}
-	planID := plan.GetIdentifier().GetId()
-	logging.Infof(ctx, "turbo-ci: workplan %s", planID)
+	logging.Infof(ctx, "turbo-ci: workplan %s", id.ToString(plan.GetIdentifier()))
 
 	// The client configured to work with the created plan.
 	client := &turboci.Client{
-		Creds:  creds,
-		PlanID: planID,
-		Token:  plan.GetCreatorToken(),
+		Creds: creds,
+		Plan:  plan.GetIdentifier(),
+		Token: plan.GetCreatorToken(),
 	}
 
 	// The mask field makes no sense inside Turbo CI stage args.
@@ -126,15 +125,21 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	req.ExecutionTimeout = nil
 	req.GracePeriod = nil
 
+	// The initial stage has a predefined ID.
+	rootStageID := idspb.Stage_builder{
+		WorkPlan: plan.GetIdentifier(),
+		Id:       proto.String(rootBuildStageID),
+	}.Build()
+
 	// Submit the build as a stage under a well-known ID. If this is a retry,
 	// then this will silently succeed without creating a duplicate.
-	if err := client.WriteStage(ctx, rootBuildStageID, req, build.Realm(), timeouts); err != nil {
+	if err := client.WriteStage(ctx, rootStageID, req, build.Realm(), timeouts); err != nil {
 		logging.Errorf(ctx, "turbo-ci: failed to submit the stage: %s", err)
 		return appstatus.ToError(status.Convert(err))
 	}
 
 	// Wait until the stage starts running and gets a build ID assigned to it.
-	buildID, err := pollStage(ctx, client, rootBuildStageID)
+	buildID, err := pollStage(ctx, client, rootStageID)
 	if err != nil {
 		logging.Errorf(ctx, "turbo-ci: giving up: %s", err)
 		return appstatus.ToError(status.Convert(err))
@@ -245,7 +250,7 @@ func pollingSchedule(ctx context.Context, attempt, errs int) time.Duration {
 }
 
 // pollStage periodically queries the stage until it gets assigned a build ID.
-func pollStage(ctx context.Context, cl *turboci.Client, stageID string) (int64, error) {
+func pollStage(ctx context.Context, cl *turboci.Client, stageID *idspb.Stage) (int64, error) {
 	deadline := clock.Now(ctx).Add(30 * time.Second)
 	ctx, cancel := clock.WithDeadline(ctx, deadline)
 	defer cancel()
@@ -306,12 +311,12 @@ func pollStage(ctx context.Context, cl *turboci.Client, stageID string) (int64, 
 				return 0, contextErr()
 			}
 			if code := status.Code(err); grpcutil.IsTransientCode(code) || code == codes.DeadlineExceeded {
-				logging.Warningf(ctx, "turbo-ci: %s: transient error querying the stage: %s", cl.PlanID, err)
+				logging.Warningf(ctx, "turbo-ci: %s: transient error querying the stage: %s", id.ToString(cl.Plan), err)
 				errs++
 				lastTransientErr = err
 				continue
 			}
-			logging.Errorf(ctx, "turbo-ci: %s: fatal error querying the stage: %s", cl.PlanID, err)
+			logging.Errorf(ctx, "turbo-ci: %s: fatal error querying the stage: %s", id.ToString(cl.Plan), err)
 			return 0, err
 		}
 
@@ -329,15 +334,16 @@ func pollStage(ctx context.Context, cl *turboci.Client, stageID string) (int64, 
 	}
 }
 
-// updateStageAttemptToScheduled sets the current stage attempt (by cl.Token as StageAttemptToken)
-// to SCHEDULED and report the build details (e.g. build ID).
-func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, attemptID *idspb.StageAttempt, bld *pb.Build) error {
-	// This can happen if a previous RunTask created the build but failed to update
-	// TurboCI, so TurboCI retries the RunTask. And after TurboCI sends the retry,
-	// the build starts running.
+// updateStageAttemptToScheduled sets the current stage attempt (conveyed by
+// cl.Token as StageAttemptToken) to SCHEDULED and report the build details
+// (e.g. build ID).
+func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld *pb.Build) error {
+	// This can happen if a previous RunTask created the build but failed to
+	// update TurboCI, so TurboCI retries the RunTask. And after TurboCI sends
+	// the retry, the build starts running.
 	// In this case Buildbucket skips updating TurboCI.
 	if bld.Status != pb.Status_SCHEDULED {
-		logging.Infof(ctx, "Build %d for stage attempt %s has passed SCHEDULED status, skip updating TurboCI", bld.Id, id.ToString(attemptID))
+		logging.Infof(ctx, "Build %d has passed SCHEDULED status, skip updating TurboCI", bld.Id)
 		return nil
 	}
 

@@ -41,10 +41,12 @@ import (
 // Client is a short-lived TurboCIOrchestratorClient scoped to a
 // particular caller and plan.
 type Client struct {
-	// Creads is the credential to use to call TurboCI Orchestrator.
+	// Creds is the credentials to use to call TurboCI Orchestrator.
 	Creds credentials.PerRPCCredentials
-	// PlanID is the workplan ID.
-	PlanID string
+
+	// Plan is the workplan ID the client works with.
+	Plan *idspb.WorkPlan
+
 	// Token is the token to use to call TurboCI Orchestrator.
 	//
 	// It could be a plan creator token or a stage attempt token.
@@ -85,18 +87,22 @@ func ProjectRPCCredentials(ctx context.Context, project string) (credentials.Per
 	return creds, nil
 }
 
+// stageID makes sure to populate `WorkPlan` field of `sid`.
+func (c *Client) stageID(sid *idspb.Stage) *idspb.Stage {
+	if sid.GetWorkPlan() == nil {
+		sid = proto.CloneOf(sid)
+		sid.SetWorkPlan(c.Plan)
+	}
+	return sid
+}
+
 // WriteStage submits the ScheduleBuildRequest stage under the given ID.
 //
 // This succeeds if the stage was submitted or it already exists.
-func (c *Client) WriteStage(ctx context.Context, stageID string, req *pb.ScheduleBuildRequest, realm string, timeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout) error {
-	sid, err := id.StageErr(id.StageNotWorknode, stageID)
-	if err != nil {
-		return errors.Fmt("writeStage: stageID: %w", err)
-	}
-
+func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.ScheduleBuildRequest, realm string, timeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout) error {
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(c.Token)
-	stg, err := writeReq.AddNewStage(sid, req)
+	stg, err := writeReq.AddNewStage(c.stageID(stageID), req)
 	if err != nil {
 		return errors.Fmt("writeStage: NewStage: %w", err)
 	}
@@ -120,7 +126,11 @@ func (c *Client) WriteStage(ctx context.Context, stageID string, req *pb.Schedul
 // failed to start (in that case the error is set in BuildStageDetails.error).
 //
 // Returns an error only if the RPC itself fails.
-func (c *Client) QueryStage(ctx context.Context, stageID string) (*pb.BuildStageDetails, error) {
+func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.BuildStageDetails, error) {
+	// Make sure to use fully populated ID, since we serialize it in full to
+	// get the map key below.
+	stageID = c.stageID(stageID)
+
 	queryReq := orchestratorpb.QueryNodesRequest_builder{
 		Token: proto.String(c.Token),
 		TypeInfo: orchestratorpb.QueryNodesRequest_TypeInfo_builder{
@@ -132,7 +142,7 @@ func (c *Client) QueryStage(ctx context.Context, stageID string) (*pb.BuildStage
 			orchestratorpb.Query_builder{
 				Select: orchestratorpb.Query_Select_builder{
 					Nodes: []*idspb.Identifier{
-						id.Wrap(id.Stage(stageID)),
+						id.Wrap(stageID),
 					},
 				}.Build(),
 			}.Build(),
@@ -143,7 +153,7 @@ func (c *Client) QueryStage(ctx context.Context, stageID string) (*pb.BuildStage
 	if err != nil {
 		return nil, AdjustTurboCIRPCError(err)
 	}
-	stage := resp.GetGraph()[c.PlanID].GetStages()[stageID].GetStage()
+	stage := resp.GetGraph()[id.ToString(stageID.GetWorkPlan())].GetStages()[id.ToString(stageID)].GetStage()
 	if stage == nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "the stage is unexpectedly missing")
 	}
@@ -151,14 +161,15 @@ func (c *Client) QueryStage(ctx context.Context, stageID string) (*pb.BuildStage
 	// This in theory should not be possible (because the stage we wrote doesn't
 	// have any dependencies and can be attempted immediately), but check anyway.
 	if len(stage.GetAttempts()) == 0 {
-		logging.Warningf(ctx, "turbo-ci: %s: the stage has no attempts yet", c.PlanID)
+		logging.Warningf(ctx, "turbo-ci: %s: the stage has no attempts yet", id.ToString(stageID.GetWorkPlan()))
 		return nil, nil
 	}
 
 	// Get the latest attempt. Note that when retrying a transiently failed
 	// attempt, a new attempt is inserted transactionally when failing the
 	// previous attempt. Thus the latest attempt is always either in one of
-	// pending states, or it is execution, or it indicated a fatal error.
+	// pending states, or it is executing, or it has already finished with
+	// a fatal error.
 	attempt := stage.GetAttempts()[len(stage.GetAttempts())-1]
 	details := data.FromMultipleValues[*pb.BuildStageDetails](attempt.GetDetails()...)
 	if details != nil {
@@ -194,10 +205,10 @@ type AttemptFailure struct {
 	Details *pb.StatusDetails
 }
 
-// FailCurrentAttempt sets the current stage attempt (by c.Token as StageAttemptToken)
-// to INCOMPLETE and report the failure.
-func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID string, failure *AttemptFailure) error {
-	logging.Errorf(ctx, "Fail stage attempt: %s: %s", attemptID, failure.Err)
+// FailCurrentAttempt sets the current stage attempt (conveyed by the c.Token
+// as StageAttemptToken) to INCOMPLETE and reports the failure.
+func (c *Client) FailCurrentAttempt(ctx context.Context, failure *AttemptFailure) error {
+	logging.Errorf(ctx, "Fail stage attempt: %s", failure.Err)
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(c.Token)
 	curWrite := writeReq.GetCurrentAttempt()

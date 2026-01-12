@@ -15,6 +15,7 @@
 package rpc
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -71,14 +72,20 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 	}))
 
 	t.Run("ok", func(t *testing.T) {
-		const planID = "1234"
+		planID := idspb.WorkPlan_builder{
+			Id: proto.String("1234"),
+		}.Build()
+		stageID := idspb.Stage_builder{
+			WorkPlan: planID,
+			Id:       proto.String(rootBuildStageID),
+		}.Build()
 
 		orch := &turboci.FakeOrchestratorClient{
-			PlanID: planID,
-			Token:  "creator-token",
+			Plan:  planID,
+			Token: "creator-token",
 			QueryNodesResponse: mockQueryNodesResponse(
 				planID,
-				rootBuildStageID,
+				stageID,
 				orchestratorpb.StageState_STAGE_STATE_ATTEMPTING,
 				buildID,
 				nil,
@@ -107,11 +114,8 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 			Token: proto.String(orch.Token),
 			Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
 				orchestratorpb.WriteNodesRequest_StageWrite_builder{
-					Identifier: idspb.Stage_builder{
-						Id:         proto.String(rootBuildStageID),
-						IsWorknode: proto.Bool(false),
-					}.Build(),
-					Realm: proto.String("project:bucket"),
+					Identifier: stageID,
+					Realm:      proto.String("project:bucket"),
 					Args: data.Value(&pb.ScheduleBuildRequest{
 						Builder:   builder,
 						RequestId: "some-request-id",
@@ -129,12 +133,7 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 				orchestratorpb.Query_builder{
 					Select: orchestratorpb.Query_Select_builder{
 						Nodes: []*idspb.Identifier{
-							idspb.Identifier_builder{
-								Stage: idspb.Stage_builder{
-									Id:         proto.String(rootBuildStageID),
-									IsWorknode: proto.Bool(false),
-								}.Build(),
-							}.Build(),
+							id.Wrap(stageID),
 						},
 					}.Build(),
 				}.Build(),
@@ -174,7 +173,13 @@ func TestPollingSchedule(t *testing.T) {
 // mockQueryNodesResponse prepares mock QueryNodesResponse.
 //
 // If buildID is negative, the stage will have no attempts at all.
-func mockQueryNodesResponse(planID, stageID string, state orchestratorpb.StageState, buildID int64, buildErr error) *orchestratorpb.QueryNodesResponse {
+func mockQueryNodesResponse(planID *idspb.WorkPlan, stageID *idspb.Stage, state orchestratorpb.StageState, buildID int64, buildErr error) *orchestratorpb.QueryNodesResponse {
+	if !proto.Equal(stageID.GetWorkPlan(), planID) {
+		panic(fmt.Sprintf("unexpected planID inside the stageID: got %s, want %s",
+			id.ToString(stageID.GetWorkPlan()),
+			id.ToString(planID),
+		))
+	}
 	var attempts []*orchestratorpb.Stage_Attempt
 	if buildID >= 0 {
 		var details []*orchestratorpb.Value
@@ -198,12 +203,12 @@ func mockQueryNodesResponse(planID, stageID string, state orchestratorpb.StageSt
 	}
 	return orchestratorpb.QueryNodesResponse_builder{
 		Graph: map[string]*orchestratorpb.GraphView{
-			planID: orchestratorpb.GraphView_builder{
-				Identifier: id.Workplan(planID),
+			id.ToString(planID): orchestratorpb.GraphView_builder{
+				Identifier: planID,
 				Stages: map[string]*orchestratorpb.StageView{
-					stageID: orchestratorpb.StageView_builder{
+					id.ToString(stageID): orchestratorpb.StageView_builder{
 						Stage: orchestratorpb.Stage_builder{
-							Identifier: id.SetWorkplan(id.Stage(stageID), planID),
+							Identifier: stageID,
 							State:      state.Enum(),
 							Attempts:   attempts,
 						}.Build(),

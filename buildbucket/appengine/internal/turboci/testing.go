@@ -33,8 +33,8 @@ type FakeOrchestratorClient struct {
 	// LastQueryNodesRequest is the last QueryNodesRequest.
 	LastQueryNodesRequest *orchestratorpb.QueryNodesRequest
 
-	// PlanID is the ID of the workplan to create.
-	PlanID string
+	// Plan is the ID of the workplan to create.
+	Plan *idspb.WorkPlan
 	// Token is the token to use.
 	Token string
 
@@ -44,23 +44,21 @@ type FakeOrchestratorClient struct {
 
 // CreateWorkPlan implements TurboCIOrchestratorClient.
 func (o *FakeOrchestratorClient) CreateWorkPlan(ctx context.Context, in *orchestratorpb.CreateWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.CreateWorkPlanResponse, error) {
-	o.LastCreateCall = proto.Clone(in).(*orchestratorpb.CreateWorkPlanRequest)
+	o.LastCreateCall = proto.CloneOf(in)
 	return orchestratorpb.CreateWorkPlanResponse_builder{
-		Identifier: idspb.WorkPlan_builder{
-			Id: proto.String(o.PlanID),
-		}.Build(),
+		Identifier:   proto.CloneOf(o.Plan),
 		CreatorToken: proto.String(o.Token),
 	}.Build(), nil
 }
 
 // WriteNodes implements TurboCIOrchestratorClient.
 func (o *FakeOrchestratorClient) WriteNodes(ctx context.Context, in *orchestratorpb.WriteNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.WriteNodesResponse, error) {
-	o.LastWriteNodesCall = proto.Clone(in).(*orchestratorpb.WriteNodesRequest)
+	o.LastWriteNodesCall = proto.CloneOf(in)
 	return &orchestratorpb.WriteNodesResponse{}, o.Err
 }
 
 // QueryNodes implements TurboCIOrchestratorClient.
 func (o *FakeOrchestratorClient) QueryNodes(ctx context.Context, in *orchestratorpb.QueryNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.QueryNodesResponse, error) {
-	o.LastQueryNodesRequest = proto.Clone(in).(*orchestratorpb.QueryNodesRequest)
+	o.LastQueryNodesRequest = proto.CloneOf(in)
 	return o.QueryNodesResponse, o.Err
 }
