@@ -135,7 +135,12 @@ export function useColumnManagement({
     });
     return preserveOrder || !platform
       ? styledColumns
-      : orderColumns(styledColumns, userVisibleColumns, temporaryColumnIds);
+      : orderColumns(
+          platform,
+          styledColumns,
+          userVisibleColumns,
+          temporaryColumnIds,
+        );
   }, [
     allColumns,
     highlightedColumnIds,

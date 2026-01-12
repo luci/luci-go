@@ -14,10 +14,17 @@
 
 import { GridColDef } from '@mui/x-data-grid';
 
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
 // This may be used later to add a 'common columns' section.
 // Currently, the columns from this string will appear
 // first and in the same order in the device table.
-const COMMON_COLUMNS: string[] = ['id', 'dut_id', 'state'];
+const COMMON_COLUMNS: Record<Platform, string[]> = {
+  [Platform.UNSPECIFIED]: [],
+  [Platform.ANDROID]: ['id', 'state', 'device_type'],
+  [Platform.CHROMEOS]: ['id', 'dut_id', 'state'],
+  [Platform.CHROMIUM]: ['id'],
+};
 
 /**
  * The idea is to first have the visible columns, then the rest.
@@ -25,6 +32,7 @@ const COMMON_COLUMNS: string[] = ['id', 'dut_id', 'state'];
  * in the array.
  */
 const sortingComparator = (
+  platform: Platform,
   a: string,
   b: string,
   visibleColumnIds: string[],
@@ -43,8 +51,8 @@ const sortingComparator = (
     return bIsTemporary - aIsTemporary;
   }
 
-  const aCommonIndex = COMMON_COLUMNS.findIndex((c) => c === a);
-  const bCommonIndex = COMMON_COLUMNS.findIndex((c) => c === b);
+  const aCommonIndex = COMMON_COLUMNS[platform].findIndex((c) => c === a);
+  const bCommonIndex = COMMON_COLUMNS[platform].findIndex((c) => c === b);
 
   // Fall back to common columns
   if (aCommonIndex !== -1 && bCommonIndex !== -1) {
@@ -61,11 +69,18 @@ const sortingComparator = (
 };
 
 export const orderColumns = (
+  platform: Platform,
   columnDefs: GridColDef[],
   visibleColumnIds: string[],
   temporaryColumnIds: string[] = [],
 ): GridColDef[] => {
   return columnDefs.sort((a, b) =>
-    sortingComparator(a.field, b.field, visibleColumnIds, temporaryColumnIds),
+    sortingComparator(
+      platform,
+      a.field,
+      b.field,
+      visibleColumnIds,
+      temporaryColumnIds,
+    ),
   );
 };

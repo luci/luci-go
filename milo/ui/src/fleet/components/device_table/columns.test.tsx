@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { getColumns } from '@/fleet/pages/device_list_page/chromeos/columns';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { orderColumns } from './columns';
 
@@ -28,9 +29,11 @@ describe('getColumns - Ordering Tests', () => {
     ];
     const visibleColumnIds = ['type', 'dut_id', 'port'];
 
-    const result = orderColumns(getColumns(columnIds), visibleColumnIds).map(
-      (col) => col.field,
-    ); // Extract just the field for ordering check
+    const result = orderColumns(
+      Platform.CHROMEOS,
+      getColumns(columnIds),
+      visibleColumnIds,
+    ).map((col) => col.field); // Extract just the field for ordering check
 
     expect(result).toEqual(['dut_id', 'port', 'type', 'id', 'state', 'host']);
   });
@@ -39,9 +42,11 @@ describe('getColumns - Ordering Tests', () => {
     const columnIds = ['col2', 'col1'];
     const visibleColumnIds = ['col3', 'col1'];
 
-    const result = orderColumns(getColumns(columnIds), visibleColumnIds).map(
-      (col) => col.field,
-    );
+    const result = orderColumns(
+      Platform.CHROMEOS,
+      getColumns(columnIds),
+      visibleColumnIds,
+    ).map((col) => col.field);
 
     expect(result).toEqual(['col1', 'col2']);
   });
