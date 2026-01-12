@@ -140,7 +140,7 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 	// Since NotifyTestResults is non-transactional, it must be called outside a
 	// transaction.
 	if err := p.publishNotifications(ctx, notifications, attrs); err != nil {
-		return errors.Fmt("publish notifications: %w", err)
+		return errors.Fmt("publish test result notifications: %w", err)
 	}
 
 	// 8. Schedules continuation in a single transaction.

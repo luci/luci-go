@@ -21,9 +21,11 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/resultdb/internal/checkpoints"
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -166,5 +168,140 @@ func TestHandleTestAggregationsPublisher(t *testing.T) {
 			payload := notifyTask.Payload.(*taskspb.PublishTestAggregations)
 			assert.Loosely(t, payload.Message, should.Match(expected))
 		}
+
+		// Check for the initial task's checkpoint.
+		checkpointKey := checkpoints.Key{
+			Project:    "testproject",
+			ResourceID: string(rootInvID),
+			ProcessID:  CheckpointProcessID,
+			Uniquifier: "level/0/pageTokens/",
+		}
+		exists, err := checkpoints.Exists(span.Single(ctx), checkpointKey)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, exists, should.BeTrue)
+	})
+
+	t.Run("Checkpoints", func(t *testing.T) {
+		ctx, sched := tq.TestingContext(ctx, nil)
+		rootInvID := rootinvocations.ID("test-root-inv-agg-checkpoints")
+
+		// Insert root invocation.
+		testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(
+			rootinvocations.NewBuilder(rootInvID).
+				WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).
+				WithSources(gitilesSources).
+				WithDefinition(rootInvDefinition).
+				Build(),
+		)...)
+
+		// Create a checkpoint for the initial task.
+		checkpointKey := checkpoints.Key{
+			Project:    "testproject",
+			ResourceID: string(rootInvID),
+			ProcessID:  CheckpointProcessID,
+			Uniquifier: "level/0/pageTokens/",
+		}
+		testutil.MustApply(ctx, t, checkpoints.Insert(ctx, checkpointKey, 10000))
+
+		task := &taskspb.PublishTestAggregationsTask{
+			RootInvocationId: string(rootInvID),
+		}
+		p := &testAggregationsPublisher{
+			task:             task,
+			resultDBHostname: rdbHost,
+		}
+		err = p.handleTestAggregationsPublisher(ctx)
+		assert.Loosely(t, err, should.BeNil)
+
+		// Should not have scheduled any tasks because checkpoint exists.
+		assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
+	})
+
+	t.Run("Continuation with a small message limit and multiple continuation tasks", func(t *testing.T) {
+		ctx, sched := tq.TestingContext(ctx, nil)
+		rootInvID := rootinvocations.ID("test-root-inv-agg-continuation")
+
+		// Insert root invocation.
+		testutil.MustApply(ctx, t, insert.RootInvocationWithRootWorkUnit(
+			rootinvocations.NewBuilder(rootInvID).
+				WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).
+				WithSources(gitilesSources).
+				WithDefinition(rootInvDefinition).
+				Build(),
+		)...)
+		testutil.MustApply(ctx, t, testaggregations.CreateTestData(rootInvID)...)
+
+		// Initial task.
+		task := &taskspb.PublishTestAggregationsTask{
+			RootInvocationId: string(rootInvID),
+		}
+
+		// Set a small limit to force continuation.
+		p := &testAggregationsPublisher{
+			task:                 task,
+			resultDBHostname:     rdbHost,
+			maxPubSubMessageSize: 500,
+		}
+
+		// Run initial task.
+		err = p.handleTestAggregationsPublisher(ctx)
+		assert.Loosely(t, err, should.BeNil)
+
+		// Process continuation tasks.
+		processedTasks := 1
+		taskIndex := 0
+
+		for {
+			currentTasks := sched.Tasks()
+			foundContinuation := false
+			// Check new tasks since last check.
+			for i := taskIndex; i < len(currentTasks); i++ {
+				tsk := currentTasks[i]
+				if tsk.Class == "publish-test-aggregations" {
+					// Found a continuation task.
+					payload := tsk.Payload.(*taskspb.PublishTestAggregationsTask)
+					p := &testAggregationsPublisher{
+						task:                 payload,
+						resultDBHostname:     rdbHost,
+						maxPubSubMessageSize: 500,
+					}
+					err = p.handleTestAggregationsPublisher(ctx)
+					assert.Loosely(t, err, should.BeNil)
+					processedTasks++
+					foundContinuation = true
+
+					// Update taskIndex to the end of currently known tasks to avoid
+					// re-processing. We break to refresh currentTasks because
+					// handleTestAggregationsPublisher might have added more.
+					taskIndex = len(currentTasks)
+					break
+				}
+			}
+			if !foundContinuation {
+				// No new continuation task found in the new batch.
+				break
+			}
+		}
+
+		// Verify we processed multiple tasks.
+		assert.Loosely(t, processedTasks, should.BeGreaterThan(1))
+
+		// Verify notifications.
+		allTasks := sched.Tasks()
+		var notifyTasks tqtesting.TaskList
+		for _, task := range allTasks {
+			if task.Class == "notify-test-aggregations" {
+				notifyTasks = append(notifyTasks, task)
+			}
+		}
+
+		// We expect all aggregations to be published eventually.
+		// Total aggregations: 17 (1 Invocation + 6 Module + 4 Coarse + 6 Fine).
+		var allAggregations []*pb.TestAggregation
+		for _, nt := range notifyTasks {
+			payload := nt.Payload.(*taskspb.PublishTestAggregations)
+			allAggregations = append(allAggregations, payload.Message.TestAggregations...)
+		}
+		assert.Loosely(t, len(allAggregations), should.Equal(17))
 	})
 }

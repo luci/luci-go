@@ -105,9 +105,16 @@ message PublishTestAggregations {
 
 // PublishTestAggregationsTask defines a task to query and publish test
 // aggregations for a root invocation.
-// Next id: 2
+// Next id: 4
 message PublishTestAggregationsTask {
   string root_invocation_id = 1;
+
+  // The index of the aggregation level being processed.
+  int32 current_aggregation_level_index = 2;
+
+  // The page token for paginating through test aggregations of the current
+  // aggregation level.
+  string page_token = 3;
 }
 
 message ExportInvocationTestResultsToBQ {

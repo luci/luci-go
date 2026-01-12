@@ -470,8 +470,8 @@ func (x *PublishWorkUnitsTask) GetWorkUnitIds() []string {
 	return nil
 }
 
-// PublishTestAggregations defines a task to publish a batch of test aggregations
-// to the Cloud Pub/Sub.
+// PublishTestAggregations defines a task to publish a batch of test
+// aggregations to the Cloud Pub/Sub.
 // Next id: 3
 type PublishTestAggregations struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -529,12 +529,17 @@ func (x *PublishTestAggregations) GetAttributes() map[string]string {
 
 // PublishTestAggregationsTask defines a task to query and publish test
 // aggregations for a root invocation.
-// Next id: 2
+// Next id: 4
 type PublishTestAggregationsTask struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	RootInvocationId string                 `protobuf:"bytes,1,opt,name=root_invocation_id,json=rootInvocationId,proto3" json:"root_invocation_id,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// The index of the aggregation level being processed.
+	CurrentAggregationLevelIndex int32 `protobuf:"varint,2,opt,name=current_aggregation_level_index,json=currentAggregationLevelIndex,proto3" json:"current_aggregation_level_index,omitempty"`
+	// The page token for paginating through test aggregations of the current
+	// aggregation level.
+	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PublishTestAggregationsTask) Reset() {
@@ -570,6 +575,20 @@ func (*PublishTestAggregationsTask) Descriptor() ([]byte, []int) {
 func (x *PublishTestAggregationsTask) GetRootInvocationId() string {
 	if x != nil {
 		return x.RootInvocationId
+	}
+	return ""
+}
+
+func (x *PublishTestAggregationsTask) GetCurrentAggregationLevelIndex() int32 {
+	if x != nil {
+		return x.CurrentAggregationLevelIndex
+	}
+	return 0
+}
+
+func (x *PublishTestAggregationsTask) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
 	}
 	return ""
 }
@@ -1032,9 +1051,12 @@ const file_go_chromium_org_luci_resultdb_internal_tasks_taskspb_tasks_proto_rawD
 	"attributes\x1a=\n" +
 	"\x0fAttributesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"K\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb1\x01\n" +
 	"\x1bPublishTestAggregationsTask\x12,\n" +
-	"\x12root_invocation_id\x18\x01 \x01(\tR\x10rootInvocationId\"\x85\x01\n" +
+	"\x12root_invocation_id\x18\x01 \x01(\tR\x10rootInvocationId\x12E\n" +
+	"\x1fcurrent_aggregation_level_index\x18\x02 \x01(\x05R\x1ccurrentAggregationLevelIndex\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"\x85\x01\n" +
 	"\x1fExportInvocationTestResultsToBQ\x12#\n" +
 	"\rinvocation_id\x18\x01 \x01(\tR\finvocationId\x12=\n" +
 	"\tbq_export\x18\x02 \x01(\v2 .luci.resultdb.v1.BigQueryExportR\bbqExport\"\x83\x01\n" +
