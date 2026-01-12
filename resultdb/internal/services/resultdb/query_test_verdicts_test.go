@@ -83,26 +83,6 @@ func TestQueryTestVerdicts(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("parent: does not match pattern"))
 				})
 			})
-			t.Run(`Result Limit`, func(t *ftt.Test) {
-				t.Run(`Default`, func(t *ftt.Test) {
-					// Valid, will use a default limit.
-					req.ResultLimit = 0
-					_, err := srv.QueryTestVerdicts(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run(`Negative`, func(t *ftt.Test) {
-					req.ResultLimit = -1
-					_, err := srv.QueryTestVerdicts(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("result_limit: must be positive"))
-				})
-				t.Run(`Too large`, func(t *ftt.Test) {
-					req.ResultLimit = 101
-					_, err := srv.QueryTestVerdicts(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("result_limit: 101 is too large, the maximum allowed value is 100"))
-				})
-			})
 			t.Run(`Page size`, func(t *ftt.Test) {
 				t.Run(`Default`, func(t *ftt.Test) {
 					// Valid, will use a default size.
@@ -184,6 +164,25 @@ func TestQueryTestVerdicts(t *testing.T) {
 						assert.Loosely(t, err, should.ErrLike("predicate: filter: expected arg after ="))
 					})
 				})
+				t.Run(`View`, func(t *ftt.Test) {
+					t.Run(`Empty`, func(t *ftt.Test) {
+						// Valid, will use a default view.
+						req.View = pb.TestVerdictView_TEST_VERDICT_VIEW_UNSPECIFIED
+						_, err := srv.QueryTestVerdicts(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run(`Valid`, func(t *ftt.Test) {
+						req.View = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
+						_, err := srv.QueryTestVerdicts(ctx, req)
+						assert.Loosely(t, err, should.BeNil)
+					})
+					t.Run(`Invalid`, func(t *ftt.Test) {
+						req.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
+						_, err := srv.QueryTestVerdicts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`view: if set, may only be set to TEST_VERDICT_VIEW_BASIC`))
+					})
+				})
 			})
 		})
 
@@ -213,7 +212,7 @@ func TestQueryTestVerdicts(t *testing.T) {
 				res, err := srv.QueryTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.TestVerdicts, should.Match(testverdictsv2.ExpectedVerdicts(rootInvID)))
+				assert.Loosely(t, res.TestVerdicts, should.Match(testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)))
 			})
 
 			t.Run(`With UI priority order`, func(t *ftt.Test) {
@@ -244,7 +243,7 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 
 				// Should match all verdicts except t7 (which is in m2).
-				expected := testverdictsv2.ExpectedVerdicts(rootInvID)
+				expected := testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 				assert.Loosely(t, res.TestVerdicts, should.Match(expected[0:6]))
 			})
 
@@ -256,7 +255,7 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				// Only t4 has a SKIPPED result.
-				expected := testverdictsv2.ExpectedVerdicts(rootInvID)
+				expected := testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 				assert.Loosely(t, res.TestVerdicts, should.Match(expected[3:4]))
 			})
 
@@ -268,30 +267,13 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				// t2 (FAILED) and t5 (FAILED and EXONERATED) match status=FAILED.
-				expected := testverdictsv2.ExpectedVerdicts(rootInvID)
+				expected := testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 				assert.Loosely(t, res.TestVerdicts, should.Match([]*pb.TestVerdict{expected[1], expected[4]}))
-			})
-
-			t.Run(`With result limit`, func(t *ftt.Test) {
-				req.ResultLimit = 1
-
-				expected := testverdictsv2.ExpectedVerdicts(rootInvID)
-				for _, tv := range expected {
-					tv.Results = tv.Results[:1]
-					if len(tv.Exonerations) > 0 {
-						tv.Exonerations = tv.Exonerations[:1]
-					}
-				}
-
-				res, err := srv.QueryTestVerdicts(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.TestVerdicts, should.Match(expected))
 			})
 
 			t.Run(`With pagination`, func(t *ftt.Test) {
 				req.PageSize = 2
-				expected := testverdictsv2.ExpectedVerdicts(rootInvID)
+				expected := testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 
 				res, err := srv.QueryTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
@@ -336,7 +318,7 @@ func TestQueryTestVerdicts(t *testing.T) {
 
 				// We expect t3 to be partially unmasked (r1 unmasked, r2 masked).
 				// All others masked.
-				expected := testverdictsv2.ExpectedVerdictsMasked(rootInvID, []string{"testproject:t3-r1"})
+				expected := testverdictsv2.ExpectedVerdictsMasked(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC, []string{"testproject:t3-r1"})
 				assert.Loosely(t, res.TestVerdicts, should.Match(expected))
 			})
 		})

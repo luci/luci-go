@@ -171,7 +171,7 @@ func longSkippedReason() *pb.SkippedReason {
 
 // ExpectedVerdicts returns the expected test verdicts corresponding
 // to the test data created by CreateTestData().
-func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
+func ExpectedVerdicts(rootInvID rootinvocations.ID, view pb.TestVerdictView) []*pb.TestVerdict {
 	makeVerdict := func(testID *pb.TestIdentifier, status pb.TestVerdict_Status, results []*pb.TestResult, exonerations []*pb.TestExoneration) *pb.TestVerdict {
 		tv := &pb.TestVerdict{
 			TestId:           pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier((testID))),
@@ -189,6 +189,12 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 			tv.StatusOverride = pb.TestVerdict_EXONERATED
 		} else {
 			tv.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
+		}
+
+		if view != pb.TestVerdictView_TEST_VERDICT_VIEW_FULL {
+			tv.Results = nil
+			tv.Exonerations = nil
+			tv.TestMetadata = nil
 		}
 
 		return tv
@@ -286,8 +292,8 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 // ExpectedVerdictsMasked returns the expected test verdicts corresponding
 // to the test data created by CreateTestData(), with the user having full
 // access only to the given realms.
-func ExpectedVerdictsMasked(rootInvID rootinvocations.ID, realms []string) []*pb.TestVerdict {
-	result := ExpectedVerdicts(rootInvID)
+func ExpectedVerdictsMasked(rootInvID rootinvocations.ID, view pb.TestVerdictView, realms []string) []*pb.TestVerdict {
+	result := ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_FULL)
 	for _, tv := range result {
 		hasFullAccessToAny := false
 		for _, r := range tv.Results {
@@ -320,6 +326,11 @@ func ExpectedVerdictsMasked(rootInvID rootinvocations.ID, realms []string) []*pb
 			tv.TestIdStructured.ModuleVariant = nil
 			tv.TestMetadata = nil
 			tv.IsMasked = true
+		}
+		if view != pb.TestVerdictView_TEST_VERDICT_VIEW_FULL {
+			tv.Results = nil
+			tv.Exonerations = nil
+			tv.TestMetadata = nil
 		}
 	}
 	return result

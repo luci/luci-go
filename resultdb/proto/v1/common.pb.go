@@ -162,6 +162,60 @@ func (WorkUnitView) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{1}
 }
 
+// TestVerdictView represents the set of test verdict fields to be retrieved.
+// See https://google.aip.dev/157.
+type TestVerdictView int32
+
+const (
+	// The default value / unset value.
+	TestVerdictView_TEST_VERDICT_VIEW_UNSPECIFIED TestVerdictView = 0
+	// Only the test identifier and status* fields are returned.
+	TestVerdictView_TEST_VERDICT_VIEW_BASIC TestVerdictView = 1
+	// Include all fields.
+	TestVerdictView_TEST_VERDICT_VIEW_FULL TestVerdictView = 2
+)
+
+// Enum value maps for TestVerdictView.
+var (
+	TestVerdictView_name = map[int32]string{
+		0: "TEST_VERDICT_VIEW_UNSPECIFIED",
+		1: "TEST_VERDICT_VIEW_BASIC",
+		2: "TEST_VERDICT_VIEW_FULL",
+	}
+	TestVerdictView_value = map[string]int32{
+		"TEST_VERDICT_VIEW_UNSPECIFIED": 0,
+		"TEST_VERDICT_VIEW_BASIC":       1,
+		"TEST_VERDICT_VIEW_FULL":        2,
+	}
+)
+
+func (x TestVerdictView) Enum() *TestVerdictView {
+	p := new(TestVerdictView)
+	*p = x
+	return p
+}
+
+func (x TestVerdictView) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TestVerdictView) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_enumTypes[2].Descriptor()
+}
+
+func (TestVerdictView) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_resultdb_proto_v1_common_proto_enumTypes[2]
+}
+
+func (x TestVerdictView) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TestVerdictView.Descriptor instead.
+func (TestVerdictView) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP(), []int{2}
+}
+
 // A key-value map describing one variant of a module.
 //
 // A module can be executed in different ways, for example on
@@ -2129,12 +2183,19 @@ var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDesc = []byte{
 	0x0a, 0x14, 0x57, 0x4f, 0x52, 0x4b, 0x5f, 0x55, 0x4e, 0x49, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57,
 	0x5f, 0x42, 0x41, 0x53, 0x49, 0x43, 0x10, 0x01, 0x12, 0x17, 0x0a, 0x13, 0x57, 0x4f, 0x52, 0x4b,
 	0x5f, 0x55, 0x4e, 0x49, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f, 0x46, 0x55, 0x4c, 0x4c, 0x10,
-	0x02, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
-	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31,
-	0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e,
-	0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64,
-	0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c,
-	0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x02, 0x2a, 0x6d, 0x0a, 0x0f, 0x54, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74,
+	0x56, 0x69, 0x65, 0x77, 0x12, 0x21, 0x0a, 0x1d, 0x54, 0x45, 0x53, 0x54, 0x5f, 0x56, 0x45, 0x52,
+	0x44, 0x49, 0x43, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43,
+	0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x1b, 0x0a, 0x17, 0x54, 0x45, 0x53, 0x54, 0x5f,
+	0x56, 0x45, 0x52, 0x44, 0x49, 0x43, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f, 0x42, 0x41, 0x53,
+	0x49, 0x43, 0x10, 0x01, 0x12, 0x1a, 0x0a, 0x16, 0x54, 0x45, 0x53, 0x54, 0x5f, 0x56, 0x45, 0x52,
+	0x44, 0x49, 0x43, 0x54, 0x5f, 0x56, 0x49, 0x45, 0x57, 0x5f, 0x46, 0x55, 0x4c, 0x4c, 0x10, 0x02,
+	0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c,
+	0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50,
+	0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f,
+	0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
+	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
+	0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2149,46 +2210,47 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescGZIP() []by
 	return file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_goTypes = []interface{}{
 	(AggregationLevel)(0),                       // 0: luci.resultdb.v1.AggregationLevel
 	(WorkUnitView)(0),                           // 1: luci.resultdb.v1.WorkUnitView
-	(*Variant)(nil),                             // 2: luci.resultdb.v1.Variant
-	(*StringPair)(nil),                          // 3: luci.resultdb.v1.StringPair
-	(*TestIdentifier)(nil),                      // 4: luci.resultdb.v1.TestIdentifier
-	(*TestIdentifierPrefix)(nil),                // 5: luci.resultdb.v1.TestIdentifierPrefix
-	(*ModuleIdentifier)(nil),                    // 6: luci.resultdb.v1.ModuleIdentifier
-	(*GitilesCommit)(nil),                       // 7: luci.resultdb.v1.GitilesCommit
-	(*GerritChange)(nil),                        // 8: luci.resultdb.v1.GerritChange
-	(*SubmittedAndroidBuild)(nil),               // 9: luci.resultdb.v1.SubmittedAndroidBuild
-	(*Sources)(nil),                             // 10: luci.resultdb.v1.Sources
-	(*CommitPosition)(nil),                      // 11: luci.resultdb.v1.CommitPosition
-	(*SourceRef)(nil),                           // 12: luci.resultdb.v1.SourceRef
-	(*GitilesRef)(nil),                          // 13: luci.resultdb.v1.GitilesRef
-	(*AndroidBuildBranch)(nil),                  // 14: luci.resultdb.v1.AndroidBuildBranch
-	(*RootInvocationDefinition)(nil),            // 15: luci.resultdb.v1.RootInvocationDefinition
-	(*BuildDescriptor)(nil),                     // 16: luci.resultdb.v1.BuildDescriptor
-	(*AndroidBuildDescriptor)(nil),              // 17: luci.resultdb.v1.AndroidBuildDescriptor
-	(*ProducerResource)(nil),                    // 18: luci.resultdb.v1.ProducerResource
-	nil,                                         // 19: luci.resultdb.v1.Variant.DefEntry
-	(*RootInvocationDefinition_Properties)(nil), // 20: luci.resultdb.v1.RootInvocationDefinition.Properties
-	nil, // 21: luci.resultdb.v1.RootInvocationDefinition.Properties.DefEntry
+	(TestVerdictView)(0),                        // 2: luci.resultdb.v1.TestVerdictView
+	(*Variant)(nil),                             // 3: luci.resultdb.v1.Variant
+	(*StringPair)(nil),                          // 4: luci.resultdb.v1.StringPair
+	(*TestIdentifier)(nil),                      // 5: luci.resultdb.v1.TestIdentifier
+	(*TestIdentifierPrefix)(nil),                // 6: luci.resultdb.v1.TestIdentifierPrefix
+	(*ModuleIdentifier)(nil),                    // 7: luci.resultdb.v1.ModuleIdentifier
+	(*GitilesCommit)(nil),                       // 8: luci.resultdb.v1.GitilesCommit
+	(*GerritChange)(nil),                        // 9: luci.resultdb.v1.GerritChange
+	(*SubmittedAndroidBuild)(nil),               // 10: luci.resultdb.v1.SubmittedAndroidBuild
+	(*Sources)(nil),                             // 11: luci.resultdb.v1.Sources
+	(*CommitPosition)(nil),                      // 12: luci.resultdb.v1.CommitPosition
+	(*SourceRef)(nil),                           // 13: luci.resultdb.v1.SourceRef
+	(*GitilesRef)(nil),                          // 14: luci.resultdb.v1.GitilesRef
+	(*AndroidBuildBranch)(nil),                  // 15: luci.resultdb.v1.AndroidBuildBranch
+	(*RootInvocationDefinition)(nil),            // 16: luci.resultdb.v1.RootInvocationDefinition
+	(*BuildDescriptor)(nil),                     // 17: luci.resultdb.v1.BuildDescriptor
+	(*AndroidBuildDescriptor)(nil),              // 18: luci.resultdb.v1.AndroidBuildDescriptor
+	(*ProducerResource)(nil),                    // 19: luci.resultdb.v1.ProducerResource
+	nil,                                         // 20: luci.resultdb.v1.Variant.DefEntry
+	(*RootInvocationDefinition_Properties)(nil), // 21: luci.resultdb.v1.RootInvocationDefinition.Properties
+	nil, // 22: luci.resultdb.v1.RootInvocationDefinition.Properties.DefEntry
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_common_proto_depIdxs = []int32{
-	19, // 0: luci.resultdb.v1.Variant.def:type_name -> luci.resultdb.v1.Variant.DefEntry
-	2,  // 1: luci.resultdb.v1.TestIdentifier.module_variant:type_name -> luci.resultdb.v1.Variant
+	20, // 0: luci.resultdb.v1.Variant.def:type_name -> luci.resultdb.v1.Variant.DefEntry
+	3,  // 1: luci.resultdb.v1.TestIdentifier.module_variant:type_name -> luci.resultdb.v1.Variant
 	0,  // 2: luci.resultdb.v1.TestIdentifierPrefix.level:type_name -> luci.resultdb.v1.AggregationLevel
-	4,  // 3: luci.resultdb.v1.TestIdentifierPrefix.id:type_name -> luci.resultdb.v1.TestIdentifier
-	2,  // 4: luci.resultdb.v1.ModuleIdentifier.module_variant:type_name -> luci.resultdb.v1.Variant
-	7,  // 5: luci.resultdb.v1.Sources.gitiles_commit:type_name -> luci.resultdb.v1.GitilesCommit
-	9,  // 6: luci.resultdb.v1.Sources.submitted_android_build:type_name -> luci.resultdb.v1.SubmittedAndroidBuild
-	8,  // 7: luci.resultdb.v1.Sources.changelists:type_name -> luci.resultdb.v1.GerritChange
-	13, // 8: luci.resultdb.v1.SourceRef.gitiles:type_name -> luci.resultdb.v1.GitilesRef
-	14, // 9: luci.resultdb.v1.SourceRef.android_build:type_name -> luci.resultdb.v1.AndroidBuildBranch
-	20, // 10: luci.resultdb.v1.RootInvocationDefinition.properties:type_name -> luci.resultdb.v1.RootInvocationDefinition.Properties
-	17, // 11: luci.resultdb.v1.BuildDescriptor.android_build:type_name -> luci.resultdb.v1.AndroidBuildDescriptor
-	21, // 12: luci.resultdb.v1.RootInvocationDefinition.Properties.def:type_name -> luci.resultdb.v1.RootInvocationDefinition.Properties.DefEntry
+	5,  // 3: luci.resultdb.v1.TestIdentifierPrefix.id:type_name -> luci.resultdb.v1.TestIdentifier
+	3,  // 4: luci.resultdb.v1.ModuleIdentifier.module_variant:type_name -> luci.resultdb.v1.Variant
+	8,  // 5: luci.resultdb.v1.Sources.gitiles_commit:type_name -> luci.resultdb.v1.GitilesCommit
+	10, // 6: luci.resultdb.v1.Sources.submitted_android_build:type_name -> luci.resultdb.v1.SubmittedAndroidBuild
+	9,  // 7: luci.resultdb.v1.Sources.changelists:type_name -> luci.resultdb.v1.GerritChange
+	14, // 8: luci.resultdb.v1.SourceRef.gitiles:type_name -> luci.resultdb.v1.GitilesRef
+	15, // 9: luci.resultdb.v1.SourceRef.android_build:type_name -> luci.resultdb.v1.AndroidBuildBranch
+	21, // 10: luci.resultdb.v1.RootInvocationDefinition.properties:type_name -> luci.resultdb.v1.RootInvocationDefinition.Properties
+	18, // 11: luci.resultdb.v1.BuildDescriptor.android_build:type_name -> luci.resultdb.v1.AndroidBuildDescriptor
+	22, // 12: luci.resultdb.v1.RootInvocationDefinition.Properties.def:type_name -> luci.resultdb.v1.RootInvocationDefinition.Properties.DefEntry
 	13, // [13:13] is the sub-list for method output_type
 	13, // [13:13] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name
@@ -2435,7 +2497,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_common_proto_rawDesc,
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,

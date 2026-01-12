@@ -563,6 +563,19 @@ enum WorkUnitView {
   WORK_UNIT_VIEW_FULL = 2;
 }
 
+// TestVerdictView represents the set of test verdict fields to be retrieved.
+// See https://google.aip.dev/157.
+enum TestVerdictView {
+  // The default value / unset value.
+  TEST_VERDICT_VIEW_UNSPECIFIED = 0;
+
+  // Only the test identifier and status* fields are returned.
+  TEST_VERDICT_VIEW_BASIC = 1;
+
+  // Include all fields.
+  TEST_VERDICT_VIEW_FULL = 2;
+}
+
 // Represents the process definition of a root invocation.
 message RootInvocationDefinition {
   // The system name that namespaces the process definition name.

@@ -47,7 +47,6 @@ func TestQuery(t *testing.T) {
 		q := &Query{
 			RootInvocationID: rootInvID,
 			PageSize:         100,
-			ResultLimit:      10,
 			Order:            OrderingByID,
 			Access: permissions.RootInvocationAccess{
 				Level: permissions.FullAccess,
@@ -81,7 +80,7 @@ func TestQuery(t *testing.T) {
 			return results
 		}
 
-		expected := ExpectedVerdicts(rootInvID)
+		expected := ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 
 		t.Run("Baseline", func(t *ftt.Test) {
 			t.Run("Without pagination", func(t *ftt.Test) {
@@ -155,23 +154,6 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, results, should.Match(expectedUIOrder))
 			})
 		})
-		t.Run("With result limit", func(t *ftt.Test) {
-			// Because test status is computed at the database side, reducing the
-			// number of results should not result in changes to test status (e.g.
-			// from flaky to failed).
-			q.ResultLimit = 1
-
-			expected := ExpectedVerdicts(rootInvID)
-			for _, tv := range expected {
-				tv.Results = tv.Results[:1]
-				if len(tv.Exonerations) > 0 {
-					tv.Exonerations = tv.Exonerations[:1]
-				}
-			}
-
-			results := fetchAll(q)
-			assert.Loosely(t, results, should.Match(expected))
-		})
 		t.Run("With response limit bytes", func(t *ftt.Test) {
 			t.Run("Makes progress", func(t *ftt.Test) {
 				// While results may be split over multiple pages, they should all be
@@ -201,7 +183,7 @@ func TestQuery(t *testing.T) {
 			})
 		})
 		t.Run("With contains test result filter", func(t *ftt.Test) {
-			expected := ExpectedVerdicts(rootInvID)
+			expected := ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 
 			// These tests do not seek to comprehensively validate filter semantics (the
 			// parser-generator library does most of that), they validate the AIP-160 filter
@@ -231,7 +213,7 @@ func TestQuery(t *testing.T) {
 				// results we have full access to.
 				q.Access.Level = permissions.LimitedAccess
 				q.Access.Realms = []string{"testproject:t4-r1"}
-				expectedLimited := ExpectedVerdictsMasked(rootInvID, q.Access.Realms)
+				expectedLimited := ExpectedVerdictsMasked(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC, q.Access.Realms)
 				expectedLimited = expectedLimited[3:4]
 				assert.Loosely(t, fetchAll(q), should.Match(expectedLimited))
 			})
@@ -252,7 +234,7 @@ func TestQuery(t *testing.T) {
 				},
 			}
 
-			expected := ExpectedVerdicts(rootInvID)
+			expected := ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 			t.Run("module-level filter", func(t *ftt.Test) {
 				expected = expected[0:6]
 				assert.Loosely(t, fetchAll(q), should.Match(expected))
@@ -283,27 +265,27 @@ func TestQuery(t *testing.T) {
 			q.Access.Level = permissions.LimitedAccess
 
 			t.Run("Baseline", func(t *ftt.Test) {
-				expectedLimited := ExpectedVerdictsMasked(rootInvID, nil)
+				expectedLimited := ExpectedVerdictsMasked(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC, nil)
 				assert.Loosely(t, fetchAll(q), should.Match(expectedLimited))
 			})
 
 			t.Run("With upgraded realms", func(t *ftt.Test) {
 				q.Access.Realms = []string{"testproject:t3-r1", "testproject:t4-r1"}
-				expectedLimited := ExpectedVerdictsMasked(rootInvID, q.Access.Realms)
+				expectedLimited := ExpectedVerdictsMasked(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC, q.Access.Realms)
 				assert.Loosely(t, fetchAll(q), should.Match(expectedLimited))
 			})
 		})
 		t.Run("With verdict filter", func(t *ftt.Test) {
 			t.Run("status", func(t *ftt.Test) {
 				q.Filter = "status = FAILED"
-				expected := ExpectedVerdicts(rootInvID)
+				expected := ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 				// t2 is FAILED and t5 is FAILED (but exonerated).
 				expected = []*pb.TestVerdict{expected[1], expected[4]}
 				assert.Loosely(t, fetchAll(q), should.Match(expected))
 			})
 			t.Run("status_override", func(t *ftt.Test) {
 				q.Filter = "status_override = EXONERATED"
-				expected := ExpectedVerdicts(rootInvID)
+				expected := ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 				// Only t5 is EXONERATED.
 				expected = expected[4:5]
 				assert.Loosely(t, fetchAll(q), should.Match(expected))

@@ -1449,24 +1449,27 @@ message QueryTestVerdictsRequest {
   //
   // Refer to https://google.aip.dev/132#ordering for syntax.
   //
-  // For performance reasons, the only allowed sort orders are:
-  // - `test_id_structured` (default, fastest)
-  // - `ui_priority desc, test_id_structured`
+  // The sort orders that can be requested are:
+  // - `test_id_structured` (test ID order)
+  // - `ui_priority desc, test_id_structured` (UI priority, then test ID order)
   //
   // Where:
   // - `test_id_structured` sorts by the lexicographical order of the test identifier,
   //   i.e. (module_name, module_scheme, module_variant, coarse_name, fine_name),
   // - `ui_priority` is an opaque priority heuristic designed for LUCI UI use only and
   //   is subject to change.
+  //
+  // If this field is left blank, the implementation will choose the order of
+  // response items so as to minimise the response latency. This may be an
+  // ordering not listed above.
   string order_by = 3;
 
-  // The maximum number of test results to be included in a test variant.
-  //
-  // If a test variant has more results than the limit, the remaining results
-  // will not be returned.
-  // If unspecified, at most 10 results will be included in a test variant.
-  // The maximum allowed value is 100.
-  int32 result_limit = 4;
+  // The set of test verdict fields to return. Currently, this RPC only supports
+  // the view TEST_VERDICT_VIEW_BASIC. The default is TEST_VERDICT_VIEW_BASIC.
+  TestVerdictView view = 7;
+
+  // For result limit, if TEST_VERDICT_VIEW_FULL is supported.
+  reserved 4; reserved "result_limit";
 
   // The maximum number of verdicts to return. The service may return fewer than
   // this value.

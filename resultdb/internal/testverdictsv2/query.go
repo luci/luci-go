@@ -20,7 +20,6 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
-	"time"
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/api/iterator"
@@ -46,9 +45,6 @@ type Query struct {
 	RootInvocationID rootinvocations.ID
 	// The number of test verdicts to return per page.
 	PageSize int
-	// The maximum number of test results and exonerations to return per verdict.
-	// The limit is applied independently to test results and exonerations.
-	ResultLimit int
 	// The soft limit on the number of bytes that should be returned by a Test Verdicts query.
 	// Row size is estimated as proto.Size() + 1000 bytes (to allow for alternative encodings
 	// which higher fixed overheads, e.g. protojson). If this is zero, no limit is applied.
@@ -68,8 +64,6 @@ type Query struct {
 	// An AIP-160 filter on the test verdicts returned. Optional.
 	// See filter.go for details.
 	Filter string
-	// Shared decoding buffer to avoid a new memory allocation for each decompression.
-	decoder testresultsv2.Decoder
 }
 
 type Ordering int
@@ -108,9 +102,6 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 	if q.PageSize <= 0 {
 		return "", errors.New("page size must be positive")
 	}
-	if q.ResultLimit <= 0 {
-		return "", errors.New("result limit must be positive")
-	}
 	if q.ResponseLimitBytes < 0 {
 		return "", errors.New("response limit bytes must be non-negative")
 	}
@@ -131,12 +122,6 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 			TestIdStructured: &pb.TestIdentifier{},
 		}
 		var variant []string
-		var results []*tvTestResult
-		var exonerations []*tvExoneration
-		var testMetadata []byte
-		var testMetadataName spanner.NullString
-		var testMetadataLocationRepo spanner.NullString
-		var testMetadataLocationFileName spanner.NullString
 		var isMasked bool
 		var uiPriority int64
 
@@ -150,12 +135,6 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 			&variant,
 			&tv.Status,
 			&tv.StatusOverride,
-			&results,
-			&exonerations,
-			&testMetadata,
-			&testMetadataName,
-			&testMetadataLocationRepo,
-			&testMetadataLocationFileName,
 			&isMasked,
 			&uiPriority,
 		)
@@ -174,25 +153,6 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 
 		// Populate test ID (flat).
 		tv.TestId = pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(tv.TestIdStructured))
-
-		// Populate results.
-		tv.Results, err = q.toResults(results, tv.TestId)
-		if err != nil {
-			return errors.Fmt("results: %w", err)
-		}
-
-		// Populate exonerations.
-		tv.Exonerations, err = q.toExonerations(exonerations, tv.TestId)
-		if err != nil {
-			return errors.Fmt("exonerations: %w", err)
-		}
-
-		// Populate test metadata.
-		// This is stored over a few fields so we need to reassemble it.
-		tv.TestMetadata, err = q.decoder.DecodeTestMetadata(testMetadata, testMetadataName, testMetadataLocationRepo, testMetadataLocationFileName)
-		if err != nil {
-			return errors.Fmt("test metadata: %w", err)
-		}
 
 		tv.IsMasked = isMasked
 
@@ -233,120 +193,10 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 	return nextPageToken, nil
 }
 
-func (q *Query) toExonerations(es []*tvExoneration, testID string) ([]*pb.TestExoneration, error) {
-	results := make([]*pb.TestExoneration, 0, len(es))
-	for _, e := range es {
-		result, err := q.toExoneration(*e, testID)
-		if err != nil {
-			return nil, fmt.Errorf("exoneration %q/%q: %w", e.WorkUnitID, e.ExonerationID, err)
-		}
-		results = append(results, result)
-	}
-	return results, nil
-}
-
-func (q *Query) toExoneration(e tvExoneration, testID string) (*pb.TestExoneration, error) {
-	result := &pb.TestExoneration{
-		Name:          pbutil.TestExonerationName(string(q.RootInvocationID), e.WorkUnitID, testID, e.ExonerationID),
-		ExonerationId: e.ExonerationID,
-	}
-
-	// TestIdStructured, TestId, Variant is elided on the child TestExoneration
-	// as it is already set on the parent TestVerdict record.
-
-	var err error
-	result.ExplanationHtml, err = q.decoder.DecompressText(e.ExplanationHTML)
-	if err != nil {
-		return nil, fmt.Errorf("explanation html: %w", err)
-	}
-	result.Reason = pb.ExonerationReason(e.Reason)
-	return result, nil
-}
-
-func (q *Query) toResults(rs []*tvTestResult, testID string) ([]*pb.TestResult, error) {
-	results := make([]*pb.TestResult, 0, len(rs))
-	for _, tr := range rs {
-		result, err := q.toResult(*tr, testID)
-		if err != nil {
-			return nil, fmt.Errorf("result %q/%q: %w", tr.WorkUnitID, tr.ResultID, err)
-		}
-		results = append(results, result)
-	}
-	return results, nil
-}
-
-func (q *Query) toResult(r tvTestResult, testID string) (*pb.TestResult, error) {
-	result := &pb.TestResult{
-		Name:     pbutil.TestResultName(string(q.RootInvocationID), r.WorkUnitID, testID, r.ResultID),
-		ResultId: r.ResultID,
-		StatusV2: pb.TestResult_Status(r.StatusV2),
-	}
-
-	// TestIdStructured, TestId, Variant is elided on the child TestResult
-	// as it is already set on the parent TestVerdict record.
-
-	var err error
-	result.SummaryHtml, err = q.decoder.DecompressText(r.SummaryHTMLMasked)
-	if err != nil {
-		return nil, errors.Fmt("summary html: %w", err)
-	}
-
-	if r.StartTime.Valid {
-		result.StartTime = pbutil.MustTimestampProto(r.StartTime.Time)
-	}
-	result.Duration = testresultsv2.ToProtoDuration(r.RunDurationNanos)
-
-	// Populate Tags.
-	result.Tags = make([]*pb.StringPair, len(r.TagsMasked))
-	for i, p := range r.TagsMasked {
-		result.Tags[i] = pbutil.StringPairFromStringUnvalidated(p)
-	}
-	result.FailureReason, err = q.decoder.DecodeFailureReason(r.FailureReason)
-	if err != nil {
-		return nil, errors.Fmt("failure reason: %w", err)
-	}
-	result.Properties, err = q.decoder.DecodeProperties(r.PropertiesMasked)
-	if err != nil {
-		return nil, errors.Fmt("properties: %w", err)
-	}
-	result.SkipReason = testresultsv2.DecodeSkipReason(r.SkipReason)
-	result.SkippedReason, err = q.decoder.DecodeSkippedReason(r.SkippedReason)
-	if err != nil {
-		return nil, errors.Fmt("skipped reason: %w", err)
-	}
-	result.FrameworkExtensions, err = q.decoder.DecodeFrameworkExtensions(r.FrameworkExtensions)
-	if err != nil {
-		return nil, errors.Fmt("framework extensions: %w", err)
-	}
-	// Populate status v1 fields from status v2.
-	result.Status, result.Expected = pbutil.TestStatusV1FromV2(result.StatusV2, result.FailureReason.GetKind(), result.FrameworkExtensions.GetWebTest())
-
-	if !r.HasAccess {
-		// Mask fields that are not allowed for limited access.
-		// Note: Masking of ModuleVariant, Tags, TestMetadata, Properties is done in SQL.
-		// FailureReason and SkippedReason are truncated here.
-		const maxReasonLength = 140
-		if result.FailureReason != nil {
-			result.FailureReason.PrimaryErrorMessage = pbutil.TruncateString(result.FailureReason.PrimaryErrorMessage, maxReasonLength)
-			for _, e := range result.FailureReason.Errors {
-				e.Message = pbutil.TruncateString(e.Message, maxReasonLength)
-				e.Trace = ""
-			}
-		}
-		if result.SkippedReason != nil {
-			result.SkippedReason.ReasonMessage = pbutil.TruncateString(result.SkippedReason.ReasonMessage, maxReasonLength)
-		}
-		result.IsMasked = true
-	}
-
-	return result, nil
-}
-
 func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 	params := map[string]any{
 		"shards":        q.RootInvocationID.AllShardIDs().ToSpanner(),
 		"limit":         q.PageSize,
-		"resultLimit":   q.ResultLimit,
 		"upgradeRealms": q.Access.Realms,
 	}
 
@@ -540,32 +390,6 @@ func (q *Query) whereAfterPageToken(token string, params map[string]any) (string
 	return builder.String(), nil
 }
 
-// tvTestResult describes a nested test result record retrieved from Spanner.
-type tvTestResult struct {
-	WorkUnitID          string
-	ResultID            string
-	StatusV2            int64  // pb.TestResult_Status
-	SummaryHTMLMasked   []byte // zstd-compressed string
-	StartTime           spanner.NullTime
-	RunDurationNanos    spanner.NullInt64
-	TagsMasked          []string          // key-vale pairs stored as ["key1:value1", "key2:value2"]
-	FailureReason       []byte            // zstd-compressed luci.resultdb.v1.FailureReason
-	PropertiesMasked    []byte            // zstd-compressed google.protobuf.Struct
-	SkipReason          spanner.NullInt64 // pb.SkipReason
-	SkippedReason       []byte            // zstd-compressed SkippedReason
-	FrameworkExtensions []byte            // zstd-compressed FrameworkExtensions
-	HasAccess           bool
-}
-
-// tvTestResult describes a nested test exoneration record retrieved from Spanner.
-type tvExoneration struct {
-	WorkUnitID      string
-	ExonerationID   string
-	CreateTime      time.Time
-	ExplanationHTML []byte // zstd-compressed string
-	Reason          int64  // pb.ExonerationReason
-}
-
 var queryTmpl = template.Must(template.New("").Parse(`
 -- We do not use WITH clauses below as Spanner query optimizer does not optimize
 -- across WITH clause/CTE boundaries and this results in suboptimal query plans. Instead
@@ -573,30 +397,26 @@ var queryTmpl = template.Must(template.New("").Parse(`
 {{define "TestResults"}}
 			-- Test results.
 			SELECT
-				* EXCEPT (ModuleVariant, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName, Properties),
+				* EXCEPT (ModuleVariant, SummaryHTML, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName, Properties),
 				-- Provide masked versions of fields to support filtering on them in the query one level up.
 				{{if eq .FullAccess true}}
 					-- Directly alias the columns if full access is granted. This can provide
 					-- a performance boost as predicates can be pushed down to the storage layer.
 					ModuleVariant AS ModuleVariantMasked,
-					SummaryHTML AS SummaryHTMLMasked,
 					Tags AS TagsMasked,
 					TestMetadata as TestMetadataMasked,
 					TestMetadataName AS TestMetadataNameMasked,
 					TestMetadataLocationRepo AS TestMetadataLocationRepoMasked,
 					TestMetadataLocationFileName AS TestMetadataLocationFileNameMasked,
-					Properties AS PropertiesMasked,
 					TRUE AS HasAccess,
 				{{else}}
 					-- User has limited acccess by default.
 					IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL) AS ModuleVariantMasked,
-					IF(Realm IN UNNEST(@upgradeRealms), SummaryHTML, NULL) AS SummaryHTMLMasked,
 					IF(Realm IN UNNEST(@upgradeRealms), Tags, NULL) AS TagsMasked,
 					IF(Realm IN UNNEST(@upgradeRealms), TestMetadata, NULL) AS TestMetadataMasked,
 					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataName, NULL) AS TestMetadataNameMasked,
 					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataLocationRepo, NULL) AS TestMetadataLocationRepoMasked,
 					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataLocationFileName, NULL) AS TestMetadataLocationFileNameMasked,
-					IF(Realm IN UNNEST(@upgradeRealms), Properties, NULL) AS PropertiesMasked,
 					(Realm IN UNNEST(@upgradeRealms)) AS HasAccess,
 				{{end}}
 			FROM TestResultsV2
@@ -606,16 +426,9 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			-- Test Exonerations.
 			SELECT
 				RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName,
-				ARRAY_AGG(STRUCT(
-					WorkUnitId,
-					ExonerationId,
-					CreateTime,
-					ExplanationHTML,
-					Reason
-				)) AS Exonerations,
 				TRUE AS HasExonerations
-				FROM TestExonerationsV2
-				WHERE RootInvocationShardId IN UNNEST(@shards) AND {{.WherePrefixClause}}
+			FROM TestExonerationsV2
+			WHERE RootInvocationShardId IN UNNEST(@shards) AND {{.WherePrefixClause}}
 			-- A given full test identifier will only appear in one shard, so we include RootInvocationShardId
 			-- in the group by key to improve performance (this allows use of streaming aggregates).
 			GROUP BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
@@ -637,27 +450,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				-- Verdicts can only be precluded if there are no other result statuses.
 				ELSE {{.VerdictPrecluded}}
 			END) AS Status,
-			ARRAY_AGG(STRUCT(
-				WorkUnitId,
-				ResultId,
-				StatusV2,
-				SummaryHTMLMasked,
-				StartTime,
-				RunDurationNanos,
-				TagsMasked,
-				FailureReason,
-				PropertiesMasked,
-				SkipReason,
-				SkippedReason,
-				FrameworkExtensions,
-				HasAccess
-			)) AS Results,
-			ANY_VALUE(E.Exonerations) AS Exonerations,
 			COALESCE(ANY_VALUE(E.HasExonerations), FALSE) AS HasExonerations,
-			ANY_VALUE(TR.TestMetadataMasked) AS TestMetadataMasked,
-			ANY_VALUE(TR.TestMetadataNameMasked) AS TestMetadataNameMasked,
-			ANY_VALUE(TR.TestMetadataLocationRepoMasked) AS TestMetadataLocationRepoMasked,
-			ANY_VALUE(TR.TestMetadataLocationFileNameMasked) AS TestMetadataLocationFileNameMasked,
 			-- The test verdict is reported as masked if we do not have access to any of
 			-- its results. In this case, the verdict's module_variant is unavailable
 			-- and the test metadata (which should be the same on all results) is
@@ -666,11 +459,10 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		FROM ({{template "TestResults" .}}
 		) TR
 		LEFT JOIN@{JOIN_METHOD=MERGE_JOIN} ({{template "TestExonerations" .}}
-		) E USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
 		-- A given full test identifier will only appear in one shard, so we include RootInvocationShardId
 		-- in the join key and group by key to improve performance.
 		-- This allows use of a merge join and streaming aggregate.
-		WHERE TR.RootInvocationShardId IN UNNEST(@shards)
+		) E USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
 		GROUP BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
 		{{if ne .ContainsTestResultFilterClause ""}}
 			HAVING LOGICAL_OR({{.ContainsTestResultFilterClause}})
@@ -686,28 +478,6 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			WHEN HasExonerations AND (Status = {{.VerdictFailed}} OR Status = {{.VerdictExecutionErrored}} OR Status = {{.VerdictPrecluded}} OR Status = {{.VerdictFlaky}}) THEN {{.VerdictExonerated}}
 			ELSE {{.VerdictNotOverridden}}
 		END) AS StatusOverride,
-		ARRAY(
-			SELECT R
-			FROM UNNEST(Results) R
-			-- Order results by status first (putting failed first, then passed, skipped, execution errored, precluded).
-			-- Use a secondary sort order to keep the query results deterministic.
-			ORDER BY IF(StatusV2 = {{.ResultFailed}}, 0, StatusV2) ASC, WorkUnitId, ResultId
-			LIMIT @resultLimit
-		) AS Results,
-		-- To avoid confusion, exonerations are only returned if the status is one that can be exonerated.
-		IF(Status = {{.VerdictFailed}} OR Status = {{.VerdictExecutionErrored}} OR Status = {{.VerdictPrecluded}} OR Status = {{.VerdictFlaky}},
-			ARRAY(
-				SELECT E
-				FROM UNNEST(Exonerations) E
-				-- Use a sort to keep the query results deterministic.
-				ORDER BY WorkUnitId, ExonerationId
-				LIMIT @resultLimit
-			),
-			NULL) as Exonerations,
-		TestMetadataMasked,
-		TestMetadataNameMasked,
-		TestMetadataLocationRepoMasked,
-		TestMetadataLocationFileNameMasked,
 		IsMasked,
 		-- UI Priority Calculation
 		(CASE
@@ -726,7 +496,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		END) AS UIPriority
 	FROM (
 		{{template "VerdictsByShard" .}}
-	) Verdicts
+	) V
 {{end}}
 SELECT
 	ModuleName,
@@ -738,12 +508,6 @@ SELECT
 	ModuleVariantMasked,
 	Status,
 	StatusOverride,
-	Results,
-	Exonerations,
-	TestMetadataMasked,
-	TestMetadataNameMasked,
-	TestMetadataLocationRepoMasked,
-	TestMetadataLocationFileNameMasked,
 	IsMasked,
 	UIPriority
 FROM (

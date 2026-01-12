@@ -67,7 +67,6 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 	q := &testverdictsv2.Query{
 		RootInvocationID:         rootInvID,
 		PageSize:                 pageSize,
-		ResultLimit:              testverdictsv2.DefaultResultLimit(req.ResultLimit),
 		ResponseLimitBytes:       queryTestVerdictsResponseLimitBytes,
 		Order:                    order,
 		ContainsTestResultFilter: req.Predicate.GetContainsTestResultFilter(),
@@ -104,12 +103,6 @@ func validateQueryTestVerdictsRequest(req *pb.QueryTestVerdictsRequest) error {
 		return errors.Fmt("page_size: %w", err)
 	}
 
-	if req.ResultLimit != 0 {
-		if err := testverdictsv2.ValidateResultLimit(req.ResultLimit); err != nil {
-			return errors.Fmt("result_limit: %w", err)
-		}
-	}
-
 	if _, err := testverdictsv2.ParseOrderBy(req.OrderBy); err != nil {
 		return errors.Fmt("order_by: %w", err)
 	}
@@ -117,6 +110,15 @@ func validateQueryTestVerdictsRequest(req *pb.QueryTestVerdictsRequest) error {
 	if req.Predicate != nil {
 		if err := validateQueryTestVerdictsPredicate(req.Predicate); err != nil {
 			return errors.Fmt("predicate: %w", err)
+		}
+	}
+
+	if req.View != pb.TestVerdictView_TEST_VERDICT_VIEW_UNSPECIFIED {
+		// TODO(b/469518821): Lift this limit once the higher-performance
+		// backend is available. Clients requesting FULL may not be able to
+		// specify certain query options.
+		if req.View != pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC {
+			return errors.New("view: if set, may only be set to TEST_VERDICT_VIEW_BASIC")
 		}
 	}
 	return nil
