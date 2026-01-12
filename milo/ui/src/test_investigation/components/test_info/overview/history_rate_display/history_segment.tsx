@@ -17,11 +17,12 @@ import { DateTime } from 'luxon';
 import { memo } from 'react';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import {
-  getStatusStyle,
-  SemanticStatusType,
-} from '@/common/styles/status_styles';
+import { getStatusStyle } from '@/common/styles/status_styles';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import {
+  getFailureRateStatusTypeFromSegment,
+  getFormattedFailureRateFromSegment,
+} from '@/test_investigation/utils/test_history_utils';
 
 import { formatSegmentTimestamp } from './util';
 
@@ -248,32 +249,3 @@ export const HistorySegment = memo(function HistorySegment({
     </HtmlTooltip>
   );
 });
-
-function getFormattedFailureRateFromSegment(segment: Segment): string {
-  if (!segment || !segment.counts) {
-    return 'N/A';
-  }
-  const { unexpectedResults = 0, totalResults = 0 } = segment.counts;
-  const ratePercent =
-    totalResults > 0 ? (unexpectedResults / totalResults) * 100 : 0;
-  return `${ratePercent.toFixed(0)}%`;
-}
-
-function getFailureRateStatusTypeFromSegment(
-  segment: Segment,
-): SemanticStatusType {
-  if (!segment || !segment.counts) {
-    return 'unknown';
-  }
-  const { unexpectedResults = 0, totalResults = 0 } = segment.counts;
-  const ratePercent =
-    totalResults > 0 ? (unexpectedResults / totalResults) * 100 : 0;
-  return determineRateStatusType(ratePercent);
-}
-
-function determineRateStatusType(ratePercent: number): SemanticStatusType {
-  if (ratePercent <= 5) return 'passed';
-  if (ratePercent > 5 && ratePercent < 95) return 'flaky';
-  if (ratePercent >= 95) return 'failed';
-  return 'unknown';
-}
