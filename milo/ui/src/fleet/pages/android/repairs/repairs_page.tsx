@@ -336,9 +336,10 @@ const COLUMNS = {
         <Typography variant="caption" sx={{ color: colors.grey[500] }}>
           /{' '}
           {x.cell.getValue() && x.row.original.total_devices
-            ? (x.row.original.total_devices
+            ? // Capping the value if the percentage is higher than 100%, see b/473028358.
+              (x.cell.getValue() / x.row.original.total_devices <= 1
                 ? x.cell.getValue() / x.row.original.total_devices
-                : 0
+                : 1
               ).toLocaleString('en-US', {
                 style: 'percent',
               })
