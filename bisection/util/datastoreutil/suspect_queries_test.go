@@ -360,23 +360,45 @@ func TestGetTestFailureAnalysisForSuspect(t *testing.T) {
 	ctx := memory.Use(context.Background())
 
 	ftt.Run("GetTestFailureAnalysisForSuspect", t, func(t *ftt.Test) {
-		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
-			Project:        "chromium",
-			TestFailureKey: datastore.NewKey(ctx, "TestFailure", "", 1, nil),
-		})
-		nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
-			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
-		})
-		suspect := &model.Suspect{
-			Id:             100,
-			Type:           model.SuspectType_NthSection,
-			ParentAnalysis: datastore.KeyForObj(ctx, nsa),
-			AnalysisType:   pb.AnalysisType_TEST_FAILURE_ANALYSIS,
-		}
+		t.Run("NthSection suspect", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+				Project:        "chromium",
+				TestFailureKey: datastore.NewKey(ctx, "TestFailure", "", 1, nil),
+			})
+			nsa := testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
+				ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+			})
+			suspect := &model.Suspect{
+				Id:             100,
+				Type:           model.SuspectType_NthSection,
+				ParentAnalysis: datastore.KeyForObj(ctx, nsa),
+				AnalysisType:   pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+			}
 
-		res, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, res, should.Match(tfa))
+			res, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Match(tfa))
+		})
+
+		t.Run("GenAI suspect", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+				Project:        "chromium",
+				TestFailureKey: datastore.NewKey(ctx, "TestFailure", "", 2, nil),
+			})
+			genai := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+				ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+			})
+			suspect := &model.Suspect{
+				Id:             200,
+				Type:           model.SuspectType_GenAI,
+				ParentAnalysis: datastore.KeyForObj(ctx, genai),
+				AnalysisType:   pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+			}
+
+			res, err := GetTestFailureAnalysisForSuspect(ctx, suspect)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Match(tfa))
+		})
 	})
 }
 

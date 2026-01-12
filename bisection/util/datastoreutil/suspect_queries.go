@@ -171,19 +171,37 @@ func GetSuspectsForTestGenAIAnalysis(ctx context.Context, genaiAnalysis *model.T
 }
 
 func FetchTestFailuresForSuspect(c context.Context, suspect *model.Suspect) (*model.TestFailureBundle, error) {
-	nsa, err := getTestNthSectionAnalysisForSuspect(c, suspect)
+	tfa, err := GetTestFailureAnalysisForSuspect(c, suspect)
 	if err != nil {
 		return nil, err
 	}
-	return getTestFailureBundleWithAnalysisKey(c, nsa.ParentAnalysisKey)
+	return getTestFailureBundleWithAnalysisKey(c, datastore.KeyForObj(c, tfa))
 }
 
 func GetTestFailureAnalysisForSuspect(c context.Context, suspect *model.Suspect) (*model.TestFailureAnalysis, error) {
-	nsa, err := getTestNthSectionAnalysisForSuspect(c, suspect)
-	if err != nil {
-		return nil, err
+	if suspect.AnalysisType != pb.AnalysisType_TEST_FAILURE_ANALYSIS {
+		return nil, errors.New("invalid suspect analysis type")
 	}
-	tfa := &model.TestFailureAnalysis{ID: nsa.ParentAnalysisKey.IntID()}
+
+	var parentAnalysisKey *datastore.Key
+	switch suspect.Type {
+	case model.SuspectType_NthSection:
+		nsa := &model.TestNthSectionAnalysis{ID: suspect.ParentAnalysis.IntID()}
+		if err := datastore.Get(c, nsa); err != nil {
+			return nil, errors.Fmt("get test nthsection analysis: %w", err)
+		}
+		parentAnalysisKey = nsa.ParentAnalysisKey
+	case model.SuspectType_GenAI:
+		genai := &model.TestGenAIAnalysis{ID: suspect.ParentAnalysis.IntID()}
+		if err := datastore.Get(c, genai); err != nil {
+			return nil, errors.Fmt("get test genai analysis: %w", err)
+		}
+		parentAnalysisKey = genai.ParentAnalysisKey
+	default:
+		return nil, fmt.Errorf("unknown suspect type: %s", suspect.Type)
+	}
+
+	tfa := &model.TestFailureAnalysis{ID: parentAnalysisKey.IntID()}
 	if err := datastore.Get(c, tfa); err != nil {
 		return nil, err
 	}
