@@ -18,8 +18,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -28,6 +30,15 @@ import (
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
+)
+
+const (
+	testRootInvocationID = "build-6363636363"
+	testProject          = "rootinvproject"
+	testRealm            = testProject + ":realm"
+	testRDBHost          = "rdb-host"
 )
 
 func TestRootInvocationFinalizedHandler(t *testing.T) {
@@ -41,17 +52,21 @@ func TestRootInvocationFinalizedHandler(t *testing.T) {
 			called := false
 			var processed bool
 
+			createTime := timestamppb.New(time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC))
 			notification := &resultpb.RootInvocationFinalizedNotification{
 				RootInvocation: &resultpb.RootInvocation{
-					Name:  fmt.Sprintf("invocations/build-%v", 6363636363),
-					Realm: "rootinvproject:realm",
+					Name:             fmt.Sprintf("rootInvocations/%s", testRootInvocationID),
+					Realm:            testRealm,
+					RootInvocationId: testRootInvocationID,
+					CreateTime:       createTime,
 				},
+				ResultdbHost: testRDBHost,
 			}
-
 			h.joinRootInvocation = func(ctx context.Context, notification *resultpb.RootInvocationFinalizedNotification) (bool, error) {
 				assert.Loosely(t, called, should.BeFalse)
 				assert.Loosely(t, notification, should.Match(&resultpb.RootInvocationFinalizedNotification{
 					RootInvocation: notification.RootInvocation,
+					ResultdbHost:   testRDBHost,
 				}))
 				called = true
 				return processed, nil
@@ -66,7 +81,7 @@ func TestRootInvocationFinalizedHandler(t *testing.T) {
 
 				err := h.Handle(ctx, message, notification)
 				assert.NoErr(t, err)
-				assert.Loosely(t, rootInvocationsFinalizedCounter.Get(ctx, "rootinvproject", "success"), should.Equal(1))
+				assert.Loosely(t, rootInvocationsFinalizedCounter.Get(ctx, testProject, "success"), should.Equal(1))
 				assert.Loosely(t, called, should.BeTrue)
 				// No task scheduled.
 				assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{}))
@@ -76,7 +91,7 @@ func TestRootInvocationFinalizedHandler(t *testing.T) {
 
 				err := h.Handle(ctx, message, notification)
 				assert.That(t, err, should.ErrLike("ignoring root invocation finalized notification"))
-				assert.Loosely(t, rootInvocationsFinalizedCounter.Get(ctx, "rootinvproject", "ignored"), should.Equal(1))
+				assert.Loosely(t, rootInvocationsFinalizedCounter.Get(ctx, testProject, "ignored"), should.Equal(1))
 				assert.Loosely(t, called, should.BeTrue)
 				// No task scheduled.
 				assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{}))
@@ -87,8 +102,15 @@ func TestRootInvocationFinalizedHandler(t *testing.T) {
 
 				err := h.Handle(ctx, message, notification)
 				assert.NoErr(t, err)
-				// TODO: Add the actual scheduled job.
-				assert.That(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{}))
+				// Task scheduled.
+				assert.Loosely(t, taskScheduler.Tasks().Payloads(), should.HaveLength(1))
+				expectedWorkUnitIngestion := &taskspb.IngestWorkUnits{
+					RootInvocation: fmt.Sprintf("rootInvocations/%s", testRootInvocationID),
+					Realm:          "android:test",
+					ResultdbHost:   testRDBHost,
+					TaskIndex:      1,
+				}
+				assert.Loosely(t, taskScheduler.Tasks().Payloads()[0], should.Match(expectedWorkUnitIngestion))
 			})
 		})
 	})

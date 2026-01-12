@@ -26,6 +26,8 @@ import (
 	"go.chromium.org/luci/server/pubsub"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
+	"go.chromium.org/luci/analysis/internal/services/workunitingester"
+	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
 
 var (
@@ -71,9 +73,18 @@ func (h *RootInvocationFinalizedHandler) Handle(ctx context.Context, message pub
 		return errors.New("root invocation must be specified")
 	}
 
-	// Schedule artifact ingestion task only for Android root invocation.
 	project, _ = realms.Split(rootInvocation.Realm)
 	if project == "android" {
+		// Only android needs work unit ingestion.
+		workUnitsPaylod := &taskspb.IngestWorkUnits{
+			RootInvocation: rootInvocation.Name,
+			Realm:          rootInvocation.Realm,
+			ResultdbHost:   notification.ResultdbHost,
+			TaskIndex:      1,
+		}
+		if err := workunitingester.Schedule(ctx, workUnitsPaylod); err != nil {
+			return errors.Fmt("schedule ingest work units: %w", err)
+		}
 		// TODO: Schedule the artifact ingest task for the root invocation.
 	}
 
