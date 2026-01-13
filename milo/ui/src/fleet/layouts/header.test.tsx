@@ -59,4 +59,43 @@ describe('Header', () => {
     );
     expect(screen.getByLabelText('avatar')).toBeInTheDocument();
   });
+
+  it('Logo should link to ChromeOS device list by default', () => {
+    (useAuthState as jest.Mock).mockReturnValue({
+      identity: ANONYMOUS_IDENTITY,
+    });
+    render(
+      <FakeContextProvider>
+        <Header sidebarOpen={false} setSidebarOpen={() => {}} />
+      </FakeContextProvider>,
+    );
+
+    const logoLink = screen.getByRole('link', { name: /logo/i });
+    expect(logoLink).toHaveAttribute(
+      'href',
+      '/ui/fleet/labs/p/chromeos/devices',
+    );
+  });
+
+  it('Logo should link to current platform device list', () => {
+    (useAuthState as jest.Mock).mockReturnValue({
+      identity: ANONYMOUS_IDENTITY,
+    });
+    render(
+      <FakeContextProvider
+        mountedPath="/p/:platform"
+        routerOptions={{
+          initialEntries: ['/p/android'],
+        }}
+      >
+        <Header sidebarOpen={false} setSidebarOpen={() => {}} />
+      </FakeContextProvider>,
+    );
+
+    const logoLink = screen.getByRole('link', { name: /logo/i });
+    expect(logoLink).toHaveAttribute(
+      'href',
+      '/ui/fleet/labs/p/android/devices',
+    );
+  });
 });
