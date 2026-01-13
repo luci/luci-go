@@ -224,7 +224,7 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 
 	wherePrefixClause := "TRUE"
 	if q.TestPrefixFilter != nil {
-		clause, err := prefixWhereClause(q.TestPrefixFilter, params)
+		clause, err := testresultsv2.PrefixWhereClause(q.TestPrefixFilter, params)
 		if err != nil {
 			return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
 		}
@@ -272,56 +272,6 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 	}
 	st.Params = params
 	return st, nil
-}
-
-// prefixWhereClause returns a WHERE clause that matches the given test ID prefix.
-// The WHERE clause will be used to filter the TestResultsV2 and TestExonerationsV2 tables.
-func prefixWhereClause(prefix *pb.TestIdentifierPrefix, params map[string]any) (predicate string, err error) {
-	// This should have been validated by the user of the Query type,
-	// but verify again for robustness.
-	if err := pbutil.ValidateTestIdentifierPrefixForQuery(prefix); err != nil {
-		return "", err
-	}
-	if prefix.Level == pb.AggregationLevel_INVOCATION {
-		// No prefix filter or prefix captures all test results in the invocation.
-		return "TRUE", nil
-	}
-
-	var predicateBuilder strings.Builder
-	predicateBuilder.WriteString("ModuleName = @prefixModuleName AND ModuleScheme = @prefixModuleScheme AND ModuleVariantHash = @prefixModuleVariantHash")
-	var moduleVariantHash string
-	if prefix.Id.ModuleVariant != nil {
-		// Module variant was specified as a variant proto.
-		moduleVariantHash = pbutil.VariantHash(prefix.Id.ModuleVariant)
-	} else if prefix.Id.ModuleVariantHash != "" {
-		// Module variant was specified as a hash.
-		moduleVariantHash = prefix.Id.ModuleVariantHash
-	} else {
-		return "", errors.Fmt("prefix filter must specify Variant or VariantHash for a level of MODULE and below")
-	}
-	params["prefixModuleName"] = prefix.Id.ModuleName
-	params["prefixModuleScheme"] = prefix.Id.ModuleScheme
-	params["prefixModuleVariantHash"] = moduleVariantHash
-
-	if prefix.Level == pb.AggregationLevel_MODULE {
-		return predicateBuilder.String(), nil
-	}
-
-	predicateBuilder.WriteString(" AND T1CoarseName = @prefixCoarseName")
-	params["prefixCoarseName"] = prefix.Id.CoarseName
-	if prefix.Level == pb.AggregationLevel_COARSE {
-		return predicateBuilder.String(), nil
-	}
-
-	predicateBuilder.WriteString(" AND T2FineName = @prefixFineName")
-	params["prefixFineName"] = prefix.Id.FineName
-	if prefix.Level == pb.AggregationLevel_FINE {
-		return predicateBuilder.String(), nil
-	}
-
-	predicateBuilder.WriteString(" AND T3CaseName = @prefixCaseName")
-	params["prefixCaseName"] = prefix.Id.CaseName
-	return predicateBuilder.String(), nil
 }
 
 func (q *Query) makePageToken(last *pb.TestVerdict, lastUIPriority int64) string {

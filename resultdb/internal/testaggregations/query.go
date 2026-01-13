@@ -282,7 +282,10 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 
 	wherePrefixClause := "TRUE"
 	if q.TestPrefixFilter != nil {
-		clause, err := q.prefixWhereClause(q.TestPrefixFilter, params)
+		if q.TestPrefixFilter.Level > q.Level {
+			return spanner.Statement{}, errors.Fmt("prefix filter: got %v, but must be equal to or coarser than the queried aggregation level %v", q.TestPrefixFilter.Level, q.Level)
+		}
+		clause, err := testresultsv2.PrefixWhereClause(q.TestPrefixFilter, params)
 		if err != nil {
 			return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
 		}
@@ -974,53 +977,4 @@ func orderByColumns(order Ordering, level pb.AggregationLevel) string {
 		return "UIPriority DESC, " + defaultOrder
 	}
 	return defaultOrder
-}
-
-// prefixWhereClause returns a WHERE clause that matches the given test ID prefix.
-// The WHERE clause will be used to filter the TestResultsV2 and TestExonerationsV2 tables,
-// and in the case of module-level aggregations or higher, the WorkUnits table.
-func (q *SingleLevelQuery) prefixWhereClause(prefix *pb.TestIdentifierPrefix, params map[string]any) (predicate string, err error) {
-	if prefix == nil || prefix.Level == pb.AggregationLevel_INVOCATION {
-		return "TRUE", nil
-	}
-	// A higher level value means a finer aggregation.
-	if prefix.Level > q.Level {
-		return "", errors.Fmt("prefix filter: got %v, but must be equal to or coarser than the queried aggregation level %v", prefix.Level, q.Level)
-	}
-
-	var predicateBuilder strings.Builder
-	predicateBuilder.WriteString("ModuleName = @prefixModuleName AND ModuleScheme = @prefixModuleScheme AND ModuleVariantHash = @prefixModuleVariantHash")
-	var moduleVariantHash string
-	if prefix.Id.ModuleVariant != nil {
-		// Module variant was specified as a variant proto.
-		moduleVariantHash = pbutil.VariantHash(prefix.Id.ModuleVariant)
-	} else if prefix.Id.ModuleVariantHash != "" {
-		// Module variant was specified as a hash.
-		moduleVariantHash = prefix.Id.ModuleVariantHash
-	} else {
-		return "", errors.Fmt("prefix filter must specify Variant or VariantHash for a level of MODULE and below")
-	}
-	params["prefixModuleName"] = prefix.Id.ModuleName
-	params["prefixModuleScheme"] = prefix.Id.ModuleScheme
-	params["prefixModuleVariantHash"] = moduleVariantHash
-
-	if prefix.Level == pb.AggregationLevel_MODULE {
-		return predicateBuilder.String(), nil
-	}
-
-	predicateBuilder.WriteString(" AND T1CoarseName = @prefixCoarseName")
-	params["prefixCoarseName"] = prefix.Id.CoarseName
-	if prefix.Level == pb.AggregationLevel_COARSE {
-		return predicateBuilder.String(), nil
-	}
-
-	predicateBuilder.WriteString(" AND T2FineName = @prefixFineName")
-	params["prefixFineName"] = prefix.Id.FineName
-	if prefix.Level == pb.AggregationLevel_FINE {
-		return predicateBuilder.String(), nil
-	}
-
-	predicateBuilder.WriteString(" AND T3CaseName = @prefixCaseName")
-	params["prefixCaseName"] = prefix.Id.CaseName
-	return predicateBuilder.String(), nil
 }
