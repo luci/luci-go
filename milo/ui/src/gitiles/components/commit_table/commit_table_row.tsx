@@ -18,6 +18,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 import { OutputCommit } from '@/gitiles/types';
 
 import { CommitContent } from './commit_content';
+import { StyledTableRow } from './common';
 import {
   CommitProvider,
   ExpandedProvider,
@@ -53,6 +54,7 @@ export function CommitTableRow({
   content,
   children,
   defaultExpandedOverride,
+  isReverted,
 }: CommitTableRowProps) {
   const tableRowIndex = useTableRowIndex();
   const expandStateStore = useExpandStateStore();
@@ -104,7 +106,13 @@ export function CommitTableRow({
         {/* Pass commit to cells via context so composing a row require less
          ** boilerplate. */}
         <CommitProvider value={commit}>
-          <TableRow>{children}</TableRow>
+          <StyledTableRow
+            sx={{
+              textDecoration: isReverted ? 'line-through' : undefined,
+            }}
+          >
+            {children}
+          </StyledTableRow>
           {/* Always render the content row to DOM to ensure a stable DOM
            ** structure.
            **/}

@@ -42,16 +42,20 @@ export function StyledTable({ children, ...props }: StyledTableProps) {
   );
 }
 
-export interface StyledTableRowProps {
+export interface StyledTableRowProps extends TableRowProps {
   readonly children?: ReactNode;
-  readonly sx?: TableRowProps['sx'];
 }
 
-export function StyledTableRow({ children, sx }: StyledTableRowProps) {
-  const props = useTableRowProps();
+export function StyledTableRow({
+  children,
+  sx,
+  ...props
+}: StyledTableRowProps) {
+  const contextProps = useTableRowProps();
 
   return (
     <TableRow
+      {...contextProps}
       {...props}
       sx={{
         '& > td': { whiteSpace: 'nowrap' },

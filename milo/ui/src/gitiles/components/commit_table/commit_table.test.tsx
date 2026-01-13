@@ -220,7 +220,7 @@ describe('<CommitTable />', () => {
     );
 
     const row = screen.getByText('Content').closest('tr')!;
-    expect(row).not.toHaveStyle('text-decoration: line-through');
+    expect(row).toHaveStyle('text-decoration: line-through');
   });
 
   it('should notify default state update correctly', async () => {

@@ -147,7 +147,7 @@ describe('<BlamelistTable />', () => {
     );
     const titleCell = within(revertedRow).getByText('reverted title');
     expect(titleCell).toHaveStyle('text-decoration: line-through');
-    expect(revertedRow).not.toHaveStyle('text-decoration: line-through');
+    expect(revertedRow).toHaveStyle('text-decoration: line-through');
 
     const revertRow = screen
       .getByText('Revert "the commit title"')
