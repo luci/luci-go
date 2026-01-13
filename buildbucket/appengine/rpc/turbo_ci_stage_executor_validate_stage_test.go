@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 
@@ -186,6 +187,7 @@ func TestValidateStage(t *testing.T) {
 				StageTimeout: &durationpb.Duration{
 					Seconds: 32550,
 				},
+				ExecuteAtLeastOneAttempt: proto.Bool(false),
 			}.Build()
 			assert.That(t, policy, should.Match(expectedPolicy))
 		})
@@ -341,7 +343,8 @@ func TestValidateStage(t *testing.T) {
 						TearingDown: durationpb.New(180 * time.Second),
 					}.Build(),
 				}.Build(),
-				StageTimeout: durationpb.New(2210 * time.Second),
+				StageTimeout:             durationpb.New(2210 * time.Second),
+				ExecuteAtLeastOneAttempt: proto.Bool(false),
 			}.Build()
 			assert.That(t, updatedPolicy, should.Match(expectedPolicy))
 		})

@@ -17,6 +17,7 @@ package rpc
 import (
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
@@ -79,11 +80,8 @@ func buildToStageExecutionPolicy(bld *pb.Build, requested *orchestratorpb.StageE
 	updated := orchestratorpb.StageExecutionPolicy_builder{
 		Retry:                          requested.GetRetry(),
 		AttemptExecutionPolicyTemplate: buildToStagetAttemptExecutionPolicy(bld),
+		ExecuteAtLeastOneAttempt:       proto.Bool(requested.GetExecuteAtLeastOneAttempt()),
 	}.Build()
-
-	if requested.HasStageTimeoutMode() {
-		updated.SetStageTimeoutMode(updated.GetStageTimeoutMode())
-	}
 
 	perAttemptPolicy := updated.GetAttemptExecutionPolicyTemplate().GetTimeout()
 	perAttemptTotal := perAttemptPolicy.GetScheduled().AsDuration() + perAttemptPolicy.GetRunning().AsDuration() + perAttemptPolicy.GetTearingDown().AsDuration()

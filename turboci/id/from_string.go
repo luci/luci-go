@@ -133,10 +133,28 @@ func FromString(id string) (*idspb.Identifier, error) {
 					}.Build()
 
 				case 'R':
-					current = idspb.CheckResult_builder{
-						Check: require[*idspb.Check](current, &err),
-						Idx:   requireInt(trimmed, &err),
-					}.Build()
+					switch x := current.(type) {
+					case *idspb.Check:
+						current = idspb.CheckResult_builder{
+							Check: x,
+							Idx:   requireInt(trimmed, &err),
+						}.Build()
+
+					case *idspb.CheckEdit:
+						current = idspb.CheckEditReason_builder{
+							CheckEdit: x,
+							Idx:       requireInt(trimmed, &err),
+						}.Build()
+
+					case *idspb.StageEdit:
+						current = idspb.StageEditReason_builder{
+							StageEdit: x,
+							Idx:       requireInt(trimmed, &err),
+						}.Build()
+
+					default:
+						err = badKeyErr()
+					}
 
 				case 'D':
 					current = idspb.CheckResultDatum_builder{

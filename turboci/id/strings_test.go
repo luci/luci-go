@@ -55,6 +55,10 @@ func TestToFromString(t *testing.T) {
 			ts := time.Unix(12345, 6789)
 			return shouldWrap(CheckEditErr("meep", ts))
 		}},
+		{":Cmeep:V12345/6789:R2", func() (*idspb.Identifier, error) {
+			ts := time.Unix(12345, 6789)
+			return shouldWrap(CheckEditReasonErr("meep", ts, 2))
+		}},
 		{":Cmeep:V12345/6789:O10", func() (*idspb.Identifier, error) {
 			ts := time.Unix(12345, 6789)
 			return shouldWrap(CheckEditOptionErr("meep", ts, 10))
@@ -81,6 +85,10 @@ func TestToFromString(t *testing.T) {
 		{":Nmeep:V12345/6789", func() (*idspb.Identifier, error) {
 			ts := time.Unix(12345, 6789)
 			return shouldWrap(StageEditErr(StageIsWorknode, "meep", ts))
+		}},
+		{":Smeep:V12345/6789:R2", func() (*idspb.Identifier, error) {
+			ts := time.Unix(12345, 6789)
+			return shouldWrap(StageEditReasonErr(StageNotWorknode, "meep", ts, 2))
 		}},
 	}
 

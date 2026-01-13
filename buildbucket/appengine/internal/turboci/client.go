@@ -215,11 +215,15 @@ func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageA
 	writeReq.Msg.SetToken(c.Token)
 	writeReq.AddReason(fmt.Sprintf("Set the stage attempt %s to INCOMPLETE due to an error: %s", id.ToString(attemptID), failure.Err))
 	curWrite := writeReq.GetCurrentAttempt()
-	curWrite.AddProgress(failure.Err.Error(), failure.Details)
+	prog, err := curWrite.AddProgress(failure.Err.Error(), failure.Details)
+	if err != nil {
+		return err
+	}
+	prog.SetIdempotencyKey("server/failure")
 
 	st := curWrite.GetStateTransition()
 	st.SetIncomplete()
 
-	_, err := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
+	_, err = WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
 	return AdjustTurboCIRPCError(err)
 }

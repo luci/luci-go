@@ -28,21 +28,6 @@ import (
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 )
 
-// Identifier is the union of all valid Identifier messages.
-type Identifier interface {
-	*idspb.Identifier |
-		*idspb.WorkPlan |
-		*idspb.Check |
-		*idspb.CheckOption |
-		*idspb.CheckResult |
-		*idspb.CheckResultDatum |
-		*idspb.CheckEdit |
-		*idspb.CheckEditOption |
-		*idspb.Stage |
-		*idspb.StageAttempt |
-		*idspb.StageEdit
-}
-
 // ToString converts any TurboCI identifier proto into a string.
 //
 // The string format is defined in [identifier.proto].
@@ -56,44 +41,7 @@ type Identifier interface {
 //
 // [identifier.proto]: https://chromium.googlesource.com/infra/turboci/proto/+/refs/heads/main/turboci/graph/ids/v1/identifier.proto
 func ToString[Id Identifier](id Id) string {
-	// Yes, I know this is an abuse of generics, but it makes for a much better
-	// API.
-	//
-	// In theory the compiler SHOULD also be able to optimize all of this away
-	// anyway, since ToString[*blah] could have all the switches eliminated.
-	//
-	// I don't think it does today though :(.
-	anyID := any(id)
-	if wrapped, ok := anyID.(*idspb.Identifier); ok {
-		switch typ := wrapped.WhichType(); typ {
-		case idspb.Identifier_WorkPlan_case:
-			return ToString(wrapped.GetWorkPlan())
-		case idspb.Identifier_Check_case:
-			return ToString(wrapped.GetCheck())
-		case idspb.Identifier_CheckOption_case:
-			return ToString(wrapped.GetCheckOption())
-		case idspb.Identifier_CheckResult_case:
-			return ToString(wrapped.GetCheckResult())
-		case idspb.Identifier_CheckResultDatum_case:
-			return ToString(wrapped.GetCheckResultDatum())
-		case idspb.Identifier_CheckEdit_case:
-			return ToString(wrapped.GetCheckEdit())
-		case idspb.Identifier_CheckEditOption_case:
-			return ToString(wrapped.GetCheckEditOption())
-		case idspb.Identifier_Stage_case:
-			return ToString(wrapped.GetStage())
-		case idspb.Identifier_StageAttempt_case:
-			return ToString(wrapped.GetStageAttempt())
-		case idspb.Identifier_StageEdit_case:
-			return ToString(wrapped.GetStageEdit())
-
-		case idspb.Identifier_Type_not_set_case:
-			return ""
-
-		default:
-			panic(fmt.Sprintf("impossible type: %s", typ))
-		}
-	}
+	anyID := unwrap(id)
 
 	fmtVersion := func(ts *timestamppb.Timestamp) string {
 		return fmt.Sprintf("%d/%d", ts.GetSeconds(), ts.GetNanos())
@@ -133,6 +81,10 @@ func ToString[Id Identifier](id Id) string {
 			acc = append(acc, fmtVersion(x.GetVersion()), ":V")
 			anyID = x.GetCheck()
 
+		case *idspb.CheckEditReason:
+			acc = append(acc, fmt.Sprint(x.GetIdx()), ":R")
+			anyID = x.GetCheckEdit()
+
 		case *idspb.CheckEditOption:
 			acc = append(acc, fmt.Sprint(x.GetIdx()), ":O")
 			anyID = x.GetCheckEdit()
@@ -156,6 +108,10 @@ func ToString[Id Identifier](id Id) string {
 		case *idspb.StageEdit:
 			acc = append(acc, fmtVersion(x.GetVersion()), ":V")
 			anyID = x.GetStage()
+
+		case *idspb.StageEditReason:
+			acc = append(acc, fmt.Sprint(x.GetIdx()), ":R")
+			anyID = x.GetStageEdit()
 
 		default:
 			panic(fmt.Sprintf("impossible type: %T", id))

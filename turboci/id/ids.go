@@ -51,65 +51,13 @@ func SetWorkplanErr[Id Identifier](id Id, workPlanID string) (Id, error) {
 	if err := checkToken("workPlanID", workPlanID); err != nil {
 		return nil, fmt.Errorf("id.SetWorkplan: %w", err)
 	}
-	anyID := any(id)
-	if wrapped, ok := anyID.(*idspb.Identifier); ok {
-		switch typ := wrapped.WhichType(); typ {
-		case idspb.Identifier_WorkPlan_case:
-			anyID = wrapped.GetWorkPlan()
-		case idspb.Identifier_Check_case:
-			anyID = wrapped.GetCheck()
-		case idspb.Identifier_CheckOption_case:
-			anyID = wrapped.GetCheckOption()
-		case idspb.Identifier_CheckResult_case:
-			anyID = wrapped.GetCheckResult()
-		case idspb.Identifier_CheckResultDatum_case:
-			anyID = wrapped.GetCheckResultDatum()
-		case idspb.Identifier_CheckEdit_case:
-			anyID = wrapped.GetCheckEdit()
-		case idspb.Identifier_CheckEditOption_case:
-			anyID = wrapped.GetCheckEditOption()
-		case idspb.Identifier_Stage_case:
-			anyID = wrapped.GetStage()
-		case idspb.Identifier_StageAttempt_case:
-			anyID = wrapped.GetStageAttempt()
-		case idspb.Identifier_StageEdit_case:
-			anyID = wrapped.GetStageEdit()
-
-		case idspb.Identifier_Type_not_set_case:
-			return id, nil
-
-		default:
-			panic(fmt.Sprintf("impossible type: %s", typ))
-		}
-	}
-
 	wp := idspb.WorkPlan_builder{Id: &workPlanID}.Build()
-
-	switch x := anyID.(type) {
-	case *idspb.WorkPlan:
-		x.SetId(workPlanID)
-	case *idspb.Check:
-		x.SetWorkPlan(wp)
-	case *idspb.CheckOption:
-		x.GetCheck().SetWorkPlan(wp)
-	case *idspb.CheckResult:
-		x.GetCheck().SetWorkPlan(wp)
-	case *idspb.CheckResultDatum:
-		x.GetResult().GetCheck().SetWorkPlan(wp)
-	case *idspb.CheckEdit:
-		x.GetCheck().SetWorkPlan(wp)
-	case *idspb.CheckEditOption:
-		x.GetCheckEdit().GetCheck().SetWorkPlan(wp)
-	case *idspb.Stage:
-		x.SetWorkPlan(wp)
-	case *idspb.StageAttempt:
-		x.GetStage().SetWorkPlan(wp)
-	case *idspb.StageEdit:
-		x.GetStage().SetWorkPlan(wp)
-	default:
-		panic(fmt.Sprintf("impossible type: %T", x))
+	_, check, stage := Root(id)
+	if check != nil {
+		check.SetWorkPlan(wp)
+	} else if stage != nil {
+		stage.SetWorkPlan(wp)
 	}
-
 	return id, nil
 }
 
@@ -242,6 +190,25 @@ func CheckEditOptionErr(checkID string, ts time.Time, optionIdx int) (*idspb.Che
 	}.Build(), nil
 }
 
+// CheckEditReasonErr returns a CheckEditReason identifier without a WorkPlan.
+//
+// Returns an error if `checkID` is malformed, `ts` is zero, or `reasonIdx` is
+// out of range.
+func CheckEditReasonErr(checkID string, ts time.Time, reasonIdx int) (*idspb.CheckEditReason, error) {
+	ceid, err := CheckEditErr(checkID, ts)
+	if err != nil {
+		return nil, fmt.Errorf("id.CheckEditReasonErr: %w", err)
+	}
+	idx, err := checkIdx("reasonIdx", reasonIdx)
+	if err != nil {
+		return nil, fmt.Errorf("id.CheckEditReasonErr: %w", err)
+	}
+	return idspb.CheckEditReason_builder{
+		CheckEdit: ceid,
+		Idx:       idx,
+	}.Build(), nil
+}
+
 // WorknodeMode is an enum to control the worknode-ness of a Stage.
 //
 // Used with [StageErr], [StageAttemptErr] and [StageEditErr].
@@ -317,6 +284,25 @@ func StageEditErr(mode WorknodeMode, stageID string, ts time.Time) (*idspb.Stage
 	}.Build(), nil
 }
 
+// StageEditReasonErr returns a StageEditReason identifier without a WorkPlan.
+//
+// Returns an error if `stageID` is malformed, `ts` is zero, or `reasonIdx` is
+// out of range.
+func StageEditReasonErr(mode WorknodeMode, stageID string, ts time.Time, reasonIdx int) (*idspb.StageEditReason, error) {
+	seid, err := StageEditErr(mode, stageID, ts)
+	if err != nil {
+		return nil, fmt.Errorf("id.StageEditReason: %w", err)
+	}
+	idx, err := checkIdx("reasonIdx", reasonIdx)
+	if err != nil {
+		return nil, fmt.Errorf("id.StageEditReason: %w", err)
+	}
+	return idspb.StageEditReason_builder{
+		StageEdit: seid,
+		Idx:       idx,
+	}.Build(), nil
+}
+
 // WorkplanErr returns a WorkPlan identifier or an error if it is invalid.
 func WorkplanErr(id string) (*idspb.WorkPlan, error) {
 	if err := checkToken("workPlanID", id); err != nil {
@@ -365,41 +351,4 @@ func StageUnknown(id string) *idspb.Stage {
 // Panics if `id` is malformed. If this is a possibility, use [StageErr] instead.
 func StageWorkNode(id string) *idspb.Stage {
 	return must(StageErr(StageIsWorknode, id))
-}
-
-// Wrap takes any Identifier sub-type and wraps it into a generic
-// idspb.Identifier.
-func Wrap[Id Identifier](id Id) *idspb.Identifier {
-	return wrap(id)
-}
-
-func wrap(id any) *idspb.Identifier {
-	switch x := id.(type) {
-	case nil:
-		return nil
-	case *idspb.Identifier:
-		return x
-	case *idspb.WorkPlan:
-		return idspb.Identifier_builder{WorkPlan: x}.Build()
-	case *idspb.Check:
-		return idspb.Identifier_builder{Check: x}.Build()
-	case *idspb.CheckOption:
-		return idspb.Identifier_builder{CheckOption: x}.Build()
-	case *idspb.CheckResult:
-		return idspb.Identifier_builder{CheckResult: x}.Build()
-	case *idspb.CheckResultDatum:
-		return idspb.Identifier_builder{CheckResultDatum: x}.Build()
-	case *idspb.CheckEdit:
-		return idspb.Identifier_builder{CheckEdit: x}.Build()
-	case *idspb.CheckEditOption:
-		return idspb.Identifier_builder{CheckEditOption: x}.Build()
-	case *idspb.Stage:
-		return idspb.Identifier_builder{Stage: x}.Build()
-	case *idspb.StageAttempt:
-		return idspb.Identifier_builder{StageAttempt: x}.Build()
-	case *idspb.StageEdit:
-		return idspb.Identifier_builder{StageEdit: x}.Build()
-	default:
-		panic(fmt.Sprintf("impossible type: %T", x))
-	}
 }

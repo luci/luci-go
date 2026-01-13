@@ -105,7 +105,7 @@ func TestFromStringErrorConditions(t *testing.T) {
 		{
 			name:        "Missing required previous ID part - R without C",
 			input:       "Lwp:R1",
-			expectedErr: `token 1 in "Lwp:R1": expected "Check", got "WorkPlan"`,
+			expectedErr: `token 1 in "Lwp:R1": unexpected key 'R'`,
 		},
 		{
 			name:        "Unexpected key for current ID type - L after L",
