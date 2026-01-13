@@ -167,10 +167,14 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 					// Don't fail the export if we can't parse the error code.
 					errorCode = 0
 				}
+				var trace string
+				if len(tr.FailureReason.Errors) > 0 {
+					trace = tr.FailureReason.Errors[0].Trace
+				}
 				errorType := findKeyFromTags(PrimaryErrorTypeTagKey, tr.Tags)
 				debugInfo = &bqpb.DebugInfo{
 					ErrorMessage: tr.FailureReason.PrimaryErrorMessage,
-					Trace:        tr.FailureReason.Errors[0].Trace,
+					Trace:        trace,
 					ErrorType:    bqpb.ErrorType(bqpb.ErrorType_value[errorType]),
 					ErrorName:    findKeyFromTags(PrimaryErrorNameTagKey, tr.Tags),
 					ErrorCode:    int64(errorCode),

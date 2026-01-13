@@ -135,22 +135,21 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 				mrc.GetRootInvocation(invReq, invRes)
 			}
 
-			aconfigFlagOverrides := &bqpb.AconfigFlagOverrides{
-				AconfigFlags: []*bqpb.AconfigFlag{
-					{
-						FlagPackage: "com.android.flags",
-						FlagName:    "my_flag",
-						State:       bqpb.AconfigFlag_FLAG_STATE_ENABLED,
-					},
-				},
-			}
-			workUnitProperties := &bqpb.WorkUnitProperties{
-				AconfigFlagOverrides: aconfigFlagOverrides,
-			}
-			protoJSON, err := protojson.Marshal(workUnitProperties)
-			assert.Loosely(t, err, should.BeNil)
-			properties := &structpb.Struct{}
-			err = protojson.Unmarshal(protoJSON, properties)
+			jsonBody := `{
+					"@type": "type.googleapis.com/wireless.android.busytown.proto.WorkUnitProperties",
+					"antsWorkUnitId": "123",
+					"aconfig_flag_overrides": {
+						"aconfig_flags": [
+							{
+								"flag_package": "com.android.flags",
+								"flag_name": "my_flag",
+								"state": "FLAG_STATE_ENABLED"
+							}
+						]
+					}
+				}`
+			workUnitProperties := &structpb.Struct{}
+			err := protojson.Unmarshal([]byte(jsonBody), workUnitProperties)
 			assert.Loosely(t, err, should.BeNil)
 
 			wuCreateTime := timestamppb.New(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
@@ -185,7 +184,7 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 					{Key: "key1", Value: "value1"},
 				},
 				SummaryMarkdown: "test summary markdown",
-				Properties:      properties,
+				Properties:      workUnitProperties,
 			}
 
 			mockWorkUnits := []*rdbpb.WorkUnit{minimalWorkUnit, complexWorkUnit}
@@ -237,7 +236,15 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 					Properties: []*bqpb.StringPair{
 						{Name: "key1", Value: "value1"},
 					},
-					AconfigFlagOverrides: aconfigFlagOverrides,
+					AconfigFlagOverrides: &bqpb.AconfigFlagOverrides{
+						AconfigFlags: []*bqpb.AconfigFlag{
+							{
+								FlagPackage: "com.android.flags",
+								FlagName:    "my_flag",
+								State:       bqpb.AconfigFlag_FLAG_STATE_ENABLED,
+							},
+						},
+					},
 				},
 			}
 

@@ -137,16 +137,22 @@ func extractAconfigFlagOverrides(properties *structpb.Struct) (*bqpb.AconfigFlag
 	if properties == nil {
 		return nil, nil
 	}
+	propertiesType := "type.googleapis.com/wireless.android.busytown.proto.WorkUnitProperties"
+	if properties.Fields["@type"].GetStringValue() != propertiesType {
+		// Properties is not the supported WorkUnitProperties type.
+		return nil, nil
+	}
 	// Marshal the field value to JSON.
 	b, err := protojson.Marshal(properties)
 	if err != nil {
-		return nil, errors.Fmt("marshal aconfig_flag_overrides to json: %w", err)
+		return nil, errors.Fmt("marshal properties to json: %w", err)
 	}
 
 	// Unmarshal JSON to the target proto.
 	workUnitProperties := &bqpb.WorkUnitProperties{}
-	if err := protojson.Unmarshal(b, workUnitProperties); err != nil {
-		return nil, errors.Fmt("unmarshal work unut properties form json: %w", err)
+	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
+	if err := unmarshaler.Unmarshal(b, workUnitProperties); err != nil {
+		return nil, errors.Fmt("unmarshal work unit properties from json: %w", err)
 	}
 	return workUnitProperties.AconfigFlagOverrides, nil
 }
