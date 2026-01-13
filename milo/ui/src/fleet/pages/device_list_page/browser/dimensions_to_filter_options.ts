@@ -17,7 +17,7 @@ import {
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
-import { OptionCategory } from '@/fleet/types';
+import { OptionCategory, StringListCategory } from '@/fleet/types';
 import {
   GetBrowserDeviceDimensionsResponse,
   LabelValues,
@@ -37,6 +37,7 @@ const mapDimensionsToCategories = (
         { label: BLANK_VALUE, value: BLANK_VALUE },
         ...filterValues.values.map((value) => ({ label: value, value })),
       ],
+      type: 'string_list',
     };
   });
 };
@@ -63,5 +64,5 @@ export const dimensionsToFilterOptions = (
     ),
   ]
     .sort((a, b) => a.label.localeCompare(b.label)) // Sort alphabetically
-    .filter((o) => o.options.length > 0);
+    .filter((o) => (o as StringListCategory).options?.length > 0);
 };

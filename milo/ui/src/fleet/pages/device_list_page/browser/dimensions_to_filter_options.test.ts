@@ -17,6 +17,7 @@ import {
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
+import { StringListCategory } from '@/fleet/types';
 import { GetBrowserDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { dimensionsToFilterOptions } from './dimensions_to_filter_options';
@@ -47,7 +48,7 @@ describe('dimensionsToFilterOptions', () => {
     const osOption = options.find((o) => o.value === 'os');
     expect(osOption).toBeDefined();
     expect(osOption?.label).toBe('OS');
-    expect(osOption?.options).toEqual([
+    expect((osOption as StringListCategory)?.options).toEqual([
       { label: BLANK_VALUE, value: BLANK_VALUE },
       { label: 'linux', value: 'linux' },
       { label: 'mac', value: 'mac' },
@@ -58,7 +59,7 @@ describe('dimensionsToFilterOptions', () => {
     const zoneOption = options.find((o) => o.value === zoneKey);
     expect(zoneOption).toBeDefined();
     expect(zoneOption?.label).toBe(zoneKey);
-    expect(zoneOption?.options).toEqual([
+    expect((zoneOption as StringListCategory)?.options).toEqual([
       { label: BLANK_VALUE, value: BLANK_VALUE },
       { label: 'us-west', value: 'us-west' },
     ]);
@@ -68,7 +69,7 @@ describe('dimensionsToFilterOptions', () => {
     const modelOption = options.find((o) => o.value === modelKey);
     expect(modelOption).toBeDefined();
     expect(modelOption?.label).toBe(modelKey);
-    expect(modelOption?.options).toEqual([
+    expect((modelOption as StringListCategory)?.options).toEqual([
       { label: BLANK_VALUE, value: BLANK_VALUE },
       { label: 'nuc', value: 'nuc' },
     ]);
@@ -82,7 +83,9 @@ describe('dimensionsToFilterOptions', () => {
     });
     const options = dimensionsToFilterOptions(response, {});
     expect(options).toHaveLength(1);
-    expect(options[0].options).toHaveLength(1);
-    expect(options[0].options[0].value).toBe(BLANK_VALUE);
+    expect((options[0] as StringListCategory).options).toHaveLength(1);
+    expect((options[0] as StringListCategory).options[0].value).toBe(
+      BLANK_VALUE,
+    );
   });
 });
