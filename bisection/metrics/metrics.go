@@ -379,15 +379,16 @@ func collectMetricsForGenAIVindication(c context.Context) error {
 
 	// Query for CompileGenAIAnalysis entities that ended in the last 24 hours.
 	q := datastore.NewQuery("CompileGenAIAnalysis").Gt("end_time", cutoffTime)
-	genaiAnalyses := []*model.CompileGenAIAnalysis{}
+	var genaiAnalyses []*model.CompileGenAIAnalysis
 	if err := datastore.GetAll(c, q, &genaiAnalyses); err != nil {
 		return errors.Annotate(err, "getting CompileGenAIAnalysis for genai metrics").Err()
 	}
-
+	logging.Infof(c, "DEBUG: Pre-Metric Increment VindicatedAnalysisCount. GenAI Analysis Count: %d", len(genaiAnalyses))
 	for _, genaiAnalysis := range genaiAnalyses {
 		// For each analysis, find its suspects.
 		sq := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
-		suspects := []*model.Suspect{}
+		logging.Infof(c, "DEBUG: Pre-Metric Increment VindicatedAnalysisCount. GenAI Analysis ID: %d", genaiAnalysis.Id)
+		var suspects []*model.Suspect
 		if err := datastore.GetAll(c, sq, &suspects); err != nil {
 			logging.Warningf(c, "failed to get suspects for CompileGenAIAnalysis %d: %v", genaiAnalysis.Id, err)
 			continue
@@ -397,11 +398,13 @@ func collectMetricsForGenAIVindication(c context.Context) error {
 		for _, suspect := range suspects {
 			if suspect.VerificationStatus == model.SuspectVerificationStatus_Vindicated {
 				vindicatedCount++
+				logging.Infof(c, "DEBUG: Pre-Metric Increment VindicatedAnalysisCount. VindicatedCount: %d", vindicatedCount)
 			}
 		}
 
 		if vindicatedCount > 0 {
 			genaiVerificationVindicatedCount.Set(c, int64(vindicatedCount), genaiAnalysis.Id)
+			logging.Infof(c, "DEBUG: Post-Metric Increment VindicatedAnalysisCount. GenAI Analysis ID: %d, VindicatedCount: %d", genaiAnalysis.Id, vindicatedCount)
 		}
 	}
 
