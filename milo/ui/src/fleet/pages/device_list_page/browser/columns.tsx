@@ -18,41 +18,37 @@ import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
 import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-export const getColumns = (
-  columnIds: string[],
-): DeviceTableGridColDef<BrowserDevice>[] => {
-  return columnIds.map((id) => {
-    const firstDotIdx = id.indexOf('.');
-    const source = firstDotIdx === -1 ? undefined : id.slice(0, firstDotIdx);
-    const label = firstDotIdx === -1 ? id : id.slice(firstDotIdx + 1);
-    return {
-      field: id,
-      headerName: label,
-      orderByField: id,
-      editable: false,
-      minWidth: 70,
-      maxWidth: 700,
-      sortable: true,
-      valueGetter: (_value, device) => {
-        if (!source) return undefined;
-        const labels =
-          source === BROWSER_SWARMING_SOURCE
-            ? device.swarmingLabels?.[label]?.values
-            : device.ufsLabels?.[label]?.values;
-        if (!labels) return undefined;
+export const getColumn = (id: string): DeviceTableGridColDef<BrowserDevice> => {
+  const firstDotIdx = id.indexOf('.');
+  const source = firstDotIdx === -1 ? undefined : id.slice(0, firstDotIdx);
+  const label = firstDotIdx === -1 ? id : id.slice(firstDotIdx + 2, -1); // Trims of the quotes
+  return {
+    field: id,
+    headerName: label,
+    orderByField: id,
+    editable: false,
+    minWidth: 70,
+    maxWidth: 700,
+    sortable: true,
+    valueGetter: (_value, device) => {
+      if (!source) return undefined;
+      const labels =
+        source === BROWSER_SWARMING_SOURCE
+          ? device.swarmingLabels?.[label]?.values
+          : device.ufsLabels?.[label]?.values;
+      if (!labels) return undefined;
 
-        return labelValuesToString(labels);
-      },
-      flex: 1,
-      renderCell: (param) => (
-        <EllipsisTooltip>{param.value ?? ''}</EllipsisTooltip>
-      ),
-      ...(BROWSER_COLUMN_OVERRIDES[id] ?? {}),
-    };
-  });
+      return labelValuesToString(labels);
+    },
+    flex: 1,
+    renderCell: (param) => (
+      <EllipsisTooltip>{param.value ?? ''}</EllipsisTooltip>
+    ),
+    ...(BROWSER_COLUMN_OVERRIDES[id] ?? {}),
+  };
 };
 
-export const BROWSER_COLUMN_OVERRIDES: Record<
+const BROWSER_COLUMN_OVERRIDES: Record<
   string,
   Partial<DeviceTableGridColDef<BrowserDevice>>
 > = {

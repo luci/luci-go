@@ -255,11 +255,11 @@ export interface ListAndroidDevicesRequest {
    */
   readonly pageSize: number;
   /**
-   * A page token, received from a previous `ListAndroidDevices` call. Provide this to
-   * retrieve the subsequent page. Returns first page if omitted.
+   * A page token, received from a previous `ListAndroidDevices` call. Provide
+   * this to retrieve the subsequent page. Returns first page if omitted.
    *
-   * When paginating, all other parameters provided to `ListAndroidDevices` must match
-   * the call that provided the page token.
+   * When paginating, all other parameters provided to `ListAndroidDevices` must
+   * match the call that provided the page token.
    */
   readonly pageToken: string;
   readonly orderBy: string;
@@ -285,11 +285,11 @@ export interface ListBrowserDevicesRequest {
    */
   readonly pageSize: number;
   /**
-   * A page token, received from a previous `ListBrowserDevices` call. Provide this to
-   * retrieve the subsequent page. Returns first page if omitted.
+   * A page token, received from a previous `ListBrowserDevices` call. Provide
+   * this to retrieve the subsequent page. Returns first page if omitted.
    *
-   * When paginating, all other parameters provided to `ListBrowserDevices` must match
-   * the call that provided the page token.
+   * When paginating, all other parameters provided to `ListBrowserDevices` must
+   * match the call that provided the page token.
    */
   readonly pageToken: string;
   readonly orderBy: string;
@@ -306,6 +306,30 @@ export interface ListBrowserDevicesResponse {
    */
   readonly nextPageToken: string;
   readonly totalSize: number;
+}
+
+export interface GetBrowserDeviceDimensionsRequest {
+}
+
+export interface GetBrowserDeviceDimensionsResponse {
+  readonly baseDimensions: { [key: string]: LabelValues };
+  readonly swarmingLabels: { [key: string]: LabelValues };
+  readonly ufsLabels: { [key: string]: LabelValues };
+}
+
+export interface GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry {
+  readonly key: string;
+  readonly value: LabelValues | undefined;
+}
+
+export interface GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry {
+  readonly key: string;
+  readonly value: LabelValues | undefined;
+}
+
+export interface GetBrowserDeviceDimensionsResponse_UfsLabelsEntry {
+  readonly key: string;
+  readonly value: LabelValues | undefined;
 }
 
 export interface DeviceSpec {
@@ -2484,6 +2508,475 @@ export const ListBrowserDevicesResponse: MessageFns<ListBrowserDevicesResponse> 
     message.devices = object.devices?.map((e) => BrowserDevice.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
     message.totalSize = object.totalSize ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetBrowserDeviceDimensionsRequest(): GetBrowserDeviceDimensionsRequest {
+  return {};
+}
+
+export const GetBrowserDeviceDimensionsRequest: MessageFns<GetBrowserDeviceDimensionsRequest> = {
+  encode(_: GetBrowserDeviceDimensionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetBrowserDeviceDimensionsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetBrowserDeviceDimensionsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetBrowserDeviceDimensionsRequest {
+    return {};
+  },
+
+  toJSON(_: GetBrowserDeviceDimensionsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetBrowserDeviceDimensionsRequest>): GetBrowserDeviceDimensionsRequest {
+    return GetBrowserDeviceDimensionsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<GetBrowserDeviceDimensionsRequest>): GetBrowserDeviceDimensionsRequest {
+    const message = createBaseGetBrowserDeviceDimensionsRequest() as any;
+    return message;
+  },
+};
+
+function createBaseGetBrowserDeviceDimensionsResponse(): GetBrowserDeviceDimensionsResponse {
+  return { baseDimensions: {}, swarmingLabels: {}, ufsLabels: {} };
+}
+
+export const GetBrowserDeviceDimensionsResponse: MessageFns<GetBrowserDeviceDimensionsResponse> = {
+  encode(message: GetBrowserDeviceDimensionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    Object.entries(message.baseDimensions).forEach(([key, value]) => {
+      GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry.encode(
+        { key: key as any, value },
+        writer.uint32(10).fork(),
+      ).join();
+    });
+    Object.entries(message.swarmingLabels).forEach(([key, value]) => {
+      GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry.encode(
+        { key: key as any, value },
+        writer.uint32(18).fork(),
+      ).join();
+    });
+    Object.entries(message.ufsLabels).forEach(([key, value]) => {
+      GetBrowserDeviceDimensionsResponse_UfsLabelsEntry.encode({ key: key as any, value }, writer.uint32(26).fork())
+        .join();
+    });
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetBrowserDeviceDimensionsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetBrowserDeviceDimensionsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.baseDimensions[entry1.key] = entry1.value;
+          }
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          const entry2 = GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry.decode(reader, reader.uint32());
+          if (entry2.value !== undefined) {
+            message.swarmingLabels[entry2.key] = entry2.value;
+          }
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          const entry3 = GetBrowserDeviceDimensionsResponse_UfsLabelsEntry.decode(reader, reader.uint32());
+          if (entry3.value !== undefined) {
+            message.ufsLabels[entry3.key] = entry3.value;
+          }
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetBrowserDeviceDimensionsResponse {
+    return {
+      baseDimensions: isObject(object.baseDimensions)
+        ? Object.entries(object.baseDimensions).reduce<{ [key: string]: LabelValues }>((acc, [key, value]) => {
+          acc[key] = LabelValues.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+      swarmingLabels: isObject(object.swarmingLabels)
+        ? Object.entries(object.swarmingLabels).reduce<{ [key: string]: LabelValues }>((acc, [key, value]) => {
+          acc[key] = LabelValues.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+      ufsLabels: isObject(object.ufsLabels)
+        ? Object.entries(object.ufsLabels).reduce<{ [key: string]: LabelValues }>((acc, [key, value]) => {
+          acc[key] = LabelValues.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: GetBrowserDeviceDimensionsResponse): unknown {
+    const obj: any = {};
+    if (message.baseDimensions) {
+      const entries = Object.entries(message.baseDimensions);
+      if (entries.length > 0) {
+        obj.baseDimensions = {};
+        entries.forEach(([k, v]) => {
+          obj.baseDimensions[k] = LabelValues.toJSON(v);
+        });
+      }
+    }
+    if (message.swarmingLabels) {
+      const entries = Object.entries(message.swarmingLabels);
+      if (entries.length > 0) {
+        obj.swarmingLabels = {};
+        entries.forEach(([k, v]) => {
+          obj.swarmingLabels[k] = LabelValues.toJSON(v);
+        });
+      }
+    }
+    if (message.ufsLabels) {
+      const entries = Object.entries(message.ufsLabels);
+      if (entries.length > 0) {
+        obj.ufsLabels = {};
+        entries.forEach(([k, v]) => {
+          obj.ufsLabels[k] = LabelValues.toJSON(v);
+        });
+      }
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetBrowserDeviceDimensionsResponse>): GetBrowserDeviceDimensionsResponse {
+    return GetBrowserDeviceDimensionsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetBrowserDeviceDimensionsResponse>): GetBrowserDeviceDimensionsResponse {
+    const message = createBaseGetBrowserDeviceDimensionsResponse() as any;
+    message.baseDimensions = Object.entries(object.baseDimensions ?? {}).reduce<{ [key: string]: LabelValues }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = LabelValues.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    message.swarmingLabels = Object.entries(object.swarmingLabels ?? {}).reduce<{ [key: string]: LabelValues }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = LabelValues.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    message.ufsLabels = Object.entries(object.ufsLabels ?? {}).reduce<{ [key: string]: LabelValues }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = LabelValues.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseGetBrowserDeviceDimensionsResponse_BaseDimensionsEntry(): GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry {
+  return { key: "", value: undefined };
+}
+
+export const GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry: MessageFns<
+  GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry
+> = {
+  encode(
+    message: GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      LabelValues.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetBrowserDeviceDimensionsResponse_BaseDimensionsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = LabelValues.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? LabelValues.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = LabelValues.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry>,
+  ): GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry {
+    return GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry>,
+  ): GetBrowserDeviceDimensionsResponse_BaseDimensionsEntry {
+    const message = createBaseGetBrowserDeviceDimensionsResponse_BaseDimensionsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? LabelValues.fromPartial(object.value)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry(): GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry {
+  return { key: "", value: undefined };
+}
+
+export const GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry: MessageFns<
+  GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry
+> = {
+  encode(
+    message: GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      LabelValues.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = LabelValues.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? LabelValues.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = LabelValues.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry>,
+  ): GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry {
+    return GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry>,
+  ): GetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry {
+    const message = createBaseGetBrowserDeviceDimensionsResponse_SwarmingLabelsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? LabelValues.fromPartial(object.value)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGetBrowserDeviceDimensionsResponse_UfsLabelsEntry(): GetBrowserDeviceDimensionsResponse_UfsLabelsEntry {
+  return { key: "", value: undefined };
+}
+
+export const GetBrowserDeviceDimensionsResponse_UfsLabelsEntry: MessageFns<
+  GetBrowserDeviceDimensionsResponse_UfsLabelsEntry
+> = {
+  encode(
+    message: GetBrowserDeviceDimensionsResponse_UfsLabelsEntry,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      LabelValues.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetBrowserDeviceDimensionsResponse_UfsLabelsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetBrowserDeviceDimensionsResponse_UfsLabelsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = LabelValues.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetBrowserDeviceDimensionsResponse_UfsLabelsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? LabelValues.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: GetBrowserDeviceDimensionsResponse_UfsLabelsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = LabelValues.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<GetBrowserDeviceDimensionsResponse_UfsLabelsEntry>,
+  ): GetBrowserDeviceDimensionsResponse_UfsLabelsEntry {
+    return GetBrowserDeviceDimensionsResponse_UfsLabelsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<GetBrowserDeviceDimensionsResponse_UfsLabelsEntry>,
+  ): GetBrowserDeviceDimensionsResponse_UfsLabelsEntry {
+    const message = createBaseGetBrowserDeviceDimensionsResponse_UfsLabelsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? LabelValues.fromPartial(object.value)
+      : undefined;
     return message;
   },
 };
@@ -7794,13 +8287,24 @@ export interface FleetConsole {
    * values
    */
   GetDeviceDimensions(request: GetDeviceDimensionsRequest): Promise<GetDeviceDimensionsResponse>;
+  /**
+   * GetBrowserDeviceDimensions provides overview of browser devices dimensions
+   * and their values
+   */
+  GetBrowserDeviceDimensions(request: GetBrowserDeviceDimensionsRequest): Promise<GetBrowserDeviceDimensionsResponse>;
   /** CountDevices provides a count of the devices */
   CountDevices(request: CountDevicesRequest): Promise<CountDevicesResponse>;
   /** RepopulateCache repopulates the cache, meant to be triggered by cron. */
   RepopulateCache(request: RepopulateCacheRequest): Promise<RepopulateCacheResponse>;
-  /** RepopulateBrowserCache repopulates browser data, meant to be triggered by cron. */
+  /**
+   * RepopulateBrowserCache repopulates browser data, meant to be triggered by
+   * cron.
+   */
   RepopulateBrowserCache(request: RepopulateBrowserCacheRequest): Promise<RepopulateBrowserCacheResponse>;
-  /** RepopulateAndroidCache repopulates android data, meant to be triggered by cron. */
+  /**
+   * RepopulateAndroidCache repopulates android data, meant to be triggered by
+   * cron.
+   */
   RepopulateAndroidCache(request: RepopulateAndroidCacheRequest): Promise<RepopulateAndroidCacheResponse>;
   /**
    * PingDB attempts to establish contact with the database and does nothing
@@ -7853,6 +8357,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ListAndroidDevices = this.ListAndroidDevices.bind(this);
     this.ListBrowserDevices = this.ListBrowserDevices.bind(this);
     this.GetDeviceDimensions = this.GetDeviceDimensions.bind(this);
+    this.GetBrowserDeviceDimensions = this.GetBrowserDeviceDimensions.bind(this);
     this.CountDevices = this.CountDevices.bind(this);
     this.RepopulateCache = this.RepopulateCache.bind(this);
     this.RepopulateBrowserCache = this.RepopulateBrowserCache.bind(this);
@@ -7924,6 +8429,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = GetDeviceDimensionsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GetDeviceDimensions", data);
     return promise.then((data) => GetDeviceDimensionsResponse.fromJSON(data));
+  }
+
+  GetBrowserDeviceDimensions(request: GetBrowserDeviceDimensionsRequest): Promise<GetBrowserDeviceDimensionsResponse> {
+    const data = GetBrowserDeviceDimensionsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetBrowserDeviceDimensions", data);
+    return promise.then((data) => GetBrowserDeviceDimensionsResponse.fromJSON(data));
   }
 
   CountDevices(request: CountDevicesRequest): Promise<CountDevicesResponse> {

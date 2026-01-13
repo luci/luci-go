@@ -57,16 +57,16 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { AutorepairJobsAlert } from '../common/autorepair_jobs_alert';
-import {
-  dimensionsToFilterOptions,
-  filterOptionsPlaceholder,
-} from '../common/helpers';
+import { filterOptionsPlaceholder } from '../common/helpers';
 
 import { BrowserSummaryHeader } from './browser_summary_header';
-import { BROWSER_COLUMN_OVERRIDES, getColumns } from './columns';
+import { getColumn } from './columns';
+import { dimensionsToFilterOptions } from './dimensions_to_filter_options';
+import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
+const EXTRA_COLUMN_IDS = ['id'];
 
 export const BrowserDevicesPage = () => {
   const { trackEvent } = useGoogleAnalytics();
@@ -99,17 +99,7 @@ export const BrowserDevicesPage = () => {
     ? ''
     : stringifyFilters(selectedOptions.filters);
 
-  // TODO: b/390013758 - Use the real GetDeviceDimensions RPC once it's ready for CHROMIUM platform.
-  const dimensionsQuery = useMemo(
-    () => ({
-      data: { baseDimensions: {}, labels: {} },
-      isPending: false,
-      isSuccess: true,
-      isError: false,
-      error: null,
-    }),
-    [],
-  );
+  const dimensionsQuery = useBrowserDeviceDimensions();
 
   // TODO: b/390013758 - Use the real CountDevices RPC once it's ready for CHROMIUM platform.
   const countQuery = {
@@ -130,23 +120,36 @@ export const BrowserDevicesPage = () => {
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
   const columnIds = useMemo(() => {
-    //TODO: use useDeviceDimensions once its implemented
+    const ids: string[] = [];
+    if (dimensionsQuery.isSuccess) {
+      ids.push(
+        ...Object.keys(dimensionsQuery.data.baseDimensions)
+          .concat(...Object.keys(dimensionsQuery.data.swarmingLabels))
+          .concat(...Object.keys(dimensionsQuery.data.ufsLabels)),
+      );
+    }
+
     if (devicesQuery.data) {
       return _.uniq([
-        'id',
         ...devicesQuery.data.devices.flatMap((d) => [
           ...Object.keys(d.swarmingLabels ?? {}).map(
-            (l) => BROWSER_SWARMING_SOURCE + '.' + l,
+            (l) => `${BROWSER_SWARMING_SOURCE}."${l}"`,
           ),
           ...Object.keys(d.ufsLabels ?? {}).map(
-            (l) => BROWSER_UFS_SOURCE + '.' + l,
+            (l) => `${BROWSER_UFS_SOURCE}."${l}"`,
           ),
         ]),
       ]);
     }
 
-    return ['id'];
-  }, [devicesQuery.data]);
+    return _.uniq([...ids, ...EXTRA_COLUMN_IDS]);
+  }, [
+    devicesQuery.data,
+    dimensionsQuery.data?.baseDimensions,
+    dimensionsQuery.data?.swarmingLabels,
+    dimensionsQuery.data?.ufsLabels,
+    dimensionsQuery.isSuccess,
+  ]);
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
@@ -207,6 +210,11 @@ export const BrowserDevicesPage = () => {
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
 
+  const columnsRecord = useMemo(
+    () => Object.fromEntries(columnIds.map((id) => [id, getColumn(id)])),
+    [columnIds],
+  );
+
   return (
     <div
       css={{
@@ -238,13 +246,10 @@ export const BrowserDevicesPage = () => {
           <DeviceListFilterBar
             filterOptions={
               dimensionsQuery.isSuccess
-                ? dimensionsToFilterOptions(
-                    dimensionsQuery.data,
-                    BROWSER_COLUMN_OVERRIDES,
-                  )
+                ? dimensionsToFilterOptions(dimensionsQuery.data, columnsRecord)
                 : filterOptionsPlaceholder(
                     selectedOptions.filters,
-                    BROWSER_COLUMN_OVERRIDES,
+                    columnsRecord,
                   )
             }
             selectedOptions={selectedOptions.filters}
@@ -263,7 +268,7 @@ export const BrowserDevicesPage = () => {
           defaultColumnIds={CHROMIUM_DEFAULT_COLUMNS}
           localStorageKey={BROWSER_DEVICES_LOCAL_STORAGE_KEY}
           rows={devices}
-          availableColumns={getColumns(columnIds)}
+          availableColumns={Object.values(columnsRecord)}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
           isError={devicesQuery.isError || dimensionsQuery.isError}
