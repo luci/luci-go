@@ -178,4 +178,18 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
       return <SmartRelativeTimestamp date={dt} />;
     },
   },
+  'mh.last_sync': {
+    orderByField: 'labels.mh.last_sync',
+    renderCell: (params) => {
+      const value = params.value as string;
+      if (!value) {
+        return null;
+      }
+      const dt = DateTime.fromISO(value);
+      if (!dt.isValid) {
+        return <>{value}</>;
+      }
+      return <SmartRelativeTimestamp date={dt} />;
+    },
+  },
 };

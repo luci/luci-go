@@ -15,6 +15,7 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Alert, IconButton, Typography, Button } from '@mui/material';
+import { DateTime } from 'luxon';
 import { MaterialReactTable, MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -22,6 +23,7 @@ import { useNavigate, useParams } from 'react-router';
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import {
   generateDeviceListURL,
   ANDROID_PLATFORM,
@@ -35,7 +37,9 @@ export const AndroidDeviceDetailsPage = () => {
   const navigate = useNavigate();
   const { error, isError, isLoading, device } = useAndroidDeviceData(id);
 
-  const columns = useMemo<MRT_ColumnDef<{ key: string; value: string }>[]>(
+  const columns = useMemo<
+    MRT_ColumnDef<{ key: string; value: React.ReactNode }>[]
+  >(
     () => [
       {
         accessorKey: 'key',
@@ -46,6 +50,7 @@ export const AndroidDeviceDetailsPage = () => {
       {
         accessorKey: 'value',
         header: 'Value',
+        Cell: ({ cell }) => cell.getValue() as React.ReactNode,
       },
     ],
     [],
@@ -54,10 +59,22 @@ export const AndroidDeviceDetailsPage = () => {
   const labels = useMemo(() => {
     if (!device) return [];
     const l = Object.entries(device.omnilabSpec?.labels ?? {}).map(
-      ([key, value]) => ({
-        key,
-        value: labelValuesToString(value.values),
-      }),
+      ([key, value]) => {
+        const strVal = labelValuesToString(value.values);
+        if (key === 'ufs.last_sync' || key === 'mh.last_sync') {
+          const dt = DateTime.fromISO(strVal);
+          if (dt.isValid) {
+            return {
+              key,
+              value: <SmartRelativeTimestamp date={dt} />,
+            };
+          }
+        }
+        return {
+          key,
+          value: strVal,
+        };
+      },
     );
     l.sort((a, b) => a.key.localeCompare(b.key));
     return l;
