@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/no-static-element-interactions */
 // Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +14,13 @@
 
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import {
-  Backdrop,
   Box,
-  Card,
+  ClickAwayListener,
   Divider,
   MenuItem,
   MenuList,
+  Paper,
+  Popper,
   Skeleton,
   Typography,
 } from '@mui/material';
@@ -33,12 +33,16 @@ import {
 } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
+import { FilterType } from '@/fleet/types';
 import { hasAnyModifier, keyboardListNavigationHandler } from '@/fleet/utils';
 import { fuzzySubstring, SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { EllipsisTooltip } from '../ellipsis_tooltip';
 import { HighlightCharacter } from '../highlight_character';
 import { Footer } from '../options_dropdown/footer';
+
+import { DateFilter, DateFilterValue } from './date_filter';
+import { RangeFilter, RangeFilterValue } from './range_filter';
 
 export interface OptionComponentHandle {
   focus: () => void;
@@ -58,8 +62,9 @@ export type OptionComponent<T> = React.ForwardRefExoticComponent<
 export type FilterCategoryData<T> = {
   value: string;
   label: string;
+  type?: FilterType;
   getChildrenSearchScore: (childrenSearchQuery: string) => number;
-  optionsComponent: OptionComponent<T>;
+  optionsComponent?: OptionComponent<T>;
   optionsComponentProps: T;
 };
 
@@ -130,12 +135,17 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
 
   useEffect(() => {
     if (!anchorEl) {
-      closeInnerMenu();
+      setOpenCategory(undefined);
     }
   }, [anchorEl]);
 
   const closeInnerMenu = () => {
     setOpenCategory(undefined);
+    // When closing the inner menu, we want to refocus the item in the main menu
+    // to allow keyboard navigation to continue
+    if (openCategory?.anchor) {
+      openCategory.anchor.focus();
+    }
   };
 
   const closeMenu = () => {
@@ -201,7 +211,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
     openCategory &&
     !filterResults.find((result) => result.el.value === openCategory.value)
   ) {
-    closeInnerMenu();
+    setOpenCategory(undefined);
   }
 
   const otherFilterResults = commonOptions
@@ -259,11 +269,74 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
       (option) => option.value === openCategory.value,
     )!;
 
-    const OptionComponent = openCategoryData.optionsComponent;
+    let content;
+
+    if (openCategoryData.type === 'date') {
+      const props = openCategoryData.optionsComponentProps as unknown as {
+        value: DateFilterValue;
+        onChange: (v: DateFilterValue) => void;
+      };
+      content = <DateFilter {...props} />;
+    } else if (openCategoryData.type === 'range') {
+      const props = openCategoryData.optionsComponentProps as unknown as {
+        value: RangeFilterValue;
+        onChange: (v: RangeFilterValue) => void;
+        min?: number;
+        max?: number;
+      };
+      content = <RangeFilter {...props} />;
+    } else {
+      const OptionComponent = openCategoryData.optionsComponent!;
+      content = (
+        <OptionComponent
+          ref={openCategoryRef}
+          key={openCategoryData.value}
+          childrenSearchQuery={
+            splitSearchQuery(searchQuery).childrenSearchQuery
+          }
+          optionComponentProps={openCategoryData.optionsComponentProps}
+          onNavigateUp={() => {
+            onSearchBarFocus();
+          }}
+          maxHeight={400}
+        />
+      );
+    }
 
     return (
-      <Card onClick={(e) => e.stopPropagation()}>
-        <div
+      <Popper
+        open={true}
+        anchorEl={openCategory.anchor}
+        placement="right-start"
+        style={{ zIndex: 1301 }}
+        modifiers={[
+          {
+            name: 'eventListeners',
+            enabled: true,
+            options: {
+              scroll: false,
+              resize: true,
+            },
+          },
+          {
+            name: 'flip',
+            enabled: true,
+            options: {
+              boundary: 'viewport',
+            },
+          },
+          {
+            name: 'preventOverflow',
+            enabled: true,
+            options: {
+              boundary: 'viewport',
+            },
+          },
+        ]}
+      >
+        <Paper
+          elevation={2}
+          onClick={(e) => e.stopPropagation()}
           onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
             if (e.key === 'Tab') {
               closeMenu();
@@ -275,51 +348,57 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
             if (e.key === 'Enter' && e.ctrlKey) {
               applyOptions();
             }
-            if (e.key === 'Backspace') {
-              onSearchQueryChangeInternal(
-                searchQuery.slice(0, searchQuery.length - 1),
+            // Only handle backspace/delete for string list (search query)
+            if (
+              !openCategoryData.type ||
+              openCategoryData.type === 'string_list'
+            ) {
+              if (e.key === 'Backspace') {
+                onSearchQueryChangeInternal(
+                  searchQuery.slice(0, searchQuery.length - 1),
+                );
+                onSearchBarFocus();
+                e.preventDefault();
+              }
+              if (e.key === 'Delete' || e.key === 'Cancel') {
+                onSearchQueryChangeInternal('');
+                onSearchBarFocus();
+              }
+            }
+
+            // Only handle navigation for list
+            if (
+              !openCategoryData.type ||
+              openCategoryData.type === 'string_list'
+            ) {
+              keyboardListNavigationHandler(
+                e,
+                undefined,
+                () => {
+                  openCategory.anchor.focus();
+                  closeInnerMenu();
+                },
+                'horizontal',
               );
-              onSearchBarFocus();
-              e.preventDefault();
-            }
-            if (e.key === 'Delete' || e.key === 'Cancel') {
-              onSearchQueryChangeInternal('');
-              onSearchBarFocus();
             }
 
-            keyboardListNavigationHandler(
-              e,
-              undefined,
-              () => {
-                openCategory.anchor.focus();
-                closeInnerMenu();
-              },
-              'horizontal',
-            );
-
-            handleRandomTextInput(e);
+            if (
+              !openCategoryData.type ||
+              openCategoryData.type === 'string_list'
+            ) {
+              handleRandomTextInput(e);
+            }
           }}
         >
-          <OptionComponent
-            ref={openCategoryRef}
-            key={openCategoryData.value}
-            childrenSearchQuery={
-              splitSearchQuery(searchQuery).childrenSearchQuery
-            }
-            optionComponentProps={openCategoryData.optionsComponentProps}
-            onNavigateUp={() => {
-              onSearchBarFocus();
-            }}
-            maxHeight={400}
-          />
+          {content}
           <Footer
             onCancelClick={closeMenu}
             onApplyClick={() => {
               applyOptions();
             }}
           />
-        </div>
-      </Card>
+        </Paper>
+      </Popper>
     );
   };
 
@@ -395,34 +474,29 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
 
   return (
     <>
-      <Backdrop
-        data-testid="filter-dropdown-backdrop"
+      <Popper
         open={!!anchorEl}
-        onClick={() => {
-          closeMenu();
-        }}
-        invisible={true}
-        sx={{
-          zIndex: 2,
-        }}
-      ></Backdrop>
-      {anchorEl && (
-        <div
-          css={{
-            zIndex: 3,
-            position: 'absolute',
-            marginTop: 3,
-            display: 'block',
+        anchorEl={anchorEl}
+        placement="bottom-start"
+        style={{ zIndex: 1300 }}
+        modifiers={[
+          {
+            name: 'offset',
+            options: {
+              offset: [0, 8],
+            },
+          },
+        ]}
+      >
+        <ClickAwayListener
+          onClickAway={(e) => {
+            if (anchorEl && anchorEl.contains(e.target as Node)) {
+              return;
+            }
+            closeMenu();
           }}
         >
-          <Card
-            elevation={2}
-            onClick={(e) => e.stopPropagation()}
-            sx={{
-              position: 'absolute',
-              ...getCardRefPosition(anchorEl),
-            }}
-          >
+          <Paper elevation={2}>
             <MenuList
               sx={{
                 minWidth: 300,
@@ -548,56 +622,10 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
                 </div>
               )}
             </MenuList>
-          </Card>
-          <div
-            css={{
-              position: 'absolute',
-              ...getInnerCardRefPositions(anchorEl, openCategory?.anchor),
-            }}
-          >
-            {renderOpenCategory()}
-          </div>
-        </div>
-      )}
+          </Paper>
+        </ClickAwayListener>
+      </Popper>
+      {renderOpenCategory()}
     </>
   );
 });
-
-const getCardRefPosition = (anchorEl: HTMLElement | null) => {
-  const anchorRect = anchorEl?.getBoundingClientRect();
-  const anchorParentRect = anchorEl?.parentElement?.getBoundingClientRect();
-  if (!anchorRect || !anchorParentRect) return {};
-
-  return {
-    left: `${anchorRect.left - (anchorParentRect?.left || 0)}px`,
-    top: `${anchorEl?.parentElement?.getBoundingClientRect().height || anchorRect.height}px`,
-  };
-};
-
-const getInnerCardRefPositions = (
-  anchorEl: HTMLElement | null,
-  anchorElInner: HTMLElement | undefined,
-) => {
-  const anchorRect = anchorEl?.getBoundingClientRect();
-  const outerMenuRect = anchorElInner?.getBoundingClientRect();
-  const outerMenuParentWidth =
-    anchorElInner?.parentElement?.getBoundingClientRect().width;
-
-  if (!anchorRect || !outerMenuRect || !outerMenuParentWidth) return;
-
-  const anchorParentRect = anchorEl?.parentElement?.getBoundingClientRect();
-
-  const newInnerCardRefPosition = {
-    left: `${anchorRect.left - (anchorParentRect?.left || 0) + outerMenuParentWidth}px`,
-    top: '',
-    bottom: '',
-  };
-  if (outerMenuRect.top > window.innerHeight / 2) {
-    newInnerCardRefPosition.top = '';
-    newInnerCardRefPosition.bottom = `${-outerMenuRect.bottom + anchorRect.top - 30}px`;
-  } else {
-    newInnerCardRefPosition.top = `${outerMenuRect.top - anchorRect.top - 30}px`;
-    newInnerCardRefPosition.bottom = '';
-  }
-  return newInnerCardRefPosition;
-};

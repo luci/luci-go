@@ -13,7 +13,11 @@
 // limitations under the License.
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import {
+  OptionCategory,
+  SelectedOptions,
+  StringListCategory,
+} from '@/fleet/types';
 import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 /**
@@ -37,6 +41,7 @@ export const dimensionsToFilterOptions = (
             return { label: value, value: value };
           }),
         ],
+        type: 'string_list',
       } as OptionCategory;
     },
   );
@@ -58,6 +63,7 @@ export const dimensionsToFilterOptions = (
             return { label: value, value: value };
           }),
         ],
+        type: 'string_list',
       } as OptionCategory,
     ];
   });
@@ -65,7 +71,10 @@ export const dimensionsToFilterOptions = (
   return baseDimensions
     .concat(labels)
     .sort((a, b) => a.label.localeCompare(b.label)) // Sort alphabetically
-    .filter((o) => o.options.length > 0);
+    .filter(
+      (o): o is StringListCategory =>
+        o.type === 'string_list' && o.options.length > 0,
+    );
 };
 
 /**
@@ -98,5 +107,6 @@ const filterOptionPlaceholder = (
     options: values.map((value) => {
       return { label: value, value: value };
     }),
+    type: 'string_list',
   };
 };

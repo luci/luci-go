@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Menu, MenuOwnerState, MenuProps, PopoverOrigin } from '@mui/material';
+import {
+  ClickAwayListener,
+  MenuProps,
+  Paper,
+  PopoverOrigin,
+  Popper,
+  PopperPlacementType,
+} from '@mui/material';
 import React, { ReactNode, useRef, useState } from 'react';
 
 import { hasAnyModifier, keyboardListNavigationHandler } from '../../utils';
@@ -20,8 +27,8 @@ import { SearchInput } from '../search_input';
 
 import { Footer } from './footer';
 
-type OptionsDropdownProps = MenuProps & {
-  onClose: () => void;
+type OptionsDropdownProps = Omit<MenuProps, 'open' | 'maxHeight'> & {
+  onClose: (event?: object, reason?: 'backdropClick' | 'escapeKeyDown') => void;
   onApply: () => void;
   renderChild: (
     searchQuery: string,
@@ -34,6 +41,37 @@ type OptionsDropdownProps = MenuProps & {
   maxHeight?: number;
   onResetClick?: React.MouseEventHandler<HTMLButtonElement>;
   footerButtons?: ('reset' | 'cancel' | 'apply')[];
+  disableEnforceFocus?: boolean;
+  disableRestoreFocus?: boolean;
+  hideBackdrop?: boolean;
+};
+
+const mapOriginToPlacement = (
+  anchorOrigin: PopoverOrigin,
+  transformOrigin?: PopoverOrigin,
+): PopperPlacementType => {
+  const { vertical, horizontal } = anchorOrigin;
+
+  if (vertical === 'bottom') {
+    if (horizontal === 'center') return 'bottom';
+    if (horizontal === 'right') return 'bottom-end';
+    return 'bottom-start';
+  }
+  if (vertical === 'top') {
+    if (horizontal === 'center') return 'top';
+    // If transformOrigin is configured to push it to the side, we might want left/right.
+    // But for simplicity, we map top-right to top-end or right-start?
+    // Based on FilterItem usage (side menu), if anchor is top-right, it likely wants right-start.
+    if (horizontal === 'right') {
+      if (transformOrigin?.horizontal === 'left') return 'right-start';
+      return 'top-end';
+    }
+    if (horizontal === 'left') {
+      if (transformOrigin?.horizontal === 'right') return 'left-start';
+      return 'top-start';
+    }
+  }
+  return 'bottom-start';
 };
 
 export function OptionsDropdown({
@@ -46,139 +84,172 @@ export function OptionsDropdown({
     vertical: 'top',
     horizontal: 'right',
   },
+  transformOrigin,
   onKeyDown,
   enableSearchInput = false,
   maxHeight = 215,
   onResetClick,
   footerButtons = ['apply', 'cancel'],
-  ...menuProps
+  sx,
 }: OptionsDropdownProps) {
   const searchInput = useRef<HTMLInputElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const slotProps = { ...(menuProps.slotProps ?? {}) };
-  const listProps = (ownerState: MenuOwnerState) => {
-    const incomingProps =
-      typeof slotProps.list === 'function'
-        ? slotProps.list(ownerState)
-        : slotProps.list;
+  const placement = mapOriginToPlacement(anchorOrigin, transformOrigin);
 
-    return {
-      ...incomingProps,
-
-      sx: [
-        {
-          paddingTop: '8px',
-          paddingBottom: 0,
-        },
-        incomingProps?.sx,
-      ],
-    };
-  };
-  const slotPropsMerged = { ...slotProps, ...{ list: listProps } };
+  React.useEffect(() => {
+    if (open && enableSearchInput) {
+      // Small timeout to allow the popover to mount and settle
+      setTimeout(() => {
+        searchInput.current?.focus();
+      }, 0);
+    }
+  }, [open, enableSearchInput]);
 
   return (
-    <Menu
-      variant="selectedMenu"
-      onClose={(...args) => {
-        if (onClose) onClose(...args);
-        if (enableSearchInput) {
-          setSearchQuery('');
-        }
-      }}
+    <Popper
       open={open}
       anchorEl={anchorEl}
-      anchorOrigin={anchorOrigin}
-      elevation={2}
+      placement={placement}
+      modifiers={[
+        {
+          name: 'flip',
+          enabled: true,
+          options: {
+            boundary: 'viewport',
+          },
+        },
+        {
+          name: 'preventOverflow',
+          enabled: true,
+          options: {
+            boundary: 'viewport',
+          },
+        },
+        {
+          name: 'offset',
+          options: {
+            offset: [0, 8],
+          },
+        },
+      ]}
       sx={{
         zIndex: 1401, // luci's cookie_consent_bar is 1400
+        ...sx,
       }}
-      {...menuProps}
-      slotProps={slotPropsMerged}
     >
-      {/* Stop propagation to prevent the caller from handling the event inside the dropdown */}
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions*/}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          e.stopPropagation();
-
-          if (e.key === 'Escape') {
-            onClose();
+      <ClickAwayListener
+        onClickAway={(e) => {
+          if (anchorEl && anchorEl.contains(e.target as Node)) {
+            return;
           }
-
-          if (e.key === 'Enter' && e.ctrlKey) {
-            onApply();
-          }
-
+          if (onClose) onClose(e, 'backdropClick');
           if (enableSearchInput) {
-            keyboardListNavigationHandler(e);
-            switch (e.key) {
-              case 'Delete':
-              case 'Cancel':
-              case 'Backspace':
-                setSearchQuery('');
-                searchInput?.current?.focus();
-            }
-            // if the key is a single alphanumeric character without modifier
-            if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
-              searchInput?.current?.focus();
-              setSearchQuery((old) => old + e.key);
-              e.preventDefault(); // Avoid race condition to type twice in the input
-            }
+            setSearchQuery('');
           }
-
-          if (onKeyDown) onKeyDown(e);
         }}
       >
-        {enableSearchInput && (
-          <SearchInput
-            searchInput={searchInput}
-            searchQuery={searchQuery}
-            fullWidth
-            onChange={(e) => {
-              setSearchQuery(e.currentTarget.value);
-            }}
-            onKeyDown={(e) => {
-              if (['Delete', 'Cancel', 'Backspace'].includes(e.key)) {
-                e.stopPropagation(); //avoids clearing the whole field
-              }
-
-              keyboardListNavigationHandler(e, undefined, () => {
-                onClose();
-                e.preventDefault();
-                e.stopPropagation();
-              });
-            }}
-          />
-        )}
-        <div
-          css={{
-            maxHeight: maxHeight,
-            overflow: 'auto',
-            width: 500, //since some values are much longer than others we want to have a constant width to avoid flickering
-          }}
-          tabIndex={-1}
-          key="options-menu-container"
-        >
-          {renderChild(searchQuery, (e) => {
-            searchInput.current?.focus();
+        <Paper
+          elevation={2}
+          onKeyDown={(e) => {
             e.stopPropagation();
-            e.preventDefault();
-          })}
-        </div>
-        {footerButtons && footerButtons.length > 0 && (
-          <Footer
-            footerButtons={footerButtons}
-            onCancelClick={(e) => {
+
+            if (e.key === 'Escape') {
               if (onClose) onClose(e, 'escapeKeyDown');
+            }
+
+            if (e.key === 'Enter' && e.ctrlKey) {
+              onApply();
+            }
+
+            if (enableSearchInput) {
+              keyboardListNavigationHandler(e);
+              switch (e.key) {
+                case 'Delete':
+                case 'Cancel':
+                case 'Backspace':
+                  setSearchQuery('');
+                  searchInput?.current?.focus();
+              }
+              // if the key is a single alphanumeric character without modifier
+              if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
+                searchInput?.current?.focus();
+                setSearchQuery((old) => old + e.key);
+                e.preventDefault(); // Avoid race condition to type twice in the input
+              }
+            }
+
+            if (onKeyDown) onKeyDown(e);
+          }}
+          sx={{
+            outline: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            paddingTop: '8px',
+            paddingBottom: 0,
+            pointerEvents: 'auto',
+          }}
+        >
+          {enableSearchInput && (
+            <SearchInput
+              searchInput={searchInput}
+              searchQuery={searchQuery}
+              fullWidth
+              onChange={(e) => {
+                setSearchQuery(e.currentTarget.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowDown') {
+                  const firstItem =
+                    listContainerRef.current?.querySelector<HTMLElement>(
+                      '[role="menuitem"], [role="option"], button',
+                    );
+                  firstItem?.focus();
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return;
+                }
+                keyboardListNavigationHandler(e, undefined, () => {
+                  if (onClose) onClose(e, 'escapeKeyDown');
+                  e.preventDefault();
+                  e.stopPropagation();
+                });
+              }}
+            />
+          )}
+          <div
+            css={{
+              maxHeight: maxHeight,
+              overflow: 'auto',
+              width: 500, //since some values are much longer than others we want to have a constant width to avoid flickering
+              paddingTop: '8px',
             }}
-            onApplyClick={onApply}
-            onResetClick={onResetClick}
-            key="options-menu-footer"
-          />
-        )}
-      </div>
-    </Menu>
+            tabIndex={-1}
+            key="options-menu-container"
+            ref={listContainerRef}
+          >
+            {renderChild(searchQuery, (e) => {
+              searchInput.current?.focus();
+              e.stopPropagation();
+              e.preventDefault();
+            })}
+          </div>
+          {footerButtons && footerButtons.length > 0 && (
+            <Footer
+              footerButtons={footerButtons}
+              onCancelClick={(e) => {
+                // Treat cancel button as escape key down for focus purposes? Or explicit cancel?
+                // Usually Cancel button just closes.
+                if (onClose) onClose(e, 'escapeKeyDown');
+              }}
+              onApplyClick={onApply}
+              onResetClick={onResetClick}
+              key="options-menu-footer"
+            />
+          )}
+        </Paper>
+      </ClickAwayListener>
+    </Popper>
   );
 }

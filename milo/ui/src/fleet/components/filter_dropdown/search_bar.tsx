@@ -18,7 +18,9 @@ import { forwardRef, useRef } from 'react';
 import { colors } from '@/fleet/theme/colors';
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 
+import { DateFilter, DateFilterProps } from './date_filter';
 import { FilterCategoryData } from './filter_dropdown';
+import { RangeFilter, RangeFilterProps } from './range_filter';
 import { SelectedChip } from './selected_chip';
 
 interface SearchBarProps<T> {
@@ -52,17 +54,33 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
     const chipListRef = useRef<(HTMLDivElement | null)[]>([]);
 
     const renderChip = (option: FilterCategoryData<unknown>, i: number) => {
-      const OptionComponent = option.optionsComponent;
-
       return (
         <SelectedChip
-          dropdownContent={(searchQuery, onNavigateUp) => (
-            <OptionComponent
-              childrenSearchQuery={searchQuery}
-              optionComponentProps={option.optionsComponentProps}
-              onNavigateUp={onNavigateUp}
-            />
-          )}
+          dropdownContent={(searchQuery, onNavigateUp) => {
+            if (option.type === 'date') {
+              return (
+                <DateFilter
+                  {...(option.optionsComponentProps as DateFilterProps)}
+                />
+              );
+            } else if (option.type === 'range') {
+              return (
+                <RangeFilter
+                  {...(option.optionsComponentProps as RangeFilterProps)}
+                />
+              );
+            }
+
+            const OptionComponent = option.optionsComponent!;
+
+            return (
+              <OptionComponent
+                childrenSearchQuery={searchQuery}
+                optionComponentProps={option.optionsComponentProps}
+                onNavigateUp={onNavigateUp}
+              />
+            );
+          }}
           ref={(el) => {
             chipListRef.current[i] = el;
             chipListRef.current = chipListRef.current.filter((x) => x !== null);

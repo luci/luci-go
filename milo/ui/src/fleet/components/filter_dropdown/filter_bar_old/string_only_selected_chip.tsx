@@ -16,7 +16,11 @@ import { useEffect, useState } from 'react';
 
 import { MenuSkeleton } from '@/fleet/components/filter_dropdown/menu_skeleton';
 import { SelectedChip } from '@/fleet/components/filter_dropdown/selected_chip';
-import { OptionCategory, SelectedOptions } from '@/fleet/types/option';
+import {
+  OptionCategory,
+  SelectedOptions,
+  StringListCategory,
+} from '@/fleet/types/option';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
 import { OptionsMenuOld } from '../options_menu_old';
@@ -57,7 +61,12 @@ export const StringOnlySelectedChip = ({
     const label = filterOption.label ?? '';
 
     return `${selectedOptions[optionKey].length ?? 0} | [ ${label} ]: ${optionValues
-      .map((o) => filterOption.options.find((x) => x.value === o)?.label ?? o)
+      .map(
+        (o) =>
+          (filterOption as StringListCategory).options?.find(
+            (x) => x.value === o,
+          )?.label ?? o,
+      )
       .join(dimensionSeparator)}`;
   };
 
@@ -74,7 +83,7 @@ export const StringOnlySelectedChip = ({
     const elements = filterOptions.find((opt) => opt.value === optionKey);
 
     const elementsSorted = fuzzySort(searchQuery)(
-      elements?.options ?? [],
+      (elements as StringListCategory)?.options ?? [],
       (o) => o.label,
     );
 

@@ -45,6 +45,7 @@ describe('dimensionsToFilterOptions', () => {
           { label: 'one', value: 'one' },
           { label: 'two', value: 'two' },
         ],
+        type: 'string_list',
       },
       {
         label: 'testLabel',
@@ -55,6 +56,7 @@ describe('dimensionsToFilterOptions', () => {
           { label: 'b', value: 'b' },
           { label: 'c', value: 'c' },
         ],
+        type: 'string_list',
       },
     ]);
   });

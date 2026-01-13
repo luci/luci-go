@@ -15,7 +15,11 @@
 import { MenuList } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import {
+  OptionCategory,
+  SelectedOptions,
+  StringListCategory,
+} from '@/fleet/types';
 import { fuzzySort, fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 
 import { FilterButton } from '../filter_button';
@@ -59,7 +63,7 @@ export function StringOnlyFilterButton({
         value: option.value,
         getSearchScore: (searchQuery: string) => {
           const sortedChildren = fuzzySort(searchQuery)(
-            option.options,
+            (option as StringListCategory).options || [],
             (o) => o.label,
           );
           const [parentScore, parentMatches] = fuzzySubstring(
@@ -123,7 +127,10 @@ const OptionComponent = ({
     onSelectedOptionsChange(newValues);
   };
 
-  const fuzzySorted = fuzzySort(searchQuery)(option.options, (o) => o.label);
+  const fuzzySorted = fuzzySort(searchQuery)(
+    (option as StringListCategory).options || [],
+    (o) => o.label,
+  );
 
   return (
     <MenuList

@@ -43,9 +43,10 @@ export const OptionsMenu = ({
   const virtualizer = useVirtualizer({
     count: elements.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 32,
+    estimateSize: () => 36, // Increased slightly to match Material UI MenuItem height typically
     enabled: true,
     overscan: 20,
+    getItemKey: (index) => elements[index].el.value, // Provide explicit key for virtualizer cache
   });
 
   const virtualRows = virtualizer.getVirtualItems();
@@ -71,26 +72,30 @@ export const OptionsMenu = ({
       css={{
         overflow: 'auto',
         maxHeight: 'inherit',
-        width: 'max-content',
+        width: '100%',
       }}
     >
       <div
         css={{
-          width: 'max-content',
+          width: '100%',
           height: `${virtualizer.getTotalSize()}px`,
+          position: 'relative',
         }}
       >
         <div
           style={{
             transform: `translateY(${virtualRows[0]?.start ?? 0}px)`,
-            width: 'max-content',
+            width: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
           }}
         >
           {virtualRows.map((virtualRow) => {
             const item = elements[virtualRow.index];
             return (
               <MenuItem
-                key={virtualRow.index}
+                key={item.el.value}
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
                 disableRipple
@@ -118,7 +123,7 @@ export const OptionsMenu = ({
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  minWidth: 'max-content',
+                  width: '100%',
                   padding: '6px 12px',
                   ...(item.el.label === BLANK_VALUE && {
                     color: colors.grey[500],
@@ -140,8 +145,11 @@ export const OptionsMenu = ({
                 <HighlightCharacter
                   variant="body2"
                   highlightIndexes={item.matches}
-                  css={{
-                    textWrap: 'wrap',
+                  sx={{
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: 'block',
                   }}
                 >
                   {item.el.label}

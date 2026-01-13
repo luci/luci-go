@@ -123,8 +123,10 @@ export function SelectedChip({
             setAnchorEL(null);
             onApply();
           }}
-          onClose={() => {
-            anchorEl?.focus();
+          onClose={(_, reason) => {
+            if (reason === 'escapeKeyDown') {
+              anchorEl?.focus();
+            }
             setAnchorEL(null);
           }}
         />

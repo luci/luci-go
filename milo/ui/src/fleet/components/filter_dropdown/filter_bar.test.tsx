@@ -688,9 +688,7 @@ describe('FilterBar', () => {
 
     expect(screen.getByText('Option 1')).toBeInTheDocument();
 
-    const backdrop = screen.getByTestId('filter-dropdown-backdrop');
-
-    await user.click(backdrop);
+    await user.click(document.body);
 
     expect(screen.queryByText('Option 1')).not.toBeInTheDocument();
   });

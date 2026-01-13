@@ -15,7 +15,11 @@
 import { useMemo } from 'react';
 
 import { COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import {
+  OptionCategory,
+  SelectedOptions,
+  StringListCategory,
+} from '@/fleet/types';
 
 import { FilterBarOld } from '../filter_dropdown/filter_bar_old';
 
@@ -34,7 +38,9 @@ export function DeviceListFilterBarOld({
 }) {
   const deviceIds = useMemo(() => {
     const deviceIdCategory = filterOptions.find((opt) => opt.value === 'id');
-    return deviceIdCategory === undefined ? [] : deviceIdCategory.options;
+    return deviceIdCategory === undefined
+      ? []
+      : (deviceIdCategory as StringListCategory).options;
   }, [filterOptions]);
 
   return (

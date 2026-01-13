@@ -23,7 +23,11 @@ import {
   useState,
 } from 'react';
 
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import {
+  OptionCategory,
+  SelectedOptions,
+  StringListCategory,
+} from '@/fleet/types';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
 import { FilterBar } from '../filter_dropdown/filter_bar';
@@ -63,12 +67,14 @@ export function DeviceListFilterBar({
 
   const filterCategoryDatas: FilterCategoryData<StringOnlyFilterOptionComponentProps>[] =
     sortedFilterOptions.map((option) => {
+      // We assume that the device list only has string list filters
+      const stringListOption = option as StringListCategory;
       return {
         label: option.label,
         value: option.value,
         getChildrenSearchScore: (childrenSearchQuery: string) => {
           const sortedChildren = fuzzySort(childrenSearchQuery)(
-            option.options,
+            stringListOption.options || [],
             (o) => o.label,
           );
           return sortedChildren[0]?.score;
@@ -97,8 +103,10 @@ export function DeviceListFilterBar({
       return '';
     }
 
+    const stringListOption = filterOption as StringListCategory;
+
     const optionLabels = selectedValuesValues.map(
-      (v) => filterOption.options.find((o) => o.value === v)?.label ?? v,
+      (v) => stringListOption.options?.find((o) => o.value === v)?.label ?? v,
     );
 
     return `${selectedOptions[filterCategory.value].length ?? 0} | [ ${filterCategory.label} ]: ${optionLabels.join(
@@ -139,7 +147,7 @@ function elevateSelectedFiltersToTheTop(
   // as they are included in the selectedOptions with an empty array.
   return filterOptions.map((filter) => {
     if (filter.value in selectedOptions) {
-      filter.options.sort((a, b) => {
+      (filter as StringListCategory).options?.sort((a, b) => {
         const aIsSelected = selectedOptions[filter.value].includes(a.value);
         const bIsSelected = selectedOptions[filter.value].includes(b.value);
         if (aIsSelected && !bIsSelected) return -1;
@@ -189,7 +197,7 @@ const OptionComponent = forwardRef<
   };
 
   const fuzzySorted = fuzzySort(childrenSearchQuery)(
-    option.options,
+    (option as StringListCategory).options || [],
     (o) => o.label,
   );
 

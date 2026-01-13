@@ -12,4 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export type { OptionCategory, SelectedOptions } from './option';
+export type {
+  AsyncMultiSelectCategory,
+  DateCategory,
+  FilterType,
+  OptionCategory,
+  RangeCategory,
+  SelectedOptions,
+  StringListCategory,
+} from './option';

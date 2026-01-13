@@ -15,7 +15,11 @@
 import { useMemo } from 'react';
 
 import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import {
+  OptionCategory,
+  SelectedOptions,
+  StringListCategory,
+} from '@/fleet/types';
 
 import { StringOnlyFilterButton } from './string_only_filter_button';
 import { StringOnlySelectedChip } from './string_only_selected_chip';
@@ -79,7 +83,7 @@ function elevateSelectedFiltersToTheTop(
   // as they are included in the selectedOptions with an empty array.
   return filterOptions.map((filter) => {
     if (filter.value in selectedOptions) {
-      filter.options.sort((a, b) => {
+      (filter as StringListCategory).options?.sort((a, b) => {
         const aIsSelected = selectedOptions[filter.value].includes(a.value);
         const bIsSelected = selectedOptions[filter.value].includes(b.value);
         if (aIsSelected && !bIsSelected) return -1;
