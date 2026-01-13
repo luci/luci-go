@@ -89,15 +89,6 @@ describe('<OverviewActionsSection />', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('should show run test locally on invalid invocation name', () => {
-    renderComponent(undefined, undefined);
-
-    const rerunButton = screen.queryByTestId('rerun-button');
-    expect(rerunButton).not.toBeInTheDocument();
-
-    expect(screen.getByText('Rerun test case locally')).toBeInTheDocument();
-  });
-
   it('should render dropdown rerun button for android invocations', () => {
     const currentInv = Invocation.fromPartial({
       ...mockInvocation,
@@ -126,5 +117,14 @@ describe('<OverviewActionsSection />', () => {
     expect(
       screen.getByText('Rerun full module with atest'),
     ).toBeInTheDocument();
+  });
+
+  it('should show run test locally on invalid invocation name', () => {
+    renderComponent(undefined, undefined);
+
+    const rerunDropdown = screen.getByTestId('rerun-dropdown');
+    fireEvent.click(rerunDropdown);
+
+    expect(screen.getByText('Rerun test case locally')).toBeInTheDocument();
   });
 });

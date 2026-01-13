@@ -42,3 +42,4 @@ export const VIRTUAL_TARGET_PREFIXES = [
   'wvr_release_protected_cf_',
   'wvr_release_unprotected_cf_',
 ];
+export const FORREST_CREATE_URL = '/builds/abtd/create';

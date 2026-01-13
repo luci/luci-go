@@ -15,7 +15,6 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import {
-  Box,
   Button,
   Link,
   Menu,
@@ -30,13 +29,35 @@ import { InstructionDialog } from '@/common/components/instruction_hint/instruct
 import { pairsToPlaceholderDict } from '@/common/tools/instruction/instruction_utils';
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { useInvocation, useTestVariant } from '@/test_investigation/context';
-import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
+import {
+  AnyInvocation,
+  isRootInvocation,
+} from '@/test_investigation/utils/invocation_utils';
+import { ANDROID_BUILD_CORP_HOST } from '@/test_investigation/utils/test_info_utils';
 
 import {
   isAnTSInvocation,
   getInvocationTag,
 } from '../../../utils/test_info_utils';
-import { VIRTUAL_TARGET_PREFIXES } from '../constants';
+import { VIRTUAL_TARGET_PREFIXES, FORREST_CREATE_URL } from '../constants';
+
+interface ForrestQueryParams {
+  build_type: string;
+  run_type: string;
+  test_name?: string;
+  build_targets?: string;
+  build_id?: string;
+  atest_command?: string;
+  product?: string;
+  [key: string]: string | undefined;
+}
+
+interface BuildTarget {
+  buildTarget?: string;
+  androidBuild?: {
+    buildTarget?: string;
+  };
+}
 
 /**
  * Determines if the target passed can be booted on acloud or not.
@@ -116,6 +137,55 @@ function getAtestCommand(
   return command;
 }
 
+function getForrestLink(
+  invocation: AnyInvocation,
+  atestCommand?: string,
+): string {
+  const buildTargets = [];
+  const primaryBuild = isRootInvocation(invocation)
+    ? invocation?.primaryBuild?.androidBuild
+    : invocation?.properties?.primaryBuild;
+  buildTargets.push(primaryBuild.buildTarget);
+  const extraBuildTargets = isRootInvocation(invocation)
+    ? (invocation.extraBuilds ?? []).map(
+        (build) => build?.androidBuild?.buildTarget ?? undefined,
+      )
+    : (invocation.properties?.extraBuilds ?? []).map(
+        (extraBuild: BuildTarget) => extraBuild?.buildTarget ?? undefined,
+      );
+
+  buildTargets.push(...extraBuildTargets);
+  buildTargets.filter((target): target is string => target !== null);
+
+  const testName =
+    atestCommand === null &&
+    getInvocationTag(invocation.tags, 'scheduler') === 'ATP'
+      ? (invocation.name ?? undefined)
+      : undefined;
+
+  const product =
+    atestCommand !== null &&
+    !isVirtualTarget(primaryBuild.buildTarget ?? undefined)
+      ? getInvocationTag(invocation.tags, 'run_target')
+      : undefined;
+  const params: ForrestQueryParams = {
+    build_type: 'build',
+    run_type: 'test',
+    test_name: testName,
+    build_targets: buildTargets.length > 0 ? buildTargets.join(',') : undefined,
+    build_id: primaryBuild?.buildId ?? undefined,
+    atest_command: atestCommand,
+    product,
+  };
+  const paramBuilder = new URLSearchParams();
+  for (const key of Object.keys(params)) {
+    if (params[key]) {
+      paramBuilder.append(key, params[key]);
+    }
+  }
+
+  return `${ANDROID_BUILD_CORP_HOST}${FORREST_CREATE_URL}?${paramBuilder.toString()}`;
+}
 export function RerunButton() {
   const testVariant = useTestVariant();
   const invocation = useInvocation();
@@ -187,6 +257,38 @@ export function RerunButton() {
     return isVirtualTarget(buildTarget);
   };
 
+  /**
+   * Determine whether to show the ABTD atest command.
+   * The test is restricted to:
+   *   branch: git_main
+   *   targets: cuttlefish, oriole, husky
+   *   test mapping
+   */
+  const showAtestAbtdRerun = () => {
+    const primaryBuild: AndroidBuild = isRootInvocation(invocation)
+      ? invocation?.primaryBuild?.androidBuild
+      : invocation?.properties?.primaryBuild;
+
+    const isValidBranch = primaryBuild?.branch === 'git_main';
+
+    const VALID_TARGETS = ['cf', 'oriole', 'husky'];
+    const target = primaryBuild?.buildTarget ?? '';
+    const isValidTarget = VALID_TARGETS.some((t) => target.includes(t));
+
+    const hasTestMappingSource = testVariant?.results[0].result.tags?.find(
+      (tag) => tag.key === 'test_mapping_source',
+    )?.value;
+    const testName = invocation.properties?.testDefinition?.name ?? '';
+    const hasTestMappingName =
+      testName.includes('test-mapping') || testName.includes('test_mapping');
+
+    return (
+      isValidBranch &&
+      isValidTarget &&
+      (hasTestMappingSource || hasTestMappingName)
+    );
+  };
+
   const copyRerunTest = () => {
     const text = getAtestCommand(testVariant);
     if (text) {
@@ -217,35 +319,47 @@ export function RerunButton() {
     handleCloseMenu();
   };
 
+  /** Generate the rerun command for atest via ABTD. */
+  const getAbtdAtestLink = () => {
+    if (!testVariant) {
+      return '';
+    }
+    const command = getAtestCommand(testVariant, {
+      omitAtest: true,
+      omitExtraArgs: true,
+    });
+    return getForrestLink(invocation, command ?? undefined);
+  };
+
   // TODO(b/445559255): conditionally render 'test case' or 'module' in rerun button labels when module page available.
   return (
     <>
       {isAnTS ? (
-        showAtestRerun ? (
-          <>
-            <Button
-              variant="outlined"
-              size="small"
-              endIcon={<ArrowDropDownIcon sx={{ p: 0, m: 0 }} />}
-              aria-controls={menuOpen ? 'rerun-menu' : undefined}
-              aria-haspopup="true"
-              aria-expanded={menuOpen ? 'true' : undefined}
-              data-testid="rerun-dropdown"
-              onClick={handleClickMenu}
-            >
-              Rerun
-            </Button>
-            <Menu
-              id="basic-menu"
-              anchorEl={anchorEl}
-              open={menuOpen}
-              onClose={handleCloseMenu}
-              slotProps={{
-                list: {
-                  'aria-labelledby': 'basic-button',
-                },
-              }}
-            >
+        <>
+          <Button
+            variant="outlined"
+            size="small"
+            endIcon={<ArrowDropDownIcon sx={{ p: 0, m: 0 }} />}
+            aria-controls={menuOpen ? 'rerun-menu' : undefined}
+            aria-haspopup="true"
+            aria-expanded={menuOpen ? 'true' : undefined}
+            data-testid="rerun-dropdown"
+            onClick={handleClickMenu}
+          >
+            Rerun
+          </Button>
+          <Menu
+            id="basic-menu"
+            anchorEl={anchorEl}
+            open={menuOpen}
+            onClose={handleCloseMenu}
+            slotProps={{
+              list: {
+                'aria-labelledby': 'basic-button',
+              },
+            }}
+          >
+            {showAtestRerun ? (
               <MenuItem onClick={copyRerunTest}>
                 <Typography
                   variant="body2"
@@ -254,58 +368,61 @@ export function RerunButton() {
                   Rerun test case with atest
                 </Typography>
               </MenuItem>
-              {showAtestModuleRerun && (
-                <MenuItem onClick={copyRerunModule}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 'bold', color: 'primary.main' }}
-                  >
-                    Rerun full module with atest
-                  </Typography>
-                </MenuItem>
-              )}
-              {showAtestAcloudRerun() && (
-                <MenuItem onClick={copyAcloudCommand}>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 'bold', color: 'primary.main' }}
-                  >
-                    Rerun test case with atest in acloud
-                  </Typography>
-                </MenuItem>
-              )}
-            </Menu>
-            <Snackbar
-              open={snackbarOpen}
-              autoHideDuration={3000}
-              onClose={() => setSnackbarOpen(false)}
-              message="atest command copied"
-            />
-          </>
-        ) : (
-          <Box
-            sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}
-          >
-            <Button
-              href="http://go/android-test-investigate-docs#common-debug-actions"
-              target="_blank"
-              rel="noreferrer"
-              component={Link}
-              size="small"
-              variant="outlined"
-              sx={{
-                textDecoration: 'none',
-                color: 'text.disabled',
-              }}
-            >
-              Rerun test case locally
-              <HelpOutlineIcon
-                sx={{ m: 0, p: 0 }}
-                style={{ color: 'text.disabled' }}
-              />
-            </Button>
-          </Box>
-        )
+            ) : (
+              <MenuItem
+                href="http://go/android-test-investigate-docs#common-debug-actions"
+                target="_blank"
+                rel="noreferrer"
+                component={Link}
+              >
+                <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+                  Rerun test case locally
+                </Typography>
+                <HelpOutlineIcon sx={{ m: 0, p: 0, color: 'text.disabled' }} />
+              </MenuItem>
+            )}
+            {showAtestAbtdRerun() && (
+              <MenuItem
+                component={Link}
+                href={getAbtdAtestLink()}
+                target="_blank"
+              >
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 'bold', color: 'primary.main' }}
+                >
+                  Rerun test case with atest in ABTD
+                </Typography>
+              </MenuItem>
+            )}
+            {showAtestModuleRerun && (
+              <MenuItem onClick={copyRerunModule}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 'bold', color: 'primary.main' }}
+                >
+                  Rerun full module with atest
+                </Typography>
+              </MenuItem>
+            )}
+            {showAtestAcloudRerun() && (
+              <MenuItem onClick={copyAcloudCommand}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 'bold', color: 'primary.main' }}
+                >
+                  Rerun test case with atest in acloud
+                </Typography>
+              </MenuItem>
+            )}
+          </Menu>
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={3000}
+            onClose={() => setSnackbarOpen(false)}
+            message="atest command copied"
+          />
+        </>
       ) : (
         <Button
           data-testid="rerun-button"
