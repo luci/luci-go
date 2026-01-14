@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
 
@@ -52,6 +52,25 @@ export function FilterBar<T>({
     }
     setValue(newValue);
   };
+
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => {
+      if (e.key === '/') {
+        if (
+          searchBarRef.current &&
+          !searchBarRef.current.contains(document.activeElement)
+        ) {
+          e.preventDefault();
+          searchBarRef.current.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', f);
+    return () => {
+      window.removeEventListener('keydown', f);
+    };
+  }, []);
 
   return (
     <div css={{ display: 'flex', gap: 8, width: '100%', position: 'relative' }}>
