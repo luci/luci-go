@@ -84,3 +84,25 @@ func ConvertMapToAnTSStringPair(pairs map[string]string) []*bqpb.StringPair {
 	}
 	return result
 }
+
+// FindKeyFromTags finds the first occurrence of the key in tags and returns the value.
+// Returns empty string if the key is not found.
+func FindKeyFromTags(key string, tags []*rdbpb.StringPair) string {
+	for _, tag := range tags {
+		if tag.Key == key {
+			return tag.Value
+		}
+	}
+	return ""
+}
+
+// FindKeysFromTags finds all occurrences of the key in tags and returns their values.
+func FindKeysFromTags(key string, tags []*rdbpb.StringPair) []string {
+	results := []string{}
+	for _, tag := range tags {
+		if tag.Key == key {
+			results = append(results, tag.Value)
+		}
+	}
+	return results
+}

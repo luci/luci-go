@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
@@ -54,12 +53,6 @@ func TestExportAntsInvocation(t *testing.T) {
 			UseNewIngestionOrder: true,
 		}
 		input := Inputs{
-			Invocation: &rdbpb.Invocation{
-				Name:         testInvocation,
-				Realm:        testRealm,
-				IsExportRoot: true,
-				FinalizeTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
-			},
 			Verdicts: mockedQueryTestVariantsRsp().TestVariants,
 			Payload:  payload,
 			LastPage: true,
@@ -67,17 +60,126 @@ func TestExportAntsInvocation(t *testing.T) {
 		antsInvocationClient := antsinvocationexporter.NewFakeClient()
 		ingester := AnTSTInvocationExporter{exporter: antsinvocationexporter.NewExporter(antsInvocationClient)}
 		t.Run("baseline", func(t *ftt.Test) {
-			err := ingester.Ingest(ctx, input)
-			assert.NoErr(t, err)
-			expectedRow := &bqpblegacy.AntsInvocationRow{
-				InvocationId: "build-87654321",
-				Timing: &bqpblegacy.Timing{
-					CreationTimestamp: 0,
-					CompleteTimestamp: 1744070400000,
-				},
-				CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
-			}
-			assert.Loosely(t, antsInvocationClient.Insertion, should.Match(expectedRow), truth.LineContext())
+			t.Run("root invocation", func(t *ftt.Test) {
+				input.Invocation = nil
+				input.RootInvocation = &rdbpb.RootInvocation{
+					Name:            "rootInvocations/inv-123",
+					State:           rdbpb.RootInvocation_SUCCEEDED,
+					CreateTime:      timestamppb.New(time.Unix(1000, 0)),
+					FinalizeTime:    timestamppb.New(time.Unix(2000, 0)),
+					SummaryMarkdown: "summary",
+					Creator:         "user:someone@example.com",
+					Tags: []*rdbpb.StringPair{
+						{Key: "key1", Value: "value1"},
+						{Key: "runner", Value: "runner1"},
+						{Key: "trigger", Value: "trigger1"},
+						{Key: "test_label", Value: "label1"},
+						{Key: "test_label", Value: "label2"},
+						{Key: "user", Value: "user1"},
+						{Key: "device_tracing_enable", Value: "true"},
+					},
+					PrimaryBuild: &rdbpb.BuildDescriptor{
+						Definition: &rdbpb.BuildDescriptor_AndroidBuild{
+							AndroidBuild: &rdbpb.AndroidBuildDescriptor{
+								BuildId:     "12345",
+								BuildTarget: "target",
+								Branch:      "branch",
+							},
+						},
+					},
+					ExtraBuilds: []*rdbpb.BuildDescriptor{
+						{
+							Definition: &rdbpb.BuildDescriptor_AndroidBuild{
+								AndroidBuild: &rdbpb.AndroidBuildDescriptor{
+									BuildId:     "67890",
+									BuildTarget: "target2",
+									Branch:      "branch2",
+								},
+							},
+						},
+					},
+					Definition: &rdbpb.RootInvocationDefinition{
+						Name: "test-name",
+						Properties: &rdbpb.RootInvocationDefinition_Properties{
+							Def: map[string]string{"prop1": "val1"},
+						},
+					},
+					ProducerResource: &rdbpb.ProducerResource{
+						System: "tradefed",
+					},
+				}
+
+				err := ingester.Ingest(ctx, input)
+				assert.NoErr(t, err)
+				assert.Loosely(t, antsInvocationClient.Insertion, should.Match(&bqpblegacy.AntsInvocationRow{
+					InvocationId:   "inv-123",
+					SchedulerState: bqpblegacy.SchedulerState_COMPLETED,
+					Timing: &bqpblegacy.Timing{
+						CreationTimestamp: 1000000,
+						CompleteTimestamp: 2000000,
+					},
+					CompletionTime: timestamppb.New(time.Unix(2000, 0)),
+					Properties: []*bqpblegacy.StringPair{
+						{Name: "key1", Value: "value1"},
+						{Name: "runner", Value: "runner1"},
+						{Name: "trigger", Value: "trigger1"},
+						{Name: "test_label", Value: "label1"},
+						{Name: "test_label", Value: "label2"},
+						{Name: "user", Value: "user1"},
+						{Name: "device_tracing_enable", Value: "true"},
+					},
+					Summary:    "summary",
+					Users:      []string{"user1", "user:someone@example.com"},
+					Scheduler:  "tradefed",
+					Runner:     "runner1",
+					Trigger:    "trigger1",
+					TestLabels: []string{"label1", "label2"},
+					BuildId:    "12345",
+					PrimaryBuild: &bqpblegacy.AntsInvocationRow_AndroidBuild{
+						BuildProvider: "androidbuild",
+						BuildId:       "12345",
+						BuildTarget:   "target",
+						Branch:        "branch",
+					},
+					ExtraBuilds: []*bqpblegacy.AntsInvocationRow_AndroidBuild{
+						{
+							BuildProvider: "androidbuild",
+							BuildId:       "67890",
+							BuildTarget:   "target2",
+							Branch:        "branch2",
+						},
+					},
+					Test: &bqpblegacy.Test{
+						Name: "test-name",
+						Properties: []*bqpblegacy.StringPair{
+							{Name: "prop1", Value: "val1"},
+						},
+					},
+					Tags: []string{"device_tracing_enable", "tf_invocation"},
+				}))
+			})
+
+			t.Run("legacy invocation", func(t *ftt.Test) {
+				input.RootInvocation = nil
+				input.Invocation = &rdbpb.Invocation{
+					Name:         testInvocation,
+					Realm:        testRealm,
+					IsExportRoot: true,
+					FinalizeTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				}
+
+				err := ingester.Ingest(ctx, input)
+				assert.NoErr(t, err)
+				expectedRow := &bqpblegacy.AntsInvocationRow{
+					InvocationId: "build-87654321",
+					Timing: &bqpblegacy.Timing{
+						CreationTimestamp: 0,
+						CompleteTimestamp: 1744070400000,
+					},
+					CompletionTime: timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+				}
+				assert.Loosely(t, antsInvocationClient.Insertion, should.Match(expectedRow))
+			})
 		})
 
 		t.Run("not android project", func(t *ftt.Test) {

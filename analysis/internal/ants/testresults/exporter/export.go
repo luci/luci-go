@@ -161,7 +161,7 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 			// Find AnTS debug Info from ResultDB's failure reason.
 			var debugInfo *bqpb.DebugInfo
 			if tr.FailureReason != nil {
-				errorCode, err := strconv.Atoi(findKeyFromTags(PrimaryErrorCodeTagKey, tr.Tags))
+				errorCode, err := strconv.Atoi(utils.FindKeyFromTags(PrimaryErrorCodeTagKey, tr.Tags))
 				if err != nil {
 					// Don't fail the export if we can't parse the error code.
 					errorCode = 0
@@ -170,14 +170,14 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 				if len(tr.FailureReason.Errors) > 0 {
 					trace = tr.FailureReason.Errors[0].Trace
 				}
-				errorType := findKeyFromTags(PrimaryErrorTypeTagKey, tr.Tags)
+				errorType := utils.FindKeyFromTags(PrimaryErrorTypeTagKey, tr.Tags)
 				debugInfo = &bqpb.DebugInfo{
 					ErrorMessage: tr.FailureReason.PrimaryErrorMessage,
 					Trace:        trace,
 					ErrorType:    bqpb.ErrorType(bqpb.ErrorType_value[errorType]),
-					ErrorName:    findKeyFromTags(PrimaryErrorNameTagKey, tr.Tags),
+					ErrorName:    utils.FindKeyFromTags(PrimaryErrorNameTagKey, tr.Tags),
 					ErrorCode:    int64(errorCode),
-					ErrorOrigin:  findKeyFromTags(PrimaryErrorOriginTagKey, tr.Tags),
+					ErrorOrigin:  utils.FindKeyFromTags(PrimaryErrorOriginTagKey, tr.Tags),
 				}
 			}
 
@@ -194,8 +194,8 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 					skippedReason = &bqpb.SkippedReason{
 						ReasonType:    bqpb.ReasonType_REASON_DEMOTION,
 						ReasonMessage: tr.SkippedReason.ReasonMessage,
-						Trigger:       findKeyFromTags(SkipTriggerTagKey, tr.Tags),
-						BugId:         findKeyFromTags(SkipBugTagKey, tr.Tags),
+						Trigger:       utils.FindKeyFromTags(SkipTriggerTagKey, tr.Tags),
+						BugId:         utils.FindKeyFromTags(SkipBugTagKey, tr.Tags),
 					}
 				}
 			}
@@ -294,13 +294,4 @@ func convertToAnTSStatusV2(status rdbpb.TestResult_Status, failureReason *rdbpb.
 	default:
 		return bqpb.AntsTestResultRow_TEST_STATUS_UNSPECIFIED
 	}
-}
-
-func findKeyFromTags(key string, tags []*rdbpb.StringPair) string {
-	for _, tag := range tags {
-		if tag.Key == key {
-			return tag.Value
-		}
-	}
-	return ""
 }

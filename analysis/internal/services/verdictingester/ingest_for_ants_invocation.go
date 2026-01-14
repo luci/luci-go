@@ -41,12 +41,6 @@ func (e *AnTSTInvocationExporter) Ingest(ctx context.Context, input Inputs) (err
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.AnTSTInvocationExporter.Ingest")
 	defer func() { tracing.End(s, err) }()
 
-	if input.Invocation == nil {
-		// Ingestion is for a root invocation.
-		// AnTS invocation export for root invocation is not supported.
-		return nil
-	}
-
 	// TODO (beining): re-work this ordering guarantee.
 	// AnTS F1 requires invocation is only exported once all test results have been exported.
 	// This check doesn't guarantee this due to the design of this task queue.
@@ -59,10 +53,14 @@ func (e *AnTSTInvocationExporter) Ingest(ctx context.Context, input Inputs) (err
 	if input.Payload.Project != "android" {
 		return nil
 	}
-
-	err = e.exporter.Export(ctx, input.Invocation)
-	if err != nil {
-		return errors.Fmt("export invocation: %w", err)
+	if input.Invocation != nil {
+		if err = e.exporter.ExportLegacy(ctx, input.Invocation); err != nil {
+			return errors.Fmt("export invocation: %w", err)
+		}
+		return nil
+	}
+	if err = e.exporter.Export(ctx, input.RootInvocation); err != nil {
+		return errors.Fmt("export root invocation: %w", err)
 	}
 	return nil
 }
