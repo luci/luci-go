@@ -22,7 +22,11 @@ import {
 } from 'material-react-table';
 
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-import { useSettings } from '@/fleet/hooks/use_settings';
+import {
+  useSettings,
+  mapMRTToMUI,
+  mapMUIToMRT,
+} from '@/fleet/hooks/use_settings';
 
 export const useFCDataTable = <TData extends MRT_RowData>(
   tableOptions: MRT_TableOptions<TData>,
@@ -44,15 +48,15 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     onDensityChange: (updater) => {
       const newDensity =
         typeof updater === 'function'
-          ? updater(settings.tableMRT.density)
+          ? updater(mapMUIToMRT(settings.table.density))
           : updater;
       setSettings({
         ...settings,
-        tableMRT: { ...settings.tableMRT, density: newDensity },
+        table: { ...settings.table, density: mapMRTToMUI(newDensity) },
       });
     },
     state: {
-      density: settings.tableMRT.density,
+      density: mapMUIToMRT(settings.table.density),
     },
 
     muiPaginationProps: {

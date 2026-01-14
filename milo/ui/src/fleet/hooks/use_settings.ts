@@ -22,10 +22,29 @@ export interface Settings {
   table: {
     density: GridDensity;
   };
-  tableMRT: {
-    density: MRT_DensityState;
-  };
 }
+
+export const mapMUIToMRT = (density: GridDensity): MRT_DensityState => {
+  switch (density) {
+    case 'compact':
+      return 'compact';
+    case 'standard':
+      return 'comfortable';
+    case 'comfortable':
+      return 'spacious';
+  }
+};
+
+export const mapMRTToMUI = (density: MRT_DensityState): GridDensity => {
+  switch (density) {
+    case 'compact':
+      return 'compact';
+    case 'comfortable':
+      return 'standard';
+    case 'spacious':
+      return 'comfortable';
+  }
+};
 
 export function useSettings(): [Settings, (value: Settings) => void] {
   const [settings, setSettings] = useLocalStorage<Settings>(
@@ -35,9 +54,6 @@ export function useSettings(): [Settings, (value: Settings) => void] {
   const actualSettings = {
     table: {
       density: settings?.table?.density ?? 'compact',
-    },
-    tableMRT: {
-      density: settings?.tableMRT?.density ?? 'compact',
     },
   };
 

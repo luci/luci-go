@@ -36,8 +36,10 @@ export const StyledGrid = ({ sx, ...props }: DataGridProps) => {
     <DataGrid
       density={settings.table.density}
       onDensityChange={(density: GridDensity) => {
-        settings.table.density = density;
-        setSettings(settings);
+        setSettings({
+          ...settings,
+          table: { ...settings.table, density },
+        });
       }}
       columnHeaderHeight={settings.table.density === 'compact' ? 75 : 56}
       sx={{
