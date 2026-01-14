@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -246,20 +245,20 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 
 func populateFromRootInvocation(antsTR *bqpb.AntsTestResultRow, rootInv *rdbpb.RootInvocation) {
 	buildDesc := rootInv.PrimaryBuild.GetAndroidBuild()
+	if buildDesc != nil {
+		antsTR.BuildType = utils.BuildTypeFromBuildID(buildDesc.BuildId)
+		antsTR.BuildId = buildDesc.BuildId
+		antsTR.BuildProvider = "androidbuild"
+		antsTR.Branch = buildDesc.Branch
+		antsTR.BuildTarget = buildDesc.BuildTarget
+	}
 	definition := rootInv.Definition
-
-	tr := &bqpb.AntsTestResultRow{
-		BuildType:     utils.BuildTypeFromBuildID(buildDesc.BuildId),
-		BuildId:       buildDesc.BuildId,
-		BuildProvider: "androidbuild",
-		Branch:        buildDesc.Branch,
-		BuildTarget:   buildDesc.BuildTarget,
-		Test: &bqpb.Test{
+	if definition != nil {
+		antsTR.Test = &bqpb.Test{
 			Name:       definition.Name,
 			Properties: utils.ConvertMapToAnTSStringPair(definition.Properties.Def),
-		},
+		}
 	}
-	proto.Merge(antsTR, tr)
 }
 
 func convertToAnTSStatusV2(status rdbpb.TestResult_Status, failureReason *rdbpb.FailureReason, skippedReason *rdbpb.SkippedReason) bqpb.AntsTestResultRow_TestStatus {
