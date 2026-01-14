@@ -32,7 +32,7 @@ import { getSemanticStatusFromVerdict } from '@/test_investigation/utils/drawer_
 
 interface ExpandableListItemProps {
   isExpanded: boolean;
-  label: string;
+  label: React.ReactNode;
   status?: TestVerdict_Status; // Undefined for non-leaf nodes.
   children?: React.ReactNode;
   secondaryText?: string;
@@ -41,6 +41,7 @@ interface ExpandableListItemProps {
   onClick?: (event: React.MouseEvent) => void;
   level?: number;
   itemRef?: RefObject<HTMLDivElement | null>;
+  title?: string;
 }
 
 export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
@@ -54,6 +55,7 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
   onClick,
   level = 0,
   itemRef,
+  title,
 }) => {
   const paddingLeft = level * 10 + 1;
 
@@ -145,7 +147,7 @@ export const ExpandableListItem: React.FC<ExpandableListItemProps> = ({
               ></Chip>
             )
           }
-          title={label}
+          title={title || (typeof label === 'string' ? label : '')}
           sx={{ m: '2px 0' }}
           disableTypography
         />

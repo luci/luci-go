@@ -30,7 +30,10 @@ import {
   VirtualTreeTable,
 } from '@/generic_libs/components/table';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { NodeLabelPrefix } from '@/test_investigation/components/node_label_prefix';
+import { VariantDisplay } from '@/test_investigation/components/test_info/variant_display';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
+import { StructuredTreeLevel } from '@/test_investigation/utils/drawer_tree_utils';
 
 import { FailureSummary } from './failure_summary';
 
@@ -135,13 +138,25 @@ export function TestVariantsTable({
                 testTextToCopy={testTextToCopy}
                 rowLabel={rowData.label}
                 isLegacyInvocation={isLegacyInvocation}
+                node={rowData}
               />
             );
           } else {
             return (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                {rowData.label}{' '}
-                <Chip color="error" label={`${rowData.failedTests} failed`} />
+                <NodeLabelPrefix node={rowData} />
+                {rowData.level === StructuredTreeLevel.Variant &&
+                rowData.moduleVariant ? (
+                  <VariantDisplay variantDef={rowData.moduleVariant} />
+                ) : (
+                  rowData.label
+                )}{' '}
+                <Chip
+                  color="error"
+                  label={`${rowData.failedTests} failed`}
+                  size="small"
+                  sx={{ ml: 1 }}
+                />
                 {isTestIdStructured && (
                   <CopyToClipboard
                     textToCopy={rowData.label}

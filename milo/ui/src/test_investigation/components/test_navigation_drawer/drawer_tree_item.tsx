@@ -18,7 +18,10 @@ import { useMemo } from 'react';
 import {
   TestVerdict_Status,
   testVerdict_StatusToJSON,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb.js';
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { NodeLabelPrefix } from '@/test_investigation/components/node_label_prefix';
+import { VariantDisplay } from '@/test_investigation/components/test_info/variant_display';
+import { StructuredTreeLevel } from '@/test_investigation/utils/drawer_tree_utils';
 
 import { useTestDrawer } from './context';
 import { ExpandableListItem } from './expandable_list_item';
@@ -100,7 +103,16 @@ export function DrawerTreeItem({ node }: DrawerTreeItemProps) {
   return (
     <ExpandableListItem
       isExpanded={isExpanded}
-      label={node.label}
+      label={
+        <>
+          <NodeLabelPrefix node={node} />
+          {node.level === StructuredTreeLevel.Variant && node.moduleVariant ? (
+            <VariantDisplay variantDef={node.moduleVariant} />
+          ) : (
+            node.label
+          )}
+        </>
+      }
       status={getStatus()}
       secondaryText={getSecondaryText()}
       totalTests={node.totalTests}

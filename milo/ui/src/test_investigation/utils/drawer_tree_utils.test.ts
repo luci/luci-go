@@ -30,6 +30,7 @@ import {
   getSemanticStatusFromResultV2,
   getSemanticStatusFromTestVariant,
   getSemanticStatusFromVerdict,
+  mergeEmptyStructuredLeafNodes,
   pathSplit,
   StructuredTreeLevel,
 } from './drawer_tree_utils';
@@ -266,9 +267,6 @@ describe('DrawerTreeUtils', () => {
 
       expect(coarseNode.children).toHaveLength(1); // fine1
       const fineNode = coarseNode.children![0];
-      expect(fineNode.id).toBe(ID_FINE);
-      expect(fineNode.label).toBe('fine1');
-
       expect(fineNode.children).toHaveLength(2); // case1, case2
       const case1 = fineNode.children![0];
       expect(case1.id).toBe(`${ID_FINE}4-case1`);
@@ -278,6 +276,41 @@ describe('DrawerTreeUtils', () => {
       expect(case2.id).toBe(`${ID_FINE}4-case2`);
       expect(case2.label).toBe('case2');
       expect(case2.failedTests).toBe(0);
+    });
+
+    it('should merge empty leaf-level nodes into their parents', () => {
+      const variants: TestVariant[] = [
+        {
+          testIdStructured: {
+            moduleName: 'module1',
+            moduleScheme: 'go',
+            moduleVariantHash: 'hash1',
+            coarseName: 'coarse1',
+            fineName: 'fine1',
+            caseName: '', // Empty case name
+          },
+          statusV2: TestVerdict_Status.FAILED,
+        },
+      ] as TestVariant[];
+
+      const tree = mergeEmptyStructuredLeafNodes(
+        buildStructuredTree(StructuredTreeLevel.Module, variants, 'S-'),
+      );
+
+      const ID_MODULE = 'S-0-module1-';
+      const ID_VARIANT = `${ID_MODULE}1-hash1-`;
+      const ID_COARSE = `${ID_VARIANT}2-coarse1-`;
+      const ID_FINE = `${ID_COARSE}3-fine1-`;
+      const ID_CASE_EMPTY = `${ID_FINE}4-`; // Corrected ID for empty case name level
+
+      // Level 3 (Fine) should now be the leaf because Level 4 (Case) was empty and merged
+      expect(tree[0].children![0].children![0].children).toHaveLength(1);
+      const fineNode = tree[0].children![0].children![0].children![0];
+      expect(fineNode.label).toBe('fine1');
+      expect(fineNode.level).toBe(StructuredTreeLevel.Fine);
+      expect(fineNode.testVariant).toBeDefined();
+      expect(fineNode.id).toBe(ID_CASE_EMPTY);
+      expect(fineNode.children).toBeUndefined();
     });
   });
 

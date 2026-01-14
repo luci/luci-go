@@ -192,10 +192,12 @@ export function buildHierarchyTree(
     (tv) =>
       !!tv.testIdStructured && tv.testIdStructured.moduleScheme !== 'legacy',
   );
-  result.tree = buildStructuredTree(
-    StructuredTreeLevel.Module,
-    structuredVariants,
-    'S-', // Initial unique prefix for structured tree IDs
+  result.tree = mergeEmptyStructuredLeafNodes(
+    buildStructuredTree(
+      StructuredTreeLevel.Module,
+      structuredVariants,
+      'S-', // Initial unique prefix for structured tree IDs
+    ),
   );
   // 2. For the remaining test variants, build up a hierarchy based on longest common prefixes and common separator characters.
   const flatVariants = testVariants.filter(
@@ -317,6 +319,11 @@ export function buildStructuredTree(
               0,
             ),
             isStructured: true,
+            moduleScheme: groupVariants[0].testIdStructured?.moduleScheme,
+            moduleVariant:
+              level === StructuredTreeLevel.Variant
+                ? groupVariants[0].testIdStructured?.moduleVariant?.def
+                : children[0].moduleVariant,
           });
         }
       }
@@ -341,6 +348,8 @@ export function buildStructuredTree(
         unknownTests: variants[0].statusV2 === undefined ? 1 : 0,
         testVariant: variants[0],
         isStructured: true,
+        moduleScheme: variants[0].testIdStructured?.moduleScheme,
+        moduleVariant: variants[0].testIdStructured?.moduleVariant?.def,
       });
     });
   }
@@ -513,6 +522,37 @@ export function compressSingleChildNodes(
   const stillNodes = compressed.filter((n) => n.children);
   const leaves = compressed.filter((n) => !n.children);
   return [...stillNodes, ...leaves];
+}
+
+/**
+ * Specifically for structured trees: if a node has a single child that is a leaf
+ * with an empty label, merge that leaf into the parent so the parent carries
+ * the test variant data and correct label.
+ */
+export function mergeEmptyStructuredLeafNodes(
+  nodes: TestNavigationTreeNode[],
+): TestNavigationTreeNode[] {
+  return nodes.map((node) => {
+    if (node.children) {
+      const mergedChildren = mergeEmptyStructuredLeafNodes(node.children);
+      if (
+        mergedChildren.length === 1 &&
+        mergedChildren[0].label === '' &&
+        mergedChildren[0].testVariant
+      ) {
+        const leaf = mergedChildren[0];
+        return {
+          ...leaf,
+          // Keep the leaf's ID but use the parent's label and level
+          id: leaf.id,
+          label: node.label,
+          level: node.level,
+        };
+      }
+      return { ...node, children: mergedChildren };
+    }
+    return node;
+  });
 }
 
 export function buildFailureReasonTree(

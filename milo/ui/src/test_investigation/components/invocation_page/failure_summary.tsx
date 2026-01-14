@@ -35,6 +35,10 @@ import {
   TestResult_Status,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { NodeLabelPrefix } from '@/test_investigation/components/node_label_prefix';
+import { VariantDisplay } from '@/test_investigation/components/test_info/variant_display';
+import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
+import { StructuredTreeLevel } from '@/test_investigation/utils/drawer_tree_utils';
 import { getTestVariantURL } from '@/test_investigation/utils/test_info_utils';
 
 export interface FailureSummaryProps {
@@ -42,6 +46,7 @@ export interface FailureSummaryProps {
   testTextToCopy: string;
   rowLabel: string;
   isLegacyInvocation: boolean;
+  node?: TestNavigationTreeNode;
 }
 
 const statusPriorityMap = {
@@ -58,6 +63,7 @@ export function FailureSummary({
   testTextToCopy,
   rowLabel,
   isLegacyInvocation,
+  node,
 }: FailureSummaryProps) {
   const { invocationId } = useParams<{ invocationId: string }>();
   if (!invocationId) {
@@ -143,12 +149,16 @@ export function FailureSummary({
                     color: styles.textColor,
                   }}
                   onClick={(e) => {
-                    {
-                      e.stopPropagation();
-                    }
+                    e.stopPropagation();
                   }}
                 >
-                  {rowLabel}
+                  {node && <NodeLabelPrefix node={node} />}
+                  {node?.level === StructuredTreeLevel.Variant &&
+                  node.moduleVariant ? (
+                    <VariantDisplay variantDef={node.moduleVariant} />
+                  ) : (
+                    rowLabel
+                  )}
                 </Link>
                 <CopyToClipboard
                   textToCopy={testTextToCopy}
@@ -222,7 +232,13 @@ export function FailureSummary({
               }
             }}
           >
-            {rowLabel}
+            {node && <NodeLabelPrefix node={node} />}
+            {node?.level === StructuredTreeLevel.Variant &&
+            node.moduleVariant ? (
+              <VariantDisplay variantDef={node.moduleVariant} />
+            ) : (
+              rowLabel
+            )}
           </Link>
           <CopyToClipboard
             textToCopy={testTextToCopy}

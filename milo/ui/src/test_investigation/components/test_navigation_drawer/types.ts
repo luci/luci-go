@@ -43,4 +43,6 @@ export interface TestNavigationTreeNode {
   unknownTests: number;
   testVariant?: TestVariant; // present on leaf nodes only.
   isStructured: boolean;
+  moduleScheme?: string;
+  moduleVariant?: { readonly [key: string]: string };
 }
