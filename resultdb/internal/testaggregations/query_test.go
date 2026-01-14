@@ -121,7 +121,7 @@ func TestQuery(t *testing.T) {
 			expected := ExpectedModuleAggregationsIDOrder()
 			t.Run("Baseline", func(t *ftt.Test) {
 				t.Run("Without pagination", func(t *ftt.Test) {
-					query.PageSize = 7 // More than large enough for all modules.
+					query.PageSize = len(expected) + 1 // Enough for for all modules, plus one.
 					aggs, nextToken, err := query.Fetch(span.Single(ctx), "")
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, nextToken, should.Equal(""))
@@ -137,7 +137,7 @@ func TestQuery(t *testing.T) {
 				query.Order = Ordering{ByUIPriority: true}
 				expected := ExpectedModuleAggregationsUIOrder()
 				t.Run("Without pagination", func(t *ftt.Test) {
-					query.PageSize = 7 // Enough for all modules, plus one.
+					query.PageSize = len(expected) + 1 // Enough for all modules, plus one.
 					query.Level = pb.AggregationLevel_MODULE
 					aggs, nextToken, err := query.Fetch(span.Single(ctx), "")
 					assert.Loosely(t, err, should.BeNil)
@@ -444,13 +444,17 @@ func TestQuery(t *testing.T) {
 				query.Level = pb.AggregationLevel_MODULE
 				expected := ExpectedModuleAggregationsIDOrder()
 
-				t.Run("ERRORED", func(t *ftt.Test) {
-					query.Filter = "module_status = ERRORED"
+				t.Run("FAILED", func(t *ftt.Test) {
+					query.Filter = "module_status = FAILED"
 					assert.Loosely(t, fetchAll(query), should.Match(expected[2:3]))
 				})
 				t.Run("RUNNING", func(t *ftt.Test) {
 					query.Filter = "module_status = RUNNING"
 					assert.Loosely(t, fetchAll(query), should.Match(expected[1:2]))
+				})
+				t.Run("FLAKY", func(t *ftt.Test) {
+					query.Filter = "module_status = FLAKY"
+					assert.Loosely(t, fetchAll(query), should.Match(expected[6:7]))
 				})
 			})
 			t.Run("All fields supported at all levels", func(t *ftt.Test) {
@@ -458,7 +462,7 @@ func TestQuery(t *testing.T) {
 				// as this is what is on the response row.
 				query.Filter = "verdict_counts.passed > 0 OR verdict_counts.flaky > 0 OR verdict_counts.failed > 0" +
 					" OR verdict_counts.skipped > 0 OR verdict_counts.execution_errored > 0 OR verdict_counts.precluded > 0" +
-					" OR verdict_counts.exonerated > 0 OR module_status = ERRORED"
+					" OR verdict_counts.exonerated > 0 OR module_status = FAILED"
 
 				t.Run("At fine-level", func(t *ftt.Test) {
 					query.Level = pb.AggregationLevel_FINE

@@ -213,6 +213,7 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 				Running:   int32(moduleStatusCounts.Running),
 				Pending:   int32(moduleStatusCounts.Pending),
 				Cancelled: int32(moduleStatusCounts.Cancelled),
+				Flaky:     int32(moduleStatusCounts.Flaky),
 				Succeeded: int32(moduleStatusCounts.Succeeded),
 				Skipped:   int32(moduleStatusCounts.Skipped),
 			}
@@ -361,9 +362,10 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 			Unspecified: int64(pb.TestAggregation_MODULE_STATUS_UNSPECIFIED),
 			Pending:     int64(pb.TestAggregation_PENDING),
 			Running:     int64(pb.TestAggregation_RUNNING),
+			Flaky:       int64(pb.TestAggregation_FLAKY),
 			Succeeded:   int64(pb.TestAggregation_SUCCEEDED),
 			Skipped:     int64(pb.TestAggregation_SKIPPED),
-			Errored:     int64(pb.TestAggregation_ERRORED),
+			Failed:      int64(pb.TestAggregation_FAILED),
 			Cancelled:   int64(pb.TestAggregation_CANCELLED),
 		},
 	}
@@ -541,19 +543,21 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				ANY_VALUE(IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL)) AS ModuleVariantMasked,
 			{{end}}
 				ModuleShardKey,
-				-- Aggregate from root work units to shards.
-				-- SUCCEEDED > RUNNING > PENDING > SKIPPED > FAILED > CANCELLED.
+				-- Aggregate from top-level work units to shards.
+				-- FLAKY > SUCCEEDED > RUNNING > PENDING > SKIPPED > FAILED > CANCELLED.
 				(CASE
+					WHEN COUNTIF(State = {{.WorkUnitStatuses.Succeeded}}) > 0
+						AND COUNTIF(State = {{.WorkUnitStatuses.Failed}}) > 0 THEN {{.ModuleStatuses.Flaky}}
 					WHEN COUNTIF(State = {{.WorkUnitStatuses.Succeeded}}) > 0 THEN {{.ModuleStatuses.Succeeded}}
 					WHEN COUNTIF(State = {{.WorkUnitStatuses.Running}}) > 0 THEN {{.ModuleStatuses.Running}}
 					WHEN COUNTIF(State = {{.WorkUnitStatuses.Pending}}) > 0 THEN {{.ModuleStatuses.Pending}}
 					WHEN COUNTIF(State = {{.WorkUnitStatuses.Skipped}}) > 0 THEN {{.ModuleStatuses.Skipped}}
-					WHEN COUNTIF(State = {{.WorkUnitStatuses.Failed}}) > 0 THEN {{.ModuleStatuses.Errored}}
+					WHEN COUNTIF(State = {{.WorkUnitStatuses.Failed}}) > 0 THEN {{.ModuleStatuses.Failed}}
 					ELSE {{.ModuleStatuses.Cancelled}}
 					END) AS ShardStatus
 			FROM WorkUnits
 			WHERE RootInvocationShardId IN UNNEST(@shards)
-				AND ModuleInheritanceStatus = 2 -- Root work unit.
+				AND ModuleInheritanceStatus = 2 -- Top-level module work unit.
 				AND {{.WherePrefixClause}}
 			GROUP BY ModuleName, ModuleScheme, ModuleVariantHash, ModuleShardKey
 {{end}}
@@ -565,18 +569,19 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			ModuleVariantHash,
 			ANY_VALUE(ModuleVariantMasked) AS ModuleVariantMasked,
 			-- Aggregate from shards to modules.
-			-- FAILED > RUNNING > PENDING > CANCELLED > SUCCEEDED > SKIPPED.
+			-- FAILED > RUNNING > PENDING > CANCELLED > FLAKY > SUCCEEDED > SKIPPED.
 			(CASE
-				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Errored}}) > 0 THEN {{.ModuleStatuses.Errored}}
+				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Failed}}) > 0 THEN {{.ModuleStatuses.Failed}}
 				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Running}}) > 0 THEN {{.ModuleStatuses.Running}}
 				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Pending}}) > 0 THEN {{.ModuleStatuses.Pending}}
 				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Cancelled}}) > 0 THEN {{.ModuleStatuses.Cancelled}}
+				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Flaky}}) > 0 THEN {{.ModuleStatuses.Flaky}}
 				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Succeeded}}) > 0 THEN {{.ModuleStatuses.Succeeded}}
 				ELSE {{.ModuleStatuses.Skipped}}
 				END) AS ModuleStatus,
 			(CASE
 				-- Module failed: priority 70.
-				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Errored}}) > 0 THEN 70
+				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Failed}}) > 0 THEN 70
 				-- Module running: priority 0
 				WHEN COUNTIF(ShardStatus = {{.ModuleStatuses.Running}}) > 0 THEN 0
 				-- Module pending: priority 0
@@ -629,10 +634,11 @@ var queryTmpl = template.Must(template.New("").Parse(`
 {{define "ModuleAggregations"}}
 	-- Module aggregations.
 	SELECT
-		COUNTIF(ModuleStatus = {{.ModuleStatuses.Errored}}) AS Failed,
+		COUNTIF(ModuleStatus = {{.ModuleStatuses.Failed}}) AS Failed,
 		COUNTIF(ModuleStatus = {{.ModuleStatuses.Running}}) AS Running,
 		COUNTIF(ModuleStatus = {{.ModuleStatuses.Pending}}) AS Pending,
 		COUNTIF(ModuleStatus = {{.ModuleStatuses.Cancelled}}) AS Cancelled,
+		COUNTIF(ModuleStatus = {{.ModuleStatuses.Flaky}}) AS Flaky,
 		COUNTIF(ModuleStatus = {{.ModuleStatuses.Succeeded}}) AS Succeeded,
 		COUNTIF(ModuleStatus = {{.ModuleStatuses.Skipped}}) AS Skipped
 	FROM ({{template "ModuleSummaries" .}}
@@ -695,6 +701,7 @@ SELECT
 	COALESCE(MA.Running, 0) AS ModulesRunning,
 	COALESCE(MA.Pending, 0) AS ModulesPending,
 	COALESCE(MA.Cancelled, 0) AS ModulesCancelled,
+	COALESCE(MA.Flaky, 0) AS ModulesFlaky,
 	COALESCE(MA.Succeeded, 0) AS ModulesSucceeded,
 	COALESCE(MA.Skipped, 0) AS ModulesSkipped,
 	COALESCE(TA.TestsPassed, 0) AS TestsPassed,
@@ -754,6 +761,7 @@ func columnsForVerdictCounts(result *verdictCounts) []interface{} {
 // as returned by the Spanner query.
 type moduleStatusCounts struct {
 	Failed    int64
+	Flaky 		int64
 	Running   int64
 	Pending   int64
 	Cancelled int64
@@ -769,6 +777,7 @@ func columnsForModuleCounts(result *moduleStatusCounts) []interface{} {
 		&result.Running,
 		&result.Pending,
 		&result.Cancelled,
+		&result.Flaky,
 		&result.Succeeded,
 		&result.Skipped,
 	}
@@ -837,9 +846,10 @@ type moduleStatusDefinitions struct {
 	Unspecified int64
 	Pending     int64
 	Running     int64
+	Flaky       int64
 	Succeeded   int64
 	Skipped     int64
-	Errored     int64
+	Failed      int64
 	Cancelled   int64
 }
 

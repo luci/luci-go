@@ -38,13 +38,12 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	// Prepare work units.
 	workUnits := []*workunits.WorkUnitRow{
 		// M1: Should be marked succeeded since at least one attempt in the only shard succeeded.
-		// This is despite an earlier failure, skip, cancellation, and a pending and running attempt.
-		workunits.NewBuilder(rootInvID, "wu-m1-a1").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_FAILED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a2").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_SUCCEEDED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a3").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_SKIPPED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a4").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_CANCELLED).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a5").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_PENDING).Build(),
-		workunits.NewBuilder(rootInvID, "wu-m1-a6").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_RUNNING).Build(),
+		// This is despite an earlier skip, cancellation, and a pending and running attempt.
+		workunits.NewBuilder(rootInvID, "wu-m1-a1").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_SUCCEEDED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a2").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_SKIPPED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a3").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_CANCELLED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a4").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_PENDING).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m1-a5").WithModuleID(moduleID("m1", "junit")).WithState(pb.WorkUnit_RUNNING).Build(),
 		// M2: Should be marked running since a retry is in progress.
 		workunits.NewBuilder(rootInvID, "wu-m2-a1").WithModuleID(moduleID("m2", "noconfig")).WithState(pb.WorkUnit_FAILED).Build(),
 		workunits.NewBuilder(rootInvID, "wu-m2-a2").WithModuleID(moduleID("m2", "noconfig")).WithState(pb.WorkUnit_RUNNING).Build(),
@@ -65,6 +64,9 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 		// M6: Should be marked cancelled, despite another shard succeeding.
 		workunits.NewBuilder(rootInvID, "wu-m6-s1").WithModuleID(moduleID("m6", "junit")).WithModuleShardKey("s1").WithState(pb.WorkUnit_CANCELLED).Build(),
 		workunits.NewBuilder(rootInvID, "wu-m6-s2").WithModuleID(moduleID("m6", "junit")).WithModuleShardKey("s2").WithState(pb.WorkUnit_SUCCEEDED).Build(),
+		// M7: Should be marked flaky since there was a success and failure.
+		workunits.NewBuilder(rootInvID, "wu-m7-a1").WithModuleID(moduleID("m7", "junit")).WithState(pb.WorkUnit_FAILED).Build(),
+		workunits.NewBuilder(rootInvID, "wu-m7-a2").WithModuleID(moduleID("m7", "junit")).WithState(pb.WorkUnit_SUCCEEDED).Build(),
 	}
 
 	// Prepare test results.
@@ -142,6 +144,7 @@ func ExpectedRootInvocationAggregation() []*pb.TestAggregation {
 		},
 		ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{
 			Failed:    1,
+			Flaky:     1,
 			Running:   1,
 			Pending:   1,
 			Cancelled: 1,
@@ -210,7 +213,7 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				Precluded:     1,
 				PrecludedBase: 1,
 			},
-			ModuleStatus: pb.TestAggregation_ERRORED,
+			ModuleStatus: pb.TestAggregation_FAILED,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -253,6 +256,20 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 			NextFinerLevel: pb.AggregationLevel_COARSE,
 			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
 			ModuleStatus:   pb.TestAggregation_CANCELLED,
+		},
+		{
+			Id: &pb.TestIdentifierPrefix{
+				Level: pb.AggregationLevel_MODULE,
+				Id: &pb.TestIdentifier{
+					ModuleName:        "m7",
+					ModuleScheme:      "junit",
+					ModuleVariant:     pbutil.Variant("key", "value"),
+					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
+				},
+			},
+			NextFinerLevel: pb.AggregationLevel_COARSE,
+			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
+			ModuleStatus:   pb.TestAggregation_FLAKY,
 		},
 	}
 }

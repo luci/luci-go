@@ -95,70 +95,64 @@ message TestAggregation {
   // The counts of test verdict statuses rolling up to this aggregation.
   VerdictCounts verdict_counts = 3;
 
-  // Module status. This is based on the work unit status and reflects
-  // the success running and uploading test results to ResultDB, not the
-  // success of the test cases themselves.
+  // Module status. This is based on the status of the top-level* work units
+  // linked the the module and reflects the success running and uploading
+  // test results to ResultDB, not the success of the test cases themselves.
   //
-  // The module status is aggregated from the status of top-level work units
-  // associated with that module as follows:
-  // - When combining top-level work units within a module-shard, where
-  //   the shard can be retried multiple times and only one attempt needs
-  //   to succeed, the greatest status in the following order wins:
-  //   SUCCEEDED > RUNNING > PENDING > SKIPPED > FAILED > CANCELLED.
-  // - When combining module-shards into the overall module status,
-  //   where we need all shards must succeed for the whole to succeed, the
-  //   greatest status in the following order wins:
-  //   FAILED > RUNNING > PENDING > CANCELLED > SUCCEEDED > SKIPPED.
+  // For example, the module status SUCCEEDED with all test results FAILED
+  // is a valid and common scenario.
   //
-  // The "RUNNING" and "PENDING" statuses were placed one behind the greatest
-  // status in each order, to propagate the known uncertainties about the final
-  // status of the module and preference alerting users about problems that
-  // look final over those that are known to have retries pending. Of course,
-  // until the root invocation is finalized, all module statuses are subject to
-  // revision as more shards/retries may still be created.
+  // *A top-level work unit is the first work unit, in any chain from the
+  // root work unit down to a leaf work unit, that specifies a module_id.
   //
-  // In aggregated form, the FAILED work unit status is renamed "ERRORED" to
-  // avoid confusion with the FAILED verdict status and connect it to the
-  // "EXECUTION_ERRORED" verdict status, which is closer in meaning.
-  //
-  // In root invocations that are finalized, the status "RUNNING" and "PENDING"
-  // will never occur as all work units will be in final states.
+  // In root invocations that are finalized, it is guaranteed that the
+  // status RUNNING and PENDING will never occur as all work units will
+  // be in final states.
   enum ModuleStatus {
     MODULE_STATUS_UNSPECIFIED = 0;
     // The module succeeded.
     //
-    // When seen on a finalized root invocation, means that for every
-    // module-shard, there was a top-level work unit with a status of
-    // SUCCEEDED or SKIPPED
-    // ("no failed or cancelled module-shards").
+    // This means all tests were run and had their results uploaded. It does
+    // NOT mean that all tests passed.
     //
-    // And moreover, there was at least one module-shard with a top-level
-    // work unit with a status of SUCCEEDED
-    // ("at least one succeeded module-shard").
+    // Technical definition (in finalized invocations):
+    // At least one module-shard has a succeeded top-level work unit and
+    // all other module-shards have at least one skipped or succeeded top-level
+    // work unit. Moreover, no module-shard will have a failed top-level
+    // work unit.
     SUCCEEDED = 1;
+    // The module succeeded, but only after retries.
+    //
+    // This means all tests were run and had their results uploaded (eventually).
+    // It does NOT mean that all tests passed.
+    //
+    // Technical definition (in finalized invocations):
+    // At least one module-shard has a succeeded top-level work unit and
+    // all other module-shards have at least one skipped or succeeded top-level
+    // work unit. Moreover, at least one shard will have a failed top-level
+    // work unit.
+    FLAKY = 7;
     // The module failed to run and/or upload all test cases.
     //
-    // When seen on a finalized root invocation, means that there
-    // was at least one module-shard that:
-    // - consisted only of FAILED or CANCELLED top-level work units, and
-    // - one of these was a FAILED top-level work unit.
-    ERRORED = 2;
+    // This does not say anything about the test results which have
+    // been uploaded (if any).
+    //
+    // Technical definition (in finalized invocations):
+    // At least one module-shard has a failed top-level work unit,
+    // and moreover does not have a succeeded or skipped top-level work unit.
+    FAILED = 2;
     // The module was skipped.
     //
-    // When seen on a finalized root invocation, means that for every
-    // module-shard, there was a top-level work unit with a status of SKIPPED.
-    //
-    // And moreover, there was no module-shard with a top-level work unit that
-    // had a status of SUCCEEDED ("no succeeded module-shards").
+    // Technical definition (in finalized invocations):
+    // For every module-shard, there was a top-level work unit with a status of SKIPPED.
+    // Moreover, there was no module-shard with a top-level work unit that
+    // had a status of SUCCEEDED.
     SKIPPED = 3;
     // The module was cancelled.
     //
-    // When seen on a finalized root invocation, means that there was at
-    // least one module-shard that consisted only of CANCELLED top-level work units.
-    //
-    // And moreover, there was no module-shard that had a FAILED
-    // top-level work unit, that did not also have a SKIPPED or SUCCEEDED
-    // top-level work unit.
+    // Technical definition (in finalized invocations):
+    // There was at least one module-shard that consisted only of CANCELLED top-level
+    // work units. Moreover, the definition for a FAILED module was not met.
     CANCELLED = 4;
     // The module is running.
     RUNNING = 5;
@@ -180,6 +174,8 @@ message TestAggregation {
   message ModuleStatusCounts {
     // The number of modules that succeeded.
     int32 succeeded = 1;
+    // The number of modules that were flaky.
+    int32 flaky = 7;
     // The number of modules that failed.
     int32 failed = 2;
     // The number of modules that skipped.

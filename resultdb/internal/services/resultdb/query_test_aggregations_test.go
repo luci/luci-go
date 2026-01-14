@@ -335,7 +335,7 @@ func TestQueryTestAggregations(t *testing.T) {
 				// The filter for module_status does not contribute to the results in this example,
 				// but we test it does not blow up for this aggregation level
 				// (module_status is UNSPECIFIED for this aggregation level).
-				req.Predicate.Filter = "verdict_counts.failed > 0 OR module_status = ERRORED"
+				req.Predicate.Filter = "verdict_counts.failed > 0 OR module_status = FAILED"
 				expected := testaggregations.ExpectedFineAggregationsIDOrder()
 
 				res, err := srv.QueryTestAggregations(ctx, req)

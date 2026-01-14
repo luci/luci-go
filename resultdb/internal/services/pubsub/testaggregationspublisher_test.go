@@ -302,6 +302,6 @@ func TestHandleTestAggregationsPublisher(t *testing.T) {
 			payload := nt.Payload.(*taskspb.PublishTestAggregations)
 			allAggregations = append(allAggregations, payload.Message.TestAggregations...)
 		}
-		assert.Loosely(t, len(allAggregations), should.Equal(17))
+		assert.Loosely(t, len(allAggregations), should.Equal(18))
 	})
 }
