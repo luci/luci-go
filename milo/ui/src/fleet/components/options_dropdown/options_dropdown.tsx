@@ -166,6 +166,13 @@ export function OptionsDropdown({
             if (enableSearchInput) {
               keyboardListNavigationHandler(e);
               switch (e.key) {
+                case '/':
+                  if (document.activeElement === searchInput.current) {
+                    return;
+                  }
+                  e.preventDefault();
+                  searchInput?.current?.focus();
+                  break;
                 case 'Delete':
                 case 'Cancel':
                 case 'Backspace':
