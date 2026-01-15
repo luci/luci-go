@@ -201,3 +201,54 @@ func (i *PageIterator[R]) decodeNext() (R, error) {
 	}
 	return i.decoder(spanRow)
 }
+
+// PeekingIterator is a wrapper around an iterator that allows peeking at the next item.
+type PeekingIterator[R any] struct {
+	iter SourceIterator[R]
+
+	// peeked stores the next element if hasPeeked is true.
+	peeked R
+	// peekedErr stores the error from fetching the next element if hasPeeked is true.
+	peekedErr error
+	// hasPeeked indicates if we have a buffered element/error.
+	hasPeeked bool
+}
+
+// SourceIterator is the interface required by PeekingIterator.
+type SourceIterator[R any] interface {
+	// Next consumes the next item from the iterator.
+	// If there are no more results, iterator.Done is returned.
+	Next() (R, error)
+	// Stop terminates the iteration. It should be called after you finish using the iterator.
+	Stop()
+}
+
+// NewPeekingIterator creates a new PeekingIterator.
+func NewPeekingIterator[R any](iter SourceIterator[R]) *PeekingIterator[R] {
+	return &PeekingIterator[R]{
+		iter: iter,
+	}
+}
+
+// Next returns the next element.
+func (i *PeekingIterator[R]) Next() (R, error) {
+	if i.hasPeeked {
+		i.hasPeeked = false
+		return i.peeked, i.peekedErr
+	}
+	return i.iter.Next()
+}
+
+// Peek returns the next element without advancing the iterator.
+func (i *PeekingIterator[R]) Peek() (R, error) {
+	if !i.hasPeeked {
+		i.peeked, i.peekedErr = i.iter.Next()
+		i.hasPeeked = true
+	}
+	return i.peeked, i.peekedErr
+}
+
+// Stop terminates the iteration. It should be called after you finish using the iterator.
+func (i *PeekingIterator[R]) Stop() {
+	i.iter.Stop()
+}
