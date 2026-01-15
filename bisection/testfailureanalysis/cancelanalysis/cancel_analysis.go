@@ -80,12 +80,7 @@ func RegisterTaskClass() {
 
 // CancelAnalysis cancels all pending and running reruns for a test failure analysis.
 func CancelAnalysis(c context.Context, analysisID int64) error {
-	c, err := loggingutil.UpdateLoggingWithAnalysisID(c, analysisID)
-	if err != nil {
-		// not critical, just log
-		err := errors.Fmt("failed UpdateLoggingWithAnalysisID %d: %w", analysisID, err)
-		logging.Errorf(c, "%v", err)
-	}
+	c = loggingutil.SetAnalysisID(c, analysisID)
 	logging.Infof(c, "Cancel test analysis %d", analysisID)
 
 	tfa, err := datastoreutil.GetTestFailureAnalysis(c, analysisID)
@@ -117,9 +112,13 @@ func CancelAnalysis(c context.Context, analysisID int64) error {
 	}
 
 	// Update status of analysis and nthsection analysis
-	// Keep the current status (should be FOUND if a culprit was confirmed)
+	// Set status to FOUND if there's a verified culprit, otherwise keep current status
 	// Update the analysis to an end runStatus when cancelling it
-	err = testfailureanalysis.UpdateAnalysisStatus(c, tfa, tfa.Status, pb.AnalysisRunStatus_CANCELED)
+	analysisStatus := tfa.Status
+	if tfa.VerifiedCulpritKey != nil {
+		analysisStatus = pb.AnalysisStatus_FOUND
+	}
+	err = testfailureanalysis.UpdateAnalysisStatus(c, tfa, analysisStatus, pb.AnalysisRunStatus_CANCELED)
 
 	if err != nil {
 		return errors.Fmt("couldn't update status for analysis %d: %w", tfa.ID, err)

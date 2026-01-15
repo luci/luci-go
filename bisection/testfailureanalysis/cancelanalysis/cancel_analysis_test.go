@@ -214,6 +214,42 @@ func TestCancelAnalysis(t *testing.T) {
 			assert.Loosely(t, rerun.Status, should.Equal(pb.RerunStatus_RERUN_STATUS_CANCELED))
 		})
 
+		t.Run("Cancel updates RUNNING analysis to FOUND when verified culprit exists", func(t *ftt.Test) {
+			// This test covers the race condition fix where the analysis status
+			// was RUNNING but VerifiedCulpritKey was set. CancelAnalysis should
+			// update the status to FOUND, not keep it as RUNNING.
+			genaiAnalysis := &model.TestGenAIAnalysis{}
+			assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
+
+			suspect := &model.Suspect{
+				ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysis),
+				Type:               model.SuspectType_GenAI,
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+			}
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+
+			tfa := &model.TestFailureAnalysis{
+				ID:                 999,
+				Project:            "chromium",
+				Status:             pb.AnalysisStatus_RUNNING, // Still running due to race
+				RunStatus:          pb.AnalysisRunStatus_STARTED,
+				VerifiedCulpritKey: datastore.KeyForObj(c, suspect), // But culprit is verified
+			}
+			assert.Loosely(t, datastore.Put(c, tfa), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			e := CancelAnalysis(c, 999)
+			assert.Loosely(t, e, should.BeNil)
+
+			datastore.GetTestable(c).CatchupIndexes()
+			assert.Loosely(t, datastore.Get(c, tfa), should.BeNil)
+
+			// Status should be updated to FOUND because there's a verified culprit
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
+		})
+
 		t.Run("Cancel preserves already ended analysis", func(t *ftt.Test) {
 			tfa := &model.TestFailureAnalysis{
 				ID:        789,
