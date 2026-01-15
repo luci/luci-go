@@ -132,14 +132,20 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 		assert.That(t, orch.LastQueryNodesRequest, should.Match(orchestratorpb.QueryNodesRequest_builder{
 			Token: proto.String(orch.Token),
 			TypeInfo: orchestratorpb.QueryNodesRequest_TypeInfo_builder{
-				Wanted: []string{"type.googleapis.com/buildbucket.v2.BuildStageDetails"},
+				Wanted: orchestratorpb.TypeSet_builder{
+					TypeUrls: []string{"type.googleapis.com/buildbucket.v2.BuildStageDetails"},
+				}.Build(),
 			}.Build(),
 			Query: []*orchestratorpb.Query{
 				orchestratorpb.Query_builder{
-					Select: orchestratorpb.Query_Select_builder{
+					NodesById: orchestratorpb.Query_NodesByID_builder{
 						Nodes: []*idspb.Identifier{
 							id.Wrap(stageID),
 						},
+					}.Build(),
+					SelectStages: &orchestratorpb.Query_SelectStages{},
+					CollectStages: orchestratorpb.Query_CollectStages_builder{
+						Attempts: orchestratorpb.CollectStageAttempts_COLLECT_STAGE_ATTEMPTS_LATEST.Enum(),
 					}.Build(),
 				}.Build(),
 			},
