@@ -124,13 +124,21 @@ export const BrowserDevicesPage = () => {
     if (dimensionsQuery.isSuccess) {
       ids.push(
         ...Object.keys(dimensionsQuery.data.baseDimensions)
-          .concat(...Object.keys(dimensionsQuery.data.swarmingLabels))
-          .concat(...Object.keys(dimensionsQuery.data.ufsLabels)),
+          .concat(
+            ...Object.keys(dimensionsQuery.data.swarmingLabels).map(
+              (l) => `${BROWSER_SWARMING_SOURCE}."${l}"`,
+            ),
+          )
+          .concat(
+            ...Object.keys(dimensionsQuery.data.ufsLabels).map(
+              (l) => `${BROWSER_UFS_SOURCE}."${l}"`,
+            ),
+          ),
       );
     }
 
     if (devicesQuery.data) {
-      return _.uniq([
+      ids.push(
         ...devicesQuery.data.devices.flatMap((d) => [
           ...Object.keys(d.swarmingLabels ?? {}).map(
             (l) => `${BROWSER_SWARMING_SOURCE}."${l}"`,
@@ -139,7 +147,7 @@ export const BrowserDevicesPage = () => {
             (l) => `${BROWSER_UFS_SOURCE}."${l}"`,
           ),
         ]),
-      ]);
+      );
     }
 
     return _.uniq([...ids, ...EXTRA_COLUMN_IDS]);
