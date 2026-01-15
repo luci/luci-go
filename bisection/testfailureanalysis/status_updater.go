@@ -27,6 +27,20 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
+// statusPriority returns the priority of an analysis status.
+// Higher priority statuses should not be downgraded to lower priority ones.
+// FOUND > SUSPECTFOUND > other statuses (RUNNING, NOTFOUND, ERROR, etc.)
+func statusPriority(status pb.AnalysisStatus) int {
+	switch status {
+	case pb.AnalysisStatus_FOUND:
+		return 2
+	case pb.AnalysisStatus_SUSPECTFOUND:
+		return 1
+	default:
+		return 0
+	}
+}
+
 // UpdateAnalysisStatus updates status of a test failure analysis.
 func UpdateAnalysisStatus(ctx context.Context, tfa *model.TestFailureAnalysis, status pb.AnalysisStatus, runStatus pb.AnalysisRunStatus) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -51,6 +65,13 @@ func UpdateAnalysisStatus(ctx context.Context, tfa *model.TestFailureAnalysis, s
 		// Do not update start time again if it has started.
 		if runStatus == pb.AnalysisRunStatus_STARTED && tfa.RunStatus != pb.AnalysisRunStatus_STARTED {
 			tfa.StartTime = clock.Now(ctx)
+		}
+
+		// Don't downgrade from a higher priority status to a lower one.
+		// This prevents overwriting SUSPECTFOUND with NOTFOUND when nthsection
+		// doesn't find a culprit but GenAI already found suspects.
+		if statusPriority(tfa.Status) > statusPriority(status) {
+			status = tfa.Status
 		}
 
 		tfa.Status = status

@@ -98,6 +98,67 @@ func TestUpdateAnalysisStatus(t *testing.T) {
 			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_NOTFOUND))
 			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_CANCELED))
 		})
+
+		t.Run("SUSPECTFOUND status is not downgraded to NOTFOUND", func(t *ftt.Test) {
+			// This tests the scenario where GenAI found suspects but nthsection
+			// didn't find a culprit. The parent analysis should stay SUSPECTFOUND.
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_SUSPECTFOUND,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+			})
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			// Status should stay SUSPECTFOUND (not downgraded to NOTFOUND)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+			// But RunStatus should be updated to ENDED
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+			assert.Loosely(t, tfa.EndTime.Unix(), should.Equal(10000))
+		})
+
+		t.Run("FOUND status is not downgraded to SUSPECTFOUND", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_FOUND,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+			})
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			// Status should stay FOUND (not downgraded to SUSPECTFOUND)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		})
+
+		t.Run("FOUND status is not downgraded to NOTFOUND", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_FOUND,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+			})
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_NOTFOUND, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			// Status should stay FOUND (not downgraded to NOTFOUND)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		})
+
+		t.Run("RUNNING status can be upgraded to SUSPECTFOUND", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_RUNNING,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+			})
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
+		})
+
+		t.Run("SUSPECTFOUND status can be upgraded to FOUND", func(t *ftt.Test) {
+			tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+				Status:    pb.AnalysisStatus_SUSPECTFOUND,
+				RunStatus: pb.AnalysisRunStatus_STARTED,
+			})
+			err := UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_FOUND, pb.AnalysisRunStatus_ENDED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_FOUND))
+			assert.Loosely(t, tfa.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+		})
 	})
 }
 
