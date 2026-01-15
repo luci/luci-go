@@ -24,12 +24,16 @@ export function TestHistory() {
   return (
     <Box sx={{ minHeight: '400px', p: 1.5 }}>
       <Typography variant="h6"> Test History</Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, mt: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'row', mt: 1 }}>
         {testVariantBranch?.segments.map((segment, index) => {
           return (
             <TestHistorySegment
               segment={segment}
               key={index}
+              isStartSegment={index === 0 ? true : false}
+              isEndSegment={
+                index === testVariantBranch.segments.length - 1 ? true : false
+              }
             ></TestHistorySegment>
           );
         })}
