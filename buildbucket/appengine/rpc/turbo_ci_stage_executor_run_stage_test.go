@@ -49,6 +49,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/rpc/testutil"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -60,7 +61,7 @@ func TestRunStage(t *testing.T) {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
-		ctx, _ = tq.TestingContext(ctx, nil)
+		ctx, sch := tq.TestingContext(ctx, nil)
 		ctx = metrics.WithServiceInfo(ctx, "svc", "job", "ins")
 		assert.NoErr(t, config.SetTestSettingsCfg(ctx, &pb.SettingsCfg{
 			Swarming: &pb.SwarmingSettings{
@@ -250,6 +251,53 @@ func TestRunStage(t *testing.T) {
 
 			_, err := se.RunStage(ctx, req)
 			assert.That(t, err, should.ErrLike("update failed"))
+		})
+
+		t.Run("attempt is alread running", func(t *ftt.Test) {
+			ctx, req, _, mockOrch, se := setup()
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+
+			mockOrch.Err = turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_RUNNING.Enum(), t)
+
+			_, err := se.RunStage(ctx, req)
+			assert.NoErr(t, err)
+		})
+
+		t.Run("attempt is cancelling", func(t *ftt.Test) {
+			ctx, req, _, mockOrch, se := setup()
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+
+			mockOrch.Err = turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_CANCELLING.Enum(), t)
+
+			_, err := se.RunStage(ctx, req)
+			assert.NoErr(t, err)
+
+			tasks := sch.Tasks()
+			// CreateBackendBuildTask, NotifyPubSubGoProxy for schedule build
+			// CancelBuildTask for handling status mismatch from TurboCI
+			assert.That(t, len(tasks), should.Equal(3))
+			_, ok := tasks.Payloads()[2].(*taskdefs.CancelBuildTask)
+			assert.Loosely(t, ok, should.BeTrue)
+		})
+
+		t.Run("attempt is incomplete", func(t *ftt.Test) {
+			ctx, req, _, mockOrch, se := setup()
+			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+
+			mockOrch.Err = turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE.Enum(), t)
+
+			_, err := se.RunStage(ctx, req)
+			assert.NoErr(t, err)
+
+			tasks := sch.Tasks()
+			// CreateBackendBuildTask, NotifyPubSubGoProxy for schedule build
+			// CancelBuildTask for handling status mismatch from TurboCI
+			assert.That(t, len(tasks), should.Equal(3))
+			_, ok := tasks.Payloads()[2].(*taskdefs.CancelBuildTask)
+			assert.Loosely(t, ok, should.BeTrue)
 		})
 
 		t.Run("failCurrentStage failure", func(t *ftt.Test) {

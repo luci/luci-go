@@ -371,7 +371,6 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, atte
 	st := curWrite.GetStateTransition()
 	st.SetScheduled(updatedPolicy)
 
-	// TODO: b/449231057 - handle status mismatch error returned by TurboCI.
 	_, err := turboci.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(cl.Creds))
-	return turboci.AdjustTurboCIRPCError(err)
+	return turboci.HandleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
 }

@@ -18,8 +18,13 @@ import (
 	"context"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
@@ -61,4 +66,13 @@ func (o *FakeOrchestratorClient) WriteNodes(ctx context.Context, in *orchestrato
 func (o *FakeOrchestratorClient) QueryNodes(ctx context.Context, in *orchestratorpb.QueryNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.QueryNodesResponse, error) {
 	o.LastQueryNodesRequest = proto.CloneOf(in)
 	return o.QueryNodesResponse, o.Err
+}
+
+func ErrorWithStageAttemptCurrentState(state *orchestratorpb.StageAttemptState, t *ftt.Test) error {
+	sacs := orchestratorpb.StageAttemptCurrentState_builder{
+		State: state,
+	}.Build()
+	st, err := status.New(codes.FailedPrecondition, "status mismatch").WithDetails(sacs)
+	assert.Loosely(t, err, should.BeNil)
+	return st.Err()
 }
