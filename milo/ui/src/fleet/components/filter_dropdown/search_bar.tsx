@@ -238,7 +238,11 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
               },
             },
             startAdornment: (
-              <>
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{ display: 'contents' }}
+              >
                 {selectedOptions?.map((option, i) =>
                   renderChip(option as FilterCategoryData<unknown>, i),
                 )}
@@ -247,7 +251,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
                      where the input is moved to next line due to wrapping. There might be a cleaner
                      way to do it though */}
                 <div css={{ display: 'inline' }} />
-              </>
+              </div>
             ),
           },
         }}

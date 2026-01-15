@@ -10,51 +10,52 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.n
+// limitations under the License.
+
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { OptionValue } from '@/fleet/types/option';
 
 import { DeviceSearchBar } from './device_search_bar';
 
+const options: OptionValue[] = [
+  { value: 'test-device-2', label: 'Test Device 2' },
+  { value: 'device-2', label: 'Device 2' },
+  { value: 'device-1', label: 'Device 1' },
+  { value: 'test-device-1', label: 'Test Device 1' },
+];
+
 describe('<DeviceSearchBar />', () => {
-  const options: OptionValue[] = [
-    { value: 'test-device-2', label: 'Test Device 2' },
-    { value: 'device-2', label: 'Device 2' },
-    { value: 'device-1', label: 'Device 1' },
-    { value: 'test-device-1', label: 'Test Device 1' },
-  ];
-  const applySelectedOption = jest.fn();
+  let applySelectedOption: jest.Mock;
 
   beforeEach(() => {
     jest.useFakeTimers();
+    applySelectedOption = jest.fn();
   });
 
   afterEach(() => {
     jest.useRealTimers();
-    applySelectedOption.mockClear();
   });
 
-  it('renders correctly', async () => {
-    render(
+  const renderComponent = (numSuggestions?: number) => {
+    return render(
       <DeviceSearchBar
         options={options}
         applySelectedOption={applySelectedOption}
+        numSuggestions={numSuggestions}
       />,
     );
+  };
+
+  it('renders correctly', async () => {
+    renderComponent();
 
     expect(screen.getByRole('textbox')).toHaveValue('');
     expect(screen.queryByText('Device 1')).not.toBeInTheDocument();
   });
 
   it('filters options based on search query', async () => {
-    render(
-      <DeviceSearchBar
-        options={options}
-        applySelectedOption={applySelectedOption}
-        numSuggestions={2}
-      />,
-    );
+    renderComponent(2);
 
     const searchQuery = 'device-2';
     const searchInput = screen.getByRole('textbox');
@@ -84,12 +85,7 @@ describe('<DeviceSearchBar />', () => {
   });
 
   it('displays a message when there are no suggestions', async () => {
-    render(
-      <DeviceSearchBar
-        options={options}
-        applySelectedOption={applySelectedOption}
-      />,
-    );
+    renderComponent();
     fireEvent.keyDown(screen.getByRole('textbox'), {
       code: 'ArrowDown',
       target: { value: 'device-3' },
