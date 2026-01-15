@@ -21,6 +21,7 @@ import (
 	"strings"
 	"text/template"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -50,6 +51,15 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		}
 		return tmplCLOwnerLacksEmails.Execute(sb, map[string]string{
 			"GerritHost": cl.Snapshot.GetGerrit().GetHost(),
+		})
+
+	case *changelist.CLError_OwnerEmailMalformed:
+		if !v.OwnerEmailMalformed {
+			return errors.New("owner_email_malformed must be set to true")
+		}
+		return tmplCLOwnerEmailMalformed.Execute(sb, map[string]string{
+			"Email":          cl.Snapshot.GetGerrit().GetInfo().GetOwner().GetEmail(),
+			"ValidRegexpStr": identity.KnownKinds[identity.User].String(),
 		})
 
 	case *changelist.CLError_UnsupportedMode:
@@ -199,6 +209,10 @@ var tmplCLOwnerLacksEmails = tmplMust(`
 {{CQ_OR_CV}} can't process the CL because its owner doesn't have a preferred email set in Gerrit settings.
 
 You can set preferred email at https://{{.GerritHost}}/settings/#EmailAddresses
+`)
+
+var tmplCLOwnerEmailMalformed = tmplMust(`
+Can't process the CL because its owner email {{.Email | printf "%q"}} is malformed. Expecting email matching Regex: {{.ValidRegexpStr | printf "%q"}}.
 `)
 
 var tmplUnsupportedMode = tmplMust(`

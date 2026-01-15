@@ -588,6 +588,18 @@ func TestUpdateConfig(t *testing.T) {
 				cl202.Snapshot.Metadata = []*changelist.StringPair{{Key: "Commit", Value: "false"}}
 				assert.Loosely(t, s1.makePCL(ctx, cl202).GetPurgeReasons(), should.BeEmpty)
 			})
+
+			t.Run("CL with malformed owner email has an error", func(t *ftt.Test) {
+				cl101.Snapshot.GetGerrit().GetInfo().Owner = gf.U("malformed username")
+				assert.That(t, s1.makePCL(ctx, cl101).GetPurgeReasons(), should.Match([]*prjpb.PurgeReason{
+					{
+						ClError: &changelist.CLError{
+							Kind: &changelist.CLError_OwnerEmailMalformed{OwnerEmailMalformed: true},
+						},
+						ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+					},
+				}))
+			})
 		})
 	})
 }

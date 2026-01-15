@@ -21,6 +21,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -317,6 +318,15 @@ func (s *State) makePCL(ctx context.Context, cl *changelist.CL) *prjpb.PCL {
 	if ci.GetOwner().GetEmail() == "" {
 		err := &changelist.CLError{
 			Kind: &changelist.CLError_OwnerLacksEmail{OwnerLacksEmail: true},
+		}
+		pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
+			ClError: err,
+			ApplyTo: &prjpb.PurgeReason_AllActiveTriggers{AllActiveTriggers: true},
+		})
+		pcl.Errors = append(pcl.Errors, err)
+	} else if _, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, ci.GetOwner().GetEmail())); err != nil {
+		err := &changelist.CLError{
+			Kind: &changelist.CLError_OwnerEmailMalformed{OwnerEmailMalformed: true},
 		}
 		pcl.PurgeReasons = append(pcl.PurgeReasons, &prjpb.PurgeReason{
 			ClError: err,

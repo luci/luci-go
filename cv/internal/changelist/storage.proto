@@ -338,6 +338,7 @@ message CLError {
     // Set with the CL ID of a failed Run, if the purge-requested-CL depends on
     // the CL.
     int64 dep_run_failed = 11;
+    bool owner_email_malformed = 12;
   }
 
   message WatchedByManyConfigGroups {

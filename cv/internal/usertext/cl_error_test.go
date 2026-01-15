@@ -15,7 +15,6 @@
 package usertext
 
 import (
-	"context"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -37,7 +36,7 @@ func TestFormatCLError(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("CLError formatting works", t, func(t *ftt.Test) {
-		ctx := memory.Use(context.Background())
+		ctx := memory.Use(t.Context())
 		const gHost = "x-review.googlesource.com"
 		ci := gf.CI(
 			43, gf.PS(2), gf.Project("re/po"), gf.Ref("refs/heads/main"),
@@ -70,6 +69,13 @@ func TestFormatCLError(t *testing.T) {
 					OwnerLacksEmail: true,
 				}
 				assert.Loosely(t, mustFormat(), should.ContainSubstring("set preferred email at https://x-review.googlesource.com/settings/#EmailAddresses"))
+			})
+			t.Run("Malformed owner email", func(t *ftt.Test) {
+				cl.Snapshot.GetGerrit().GetInfo().Owner = gf.U("bad email")
+				reason.Kind = &changelist.CLError_OwnerEmailMalformed{
+					OwnerEmailMalformed: true,
+				}
+				assert.That(t, mustFormat(), should.ContainSubstring(`its owner email "bad email@example.com" is malformed`))
 			})
 			t.Run("Not yet supported mode", func(t *ftt.Test) {
 				reason.Kind = &changelist.CLError_UnsupportedMode{
