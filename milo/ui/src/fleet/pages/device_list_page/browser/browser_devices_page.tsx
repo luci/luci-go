@@ -230,7 +230,10 @@ export const BrowserDevicesPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <BrowserSummaryHeader selectedOptions={selectedOptions.filters || {}} />
+      <BrowserSummaryHeader
+        selectedOptions={selectedOptions.filters || {}}
+        pagerContext={pagerCtx}
+      />
       <AutorepairJobsAlert />
       <div
         css={{
