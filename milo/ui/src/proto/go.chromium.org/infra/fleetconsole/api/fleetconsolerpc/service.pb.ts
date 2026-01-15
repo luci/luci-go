@@ -419,6 +419,26 @@ export interface DeviceStateCounts {
   readonly needsReplacement: number;
 }
 
+export interface CountBrowserDevicesRequest {
+  /**
+   * See: AIP-160 (https://google.aip.dev/160) for the syntax
+   * Same filter format as ListDevicesRequest
+   */
+  readonly filter: string;
+}
+
+export interface CountBrowserDevicesResponse {
+  readonly total: number;
+  readonly swarmingState: SwarmingStateCounts | undefined;
+}
+
+export interface SwarmingStateCounts {
+  readonly alive: number;
+  readonly dead: number;
+  readonly quarantined: number;
+  readonly maintenance: number;
+}
+
 export interface RepopulateCacheRequest {
 }
 
@@ -4270,6 +4290,250 @@ export const DeviceStateCounts: MessageFns<DeviceStateCounts> = {
     message.repairFailed = object.repairFailed ?? 0;
     message.needsDeploy = object.needsDeploy ?? 0;
     message.needsReplacement = object.needsReplacement ?? 0;
+    return message;
+  },
+};
+
+function createBaseCountBrowserDevicesRequest(): CountBrowserDevicesRequest {
+  return { filter: "" };
+}
+
+export const CountBrowserDevicesRequest: MessageFns<CountBrowserDevicesRequest> = {
+  encode(message: CountBrowserDevicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.filter !== "") {
+      writer.uint32(10).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountBrowserDevicesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountBrowserDevicesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountBrowserDevicesRequest {
+    return { filter: isSet(object.filter) ? globalThis.String(object.filter) : "" };
+  },
+
+  toJSON(message: CountBrowserDevicesRequest): unknown {
+    const obj: any = {};
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountBrowserDevicesRequest>): CountBrowserDevicesRequest {
+    return CountBrowserDevicesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountBrowserDevicesRequest>): CountBrowserDevicesRequest {
+    const message = createBaseCountBrowserDevicesRequest() as any;
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseCountBrowserDevicesResponse(): CountBrowserDevicesResponse {
+  return { total: 0, swarmingState: undefined };
+}
+
+export const CountBrowserDevicesResponse: MessageFns<CountBrowserDevicesResponse> = {
+  encode(message: CountBrowserDevicesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.total !== 0) {
+      writer.uint32(8).int32(message.total);
+    }
+    if (message.swarmingState !== undefined) {
+      SwarmingStateCounts.encode(message.swarmingState, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountBrowserDevicesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountBrowserDevicesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.swarmingState = SwarmingStateCounts.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountBrowserDevicesResponse {
+    return {
+      total: isSet(object.total) ? globalThis.Number(object.total) : 0,
+      swarmingState: isSet(object.swarmingState) ? SwarmingStateCounts.fromJSON(object.swarmingState) : undefined,
+    };
+  },
+
+  toJSON(message: CountBrowserDevicesResponse): unknown {
+    const obj: any = {};
+    if (message.total !== 0) {
+      obj.total = Math.round(message.total);
+    }
+    if (message.swarmingState !== undefined) {
+      obj.swarmingState = SwarmingStateCounts.toJSON(message.swarmingState);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountBrowserDevicesResponse>): CountBrowserDevicesResponse {
+    return CountBrowserDevicesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountBrowserDevicesResponse>): CountBrowserDevicesResponse {
+    const message = createBaseCountBrowserDevicesResponse() as any;
+    message.total = object.total ?? 0;
+    message.swarmingState = (object.swarmingState !== undefined && object.swarmingState !== null)
+      ? SwarmingStateCounts.fromPartial(object.swarmingState)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseSwarmingStateCounts(): SwarmingStateCounts {
+  return { alive: 0, dead: 0, quarantined: 0, maintenance: 0 };
+}
+
+export const SwarmingStateCounts: MessageFns<SwarmingStateCounts> = {
+  encode(message: SwarmingStateCounts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.alive !== 0) {
+      writer.uint32(8).int32(message.alive);
+    }
+    if (message.dead !== 0) {
+      writer.uint32(16).int32(message.dead);
+    }
+    if (message.quarantined !== 0) {
+      writer.uint32(24).int32(message.quarantined);
+    }
+    if (message.maintenance !== 0) {
+      writer.uint32(32).int32(message.maintenance);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SwarmingStateCounts {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSwarmingStateCounts() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.alive = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.dead = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.quarantined = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.maintenance = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SwarmingStateCounts {
+    return {
+      alive: isSet(object.alive) ? globalThis.Number(object.alive) : 0,
+      dead: isSet(object.dead) ? globalThis.Number(object.dead) : 0,
+      quarantined: isSet(object.quarantined) ? globalThis.Number(object.quarantined) : 0,
+      maintenance: isSet(object.maintenance) ? globalThis.Number(object.maintenance) : 0,
+    };
+  },
+
+  toJSON(message: SwarmingStateCounts): unknown {
+    const obj: any = {};
+    if (message.alive !== 0) {
+      obj.alive = Math.round(message.alive);
+    }
+    if (message.dead !== 0) {
+      obj.dead = Math.round(message.dead);
+    }
+    if (message.quarantined !== 0) {
+      obj.quarantined = Math.round(message.quarantined);
+    }
+    if (message.maintenance !== 0) {
+      obj.maintenance = Math.round(message.maintenance);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SwarmingStateCounts>): SwarmingStateCounts {
+    return SwarmingStateCounts.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SwarmingStateCounts>): SwarmingStateCounts {
+    const message = createBaseSwarmingStateCounts() as any;
+    message.alive = object.alive ?? 0;
+    message.dead = object.dead ?? 0;
+    message.quarantined = object.quarantined ?? 0;
+    message.maintenance = object.maintenance ?? 0;
     return message;
   },
 };
@@ -8294,6 +8558,8 @@ export interface FleetConsole {
   GetBrowserDeviceDimensions(request: GetBrowserDeviceDimensionsRequest): Promise<GetBrowserDeviceDimensionsResponse>;
   /** CountDevices provides a count of the devices */
   CountDevices(request: CountDevicesRequest): Promise<CountDevicesResponse>;
+  /** CountBrowserDevices provides with browser devices metrics */
+  CountBrowserDevices(request: CountBrowserDevicesRequest): Promise<CountBrowserDevicesResponse>;
   /** RepopulateCache repopulates the cache, meant to be triggered by cron. */
   RepopulateCache(request: RepopulateCacheRequest): Promise<RepopulateCacheResponse>;
   /**
@@ -8359,6 +8625,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.GetDeviceDimensions = this.GetDeviceDimensions.bind(this);
     this.GetBrowserDeviceDimensions = this.GetBrowserDeviceDimensions.bind(this);
     this.CountDevices = this.CountDevices.bind(this);
+    this.CountBrowserDevices = this.CountBrowserDevices.bind(this);
     this.RepopulateCache = this.RepopulateCache.bind(this);
     this.RepopulateBrowserCache = this.RepopulateBrowserCache.bind(this);
     this.RepopulateAndroidCache = this.RepopulateAndroidCache.bind(this);
@@ -8441,6 +8708,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = CountDevicesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CountDevices", data);
     return promise.then((data) => CountDevicesResponse.fromJSON(data));
+  }
+
+  CountBrowserDevices(request: CountBrowserDevicesRequest): Promise<CountBrowserDevicesResponse> {
+    const data = CountBrowserDevicesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CountBrowserDevices", data);
+    return promise.then((data) => CountBrowserDevicesResponse.fromJSON(data));
   }
 
   RepopulateCache(request: RepopulateCacheRequest): Promise<RepopulateCacheResponse> {
