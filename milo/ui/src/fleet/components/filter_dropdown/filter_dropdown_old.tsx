@@ -88,6 +88,21 @@ export function FilterDropdownOld<T>({
     }
   }, [anchorEl]);
 
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => {
+      if (e.key === '/') {
+        if (!searchInput.current?.contains(document.activeElement))
+          e.preventDefault();
+        searchInput.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', f);
+    return () => {
+      window.removeEventListener('keydown', f);
+    };
+  }, []);
+
   const closeInnerMenu = useCallback(() => {
     openCategory?.anchor?.focus();
     setOpenCategory(undefined);

@@ -14,7 +14,7 @@
 
 import AddIcon from '@mui/icons-material/Add';
 import { Chip, colors } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   FilterDropdownOld,
@@ -36,10 +36,24 @@ export function FilterButton<T>({
   commonOptions?: string[];
 }) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
+  const filterButtonRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => {
+      if (e.key === '/') {
+        filterButtonRef.current?.click();
+      }
+    };
+
+    window.addEventListener('keydown', f);
+    return () => {
+      window.removeEventListener('keydown', f);
+    };
+  }, []);
 
   return (
     <>
       <Chip
+        ref={filterButtonRef}
         onClick={(event) => setAnchorEL(event.currentTarget)}
         label="Add filter"
         variant="outlined"
