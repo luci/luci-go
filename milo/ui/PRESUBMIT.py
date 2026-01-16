@@ -31,6 +31,24 @@ def CheckLintAndTypes(input_api, output_api):
   # We run these commands in the directory of this PRESUBMIT.py file.
   cwd = input_api.PresubmitLocalPath()
 
+  # Check if node_modules exists, if not, try to install dependencies.
+  node_modules_path = input_api.os_path.join(cwd, 'node_modules')
+  if not input_api.os_path.exists(node_modules_path):
+    # warning if running heavily in presubmit
+    print('node_modules not found in %s, installing dependencies...' % cwd)
+    try:
+      # Check if npm is available
+      input_api.subprocess.check_call(
+          ['npm', '--version'], stdout=input_api.subprocess.DEVNULL, stderr=input_api.subprocess.DEVNULL)
+      # Run npm ci
+      input_api.subprocess.check_call(
+          ['npm', 'ci'], cwd=cwd, stdout=input_api.subprocess.DEVNULL, stderr=input_api.subprocess.DEVNULL)
+    except (OSError, input_api.subprocess.CalledProcessError) as e:
+      return [output_api.PresubmitError(
+          'Detailed error: %s\n'
+          'node_modules is missing in %s and npm ci failed. '
+          'Please verify npm is installed and works.' % (e, cwd))]
+
   # Optimizing Lint: Run eslint ONLY on affected files.
   # We use 'npx eslint' to ensure we use the local eslint installation.
   # We pass the relative paths of affected files.
