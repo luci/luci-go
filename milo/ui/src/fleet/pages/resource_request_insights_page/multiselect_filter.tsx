@@ -15,9 +15,18 @@
 import styled from '@emotion/styled';
 import { Alert, CircularProgress, MenuList } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 
-import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
+import {
+  OptionComponentHandle,
+  OptionComponentProps,
+} from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { OptionsMenuOld } from '@/fleet/components/filter_dropdown/options_menu_old';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
@@ -37,12 +46,23 @@ const Container = styled.div`
   box-sizing: border-box;
 `;
 
-export const MultiSelectFilter = ({
-  optionComponentProps: { onFiltersChange, onClose, filters, option },
-  searchQuery,
-  maxHeight,
-}: OptionComponentProps<ResourceRequestInsightsOptionComponentProps>) => {
+export const MultiSelectFilter = forwardRef(function MultiSelectFilter(
+  {
+    optionComponentProps: { onFiltersChange, onClose, filters, option },
+    childrenSearchQuery,
+    maxHeight,
+  }: OptionComponentProps<ResourceRequestInsightsOptionComponentProps>,
+  ref,
+) {
   useEffect(() => () => onClose(), [onClose]);
+
+  const optionsMenuRef = useRef<OptionComponentHandle>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      optionsMenuRef.current?.focus();
+    },
+  }));
 
   const [initialSelections, _] = useState(
     (filters && (filters[option.value] as string[])) ?? [],
@@ -84,7 +104,7 @@ export const MultiSelectFilter = ({
   const elements = getSortedMultiselectElements(
     query.data,
     option.value,
-    searchQuery,
+    childrenSearchQuery,
     initialSelections,
   );
 
@@ -120,6 +140,7 @@ export const MultiSelectFilter = ({
       }}
     >
       <OptionsMenuOld
+        ref={optionsMenuRef}
         elements={elements}
         selectedElements={new Set(optionValues ?? [])}
         flipOption={(value: string) => {
@@ -128,4 +149,4 @@ export const MultiSelectFilter = ({
       />
     </MenuList>
   );
-};
+});

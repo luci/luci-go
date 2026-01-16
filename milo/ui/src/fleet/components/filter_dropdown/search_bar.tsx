@@ -33,6 +33,7 @@ interface SearchBarProps<T> {
   getLabel: (option: FilterCategoryData<T>) => string; // TODO: could be part of FilterCategoryData itself
   isLoading?: boolean;
   onChipEditApplied: () => void;
+  placeholder?: string;
 }
 
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
@@ -46,6 +47,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
       getLabel,
       onChipDeleted,
       onChipEditApplied,
+      placeholder = 'Add a filter (e.g. "dut1" or "state:ready")',
     }: SearchBarProps<T>,
     ref: React.ForwardedRef<HTMLInputElement>,
   ) {
@@ -207,7 +209,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
             'horizontal',
           );
         }}
-        placeholder='Add a filter (e.g. "dut1" or "state:ready")'
+        placeholder={placeholder}
         autoComplete="off"
         size="small"
         slotProps={{

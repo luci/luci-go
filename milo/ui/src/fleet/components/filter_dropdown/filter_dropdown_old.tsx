@@ -39,7 +39,9 @@ export type OptionComponentProps<T> = {
   maxHeight?: number;
 };
 
-export type OptionComponent<T> = React.FC<OptionComponentProps<T>>;
+export type OptionComponent<T> = React.ComponentType<
+  OptionComponentProps<T> & React.RefAttributes<unknown>
+>;
 
 export type FilterCategoryDataOld<T> = {
   value: string;
@@ -79,6 +81,7 @@ export function FilterDropdownOld<T>({
 
   const [searchQuery, setSearchQuery] = useState('');
   const searchInput = useRef<HTMLInputElement>(null);
+  const optionComponentRef = useRef<{ focus: () => void }>(null);
 
   useEffect(() => {
     // The autofocus prop is not working
@@ -102,6 +105,12 @@ export function FilterDropdownOld<T>({
       window.removeEventListener('keydown', f);
     };
   }, []);
+
+  useEffect(() => {
+    if (openCategory) {
+      optionComponentRef.current?.focus?.();
+    }
+  }, [openCategory]);
 
   const closeInnerMenu = useCallback(() => {
     openCategory?.anchor?.focus();
@@ -192,6 +201,7 @@ export function FilterDropdownOld<T>({
           }}
         >
           <OptionComponent
+            ref={optionComponentRef}
             key={openCategoryData.value}
             searchQuery={searchQuery}
             optionComponentProps={openCategoryData.optionsComponentProps}

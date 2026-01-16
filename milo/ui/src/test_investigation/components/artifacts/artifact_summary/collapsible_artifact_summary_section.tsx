@@ -72,6 +72,7 @@ export function CollapsibleArtifactSummarySection({
                 sx={{ ml: 0.5 }}
                 aria-label={`Info for ${title}`}
                 onClick={(e) => e.stopPropagation()}
+                component="div"
               >
                 <HelpOutlineIcon fontSize="small" />
               </IconButton>

@@ -41,8 +41,8 @@ import { EllipsisTooltip } from '../ellipsis_tooltip';
 import { HighlightCharacter } from '../highlight_character';
 import { Footer } from '../options_dropdown/footer';
 
-import { DateFilter, DateFilterValue } from './date_filter';
-import { RangeFilter, RangeFilterValue } from './range_filter';
+import { DateFilter, DateFilterProps } from './date_filter';
+import { RangeFilter, RangeFilterProps } from './range_filter';
 
 export interface OptionComponentHandle {
   focus: () => void;
@@ -272,19 +272,19 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
     let content;
 
     if (openCategoryData.type === 'date') {
-      const props = openCategoryData.optionsComponentProps as unknown as {
-        value: DateFilterValue;
-        onChange: (v: DateFilterValue) => void;
-      };
-      content = <DateFilter {...props} />;
+      content = (
+        <DateFilter
+          ref={openCategoryRef}
+          {...(openCategoryData.optionsComponentProps as DateFilterProps)}
+        />
+      );
     } else if (openCategoryData.type === 'range') {
-      const props = openCategoryData.optionsComponentProps as unknown as {
-        value: RangeFilterValue;
-        onChange: (v: RangeFilterValue) => void;
-        min?: number;
-        max?: number;
-      };
-      content = <RangeFilter {...props} />;
+      content = (
+        <RangeFilter
+          ref={openCategoryRef}
+          {...(openCategoryData.optionsComponentProps as RangeFilterProps)}
+        />
+      );
     } else {
       const OptionComponent = openCategoryData.optionsComponent!;
       content = (

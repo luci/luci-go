@@ -23,6 +23,10 @@ import { RecoverableErrorFallback } from './recoverable_error_fallback';
 export interface RecoverableErrorBoundaryProps {
   readonly children: ReactNode;
   readonly resetKeys?: Array<unknown>;
+  readonly fallbackRender?: (props: {
+    error: unknown;
+    resetErrorBoundary: (...args: unknown[]) => void;
+  }) => ReactNode;
 }
 
 /**
@@ -32,17 +36,22 @@ export interface RecoverableErrorBoundaryProps {
 export function RecoverableErrorBoundary({
   children,
   resetKeys,
+  fallbackRender,
 }: RecoverableErrorBoundaryProps) {
+  const fallbackProps = fallbackRender
+    ? { fallbackRender }
+    : { FallbackComponent: RecoverableErrorFallback };
+
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <ErrorBoundary
           onReset={() => reset()}
           resetKeys={resetKeys}
-          FallbackComponent={RecoverableErrorFallback}
           onError={(err, _) => {
             errorReporter.report(err);
           }}
+          {...fallbackProps}
         >
           {children}
         </ErrorBoundary>

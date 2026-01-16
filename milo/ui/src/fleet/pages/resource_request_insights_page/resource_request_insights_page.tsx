@@ -13,14 +13,15 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
+import { DateTime } from 'luxon';
 import { useCallback, useEffect, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { FilterButton } from '@/fleet/components/filter_dropdown/filter_button';
-import { FilterCategoryDataOld } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
-import { SelectedChip } from '@/fleet/components/filter_dropdown/selected_chip';
+import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
+import { FilterCategoryData } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { fromLuxonDateTime, toIsoString } from '@/fleet/utils/dates';
 import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -28,7 +29,8 @@ import { ResourceRequestTable } from './resource_requests_table';
 import { RRI_COLUMNS } from './rri_columns';
 import { RriSummaryHeader } from './rri_summary_header';
 import {
-  ResourceRequestInsightsOptionComponentProps,
+  DateFilterData,
+  RangeFilterData,
   RriFilterKey,
   RriFilterOption,
   RriFilters,
@@ -38,6 +40,72 @@ import {
 const Container = styled.div`
   margin: 24px;
 `;
+
+const createDateFilterAdapter = (
+  option: RriFilterOption,
+  commonProps: Partial<FilterCategoryData<unknown>>,
+  currentFilters: RriFilters | undefined,
+  setCurrentFilters: (filters: RriFilters | undefined) => void,
+): FilterCategoryData<unknown> => {
+  const val = currentFilters?.[option.value] as DateFilterData | undefined;
+  return {
+    ...commonProps,
+    value: option.value,
+    label: commonProps.label || option.value,
+    getChildrenSearchScore: commonProps.getChildrenSearchScore!,
+    type: 'date',
+    optionsComponentProps: {
+      value: {
+        min: toIsoString(val?.min),
+        max: toIsoString(val?.max),
+      },
+      onChange: (newVal: { min?: string; max?: string }) => {
+        setCurrentFilters({
+          ...currentFilters,
+          [option.value]: {
+            min: fromLuxonDateTime(
+              newVal.min ? DateTime.fromISO(newVal.min) : undefined,
+            ),
+            max: fromLuxonDateTime(
+              newVal.max ? DateTime.fromISO(newVal.max) : undefined,
+            ),
+          },
+        });
+      },
+    },
+  };
+};
+
+const createRangeFilterAdapter = (
+  option: RriFilterOption,
+  commonProps: Partial<FilterCategoryData<unknown>>,
+  currentFilters: RriFilters | undefined,
+  setCurrentFilters: (filters: RriFilters | undefined) => void,
+): FilterCategoryData<unknown> => {
+  const val = currentFilters?.[option.value] as RangeFilterData | undefined;
+  return {
+    ...commonProps,
+    value: option.value,
+    label: commonProps.label || option.value,
+    getChildrenSearchScore: commonProps.getChildrenSearchScore!,
+    type: 'range',
+    optionsComponentProps: {
+      value: {
+        min: val?.min,
+        max: val?.max,
+      },
+      onChange: (newVal: { min?: number; max?: number }) => {
+        setCurrentFilters({
+          ...currentFilters,
+          [option.value]: {
+            min: newVal.min,
+            max: newVal.max,
+          },
+        });
+      },
+    },
+  };
+};
 
 export const ResourceRequestListPage = () => {
   const { filterComponents, filterData, setFilters, getSelectedFilterLabel } =
@@ -57,24 +125,48 @@ export const ResourceRequestListPage = () => {
     setFilters(currentFilters);
   };
 
-  const filterCategoryDatas: FilterCategoryDataOld<ResourceRequestInsightsOptionComponentProps>[] =
+  const filterCategoryDatas: FilterCategoryData<unknown>[] =
     filterComponents.map((option) => {
       const label: string =
         RRI_COLUMNS.find((c) => c.id === option.value)?.gridColDef.headerName ??
         option.value;
 
-      return {
+      const commonProps = {
         label: label,
         value: option.value,
-        getSearchScore: (searchQuery: string) => {
+        type: option.type,
+        getChildrenSearchScore: (searchQuery: string) => {
           const typedOption = option as RriFilterOption;
           const childrenScore = typedOption.getChildrenSearchScore
             ? typedOption.getChildrenSearchScore(searchQuery)
             : 0;
-          const [score, matches] = fuzzySubstring(searchQuery, label);
-          return { score: Math.max(score, childrenScore), matches: matches };
+          const [score] = fuzzySubstring(searchQuery, label);
+          return Math.max(score, childrenScore);
         },
-        optionsComponent: option.optionsComponent,
+      };
+
+      if (option.type === 'date') {
+        return createDateFilterAdapter(
+          option,
+          commonProps,
+          currentFilters,
+          setCurrentFilters,
+        );
+      }
+
+      if (option.type === 'range') {
+        return createRangeFilterAdapter(
+          option,
+          commonProps,
+          currentFilters,
+          setCurrentFilters,
+        );
+      }
+
+      return {
+        ...commonProps,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        optionsComponent: option.optionsComponent as any,
         optionsComponentProps: {
           option: option,
           onApply: onApplyFilters,
@@ -82,35 +174,8 @@ export const ResourceRequestListPage = () => {
           onFiltersChange: setCurrentFilters,
           onClose: clearSelections,
         },
-      } satisfies FilterCategoryDataOld<ResourceRequestInsightsOptionComponentProps>;
+      };
     });
-
-  const getSelectedChipDropdownContent = (
-    filterKey: RriFilterKey,
-    searchQuery: string,
-  ) => {
-    const filterOption = filterComponents.find(
-      (opt) => opt.value === filterKey,
-    );
-    if (!filterOption) {
-      return undefined;
-    }
-
-    const OptionComponent = filterOption.optionsComponent;
-
-    return (
-      <OptionComponent
-        searchQuery={searchQuery}
-        optionComponentProps={{
-          filters: currentFilters,
-          onClose: clearSelections,
-          onFiltersChange: setCurrentFilters,
-          option: filterComponents.find((opt) => opt.value === filterKey)!,
-          onApply: onApplyFilters,
-        }}
-      />
-    );
-  };
 
   const getFilterBar = () => {
     return (
@@ -125,37 +190,26 @@ export const ResourceRequestListPage = () => {
           borderRadius: 4,
         }}
       >
-        <FilterButton
-          filterOptions={filterCategoryDatas}
+        <FilterBar
+          filterCategoryDatas={filterCategoryDatas}
+          selectedOptions={Object.keys(filterData ?? {}).filter(
+            (k) => filterData?.[k as RriFilterKey] !== undefined,
+          )}
           onApply={onApplyFilters}
-          // isLoading={query.isPending}
+          getChipLabel={(o) => {
+            const val = filterData?.[o.value as RriFilterKey];
+            return val
+              ? getSelectedFilterLabel(o.value as RriFilterKey, val)
+              : '';
+          }}
+          onChipDeleted={(o) => {
+            const newFilters = { ...filterData };
+
+            delete newFilters[o.value as RriFilterKey];
+            setFilters(newFilters);
+          }}
+          searchPlaceholder='Add a filter (e.g. "rr_id" or "status")'
         />
-        {(
-          Object.entries(filterData ?? {}) as [
-            RriFilterKey,
-            RriFilters[RriFilterKey],
-          ][]
-        ).map(
-          ([filterKey, filterValue]) =>
-            filterValue && (
-              <SelectedChip
-                key={filterKey}
-                dropdownContent={(searchQuery) =>
-                  getSelectedChipDropdownContent(filterKey, searchQuery)
-                }
-                label={getSelectedFilterLabel(filterKey, filterValue)}
-                onApply={() => {
-                  onApplyFilters();
-                }}
-                onDelete={() => {
-                  setFilters({
-                    ...currentFilters,
-                    [filterKey]: undefined,
-                  });
-                }}
-              />
-            ),
-        )}
       </div>
     );
   };
@@ -174,9 +228,13 @@ export function Component() {
     <TrackLeafRoutePageView contentGroup="fleet-console-resource-request-list">
       <FleetHelmet pageTitle="Resource Requests" />
       <RecoverableErrorBoundary
-        // See the documentation for `<LoginPage />` for why we handle error
-        // this way.
-        key="fleet-resource-request-list-page"
+        fallbackRender={({ error }) => (
+          <LoggedInBoundary>
+            <div css={{ padding: 24 }}>
+              <>{error instanceof Error ? error.message : String(error)}</>
+            </div>
+          </LoggedInBoundary>
+        )}
       >
         <LoggedInBoundary>
           <ResourceRequestListPage />

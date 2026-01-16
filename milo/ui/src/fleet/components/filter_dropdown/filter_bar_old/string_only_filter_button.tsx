@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { MenuList } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useState } from 'react';
 
 import {
   OptionCategory,
@@ -108,15 +108,18 @@ interface StringOnlyFilterOptionComponentProps {
   onClose: () => void;
 }
 
-const OptionComponent = ({
-  searchQuery,
-  optionComponentProps: {
-    option,
-    selectedOptions,
-    onSelectedOptionsChange,
-    onClose,
-  },
-}: OptionComponentProps<StringOnlyFilterOptionComponentProps>) => {
+const OptionComponent = forwardRef(function OptionComponent(
+  {
+    searchQuery,
+    optionComponentProps: {
+      option,
+      selectedOptions,
+      onSelectedOptionsChange,
+      onClose,
+    },
+  }: OptionComponentProps<StringOnlyFilterOptionComponentProps>,
+  ref,
+) {
   useEffect(() => () => onClose(), [onClose]);
 
   const flipOption = (o2Value: string) => {
@@ -140,10 +143,11 @@ const OptionComponent = ({
       }}
     >
       <OptionsMenuOld
+        ref={ref}
         elements={fuzzySorted}
         selectedElements={new Set(selectedOptions)}
         flipOption={(value) => flipOption(value)}
       />
     </MenuList>
   );
-};
+});

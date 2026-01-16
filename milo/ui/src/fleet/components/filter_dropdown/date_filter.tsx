@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
-import { useEffect, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 export interface DateFilterValue {
   min?: string; // ISO string
@@ -31,21 +30,15 @@ interface CustomDatePickerProps {
   label: string;
   value: DateTime<true> | null;
   onChange: (date: DateTime<true> | null) => void;
+  inputRef?: React.Ref<HTMLInputElement>;
 }
 
 const CustomDatePicker = ({
   label,
   value,
   onChange,
+  inputRef,
 }: CustomDatePickerProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (label === 'From') {
-      inputRef.current?.focus();
-    }
-  }, [label]);
-
   return (
     <div css={{ flex: 1 }}>
       <DatePicker
@@ -70,7 +63,18 @@ const CustomDatePicker = ({
   );
 };
 
-export function DateFilter({ value, onChange }: DateFilterProps) {
+export const DateFilter = forwardRef(function DateFilter(
+  { value, onChange }: DateFilterProps,
+  ref,
+) {
+  const firstInputRef = useRef<HTMLInputElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      firstInputRef.current?.focus();
+    },
+  }));
+
   const updateFilter = (newDate: DateFilterValue): void => {
     if (!newDate.min && !newDate.max) {
       onChange({});
@@ -79,29 +83,41 @@ export function DateFilter({ value, onChange }: DateFilterProps) {
     onChange(newDate);
   };
 
+  const getValidDate = (isoDate?: string) => {
+    if (!isoDate) return null;
+    const date = DateTime.fromISO(isoDate);
+    return date.isValid ? date : null;
+  };
+
   return (
-    <Box
-      sx={{
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <div
+      role="group"
+      aria-label="Date filter"
+      tabIndex={-1}
+      css={{
         display: 'flex',
-        gap: '8px',
+        gap: 8,
         width: 400,
         padding: '12px 8px',
+        outline: 'none',
       }}
       onKeyDown={(e) => e.stopPropagation()}
     >
       <CustomDatePicker
         label={'From'}
-        value={value.min ? DateTime.fromISO(value.min) : null}
+        value={getValidDate(value.min)}
         onChange={(date) => {
           updateFilter({
             min: date?.toISODate() || undefined,
             max: value.max,
           });
         }}
+        inputRef={firstInputRef}
       />
       <CustomDatePicker
         label={'To'}
-        value={value.max ? DateTime.fromISO(value.max) : null}
+        value={getValidDate(value.max)}
         onChange={(date) => {
           updateFilter({
             min: value.min,
@@ -109,6 +125,6 @@ export function DateFilter({ value, onChange }: DateFilterProps) {
           });
         }}
       />
-    </Box>
+    </div>
   );
-}
+});

@@ -30,6 +30,7 @@ interface FilterBarProps<T> {
   getChipLabel: (option: FilterCategoryData<T>) => string;
   onChipDeleted: (option: FilterCategoryData<T>) => void;
   isLoading?: boolean;
+  searchPlaceholder?: string;
 }
 
 export function FilterBar<T>({
@@ -39,6 +40,7 @@ export function FilterBar<T>({
   getChipLabel,
   onChipDeleted,
   isLoading,
+  searchPlaceholder,
 }: FilterBarProps<T>) {
   const [value, setValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -94,6 +96,7 @@ export function FilterBar<T>({
         }}
         getLabel={(o) => getChipLabel(o as FilterCategoryData<T>)}
         onChipEditApplied={onApply}
+        placeholder={searchPlaceholder}
       />
       <FilterDropdown
         ref={filterDropdownRef}

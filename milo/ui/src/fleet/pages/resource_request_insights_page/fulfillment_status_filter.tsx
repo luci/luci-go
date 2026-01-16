@@ -14,7 +14,7 @@
 
 import { useEffect } from 'react';
 
-import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
+import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { OptionsMenu } from '@/fleet/components/filter_dropdown/options_menu';
 
 import { getFulfillmentStatusScoredOptions } from './fulfillment_status';
@@ -25,7 +25,7 @@ import {
 
 export const FulfillmentStatusFilter = ({
   optionComponentProps: { onFiltersChange, onClose, filters },
-  searchQuery,
+  childrenSearchQuery,
 }: OptionComponentProps<ResourceRequestInsightsOptionComponentProps>) => {
   useEffect(() => () => onClose(), [onClose]);
 
@@ -55,7 +55,7 @@ export const FulfillmentStatusFilter = ({
   return (
     <div css={{ marginTop: 8 }}>
       <OptionsMenu
-        elements={getFulfillmentStatusScoredOptions(searchQuery)}
+        elements={getFulfillmentStatusScoredOptions(childrenSearchQuery)}
         selectedElements={new Set(filters?.fulfillment_status ?? [])}
         flipOption={(value: string) => {
           onFiltersChange(getFiltersAfterFlip(value));

@@ -13,7 +13,13 @@
 // limitations under the License.
 import { Checkbox, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useRef } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 
 import { OptionValue } from '@/fleet/types/option';
 import { keyboardListNavigationHandler } from '@/fleet/utils';
@@ -30,12 +36,11 @@ interface OptionsMenuProps {
 /**
  * @deprecated This component will be removed when all pages are migrated to go/fleet-console-unified-filter-bar
  */
-export const OptionsMenuOld = ({
-  elements,
-  selectedElements,
-  flipOption,
-}: OptionsMenuProps) => {
-  const parentRef = useRef(null);
+export const OptionsMenuOld = forwardRef(function OptionsMenuOld(
+  { elements, selectedElements, flipOption }: OptionsMenuProps,
+  ref,
+) {
+  const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: elements.length,
     getScrollElement: () => parentRef.current,
@@ -44,7 +49,27 @@ export const OptionsMenuOld = ({
     overscan: 20,
   });
 
+  const [shouldFocus, setShouldFocus] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      setShouldFocus(true);
+    },
+  }));
+
   const virtualRows = virtualizer.getVirtualItems();
+
+  useEffect(() => {
+    if (shouldFocus && virtualRows.length > 0) {
+      const firstItem = parentRef.current?.querySelector(
+        '[data-index="0"]',
+      ) as HTMLElement;
+      if (firstItem) {
+        firstItem.focus();
+        setShouldFocus(false);
+      }
+    }
+  }, [shouldFocus, virtualRows]);
 
   if (elements.length === 0) {
     return (
@@ -69,7 +94,7 @@ export const OptionsMenuOld = ({
         overflow: 'auto',
         maxHeight: 'inherit',
         minWidth: '100%',
-        width: Math.max(...elements.map((c) => c.el.label.length * 8)),
+        width: '100%',
       }}
     >
       <div
@@ -102,8 +127,6 @@ export const OptionsMenuOld = ({
                   }
                   flipOption(elements[virtualRow.index].el.value);
                 }}
-                // eslint-disable-next-line jsx-a11y/no-autofocus
-                autoFocus={virtualRow.index === 0}
                 onKeyDown={keyboardListNavigationHandler}
                 css={{
                   display: 'flex',
@@ -143,4 +166,4 @@ export const OptionsMenuOld = ({
       </div>
     </div>
   );
-};
+});

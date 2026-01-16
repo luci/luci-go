@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Slider, TextField } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Slider, TextField } from '@mui/material';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 
 export interface RangeFilterValue {
   min?: number;
@@ -27,12 +33,18 @@ export interface RangeFilterProps {
   max?: number;
 }
 
-export function RangeFilter({
-  value,
-  onChange,
-  min = 0,
-  max = 10000,
-}: RangeFilterProps) {
+export const RangeFilter = forwardRef(function RangeFilter(
+  { value, onChange, min = 0, max = 10000 }: RangeFilterProps,
+  ref,
+) {
+  const minInputRef = useRef<HTMLInputElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      minInputRef.current?.focus();
+    },
+  }));
+
   // used by the input fields and may be outside of min/max temporarily
   const [textFieldValue, setTextFieldValue] = useState<[number, number]>([
     value.min ?? min,
@@ -67,14 +79,19 @@ export function RangeFilter({
   };
 
   return (
-    <Box
-      sx={{
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <div
+      role="group"
+      aria-label="Range filter"
+      tabIndex={-1}
+      css={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px',
+        gap: 20,
         width: 300,
         padding: '12px 20px',
         alignItems: 'center',
+        outline: 'none',
       }}
       onKeyDown={(e) => e.stopPropagation()}
     >
@@ -101,6 +118,7 @@ export function RangeFilter({
           label="Min"
           type="number"
           size="small"
+          inputRef={minInputRef}
           slotProps={{
             inputLabel: {
               shrink: true,
@@ -148,6 +166,6 @@ export function RangeFilter({
           }}
         />
       </div>
-    </Box>
+    </div>
   );
-}
+});

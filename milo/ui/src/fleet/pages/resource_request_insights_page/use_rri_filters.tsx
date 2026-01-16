@@ -23,6 +23,7 @@ import {
   multiselectFilterToUrlString,
   parseMultiselectFilter,
 } from '@/fleet/pages/resource_request_insights_page/rri_url_utils';
+import { FilterType } from '@/fleet/types';
 import { OptionValue } from '@/fleet/types/option';
 import { toIsoString } from '@/fleet/utils/dates';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
@@ -33,14 +34,12 @@ import {
   ResourceRequest_Status,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { DateFilter } from './date_filter';
 import {
   fulfillmentStatusDisplayValueMap,
   getFulfillmentStatusScoredOptions,
 } from './fulfillment_status';
 import { FulfillmentStatusFilter } from './fulfillment_status_filter';
 import { MultiSelectFilter } from './multiselect_filter';
-import { RangeFilter } from './range_filter';
 import { ResourceRequestColumnKey, RRI_COLUMNS } from './rri_columns';
 
 const FILTER_SEPARATOR = '&';
@@ -99,8 +98,9 @@ export type RriFilters = {
 
 export interface RriFilterOption {
   value: RriFilterKey;
+  type?: FilterType;
   getChildrenSearchScore?: (searchQuery: string) => number;
-  optionsComponent: OptionComponent<ResourceRequestInsightsOptionComponentProps>;
+  optionsComponent?: OptionComponent<ResourceRequestInsightsOptionComponentProps>;
 }
 
 export interface ResourceRequestInsightsOptionComponentProps {
@@ -452,27 +452,27 @@ export const useRriFilters = () => {
     },
     {
       value: 'resource_request_target_delivery_date',
-      optionsComponent: DateFilter,
+      type: 'date',
     },
     {
       value: 'resource_request_actual_delivery_date',
-      optionsComponent: DateFilter,
+      type: 'date',
     },
     {
       value: 'material_sourcing_actual_delivery_date',
-      optionsComponent: DateFilter,
+      type: 'date',
     },
     {
       value: 'build_actual_delivery_date',
-      optionsComponent: DateFilter,
+      type: 'date',
     },
     {
       value: 'qa_actual_delivery_date',
-      optionsComponent: DateFilter,
+      type: 'date',
     },
     {
       value: 'config_actual_delivery_date',
-      optionsComponent: DateFilter,
+      type: 'date',
     },
     {
       value: 'customer',
@@ -498,7 +498,7 @@ export const useRriFilters = () => {
     {
       value: 'accepted_quantity',
       getChildrenSearchScore: () => 0,
-      optionsComponent: RangeFilter,
+      type: 'range',
     },
     {
       value: 'criticality',
