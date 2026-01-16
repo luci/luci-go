@@ -55,7 +55,11 @@ def CheckLintAndTypes(input_api, output_api):
   affected_file_paths = [
       input_api.os_path.relpath(f.AbsoluteLocalPath(), cwd)
       for f in affected_files
+      if f.Action() != 'D'
   ]
+
+  if not affected_file_paths:
+      return []
 
   # For type-check, we must still run the full check, but we rely on
   # 'incremental': true in tsconfig.json to speed it up.
