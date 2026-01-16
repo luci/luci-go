@@ -20,7 +20,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/analysis/internal/ants/utils"
 	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 )
 
@@ -44,7 +46,9 @@ func NewExporter(client InsertClient) *Exporter {
 // ExportOptions captures context which will be exported
 // alongside the test artifacts.
 type ExportOptions struct {
-	Invocation *rdbpb.Invocation
+	// Exactly one of Invocation or RootInvocation should be set.
+	Invocation     *rdbpb.Invocation
+	RootInvocation *rdbpb.RootInvocation
 }
 
 // Export inserts the provided artifacts into BigQuery.
@@ -62,22 +66,55 @@ func (e *Exporter) Export(ctx context.Context, artifacts []*rdbpb.Artifact, opts
 
 // prepareExportRow converts a ResultDB Artifact proto to an AntsArtifactRow BigQuery proto.
 func prepareExportRow(artifacts []*rdbpb.Artifact, opts ExportOptions) ([]*bqpb.AntsArtifactRow, error) {
-	invocationID, err := rdbpbutil.ParseInvocationName(opts.Invocation.Name)
-	if err != nil {
-		return nil, errors.Fmt("invalid invocation name %q: %w", invocationID, err)
+	var invocationIDInDestTable string
+	var completionTime *timestamppb.Timestamp
+	if opts.RootInvocation != nil {
+		invocationIDInDestTable = opts.RootInvocation.RootInvocationId
+		completionTime = opts.RootInvocation.FinalizeTime
+	} else if opts.Invocation != nil {
+		var err error
+		invocationIDInDestTable, err = rdbpbutil.ParseInvocationName(opts.Invocation.Name)
+		if err != nil {
+			return nil, errors.Fmt("invalid invocation name %q: %w", opts.Invocation.Name, err)
+		}
+		completionTime = opts.Invocation.FinalizeTime
+	} else {
+		// Should not happen.
+		return nil, errors.New("neither Invocation nor RootInvocation is provided")
 	}
 
 	results := make([]*bqpb.AntsArtifactRow, 0, len(artifacts))
 	for _, artifact := range artifacts {
+
 		artifactRow := &bqpb.AntsArtifactRow{
-			InvocationId:   invocationID,
-			WorkUnitId:     "",
+			InvocationId:   invocationIDInDestTable,
 			TestResultId:   artifact.ResultId,
 			Name:           artifact.ArtifactId,
 			Size:           artifact.SizeBytes,
 			ContentType:    artifact.ContentType,
-			ArtifactType:   "",
-			CompletionTime: opts.Invocation.FinalizeTime,
+			ArtifactType:   artifact.ArtifactType,
+			CompletionTime: completionTime,
+		}
+
+		// Populate work unit id.
+		if opts.RootInvocation != nil {
+			parts, err := rdbpbutil.ParseArtifactName(artifact.Name)
+			if err != nil {
+				return nil, err
+			}
+			artifactRow.WorkUnitId = parts.WorkUnitID
+		}
+
+		// Populate root invocation info.
+		if opts.RootInvocation != nil {
+			buildDesc := opts.RootInvocation.PrimaryBuild.GetAndroidBuild()
+			if buildDesc != nil {
+				artifactRow.BuildType = utils.BuildTypeFromBuildID(buildDesc.BuildId)
+				artifactRow.BuildId = buildDesc.BuildId
+				artifactRow.BuildProvider = "androidbuild"
+				artifactRow.Branch = buildDesc.Branch
+				artifactRow.BuildTarget = buildDesc.BuildTarget
+			}
 		}
 		results = append(results, artifactRow)
 	}

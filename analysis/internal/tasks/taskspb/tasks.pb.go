@@ -257,7 +257,14 @@ type IngestArtifacts struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The ResultDB invocation finalized notification that triggered
 	// the ingestion of test artifacts.
+	// Should be empty if root_invocation_notification is set.
+	// TODO (b/476258742): remove the legacy invocation support
+	// Deprecated, use root_invocation_notification instead.
 	Notification *v1.InvocationFinalizedNotification `protobuf:"bytes,1,opt,name=notification,proto3" json:"notification,omitempty"`
+	// The ResultDB root invocation finalized notification that triggered
+	// the ingestion of test artifacts.
+	// Should be empty if notification is set.
+	RootInvocationNotification *v1.RootInvocationFinalizedNotification `protobuf:"bytes,4,opt,name=root_invocation_notification,json=rootInvocationNotification,proto3" json:"root_invocation_notification,omitempty"`
 	// The page token value to use when calling QueryArtifacts.
 	// For the first task, this should be "". For subsequent tasks,
 	// this is the next_page_token value returned by the last call.
@@ -303,6 +310,13 @@ func (*IngestArtifacts) Descriptor() ([]byte, []int) {
 func (x *IngestArtifacts) GetNotification() *v1.InvocationFinalizedNotification {
 	if x != nil {
 		return x.Notification
+	}
+	return nil
+}
+
+func (x *IngestArtifacts) GetRootInvocationNotification() *v1.RootInvocationFinalizedNotification {
+	if x != nil {
+		return x.RootInvocationNotification
 	}
 	return nil
 }
@@ -882,9 +896,10 @@ const file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_rawD
 	"\n" +
 	"page_token\x18\x02 \x01(\tR\tpageToken\x12\x1d\n" +
 	"\n" +
-	"task_index\x18\x03 \x01(\x03R\ttaskIndex\"\xa6\x01\n" +
+	"task_index\x18\x03 \x01(\x03R\ttaskIndex\"\x9f\x02\n" +
 	"\x0fIngestArtifacts\x12U\n" +
-	"\fnotification\x18\x01 \x01(\v21.luci.resultdb.v1.InvocationFinalizedNotificationR\fnotification\x12\x1d\n" +
+	"\fnotification\x18\x01 \x01(\v21.luci.resultdb.v1.InvocationFinalizedNotificationR\fnotification\x12w\n" +
+	"\x1croot_invocation_notification\x18\x04 \x01(\v25.luci.resultdb.v1.RootInvocationFinalizedNotificationR\x1arootInvocationNotification\x12\x1d\n" +
 	"\n" +
 	"page_token\x18\x02 \x01(\tR\tpageToken\x12\x1d\n" +
 	"\n" +
@@ -957,6 +972,7 @@ var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_goType
 	(*proto.PresubmitResult)(nil),                   // 14: luci.analysis.internal.ingestion.control.PresubmitResult
 	(*v1.InvocationReadyForExportNotification)(nil), // 15: luci.resultdb.v1.InvocationReadyForExportNotification
 	(*v1.InvocationFinalizedNotification)(nil),      // 16: luci.resultdb.v1.InvocationFinalizedNotification
+	(*v1.RootInvocationFinalizedNotification)(nil),  // 17: luci.resultdb.v1.RootInvocationFinalizedNotification
 }
 var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_depIdxs = []int32{
 	10, // 0: luci.analysis.internal.tasks.IngestTestVerdicts.partition_time:type_name -> google.protobuf.Timestamp
@@ -966,21 +982,22 @@ var file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_depIdx
 	14, // 4: luci.analysis.internal.tasks.IngestTestVerdicts.presubmit_run:type_name -> luci.analysis.internal.ingestion.control.PresubmitResult
 	15, // 5: luci.analysis.internal.tasks.IngestTestResults.notification:type_name -> luci.resultdb.v1.InvocationReadyForExportNotification
 	16, // 6: luci.analysis.internal.tasks.IngestArtifacts.notification:type_name -> luci.resultdb.v1.InvocationFinalizedNotification
-	10, // 7: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
-	10, // 8: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
-	10, // 9: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
-	5,  // 10: luci.analysis.internal.tasks.ReclusterChunks.state:type_name -> luci.analysis.internal.tasks.ReclusterChunkState
-	10, // 11: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
-	10, // 12: luci.analysis.internal.tasks.UpdateBugs.reclustering_attempt_minute:type_name -> google.protobuf.Timestamp
-	10, // 13: luci.analysis.internal.tasks.UpdateBugs.deadline:type_name -> google.protobuf.Timestamp
-	10, // 14: luci.analysis.internal.tasks.Backfill.day:type_name -> google.protobuf.Timestamp
-	10, // 15: luci.analysis.internal.tasks.GroupChangepoints.week:type_name -> google.protobuf.Timestamp
-	10, // 16: luci.analysis.internal.tasks.GroupChangepoints.schedule_time:type_name -> google.protobuf.Timestamp
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	17, // 7: luci.analysis.internal.tasks.IngestArtifacts.root_invocation_notification:type_name -> luci.resultdb.v1.RootInvocationFinalizedNotification
+	10, // 8: luci.analysis.internal.tasks.ReclusterChunks.attempt_time:type_name -> google.protobuf.Timestamp
+	10, // 9: luci.analysis.internal.tasks.ReclusterChunks.rules_version:type_name -> google.protobuf.Timestamp
+	10, // 10: luci.analysis.internal.tasks.ReclusterChunks.config_version:type_name -> google.protobuf.Timestamp
+	5,  // 11: luci.analysis.internal.tasks.ReclusterChunks.state:type_name -> luci.analysis.internal.tasks.ReclusterChunkState
+	10, // 12: luci.analysis.internal.tasks.ReclusterChunkState.next_report_due:type_name -> google.protobuf.Timestamp
+	10, // 13: luci.analysis.internal.tasks.UpdateBugs.reclustering_attempt_minute:type_name -> google.protobuf.Timestamp
+	10, // 14: luci.analysis.internal.tasks.UpdateBugs.deadline:type_name -> google.protobuf.Timestamp
+	10, // 15: luci.analysis.internal.tasks.Backfill.day:type_name -> google.protobuf.Timestamp
+	10, // 16: luci.analysis.internal.tasks.GroupChangepoints.week:type_name -> google.protobuf.Timestamp
+	10, // 17: luci.analysis.internal.tasks.GroupChangepoints.schedule_time:type_name -> google.protobuf.Timestamp
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_internal_tasks_taskspb_tasks_proto_init() }

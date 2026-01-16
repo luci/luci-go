@@ -47,11 +47,11 @@ import (
 
 // Constants for test data.
 const (
-	testProject      = "android"
-	testResultDBHost = "test-resultdb-host"
-	testInvocationID = "test-invocation-123"
-	testInvocation   = "invocations/" + testInvocationID
-	testRealm        = testProject + ":ci"
+	testProject            = "android"
+	testResultDBHost       = "test-resultdb-host"
+	testRootInvocationID   = "test-invocation-123"
+	testRootInvocationName = "rootInvocations/" + testRootInvocationID
+	testRealm              = testProject + ":ci"
 )
 
 func TestSchedule(t *testing.T) {
@@ -60,10 +60,14 @@ func TestSchedule(t *testing.T) {
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		task := &taskspb.IngestArtifacts{
-			Notification: &resultpb.InvocationFinalizedNotification{
+			RootInvocationNotification: &resultpb.RootInvocationFinalizedNotification{
 				ResultdbHost: testResultDBHost,
-				Invocation:   testInvocation,
-				Realm:        testRealm,
+				RootInvocation: &resultpb.RootInvocation{
+					Name:             testRootInvocationName,
+					Realm:            testRealm,
+					FinalizeTime:     timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+					RootInvocationId: testRootInvocationID,
+				},
 			},
 			PageToken: "initial-token",
 			TaskIndex: 1,
@@ -95,12 +99,19 @@ func TestArtifactIngesterRun(t *testing.T) {
 		ingester := &artifactIngester{
 			antsExporter: antsexporter.NewExporter(antsClient),
 		}
-		// Common test payload.
+
+		invocationFinalizedTime := timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC))
+
+		// Base payload.
 		basePayload := &taskspb.IngestArtifacts{
-			Notification: &resultpb.InvocationFinalizedNotification{
+			RootInvocationNotification: &resultpb.RootInvocationFinalizedNotification{
 				ResultdbHost: testResultDBHost,
-				Invocation:   testInvocation,
-				Realm:        testRealm,
+				RootInvocation: &resultpb.RootInvocation{
+					Name:             testRootInvocationName,
+					Realm:            testRealm,
+					FinalizeTime:     invocationFinalizedTime,
+					RootInvocationId: testRootInvocationID,
+				},
 			},
 			PageToken: "initial-page-token",
 			TaskIndex: 1,
@@ -113,32 +124,24 @@ func TestArtifactIngesterRun(t *testing.T) {
 			mrc := resultdb.NewMockedClient(ctx, ctl)
 			ctx = mrc.Ctx
 
-			invocationFinalizedTime := timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC))
-			setupGetInvocationMock := func(modifiers ...func(*resultpb.Invocation)) {
-				invReq := &resultpb.GetInvocationRequest{
-					Name: testInvocation,
-				}
-				invRes := &resultpb.Invocation{
-					Name:         testInvocation,
-					Realm:        testRealm,
-					IsExportRoot: true,
-					FinalizeTime: invocationFinalizedTime,
-				}
-				for _, modifier := range modifiers {
-					modifier(invRes)
-				}
-				mrc.GetInvocation(invReq, invRes)
+			req := &resultpb.QueryArtifactsRequest{
+				Parent:    testRootInvocationName,
+				PageSize:  1000,
+				PageToken: "initial-page-token",
+				ReadMask: &fieldmaskpb.FieldMask{
+					Paths: artifactFields,
+				},
 			}
 
 			mockArtifacts := []*resultpb.Artifact{
 				{
-					Name:        fmt.Sprintf("%s/artifacts/screenshot.png", testInvocation),
+					Name:        fmt.Sprintf("rootInvocations/%s/workUnits/wu-1/artifacts/screenshot.png", testRootInvocationID),
 					ArtifactId:  "screenshot.png",
 					ContentType: "image/png",
 					SizeBytes:   102400,
 				},
 				{
-					Name:        "invocations/inv456/tests/my_test_case/results/result789/artifacts/log.txt",
+					Name:        fmt.Sprintf("rootInvocations/%s/workUnits/wu-2/tests/my_test_case/results/result789/artifacts/log.txt", testRootInvocationID),
 					TestId:      "my_test_case",
 					ResultId:    "result789",
 					ArtifactId:  "log.txt",
@@ -148,8 +151,8 @@ func TestArtifactIngesterRun(t *testing.T) {
 			}
 			expectedAntsArtifactRows := []*bqpb.AntsArtifactRow{
 				{
-					InvocationId:   testInvocationID,
-					WorkUnitId:     "",
+					InvocationId:   testRootInvocationID,
+					WorkUnitId:     "wu-1",
 					TestResultId:   "",
 					Name:           "screenshot.png",
 					Size:           102400,
@@ -158,8 +161,8 @@ func TestArtifactIngesterRun(t *testing.T) {
 					CompletionTime: invocationFinalizedTime,
 				},
 				{
-					InvocationId:   testInvocationID,
-					WorkUnitId:     "",
+					InvocationId:   testRootInvocationID,
+					WorkUnitId:     "wu-2",
 					TestResultId:   "result789",
 					Name:           "log.txt",
 					Size:           5120,
@@ -169,15 +172,7 @@ func TestArtifactIngesterRun(t *testing.T) {
 				},
 			}
 
-			setupQueryArtifactsMock := func(modifiers ...func(*resultpb.QueryArtifactsResponse)) {
-				arReq := &resultpb.QueryArtifactsRequest{
-					Invocations: []string{testInvocation},
-					PageSize:    1000,
-					PageToken:   "initial-page-token",
-					ReadMask: &fieldmaskpb.FieldMask{
-						Paths: artifactFields,
-					},
-				}
+			setupQueryArtifactsMock := func(req *resultpb.QueryArtifactsRequest, modifiers ...func(*resultpb.QueryArtifactsResponse)) {
 				arRes := &resultpb.QueryArtifactsResponse{
 					Artifacts:     mockArtifacts,
 					NextPageToken: "continuation-token",
@@ -185,7 +180,7 @@ func TestArtifactIngesterRun(t *testing.T) {
 				for _, modifier := range modifiers {
 					modifier(arRes)
 				}
-				mrc.QueryArtifacts(arReq, arRes)
+				mrc.QueryArtifacts(req, arRes)
 			}
 
 			// Set up service config.
@@ -194,8 +189,7 @@ func TestArtifactIngesterRun(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run(`with next page`, func(t *ftt.Test) {
-				setupGetInvocationMock()
-				setupQueryArtifactsMock()
+				setupQueryArtifactsMock(req)
 
 				err := ingester.run(ctx, basePayload)
 				assert.Loosely(t, err, should.BeNil)
@@ -211,7 +205,7 @@ func TestArtifactIngesterRun(t *testing.T) {
 					{
 						Key: checkpoints.Key{
 							Project:    testProject,
-							ResourceID: fmt.Sprintf("%s/%s", testResultDBHost, "test-invocation-123"),
+							ResourceID: fmt.Sprintf("rootInvocation/%s/%s", testResultDBHost, "test-invocation-123"),
 							ProcessID:  "artifact-ingestion/schedule-continuation",
 							Uniquifier: fmt.Sprintf("%v", basePayload.TaskIndex), // Uniquifier is current TaskIndex
 						},
@@ -223,8 +217,7 @@ func TestArtifactIngesterRun(t *testing.T) {
 			})
 
 			t.Run(`last page`, func(t *ftt.Test) {
-				setupGetInvocationMock()
-				setupQueryArtifactsMock(func(res *resultpb.QueryArtifactsResponse) {
+				setupQueryArtifactsMock(req, func(res *resultpb.QueryArtifactsResponse) {
 					res.NextPageToken = ""
 				})
 
@@ -239,8 +232,7 @@ func TestArtifactIngesterRun(t *testing.T) {
 			})
 
 			t.Run(`Retry Task After Continuation Task Already Created`, func(t *ftt.Test) {
-				setupGetInvocationMock()
-				setupQueryArtifactsMock(func(res *resultpb.QueryArtifactsResponse) {
+				setupQueryArtifactsMock(req, func(res *resultpb.QueryArtifactsResponse) {
 					res.NextPageToken = "next-page-token"
 				})
 
@@ -249,7 +241,7 @@ func TestArtifactIngesterRun(t *testing.T) {
 				existingCheckpoint := checkpoints.Checkpoint{
 					Key: checkpoints.Key{
 						Project:    testProject,
-						ResourceID: fmt.Sprintf("%s/%s", testResultDBHost, testInvocationID),
+						ResourceID: fmt.Sprintf("rootInvocation/%s/%s", testResultDBHost, testRootInvocationID),
 						ProcessID:  "artifact-ingestion/schedule-continuation",
 						Uniquifier: fmt.Sprintf("%v", basePayload.TaskIndex),
 					},
@@ -267,6 +259,57 @@ func TestArtifactIngesterRun(t *testing.T) {
 				// Check exported artifacts.
 				assert.Loosely(t, antsClient.Insertions, should.Match(expectedAntsArtifactRows))
 			})
+			t.Run("legacy invocation payload", func(t *ftt.Test) {
+				basePayload.Notification = &resultpb.InvocationFinalizedNotification{
+					ResultdbHost: testResultDBHost,
+					Invocation:   "invocations/test-invocation",
+					Realm:        testRealm,
+				}
+				basePayload.RootInvocationNotification = nil
+				// Set up invocation mock.
+				invReq := &resultpb.GetInvocationRequest{
+					Name: "invocations/test-invocation",
+				}
+				invRes := &resultpb.Invocation{
+					Name:         "invocations/test-invocation",
+					Realm:        testRealm,
+					IsExportRoot: true,
+					FinalizeTime: invocationFinalizedTime,
+				}
+				mrc.GetInvocation(invReq, invRes)
+				req.Parent = ""
+				req.Invocations = []string{"invocations/test-invocation"}
+				setupQueryArtifactsMock(req)
+
+				err := ingester.run(ctx, basePayload)
+				assert.Loosely(t, err, should.BeNil)
+
+				// A continuation task should be scheduled.
+				expectedContinuationPayload := proto.Clone(basePayload).(*taskspb.IngestArtifacts)
+				expectedContinuationPayload.PageToken = "continuation-token"
+				expectedContinuationPayload.TaskIndex = basePayload.TaskIndex + 1 // TaskIndex increments
+				verifyScheduledArtifactTask(t, skdr, expectedContinuationPayload)
+
+				// A checkpoint should be created.
+				expectedCheckpoints := []checkpoints.Checkpoint{
+					{
+						Key: checkpoints.Key{
+							Project:    testProject,
+							ResourceID: fmt.Sprintf("%s/%s", testResultDBHost, "test-invocation"),
+							ProcessID:  "artifact-ingestion/schedule-continuation",
+							Uniquifier: fmt.Sprintf("%v", basePayload.TaskIndex), // Uniquifier is current TaskIndex
+						},
+					},
+				}
+				verifyCheckpoints(ctx, t, expectedCheckpoints)
+
+				// Check exported artifacts.
+				expectedAntsArtifactRows[0].WorkUnitId = ""
+				expectedAntsArtifactRows[0].InvocationId = "test-invocation"
+				expectedAntsArtifactRows[1].WorkUnitId = ""
+				expectedAntsArtifactRows[1].InvocationId = "test-invocation"
+				assert.Loosely(t, antsClient.Insertions, should.Match(expectedAntsArtifactRows))
+			})
 			t.Run(`Project not allowlisted for ingestion`, func(t *ftt.Test) {
 				cfg.Ingestion = &configpb.Ingestion{
 					ProjectAllowlistEnabled: true,
@@ -282,14 +325,6 @@ func TestArtifactIngesterRun(t *testing.T) {
 		})
 
 		t.Run(`Invalid payload`, func(t *ftt.Test) {
-			t.Run(`Notification Missing`, func(t *ftt.Test) {
-				payload := proto.Clone(basePayload).(*taskspb.IngestArtifacts)
-				payload.Notification = nil
-
-				err := ingester.run(ctx, payload)
-				assert.Loosely(t, err, should.ErrLike("validate payload: notification: unspecified"))
-			})
-
 			t.Run(`TaskIndex Zero`, func(t *ftt.Test) {
 				payload := proto.Clone(basePayload).(*taskspb.IngestArtifacts)
 				payload.TaskIndex = 0
@@ -297,6 +332,10 @@ func TestArtifactIngesterRun(t *testing.T) {
 				err := ingester.run(ctx, payload)
 				assert.Loosely(t, err, should.ErrLike("validate payload: task index must be positive"))
 			})
+
+			// Other invalid payload cases are not tested because validatePayload is intended
+			// only as a sanity check for logic errors, not as a comprehensive validation
+			// of trusted input.
 		})
 	})
 }

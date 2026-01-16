@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -43,7 +44,9 @@ const (
 
 func TestRootInvocationFinalizedHandler(t *testing.T) {
 	ftt.Run(`Test RootInvocationFinalizedHandler`, t, func(t *ftt.Test) {
-		ctx, _ := tsmon.WithDummyInMemory(context.Background())
+		ctx := context.Background()
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		ctx, _ = testclock.UseTime(ctx, time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC))
 		ctx, taskScheduler := tq.TestingContext(ctx, nil)
 
 		h := &RootInvocationFinalizedHandler{}
@@ -103,14 +106,21 @@ func TestRootInvocationFinalizedHandler(t *testing.T) {
 				err := h.Handle(ctx, message, notification)
 				assert.NoErr(t, err)
 				// Task scheduled.
-				assert.Loosely(t, taskScheduler.Tasks().Payloads(), should.HaveLength(1))
+				assert.Loosely(t, taskScheduler.Tasks().Payloads(), should.HaveLength(2))
 				expectedWorkUnitIngestion := &taskspb.IngestWorkUnits{
 					RootInvocation: fmt.Sprintf("rootInvocations/%s", testRootInvocationID),
 					Realm:          "android:test",
 					ResultdbHost:   testRDBHost,
 					TaskIndex:      1,
 				}
-				assert.Loosely(t, taskScheduler.Tasks().Payloads()[0], should.Match(expectedWorkUnitIngestion))
+				expectedArtifactIngestion := &taskspb.IngestArtifacts{
+					RootInvocationNotification: notification,
+					TaskIndex:                  1,
+				}
+				assert.Loosely(t, taskScheduler.Tasks().Payloads(), should.Match([]proto.Message{
+					expectedArtifactIngestion,
+					expectedWorkUnitIngestion,
+				}))
 			})
 		})
 	})

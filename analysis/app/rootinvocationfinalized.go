@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/pubsub"
 
 	"go.chromium.org/luci/analysis/internal/ingestion/join"
+	"go.chromium.org/luci/analysis/internal/services/artifactingester"
 	"go.chromium.org/luci/analysis/internal/services/workunitingester"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 )
@@ -85,7 +86,11 @@ func (h *RootInvocationFinalizedHandler) Handle(ctx context.Context, message pub
 		if err := workunitingester.Schedule(ctx, workUnitsPaylod); err != nil {
 			return errors.Fmt("schedule ingest work units: %w", err)
 		}
-		// TODO: Schedule the artifact ingest task for the root invocation.
+		artifactPayload := &taskspb.IngestArtifacts{
+			RootInvocationNotification: notification,
+			TaskIndex:                  1,
+		}
+		artifactingester.Schedule(ctx, artifactPayload)
 	}
 
 	// Handle join invocation.

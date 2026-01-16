@@ -91,7 +91,15 @@ message IngestTestResults {
 message IngestArtifacts {
   // The ResultDB invocation finalized notification that triggered
   // the ingestion of test artifacts.
+  // Should be empty if root_invocation_notification is set.
+  // TODO (b/476258742): remove the legacy invocation support
+  // Deprecated, use root_invocation_notification instead.
   luci.resultdb.v1.InvocationFinalizedNotification notification = 1;
+
+  // The ResultDB root invocation finalized notification that triggered
+  // the ingestion of test artifacts.
+  // Should be empty if notification is set.
+  luci.resultdb.v1.RootInvocationFinalizedNotification root_invocation_notification = 4;
 
   // The page token value to use when calling QueryArtifacts.
   // For the first task, this should be "". For subsequent tasks,

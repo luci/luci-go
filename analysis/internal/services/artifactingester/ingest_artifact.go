@@ -87,10 +87,20 @@ func RegisterTaskHandler(srv *server.Server) error {
 
 // Schedule enqueues a task to ingest artifacts.
 func Schedule(ctx context.Context, task *taskspb.IngestArtifacts) {
-	project, _ := realms.Split(task.Notification.Realm)
+	var title string
+	if task.RootInvocationNotification != nil {
+		rootInv := task.RootInvocationNotification.RootInvocation
+		project, _ := realms.Split(rootInv.Realm)
+		title = fmt.Sprintf("%s-%s-page-%v", project, rootInv.RootInvocationId, task.TaskIndex)
+	}
+
+	if task.Notification != nil {
+		project, _ := realms.Split(task.Notification.Realm)
+		title = fmt.Sprintf("legacy-%s-%s-page-%v", project, task.Notification.Invocation, task.TaskIndex)
+	}
 
 	tq.MustAddTask(ctx, &tq.Task{
-		Title:   fmt.Sprintf("%s-%s-page-%v", project, task.Notification.Invocation, task.TaskIndex),
+		Title:   title,
 		Payload: task,
 	})
 }
@@ -105,10 +115,30 @@ func (a *artifactIngester) run(ctx context.Context, payload *taskspb.IngestArtif
 	if err := validatePayload(payload); err != nil {
 		return tq.Fatal.Apply(errors.Fmt("validate payload: %w", err))
 	}
-	n := payload.Notification
 
-	project, _ := realms.Split(n.Realm)
-	ctx = logging.SetFields(ctx, logging.Fields{"Project": project, "Invocation": n.Invocation})
+	var project string
+	var resultdbHost string
+	var invocationName string
+	var rootInvocationName string
+
+	// Exactly one of legacyNotification or rootInvocationNotification should be set.
+	legacyNotification := payload.Notification
+	rootInvocationNotification := payload.RootInvocationNotification
+
+	if rootInvocationNotification != nil {
+		project, _ = realms.Split(rootInvocationNotification.RootInvocation.Realm)
+		resultdbHost = rootInvocationNotification.ResultdbHost
+		rootInvocationName = rootInvocationNotification.RootInvocation.Name
+	} else if legacyNotification != nil {
+		project, _ = realms.Split(legacyNotification.Realm)
+		resultdbHost = legacyNotification.ResultdbHost
+		invocationName = legacyNotification.Invocation
+	} else {
+		// Should never happen, this should be caught by validatePayload.
+		return errors.New("logic error: neither notification nor root_invocation_notification specified")
+	}
+
+	ctx = logging.SetFields(ctx, logging.Fields{"Project": project, "Invocation": invocationName, "RootInvocation": rootInvocationName})
 
 	isProjectEnabled, err := config.IsProjectEnabledForIngestion(ctx, project)
 	if err != nil {
@@ -119,41 +149,55 @@ func (a *artifactIngester) run(ctx context.Context, payload *taskspb.IngestArtif
 		return nil
 	}
 
-	invClient, err := resultdb.NewClient(ctx, n.ResultdbHost, project)
+	invClient, err := resultdb.NewClient(ctx, resultdbHost, project)
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}
 
-	invocation, err := invClient.GetInvocation(ctx, n.Invocation)
-	code := status.Code(err)
-	if code == codes.NotFound {
-		// Invocation not found, end the task gracefully.
-		logging.Warningf(ctx, "Invocation not found.",
-			invocation, project)
-		return nil
-	}
-	if code == codes.PermissionDenied {
-		// Invocation not found, end the task gracefully.
-		logging.Warningf(ctx, "Invocation permission denied.")
-		return nil
-	}
-	if err != nil {
-		// Other error.
-		return transient.Tag.Apply(errors.Fmt("read invocation: %w", err))
+	// Exactly one of invocation or rootInvocation should be set, depends
+	// on whether the task was triggered by a legacy InvocationFinalizedNotification
+	// or a RootInvocationFinalizedNotification.
+	var invocation *resultpb.Invocation
+	var rootInvocation *resultpb.RootInvocation
+
+	if rootInvocationNotification != nil {
+		rootInvocation = rootInvocationNotification.RootInvocation
+	} else {
+		invocation, err = invClient.GetInvocation(ctx, legacyNotification.Invocation)
+		code := status.Code(err)
+		if code == codes.NotFound {
+			// Invocation not found, end the task gracefully.
+			logging.Warningf(ctx, "Invocation not found.",
+				invocation, project)
+			return nil
+		}
+		if code == codes.PermissionDenied {
+			// Invocation not found, end the task gracefully.
+			logging.Warningf(ctx, "Invocation permission denied.")
+			return nil
+		}
+		if err != nil {
+			// Other error.
+			return transient.Tag.Apply(errors.Fmt("read invocation: %w", err))
+		}
 	}
 
 	req := &resultpb.QueryArtifactsRequest{
-		Invocations: []string{n.Invocation},
-		PageSize:    1000,
-		PageToken:   payload.PageToken,
+		PageSize:  1000,
+		PageToken: payload.PageToken,
 		ReadMask: &fieldmaskpb.FieldMask{
 			Paths: artifactFields,
 		},
 	}
+	if rootInvocation != nil {
+		req.Parent = rootInvocation.Name
+	} else {
+		req.Invocations = []string{invocation.Name}
+	}
 	rsp, err := invClient.QueryArtifacts(ctx, req)
-	code = status.Code(err)
+	code := status.Code(err)
 	if code == codes.PermissionDenied {
-		logging.Warningf(ctx, "Invocation query artifacts permission denied.")
+		logging.Warningf(ctx, "Query artifacts permission denied.")
 		return tq.Fatal.Apply(errors.Fmt("query artifacts: %w", err))
 	}
 	if err != nil {
@@ -168,14 +212,14 @@ func (a *artifactIngester) run(ctx context.Context, payload *taskspb.IngestArtif
 	}
 
 	if len(rsp.Artifacts) > 0 {
-		if err := ingestAnTSArtifacts(ctx, project, rsp.Artifacts, invocation, a.antsExporter); err != nil {
+		if err := ingestAnTSArtifacts(ctx, project, rsp.Artifacts, invocation, rootInvocation, a.antsExporter); err != nil {
 			return transient.Tag.Apply(errors.Fmt("ingestAnTSArtifacts  %w", err))
 		}
 	}
 	return nil
 }
 
-func ingestAnTSArtifacts(ctx context.Context, project string, artifacts []*resultpb.Artifact, invocation *resultpb.Invocation, exporter *antsexporter.Exporter) (err error) {
+func ingestAnTSArtifacts(ctx context.Context, project string, artifacts []*resultpb.Artifact, invocation *resultpb.Invocation, rootInvocation *resultpb.RootInvocation, exporter *antsexporter.Exporter) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/artifactingester.ingestAnTSArtifacts")
 	defer func() { tracing.End(s, err) }()
 
@@ -184,7 +228,8 @@ func ingestAnTSArtifacts(ctx context.Context, project string, artifacts []*resul
 		return nil
 	}
 	exportOptions := antsexporter.ExportOptions{
-		Invocation: invocation,
+		Invocation:     invocation,
+		RootInvocation: rootInvocation,
 	}
 	err = exporter.Export(ctx, artifacts, exportOptions)
 	if err != nil {
@@ -207,19 +252,34 @@ func scheduleNextArtifactTask(ctx context.Context, task *taskspb.IngestArtifacts
 		// last page. We should not schedule a continuation task.
 		panic("next page token cannot be the empty page token")
 	}
-	project, _ := realms.Split(task.Notification.Realm)
-	rdbHost := task.Notification.ResultdbHost
-	invID, err := pbutil.ParseInvocationName(task.Notification.Invocation)
-	if err != nil {
-		return errors.Fmt("parse invocation name: %w", err)
+
+	var project string
+	var resourceID string
+
+	if task.RootInvocationNotification != nil {
+		n := task.RootInvocationNotification
+		project, _ = realms.Split(n.RootInvocation.Realm)
+		// Root invocation id and invocation id can collide, prefix the resourceID for root invocation task to differentiate.
+		resourceID = fmt.Sprintf("rootInvocation/%s/%s", n.ResultdbHost, n.RootInvocation.RootInvocationId)
+	} else if task.Notification != nil {
+		n := task.Notification
+		project, _ = realms.Split(n.Realm)
+		invID, err := pbutil.ParseInvocationName(n.Invocation)
+		if err != nil {
+			return errors.Fmt("parse invocation name: %w", err)
+		}
+		resourceID = fmt.Sprintf("%s/%s", n.ResultdbHost, invID)
+	} else {
+		// Should never happen, this should be caught by validatePayload.
+		return errors.New("logic error: neither notification nor root_invocation_notification specified")
 	}
 
 	// Schedule the task transactionally, conditioned on it not having been
 	// scheduled before.
-	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 		key := checkpoints.Key{
 			Project:    project,
-			ResourceID: fmt.Sprintf("%s/%s", rdbHost, invID),
+			ResourceID: resourceID,
 			ProcessID:  "artifact-ingestion/schedule-continuation",
 			Uniquifier: fmt.Sprintf("%v", task.TaskIndex),
 		}
@@ -242,9 +302,10 @@ func scheduleNextArtifactTask(ctx context.Context, task *taskspb.IngestArtifacts
 		nextTaskIndex := task.TaskIndex + 1
 
 		itaTask := &taskspb.IngestArtifacts{
-			Notification: task.Notification,
-			PageToken:    nextPageToken,
-			TaskIndex:    nextTaskIndex,
+			Notification:               task.Notification,
+			RootInvocationNotification: task.RootInvocationNotification,
+			PageToken:                  nextPageToken,
+			TaskIndex:                  nextTaskIndex,
 		}
 		Schedule(ctx, itaTask)
 
@@ -253,10 +314,27 @@ func scheduleNextArtifactTask(ctx context.Context, task *taskspb.IngestArtifacts
 	return err
 }
 
+// validatePayload performs a basic sanity check on the task payload.
+// It does not validate every field comprehensively as the input is expected
+// to come from trusted internal systems. Its primary purpose is to catch
+// logic errors (e.g. missing required fields).
 func validatePayload(payload *taskspb.IngestArtifacts) error {
-	if err := validateNotification(payload.Notification); err != nil {
-		return errors.Fmt("notification: %w", err)
+	if payload.Notification != nil {
+		if err := validateNotification(payload.Notification); err != nil {
+			return errors.Fmt("notification: %w", err)
+		}
+	} else if payload.RootInvocationNotification != nil {
+		if err := validateRootInvocationNotification(payload.RootInvocationNotification); err != nil {
+			return errors.Fmt("root invocation notification: %w", err)
+		}
+	} else {
+		return errors.New("neither notification nor root_invocation_notification specified")
 	}
+
+	if payload.Notification != nil && payload.RootInvocationNotification != nil {
+		return errors.New("only one of notification or root_invocation_notification should be specified")
+	}
+
 	if payload.TaskIndex <= 0 {
 		return errors.New("task index must be positive")
 	}
@@ -271,10 +349,29 @@ func validateNotification(n *resultpb.InvocationFinalizedNotification) error {
 		return errors.New("resultdb host is required")
 	}
 	if err := pbutil.ValidateInvocationName(n.Invocation); err != nil {
-		return errors.Fmt("root invocation name: %w", err)
+		return errors.Fmt("invocation name: %w", err)
 	}
 	if err := realms.ValidateRealmName(n.Realm, realms.GlobalScope); err != nil {
 		return errors.Fmt("invocation realm: %w", err)
+	}
+	return nil
+}
+
+func validateRootInvocationNotification(n *resultpb.RootInvocationFinalizedNotification) error {
+	if n == nil {
+		return errors.New("unspecified")
+	}
+	if n.ResultdbHost == "" {
+		return errors.New("resultdb host is required")
+	}
+	if n.RootInvocation == nil {
+		return errors.New("root invocation is required")
+	}
+	if err := pbutil.ValidateRootInvocationName(n.RootInvocation.Name); err != nil {
+		return errors.Fmt("root invocation name: %w", err)
+	}
+	if err := realms.ValidateRealmName(n.RootInvocation.Realm, realms.GlobalScope); err != nil {
+		return errors.Fmt("root invocation realm: %w", err)
 	}
 	return nil
 }
