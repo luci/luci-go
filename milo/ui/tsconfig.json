@@ -14,6 +14,7 @@
     "outDir": "dist/",
     "noEmit": true,
     "isolatedModules": true,
+    "incremental": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
