@@ -34,7 +34,10 @@ def CheckLintAndTypes(input_api, output_api):
   # Optimizing Lint: Run eslint ONLY on affected files.
   # We use 'npx eslint' to ensure we use the local eslint installation.
   # We pass the relative paths of affected files.
-  affected_file_paths = [f.LocalPath() for f in affected_files]
+  affected_file_paths = [
+      input_api.os_path.relpath(f.AbsoluteLocalPath(), cwd)
+      for f in affected_files
+  ]
 
   # For type-check, we must still run the full check, but we rely on
   # 'incremental': true in tsconfig.json to speed it up.
