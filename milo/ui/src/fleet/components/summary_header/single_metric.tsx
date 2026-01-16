@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Button, colors, Skeleton, Typography } from '@mui/material';
+import { Button, Skeleton, Typography } from '@mui/material';
 import { ReactElement } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -47,7 +47,7 @@ export function SingleMetric({
     return loading ? (
       <Skeleton width={16} height={18} />
     ) : (
-      <Typography variant="caption" color={colors.grey[700]}>
+      <Typography variant="body2">
         {percentage.toLocaleString(undefined, {
           style: 'percent',
           maximumFractionDigits: 1,
