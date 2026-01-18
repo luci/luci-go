@@ -458,6 +458,29 @@ func TestQueryArtifacts(t *testing.T) {
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike("is not in parent root invocation"))
 			})
+			t.Run(`Pagination with Work Unit artifacts`, func(t *ftt.Test) {
+				// Insert 2 work unit artifacts.
+				wuID := invocations.ID("workunit:inv1:wu1")
+				testutil.MustApply(ctx, t,
+					insert.Artifact(wuID, "", "a1", nil),
+					insert.Artifact(wuID, "", "a2", nil),
+				)
+
+				req.Invocations = nil
+				req.Parent = "rootInvocations/inv1"
+				req.Predicate.WorkUnits = []string{"rootInvocations/inv1/workUnits/wu1"}
+				req.PageSize = 1
+
+				// This should not panic.
+				_, token := mustFetch(t, req)
+				assert.Loosely(t, token, should.NotBeEmpty)
+
+				// Fetch the second page.
+				req.PageToken = token
+				actual, _ := mustFetch(t, req)
+				assert.Loosely(t, actual, should.HaveLength(1))
+				assert.Loosely(t, actual[0].Name, should.Equal("rootInvocations/inv1/workUnits/wu1/artifacts/a2"))
+			})
 		})
 	})
 }
