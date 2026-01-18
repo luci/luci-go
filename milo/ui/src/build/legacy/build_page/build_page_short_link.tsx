@@ -43,7 +43,7 @@ export function BuildPageShortLink() {
   } = useQuery({
     ...client.GetBuild.query(
       GetBuildRequest.fromPartial({
-        id: buildId,
+        id: buildId.startsWith('b') ? buildId.slice(1) : buildId,
         mask: {
           fields: BUILD_FIELD_MASK,
         },
