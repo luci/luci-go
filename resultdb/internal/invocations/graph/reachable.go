@@ -35,6 +35,8 @@ type ReachableInvocation struct {
 	HasTestResults bool
 	// HasTestResults stores whether the invocation has any test exonerations.
 	HasTestExonerations bool
+	// HasArtifacts stores whether the invocation has any artifacts.
+	HasArtifacts bool
 	// The realm of the invocation.
 	Realm string
 	// The source associated with the invocation, which can be looked up in
@@ -138,6 +140,24 @@ func (r ReachableInvocations) WithExonerationsIDSet() (invocations.IDSet, error)
 	result := make(invocations.IDSet, len(r.Invocations))
 	for id, inv := range r.Invocations {
 		if inv.HasTestExonerations {
+			result[id] = struct{}{}
+		}
+	}
+	// Yes, this is an artificial limit.  With 20,000 invocations you are already likely
+	// to run into problems if you try to process all of these in one go (e.g. in a
+	// Spanner query).  If you want more, use the batched call and handle a batch at a time.
+	if len(result) > MaxNodes {
+		return nil, TooManyTag.Apply(errors.Fmt("more than %d invocations match", MaxNodes))
+	}
+	return result, nil
+}
+
+// WithArtifactsIDSet returns the set of invocation IDs
+// that contain artifacts.
+func (r ReachableInvocations) WithArtifactsIDSet() (invocations.IDSet, error) {
+	result := make(invocations.IDSet, len(r.Invocations))
+	for id, inv := range r.Invocations {
+		if inv.HasArtifacts {
 			result[id] = struct{}{}
 		}
 	}
@@ -272,6 +292,7 @@ func (r ReachableInvocations) marshal() ([]byte, error) {
 			InvocationId:          string(id),
 			HasTestResults:        inv.HasTestResults,
 			HasTestExonerations:   inv.HasTestExonerations,
+			HasArtifacts:          inv.HasArtifacts,
 			Realm:                 inv.Realm,
 			Instructions:          inv.Instructions,
 			IncludedInvocationIds: ids,
@@ -324,6 +345,7 @@ func unmarshalReachableInvocations(value []byte) (ReachableInvocations, error) {
 		inv := ReachableInvocation{
 			HasTestResults:        entry.HasTestResults,
 			HasTestExonerations:   entry.HasTestExonerations,
+			HasArtifacts:          entry.HasArtifacts,
 			Realm:                 entry.Realm,
 			SourceHash:            EmptySourceHash,
 			Instructions:          entry.Instructions,

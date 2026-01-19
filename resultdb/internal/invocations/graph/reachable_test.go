@@ -35,33 +35,33 @@ func TestReachableInvocations(t *testing.T) {
 		invs.Sources[HashSources(src1)] = src1
 		invs.Sources[HashSources(src2)] = src2
 
-		invs.Invocations["0"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}}
-		invs.Invocations["1"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB", IncludedInvocationIDs: []invocations.ID{}}
-		invs.Invocations["2"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC", IncludedInvocationIDs: []invocations.ID{}}
-		invs.Invocations["3"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}}
-		invs.Invocations["4"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: HashSources(src2), IncludedInvocationIDs: []invocations.ID{}}
-		invs.Invocations["5"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA", IncludedInvocationIDs: []invocations.ID{}}
+		invs.Invocations["0"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, HasArtifacts: true, Realm: "testproject:testrealmA", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}}
+		invs.Invocations["1"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: false, HasArtifacts: false, Realm: "testproject:testrealmB", IncludedInvocationIDs: []invocations.ID{}}
+		invs.Invocations["2"] = ReachableInvocation{HasTestResults: true, HasTestExonerations: true, HasArtifacts: true, Realm: "testproject:testrealmC", IncludedInvocationIDs: []invocations.ID{}}
+		invs.Invocations["3"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, HasArtifacts: true, Realm: "testproject:testrealmC", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}}
+		invs.Invocations["4"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: true, HasArtifacts: false, Realm: "testproject:testrealmB", SourceHash: HashSources(src2), IncludedInvocationIDs: []invocations.ID{}}
+		invs.Invocations["5"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, HasArtifacts: false, Realm: "testproject:testrealmA", IncludedInvocationIDs: []invocations.ID{}}
 
 		t.Run(`Batches`, func(t *ftt.Test) {
 			results := invs.batches(2)
 			assert.Loosely(t, results[0].Invocations, should.Match(map[invocations.ID]ReachableInvocation{
-				"3": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}},
-				"4": {HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: HashSources(src2), IncludedInvocationIDs: []invocations.ID{}},
+				"3": {HasTestResults: false, HasTestExonerations: false, HasArtifacts: true, Realm: "testproject:testrealmC", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}},
+				"4": {HasTestResults: false, HasTestExonerations: true, HasArtifacts: false, Realm: "testproject:testrealmB", SourceHash: HashSources(src2), IncludedInvocationIDs: []invocations.ID{}},
 			}))
 			assert.Loosely(t, results[0].Sources, should.HaveLength(2))
 			assert.Loosely(t, results[0].Sources[HashSources(src1)], should.Match(src1))
 			assert.Loosely(t, results[0].Sources[HashSources(src2)], should.Match(src2))
 
 			assert.Loosely(t, results[1].Invocations, should.Match(map[invocations.ID]ReachableInvocation{
-				"0": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}},
-				"1": {HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB", IncludedInvocationIDs: []invocations.ID{}},
+				"0": {HasTestResults: true, HasTestExonerations: true, HasArtifacts: true, Realm: "testproject:testrealmA", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}},
+				"1": {HasTestResults: true, HasTestExonerations: false, HasArtifacts: false, Realm: "testproject:testrealmB", IncludedInvocationIDs: []invocations.ID{}},
 			}))
 			assert.Loosely(t, results[1].Sources, should.HaveLength(1))
 			assert.Loosely(t, results[1].Sources[HashSources(src1)], should.Match(src1))
 
 			assert.Loosely(t, results[2].Invocations, should.Match(map[invocations.ID]ReachableInvocation{
-				"2": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC", IncludedInvocationIDs: []invocations.ID{}},
-				"5": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA", IncludedInvocationIDs: []invocations.ID{}},
+				"2": {HasTestResults: true, HasTestExonerations: true, HasArtifacts: true, Realm: "testproject:testrealmC", IncludedInvocationIDs: []invocations.ID{}},
+				"5": {HasTestResults: false, HasTestExonerations: false, HasArtifacts: false, Realm: "testproject:testrealmA", IncludedInvocationIDs: []invocations.ID{}},
 			}))
 			assert.Loosely(t, results[2].Sources, should.HaveLength(0))
 		})
@@ -92,6 +92,11 @@ func TestReachableInvocations(t *testing.T) {
 			invIDs, err := invs.WithExonerationsIDSet()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, invIDs, should.Match(invocations.NewIDSet("0", "2", "4")))
+		})
+		t.Run(`WithArtifactsIDSet`, func(t *ftt.Test) {
+			invIDs, err := invs.WithArtifactsIDSet()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invIDs, should.Match(invocations.NewIDSet("0", "2", "3")))
 		})
 	})
 	ftt.Run(`Union`, t, func(t *ftt.Test) {

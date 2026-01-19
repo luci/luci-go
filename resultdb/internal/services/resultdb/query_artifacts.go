@@ -106,6 +106,12 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 
+	// Eliminate any invocations that do not have artifacts for Spanner query performance.
+	reachableInvIDs, err = reachableInvs.WithArtifactsIDSet()
+	if err != nil {
+		return nil, err
+	}
+
 	// Query artifacts.
 	q := &artifacts.Query{
 		InvocationIDs:       reachableInvIDs,
@@ -203,7 +209,8 @@ func resolveRootInvocation(ctx context.Context, in *pb.QueryArtifactsRequest) (i
 		reachableInvs := graph.NewReachableInvocations()
 		for id, realm := range realms {
 			reachableInvs.Invocations[id] = graph.ReachableInvocation{
-				Realm: realm,
+				Realm:        realm,
+				HasArtifacts: true,
 			}
 		}
 		return wuInvs, reachableInvs, nil

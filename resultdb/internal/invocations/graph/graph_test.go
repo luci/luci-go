@@ -478,6 +478,7 @@ func TestReachCache(t *testing.T) {
 		invs.Invocations["inv"] = ReachableInvocation{
 			HasTestResults:      true,
 			HasTestExonerations: true,
+			HasArtifacts:        true,
 			Realm:               insert.TestRealm,
 			Instructions: &pb.Instructions{
 				Instructions: []*pb.Instruction{
@@ -518,7 +519,7 @@ func TestReachCache(t *testing.T) {
 			assert.Loosely(c, err, should.BeNil)
 			assert.Loosely(c, actual, should.Match(invs))
 			assert.Loosely(c, conn.received, should.Match([][]any{
-				{"GET", "reach4:inv"},
+				{"GET", "reach5:inv"},
 			}))
 		})
 
@@ -533,13 +534,27 @@ func TestReachCache(t *testing.T) {
 			assert.Loosely(c, err, should.BeNil)
 
 			assert.Loosely(c, conn.received, should.Match([][]any{
-				{"SET", "reach4:inv", conn.received[0][2]},
-				{"EXPIRE", "reach4:inv", 2592000},
+				{"SET", "reach5:inv", conn.received[0][2]},
+				{"EXPIRE", "reach5:inv", 2592000},
 			}))
 			actual, err := unmarshalReachableInvocations(conn.received[0][2].([]byte))
 			assert.Loosely(c, err, should.BeNil)
 			assert.Loosely(c, actual, should.Match(invs))
 		})
+	})
+}
+
+func TestWithArtifactsIDSet(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`WithArtifactsIDSet`, t, func(t *ftt.Test) {
+		invs := NewReachableInvocations()
+		invs.Invocations["a"] = ReachableInvocation{HasArtifacts: true}
+		invs.Invocations["b"] = ReachableInvocation{HasArtifacts: false}
+		invs.Invocations["c"] = ReachableInvocation{HasArtifacts: true}
+
+		actual, err := invs.WithArtifactsIDSet()
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Match(invocations.NewIDSet("a", "c")))
 	})
 }
 

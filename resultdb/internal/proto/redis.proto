@@ -16,8 +16,8 @@ syntax = "proto3";
 
 package luci.resultdb.internal;
 
+import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/instruction.proto";
-import "go.chromium.org/luci/resultdb/proto/v1/invocation.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/internal/proto;internalpb";
 
@@ -35,6 +35,8 @@ message ReachableInvocations {
         bool has_test_exonerations = 3;
         // The realm of the invocation.
         string realm = 4;
+        // Whether the invocation has any artifacts.
+        bool has_artifacts = 8;
         // The offset of this invocation's resolved sources
         // in ReachableInvocations.sources.
         // 0 indicates there are no sources, 1 indicates the

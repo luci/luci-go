@@ -176,6 +176,7 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 
 	var withTestResults invocations.IDSet
 	var withExonerations invocations.IDSet
+	var withArtifacts invocations.IDSet
 	var invDetails map[invocations.ID]invocationDetails
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -192,6 +193,14 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 		withExonerations, err = queryInvocations(ctx, `SELECT DISTINCT te.InvocationID FROM UNNEST(@invocations) inv JOIN TestExonerations te on te.InvocationId = inv`, reachableInvocations)
 		if err != nil {
 			return errors.Fmt("querying invocations with test exonerations: %w", err)
+		}
+		return nil
+	})
+	eg.Go(func() error {
+		var err error
+		withArtifacts, err = queryInvocations(ctx, `SELECT DISTINCT a.InvocationID FROM UNNEST(@invocations) inv JOIN Artifacts a on a.InvocationId = inv`, reachableInvocations)
+		if err != nil {
+			return errors.Fmt("querying invocations with artifacts: %w", err)
 		}
 		return nil
 	})
@@ -221,6 +230,7 @@ func reachableUncached(ctx context.Context, roots invocations.IDSet) (ri Reachab
 		inv := ReachableInvocation{
 			HasTestResults:        withTestResults.Has(id),
 			HasTestExonerations:   withExonerations.Has(id),
+			HasArtifacts:          withArtifacts.Has(id),
 			Realm:                 details.Realm,
 			Instructions:          details.Instructions,
 			IncludedInvocationIDs: includedIds,
@@ -429,7 +439,7 @@ type reachCache invocations.ID
 
 // key returns the Redis key.
 func (c reachCache) key() string {
-	return fmt.Sprintf("reach4:%s", c)
+	return fmt.Sprintf("reach5:%s", c)
 }
 
 // Write writes the new value.
