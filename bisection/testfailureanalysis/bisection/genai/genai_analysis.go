@@ -193,6 +193,12 @@ func Analyze(ctx context.Context, tfa *model.TestFailureAnalysis, client llm.Cli
 		return errors.Fmt("failed to save suspects: %w", err)
 	}
 
+	// Update parent analysis status to SUSPECTFOUND.
+	if err := testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_SUSPECTFOUND, pb.AnalysisRunStatus_STARTED); err != nil {
+		// Non-critical, just log the error - the GenAI analysis itself succeeded
+		logging.Errorf(ctx, "Failed to update parent analysis status to SUSPECTFOUND: %v", err)
+	}
+
 	// Schedule Test Failure verification for all GenAI suspects
 	for _, suspect := range suspectsModel {
 		if err := task.ScheduleTestFailureTask(ctx, tfa.ID, suspect.Id, datastore.KeyForObj(ctx, genaiAnalysis).Encode()); err != nil {

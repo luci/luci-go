@@ -265,9 +265,13 @@ func TestAnalyze(t *testing.T) {
 		assert.Loosely(t, len(genaiAnalyses), should.Equal(1))
 		genaiAnalysis := genaiAnalyses[0]
 
-		// Verify analysis status
+		// Verify GenAI analysis status
 		assert.Loosely(t, genaiAnalysis.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
 		assert.Loosely(t, genaiAnalysis.RunStatus, should.Equal(pb.AnalysisRunStatus_ENDED))
+
+		// Verify parent analysis status is also updated to SUSPECTFOUND
+		assert.Loosely(t, datastore.Get(ctx, tfa), should.BeNil)
+		assert.Loosely(t, tfa.Status, should.Equal(pb.AnalysisStatus_SUSPECTFOUND))
 
 		// Verify 3 suspects were created
 		suspects := []*model.Suspect{}
