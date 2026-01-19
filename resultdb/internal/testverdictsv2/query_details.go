@@ -208,6 +208,9 @@ func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.Verdict
 		RootInvocation:   q.RootInvocationID,
 		TestPrefixFilter: q.TestPrefixFilter,
 		VerdictIDs:       q.VerdictIDs,
+		Access: permissions.RootInvocationAccess{
+			Level: permissions.FullAccess,
+		},
 	}
 	tePageToken := testexonerationsv2.ID{
 		RootInvocationShardID: pageToken.RootInvocationShardID,

@@ -17,6 +17,7 @@ package testexonerationsv2
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 
 	"google.golang.org/api/iterator"
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
@@ -62,6 +64,7 @@ func TestQuery(t *testing.T) {
 				WithCaseName(fmt.Sprintf("t%d", i)).
 				WithWorkUnitID("w1").
 				WithExonerationID("e1").
+				WithRealm(fmt.Sprintf("testproject:realm-%d", i%2)). // Alternating realms: realm-0, realm-1
 				Build()
 
 			ms = append(ms, InsertForTesting(row))
@@ -71,6 +74,7 @@ func TestQuery(t *testing.T) {
 
 		q := &Query{
 			RootInvocation: rootInvID,
+			Access:         permissions.RootInvocationAccess{Level: permissions.FullAccess},
 		}
 		opts := spanutil.BufferingOptions{
 			FirstPageSize:  10,
@@ -200,5 +204,55 @@ func TestQuery(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, results, should.BeEmpty)
 		})
+
+		t.Run("With limited access", func(t *ftt.Test) {
+			q.Access.Level = permissions.LimitedAccess
+
+			t.Run("Baseline", func(t *ftt.Test) {
+				// No realms allowed.
+				expectedMasked := maskedExonerations(expected, nil)
+				results, err := fetchAll(ctx, q, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Match(expectedMasked))
+			})
+
+			t.Run("With upgraded realms", func(t *ftt.Test) {
+				// Allow access to realm-0.
+				q.Access.Realms = []string{"testproject:realm-0"}
+
+				expectedMasked := maskedExonerations(expected, q.Access.Realms)
+				results, err := fetchAll(ctx, q, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Match(expectedMasked))
+
+				// Verify that we actually have a mix of masked and unmasked.
+				var maskedCount, unmaskedCount int
+				for _, r := range results {
+					if r.IsMasked {
+						maskedCount++
+					} else {
+						unmaskedCount++
+					}
+				}
+				assert.Loosely(t, maskedCount, should.BeGreaterThan(0))
+				assert.Loosely(t, unmaskedCount, should.BeGreaterThan(0))
+			})
+		})
 	})
+}
+
+// maskedExonerations returns masked copies of the given test results,
+// with results from realms in the given list *not* masked.
+func maskedExonerations(exonerations []*TestExonerationRow, allowedRealms []string) []*TestExonerationRow {
+	var masked []*TestExonerationRow
+	for _, r := range exonerations {
+		// Clone the row.
+		m := *r
+		if !slices.Contains(allowedRealms, r.Realm) {
+			m.IsMasked = true
+			m.ModuleVariant = nil
+		}
+		masked = append(masked, &m)
+	}
+	return masked
 }

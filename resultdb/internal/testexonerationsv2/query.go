@@ -24,9 +24,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -45,6 +47,8 @@ type Query struct {
 	// At most 10,000 IDs can be nominated (see "Values in an IN operator"):
 	// https://docs.cloud.google.com/spanner/quotas#query-limits
 	VerdictIDs []testresultsv2.VerdictID
+	// The access the caller has to the root invocation.
+	Access permissions.RootInvocationAccess
 }
 
 // List returns an iterator over the test exonerations in the root invocation,
@@ -79,8 +83,12 @@ func (q *Query) List(ctx context.Context, pageToken ID, opts spanutil.BufferingO
 // buildQuery returns a spanner query that returns the next page of results,
 // starting at pageToken.
 func (q *Query) buildQuery(pageToken ID, pageSize int) (spanner.Statement, error) {
+	if q.Access.Level == permissions.NoAccess {
+		return spanner.Statement{}, errors.New("no access to root invocation")
+	}
 	params := map[string]any{
-		"limit": pageSize,
+		"limit":         pageSize,
+		"upgradeRealms": q.Access.Realms,
 	}
 
 	paginationClause := "TRUE"
@@ -110,6 +118,7 @@ func (q *Query) buildQuery(pageToken ID, pageSize int) (spanner.Statement, error
 	tmplInput := map[string]any{
 		"PaginationClause": paginationClause,
 		"WhereClause":      whereClause,
+		"FullAccess":       q.Access.Level == permissions.FullAccess,
 	}
 
 	st, err := spanutil.GenerateStatement(testExonerationQueryTmpl, tmplInput)
@@ -164,6 +173,23 @@ func (q *Query) whereAfterPageToken(token ID, params map[string]any) string {
 }
 
 var testExonerationQueryTmpl = template.Must(template.New("").Parse(`
+-- We do not use WITH clauses below as Spanner query optimizer does not optimize
+-- across WITH clause/CTE boundaries and this results in suboptimal query plans. Instead
+-- we use templates to include the nested SQL statements.
+{{define "MaskedTestExonerations"}}
+	-- Masked test exonerations.
+	SELECT
+		* EXCEPT (ModuleVariant),
+		{{if eq .FullAccess true}}
+			ModuleVariant AS ModuleVariantMasked,
+			FALSE AS IsMasked,
+		{{else}}
+			IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL) AS ModuleVariantMasked,
+			(Realm NOT IN UNNEST(@upgradeRealms)) AS IsMasked,
+		{{end}}
+	FROM TestExonerationsV2
+	WHERE {{.WhereClause}}
+{{end}}
 SELECT
 	RootInvocationShardId,
 	ModuleName,
@@ -174,13 +200,16 @@ SELECT
 	T3CaseName,
 	WorkUnitId,
 	ExonerationId,
-	ModuleVariant,
+	ModuleVariantMasked,
 	CreateTime,
 	Realm,
 	ExplanationHTML,
-	Reason
-FROM TestExonerationsV2
-WHERE {{.WhereClause}} AND {{.PaginationClause}}
+	Reason,
+	IsMasked,
+FROM (
+	{{template "MaskedTestExonerations" .}}
+) E
+WHERE {{.PaginationClause}}
 ORDER BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ExonerationId
 LIMIT @limit
 `))
@@ -188,7 +217,7 @@ LIMIT @limit
 func decodeRow(spanRow *spanner.Row, b *spanutil.Buffer) (*TestExonerationRow, error) {
 	row := &TestExonerationRow{}
 	var explanationHTML spanutil.Compressed
-	var moduleVariant *pb.Variant
+	var moduleVariant []string
 	err := b.FromSpanner(spanRow,
 		&row.ID.RootInvocationShardID,
 		&row.ID.ModuleName,
@@ -204,11 +233,21 @@ func decodeRow(spanRow *spanner.Row, b *spanutil.Buffer) (*TestExonerationRow, e
 		&row.Realm,
 		&explanationHTML,
 		&row.Reason,
+		&row.IsMasked,
 	)
 	if err != nil {
 		return nil, errors.Fmt("unmarshal row: %w", err)
 	}
+
+	// For masked test verdicts, the variant is nil. This allows distinguishing
+	// a masked variant from an empty variant.
+	if moduleVariant != nil {
+		row.ModuleVariant, err = pbutil.VariantFromStrings(moduleVariant)
+		if err != nil {
+			return nil, errors.Fmt("module variant: %w", err)
+		}
+	}
+
 	row.ExplanationHTML = string(explanationHTML)
-	row.ModuleVariant = moduleVariant
 	return row, nil
 }

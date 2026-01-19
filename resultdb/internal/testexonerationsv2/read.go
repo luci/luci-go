@@ -112,6 +112,6 @@ func (r *TestExonerationRow) ToProto() *pb.TestExoneration {
 		ExplanationHtml: r.ExplanationHTML,
 		VariantHash:     r.ID.ModuleVariantHash,
 		Reason:          r.Reason,
-		IsMasked:        false,
+		IsMasked:        r.IsMasked,
 	}
 }

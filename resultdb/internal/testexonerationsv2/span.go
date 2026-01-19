@@ -31,6 +31,8 @@ type TestExonerationRow struct {
 	Realm           string
 	ExplanationHTML string
 	Reason          pb.ExonerationReason
+	// Whether the row was masked, because the user only has limited access. Output only.
+	IsMasked bool
 }
 
 // Create returns a mutation to insert or update a TestExonerationRow.
