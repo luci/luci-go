@@ -34,6 +34,8 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * See also:
  *   * StageView (graph view object for a Stage and contained messages)
  *   * StageEditView (graph view object for Edits of a Stage)
+ *
+ * Next ID: 15
  */
 export interface Stage {
   /** The Stage's identifier. */
@@ -99,6 +101,13 @@ export interface Stage {
     | StageState
     | undefined;
   /**
+   * If this stage was cancelled, this indicates the Actor which cancelled
+   * it.
+   */
+  readonly cancelledBy?:
+    | Actor
+    | undefined;
+  /**
    * Append-only list of StateHistoryEntry to record the database revision
    * (commit timestamp) when each time this Stage's state changes.
    */
@@ -108,8 +117,6 @@ export interface Stage {
    *
    * Stages are allowed to depend on other Checks and Stages, and will not be
    * sent to an Executor until dependencies is resolved.
-   *
-   * Once the Stage is ATTEMPTING, this field is immutable.
    */
   readonly dependencies?:
     | Dependencies
@@ -218,7 +225,7 @@ export interface Stage_ExecutionPolicyState {
  * TBD: Pull this into its own top-level StageAttempt entity because it will
  * need to have its own state and lifecycle/transactions.
  *
- * Next ID: 11
+ * Next ID: 12
  */
 export interface Stage_Attempt {
   /** The Stage Attempt's identifier. */
@@ -257,6 +264,27 @@ export interface Stage_Attempt {
    * (commit timestamp) when each time this Attempt's state changes.
    */
   readonly stateHistory: readonly Stage_Attempt_StateHistoryEntry[];
+  /**
+   * If set, this Attempt is in a state where the Orchestrator is waiting for
+   * some future time to interact with it.
+   *
+   * The states where this is set are:
+   *
+   *   * PENDING - The Orchestrator attempted to send this Stage Attempt to
+   *     the executor, but failed for some reason. The Orchestrator will try
+   *     again after this time.
+   *   * THROTTLED - The Executor explicitly asked the Orchestrator to hold
+   *     a PENDING attempt until later. The Orchestrator not to attempt to
+   *     call RunStage again until this time.
+   *   * AWAITING_RETRY - This Attempt was created as a retry of a previous
+   *     INCOMPLETE attempt, and the Orchestrator will not advance it to
+   *     PENDING until this time.
+   *
+   * In all other states, this field is unset.
+   */
+  readonly waitingUntil?:
+    | string
+    | undefined;
   /**
    * An opaque value provided by a Stage Attempt process (i.e. a single thread
    * of execution which is servicing this Stage Attempt) which is used to
@@ -370,7 +398,17 @@ export interface Stage_Attempt_Progress {
    * following:
    *   * turboci.graph.orchestrator.v1.ProgressEvolvePending
    */
-  readonly createdBy?: Actor | undefined;
+  readonly createdBy?:
+    | Actor
+    | undefined;
+  /**
+   * Unique-to-this-Attempt key for this Progress message.
+   *
+   * Used to prevent duplicate Progress messages via WriteNodesRequest.
+   *
+   * See WriteNodesRequest.StageAttemptProgress.
+   */
+  readonly idempotencyKey?: string | undefined;
 }
 
 /**
@@ -492,6 +530,7 @@ function createBaseStage(): Stage {
     args: undefined,
     version: undefined,
     state: undefined,
+    cancelledBy: undefined,
     stateHistory: [],
     dependencies: undefined,
     executionPolicy: undefined,
@@ -521,6 +560,9 @@ export const Stage: MessageFns<Stage> = {
     }
     if (message.state !== undefined) {
       writer.uint32(48).int32(message.state);
+    }
+    if (message.cancelledBy !== undefined) {
+      Actor.encode(message.cancelledBy, writer.uint32(114).fork()).join();
     }
     for (const v of message.stateHistory) {
       Stage_StateHistoryEntry.encode(v!, writer.uint32(58).fork()).join();
@@ -601,6 +643,14 @@ export const Stage: MessageFns<Stage> = {
           message.state = reader.int32() as any;
           continue;
         }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.cancelledBy = Actor.decode(reader, reader.uint32());
+          continue;
+        }
         case 7: {
           if (tag !== 58) {
             break;
@@ -674,6 +724,7 @@ export const Stage: MessageFns<Stage> = {
       args: isSet(object.args) ? Value.fromJSON(object.args) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       state: isSet(object.state) ? stageStateFromJSON(object.state) : undefined,
+      cancelledBy: isSet(object.cancelledBy) ? Actor.fromJSON(object.cancelledBy) : undefined,
       stateHistory: globalThis.Array.isArray(object?.stateHistory)
         ? object.stateHistory.map((e: any) => Stage_StateHistoryEntry.fromJSON(e))
         : [],
@@ -711,6 +762,9 @@ export const Stage: MessageFns<Stage> = {
     }
     if (message.state !== undefined) {
       obj.state = stageStateToJSON(message.state);
+    }
+    if (message.cancelledBy !== undefined) {
+      obj.cancelledBy = Actor.toJSON(message.cancelledBy);
     }
     if (message.stateHistory?.length) {
       obj.stateHistory = message.stateHistory.map((e) => Stage_StateHistoryEntry.toJSON(e));
@@ -753,6 +807,9 @@ export const Stage: MessageFns<Stage> = {
       ? Revision.fromPartial(object.version)
       : undefined;
     message.state = object.state ?? undefined;
+    message.cancelledBy = (object.cancelledBy !== undefined && object.cancelledBy !== null)
+      ? Actor.fromPartial(object.cancelledBy)
+      : undefined;
     message.stateHistory = object.stateHistory?.map((e) => Stage_StateHistoryEntry.fromPartial(e)) || [];
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? Dependencies.fromPartial(object.dependencies)
@@ -935,6 +992,7 @@ function createBaseStage_Attempt(): Stage_Attempt {
     lastHeartbeat: undefined,
     state: undefined,
     stateHistory: [],
+    waitingUntil: undefined,
     processUid: undefined,
     details: [],
     progress: [],
@@ -958,6 +1016,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     }
     for (const v of message.stateHistory) {
       Stage_Attempt_StateHistoryEntry.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.waitingUntil !== undefined) {
+      Timestamp.encode(toTimestamp(message.waitingUntil), writer.uint32(90).fork()).join();
     }
     if (message.processUid !== undefined) {
       writer.uint32(42).string(message.processUid);
@@ -1021,6 +1082,14 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
           message.stateHistory.push(Stage_Attempt_StateHistoryEntry.decode(reader, reader.uint32()));
           continue;
         }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.waitingUntil = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
         case 5: {
           if (tag !== 42) {
             break;
@@ -1071,6 +1140,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
       stateHistory: globalThis.Array.isArray(object?.stateHistory)
         ? object.stateHistory.map((e: any) => Stage_Attempt_StateHistoryEntry.fromJSON(e))
         : [],
+      waitingUntil: isSet(object.waitingUntil) ? globalThis.String(object.waitingUntil) : undefined,
       processUid: isSet(object.processUid) ? globalThis.String(object.processUid) : undefined,
       details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
       progress: globalThis.Array.isArray(object?.progress)
@@ -1098,6 +1168,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     }
     if (message.stateHistory?.length) {
       obj.stateHistory = message.stateHistory.map((e) => Stage_Attempt_StateHistoryEntry.toJSON(e));
+    }
+    if (message.waitingUntil !== undefined) {
+      obj.waitingUntil = message.waitingUntil;
     }
     if (message.processUid !== undefined) {
       obj.processUid = message.processUid;
@@ -1130,6 +1203,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
       : undefined;
     message.state = object.state ?? undefined;
     message.stateHistory = object.stateHistory?.map((e) => Stage_Attempt_StateHistoryEntry.fromPartial(e)) || [];
+    message.waitingUntil = object.waitingUntil ?? undefined;
     message.processUid = object.processUid ?? undefined;
     message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
     message.progress = object.progress?.map((e) => Stage_Attempt_Progress.fromPartial(e)) || [];
@@ -1219,7 +1293,7 @@ export const Stage_Attempt_StateHistoryEntry: MessageFns<Stage_Attempt_StateHist
 };
 
 function createBaseStage_Attempt_Progress(): Stage_Attempt_Progress {
-  return { message: undefined, version: undefined, details: [], createdBy: undefined };
+  return { message: undefined, version: undefined, details: [], createdBy: undefined, idempotencyKey: undefined };
 }
 
 export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
@@ -1235,6 +1309,9 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
     }
     if (message.createdBy !== undefined) {
       Actor.encode(message.createdBy, writer.uint32(34).fork()).join();
+    }
+    if (message.idempotencyKey !== undefined) {
+      writer.uint32(42).string(message.idempotencyKey);
     }
     return writer;
   },
@@ -1278,6 +1355,14 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
           message.createdBy = Actor.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.idempotencyKey = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1293,6 +1378,7 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
+      idempotencyKey: isSet(object.idempotencyKey) ? globalThis.String(object.idempotencyKey) : undefined,
     };
   },
 
@@ -1310,6 +1396,9 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
     if (message.createdBy !== undefined) {
       obj.createdBy = Actor.toJSON(message.createdBy);
     }
+    if (message.idempotencyKey !== undefined) {
+      obj.idempotencyKey = message.idempotencyKey;
+    }
     return obj;
   },
 
@@ -1326,6 +1415,7 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;
+    message.idempotencyKey = object.idempotencyKey ?? undefined;
     return message;
   },
 };

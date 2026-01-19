@@ -48,78 +48,74 @@ export interface TestAggregation {
 }
 
 /**
- * Module status. This is based on the work unit status and reflects
- * the success running and uploading test results to ResultDB, not the
- * success of the test cases themselves.
+ * Module status. This is based on the status of the top-level* work units
+ * linked the the module and reflects the success running and uploading
+ * test results to ResultDB, not the success of the test cases themselves.
  *
- * The module status is aggregated from the status of top-level work units
- * associated with that module as follows:
- * - When combining top-level work units within a module-shard, where
- *   the shard can be retried multiple times and only one attempt needs
- *   to succeed, the greatest status in the following order wins:
- *   SUCCEEDED > RUNNING > PENDING > SKIPPED > FAILED > CANCELLED.
- * - When combining module-shards into the overall module status,
- *   where we need all shards must succeed for the whole to succeed, the
- *   greatest status in the following order wins:
- *   FAILED > RUNNING > PENDING > CANCELLED > SUCCEEDED > SKIPPED.
+ * For example, the module status SUCCEEDED with all test results FAILED
+ * is a valid and common scenario.
  *
- * The "RUNNING" and "PENDING" statuses were placed one behind the greatest
- * status in each order, to propagate the known uncertainties about the final
- * status of the module and preference alerting users about problems that
- * look final over those that are known to have retries pending. Of course,
- * until the root invocation is finalized, all module statuses are subject to
- * revision as more shards/retries may still be created.
+ * *A top-level work unit is the first work unit, in any chain from the
+ * root work unit down to a leaf work unit, that specifies a module_id.
  *
- * In aggregated form, the FAILED work unit status is renamed "ERRORED" to
- * avoid confusion with the FAILED verdict status and connect it to the
- * "EXECUTION_ERRORED" verdict status, which is closer in meaning.
- *
- * In root invocations that are finalized, the status "RUNNING" and "PENDING"
- * will never occur as all work units will be in final states.
+ * In root invocations that are finalized, it is guaranteed that the
+ * status RUNNING and PENDING will never occur as all work units will
+ * be in final states.
  */
 export enum TestAggregation_ModuleStatus {
   MODULE_STATUS_UNSPECIFIED = 0,
   /**
    * SUCCEEDED - The module succeeded.
    *
-   * When seen on a finalized root invocation, means that for every
-   * module-shard, there was a top-level work unit with a status of
-   * SUCCEEDED or SKIPPED
-   * ("no failed or cancelled module-shards").
+   * This means all tests were run and had their results uploaded. It does
+   * NOT mean that all tests passed.
    *
-   * And moreover, there was at least one module-shard with a top-level
-   * work unit with a status of SUCCEEDED
-   * ("at least one succeeded module-shard").
+   * Technical definition (in finalized invocations):
+   * At least one module-shard has a succeeded top-level work unit and
+   * all other module-shards have at least one skipped or succeeded top-level
+   * work unit. Moreover, no module-shard will have a failed top-level
+   * work unit.
    */
   SUCCEEDED = 1,
   /**
-   * ERRORED - The module failed to run and/or upload all test cases.
+   * FLAKY - The module succeeded, but only after retries.
    *
-   * When seen on a finalized root invocation, means that there
-   * was at least one module-shard that:
-   * - consisted only of FAILED or CANCELLED top-level work units, and
-   * - one of these was a FAILED top-level work unit.
+   * This means all tests were run and had their results uploaded (eventually).
+   * It does NOT mean that all tests passed.
+   *
+   * Technical definition (in finalized invocations):
+   * At least one module-shard has a succeeded top-level work unit and
+   * all other module-shards have at least one skipped or succeeded top-level
+   * work unit. Moreover, at least one shard will have a failed top-level
+   * work unit.
    */
-  ERRORED = 2,
+  FLAKY = 7,
+  /**
+   * FAILED - The module failed to run and/or upload all test cases.
+   *
+   * This does not say anything about the test results which have
+   * been uploaded (if any).
+   *
+   * Technical definition (in finalized invocations):
+   * At least one module-shard has a failed top-level work unit,
+   * and moreover does not have a succeeded or skipped top-level work unit.
+   */
+  FAILED = 2,
   /**
    * SKIPPED - The module was skipped.
    *
-   * When seen on a finalized root invocation, means that for every
-   * module-shard, there was a top-level work unit with a status of SKIPPED.
-   *
-   * And moreover, there was no module-shard with a top-level work unit that
-   * had a status of SUCCEEDED ("no succeeded module-shards").
+   * Technical definition (in finalized invocations):
+   * For every module-shard, there was a top-level work unit with a status of SKIPPED.
+   * Moreover, there was no module-shard with a top-level work unit that
+   * had a status of SUCCEEDED.
    */
   SKIPPED = 3,
   /**
    * CANCELLED - The module was cancelled.
    *
-   * When seen on a finalized root invocation, means that there was at
-   * least one module-shard that consisted only of CANCELLED top-level work units.
-   *
-   * And moreover, there was no module-shard that had a FAILED
-   * top-level work unit, that did not also have a SKIPPED or SUCCEEDED
-   * top-level work unit.
+   * Technical definition (in finalized invocations):
+   * There was at least one module-shard that consisted only of CANCELLED top-level
+   * work units. Moreover, the definition for a FAILED module was not met.
    */
   CANCELLED = 4,
   /** RUNNING - The module is running. */
@@ -136,9 +132,12 @@ export function testAggregation_ModuleStatusFromJSON(object: any): TestAggregati
     case 1:
     case "SUCCEEDED":
       return TestAggregation_ModuleStatus.SUCCEEDED;
+    case 7:
+    case "FLAKY":
+      return TestAggregation_ModuleStatus.FLAKY;
     case 2:
-    case "ERRORED":
-      return TestAggregation_ModuleStatus.ERRORED;
+    case "FAILED":
+      return TestAggregation_ModuleStatus.FAILED;
     case 3:
     case "SKIPPED":
       return TestAggregation_ModuleStatus.SKIPPED;
@@ -162,8 +161,10 @@ export function testAggregation_ModuleStatusToJSON(object: TestAggregation_Modul
       return "MODULE_STATUS_UNSPECIFIED";
     case TestAggregation_ModuleStatus.SUCCEEDED:
       return "SUCCEEDED";
-    case TestAggregation_ModuleStatus.ERRORED:
-      return "ERRORED";
+    case TestAggregation_ModuleStatus.FLAKY:
+      return "FLAKY";
+    case TestAggregation_ModuleStatus.FAILED:
+      return "FAILED";
     case TestAggregation_ModuleStatus.SKIPPED:
       return "SKIPPED";
     case TestAggregation_ModuleStatus.CANCELLED:
@@ -256,6 +257,8 @@ export interface TestAggregation_VerdictCounts {
 export interface TestAggregation_ModuleStatusCounts {
   /** The number of modules that succeeded. */
   readonly succeeded: number;
+  /** The number of modules that were flaky. */
+  readonly flaky: number;
   /** The number of modules that failed. */
   readonly failed: number;
   /** The number of modules that skipped. */
@@ -669,13 +672,16 @@ export const TestAggregation_VerdictCounts: MessageFns<TestAggregation_VerdictCo
 };
 
 function createBaseTestAggregation_ModuleStatusCounts(): TestAggregation_ModuleStatusCounts {
-  return { succeeded: 0, failed: 0, skipped: 0, cancelled: 0, running: 0, pending: 0 };
+  return { succeeded: 0, flaky: 0, failed: 0, skipped: 0, cancelled: 0, running: 0, pending: 0 };
 }
 
 export const TestAggregation_ModuleStatusCounts: MessageFns<TestAggregation_ModuleStatusCounts> = {
   encode(message: TestAggregation_ModuleStatusCounts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.succeeded !== 0) {
       writer.uint32(8).int32(message.succeeded);
+    }
+    if (message.flaky !== 0) {
+      writer.uint32(56).int32(message.flaky);
     }
     if (message.failed !== 0) {
       writer.uint32(16).int32(message.failed);
@@ -708,6 +714,14 @@ export const TestAggregation_ModuleStatusCounts: MessageFns<TestAggregation_Modu
           }
 
           message.succeeded = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.flaky = reader.int32();
           continue;
         }
         case 2: {
@@ -762,6 +776,7 @@ export const TestAggregation_ModuleStatusCounts: MessageFns<TestAggregation_Modu
   fromJSON(object: any): TestAggregation_ModuleStatusCounts {
     return {
       succeeded: isSet(object.succeeded) ? globalThis.Number(object.succeeded) : 0,
+      flaky: isSet(object.flaky) ? globalThis.Number(object.flaky) : 0,
       failed: isSet(object.failed) ? globalThis.Number(object.failed) : 0,
       skipped: isSet(object.skipped) ? globalThis.Number(object.skipped) : 0,
       cancelled: isSet(object.cancelled) ? globalThis.Number(object.cancelled) : 0,
@@ -774,6 +789,9 @@ export const TestAggregation_ModuleStatusCounts: MessageFns<TestAggregation_Modu
     const obj: any = {};
     if (message.succeeded !== 0) {
       obj.succeeded = Math.round(message.succeeded);
+    }
+    if (message.flaky !== 0) {
+      obj.flaky = Math.round(message.flaky);
     }
     if (message.failed !== 0) {
       obj.failed = Math.round(message.failed);
@@ -799,6 +817,7 @@ export const TestAggregation_ModuleStatusCounts: MessageFns<TestAggregation_Modu
   fromPartial(object: DeepPartial<TestAggregation_ModuleStatusCounts>): TestAggregation_ModuleStatusCounts {
     const message = createBaseTestAggregation_ModuleStatusCounts() as any;
     message.succeeded = object.succeeded ?? 0;
+    message.flaky = object.flaky ?? 0;
     message.failed = object.failed ?? 0;
     message.skipped = object.skipped ?? 0;
     message.cancelled = object.cancelled ?? 0;

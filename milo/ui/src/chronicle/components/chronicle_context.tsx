@@ -97,17 +97,20 @@ export function ChronicleContextProvider({
   const result = useQueryNodes({
     query: [
       {
-        select: {
-          workplan: {
-            inWorkplans: [{ id: workplanId }],
-          },
-          nodes: [],
-          checkPatterns: [],
-          stagePatterns: [],
+        nodesInWorkplan: { id: workplanId },
+        collectChecks: {
+          options: true,
+          resultData: true,
+        },
+        collectStages: {
+          attempts: 3, // COLLECT_STAGE_ATTEMPTS_LATEST
         },
       },
     ],
-    typeInfo: { wanted: ['*'], known: ['*'] },
+    typeInfo: {
+      wanted: { typeUrls: ['*'] },
+      known: { typeUrls: ['*'] },
+    },
   });
 
   const queryNodesResponse = result.data;

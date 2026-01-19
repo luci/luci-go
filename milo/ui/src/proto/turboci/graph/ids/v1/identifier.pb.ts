@@ -49,6 +49,10 @@ export interface Identifier {
   readonly checkEditOption?:
     | CheckEditOption
     | undefined;
+  /** A reason for an edit to a Check. */
+  readonly checkEditReason?:
+    | CheckEditReason
+    | undefined;
   /** A Stage within a WorkPlan. */
   readonly stage?:
     | Stage
@@ -58,7 +62,11 @@ export interface Identifier {
     | StageAttempt
     | undefined;
   /** An edit to a Stage. */
-  readonly stageEdit?: StageEdit | undefined;
+  readonly stageEdit?:
+    | StageEdit
+    | undefined;
+  /** A reason for an edit to a Stage. */
+  readonly stageEditReason?: StageEditReason | undefined;
 }
 
 /**
@@ -172,7 +180,7 @@ export interface CheckResultDatum {
 /**
  * Identifies a CheckEdit within a WorkPlan.
  *
- * Serialized as "<check>:E<version>".
+ * Serialized as "<check>:V<version>".
  *
  * E.g.
  * "L<check.work_plan.id>:C<check.id>:V<version.seconds>/<version.nanos>"
@@ -198,7 +206,7 @@ export interface CheckEdit {
  * realm than the CheckEdit itself.
  */
 export interface CheckEditOption {
-  /** The check that this edit belongs to. */
+  /** The check edit that this option belongs to. */
   readonly checkEdit?:
     | CheckEdit
     | undefined;
@@ -207,6 +215,23 @@ export interface CheckEditOption {
    *
    * This is 1-based to distinguish it from 0/unset (which is invalid).
    */
+  readonly idx?: number | undefined;
+}
+
+/**
+ * Identifies a Reason within a CheckEdit.
+ *
+ * Serialized as "<edit>:R<idx>".
+ *
+ * E.g.
+ * "L<check.work_plan.id>:C<check.id>:V<version.seconds>/<version.nanos>:R1"
+ */
+export interface CheckEditReason {
+  /** The check edit that this reason belongs to. */
+  readonly checkEdit?:
+    | CheckEdit
+    | undefined;
+  /** The 1-based index of this Reason in the edit. */
   readonly idx?: number | undefined;
 }
 
@@ -275,7 +300,7 @@ export interface StageAttempt {
 /**
  * Identifies a Stage Edit within a WorkPlan.
  *
- * Serialized as "<stage>:E<version>".
+ * Serialized as "<stage>:V<version>".
  *
  * E.g.
  * "L<stage.work_plan.id>:<stage.id>:V<version.seconds>/<version.nanos>"
@@ -289,6 +314,23 @@ export interface StageEdit {
   readonly version?: string | undefined;
 }
 
+/**
+ * Identifies a Reason within a StageEdit.
+ *
+ * Serialized as "<edit>:R<idx>".
+ *
+ * E.g.
+ * "L<stage.work_plan.id>:<stage.id>:V<version.seconds>/<version.nanos>:R1"
+ */
+export interface StageEditReason {
+  /** The stage edit that this reason belongs to. */
+  readonly stageEdit?:
+    | StageEdit
+    | undefined;
+  /** The 1-based index of this Reason in the edit. */
+  readonly idx?: number | undefined;
+}
+
 function createBaseIdentifier(): Identifier {
   return {
     workPlan: undefined,
@@ -298,9 +340,11 @@ function createBaseIdentifier(): Identifier {
     checkResultDatum: undefined,
     checkEdit: undefined,
     checkEditOption: undefined,
+    checkEditReason: undefined,
     stage: undefined,
     stageAttempt: undefined,
     stageEdit: undefined,
+    stageEditReason: undefined,
   };
 }
 
@@ -327,6 +371,9 @@ export const Identifier: MessageFns<Identifier> = {
     if (message.checkEditOption !== undefined) {
       CheckEditOption.encode(message.checkEditOption, writer.uint32(58).fork()).join();
     }
+    if (message.checkEditReason !== undefined) {
+      CheckEditReason.encode(message.checkEditReason, writer.uint32(90).fork()).join();
+    }
     if (message.stage !== undefined) {
       Stage.encode(message.stage, writer.uint32(66).fork()).join();
     }
@@ -335,6 +382,9 @@ export const Identifier: MessageFns<Identifier> = {
     }
     if (message.stageEdit !== undefined) {
       StageEdit.encode(message.stageEdit, writer.uint32(82).fork()).join();
+    }
+    if (message.stageEditReason !== undefined) {
+      StageEditReason.encode(message.stageEditReason, writer.uint32(98).fork()).join();
     }
     return writer;
   },
@@ -402,6 +452,14 @@ export const Identifier: MessageFns<Identifier> = {
           message.checkEditOption = CheckEditOption.decode(reader, reader.uint32());
           continue;
         }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.checkEditReason = CheckEditReason.decode(reader, reader.uint32());
+          continue;
+        }
         case 8: {
           if (tag !== 66) {
             break;
@@ -426,6 +484,14 @@ export const Identifier: MessageFns<Identifier> = {
           message.stageEdit = StageEdit.decode(reader, reader.uint32());
           continue;
         }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.stageEditReason = StageEditReason.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -444,9 +510,11 @@ export const Identifier: MessageFns<Identifier> = {
       checkResultDatum: isSet(object.checkResultDatum) ? CheckResultDatum.fromJSON(object.checkResultDatum) : undefined,
       checkEdit: isSet(object.checkEdit) ? CheckEdit.fromJSON(object.checkEdit) : undefined,
       checkEditOption: isSet(object.checkEditOption) ? CheckEditOption.fromJSON(object.checkEditOption) : undefined,
+      checkEditReason: isSet(object.checkEditReason) ? CheckEditReason.fromJSON(object.checkEditReason) : undefined,
       stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined,
       stageAttempt: isSet(object.stageAttempt) ? StageAttempt.fromJSON(object.stageAttempt) : undefined,
       stageEdit: isSet(object.stageEdit) ? StageEdit.fromJSON(object.stageEdit) : undefined,
+      stageEditReason: isSet(object.stageEditReason) ? StageEditReason.fromJSON(object.stageEditReason) : undefined,
     };
   },
 
@@ -473,6 +541,9 @@ export const Identifier: MessageFns<Identifier> = {
     if (message.checkEditOption !== undefined) {
       obj.checkEditOption = CheckEditOption.toJSON(message.checkEditOption);
     }
+    if (message.checkEditReason !== undefined) {
+      obj.checkEditReason = CheckEditReason.toJSON(message.checkEditReason);
+    }
     if (message.stage !== undefined) {
       obj.stage = Stage.toJSON(message.stage);
     }
@@ -481,6 +552,9 @@ export const Identifier: MessageFns<Identifier> = {
     }
     if (message.stageEdit !== undefined) {
       obj.stageEdit = StageEdit.toJSON(message.stageEdit);
+    }
+    if (message.stageEditReason !== undefined) {
+      obj.stageEditReason = StageEditReason.toJSON(message.stageEditReason);
     }
     return obj;
   },
@@ -509,12 +583,18 @@ export const Identifier: MessageFns<Identifier> = {
     message.checkEditOption = (object.checkEditOption !== undefined && object.checkEditOption !== null)
       ? CheckEditOption.fromPartial(object.checkEditOption)
       : undefined;
+    message.checkEditReason = (object.checkEditReason !== undefined && object.checkEditReason !== null)
+      ? CheckEditReason.fromPartial(object.checkEditReason)
+      : undefined;
     message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
     message.stageAttempt = (object.stageAttempt !== undefined && object.stageAttempt !== null)
       ? StageAttempt.fromPartial(object.stageAttempt)
       : undefined;
     message.stageEdit = (object.stageEdit !== undefined && object.stageEdit !== null)
       ? StageEdit.fromPartial(object.stageEdit)
+      : undefined;
+    message.stageEditReason = (object.stageEditReason !== undefined && object.stageEditReason !== null)
+      ? StageEditReason.fromPartial(object.stageEditReason)
       : undefined;
     return message;
   },
@@ -1040,6 +1120,84 @@ export const CheckEditOption: MessageFns<CheckEditOption> = {
   },
 };
 
+function createBaseCheckEditReason(): CheckEditReason {
+  return { checkEdit: undefined, idx: undefined };
+}
+
+export const CheckEditReason: MessageFns<CheckEditReason> = {
+  encode(message: CheckEditReason, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.checkEdit !== undefined) {
+      CheckEdit.encode(message.checkEdit, writer.uint32(10).fork()).join();
+    }
+    if (message.idx !== undefined) {
+      writer.uint32(16).int32(message.idx);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckEditReason {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckEditReason() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.checkEdit = CheckEdit.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.idx = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckEditReason {
+    return {
+      checkEdit: isSet(object.checkEdit) ? CheckEdit.fromJSON(object.checkEdit) : undefined,
+      idx: isSet(object.idx) ? globalThis.Number(object.idx) : undefined,
+    };
+  },
+
+  toJSON(message: CheckEditReason): unknown {
+    const obj: any = {};
+    if (message.checkEdit !== undefined) {
+      obj.checkEdit = CheckEdit.toJSON(message.checkEdit);
+    }
+    if (message.idx !== undefined) {
+      obj.idx = Math.round(message.idx);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckEditReason>): CheckEditReason {
+    return CheckEditReason.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CheckEditReason>): CheckEditReason {
+    const message = createBaseCheckEditReason() as any;
+    message.checkEdit = (object.checkEdit !== undefined && object.checkEdit !== null)
+      ? CheckEdit.fromPartial(object.checkEdit)
+      : undefined;
+    message.idx = object.idx ?? undefined;
+    return message;
+  },
+};
+
 function createBaseStage(): Stage {
   return { workPlan: undefined, isWorknode: undefined, id: undefined };
 }
@@ -1282,6 +1440,84 @@ export const StageEdit: MessageFns<StageEdit> = {
     const message = createBaseStageEdit() as any;
     message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
     message.version = object.version ?? undefined;
+    return message;
+  },
+};
+
+function createBaseStageEditReason(): StageEditReason {
+  return { stageEdit: undefined, idx: undefined };
+}
+
+export const StageEditReason: MessageFns<StageEditReason> = {
+  encode(message: StageEditReason, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.stageEdit !== undefined) {
+      StageEdit.encode(message.stageEdit, writer.uint32(10).fork()).join();
+    }
+    if (message.idx !== undefined) {
+      writer.uint32(16).int32(message.idx);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): StageEditReason {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStageEditReason() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.stageEdit = StageEdit.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.idx = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StageEditReason {
+    return {
+      stageEdit: isSet(object.stageEdit) ? StageEdit.fromJSON(object.stageEdit) : undefined,
+      idx: isSet(object.idx) ? globalThis.Number(object.idx) : undefined,
+    };
+  },
+
+  toJSON(message: StageEditReason): unknown {
+    const obj: any = {};
+    if (message.stageEdit !== undefined) {
+      obj.stageEdit = StageEdit.toJSON(message.stageEdit);
+    }
+    if (message.idx !== undefined) {
+      obj.idx = Math.round(message.idx);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<StageEditReason>): StageEditReason {
+    return StageEditReason.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<StageEditReason>): StageEditReason {
+    const message = createBaseStageEditReason() as any;
+    message.stageEdit = (object.stageEdit !== undefined && object.stageEdit !== null)
+      ? StageEdit.fromPartial(object.stageEdit)
+      : undefined;
+    message.idx = object.idx ?? undefined;
     return message;
   },
 };

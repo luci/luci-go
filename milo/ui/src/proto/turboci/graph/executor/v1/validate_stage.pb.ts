@@ -19,7 +19,16 @@ export interface ValidateStageRequest {
 
 /** Response to a stage validation request. */
 export interface ValidateStageResponse {
-  /** Validated execution policy for the stage. */
+  /**
+   * Validated execution policy for the stage.
+   *
+   * It SHOULD be based on `stage.execution_policy.requested`. In particular
+   * executors are expected to populate various unset fields with
+   * executor-specific defaults (see e.g. `timeout` field in
+   * StageAttemptExecutionPolicy).
+   *
+   * Required.
+   */
   readonly stageExecutionPolicy?: StageExecutionPolicy | undefined;
 }
 

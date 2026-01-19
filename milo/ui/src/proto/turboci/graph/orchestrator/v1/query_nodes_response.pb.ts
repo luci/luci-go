@@ -17,7 +17,7 @@ export interface QueryNodesResponse {
   /**
    * The graph view of the nodes matching the query.
    *
-   * Indexed by WorkPlan id.
+   * Indexed by WorkPlan's canonical string id.
    *
    * The `version` field of each GraphView will always be identical.
    */

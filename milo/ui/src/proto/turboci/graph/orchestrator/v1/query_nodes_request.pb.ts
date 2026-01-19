@@ -8,6 +8,7 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Query } from "./query.pb";
 import { Revision } from "./revision.pb";
+import { TypeSet } from "./type_set.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -58,18 +59,29 @@ export interface QueryNodesRequest {
  */
 export interface QueryNodesRequest_TypeInfo {
   /**
-   * Type URLs that the caller wants to see in the response. Any child Node
-   * whose type URL is not specified here will be omitted in the response.
+   * Set of type URLs that the caller wants to see in the response. Any child
+   * Node whose type URL is not specified here will be omitted in the
+   * response.
    *
-   * TBD: The special value "*" means that the caller wants to see ALL types,
-   * but this requires an extra permission. Extra permission is needed to
-   * encourage clients to be explicit about what they want to reduce
-   * bandwidth, coupling and increase auditability.
+   * The set may contain an URL with a trailing wildcard to indicate that you
+   * want all data whose type appears in this proto namespace. For example:
+   *   * type.googleapis.com/turboci.data.*
+   *   * type.googleapis.com/*
    *
-   * TBD: Allow limited wildcards to include everything under some package
-   * namespace like `turboci.data.*`.
+   * Use this power wisely! This can have the following adverse affects:
+   *   * It can send your client much more data than it needs (and the server
+   *     will do more work to obtain and serialize this useless data).
+   *   * It can make coupling analysis harder; if all nodes are reading all
+   *     data, then it makes it much harder to answer "who depends on this
+   *     data type?"
+   *
+   * Good usages of this (especially the full wildcard, "*") include:
+   *   * Humans trying to debug/observe data in the graph (via UI or CLI).
+   *   * LLMs trying to analyze data in the graph.
    */
-  readonly wanted: readonly string[];
+  readonly wanted?:
+    | TypeSet
+    | undefined;
   /**
    * If specified the orchestrator will encode all Values with this
    * alternate encoding, excluding types listed in `known`.
@@ -77,19 +89,23 @@ export interface QueryNodesRequest_TypeInfo {
    * Note that the orchestrator may have an out-of-date version of the
    * descriptors - if this happens then Value.has_unknown_fields may be set
    * to `true`.
+   *
+   * This is intended to support:
+   *   * Humans trying to debug/observe data in the graph (via UI or CLI).
+   *   * LLMs trying to analyze data in the graph.
+   *
+   * Stage implementations, monitoring pipelines and scripts should ideally
+   * be written to directly use the original binary encoded proto data.
    */
   readonly unknownJsonpb?:
     | boolean
     | undefined;
   /**
-   * Type URLs that the caller has descriptors for. Used with
-   * `unknown_alternate_encoding` to avoid encoding types the caller does
-   * actually have descriptors for.
-   *
-   * TBD: Allow limited wildcards to include everything under some package
-   * namespace like `turboci.data.*`.
+   * Set of type URLs that the caller has descriptors for. Used with
+   * `unknown_jsonpb` to avoid encoding types the caller does actually have
+   * descriptors for.
    */
-  readonly known: readonly string[];
+  readonly known?: TypeSet | undefined;
 }
 
 /**
@@ -241,19 +257,19 @@ export const QueryNodesRequest: MessageFns<QueryNodesRequest> = {
 };
 
 function createBaseQueryNodesRequest_TypeInfo(): QueryNodesRequest_TypeInfo {
-  return { wanted: [], unknownJsonpb: undefined, known: [] };
+  return { wanted: undefined, unknownJsonpb: undefined, known: undefined };
 }
 
 export const QueryNodesRequest_TypeInfo: MessageFns<QueryNodesRequest_TypeInfo> = {
   encode(message: QueryNodesRequest_TypeInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.wanted) {
-      writer.uint32(10).string(v!);
+    if (message.wanted !== undefined) {
+      TypeSet.encode(message.wanted, writer.uint32(10).fork()).join();
     }
     if (message.unknownJsonpb !== undefined) {
       writer.uint32(16).bool(message.unknownJsonpb);
     }
-    for (const v of message.known) {
-      writer.uint32(26).string(v!);
+    if (message.known !== undefined) {
+      TypeSet.encode(message.known, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -270,7 +286,7 @@ export const QueryNodesRequest_TypeInfo: MessageFns<QueryNodesRequest_TypeInfo> 
             break;
           }
 
-          message.wanted.push(reader.string());
+          message.wanted = TypeSet.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -286,7 +302,7 @@ export const QueryNodesRequest_TypeInfo: MessageFns<QueryNodesRequest_TypeInfo> 
             break;
           }
 
-          message.known.push(reader.string());
+          message.known = TypeSet.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -300,22 +316,22 @@ export const QueryNodesRequest_TypeInfo: MessageFns<QueryNodesRequest_TypeInfo> 
 
   fromJSON(object: any): QueryNodesRequest_TypeInfo {
     return {
-      wanted: globalThis.Array.isArray(object?.wanted) ? object.wanted.map((e: any) => globalThis.String(e)) : [],
+      wanted: isSet(object.wanted) ? TypeSet.fromJSON(object.wanted) : undefined,
       unknownJsonpb: isSet(object.unknownJsonpb) ? globalThis.Boolean(object.unknownJsonpb) : undefined,
-      known: globalThis.Array.isArray(object?.known) ? object.known.map((e: any) => globalThis.String(e)) : [],
+      known: isSet(object.known) ? TypeSet.fromJSON(object.known) : undefined,
     };
   },
 
   toJSON(message: QueryNodesRequest_TypeInfo): unknown {
     const obj: any = {};
-    if (message.wanted?.length) {
-      obj.wanted = message.wanted;
+    if (message.wanted !== undefined) {
+      obj.wanted = TypeSet.toJSON(message.wanted);
     }
     if (message.unknownJsonpb !== undefined) {
       obj.unknownJsonpb = message.unknownJsonpb;
     }
-    if (message.known?.length) {
-      obj.known = message.known;
+    if (message.known !== undefined) {
+      obj.known = TypeSet.toJSON(message.known);
     }
     return obj;
   },
@@ -325,9 +341,13 @@ export const QueryNodesRequest_TypeInfo: MessageFns<QueryNodesRequest_TypeInfo> 
   },
   fromPartial(object: DeepPartial<QueryNodesRequest_TypeInfo>): QueryNodesRequest_TypeInfo {
     const message = createBaseQueryNodesRequest_TypeInfo() as any;
-    message.wanted = object.wanted?.map((e) => e) || [];
+    message.wanted = (object.wanted !== undefined && object.wanted !== null)
+      ? TypeSet.fromPartial(object.wanted)
+      : undefined;
     message.unknownJsonpb = object.unknownJsonpb ?? undefined;
-    message.known = object.known?.map((e) => e) || [];
+    message.known = (object.known !== undefined && object.known !== null)
+      ? TypeSet.fromPartial(object.known)
+      : undefined;
     return message;
   },
 };

@@ -32,12 +32,16 @@ export enum IdentifierKind {
   IDENTIFIER_KIND_CHECK_EDIT = 6,
   /** IDENTIFIER_KIND_CHECK_EDIT_OPTION - An Identifier.CheckEditOption. */
   IDENTIFIER_KIND_CHECK_EDIT_OPTION = 7,
+  /** IDENTIFIER_KIND_CHECK_EDIT_REASON - An Identifier.CheckEditReason */
+  IDENTIFIER_KIND_CHECK_EDIT_REASON = 11,
   /** IDENTIFIER_KIND_STAGE - An Identifier.Stage. */
   IDENTIFIER_KIND_STAGE = 8,
   /** IDENTIFIER_KIND_STAGE_ATTEMPT - An Identifier.StageAttempt. */
   IDENTIFIER_KIND_STAGE_ATTEMPT = 9,
   /** IDENTIFIER_KIND_STAGE_EDIT - An Identifier.StageEdit. */
   IDENTIFIER_KIND_STAGE_EDIT = 10,
+  /** IDENTIFIER_KIND_STAGE_EDIT_REASON - An Identifier.StageEditReason */
+  IDENTIFIER_KIND_STAGE_EDIT_REASON = 12,
 }
 
 export function identifierKindFromJSON(object: any): IdentifierKind {
@@ -66,6 +70,9 @@ export function identifierKindFromJSON(object: any): IdentifierKind {
     case 7:
     case "IDENTIFIER_KIND_CHECK_EDIT_OPTION":
       return IdentifierKind.IDENTIFIER_KIND_CHECK_EDIT_OPTION;
+    case 11:
+    case "IDENTIFIER_KIND_CHECK_EDIT_REASON":
+      return IdentifierKind.IDENTIFIER_KIND_CHECK_EDIT_REASON;
     case 8:
     case "IDENTIFIER_KIND_STAGE":
       return IdentifierKind.IDENTIFIER_KIND_STAGE;
@@ -75,6 +82,9 @@ export function identifierKindFromJSON(object: any): IdentifierKind {
     case 10:
     case "IDENTIFIER_KIND_STAGE_EDIT":
       return IdentifierKind.IDENTIFIER_KIND_STAGE_EDIT;
+    case 12:
+    case "IDENTIFIER_KIND_STAGE_EDIT_REASON":
+      return IdentifierKind.IDENTIFIER_KIND_STAGE_EDIT_REASON;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum IdentifierKind");
   }
@@ -98,12 +108,16 @@ export function identifierKindToJSON(object: IdentifierKind): string {
       return "IDENTIFIER_KIND_CHECK_EDIT";
     case IdentifierKind.IDENTIFIER_KIND_CHECK_EDIT_OPTION:
       return "IDENTIFIER_KIND_CHECK_EDIT_OPTION";
+    case IdentifierKind.IDENTIFIER_KIND_CHECK_EDIT_REASON:
+      return "IDENTIFIER_KIND_CHECK_EDIT_REASON";
     case IdentifierKind.IDENTIFIER_KIND_STAGE:
       return "IDENTIFIER_KIND_STAGE";
     case IdentifierKind.IDENTIFIER_KIND_STAGE_ATTEMPT:
       return "IDENTIFIER_KIND_STAGE_ATTEMPT";
     case IdentifierKind.IDENTIFIER_KIND_STAGE_EDIT:
       return "IDENTIFIER_KIND_STAGE_EDIT";
+    case IdentifierKind.IDENTIFIER_KIND_STAGE_EDIT_REASON:
+      return "IDENTIFIER_KIND_STAGE_EDIT_REASON";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum IdentifierKind");
   }

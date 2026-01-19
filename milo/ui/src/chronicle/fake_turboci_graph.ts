@@ -87,10 +87,7 @@ import {
 } from '../proto/turboci/graph/orchestrator/v1/stage.pb';
 import { StageAttemptState } from '../proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import { StageDelta } from '../proto/turboci/graph/orchestrator/v1/stage_delta.pb';
-import {
-  StageExecutionPolicy,
-  StageExecutionPolicy_StageTimeoutMode,
-} from '../proto/turboci/graph/orchestrator/v1/stage_execution_policy.pb';
+import { StageExecutionPolicy } from '../proto/turboci/graph/orchestrator/v1/stage_execution_policy.pb';
 import { StageState } from '../proto/turboci/graph/orchestrator/v1/stage_state.pb';
 import { StageView } from '../proto/turboci/graph/orchestrator/v1/stage_view.pb';
 import { Value } from '../proto/turboci/graph/orchestrator/v1/value.pb';
@@ -1277,8 +1274,7 @@ export class FakeGraphGenerator {
     return {
       retry: { maxRetries: 3 },
       stageTimeout: this.createDuration(7200),
-      stageTimeoutMode:
-        StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT,
+      executeAtLeastOneAttempt: true,
     };
   }
 

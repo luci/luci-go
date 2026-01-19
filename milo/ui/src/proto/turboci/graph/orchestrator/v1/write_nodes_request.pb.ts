@@ -175,6 +175,54 @@ export interface WriteNodesRequest_StageAttemptProgress {
     | undefined;
   /** Machine-readable details for this progress item. */
   readonly details: readonly Value[];
+  /**
+   * An optional field for preventing duplicate progress messages.
+   *
+   * If you don't care about duplicate progress messages on retried RPCs, you
+   * can ignore this field.
+   *
+   * Otherwise, if set, this field must be unique per progress message, per
+   * Stage Attempt.
+   *
+   * Writing multiple progress messages with the same idempotency_key, but
+   * different `message` or `details` fields is an error.
+   *
+   * It is recommended to set this field like "<thread_id>/<unique>" where
+   * <thread_id> identifies a single actor within the Executor, in the
+   * context of the current stage attempt token, and <unique> is some unique
+   * value for that actor, for the Stage Attempt.
+   *
+   * Examples:
+   *   * server/<purpose> - messages emitted by the server on behalf of a
+   *     working bot with some specific purpose (e.g. "server/final").
+   *   * bot/<sequence> etc. - messages emitted by the bot from a single
+   *     process on a machine somewhere. The process keeps <sequence> as a
+   *     simple counter in-memory.
+   *   * <uuid> - 36 bytes of stringy goodness. Hopefully your progress
+   *     messages are much longer than this :)
+   *
+   * This solves the problem where:
+   *   * you do a write with a progress message (e.g. "hello"), but fail to
+   *     get the OK response (network, cosmic rays, etc.).
+   *   * you then retry the RPC.
+   *
+   * If the WriteNodesRequest has a TransactionDetails, the retry will fail,
+   * and after getting the current Stage Attempt state, you would need to
+   * scan through the existing Progress messages to see if the message
+   * "hello" is present (assuming that "hello" is actually a unique progress
+   * message in the first place).
+   *
+   * If the WriteNodesRequest does NOT have a TransactionDetails, the new
+   * message will just be appended silently, and you will end up with two
+   * "hello" messages.
+   *
+   * Setting the idempotency_key to a per-Attempt-unique value will prevent
+   * this; this Progress message will be recorded at most once on the
+   * Attempt, and on the retry, the orchestrator will know that this message
+   * was already recorded and will be able to return OK without duplicating
+   * it.
+   */
+  readonly idempotencyKey?: string | undefined;
 }
 
 /**
@@ -527,8 +575,8 @@ export interface WriteNodesRequest_CurrentAttemptWrite {
   /**
    * Progress messages to add to the current Stage Attempt.
    *
-   * It is a good idea to do these progress updates transactionally,
-   * otherwise it's possible to double-append them.
+   * See StageAttemptProgress.idempotency_key to prevent duplicate appends on
+   * network flake.
    */
   readonly progress: readonly WriteNodesRequest_StageAttemptProgress[];
   /** A state transition to make in this write. */
@@ -1058,7 +1106,7 @@ export const WriteNodesRequest_DependencyGroup: MessageFns<WriteNodesRequest_Dep
 };
 
 function createBaseWriteNodesRequest_StageAttemptProgress(): WriteNodesRequest_StageAttemptProgress {
-  return { message: undefined, details: [] };
+  return { message: undefined, details: [], idempotencyKey: undefined };
 }
 
 export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesRequest_StageAttemptProgress> = {
@@ -1068,6 +1116,9 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
     }
     for (const v of message.details) {
       Value.encode(v!, writer.uint32(18).fork()).join();
+    }
+    if (message.idempotencyKey !== undefined) {
+      writer.uint32(26).string(message.idempotencyKey);
     }
     return writer;
   },
@@ -1095,6 +1146,14 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
           message.details.push(Value.decode(reader, reader.uint32()));
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.idempotencyKey = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1108,6 +1167,7 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
     return {
       message: isSet(object.message) ? globalThis.String(object.message) : undefined,
       details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+      idempotencyKey: isSet(object.idempotencyKey) ? globalThis.String(object.idempotencyKey) : undefined,
     };
   },
 
@@ -1119,6 +1179,9 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
     if (message.details?.length) {
       obj.details = message.details.map((e) => Value.toJSON(e));
     }
+    if (message.idempotencyKey !== undefined) {
+      obj.idempotencyKey = message.idempotencyKey;
+    }
     return obj;
   },
 
@@ -1129,6 +1192,7 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
     const message = createBaseWriteNodesRequest_StageAttemptProgress() as any;
     message.message = object.message ?? undefined;
     message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    message.idempotencyKey = object.idempotencyKey ?? undefined;
     return message;
   },
 };

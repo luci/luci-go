@@ -20,44 +20,27 @@ export interface MethodOptions {
 }
 
 /**
- * Which permissions this RPC may check.
+ * Which permissions this RPC may check, and under what conditions.
  *
  * This is purely for documentation purposes.
- *
- * Example:
- *   rpc Foo(FooRequest) returns (FooResponse) {
- *     option (turboci_rpc) = {
- *       permission: {
- *         name: "turboci.checks.update"
- *         in: IDENTIFIER_KIND_CHECK
- *         for: "Check edits"
- *         for: "Check option edits"
- *       }
- *       permission: {
- *         name: "turboci.checks.globalUpdate"
- *         in: IDENTIFIER_KIND_WORK_PLAN
- *         for: "Calls without StageAttemptToken"
- *       }
- *     };
- *   }
- *
- * This indicates that the RPC requires the permission
- * "turboci.checks.update" for all check and check option edits, and ALSO
- * requires "turboci.checks.globalUpdate" for all calls to this RPC without
- * a StageAttemptToken.
- *
- * You should also refer to the documentation of `Foo` for any additional
- * details of when these permissions are checked.
  */
 export interface MethodOptions_Permission {
-  /** The name of the permission. */
-  readonly name?:
+  /**
+   * The name of the permission checked for operations in the same
+   * workplan as the token.
+   */
+  readonly internal?:
     | string
     | undefined;
-  /** The node whose realm will be checked. */
-  readonly in?:
-    | IdentifierKind
+  /**
+   * The name of the permission checked for operations outside the
+   * workplan of the token, or for operations with no token at all.
+   */
+  readonly external?:
+    | string
     | undefined;
+  /** The node(s) whose realm will be checked. */
+  readonly in: readonly IdentifierKind[];
   /** Short description of when this permission is checked. */
   readonly for: readonly string[];
 }
@@ -125,19 +108,24 @@ export const MethodOptions: MessageFns<MethodOptions> = {
 };
 
 function createBaseMethodOptions_Permission(): MethodOptions_Permission {
-  return { name: undefined, in: undefined, for: [] };
+  return { internal: undefined, external: undefined, in: [], for: [] };
 }
 
 export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
   encode(message: MethodOptions_Permission, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.name !== undefined) {
-      writer.uint32(10).string(message.name);
+    if (message.internal !== undefined) {
+      writer.uint32(10).string(message.internal);
     }
-    if (message.in !== undefined) {
-      writer.uint32(16).int32(message.in);
+    if (message.external !== undefined) {
+      writer.uint32(18).string(message.external);
     }
+    writer.uint32(26).fork();
+    for (const v of message.in) {
+      writer.int32(v);
+    }
+    writer.join();
     for (const v of message.for) {
-      writer.uint32(26).string(v!);
+      writer.uint32(34).string(v!);
     }
     return writer;
   },
@@ -154,19 +142,37 @@ export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
             break;
           }
 
-          message.name = reader.string();
+          message.internal = reader.string();
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.in = reader.int32() as any;
+          message.external = reader.string();
           continue;
         }
         case 3: {
-          if (tag !== 26) {
+          if (tag === 24) {
+            message.in.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 26) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.in.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+        case 4: {
+          if (tag !== 34) {
             break;
           }
 
@@ -184,19 +190,23 @@ export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
 
   fromJSON(object: any): MethodOptions_Permission {
     return {
-      name: isSet(object.name) ? globalThis.String(object.name) : undefined,
-      in: isSet(object.in) ? identifierKindFromJSON(object.in) : undefined,
+      internal: isSet(object.internal) ? globalThis.String(object.internal) : undefined,
+      external: isSet(object.external) ? globalThis.String(object.external) : undefined,
+      in: globalThis.Array.isArray(object?.in) ? object.in.map((e: any) => identifierKindFromJSON(e)) : [],
       for: globalThis.Array.isArray(object?.for) ? object.for.map((e: any) => globalThis.String(e)) : [],
     };
   },
 
   toJSON(message: MethodOptions_Permission): unknown {
     const obj: any = {};
-    if (message.name !== undefined) {
-      obj.name = message.name;
+    if (message.internal !== undefined) {
+      obj.internal = message.internal;
     }
-    if (message.in !== undefined) {
-      obj.in = identifierKindToJSON(message.in);
+    if (message.external !== undefined) {
+      obj.external = message.external;
+    }
+    if (message.in?.length) {
+      obj.in = message.in.map((e) => identifierKindToJSON(e));
     }
     if (message.for?.length) {
       obj.for = message.for;
@@ -209,8 +219,9 @@ export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
   },
   fromPartial(object: DeepPartial<MethodOptions_Permission>): MethodOptions_Permission {
     const message = createBaseMethodOptions_Permission() as any;
-    message.name = object.name ?? undefined;
-    message.in = object.in ?? undefined;
+    message.internal = object.internal ?? undefined;
+    message.external = object.external ?? undefined;
+    message.in = object.in?.map((e) => e) || [];
     message.for = object.for?.map((e) => e) || [];
     return message;
   },

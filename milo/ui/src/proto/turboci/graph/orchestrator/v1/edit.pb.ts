@@ -119,11 +119,11 @@ export interface Edit {
    * realms.
    *
    * NOTE: When viewing Edits, the reader will only see the reasons for which
-   * they have read permissions (that is - two different users may see different
-   * versions of this otherwise entirely-immutable Edit).
+   * they have read permissions (that is - two different users may see
+   * different versions of this otherwise entirely-immutable Edit).
    *
-   * By convention, these should be ordered from most to least specific, so if a
-   * client only wants to display one Reason, it should be the first in this
+   * By convention, these should be ordered from most to least specific, so if
+   * a client only wants to display one Reason, it should be the first in this
    * list.
    */
   readonly reasons: readonly Edit_Reason[];
@@ -148,6 +148,10 @@ export interface Edit {
  * WriteNodes).
  */
 export interface Edit_Reason {
+  /** The identifier of this specific Reason. */
+  readonly identifier?:
+    | Identifier
+    | undefined;
   /**
    * The security realm for this reason.
    *
@@ -426,11 +430,14 @@ export const Edit: MessageFns<Edit> = {
 };
 
 function createBaseEdit_Reason(): Edit_Reason {
-  return { realm: undefined, message: undefined, details: [] };
+  return { identifier: undefined, realm: undefined, message: undefined, details: [] };
 }
 
 export const Edit_Reason: MessageFns<Edit_Reason> = {
   encode(message: Edit_Reason, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.identifier !== undefined) {
+      Identifier.encode(message.identifier, writer.uint32(34).fork()).join();
+    }
     if (message.realm !== undefined) {
       writer.uint32(10).string(message.realm);
     }
@@ -450,6 +457,14 @@ export const Edit_Reason: MessageFns<Edit_Reason> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.identifier = Identifier.decode(reader, reader.uint32());
+          continue;
+        }
         case 1: {
           if (tag !== 10) {
             break;
@@ -485,6 +500,7 @@ export const Edit_Reason: MessageFns<Edit_Reason> = {
 
   fromJSON(object: any): Edit_Reason {
     return {
+      identifier: isSet(object.identifier) ? Identifier.fromJSON(object.identifier) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       message: isSet(object.message) ? globalThis.String(object.message) : undefined,
       details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
@@ -493,6 +509,9 @@ export const Edit_Reason: MessageFns<Edit_Reason> = {
 
   toJSON(message: Edit_Reason): unknown {
     const obj: any = {};
+    if (message.identifier !== undefined) {
+      obj.identifier = Identifier.toJSON(message.identifier);
+    }
     if (message.realm !== undefined) {
       obj.realm = message.realm;
     }
@@ -510,6 +529,9 @@ export const Edit_Reason: MessageFns<Edit_Reason> = {
   },
   fromPartial(object: DeepPartial<Edit_Reason>): Edit_Reason {
     const message = createBaseEdit_Reason() as any;
+    message.identifier = (object.identifier !== undefined && object.identifier !== null)
+      ? Identifier.fromPartial(object.identifier)
+      : undefined;
     message.realm = object.realm ?? undefined;
     message.message = object.message ?? undefined;
     message.details = object.details?.map((e) => Value.fromPartial(e)) || [];

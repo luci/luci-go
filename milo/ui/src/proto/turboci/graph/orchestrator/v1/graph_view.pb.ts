@@ -48,17 +48,20 @@ export interface GraphView {
     | WorkPlan
     | undefined;
   /**
-   * Checks in the graph, addressed by `check.identifier.id`.
+   * Checks in the graph.
+   *
+   * These are key'd by the Check's canonical string ID, including the
+   * WorkPlan.
    *
    * Checks may be omitted if the user does not have permission to view them,
    * or if the user did not request them.
    */
   readonly checks: { [key: string]: CheckView };
   /**
-   * Stages in the graph, addressed by `stage.identifier.id`.
+   * Stages in the graph.
    *
-   * Note that for the same reason ids.v1.Stage.id contains the 'S' or 'N'
-   * prefix, that prefix appears in the key here as well.
+   * These are key'd by the Stage's canonical string ID, including the
+   * WorkPlan.
    *
    * Stages may be omitted if the user does not have permission to view them,
    * or if the user did not request them.

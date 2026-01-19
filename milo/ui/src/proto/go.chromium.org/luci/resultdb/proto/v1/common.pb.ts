@@ -134,6 +134,48 @@ export function workUnitViewToJSON(object: WorkUnitView): string {
 }
 
 /**
+ * TestVerdictView represents the set of test verdict fields to be retrieved.
+ * See https://google.aip.dev/157.
+ */
+export enum TestVerdictView {
+  /** TEST_VERDICT_VIEW_UNSPECIFIED - The default value / unset value. */
+  TEST_VERDICT_VIEW_UNSPECIFIED = 0,
+  /** TEST_VERDICT_VIEW_BASIC - Only the test identifier and status* fields are returned. */
+  TEST_VERDICT_VIEW_BASIC = 1,
+  /** TEST_VERDICT_VIEW_FULL - Include all fields. */
+  TEST_VERDICT_VIEW_FULL = 2,
+}
+
+export function testVerdictViewFromJSON(object: any): TestVerdictView {
+  switch (object) {
+    case 0:
+    case "TEST_VERDICT_VIEW_UNSPECIFIED":
+      return TestVerdictView.TEST_VERDICT_VIEW_UNSPECIFIED;
+    case 1:
+    case "TEST_VERDICT_VIEW_BASIC":
+      return TestVerdictView.TEST_VERDICT_VIEW_BASIC;
+    case 2:
+    case "TEST_VERDICT_VIEW_FULL":
+      return TestVerdictView.TEST_VERDICT_VIEW_FULL;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdictView");
+  }
+}
+
+export function testVerdictViewToJSON(object: TestVerdictView): string {
+  switch (object) {
+    case TestVerdictView.TEST_VERDICT_VIEW_UNSPECIFIED:
+      return "TEST_VERDICT_VIEW_UNSPECIFIED";
+    case TestVerdictView.TEST_VERDICT_VIEW_BASIC:
+      return "TEST_VERDICT_VIEW_BASIC";
+    case TestVerdictView.TEST_VERDICT_VIEW_FULL:
+      return "TEST_VERDICT_VIEW_FULL";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestVerdictView");
+  }
+}
+
+/**
  * A key-value map describing one variant of a module.
  *
  * A module can be executed in different ways, for example on

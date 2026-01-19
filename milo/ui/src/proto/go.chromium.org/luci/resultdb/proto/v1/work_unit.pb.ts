@@ -580,7 +580,11 @@ export interface QueryWorkUnitsRequest {
    * Format: rootInvocations/{ROOT_INVOCATION_ID}
    */
   readonly parent: string;
-  /** The predicate to filter the workunits to be returned. */
+  /**
+   * The predicate to filter the workunits to be returned.
+   * Pagination is not supported if predicate.AncestorsOf is specified,
+   * page_size and page_token will be ignored.
+   */
   readonly predicate:
     | WorkUnitPredicate
     | undefined;
@@ -591,12 +595,35 @@ export interface QueryWorkUnitsRequest {
    * ~2MB). Defaults to BASIC.
    */
   readonly view: WorkUnitView;
+  /**
+   * The maximum number of work units to return.
+   *
+   * The service may return fewer than this value.
+   * If unspecified, at most 100 work units will be returned.
+   * The maximum value is 1000; values above 1000 will be coerced to 1000.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `QueryWorkUnitsRequest` call.
+   * Provide this to retrieve the subsequent page.
+   *
+   * When paginating, all other parameters provided to `QueryWorkUnitsRequest` MUST
+   * match the call that provided the page token.
+   */
+  readonly pageToken: string;
 }
 
 /** A response message for the QueryWorkUnits RPC. */
 export interface QueryWorkUnitsResponse {
   /** The workunits matching the query. */
   readonly workUnits: readonly WorkUnit[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there were no subsequent pages at the time of
+   * request.
+   * If the root work unit is not finalized, more results may appear later.
+   */
+  readonly nextPageToken: string;
 }
 
 function createBaseWorkUnit(): WorkUnit {
@@ -1413,7 +1440,7 @@ export const BatchGetWorkUnitsResponse: MessageFns<BatchGetWorkUnitsResponse> = 
 };
 
 function createBaseQueryWorkUnitsRequest(): QueryWorkUnitsRequest {
-  return { parent: "", predicate: undefined, view: 0 };
+  return { parent: "", predicate: undefined, view: 0, pageSize: 0, pageToken: "" };
 }
 
 export const QueryWorkUnitsRequest: MessageFns<QueryWorkUnitsRequest> = {
@@ -1426,6 +1453,12 @@ export const QueryWorkUnitsRequest: MessageFns<QueryWorkUnitsRequest> = {
     }
     if (message.view !== 0) {
       writer.uint32(24).int32(message.view);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(32).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(42).string(message.pageToken);
     }
     return writer;
   },
@@ -1461,6 +1494,22 @@ export const QueryWorkUnitsRequest: MessageFns<QueryWorkUnitsRequest> = {
           message.view = reader.int32() as any;
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1475,6 +1524,8 @@ export const QueryWorkUnitsRequest: MessageFns<QueryWorkUnitsRequest> = {
       parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
       predicate: isSet(object.predicate) ? WorkUnitPredicate.fromJSON(object.predicate) : undefined,
       view: isSet(object.view) ? workUnitViewFromJSON(object.view) : 0,
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
     };
   },
 
@@ -1489,6 +1540,12 @@ export const QueryWorkUnitsRequest: MessageFns<QueryWorkUnitsRequest> = {
     if (message.view !== 0) {
       obj.view = workUnitViewToJSON(message.view);
     }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
     return obj;
   },
 
@@ -1502,18 +1559,23 @@ export const QueryWorkUnitsRequest: MessageFns<QueryWorkUnitsRequest> = {
       ? WorkUnitPredicate.fromPartial(object.predicate)
       : undefined;
     message.view = object.view ?? 0;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
     return message;
   },
 };
 
 function createBaseQueryWorkUnitsResponse(): QueryWorkUnitsResponse {
-  return { workUnits: [] };
+  return { workUnits: [], nextPageToken: "" };
 }
 
 export const QueryWorkUnitsResponse: MessageFns<QueryWorkUnitsResponse> = {
   encode(message: QueryWorkUnitsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.workUnits) {
       WorkUnit.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
     }
     return writer;
   },
@@ -1533,6 +1595,14 @@ export const QueryWorkUnitsResponse: MessageFns<QueryWorkUnitsResponse> = {
           message.workUnits.push(WorkUnit.decode(reader, reader.uint32()));
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1547,6 +1617,7 @@ export const QueryWorkUnitsResponse: MessageFns<QueryWorkUnitsResponse> = {
       workUnits: globalThis.Array.isArray(object?.workUnits)
         ? object.workUnits.map((e: any) => WorkUnit.fromJSON(e))
         : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
     };
   },
 
@@ -1554,6 +1625,9 @@ export const QueryWorkUnitsResponse: MessageFns<QueryWorkUnitsResponse> = {
     const obj: any = {};
     if (message.workUnits?.length) {
       obj.workUnits = message.workUnits.map((e) => WorkUnit.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
     }
     return obj;
   },
@@ -1564,6 +1638,7 @@ export const QueryWorkUnitsResponse: MessageFns<QueryWorkUnitsResponse> = {
   fromPartial(object: DeepPartial<QueryWorkUnitsResponse>): QueryWorkUnitsResponse {
     const message = createBaseQueryWorkUnitsResponse() as any;
     message.workUnits = object.workUnits?.map((e) => WorkUnit.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
     return message;
   },
 };

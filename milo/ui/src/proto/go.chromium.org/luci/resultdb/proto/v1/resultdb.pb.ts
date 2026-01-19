@@ -9,7 +9,14 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { Artifact, ArtifactLine } from "./artifact.pb";
-import { Sources, TestIdentifier, TestIdentifierPrefix, Variant } from "./common.pb";
+import {
+  Sources,
+  TestIdentifier,
+  TestVerdictView,
+  testVerdictViewFromJSON,
+  testVerdictViewToJSON,
+  Variant,
+} from "./common.pb";
 import { Instruction, InstructionTarget, instructionTargetFromJSON, instructionTargetToJSON } from "./instruction.pb";
 import { Invocation } from "./invocation.pb";
 import {
@@ -18,6 +25,7 @@ import {
   TestExonerationPredicate,
   TestMetadataPredicate,
   TestResultPredicate,
+  TestVerdictPredicate,
 } from "./predicate.pb";
 import { GetRootInvocationRequest, RootInvocation } from "./root_invocation.pb";
 import { TestAggregation } from "./test_aggregation.pb";
@@ -442,15 +450,26 @@ export interface CompareArtifactLinesRequest {
    * Required. The name of the artifact from a failing test result to be
    * analyzed. Format:
    * "invocations/{INVOCATION_ID}/tests/{URL_ESCAPED_TEST_ID}/results/{RESULT_ID}/artifacts/{ARTIFACT_ID}".
+   *
+   * Note that this is typically used for a failing test artifact, but
+   * this is not a requirement, any artifact can be used here.  The
+   * failing vs comparison names are used to improve the readability
+   * of the documentation only.
    */
   readonly name: string;
   /**
-   * Required. A list of names of passing test results to compare against.
+   * Required exactly one of `passing_results` or`artifacts` must be specified (not both).
+   * A list of names of passing test results to compare against.
    * These should be for the same test_id and variant_hash as the failing
    * result. The names are in the ResultDB test result name format, as returned
    * by the TestHistory.QueryRecentPasses RPC.
    */
   readonly passingResults: readonly string[];
+  /**
+   * Required exactly one of `passing_results` or`artifacts` must be specified (not both).
+   * A list of artifact names to compare against.
+   */
+  readonly artifacts: readonly string[];
   /** Optional. The view to control which fields are returned in the response. */
   readonly view: CompareArtifactLinesRequest_View;
   /**
@@ -519,8 +538,8 @@ export function compareArtifactLinesRequest_ViewToJSON(object: CompareArtifactLi
 export interface CompareArtifactLinesResponse {
   /**
    * Contiguous ranges in the requested artifact that do not appear in the
-   * corresponding artifacts from the provided passing test results.
-   * The ranges are sorted in ascending order by their starting position.
+   * corresponding artifacts from the provided passing test results or comparison
+   * artifacts. The ranges are sorted in ascending order by their starting position.
    */
   readonly failureOnlyRanges: readonly CompareArtifactLinesResponse_FailureOnlyRange[];
   /**
@@ -530,14 +549,21 @@ export interface CompareArtifactLinesResponse {
    */
   readonly nextPageToken: string;
   /**
-   * The names of the actual artifacts from passing results that were used
-   * for the comparison.  There may be fewer than passing_results from the
-   * request if the caller did not have permission to some results, or some
-   * results did not contain a corresponding artifact.
-   * Note that if there are no names in this field then no comparison was
-   * performed.
+   * DEPRECATED: Use `artifacts` instead.  This field is now empty, but left
+   * present temporarily for code compatibility.
+   *
+   * @deprecated
    */
   readonly usedPassingArtifacts: readonly string[];
+  /**
+   * The names of the artifacts that were used for the comparison (either from
+   * passing results or from the artifacts field).
+   * There may be fewer than the artifacts/passing_results from the request if
+   * the caller did not have permission to some artifacts, or some results did
+   * not contain a corresponding artifact.
+   * Note that if this field is empty then no comparison was performed.
+   */
+  readonly artifacts: readonly string[];
 }
 
 /**
@@ -637,17 +663,10 @@ export interface QueryTestVariantsRequest {
    *
    * See https://google.aip.dev/132 for syntax.
    *
-   * For performance reasons, only two sort orders are supported:
-   * - verdict status v1 ascending (order is UNEXPECTED, UNEXPECTEDLY_SKIPPED,
-   *   FLAKY, EXONERATED, EXPECTED).
-   *   This is the default. It can be explicitly requested by "status" or
-   *   "status asc".
-   * - effective verdict status v2 ascending (by verdict status v2 including any
-   * status overrides,
-   *   order is FAILED, EXECUTION_ERRORED, PRECLUDED, FLAKY, EXONERATED, SKIPPED
-   *   & PASSED). It can be requested by "status_v2_effective" or
-   *   "status_v2_effective asc" where status_v2_effective is a virtual field
-   *   representing the above sort order.
+   * The only supported sort order is "status_v2_effective", which is also the
+   * default. It sorts by verdict status v2 including any status overrides,
+   * ordering results by FAILED, EXECUTION_ERRORED, PRECLUDED, FLAKY, EXONERATED,
+   * (SKIPPED & PASSED).
    */
   readonly orderBy: string;
   /**
@@ -1437,8 +1456,11 @@ export interface QueryTestAggregationsRequest {
    * - `id.level, id.id` (default)
    * - `id.level, ui_priority desc, id.id`
    *
-   * Where `id.id` sorts by the lexicographical order of the test identifier prefix,
-   * i.e. (module_name, module_scheme, module_variant, coarse_name, fine_name).
+   * Where
+   * - `id.id` sorts by the lexicographical order of the test identifier prefix,
+   *   i.e. (module_name, module_scheme, module_variant, coarse_name, fine_name).
+   * - `ui_priority` is an opaque priority heuristic designed for LUCI UI use only and
+   *   is subject to change.
    *
    * For queries that filter to one level of aggregations, the `id.level` is
    * implicit and can be omitted.
@@ -1447,8 +1469,8 @@ export interface QueryTestAggregationsRequest {
   /**
    * The maximum number of items to return. The service may return fewer than
    * this value.
-   * If unspecified, at most 1000 items will be returned.
-   * The maximum value is 10000; values above 10000 will be coerced to 10000.
+   * If unspecified, at most 1_000 items will be returned.
+   * The maximum value is 10_000; values above 10_000 will be coerced to 10_000.
    */
   readonly pageSize: number;
   /**
@@ -1486,39 +1508,45 @@ export interface QueryTestAggregationsResponse {
 
 /**
  * A request message for QueryTestVerdicts RPC.
- * Next ID: 5.
+ * Next ID: 7.
  */
 export interface QueryTestVerdictsRequest {
-  /**
-   * The root invocation to retrieve test verdicts for.
-   * Format: invocations/{INVOCATION_ID}.
-   * N.B. Specifying an invocation that is not an export root will yield an
-   * INVALID_ARGUMENT error.
-   */
-  readonly invocation: string;
-  /**
-   * The test prefix for which to return aggregates.
-   *
-   * The test prefix may have:
-   * - No fields set, to return all aggregates in the invocation.
-   * - Only module set, to return all aggregates within a module.
-   * - Module and coarse name set, to return aggregates with a coarse-level
-   * aggregation.
-   * - Module, coarse name and fine name set, to return aggregates within a
-   * fine-level aggregation.
-   *
-   * The test prefix should not be more precise than the requested
-   * aggregation_level. For example, if asking for a coarse-level aggregation,
-   * do not include a fine name in the test prefix filter.
-   */
-  readonly testPrefixFilter:
-    | TestIdentifierPrefix
+  /** The name of the root invocation to retrieve test variants from, see RootInvocation.name. */
+  readonly parent: string;
+  /** The predicate to filter test verdicts. */
+  readonly predicate:
+    | TestVerdictPredicate
     | undefined;
   /**
-   * The maximum number of items to return. The service may return fewer than
+   * The order to sort test verdicts by.
+   *
+   * Refer to https://google.aip.dev/132#ordering for syntax.
+   *
+   * The sort orders that can be requested are:
+   * - `test_id_structured` (test ID order)
+   * - `ui_priority desc, test_id_structured` (UI priority, then test ID order)
+   *
+   * Where:
+   * - `test_id_structured` sorts by the lexicographical order of the test identifier,
+   *   i.e. (module_name, module_scheme, module_variant, coarse_name, fine_name),
+   * - `ui_priority` is an opaque priority heuristic designed for LUCI UI use only and
+   *   is subject to change.
+   *
+   * If this field is left blank, the implementation will choose the order of
+   * response items so as to minimise the response latency. This may be an
+   * ordering not listed above.
+   */
+  readonly orderBy: string;
+  /**
+   * The set of test verdict fields to return. Currently, this RPC only supports
+   * the view TEST_VERDICT_VIEW_BASIC. The default is TEST_VERDICT_VIEW_BASIC.
+   */
+  readonly view: TestVerdictView;
+  /**
+   * The maximum number of verdicts to return. The service may return fewer than
    * this value.
-   * If unspecified, at most 1000 items will be returned.
-   * The maximum value is 10000; values above 10000 will be coerced to 10000.
+   * If unspecified, at most 1_000 verdicts will be returned.
+   * The maximum value is 10_000; values above 10_000 will be coerced to 10_000.
    */
   readonly pageSize: number;
   /**
@@ -3320,7 +3348,7 @@ export const ListArtifactLinesResponse: MessageFns<ListArtifactLinesResponse> = 
 };
 
 function createBaseCompareArtifactLinesRequest(): CompareArtifactLinesRequest {
-  return { name: "", passingResults: [], view: 0, pageSize: 0, pageToken: "" };
+  return { name: "", passingResults: [], artifacts: [], view: 0, pageSize: 0, pageToken: "" };
 }
 
 export const CompareArtifactLinesRequest: MessageFns<CompareArtifactLinesRequest> = {
@@ -3330,6 +3358,9 @@ export const CompareArtifactLinesRequest: MessageFns<CompareArtifactLinesRequest
     }
     for (const v of message.passingResults) {
       writer.uint32(18).string(v!);
+    }
+    for (const v of message.artifacts) {
+      writer.uint32(50).string(v!);
     }
     if (message.view !== 0) {
       writer.uint32(24).int32(message.view);
@@ -3364,6 +3395,14 @@ export const CompareArtifactLinesRequest: MessageFns<CompareArtifactLinesRequest
           }
 
           message.passingResults.push(reader.string());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.artifacts.push(reader.string());
           continue;
         }
         case 3: {
@@ -3405,6 +3444,9 @@ export const CompareArtifactLinesRequest: MessageFns<CompareArtifactLinesRequest
       passingResults: globalThis.Array.isArray(object?.passingResults)
         ? object.passingResults.map((e: any) => globalThis.String(e))
         : [],
+      artifacts: globalThis.Array.isArray(object?.artifacts)
+        ? object.artifacts.map((e: any) => globalThis.String(e))
+        : [],
       view: isSet(object.view) ? compareArtifactLinesRequest_ViewFromJSON(object.view) : 0,
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
@@ -3418,6 +3460,9 @@ export const CompareArtifactLinesRequest: MessageFns<CompareArtifactLinesRequest
     }
     if (message.passingResults?.length) {
       obj.passingResults = message.passingResults;
+    }
+    if (message.artifacts?.length) {
+      obj.artifacts = message.artifacts;
     }
     if (message.view !== 0) {
       obj.view = compareArtifactLinesRequest_ViewToJSON(message.view);
@@ -3438,6 +3483,7 @@ export const CompareArtifactLinesRequest: MessageFns<CompareArtifactLinesRequest
     const message = createBaseCompareArtifactLinesRequest() as any;
     message.name = object.name ?? "";
     message.passingResults = object.passingResults?.map((e) => e) || [];
+    message.artifacts = object.artifacts?.map((e) => e) || [];
     message.view = object.view ?? 0;
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
@@ -3446,7 +3492,7 @@ export const CompareArtifactLinesRequest: MessageFns<CompareArtifactLinesRequest
 };
 
 function createBaseCompareArtifactLinesResponse(): CompareArtifactLinesResponse {
-  return { failureOnlyRanges: [], nextPageToken: "", usedPassingArtifacts: [] };
+  return { failureOnlyRanges: [], nextPageToken: "", usedPassingArtifacts: [], artifacts: [] };
 }
 
 export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesResponse> = {
@@ -3459,6 +3505,9 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
     }
     for (const v of message.usedPassingArtifacts) {
       writer.uint32(26).string(v!);
+    }
+    for (const v of message.artifacts) {
+      writer.uint32(34).string(v!);
     }
     return writer;
   },
@@ -3494,6 +3543,14 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
           message.usedPassingArtifacts.push(reader.string());
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.artifacts.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3512,6 +3569,9 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
       usedPassingArtifacts: globalThis.Array.isArray(object?.usedPassingArtifacts)
         ? object.usedPassingArtifacts.map((e: any) => globalThis.String(e))
         : [],
+      artifacts: globalThis.Array.isArray(object?.artifacts)
+        ? object.artifacts.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -3528,6 +3588,9 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
     if (message.usedPassingArtifacts?.length) {
       obj.usedPassingArtifacts = message.usedPassingArtifacts;
     }
+    if (message.artifacts?.length) {
+      obj.artifacts = message.artifacts;
+    }
     return obj;
   },
 
@@ -3540,6 +3603,7 @@ export const CompareArtifactLinesResponse: MessageFns<CompareArtifactLinesRespon
       object.failureOnlyRanges?.map((e) => CompareArtifactLinesResponse_FailureOnlyRange.fromPartial(e)) || [];
     message.nextPageToken = object.nextPageToken ?? "";
     message.usedPassingArtifacts = object.usedPassingArtifacts?.map((e) => e) || [];
+    message.artifacts = object.artifacts?.map((e) => e) || [];
     return message;
   },
 };
@@ -7398,22 +7462,28 @@ export const QueryTestAggregationsResponse: MessageFns<QueryTestAggregationsResp
 };
 
 function createBaseQueryTestVerdictsRequest(): QueryTestVerdictsRequest {
-  return { invocation: "", testPrefixFilter: undefined, pageSize: 0, pageToken: "" };
+  return { parent: "", predicate: undefined, orderBy: "", view: 0, pageSize: 0, pageToken: "" };
 }
 
 export const QueryTestVerdictsRequest: MessageFns<QueryTestVerdictsRequest> = {
   encode(message: QueryTestVerdictsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.invocation !== "") {
-      writer.uint32(10).string(message.invocation);
+    if (message.parent !== "") {
+      writer.uint32(10).string(message.parent);
     }
-    if (message.testPrefixFilter !== undefined) {
-      TestIdentifierPrefix.encode(message.testPrefixFilter, writer.uint32(18).fork()).join();
+    if (message.predicate !== undefined) {
+      TestVerdictPredicate.encode(message.predicate, writer.uint32(18).fork()).join();
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(26).string(message.orderBy);
+    }
+    if (message.view !== 0) {
+      writer.uint32(56).int32(message.view);
     }
     if (message.pageSize !== 0) {
-      writer.uint32(24).int32(message.pageSize);
+      writer.uint32(40).int32(message.pageSize);
     }
     if (message.pageToken !== "") {
-      writer.uint32(34).string(message.pageToken);
+      writer.uint32(50).string(message.pageToken);
     }
     return writer;
   },
@@ -7430,7 +7500,7 @@ export const QueryTestVerdictsRequest: MessageFns<QueryTestVerdictsRequest> = {
             break;
           }
 
-          message.invocation = reader.string();
+          message.parent = reader.string();
           continue;
         }
         case 2: {
@@ -7438,19 +7508,35 @@ export const QueryTestVerdictsRequest: MessageFns<QueryTestVerdictsRequest> = {
             break;
           }
 
-          message.testPrefixFilter = TestIdentifierPrefix.decode(reader, reader.uint32());
+          message.predicate = TestVerdictPredicate.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
-          if (tag !== 24) {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.view = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
             break;
           }
 
           message.pageSize = reader.int32();
           continue;
         }
-        case 4: {
-          if (tag !== 34) {
+        case 6: {
+          if (tag !== 50) {
             break;
           }
 
@@ -7468,10 +7554,10 @@ export const QueryTestVerdictsRequest: MessageFns<QueryTestVerdictsRequest> = {
 
   fromJSON(object: any): QueryTestVerdictsRequest {
     return {
-      invocation: isSet(object.invocation) ? globalThis.String(object.invocation) : "",
-      testPrefixFilter: isSet(object.testPrefixFilter)
-        ? TestIdentifierPrefix.fromJSON(object.testPrefixFilter)
-        : undefined,
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
+      predicate: isSet(object.predicate) ? TestVerdictPredicate.fromJSON(object.predicate) : undefined,
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      view: isSet(object.view) ? testVerdictViewFromJSON(object.view) : 0,
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
     };
@@ -7479,11 +7565,17 @@ export const QueryTestVerdictsRequest: MessageFns<QueryTestVerdictsRequest> = {
 
   toJSON(message: QueryTestVerdictsRequest): unknown {
     const obj: any = {};
-    if (message.invocation !== "") {
-      obj.invocation = message.invocation;
+    if (message.parent !== "") {
+      obj.parent = message.parent;
     }
-    if (message.testPrefixFilter !== undefined) {
-      obj.testPrefixFilter = TestIdentifierPrefix.toJSON(message.testPrefixFilter);
+    if (message.predicate !== undefined) {
+      obj.predicate = TestVerdictPredicate.toJSON(message.predicate);
+    }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
+    if (message.view !== 0) {
+      obj.view = testVerdictViewToJSON(message.view);
     }
     if (message.pageSize !== 0) {
       obj.pageSize = Math.round(message.pageSize);
@@ -7499,10 +7591,12 @@ export const QueryTestVerdictsRequest: MessageFns<QueryTestVerdictsRequest> = {
   },
   fromPartial(object: DeepPartial<QueryTestVerdictsRequest>): QueryTestVerdictsRequest {
     const message = createBaseQueryTestVerdictsRequest() as any;
-    message.invocation = object.invocation ?? "";
-    message.testPrefixFilter = (object.testPrefixFilter !== undefined && object.testPrefixFilter !== null)
-      ? TestIdentifierPrefix.fromPartial(object.testPrefixFilter)
+    message.parent = object.parent ?? "";
+    message.predicate = (object.predicate !== undefined && object.predicate !== null)
+      ? TestVerdictPredicate.fromPartial(object.predicate)
       : undefined;
+    message.orderBy = object.orderBy ?? "";
+    message.view = object.view ?? 0;
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
     return message;

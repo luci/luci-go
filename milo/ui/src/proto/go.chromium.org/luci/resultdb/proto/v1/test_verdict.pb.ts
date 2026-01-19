@@ -47,7 +47,18 @@ export interface TestVerdict {
    * metadata. This RPC relies on this rule and returns test metadata from
    * *arbitrary* result of the test variant.
    */
-  readonly testMetadata: TestMetadata | undefined;
+  readonly testMetadata:
+    | TestMetadata
+    | undefined;
+  /**
+   * Whether the
+   *    - test metadata; and/or
+   *    - test_id_structured.module_definition
+   * have been masked from the test variant, due to limited access of the caller.
+   *
+   * Output only.
+   */
+  readonly isMasked: boolean;
 }
 
 /**
@@ -188,6 +199,7 @@ function createBaseTestVerdict(): TestVerdict {
     results: [],
     exonerations: [],
     testMetadata: undefined,
+    isMasked: false,
   };
 }
 
@@ -213,6 +225,9 @@ export const TestVerdict: MessageFns<TestVerdict> = {
     }
     if (message.testMetadata !== undefined) {
       TestMetadata.encode(message.testMetadata, writer.uint32(74).fork()).join();
+    }
+    if (message.isMasked !== false) {
+      writer.uint32(80).bool(message.isMasked);
     }
     return writer;
   },
@@ -280,6 +295,14 @@ export const TestVerdict: MessageFns<TestVerdict> = {
           message.testMetadata = TestMetadata.decode(reader, reader.uint32());
           continue;
         }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.isMasked = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -300,6 +323,7 @@ export const TestVerdict: MessageFns<TestVerdict> = {
         ? object.exonerations.map((e: any) => TestExoneration.fromJSON(e))
         : [],
       testMetadata: isSet(object.testMetadata) ? TestMetadata.fromJSON(object.testMetadata) : undefined,
+      isMasked: isSet(object.isMasked) ? globalThis.Boolean(object.isMasked) : false,
     };
   },
 
@@ -326,6 +350,9 @@ export const TestVerdict: MessageFns<TestVerdict> = {
     if (message.testMetadata !== undefined) {
       obj.testMetadata = TestMetadata.toJSON(message.testMetadata);
     }
+    if (message.isMasked !== false) {
+      obj.isMasked = message.isMasked;
+    }
     return obj;
   },
 
@@ -345,6 +372,7 @@ export const TestVerdict: MessageFns<TestVerdict> = {
     message.testMetadata = (object.testMetadata !== undefined && object.testMetadata !== null)
       ? TestMetadata.fromPartial(object.testMetadata)
       : undefined;
+    message.isMasked = object.isMasked ?? false;
     return message;
   },
 };

@@ -41,6 +41,8 @@ export enum StageConcludedReason {
    * See StageExecutionPolicy for details.
    */
   STAGE_CONCLUDED_REASON_TIMEOUT = 4,
+  /** STAGE_CONCLUDED_REASON_CANCELLED - The Stage was explicitly cancelled via WriteNodes. */
+  STAGE_CONCLUDED_REASON_CANCELLED = 5,
 }
 
 export function stageConcludedReasonFromJSON(object: any): StageConcludedReason {
@@ -60,6 +62,9 @@ export function stageConcludedReasonFromJSON(object: any): StageConcludedReason 
     case 4:
     case "STAGE_CONCLUDED_REASON_TIMEOUT":
       return StageConcludedReason.STAGE_CONCLUDED_REASON_TIMEOUT;
+    case 5:
+    case "STAGE_CONCLUDED_REASON_CANCELLED":
+      return StageConcludedReason.STAGE_CONCLUDED_REASON_CANCELLED;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum StageConcludedReason");
   }
@@ -77,6 +82,8 @@ export function stageConcludedReasonToJSON(object: StageConcludedReason): string
       return "STAGE_CONCLUDED_REASON_FINAL_ATTEMPT_BLOCKED_RETRY";
     case StageConcludedReason.STAGE_CONCLUDED_REASON_TIMEOUT:
       return "STAGE_CONCLUDED_REASON_TIMEOUT";
+    case StageConcludedReason.STAGE_CONCLUDED_REASON_CANCELLED:
+      return "STAGE_CONCLUDED_REASON_CANCELLED";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum StageConcludedReason");
   }

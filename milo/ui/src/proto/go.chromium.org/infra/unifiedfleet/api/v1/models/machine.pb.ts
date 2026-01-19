@@ -283,7 +283,7 @@ export interface ChromeBrowserMachine {
 
 /**
  * ChromeOSMachine refers duts and servers in Chrome OS lab
- * NEXT TAG: 20
+ * NEXT TAG: 21
  */
 export interface ChromeOSMachine {
   /**
@@ -329,6 +329,8 @@ export interface ChromeOSMachine {
   readonly dlmSkuId: string;
   /** Storage type */
   readonly storageType: StorageType;
+  /** the firmware identifier for android_desktop device */
+  readonly frid: string;
 }
 
 /**
@@ -1073,6 +1075,7 @@ function createBaseChromeOSMachine(): ChromeOSMachine {
     wifiBluetooth: "",
     dlmSkuId: "",
     storageType: 0,
+    frid: "",
   };
 }
 
@@ -1134,6 +1137,9 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
     }
     if (message.storageType !== 0) {
       writer.uint32(152).int32(message.storageType);
+    }
+    if (message.frid !== "") {
+      writer.uint32(162).string(message.frid);
     }
     return writer;
   },
@@ -1297,6 +1303,14 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
           message.storageType = reader.int32() as any;
           continue;
         }
+        case 20: {
+          if (tag !== 162) {
+            break;
+          }
+
+          message.frid = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1327,6 +1341,7 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
       wifiBluetooth: isSet(object.wifiBluetooth) ? globalThis.String(object.wifiBluetooth) : "",
       dlmSkuId: isSet(object.dlmSkuId) ? globalThis.String(object.dlmSkuId) : "",
       storageType: isSet(object.storageType) ? storageTypeFromJSON(object.storageType) : 0,
+      frid: isSet(object.frid) ? globalThis.String(object.frid) : "",
     };
   },
 
@@ -1389,6 +1404,9 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
     if (message.storageType !== 0) {
       obj.storageType = storageTypeToJSON(message.storageType);
     }
+    if (message.frid !== "") {
+      obj.frid = message.frid;
+    }
     return obj;
   },
 
@@ -1416,6 +1434,7 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
     message.wifiBluetooth = object.wifiBluetooth ?? "";
     message.dlmSkuId = object.dlmSkuId ?? "";
     message.storageType = object.storageType ?? 0;
+    message.frid = object.frid ?? "";
     return message;
   },
 };

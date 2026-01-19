@@ -25,7 +25,11 @@ export interface Actor {
     | Actor_Orchestrator
     | undefined;
   /** The Creator of the Workplan generated this Edit. */
-  readonly workplanCreator?: Actor_WorkplanCreator | undefined;
+  readonly workplanCreator?:
+    | Actor_WorkplanCreator
+    | undefined;
+  /** An account not represented by one of the other Actor kinds. */
+  readonly external?: Actor_External | undefined;
 }
 
 /** Placeholder type for when the Orchestrator itself makes this edit. */
@@ -36,8 +40,15 @@ export interface Actor_Orchestrator {
 export interface Actor_WorkplanCreator {
 }
 
+/**
+ * External indicates that the edit came from some Actor using an External
+ * permission variant (no write token used).
+ */
+export interface Actor_External {
+}
+
 function createBaseActor(): Actor {
-  return { stageAttempt: undefined, orchestrator: undefined, workplanCreator: undefined };
+  return { stageAttempt: undefined, orchestrator: undefined, workplanCreator: undefined, external: undefined };
 }
 
 export const Actor: MessageFns<Actor> = {
@@ -50,6 +61,9 @@ export const Actor: MessageFns<Actor> = {
     }
     if (message.workplanCreator !== undefined) {
       Actor_WorkplanCreator.encode(message.workplanCreator, writer.uint32(26).fork()).join();
+    }
+    if (message.external !== undefined) {
+      Actor_External.encode(message.external, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -85,6 +99,14 @@ export const Actor: MessageFns<Actor> = {
           message.workplanCreator = Actor_WorkplanCreator.decode(reader, reader.uint32());
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.external = Actor_External.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -101,6 +123,7 @@ export const Actor: MessageFns<Actor> = {
       workplanCreator: isSet(object.workplanCreator)
         ? Actor_WorkplanCreator.fromJSON(object.workplanCreator)
         : undefined,
+      external: isSet(object.external) ? Actor_External.fromJSON(object.external) : undefined,
     };
   },
 
@@ -114,6 +137,9 @@ export const Actor: MessageFns<Actor> = {
     }
     if (message.workplanCreator !== undefined) {
       obj.workplanCreator = Actor_WorkplanCreator.toJSON(message.workplanCreator);
+    }
+    if (message.external !== undefined) {
+      obj.external = Actor_External.toJSON(message.external);
     }
     return obj;
   },
@@ -131,6 +157,9 @@ export const Actor: MessageFns<Actor> = {
       : undefined;
     message.workplanCreator = (object.workplanCreator !== undefined && object.workplanCreator !== null)
       ? Actor_WorkplanCreator.fromPartial(object.workplanCreator)
+      : undefined;
+    message.external = (object.external !== undefined && object.external !== null)
+      ? Actor_External.fromPartial(object.external)
       : undefined;
     return message;
   },
@@ -218,6 +247,49 @@ export const Actor_WorkplanCreator: MessageFns<Actor_WorkplanCreator> = {
   },
   fromPartial(_: DeepPartial<Actor_WorkplanCreator>): Actor_WorkplanCreator {
     const message = createBaseActor_WorkplanCreator() as any;
+    return message;
+  },
+};
+
+function createBaseActor_External(): Actor_External {
+  return {};
+}
+
+export const Actor_External: MessageFns<Actor_External> = {
+  encode(_: Actor_External, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Actor_External {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseActor_External() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): Actor_External {
+    return {};
+  },
+
+  toJSON(_: Actor_External): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<Actor_External>): Actor_External {
+    return Actor_External.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<Actor_External>): Actor_External {
+    const message = createBaseActor_External() as any;
     return message;
   },
 };

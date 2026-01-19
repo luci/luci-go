@@ -322,13 +322,86 @@ export interface TestAggregationPredicate {
    * components when injecting them into filter strings, filtering on a variant is exact
    * and not simply checking for presence of a subset of key/value pairs).
    *
-   * N.B. Setting this to a filter that will always evaluate to true yields
+   * Note: Setting this to a filter that will always evaluate to true yields
    * different results to leaving this filter unset, in that the former filters to
    * only aggregations with test results and the latter returns any test aggregation.
    * Aggregations without test results can occur for module and invocation-level
    * aggregations.
    */
   readonly containsTestResultFilter: string;
+  /**
+   * A free-form filter on the returned `TestAggregation`s.
+   *
+   * The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
+   * with the following fields available:
+   * - verdict_counts.failed (number)
+   * - verdict_counts.flaky (number)
+   * - verdict_counts.passed (number)
+   * - verdict_counts.skipped (number)
+   * - verdict_counts.execution_errored (number)
+   * - verdict_counts.precluded (number)
+   * - verdict_counts.exonerated (number)
+   * - module_status (luci.resultdb.v1.TestAggregation.ModuleStatus):
+   *   for aggregations at Invocation, Coarse and Fine levels, this field is
+   *   be MODULE_STATUS_UNSPECIFIED, so is only useful for filtering Module-level
+   *   aggregations.
+   */
+  readonly filter: string;
+}
+
+/** Represents a function TestVerdict -> bool. */
+export interface TestVerdictPredicate {
+  /**
+   * The test prefix for which to return verdicts.
+   *
+   * Example: To limit verdicts to those for a given module:
+   * - set the test_prefix_filter.aggregation_level to MODULE, and
+   * - test_prefix_filter.id to the Test ID prefix of that module.
+   */
+  readonly testPrefixFilter:
+    | TestIdentifierPrefix
+    | undefined;
+  /**
+   * Limits results to only those test verdicts that *contain* a test result
+   * matching this filter.
+   *
+   * The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
+   * with the following fields available:
+   * - test_id (string) - the flat-form test ID
+   * - test_id_structured.module_name (string) - the structured form test ID
+   * - test_id_structured.module_scheme (string)
+   * - test_id_structured.module_variant (filters behave as if this field is a map<string, string>)
+   * - test_id_structured.module_variant_hash (string)
+   * - test_id_structured.coarse_name (string)
+   * - test_id_structured.fine_name (string)
+   * - test_id_structured.case_name (string)
+   * - test_metadata.name (string)
+   * - tags (repeated (key string, value string))
+   * - test_metadata.location.repo (string)
+   * - test_metadata.location.file_name (string)
+   * - status (enum luci.resultdb.v1.TestResult.Status) - the status_v2 of the test result
+   * - duration (google.protobuf.Duration)
+   *
+   * While this filter generally offers a superset of functionality of the `test_prefix_filter`
+   * field, clients will generally prefer to use `test_prefix_filter` if it is
+   * sufficient as its use has less sharp edges (e.g. no need to escape test ID
+   * components when injecting them into filter strings, filtering on a variant is exact
+   * and not simply checking for presence of a subset of key/value pairs).
+   */
+  readonly containsTestResultFilter: string;
+  /**
+   * A free-form filter on the returned `TestVerdict`s.
+   *
+   * The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
+   * with the following fields available:
+   * - status (luci.resultdb.v1.TestVerdict.Status)
+   * - status_override (luci.resultdb.v1.TestVerdict.StatusOverride)
+   *
+   * For example, the following filter filters to verdicts with a status of failed
+   * or execution_errored (that were not exonerated):
+   * `(status = FAILED OR status = EXECUTION_ERRORED) AND status_override = NOT_OVERRIDDEN`
+   */
+  readonly filter: string;
 }
 
 function createBaseTestResultPredicate(): TestResultPredicate {
@@ -984,7 +1057,7 @@ export const WorkUnitPredicate: MessageFns<WorkUnitPredicate> = {
 };
 
 function createBaseTestAggregationPredicate(): TestAggregationPredicate {
-  return { aggregationLevel: 0, testPrefixFilter: undefined, containsTestResultFilter: "" };
+  return { aggregationLevel: 0, testPrefixFilter: undefined, containsTestResultFilter: "", filter: "" };
 }
 
 export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
@@ -997,6 +1070,9 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
     }
     if (message.containsTestResultFilter !== "") {
       writer.uint32(26).string(message.containsTestResultFilter);
+    }
+    if (message.filter !== "") {
+      writer.uint32(34).string(message.filter);
     }
     return writer;
   },
@@ -1032,6 +1108,14 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
           message.containsTestResultFilter = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1050,6 +1134,7 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
       containsTestResultFilter: isSet(object.containsTestResultFilter)
         ? globalThis.String(object.containsTestResultFilter)
         : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
     };
   },
 
@@ -1064,6 +1149,9 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
     if (message.containsTestResultFilter !== "") {
       obj.containsTestResultFilter = message.containsTestResultFilter;
     }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
     return obj;
   },
 
@@ -1077,6 +1165,105 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
       ? TestIdentifierPrefix.fromPartial(object.testPrefixFilter)
       : undefined;
     message.containsTestResultFilter = object.containsTestResultFilter ?? "";
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseTestVerdictPredicate(): TestVerdictPredicate {
+  return { testPrefixFilter: undefined, containsTestResultFilter: "", filter: "" };
+}
+
+export const TestVerdictPredicate: MessageFns<TestVerdictPredicate> = {
+  encode(message: TestVerdictPredicate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.testPrefixFilter !== undefined) {
+      TestIdentifierPrefix.encode(message.testPrefixFilter, writer.uint32(10).fork()).join();
+    }
+    if (message.containsTestResultFilter !== "") {
+      writer.uint32(18).string(message.containsTestResultFilter);
+    }
+    if (message.filter !== "") {
+      writer.uint32(26).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TestVerdictPredicate {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestVerdictPredicate() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testPrefixFilter = TestIdentifierPrefix.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.containsTestResultFilter = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestVerdictPredicate {
+    return {
+      testPrefixFilter: isSet(object.testPrefixFilter)
+        ? TestIdentifierPrefix.fromJSON(object.testPrefixFilter)
+        : undefined,
+      containsTestResultFilter: isSet(object.containsTestResultFilter)
+        ? globalThis.String(object.containsTestResultFilter)
+        : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: TestVerdictPredicate): unknown {
+    const obj: any = {};
+    if (message.testPrefixFilter !== undefined) {
+      obj.testPrefixFilter = TestIdentifierPrefix.toJSON(message.testPrefixFilter);
+    }
+    if (message.containsTestResultFilter !== "") {
+      obj.containsTestResultFilter = message.containsTestResultFilter;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TestVerdictPredicate>): TestVerdictPredicate {
+    return TestVerdictPredicate.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TestVerdictPredicate>): TestVerdictPredicate {
+    const message = createBaseTestVerdictPredicate() as any;
+    message.testPrefixFilter = (object.testPrefixFilter !== undefined && object.testPrefixFilter !== null)
+      ? TestIdentifierPrefix.fromPartial(object.testPrefixFilter)
+      : undefined;
+    message.containsTestResultFilter = object.containsTestResultFilter ?? "";
+    message.filter = object.filter ?? "";
     return message;
   },
 };

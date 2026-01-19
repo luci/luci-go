@@ -12,65 +12,68 @@ import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /**
- * StageExecutionPolicy describes constraints on how a Stage may be executed by the
- * Orchestrator.
+ * StageExecutionPolicy describes constraints on how a Stage may be executed
+ * by the Orchestrator.
  */
 export interface StageExecutionPolicy {
   /**
    * Policy for retrying this Stage across multiple Attempts.
    *
-   * If omitted, the Stage will be attempted at most once.
+   * If omitted, the Stage will be attempted at most once (if at all permitted
+   * by `stage_timeout` and `execute_at_least_one_attempt`).
    */
   readonly retry?:
     | StageExecutionPolicy_Retry
     | undefined;
   /**
-   * The maximum amount of time the Stage itself can stay in a non-FINAL state.
+   * An approximate cap on the maximum amount of time the Stage itself can stay
+   * in a non-FINAL state.
    *
    * This timeout starts from the time the Stage is *created*.
    *
-   * This supersedes all per-Attempt restrictions and is intended to be able
-   * to set a cap on the maximum overall amount of time that a stage can take.
+   * When launching an attempt, the orchestrator will estimate when the attempt
+   * will finish executing in the most pessimistic scenario (e.g. hitting all
+   * possible StageAttemptExecutionPolicy timeouts). A new attempt will be
+   * allowed to run if its estimated completion time still fits within the stage
+   * timeout. Retrying an attempt has extra conditions (see Retry for details).
+   * If `execute_at_least_one_attempt` is true, then this timeout will be
+   * totally ignored when launching the first attempt.
    *
-   * This MUST be greater than the cumulative timeouts in `attempt_timeout` - it
-   * should also account for some amount of time for this Stage to enter the
-   * ATTEMPTING state in the first place.
+   * This timeout normally should be greater than the cumulative timeouts in
+   * StageAttemptExecutionPolicy. It should also account for some amount of time
+   * for this Stage to enter the ATTEMPTING state in the first place.
    *
-   * Interaction with retries: See `stage_timeout_mode`.
+   * Note this timeout is enforced only when launching an attempt, i.e. if
+   * a stage attempt is already running, it will always be allowed to run to its
+   * completion (or an attempt timeout per its own StageAttemptExecutionPolicy).
+   *
+   * Note that the timeout enforcement doesn't apply to stages that are still
+   * blocked on their dependencies: if a stage timeout is reached while the
+   * stage is still in PLANNED state, nothing will happen to the stage state at
+   * that particular moment. The stage will remain in PLANNED state until its
+   * dependencies are resolved (just like happens in a normal scenario). Only
+   * then will it potentially move into FINAL state due to hitting the stage
+   * timeout (depending on `execute_at_least_one_attempt`).
+   *
+   * If unset, this timeout will not apply at all (i.e. logically this timeout
+   * will be infinite).
    */
   readonly stageTimeout?:
     | Duration
     | undefined;
   /**
-   * Describes how stage_timeout interacts with the Stage state machine.
+   * If true, always launch the first attempt, totally ignoring `stage_timeout`.
    *
-   * In particular, we want to avoid the situation where the Orchestrator
-   * creates 'doomed' Stage Attempts.
-   *
-   * Consider the case where a Build Stage is allotted a total of 6 hours to be
-   * scheduled, execute and complete. If there are only 4 hours left on
-   * `stage_timeout`, it likely doesn't make sense to trigger the Build with the
-   * intent on killing it off 2 hours before it will likely complete (which
-   * would just be a waste of resources).
-   *
-   * In this scenario, the two modes available today would let you:
-   *   * potentially overshoot stage_timeout by 2 hours
-   *   * fail the stage with 4 hours of stage_timeout left
-   *   * fail the stage with 4 hours of stage_timeout left (unless the stage has
-   *     zero attempts, in which case it will overshoot by 2 hours)
-   *
-   * TBD: it's possible to imagine another mode which runs a final Attempt with
-   * a modified `attempt_timeout` - this is likely more complicated (which
-   * timeout do you prune? probably pending_throttled?). Leaving this out for
-   * now to see how far these other modes get us.
-   *
-   * If unset, defaults to STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT.
+   * If false or unset, and the estimated stage attempt completion time exceeds
+   * the stage timeout (see `stage_timeout` for details), the stage (when its
+   * dependencies are unblocked) will move into FINAL state immediately without
+   * running any attempts at all. StageConcludedReason will be TIMEOUT.
    */
-  readonly stageTimeoutMode?:
-    | StageExecutionPolicy_StageTimeoutMode
+  readonly executeAtLeastOneAttempt?:
+    | boolean
     | undefined;
   /**
-   * Template for attempt level execution policy.
+   * Template for an attempt level execution policy.
    *
    * Each attempt will be created with this policy as requested. But the
    * executor may augment the policy by merging the requested policy and what
@@ -79,87 +82,28 @@ export interface StageExecutionPolicy {
   readonly attemptExecutionPolicyTemplate?: StageAttemptExecutionPolicy | undefined;
 }
 
-/** The description of what happens when `stage_timeout` is reached. */
-export enum StageExecutionPolicy_StageTimeoutMode {
-  /** STAGE_TIMEOUT_MODE_UNKNOWN - UNKNOWN is the invalid mode. */
-  STAGE_TIMEOUT_MODE_UNKNOWN = 0,
-  /**
-   * STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT - FINISH_CURRENT_ATTEMPT means that when `stage_timeout` occurs, the
-   * Orchestrator will allow the current Attempt to finish within it's
-   * configured expiration.
-   */
-  STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT = 1,
-  /**
-   * STAGE_TIMEOUT_MODE_BLOCK_MAX_EXECUTION_RETRY - BLOCK_MAX_EXECUTION_RETRY means that BEFORE `stage_timeout` occurs, the
-   * Orchestrator will calculate if the next Attempt, assuming it runs to the
-   * maximum duration of all timeouts in `attempt_timeout`, plus the computed
-   * backoff delay, would complete before `stage_timeout`.
-   *
-   * If it would, then the retry Attempt will be created. Otherwise the
-   * Orchestrator will not create a retry.
-   *
-   * Note that this mode also means that if it took a VERY long time to
-   * unblock this Stage, and the Stage Attempt's maximum execution time is
-   * also long, it's possible for the Stage to move to FINAL without executing
-   * any Attempt at all. See HYBRID for a compromise.
-   */
-  STAGE_TIMEOUT_MODE_BLOCK_MAX_EXECUTION_RETRY = 2,
-  /**
-   * STAGE_TIMEOUT_MODE_HYBRID - This is the same as BLOCK_MAX_EXECUTION_RETRY, except that the Stage will
-   * always have at least one Attempt (so, it behaves like
-   * FINISH_CURRENT_ATTEMPT if the Stage has zero or one Attempts, otherwise
-   * like BLOCK_MAX_EXECUTION_RETRY).
-   */
-  STAGE_TIMEOUT_MODE_HYBRID = 3,
-}
-
-export function stageExecutionPolicy_StageTimeoutModeFromJSON(object: any): StageExecutionPolicy_StageTimeoutMode {
-  switch (object) {
-    case 0:
-    case "STAGE_TIMEOUT_MODE_UNKNOWN":
-      return StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_UNKNOWN;
-    case 1:
-    case "STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT":
-      return StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT;
-    case 2:
-    case "STAGE_TIMEOUT_MODE_BLOCK_MAX_EXECUTION_RETRY":
-      return StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_BLOCK_MAX_EXECUTION_RETRY;
-    case 3:
-    case "STAGE_TIMEOUT_MODE_HYBRID":
-      return StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_HYBRID;
-    default:
-      throw new globalThis.Error(
-        "Unrecognized enum value " + object + " for enum StageExecutionPolicy_StageTimeoutMode",
-      );
-  }
-}
-
-export function stageExecutionPolicy_StageTimeoutModeToJSON(object: StageExecutionPolicy_StageTimeoutMode): string {
-  switch (object) {
-    case StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_UNKNOWN:
-      return "STAGE_TIMEOUT_MODE_UNKNOWN";
-    case StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT:
-      return "STAGE_TIMEOUT_MODE_FINISH_CURRENT_ATTEMPT";
-    case StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_BLOCK_MAX_EXECUTION_RETRY:
-      return "STAGE_TIMEOUT_MODE_BLOCK_MAX_EXECUTION_RETRY";
-    case StageExecutionPolicy_StageTimeoutMode.STAGE_TIMEOUT_MODE_HYBRID:
-      return "STAGE_TIMEOUT_MODE_HYBRID";
-    default:
-      throw new globalThis.Error(
-        "Unrecognized enum value " + object + " for enum StageExecutionPolicy_StageTimeoutMode",
-      );
-  }
-}
-
 /** Retry describes the policy for retrying a Stage across multiple Attempts. */
 export interface StageExecutionPolicy_Retry {
   /**
    * The maximum number of retries (apart from the first attempt) that will be
    * made for this Stage.
    *
-   * Another Attempt is created when the number of Attempts does not exceed
-   * max_retries+1, stage_timeout and stage_timeout_mode would allow another
-   * Attempt, and `WriteNodes.current_state.block_new_attempts` was false.
+   * If an Attempt fails (i.e. becomes INCOMPLETE), a new Attempt is created
+   * when all of the below is true:
+   *   1. The new number of Attempts does not exceed max_retries+1. If this
+   *      condition is violated, StageConcludedReason will be NO_RETRIES_LEFT.
+   *   2. There's enough time left in `stage_timeout` to run the new attempt
+   *      to completion in the most pessimistic case (waiting the attempt
+   *      retry backoff timer and hitting all possible stage attempt timeouts
+   *      configured in the StageAttemptExecutionPolicy). If this condition
+   *      is violated, StageConcludedReason will be TIMEOUT.
+   *   3. The last attempt had `WriteNodes.current_state.block_new_attempts`
+   *      set to false. If this condition is violated, StageConcludedReason
+   *      will be FINAL_ATTEMPT_BLOCKED_RETRY.
+   *
+   * If no retries are allowed, the stage will transition to FINAL or
+   * AWAITING_GROUP state (in case the incomplete attempt managed to submit
+   * a continuation group before it died).
    */
   readonly maxRetries?: number | undefined;
 }
@@ -168,7 +112,7 @@ function createBaseStageExecutionPolicy(): StageExecutionPolicy {
   return {
     retry: undefined,
     stageTimeout: undefined,
-    stageTimeoutMode: undefined,
+    executeAtLeastOneAttempt: undefined,
     attemptExecutionPolicyTemplate: undefined,
   };
 }
@@ -181,8 +125,8 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
     if (message.stageTimeout !== undefined) {
       Duration.encode(message.stageTimeout, writer.uint32(18).fork()).join();
     }
-    if (message.stageTimeoutMode !== undefined) {
-      writer.uint32(24).int32(message.stageTimeoutMode);
+    if (message.executeAtLeastOneAttempt !== undefined) {
+      writer.uint32(24).bool(message.executeAtLeastOneAttempt);
     }
     if (message.attemptExecutionPolicyTemplate !== undefined) {
       StageAttemptExecutionPolicy.encode(message.attemptExecutionPolicyTemplate, writer.uint32(34).fork()).join();
@@ -218,7 +162,7 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
             break;
           }
 
-          message.stageTimeoutMode = reader.int32() as any;
+          message.executeAtLeastOneAttempt = reader.bool();
           continue;
         }
         case 4: {
@@ -242,8 +186,8 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
     return {
       retry: isSet(object.retry) ? StageExecutionPolicy_Retry.fromJSON(object.retry) : undefined,
       stageTimeout: isSet(object.stageTimeout) ? Duration.fromJSON(object.stageTimeout) : undefined,
-      stageTimeoutMode: isSet(object.stageTimeoutMode)
-        ? stageExecutionPolicy_StageTimeoutModeFromJSON(object.stageTimeoutMode)
+      executeAtLeastOneAttempt: isSet(object.executeAtLeastOneAttempt)
+        ? globalThis.Boolean(object.executeAtLeastOneAttempt)
         : undefined,
       attemptExecutionPolicyTemplate: isSet(object.attemptExecutionPolicyTemplate)
         ? StageAttemptExecutionPolicy.fromJSON(object.attemptExecutionPolicyTemplate)
@@ -259,8 +203,8 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
     if (message.stageTimeout !== undefined) {
       obj.stageTimeout = Duration.toJSON(message.stageTimeout);
     }
-    if (message.stageTimeoutMode !== undefined) {
-      obj.stageTimeoutMode = stageExecutionPolicy_StageTimeoutModeToJSON(message.stageTimeoutMode);
+    if (message.executeAtLeastOneAttempt !== undefined) {
+      obj.executeAtLeastOneAttempt = message.executeAtLeastOneAttempt;
     }
     if (message.attemptExecutionPolicyTemplate !== undefined) {
       obj.attemptExecutionPolicyTemplate = StageAttemptExecutionPolicy.toJSON(message.attemptExecutionPolicyTemplate);
@@ -279,7 +223,7 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
     message.stageTimeout = (object.stageTimeout !== undefined && object.stageTimeout !== null)
       ? Duration.fromPartial(object.stageTimeout)
       : undefined;
-    message.stageTimeoutMode = object.stageTimeoutMode ?? undefined;
+    message.executeAtLeastOneAttempt = object.executeAtLeastOneAttempt ?? undefined;
     message.attemptExecutionPolicyTemplate =
       (object.attemptExecutionPolicyTemplate !== undefined && object.attemptExecutionPolicyTemplate !== null)
         ? StageAttemptExecutionPolicy.fromPartial(object.attemptExecutionPolicyTemplate)

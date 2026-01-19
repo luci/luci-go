@@ -10,18 +10,20 @@ import { Identifier, WorkPlan } from "../../ids/v1/identifier.pb";
 import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { RevisionRange } from "./revision_range.pb";
+import { StageState, stageStateFromJSON, stageStateToJSON } from "./stage_state.pb";
+import { TypeSet } from "./type_set.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /**
- * When expanding a query selection set with Query.Expand.Dependencies or
- * Query.Expand.Dependants, how should we actually expand that set?
+ * When expanding a query selection set with Query.ExpandDependencies or
+ * Query.ExpandDependents, how should we actually expand that set?
  */
 export enum QueryExpandDepsMode {
   /**
    * QUERY_EXPAND_DEPS_MODE_UNKNOWN - Unknown query expansion mode.
    *
-   * Defaults to 'REQUESTED'.
+   * Equivalent to QUERY_EXPAND_DEPS_MODE_EDGES.
    */
   QUERY_EXPAND_DEPS_MODE_UNKNOWN = 0,
   /** QUERY_EXPAND_DEPS_MODE_EDGES - Expand to deps which are listed in dependencies.edges. */
@@ -66,102 +68,152 @@ export function queryExpandDepsModeToJSON(object: QueryExpandDepsMode): string {
   }
 }
 
+/** Defines what subset of Stage Attempts to include when returning a Stage. */
+export enum CollectStageAttempts {
+  /**
+   * COLLECT_STAGE_ATTEMPTS_UNKNOWN - UNKNOWN is the default value.
+   *
+   * Equivalent to COLLECT_STAGE_ATTEMPTS_NONE.
+   */
+  COLLECT_STAGE_ATTEMPTS_UNKNOWN = 0,
+  /** COLLECT_STAGE_ATTEMPTS_NONE - No stage attempts will be returned, this is default. */
+  COLLECT_STAGE_ATTEMPTS_NONE = 1,
+  /** COLLECT_STAGE_ATTEMPTS_ALL - All stage attempts will be returned. */
+  COLLECT_STAGE_ATTEMPTS_ALL = 2,
+  /**
+   * COLLECT_STAGE_ATTEMPTS_LATEST - Only the latest stage attempt will be returned.
+   *
+   * All non-latest attempts will be represented by shallow entries just
+   * containing their ID (to preserve the invariant that Stage.attempt[x] has
+   * ID with Idx `x+1`).
+   */
+  COLLECT_STAGE_ATTEMPTS_LATEST = 3,
+}
+
+export function collectStageAttemptsFromJSON(object: any): CollectStageAttempts {
+  switch (object) {
+    case 0:
+    case "COLLECT_STAGE_ATTEMPTS_UNKNOWN":
+      return CollectStageAttempts.COLLECT_STAGE_ATTEMPTS_UNKNOWN;
+    case 1:
+    case "COLLECT_STAGE_ATTEMPTS_NONE":
+      return CollectStageAttempts.COLLECT_STAGE_ATTEMPTS_NONE;
+    case 2:
+    case "COLLECT_STAGE_ATTEMPTS_ALL":
+      return CollectStageAttempts.COLLECT_STAGE_ATTEMPTS_ALL;
+    case 3:
+    case "COLLECT_STAGE_ATTEMPTS_LATEST":
+      return CollectStageAttempts.COLLECT_STAGE_ATTEMPTS_LATEST;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum CollectStageAttempts");
+  }
+}
+
+export function collectStageAttemptsToJSON(object: CollectStageAttempts): string {
+  switch (object) {
+    case CollectStageAttempts.COLLECT_STAGE_ATTEMPTS_UNKNOWN:
+      return "COLLECT_STAGE_ATTEMPTS_UNKNOWN";
+    case CollectStageAttempts.COLLECT_STAGE_ATTEMPTS_NONE:
+      return "COLLECT_STAGE_ATTEMPTS_NONE";
+    case CollectStageAttempts.COLLECT_STAGE_ATTEMPTS_ALL:
+      return "COLLECT_STAGE_ATTEMPTS_ALL";
+    case CollectStageAttempts.COLLECT_STAGE_ATTEMPTS_LATEST:
+      return "COLLECT_STAGE_ATTEMPTS_LATEST";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum CollectStageAttempts");
+  }
+}
+
 /**
- * Query describes a simple graph query.
+ * Query describes a single graph query.
  *
- * This is composed of three phases: selection, expansion and collection.
+ * This is composed of 3 phases: selection with filtering, expansion and
+ * collection.
  *
- * The selection phase queries for a set of nodes within a WorkPlan
- * - effectively a regular SELECT type query on a traditional database.
+ * The selection phase (represented by fields `node_set`, `select_stages` and
+ * `select_checks`) either just picks the given set of nodes or selects
+ * all nodes within a matching set of work plans (most commonly just some
+ * single plan). Selected nodes then are optionally filtered based on their
+ * type and properties.
  *
- * After the selection phase, the expansion phase allows traversal along the
+ * After the filtering phase, the expansion phase (represented by fields
+ * `expand_dependencies` and `expand_dependents`) allows traversal along the
  * edges of the selected nodes. Currently only 'dependency' edge traversal is
  * supported, but other types of relationships could be possible in the future
  * (e.g. 'created_by', 'written_by', etc.).
  *
  * Finally, after the set of nodes has been fully expanded, we collect all the
- * requested data from those Nodes.
+ * requested data from those Nodes. This phase is represented by fields
+ * `collect_checks` and `collect_stages`.
+ *
+ *                  ┌──────────┐
+ *           ┌──────┤ node_set ├─────┐
+ *           │      └──────────┘     │
+ *           ▼                       ▼
+ *    ┌─────────────┐         ┌─────────────┐
+ *    │select_checks│         │select_stages│      Select + Filter
+ *    └──────┬──────┘         └──────┬──────┘
+ *           │                       │
+ *           │       ┌───────┐       │
+ *           └──────►│       │◄──────┘
+ *                   │<union>│
+ *           ┌───────┤       ├───────┐
+ *           │       └───────┘       │
+ *           ▼            │          ▼
+ *  ┌───────────────────┐ │ ┌─────────────────┐
+ *  │expand_dependencies│ │ │expand_dependents│    Expand
+ *  └────────┬──────────┘ │ └────────┬────────┘
+ *           │            ▼          │
+ *           │       ┌───────┐       │
+ *           └──────►│       │◄──────┘
+ *                   │<union>│
+ *           ┌───────┤       ├───────┐
+ *           │       └───────┘       │
+ *           │                       │
+ *           ▼                       ▼
+ *    ┌──────────────┐       ┌──────────────┐
+ *    │collect_checks│       │collect_stages│      Collect
+ *    └──────┬───────┘       └───────┬──────┘
+ *           │                       │
+ *           │      ┌─────────┐      │
+ *           └─────►│GraphView│◄─────┘
+ *                  └─────────┘
  *
  * See QueryNodesRequest.version for how this Query interacts with transactions.
+ *
+ * Queries that are guaranteed to produce no results (like a query with
+ * only `select_stages`, no expansion, and no `collect_stages`) are rejected
+ * as invalid, resulting in INVALID_ARGUMENT error from QueryNodes.
  */
 export interface Query {
-  /** Select an arbitrary set of nodes. */
-  readonly select?:
-    | Query_Select
+  /** Select all nodes in the given work plan. */
+  readonly nodesInWorkplan?:
+    | WorkPlan
     | undefined;
-  /** Expand that set of nodes by following their edges. */
-  readonly expand?:
-    | Query_Expand
+  /** Select all nodes in all work plans matching some criteria. */
+  readonly nodesAcrossWorkplans?:
+    | Query_NodesAcrossWorkPlans
     | undefined;
-  /** The data to collect from the expanded node set. */
-  readonly collect?: Query_Collect | undefined;
-}
-
-/** Select picks some set of nodes out of the graph. */
-export interface Query_Select {
-  /** Which WorkPlans to search across. */
-  readonly workplan?:
-    | Query_Select_WorkPlanConstraint
+  /** Select the explicitly given set of nodes. */
+  readonly nodesById?:
+    | Query_NodesByID
     | undefined;
   /**
-   * The identifiers of specific nodes to select.
+   * If present, indicates the query wants to examine Checks.
    *
-   * This should be used if you already know the identifiers of the nodes you
-   * care about.
+   * At least one of `select_checks` or `select_stages` must be set.
    */
-  readonly nodes: readonly Identifier[];
-  /** Select Checks matching these patterns. */
-  readonly checkPatterns: readonly Query_Select_CheckPattern[];
-  /** Select Stages matching these patterns. */
-  readonly stagePatterns: readonly Query_Select_StagePattern[];
-}
-
-/**
- * How this selection of nodes should be constrained to one or more
- * WorkPlans.
- */
-export interface Query_Select_WorkPlanConstraint {
-  /** Constrain this Select to the given WorkPlan(s). */
-  readonly inWorkplans: readonly WorkPlan[];
-}
-
-/** Select one or more Checks which match this pattern. */
-export interface Query_Select_CheckPattern {
-  /** Find Checks of this kind (unset means all kinds). */
-  readonly kind?:
-    | CheckKind
-    | undefined;
-  /** Find Checks whose `Identifier.Check.id` matches this re2 regex. */
-  readonly idRegex?:
-    | string
+  readonly selectChecks?:
+    | Query_SelectChecks
     | undefined;
   /**
-   * Find Checks with *any* of these options. Note that you still must set
-   * type_urls and collect.data.check.options to actually get the
-   * Check Option data in the result set.
+   * If present, indicates the query wants to examine Stages.
+   *
+   * At least one of `select_checks` or `select_stages` must be set.
    */
-  readonly withOptionTypes: readonly string[];
-  /** Find Checks in this state. */
-  readonly state?:
-    | CheckState
+  readonly selectStages?:
+    | Query_SelectStages
     | undefined;
-  /**
-   * Find Checks with *any* of these result data types. Note that you still
-   * must set type_urls and collect.data.check.result_data to actually get the
-   * Check Result data in the result set.
-   */
-  readonly withResultDataTypes: readonly string[];
-}
-
-/** Select one or more Stages which match this pattern. */
-export interface Query_Select_StagePattern {
-}
-
-/**
- * Expand takes the selected node set and 'expands' it by following edges in
- * the graph from those nodes.
- */
-export interface Query_Expand {
   /**
    * For each selected Check or Stage, include its immediate dependencies.
    *
@@ -170,8 +222,8 @@ export interface Query_Expand {
    *
    * (B, C) are dependencies of A.
    */
-  readonly dependencies?:
-    | Query_Expand_Dependencies
+  readonly expandDependencies?:
+    | Query_ExpandDependencies
     | undefined;
   /**
    * For each selected Check or Stage, include any Checks/Stages which depend
@@ -182,11 +234,149 @@ export interface Query_Expand {
    *
    * A is a dependent of B.
    */
-  readonly dependents?: Query_Expand_Dependents | undefined;
+  readonly expandDependents?:
+    | Query_ExpandDependents
+    | undefined;
+  /**
+   * If present, indicates the caller is interested in Checks processed by
+   * the query (including the originally selected checks, if any, and all checks
+   * discovered during the Expand phase).
+   *
+   * If absent, the result will have no checks at all.
+   *
+   * At least one of `collect_checks` or `collect_stages` must be set.
+   */
+  readonly collectChecks?:
+    | Query_CollectChecks
+    | undefined;
+  /**
+   * If present, indicates the caller is interested in Stages processed by
+   * the query (including the originally selected stages, if any, and all stages
+   * discovered during the Expand phase).
+   *
+   * If absent, the result will have no stages at all.
+   *
+   * At least one of `collect_checks` or `collect_stages` must be set.
+   */
+  readonly collectStages?: Query_CollectStages | undefined;
+}
+
+/** Indicates to work with all nodes in the matching set of work plans. */
+export interface Query_NodesAcrossWorkPlans {
+}
+
+/** Indicates to work only with the given list of nodes. */
+export interface Query_NodesByID {
+  /**
+   * The identifiers of specific nodes to select.
+   *
+   * This should be used if you already know the identifiers of the nodes you
+   * care about.
+   *
+   * These nodes will be subjected to `select_checks` and `select_stages`
+   * predicates. This allowed to e.g. examine if any of the already known
+   * nodes are in a particular expected state already.
+   *
+   * Nodes that don't exist at all will be skipped and their IDs will be
+   * returned in QueryNodesResponse.absent.
+   */
+  readonly nodes: readonly Identifier[];
+}
+
+/**
+ * If present, indicates the query wants to examine Checks, optionally
+ * passing them through the given filtering predicate before proceeding.
+ *
+ * The outcome of this phase is joined with the outcome of a similar
+ * SelectStages phase before being passed to Expand and Collect phases.
+ *
+ * If not set, the query will not be selecting any Check nodes at the
+ * selection phase (note you still may see Checks in the overall result
+ * if `collect_checks` is present and some Checks were discovered during
+ * the Expand phase).
+ */
+export interface Query_SelectChecks {
+  /**
+   * Pick Checks matching any of these predicates (they are ORed together).
+   *
+   * If empty, all Checks will be selected.
+   */
+  readonly predicates: readonly Query_SelectChecks_Predicate[];
+}
+
+/**
+ * Only pick Checks which match this predicate.
+ *
+ * Individual clauses are ANDed together. An unset field means the
+ * corresponding clause is not checked. At least one field must be set.
+ */
+export interface Query_SelectChecks_Predicate {
+  /** Pick Checks of this kind. */
+  readonly kind?:
+    | CheckKind
+    | undefined;
+  /** Pick Checks in this state. */
+  readonly state?:
+    | CheckState
+    | undefined;
+  /**
+   * Pick Checks that have a Check Option that matches the type filter.
+   *
+   * Note that you still must set QueryNodesRequest.type_info.wanted and
+   * collect_checks.options to actually get the Check Option data in
+   * the result set.
+   */
+  readonly withOptionType?:
+    | TypeSet
+    | undefined;
+  /**
+   * Pick Checks that have a Check Result that matches the type filter.
+   *
+   * Note that you still must set QueryNodesRequest.type_info.wanted and
+   * collect_checks.result_data to actually get the Check Result data in
+   * the result set.
+   */
+  readonly withResultDataType?: TypeSet | undefined;
+}
+
+/**
+ * If present, indicates the query wants to examine Stages, optionally
+ * passing them through the given filtering predicate before proceeding.
+ *
+ * The outcome of this phase is joined with the outcome of a similar
+ * SelectChecks phase before being passed to Expand and Collect phases.
+ *
+ * If not set, the query will not be selecting any Stage nodes at the
+ * selection phase (note you still may see Stages in the overall result
+ * if `collect_stages` is present and some Stages were discovered during
+ * the Expand phase).
+ */
+export interface Query_SelectStages {
+  /**
+   * Pick Stages matching any of these predicates (they are ORed together).
+   *
+   * If empty, all Stages will be selected.
+   */
+  readonly predicates: readonly Query_SelectStages_Predicate[];
+}
+
+/**
+ * Only pick Stages which match this predicate.
+ *
+ * Individual clauses are ANDed together. An unset field means the
+ * corresponding clause is not checked. At least one field must be set.
+ */
+export interface Query_SelectStages_Predicate {
+  /** Pick Stages in this state. */
+  readonly state?:
+    | StageState
+    | undefined;
+  /** Pick Stages with Args matching the type filter. */
+  readonly withArgsType?: TypeSet | undefined;
 }
 
 /** How to expand the dependencies for a Check or Stage. */
-export interface Query_Expand_Dependencies {
+export interface Query_ExpandDependencies {
   /**
    * How to expand dependencies.
    *
@@ -196,7 +386,7 @@ export interface Query_Expand_Dependencies {
 }
 
 /** How to expand the dependents for a Check or Stage. */
-export interface Query_Expand_Dependents {
+export interface Query_ExpandDependents {
   /**
    * How to expand dependents.
    *
@@ -205,58 +395,107 @@ export interface Query_Expand_Dependents {
   readonly mode?: QueryExpandDepsMode | undefined;
 }
 
-/** Collect retrieves data from the expanded node set. */
-export interface Query_Collect {
-  /** Describes what data the caller wants to see for Checks. */
-  readonly check?:
-    | Query_Collect_Check
-    | undefined;
-  /** Describes what data the caller wants to see for Stages. */
-  readonly stage?: Query_Collect_Stage | undefined;
-}
-
-/** Describes what data the caller wants to see for Checks. */
-export interface Query_Collect_Check {
-  /** Include CheckOptions filtered by `type_urls` for any selected Checks. */
+/**
+ * Describes what data the caller wants to see for discovered Checks (in
+ * addition to core Check properties).
+ */
+export interface Query_CollectChecks {
+  /**
+   * Include CheckOptions for any discovered Checks.
+   *
+   * Only options matching QueryNodesRequest.type_info.wanted TypeSet will
+   * be returned (for initially selected Checks, this type filter is applied
+   * on top of filtering done by SelectChecks.predicates).
+   */
   readonly options?:
     | boolean
     | undefined;
-  /** Include Result data filtered by `type_urls` for any selected Checks. */
+  /**
+   * Include Result data for any selected Checks.
+   *
+   * Only options matching QueryNodesRequest.type_info.wanted TypeSet will
+   * be returned (for initially selected Checks, this type filter is applied
+   * on top of filtering done by SelectChecks.predicates).
+   */
   readonly resultData?:
     | boolean
     | undefined;
   /**
    * Include edits only within this range of Revisions.
    *
-   * An empty RevisionRange (e.g. {0, 0}) means `all edits`.
+   * An empty RevisionRange (e.g. {0, 0}) means `all edits`. If this field
+   * is absent, no edits will be included.
    */
   readonly edits?: RevisionRange | undefined;
 }
 
-/** Describes what data the caller wants to see for Stages. */
-export interface Query_Collect_Stage {
+/**
+ * Describes what data the caller wants to see for discovered Stages (in
+ * addition to core Stage properties).
+ *
+ * Value-typed fields inside Stage Attempts (e.g. progress details) and Stage
+ * Edits are subject to filtering by QueryNodesRequest.type_info.wanted.
+ */
+export interface Query_CollectStages {
+  /**
+   * What subset of Stage Attempts to include.
+   *
+   * By default attempts are not included.
+   */
+  readonly attempts?:
+    | CollectStageAttempts
+    | undefined;
   /**
    * Include edits only within this range of Revisions.
    *
-   * An empty RevisionRange (e.g. {0, 0}) means `all edits`.
+   * An empty RevisionRange (e.g. {0, 0}) means `all edits`. If this field
+   * is absent, no edits will be included.
    */
   readonly edits?: RevisionRange | undefined;
 }
 
 function createBaseQuery(): Query {
-  return { select: undefined, expand: undefined, collect: undefined };
+  return {
+    nodesInWorkplan: undefined,
+    nodesAcrossWorkplans: undefined,
+    nodesById: undefined,
+    selectChecks: undefined,
+    selectStages: undefined,
+    expandDependencies: undefined,
+    expandDependents: undefined,
+    collectChecks: undefined,
+    collectStages: undefined,
+  };
 }
 
 export const Query: MessageFns<Query> = {
   encode(message: Query, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.select !== undefined) {
-      Query_Select.encode(message.select, writer.uint32(18).fork()).join();
+    if (message.nodesInWorkplan !== undefined) {
+      WorkPlan.encode(message.nodesInWorkplan, writer.uint32(10).fork()).join();
     }
-    if (message.expand !== undefined) {
-      Query_Expand.encode(message.expand, writer.uint32(26).fork()).join();
+    if (message.nodesAcrossWorkplans !== undefined) {
+      Query_NodesAcrossWorkPlans.encode(message.nodesAcrossWorkplans, writer.uint32(18).fork()).join();
     }
-    if (message.collect !== undefined) {
-      Query_Collect.encode(message.collect, writer.uint32(34).fork()).join();
+    if (message.nodesById !== undefined) {
+      Query_NodesByID.encode(message.nodesById, writer.uint32(26).fork()).join();
+    }
+    if (message.selectChecks !== undefined) {
+      Query_SelectChecks.encode(message.selectChecks, writer.uint32(34).fork()).join();
+    }
+    if (message.selectStages !== undefined) {
+      Query_SelectStages.encode(message.selectStages, writer.uint32(42).fork()).join();
+    }
+    if (message.expandDependencies !== undefined) {
+      Query_ExpandDependencies.encode(message.expandDependencies, writer.uint32(50).fork()).join();
+    }
+    if (message.expandDependents !== undefined) {
+      Query_ExpandDependents.encode(message.expandDependents, writer.uint32(58).fork()).join();
+    }
+    if (message.collectChecks !== undefined) {
+      Query_CollectChecks.encode(message.collectChecks, writer.uint32(66).fork()).join();
+    }
+    if (message.collectStages !== undefined) {
+      Query_CollectStages.encode(message.collectStages, writer.uint32(74).fork()).join();
     }
     return writer;
   },
@@ -268,12 +507,20 @@ export const Query: MessageFns<Query> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.nodesInWorkplan = WorkPlan.decode(reader, reader.uint32());
+          continue;
+        }
         case 2: {
           if (tag !== 18) {
             break;
           }
 
-          message.select = Query_Select.decode(reader, reader.uint32());
+          message.nodesAcrossWorkplans = Query_NodesAcrossWorkPlans.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -281,7 +528,7 @@ export const Query: MessageFns<Query> = {
             break;
           }
 
-          message.expand = Query_Expand.decode(reader, reader.uint32());
+          message.nodesById = Query_NodesByID.decode(reader, reader.uint32());
           continue;
         }
         case 4: {
@@ -289,7 +536,47 @@ export const Query: MessageFns<Query> = {
             break;
           }
 
-          message.collect = Query_Collect.decode(reader, reader.uint32());
+          message.selectChecks = Query_SelectChecks.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.selectStages = Query_SelectStages.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.expandDependencies = Query_ExpandDependencies.decode(reader, reader.uint32());
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.expandDependents = Query_ExpandDependents.decode(reader, reader.uint32());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.collectChecks = Query_CollectChecks.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.collectStages = Query_CollectStages.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -303,22 +590,52 @@ export const Query: MessageFns<Query> = {
 
   fromJSON(object: any): Query {
     return {
-      select: isSet(object.select) ? Query_Select.fromJSON(object.select) : undefined,
-      expand: isSet(object.expand) ? Query_Expand.fromJSON(object.expand) : undefined,
-      collect: isSet(object.collect) ? Query_Collect.fromJSON(object.collect) : undefined,
+      nodesInWorkplan: isSet(object.nodesInWorkplan) ? WorkPlan.fromJSON(object.nodesInWorkplan) : undefined,
+      nodesAcrossWorkplans: isSet(object.nodesAcrossWorkplans)
+        ? Query_NodesAcrossWorkPlans.fromJSON(object.nodesAcrossWorkplans)
+        : undefined,
+      nodesById: isSet(object.nodesById) ? Query_NodesByID.fromJSON(object.nodesById) : undefined,
+      selectChecks: isSet(object.selectChecks) ? Query_SelectChecks.fromJSON(object.selectChecks) : undefined,
+      selectStages: isSet(object.selectStages) ? Query_SelectStages.fromJSON(object.selectStages) : undefined,
+      expandDependencies: isSet(object.expandDependencies)
+        ? Query_ExpandDependencies.fromJSON(object.expandDependencies)
+        : undefined,
+      expandDependents: isSet(object.expandDependents)
+        ? Query_ExpandDependents.fromJSON(object.expandDependents)
+        : undefined,
+      collectChecks: isSet(object.collectChecks) ? Query_CollectChecks.fromJSON(object.collectChecks) : undefined,
+      collectStages: isSet(object.collectStages) ? Query_CollectStages.fromJSON(object.collectStages) : undefined,
     };
   },
 
   toJSON(message: Query): unknown {
     const obj: any = {};
-    if (message.select !== undefined) {
-      obj.select = Query_Select.toJSON(message.select);
+    if (message.nodesInWorkplan !== undefined) {
+      obj.nodesInWorkplan = WorkPlan.toJSON(message.nodesInWorkplan);
     }
-    if (message.expand !== undefined) {
-      obj.expand = Query_Expand.toJSON(message.expand);
+    if (message.nodesAcrossWorkplans !== undefined) {
+      obj.nodesAcrossWorkplans = Query_NodesAcrossWorkPlans.toJSON(message.nodesAcrossWorkplans);
     }
-    if (message.collect !== undefined) {
-      obj.collect = Query_Collect.toJSON(message.collect);
+    if (message.nodesById !== undefined) {
+      obj.nodesById = Query_NodesByID.toJSON(message.nodesById);
+    }
+    if (message.selectChecks !== undefined) {
+      obj.selectChecks = Query_SelectChecks.toJSON(message.selectChecks);
+    }
+    if (message.selectStages !== undefined) {
+      obj.selectStages = Query_SelectStages.toJSON(message.selectStages);
+    }
+    if (message.expandDependencies !== undefined) {
+      obj.expandDependencies = Query_ExpandDependencies.toJSON(message.expandDependencies);
+    }
+    if (message.expandDependents !== undefined) {
+      obj.expandDependents = Query_ExpandDependents.toJSON(message.expandDependents);
+    }
+    if (message.collectChecks !== undefined) {
+      obj.collectChecks = Query_CollectChecks.toJSON(message.collectChecks);
+    }
+    if (message.collectStages !== undefined) {
+      obj.collectStages = Query_CollectStages.toJSON(message.collectStages);
     }
     return obj;
   },
@@ -328,55 +645,99 @@ export const Query: MessageFns<Query> = {
   },
   fromPartial(object: DeepPartial<Query>): Query {
     const message = createBaseQuery() as any;
-    message.select = (object.select !== undefined && object.select !== null)
-      ? Query_Select.fromPartial(object.select)
+    message.nodesInWorkplan = (object.nodesInWorkplan !== undefined && object.nodesInWorkplan !== null)
+      ? WorkPlan.fromPartial(object.nodesInWorkplan)
       : undefined;
-    message.expand = (object.expand !== undefined && object.expand !== null)
-      ? Query_Expand.fromPartial(object.expand)
+    message.nodesAcrossWorkplans = (object.nodesAcrossWorkplans !== undefined && object.nodesAcrossWorkplans !== null)
+      ? Query_NodesAcrossWorkPlans.fromPartial(object.nodesAcrossWorkplans)
       : undefined;
-    message.collect = (object.collect !== undefined && object.collect !== null)
-      ? Query_Collect.fromPartial(object.collect)
+    message.nodesById = (object.nodesById !== undefined && object.nodesById !== null)
+      ? Query_NodesByID.fromPartial(object.nodesById)
+      : undefined;
+    message.selectChecks = (object.selectChecks !== undefined && object.selectChecks !== null)
+      ? Query_SelectChecks.fromPartial(object.selectChecks)
+      : undefined;
+    message.selectStages = (object.selectStages !== undefined && object.selectStages !== null)
+      ? Query_SelectStages.fromPartial(object.selectStages)
+      : undefined;
+    message.expandDependencies = (object.expandDependencies !== undefined && object.expandDependencies !== null)
+      ? Query_ExpandDependencies.fromPartial(object.expandDependencies)
+      : undefined;
+    message.expandDependents = (object.expandDependents !== undefined && object.expandDependents !== null)
+      ? Query_ExpandDependents.fromPartial(object.expandDependents)
+      : undefined;
+    message.collectChecks = (object.collectChecks !== undefined && object.collectChecks !== null)
+      ? Query_CollectChecks.fromPartial(object.collectChecks)
+      : undefined;
+    message.collectStages = (object.collectStages !== undefined && object.collectStages !== null)
+      ? Query_CollectStages.fromPartial(object.collectStages)
       : undefined;
     return message;
   },
 };
 
-function createBaseQuery_Select(): Query_Select {
-  return { workplan: undefined, nodes: [], checkPatterns: [], stagePatterns: [] };
+function createBaseQuery_NodesAcrossWorkPlans(): Query_NodesAcrossWorkPlans {
+  return {};
 }
 
-export const Query_Select: MessageFns<Query_Select> = {
-  encode(message: Query_Select, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.workplan !== undefined) {
-      Query_Select_WorkPlanConstraint.encode(message.workplan, writer.uint32(10).fork()).join();
+export const Query_NodesAcrossWorkPlans: MessageFns<Query_NodesAcrossWorkPlans> = {
+  encode(_: Query_NodesAcrossWorkPlans, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_NodesAcrossWorkPlans {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuery_NodesAcrossWorkPlans() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
     }
+    return message;
+  },
+
+  fromJSON(_: any): Query_NodesAcrossWorkPlans {
+    return {};
+  },
+
+  toJSON(_: Query_NodesAcrossWorkPlans): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<Query_NodesAcrossWorkPlans>): Query_NodesAcrossWorkPlans {
+    return Query_NodesAcrossWorkPlans.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<Query_NodesAcrossWorkPlans>): Query_NodesAcrossWorkPlans {
+    const message = createBaseQuery_NodesAcrossWorkPlans() as any;
+    return message;
+  },
+};
+
+function createBaseQuery_NodesByID(): Query_NodesByID {
+  return { nodes: [] };
+}
+
+export const Query_NodesByID: MessageFns<Query_NodesByID> = {
+  encode(message: Query_NodesByID, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.nodes) {
       Identifier.encode(v!, writer.uint32(18).fork()).join();
-    }
-    for (const v of message.checkPatterns) {
-      Query_Select_CheckPattern.encode(v!, writer.uint32(26).fork()).join();
-    }
-    for (const v of message.stagePatterns) {
-      Query_Select_StagePattern.encode(v!, writer.uint32(34).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Select {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_NodesByID {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Select() as any;
+    const message = createBaseQuery_NodesByID() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.workplan = Query_Select_WorkPlanConstraint.decode(reader, reader.uint32());
-          continue;
-        }
         case 2: {
           if (tag !== 18) {
             break;
@@ -385,22 +746,6 @@ export const Query_Select: MessageFns<Query_Select> = {
           message.nodes.push(Identifier.decode(reader, reader.uint32()));
           continue;
         }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.checkPatterns.push(Query_Select_CheckPattern.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.stagePatterns.push(Query_Select_StagePattern.decode(reader, reader.uint32()));
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -410,67 +755,46 @@ export const Query_Select: MessageFns<Query_Select> = {
     return message;
   },
 
-  fromJSON(object: any): Query_Select {
+  fromJSON(object: any): Query_NodesByID {
     return {
-      workplan: isSet(object.workplan) ? Query_Select_WorkPlanConstraint.fromJSON(object.workplan) : undefined,
       nodes: globalThis.Array.isArray(object?.nodes) ? object.nodes.map((e: any) => Identifier.fromJSON(e)) : [],
-      checkPatterns: globalThis.Array.isArray(object?.checkPatterns)
-        ? object.checkPatterns.map((e: any) => Query_Select_CheckPattern.fromJSON(e))
-        : [],
-      stagePatterns: globalThis.Array.isArray(object?.stagePatterns)
-        ? object.stagePatterns.map((e: any) => Query_Select_StagePattern.fromJSON(e))
-        : [],
     };
   },
 
-  toJSON(message: Query_Select): unknown {
+  toJSON(message: Query_NodesByID): unknown {
     const obj: any = {};
-    if (message.workplan !== undefined) {
-      obj.workplan = Query_Select_WorkPlanConstraint.toJSON(message.workplan);
-    }
     if (message.nodes?.length) {
       obj.nodes = message.nodes.map((e) => Identifier.toJSON(e));
-    }
-    if (message.checkPatterns?.length) {
-      obj.checkPatterns = message.checkPatterns.map((e) => Query_Select_CheckPattern.toJSON(e));
-    }
-    if (message.stagePatterns?.length) {
-      obj.stagePatterns = message.stagePatterns.map((e) => Query_Select_StagePattern.toJSON(e));
     }
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Select>): Query_Select {
-    return Query_Select.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_NodesByID>): Query_NodesByID {
+    return Query_NodesByID.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Select>): Query_Select {
-    const message = createBaseQuery_Select() as any;
-    message.workplan = (object.workplan !== undefined && object.workplan !== null)
-      ? Query_Select_WorkPlanConstraint.fromPartial(object.workplan)
-      : undefined;
+  fromPartial(object: DeepPartial<Query_NodesByID>): Query_NodesByID {
+    const message = createBaseQuery_NodesByID() as any;
     message.nodes = object.nodes?.map((e) => Identifier.fromPartial(e)) || [];
-    message.checkPatterns = object.checkPatterns?.map((e) => Query_Select_CheckPattern.fromPartial(e)) || [];
-    message.stagePatterns = object.stagePatterns?.map((e) => Query_Select_StagePattern.fromPartial(e)) || [];
     return message;
   },
 };
 
-function createBaseQuery_Select_WorkPlanConstraint(): Query_Select_WorkPlanConstraint {
-  return { inWorkplans: [] };
+function createBaseQuery_SelectChecks(): Query_SelectChecks {
+  return { predicates: [] };
 }
 
-export const Query_Select_WorkPlanConstraint: MessageFns<Query_Select_WorkPlanConstraint> = {
-  encode(message: Query_Select_WorkPlanConstraint, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.inWorkplans) {
-      WorkPlan.encode(v!, writer.uint32(10).fork()).join();
+export const Query_SelectChecks: MessageFns<Query_SelectChecks> = {
+  encode(message: Query_SelectChecks, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.predicates) {
+      Query_SelectChecks_Predicate.encode(v!, writer.uint32(10).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Select_WorkPlanConstraint {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_SelectChecks {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Select_WorkPlanConstraint() as any;
+    const message = createBaseQuery_SelectChecks() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -479,7 +803,7 @@ export const Query_Select_WorkPlanConstraint: MessageFns<Query_Select_WorkPlanCo
             break;
           }
 
-          message.inWorkplans.push(WorkPlan.decode(reader, reader.uint32()));
+          message.predicates.push(Query_SelectChecks_Predicate.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -491,60 +815,57 @@ export const Query_Select_WorkPlanConstraint: MessageFns<Query_Select_WorkPlanCo
     return message;
   },
 
-  fromJSON(object: any): Query_Select_WorkPlanConstraint {
+  fromJSON(object: any): Query_SelectChecks {
     return {
-      inWorkplans: globalThis.Array.isArray(object?.inWorkplans)
-        ? object.inWorkplans.map((e: any) => WorkPlan.fromJSON(e))
+      predicates: globalThis.Array.isArray(object?.predicates)
+        ? object.predicates.map((e: any) => Query_SelectChecks_Predicate.fromJSON(e))
         : [],
     };
   },
 
-  toJSON(message: Query_Select_WorkPlanConstraint): unknown {
+  toJSON(message: Query_SelectChecks): unknown {
     const obj: any = {};
-    if (message.inWorkplans?.length) {
-      obj.inWorkplans = message.inWorkplans.map((e) => WorkPlan.toJSON(e));
+    if (message.predicates?.length) {
+      obj.predicates = message.predicates.map((e) => Query_SelectChecks_Predicate.toJSON(e));
     }
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Select_WorkPlanConstraint>): Query_Select_WorkPlanConstraint {
-    return Query_Select_WorkPlanConstraint.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_SelectChecks>): Query_SelectChecks {
+    return Query_SelectChecks.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Select_WorkPlanConstraint>): Query_Select_WorkPlanConstraint {
-    const message = createBaseQuery_Select_WorkPlanConstraint() as any;
-    message.inWorkplans = object.inWorkplans?.map((e) => WorkPlan.fromPartial(e)) || [];
+  fromPartial(object: DeepPartial<Query_SelectChecks>): Query_SelectChecks {
+    const message = createBaseQuery_SelectChecks() as any;
+    message.predicates = object.predicates?.map((e) => Query_SelectChecks_Predicate.fromPartial(e)) || [];
     return message;
   },
 };
 
-function createBaseQuery_Select_CheckPattern(): Query_Select_CheckPattern {
-  return { kind: undefined, idRegex: undefined, withOptionTypes: [], state: undefined, withResultDataTypes: [] };
+function createBaseQuery_SelectChecks_Predicate(): Query_SelectChecks_Predicate {
+  return { kind: undefined, state: undefined, withOptionType: undefined, withResultDataType: undefined };
 }
 
-export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = {
-  encode(message: Query_Select_CheckPattern, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Query_SelectChecks_Predicate: MessageFns<Query_SelectChecks_Predicate> = {
+  encode(message: Query_SelectChecks_Predicate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.kind !== undefined) {
       writer.uint32(8).int32(message.kind);
     }
-    if (message.idRegex !== undefined) {
-      writer.uint32(18).string(message.idRegex);
-    }
-    for (const v of message.withOptionTypes) {
-      writer.uint32(26).string(v!);
-    }
     if (message.state !== undefined) {
-      writer.uint32(32).int32(message.state);
+      writer.uint32(16).int32(message.state);
     }
-    for (const v of message.withResultDataTypes) {
-      writer.uint32(42).string(v!);
+    if (message.withOptionType !== undefined) {
+      TypeSet.encode(message.withOptionType, writer.uint32(26).fork()).join();
+    }
+    if (message.withResultDataType !== undefined) {
+      TypeSet.encode(message.withResultDataType, writer.uint32(34).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Select_CheckPattern {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_SelectChecks_Predicate {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Select_CheckPattern() as any;
+    const message = createBaseQuery_SelectChecks_Predicate() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -557,11 +878,11 @@ export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = 
           continue;
         }
         case 2: {
-          if (tag !== 18) {
+          if (tag !== 16) {
             break;
           }
 
-          message.idRegex = reader.string();
+          message.state = reader.int32() as any;
           continue;
         }
         case 3: {
@@ -569,23 +890,167 @@ export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = 
             break;
           }
 
-          message.withOptionTypes.push(reader.string());
+          message.withOptionType = TypeSet.decode(reader, reader.uint32());
           continue;
         }
         case 4: {
-          if (tag !== 32) {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.withResultDataType = TypeSet.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Query_SelectChecks_Predicate {
+    return {
+      kind: isSet(object.kind) ? checkKindFromJSON(object.kind) : undefined,
+      state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
+      withOptionType: isSet(object.withOptionType) ? TypeSet.fromJSON(object.withOptionType) : undefined,
+      withResultDataType: isSet(object.withResultDataType) ? TypeSet.fromJSON(object.withResultDataType) : undefined,
+    };
+  },
+
+  toJSON(message: Query_SelectChecks_Predicate): unknown {
+    const obj: any = {};
+    if (message.kind !== undefined) {
+      obj.kind = checkKindToJSON(message.kind);
+    }
+    if (message.state !== undefined) {
+      obj.state = checkStateToJSON(message.state);
+    }
+    if (message.withOptionType !== undefined) {
+      obj.withOptionType = TypeSet.toJSON(message.withOptionType);
+    }
+    if (message.withResultDataType !== undefined) {
+      obj.withResultDataType = TypeSet.toJSON(message.withResultDataType);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Query_SelectChecks_Predicate>): Query_SelectChecks_Predicate {
+    return Query_SelectChecks_Predicate.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Query_SelectChecks_Predicate>): Query_SelectChecks_Predicate {
+    const message = createBaseQuery_SelectChecks_Predicate() as any;
+    message.kind = object.kind ?? undefined;
+    message.state = object.state ?? undefined;
+    message.withOptionType = (object.withOptionType !== undefined && object.withOptionType !== null)
+      ? TypeSet.fromPartial(object.withOptionType)
+      : undefined;
+    message.withResultDataType = (object.withResultDataType !== undefined && object.withResultDataType !== null)
+      ? TypeSet.fromPartial(object.withResultDataType)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseQuery_SelectStages(): Query_SelectStages {
+  return { predicates: [] };
+}
+
+export const Query_SelectStages: MessageFns<Query_SelectStages> = {
+  encode(message: Query_SelectStages, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.predicates) {
+      Query_SelectStages_Predicate.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_SelectStages {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuery_SelectStages() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.predicates.push(Query_SelectStages_Predicate.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Query_SelectStages {
+    return {
+      predicates: globalThis.Array.isArray(object?.predicates)
+        ? object.predicates.map((e: any) => Query_SelectStages_Predicate.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: Query_SelectStages): unknown {
+    const obj: any = {};
+    if (message.predicates?.length) {
+      obj.predicates = message.predicates.map((e) => Query_SelectStages_Predicate.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Query_SelectStages>): Query_SelectStages {
+    return Query_SelectStages.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Query_SelectStages>): Query_SelectStages {
+    const message = createBaseQuery_SelectStages() as any;
+    message.predicates = object.predicates?.map((e) => Query_SelectStages_Predicate.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseQuery_SelectStages_Predicate(): Query_SelectStages_Predicate {
+  return { state: undefined, withArgsType: undefined };
+}
+
+export const Query_SelectStages_Predicate: MessageFns<Query_SelectStages_Predicate> = {
+  encode(message: Query_SelectStages_Predicate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.state !== undefined) {
+      writer.uint32(8).int32(message.state);
+    }
+    if (message.withArgsType !== undefined) {
+      TypeSet.encode(message.withArgsType, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_SelectStages_Predicate {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuery_SelectStages_Predicate() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
             break;
           }
 
           message.state = reader.int32() as any;
           continue;
         }
-        case 5: {
-          if (tag !== 42) {
+        case 2: {
+          if (tag !== 18) {
             break;
           }
 
-          message.withResultDataTypes.push(reader.string());
+          message.withArgsType = TypeSet.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -597,193 +1062,53 @@ export const Query_Select_CheckPattern: MessageFns<Query_Select_CheckPattern> = 
     return message;
   },
 
-  fromJSON(object: any): Query_Select_CheckPattern {
+  fromJSON(object: any): Query_SelectStages_Predicate {
     return {
-      kind: isSet(object.kind) ? checkKindFromJSON(object.kind) : undefined,
-      idRegex: isSet(object.idRegex) ? globalThis.String(object.idRegex) : undefined,
-      withOptionTypes: globalThis.Array.isArray(object?.withOptionTypes)
-        ? object.withOptionTypes.map((e: any) => globalThis.String(e))
-        : [],
-      state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
-      withResultDataTypes: globalThis.Array.isArray(object?.withResultDataTypes)
-        ? object.withResultDataTypes.map((e: any) => globalThis.String(e))
-        : [],
+      state: isSet(object.state) ? stageStateFromJSON(object.state) : undefined,
+      withArgsType: isSet(object.withArgsType) ? TypeSet.fromJSON(object.withArgsType) : undefined,
     };
   },
 
-  toJSON(message: Query_Select_CheckPattern): unknown {
+  toJSON(message: Query_SelectStages_Predicate): unknown {
     const obj: any = {};
-    if (message.kind !== undefined) {
-      obj.kind = checkKindToJSON(message.kind);
-    }
-    if (message.idRegex !== undefined) {
-      obj.idRegex = message.idRegex;
-    }
-    if (message.withOptionTypes?.length) {
-      obj.withOptionTypes = message.withOptionTypes;
-    }
     if (message.state !== undefined) {
-      obj.state = checkStateToJSON(message.state);
+      obj.state = stageStateToJSON(message.state);
     }
-    if (message.withResultDataTypes?.length) {
-      obj.withResultDataTypes = message.withResultDataTypes;
+    if (message.withArgsType !== undefined) {
+      obj.withArgsType = TypeSet.toJSON(message.withArgsType);
     }
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Select_CheckPattern>): Query_Select_CheckPattern {
-    return Query_Select_CheckPattern.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_SelectStages_Predicate>): Query_SelectStages_Predicate {
+    return Query_SelectStages_Predicate.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Select_CheckPattern>): Query_Select_CheckPattern {
-    const message = createBaseQuery_Select_CheckPattern() as any;
-    message.kind = object.kind ?? undefined;
-    message.idRegex = object.idRegex ?? undefined;
-    message.withOptionTypes = object.withOptionTypes?.map((e) => e) || [];
+  fromPartial(object: DeepPartial<Query_SelectStages_Predicate>): Query_SelectStages_Predicate {
+    const message = createBaseQuery_SelectStages_Predicate() as any;
     message.state = object.state ?? undefined;
-    message.withResultDataTypes = object.withResultDataTypes?.map((e) => e) || [];
-    return message;
-  },
-};
-
-function createBaseQuery_Select_StagePattern(): Query_Select_StagePattern {
-  return {};
-}
-
-export const Query_Select_StagePattern: MessageFns<Query_Select_StagePattern> = {
-  encode(_: Query_Select_StagePattern, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Select_StagePattern {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Select_StagePattern() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): Query_Select_StagePattern {
-    return {};
-  },
-
-  toJSON(_: Query_Select_StagePattern): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create(base?: DeepPartial<Query_Select_StagePattern>): Query_Select_StagePattern {
-    return Query_Select_StagePattern.fromPartial(base ?? {});
-  },
-  fromPartial(_: DeepPartial<Query_Select_StagePattern>): Query_Select_StagePattern {
-    const message = createBaseQuery_Select_StagePattern() as any;
-    return message;
-  },
-};
-
-function createBaseQuery_Expand(): Query_Expand {
-  return { dependencies: undefined, dependents: undefined };
-}
-
-export const Query_Expand: MessageFns<Query_Expand> = {
-  encode(message: Query_Expand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.dependencies !== undefined) {
-      Query_Expand_Dependencies.encode(message.dependencies, writer.uint32(10).fork()).join();
-    }
-    if (message.dependents !== undefined) {
-      Query_Expand_Dependents.encode(message.dependents, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Expand {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Expand() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.dependencies = Query_Expand_Dependencies.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.dependents = Query_Expand_Dependents.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): Query_Expand {
-    return {
-      dependencies: isSet(object.dependencies) ? Query_Expand_Dependencies.fromJSON(object.dependencies) : undefined,
-      dependents: isSet(object.dependents) ? Query_Expand_Dependents.fromJSON(object.dependents) : undefined,
-    };
-  },
-
-  toJSON(message: Query_Expand): unknown {
-    const obj: any = {};
-    if (message.dependencies !== undefined) {
-      obj.dependencies = Query_Expand_Dependencies.toJSON(message.dependencies);
-    }
-    if (message.dependents !== undefined) {
-      obj.dependents = Query_Expand_Dependents.toJSON(message.dependents);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<Query_Expand>): Query_Expand {
-    return Query_Expand.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<Query_Expand>): Query_Expand {
-    const message = createBaseQuery_Expand() as any;
-    message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
-      ? Query_Expand_Dependencies.fromPartial(object.dependencies)
-      : undefined;
-    message.dependents = (object.dependents !== undefined && object.dependents !== null)
-      ? Query_Expand_Dependents.fromPartial(object.dependents)
+    message.withArgsType = (object.withArgsType !== undefined && object.withArgsType !== null)
+      ? TypeSet.fromPartial(object.withArgsType)
       : undefined;
     return message;
   },
 };
 
-function createBaseQuery_Expand_Dependencies(): Query_Expand_Dependencies {
+function createBaseQuery_ExpandDependencies(): Query_ExpandDependencies {
   return { mode: undefined };
 }
 
-export const Query_Expand_Dependencies: MessageFns<Query_Expand_Dependencies> = {
-  encode(message: Query_Expand_Dependencies, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Query_ExpandDependencies: MessageFns<Query_ExpandDependencies> = {
+  encode(message: Query_ExpandDependencies, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.mode !== undefined) {
       writer.uint32(8).int32(message.mode);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Expand_Dependencies {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_ExpandDependencies {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Expand_Dependencies() as any;
+    const message = createBaseQuery_ExpandDependencies() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -804,11 +1129,11 @@ export const Query_Expand_Dependencies: MessageFns<Query_Expand_Dependencies> = 
     return message;
   },
 
-  fromJSON(object: any): Query_Expand_Dependencies {
+  fromJSON(object: any): Query_ExpandDependencies {
     return { mode: isSet(object.mode) ? queryExpandDepsModeFromJSON(object.mode) : undefined };
   },
 
-  toJSON(message: Query_Expand_Dependencies): unknown {
+  toJSON(message: Query_ExpandDependencies): unknown {
     const obj: any = {};
     if (message.mode !== undefined) {
       obj.mode = queryExpandDepsModeToJSON(message.mode);
@@ -816,32 +1141,32 @@ export const Query_Expand_Dependencies: MessageFns<Query_Expand_Dependencies> = 
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Expand_Dependencies>): Query_Expand_Dependencies {
-    return Query_Expand_Dependencies.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_ExpandDependencies>): Query_ExpandDependencies {
+    return Query_ExpandDependencies.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Expand_Dependencies>): Query_Expand_Dependencies {
-    const message = createBaseQuery_Expand_Dependencies() as any;
+  fromPartial(object: DeepPartial<Query_ExpandDependencies>): Query_ExpandDependencies {
+    const message = createBaseQuery_ExpandDependencies() as any;
     message.mode = object.mode ?? undefined;
     return message;
   },
 };
 
-function createBaseQuery_Expand_Dependents(): Query_Expand_Dependents {
+function createBaseQuery_ExpandDependents(): Query_ExpandDependents {
   return { mode: undefined };
 }
 
-export const Query_Expand_Dependents: MessageFns<Query_Expand_Dependents> = {
-  encode(message: Query_Expand_Dependents, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Query_ExpandDependents: MessageFns<Query_ExpandDependents> = {
+  encode(message: Query_ExpandDependents, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.mode !== undefined) {
       writer.uint32(8).int32(message.mode);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Expand_Dependents {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_ExpandDependents {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Expand_Dependents() as any;
+    const message = createBaseQuery_ExpandDependents() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -862,11 +1187,11 @@ export const Query_Expand_Dependents: MessageFns<Query_Expand_Dependents> = {
     return message;
   },
 
-  fromJSON(object: any): Query_Expand_Dependents {
+  fromJSON(object: any): Query_ExpandDependents {
     return { mode: isSet(object.mode) ? queryExpandDepsModeFromJSON(object.mode) : undefined };
   },
 
-  toJSON(message: Query_Expand_Dependents): unknown {
+  toJSON(message: Query_ExpandDependents): unknown {
     const obj: any = {};
     if (message.mode !== undefined) {
       obj.mode = queryExpandDepsModeToJSON(message.mode);
@@ -874,102 +1199,22 @@ export const Query_Expand_Dependents: MessageFns<Query_Expand_Dependents> = {
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Expand_Dependents>): Query_Expand_Dependents {
-    return Query_Expand_Dependents.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_ExpandDependents>): Query_ExpandDependents {
+    return Query_ExpandDependents.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Expand_Dependents>): Query_Expand_Dependents {
-    const message = createBaseQuery_Expand_Dependents() as any;
+  fromPartial(object: DeepPartial<Query_ExpandDependents>): Query_ExpandDependents {
+    const message = createBaseQuery_ExpandDependents() as any;
     message.mode = object.mode ?? undefined;
     return message;
   },
 };
 
-function createBaseQuery_Collect(): Query_Collect {
-  return { check: undefined, stage: undefined };
-}
-
-export const Query_Collect: MessageFns<Query_Collect> = {
-  encode(message: Query_Collect, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.check !== undefined) {
-      Query_Collect_Check.encode(message.check, writer.uint32(10).fork()).join();
-    }
-    if (message.stage !== undefined) {
-      Query_Collect_Stage.encode(message.stage, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Collect {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Collect() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.check = Query_Collect_Check.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.stage = Query_Collect_Stage.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): Query_Collect {
-    return {
-      check: isSet(object.check) ? Query_Collect_Check.fromJSON(object.check) : undefined,
-      stage: isSet(object.stage) ? Query_Collect_Stage.fromJSON(object.stage) : undefined,
-    };
-  },
-
-  toJSON(message: Query_Collect): unknown {
-    const obj: any = {};
-    if (message.check !== undefined) {
-      obj.check = Query_Collect_Check.toJSON(message.check);
-    }
-    if (message.stage !== undefined) {
-      obj.stage = Query_Collect_Stage.toJSON(message.stage);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<Query_Collect>): Query_Collect {
-    return Query_Collect.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<Query_Collect>): Query_Collect {
-    const message = createBaseQuery_Collect() as any;
-    message.check = (object.check !== undefined && object.check !== null)
-      ? Query_Collect_Check.fromPartial(object.check)
-      : undefined;
-    message.stage = (object.stage !== undefined && object.stage !== null)
-      ? Query_Collect_Stage.fromPartial(object.stage)
-      : undefined;
-    return message;
-  },
-};
-
-function createBaseQuery_Collect_Check(): Query_Collect_Check {
+function createBaseQuery_CollectChecks(): Query_CollectChecks {
   return { options: undefined, resultData: undefined, edits: undefined };
 }
 
-export const Query_Collect_Check: MessageFns<Query_Collect_Check> = {
-  encode(message: Query_Collect_Check, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Query_CollectChecks: MessageFns<Query_CollectChecks> = {
+  encode(message: Query_CollectChecks, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.options !== undefined) {
       writer.uint32(8).bool(message.options);
     }
@@ -982,10 +1227,10 @@ export const Query_Collect_Check: MessageFns<Query_Collect_Check> = {
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Collect_Check {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_CollectChecks {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Collect_Check() as any;
+    const message = createBaseQuery_CollectChecks() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -1022,7 +1267,7 @@ export const Query_Collect_Check: MessageFns<Query_Collect_Check> = {
     return message;
   },
 
-  fromJSON(object: any): Query_Collect_Check {
+  fromJSON(object: any): Query_CollectChecks {
     return {
       options: isSet(object.options) ? globalThis.Boolean(object.options) : undefined,
       resultData: isSet(object.resultData) ? globalThis.Boolean(object.resultData) : undefined,
@@ -1030,7 +1275,7 @@ export const Query_Collect_Check: MessageFns<Query_Collect_Check> = {
     };
   },
 
-  toJSON(message: Query_Collect_Check): unknown {
+  toJSON(message: Query_CollectChecks): unknown {
     const obj: any = {};
     if (message.options !== undefined) {
       obj.options = message.options;
@@ -1044,11 +1289,11 @@ export const Query_Collect_Check: MessageFns<Query_Collect_Check> = {
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Collect_Check>): Query_Collect_Check {
-    return Query_Collect_Check.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_CollectChecks>): Query_CollectChecks {
+    return Query_CollectChecks.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Collect_Check>): Query_Collect_Check {
-    const message = createBaseQuery_Collect_Check() as any;
+  fromPartial(object: DeepPartial<Query_CollectChecks>): Query_CollectChecks {
+    const message = createBaseQuery_CollectChecks() as any;
     message.options = object.options ?? undefined;
     message.resultData = object.resultData ?? undefined;
     message.edits = (object.edits !== undefined && object.edits !== null)
@@ -1058,27 +1303,38 @@ export const Query_Collect_Check: MessageFns<Query_Collect_Check> = {
   },
 };
 
-function createBaseQuery_Collect_Stage(): Query_Collect_Stage {
-  return { edits: undefined };
+function createBaseQuery_CollectStages(): Query_CollectStages {
+  return { attempts: undefined, edits: undefined };
 }
 
-export const Query_Collect_Stage: MessageFns<Query_Collect_Stage> = {
-  encode(message: Query_Collect_Stage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const Query_CollectStages: MessageFns<Query_CollectStages> = {
+  encode(message: Query_CollectStages, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.attempts !== undefined) {
+      writer.uint32(8).int32(message.attempts);
+    }
     if (message.edits !== undefined) {
-      RevisionRange.encode(message.edits, writer.uint32(10).fork()).join();
+      RevisionRange.encode(message.edits, writer.uint32(18).fork()).join();
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): Query_Collect_Stage {
+  decode(input: BinaryReader | Uint8Array, length?: number): Query_CollectStages {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQuery_Collect_Stage() as any;
+    const message = createBaseQuery_CollectStages() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 10) {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.attempts = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
             break;
           }
 
@@ -1094,23 +1350,30 @@ export const Query_Collect_Stage: MessageFns<Query_Collect_Stage> = {
     return message;
   },
 
-  fromJSON(object: any): Query_Collect_Stage {
-    return { edits: isSet(object.edits) ? RevisionRange.fromJSON(object.edits) : undefined };
+  fromJSON(object: any): Query_CollectStages {
+    return {
+      attempts: isSet(object.attempts) ? collectStageAttemptsFromJSON(object.attempts) : undefined,
+      edits: isSet(object.edits) ? RevisionRange.fromJSON(object.edits) : undefined,
+    };
   },
 
-  toJSON(message: Query_Collect_Stage): unknown {
+  toJSON(message: Query_CollectStages): unknown {
     const obj: any = {};
+    if (message.attempts !== undefined) {
+      obj.attempts = collectStageAttemptsToJSON(message.attempts);
+    }
     if (message.edits !== undefined) {
       obj.edits = RevisionRange.toJSON(message.edits);
     }
     return obj;
   },
 
-  create(base?: DeepPartial<Query_Collect_Stage>): Query_Collect_Stage {
-    return Query_Collect_Stage.fromPartial(base ?? {});
+  create(base?: DeepPartial<Query_CollectStages>): Query_CollectStages {
+    return Query_CollectStages.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<Query_Collect_Stage>): Query_Collect_Stage {
-    const message = createBaseQuery_Collect_Stage() as any;
+  fromPartial(object: DeepPartial<Query_CollectStages>): Query_CollectStages {
+    const message = createBaseQuery_CollectStages() as any;
+    message.attempts = object.attempts ?? undefined;
     message.edits = (object.edits !== undefined && object.edits !== null)
       ? RevisionRange.fromPartial(object.edits)
       : undefined;

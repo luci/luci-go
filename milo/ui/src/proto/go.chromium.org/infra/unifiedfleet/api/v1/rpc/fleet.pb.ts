@@ -1158,6 +1158,13 @@ export interface DeleteDracRequest {
   readonly name: string;
 }
 
+export interface RenameDracRequest {
+  /** The name of the Drac to rename */
+  readonly name: string;
+  /** The new name of the Drac */
+  readonly newName: string;
+}
+
 /**
  * Contains the required information for creating a Switch represented in
  * the database.
@@ -1461,6 +1468,8 @@ export interface ChromeOsRecoveryData_DutData {
   readonly deviceSku: string;
   readonly dlmSkuId: string;
   readonly storageType: StorageType;
+  /** the firmware identifier for android_desktop device */
+  readonly frid: string;
 }
 
 export interface ChromeOsRecoveryData_WifiRouter {
@@ -10110,6 +10119,82 @@ export const DeleteDracRequest: MessageFns<DeleteDracRequest> = {
   },
 };
 
+function createBaseRenameDracRequest(): RenameDracRequest {
+  return { name: "", newName: "" };
+}
+
+export const RenameDracRequest: MessageFns<RenameDracRequest> = {
+  encode(message: RenameDracRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.newName !== "") {
+      writer.uint32(18).string(message.newName);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RenameDracRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRenameDracRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.newName = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RenameDracRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      newName: isSet(object.newName) ? globalThis.String(object.newName) : "",
+    };
+  },
+
+  toJSON(message: RenameDracRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.newName !== "") {
+      obj.newName = message.newName;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RenameDracRequest>): RenameDracRequest {
+    return RenameDracRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RenameDracRequest>): RenameDracRequest {
+    const message = createBaseRenameDracRequest() as any;
+    message.name = object.name ?? "";
+    message.newName = object.newName ?? "";
+    return message;
+  },
+};
+
 function createBaseCreateSwitchRequest(): CreateSwitchRequest {
   return { switch: undefined, switchId: "" };
 }
@@ -12091,7 +12176,7 @@ export const ChromeOsRecoveryData: MessageFns<ChromeOsRecoveryData> = {
 };
 
 function createBaseChromeOsRecoveryData_DutData(): ChromeOsRecoveryData_DutData {
-  return { serialNumber: "", hwID: "", deviceSku: "", dlmSkuId: "", storageType: 0 };
+  return { serialNumber: "", hwID: "", deviceSku: "", dlmSkuId: "", storageType: 0, frid: "" };
 }
 
 export const ChromeOsRecoveryData_DutData: MessageFns<ChromeOsRecoveryData_DutData> = {
@@ -12110,6 +12195,9 @@ export const ChromeOsRecoveryData_DutData: MessageFns<ChromeOsRecoveryData_DutDa
     }
     if (message.storageType !== 0) {
       writer.uint32(40).int32(message.storageType);
+    }
+    if (message.frid !== "") {
+      writer.uint32(50).string(message.frid);
     }
     return writer;
   },
@@ -12161,6 +12249,14 @@ export const ChromeOsRecoveryData_DutData: MessageFns<ChromeOsRecoveryData_DutDa
           message.storageType = reader.int32() as any;
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.frid = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -12177,6 +12273,7 @@ export const ChromeOsRecoveryData_DutData: MessageFns<ChromeOsRecoveryData_DutDa
       deviceSku: isSet(object.deviceSku) ? globalThis.String(object.deviceSku) : "",
       dlmSkuId: isSet(object.dlmSkuId) ? globalThis.String(object.dlmSkuId) : "",
       storageType: isSet(object.storageType) ? storageTypeFromJSON(object.storageType) : 0,
+      frid: isSet(object.frid) ? globalThis.String(object.frid) : "",
     };
   },
 
@@ -12197,6 +12294,9 @@ export const ChromeOsRecoveryData_DutData: MessageFns<ChromeOsRecoveryData_DutDa
     if (message.storageType !== 0) {
       obj.storageType = storageTypeToJSON(message.storageType);
     }
+    if (message.frid !== "") {
+      obj.frid = message.frid;
+    }
     return obj;
   },
 
@@ -12210,6 +12310,7 @@ export const ChromeOsRecoveryData_DutData: MessageFns<ChromeOsRecoveryData_DutDa
     message.deviceSku = object.deviceSku ?? "";
     message.dlmSkuId = object.dlmSkuId ?? "";
     message.storageType = object.storageType ?? 0;
+    message.frid = object.frid ?? "";
     return message;
   },
 };
@@ -19489,6 +19590,8 @@ export interface Fleet {
   ListDracs(request: ListDracsRequest): Promise<ListDracsResponse>;
   /** Delete delete the drac */
   DeleteDrac(request: DeleteDracRequest): Promise<Empty>;
+  /** Rename rename the drac */
+  RenameDrac(request: RenameDracRequest): Promise<Drac>;
   /** CreateSwitch creates a new switch */
   CreateSwitch(request: CreateSwitchRequest): Promise<Switch>;
   /** Update updates the switch */
@@ -19740,6 +19843,7 @@ export class FleetClientImpl implements Fleet {
     this.GetDrac = this.GetDrac.bind(this);
     this.ListDracs = this.ListDracs.bind(this);
     this.DeleteDrac = this.DeleteDrac.bind(this);
+    this.RenameDrac = this.RenameDrac.bind(this);
     this.CreateSwitch = this.CreateSwitch.bind(this);
     this.UpdateSwitch = this.UpdateSwitch.bind(this);
     this.GetSwitch = this.GetSwitch.bind(this);
@@ -20188,6 +20292,12 @@ export class FleetClientImpl implements Fleet {
     const data = DeleteDracRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "DeleteDrac", data);
     return promise.then((data) => Empty.fromJSON(data));
+  }
+
+  RenameDrac(request: RenameDracRequest): Promise<Drac> {
+    const data = RenameDracRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "RenameDrac", data);
+    return promise.then((data) => Drac.fromJSON(data));
   }
 
   CreateSwitch(request: CreateSwitchRequest): Promise<Switch> {

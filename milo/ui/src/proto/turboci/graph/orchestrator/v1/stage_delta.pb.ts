@@ -7,6 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { StageAttempt } from "../../ids/v1/identifier.pb";
+import { Dependencies } from "./dependencies.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
 import { StageState, stageStateFromJSON, stageStateToJSON } from "./stage_state.pb";
 import { Value } from "./value.pb";
@@ -26,6 +27,19 @@ export interface StageDelta {
    * INCOMPLETE at the same time a new Attempt is written as PENDING.
    */
   readonly attempts: readonly StageDelta_Attempt[];
+  /** Cancelled is true if the edit cancelled this Stage. */
+  readonly cancelled?:
+    | boolean
+    | undefined;
+  /**
+   * The Stage continuation_group written as part of this edit.
+   *
+   * The fields within reflect what was changed in this edit:
+   *   * `edges`, `predicate` and `resolution` are included in-whole, and mean
+   *     that this edit modified those fields.
+   *   * `resolution_events` reflects just new events resolved in this edit.
+   */
+  readonly continuationGroup?: Dependencies | undefined;
 }
 
 /** Attempt represents a delta to a given StageAttempt. */
@@ -50,7 +64,7 @@ export interface StageDelta_Attempt {
 }
 
 function createBaseStageDelta(): StageDelta {
-  return { state: undefined, attempts: [] };
+  return { state: undefined, attempts: [], cancelled: undefined, continuationGroup: undefined };
 }
 
 export const StageDelta: MessageFns<StageDelta> = {
@@ -60,6 +74,12 @@ export const StageDelta: MessageFns<StageDelta> = {
     }
     for (const v of message.attempts) {
       StageDelta_Attempt.encode(v!, writer.uint32(18).fork()).join();
+    }
+    if (message.cancelled !== undefined) {
+      writer.uint32(24).bool(message.cancelled);
+    }
+    if (message.continuationGroup !== undefined) {
+      Dependencies.encode(message.continuationGroup, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -87,6 +107,22 @@ export const StageDelta: MessageFns<StageDelta> = {
           message.attempts.push(StageDelta_Attempt.decode(reader, reader.uint32()));
           continue;
         }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.cancelled = reader.bool();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.continuationGroup = Dependencies.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -102,6 +138,8 @@ export const StageDelta: MessageFns<StageDelta> = {
       attempts: globalThis.Array.isArray(object?.attempts)
         ? object.attempts.map((e: any) => StageDelta_Attempt.fromJSON(e))
         : [],
+      cancelled: isSet(object.cancelled) ? globalThis.Boolean(object.cancelled) : undefined,
+      continuationGroup: isSet(object.continuationGroup) ? Dependencies.fromJSON(object.continuationGroup) : undefined,
     };
   },
 
@@ -113,6 +151,12 @@ export const StageDelta: MessageFns<StageDelta> = {
     if (message.attempts?.length) {
       obj.attempts = message.attempts.map((e) => StageDelta_Attempt.toJSON(e));
     }
+    if (message.cancelled !== undefined) {
+      obj.cancelled = message.cancelled;
+    }
+    if (message.continuationGroup !== undefined) {
+      obj.continuationGroup = Dependencies.toJSON(message.continuationGroup);
+    }
     return obj;
   },
 
@@ -123,6 +167,10 @@ export const StageDelta: MessageFns<StageDelta> = {
     const message = createBaseStageDelta() as any;
     message.state = object.state ?? undefined;
     message.attempts = object.attempts?.map((e) => StageDelta_Attempt.fromPartial(e)) || [];
+    message.cancelled = object.cancelled ?? undefined;
+    message.continuationGroup = (object.continuationGroup !== undefined && object.continuationGroup !== null)
+      ? Dependencies.fromPartial(object.continuationGroup)
+      : undefined;
     return message;
   },
 };
