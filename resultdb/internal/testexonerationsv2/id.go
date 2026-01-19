@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 )
 
 // ID represents the fully-qualified identifier of a test exoneration.
@@ -108,5 +109,18 @@ func (id ID) Key() spanner.Key {
 		id.CaseName,
 		id.WorkUnitID,
 		id.ExonerationID,
+	}
+}
+
+// VerdictID returns the verdict ID for the test exoneration.
+func (id ID) VerdictID() testresultsv2.VerdictID {
+	return testresultsv2.VerdictID{
+		RootInvocationShardID: id.RootInvocationShardID,
+		ModuleName:            id.ModuleName,
+		ModuleScheme:          id.ModuleScheme,
+		ModuleVariantHash:     id.ModuleVariantHash,
+		CoarseName:            id.CoarseName,
+		FineName:              id.FineName,
+		CaseName:              id.CaseName,
 	}
 }

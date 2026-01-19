@@ -16,7 +16,6 @@ package testverdictsv2
 
 import (
 	"context"
-	"strings"
 
 	"google.golang.org/api/iterator"
 	"google.golang.org/protobuf/proto"
@@ -41,6 +40,15 @@ type QueryDetails struct {
 	RootInvocationID rootinvocations.ID
 	// The test prefix filter to apply.
 	TestPrefixFilter *pb.TestIdentifierPrefix
+	// The specific verdicts to filter to. If this is set, both
+	// RootInvocationID and TestPrefixFilter are ignored.
+	//
+	// This list is treated as a set; the verdicts will not necessarily
+	// be returned in this order.
+	//
+	// At most 10,000 IDs can be nominated (see "Values in an IN operator"):
+	// https://docs.cloud.google.com/spanner/quotas#query-limits
+	VerdictIDs []testresultsv2.VerdictID
 }
 
 // FetchOptions specifies options for fetching a page of test verdicts.
@@ -60,19 +68,19 @@ type FetchOptions struct {
 const protoJSONOverheadBytes = 1000
 
 // Fetch fetches a page of verdicts starting at the given page token.
-func (q *QueryDetails) Fetch(ctx context.Context, pageToken ID, opts FetchOptions) ([]*pb.TestVerdict, ID, error) {
+func (q *QueryDetails) Fetch(ctx context.Context, pageToken testresultsv2.VerdictID, opts FetchOptions) ([]*pb.TestVerdict, testresultsv2.VerdictID, error) {
 	if opts.PageSize <= 0 {
-		return nil, ID{}, errors.New("page size must be positive")
+		return nil, testresultsv2.VerdictID{}, errors.New("page size must be positive")
 	}
 	if opts.ResultLimit <= 0 {
-		return nil, ID{}, errors.New("result limit must be positive")
+		return nil, testresultsv2.VerdictID{}, errors.New("result limit must be positive")
 	}
 	if opts.ResponseLimitBytes < 0 {
-		return nil, ID{}, errors.New("if set, response limit bytes must be positive")
+		return nil, testresultsv2.VerdictID{}, errors.New("if set, response limit bytes must be positive")
 	}
 
 	var results []*pb.TestVerdict
-	var nextPageToken ID
+	var nextPageToken testresultsv2.VerdictID
 	var totalSize int
 	it := q.List(ctx, pageToken, opts.PageSize)
 	err := it.Do(func(tv *TestVerdict) error {
@@ -102,11 +110,11 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken ID, opts FetchOption
 		return nil
 	})
 	if err != nil && err != iterator.Done {
-		return nil, ID{}, err
+		return nil, testresultsv2.VerdictID{}, err
 	}
 	// If we did not terminate early, the iterator has been exhausted.
 	if err == nil {
-		nextPageToken = ID{}
+		nextPageToken = testresultsv2.VerdictID{}
 	}
 	return results, nextPageToken, nil
 }
@@ -156,13 +164,14 @@ func statusV2FromResults(results []*testresultsv2.TestResultRow) pb.TestVerdict_
 //
 // Using the iterator, rows are streamed from Spanner which prevents
 // the need to keep the entire result set in memory.
-func (q *QueryDetails) List(ctx context.Context, pageToken ID, bufferSize int) *Iterator {
+func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.VerdictID, bufferSize int) *Iterator {
 	if bufferSize < 100 {
 		bufferSize = 100
 	}
 	trQuery := testresultsv2.Query{
 		RootInvocation:   q.RootInvocationID,
 		TestPrefixFilter: q.TestPrefixFilter,
+		VerdictIDs:     q.VerdictIDs,
 	}
 	trPageToken := testresultsv2.ID{
 		RootInvocationShardID: pageToken.RootInvocationShardID,
@@ -194,6 +203,7 @@ func (q *QueryDetails) List(ctx context.Context, pageToken ID, bufferSize int) *
 	teQuery := testexonerationsv2.Query{
 		RootInvocation:   q.RootInvocationID,
 		TestPrefixFilter: q.TestPrefixFilter,
+		VerdictIDs:     q.VerdictIDs,
 	}
 	tePageToken := testexonerationsv2.ID{
 		RootInvocationShardID: pageToken.RootInvocationShardID,
@@ -249,7 +259,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 	}
 
 	// Identify the verdict we are about to construct.
-	verdictID := verdictIDFromResultID(res.ID)
+	verdictID := res.ID.VerdictID()
 	verdict := &TestVerdict{
 		ID:           verdictID,
 		TestMetadata: res.TestMetadata,
@@ -264,7 +274,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 		if err != nil {
 			return nil, err
 		}
-		if verdictIDFromResultID(r.ID) != verdictID {
+		if r.ID.VerdictID() != verdictID {
 			// Test result is for a future verdict. Do not consume it.
 			break
 		}
@@ -289,7 +299,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 			return nil, err
 		}
 
-		eID := verdictIDFromExonerationID(e.ID)
+		eID := e.ID.VerdictID()
 		cmp := eID.Compare(verdictID)
 		if cmp < 0 {
 			// Exoneration for a verdict we have already passed (never saw results for).
@@ -335,58 +345,4 @@ func (i *Iterator) Do(f func(*TestVerdict) error) error {
 func (i *Iterator) Stop() {
 	i.testResults.Stop()
 	i.testExonerations.Stop()
-}
-
-// Compare returns -1 iff id < other, 0 iff id == other and 1 iff id > other
-// in TestResultV2 / TestExonerationV2 table order.
-func (id ID) Compare(other ID) int {
-	if id.RootInvocationShardID != other.RootInvocationShardID {
-		if id.RootInvocationShardID.Before(other.RootInvocationShardID) {
-			return -1
-		}
-		return 1
-	}
-	if id.ModuleName != other.ModuleName {
-		return strings.Compare(id.ModuleName, other.ModuleName)
-	}
-	if id.ModuleScheme != other.ModuleScheme {
-		return strings.Compare(id.ModuleScheme, other.ModuleScheme)
-	}
-	if id.ModuleVariantHash != other.ModuleVariantHash {
-		return strings.Compare(id.ModuleVariantHash, other.ModuleVariantHash)
-	}
-	if id.CoarseName != other.CoarseName {
-		return strings.Compare(id.CoarseName, other.CoarseName)
-	}
-	if id.FineName != other.FineName {
-		return strings.Compare(id.FineName, other.FineName)
-	}
-	if id.CaseName != other.CaseName {
-		return strings.Compare(id.CaseName, other.CaseName)
-	}
-	return 0
-}
-
-func verdictIDFromResultID(id testresultsv2.ID) ID {
-	return ID{
-		RootInvocationShardID: id.RootInvocationShardID,
-		ModuleName:            id.ModuleName,
-		ModuleScheme:          id.ModuleScheme,
-		ModuleVariantHash:     id.ModuleVariantHash,
-		CoarseName:            id.CoarseName,
-		FineName:              id.FineName,
-		CaseName:              id.CaseName,
-	}
-}
-
-func verdictIDFromExonerationID(id testexonerationsv2.ID) ID {
-	return ID{
-		RootInvocationShardID: id.RootInvocationShardID,
-		ModuleName:            id.ModuleName,
-		ModuleScheme:          id.ModuleScheme,
-		ModuleVariantHash:     id.ModuleVariantHash,
-		CoarseName:            id.CoarseName,
-		FineName:              id.FineName,
-		CaseName:              id.CaseName,
-	}
 }

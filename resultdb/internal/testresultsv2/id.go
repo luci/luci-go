@@ -81,3 +81,16 @@ func (id ID) Key() spanner.Key {
 		id.ResultID,
 	}
 }
+
+// VerdictID returns the verdict ID for the test result.
+func (id ID) VerdictID() VerdictID {
+	return VerdictID{
+		RootInvocationShardID: id.RootInvocationShardID,
+		ModuleName:            id.ModuleName,
+		ModuleScheme:          id.ModuleScheme,
+		ModuleVariantHash:     id.ModuleVariantHash,
+		CoarseName:            id.CoarseName,
+		FineName:              id.FineName,
+		CaseName:              id.CaseName,
+	}
+}

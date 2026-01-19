@@ -15,31 +15,17 @@
 package testverdictsv2
 
 import (
-	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testexonerationsv2"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// The identifier of a test verdict.
-type ID struct {
-	// The root invocation shard.
-	RootInvocationShardID rootinvocations.ShardID
-	// Test identifier components.
-	ModuleName        string
-	ModuleScheme      string
-	ModuleVariantHash string
-	CoarseName        string
-	FineName          string
-	CaseName          string
-}
-
 // TestVerdictSummary represents the summary of a test verdict. It corresponds
 // to the fields present on the BASIC test verdict view.
 type TestVerdictSummary struct {
 	// The identifier of the test verdict.
-	ID ID
+	ID testresultsv2.VerdictID
 	// The module variant.
 	ModuleVariant *pb.Variant
 	// The status of the test verdict.
@@ -76,7 +62,7 @@ func (v *TestVerdictSummary) ToProto() *pb.TestVerdict {
 // present on the FULL test verdict view.
 type TestVerdict struct {
 	// The identifier of the test verdict.
-	ID ID
+	ID testresultsv2.VerdictID
 	// The test results in the verdict.
 	Results []*testresultsv2.TestResultRow
 	// The test exonerations that make up the verdict.

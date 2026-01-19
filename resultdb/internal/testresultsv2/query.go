@@ -35,6 +35,15 @@ type Query struct {
 	RootInvocation rootinvocations.ID
 	// The test prefix filter to apply.
 	TestPrefixFilter *pb.TestIdentifierPrefix
+	// The specific verdicts to filter to. If this is set, both
+	// RootInvocationID and TestPrefixFilter are ignored.
+	//
+	// This list is treated as a set; the verdicts will not necessarily
+	// be returned in this order.
+	//
+	// At most 10,000 IDs can be nominated (see "Values in an IN operator"):
+	// https://docs.cloud.google.com/spanner/quotas#query-limits
+	VerdictIDs []VerdictID
 }
 
 // List returns an iterator over the test results in the root invocation,
@@ -79,28 +88,36 @@ func (q *Query) buildQuery(pageToken ID, pageSize int) (spanner.Statement, error
 		paginationClause = q.whereAfterPageToken(pageToken, params)
 	}
 
-	wherePrefixClause := "TRUE"
-	if q.TestPrefixFilter != nil {
-		clause, err := PrefixWhereClause(q.TestPrefixFilter, params)
+	var whereClause string
+	if len(q.VerdictIDs) > 0 {
+		clause, err := NominatedVerdictsClause(q.VerdictIDs, params)
 		if err != nil {
-			return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
+			return spanner.Statement{}, errors.Fmt("verdict_ids: %w", err)
 		}
-		wherePrefixClause = "(" + clause + ")"
+		whereClause = "(" + clause + ")"
+	} else {
+		whereClause = "RootInvocationShardId IN UNNEST(@rootInvocationShards)"
+		params["rootInvocationShards"] = q.RootInvocation.AllShardIDs().ToSpanner()
+		if q.TestPrefixFilter != nil {
+			clause, err := PrefixWhereClause(q.TestPrefixFilter, params)
+			if err != nil {
+				return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
+			}
+			whereClause += " AND (" + clause + ")"
+		}
 	}
 
 	tmplInput := map[string]any{
-		"PaginationClause":  paginationClause,
-		"WherePrefixClause": wherePrefixClause,
+		"PaginationClause": paginationClause,
+		"WhereClause":      whereClause,
 	}
-
-	params["rootInvocationShards"] = q.RootInvocation.AllShardIDs().ToSpanner()
 
 	st, err := spanutil.GenerateStatement(testResultQueryTmpl, tmplInput)
 	if err != nil {
 		return spanner.Statement{}, err
 	}
 
-	st.Params = params
+	st.Params = spanutil.ToSpannerMap(params)
 	return st, nil
 }
 
@@ -175,7 +192,7 @@ SELECT
 	SkippedReason,
 	FrameworkExtensions,
 FROM TestResultsV2
-WHERE RootInvocationShardId IN UNNEST(@rootInvocationShards) AND {{.WherePrefixClause}} AND {{.PaginationClause}}
+WHERE {{.WhereClause}} AND {{.PaginationClause}}
 ORDER BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ResultId
 LIMIT @limit
 `))

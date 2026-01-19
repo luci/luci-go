@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -51,17 +52,16 @@ func TestQuery(t *testing.T) {
 		// m1, s1, v1, c1, f1, t1, w1, e9
 		var expected []*TestExonerationRow
 		for i := 0; i < 10; i++ {
-			suffix := fmt.Sprintf("%d", i)
 			row := NewBuilder().
-				WithRootInvocationShardID(rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 0}).
+				WithRootInvocationShardID(rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: i % rootinvocations.RootInvocationShardCount}).
 				WithModuleName("m1").
 				WithModuleScheme("s1").
 				WithModuleVariant(pbutil.Variant("k", "v1")).
 				WithCoarseName("c1").
 				WithFineName("f1").
-				WithCaseName("t1").
+				WithCaseName(fmt.Sprintf("t%d", i)).
 				WithWorkUnitID("w1").
-				WithExonerationID("e" + suffix).
+				WithExonerationID("e1").
 				Build()
 
 			ms = append(ms, InsertForTesting(row))
@@ -154,6 +154,36 @@ func TestQuery(t *testing.T) {
 				},
 			}
 
+			results, err := fetchAll(ctx, q, opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.Match(expected))
+		})
+
+		t.Run("With nominated IDs", func(t *ftt.Test) {
+			verdictID := func(i int) testresultsv2.VerdictID {
+				return testresultsv2.VerdictID{
+					RootInvocationShardID: rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: i % rootinvocations.RootInvocationShardCount},
+					ModuleName:            "m1",
+					ModuleScheme:          "s1",
+					ModuleVariantHash:     pbutil.VariantHash(pbutil.Variant("k", "v1")),
+					CoarseName:            "c1",
+					FineName:              "f1",
+					CaseName:              fmt.Sprintf("t%d", i),
+				}
+			}
+			nominated := []testresultsv2.VerdictID{
+				verdictID(3),
+				verdictID(1),
+				verdictID(5),
+			}
+			// Note: rows are still returned in primary key order, which may not match the order in the list.
+			expected := []*TestExonerationRow{
+				expected[1],
+				expected[3],
+				expected[5],
+			}
+
+			q.VerdictIDs = nominated
 			results, err := fetchAll(ctx, q, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, results, should.Match(expected))
