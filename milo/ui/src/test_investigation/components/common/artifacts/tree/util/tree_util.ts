@@ -18,18 +18,18 @@ import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifac
 import { ArtifactTreeNodeData, SelectedArtifactSource } from '../../types';
 
 export interface ArtifactFilterOptions {
-  debouncedSearchTerm: string;
+  searchTerm: string;
   artifactTypes: string[];
 }
 
 export function filterArtifacts(
   artifacts: readonly Artifact[],
-  { debouncedSearchTerm, artifactTypes }: ArtifactFilterOptions,
+  { searchTerm, artifactTypes }: ArtifactFilterOptions,
 ): readonly Artifact[] {
   let filtered = artifacts;
 
-  if (debouncedSearchTerm) {
-    const lowerTerm = debouncedSearchTerm.toLowerCase();
+  if (searchTerm) {
+    const lowerTerm = searchTerm.toLowerCase();
     filtered = filtered.filter((artifact) =>
       artifact.artifactId.toLowerCase().includes(lowerTerm),
     );
@@ -180,4 +180,36 @@ export function findNode(
     }
   }
   return null;
+}
+/**
+ * Map to find the display name given a WorkunitFolder type
+ */
+export const typeDisplayNameMap = new Map([
+  ['ATP_INVOCATION', 'ATP'],
+  ['TFC_COMMAND', 'TFC COMMAND'],
+  ['TFC_COMMAND_TASK', 'TRADEFED'],
+  ['TF_INVOCATION', 'TRADEFED'],
+  ['TF_MODULE', 'MODULE'],
+  ['TF_TEST_RUN', 'TEST RUN'],
+]);
+
+export function getWorkUnitLabel(
+  wu: {
+    kind?: string;
+    workUnitId: string;
+    moduleId?: { moduleName: string; moduleScheme?: string };
+    moduleShardKey?: string;
+  },
+  rootInvocationName?: string,
+): string {
+  if (wu.moduleId) {
+    return `Module: ${wu.moduleId.moduleName}${wu.moduleShardKey ? ` - ${wu.moduleShardKey}` : ''}`;
+  }
+  if (wu.workUnitId === 'root' && rootInvocationName) {
+    return rootInvocationName;
+  }
+  if (wu.kind && typeDisplayNameMap.has(wu.kind)) {
+    return typeDisplayNameMap.get(wu.kind)!;
+  }
+  return wu.kind || wu.workUnitId;
 }

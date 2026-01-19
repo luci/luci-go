@@ -122,7 +122,12 @@ export default [
       ],
       'max-len': [
         'error',
-        { code: 140, ignoreUrls: true, ignoreRegExpLiterals: true },
+        {
+          code: 140,
+          ignoreUrls: true,
+          ignoreRegExpLiterals: true,
+          ignorePattern: '^import\\s.+\\sfrom\\s.+;$',
+        },
       ],
       'new-cap': 'off',
       'no-restricted-imports': [

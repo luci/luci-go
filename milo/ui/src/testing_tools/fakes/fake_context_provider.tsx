@@ -16,7 +16,7 @@ import { ThemeProvider } from '@emotion/react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import {
   Outlet,
   RouteObject,
@@ -68,32 +68,36 @@ export function FakeContextProvider({
     return c;
   });
 
-  const router = createMemoryRouter(
-    [
-      {
-        element: (
-          // N.B. keep the provider declaration order and placement in sync with
-          // App.tsx so it's easier to test the effect of missing contexts.
-          // e.g. `errorElement` shall not rely on `<AuthStateProvider />`.
-          <SyncedSearchParamsProvider>
-            <FakeAuthStateProvider>
-              <FeatureFlagsProvider>
-                <Outlet />
-              </FeatureFlagsProvider>
-            </FakeAuthStateProvider>
-          </SyncedSearchParamsProvider>
-        ),
-        children: [
+  const router = useMemo(
+    () =>
+      createMemoryRouter(
+        [
           {
-            path: mountedPath || '/',
-            element: children,
-            errorElement: errorElement,
+            element: (
+              // N.B. keep the provider declaration order and placement in sync with
+              // App.tsx so it's easier to test the effect of missing contexts.
+              // e.g. `errorElement` shall not rely on `<AuthStateProvider />`.
+              <SyncedSearchParamsProvider>
+                <FakeAuthStateProvider>
+                  <FeatureFlagsProvider>
+                    <Outlet />
+                  </FeatureFlagsProvider>
+                </FakeAuthStateProvider>
+              </SyncedSearchParamsProvider>
+            ),
+            children: [
+              {
+                path: mountedPath || '/',
+                element: children,
+                errorElement: errorElement,
+              },
+              ...siblingRoutes,
+            ],
           },
-          ...siblingRoutes,
         ],
-      },
-    ],
-    routerOptions,
+        routerOptions,
+      ),
+    [mountedPath, children, errorElement, siblingRoutes, routerOptions],
   );
 
   return (

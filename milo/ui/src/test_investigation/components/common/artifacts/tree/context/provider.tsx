@@ -118,14 +118,14 @@ export function ArtifactFilterProvider({
     [setSearchParams],
   );
 
-  const hideEmptyFolders = searchParams.get('no_empty') === 'true';
+  const hideEmptyFolders = searchParams.get('no_empty') !== 'false';
   const setHideEmptyFolders = useCallback(
     (hide: boolean) => {
       setSearchParams((params) => {
         if (hide) {
-          params.set('no_empty', 'true');
-        } else {
           params.delete('no_empty');
+        } else {
+          params.set('no_empty', 'false');
         }
         return params;
       });

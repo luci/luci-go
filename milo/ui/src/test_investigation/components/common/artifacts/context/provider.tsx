@@ -38,11 +38,6 @@ export function ArtifactsProvider({
   const [filterQuery, setFilterQuery] = useState('');
 
   const contextValue = useMemo(() => {
-    // We need to find the selected node object from ID if only ID is passed?
-    // Or we assume `selectedNode` prop is passed?
-    // The requirement says "The component needs to be generic".
-    // I made `selectedNodeId` prop, but context returns `selectedNode`.
-
     const findNode = (
       nodes: ArtifactTreeNodeData[],
       id: string,

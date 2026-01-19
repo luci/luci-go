@@ -37,6 +37,7 @@ interface ArtifactsTreeLayoutProps {
   // Optional slot for controls like clustering that are specific to test investigation
   headerControls?: ReactNode;
   hideViewModeToggle?: boolean;
+  selectedNodeName?: string;
 }
 
 export function ArtifactsTreeLayout({
@@ -45,6 +46,7 @@ export function ArtifactsTreeLayout({
   onViewModeChange,
   headerControls,
   hideViewModeToggle,
+  selectedNodeName,
 }: ArtifactsTreeLayoutProps) {
   const { isFilterPanelOpen, setIsFilterPanelOpen } = useArtifactFilters();
 
@@ -122,6 +124,34 @@ export function ArtifactsTreeLayout({
       <Box
         sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative', px: 3 }}
       >
+        {selectedNodeName && (
+          <Box
+            sx={{
+              mb: 1,
+              p: 1,
+              bgcolor: 'action.selected',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 0.5,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Selected Artifact
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                wordBreak: 'break-all',
+                fontWeight: 500,
+              }}
+            >
+              {selectedNodeName}
+            </Typography>
+          </Box>
+        )}
         {children}
       </Box>
     </Box>

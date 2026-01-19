@@ -30,10 +30,9 @@ import {
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
 import { GetArtifactRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
+import { TextDiffArtifactView } from '@/test_investigation/components/common/artifacts/content/text_diff';
 import { useIsLegacyInvocation } from '@/test_investigation/context';
 import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries';
-
-import { TextDiffArtifactView } from '../../common/artifacts/content/text_diff';
 
 import { CollapsibleArtifactSummarySection } from './collapsible_artifact_summary_section';
 import { LegacyInvocationLinks } from './legacy_invocation_links';
@@ -55,9 +54,6 @@ function getFailureReasonKindDisplayText(
     return undefined;
   }
   const kindStr = failureReason_KindToJSON(kind);
-  if (kindStr === 'KIND_UNSPECIFIED' || kindStr === 'ORDINARY') {
-    return undefined;
-  }
   return kindStr
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())

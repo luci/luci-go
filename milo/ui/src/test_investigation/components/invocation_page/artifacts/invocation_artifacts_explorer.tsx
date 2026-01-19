@@ -13,17 +13,18 @@
 // limitations under the License.
 
 import { Box, Typography } from '@mui/material';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { useMemo, useState } from 'react';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { ArtifactContentView } from '@/test_investigation/components/common/artifacts/content/artifact_content_view';
+import { ArtifactsSplitView } from '@/test_investigation/components/common/artifacts/artifacts_split_view';
 import { useArtifacts } from '@/test_investigation/components/common/artifacts/context/context';
-import { ArtifactsTreeLayout } from '@/test_investigation/components/common/artifacts/tree/artifact_tree_layout';
 import { ArtifactTreeView } from '@/test_investigation/components/common/artifacts/tree/artifact_tree_view/artifact_tree_view';
 import { ArtifactFilterProvider } from '@/test_investigation/components/common/artifacts/tree/context/provider';
 import { InvocationArtifactSummary } from '@/test_investigation/components/invocation_page/artifacts/invocation_artifact_summary';
+import { InvocationWorkUnitTreeView } from '@/test_investigation/components/invocation_page/artifacts/work_unit_tree';
 
 import { InvocationArtifactsLoader } from './invocation_artifacts_loader';
+import { LazyArtifactContentView } from './lazy_artifact_content_view';
 
 export function InvocationArtifactsExplorer() {
   return (
@@ -36,100 +37,62 @@ export function InvocationArtifactsExplorer() {
 }
 
 function ExplorerContent() {
-  const { selectedNode, nodes } = useArtifacts();
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const { selectedNode, nodes, invocation } = useArtifacts();
+  // Lift state up for Work Unit Tree selection
+  const [workUnitSelectedNode, setWorkUnitSelectedNode] =
+    useState<typeof selectedNode>(null);
+
+  const [searchParams] = useSyncedSearchParams();
   const viewMode =
     (searchParams.get('view') as 'artifacts' | 'work-units') || 'artifacts';
-  const setViewMode = (mode: 'artifacts' | 'work-units') => {
-    setSearchParams(
-      (params) => {
-        params.set('view', mode);
-        return params;
-      },
-      { replace: true },
-    );
-  };
 
-  if (nodes.length === 0) {
-    return (
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%',
-        }}
-      >
-        <Typography color="text.secondary">No artifacts to display.</Typography>
-      </Box>
-    );
-  }
+  const rootInvocationId = useMemo(() => {
+    if (invocation?.name) {
+      return invocation.name.split('/').pop() || '';
+    }
+    return '';
+  }, [invocation]);
+
+  const activeSelectedNode = selectedNode || workUnitSelectedNode;
 
   return (
-    <PanelGroup
-      direction="horizontal"
-      style={{
-        height: '100%',
-        overflowY: 'visible',
-        overflowX: 'clip',
-      }}
-      autoSaveId="invocation-artifacts-panel-group-size"
-    >
-      <Panel
-        defaultSize={30}
-        minSize={20}
-        style={{ overflowY: 'visible', overflowX: 'clip' }}
-      >
-        <ArtifactsTreeLayout
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          hideViewModeToggle
-        >
-          <ArtifactTreeView />
-        </ArtifactsTreeLayout>
-      </Panel>
-      <PanelResizeHandle>
-        <Box
-          sx={{
-            width: '8px',
-            height: '100%',
-            cursor: 'col-resize',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'action.hover',
-            '&:hover': { bgcolor: 'action.selected' },
-          }}
-        >
-          <Box sx={{ width: '2px', height: '24px', bgcolor: 'divider' }} />
-        </Box>
-      </PanelResizeHandle>
-      <Panel
-        defaultSize={70}
-        minSize={30}
-        style={{ overflowY: 'visible', overflowX: 'clip', minWidth: 0 }}
-      >
-        <Box sx={{ width: '100%', height: '100%', overflow: 'auto' }}>
-          {selectedNode?.isSummary ? (
-            <InvocationArtifactSummary />
-          ) : selectedNode?.artifact ? (
-            <ArtifactContentView artifact={selectedNode.artifact} />
-          ) : (
+    <ArtifactsSplitView
+      sidebarContent={
+        viewMode === 'artifacts' ? (
+          nodes.length === 0 ? (
             <Box
               sx={{
+                p: 2,
                 display: 'flex',
-                alignItems: 'center',
                 justifyContent: 'center',
+                alignItems: 'center',
                 height: '100%',
-                color: 'text.secondary',
               }}
             >
-              <Typography>Select an artifact to view.</Typography>
+              <Typography color="text.secondary">
+                No artifacts to display.
+              </Typography>
             </Box>
-          )}
-        </Box>
-      </Panel>
-    </PanelGroup>
+          ) : (
+            <ArtifactTreeView />
+          )
+        ) : (
+          <InvocationWorkUnitTreeView
+            rootInvocationId={rootInvocationId}
+            onNodeSelect={setWorkUnitSelectedNode}
+          />
+        )
+      }
+      selectedNode={activeSelectedNode}
+      renderContent={(node) => {
+        if (node.isSummary) {
+          return <InvocationArtifactSummary />;
+        }
+        if (node.artifact) {
+          return <LazyArtifactContentView artifact={node.artifact} />;
+        }
+        return null; // Fallback to default empty state
+      }}
+    />
   );
 }

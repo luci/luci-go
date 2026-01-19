@@ -20,16 +20,16 @@ import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { RootInvocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import { WorkUnit } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/work_unit.pb';
+import { ArtifactsProvider } from '@/test_investigation/components/common/artifacts/context/provider';
+import { ArtifactFilterProvider } from '@/test_investigation/components/common/artifacts/tree/context/provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ArtifactsProvider } from '../../common/artifacts/context/provider';
-import { ArtifactFilterProvider } from '../../common/artifacts/tree/context/provider';
 import { useArtifactsContext } from '../context';
 
-import { WorkUnitArtifactsTreeView } from './work_unit_artifacts_tree_view';
+import { TestResultWorkUnitTreeView } from './test_result_work_unit_tree_view';
 
 jest.mock(
-  '../../common/artifacts/tree/artifact_tree_node/artifact_tree_node',
+  '@/test_investigation/components/common/artifacts/tree/artifact_tree_node/artifact_tree_node',
   () => ({
     ArtifactTreeNode: ({ row }: { row: { name: string } }) => (
       <div data-testid="artifact-tree-node">{row.name}</div>
@@ -54,7 +54,11 @@ jest.mock('@tanstack/react-query', () => ({
   useQueries: jest.fn(),
 }));
 
-describe('<WorkUnitArtifactsTreeView />', () => {
+jest.mock('@/test_investigation/context/context', () => ({
+  useInvocation: jest.fn(),
+}));
+
+describe('<TestResultWorkUnitTreeView />', () => {
   const mockWorkUnits: WorkUnit[] = [
     WorkUnit.fromPartial({
       name: 'rootInvocations/inv/workUnits/wu0',
@@ -80,13 +84,19 @@ describe('<WorkUnitArtifactsTreeView />', () => {
   beforeEach(() => {
     (useResultDbClient as jest.Mock).mockReturnValue({
       QueryWorkUnits: {
-        query: jest.fn().mockReturnValue({}),
+        query: jest
+          .fn()
+          .mockImplementation((req) => ({ ...req, _type: 'QueryWorkUnits' })),
       },
       ListArtifacts: {
-        query: jest.fn().mockReturnValue({}),
+        query: jest
+          .fn()
+          .mockImplementation((req) => ({ ...req, _type: 'ListArtifacts' })),
       },
       GetWorkUnit: {
-        query: jest.fn().mockReturnValue({}),
+        query: jest
+          .fn()
+          .mockImplementation((req) => ({ ...req, _type: 'GetWorkUnit' })),
       },
     });
 
@@ -189,6 +199,7 @@ describe('<WorkUnitArtifactsTreeView />', () => {
             ],
           },
           isLoading: false,
+          isError: false,
         };
       }
 
@@ -222,7 +233,7 @@ describe('<WorkUnitArtifactsTreeView />', () => {
                 name: 'rootInvocations/inv',
               })}
             >
-              <WorkUnitArtifactsTreeView
+              <TestResultWorkUnitTreeView
                 rootInvocationId="inv"
                 workUnitId="wu1"
               />
@@ -243,5 +254,78 @@ describe('<WorkUnitArtifactsTreeView />', () => {
     expect(elements).toHaveLength(2);
     expect(screen.getByText('test_result_artifact.txt')).toBeInTheDocument();
     expect(screen.getByText('result.txt')).toBeInTheDocument();
+  });
+
+  it('should render module work units with prefix', async () => {
+    const mockModuleWorkUnit = WorkUnit.fromPartial({
+      name: 'rootInvocations/inv/workUnits/module-wu',
+      workUnitId: 'module-wu',
+      moduleId: { moduleName: 'MyModule' },
+    });
+
+    (useQuery as jest.Mock).mockImplementation((query) => {
+      // Mock GetWorkUnit for the target work unit
+      if (
+        query?.name?.includes('GetWorkUnit') ||
+        query?._type === 'GetWorkUnit'
+      ) {
+        return {
+          data: mockModuleWorkUnit,
+          isLoading: false,
+        };
+      }
+      // Mock QueryWorkUnits (children/descendants)
+      if (
+        query?.parent?.includes('workUnits') ||
+        query?.parent?.includes('rootInvocations/inv')
+      ) {
+        return { data: { workUnits: [] }, isLoading: false };
+      }
+      return { data: undefined, isLoading: false };
+    });
+
+    (useQueries as jest.Mock).mockReturnValue([
+      {
+        data: {
+          artifacts: [
+            Artifact.fromPartial({
+              name: 'rootInvocations/inv/workUnits/module-wu/artifacts/log.txt',
+              artifactId: 'log.txt',
+            }),
+          ],
+        },
+        isLoading: false,
+      },
+    ]);
+
+    (useArtifactsContext as jest.Mock).mockReturnValue({
+      selectedArtifact: null,
+      setSelectedArtifact: jest.fn(),
+      clusteredFailures: [],
+      hasRenderableResults: false,
+      currentResult: { name: 'res' },
+    });
+
+    render(
+      <FakeContextProvider>
+        <VirtuosoMockContext.Provider
+          value={{ viewportHeight: 300, itemHeight: 30 }}
+        >
+          <ArtifactFilterProvider>
+            <ArtifactsProvider
+              nodes={[]}
+              invocation={RootInvocation.fromPartial({})}
+            >
+              <TestResultWorkUnitTreeView
+                rootInvocationId="inv"
+                workUnitId="module-wu"
+              />
+            </ArtifactsProvider>
+          </ArtifactFilterProvider>
+        </VirtuosoMockContext.Provider>
+      </FakeContextProvider>,
+    );
+
+    expect(await screen.findByText('Module: MyModule')).toBeInTheDocument();
   });
 });

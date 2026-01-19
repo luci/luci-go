@@ -22,14 +22,19 @@ import { useFetchArtifactContentQuery } from '@/test_investigation/hooks/queries
 import { DefaultArtifactContent } from './default';
 import { LogArtifactContent } from './logs';
 import { TextDiffArtifactContent } from './text_diff';
+import { VirtualizedArtifactContent } from './virtualized';
 
 interface ArtifactContentViewProps {
   artifact: Artifact;
+  enableLogComparison?: boolean;
 }
 
 const INITIAL_CONTENT_LIMIT = 5000;
 
-export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
+export function ArtifactContentView({
+  artifact,
+  enableLogComparison = true,
+}: ArtifactContentViewProps) {
   const { data: initialContentData, isLoading: isInitialLoading } =
     useFetchArtifactContentQuery({
       artifact: artifact,
@@ -59,10 +64,11 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
     return (
       <Box
         sx={{
+          p: 2,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100px',
+          height: '100%',
         }}
       >
         <CircularProgress />
@@ -123,11 +129,21 @@ export function ArtifactContentView({ artifact }: ArtifactContentViewProps) {
           content={artifactContentData.data}
           isFullLoading={isFullLoading}
         />
-      ) : isLogComparisonPossible ? (
+      ) : isLogComparisonPossible && enableLogComparison ? (
         <LogArtifactContent
           artifact={artifact}
           content={artifactContentData.data || ''}
           isFullLoading={isFullLoading}
+        />
+      ) : isLogComparisonPossible && !enableLogComparison ? (
+        <VirtualizedArtifactContent
+          content={artifactContentData.data || ''}
+          isFullLoading={isFullLoading}
+          artifact={artifact}
+          hasPassingResults={false}
+          isLogComparisonPossible={false}
+          showLogComparison={false}
+          onToggleLogComparison={() => {}}
         />
       ) : (
         <DefaultArtifactContent

@@ -108,7 +108,11 @@ export function InvocationArtifactsLoader({
   }, [artifacts, setAvailableArtifactTypes]);
 
   const filteredArtifacts = useMemo(
-    () => filterArtifacts(artifacts, { debouncedSearchTerm, artifactTypes }),
+    () =>
+      filterArtifacts(artifacts, {
+        searchTerm: debouncedSearchTerm,
+        artifactTypes,
+      }),
     [artifacts, debouncedSearchTerm, artifactTypes],
   );
 

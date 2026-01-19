@@ -22,7 +22,7 @@ import { GetInvocationRequest } from '@/proto/go.chromium.org/luci/resultdb/prot
 import { GetRootInvocationRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
-import { FetchedArtifactContent } from '../components/artifacts/types';
+import { FetchedArtifactContent } from '../components/common/artifacts/types';
 import { USE_ROOT_INVOCATION_FLAG } from '../pages/features';
 
 /**

@@ -28,9 +28,11 @@ import {
   testResult_StatusToJSON,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestResultBundle } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import {
+  ArtifactTreeNodeData,
+  ClusteredResult,
+} from '@/test_investigation/components/common/artifacts/types';
 import { normalizeFailureReason } from '@/test_investigation/utils/test_variant_utils';
-
-import { ArtifactTreeNodeData, ClusteredResult } from '../types';
 
 import { ArtifactsContext, ArtifactsContextType } from './context';
 

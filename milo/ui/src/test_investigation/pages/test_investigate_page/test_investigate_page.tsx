@@ -58,13 +58,13 @@ import {
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { BatchGetTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { TestVerdict_StatusOverride } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import { ArtifactsSection } from '@/test_investigation/components/artifacts/artifacts_section';
 import { RedirectBackBanner } from '@/test_investigation/components/redirect_back_banner';
 import { RedirectATIBanner } from '@/test_investigation/components/redirect_back_banner/redirect_ati_banner';
 import { TestInfo } from '@/test_investigation/components/test_info';
 import { CollapsedTestInfoHeader } from '@/test_investigation/components/test_info/collapsed_test_info_header';
 import { TestInfoProvider } from '@/test_investigation/components/test_info/context/provider';
 import { TestInfoHeader } from '@/test_investigation/components/test_info/test_info_header';
+import { ArtifactsSection } from '@/test_investigation/components/test_investigate_page/artifacts/artifacts_section';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
 import { TestDrawerProvider } from '@/test_investigation/components/test_navigation_drawer/context';
 import {

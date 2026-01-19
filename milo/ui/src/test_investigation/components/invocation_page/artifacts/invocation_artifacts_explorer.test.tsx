@@ -62,12 +62,9 @@ jest.mock(
   }),
 );
 
-jest.mock(
-  '@/test_investigation/components/common/artifacts/content/artifact_content_view',
-  () => ({
-    ArtifactContentView: () => <div>ArtifactContentView</div>,
-  }),
-);
+jest.mock('./lazy_artifact_content_view', () => ({
+  LazyArtifactContentView: () => <div>LazyArtifactContentView</div>,
+}));
 
 jest.mock('@/common/components/sanitized_html', () => ({
   SanitizedHtml: ({ html }: { html: string }) => (
@@ -146,7 +143,7 @@ describe('InvocationArtifactsExplorer', () => {
       nodes: [{ id: 'n1' }],
     });
     render(<InvocationArtifactsExplorer />);
-    expect(screen.getByText('ArtifactContentView')).toBeInTheDocument();
+    expect(screen.getByText('LazyArtifactContentView')).toBeInTheDocument();
   });
 
   it('renders markdown summary when RootInvocation has summary', () => {

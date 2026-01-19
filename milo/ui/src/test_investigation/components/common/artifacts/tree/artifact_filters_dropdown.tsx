@@ -15,6 +15,7 @@
 import SearchIcon from '@mui/icons-material/Search';
 import TuneIcon from '@mui/icons-material/Tune';
 import {
+  Badge,
   Box,
   Button,
   ClickAwayListener,
@@ -30,7 +31,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { ChangeEvent, useRef } from 'react';
+import { ChangeEvent, useMemo, useRef } from 'react';
 
 import { useArtifactFilters } from './context/context';
 
@@ -62,6 +63,26 @@ export function ArtifactFiltersDropdown({
     onClearFilters,
   } = useArtifactFilters();
 
+  const activeFiltersCount = useMemo(
+    () =>
+      [
+        artifactTypes.length > 0,
+        crashTypes.length > 0,
+        showCriticalCrashes,
+        hideAutomationFiles,
+        hideEmptyFolders,
+        showOnlyFoldersWithError,
+      ].filter(Boolean).length,
+    [
+      artifactTypes.length,
+      crashTypes.length,
+      showCriticalCrashes,
+      hideAutomationFiles,
+      hideEmptyFolders,
+      showOnlyFoldersWithError,
+    ],
+  );
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -89,7 +110,14 @@ export function ArtifactFiltersDropdown({
                       color: isOpen ? 'primary.main' : 'inherit',
                     }}
                   >
-                    <TuneIcon />
+                    <Badge
+                      badgeContent={activeFiltersCount}
+                      color="error"
+                      invisible={activeFiltersCount === 0}
+                      slotProps={{ badge: { style: { top: 4, right: 4 } } }}
+                    >
+                      <TuneIcon />
+                    </Badge>
                   </IconButton>
                 </InputAdornment>
               ),

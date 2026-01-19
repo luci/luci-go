@@ -25,20 +25,19 @@ import {
   ListArtifactsRequest,
   ListArtifactsResponse,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import {
-  useInvocation,
-  useIsLegacyInvocation,
-} from '@/test_investigation/context';
-
-import { ArtifactsProvider } from '../common/artifacts/context/provider';
-import { useArtifactFilters } from '../common/artifacts/tree/context/context';
+import { ArtifactsProvider } from '@/test_investigation/components/common/artifacts/context/provider';
+import { useArtifactFilters } from '@/test_investigation/components/common/artifacts/tree/context/context';
 import {
   buildArtifactsTree,
   filterArtifacts,
   findFirstLeafRecursive,
   findNode,
   pruneEmptyFolders,
-} from '../common/artifacts/tree/util/tree_util';
+} from '@/test_investigation/components/common/artifacts/tree/util/tree_util';
+import {
+  useInvocation,
+  useIsLegacyInvocation,
+} from '@/test_investigation/context';
 
 import { useArtifactsContext } from './context';
 
@@ -152,12 +151,19 @@ export function ArtifactsLoader({ children }: ArtifactsLoaderProps) {
 
   const filteredResultArtifacts = useMemo(
     () =>
-      filterArtifacts(resultArtifacts, { debouncedSearchTerm, artifactTypes }),
+      filterArtifacts(resultArtifacts, {
+        searchTerm: debouncedSearchTerm,
+        artifactTypes,
+      }),
     [resultArtifacts, debouncedSearchTerm, artifactTypes],
   );
 
   const filteredInvArtifacts = useMemo(
-    () => filterArtifacts(invArtifacts, { debouncedSearchTerm, artifactTypes }),
+    () =>
+      filterArtifacts(invArtifacts, {
+        searchTerm: debouncedSearchTerm,
+        artifactTypes,
+      }),
     [invArtifacts, debouncedSearchTerm, artifactTypes],
   );
 
