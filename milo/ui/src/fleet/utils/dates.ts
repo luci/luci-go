@@ -26,7 +26,12 @@ export const toIsoString = (dateOnly: DateOnly | undefined): string => {
 export const toLuxonDateTime = (
   dateOnly: DateOnly | undefined,
 ): DateTime | undefined => {
-  if (!dateOnly) {
+  if (
+    !dateOnly ||
+    isNaN(dateOnly.year!) ||
+    isNaN(dateOnly.month!) ||
+    isNaN(dateOnly.day!)
+  ) {
     return undefined;
   }
 
@@ -40,7 +45,7 @@ export const toLuxonDateTime = (
 export const fromLuxonDateTime = (
   dateTime: DateTime | null | undefined,
 ): DateOnly | undefined => {
-  if (!dateTime) {
+  if (!dateTime || !dateTime.isValid) {
     return undefined;
   }
 

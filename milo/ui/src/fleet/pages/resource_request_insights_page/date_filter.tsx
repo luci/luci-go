@@ -11,10 +11,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DatePicker } from '@mui/x-date-pickers';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
 import { useEffect } from 'react';
 
+import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { OptionComponentProps } from '@/fleet/components/filter_dropdown/filter_dropdown_old';
 import { fromLuxonDateTime, toLuxonDateTime } from '@/fleet/utils/dates';
 
@@ -81,34 +82,36 @@ export const DateFilter = ({
   };
 
   return (
-    <div
-      css={{
-        display: 'flex',
-        gap: 8,
-        width: 400,
-        padding: '12px 8px',
-      }}
-    >
-      <CustomDatePicker
-        label={'From'}
-        value={toLuxonDateTime(dateFilterData?.min) || null}
-        onChange={(date) => {
-          updateFilter({
-            min: fromLuxonDateTime(date),
-            max: dateFilterData?.max,
-          });
+    <LocalizationProvider dateAdapter={SafeAdapterLuxon}>
+      <div
+        css={{
+          display: 'flex',
+          gap: 8,
+          width: 400,
+          padding: '12px 8px',
         }}
-      />
-      <CustomDatePicker
-        label={'To'}
-        value={toLuxonDateTime(dateFilterData?.max) || null}
-        onChange={(date) => {
-          updateFilter({
-            min: dateFilterData?.min,
-            max: fromLuxonDateTime(date),
-          });
-        }}
-      />
-    </div>
+      >
+        <CustomDatePicker
+          label={'From'}
+          value={toLuxonDateTime(dateFilterData?.min) || null}
+          onChange={(date) => {
+            updateFilter({
+              min: fromLuxonDateTime(date),
+              max: dateFilterData?.max,
+            });
+          }}
+        />
+        <CustomDatePicker
+          label={'To'}
+          value={toLuxonDateTime(dateFilterData?.max) || null}
+          onChange={(date) => {
+            updateFilter({
+              min: dateFilterData?.min,
+              max: fromLuxonDateTime(date),
+            });
+          }}
+        />
+      </div>
+    </LocalizationProvider>
   );
 };

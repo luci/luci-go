@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { DatePicker } from '@mui/x-date-pickers';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
 import { forwardRef, useImperativeHandle, useRef } from 'react';
+
+import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 
 export interface DateFilterValue {
   min?: string; // ISO string
@@ -41,24 +43,26 @@ const CustomDatePicker = ({
 }: CustomDatePickerProps) => {
   return (
     <div css={{ flex: 1 }}>
-      <DatePicker
-        label={label}
-        value={value}
-        onChange={onChange}
-        slotProps={{
-          field: {
-            clearable: true,
-          },
-          popper: {
-            sx: {
-              zIndex: 1500,
+      <LocalizationProvider dateAdapter={SafeAdapterLuxon}>
+        <DatePicker
+          label={label}
+          value={value}
+          onChange={onChange}
+          slotProps={{
+            field: {
+              clearable: true,
             },
-          },
-          textField: {
-            inputRef,
-          },
-        }}
-      />
+            popper: {
+              sx: {
+                zIndex: 1500,
+              },
+            },
+            textField: {
+              inputRef,
+            },
+          }}
+        />
+      </LocalizationProvider>
     </div>
   );
 };
