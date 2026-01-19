@@ -116,6 +116,10 @@ func (id ShardID) Key(suffix ...any) spanner.Key {
 
 // Before returns true if this ID is before the other ID in Spanner table order.
 func (id ShardID) Before(other ShardID) bool {
+	if id.RootInvocationID == other.RootInvocationID {
+		// Optimization: avoid hashing and string comparison for the simple case.
+		return id.ShardIndex < other.ShardIndex
+	}
 	return id.RowID() < other.RowID()
 }
 

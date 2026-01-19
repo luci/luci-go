@@ -36,17 +36,18 @@ import (
 // CreateTestData creates test data used for testing test verdicts.
 func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	// Pick a few shards. In reality each test may be in a different shard.
-	shard := rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 0}
+	shardOne := rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 0}
+	shardTwo := rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 15}
 
 	baseBuilder := func() *testresultsv2.Builder {
-		return testresultsv2.NewBuilder().WithRootInvocationShardID(shard).
+		return testresultsv2.NewBuilder().WithRootInvocationShardID(shardOne).
 			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).
 			WithCoarseName("c1").WithFineName("f1").WithCaseName("t1").WithTags(pbutil.StringPairs("mytag", "myvalue")).
 			WithTestMetadata(&pb.TestMetadata{Name: "tmd", Location: &pb.TestLocation{Repo: "https://repo", FileName: "file"}}).
 			WithProperties(&structpb.Struct{Fields: map[string]*structpb.Value{"key": structpb.NewStringValue("value")}})
 	}
 	baseExonerationBuilder := func() *testexonerationsv2.Builder {
-		return testexonerationsv2.NewBuilder().WithRootInvocationShardID(shard).
+		return testexonerationsv2.NewBuilder().WithRootInvocationShardID(shardOne).
 			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).WithCoarseName("c1").WithFineName("f1").WithCaseName("t1")
 	}
 	workUnitBuilder := func(workUnitID string) *workunits.Builder {
@@ -73,7 +74,7 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 		baseBuilder().WithCaseName("t3").WithResultID("r2").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t3-r2").Build(),
 
 		// Verdict 4: Skipped
-		baseBuilder().WithCaseName("t4").WithResultID("r1").WithStatusV2(pb.TestResult_SKIPPED).WithRealm("testproject:t4-r1").
+		baseBuilder().WithRootInvocationShardID(shardTwo).WithCaseName("t4").WithResultID("r1").WithStatusV2(pb.TestResult_SKIPPED).WithRealm("testproject:t4-r1").
 			WithSkippedReason(longSkippedReason()).Build(),
 
 		// Verdict 5: Exonerated (Fail + Exoneration)
@@ -287,6 +288,17 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID, view pb.TestVerdictView) []*
 	v7 := makeVerdict(testID7, pb.TestVerdict_EXECUTION_ERRORED, []*pb.TestResult{r7}, nil)
 
 	return []*pb.TestVerdict{v1, v2, v3, v4, v5, v6, v7}
+}
+
+func ExpectedVerdictsInPrimaryKeyOrder(rootInvID rootinvocations.ID, view pb.TestVerdictView) []*pb.TestVerdict {
+	verdicts := ExpectedVerdicts(rootInvID, view)
+	// Verdict t4 is in shard 15 whereas all others are in shard 0, move it to the end.
+	t4 := verdicts[3]
+	var results []*pb.TestVerdict
+	results = append(results, verdicts[:3]...)
+	results = append(results, verdicts[4:]...)
+	results = append(results, t4)
+	return results
 }
 
 // ExpectedVerdictsMasked returns the expected test verdicts corresponding
