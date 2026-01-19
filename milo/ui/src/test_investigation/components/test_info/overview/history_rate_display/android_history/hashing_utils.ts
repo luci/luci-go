@@ -105,6 +105,7 @@ export function getAntsTestIdentifierHash(
       }
     }
   }
+
   if (!antsTestId) {
     return null;
   }

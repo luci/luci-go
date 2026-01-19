@@ -14,7 +14,10 @@
 
 import { DateTime } from 'luxon';
 
-import { SegmentSummary } from '@/common/hooks/gapi_query/android_fluxgate/android_fluxgate';
+import {
+  AggregatedCluster,
+  SegmentSummary,
+} from '@/common/hooks/gapi_query/android_fluxgate/android_fluxgate';
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
@@ -83,8 +86,14 @@ export function calculateStartBuildId(
   if (!buildBefore) return buildAfter?.buildId;
   if (!buildAfter) return buildBefore?.buildId;
 
-  const timeBefore = Number(buildBefore.creationTimestamp || 0);
-  const timeAfter = Number(buildAfter.creationTimestamp || 0);
+  const parseTime = (ts?: string) => {
+    if (!ts) return 0;
+    const n = Number(ts);
+    return !isNaN(n) ? n : DateTime.fromISO(ts).toMillis();
+  };
+
+  const timeBefore = parseTime(buildBefore.creationTimestamp);
+  const timeAfter = parseTime(buildAfter.creationTimestamp);
   const diffBefore = Math.abs(targetTimestampMs - timeBefore);
   const diffAfter = Math.abs(targetTimestampMs - timeAfter);
 
@@ -158,7 +167,78 @@ export function getOrSynthesizeSummaries(
     }
   }
 
-  return loadedSummaries;
+  // Collapse adjacent segments with identical failure rates
+  if (loadedSummaries.length === 0) return [];
+
+  const collapsed: SegmentSummary[] = [];
+  let current = loadedSummaries[0];
+
+  for (let i = 1; i < loadedSummaries.length; i++) {
+    const next = loadedSummaries[i];
+    const rateA = current.health?.failRate?.rate;
+    const rateB = next.health?.failRate?.rate;
+
+    // Use loose equality to catch null vs undefined if needed, but strict is fine if types are consistent.
+    // We treat undefined/null rate as distinct from 0 usually, or maybe same?
+    // Let's stick to strict equality of the value.
+    if (rateA === rateB) {
+      // Merge: Keep 'current' (Newer) but update its endResult to 'next' (Older) endResult
+      // And merge counts/clusters
+      const failA = Number(current.health?.failRate?.failures || '0');
+      const totalA = Number(current.health?.failRate?.total || '0');
+      const failB = Number(next.health?.failRate?.failures || '0');
+      const totalB = Number(next.health?.failRate?.total || '0');
+
+      const mergedFail = (failA + failB).toString();
+      const mergedTotal = (totalA + totalB).toString();
+
+      // Merge clusters
+      const clusterMap = new Map<string, AggregatedCluster>();
+      const addClusters = (clusters: AggregatedCluster[]) => {
+        clusters.forEach((c) => {
+          const existing = clusterMap.get(c.clusterId);
+          if (existing) {
+            const count = (
+              Number(existing.count || '0') + Number(c.count || '0')
+            ).toString();
+            clusterMap.set(c.clusterId, { ...existing, count });
+          } else {
+            clusterMap.set(c.clusterId, c);
+          }
+        });
+      };
+      addClusters(current.clusters || []);
+      addClusters(next.clusters || []);
+
+      current = {
+        ...current,
+        // Extend the range to cover the older segment
+        endResult: next.endResult,
+        health: {
+          ...current.health,
+          failRate: {
+            // we checked rateA === rateB, so rate is preserved
+            rate: rateA || 0,
+            failures: mergedFail,
+            total: mergedTotal,
+            // approximate distribution?
+            ...(current.health?.failRate?.distribution && {
+              distribution: current.health.failRate.distribution,
+            }),
+          },
+          // Preserve other health metrics from 'current' (Newer) generally preferred,
+          // or we could merge them if beneficial. For now keeping Newer state implies "this rate persists".
+        },
+        clusters: Array.from(clusterMap.values()),
+      };
+    } else {
+      collapsed.push(current);
+      current = next;
+    }
+  }
+  collapsed.push(current);
+
+  return collapsed;
 }
 
 export interface VisibleSegmentsResult {

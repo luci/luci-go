@@ -25,6 +25,7 @@ import { AndroidHistoryChangepoint } from './android_history_changepoint';
 import { AndroidHistorySegment } from './android_history_segment';
 import { getAntsTestIdentifierHash } from './hashing_utils';
 import {
+  THIRTY_DAYS_MS,
   calculateStartBuildId,
   calculateTargetTimestamp,
   calculateVisibleSegments,
@@ -54,8 +55,35 @@ export function AndroidTestTimeline() {
   );
 
   const targetTimestampStr = useMemo(
-    () => targetTimestampMs.toString(),
+    () => new Date(targetTimestampMs).toISOString(),
     [targetTimestampMs],
+  );
+
+  // Calculate timestamps for 30 day windows around target
+  const olderWindowTimestampMs = useMemo(
+    () => targetTimestampMs - THIRTY_DAYS_MS,
+    [targetTimestampMs],
+  );
+  const newerWindowTimestampMs = useMemo(
+    () => targetTimestampMs + THIRTY_DAYS_MS,
+    [targetTimestampMs],
+  );
+
+  const olderWindowTimestampStr = useMemo(
+    () => new Date(olderWindowTimestampMs).toISOString(),
+    [olderWindowTimestampMs],
+  );
+  const newerWindowTimestampStr = useMemo(
+    () => new Date(newerWindowTimestampMs).toISOString(),
+    [newerWindowTimestampMs],
+  );
+
+  const antsTestId = useMemo(
+    () =>
+      rootInvocation
+        ? getAntsTestIdentifierHash(rootInvocation, testVariant)
+        : null,
+    [rootInvocation, testVariant],
   );
 
   // 1. Fetch Latest Build (to serve as ending_build_id for range)
@@ -67,36 +95,47 @@ export function AndroidTestTimeline() {
       sorting_type: SortingType.BUILD_ID, // Latest first
     },
     {
-      enabled: !!branch && !!target,
+      enabled: !!branch && !!target && !!antsTestId,
       staleTime: 5 * 60 * 1000,
     },
   );
 
   // 2. Fetch ~6 Months Ago Builds (to find starting_build_id)
+
+  // builds older than target: range [target, target-30d]
+  // start (recent) = target
+  // end (older) = target-30d
+  // sort DESC (Newest First) -> Closest to target
   const { data: buildBeforeData, isLoading: isLoadingBefore } = useListBuilds(
     {
       branches: branch ? [branch] : undefined,
       targets: target ? [target] : undefined,
+      start_creation_timestamp: targetTimestampStr,
+      end_creation_timestamp: olderWindowTimestampStr,
+      page_size: 1,
+      sorting_type: SortingType.BUILD_ID,
+    },
+    {
+      enabled: !!branch && !!target && !!antsTestId,
+      staleTime: Infinity,
+    },
+  );
+
+  // builds newer than target: range [target+30d, target]
+  // start (recent) = target+30d
+  // end (older) = target
+  // sort ASC (Oldest First) -> Closest to target
+  const { data: buildAfterData, isLoading: isLoadingAfter } = useListBuilds(
+    {
+      branches: branch ? [branch] : undefined,
+      targets: target ? [target] : undefined,
+      start_creation_timestamp: newerWindowTimestampStr,
       end_creation_timestamp: targetTimestampStr,
       page_size: 1,
       sorting_type: SortingType.BUILD_ID_ASC,
     },
     {
-      enabled: !!branch && !!target,
-      staleTime: Infinity,
-    },
-  );
-
-  const { data: buildAfterData, isLoading: isLoadingAfter } = useListBuilds(
-    {
-      branches: branch ? [branch] : undefined,
-      targets: target ? [target] : undefined,
-      start_creation_timestamp: targetTimestampStr,
-      page_size: 1,
-      sorting_type: SortingType.BUILD_ID_ASC, // Oldest after timestamp
-    },
-    {
-      enabled: !!branch && !!target,
+      enabled: !!branch && !!target && !!antsTestId,
       staleTime: Infinity,
     },
   );
@@ -111,13 +150,6 @@ export function AndroidTestTimeline() {
   // Determine end build ID (latest available)
   const endBuildId = latestBuildData?.builds?.[0]?.buildId || currentBuildId;
 
-  const antsTestId = useMemo(
-    () =>
-      rootInvocation
-        ? getAntsTestIdentifierHash(rootInvocation, testVariant)
-        : null,
-    [rootInvocation, testVariant],
-  );
   const { data: summariesData, isLoading: isLoadingSummaries } =
     useGetTestResultFluxgateSegmentSummaries(
       {

@@ -25,7 +25,7 @@ import {
   ListBuildsResponse,
 } from './types';
 
-const API_BASE_PATH = 'https://androidbuildinternal.googleapis.com/';
+const API_BASE_PATH = 'https://androidbuild-pa.googleapis.com/';
 
 /**
  * Gets the current state of a single component
@@ -49,7 +49,7 @@ export const useListBuilds = (
   params: ListBuildsRequest,
   queryOptions: WrapperQueryOptions<ListBuildsResponse>,
 ): UseQueryResult<ListBuildsResponse> => {
-  const path = 'android/internal/build/v3/builds';
+  const path = 'v4/builds';
   return useGapiQuery<ListBuildsResponse>(
     {
       method: 'GET',
@@ -57,7 +57,7 @@ export const useListBuilds = (
       params: {
         branches: params.branches,
         targets: params.targets,
-        buildType: 'SUBMITTED',
+        build_type: 'SUBMITTED',
         start_creation_timestamp: params.start_creation_timestamp,
         end_creation_timestamp: params.end_creation_timestamp,
         sorting_type: params.sorting_type,

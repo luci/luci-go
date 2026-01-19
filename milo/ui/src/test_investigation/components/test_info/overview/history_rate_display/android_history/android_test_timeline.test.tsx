@@ -139,7 +139,7 @@ describe('<AndroidTestTimeline />', () => {
         };
       }
       // Before/After logs
-      if (params.end_creation_timestamp) {
+      if (params.start_creation_timestamp) {
         return {
           data: {
             builds: [{ buildId: '111111', creationTimestamp: '1000' }],
@@ -539,6 +539,92 @@ describe('<AndroidTestTimeline />', () => {
         test_identifier_ids: [MOCK_TEST_ID],
       }),
       expect.anything(),
+    );
+  });
+
+  it('should collapse adjacent segments with identical failure rates', () => {
+    // Both segments have 0% fail rate
+    const segmentBase = {
+      health: { failRate: { rate: 0, failures: '0', total: '10' } },
+      clusters: [],
+    };
+
+    mockUseGetTestResultFluxgateSegmentSummaries.mockReturnValue({
+      data: {
+        summaries: [
+          {
+            summaries: [
+              {
+                ...segmentBase,
+                startResult: { buildId: '900' },
+                endResult: { buildId: '800' },
+              }, // Newer
+              {
+                ...segmentBase,
+                startResult: { buildId: '799' },
+                endResult: { buildId: '700' },
+              }, // Older (Same Rate)
+            ],
+          },
+        ],
+      },
+      isLoading: false,
+    });
+
+    // Mock build 850 (Inside Newer)
+    mockUseListBuilds.mockReturnValue({
+      data: { builds: [{ buildId: '850', creationTimestamp: '2000' }] },
+      isLoading: false,
+    });
+
+    renderComponent();
+
+    // The two segments should be collapsed into one.
+    // Since current build (850) is in the merged segment, we should see it as "Current".
+    // We should NOT see an arrow because there is no adjacent segment.
+    expect(screen.queryByTestId('ArrowBackIcon')).not.toBeInTheDocument();
+  });
+  it('should skip build API calls if AnTS properties are missing', () => {
+    // missing AnTS properties -> antsTestId is null
+
+    // We expect NO calls to listBuilds with enabled: true
+    mockUseListBuilds.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    });
+    mockUseGetTestResultFluxgateSegmentSummaries.mockReturnValue({
+      data: { summaries: [] },
+      isLoading: false,
+    });
+
+    // Render with component helper
+    render(
+      <FakeContextProvider>
+        <InvocationProvider
+          project={MOCK_PROJECT_ID}
+          invocation={mockRootInvocation}
+          rawInvocationId="root-123"
+          isLegacyInvocation={false}
+        >
+          <TestVariantProvider
+            testVariant={
+              TestVariant.fromPartial({
+                testId: 'some-test-id',
+              }) as OutputTestVerdict
+            }
+            displayStatusString="failed"
+          >
+            <AndroidTestTimeline />
+          </TestVariantProvider>
+        </InvocationProvider>
+      </FakeContextProvider>,
+    );
+
+    // Verify useListBuilds was NOT called with enabled: true
+    // Note: useListBuilds might be called multiple times, so we check that NO call had enabled: true
+    expect(mockUseListBuilds).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ enabled: true }),
     );
   });
 });
