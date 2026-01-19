@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -71,12 +72,17 @@ func TestQuery(t *testing.T) {
 		q := &Query{
 			RootInvocation: rootInvID,
 		}
+		opts := spanutil.BufferingOptions{
+			FirstPageSize:  10,
+			SecondPageSize: 10,
+			GrowthFactor:   1.0,
+		}
 
 		// Helper to fetch all results using the iterator.
-		fetchAll := func(ctx context.Context, q *Query) ([]*TestResultRow, error) {
+		fetchAll := func(ctx context.Context, q *Query, opts spanutil.BufferingOptions) ([]*TestResultRow, error) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
-			it := q.List(ctx, ID{})
+			it := q.List(ctx, ID{}, opts)
 			var results []*TestResultRow
 			for {
 				row, err := it.Next()
@@ -92,15 +98,7 @@ func TestQuery(t *testing.T) {
 		}
 
 		t.Run("Baseline", func(t *ftt.Test) {
-			results, err := fetchAll(ctx, q)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, results, should.Match(expected))
-		})
-
-		t.Run("With buffer size", func(t *ftt.Test) {
-			// Set a small buffer size to force multiple pages.
-			q.bufferSize = 2
-			results, err := fetchAll(ctx, q)
+			results, err := fetchAll(ctx, q, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, results, should.Match(expected))
 		})
@@ -108,8 +106,9 @@ func TestQuery(t *testing.T) {
 		t.Run("Page tokens work correctly", func(t *ftt.Test) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
-			q.bufferSize = 3
-			it := q.List(ctx, ID{})
+			opts.FirstPageSize = 3
+			opts.SecondPageSize = 1
+			it := q.List(ctx, ID{}, opts)
 
 			// Fetch first page (3 items).
 			var page1 []*TestResultRow
@@ -125,7 +124,7 @@ func TestQuery(t *testing.T) {
 			assert.Loosely(t, token, should.NotBeZero)
 
 			// Start new query from token.
-			it2 := q.List(ctx, token)
+			it2 := q.List(ctx, token, opts)
 			var remaining []*TestResultRow
 			for {
 				row, err := it2.Next()
@@ -155,7 +154,7 @@ func TestQuery(t *testing.T) {
 				},
 			}
 
-			results, err := fetchAll(ctx, q)
+			results, err := fetchAll(ctx, q, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, results, should.Match(expected))
 		})
@@ -167,7 +166,7 @@ func TestQuery(t *testing.T) {
 			testutil.MustApply(ctx, t, ms...)
 
 			q.RootInvocation = emptyInvID
-			results, err := fetchAll(ctx, q)
+			results, err := fetchAll(ctx, q, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, results, should.BeEmpty)
 		})

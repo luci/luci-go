@@ -16,6 +16,7 @@ package testexonerationsv2
 
 import (
 	"context"
+	"fmt"
 	"text/template"
 
 	"cloud.google.com/go/spanner"
@@ -35,28 +36,21 @@ type Query struct {
 	RootInvocation rootinvocations.ID
 	// The test prefix filter to apply.
 	TestPrefixFilter *pb.TestIdentifierPrefix
-
-	// bufferSize is a hint for how many test exonerations to query from Spanner
-	// at a time. This affects the size of Spanner result sets. If you are
-	// querying a known number of results, set this to that number.
-	bufferSize int
 }
-
-// defaultBufferSize is the default page size for queries.
-const defaultBufferSize = 1000
 
 // List returns an iterator over the test exonerations in the root invocation,
 // starting at the given pageToken. Results are listed in primary key order.
 //
 // To start from the beginning of the table, pass a pageToken of (ID{}).
 // The returned iterator will iterate over all results that match the query.
-func (q *Query) List(ctx context.Context, pageToken ID) *spanutil.Iterator[*TestExonerationRow, ID] {
-	pageSize := q.bufferSize
-	if pageSize == 0 {
-		pageSize = defaultBufferSize
-	}
+func (q *Query) List(ctx context.Context, pageToken ID, opts spanutil.BufferingOptions) *spanutil.Iterator[*TestExonerationRow, ID] {
+	pageSizeController := spanutil.NewPageSizeController(opts)
 
 	queryFn := func(token ID) (*spanutil.PageIterator[*TestExonerationRow], error) {
+		pageSize, err := pageSizeController.NextPageSize()
+		if err != nil {
+			return nil, fmt.Errorf("get next page size: %w", err)
+		}
 		st, err := q.buildQuery(token, pageSize)
 		if err != nil {
 			return nil, err
