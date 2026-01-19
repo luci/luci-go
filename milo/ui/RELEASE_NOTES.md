@@ -45,6 +45,15 @@ release tag numbers.
 -->
 
 <!-- Add new changes here. See the instruction above for more details. -->
+<!-- __RELEASE__: 9 -->
+## 2026-01-16
+
+### New Test Investigate UI
+*   **Invocation Page**: Added hierarchy labels to table rows and sticky verdict info headers.
+*   **Artifacts**: Faster artifact fetching.
+*   **Navigation**: Persistent filters and selection between navigations.
+*   **ABTD**: Added rerun button option.
+
 <!-- __RELEASE__: 8 -->
 ## 2025-12-18
 
