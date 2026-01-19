@@ -43,31 +43,6 @@ type QueryDetails struct {
 	TestPrefixFilter *pb.TestIdentifierPrefix
 }
 
-// The identifier of a test verdict.
-type ID struct {
-	// The root invocation shard.
-	RootInvocationShardID rootinvocations.ShardID
-	// Test identifier components.
-	ModuleName        string
-	ModuleScheme      string
-	ModuleVariantHash string
-	CoarseName        string
-	FineName          string
-	CaseName          string
-}
-
-// TestVerdict represents a test verdict.
-type TestVerdict struct {
-	// The identifier of the test verdict.
-	ID ID
-	// The test results in the verdict.
-	Results []*testresultsv2.TestResultRow
-	// The test exonerations that make up the verdict.
-	Exonerations []*testexonerationsv2.TestExonerationRow
-	// The test metadata of the verdict. This is picked from one of the results.
-	TestMetadata *pb.TestMetadata
-}
-
 // FetchOptions specifies options for fetching a page of test verdicts.
 type FetchOptions struct {
 	// The maximum number of test verdicts to return per page.
@@ -101,7 +76,7 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken ID, opts FetchOption
 	var totalSize int
 	it := q.List(ctx, pageToken, opts.PageSize)
 	err := it.Do(func(tv *TestVerdict) error {
-		result := toTestVerdictProto(tv, opts.ResultLimit)
+		result := tv.ToProto(opts.ResultLimit)
 
 		if opts.ResponseLimitBytes != 0 {
 			// Apply response size limiting by bytes.
@@ -110,7 +85,7 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken ID, opts FetchOption
 			if (totalSize + resultSize) > opts.ResponseLimitBytes {
 				if len(results) == 0 {
 					// This should not normally happen.
-					return errors.Fmt("a single result (%v bytes) was larger than the total response limit (%v bytes)", resultSize, opts.ResponseLimitBytes)
+					return errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", resultSize, opts.ResponseLimitBytes)
 				}
 				// Stop iteration before appending the result.
 				return iterator.Done
@@ -134,58 +109,6 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken ID, opts FetchOption
 		nextPageToken = ID{}
 	}
 	return results, nextPageToken, nil
-}
-
-func toTestVerdictProto(verdict *TestVerdict, resultLimit int) *pb.TestVerdict {
-	v := &pb.TestVerdict{}
-
-	// To avoid inaccurate statuses, the status should be computed from all results before
-	// truncation.
-	v.Status = statusV2FromResults(verdict.Results)
-	isExonerable := (v.Status == pb.TestVerdict_FAILED || v.Status == pb.TestVerdict_EXECUTION_ERRORED || v.Status == pb.TestVerdict_PRECLUDED || v.Status == pb.TestVerdict_FLAKY)
-	if len(verdict.Exonerations) > 0 && isExonerable {
-		v.StatusOverride = pb.TestVerdict_EXONERATED
-	} else {
-		v.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
-	}
-
-	for i, result := range verdict.Results {
-		resultProto := result.ToProto()
-		if i == 0 {
-			// Lift test ID and metadata up to the verdict level.
-			v.TestId = resultProto.TestId
-			v.TestIdStructured = resultProto.TestIdStructured
-		}
-		if v.TestMetadata == nil && result.TestMetadata != nil {
-			// Take the first non-nil test metadata.
-			v.TestMetadata = result.TestMetadata
-		}
-
-		if len(v.Results) < resultLimit {
-			// Unset fields that are lifted up to the verdict level to reduce
-			// response size.
-			resultProto.TestId = ""
-			resultProto.TestIdStructured = nil
-			resultProto.Variant = nil
-			resultProto.VariantHash = ""
-			resultProto.TestMetadata = nil
-			v.Results = append(v.Results, resultProto)
-		}
-	}
-
-	for _, exoneration := range verdict.Exonerations {
-		if len(v.Exonerations) < resultLimit {
-			exonerationProto := exoneration.ToProto()
-			// Unset fields that are lifted up to the verdict level to reduce
-			// response size.
-			exonerationProto.TestIdStructured = nil
-			exonerationProto.TestId = ""
-			exonerationProto.Variant = nil
-			exonerationProto.VariantHash = ""
-			v.Exonerations = append(v.Exonerations, exonerationProto)
-		}
-	}
-	return v
 }
 
 // statusV2FromResults computes the verdict status (v2) based on

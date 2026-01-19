@@ -72,7 +72,7 @@ const (
 	// Verdicts should be sorted by (structured) test identifier.
 	// This order is the best for RPC performance as it follows the natural table ordering.
 	OrderingByID Ordering = iota
-	// Results should be sorted by UI priority.
+	// Verdicts should be sorted by UI priority.
 	// This is means the order will be:
 	// - Failed
 	// - Execution Error
@@ -86,9 +86,23 @@ const (
 // Fetch fetches a page of test verdicts.
 func (q *Query) Fetch(ctx context.Context, pageToken string) ([]*pb.TestVerdict, string, error) {
 	var results []*pb.TestVerdict
-	nextPageToken, err := q.Run(ctx, pageToken, func(tv *pb.TestVerdict) error {
-		results = append(results, tv)
-		return nil
+	var totalSize int
+	nextPageToken, err := q.run(ctx, pageToken, func(tv *TestVerdictSummary) (bool, error) {
+		p := tv.ToProto()
+		if q.ResponseLimitBytes > 0 {
+			// Estimate row size using formula documented on q.ResponseLimitBytes.
+			size := proto.Size(p) + 1000
+			if totalSize+size > q.ResponseLimitBytes {
+				if len(results) == 0 {
+					return false, errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", size, q.ResponseLimitBytes)
+				}
+				// We would exceed the hard limit. Stop iteration early.
+				return false, iterator.Done
+			}
+			totalSize += size
+		}
+		results = append(results, p)
+		return true, nil
 	})
 	if err != nil {
 		return nil, "", err
@@ -96,9 +110,15 @@ func (q *Query) Fetch(ctx context.Context, pageToken string) ([]*pb.TestVerdict,
 	return results, nextPageToken, nil
 }
 
-// Run queries test verdicts for a given root invocation, calling the given row callback
-// for each row. To stop iteration early, the callback should return iterator.Done.
-func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.TestVerdict) error) (string, error) {
+// run queries test verdicts for a given root invocation, calling the given row callback
+// for each row.
+//
+// To stop iteration early, the callback should return iterator.Done. The value of `consumed`
+// distinguishes stopping before the row and after the row for the purposes of advancing the
+// page token.
+//
+// It is an error to return `false` for consumed and not return an error.
+func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*TestVerdictSummary) (consumed bool, err error)) (string, error) {
 	if q.PageSize <= 0 {
 		return "", errors.New("page size must be positive")
 	}
@@ -111,32 +131,27 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 		return "", err
 	}
 
-	var lastTV *pb.TestVerdict
-	var lastUIPriority int64
+	var lastSummary *TestVerdictSummary
 	var b spanutil.Buffer
 	rowsSeen := 0
-	totalSize := 0
 
 	err = span.Query(ctx, st).Do(func(row *spanner.Row) error {
-		tv := &pb.TestVerdict{
-			TestIdStructured: &pb.TestIdentifier{},
-		}
+		tv := &TestVerdictSummary{}
 		var variant []string
-		var isMasked bool
-		var uiPriority int64
 
 		err := b.FromSpanner(row,
-			&tv.TestIdStructured.ModuleName,
-			&tv.TestIdStructured.ModuleScheme,
-			&tv.TestIdStructured.ModuleVariantHash,
-			&tv.TestIdStructured.CoarseName,
-			&tv.TestIdStructured.FineName,
-			&tv.TestIdStructured.CaseName,
+			&tv.ID.RootInvocationShardID,
+			&tv.ID.ModuleName,
+			&tv.ID.ModuleScheme,
+			&tv.ID.ModuleVariantHash,
+			&tv.ID.CoarseName,
+			&tv.ID.FineName,
+			&tv.ID.CaseName,
 			&variant,
 			&tv.Status,
 			&tv.StatusOverride,
-			&isMasked,
-			&uiPriority,
+			&tv.IsMasked,
+			&tv.UIPriority,
 		)
 		if err != nil {
 			return err
@@ -145,32 +160,23 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 		// For masked test verdicts, the variant is nil. This allows distinguishing
 		// a masked variant from an empty variant.
 		if variant != nil {
-			tv.TestIdStructured.ModuleVariant, err = pbutil.VariantFromStrings(variant)
+			tv.ModuleVariant, err = pbutil.VariantFromStrings(variant)
 			if err != nil {
 				return errors.Fmt("module variant: %w", err)
 			}
 		}
 
-		// Populate test ID (flat).
-		tv.TestId = pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(tv.TestIdStructured))
-
-		tv.IsMasked = isMasked
-
-		lastTV = tv
-		lastUIPriority = uiPriority
-		rowsSeen++
-
-		// Estimate row size using formula documented on q.ResponseLimitBytes.
-		totalSize += proto.Size(tv) + 1000
-
-		if err := rowCallback(tv); err != nil {
+		consumed, err := rowCallback(tv)
+		if consumed {
+			lastSummary = tv
+			rowsSeen++
+		}
+		if err != nil {
+			// Stop iteration early if there was an error.
 			return err
 		}
-		// If there is a (soft) response limit, and we have exceeded it, stop reading.
-		// Limits are enforced in a soft way to ensure we return at least one verdict per page,
-		// otherwise we cannot make progress.
-		if q.ResponseLimitBytes != 0 && totalSize >= q.ResponseLimitBytes {
-			return iterator.Done
+		if err == nil && !consumed {
+			return errors.New("callback did not consume row and did not return an error")
 		}
 		return nil
 	})
@@ -179,13 +185,13 @@ func (q *Query) Run(ctx context.Context, pageToken string, rowCallback func(*pb.
 	}
 	// We had fewer verdicts than the page size and we didn't stop iteration early.
 	if rowsSeen < q.PageSize && err == nil {
-		// There are no more verdicts to query.
+		// There are no more verdicts to query. The page token is empty to signal end of iteration.
 		return "", nil
 	}
 
 	var nextPageToken string
-	if lastTV != nil {
-		nextPageToken = q.makePageToken(lastTV, lastUIPriority)
+	if lastSummary != nil {
+		nextPageToken = q.makePageToken(lastSummary)
 	} else {
 		// If there are no more verdicts, the page token is empty to signal end of iteration.
 		nextPageToken = ""
@@ -274,17 +280,17 @@ func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
 	return st, nil
 }
 
-func (q *Query) makePageToken(last *pb.TestVerdict, lastUIPriority int64) string {
+func (q *Query) makePageToken(last *TestVerdictSummary) string {
 	var parts []string
 	if q.Order == OrderingByUIPriority {
-		parts = append(parts, fmt.Sprintf("%d", lastUIPriority))
+		parts = append(parts, fmt.Sprintf("%d", last.UIPriority))
 	}
-	parts = append(parts, last.TestIdStructured.ModuleName)
-	parts = append(parts, last.TestIdStructured.ModuleScheme)
-	parts = append(parts, last.TestIdStructured.ModuleVariantHash)
-	parts = append(parts, last.TestIdStructured.CoarseName)
-	parts = append(parts, last.TestIdStructured.FineName)
-	parts = append(parts, last.TestIdStructured.CaseName)
+	parts = append(parts, last.ID.ModuleName)
+	parts = append(parts, last.ID.ModuleScheme)
+	parts = append(parts, last.ID.ModuleVariantHash)
+	parts = append(parts, last.ID.CoarseName)
+	parts = append(parts, last.ID.FineName)
+	parts = append(parts, last.ID.CaseName)
 	return pagination.Token(parts...)
 }
 
@@ -421,6 +427,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 {{define "Verdicts"}}
 	-- Verdicts.
 	SELECT
+		RootInvocationShardId,
 		ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName,
 		ModuleVariantMasked,
 		Status,
@@ -449,6 +456,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 	) V
 {{end}}
 SELECT
+	RootInvocationShardId,
 	ModuleName,
 	ModuleScheme,
 	ModuleVariantHash,

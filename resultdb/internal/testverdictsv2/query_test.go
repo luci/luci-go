@@ -158,28 +158,26 @@ func TestQuery(t *testing.T) {
 			t.Run("Makes progress", func(t *ftt.Test) {
 				// While results may be split over multiple pages, they should all be
 				// returned.
-				q.ResponseLimitBytes = 1
+				// Set limit to allow at least one item.
+				q.ResponseLimitBytes = proto.Size(expected[0]) + 1000
 				results := fetchAll(q)
 				assert.Loosely(t, results, should.Match(expected))
 			})
-			t.Run("Minimum limit", func(t *ftt.Test) {
-				// Expect only one row to be returned, because the limit is very low.
-				// One row is the minimum that must be returned to make progress.
+			t.Run("Limit too small", func(t *ftt.Test) {
+				// Expect error because the limit is too low to return even one row.
 				q.ResponseLimitBytes = 1
-				verdicts, token, err := q.Fetch(span.Single(ctx), "")
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, token, should.NotBeEmpty)
-				assert.Loosely(t, verdicts, should.Match(expected[:1]))
+				_, _, err := q.Fetch(span.Single(ctx), "")
+				assert.Loosely(t, err, should.ErrLike("a single verdict ("))
+				assert.Loosely(t, err, should.ErrLike("bytes) was larger than the total response limit (1 bytes)"))
 			})
 			t.Run("Limit is applied correctly", func(t *ftt.Test) {
-				// Should return three rows, as the limit fits more than
-				// the first two rows and the limit is soft.
+				// Should return two rows, as the limit is hard.
 				q.ResponseLimitBytes = (proto.Size(expected[0]) + 1000) + (proto.Size(expected[1]) + 1000) + 1
 
 				verdicts, token, err := q.Fetch(span.Single(ctx), "")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, token, should.NotBeEmpty)
-				assert.Loosely(t, verdicts, should.Match(expected[:3]))
+				assert.Loosely(t, verdicts, should.Match(expected[:2]))
 			})
 		})
 		t.Run("With contains test result filter", func(t *ftt.Test) {
