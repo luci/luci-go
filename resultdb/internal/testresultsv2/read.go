@@ -190,5 +190,6 @@ func (r *TestResultRow) ToProto() *pb.TestResult {
 		SkipReason:          r.SkipReason,
 		SkippedReason:       r.SkippedReason,
 		FrameworkExtensions: r.FrameworkExtensions,
+		IsMasked:            r.IsMasked,
 	}
 }

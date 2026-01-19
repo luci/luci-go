@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testexonerationsv2"
@@ -171,7 +172,10 @@ func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.Verdict
 	trQuery := testresultsv2.Query{
 		RootInvocation:   q.RootInvocationID,
 		TestPrefixFilter: q.TestPrefixFilter,
-		VerdictIDs:     q.VerdictIDs,
+		VerdictIDs:       q.VerdictIDs,
+		Access: permissions.RootInvocationAccess{
+			Level: permissions.FullAccess,
+		},
 	}
 	trPageToken := testresultsv2.ID{
 		RootInvocationShardID: pageToken.RootInvocationShardID,
@@ -203,7 +207,7 @@ func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.Verdict
 	teQuery := testexonerationsv2.Query{
 		RootInvocation:   q.RootInvocationID,
 		TestPrefixFilter: q.TestPrefixFilter,
-		VerdictIDs:     q.VerdictIDs,
+		VerdictIDs:       q.VerdictIDs,
 	}
 	tePageToken := testexonerationsv2.ID{
 		RootInvocationShardID: pageToken.RootInvocationShardID,

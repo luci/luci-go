@@ -125,6 +125,9 @@ func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*Tes
 	if q.ResponseLimitBytes < 0 {
 		return "", errors.New("response limit bytes must be non-negative")
 	}
+	if q.Access.Level == permissions.NoAccess {
+		return "", errors.New("no access to root invocation")
+	}
 
 	st, err := q.buildQuery(pageToken)
 	if err != nil {

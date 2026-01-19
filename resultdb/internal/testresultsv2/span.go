@@ -43,6 +43,8 @@ type TestResultRow struct {
 	SkipReason          pb.SkipReason // Deprecated
 	SkippedReason       *pb.SkippedReason
 	FrameworkExtensions *pb.FrameworkExtensions
+	// Whether the result has been masked. This field is output only.
+	IsMasked bool
 }
 
 // All columns in the TestResult table.

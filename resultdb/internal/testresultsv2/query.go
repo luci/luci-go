@@ -24,10 +24,20 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// MaskedFailueReasonLength is the length to which failure reasons should be masked
+// for users who only have resultdb.testResults.listLimited permission.
+const MaskedFailureReasonLength = 140
+
+// MaskedFailueReasonLength is the length to which skip reasons should be masked
+// for users who only have resultdb.testResults.listLimited permission.
+const MaskedSkipReasonLength = 140
 
 // Query provides methods to query test results in a root invocation.
 type Query struct {
@@ -44,6 +54,8 @@ type Query struct {
 	// At most 10,000 IDs can be nominated (see "Values in an IN operator"):
 	// https://docs.cloud.google.com/spanner/quotas#query-limits
 	VerdictIDs []VerdictID
+	// The access the caller has to the root invocation.
+	Access permissions.RootInvocationAccess
 }
 
 // List returns an iterator over the test results in the root invocation,
@@ -79,8 +91,12 @@ func (q *Query) List(ctx context.Context, pageToken ID, opts spanutil.BufferingO
 // buildQuery returns a spanner query that returns the next page of results,
 // starting at pageToken.
 func (q *Query) buildQuery(pageToken ID, pageSize int) (spanner.Statement, error) {
+	if q.Access.Level == permissions.NoAccess {
+		return spanner.Statement{}, errors.New("no access to root invocation")
+	}
 	params := map[string]any{
-		"limit": pageSize,
+		"limit":         pageSize,
+		"upgradeRealms": q.Access.Realms,
 	}
 
 	paginationClause := "TRUE"
@@ -110,6 +126,7 @@ func (q *Query) buildQuery(pageToken ID, pageSize int) (spanner.Statement, error
 	tmplInput := map[string]any{
 		"PaginationClause": paginationClause,
 		"WhereClause":      whereClause,
+		"FullAccess":       q.Access.Level == permissions.FullAccess,
 	}
 
 	st, err := spanutil.GenerateStatement(testResultQueryTmpl, tmplInput)
@@ -164,6 +181,42 @@ func (q *Query) whereAfterPageToken(token ID, params map[string]any) string {
 }
 
 var testResultQueryTmpl = template.Must(template.New("").Parse(`
+-- We do not use WITH clauses below as Spanner query optimizer does not optimize
+-- across WITH clause/CTE boundaries and this results in suboptimal query plans. Instead
+-- we use templates to include the nested SQL statements.
+{{define "MaskedTestResults"}}
+	-- Masked test results.
+	SELECT
+		* EXCEPT (ModuleVariant, SummaryHTML, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName, Properties),
+		-- Provide masked versions of fields to support filtering on them in the query one level up.
+		{{if eq .FullAccess true}}
+			-- Directly alias the columns if full access is granted. This can provide
+			-- a performance boost as predicates can be pushed down to the storage layer.
+			ModuleVariant AS ModuleVariantMasked,
+			SummaryHTML AS SummaryHTMLMasked,
+			Tags AS TagsMasked,
+			TestMetadata as TestMetadataMasked,
+			TestMetadataName AS TestMetadataNameMasked,
+			TestMetadataLocationRepo AS TestMetadataLocationRepoMasked,
+			TestMetadataLocationFileName AS TestMetadataLocationFileNameMasked,
+			Properties AS PropertiesMasked,
+			FALSE AS IsMasked,
+		{{else}}
+			-- User has limited acccess by default.
+			-- The failure reason and skipped reason fields cannot be masked in SQL as they are serialized+compressed protos.
+			IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL) AS ModuleVariantMasked,
+			IF(Realm IN UNNEST(@upgradeRealms), SummaryHTML, NULL) AS SummaryHTMLMasked,
+			IF(Realm IN UNNEST(@upgradeRealms), Tags, NULL) AS TagsMasked,
+			IF(Realm IN UNNEST(@upgradeRealms), TestMetadata, NULL) AS TestMetadataMasked,
+			IF(Realm IN UNNEST(@upgradeRealms), TestMetadataName, NULL) AS TestMetadataNameMasked,
+			IF(Realm IN UNNEST(@upgradeRealms), TestMetadataLocationRepo, NULL) AS TestMetadataLocationRepoMasked,
+			IF(Realm IN UNNEST(@upgradeRealms), TestMetadataLocationFileName, NULL) AS TestMetadataLocationFileNameMasked,
+			IF(Realm IN UNNEST(@upgradeRealms), Properties, NULL) AS PropertiesMasked,
+			(Realm NOT IN UNNEST(@upgradeRealms)) AS IsMasked,
+		{{end}}
+	FROM TestResultsV2
+	WHERE {{.WhereClause}}
+{{end}}
 SELECT
 	RootInvocationShardId,
 	ModuleName,
@@ -174,25 +227,28 @@ SELECT
 	T3CaseName,
 	WorkUnitId,
 	ResultId,
-	ModuleVariant,
+	ModuleVariantMasked,
 	CreateTime,
 	Realm,
 	StatusV2,
-	SummaryHTML,
+	SummaryHTMLMasked,
 	StartTime,
 	RunDurationNanos,
-	Tags,
-	TestMetadata,
-	TestMetadataName,
-	TestMetadataLocationRepo,
-	TestMetadataLocationFileName,
+	TagsMasked,
+	TestMetadataMasked,
+	TestMetadataNameMasked,
+	TestMetadataLocationRepoMasked,
+	TestMetadataLocationFileNameMasked,
 	FailureReason,
-	Properties,
+	PropertiesMasked,
 	SkipReason,
 	SkippedReason,
 	FrameworkExtensions,
-FROM TestResultsV2
-WHERE {{.WhereClause}} AND {{.PaginationClause}}
+	IsMasked,
+FROM (
+	{{template "MaskedTestResults" .}}
+) R
+WHERE {{.PaginationClause}}
 ORDER BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ResultId
 LIMIT @limit
 `))
@@ -201,6 +257,7 @@ func decodeRow(spanRow *spanner.Row, b *spanutil.Buffer, decoder *Decoder) (*Tes
 	var summaryHTML, testMetadata, failureReason, properties, skippedReason, frameworkExtensions []byte
 	var testMetadataName, testMetadataLocationRepo, testMetadataLocationFileName spanner.NullString
 	var skipReason spanner.NullInt64
+	var variant []string
 	var statusV2 int64
 
 	row := &TestResultRow{}
@@ -214,7 +271,7 @@ func decodeRow(spanRow *spanner.Row, b *spanutil.Buffer, decoder *Decoder) (*Tes
 		&row.ID.CaseName,
 		&row.ID.WorkUnitID,
 		&row.ID.ResultID,
-		&row.ModuleVariant,
+		&variant,
 		&row.CreateTime,
 		&row.Realm,
 		&statusV2,
@@ -231,12 +288,22 @@ func decodeRow(spanRow *spanner.Row, b *spanutil.Buffer, decoder *Decoder) (*Tes
 		&skipReason,
 		&skippedReason,
 		&frameworkExtensions,
+		&row.IsMasked,
 	)
 	if err != nil {
 		return nil, errors.Fmt("unmarshal row: %w", err)
 	}
 	row.StatusV2 = pb.TestResult_Status(statusV2)
 	row.SkipReason = DecodeSkipReason(skipReason)
+
+	// For masked test verdicts, the variant is nil. This allows distinguishing
+	// a masked variant from an empty variant.
+	if variant != nil {
+		row.ModuleVariant, err = pbutil.VariantFromStrings(variant)
+		if err != nil {
+			return nil, errors.Fmt("module variant: %w", err)
+		}
+	}
 
 	if row.SummaryHTML, err = decoder.DecompressText(summaryHTML); err != nil {
 		return nil, errors.Fmt("decompress SummaryHTML: %w", err)
@@ -260,6 +327,29 @@ func decodeRow(spanRow *spanner.Row, b *spanutil.Buffer, decoder *Decoder) (*Tes
 
 	if row.FrameworkExtensions, err = decoder.DecodeFrameworkExtensions(frameworkExtensions); err != nil {
 		return nil, errors.Fmt("decode FrameworkExtensions: %w", err)
+	}
+
+	if row.IsMasked {
+		// Although it is the same on-the-wire, for testing purposes, prefer nil tags
+		// over empty slice when the tags have been masked.
+		row.Tags = nil
+
+		// The following cannot be achieved inside the query because the failure reason and
+		// skipped reason are stored in serialized protobufs.
+
+		// Truncate FailureReason.
+		if row.FailureReason != nil {
+			row.FailureReason.PrimaryErrorMessage = pbutil.TruncateString(row.FailureReason.PrimaryErrorMessage, MaskedFailureReasonLength)
+			for _, e := range row.FailureReason.Errors {
+				e.Message = pbutil.TruncateString(e.Message, MaskedFailureReasonLength)
+				e.Trace = ""
+			}
+		}
+		// Truncate SkippedReason.
+		if row.SkippedReason != nil {
+			row.SkippedReason.ReasonMessage = pbutil.TruncateString(row.SkippedReason.ReasonMessage, MaskedSkipReasonLength)
+			row.SkippedReason.Trace = ""
+		}
 	}
 	return row, nil
 }
