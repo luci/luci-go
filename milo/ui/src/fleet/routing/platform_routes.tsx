@@ -92,6 +92,13 @@ export const platformRoutes: RouteObject[] = [
                   default: module.AndroidDeviceDetailsPage,
                 })),
               ),
+              [Platform.CHROMIUM]: lazy(() =>
+                import(
+                  '@/fleet/pages/device_details_page/browser_device_details_page'
+                ).then((module) => ({
+                  default: module.BrowserDeviceDetailsPage,
+                })),
+              ),
             }}
           />
         ),

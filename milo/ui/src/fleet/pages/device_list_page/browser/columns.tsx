@@ -12,19 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GridRenderCellParams } from '@mui/x-data-grid';
+
 import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
+import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
+import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
+import { generateBrowserDeviceDetailsURL } from '@/fleet/constants/paths';
 import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
+import { getStatusColor } from '../chromeos/dut_state';
 
 export const getColumn = (id: string): DeviceTableGridColDef<BrowserDevice> => {
   const firstDotIdx = id.indexOf('.');
-  const source = firstDotIdx === -1 ? undefined : id.slice(0, firstDotIdx);
+  const source =
+    firstDotIdx === -1
+      ? undefined
+      : id.slice(0, firstDotIdx).replace('_labels', '');
   const label = firstDotIdx === -1 ? id : id.slice(firstDotIdx + 2, -1); // Trims of the quotes
+
   return {
     field: id,
-    headerName: label,
+    headerName: source ? `${source}.${label}` : label,
     orderByField: id,
     editable: false,
     minWidth: 70,
@@ -44,11 +56,11 @@ export const getColumn = (id: string): DeviceTableGridColDef<BrowserDevice> => {
     renderCell: (param) => (
       <EllipsisTooltip>{param.value ?? ''}</EllipsisTooltip>
     ),
-    ...(BROWSER_COLUMN_OVERRIDES[id] ?? {}),
+    ...(BROWSER_COLUMN_OVERRIDES[source ? `${source}.${label}` : label] ?? {}),
   };
 };
 
-const BROWSER_COLUMN_OVERRIDES: Record<
+export const BROWSER_COLUMN_OVERRIDES: Record<
   string,
   Partial<DeviceTableGridColDef<BrowserDevice>>
 > = {
@@ -56,5 +68,27 @@ const BROWSER_COLUMN_OVERRIDES: Record<
     flex: 3,
     orderByField: 'id',
     valueGetter: (_value, row) => row.id,
+    renderCell: renderCellWithLink(
+      (value) => generateBrowserDeviceDetailsURL(value),
+      false,
+    ),
+  },
+  'swarming.dut_state': {
+    valueGetter: (_, device) =>
+      device.swarmingLabels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
+    renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
+      const stateValue =
+        params.row?.swarmingLabels?.['dut_state']?.values?.[0]?.toUpperCase() ??
+        params.value ??
+        '';
+
+      if (stateValue === '')
+        return <EllipsisTooltip>{stateValue}</EllipsisTooltip>;
+
+      return renderChipCell(
+        getSwarmingStateDocLinkForLabel,
+        getStatusColor,
+      )({ ...params, value: stateValue.toUpperCase() });
+    },
   },
 };

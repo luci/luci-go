@@ -52,6 +52,7 @@ import {
 } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
+  BrowserDevice,
   ListBrowserDevicesRequest,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -63,6 +64,10 @@ import { BrowserSummaryHeader } from './browser_summary_header';
 import { getColumn } from './columns';
 import { dimensionsToFilterOptions } from './dimensions_to_filter_options';
 import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
+
+export interface BrowserDeviceDimensionsProps {
+  device?: BrowserDevice;
+}
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
@@ -125,14 +130,14 @@ export const BrowserDevicesPage = () => {
       ids.push(
         ...Object.keys(dimensionsQuery.data.baseDimensions)
           .concat(
-            ...Object.keys(dimensionsQuery.data.swarmingLabels).map(
-              (l) => `${BROWSER_SWARMING_SOURCE}."${l}"`,
-            ),
+            ...Object.keys(dimensionsQuery.data.swarmingLabels)
+              .filter((l) => !EXTRA_COLUMN_IDS.includes(l))
+              .map((l) => `${BROWSER_SWARMING_SOURCE}."${l}"`),
           )
           .concat(
-            ...Object.keys(dimensionsQuery.data.ufsLabels).map(
-              (l) => `${BROWSER_UFS_SOURCE}."${l}"`,
-            ),
+            ...Object.keys(dimensionsQuery.data.ufsLabels)
+              .filter((l) => !EXTRA_COLUMN_IDS.includes(l))
+              .map((l) => `${BROWSER_UFS_SOURCE}."${l}"`),
           ),
       );
     }
