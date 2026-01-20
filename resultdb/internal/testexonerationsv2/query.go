@@ -38,11 +38,13 @@ type Query struct {
 	RootInvocation rootinvocations.ID
 	// The test prefix filter to apply.
 	TestPrefixFilter *pb.TestIdentifierPrefix
-	// The specific verdicts to filter to. If this is set, both
+	// The specific verdicts to retrieve. If this is set, both
 	// RootInvocationID and TestPrefixFilter are ignored.
 	//
-	// This list is treated as a set; the verdicts will not necessarily
-	// be returned in this order.
+	// Verdicts will be returned in the same order as this list.
+	// Duplicates are allowed, and will result in the same results
+	// being returned multiple times. Use TestResult.Ordinal to
+	// identify which verdict the result is being returned for.
 	//
 	// At most 10,000 IDs can be nominated (see "Values in an IN operator"):
 	// https://docs.cloud.google.com/spanner/quotas#query-limits
@@ -51,15 +53,26 @@ type Query struct {
 	Access permissions.RootInvocationAccess
 }
 
+// PageToken represents a token that can be used to resume a query
+// after a certain point.
+type PageToken struct {
+	// The primary key of the last test exoneration.
+	ID ID
+	// A one-based index into q.VerdictIDs that indicates the last verdict returned.
+	// Only set if Query.VerdictIDs != nil.
+	// Used to keep position in case of a duplicated ID in Query.VerdictIDs.
+	RequestOrdinal int
+}
+
 // List returns an iterator over the test exonerations in the root invocation,
 // starting at the given pageToken. Results are listed in primary key order.
 //
 // To start from the beginning of the table, pass a pageToken of (ID{}).
 // The returned iterator will iterate over all results that match the query.
-func (q *Query) List(ctx context.Context, pageToken ID, opts spanutil.BufferingOptions) *spanutil.Iterator[*TestExonerationRow, ID] {
+func (q *Query) List(ctx context.Context, pageToken PageToken, opts spanutil.BufferingOptions) *spanutil.Iterator[*TestExonerationRow, PageToken] {
 	pageSizeController := spanutil.NewPageSizeController(opts)
 
-	queryFn := func(token ID) (*spanutil.PageIterator[*TestExonerationRow], error) {
+	queryFn := func(token PageToken) (*spanutil.PageIterator[*TestExonerationRow], error) {
 		pageSize, err := pageSizeController.NextPageSize()
 		if err != nil {
 			return nil, fmt.Errorf("get next page size: %w", err)
@@ -71,18 +84,17 @@ func (q *Query) List(ctx context.Context, pageToken ID, opts spanutil.BufferingO
 		it := span.Query(ctx, st)
 		var buf spanutil.Buffer
 		decodeFn := func(row *spanner.Row) (*TestExonerationRow, error) {
-			return decodeRow(row, &buf)
+			return q.decodeRow(row, &buf)
 		}
 		return spanutil.NewPageIterator(it, decodeFn, pageSize), nil
 	}
-	idAccessor := func(r *TestExonerationRow) ID { return r.ID }
 
-	return spanutil.NewIterator(queryFn, idAccessor, pageToken)
+	return spanutil.NewIterator(queryFn, q.pageTokenFromExoneration, pageToken)
 }
 
 // buildQuery returns a spanner query that returns the next page of results,
 // starting at pageToken.
-func (q *Query) buildQuery(pageToken ID, pageSize int) (spanner.Statement, error) {
+func (q *Query) buildQuery(pageToken PageToken, pageSize int) (spanner.Statement, error) {
 	if q.Access.Level == permissions.NoAccess {
 		return spanner.Statement{}, errors.New("no access to root invocation")
 	}
@@ -92,17 +104,19 @@ func (q *Query) buildQuery(pageToken ID, pageSize int) (spanner.Statement, error
 	}
 
 	paginationClause := "TRUE"
-	if pageToken != (ID{}) {
+	if pageToken != (PageToken{}) {
 		paginationClause = q.whereAfterPageToken(pageToken, params)
 	}
 
-	var whereClause string
-	if len(q.VerdictIDs) > 0 {
-		clause, err := testresultsv2.NominatedVerdictsClause(q.VerdictIDs, params)
+	whereClause := "TRUE"
+	var usingVerdictIDs bool
+	if q.VerdictIDs != nil {
+		verdicts, err := testresultsv2.SpannerVerdictIDs(q.VerdictIDs)
 		if err != nil {
 			return spanner.Statement{}, errors.Fmt("verdict_ids: %w", err)
 		}
-		whereClause = "(" + clause + ")"
+		params["verdictIDs"] = verdicts
+		usingVerdictIDs = true
 	} else {
 		whereClause = "RootInvocationShardId IN UNNEST(@rootInvocationShards)"
 		params["rootInvocationShards"] = q.RootInvocation.AllShardIDs().ToSpanner()
@@ -118,6 +132,7 @@ func (q *Query) buildQuery(pageToken ID, pageSize int) (spanner.Statement, error
 	tmplInput := map[string]any{
 		"PaginationClause": paginationClause,
 		"WhereClause":      whereClause,
+		"HasVerdictIDs":    usingVerdictIDs,
 		"FullAccess":       q.Access.Level == permissions.FullAccess,
 	}
 
@@ -130,46 +145,74 @@ func (q *Query) buildQuery(pageToken ID, pageSize int) (spanner.Statement, error
 	return st, nil
 }
 
-func (q *Query) whereAfterPageToken(token ID, params map[string]any) string {
-	columns := []spanutil.PageTokenElement{
-		{
-			ColumnName: "RootInvocationShardID",
-			AfterValue: token.RootInvocationShardID.RowID(),
-		},
-		{
-			ColumnName: "ModuleName",
-			AfterValue: token.ModuleName,
-		},
-		{
-			ColumnName: "ModuleScheme",
-			AfterValue: token.ModuleScheme,
-		},
-		{
-			ColumnName: "ModuleVariantHash",
-			AfterValue: token.ModuleVariantHash,
-		},
-		{
-			ColumnName: "T1CoarseName",
-			AfterValue: token.CoarseName,
-		},
-		{
-			ColumnName: "T2FineName",
-			AfterValue: token.FineName,
-		},
-		{
-			ColumnName: "T3CaseName",
-			AfterValue: token.CaseName,
-		},
+func (q *Query) whereAfterPageToken(token PageToken, params map[string]any) string {
+	var columns []spanutil.PageTokenElement
+	if q.VerdictIDs != nil {
+		columns = append(columns, spanutil.PageTokenElement{
+			ColumnName: "RequestIndex",
+			AfterValue: int64(token.RequestOrdinal - 1),
+		})
+	} else {
+		columns = append(columns, []spanutil.PageTokenElement{
+			{
+				ColumnName: "RootInvocationShardID",
+				AfterValue: token.ID.RootInvocationShardID.RowID(),
+			},
+			{
+				ColumnName: "ModuleName",
+				AfterValue: token.ID.ModuleName,
+			},
+			{
+				ColumnName: "ModuleScheme",
+				AfterValue: token.ID.ModuleScheme,
+			},
+			{
+				ColumnName: "ModuleVariantHash",
+				AfterValue: token.ID.ModuleVariantHash,
+			},
+			{
+				ColumnName: "T1CoarseName",
+				AfterValue: token.ID.CoarseName,
+			},
+			{
+				ColumnName: "T2FineName",
+				AfterValue: token.ID.FineName,
+			},
+			{
+				ColumnName: "T3CaseName",
+				AfterValue: token.ID.CaseName,
+			},
+		}...)
+	}
+	columns = append(columns, []spanutil.PageTokenElement{
 		{
 			ColumnName: "WorkUnitID",
-			AfterValue: token.WorkUnitID,
-		},
-		{
+			AfterValue: token.ID.WorkUnitID,
+		}, {
 			ColumnName: "ExonerationID",
-			AfterValue: token.ExonerationID,
+			AfterValue: token.ID.ExonerationID,
 		},
-	}
+	}...)
 	return spanutil.WhereAfterClause(columns, "after", params)
+}
+
+// pageTokenFromExoneration returns the page token for the page starting
+// immediately after the given test exoneration.
+func (q *Query) pageTokenFromExoneration(r *TestExonerationRow) PageToken {
+	if q.VerdictIDs != nil {
+		// We are retrieving nominated verdicts. Page based on the
+		// RequestOrdinal (the index into VerdictIDs) and the WorkUnitID/ExonerationID.
+		return PageToken{
+			ID: ID{
+				WorkUnitID:    r.ID.WorkUnitID,
+				ExonerationID: r.ID.ExonerationID,
+			},
+			RequestOrdinal: r.RequestOrdinal,
+		}
+	} else {
+		// Page based on primary key.
+		return PageToken{ID: r.ID}
+	}
 }
 
 var testExonerationQueryTmpl = template.Must(template.New("").Parse(`
@@ -180,14 +223,19 @@ var testExonerationQueryTmpl = template.Must(template.New("").Parse(`
 	-- Masked test exonerations.
 	SELECT
 		* EXCEPT (ModuleVariant),
-		{{if eq .FullAccess true}}
-			ModuleVariant AS ModuleVariantMasked,
-			FALSE AS IsMasked,
-		{{else}}
-			IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL) AS ModuleVariantMasked,
-			(Realm NOT IN UNNEST(@upgradeRealms)) AS IsMasked,
-		{{end}}
+	{{if eq .FullAccess true}}
+		ModuleVariant AS ModuleVariantMasked,
+		FALSE AS IsMasked,
+	{{else}}
+		IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL) AS ModuleVariantMasked,
+		(Realm NOT IN UNNEST(@upgradeRealms)) AS IsMasked,
+	{{end}}
+	{{if eq .HasVerdictIDs true}}
+	FROM UNNEST(@verdictIDs) WITH OFFSET RequestIndex
+	JOIN TestExonerationsV2 USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
+	{{else}}
 	FROM TestExonerationsV2
+	{{end}}
 	WHERE {{.WhereClause}}
 {{end}}
 SELECT
@@ -206,19 +254,23 @@ SELECT
 	ExplanationHTML,
 	Reason,
 	IsMasked,
+	{{if eq .HasVerdictIDs true}}RequestIndex,{{end}}
 FROM (
 	{{template "MaskedTestExonerations" .}}
 ) E
 WHERE {{.PaginationClause}}
-ORDER BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ExonerationId
+ORDER BY
+	{{if eq .HasVerdictIDs true}}RequestIndex,{{end}}
+	RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ExonerationId
 LIMIT @limit
 `))
 
-func decodeRow(spanRow *spanner.Row, b *spanutil.Buffer) (*TestExonerationRow, error) {
+func (q *Query) decodeRow(spanRow *spanner.Row, b *spanutil.Buffer) (*TestExonerationRow, error) {
 	row := &TestExonerationRow{}
 	var explanationHTML spanutil.Compressed
 	var moduleVariant []string
-	err := b.FromSpanner(spanRow,
+	var requestIndex int64
+	dest := []any{
 		&row.ID.RootInvocationShardID,
 		&row.ID.ModuleName,
 		&row.ID.ModuleScheme,
@@ -234,7 +286,12 @@ func decodeRow(spanRow *spanner.Row, b *spanutil.Buffer) (*TestExonerationRow, e
 		&explanationHTML,
 		&row.Reason,
 		&row.IsMasked,
-	)
+	}
+	if q.VerdictIDs != nil {
+		dest = append(dest, &requestIndex)
+	}
+
+	err := b.FromSpanner(spanRow, dest...)
 	if err != nil {
 		return nil, errors.Fmt("unmarshal row: %w", err)
 	}
@@ -249,5 +306,11 @@ func decodeRow(spanRow *spanner.Row, b *spanutil.Buffer) (*TestExonerationRow, e
 	}
 
 	row.ExplanationHTML = string(explanationHTML)
+
+	if q.VerdictIDs != nil {
+		// Convert from zero-based index to one-based index, so that we can detect
+		// when RequestOrdinal is unset as opposed to referencing the first verdict ID.
+		row.RequestOrdinal = int(requestIndex) + 1
+	}
 	return row, nil
 }

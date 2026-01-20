@@ -60,6 +60,9 @@ func (v *TestVerdictSummary) ToProto() *pb.TestVerdict {
 
 // TestVerdict represents a test verdict. It corresponds to the fields
 // present on the FULL test verdict view.
+//
+// If an attempt was made to retrieve verdicts by ID, and the verdict was not
+// found, an empty TestVerdict with only Ordinal set may be retruend.
 type TestVerdict struct {
 	// The identifier of the test verdict.
 	ID testresultsv2.VerdictID
@@ -69,9 +72,18 @@ type TestVerdict struct {
 	Exonerations []*testexonerationsv2.TestExonerationRow
 	// The test metadata of the verdict. This is picked from one of the results.
 	TestMetadata *pb.TestMetadata
+	// The one-based index into Query.VerdictIDs this result relates to. Only set
+	// if the result is retrieved using a query for nominated verdict IDs. Output only.
+	RequestOrdinal int
 }
 
 func (v *TestVerdict) ToProto(resultLimit int) *pb.TestVerdict {
+	if len(v.Results) == 0 {
+		// This is an empty verdict, e.g. placeholder for a requested verdict that was
+		// not found.
+		return nil
+	}
+
 	tv := &pb.TestVerdict{}
 
 	// To avoid inaccurate statuses, the status should be computed from all results before

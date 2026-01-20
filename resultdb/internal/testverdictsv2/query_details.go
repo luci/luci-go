@@ -44,8 +44,12 @@ type QueryDetails struct {
 	// The specific verdicts to filter to. If this is set, both
 	// RootInvocationID and TestPrefixFilter are ignored.
 	//
-	// This list is treated as a set; the verdicts will not necessarily
-	// be returned in this order.
+	// Verdicts will be returned in the same order as this list.
+	// Duplicates are allowed, and will result in the same verdict
+	// being returned multiple times. If some verdicts are missing,
+	// placeholder `TestVerdicts`(s) will be returned. The
+	// `RequestOrdinal` field on returned Verdicts will identify
+	// which verdict (from this list) is being returned.
 	//
 	// At most 10,000 IDs can be nominated (see "Values in an IN operator"):
 	// https://docs.cloud.google.com/spanner/quotas#query-limits
@@ -66,22 +70,36 @@ type FetchOptions struct {
 	ResponseLimitBytes int
 }
 
+// PageToken represents the token for a page of (detailed) verdicts.
+type PageToken struct {
+	// Either of the following will be specified; not both.
+
+	// The verdict ID of the last returned verdict.
+	ID testresultsv2.VerdictID
+	// The one-based index into VerdictIDs that represents the last returned verdict.
+	// Only set if QueryDetails.VerdictIDs is set.
+	// Used to keep position in case of a duplicated ID(s) in QueryDetails.VerdictIDs.
+	RequestOrdinal int
+}
+
+// protoJSONOverheadBytes is the assumed overhead of a protojson-encoding a TestVerdict proto,
+// beyond its wire proto-encoded size.
 const protoJSONOverheadBytes = 1000
 
 // Fetch fetches a page of verdicts starting at the given page token.
-func (q *QueryDetails) Fetch(ctx context.Context, pageToken testresultsv2.VerdictID, opts FetchOptions) ([]*pb.TestVerdict, testresultsv2.VerdictID, error) {
+func (q *QueryDetails) Fetch(ctx context.Context, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
 	if opts.PageSize <= 0 {
-		return nil, testresultsv2.VerdictID{}, errors.New("page size must be positive")
+		return nil, PageToken{}, errors.New("page size must be positive")
 	}
 	if opts.ResultLimit <= 0 {
-		return nil, testresultsv2.VerdictID{}, errors.New("result limit must be positive")
+		return nil, PageToken{}, errors.New("result limit must be positive")
 	}
 	if opts.ResponseLimitBytes < 0 {
-		return nil, testresultsv2.VerdictID{}, errors.New("if set, response limit bytes must be positive")
+		return nil, PageToken{}, errors.New("if set, response limit bytes must be positive")
 	}
 
 	var results []*pb.TestVerdict
-	var nextPageToken testresultsv2.VerdictID
+	var nextPageToken PageToken
 	var totalSize int
 	it := q.List(ctx, pageToken, opts.PageSize)
 	err := it.Do(func(tv *TestVerdict) error {
@@ -103,7 +121,7 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken testresultsv2.Verdic
 		}
 
 		results = append(results, result)
-		nextPageToken = tv.ID
+		nextPageToken = pageTokenFromVerdict(tv)
 		if len(results) >= opts.PageSize {
 			// We have met the page size target. Stop iteration.
 			return iterator.Done
@@ -111,11 +129,11 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken testresultsv2.Verdic
 		return nil
 	})
 	if err != nil && err != iterator.Done {
-		return nil, testresultsv2.VerdictID{}, err
+		return nil, PageToken{}, err
 	}
 	// If we did not terminate early, the iterator has been exhausted.
 	if err == nil {
-		nextPageToken = testresultsv2.VerdictID{}
+		nextPageToken = PageToken{}
 	}
 	return results, nextPageToken, nil
 }
@@ -165,9 +183,9 @@ func statusV2FromResults(results []*testresultsv2.TestResultRow) pb.TestVerdict_
 //
 // Using the iterator, rows are streamed from Spanner which prevents
 // the need to keep the entire result set in memory.
-func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.VerdictID, bufferSize int) *Iterator {
-	if bufferSize < 100 {
-		bufferSize = 100
+func (q *QueryDetails) List(ctx context.Context, pageToken PageToken, bufferSize int) *Iterator {
+	if bufferSize <= 0 {
+		bufferSize = 1_000 // Set a sensible default size.
 	}
 	trQuery := testresultsv2.Query{
 		RootInvocation:   q.RootInvocationID,
@@ -177,20 +195,7 @@ func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.Verdict
 			Level: permissions.FullAccess,
 		},
 	}
-	trPageToken := testresultsv2.ID{
-		RootInvocationShardID: pageToken.RootInvocationShardID,
-		ModuleName:            pageToken.ModuleName,
-		ModuleScheme:          pageToken.ModuleScheme,
-		ModuleVariantHash:     pageToken.ModuleVariantHash,
-		CoarseName:            pageToken.CoarseName,
-		FineName:              pageToken.FineName,
-		CaseName:              pageToken.CaseName,
-		// We want to start *after* the last verdict.
-		// U+10FFFF is the maximum unicode character and will sort after
-		// all valid WorkUnits.
-		WorkUnitID: "\U0010FFFF",
-		ResultID:   "",
-	}
+	trPageToken := pageToken.toTestResultsPageToken()
 	trOpts := spanutil.BufferingOptions{
 		// System-wise, the average number of test results per verdict is about 1.1.
 		// Here we request slightly more to reduce the chance we need a second page.
@@ -202,6 +207,9 @@ func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.Verdict
 		// to avoid perpetually underestimating.
 		GrowthFactor: 2.0,
 	}
+	if trOpts.SecondPageSize < 1 {
+		trOpts.SecondPageSize = 1
+	}
 	trIterator := trQuery.List(ctx, trPageToken, trOpts)
 
 	teQuery := testexonerationsv2.Query{
@@ -212,20 +220,7 @@ func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.Verdict
 			Level: permissions.FullAccess,
 		},
 	}
-	tePageToken := testexonerationsv2.ID{
-		RootInvocationShardID: pageToken.RootInvocationShardID,
-		ModuleName:            pageToken.ModuleName,
-		ModuleScheme:          pageToken.ModuleScheme,
-		ModuleVariantHash:     pageToken.ModuleVariantHash,
-		CoarseName:            pageToken.CoarseName,
-		FineName:              pageToken.FineName,
-		CaseName:              pageToken.CaseName,
-		// We want to start *after* the last verdict.
-		// U+10FFFF is the maximum unicode character and will sort after
-		// all valid WorkUnits.
-		WorkUnitID:    "\U0010FFFF",
-		ExonerationID: "",
-	}
+	tePageToken := pageToken.toTestExonerationsPageToken()
 	teOpts := spanutil.BufferingOptions{
 		// System-wise, about a half percent of verdicts are exonerated.
 		FirstPageSize: bufferSize / 100,
@@ -236,11 +231,15 @@ func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.Verdict
 		// to avoid perpetually underestimating.
 		GrowthFactor: 2.0,
 	}
+	if teOpts.FirstPageSize < 1 {
+		teOpts.FirstPageSize = 1
+	}
 	teIterator := teQuery.List(ctx, tePageToken, teOpts)
 
 	return &Iterator{
-		testResults:      spanutil.NewPeekingIterator(trIterator),
-		testExonerations: spanutil.NewPeekingIterator(teIterator),
+		testResults:        spanutil.NewPeekingIterator(trIterator),
+		testExonerations:   spanutil.NewPeekingIterator(teIterator),
+		lastRequestOrdinal: pageToken.RequestOrdinal,
 	}
 }
 
@@ -249,8 +248,9 @@ func (q *QueryDetails) List(ctx context.Context, pageToken testresultsv2.Verdict
 // Internally, it implements a merge join between test result and test exoneration
 // iterators.
 type Iterator struct {
-	testResults      *spanutil.PeekingIterator[*testresultsv2.TestResultRow]
-	testExonerations *spanutil.PeekingIterator[*testexonerationsv2.TestExonerationRow]
+	testResults        *spanutil.PeekingIterator[*testresultsv2.TestResultRow]
+	testExonerations   *spanutil.PeekingIterator[*testexonerationsv2.TestExonerationRow]
+	lastRequestOrdinal int
 }
 
 // Next returns the next test verdict.
@@ -265,12 +265,22 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 		return nil, err
 	}
 
-	// Identify the verdict we are about to construct.
-	verdictID := res.ID.VerdictID()
-	verdict := &TestVerdict{
-		ID:           verdictID,
-		TestMetadata: res.TestMetadata,
+	if res.RequestOrdinal != 0 && res.RequestOrdinal > (i.lastRequestOrdinal+1) {
+		// We are querying specific verdicts via q.VerdictIDs and one or more
+		// verdicts are missing. Return a placeholder verdict in place of
+		// the missing verdict.
+		i.lastRequestOrdinal++
+		return &TestVerdict{RequestOrdinal: i.lastRequestOrdinal}, nil
 	}
+
+	// Identify the verdict we are about to construct.
+	verdictToken := pageTokenFromResult(res)
+	verdict := &TestVerdict{
+		ID:             res.ID.VerdictID(),
+		TestMetadata:   res.TestMetadata,
+		RequestOrdinal: res.RequestOrdinal,
+	}
+	i.lastRequestOrdinal = res.RequestOrdinal
 
 	// Consume all test results for this verdict.
 	for {
@@ -281,7 +291,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 		if err != nil {
 			return nil, err
 		}
-		if r.ID.VerdictID() != verdictID {
+		if pageTokenFromResult(r) != verdictToken {
 			// Test result is for a future verdict. Do not consume it.
 			break
 		}
@@ -306,8 +316,8 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 			return nil, err
 		}
 
-		eID := e.ID.VerdictID()
-		cmp := eID.Compare(verdictID)
+		eToken := pageTokenFromExoneration(e)
+		cmp := eToken.Compare(verdictToken)
 		if cmp < 0 {
 			// Exoneration for a verdict we have already passed (never saw results for).
 			// Skip it.
@@ -331,8 +341,10 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 }
 
 // Do calls the given callback function for each test verdict in the iterator,
-// or until the callback function returns an error.
+// or until the callback function returns an error. It takes care of calling
+// Stop.
 func (i *Iterator) Do(f func(*TestVerdict) error) error {
+	defer i.Stop()
 	for {
 		tv, err := i.Next()
 		if err == iterator.Done {
@@ -352,4 +364,100 @@ func (i *Iterator) Do(f func(*TestVerdict) error) error {
 func (i *Iterator) Stop() {
 	i.testResults.Stop()
 	i.testExonerations.Stop()
+}
+
+// Compare returns -1 iff t < other, 0 iff t == other and 1 iff t > other
+// in TestResultV2 / TestExonerationV2 table order.
+func (t PageToken) Compare(other PageToken) int {
+	if t.RequestOrdinal > 0 || other.RequestOrdinal > 0 {
+		// Retrieiving nominated verdicts.
+		if t.RequestOrdinal != other.RequestOrdinal {
+			if t.RequestOrdinal < other.RequestOrdinal {
+				return -1
+			}
+			return 1
+		}
+		return 0
+	}
+	// Retrieving verdicts in ID order.
+	return t.ID.Compare(other.ID)
+}
+
+func pageTokenFromResult(result *testresultsv2.TestResultRow) PageToken {
+	if result.RequestOrdinal > 0 {
+		// Page token used when retrieiving nominated verdicts.
+		return PageToken{RequestOrdinal: result.RequestOrdinal}
+	} else {
+		return PageToken{ID: result.ID.VerdictID()}
+	}
+}
+
+func pageTokenFromExoneration(exoneration *testexonerationsv2.TestExonerationRow) PageToken {
+	if exoneration.RequestOrdinal > 0 {
+		// Page token used when retrieiving nominated verdicts.
+		return PageToken{RequestOrdinal: exoneration.RequestOrdinal}
+	} else {
+		return PageToken{ID: exoneration.ID.VerdictID()}
+	}
+}
+
+func pageTokenFromVerdict(verdict *TestVerdict) PageToken {
+	if verdict.RequestOrdinal > 0 {
+		// Page token used when retrieiving nominated verdicts.
+		return PageToken{RequestOrdinal: verdict.RequestOrdinal}
+	} else {
+		return PageToken{ID: verdict.ID}
+	}
+}
+
+// toTestResultsPageToken converts a test verdict page token to
+// a test result page token.
+func (t PageToken) toTestResultsPageToken() testresultsv2.PageToken {
+	if t == (PageToken{}) {
+		return testresultsv2.PageToken{}
+	}
+	var result testresultsv2.PageToken
+	if t.RequestOrdinal > 0 {
+		result.RequestOrdinal = t.RequestOrdinal
+	} else {
+		result.ID.RootInvocationShardID = t.ID.RootInvocationShardID
+		result.ID.ModuleName = t.ID.ModuleName
+		result.ID.ModuleScheme = t.ID.ModuleScheme
+		result.ID.ModuleVariantHash = t.ID.ModuleVariantHash
+		result.ID.CoarseName = t.ID.CoarseName
+		result.ID.FineName = t.ID.FineName
+		result.ID.CaseName = t.ID.CaseName
+	}
+	// We want to start *after* the last verdict.
+	// U+10FFFF is the maximum unicode character and will sort after
+	// all valid WorkUnits. It is not valid for work unit IDs itself.
+	result.ID.WorkUnitID = "\U0010FFFF"
+	result.ID.ResultID = ""
+	return result
+}
+
+// toTestExonerationsPageToken converts a test verdict page token to
+// a test exonerations page token.
+func (t PageToken) toTestExonerationsPageToken() testexonerationsv2.PageToken {
+	if t == (PageToken{}) {
+		return testexonerationsv2.PageToken{}
+	}
+	var result testexonerationsv2.PageToken
+	if t.RequestOrdinal > 0 {
+		result.RequestOrdinal = t.RequestOrdinal
+	} else {
+		result.ID.RootInvocationShardID = t.ID.RootInvocationShardID
+		result.ID.ModuleName = t.ID.ModuleName
+		result.ID.ModuleScheme = t.ID.ModuleScheme
+		result.ID.ModuleVariantHash = t.ID.ModuleVariantHash
+		result.ID.CoarseName = t.ID.CoarseName
+		result.ID.FineName = t.ID.FineName
+		result.ID.CaseName = t.ID.CaseName
+	}
+	// We want to start *after* the last verdict.
+	// U+10FFFF is the maximum unicode character and will sort after
+	// all valid WorkUnits. It is not valid for work unit IDs itself.
+	result.ID.WorkUnitID = "\U0010FFFF"
+	result.ID.ExonerationID = ""
+	return result
 }

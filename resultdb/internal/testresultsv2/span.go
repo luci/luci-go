@@ -43,8 +43,12 @@ type TestResultRow struct {
 	SkipReason          pb.SkipReason // Deprecated
 	SkippedReason       *pb.SkippedReason
 	FrameworkExtensions *pb.FrameworkExtensions
-	// Whether the result has been masked. This field is output only.
+	// Whether the result has been masked to only the fields that are visible to
+	// users with limited access. Output only.
 	IsMasked bool
+	// The one-based index into Query.VerdictIDs this result relates to. Only set
+	// if the result is retrieved using a query for nominated verdict IDs. Output only.
+	RequestOrdinal int
 }
 
 // All columns in the TestResult table.

@@ -17,6 +17,8 @@ package testresultsv2
 import (
 	"strings"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 )
 
@@ -65,4 +67,51 @@ func (id VerdictID) Compare(other VerdictID) int {
 		return strings.Compare(id.CaseName, other.CaseName)
 	}
 	return 0
+}
+
+// The maximum number of nominated verdict IDs.
+//
+// This comes from two places:
+//   - If the IDs are ever used in an IN clause, we have
+//     https://cloud.google.com/spanner/quotas#query-limits ("Values in an IN operator")
+//     limiting us to at most 10,000 items.
+//   - Any Spanner parameters will count towards the request size limit of 10 MiB. As each
+//     test ID is up to around 512 characters, with the addition of the RootInvocation and
+//     VariantHash, the total size could be some 6-7 MiB. See:
+//     https://docs.cloud.google.com/spanner/quotas#request-limits
+const MaxNominatedVerdicts = 10_000
+
+// SpannerVerdictID is the struct used to represent a test verdict ID in Spanner.
+// It matches the schema of the TestResultsV2 and TestExonerationsV2 table without additional
+// conversion.
+type SpannerVerdictID struct {
+	// The root invocation shard.
+	RootInvocationShardID string
+	// Test identifier components.
+	ModuleName        string
+	ModuleScheme      string
+	ModuleVariantHash string
+	T1CoarseName      string
+	T2FineName        string
+	T3CaseName        string
+}
+
+// SpannerVerdictIDs returns the given verdict IDs in a form that can be passed to Spanner.
+func SpannerVerdictIDs(verdictIDs []VerdictID) ([]SpannerVerdictID, error) {
+	if len(verdictIDs) > MaxNominatedVerdicts {
+		return nil, errors.Fmt("got %d nominated verdicts, but only %d are allowed", len(verdictIDs), MaxNominatedVerdicts)
+	}
+	spannerIDs := make([]SpannerVerdictID, 0, len(verdictIDs))
+	for _, id := range verdictIDs {
+		spannerIDs = append(spannerIDs, SpannerVerdictID{
+			RootInvocationShardID: id.RootInvocationShardID.RowID(),
+			ModuleName:            id.ModuleName,
+			ModuleScheme:          id.ModuleScheme,
+			ModuleVariantHash:     id.ModuleVariantHash,
+			T1CoarseName:          id.CoarseName,
+			T2FineName:            id.FineName,
+			T3CaseName:            id.CaseName,
+		})
+	}
+	return spannerIDs, nil
 }

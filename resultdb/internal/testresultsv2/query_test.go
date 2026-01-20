@@ -88,7 +88,7 @@ func TestQuery(t *testing.T) {
 		fetchAll := func(ctx context.Context, q *Query, opts spanutil.BufferingOptions) ([]*TestResultRow, error) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
-			it := q.List(ctx, ID{}, opts)
+			it := q.List(ctx, PageToken{}, opts)
 			var results []*TestResultRow
 			for {
 				row, err := it.Next()
@@ -114,7 +114,7 @@ func TestQuery(t *testing.T) {
 			defer cancel()
 			opts.FirstPageSize = 3
 			opts.SecondPageSize = 1
-			it := q.List(ctx, ID{}, opts)
+			it := q.List(ctx, PageToken{}, opts)
 
 			// Fetch first page (3 items).
 			var page1 []*TestResultRow
@@ -180,13 +180,19 @@ func TestQuery(t *testing.T) {
 			nominated := []VerdictID{
 				verdictID(3),
 				verdictID(1),
+				verdictID(1),
 				verdictID(5),
+				verdictID(100), // Does not exist.
+				verdictID(1),
 			}
-			// Note: rows are still returned in primary key order, which may not match the order in the list.
+
+			// Note: verdicts must be return in the order they are requested, including duplicates.
 			expected := []*TestResultRow{
-				expected[1],
-				expected[3],
-				expected[5],
+				withRequestOrdinal(expected[3], 1),
+				withRequestOrdinal(expected[1], 2),
+				withRequestOrdinal(expected[1], 3),
+				withRequestOrdinal(expected[5], 4),
+				withRequestOrdinal(expected[1], 6),
 			}
 
 			q.VerdictIDs = nominated
@@ -275,4 +281,11 @@ func maskedResults(results []*TestResultRow, allowedRealms []string) []*TestResu
 		masked = append(masked, &m)
 	}
 	return masked
+}
+
+func withRequestOrdinal(row *TestResultRow, ordinal int) *TestResultRow {
+	// Copy the row.
+	result := *row
+	result.RequestOrdinal = ordinal
+	return &result
 }

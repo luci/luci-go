@@ -15,7 +15,6 @@
 package testresultsv2
 
 import (
-	"fmt"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -23,44 +22,6 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
-
-// NominatedVerdictsClause returns a WHERE clause that matches the given test IDs.
-func NominatedVerdictsClause(nominatedIDs []VerdictID, params map[string]any) (predicate string, err error) {
-	// At most 10,000 IDs can be nominated (see "Values in an IN operator"):
-	// https://docs.cloud.google.com/spanner/quotas#query-limits
-	const maxNominatedIDs = 10_000
-	if len(nominatedIDs) > maxNominatedIDs {
-		return "", fmt.Errorf("number of nominated IDs (%d) exceeds the limit of %d", len(nominatedIDs), maxNominatedIDs)
-	}
-
-	type spannerTestID struct {
-		// The root invocation shard.
-		RootInvocationShardID string
-		// Test identifier components.
-		ModuleName        string
-		ModuleScheme      string
-		ModuleVariantHash string
-		T1CoarseName      string
-		T2FineName        string
-		T3CaseName        string
-	}
-
-	spannerIDs := make([]spannerTestID, 0, len(nominatedIDs))
-	for _, id := range nominatedIDs {
-		spannerIDs = append(spannerIDs, spannerTestID{
-			RootInvocationShardID: id.RootInvocationShardID.RowID(),
-			ModuleName:            id.ModuleName,
-			ModuleScheme:          id.ModuleScheme,
-			ModuleVariantHash:     id.ModuleVariantHash,
-			T1CoarseName:          id.CoarseName,
-			T2FineName:            id.FineName,
-			T3CaseName:            id.CaseName,
-		})
-	}
-
-	params["nominatedIDs"] = spannerIDs
-	return `STRUCT(RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName) IN UNNEST(@nominatedIDs)`, nil
-}
 
 // PrefixWhereClause returns a WHERE clause that matches the given test ID prefix.
 // The WHERE clause will be used to filter the TestResultsV2 and TestExonerationsV2 tables.

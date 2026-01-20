@@ -33,6 +33,9 @@ type TestExonerationRow struct {
 	Reason          pb.ExonerationReason
 	// Whether the row was masked, because the user only has limited access. Output only.
 	IsMasked bool
+	// The one-based index into Query.VerdictIDs this exoneration relates to. Only set
+	// if the exoneration is retrieved using a query for nominated verdict IDs. Output only.
+	RequestOrdinal int
 }
 
 // Create returns a mutation to insert or update a TestExonerationRow.

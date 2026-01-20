@@ -48,14 +48,14 @@ func TestQueryDetails(t *testing.T) {
 
 		fetchAll := func(q *QueryDetails, opts FetchOptions) []*pb.TestVerdict {
 			var results []*pb.TestVerdict
-			var token testresultsv2.VerdictID
+			var token PageToken
 			for {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				verdicts, nextToken, err := q.Fetch(ctx, token, opts)
 				cancel()
 				assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
 				results = append(results, verdicts...)
-				if nextToken == (testresultsv2.VerdictID{}) {
+				if nextToken == (PageToken{}) {
 					// This is the last page.
 					assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(opts.PageSize))
 					break
@@ -82,9 +82,9 @@ func TestQueryDetails(t *testing.T) {
 			t.Run("Without pagination", func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				verdicts, token, err := q.Fetch(ctx, testresultsv2.VerdictID{}, FetchOptions{PageSize: 100, ResultLimit: 10})
+				verdicts, token, err := q.Fetch(ctx, PageToken{}, FetchOptions{PageSize: 100, ResultLimit: 10})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, token, should.Match(testresultsv2.VerdictID{}))
+				assert.Loosely(t, token, should.Match(PageToken{}))
 				assert.Loosely(t, verdicts, should.Match(expected))
 			})
 			t.Run("With pagination", func(t *ftt.Test) {
@@ -133,9 +133,9 @@ func TestQueryDetails(t *testing.T) {
 				limit := (proto.Size(expected[0]) + 1000) + (proto.Size(expected[1]) + 1000) + 1
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				verdicts, token, err := q.Fetch(ctx, testresultsv2.VerdictID{}, FetchOptions{PageSize: 100, ResultLimit: 10, ResponseLimitBytes: limit})
+				verdicts, token, err := q.Fetch(ctx, PageToken{}, FetchOptions{PageSize: 100, ResultLimit: 10, ResponseLimitBytes: limit})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, token, should.NotMatch(testresultsv2.VerdictID{}))
+				assert.Loosely(t, token, should.NotMatch(PageToken{}))
 				assert.Loosely(t, verdicts, should.Match(expected[:2]))
 			})
 		})
@@ -188,32 +188,54 @@ func TestQueryDetails(t *testing.T) {
 			nominated := []testresultsv2.VerdictID{
 				verdictID(expected[2]),
 				verdictID(expected[0]),
+				{
+					// Does not exist.
+					RootInvocationShardID: rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 10},
+					ModuleName:            "non_existant_module",
+					ModuleVariantHash:     "1234567890abcdef",
+					ModuleScheme:          "junit",
+					CaseName:              "MyTest",
+				},
+				verdictID(expected[2]),
+				verdictID(expected[2]),
 			}
 			q.VerdictIDs = nominated
 
-			// Should return only the nominated verdicts.
-			// Note: The verdicts are returned in primary key order, not necessarily the requested order.
-			expectedSubset := []*pb.TestVerdict{expected[0], expected[2]}
-			assert.Loosely(t, fetchAll(q, FetchOptions{PageSize: 100, ResultLimit: 10}), should.Match(expectedSubset))
+			// Note: verdicts must be return in the order they are requested, including duplicates.
+			// Missing verdicts are indicating with nils.
+			expectedSubset := []*pb.TestVerdict{
+				expected[2],
+				expected[0],
+				nil,
+				expected[2],
+				expected[2],
+			}
+
+			t.Run("Baseline", func(t *ftt.Test) {
+				assert.Loosely(t, fetchAll(q, FetchOptions{PageSize: 100, ResultLimit: 10}), should.Match(expectedSubset))
+			})
+			t.Run("With small page size", func(t *ftt.Test) {
+				assert.Loosely(t, fetchAll(q, FetchOptions{PageSize: 1, ResultLimit: 10}), should.Match(expectedSubset))
+			})
 		})
 
 		t.Run("Errors", func(t *ftt.Test) {
 			t.Run("Invalid page size", func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				_, _, err := q.Fetch(ctx, testresultsv2.VerdictID{}, FetchOptions{PageSize: 0, ResultLimit: 10})
+				_, _, err := q.Fetch(ctx, PageToken{}, FetchOptions{PageSize: 0, ResultLimit: 10})
 				assert.Loosely(t, err, should.ErrLike("page size must be positive"))
 			})
 			t.Run("Invalid result limit", func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				_, _, err := q.Fetch(ctx, testresultsv2.VerdictID{}, FetchOptions{PageSize: 100, ResultLimit: 0})
+				_, _, err := q.Fetch(ctx, PageToken{}, FetchOptions{PageSize: 100, ResultLimit: 0})
 				assert.Loosely(t, err, should.ErrLike("result limit must be positive"))
 			})
 			t.Run("Invalid response limit bytes", func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				_, _, err := q.Fetch(ctx, testresultsv2.VerdictID{}, FetchOptions{PageSize: 100, ResultLimit: 10, ResponseLimitBytes: -1})
+				_, _, err := q.Fetch(ctx, PageToken{}, FetchOptions{PageSize: 100, ResultLimit: 10, ResponseLimitBytes: -1})
 				assert.Loosely(t, err, should.ErrLike("response limit bytes must be positive"))
 			})
 		})

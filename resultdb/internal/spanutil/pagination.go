@@ -21,7 +21,7 @@ type PageTokenElement struct {
 	// ColumnName in the database.
 	ColumnName string
 	// AfterValue is the value of the column after which to filter.
-	AfterValue string
+	AfterValue any
 }
 
 // WhereAfterClause generates a WHERE clause that filters for rows after
