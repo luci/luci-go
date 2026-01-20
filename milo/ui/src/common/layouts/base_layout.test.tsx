@@ -16,6 +16,7 @@ import { render, screen } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
 import { useMatches } from 'react-router';
 
+import * as PageMeta from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -23,6 +24,18 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 import { SIDE_BAR_OPEN_CACHE_KEY } from './base_layout';
 import { BaseLayout } from './base_layout';
 import { PAGE_LABEL_MAP } from './constants';
+
+jest.mock('@/common/tools/logging', () => ({
+  logging: {
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+jest.mock('@/common/components/page_meta', () => ({
+  ...jest.requireActual('@/common/components/page_meta'),
+  useProjectCtx: jest.fn(),
+}));
 
 jest.mock('react-router', () => {
   return self.createSelectiveSpiesFromModule<typeof import('react-router')>(
@@ -60,7 +73,8 @@ describe('<BaseLayout />', () => {
     useMatchesMock.mockClear();
   });
 
-  it('should display sidebar if no value is stored', async () => {
+  it('should not display sidebar if no value is stored', async () => {
+    // Default is now closed (false)
     render(
       <StoreProvider value={store}>
         <FakeContextProvider>
@@ -73,11 +87,30 @@ describe('<BaseLayout />', () => {
 
     expect(
       screen.getByText(PAGE_LABEL_MAP[UiPage.BuilderSearch]),
-    ).toBeVisible();
+    ).not.toBeVisible();
   });
 
   it('should hide sidebar if the local storage value is false', async () => {
     storageList.set(SIDE_BAR_OPEN_CACHE_KEY, 'false');
+    render(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    await screen.findByText('LUCI');
+
+    expect(
+      screen.getByText(PAGE_LABEL_MAP[UiPage.BuilderSearch]),
+    ).not.toBeVisible();
+  });
+
+  it('should hide sidebar if project is android even if local storage is true', async () => {
+    storageList.set(SIDE_BAR_OPEN_CACHE_KEY, 'true');
+    (PageMeta.useProjectCtx as jest.Mock).mockReturnValue('android');
+
     render(
       <StoreProvider value={store}>
         <FakeContextProvider>

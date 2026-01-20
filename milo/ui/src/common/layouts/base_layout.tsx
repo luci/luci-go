@@ -19,6 +19,7 @@ import { useLocalStorage } from 'react-use';
 
 import miloFavicon from '@/common/assets/favicons/milo-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useProjectCtx } from '@/common/components/page_meta';
 import {
   QueuedStickyScrollingBase,
   StickyOffset,
@@ -46,9 +47,11 @@ const ScrollingBase = styled(QueuedStickyScrollingBase)`
 export const SIDE_BAR_OPEN_CACHE_KEY = 'side-bar-open';
 
 export const BaseLayout = () => {
-  const [sidebarOpen = true, setSidebarOpen] = useLocalStorage<boolean>(
+  const [sidebarOpen = false, setSidebarOpen] = useLocalStorage<boolean>(
     SIDE_BAR_OPEN_CACHE_KEY,
   );
+  const project = useProjectCtx();
+  const shouldShowSidebar = project !== 'android';
   const matches = useMatches() as UIMatch<
     unknown,
     { layout?: () => ReactNode }
@@ -72,7 +75,11 @@ export const BaseLayout = () => {
         top
         sx={{ gridArea: 'app-bar', zIndex: (theme) => theme.zIndex.appBar }}
       >
-        <AppBar open={sidebarOpen} handleSidebarChanged={setSidebarOpen} />
+        <AppBar
+          open={sidebarOpen}
+          handleSidebarChanged={setSidebarOpen}
+          showSidebarToggle={shouldShowSidebar}
+        />
       </Sticky>
       <Sticky
         left
@@ -82,7 +89,7 @@ export const BaseLayout = () => {
           zIndex: (theme) => theme.zIndex.drawer,
         }}
       >
-        <Sidebar open={sidebarOpen} />
+        <Sidebar open={shouldShowSidebar && sidebarOpen} />
       </Sticky>
       <Sticky top sx={{ gridArea: 'footer' }}>
         <PrivacyFooter />

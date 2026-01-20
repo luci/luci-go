@@ -75,4 +75,20 @@ describe('AppDetails', () => {
     expect(screen.getByText('LUCI')).toBeInTheDocument();
     expect(screen.getByText('chrome')).toBeInTheDocument();
   });
+
+  it('should hide menu icon when showSidebarToggle is false', async () => {
+    render(
+      <FakeContextProvider>
+        <AppDetails
+          open={true}
+          handleSidebarChanged={(_: boolean) => {}}
+          showSidebarToggle={false}
+        />
+      </FakeContextProvider>,
+    );
+
+    // Should verify MenuIcon is NOT present
+    expect(screen.queryByLabelText('menu')).not.toBeInTheDocument();
+    expect(screen.getByText('LUCI')).toBeInTheDocument();
+  });
 });

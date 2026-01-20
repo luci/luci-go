@@ -41,9 +41,14 @@ const StyledMuiAppBar = styled(MuiAppBar)(() => ({
 interface Props {
   open: boolean;
   handleSidebarChanged: (isOpen: boolean) => void;
+  showSidebarToggle?: boolean;
 }
 
-export const AppBar = ({ open, handleSidebarChanged }: Props) => {
+export const AppBar = ({
+  open,
+  handleSidebarChanged,
+  showSidebarToggle = true,
+}: Props) => {
   const authState = useAuthState();
 
   return (
@@ -63,7 +68,11 @@ export const AppBar = ({ open, handleSidebarChanged }: Props) => {
         <ItemGroup
           sx={{ left: 'calc(var(--accumulated-left) + 25px)', gap: 2 }}
         >
-          <AppDetails open={open} handleSidebarChanged={handleSidebarChanged} />
+          <AppDetails
+            open={open}
+            handleSidebarChanged={handleSidebarChanged}
+            showSidebarToggle={showSidebarToggle}
+          />
         </ItemGroup>
         <Box sx={{ flexGrow: 1 }}></Box>
         <ItemGroup

@@ -30,21 +30,28 @@ import { PAGE_LABEL_MAP } from '../../constants';
 interface Props {
   open: boolean;
   handleSidebarChanged: (isOpen: boolean) => void;
+  showSidebarToggle?: boolean;
 }
 
-export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
+export const AppDetails = ({
+  open,
+  handleSidebarChanged,
+  showSidebarToggle = true,
+}: Props) => {
   const activePage = useActivePageId();
   const project = useProjectCtx();
   return (
     <>
-      <StyledIconButton
-        aria-label="menu"
-        onClick={() => handleSidebarChanged(!open)}
-        edge={false}
-        size="medium"
-      >
-        <MenuIcon />
-      </StyledIconButton>
+      {showSidebarToggle && (
+        <StyledIconButton
+          aria-label="menu"
+          onClick={() => handleSidebarChanged(!open)}
+          edge={false}
+          size="medium"
+        >
+          <MenuIcon />
+        </StyledIconButton>
+      )}
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <StyledAppBarLink
           component={RouterLink}
