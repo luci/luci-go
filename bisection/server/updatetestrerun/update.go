@@ -72,9 +72,12 @@ func Update(ctx context.Context, req *pb.UpdateTestAnalysisProgressRequest) (ret
 		}
 	}
 
-	// Something is wrong here. We should not receive an update for ended rerun.
+	// The rerun has already ended (e.g., canceled due to culprit found).
+	// This can happen when the build finishes after CancelAnalysis ran.
+	// Just log and return success since the result doesn't matter anymore.
 	if rerun.HasEnded() {
-		return status.Errorf(codes.Internal, "rerun has ended")
+		logging.Infof(ctx, "Rerun %d has already ended with status %v, skipping update", req.Bbid, rerun.Status)
+		return nil
 	}
 
 	// Safeguard, we don't really expect any other type.

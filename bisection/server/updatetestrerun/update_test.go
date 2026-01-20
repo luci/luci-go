@@ -110,6 +110,8 @@ func TestUpdate(t *testing.T) {
 		})
 
 		t.Run("Rerun ended", func(t *ftt.Test) {
+			// When a rerun has already ended (e.g., canceled due to culprit found),
+			// the update should be skipped gracefully instead of returning an error.
 			req := &pb.UpdateTestAnalysisProgressRequest{
 				Bbid:  801,
 				BotId: "bot",
@@ -119,9 +121,7 @@ func TestUpdate(t *testing.T) {
 				Status: pb.RerunStatus_RERUN_STATUS_FAILED,
 			})
 			err := Update(ctx, req)
-			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.Internal))
-			assert.Loosely(t, err.Error(), should.ContainSubstring("rerun has ended"))
+			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run("Invalid rerun type", func(t *ftt.Test) {
