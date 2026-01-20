@@ -39,7 +39,7 @@ import {
   prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_ft_selector';
+import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
