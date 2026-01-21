@@ -25,6 +25,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/server/tq/tqtesting"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
+	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/api/taskspb"
 	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 	"go.chromium.org/luci/auth_service/impl/info"
@@ -2186,6 +2188,72 @@ func TestProtoConversion(t *testing.T) {
 		assert.Loosely(t, group.CallerCanViewMembers, should.BeTrue)
 		assert.Loosely(t, group.NumRedacted, should.Equal(0))
 	})
+
+	ftt.Run("AuthGroup ToProto handles members unsharding", t, func(t *ftt.Test) {
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"testers"},
+		})
+
+		// Set up sharded group in Datastore.
+		group := testAuthGroup(ctx, "foo")
+		expectedMembers := group.Members
+		shards, err := createAuthGroupShards(ctx, group, 10)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shards, should.NotBeEmpty)
+		group.setShardIDs(ctx, shards)
+		assert.Loosely(t, datastore.Put(ctx, group, shards), should.BeNil)
+
+		// Set up sharded group with invalid ShardIDs.
+		invalidGroup := testAuthGroup(ctx, "invalid")
+		invalidGroup.Members = nil
+		invalidGroup.ShardIDs = []string{"non", "sense"}
+		assert.Loosely(t, datastore.Put(ctx, invalidGroup), should.BeNil)
+
+		t.Run("skips unsharding if memberships not requested", func(t *ftt.Test) {
+			actual, err := invalidGroup.ToProto(ctx, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Match(&rpcpb.AuthGroup{
+				Name:                 invalidGroup.ID,
+				Description:          invalidGroup.Description,
+				Owners:               invalidGroup.Owners,
+				CreatedTs:            timestamppb.New(invalidGroup.CreatedTS),
+				CreatedBy:            invalidGroup.CreatedBy,
+				Etag:                 invalidGroup.etag(),
+				CallerCanViewMembers: true,
+				CallerCanModify:      false,
+			}))
+		})
+
+		t.Run("returns error for unsharding problem", func(t *ftt.Test) {
+			_, err := invalidGroup.ToProto(ctx, true)
+			assert.Loosely(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
+		})
+
+		t.Run("returns members for a sharded group", func(t *ftt.Test) {
+			actual, err := group.ToProto(ctx, true)
+			assert.Loosely(t, err, should.BeNil)
+
+			// The input group should be unchanged; the Members field should still be
+			// nil from setting ShardIDs.
+			assert.Loosely(t, group.Members, should.BeNil)
+
+			// But the members (unsharded) should be returned in the proto.
+			assert.Loosely(t, actual, should.Match(&rpcpb.AuthGroup{
+				Name:                 group.ID,
+				Description:          group.Description,
+				Owners:               group.Owners,
+				CreatedTs:            timestamppb.New(invalidGroup.CreatedTS),
+				CreatedBy:            group.CreatedBy,
+				Etag:                 group.etag(),
+				CallerCanViewMembers: true,
+				CallerCanModify:      false,
+				Members:              expectedMembers,
+				Globs:                group.Globs,
+				Nested:               group.Nested,
+			}))
+		})
+	})
 }
 
 func TestRealmsToProto(t *testing.T) {
@@ -2347,6 +2415,37 @@ func TestValidateAdminGroup(t *testing.T) {
 				Nested: []string{"sys/admins@example.com"},
 			}
 			assert.Loosely(t, validateAdminGroup(ctx, g), should.BeNil)
+		})
+	})
+}
+
+func TestAuthGroupSharding(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("unsharding sharded AuthGroup members works", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+
+		group := testAuthGroup(ctx, "test-sharding-group")
+		expectedMembers := group.Members
+
+		shards, err := createAuthGroupShards(ctx, group, 10)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shards, should.NotBeEmpty)
+
+		members, err := unshardMembers(ctx, shards)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, members, should.Match(expectedMembers))
+
+		t.Run("restoring Members works", func(t *ftt.Test) {
+			group.setShardIDs(ctx, shards)
+			assert.Loosely(t, group.Members, should.BeNil)
+			assert.Loosely(t, group.ShardIDs, should.HaveLength(len(shards)))
+
+			assert.Loosely(t, datastore.Put(ctx, group, shards), should.BeNil)
+
+			assert.Loosely(t, group.restoreMembersFromShards(ctx), should.BeNil)
+			assert.Loosely(t, group.Members, should.Match(expectedMembers))
+			assert.Loosely(t, group.ShardIDs, should.BeNil)
 		})
 	})
 }

@@ -64,7 +64,11 @@ const (
 	TrustedServicesGroup = "auth-trusted-services"
 
 	// Max size of AuthDBShard.Blob.
-	MaxShardSize = 900 * 1024 // 900 kB.
+	MaxDBShardSize = 900 * 1024 // 900 kB.
+
+	// Max size of AuthGroupShard.Blob, and also the threshold at which sharding
+	// of an AuthGroup's Members should be done.
+	MaxGroupShardSize = 800 * 1024 // 800 kB.
 )
 
 // AuthVersionedEntityMixin is for AuthDB entities that
@@ -321,6 +325,10 @@ type AuthGroup struct {
 	Parent *datastore.Key `gae:"$parent"`
 
 	// Members is the list of members that are explicitly in this group.
+	// May be empty if:
+	// * there are no direct members in the group; OR
+	// * the group has been sharded and requires unsharding to repopulate the members.
+	// ShardIDs will be non-empty if unsharding is required.
 	Members []string `gae:"members"`
 
 	// Globs is the list of identity-glob expressions in this group.
@@ -343,6 +351,36 @@ type AuthGroup struct {
 
 	// CreatedBy is the email of the user who created this group.
 	CreatedBy string `gae:"created_by"`
+
+	// ShardIDs is a list of shard IDs if sharded or empty if Members should be used.
+	ShardIDs []string `gae:"shard_ids,noindex"`
+}
+
+// AuthGroupShard stores a shard of a serialized-then-compressed rpcpb.AuthGroup
+// with only the Members field set.
+type AuthGroupShard struct {
+	// AuthVersionedEntityMixin is embedded
+	// to include modification details related to this entity.
+	AuthVersionedEntityMixin
+
+	Kind string `gae:"$kind,AuthGroupShard"`
+
+	// Parent is RootKey().
+	Parent *datastore.Key `gae:"$parent"`
+
+	// ID is "<group_name>:<shard_hash>"
+	ID string `gae:"$id"`
+
+	// Blob is a sharded part of the compressed members in an AuthGroup.
+	Blob []byte `gae:"blob,noindex"`
+
+	// Ignore extra fields. This is needed so AuthGroupShardHistory entities can
+	// be loaded into an AuthGroupShard, which supports unsharding.
+	_extra datastore.PropertyMap `gae:"-,extra"`
+}
+
+func (ags *AuthGroupShard) GetBlob() []byte {
+	return ags.Blob
 }
 
 type AuthIPAllowlist struct {
@@ -1441,8 +1479,8 @@ func StoreAuthDBSnapshot(ctx context.Context, replicationState *AuthReplicationS
 	// efficient to store it inline in AuthDBSnapshot (it is also how it
 	// is stored in older entities, before sharding was introduced).
 	var shardIDs []string
-	if len(deflated) > MaxShardSize {
-		shardIDs, err = shardAuthDB(ctx, replicationState.AuthDBRev, deflated, MaxShardSize)
+	if len(deflated) > MaxDBShardSize {
+		shardIDs, err = shardAuthDB(ctx, replicationState.AuthDBRev, deflated, MaxDBShardSize)
 		if err != nil {
 			return errors.Fmt("error sharding AuthDB: %w", err)
 		}
@@ -1919,6 +1957,113 @@ func unshardAuthDB(ctx context.Context, shardIDs []string) ([]byte, error) {
 	return authDBBlob, nil
 }
 
+// createAuthGroupShards splits the group's Members into shards and returns them.
+// Returns nil if sharding isn't required.
+// Note: the caller is responsible for putting the shards into Datastore.
+func createAuthGroupShards(ctx context.Context, group *AuthGroup, maxSize int) ([]*AuthGroupShard, error) {
+	if group == nil || group.ID == "" {
+		return nil, nil
+	}
+
+	shardBlobs := shardMembers(ctx, group.Members, maxSize)
+	if shardBlobs == nil {
+		return nil, nil
+	}
+
+	shards := make([]*AuthGroupShard, len(shardBlobs))
+	for i, shardBlob := range shardBlobs {
+		shardChecksum := sha256.Sum256(shardBlob)
+		shardID := fmt.Sprintf("%s:%s", group.ID, hex.EncodeToString(shardChecksum[:]))
+
+		shards[i] = &AuthGroupShard{
+			Kind:   "AuthGroupShard",
+			Parent: group.Parent,
+			ID:     shardID,
+			Blob:   shardBlob,
+		}
+	}
+
+	return shards, nil
+}
+
+// getShards gets the group's shards from Datastore. Returns nil if the group
+// isn't sharded.
+func (group *AuthGroup) getShards(ctx context.Context) ([]*AuthGroupShard, error) {
+	if group == nil || len(group.ShardIDs) == 0 {
+		return nil, nil
+	}
+
+	// Fetch the shards.
+	shards := make([]*AuthGroupShard, len(group.ShardIDs))
+	for i, shardID := range group.ShardIDs {
+		shards[i] = &AuthGroupShard{
+			Kind:   "AuthGroupShard",
+			Parent: group.Parent,
+			ID:     shardID,
+		}
+	}
+	if err := datastore.Get(ctx, shards); err != nil {
+		return nil, errors.Fmt("error getting AuthGroupShards: %w", err)
+	}
+
+	return shards, nil
+}
+
+// getMembersFromShards gets the group's shards from Datastore and unshards them
+// to get the members value used to create the shards.
+// Note: this method *DOES NOT* modify the group.
+func (group *AuthGroup) getMembersFromShards(ctx context.Context) ([]string, error) {
+	shards, err := group.getShards(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(shards) == 0 {
+		return nil, nil
+	}
+
+	// Handle unsharding.
+	members, err := unshardMembers(ctx, shards)
+	if err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
+
+// setShardIDs sets the group's ShardIDs field to be those of the given shards.
+func (group *AuthGroup) setShardIDs(ctx context.Context, shards []*AuthGroupShard) {
+	if len(shards) == 0 {
+		group.ShardIDs = nil
+		return
+	}
+
+	group.ShardIDs = make([]string, len(shards))
+	for i, shard := range shards {
+		group.ShardIDs[i] = shard.ID
+	}
+	group.Members = nil
+}
+
+// restoreMembersFromShards restores the group's Members field from its shards,
+// if sharded. The group's ShardIDs will be cleared to denote the Members field
+// has been restored.
+func (group *AuthGroup) restoreMembersFromShards(ctx context.Context) error {
+	if len(group.ShardIDs) == 0 {
+		// Nothing to do.
+		return nil
+	}
+
+	members, err := group.getMembersFromShards(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Set Members field and clear ShardIDs to denote the completed restoration.
+	group.Members = members
+	group.ShardIDs = nil
+	return nil
+}
+
 // ToProto converts the AuthGroup entity to the protobuffer equivalent.
 //
 // Set includeMemberships to true if we also want to include the group members, or false
@@ -1946,10 +2091,20 @@ func (group *AuthGroup) ToProto(ctx context.Context, includeMemberships bool) (*
 	}
 
 	if includeMemberships {
+		members := group.Members
+
+		// Handle unsharding of members if necessary.
+		if len(group.ShardIDs) > 0 {
+			members, err = group.getMembersFromShards(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		if membersVisible {
-			authGroup.Members = group.Members
+			authGroup.Members = members
 		} else {
-			authGroup.NumRedacted = int32(len(group.Members))
+			authGroup.NumRedacted = int32(len(members))
 		}
 		authGroup.Globs = group.Globs
 		authGroup.Nested = group.Nested
