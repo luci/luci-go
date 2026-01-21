@@ -42,11 +42,9 @@ export function AndroidTestTimeline() {
 
   const branch = androidBuild?.branch;
   const target = androidBuild?.buildTarget;
-  // Use source build ID as the anchor for current build
-  // Fallback to primary build ID if source is missing (e.g. non-submitted build or missing source info)
+  // Use source build ID as the anchor for current build.
   const currentBuildId =
-    rootInvocation?.sources?.submittedAndroidBuild?.buildId ||
-    androidBuild?.buildId;
+    rootInvocation?.sources?.submittedAndroidBuild?.buildId;
 
   // Calculate timestamp for 6 months ago (search window for start)
   const targetTimestampMs = useMemo(
@@ -95,7 +93,7 @@ export function AndroidTestTimeline() {
       sorting_type: SortingType.BUILD_ID, // Latest first
     },
     {
-      enabled: !!branch && !!target && !!antsTestId,
+      enabled: !!branch && !!target && !!antsTestId && !!currentBuildId,
       staleTime: 5 * 60 * 1000,
     },
   );
@@ -108,15 +106,15 @@ export function AndroidTestTimeline() {
   // sort DESC (Newest First) -> Closest to target
   const { data: buildBeforeData, isLoading: isLoadingBefore } = useListBuilds(
     {
-      branches: branch ? [branch] : undefined,
-      targets: target ? [target] : undefined,
+      branches: [branch!],
+      targets: [target!],
       start_creation_timestamp: targetTimestampStr,
       end_creation_timestamp: olderWindowTimestampStr,
       page_size: 1,
       sorting_type: SortingType.BUILD_ID,
     },
     {
-      enabled: !!branch && !!target && !!antsTestId,
+      enabled: !!branch && !!target && !!antsTestId && !!currentBuildId,
       staleTime: Infinity,
     },
   );
@@ -127,15 +125,15 @@ export function AndroidTestTimeline() {
   // sort ASC (Oldest First) -> Closest to target
   const { data: buildAfterData, isLoading: isLoadingAfter } = useListBuilds(
     {
-      branches: branch ? [branch] : undefined,
-      targets: target ? [target] : undefined,
+      branches: [branch!],
+      targets: [target!],
       start_creation_timestamp: newerWindowTimestampStr,
       end_creation_timestamp: targetTimestampStr,
       page_size: 1,
       sorting_type: SortingType.BUILD_ID_ASC,
     },
     {
-      enabled: !!branch && !!target && !!antsTestId,
+      enabled: !!branch && !!target && !!antsTestId && !!currentBuildId,
       staleTime: Infinity,
     },
   );
@@ -163,7 +161,8 @@ export function AndroidTestTimeline() {
         },
       },
       {
-        enabled: !!startBuildId && !!endBuildId && !!antsTestId,
+        enabled:
+          !!startBuildId && !!endBuildId && !!antsTestId && !!currentBuildId,
         staleTime: 5 * 60 * 1000,
       },
     );
@@ -235,19 +234,34 @@ export function AndroidTestTimeline() {
         {visibleSegments.map((item, index) => {
           const isLast = index === visibleSegments.length - 1;
 
+          // If this is the current invocation segment, we want to ensure any changepoint
+          // link pointing *to* this segment uses the specific submittedBuildId of the
+          // invocation, rather than the segment's endResult buildId (which might differ
+          // if the segment covers a range).
+          const segment =
+            item.type === 'invocation' && item.segment.endResult
+              ? {
+                  ...item.segment,
+                  endResult: {
+                    ...item.segment.endResult,
+                    buildId: currentBuildId || item.segment.endResult.buildId,
+                  },
+                }
+              : item.segment;
+
           return (
             <Box
               key={index}
               sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
             >
               <AndroidHistorySegment
-                segment={item.segment}
+                segment={segment}
                 segmentContextType={item.type}
                 isMostRecentSegment={index === 0 && !ellipsisNewer}
               />
               {!isLast && (
                 <AndroidHistoryChangepoint
-                  pointingToSegment={item.segment}
+                  pointingToSegment={segment}
                   olderSegment={visibleSegments[index + 1].segment}
                 />
               )}

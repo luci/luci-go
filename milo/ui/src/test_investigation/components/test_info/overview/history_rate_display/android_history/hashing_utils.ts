@@ -22,8 +22,6 @@ import { RootInvocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/r
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
 // Interfaces for AnTS properties
-// Note: These interfaces are local definitions for custom properties
-// found in TestResult.properties within TestVariant.results.
 interface Property {
   name: string;
   value: string;
@@ -34,13 +32,11 @@ interface AntsTestIdentifier {
   moduleParameters?: Property[];
   testClass?: string;
   method?: string;
-  // methodParameters ignored as per user instructions
 }
 
 interface AntsTestResultProperties {
   '@type': string;
   antsTestId?: AntsTestIdentifier;
-  // other fields ignored
 }
 
 export function getSchedulerAndBuildProvider(system: string): {
@@ -81,7 +77,6 @@ export function getAntsTestIdentifierHash(
   const invID: InvocationID = {
     testName: rootInvocation.definition?.name || '',
     properties: rootInvocation.definition?.properties?.def || {},
-    // Use primaryBuild for both branch and target for consistency
     branch: rootInvocation.primaryBuild?.androidBuild?.branch || '',
     target: rootInvocation.primaryBuild?.androidBuild?.buildTarget || '',
     scheduler,

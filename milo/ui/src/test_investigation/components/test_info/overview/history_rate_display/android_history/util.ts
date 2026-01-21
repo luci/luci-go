@@ -66,7 +66,6 @@ export function calculateTargetTimestamp(invocation: AnyInvocation): number {
   return createTime - SIX_MONTHS_MS;
 }
 
-// Minimal interface for what we need from build data
 interface BuildData {
   builds?: {
     buildId: string;
@@ -178,9 +177,6 @@ export function getOrSynthesizeSummaries(
     const rateA = current.health?.failRate?.rate;
     const rateB = next.health?.failRate?.rate;
 
-    // Use loose equality to catch null vs undefined if needed, but strict is fine if types are consistent.
-    // We treat undefined/null rate as distinct from 0 usually, or maybe same?
-    // Let's stick to strict equality of the value.
     if (rateA === rateB) {
       // Merge: Keep 'current' (Newer) but update its endResult to 'next' (Older) endResult
       // And merge counts/clusters
@@ -241,11 +237,13 @@ export function getOrSynthesizeSummaries(
   return collapsed;
 }
 
+export interface AndroidHistoryVisibleSegment {
+  segment: SegmentSummary;
+  type: 'afterInvocation' | 'invocation' | 'beforeInvocation';
+}
+
 export interface VisibleSegmentsResult {
-  visibleSegments: {
-    segment: SegmentSummary;
-    type: 'afterInvocation' | 'invocation' | 'beforeInvocation';
-  }[];
+  visibleSegments: AndroidHistoryVisibleSegment[];
   ellipsisNewer: boolean;
   ellipsisOlder: boolean;
 }
@@ -254,25 +252,20 @@ export function calculateVisibleSegments(
   summaries: SegmentSummary[],
   currentBuildId: string,
 ): VisibleSegmentsResult {
-  const currentIndex = findInvocationSegmentIndex(
-    summaries,
-    currentBuildId || '',
-  );
-  if (currentIndex === -1)
+  const currentIndex = findInvocationSegmentIndex(summaries, currentBuildId);
+  if (currentIndex === -1) {
     return {
       visibleSegments: [],
       ellipsisNewer: false,
       ellipsisOlder: false,
     };
+  }
 
   // Compress to: [Prev (Newer), Current, Next (Older)]
   // Segments are sorted Descending (Newest -> Oldest)
   // index - 1 is Newer
   // index + 1 is Older
-  const segments: {
-    segment: SegmentSummary;
-    type: 'afterInvocation' | 'invocation' | 'beforeInvocation';
-  }[] = [];
+  const segments: AndroidHistoryVisibleSegment[] = [];
 
   // Add Newer (if exists)
   if (currentIndex > 0) {

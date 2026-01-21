@@ -112,7 +112,7 @@ describe('<AndroidTestTimeline />', () => {
     expect(screen.getByText('Loading timeline...')).toBeInTheDocument();
   });
 
-  it('should render nothing if missing submittedAndroidBuild or build identifiers', () => {
+  it('should render nothing if missing submittedAndroidBuild', () => {
     const inv = RootInvocation.fromPartial({
       ...mockRootInvocation,
       sources: undefined, // Missing sources
@@ -411,22 +411,20 @@ describe('<AndroidTestTimeline />', () => {
     // olderSegment is index 1. from_id = 800.
     // pointingToSegment is index 0. to_id = 900.
     const expectedUrl =
-      'https://android-build.corp.google.com/range_search/cls/from_id/800/to_id/900/';
+      'https://android-build.corp.google.com/range_search/cls/from_id/800/to_id/950/';
 
     // We can find the link by role 'link' or title if added
     const link = screen.getByTitle('View Blamelist');
     expect(link).toHaveAttribute('href', expectedUrl);
   });
 
-  it('should render synthetic segment when branch/target are missing but buildId exists', () => {
-    // Modify invocation to have NO branch/target, NO submittedAndroidBuild
-    // But keep primaryBuild.androidBuild.buildId
+  it('should render nothing if submittedAndroidBuild is missing', () => {
+    // Modify invocation to have NO submittedAndroidBuild
     const inv = RootInvocation.fromPartial({
       ...mockRootInvocation,
       primaryBuild: {
         androidBuild: {
           buildId: 'fallback-888',
-          // branch/target undefined
         },
       },
       sources: {
@@ -434,33 +432,16 @@ describe('<AndroidTestTimeline />', () => {
       },
     });
 
-    mockUseGetTestResultFluxgateSegmentSummaries.mockReturnValue({
-      data: { summaries: [] },
-      isLoading: false,
-    });
+    const { container } = renderComponent(inv);
 
-    // Mock history fetch to return empty or be disabled (it should be disabled)
-    mockUseListBuilds.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-    });
+    // Should yield empty result (null)
+    expect(container).toBeEmptyDOMElement();
 
-    // We need to pass displayStatusString to TestVariantProvider?
-    // It's already in renderComponent helper.
-    // Also we need to make sure testVariant status is set.
-    mockTestVariant = {
-      ...mockTestVariant,
-      statusV2: TestVerdict_Status.FAILED,
-    } as OutputTestVerdict;
-
-    const { getByText } = renderComponent(inv);
-
-    // Should show synthetic segment with 100% failure rate (FAILED)
-    expect(getByText('100% now failing')).toBeInTheDocument();
-
-    expect(mockUseGetTestResultFluxgateSegmentSummaries).toHaveBeenCalledWith(
+    // Verify useListBuilds was NOT called with enabled: true
+    // We check this to ensure we are not wasting resources
+    expect(mockUseListBuilds).not.toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ enabled: false }),
+      expect.objectContaining({ enabled: true }),
     );
   });
 
