@@ -346,7 +346,10 @@ func GetAllAuthDBChange(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (
 		if len(change.ShardIDs) > 0 {
 			// Unsharding is required.
 			if err := change.restoreMembersFromShards(ctx); err != nil {
-				return err
+				// Log error and return the change as-is; a problematic changelog
+				// shouldn't prevent other changes from being fetched.
+				logging.Errorf(ctx, "error restoring Members from shards for target %s: %w",
+					change.Target, err)
 			}
 		}
 
@@ -695,7 +698,7 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 			When:       clock.Now(ctx).UTC(),
 			AppVersion: info.ImageVersion(ctx),
 		}
-		if err := datastore.Put(ctx, changes, logRev); err != nil {
+		if err := datastore.Put(ctx, changes, shards, logRev); err != nil {
 			return err
 		}
 
