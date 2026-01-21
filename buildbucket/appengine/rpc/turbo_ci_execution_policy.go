@@ -26,10 +26,12 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
-// Margin applied to a timeout duration from build to policy.
-// To avoid Buildbucket and TurboCI colliding when they both try to handle
-// a timeout event.
-const buildToPolicyTimeoutMargin = 30 * time.Second
+const (
+	// Margin applied to a timeout duration from build to policy.
+	// To avoid Buildbucket and TurboCI colliding when they both try to handle
+	// a timeout event.
+	buildToPolicyTimeoutMargin = 30 * time.Second
+)
 
 func buildToPolicyTimeout(d *durationpb.Duration) *durationpb.Duration {
 	if d == nil {
@@ -77,22 +79,12 @@ func scheduleBuildRequestToPolicyTimeout(req *pb.ScheduleBuildRequest) *orchestr
 }
 
 func buildToStageExecutionPolicy(bld *pb.Build, requested *orchestratorpb.StageExecutionPolicy) *orchestratorpb.StageExecutionPolicy {
-	updated := orchestratorpb.StageExecutionPolicy_builder{
+	return orchestratorpb.StageExecutionPolicy_builder{
 		Retry:                          requested.GetRetry(),
 		AttemptExecutionPolicyTemplate: buildToStagetAttemptExecutionPolicy(bld),
 		ExecuteAtLeastOneAttempt:       proto.Bool(requested.GetExecuteAtLeastOneAttempt()),
+		StageTimeout:                   requested.GetStageTimeout(),
 	}.Build()
-
-	perAttemptPolicy := updated.GetAttemptExecutionPolicyTemplate().GetTimeout()
-	perAttemptTotal := perAttemptPolicy.GetScheduled().AsDuration() + perAttemptPolicy.GetRunning().AsDuration() + perAttemptPolicy.GetTearingDown().AsDuration()
-	retry := updated.GetRetry().GetMaxRetries()
-	if retry == 0 {
-		retry = 1
-	}
-	stageDuration := perAttemptTotal * time.Duration(retry)
-	updated.SetStageTimeout(durationpb.New(stageDuration))
-
-	return updated
 }
 
 func buildToStagetAttemptExecutionPolicy(bld *pb.Build) *orchestratorpb.StageAttemptExecutionPolicy {

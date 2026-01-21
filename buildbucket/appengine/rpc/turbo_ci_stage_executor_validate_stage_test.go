@@ -184,9 +184,6 @@ func TestValidateStage(t *testing.T) {
 						},
 					}.Build(),
 				}.Build(),
-				StageTimeout: &durationpb.Duration{
-					Seconds: 32550,
-				},
 				ExecuteAtLeastOneAttempt: proto.Bool(false),
 			}.Build()
 			assert.That(t, policy, should.Match(expectedPolicy))
@@ -343,7 +340,6 @@ func TestValidateStage(t *testing.T) {
 						TearingDown: durationpb.New(180 * time.Second),
 					}.Build(),
 				}.Build(),
-				StageTimeout:             durationpb.New(2210 * time.Second),
 				ExecuteAtLeastOneAttempt: proto.Bool(false),
 			}.Build()
 			assert.That(t, updatedPolicy, should.Match(expectedPolicy))
