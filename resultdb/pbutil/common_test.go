@@ -823,6 +823,18 @@ func TestValidate(t *testing.T) {
 			})
 		})
 	})
+	ftt.Run(`ValidateTestVerdictView`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateTestVerdictView(pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC), should.BeNil)
+			assert.Loosely(t, ValidateTestVerdictView(pb.TestVerdictView_TEST_VERDICT_VIEW_FULL), should.BeNil)
+		})
+		t.Run(`Unspecified`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateTestVerdictView(pb.TestVerdictView_TEST_VERDICT_VIEW_UNSPECIFIED), should.ErrLike(`must be specified`))
+		})
+		t.Run(`Invalid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateTestVerdictView(pb.TestVerdictView(100)), should.ErrLike(`invalid value 100`))
+		})
+	})
 }
 
 func TestSourceModel(t *testing.T) {

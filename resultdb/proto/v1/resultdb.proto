@@ -1468,7 +1468,8 @@ message QueryTestVerdictsRequest {
   // the view TEST_VERDICT_VIEW_BASIC. The default is TEST_VERDICT_VIEW_BASIC.
   TestVerdictView view = 7;
 
-  // For result limit, if TEST_VERDICT_VIEW_FULL is supported.
+  // For result limit, if support added in future. Currently the implementation
+  // applies a standard limit of 500 results or 2 MiB per verdict, whichever is less.
   reserved 4; reserved "result_limit";
 
   // The maximum number of verdicts to return. The service may return fewer than

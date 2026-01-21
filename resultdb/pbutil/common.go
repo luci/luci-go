@@ -890,3 +890,14 @@ func RemoveProducerResourceOutputOnlyFields(pr *pb.ProducerResource) *pb.Produce
 	result.Url = ""
 	return result
 }
+
+// ValidateTestVerdictView returns a non-nil error if view is invalid.
+func ValidateTestVerdictView(view pb.TestVerdictView) error {
+	if err := ValidateEnum(int32(view), pb.TestVerdictView_name); err != nil {
+		return err
+	}
+	if view == pb.TestVerdictView_TEST_VERDICT_VIEW_UNSPECIFIED {
+		return errors.New("must be specified")
+	}
+	return nil
+}

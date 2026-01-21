@@ -64,16 +64,24 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 		return nil, err
 	}
 
+	view := req.View
+	if view == pb.TestVerdictView_TEST_VERDICT_VIEW_UNSPECIFIED {
+		// Default to basic view if the user has not specified anything.
+		view = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
+	}
+
 	q := &testverdictsv2.Query{
 		RootInvocationID:         rootInvID,
 		PageSize:                 pageSize,
 		ResponseLimitBytes:       queryTestVerdictsResponseLimitBytes,
+		VerdictResultLimit:       testverdictsv2.StandardVerdictResultLimit,
+		VerdictSizeLimit:         testverdictsv2.StandardVerdictSizeLimit,
 		Order:                    order,
 		ContainsTestResultFilter: req.Predicate.GetContainsTestResultFilter(),
 		TestPrefixFilter:         req.Predicate.GetTestPrefixFilter(),
 		Access:                   access,
 		Filter:                   req.Predicate.GetFilter(),
-		View:                     pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC,
+		View:                     view,
 	}
 
 	verdicts, nextPageToken, err := q.Fetch(ctx, req.PageToken)
@@ -100,13 +108,7 @@ func verifyQueryTestVerdictsAccess(ctx context.Context, req *pb.QueryTestVerdict
 }
 
 func validateQueryTestVerdictsRequest(req *pb.QueryTestVerdictsRequest) error {
-	if err := pagination.ValidatePageSize(req.PageSize); err != nil {
-		return errors.Fmt("page_size: %w", err)
-	}
-
-	if _, err := testverdictsv2.ParseOrderBy(req.OrderBy); err != nil {
-		return errors.Fmt("order_by: %w", err)
-	}
+	// req.Parent is already validated by verifyQueryTestVerdictsAccess.
 
 	if req.Predicate != nil {
 		if err := validateQueryTestVerdictsPredicate(req.Predicate); err != nil {
@@ -114,14 +116,23 @@ func validateQueryTestVerdictsRequest(req *pb.QueryTestVerdictsRequest) error {
 		}
 	}
 
+	if _, err := testverdictsv2.ParseOrderBy(req.OrderBy); err != nil {
+		return errors.Fmt("order_by: %w", err)
+	}
+
+	// Per https://google.aip.dev/157, view must be an optional field.
 	if req.View != pb.TestVerdictView_TEST_VERDICT_VIEW_UNSPECIFIED {
-		// TODO(b/469518821): Lift this limit once the higher-performance
-		// backend is available. Clients requesting FULL may not be able to
-		// specify certain query options.
-		if req.View != pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC {
-			return errors.New("view: if set, may only be set to TEST_VERDICT_VIEW_BASIC")
+		if err := pbutil.ValidateTestVerdictView(req.View); err != nil {
+			return errors.Fmt("view: %w", err)
 		}
 	}
+
+	if err := pagination.ValidatePageSize(req.PageSize); err != nil {
+		return errors.Fmt("page_size: %w", err)
+	}
+
+	// PageToken is verified by the query backend.
+
 	return nil
 }
 

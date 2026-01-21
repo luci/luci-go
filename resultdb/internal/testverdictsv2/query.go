@@ -45,13 +45,19 @@ type Query struct {
 	RootInvocationID rootinvocations.ID
 	// The number of test verdicts to return per page.
 	PageSize int
-	// The soft limit on the number of bytes that should be returned by a Test Verdicts query.
-	// Row size is estimated as proto.Size() + 1000 bytes (to allow for alternative encodings
-	// which higher fixed overheads, e.g. protojson). If this is zero, no limit is applied.
+	// The hard limit on the number of bytes that should be returned by a Test Verdicts query.
+	// Row size is estimated as proto.Size() + protoJSONOverheadBytes bytes (to allow for
+	// alternative encodings which higher fixed overheads, e.g. protojson). If this is zero,
+	// no limit is applied.
+	// This should be set to a value equal or greater than VerdictSizeLimit.
 	ResponseLimitBytes int
 	// The limit on the number of test results and test exonerations to return per verdict.
 	// The limit is applied independently to test results and exonerations.
-	ResultLimit int
+	VerdictResultLimit int
+	// The size limit, in bytes, of each test verdict.
+	// This limit is only ever used to reduce the number of test results and exonerations
+	// returned, and not any other properties.
+	VerdictSizeLimit int
 	// Whether to use UI sort order, i.e. by ui_priority first, instead of by test ID.
 	// This incurs a performance penalty, as results are not returned in table order.
 	Order Ordering
@@ -90,10 +96,29 @@ const (
 
 // Fetch fetches a page of test verdicts.
 func (q *Query) Fetch(ctx context.Context, pageToken string) ([]*pb.TestVerdict, string, error) {
-	if q.View != pb.TestVerdictView_TEST_VERDICT_VIEW_FULL {
+	if q.PageSize <= 0 {
+		return nil, "", errors.New("page size must be positive")
+	}
+	if q.ResponseLimitBytes < 0 {
+		return nil, "", errors.New("response limit bytes must be non-negative")
+	}
+	if q.VerdictResultLimit <= 0 {
+		return nil, "", errors.New("verdict result limit must be positive")
+	}
+	if q.VerdictSizeLimit <= 0 {
+		return nil, "", errors.New("verdict size limit must be positive")
+	}
+	if q.Access.Level == permissions.NoAccess {
+		return nil, "", errors.New("no access to root invocation")
+	}
+
+	switch q.View {
+	case pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC:
 		return q.fetchSimpleView(ctx, pageToken)
-	} else {
+	case pb.TestVerdictView_TEST_VERDICT_VIEW_FULL:
 		return q.fetchDetailedView(ctx, pageToken)
+	default:
+		return nil, "", errors.Fmt("unknown view %q", q.View)
 	}
 }
 
@@ -126,10 +151,6 @@ func (q *Query) fetchSimpleView(ctx context.Context, pageToken string) ([]*pb.Te
 
 // fetchDetailedView fetches a page of test verdicts with view of TEST_VERDICT_VIEW_FULL.
 func (q *Query) fetchDetailedView(ctx context.Context, pageToken string) ([]*pb.TestVerdict, string, error) {
-	if q.ResultLimit <= 0 {
-		return nil, "", errors.New("result limit must be positive")
-	}
-
 	var ids []testresultsv2.VerdictID
 	var summaries []*TestVerdictSummary
 
@@ -155,7 +176,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string) ([]*pb.
 	it := detailsQuery.List(ctx, PageToken{}, q.PageSize)
 	err = it.Do(func(tv *TestVerdict) error {
 		// Verdicts come in the order requested.
-		result := tv.ToProto(q.ResultLimit)
+		result := tv.ToProto(q.VerdictResultLimit, q.VerdictSizeLimit)
 		if q.ResponseLimitBytes > 0 {
 			// Estimate row size using formula documented on q.ResponseLimitBytes.
 			size := proto.Size(result) + protoJSONOverheadBytes
@@ -204,16 +225,6 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string) ([]*pb.
 //
 // It is an error to return `false` for consumed and not return an error.
 func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*TestVerdictSummary) (consumed bool, err error)) (string, error) {
-	if q.PageSize <= 0 {
-		return "", errors.New("page size must be positive")
-	}
-	if q.ResponseLimitBytes < 0 {
-		return "", errors.New("response limit bytes must be non-negative")
-	}
-	if q.Access.Level == permissions.NoAccess {
-		return "", errors.New("no access to root invocation")
-	}
-
 	st, err := q.buildQuery(pageToken)
 	if err != nil {
 		return "", err

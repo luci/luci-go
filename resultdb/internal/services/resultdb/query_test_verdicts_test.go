@@ -83,48 +83,6 @@ func TestQueryTestVerdicts(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("parent: does not match pattern"))
 				})
 			})
-			t.Run(`Page size`, func(t *ftt.Test) {
-				t.Run(`Default`, func(t *ftt.Test) {
-					// Valid, will use a default size.
-					req.PageSize = 0
-					_, err := srv.QueryTestVerdicts(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run(`Negative`, func(t *ftt.Test) {
-					req.PageSize = -1
-					_, err := srv.QueryTestVerdicts(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("page_size: negative"))
-				})
-			})
-			t.Run(`Page token`, func(t *ftt.Test) {
-				t.Run(`Empty`, func(t *ftt.Test) {
-					// Valid, will start from first page.
-					req.PageToken = ""
-					_, err := srv.QueryTestVerdicts(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run(`Invalid`, func(t *ftt.Test) {
-					req.PageToken = "some invalid token"
-					_, err := srv.QueryTestVerdicts(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("page_token: invalid page token"))
-				})
-			})
-			t.Run(`Order by`, func(t *ftt.Test) {
-				t.Run(`Empty`, func(t *ftt.Test) {
-					// Valid, will use default sort order.
-					req.OrderBy = ""
-					_, err := srv.QueryTestVerdicts(ctx, req)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run(`Invalid`, func(t *ftt.Test) {
-					req.OrderBy = "invalid"
-					_, err := srv.QueryTestVerdicts(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike(`order_by: unsupported order by clause: "invalid"; supported orders are `))
-				})
-			})
 			t.Run(`Predicate`, func(t *ftt.Test) {
 				t.Run(`Unspecified`, func(t *ftt.Test) {
 					req.Predicate = nil
@@ -172,16 +130,58 @@ func TestQueryTestVerdicts(t *testing.T) {
 						assert.Loosely(t, err, should.BeNil)
 					})
 					t.Run(`Valid`, func(t *ftt.Test) {
-						req.View = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
+						req.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
 						_, err := srv.QueryTestVerdicts(ctx, req)
 						assert.Loosely(t, err, should.BeNil)
 					})
 					t.Run(`Invalid`, func(t *ftt.Test) {
-						req.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
+						req.View = pb.TestVerdictView(123)
 						_, err := srv.QueryTestVerdicts(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike(`view: if set, may only be set to TEST_VERDICT_VIEW_BASIC`))
+						assert.Loosely(t, err, should.ErrLike(`view: invalid value 123`))
 					})
+				})
+			})
+			t.Run(`Order by`, func(t *ftt.Test) {
+				t.Run(`Empty`, func(t *ftt.Test) {
+					// Valid, will use default sort order.
+					req.OrderBy = ""
+					_, err := srv.QueryTestVerdicts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run(`Invalid`, func(t *ftt.Test) {
+					req.OrderBy = "invalid"
+					_, err := srv.QueryTestVerdicts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`order_by: unsupported order by clause: "invalid"; supported orders are `))
+				})
+			})
+			t.Run(`Page size`, func(t *ftt.Test) {
+				t.Run(`Default`, func(t *ftt.Test) {
+					// Valid, will use a default size.
+					req.PageSize = 0
+					_, err := srv.QueryTestVerdicts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run(`Negative`, func(t *ftt.Test) {
+					req.PageSize = -1
+					_, err := srv.QueryTestVerdicts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("page_size: negative"))
+				})
+			})
+			t.Run(`Page token`, func(t *ftt.Test) {
+				t.Run(`Empty`, func(t *ftt.Test) {
+					// Valid, will start from first page.
+					req.PageToken = ""
+					_, err := srv.QueryTestVerdicts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run(`Invalid`, func(t *ftt.Test) {
+					req.PageToken = "some invalid token"
+					_, err := srv.QueryTestVerdicts(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("page_token: invalid page token"))
 				})
 			})
 		})
@@ -294,6 +294,27 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.TestVerdicts, should.Match(expected[6:]))
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+			})
+
+			t.Run("With view", func(t *ftt.Test) {
+				t.Run("Basic", func(t *ftt.Test) {
+					req.View = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
+					expected := testverdictsv2.ToBasicView(testverdictsv2.ExpectedVerdicts(rootInvID))
+
+					res, err := srv.QueryTestVerdicts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.TestVerdicts, should.Match(expected))
+					assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+				})
+				t.Run("Full", func(t *ftt.Test) {
+					req.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
+					expected := testverdictsv2.ExpectedVerdicts(rootInvID)
+
+					res, err := srv.QueryTestVerdicts(ctx, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res.TestVerdicts, should.Match(expected))
+					assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+				})
 			})
 
 			t.Run(`With limited access`, func(t *ftt.Test) {

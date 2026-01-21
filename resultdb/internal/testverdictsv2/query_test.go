@@ -46,10 +46,11 @@ func TestQuery(t *testing.T) {
 		testutil.MustApply(ctx, t, ms...)
 
 		q := &Query{
-			RootInvocationID: rootInvID,
-			PageSize:         100,
-			ResultLimit:      10,
-			Order:            OrderingByID,
+			RootInvocationID:   rootInvID,
+			PageSize:           100,
+			VerdictResultLimit: StandardVerdictResultLimit,
+			VerdictSizeLimit:   StandardVerdictSizeLimit,
+			Order:              OrderingByID,
 			Access: permissions.RootInvocationAccess{
 				Level: permissions.FullAccess,
 			},
@@ -97,11 +98,6 @@ func TestQuery(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, token, should.Equal(""))
 			assert.Loosely(t, verdicts, should.Match(expected))
-		})
-		t.Run("With pagination", func(t *ftt.Test) {
-			q.PageSize = 1
-			results := fetchAll(q)
-			assert.Loosely(t, results, should.Match(expected))
 		})
 		t.Run("With basic view", func(t *ftt.Test) {
 			q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
@@ -180,6 +176,11 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, results, should.Match(expectedUIOrder))
 			})
 		})
+		t.Run("With page size", func(t *ftt.Test) {
+			q.PageSize = 1
+			results := fetchAll(q)
+			assert.Loosely(t, results, should.Match(expected))
+		})
 		t.Run("With response limit bytes", func(t *ftt.Test) {
 			// Response limiting implementation is different based on the view used, so make sure both work.
 			views := []pb.TestVerdictView{pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC, pb.TestVerdictView_TEST_VERDICT_VIEW_FULL}
@@ -220,6 +221,31 @@ func TestQuery(t *testing.T) {
 					})
 				})
 			}
+		})
+		t.Run("With verdict result limit", func(t *ftt.Test) {
+			q.VerdictResultLimit = 1
+			for _, e := range expected {
+				e.Results = e.Results[:1]
+				if len(e.Exonerations) > 1 {
+					e.Exonerations = e.Exonerations[:1]
+				}
+			}
+
+			results := fetchAll(q)
+			assert.Loosely(t, results, should.Match(expected))
+		})
+		t.Run("With verdict size limit", func(t *ftt.Test) {
+			// Remove one result from t3 and measure its size. This will be our target.
+			assert.Loosely(t, expected[2].Results, should.HaveLength(2))
+			expected[2].Results = expected[2].Results[:1]
+			q.VerdictSizeLimit = proto.Size(expected[2]) + protoJSONOverheadBytes
+
+			// As the implementation is conservative, give it a little bit of extra room.
+			q.VerdictSizeLimit += 2
+
+			results := fetchAll(q)
+			assert.Loosely(t, results, should.HaveLength(len(expected)))
+			assert.Loosely(t, results[2], should.Match(expected[2]))
 		})
 		t.Run("With contains test result filter", func(t *ftt.Test) {
 			expected := ExpectedVerdicts(rootInvID)

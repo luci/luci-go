@@ -62,14 +62,17 @@ type QueryDetails struct {
 type FetchOptions struct {
 	// The maximum number of test verdicts to return per page.
 	PageSize int
-	// The maximum number of test results or test exonerations to return per verdict
-	// (limits are applied separately to test results and exonerations).
-	ResultLimit int
 	// The limit on the number of bytes that should be returned in a page.
 	// Row size is estimated as proto.Size() + protoJSONOverheadBytes bytes (to allow for
 	// alternative encodings which higher fixed overheads than wire proto, e.g. protojson).
 	// If this is zero, no limit is applied.
 	ResponseLimitBytes int
+
+	// The limit on the number of test results and test exonerations to return per verdict.
+	// The limit is applied independently to test results and exonerations.
+	VerdictResultLimit int
+	// The size limit, in bytes, of each test verdict.
+	VerdictSizeLimit int
 }
 
 // PageToken represents the token for a page of (detailed) verdicts.
@@ -93,8 +96,11 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken PageToken, opts Fetc
 	if opts.PageSize <= 0 {
 		return nil, PageToken{}, errors.New("page size must be positive")
 	}
-	if opts.ResultLimit <= 0 {
-		return nil, PageToken{}, errors.New("result limit must be positive")
+	if opts.VerdictResultLimit <= 0 {
+		return nil, PageToken{}, errors.New("verdict result limit must be positive")
+	}
+	if opts.VerdictSizeLimit <= 0 {
+		return nil, PageToken{}, errors.New("verdict size limit must be positive")
 	}
 	if opts.ResponseLimitBytes < 0 {
 		return nil, PageToken{}, errors.New("if set, response limit bytes must be positive")
@@ -105,7 +111,7 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken PageToken, opts Fetc
 	var totalSize int
 	it := q.List(ctx, pageToken, opts.PageSize)
 	err := it.Do(func(tv *TestVerdict) error {
-		result := tv.ToProto(opts.ResultLimit)
+		result := tv.ToProto(opts.VerdictResultLimit, opts.VerdictSizeLimit)
 
 		if opts.ResponseLimitBytes != 0 {
 			// Apply response size limiting by bytes.

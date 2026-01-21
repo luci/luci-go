@@ -15,10 +15,29 @@
 package testverdictsv2
 
 import (
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/resultdb/internal/testexonerationsv2"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+const (
+	// StandardVerdictSizeLimit is the recommended size limit, in bytes, of each test verdict.
+	//
+	// A limit must be enforced to avoid verdicts hitting limits such as:
+	// - BigQuery's 10 MiB per row limit
+	// - Spanner's 10 MiB per request limit
+	// - Pubsub's 10 MiB message size limit
+	StandardVerdictSizeLimit = 2 * 1024 * 1024
+
+	// StandardVerdictResultLimit is the standard limit on the number of results and
+	// exonerations returned in a verdict.
+	//
+	// This avoids clients running into issues, e.g. Spanner's 80,000 mutation per
+	// commit limit.
+	StandardVerdictResultLimit = 500
 )
 
 // TestVerdictSummary represents the summary of a test verdict. It corresponds
@@ -75,7 +94,9 @@ type TestVerdict struct {
 	RequestOrdinal int
 }
 
-func (v *TestVerdict) ToProto(resultLimit int) *pb.TestVerdict {
+// ToProto converts the given TestVerdict into its proto representation, obeying
+// dual (result count and size) limits.
+func (v *TestVerdict) ToProto(resultLimit int, verdictSizeLimit int) *pb.TestVerdict {
 	if len(v.Results) == 0 {
 		// This is an empty verdict, e.g. placeholder for a requested verdict that was
 		// not found.
@@ -83,6 +104,33 @@ func (v *TestVerdict) ToProto(resultLimit int) *pb.TestVerdict {
 	}
 
 	tv := &pb.TestVerdict{}
+
+	// Take the first non-nil test metadata and module variant.
+	var moduleVariant *pb.Variant
+	var testMetadata *pb.TestMetadata
+	for _, result := range v.Results {
+		if testMetadata == nil && result.TestMetadata != nil {
+			testMetadata = result.TestMetadata
+		}
+		if moduleVariant == nil && result.ModuleVariant != nil {
+			moduleVariant = result.ModuleVariant
+		}
+	}
+
+	tv.TestIdStructured = &pb.TestIdentifier{
+		ModuleName:        v.Results[0].ID.ModuleName,
+		ModuleScheme:      v.Results[0].ID.ModuleScheme,
+		ModuleVariant:     moduleVariant,
+		ModuleVariantHash: v.Results[0].ID.ModuleVariantHash,
+		CoarseName:        v.Results[0].ID.CoarseName,
+		FineName:          v.Results[0].ID.FineName,
+		CaseName:          v.Results[0].ID.CaseName,
+	}
+	if moduleVariant == nil {
+		tv.IsMasked = true
+	}
+	tv.TestId = pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(tv.TestIdStructured))
+	tv.TestMetadata = testMetadata
 
 	// To avoid inaccurate statuses, the status should be computed from all results before
 	// truncation.
@@ -94,21 +142,16 @@ func (v *TestVerdict) ToProto(resultLimit int) *pb.TestVerdict {
 		tv.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
 	}
 
-	for i, result := range v.Results {
-		resultProto := result.ToProto()
-		if i == 0 || (tv.IsMasked && result.ModuleVariant != nil) {
-			// Lift test ID and metadata up to the verdict level.
-			// If a result has an unmasked variant, then preferentially use that one.
-			tv.TestId = resultProto.TestId
-			tv.TestIdStructured = resultProto.TestIdStructured
-			tv.IsMasked = resultProto.IsMasked
-		}
-		if tv.TestMetadata == nil && result.TestMetadata != nil {
-			// Take the first non-nil test metadata.
-			tv.TestMetadata = result.TestMetadata
-		}
+	totalSize := protoJSONOverheadBytes + proto.Size(tv)
 
-		if len(tv.Results) < resultLimit {
+	// Alternate between adding results and exonerations to ensure fairness
+	// in how the available bytes are used.
+	for i := range max(len(v.Results), len(v.Exonerations)) {
+		if i >= resultLimit {
+			break
+		}
+		if i < len(v.Results) {
+			resultProto := v.Results[i].ToProto()
 			// Unset fields that are lifted up to the verdict level to reduce
 			// response size.
 			resultProto.TestId = ""
@@ -116,20 +159,37 @@ func (v *TestVerdict) ToProto(resultLimit int) *pb.TestVerdict {
 			resultProto.Variant = nil
 			resultProto.VariantHash = ""
 			resultProto.TestMetadata = nil
-			tv.Results = append(tv.Results, resultProto)
-		}
-	}
 
-	for _, exoneration := range v.Exonerations {
-		if len(tv.Exonerations) < resultLimit {
-			exonerationProto := exoneration.ToProto()
+			// Add a few extra bytes to capture the cost of embedding
+			// the result inside the parent verdict. Five should be conservative.
+			// https://protobuf.dev/programming-guides/encoding/#embedded
+			size := proto.Size(resultProto) + 5
+			if (totalSize + size) > verdictSizeLimit {
+				// We are full.
+				break
+			}
+			tv.Results = append(tv.Results, resultProto)
+			totalSize += size
+		}
+		if i < len(v.Exonerations) {
+			exonerationProto := v.Exonerations[i].ToProto()
 			// Unset fields that are lifted up to the verdict level to reduce
 			// response size.
 			exonerationProto.TestIdStructured = nil
 			exonerationProto.TestId = ""
 			exonerationProto.Variant = nil
 			exonerationProto.VariantHash = ""
+
+			// Add a few extra bytes to capture the cost of embedding
+			// the exoneration inside the parent verdict. Five should be conservative.
+			// https://protobuf.dev/programming-guides/encoding/#embedded
+			size := proto.Size(exonerationProto) + 5
+			if (totalSize + size) > verdictSizeLimit {
+				// We are full.
+				break
+			}
 			tv.Exonerations = append(tv.Exonerations, exonerationProto)
+			totalSize += size
 		}
 	}
 	return tv
