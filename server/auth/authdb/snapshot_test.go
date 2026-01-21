@@ -31,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
@@ -127,7 +126,7 @@ func TestSnapshotDB(t *testing.T) {
 		panic(err)
 	}
 
-	ftt.Run("IsAllowedOAuthClientID works", t, func(t *ftt.Test) {
+	t.Run("IsAllowedOAuthClientID works", func(t *testing.T) {
 		call := func(email, clientID string) bool {
 			res, err := db.IsAllowedOAuthClientID(ctx, email, clientID)
 			assert.Loosely(t, err, should.BeNil)
@@ -141,7 +140,7 @@ func TestSnapshotDB(t *testing.T) {
 		assert.Loosely(t, call("dude@example.com", "unknown-client-id"), should.BeFalse)
 	})
 
-	ftt.Run("IsInternalService works", t, func(t *ftt.Test) {
+	t.Run("IsInternalService works", func(t *testing.T) {
 		call := func(hostname string) bool {
 			res, err := db.IsInternalService(ctx, hostname)
 			assert.Loosely(t, err, should.BeNil)
@@ -156,7 +155,7 @@ func TestSnapshotDB(t *testing.T) {
 		assert.Loosely(t, call("i1.example.com-something"), should.BeFalse)
 	})
 
-	ftt.Run("IsMember works", t, func(t *ftt.Test) {
+	t.Run("IsMember works", func(t *testing.T) {
 		call := func(ident string, groups ...string) bool {
 			res, err := db.IsMember(ctx, identity.Identity(ident), groups)
 			assert.Loosely(t, err, should.BeNil)
@@ -191,7 +190,7 @@ func TestSnapshotDB(t *testing.T) {
 		assert.Loosely(t, call("user:abc@Example.com", "unknown", "via glob"), should.BeFalse)
 	})
 
-	ftt.Run("CheckMembership works", t, func(t *ftt.Test) {
+	t.Run("CheckMembership works", func(t *testing.T) {
 		call := func(ident string, groups ...string) []string {
 			res, err := db.CheckMembership(ctx, identity.Identity(ident), groups)
 			assert.Loosely(t, err, should.BeNil)
@@ -218,13 +217,13 @@ func TestSnapshotDB(t *testing.T) {
 		assert.Loosely(t, call("user:abc@example.com", "via glob", "direct"), should.Match([]string{"via glob", "direct"}))
 	})
 
-	ftt.Run("FilterKnownGroups works", t, func(t *ftt.Test) {
+	t.Run("FilterKnownGroups works", func(t *testing.T) {
 		known, err := db.FilterKnownGroups(ctx, []string{"direct", "unknown", "empty", "direct", "unknown"})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, known, should.Match([]string{"direct", "empty", "direct"}))
 	})
 
-	ftt.Run("With realms", t, func(t *ftt.Test) {
+	t.Run("With realms", func(t *testing.T) {
 		db, err := NewSnapshotDB(&protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
 				{
@@ -295,7 +294,7 @@ func TestSnapshotDB(t *testing.T) {
 		}, "http://auth-service", 1234, false)
 		assert.Loosely(t, err, should.BeNil)
 
-		t.Run("HasPermission works", func(t *ftt.Test) {
+		t.Run("HasPermission works", func(t *testing.T) {
 			// A direct hit.
 			ok, err := db.HasPermission(ctx, "user:realm@example.com", perm1, "proj:some/realm", nil)
 			assert.Loosely(t, err, should.BeNil)
@@ -341,7 +340,7 @@ func TestSnapshotDB(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("bad global realm name"))
 		})
 
-		t.Run("Conditional bindings", func(t *ftt.Test) {
+		t.Run("Conditional bindings", func(t *testing.T) {
 			ok, err := db.HasPermission(ctx, "user:cond@example.com", perm1, "proj:some/realm", nil)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ok, should.BeFalse)
@@ -363,7 +362,7 @@ func TestSnapshotDB(t *testing.T) {
 			assert.Loosely(t, ok, should.BeFalse)
 		})
 
-		t.Run("QueryRealms works", func(t *ftt.Test) {
+		t.Run("QueryRealms works", func(t *testing.T) {
 			// A direct hit.
 			r, err := db.QueryRealms(ctx, "user:realm@example.com", perm1, "", nil)
 			sort.Strings(r)
@@ -387,7 +386,7 @@ func TestSnapshotDB(t *testing.T) {
 			assert.Loosely(t, r, should.Match([]string{"proj:some/realm"}))
 		})
 
-		t.Run("QueryRealms with conditional bindings", func(t *ftt.Test) {
+		t.Run("QueryRealms with conditional bindings", func(t *testing.T) {
 			r, err := db.QueryRealms(ctx, "user:cond@example.com", perm1, "", nil)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, r, should.BeEmpty)
@@ -401,12 +400,12 @@ func TestSnapshotDB(t *testing.T) {
 			assert.Loosely(t, r, should.BeEmpty)
 		})
 
-		t.Run("QueryRealms with unindexed permission", func(t *ftt.Test) {
+		t.Run("QueryRealms with unindexed permission", func(t *testing.T) {
 			_, err := db.QueryRealms(ctx, "user:realm@example.com", perm2, "", nil)
 			assert.Loosely(t, err, should.ErrLike("permission luci.dev.testing2 cannot be used in QueryRealms"))
 		})
 
-		t.Run("GetRealmData works", func(t *ftt.Test) {
+		t.Run("GetRealmData works", func(t *testing.T) {
 			// Known realm with data.
 			d, err := db.GetRealmData(ctx, "proj:some/realm")
 			assert.Loosely(t, err, should.BeNil)
@@ -433,7 +432,7 @@ func TestSnapshotDB(t *testing.T) {
 		})
 	})
 
-	ftt.Run("GetCertificates works", t, func(t *ftt.Test) {
+	t.Run("GetCertificates works", func(t *testing.T) {
 		tokenService := signingtest.NewSigner(&signing.ServiceInfo{
 			AppID:              "token-server",
 			ServiceAccountName: "token-server-account@example.com",
@@ -473,7 +472,7 @@ func TestSnapshotDB(t *testing.T) {
 		assert.Loosely(t, certs, should.BeNil)
 	})
 
-	ftt.Run("IsAllowedIP works", t, func(t *ftt.Test) {
+	t.Run("IsAllowedIP works", func(t *testing.T) {
 		l, err := db.GetAllowlistForIdentity(ctx, "user:abc@example.com")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, l, should.Equal("allowlist"))
@@ -496,13 +495,13 @@ func TestSnapshotDB(t *testing.T) {
 		assert.Loosely(t, call("1.2.3.4", "empty"), should.BeFalse)
 	})
 
-	ftt.Run("Revision works", t, func(t *ftt.Test) {
+	t.Run("Revision works", func(t *testing.T) {
 		assert.Loosely(t, Revision(&SnapshotDB{Rev: 123}), should.Equal(123))
 		assert.Loosely(t, Revision(ErroringDB{}), should.BeZero)
 		assert.Loosely(t, Revision(nil), should.BeZero)
 	})
 
-	ftt.Run("SnapshotDBFromTextProto works", t, func(t *ftt.Test) {
+	t.Run("SnapshotDBFromTextProto works", func(t *testing.T) {
 		db, err := SnapshotDBFromTextProto(strings.NewReader(`
 			groups {
 				name: "group"
@@ -515,14 +514,14 @@ func TestSnapshotDB(t *testing.T) {
 		assert.Loosely(t, yes, should.BeTrue)
 	})
 
-	ftt.Run("SnapshotDBFromTextProto bad proto", t, func(t *ftt.Test) {
+	t.Run("SnapshotDBFromTextProto bad proto", func(t *testing.T) {
 		_, err := SnapshotDBFromTextProto(strings.NewReader(`
 			groupz {}
 		`))
 		assert.Loosely(t, err, should.ErrLike("not a valid AuthDB text proto file"))
 	})
 
-	ftt.Run("SnapshotDBFromTextProto bad structure", t, func(t *ftt.Test) {
+	t.Run("SnapshotDBFromTextProto bad structure", func(t *testing.T) {
 		_, err := SnapshotDBFromTextProto(strings.NewReader(`
 			groups {
 				name: "group 1"

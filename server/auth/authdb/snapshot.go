@@ -62,11 +62,11 @@ var _ DB = &SnapshotDB{}
 
 // Revision returns a revision of an auth DB or 0 if it can't be determined.
 //
-// It's just a small helper that casts db to *SnapshotDB and extracts the
-// revision from there.
+// It's just a small helper that checks if the DB also has `Revision() int64`
+// method and calls it to extract the revision.
 func Revision(db DB) int64 {
-	if snap, _ := db.(*SnapshotDB); snap != nil {
-		return snap.Rev
+	if revDB, _ := db.(interface{ Revision() int64 }); revDB != nil {
+		return revDB.Revision()
 	}
 	return 0
 }
@@ -137,6 +137,13 @@ func NewSnapshotDB(authDB *protocol.AuthDB, authServiceURL string, rev int64, va
 		tokenServiceURL:   authDB.TokenServerUrl,
 		tokenServiceCerts: &certs.Bundle{ServiceURL: authDB.TokenServerUrl},
 	}, nil
+}
+
+// Revision returns the Auth DB revision of this snapshot was loaded from.
+//
+// Use by [Revision] helper.
+func (db *SnapshotDB) Revision() int64 {
+	return db.Rev
 }
 
 // IsAllowedOAuthClientID returns true if the given OAuth2 client ID can be used
