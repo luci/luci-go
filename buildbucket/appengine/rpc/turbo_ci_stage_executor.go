@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -30,6 +31,7 @@ import (
 	executorgrpcpb "go.chromium.org/turboci/proto/go/graph/executor/v1/grpcpb"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -154,7 +156,14 @@ func TurboCIInterceptor(ctx context.Context, turboCIStagesServiceAccount string)
 			logging.Errorf(ctx, "Failed to impersonate %q: %s", endUser, err)
 			return nil, appstatus.Errorf(codes.Internal, "failed to impersonate the end user")
 		}
-		return handler(ctx, req)
+
+		parts := strings.Split(info.FullMethod, "/")
+		method := parts[len(parts)-1]
+
+		turboci.LogRequest(ctx, method, req)
+		resp, err := handler(ctx, req)
+		turboci.LogResponse(ctx, method, resp, err)
+		return resp, err
 	}
 }
 

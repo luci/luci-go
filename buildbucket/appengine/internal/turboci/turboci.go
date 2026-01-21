@@ -19,10 +19,13 @@ import (
 	"context"
 	"fmt"
 	"math/rand/v2"
+	"strings"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -94,19 +97,28 @@ func TurboCIOrchestratorClient(ctx context.Context) orchestratorgrpcpb.TurboCIOr
 // CreateWorkPlan is a helper function to get the installed orchestrator client
 // and call CreateWorkPlan with it.
 func CreateWorkPlan(ctx context.Context, in *orchestratorpb.CreateWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.CreateWorkPlanResponse, error) {
-	return TurboCIOrchestratorClient(ctx).CreateWorkPlan(ctx, in, opts...)
+	LogRequest(ctx, "CreateWorkPlan", in)
+	resp, err := TurboCIOrchestratorClient(ctx).CreateWorkPlan(ctx, in, opts...)
+	LogResponse(ctx, "CreateWorkPlan", resp, err)
+	return resp, err
 }
 
 // WriteNodes is a helper function to get the installed orchestrator client
 // and call WriteNodes with it.
 func WriteNodes(ctx context.Context, in *orchestratorpb.WriteNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.WriteNodesResponse, error) {
-	return TurboCIOrchestratorClient(ctx).WriteNodes(ctx, in, opts...)
+	LogRequest(ctx, "WriteNodes", in)
+	resp, err := TurboCIOrchestratorClient(ctx).WriteNodes(ctx, in, opts...)
+	LogResponse(ctx, "WriteNodes", resp, err)
+	return resp, err
 }
 
 // QueryNodes is a helper function to get the installed orchestrator client
 // and call QueryNodes with it.
 func QueryNodes(ctx context.Context, in *orchestratorpb.QueryNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.QueryNodesResponse, error) {
-	return TurboCIOrchestratorClient(ctx).QueryNodes(ctx, in, opts...)
+	LogRequest(ctx, "QueryNodes", in)
+	resp, err := TurboCIOrchestratorClient(ctx).QueryNodes(ctx, in, opts...)
+	LogResponse(ctx, "QueryNodes", resp, err)
+	return resp, err
 }
 
 type clientPool []grpc.ClientConnInterface
@@ -129,4 +141,51 @@ func (cp clientPool) QueryNodes(ctx context.Context, in *orchestratorpb.QueryNod
 // pickRandom returns a random connection from the pool.
 func (cp clientPool) pickRandom() orchestratorgrpcpb.TurboCIOrchestratorClient {
 	return orchestratorgrpcpb.NewTurboCIOrchestratorClient(cp[rand.IntN(len(cp))])
+}
+
+// LogRequest dumps a slightly redacted Turbo CI request proto into the log.
+func LogRequest(ctx context.Context, rpc string, req any) {
+	logging.Infof(ctx, "turbo-ci: %s request:\n%s", rpc, turboCIMsgToText(req))
+}
+
+// LogResponse dumps a slightly redacted Turbo CI response proto into the log.
+func LogResponse(ctx context.Context, rpc string, resp any, err error) {
+	if err != nil {
+		logging.Warningf(ctx, "turbo-ci: %s response: %s", rpc, err)
+	} else {
+		logging.Infof(ctx, "turbo-ci: %s response:\n%s", rpc, turboCIMsgToText(resp))
+	}
+}
+
+// turboCIMsgToText redacts the token and logs the message.
+func turboCIMsgToText(msg any) string {
+	if msg == nil {
+		return "nil"
+	}
+	m, _ := msg.(proto.Message)
+	if m == nil {
+		return fmt.Sprintf("<not a proto: %T>", msg)
+	}
+	switch v := m.(type) {
+	case *orchestratorpb.WriteNodesRequest:
+		defer redactToken(v.HasToken, v.GetToken, v.SetToken)()
+	case *orchestratorpb.QueryNodesRequest:
+		defer redactToken(v.HasToken, v.GetToken, v.SetToken)()
+	case *orchestratorpb.CreateWorkPlanResponse:
+		defer redactToken(v.HasCreatorToken, v.GetCreatorToken, v.SetCreatorToken)()
+	}
+	blob, err := (prototext.MarshalOptions{Multiline: true}).Marshal(m)
+	if err != nil {
+		return fmt.Sprintf("<marshal error %q>", err)
+	}
+	return string(blob)
+}
+
+func redactToken(has func() bool, get func() string, set func(string)) func() {
+	if !has() {
+		return func() {}
+	}
+	val := get()
+	set(strings.Repeat("x", len(val)))
+	return func() { set(val) }
 }
