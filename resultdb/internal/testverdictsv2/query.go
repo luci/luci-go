@@ -49,6 +49,9 @@ type Query struct {
 	// Row size is estimated as proto.Size() + 1000 bytes (to allow for alternative encodings
 	// which higher fixed overheads, e.g. protojson). If this is zero, no limit is applied.
 	ResponseLimitBytes int
+	// The limit on the number of test results and test exonerations to return per verdict.
+	// The limit is applied independently to test results and exonerations.
+	ResultLimit int
 	// Whether to use UI sort order, i.e. by ui_priority first, instead of by test ID.
 	// This incurs a performance penalty, as results are not returned in table order.
 	Order Ordering
@@ -64,6 +67,8 @@ type Query struct {
 	// An AIP-160 filter on the test verdicts returned. Optional.
 	// See filter.go for details.
 	Filter string
+	// The view to return.
+	View pb.TestVerdictView
 }
 
 type Ordering int
@@ -85,6 +90,15 @@ const (
 
 // Fetch fetches a page of test verdicts.
 func (q *Query) Fetch(ctx context.Context, pageToken string) ([]*pb.TestVerdict, string, error) {
+	if q.View != pb.TestVerdictView_TEST_VERDICT_VIEW_FULL {
+		return q.fetchSimpleView(ctx, pageToken)
+	} else {
+		return q.fetchDetailedView(ctx, pageToken)
+	}
+}
+
+// fetchSimpleView fetches a page of test verdicts with a view of TEST_VERDICT_VIEW_BASIC.
+func (q *Query) fetchSimpleView(ctx context.Context, pageToken string) ([]*pb.TestVerdict, string, error) {
 	var results []*pb.TestVerdict
 	var totalSize int
 	nextPageToken, err := q.run(ctx, pageToken, func(tv *TestVerdictSummary) (bool, error) {
@@ -106,6 +120,77 @@ func (q *Query) Fetch(ctx context.Context, pageToken string) ([]*pb.TestVerdict,
 	})
 	if err != nil {
 		return nil, "", err
+	}
+	return results, nextPageToken, nil
+}
+
+// fetchDetailedView fetches a page of test verdicts with view of TEST_VERDICT_VIEW_FULL.
+func (q *Query) fetchDetailedView(ctx context.Context, pageToken string) ([]*pb.TestVerdict, string, error) {
+	if q.ResultLimit <= 0 {
+		return nil, "", errors.New("result limit must be positive")
+	}
+
+	var ids []testresultsv2.VerdictID
+	var summaries []*TestVerdictSummary
+
+	// Fetch up to q.PageSize verdict summaries.
+	_, err := q.run(ctx, pageToken, func(tv *TestVerdictSummary) (bool, error) {
+		ids = append(ids, tv.ID)
+		summaries = append(summaries, tv)
+		return true, nil
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	// For each verdict summary, query the details.
+	detailsQuery := QueryDetails{
+		VerdictIDs: ids,
+		Access:     q.Access,
+	}
+
+	results := make([]*pb.TestVerdict, 0, q.PageSize)
+	totalSize := 0
+
+	it := detailsQuery.List(ctx, PageToken{}, q.PageSize)
+	err = it.Do(func(tv *TestVerdict) error {
+		// Verdicts come in the order requested.
+		result := tv.ToProto(q.ResultLimit)
+		if q.ResponseLimitBytes > 0 {
+			// Estimate row size using formula documented on q.ResponseLimitBytes.
+			size := proto.Size(result) + protoJSONOverheadBytes
+			if totalSize+size > q.ResponseLimitBytes {
+				if len(results) == 0 {
+					return errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", size, q.ResponseLimitBytes)
+				}
+				// We would exceed the hard limit. Stop iteration early.
+				return iterator.Done
+			}
+			totalSize += size
+		}
+		results = append(results, result)
+		return nil
+	})
+	if err != nil && !errors.Is(err, iterator.Done) {
+		// There was an error when retrieving the verdicts.
+		return nil, "", err
+	}
+	// We had fewer verdicts than the page size and we didn't stop iteration early.
+	if len(results) < q.PageSize && err == nil {
+		// There are no more verdicts to query. The page token is empty to signal end of iteration.
+		return results, "", nil
+	}
+
+	// We either:
+	// - Have a full page of verdicts
+	// - Stopped iteration early using iterator.Done
+	// Continue paginating from the last result we are returning.
+	var nextPageToken string
+	if len(results) > 0 {
+		lastSummary := summaries[len(results)-1]
+		nextPageToken = q.makePageToken(lastSummary)
+	} else {
+		return nil, "", errors.New("fetch is returning zero verdicts. This should never happen, as progress will never be made.")
 	}
 	return results, nextPageToken, nil
 }
@@ -184,6 +269,7 @@ func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*Tes
 		return nil
 	})
 	if err != nil && !errors.Is(err, iterator.Done) {
+		// There was an error during iteration.
 		return "", err
 	}
 	// We had fewer verdicts than the page size and we didn't stop iteration early.
@@ -192,12 +278,17 @@ func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*Tes
 		return "", nil
 	}
 
+	// We either:
+	// - Have a full page of verdicts
+	// - Stopped iteration early using iterator.Done
+	// Continue paginating.
 	var nextPageToken string
 	if lastSummary != nil {
 		nextPageToken = q.makePageToken(lastSummary)
 	} else {
-		// If there are no more verdicts, the page token is empty to signal end of iteration.
-		nextPageToken = ""
+		// The very first callback returned (consumed = false, iterator.Done), so
+		// the page token did not advance.
+		nextPageToken = pageToken
 	}
 	return nextPageToken, nil
 }

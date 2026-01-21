@@ -54,6 +54,8 @@ type QueryDetails struct {
 	// At most 10,000 IDs can be nominated (see "Values in an IN operator"):
 	// https://docs.cloud.google.com/spanner/quotas#query-limits
 	VerdictIDs []testresultsv2.VerdictID
+	// The access the caller has to the root invocation.
+	Access permissions.RootInvocationAccess
 }
 
 // FetchOptions specifies options for fetching a page of test verdicts.
@@ -191,9 +193,7 @@ func (q *QueryDetails) List(ctx context.Context, pageToken PageToken, bufferSize
 		RootInvocation:   q.RootInvocationID,
 		TestPrefixFilter: q.TestPrefixFilter,
 		VerdictIDs:       q.VerdictIDs,
-		Access: permissions.RootInvocationAccess{
-			Level: permissions.FullAccess,
-		},
+		Access:           q.Access,
 	}
 	trPageToken := pageToken.toTestResultsPageToken()
 	trOpts := spanutil.BufferingOptions{
@@ -216,9 +216,7 @@ func (q *QueryDetails) List(ctx context.Context, pageToken PageToken, bufferSize
 		RootInvocation:   q.RootInvocationID,
 		TestPrefixFilter: q.TestPrefixFilter,
 		VerdictIDs:       q.VerdictIDs,
-		Access: permissions.RootInvocationAccess{
-			Level: permissions.FullAccess,
-		},
+		Access:           q.Access,
 	}
 	tePageToken := pageToken.toTestExonerationsPageToken()
 	teOpts := spanutil.BufferingOptions{
@@ -277,7 +275,6 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 	verdictToken := pageTokenFromResult(res)
 	verdict := &TestVerdict{
 		ID:             res.ID.VerdictID(),
-		TestMetadata:   res.TestMetadata,
 		RequestOrdinal: res.RequestOrdinal,
 	}
 	i.lastRequestOrdinal = res.RequestOrdinal

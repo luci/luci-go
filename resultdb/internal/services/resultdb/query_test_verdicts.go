@@ -73,6 +73,7 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 		TestPrefixFilter:         req.Predicate.GetTestPrefixFilter(),
 		Access:                   access,
 		Filter:                   req.Predicate.GetFilter(),
+		View:                     pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC,
 	}
 
 	verdicts, nextPageToken, err := q.Fetch(ctx, req.PageToken)

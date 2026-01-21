@@ -70,8 +70,6 @@ type TestVerdict struct {
 	Results []*testresultsv2.TestResultRow
 	// The test exonerations that make up the verdict.
 	Exonerations []*testexonerationsv2.TestExonerationRow
-	// The test metadata of the verdict. This is picked from one of the results.
-	TestMetadata *pb.TestMetadata
 	// The one-based index into Query.VerdictIDs this result relates to. Only set
 	// if the result is retrieved using a query for nominated verdict IDs. Output only.
 	RequestOrdinal int
@@ -98,10 +96,12 @@ func (v *TestVerdict) ToProto(resultLimit int) *pb.TestVerdict {
 
 	for i, result := range v.Results {
 		resultProto := result.ToProto()
-		if i == 0 {
+		if i == 0 || (tv.IsMasked && result.ModuleVariant != nil) {
 			// Lift test ID and metadata up to the verdict level.
+			// If a result has an unmasked variant, then preferentially use that one.
 			tv.TestId = resultProto.TestId
 			tv.TestIdStructured = resultProto.TestIdStructured
+			tv.IsMasked = resultProto.IsMasked
 		}
 		if tv.TestMetadata == nil && result.TestMetadata != nil {
 			// Take the first non-nil test metadata.

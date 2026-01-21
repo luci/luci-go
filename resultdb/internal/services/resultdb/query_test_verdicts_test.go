@@ -207,12 +207,13 @@ func TestQueryTestVerdicts(t *testing.T) {
 
 		t.Run(`End-to-End`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t, testverdictsv2.CreateTestData(rootInvID)...)
+			expected := testverdictsv2.ToBasicView(testverdictsv2.ExpectedVerdicts(rootInvID))
 
 			t.Run(`Valid request`, func(t *ftt.Test) {
 				res, err := srv.QueryTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
-				assert.Loosely(t, res.TestVerdicts, should.Match(testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)))
+				assert.Loosely(t, res.TestVerdicts, should.Match(expected))
 			})
 
 			t.Run(`With UI priority order`, func(t *ftt.Test) {
@@ -243,7 +244,6 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 
 				// Should match all verdicts except t7 (which is in m2).
-				expected := testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 				assert.Loosely(t, res.TestVerdicts, should.Match(expected[0:6]))
 			})
 
@@ -255,7 +255,6 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				// Only t4 has a SKIPPED result.
-				expected := testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 				assert.Loosely(t, res.TestVerdicts, should.Match(expected[3:4]))
 			})
 
@@ -267,13 +266,11 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				// t2 (FAILED) and t5 (FAILED and EXONERATED) match status=FAILED.
-				expected := testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 				assert.Loosely(t, res.TestVerdicts, should.Match([]*pb.TestVerdict{expected[1], expected[4]}))
 			})
 
 			t.Run(`With pagination`, func(t *ftt.Test) {
 				req.PageSize = 2
-				expected := testverdictsv2.ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC)
 
 				res, err := srv.QueryTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
@@ -318,7 +315,7 @@ func TestQueryTestVerdicts(t *testing.T) {
 
 				// We expect t3 to be partially unmasked (r1 unmasked, r2 masked).
 				// All others masked.
-				expected := testverdictsv2.ExpectedVerdictsMasked(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC, []string{"testproject:t3-r1"})
+				expected := testverdictsv2.ToBasicView(testverdictsv2.ExpectedMaskedVerdicts(testverdictsv2.ExpectedVerdicts(rootInvID), []string{"testproject:t3-r1"}))
 				assert.Loosely(t, res.TestVerdicts, should.Match(expected))
 			})
 		})

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -44,6 +45,9 @@ func TestQueryDetails(t *testing.T) {
 
 		q := &QueryDetails{
 			RootInvocationID: rootInvID,
+			Access: permissions.RootInvocationAccess{
+				Level: permissions.FullAccess,
+			},
 		}
 
 		fetchAll := func(q *QueryDetails, opts FetchOptions) []*pb.TestVerdict {
@@ -216,6 +220,20 @@ func TestQueryDetails(t *testing.T) {
 			})
 			t.Run("With small page size", func(t *ftt.Test) {
 				assert.Loosely(t, fetchAll(q, FetchOptions{PageSize: 1, ResultLimit: 10}), should.Match(expectedSubset))
+			})
+		})
+
+		t.Run("With limited access", func(t *ftt.Test) {
+			q.Access.Level = permissions.LimitedAccess
+			t.Run("Baseline", func(t *ftt.Test) {
+				expectedLimited := ExpectedMaskedVerdicts(expected, nil)
+				assert.Loosely(t, fetchAll(q, FetchOptions{PageSize: 100, ResultLimit: 10}), should.Match(expectedLimited))
+			})
+
+			t.Run("With upgraded realms", func(t *ftt.Test) {
+				q.Access.Realms = []string{"testproject:t3-r1", "testproject:t4-r1"}
+				expectedLimited := ExpectedMaskedVerdicts(expected, q.Access.Realms)
+				assert.Loosely(t, fetchAll(q, FetchOptions{PageSize: 100, ResultLimit: 10}), should.Match(expectedLimited))
 			})
 		})
 

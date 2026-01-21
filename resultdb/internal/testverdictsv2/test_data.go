@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -32,6 +33,8 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+const exonerationsTestRealm = "testproject:exonerations"
 
 // CreateTestData creates test data used for testing test verdicts.
 func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
@@ -48,7 +51,8 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	}
 	baseExonerationBuilder := func() *testexonerationsv2.Builder {
 		return testexonerationsv2.NewBuilder().WithRootInvocationShardID(shardOne).
-			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).WithCoarseName("c1").WithFineName("f1").WithCaseName("t1")
+			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).
+			WithCoarseName("c1").WithFineName("f1").WithCaseName("t1").WithRealm(exonerationsTestRealm)
 	}
 	workUnitBuilder := func(workUnitID string) *workunits.Builder {
 		id := &pb.ModuleIdentifier{
@@ -170,9 +174,22 @@ func longSkippedReason() *pb.SkippedReason {
 	}
 }
 
+// ToBasicView returns the basic view of the given verdicts, for testing.
+func ToBasicView(verdicts []*pb.TestVerdict) []*pb.TestVerdict {
+	result := make([]*pb.TestVerdict, len(verdicts))
+	for i, v := range verdicts {
+		copy := proto.Clone(v).(*pb.TestVerdict)
+		copy.Results = nil
+		copy.Exonerations = nil
+		copy.TestMetadata = nil
+		result[i] = copy
+	}
+	return result
+}
+
 // ExpectedVerdicts returns the expected test verdicts corresponding
 // to the test data created by CreateTestData().
-func ExpectedVerdicts(rootInvID rootinvocations.ID, view pb.TestVerdictView) []*pb.TestVerdict {
+func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 	makeVerdict := func(testID *pb.TestIdentifier, status pb.TestVerdict_Status, results []*pb.TestResult, exonerations []*pb.TestExoneration) *pb.TestVerdict {
 		tv := &pb.TestVerdict{
 			TestId:           pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier((testID))),
@@ -190,12 +207,6 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID, view pb.TestVerdictView) []*
 			tv.StatusOverride = pb.TestVerdict_EXONERATED
 		} else {
 			tv.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
-		}
-
-		if view != pb.TestVerdictView_TEST_VERDICT_VIEW_FULL {
-			tv.Results = nil
-			tv.Exonerations = nil
-			tv.TestMetadata = nil
 		}
 
 		return tv
@@ -291,7 +302,7 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID, view pb.TestVerdictView) []*
 }
 
 func ExpectedVerdictsInPrimaryKeyOrder(rootInvID rootinvocations.ID, view pb.TestVerdictView) []*pb.TestVerdict {
-	verdicts := ExpectedVerdicts(rootInvID, view)
+	verdicts := ExpectedVerdicts(rootInvID)
 	// Verdict t4 is in shard 15 whereas all others are in shard 0, move it to the end.
 	t4 := verdicts[3]
 	var results []*pb.TestVerdict
@@ -301,12 +312,12 @@ func ExpectedVerdictsInPrimaryKeyOrder(rootInvID rootinvocations.ID, view pb.Tes
 	return results
 }
 
-// ExpectedVerdictsMasked returns the expected test verdicts corresponding
-// to the test data created by CreateTestData(), with the user having full
-// access only to the given realms.
-func ExpectedVerdictsMasked(rootInvID rootinvocations.ID, view pb.TestVerdictView, realms []string) []*pb.TestVerdict {
-	result := ExpectedVerdicts(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_FULL)
-	for _, tv := range result {
+// ExpectedMaskedVerdicts returns the expected masked versions of the given
+// unmasked full verdicts, with the user having full access only to the given realms.
+func ExpectedMaskedVerdicts(originalVerdicts []*pb.TestVerdict, realms []string) []*pb.TestVerdict {
+	verdicts := make([]*pb.TestVerdict, 0, len(originalVerdicts))
+	for _, originalTV := range originalVerdicts {
+		tv := proto.Clone(originalTV).(*pb.TestVerdict)
 		hasFullAccessToAny := false
 		for _, r := range tv.Results {
 			resultRealm := fmt.Sprintf("testproject:%s-%s", tv.TestIdStructured.CaseName, r.ResultId)
@@ -334,16 +345,18 @@ func ExpectedVerdictsMasked(rootInvID rootinvocations.ID, view pb.TestVerdictVie
 			}
 			r.IsMasked = true
 		}
+		for _, e := range tv.Exonerations {
+			if slices.Contains(realms, exonerationsTestRealm) {
+				continue
+			}
+			e.IsMasked = true
+		}
 		if !hasFullAccessToAny {
 			tv.TestIdStructured.ModuleVariant = nil
 			tv.TestMetadata = nil
 			tv.IsMasked = true
 		}
-		if view != pb.TestVerdictView_TEST_VERDICT_VIEW_FULL {
-			tv.Results = nil
-			tv.Exonerations = nil
-			tv.TestMetadata = nil
-		}
+		verdicts = append(verdicts, tv)
 	}
-	return result
+	return verdicts
 }
