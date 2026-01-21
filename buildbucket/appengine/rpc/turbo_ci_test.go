@@ -76,8 +76,9 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 			Id: proto.String("1234"),
 		}.Build()
 		stageID := idspb.Stage_builder{
-			WorkPlan: planID,
-			Id:       proto.String(rootBuildStageID),
+			WorkPlan:   planID,
+			Id:         proto.String(rootBuildStageID),
+			IsWorknode: proto.Bool(false),
 		}.Build()
 
 		orch := &turboci.FakeOrchestratorClient{

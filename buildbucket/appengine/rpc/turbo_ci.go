@@ -127,8 +127,9 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 
 	// The initial stage has a predefined ID.
 	rootStageID := idspb.Stage_builder{
-		WorkPlan: plan.GetIdentifier(),
-		Id:       proto.String(rootBuildStageID),
+		WorkPlan:   plan.GetIdentifier(),
+		Id:         proto.String(rootBuildStageID),
+		IsWorknode: proto.Bool(false),
 	}.Build()
 
 	// Submit the build as a stage under a well-known ID. If this is a retry,

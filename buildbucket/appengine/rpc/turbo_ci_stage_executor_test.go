@@ -200,7 +200,8 @@ func fakeTestStage(project string) *orchestratorpb.Stage {
 			WorkPlan: idspb.WorkPlan_builder{
 				Id: proto.String("L12345"),
 			}.Build(),
-			Id: proto.String("S4567"),
+			Id:         proto.String("S4567"),
+			IsWorknode: proto.Bool(false),
 		}.Build(),
 		Args: orchestratorpb.Value_builder{
 			Value: value,
