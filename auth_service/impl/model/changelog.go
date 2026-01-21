@@ -344,12 +344,18 @@ func GetAllAuthDBChange(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (
 	var nextCur datastore.Cursor
 	err = datastore.Run(ctx, query, func(change *AuthDBChange, cb datastore.CursorCB) error {
 		if len(change.ShardIDs) > 0 {
-			// Unsharding is required.
-			if err := change.restoreMembersFromShards(ctx); err != nil {
-				// Log error and return the change as-is; a problematic changelog
-				// shouldn't prevent other changes from being fetched.
+			if sErr := change.restoreMembersFromShards(ctx); sErr != nil {
+				// Log the error but still return the change; a problematic change shouldn't
+				// prevent other changes from being fetched.
 				logging.Errorf(ctx, "error restoring Members from shards for target %s: %w",
-					change.Target, err)
+					change.Target, sErr)
+
+				if !transient.Tag.In(sErr) {
+					// Clear the ShardIDs to denote unsharding was attempted but results
+					// in a non-transient error. This prevents future unsharding attempts,
+					// such as when the change is converted to a proto.
+					change.ShardIDs = nil
+				}
 			}
 		}
 

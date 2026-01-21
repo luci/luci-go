@@ -204,6 +204,9 @@ func TestGetAllAuthDBChange(t *testing.T) {
 			oversizedCreation.ShardIDs = append(oversizedCreation.ShardIDs, shard.ID)
 		}
 
+		invalidShardedChange := testAuthDBGroupChange(ctx, t, "AuthGroup$groupInvalid", ChangeGroupMembersAdded, 500)
+		invalidShardedChange.ShardIDs = []string{"non", "sense"}
+
 		assert.Loosely(t, datastore.Put(ctx,
 			oversizedCreation,
 			shards,
@@ -217,6 +220,7 @@ func TestGetAllAuthDBChange(t *testing.T) {
 			testAuthDBConfigChange(ctx, t, 1115),
 			testAuthRealmsGlobalsChange(ctx, t, 1120),
 			testAuthProjectRealmsChange(ctx, t, 1115),
+			invalidShardedChange,
 		), should.BeNil)
 
 		t.Run("Sort by key", func(t *ftt.Test) {
@@ -313,6 +317,23 @@ func TestGetAllAuthDBChange(t *testing.T) {
 			assert.Loosely(t, changes, should.Match([]*AuthDBChange{
 				expectedChange,
 			}))
+		})
+
+		t.Run("Handles invalid sharded changes", func(t *ftt.Test) {
+			req := &rpcpb.ListChangeLogsRequest{
+				Target:   "AuthGroup$groupInvalid",
+				PageSize: 10,
+			}
+			changes, _, err := GetAllAuthDBChange(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, changes, should.HaveLength(1))
+			assert.Loosely(t, changes, should.Match([]*AuthDBChange{
+				testAuthDBGroupChange(ctx, t, "AuthGroup$groupInvalid", ChangeGroupMembersAdded, 500),
+			}))
+
+			// Check converting to proto won't return an error either.
+			_, err = changes[0].ToProto(ctx)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
@@ -1300,7 +1321,7 @@ func TestAuthDBChangeProtoConversion(t *testing.T) {
 			}))
 		})
 
-		t.Run("Google groups can be sen by admin", func(t *ftt.Test) {
+		t.Run("Google groups can be seen by admin", func(t *ftt.Test) {
 			ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
 				Identity:       "user:admin@example.com",
 				IdentityGroups: []string{AdminGroup},
