@@ -538,15 +538,16 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 		}
 		if isSubgroup {
 			// The group is a subgroup of another so it shouldn't be deleted.
-			// Clear its members instead.
+			// Clear its members (if they haven't yet been cleared).
 			if len(existingGroup.ShardIDs) > 0 || len(existingGroup.Members) > 0 {
 				existingGroup.Members = nil
 				existingGroup.ShardIDs = nil
 				updatedGroups.Add(existingGroup.ID)
 				logging.Infof(ctx, "U %s", existingGroup.ID)
 				toPut = append(toPut, existingGroup)
-				continue
 			}
+			// Skip deleting it.
+			continue
 		}
 
 		logging.Infof(ctx, "D %s", existingGroup.ID)
