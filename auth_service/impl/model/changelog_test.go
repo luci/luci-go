@@ -1269,3 +1269,35 @@ func TestPropertyMapHelpers(t *testing.T) {
 		}))
 	})
 }
+
+func TestAuthDBChangeSharding(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("unsharding sharded AuthDBChange members works", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+
+		expectedMembers := []string{"user:b@example.com", "user:a@example.com"}
+		change := testAuthDBGroupChange(ctx, t, "AuthGroup$groupA", ChangeGroupMembersAdded, 1001)
+		change.Members = expectedMembers
+
+		shards, err := createAuthDBChangeShards(ctx, change, 10)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shards, should.NotBeEmpty)
+
+		members, err := unshardMembers(ctx, shards)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, members, should.Match(expectedMembers))
+
+		t.Run("restoring Members works", func(t *ftt.Test) {
+			change.setShardIDs(ctx, shards)
+			assert.Loosely(t, change.Members, should.BeNil)
+			assert.Loosely(t, change.ShardIDs, should.HaveLength(len(shards)))
+
+			assert.Loosely(t, datastore.Put(ctx, change, shards), should.BeNil)
+
+			assert.Loosely(t, change.restoreMembersFromShards(ctx), should.BeNil)
+			assert.Loosely(t, change.Members, should.Match(expectedMembers))
+			assert.Loosely(t, change.ShardIDs, should.BeNil)
+		})
+	})
+}

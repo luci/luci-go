@@ -17,6 +17,8 @@ package model
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"regexp"
 	"strings"
@@ -84,6 +86,10 @@ const (
 	ChangeProjectRealmsRemoved     ChangeType = 10300
 
 	authGroupChangePrefix = "AuthGroup$"
+
+	// Max size of AuthDBChangeShard.Blob, and also the threshold at which sharding
+	// of an AuthDBChange's Members should be done.
+	MaxChangeShardSize = 800 * 1024 // 800 kB.
 )
 
 var (
@@ -238,6 +244,21 @@ type AuthDBChange struct {
 	PermsRevNew    string `gae:"perms_rev_new,noindex"`
 	ProjectsRevOld string `gae:"projects_rev_old,noindex"`
 	ProjectsRevNew string `gae:"projects_rev_new,noindex"`
+
+	ShardIDs []string `gae:"shard_ids,noindex"`
+}
+
+type AuthDBChangeShard struct {
+	Kind   string         `gae:"$kind,AuthDBChangeShard"`
+	Parent *datastore.Key `gae:"$parent"`
+	ID     string         `gae:"$id"`
+
+	// Blob is a sharded part of the compressed members specified in a change.
+	Blob []byte
+}
+
+func (acs *AuthDBChangeShard) GetBlob() []byte {
+	return acs.Blob
 }
 
 // ChangeLogRootKey returns the root key of an entity group with change log.
@@ -347,7 +368,82 @@ func (ct ChangeType) ToString() string {
 	return val
 }
 
+// getMembersFromShards gets the AuthDBChange's shards from Datastore and unshards
+// them to get the members value used to create the shards.
+// Note: this method *DOES NOT* modify the AuthDBChange.
+func (change *AuthDBChange) getMembersFromShards(ctx context.Context) ([]string, error) {
+	if change == nil || len(change.ShardIDs) == 0 {
+		return nil, nil
+	}
+
+	// Fetch the shards.
+	shards := make([]*AuthDBChangeShard, len(change.ShardIDs))
+	for i, shardID := range change.ShardIDs {
+		shards[i] = &AuthDBChangeShard{
+			Kind:   "AuthDBChangeShard",
+			Parent: change.Parent,
+			ID:     shardID,
+		}
+	}
+	if err := datastore.Get(ctx, shards); err != nil {
+		return nil, errors.Fmt("error getting AuthDBChangeShards: %w", err)
+	}
+
+	// Handle unsharding.
+	members, err := unshardMembers(ctx, shards)
+	if err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
+
+// setShardIDs sets the AuthDBChange's ShardIDs field to be those of the given
+// shards.
+func (change *AuthDBChange) setShardIDs(ctx context.Context, shards []*AuthDBChangeShard) {
+	if len(shards) == 0 {
+		change.ShardIDs = nil
+		return
+	}
+
+	change.ShardIDs = make([]string, len(shards))
+	for i, shard := range shards {
+		change.ShardIDs[i] = shard.ID
+	}
+	change.Members = nil
+}
+
+// restoreMembersFromShards restores the AuthDBChange's Members field from its
+// shards, if sharded. The AuthDBChange's ShardIDs will be cleared to denote the
+// Members field has been restored.
+func (change *AuthDBChange) restoreMembersFromShards(ctx context.Context) error {
+	if len(change.ShardIDs) == 0 {
+		// Nothing to do.
+		return nil
+	}
+
+	members, err := change.getMembersFromShards(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Set Members field and clear ShardIDs to denote the completed restoration.
+	change.Members = members
+	change.ShardIDs = nil
+	return nil
+}
+
 func (change *AuthDBChange) ToProto(ctx context.Context) (*rpcpb.AuthDBChange, error) {
+	// Handle unsharding of members if necessary.
+	members := change.Members
+	var err error
+	if len(change.ShardIDs) > 0 {
+		members, err = change.getMembersFromShards(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	out := &rpcpb.AuthDBChange{
 		ChangeType:               change.ChangeType.ToString(),
 		Target:                   change.Target,
@@ -395,9 +491,9 @@ func (change *AuthDBChange) ToProto(ctx context.Context) (*rpcpb.AuthDBChange, e
 		return nil, err
 	}
 	if ok {
-		out.Members = change.Members
+		out.Members = members
 	} else {
-		out.NumRedacted = int32(len(change.Members))
+		out.NumRedacted = int32(len(members))
 	}
 	return out, nil
 }
@@ -620,6 +716,41 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 	}
 
 	return changes, nil
+}
+
+// createAuthDBChangeShards splits the AuthDBChange's Members into shards and returns them.
+// Returns nil if sharding isn't required.
+// Note: the caller is responsible for putting the shards into Datastore.
+func createAuthDBChangeShards(ctx context.Context, change *AuthDBChange, maxSize int) ([]*AuthDBChangeShard, error) {
+	if change == nil {
+		return nil, nil
+	}
+
+	shardBlobs := shardMembers(ctx, change.Members, maxSize)
+	if shardBlobs == nil {
+		return nil, nil
+	}
+
+	shards := make([]*AuthDBChangeShard, len(shardBlobs))
+	for i, shardBlob := range shardBlobs {
+		shardChecksum := sha256.Sum256(shardBlob)
+		shardID := fmt.Sprintf(
+			"%d:%s:%s:%s",
+			change.AuthDBRev,
+			change.Target,
+			change.ChangeType.ToString(),
+			hex.EncodeToString(shardChecksum[:]),
+		)
+
+		shards[i] = &AuthDBChangeShard{
+			Kind:   "AuthDBChangeShard",
+			Parent: change.Parent,
+			ID:     shardID,
+			Blob:   shardBlob,
+		}
+	}
+
+	return shards, nil
 }
 
 func diffLists(old, new []string) ([]string, []string) {
