@@ -145,6 +145,17 @@ func emptyAuthGroup(ctx context.Context, name string) *AuthGroup {
 	}
 }
 
+func oversizedAuthGroup(ctx context.Context, name string) *AuthGroup {
+	n := 100000
+	targetMembers := make([]string, n)
+	for i := range n {
+		targetMembers[i] = fmt.Sprintf("user:testUser%d@example.com", i)
+	}
+	group := emptyAuthGroup(ctx, name)
+	group.Members = targetMembers
+	return group
+}
+
 func testIPAllowlist(ctx context.Context, name string, subnets []string) *AuthIPAllowlist {
 	if subnets == nil {
 		subnets = []string{
@@ -360,6 +371,31 @@ func TestGetAllAuthGroups(t *testing.T) {
 			assert.Loosely(t, actualAuthGroups, should.Match([]*AuthGroup{
 				expectedAuthGroup1,
 				testAuthGroup(ctx, "test-auth-group-2"),
+			}))
+		})
+
+		t.Run("handles sharded groups", func(t *ftt.Test) {
+			ctx := memory.Use(context.Background())
+
+			// Put a sharded group with a couple of non-sharded groups into Datastore.
+			bigGroup := oversizedAuthGroup(ctx, "test-auth-group-2")
+			shards, err := createAuthGroupShards(ctx, bigGroup, MaxGroupShardSize)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, shards, should.NotBeEmpty)
+			bigGroup.setShardIDs(ctx, shards)
+			assert.Loosely(t, datastore.Put(ctx,
+				bigGroup, shards,
+				testAuthGroup(ctx, "test-auth-group-1"),
+				testAuthGroup(ctx, "test-auth-group-3"),
+			), should.BeNil)
+
+			actualAuthGroups, err := GetAllAuthGroups(ctx)
+			assert.Loosely(t, err, should.BeNil)
+
+			assert.Loosely(t, actualAuthGroups, should.Match([]*AuthGroup{
+				testAuthGroup(ctx, "test-auth-group-1"),
+				oversizedAuthGroup(ctx, "test-auth-group-2"),
+				testAuthGroup(ctx, "test-auth-group-3"),
 			}))
 		})
 	})
@@ -631,6 +667,65 @@ func TestCreateAuthGroup(t *testing.T) {
 				}
 			}
 		})
+
+		t.Run("handles oversized groups", func(t *ftt.Test) {
+			group := oversizedAuthGroup(ctx, "test-oversized-group")
+			created, err := CreateAuthGroup(ctx, group, "test historical comment")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, created.ShardIDs, should.BeEmpty)
+			assert.Loosely(t, created.Members, should.Match(group.Members))
+
+			storedShards, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, storedShards, should.NotBeEmpty)
+			firstShardID := getStringProp(storedShards[0], "$id")
+
+			t.Run("oversized groups have historical group and group shard entities", func(t *ftt.Test) {
+				groupEntities, err := getAllDatastoreEntities(ctx, "AuthGroupHistory", HistoricalRevisionKey(ctx, 1))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, groupEntities, should.HaveLength(1))
+				historicalGroupEntity := groupEntities[0]
+				assert.Loosely(t, getDatastoreKey(historicalGroupEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGroupHistory,\"test-oversized-group\""))
+				assert.Loosely(t, getStringProp(historicalGroupEntity, "description"), should.Equal(group.Description))
+				assert.Loosely(t, getStringProp(historicalGroupEntity, "owners"), should.Equal(group.Owners))
+				assert.Loosely(t, getStringSliceProp(historicalGroupEntity, "members"), should.BeNil)
+				assert.Loosely(t, getStringSliceProp(historicalGroupEntity, "globs"), should.Match(group.Globs))
+				assert.Loosely(t, getStringSliceProp(historicalGroupEntity, "nested"), should.Match(group.Nested))
+				assert.Loosely(t, getStringProp(historicalGroupEntity, "created_by"), should.Equal("user:someone@example.com"))
+				assert.Loosely(t, getTimeProp(historicalGroupEntity, "created_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, getStringProp(historicalGroupEntity, "modified_by"), should.Equal("user:someone@example.com"))
+				assert.Loosely(t, getTimeProp(historicalGroupEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, getInt64Prop(historicalGroupEntity, "auth_db_rev"), should.Equal(1))
+				assert.Loosely(t, getProp(historicalGroupEntity, "auth_db_prev_rev"), should.BeNil)
+				assert.Loosely(t, getBoolProp(historicalGroupEntity, "auth_db_deleted"), should.BeFalse)
+				assert.Loosely(t, getStringProp(historicalGroupEntity, "auth_db_change_comment"), should.Equal("test historical comment"))
+				assert.Loosely(t, getStringProp(historicalGroupEntity, "auth_db_app_version"), should.Equal("test-version"))
+
+				// Check no properties are indexed.
+				for k := range historicalGroupEntity {
+					assert.Loosely(t, isPropIndexed(historicalGroupEntity, k), should.BeFalse)
+				}
+
+				groupShardEntities, err := getAllDatastoreEntities(ctx, "AuthGroupShardHistory", HistoricalRevisionKey(ctx, 1))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, groupShardEntities, should.NotBeEmpty)
+
+				historicalGroupShardEntity := groupShardEntities[0]
+				assert.Loosely(t, getDatastoreKey(historicalGroupShardEntity).String(), should.Equal("dev~app::/AuthGlobalConfig,\"root\"/Rev,1/AuthGroupShardHistory,\""+firstShardID+"\""))
+				assert.Loosely(t, getStringProp(historicalGroupShardEntity, "modified_by"), should.Equal("user:someone@example.com"))
+				assert.Loosely(t, getTimeProp(historicalGroupShardEntity, "modified_ts").Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, getInt64Prop(historicalGroupShardEntity, "auth_db_rev"), should.Equal(1))
+				assert.Loosely(t, getProp(historicalGroupShardEntity, "auth_db_prev_rev"), should.BeNil)
+				assert.Loosely(t, getBoolProp(historicalGroupShardEntity, "auth_db_deleted"), should.BeFalse)
+				assert.Loosely(t, getStringProp(historicalGroupShardEntity, "auth_db_change_comment"), should.Equal("test historical comment"))
+				assert.Loosely(t, getStringProp(historicalGroupShardEntity, "auth_db_app_version"), should.Equal("test-version"))
+
+				// Check no properties are indexed.
+				for k := range historicalGroupShardEntity {
+					assert.Loosely(t, isPropIndexed(historicalGroupShardEntity, k), should.BeFalse)
+				}
+			})
+		})
 	})
 }
 
@@ -862,10 +957,15 @@ func TestUpdateAuthGroup(t *testing.T) {
 			assert.Loosely(t, updatedGroup.Nested, should.Match(group.Nested))
 			assert.Loosely(t, updatedGroup.CreatedBy, should.Equal("user:test-creator@example.com"))
 			assert.Loosely(t, updatedGroup.CreatedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+			assert.Loosely(t, updatedGroup.ShardIDs, should.BeEmpty)
 			assert.Loosely(t, updatedGroup.ModifiedBy, should.Equal("user:someone@example.com"))
 			assert.Loosely(t, updatedGroup.ModifiedTS.Unix(), should.Equal(testCreatedTS.Unix()))
 			assert.Loosely(t, updatedGroup.AuthDBRev, should.Equal(11))
 			assert.Loosely(t, updatedGroup.AuthDBPrevRev, should.Equal(1))
+
+			storedShards, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, storedShards, should.BeEmpty)
 
 			fetchedGroup, err := GetAuthGroup(ctx, "foo")
 			assert.Loosely(t, err, should.BeNil)
@@ -962,6 +1062,109 @@ func TestUpdateAuthGroup(t *testing.T) {
 			for k := range historicalEntity {
 				assert.Loosely(t, isPropIndexed(historicalEntity, k), should.BeFalse)
 			}
+		})
+
+		t.Run("updates oversized groups", func(t *ftt.Test) {
+			oversizedGroup := oversizedAuthGroup(ctx, "test-oversized-group")
+
+			t.Run("unsharded -> sharded", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
+
+				// Update the Members to be very big.
+				group.Members = oversizedGroup.Members
+				updatedGroup, err := UpdateAuthGroup(
+					ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag,
+					"Go pRPC API")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
+				assert.Loosely(t, updatedGroup.ID, should.Equal(group.ID))
+				assert.Loosely(t, updatedGroup.Description, should.Equal(group.Description))
+				assert.Loosely(t, updatedGroup.Owners, should.Equal(group.Owners))
+				assert.Loosely(t, updatedGroup.Members, should.Match(oversizedGroup.Members))
+				assert.Loosely(t, updatedGroup.Globs, should.Match(group.Globs))
+				assert.Loosely(t, updatedGroup.Nested, should.Match(group.Nested))
+				assert.Loosely(t, updatedGroup.CreatedBy, should.Equal("user:test-creator@example.com"))
+				assert.Loosely(t, updatedGroup.CreatedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, updatedGroup.ShardIDs, should.BeEmpty)
+				assert.Loosely(t, updatedGroup.ModifiedBy, should.Equal("user:someone@example.com"))
+				assert.Loosely(t, updatedGroup.ModifiedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, updatedGroup.AuthDBRev, should.Equal(11))
+				assert.Loosely(t, updatedGroup.AuthDBPrevRev, should.Equal(1))
+
+				storedShards, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, storedShards, should.NotBeEmpty)
+			})
+
+			t.Run("sharded -> unsharded", func(t *ftt.Test) {
+				expectedMembers := group.Members
+
+				// Put a sharded group into Datastore.
+				shards, err := createAuthGroupShards(ctx, group, 10)
+				assert.Loosely(t, err, should.BeNil)
+				group.setShardIDs(ctx, shards)
+				assert.Loosely(t, datastore.Put(ctx, group, shards), should.BeNil)
+
+				// Update the description. Sharding should not be required, as the size
+				// threshold used by UpdateAuthGroup is MaxGroupShardSize.
+				group.Description = "updated description"
+				updatedGroup, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"description"}}, etag, "Go pRPC API")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
+				assert.Loosely(t, updatedGroup.ID, should.Equal(group.ID))
+				assert.Loosely(t, updatedGroup.Description, should.Equal("updated description"))
+				assert.Loosely(t, updatedGroup.Owners, should.Equal(group.Owners))
+				assert.Loosely(t, updatedGroup.Members, should.Match(expectedMembers))
+				assert.Loosely(t, updatedGroup.Globs, should.Match(group.Globs))
+				assert.Loosely(t, updatedGroup.Nested, should.Match(group.Nested))
+				assert.Loosely(t, updatedGroup.CreatedBy, should.Equal("user:test-creator@example.com"))
+				assert.Loosely(t, updatedGroup.CreatedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, updatedGroup.ShardIDs, should.BeEmpty)
+				assert.Loosely(t, updatedGroup.ModifiedBy, should.Equal("user:someone@example.com"))
+				assert.Loosely(t, updatedGroup.ModifiedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, updatedGroup.AuthDBRev, should.Equal(11))
+				assert.Loosely(t, updatedGroup.AuthDBPrevRev, should.Equal(1))
+
+				storedShards, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, storedShards, should.BeEmpty)
+			})
+
+			t.Run("sharded -> sharded", func(t *ftt.Test) {
+				// Put a sharded group into Datastore.
+				bigGroup := oversizedAuthGroup(ctx, "oversized-test-group")
+				bigGroup.Owners = "owners-foo"
+				bigGroup.ModifiedTS = testModifiedTS
+				shards, err := createAuthGroupShards(ctx, bigGroup, MaxGroupShardSize)
+				assert.Loosely(t, err, should.BeNil)
+				bigGroup.setShardIDs(ctx, shards)
+				assert.Loosely(t, datastore.Put(ctx, bigGroup, shards), should.BeNil)
+
+				// Update the description.
+				bigGroup.Description = "sharded oversized group"
+				updatedGroup, err := UpdateAuthGroup(ctx, bigGroup, &fieldmaskpb.FieldMask{Paths: []string{"description"}}, etag, "Go pRPC API")
+				assert.Loosely(t, err, should.BeNil)
+
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
+				assert.Loosely(t, updatedGroup.ID, should.Equal("oversized-test-group"))
+				assert.Loosely(t, updatedGroup.Description, should.Equal("sharded oversized group"))
+				assert.Loosely(t, updatedGroup.Owners, should.Equal("owners-foo"))
+				assert.Loosely(t, updatedGroup.Members, should.Match(oversizedGroup.Members))
+				assert.Loosely(t, updatedGroup.Globs, should.Match(oversizedGroup.Globs))
+				assert.Loosely(t, updatedGroup.Nested, should.Match(oversizedGroup.Nested))
+				assert.Loosely(t, updatedGroup.CreatedBy, should.Equal("user:test-creator@example.com"))
+				assert.Loosely(t, updatedGroup.CreatedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, updatedGroup.ShardIDs, should.BeEmpty)
+				assert.Loosely(t, updatedGroup.ModifiedBy, should.Equal("user:someone@example.com"))
+				assert.Loosely(t, updatedGroup.ModifiedTS.Unix(), should.Equal(testCreatedTS.Unix()))
+				assert.Loosely(t, updatedGroup.AuthDBRev, should.Equal(11))
+				assert.Loosely(t, updatedGroup.AuthDBPrevRev, should.Equal(1))
+
+				// The number of shards should be unchanged.
+				storedShards, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, storedShards, should.HaveLength(len(shards)))
+			})
 		})
 
 		t.Run("cyclic dependencies", func(t *ftt.Test) {
@@ -1182,6 +1385,43 @@ func TestDeleteAuthGroup(t *testing.T) {
 			for k := range historicalEntity {
 				assert.Loosely(t, isPropIndexed(historicalEntity, k), should.BeFalse)
 			}
+		})
+
+		t.Run("handles deleting oversized group", func(t *ftt.Test) {
+			// Put a sharded group into Datastore.
+			group := oversizedAuthGroup(ctx, "tst-oversized-group")
+			shards, err := createAuthGroupShards(ctx, group, MaxGroupShardSize)
+			assert.Loosely(t, err, should.BeNil)
+			group.setShardIDs(ctx, shards)
+			assert.Loosely(t, datastore.Put(ctx, group, shards), should.BeNil)
+			fetchedGroups, err := getAllDatastoreEntities(ctx, "AuthGroup", RootKey(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetchedGroups, should.HaveLength(1))
+			fetchedGroupShards, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetchedGroupShards, should.HaveLength(len(shards)))
+
+			err = DeleteAuthGroup(ctx, group.ID, etag, "Go pRPC API")
+			assert.Loosely(t, err, should.BeNil)
+
+			fetchedGroups, err = getAllDatastoreEntities(ctx, "AuthGroup", RootKey(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetchedGroups, should.BeEmpty)
+			fetchedGroupShards, err = getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetchedGroupShards, should.BeEmpty)
+
+			state1, err := GetReplicationState(ctx)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, state1.AuthDBRev, should.Equal(1))
+			tasks := taskScheduler.Tasks()
+			assert.Loosely(t, tasks, should.HaveLength(2))
+			processChangeTask := tasks[0]
+			assert.Loosely(t, processChangeTask.Class, should.Equal("process-change-task"))
+			assert.Loosely(t, processChangeTask.Payload, should.Match(&taskspb.ProcessChangeTask{AuthDbRev: 1}))
+			replicationTask := tasks[1]
+			assert.Loosely(t, replicationTask.Class, should.Equal("replication-task"))
+			assert.Loosely(t, replicationTask.Payload, should.Match(&taskspb.ReplicationTask{AuthDbRev: 1}))
 		})
 	})
 }

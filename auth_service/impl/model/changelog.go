@@ -21,6 +21,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -342,6 +343,13 @@ func GetAllAuthDBChange(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (
 
 	var nextCur datastore.Cursor
 	err = datastore.Run(ctx, query, func(change *AuthDBChange, cb datastore.CursorCB) error {
+		if len(change.ShardIDs) > 0 {
+			// Unsharding is required.
+			if err := change.restoreMembersFromShards(ctx); err != nil {
+				return err
+			}
+		}
+
 		changes = append(changes, change)
 		if len(changes) >= int(req.PageSize) {
 			if nextCur, err = cb(); err != nil {
@@ -532,6 +540,7 @@ func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTas
 
 var knownHistoricalEntities = map[string]diffFunc{
 	"AuthGroupHistory":         diffGroups,
+	"AuthGroupShardHistory":    diffGroupShards,
 	"AuthIPWhitelistHistory":   diffIPAllowlists,
 	"AuthGlobalConfigHistory":  diffGlobalConfig,
 	"AuthRealmsGlobalsHistory": diffRealmsGlobals,
@@ -581,7 +590,8 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 
 	// If here, changelog has not been generated for this revision yet.
 	query := datastore.NewQuery("").Ancestor(HistoricalRevisionKey(ctx, authDBRev))
-	changes := []*AuthDBChange{}
+	var changes []*AuthDBChange
+	var shards []*AuthDBChangeShard
 
 	getPms := func(key *datastore.Key, class string, pm datastore.PropertyMap) (string, datastore.PropertyMap, datastore.PropertyMap, error) {
 		target := fmt.Sprintf("%s$%s", class, key.StringID())
@@ -602,7 +612,7 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 			return errors.New("key not found for pm")
 		}
 
-		re := regexp.MustCompile("((Auth(Group|IPWhitelist|IPWhitelistAssignments|GlobalConfig|RealmsGlobals|ProjectRealms))History)")
+		re := regexp.MustCompile("((Auth(Group|GroupShard|IPWhitelist|IPWhitelistAssignments|GlobalConfig|RealmsGlobals|ProjectRealms))History)")
 		heKeys := re.FindStringSubmatch(key.String())
 		if len(heKeys) != 4 {
 			return errors.New("entity not found in key")
@@ -642,6 +652,15 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 				c.When = common.When
 				c.Comment = common.Comment
 				c.AppVersion = common.AppVersion
+
+				changeShards, err := createAuthDBChangeShards(ctx, c, MaxChangeShardSize)
+				if err != nil {
+					return errors.Fmt("error sharding AuthDBChange: %w", err)
+				}
+				if len(changeShards) != 0 {
+					c.setShardIDs(ctx, changeShards)
+					shards = append(shards, changeShards...)
+				}
 			}
 
 			changes = append(changes, diffChanges...)
@@ -770,12 +789,50 @@ func setTargetTypeFields(ctx context.Context, ct ChangeType, target, class strin
 	return a
 }
 
+// getMembersProp gets the members of an AuthGroup, given the AuthGroup's
+// Datastore property map. This helper handles unsharding if necessary.
+func getMembersProp(ctx context.Context, gpm datastore.PropertyMap) ([]string, error) {
+	shardIDs := getStringSliceProp(gpm, "shard_ids")
+
+	if shardIDs == nil {
+		// No shard IDs, so just read members directly.
+		return getStringSliceProp(gpm, "members"), nil
+	}
+
+	// Unsharding is required.
+	shards := make([]*AuthGroupShard, len(shardIDs))
+	for i, shardID := range shardIDs {
+		shards[i] = &AuthGroupShard{
+			Kind:   "AuthGroupShardHistory",
+			Parent: getDatastoreKey(gpm).Parent(),
+			ID:     shardID,
+		}
+	}
+	if err := datastore.Get(ctx, shards); err != nil {
+		return nil, err
+	}
+	members, err := unshardMembers(ctx, shards)
+	if err != nil {
+		return nil, err
+	}
+	if len(members) == 0 {
+		// Return nil for empty members so change logs are concise.
+		return nil, nil
+	}
+	return members, nil
+}
+
 func diffGroups(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
 	changes := []*AuthDBChange{}
 	class := "AuthDBGroupChange"
 
 	if getBoolProp(new, "auth_db_deleted") {
-		if mems := getStringSliceProp(new, "members"); mems != nil {
+		mems, err := getMembersProp(ctx, new)
+		if err != nil {
+			return nil, err
+		}
+		if mems != nil {
+			slices.Sort(mems)
 			changes = append(changes, setTargetTypeFields(ctx, ChangeGroupMembersRemoved, target, class, &AuthDBChange{Members: mems}))
 		}
 		if globs := getStringSliceProp(new, "globs"); globs != nil {
@@ -801,7 +858,12 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 		}
 
 		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupCreated, target, class, &AuthDBChange{Description: desc, Owners: owners}))
-		if mems := getStringSliceProp(new, "members"); mems != nil {
+		mems, err := getMembersProp(ctx, new)
+		if err != nil {
+			return nil, err
+		}
+		if mems != nil {
+			slices.Sort(mems)
 			changes = append(changes, setTargetTypeFields(ctx, ChangeGroupMembersAdded, target, class, &AuthDBChange{Members: mems}))
 		}
 		if globs := getStringSliceProp(new, "globs"); globs != nil {
@@ -826,7 +888,16 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupOwnersChanged, target, class, &AuthDBChange{Owners: newOwners, OldOwners: oldOwners}))
 	}
 
-	added, removed := diffLists(getStringSliceProp(old, "members"), getStringSliceProp(new, "members"))
+	oldMembers, err := getMembersProp(ctx, old)
+	if err != nil {
+		return nil, err
+	}
+	newMembers, err := getMembersProp(ctx, new)
+	if err != nil {
+		return nil, err
+	}
+
+	added, removed := diffLists(oldMembers, newMembers)
 	if len(added) > 0 {
 		changes = append(changes, setTargetTypeFields(ctx, ChangeGroupMembersAdded, target, class, &AuthDBChange{Members: added}))
 	}
@@ -851,6 +922,13 @@ func diffGroups(ctx context.Context, target string, old, new datastore.PropertyM
 	}
 
 	return changes, nil
+}
+
+func diffGroupShards(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {
+	// GroupShards should not be directly diffed; they will be used when diffing
+	// the associated AuthGroup. This function is defined so that
+	// AuthGroupShard entities can still be historically revisioned.
+	return nil, nil
 }
 
 func diffIPAllowlists(ctx context.Context, target string, old, new datastore.PropertyMap) ([]*AuthDBChange, error) {

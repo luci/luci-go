@@ -23,6 +23,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -313,6 +314,14 @@ type AuthProjectRealmsMeta struct {
 }
 
 // AuthGroup is a group of identities, the entity id is the group name.
+// The Members field may be sharded to support very large groups, so
+// avoid directly accessing AuthGroup via datastore.Get.
+// These entities are also versioned, so DO NOT update/delete with datastore.Put.
+// Instead, use:
+// * GetAuthGroup;
+// * GetAllAuthGroups;
+// * UpdateAuthGroup; and
+// * DeleteAuthGroup.
 type AuthGroup struct {
 	// AuthVersionedEntityMixin is embedded
 	// to include modification details related to this entity.
@@ -655,6 +664,7 @@ func runAuthDBChange(ctx context.Context, historicalComment string, f func(conte
 }
 
 // GetAuthGroup gets the AuthGroup with the given id(groupName).
+// Members will be unsharded if necessary.
 //
 // Returns datastore.ErrNoSuchEntity if the group given is not present.
 // Returns an annotated error for other errors.
@@ -664,41 +674,80 @@ func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 	}
 
 	authGroup := makeAuthGroup(ctx, groupName)
-
-	switch err := datastore.Get(ctx, authGroup); {
-	case err == nil:
-		// Set the Owners field to the admin group if it's empty, which may
-		// happen if the group was created by the Python version of
-		// Auth Service.
-		if authGroup.Owners == "" {
-			authGroup.Owners = AdminGroup
+	err := datastore.Get(ctx, authGroup)
+	if err != nil {
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			return nil, err
 		}
-		return authGroup, nil
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, err
-	default:
 		return nil, errors.Fmt("error getting AuthGroup: %w", err)
 	}
+
+	// Set the Owners field to the admin group if it's empty, which may
+	// happen if the group was created by the Python version of
+	// Auth Service.
+	if authGroup.Owners == "" {
+		authGroup.Owners = AdminGroup
+	}
+
+	if err := authGroup.restoreMembersFromShards(ctx); err != nil {
+		return nil, err
+	}
+
+	return authGroup, nil
 }
 
-// GetAllAuthGroups returns all the AuthGroups from the datastore.
-//
-// Returns an annotated error.
-func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
+func getRawAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 	query := datastore.NewQuery("AuthGroup").Ancestor(RootKey(ctx))
 	var authGroups []*AuthGroup
 	err := datastore.GetAll(ctx, query, &authGroups)
 	if err != nil {
 		return nil, errors.Fmt("error getting all AuthGroup entities: %w", err)
 	}
-	for _, authGroup := range authGroups {
-		// Set the Owners field to the admin group if it's empty, which may
-		// happen if the group was created by the Python version of
-		// Auth Service.
-		if authGroup.Owners == "" {
-			authGroup.Owners = AdminGroup
-		}
+
+	return authGroups, nil
+}
+
+// GetAllAuthGroups returns all the AuthGroups from the datastore.
+// Members will be unsharded if necessary.
+//
+// Returns an annotated error.
+func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
+	authGroups, err := getRawAuthGroups(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	// Handle empty owners and unsharding in parallel.
+	nWorkers := 8
+	if len(authGroups) < nWorkers {
+		nWorkers = len(authGroups)
+	}
+	err = parallel.WorkPool(nWorkers, func(work chan<- func() error) {
+		for _, authGroup := range authGroups {
+			work <- func() error {
+				if authGroup == nil || authGroup.ID == "" {
+					return nil
+				}
+
+				// Set the Owners field to the admin group if it's empty, which may
+				// happen if the group was created by the Python version of
+				// Auth Service.
+				if authGroup.Owners == "" {
+					authGroup.Owners = AdminGroup
+				}
+
+				if err := authGroup.restoreMembersFromShards(ctx); err != nil {
+					return err
+				}
+
+				return nil
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return authGroups, nil
 }
 
@@ -909,16 +958,38 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment st
 		newGroup.CreatedTS = createdTS
 		newGroup.CreatedBy = string(creator)
 
-		// Commit the group. This adds last-modified data on the group,
-		// increments the AuthDB revision, automatically creates a historical
-		// version, and triggers replication.
-		return commitEntity(newGroup, createdTS, creator, false)
-	})
+		// Check if sharding is necessary.
+		shards, err := createAuthGroupShards(ctx, newGroup, MaxGroupShardSize)
+		if err != nil {
+			return err
+		}
+		if len(shards) != 0 {
+			newGroup.setShardIDs(ctx, shards)
+		}
 
+		// Commit the group and shards (if any). This adds last-modified data on
+		// the group and its shards, increments the AuthDB revision, automatically
+		// creates historical version(s), and triggers replication.
+		if err := commitEntity(newGroup, createdTS, creator, false); err != nil {
+			return err
+		}
+		for _, shard := range shards {
+			if err := commitEntity(shard, createdTS, creator, false); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	return newGroup, nil
+
+	// Refetch the group as saved in Datastore so subsequent updates work.
+	createdGroup, err := GetAuthGroup(ctx, group.ID)
+	if err != nil {
+		return nil, errors.Fmt("get group after create failed: %w", err)
+	}
+	return createdGroup, nil
 }
 
 // findGroupsWithFieldEq queries Datastore for the names of all groups where the
@@ -1118,13 +1189,59 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 			}
 		}
 
+		// Handle Members sharding.
+
+		// The shards for the old revision of this group should be removed if they
+		// are no longer referenced.
+		oldShards, err := authGroup.getShards(ctx)
+		if err != nil {
+			return err
+		}
+		unreferencedShards := make(map[string]*AuthGroupShard, len(oldShards))
+		for _, shard := range oldShards {
+			unreferencedShards[shard.ID] = shard
+		}
+
+		// Check if sharding is necessary.
+		var shardsToPut []*AuthGroupShard
+		shardsToPut, err = createAuthGroupShards(ctx, authGroup, MaxGroupShardSize)
+		if err != nil {
+			return err
+		}
+		if len(shardsToPut) != 0 {
+			authGroup.setShardIDs(ctx, shardsToPut)
+			for _, shard := range shardsToPut {
+				// The shard is still referenced, so it shouldn't be deleted from Datastore.
+				delete(unreferencedShards, shard.ID)
+			}
+		} else {
+			authGroup.ShardIDs = nil
+		}
+
 		// Commit the update.
-		return commitEntity(authGroup, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
+		modifier := auth.CurrentIdentity(ctx)
+		modifiedTS := clock.Now(ctx).UTC()
+		if err := commitEntity(authGroup, modifiedTS, modifier, false); err != nil {
+			return err
+		}
+		// Delete unreferenced shards.
+		for shard := range maps.Values(unreferencedShards) {
+			if err := commitEntity(shard, modifiedTS, modifier, true); err != nil {
+				return err
+			}
+		}
+		// Create/update referenced shards.
+		for _, shard := range shardsToPut {
+			if err := commitEntity(shard, modifiedTS, modifier, false); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	// Refetch the group as saved in datastore so subsequent updates work.
+	// Refetch the group as saved in Datastore so subsequent updates work.
 	updatedGroup, err := GetAuthGroup(ctx, groupUpdate.ID)
 	if err != nil {
 		return nil, errors.Fmt("get group after update failed: %w", err)
@@ -1175,6 +1292,10 @@ func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
 //	customerrors.ErrReferencedEntity if the group is referenced by another group.
 //	Annotated error for other errors.
 func DeleteAuthGroup(ctx context.Context, groupName string, etag string, historicalComment string) error {
+	if groupName == "" {
+		return customerrors.ErrInvalidArgument
+	}
+
 	// Disallow deletion of hardcoded groups.
 	if groupName == AdminGroup || groupName == GroupCreatorsGroup {
 		return customerrors.ErrPermissionDenied
@@ -1187,8 +1308,8 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		// Fetch the group and check the user is an admin or a group owner.
-		authGroup, err := GetAuthGroup(ctx, groupName)
-		if err != nil {
+		authGroup := makeAuthGroup(ctx, groupName)
+		if err := datastore.Get(ctx, authGroup); err != nil {
 			return err
 		}
 		ok, err := auth.IsMember(ctx, AdminGroup, authGroup.Owners)
@@ -1216,8 +1337,23 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 			return errors.Fmt("this group is referenced by other groups: [%s]: %w", groupsStr, customerrors.ErrReferencedEntity)
 		}
 
-		// Delete the group.
-		return commitEntity(authGroup, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), true)
+		// Delete the group and shards, if any.
+		shards, err := authGroup.getShards(ctx)
+		if err != nil {
+			return err
+		}
+		deleter := auth.CurrentIdentity(ctx)
+		deletedTS := clock.Now(ctx).UTC()
+		if err := commitEntity(authGroup, deletedTS, deleter, true); err != nil {
+			return err
+		}
+		for _, shard := range shards {
+			if err := commitEntity(shard, deletedTS, deleter, true); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 }
 

@@ -217,7 +217,7 @@ func TestImportBundles(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Testing importBundles", t, func(t *ftt.Test) {
-		// Set up craetor and modifier identities.
+		// Set up creator and modifier identities.
 		creator := "user:test-creator@example.com"
 		modifier := "user:test-modifier@example.com"
 		callerIdent := identity.Identity(modifier)
@@ -404,6 +404,137 @@ func TestImportBundles(t *testing.T) {
 				assert.Loosely(t, updatedGroups, should.Match(groupsBundled))
 				assert.Loosely(t, rev, should.Equal(3))
 			})
+
+			t.Run("creates oversized groups", func(t *ftt.Test) {
+				// Create an import bundle with oversized groups.
+				bundle, groupNames := makeGroupBundle("test", 4)
+				expectedMembers, bundleMembers := makeBundleMembers(100000)
+				for _, groupName := range groupNames {
+					bundle["test"][groupName] = bundleMembers
+				}
+
+				// Import the oversized groups.
+				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, nil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Match(groupNames))
+				assert.Loosely(t, rev, should.Equal(1))
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
+
+				// Check the oversized groups were created.
+				groups, err := GetAllAuthGroups(ctx)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, groups, should.HaveLength(5))
+				for _, group := range groups {
+					if group.ID == AdminGroup {
+						continue
+					}
+					assert.Loosely(t, group.Members, should.Match(expectedMembers))
+					assert.Loosely(t, group.ShardIDs, should.BeNil)
+				}
+
+				shards, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, shards, should.NotBeEmpty)
+			})
+
+			t.Run("updates a group to be oversized", func(t *ftt.Test) {
+				// Set up datastore with the initial state of the external group.
+				g := testExternalAuthGroup(ctx, "test/group-0", creator,
+					[]string{"user:b@example.com", "user:c@example.com"}, testCreatedTS)
+				assert.Loosely(t, datastore.Put(ctx, g, testAuthReplicationState(ctx, 1)), should.BeNil)
+
+				// Create an import bundle with the group now oversized.
+				bundle, groupNames := makeGroupBundle("test", 1)
+				expectedMembers, bundleMembers := makeBundleMembers(100000)
+				for _, groupName := range groupNames {
+					bundle["test"][groupName] = bundleMembers
+				}
+
+				// Import the oversized groups.
+				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, nil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Match(groupNames))
+				assert.Loosely(t, rev, should.Equal(2))
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
+
+				group, err := GetAuthGroup(ctx, groupNames[0])
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, group.Members, should.Match(expectedMembers))
+
+				shards, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, shards, should.NotBeEmpty)
+			})
+
+			t.Run("deletes an oversized group", func(t *ftt.Test) {
+				// Set up datastore with the initial state of the external group, which
+				// is sharded.
+				members, _ := makeBundleMembers(100000)
+				g := testExternalAuthGroup(ctx, "test/group-to-be-deleted", creator,
+					members, testCreatedTS)
+				shards, err := createAuthGroupShards(ctx, g, MaxGroupShardSize)
+				assert.Loosely(t, err, should.BeNil)
+				g.setShardIDs(ctx, shards)
+				assert.Loosely(t, datastore.Put(ctx, g, shards, testAuthReplicationState(ctx, 1)), should.BeNil)
+
+				// Create an import bundle without the initial group.
+				bundle, _ := makeGroupBundle("test", 1)
+
+				// Do the import.
+				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, nil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Match(
+					[]string{"test/group-0", "test/group-to-be-deleted"}))
+				assert.Loosely(t, rev, should.Equal(2))
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
+
+				// Check the group no longer exists.
+				_, err = GetAuthGroup(ctx, "test/group-to-be-deleted")
+				assert.Loosely(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
+
+				// Check the shards have also been deleted.
+				shardEntities, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, shardEntities, should.BeEmpty)
+			})
+
+			t.Run("clears an oversized group if still referenced", func(t *ftt.Test) {
+				// Set up datastore with the initial state of the external group, which
+				// is sharded, and another group which references it.
+				members, _ := makeBundleMembers(100000)
+				g := testExternalAuthGroup(ctx, "test/group-to-be-cleared", creator,
+					members, testCreatedTS)
+				shards, err := createAuthGroupShards(ctx, g, MaxGroupShardSize)
+				assert.Loosely(t, err, should.BeNil)
+				g.setShardIDs(ctx, shards)
+				superGroup := testAuthGroup(ctx, "test-group")
+				superGroup.Nested = []string{"test/group-to-be-cleared"}
+				assert.Loosely(t,
+					datastore.Put(ctx, g, superGroup, shards, testAuthReplicationState(ctx, 1)),
+					should.BeNil)
+
+				// Create an import bundle without the initial group.
+				bundle, _ := makeGroupBundle("test", 1)
+
+				// Do the import.
+				updatedGroups, rev, err := importBundles(ctx, bundle, callerIdent, nil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, updatedGroups, should.Match(
+					[]string{"test/group-0", "test/group-to-be-cleared"}))
+				assert.Loosely(t, rev, should.Equal(2))
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
+
+				// Check the group still exists, but is empty.
+				actualGroup, err := GetAuthGroup(ctx, "test/group-to-be-cleared")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actualGroup.Members, should.BeNil)
+				assert.Loosely(t, actualGroup.ShardIDs, should.BeNil)
+
+				// Check the shards have also been deleted.
+				shardEntities, err := getAllDatastoreEntities(ctx, "AuthGroupShard", RootKey(ctx))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, shardEntities, should.BeEmpty)
+			})
 		})
 	})
 }
@@ -418,6 +549,16 @@ func makeGroupBundle(system string, size int) (map[string]GroupBundle, []string)
 		groupsBundled.Add(group)
 	}
 	return bundle, groupsBundled.ToSortedSlice()
+}
+
+func makeBundleMembers(n int) ([]string, []identity.Identity) {
+	members := make([]string, n)
+	bundleMembers := make([]identity.Identity, n)
+	for i := range n {
+		members[i] = fmt.Sprintf("user:testUser%d@example.com", i)
+		bundleMembers[i] = identity.Identity(members[i])
+	}
+	return members, bundleMembers
 }
 
 func testExternalAuthGroup(ctx context.Context, name, createdBy string, members []string, createdTS time.Time) *AuthGroup {

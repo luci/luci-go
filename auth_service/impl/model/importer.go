@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -253,7 +254,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 	// Fetches all existing groups and AuthDB revision number.
 	groupsSnapshot := func(ctx context.Context) (gMap map[string]*AuthGroup, rev int64, err error) {
 		err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-			groups, err := GetAllAuthGroups(ctx)
+			groups, err := getRawAuthGroups(ctx)
 			if err != nil {
 				return err
 			}
@@ -271,7 +272,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 	}
 
 	// Transactionally puts and deletes a bunch of entities.
-	applyImport := func(expectedRevision int64, entitiesToPut, entitiesToDelete []*AuthGroup, ts time.Time) error {
+	applyImport := func(expectedRevision int64, entitiesToPut, entitiesToDelete []versionedEntity, ts time.Time) error {
 		// Runs in transaction.
 		return runAuthDBChange(ctx, "Imported from group bundles", func(ctx context.Context, cae commitAuthEntity) error {
 			rev, err := getAuthDBRevision(ctx)
@@ -323,11 +324,18 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 		if testHook != nil && loopCount == 2 {
 			testHook()
 		}
-		entitiesToPut := []*AuthGroup{}
-		entitiesToDel := []*AuthGroup{}
+
+		logging.Infof(ctx, "Preparing AuthDB rev %d", revision+1)
+
+		entitiesToPut := []versionedEntity{}
+		entitiesToDel := []versionedEntity{}
 		for sys := range bundles {
 			iGroups := bundles[sys]
-			toPut, toDel := prepareImport(ctx, sys, groups, iGroups, providedBy, ts)
+			toPut, toDel, updated, err := prepareImport(ctx, sys, groups, iGroups, providedBy, ts)
+			if err != nil {
+				return nil, revision, err
+			}
+			updatedGroups = updatedGroups.Union(updated)
 			entitiesToPut = append(entitiesToPut, toPut...)
 			entitiesToDel = append(entitiesToDel, toDel...)
 		}
@@ -357,17 +365,6 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 		} else if len(entitiesToPut)+len(entitiesToDel) > 200 {
 			entitiesToDel = entitiesToDel[:200-len(entitiesToPut)]
 			truncated = true
-		}
-
-		// Log what we are about to do to help debugging transaction errors.
-		logging.Infof(ctx, "Preparing AuthDB rev %d with %d puts and %d deletes:", revision+1, len(entitiesToPut), len(entitiesToDel))
-		for _, e := range entitiesToPut {
-			logging.Infof(ctx, "U %s", e.ID)
-			updatedGroups.Add(e.ID)
-		}
-		for _, e := range entitiesToDel {
-			logging.Infof(ctx, "D %s", e.ID)
-			updatedGroups.Add(e.ID)
 		}
 
 		// Check the AdminGroup exists before attempting to apply the import,
@@ -415,7 +412,7 @@ func importBundles(ctx context.Context, bundles map[string]GroupBundle, provided
 // prepareImport compares the bundle given to the what is currently present in datastore
 // to get the operations for all the groups.
 func prepareImport(ctx context.Context, systemName string, existingGroups map[string]*AuthGroup, iGroups GroupBundle,
-	providedBy identity.Identity, createdTS time.Time) (toPut []*AuthGroup, toDel []*AuthGroup) {
+	providedBy identity.Identity, createdTS time.Time) (toPut, toDel []versionedEntity, updatedGroups stringset.Set, err error) {
 	// Filter existing groups to those that belong to the given system.
 	sysGroupsSet := stringset.New(0)
 	sysPrefix := fmt.Sprintf("%s/", systemName)
@@ -433,8 +430,24 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 
 	// Create new groups.
 	toCreate := iGroupsSet.Difference(sysGroupsSet).ToSlice()
+	updatedGroups = stringset.New(len(toCreate))
 	for _, g := range toCreate {
 		group := makeNewExternalAuthGroup(ctx, g, iGroups[g], providedBy, createdTS)
+
+		// Check if sharding is necessary.
+		shards, err := createAuthGroupShards(ctx, group, MaxGroupShardSize)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if len(shards) > 0 {
+			group.setShardIDs(ctx, shards)
+			for _, shard := range shards {
+				toPut = append(toPut, shard)
+			}
+		}
+
+		logging.Infof(ctx, "U %s", group.ID)
+		updatedGroups.Add(group.ID)
 		toPut = append(toPut, group)
 	}
 
@@ -442,11 +455,60 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 	toUpdate := sysGroupsSet.Intersect(iGroupsSet).ToSlice()
 	for _, g := range toUpdate {
 		existingGroup := existingGroups[g]
+		members := existingGroup.Members
+		if len(existingGroup.ShardIDs) > 0 {
+			members, err = existingGroup.getMembersFromShards(ctx)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+		}
+
 		importedMembers := identitiesToStrings(iGroups[g])
-		if len(importedMembers) != len(existingGroup.Members) ||
-			!stringset.NewFromSlice(importedMembers...).HasAll(existingGroup.Members...) {
-			existingGroup.Members = importedMembers
-			toPut = append(toPut, existingGroup)
+		if len(importedMembers) == len(members) &&
+			stringset.NewFromSlice(importedMembers...).HasAll(members...) {
+			// The group hasn't changed, so skip updating it.
+			continue
+		}
+
+		existingGroup.Members = importedMembers
+
+		// Handle Members sharding.
+
+		// The shards for the old revision of this group should be removed if they
+		// are no longer referenced.
+		oldShards, err := existingGroup.getShards(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		unreferencedShards := make(map[string]*AuthGroupShard, len(oldShards))
+		for _, shard := range oldShards {
+			unreferencedShards[shard.ID] = shard
+		}
+
+		// Check if sharding is necessary.
+		var shardsToPut []*AuthGroupShard
+		shardsToPut, err = createAuthGroupShards(ctx, existingGroup, MaxGroupShardSize)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if len(shardsToPut) != 0 {
+			existingGroup.setShardIDs(ctx, shardsToPut)
+			for _, shard := range shardsToPut {
+				toPut = append(toPut, shard)
+				// The shard is still referenced, so it shouldn't be deleted from Datastore.
+				delete(unreferencedShards, shard.ID)
+			}
+		} else {
+			existingGroup.ShardIDs = nil
+		}
+
+		logging.Infof(ctx, "U %s", existingGroup.ID)
+		updatedGroups.Add(existingGroup.ID)
+		toPut = append(toPut, existingGroup)
+
+		// The unreferenced shards should be deleted.
+		for shard := range maps.Values(unreferencedShards) {
+			toDel = append(toDel, shard)
 		}
 	}
 
@@ -464,20 +526,35 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 		}
 
 		existingGroup := existingGroups[groupName]
+		shards, err := existingGroup.getShards(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if len(shards) > 0 {
+			// Delete this group's shards.
+			for _, shard := range shards {
+				toDel = append(toDel, shard)
+			}
+		}
 		if isSubgroup {
 			// The group is a subgroup of another so it shouldn't be deleted.
-			// Clear members only if there are currently members in the group.
-			if len(existingGroup.Members) != 0 {
-				existingGroup.Members = []string{}
+			// Clear its members instead.
+			if len(existingGroup.ShardIDs) > 0 || len(existingGroup.Members) > 0 {
+				existingGroup.Members = nil
+				existingGroup.ShardIDs = nil
+				updatedGroups.Add(existingGroup.ID)
+				logging.Infof(ctx, "U %s", existingGroup.ID)
 				toPut = append(toPut, existingGroup)
+				continue
 			}
-			continue
 		}
 
+		logging.Infof(ctx, "D %s", existingGroup.ID)
+		updatedGroups.Add(existingGroup.ID)
 		toDel = append(toDel, existingGroup)
 	}
 
-	return toPut, toDel
+	return toPut, toDel, updatedGroups, nil
 }
 
 func identitiesToStrings(idents []identity.Identity) []string {

@@ -92,6 +92,15 @@ func TestTakeSnapshot(t *testing.T) {
 			projectRealms2,
 			projectRealms1,
 		), should.BeNil)
+		group3 := testAuthGroup(ctx, "group-3")
+		shards, err := createAuthGroupShards(ctx, group3, 10)
+		group3.ShardIDs = make([]string, 0, len(shards))
+		for _, shard := range shards {
+			group3.ShardIDs = append(group3.ShardIDs, shard.ID)
+		}
+		group3.Members = nil
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, datastore.Put(ctx, group3, shards), should.BeNil)
 
 		snap, err := TakeSnapshot(ctx)
 		assert.Loosely(t, err, should.BeNil)
@@ -102,6 +111,7 @@ func TestTakeSnapshot(t *testing.T) {
 			Groups: []*AuthGroup{
 				testAuthGroup(ctx, "group-1"),
 				testAuthGroup(ctx, "group-2"),
+				testAuthGroup(ctx, "group-3"),
 			},
 			IPAllowlists: []*AuthIPAllowlist{
 				testIPAllowlist(ctx, "ip-allowlist-1", nil),
@@ -190,6 +200,7 @@ func TestTakeSnapshot(t *testing.T) {
 				Groups: []*protocol.AuthGroup{
 					groupProto("group-1"),
 					groupProto("group-2"),
+					groupProto("group-3"),
 				},
 				IpWhitelists: []*protocol.AuthIPWhitelist{
 					allowlistProto("ip-allowlist-1"),
