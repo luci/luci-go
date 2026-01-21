@@ -16,7 +16,7 @@ import { useNavigate, useParams } from 'react-router';
 
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { generateAnotherPlatformCorrespondingURL } from '../constants/paths';
+import { generateDeviceListURL } from '../constants/paths';
 
 export type PlatformDetails = {
   setPlatform: (p: Platform) => void;
@@ -48,7 +48,7 @@ export function usePlatform(): PlatformDetails {
   }
 
   const setPlatform = (newPlatform: Platform) => {
-    navigate(generateAnotherPlatformCorrespondingURL(platform, newPlatform));
+    navigate(generateDeviceListURL(Platform[newPlatform].toLowerCase()));
   };
 
   return {
