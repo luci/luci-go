@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcmon"
+	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 )
@@ -173,10 +174,15 @@ func turboCIMsgToText(msg any) string {
 		defer redactToken(v.HasToken, v.GetToken, v.SetToken)()
 	case *orchestratorpb.CreateWorkPlanResponse:
 		defer redactToken(v.HasCreatorToken, v.GetCreatorToken, v.SetCreatorToken)()
+	case *executorpb.RunStageRequest:
+		defer redactToken(v.HasStageAttemptToken, v.GetStageAttemptToken, v.SetStageAttemptToken)()
 	}
 	blob, err := (prototext.MarshalOptions{Multiline: true}).Marshal(m)
 	if err != nil {
 		return fmt.Sprintf("<marshal error %q>", err)
+	}
+	if len(blob) == 0 {
+		return "<empty>"
 	}
 	return string(blob)
 }
