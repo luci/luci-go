@@ -255,7 +255,7 @@ type AuthDBChangeShard struct {
 	ID     string         `gae:"$id"`
 
 	// Blob is a sharded part of the compressed members specified in a change.
-	Blob []byte
+	Blob []byte `gae:"blob,noindex"`
 }
 
 func (acs *AuthDBChangeShard) GetBlob() []byte {
