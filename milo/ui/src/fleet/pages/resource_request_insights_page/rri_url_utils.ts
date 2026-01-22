@@ -36,6 +36,9 @@ export const parseMultiselectFilter = (str?: string): string[] | undefined => {
     return undefined;
   }
 
+  const OR_SEPARATOR = ' OR ';
+  const SEPARATOR_LENGTH = OR_SEPARATOR.length;
+
   const trimmed = str.trim();
   if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
     // single value in quotes
@@ -47,10 +50,49 @@ export const parseMultiselectFilter = (str?: string): string[] | undefined => {
       throw new Error('Missing closing parenthesis');
     }
 
-    const values = trimmed
-      .slice(1, -1)
-      .split(/or|\|/i)
-      .map((s) => s.trim());
+    const values: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    const content = trimmed.slice(1, -1);
+
+    // Use a pointer to iterate through the string
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+
+      if (char === '"' && (i === 0 || content[i - 1] !== '\\')) {
+        inQuotes = !inQuotes;
+      }
+
+      if (!inQuotes) {
+        // Check for " OR " (surrounded by spaces) or "|"
+        // We look for " OR " specifically to avoid matching "WORD"
+        // Also handle "OR" at start/end if that's possible (though trim() handles ends)
+        // Actually, we can just check if we hit a separator.
+
+        // Check for "|"
+        if (char === '|') {
+          values.push(current.trim());
+          current = '';
+          continue;
+        }
+
+        // Check for " OR "
+        // We look ahead to see if we match " OR ".
+        // Note: verify bounds.
+        if (
+          content.slice(i, i + SEPARATOR_LENGTH).toUpperCase() === OR_SEPARATOR
+        ) {
+          values.push(current.trim());
+          current = '';
+          i += SEPARATOR_LENGTH - 1; // Skip OR_SEPARATOR (the loop will increment one more)
+          continue;
+        }
+      }
+
+      current += char;
+    }
+    values.push(current.trim());
 
     if (values.some((v) => v === '')) {
       throw new Error('Found a hanging ORs');

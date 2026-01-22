@@ -33,6 +33,14 @@ describe('multi_select_search_param_utils', () => {
       expect(result).toEqual(['value 1', 'value with "quotes"']);
     });
 
+    it('should handle OR inside quoted values', () => {
+      const result = parseMultiselectFilter(
+        '("value with OR inside" OR "another valueRef")',
+      );
+
+      expect(result).toEqual(['value with OR inside', 'another valueRef']);
+    });
+
     it('should parse a single value in parentheses', () => {
       const result = parseMultiselectFilter('("value 1")');
 
