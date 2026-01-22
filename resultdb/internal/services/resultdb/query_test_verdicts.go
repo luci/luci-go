@@ -72,10 +72,6 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 
 	q := &testverdictsv2.Query{
 		RootInvocationID:         rootInvID,
-		PageSize:                 pageSize,
-		ResponseLimitBytes:       queryTestVerdictsResponseLimitBytes,
-		VerdictResultLimit:       testverdictsv2.StandardVerdictResultLimit,
-		VerdictSizeLimit:         testverdictsv2.StandardVerdictSizeLimit,
 		Order:                    order,
 		ContainsTestResultFilter: req.Predicate.GetContainsTestResultFilter(),
 		TestPrefixFilter:         req.Predicate.GetTestPrefixFilter(),
@@ -84,7 +80,15 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 		View:                     view,
 	}
 
-	verdicts, nextPageToken, err := q.Fetch(ctx, req.PageToken)
+	fetchOpts := testverdictsv2.FetchOptions{
+		PageSize:           pageSize,
+		ResponseLimitBytes: queryTestVerdictsResponseLimitBytes,
+		TotalResultLimit:   testresultsv2.MaxTestResultsPageSize,
+		VerdictResultLimit: testverdictsv2.StandardVerdictResultLimit,
+		VerdictSizeLimit:   testverdictsv2.StandardVerdictSizeLimit,
+	}
+
+	verdicts, nextPageToken, err := q.Fetch(ctx, req.PageToken, fetchOpts)
 	if err != nil {
 		return nil, err
 	}

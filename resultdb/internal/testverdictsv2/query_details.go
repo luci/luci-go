@@ -16,6 +16,7 @@ package testverdictsv2
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/api/iterator"
 	"google.golang.org/protobuf/proto"
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testexonerationsv2"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -58,23 +60,6 @@ type QueryDetails struct {
 	Access permissions.RootInvocationAccess
 }
 
-// FetchOptions specifies options for fetching a page of test verdicts.
-type FetchOptions struct {
-	// The maximum number of test verdicts to return per page.
-	PageSize int
-	// The limit on the number of bytes that should be returned in a page.
-	// Row size is estimated as proto.Size() + protoJSONOverheadBytes bytes (to allow for
-	// alternative encodings which higher fixed overheads than wire proto, e.g. protojson).
-	// If this is zero, no limit is applied.
-	ResponseLimitBytes int
-
-	// The limit on the number of test results and test exonerations to return per verdict.
-	// The limit is applied independently to test results and exonerations.
-	VerdictResultLimit int
-	// The size limit, in bytes, of each test verdict.
-	VerdictSizeLimit int
-}
-
 // PageToken represents the token for a page of (detailed) verdicts.
 type PageToken struct {
 	// Either of the following will be specified; not both.
@@ -93,32 +78,23 @@ const protoJSONOverheadBytes = 1000
 
 // Fetch fetches a page of verdicts starting at the given page token.
 func (q *QueryDetails) Fetch(ctx context.Context, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
-	if opts.PageSize <= 0 {
-		return nil, PageToken{}, errors.New("page size must be positive")
-	}
-	if opts.VerdictResultLimit <= 0 {
-		return nil, PageToken{}, errors.New("verdict result limit must be positive")
-	}
-	if opts.VerdictSizeLimit <= 0 {
-		return nil, PageToken{}, errors.New("verdict size limit must be positive")
-	}
-	if opts.ResponseLimitBytes < 0 {
-		return nil, PageToken{}, errors.New("if set, response limit bytes must be positive")
+	if err := opts.Validate(); err != nil {
+		return nil, PageToken{}, err
 	}
 
-	var results []*pb.TestVerdict
+	var verdicts []*pb.TestVerdict
 	var nextPageToken PageToken
 	var totalSize int
 	it := q.List(ctx, pageToken, opts.PageSize)
-	err := it.Do(func(tv *TestVerdict) error {
-		result := tv.ToProto(opts.VerdictResultLimit, opts.VerdictSizeLimit)
+	err := it.Do(ctx, func(tv *TestVerdict) error {
+		verdict := tv.ToProto(opts.VerdictResultLimit, opts.VerdictSizeLimit)
 
 		if opts.ResponseLimitBytes != 0 {
 			// Apply response size limiting by bytes.
 			// Estimate size as per comment on FetchOptions.ResponseLimitBytes.
-			resultSize := proto.Size(result) + protoJSONOverheadBytes
+			resultSize := proto.Size(verdict) + protoJSONOverheadBytes
 			if (totalSize + resultSize) > opts.ResponseLimitBytes {
-				if len(results) == 0 {
+				if len(verdicts) == 0 {
 					// This should not normally happen.
 					return errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", resultSize, opts.ResponseLimitBytes)
 				}
@@ -128,9 +104,9 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken PageToken, opts Fetc
 			totalSize += resultSize
 		}
 
-		results = append(results, result)
+		verdicts = append(verdicts, verdict)
 		nextPageToken = pageTokenFromVerdict(tv)
-		if len(results) >= opts.PageSize {
+		if len(verdicts) >= opts.PageSize {
 			// We have met the page size target. Stop iteration.
 			return iterator.Done
 		}
@@ -143,7 +119,7 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken PageToken, opts Fetc
 	if err == nil {
 		nextPageToken = PageToken{}
 	}
-	return results, nextPageToken, nil
+	return verdicts, nextPageToken, nil
 }
 
 // statusV2FromResults computes the verdict status (v2) based on
@@ -203,18 +179,26 @@ func (q *QueryDetails) List(ctx context.Context, pageToken PageToken, bufferSize
 	}
 	trPageToken := pageToken.toTestResultsPageToken()
 	trOpts := spanutil.BufferingOptions{
-		// System-wise, the average number of test results per verdict is about 1.1.
+		// System-wide, the average number of test results per verdict is about 1.1.
 		// Here we request slightly more to reduce the chance we need a second page.
-		FirstPageSize: bufferSize * (12 / 10),
-		// If the first page isn't enough, we probably only need a small amount more.
-		SecondPageSize: bufferSize / 2,
+		// Add one as our iterator needs one extra result to confirm it has finished
+		// reading the verdict.
+		FirstPageSize: bufferSize*(12/10) + 1,
+		// If the first page isn't enough, get another similar amount.
+		SecondPageSize: bufferSize,
 		// Thereafter, we are dealing with significant outliers or we might have
 		// made a significant error in our estimate. Double the page size each time
 		// to avoid perpetually underestimating.
 		GrowthFactor: 2.0,
+		MaxPageSize:  testresultsv2.MaxTestResultsPageSize,
 	}
-	if trOpts.SecondPageSize < 1 {
-		trOpts.SecondPageSize = 1
+	if q.VerdictIDs != nil {
+		// If doing a query for nominated verdict IDs, clients typically try to page
+		// through all verdicts they requested. There is no point starting with a small
+		// page size to avoid reading more than necessary; we want to read everything
+		// as fast as we can.
+		trOpts.FirstPageSize = testresultsv2.MaxTestResultsPageSize
+		trOpts.SecondPageSize = testresultsv2.MaxTestResultsPageSize
 	}
 	trIterator := trQuery.List(ctx, trPageToken, trOpts)
 
@@ -226,17 +210,25 @@ func (q *QueryDetails) List(ctx context.Context, pageToken PageToken, bufferSize
 	}
 	tePageToken := pageToken.toTestExonerationsPageToken()
 	teOpts := spanutil.BufferingOptions{
-		// System-wise, about a half percent of verdicts are exonerated.
-		FirstPageSize: bufferSize / 100,
+		// System-wide, about a half percent of verdicts are exonerated, here we
+		// query 1%. Add one as our iterator always needs one more exoneration to
+		// confirm it has finished reading the verdict.
+		FirstPageSize: (bufferSize / 100) + 1,
 		// If the first page isn't enough, maybe we hit a large block of exonerations.
 		SecondPageSize: bufferSize,
 		// Thereafter, we are dealing with significant outliers or we might have
 		// made a significant error in our estimate. Double the page size each time
 		// to avoid perpetually underestimating.
 		GrowthFactor: 2.0,
+		MaxPageSize:  testexonerationsv2.MaxTestExonerationsPageSize,
 	}
-	if teOpts.FirstPageSize < 1 {
-		teOpts.FirstPageSize = 1
+	if q.VerdictIDs != nil {
+		// If doing a query for nominated verdict IDs, clients typically try to page
+		// through all verdicts they requested. There is no point starting with a small
+		// page size to avoid reading more than necessary; we want to read everything
+		// as fast as we can.
+		teOpts.FirstPageSize = testexonerationsv2.MaxTestExonerationsPageSize
+		teOpts.SecondPageSize = testexonerationsv2.MaxTestExonerationsPageSize
 	}
 	teIterator := teQuery.List(ctx, tePageToken, teOpts)
 
@@ -292,7 +284,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("peek next test result: %w", err)
 		}
 		if pageTokenFromResult(r) != verdictToken {
 			// Test result is for a future verdict. Do not consume it.
@@ -302,7 +294,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 		// Consume the result.
 		verdict.Results = append(verdict.Results, r)
 		if _, err := i.testResults.Next(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("consume test result: %w", err)
 		}
 	}
 
@@ -316,7 +308,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("peek next exoneration: %w", err)
 		}
 
 		eToken := pageTokenFromExoneration(e)
@@ -325,7 +317,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 			// Exoneration for a verdict we have already passed (never saw results for).
 			// Skip it.
 			if _, err := i.testExonerations.Next(); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("consume test exoneration: %w", err)
 			}
 			continue
 		}
@@ -337,7 +329,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 		// Consume the exoneration.
 		verdict.Exonerations = append(verdict.Exonerations, e)
 		if _, err := i.testExonerations.Next(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("consume test exoneration: %w", err)
 		}
 	}
 	return verdict, nil
@@ -346,7 +338,10 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 // Do calls the given callback function for each test verdict in the iterator,
 // or until the callback function returns an error. It takes care of calling
 // Stop.
-func (i *Iterator) Do(f func(*TestVerdict) error) error {
+func (i *Iterator) Do(ctx context.Context, f func(*TestVerdict) error) (err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.Iterator.Do")
+	defer func() { tracing.End(ts, err) }()
+
 	defer i.Stop()
 	for {
 		tv, err := i.Next()

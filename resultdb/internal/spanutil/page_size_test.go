@@ -28,6 +28,7 @@ func TestPageSizeController(t *testing.T) {
 			FirstPageSize:  10,
 			SecondPageSize: 20,
 			GrowthFactor:   1.0,
+			MaxPageSize:    10_000,
 		}
 		t.Run("Invalid Options", func(t *ftt.Test) {
 			t.Run("FirstPageSize <= 0", func(t *ftt.Test) {
@@ -90,6 +91,7 @@ func TestPageSizeController(t *testing.T) {
 			opts.FirstPageSize = 3010
 			opts.SecondPageSize = 1000
 			opts.GrowthFactor = 2.0
+			opts.MaxPageSize = 10_000
 			c := NewPageSizeController(opts)
 
 			expected := []int{3010, 1000, 2000, 4000, 8000, 10_000, 10_000, 10_000}

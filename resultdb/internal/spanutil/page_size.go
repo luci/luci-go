@@ -39,13 +39,9 @@ type BufferingOptions struct {
 	// To avoid disk spills, growth is capped to a maximum page size of
 	// 10,000, which seems to be small enough to avoid disk spills.
 	GrowthFactor float64
+	// The maximum page size.
+	MaxPageSize int
 }
-
-// The page size that usually avoids Spanner spilling data to disk. Tested
-// empirically on TestResults table. It is believed spills happens when the
-// result set size approaches 32 MB.
-// At 1 KB per test result, this keeps query results to ~10MB.
-const maxPageSize = 10_000
 
 // PageSizeController controls the page size for a paged iterator.
 type PageSizeController struct {
@@ -75,19 +71,19 @@ func (bc *PageSizeController) NextPageSize() (int, error) {
 	}
 
 	bc.pageNumber++
+	var newPageSize int
 	if bc.pageNumber == 1 {
-		bc.lastPageSize = bc.opts.FirstPageSize
-		return bc.lastPageSize, nil
+		newPageSize = bc.opts.FirstPageSize
+	} else if bc.pageNumber == 2 {
+		newPageSize = bc.opts.SecondPageSize
+	} else {
+		// Grow the page size, clamping to MaxPageSize.
+		newPageSizeFloat := (float64(bc.lastPageSize) * bc.opts.GrowthFactor)
+		newPageSize = int(newPageSizeFloat)
 	}
-	if bc.pageNumber == 2 {
-		bc.lastPageSize = bc.opts.SecondPageSize
-		return bc.lastPageSize, nil
+	if newPageSize > bc.opts.MaxPageSize {
+		newPageSize = bc.opts.MaxPageSize
 	}
-	// Grow the page size, clamping to MaxPageSize.
-	newPageSize := (float64(bc.lastPageSize) * bc.opts.GrowthFactor)
-	if newPageSize > maxPageSize {
-		newPageSize = maxPageSize
-	}
-	bc.lastPageSize = int(newPageSize)
-	return bc.lastPageSize, nil
+	bc.lastPageSize = newPageSize
+	return newPageSize, nil
 }

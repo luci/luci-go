@@ -32,6 +32,14 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// MaxTestExonerationsPageSize is the maximum page test results page size.
+// It is selected to avoid Spanner spilling bytes to disk, which usually
+// appears to occur once the results exceed 16-32 MiB.
+//
+// Currently follows the test result page size, as exonerations are usually
+// equal or smaller in size.
+const MaxTestExonerationsPageSize = testresultsv2.MaxTestResultsPageSize
+
 // Query provides methods to query test exonerations in a root invocation.
 type Query struct {
 	// The root invocation to query.

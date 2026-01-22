@@ -26,7 +26,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
@@ -35,6 +37,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
+	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -43,21 +46,6 @@ import (
 type Query struct {
 	// The root invocation.
 	RootInvocationID rootinvocations.ID
-	// The number of test verdicts to return per page.
-	PageSize int
-	// The hard limit on the number of bytes that should be returned by a Test Verdicts query.
-	// Row size is estimated as proto.Size() + protoJSONOverheadBytes bytes (to allow for
-	// alternative encodings which higher fixed overheads, e.g. protojson). If this is zero,
-	// no limit is applied.
-	// This should be set to a value equal or greater than VerdictSizeLimit.
-	ResponseLimitBytes int
-	// The limit on the number of test results and test exonerations to return per verdict.
-	// The limit is applied independently to test results and exonerations.
-	VerdictResultLimit int
-	// The size limit, in bytes, of each test verdict.
-	// This limit is only ever used to reduce the number of test results and exonerations
-	// returned, and not any other properties.
-	VerdictSizeLimit int
 	// Whether to use UI sort order, i.e. by ui_priority first, instead of by test ID.
 	// This incurs a performance penalty, as results are not returned in table order.
 	Order Ordering
@@ -94,19 +82,56 @@ const (
 	OrderingByUIPriority
 )
 
+type FetchOptions struct {
+	// The number of test verdicts to return per page.
+	PageSize int
+	// The hard limit on the number of bytes that should be returned by a Test Verdicts query.
+	// Row size is estimated as proto.Size() + protoJSONOverheadBytes bytes (to allow for
+	// alternative encodings which higher fixed overheads, e.g. protojson). If this is zero,
+	// no limit is applied.
+	// This should be set to a value equal or greater than VerdictSizeLimit.
+	ResponseLimitBytes int
+	// A soft limit on the the maximum number of results the underlying query should retrieve.
+	// This is used to manage timeout risk.
+	TotalResultLimit int
+	// The limit on the number of test results and test exonerations to return per verdict.
+	// The limit is applied independently to test results and exonerations.
+	VerdictResultLimit int
+	// The size limit, in bytes, of each test verdict.
+	// This limit is only ever used to reduce the number of test results and exonerations
+	// returned, and not any other properties.
+	VerdictSizeLimit int
+}
+
+// Validate validates the fetch options.
+func (opts FetchOptions) Validate() error {
+	if opts.PageSize <= 0 {
+		return errors.New("page size must be positive")
+	}
+	if opts.ResponseLimitBytes < 0 {
+		return errors.New("if set, response limit bytes must be positive")
+	}
+	if opts.TotalResultLimit < 0 {
+		return errors.New("if set, total result limit must be be positive")
+	}
+	if opts.VerdictResultLimit <= 0 {
+		return errors.New("verdict result limit must be positive")
+	}
+	if opts.VerdictSizeLimit <= 0 {
+		return errors.New("verdict size limit must be positive")
+	}
+	return nil
+}
+
 // Fetch fetches a page of test verdicts.
-func (q *Query) Fetch(ctx context.Context, pageToken string) ([]*pb.TestVerdict, string, error) {
-	if q.PageSize <= 0 {
-		return nil, "", errors.New("page size must be positive")
-	}
-	if q.ResponseLimitBytes < 0 {
-		return nil, "", errors.New("response limit bytes must be non-negative")
-	}
-	if q.VerdictResultLimit <= 0 {
-		return nil, "", errors.New("verdict result limit must be positive")
-	}
-	if q.VerdictSizeLimit <= 0 {
-		return nil, "", errors.New("verdict size limit must be positive")
+func (q *Query) Fetch(ctx context.Context, pageToken string, opts FetchOptions) ([]*pb.TestVerdict, string, error) {
+	ctx = logging.SetFields(ctx, logging.Fields{
+		"RootInvocationID": q.RootInvocationID,
+		"PageSize":         opts.PageSize,
+	})
+
+	if err := opts.Validate(); err != nil {
+		return nil, "", errors.Fmt("opts: %w", err)
 	}
 	if q.Access.Level == permissions.NoAccess {
 		return nil, "", errors.New("no access to root invocation")
@@ -114,48 +139,54 @@ func (q *Query) Fetch(ctx context.Context, pageToken string) ([]*pb.TestVerdict,
 
 	switch q.View {
 	case pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC:
-		return q.fetchSimpleView(ctx, pageToken)
+		return q.fetchSimpleView(ctx, pageToken, opts)
 	case pb.TestVerdictView_TEST_VERDICT_VIEW_FULL:
-		return q.fetchDetailedView(ctx, pageToken)
+		return q.fetchDetailedView(ctx, pageToken, opts)
 	default:
 		return nil, "", errors.Fmt("unknown view %q", q.View)
 	}
 }
 
 // fetchSimpleView fetches a page of test verdicts with a view of TEST_VERDICT_VIEW_BASIC.
-func (q *Query) fetchSimpleView(ctx context.Context, pageToken string) ([]*pb.TestVerdict, string, error) {
-	var results []*pb.TestVerdict
+func (q *Query) fetchSimpleView(ctx context.Context, pageToken string, opts FetchOptions) (verdicts []*pb.TestVerdict, nextPageToken string, retErr error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.Query.fetchSimpleView")
+	defer func() { tracing.End(ts, retErr) }()
+
 	var totalSize int
-	nextPageToken, err := q.run(ctx, pageToken, func(tv *TestVerdictSummary) (bool, error) {
+	nextPageToken, err := q.run(ctx, pageToken, opts.PageSize, func(tv *TestVerdictSummary) (bool, error) {
 		p := tv.ToProto()
-		if q.ResponseLimitBytes > 0 {
+		if opts.ResponseLimitBytes > 0 {
 			// Estimate row size using formula documented on q.ResponseLimitBytes.
 			size := proto.Size(p) + 1000
-			if totalSize+size > q.ResponseLimitBytes {
-				if len(results) == 0 {
-					return false, errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", size, q.ResponseLimitBytes)
+			if totalSize+size > opts.ResponseLimitBytes {
+				if len(verdicts) == 0 {
+					return false, errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", size, opts.ResponseLimitBytes)
 				}
 				// We would exceed the hard limit. Stop iteration early.
 				return false, iterator.Done
 			}
 			totalSize += size
 		}
-		results = append(results, p)
+		verdicts = append(verdicts, p)
 		return true, nil
 	})
 	if err != nil {
 		return nil, "", err
 	}
-	return results, nextPageToken, nil
+	return verdicts, nextPageToken, nil
 }
 
 // fetchDetailedView fetches a page of test verdicts with view of TEST_VERDICT_VIEW_FULL.
-func (q *Query) fetchDetailedView(ctx context.Context, pageToken string) ([]*pb.TestVerdict, string, error) {
+func (q *Query) fetchDetailedView(ctx context.Context, pageToken string, opts FetchOptions) (verdicts []*pb.TestVerdict, nextPageToken string, retErr error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.Query.fetchDetailedView")
+	defer func() { tracing.End(ts, retErr) }()
+
 	var ids []testresultsv2.VerdictID
 	var summaries []*TestVerdictSummary
 
+	startTime := clock.Now(ctx)
 	// Fetch up to q.PageSize verdict summaries.
-	_, err := q.run(ctx, pageToken, func(tv *TestVerdictSummary) (bool, error) {
+	_, err := q.run(ctx, pageToken, opts.PageSize, func(tv *TestVerdictSummary) (bool, error) {
 		ids = append(ids, tv.ID)
 		summaries = append(summaries, tv)
 		return true, nil
@@ -163,6 +194,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string) ([]*pb.
 	if err != nil {
 		return nil, "", err
 	}
+	logging.Debugf(ctx, "Fetched summaries in %v.", clock.Since(ctx, startTime))
 
 	// For each verdict summary, query the details.
 	detailsQuery := QueryDetails{
@@ -170,50 +202,84 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string) ([]*pb.
 		Access:     q.Access,
 	}
 
-	results := make([]*pb.TestVerdict, 0, q.PageSize)
+	// If querying all details for all the verdicts would retrieve too
+	// many test results, cut down the size of this page. Cutting down
+	// here is faster than stopping early in the results iterator, as it
+	// makes the Spanner query simpler.
+	if opts.TotalResultLimit != 0 {
+		var totalResultCount int64
+		for i, summary := range summaries {
+			if i == 0 {
+				// At minimum, we must always retrieve the first verdict, however
+				// large it is, otherwise this query will never advance the page
+				// token.
+				totalResultCount += summary.ResultCount
+				continue
+			}
+			// Check the verdict fits within the result limit.
+			// The underlying iterator always needs on result extra to identify
+			// the end of the verdict, so account for needing one test result extra.
+			if (totalResultCount + summary.ResultCount + 1) <= int64(opts.TotalResultLimit) {
+				// This verdict fits within the limit.
+				totalResultCount += summary.ResultCount
+				continue
+			}
+			// Cut the page here.
+			// As we are cutting pages based on objective criteria, the RPC remains
+			// deterministic.
+			detailsQuery.VerdictIDs = detailsQuery.VerdictIDs[:i]
+			logging.Debugf(ctx, "Cut fetched page size to %v (%v results).", len(detailsQuery.VerdictIDs), totalResultCount)
+			break
+		}
+	}
+
+	verdicts = make([]*pb.TestVerdict, 0, opts.PageSize)
 	totalSize := 0
 
-	it := detailsQuery.List(ctx, PageToken{}, q.PageSize)
-	err = it.Do(func(tv *TestVerdict) error {
+	startTime = clock.Now(ctx)
+	it := detailsQuery.List(ctx, PageToken{}, opts.PageSize)
+	err = it.Do(ctx, func(tv *TestVerdict) error {
 		// Verdicts come in the order requested.
-		result := tv.ToProto(q.VerdictResultLimit, q.VerdictSizeLimit)
-		if q.ResponseLimitBytes > 0 {
+		verdict := tv.ToProto(opts.VerdictResultLimit, opts.VerdictSizeLimit)
+		if opts.ResponseLimitBytes > 0 {
 			// Estimate row size using formula documented on q.ResponseLimitBytes.
-			size := proto.Size(result) + protoJSONOverheadBytes
-			if totalSize+size > q.ResponseLimitBytes {
-				if len(results) == 0 {
-					return errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", size, q.ResponseLimitBytes)
+			size := proto.Size(verdict) + protoJSONOverheadBytes
+			if totalSize+size > opts.ResponseLimitBytes {
+				if len(verdicts) == 0 {
+					return errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", size, opts.ResponseLimitBytes)
 				}
 				// We would exceed the hard limit. Stop iteration early.
 				return iterator.Done
 			}
 			totalSize += size
 		}
-		results = append(results, result)
+		verdicts = append(verdicts, verdict)
 		return nil
 	})
 	if err != nil && !errors.Is(err, iterator.Done) {
 		// There was an error when retrieving the verdicts.
 		return nil, "", err
 	}
-	// We had fewer verdicts than the page size and we didn't stop iteration early.
-	if len(results) < q.PageSize && err == nil {
+	logging.Debugf(ctx, "Fetched details in %v.", clock.Since(ctx, startTime))
+
+	// The first stage returned fewer verdicts than the page size,
+	// and we retrieved all of them (didn't stop iteration early).
+	if len(ids) < opts.PageSize && len(verdicts) == len(ids) {
 		// There are no more verdicts to query. The page token is empty to signal end of iteration.
-		return results, "", nil
+		return verdicts, "", nil
 	}
 
 	// We either:
-	// - Have a full page of verdicts
+	// - Have a full page of verdicts, or
 	// - Stopped iteration early using iterator.Done
 	// Continue paginating from the last result we are returning.
-	var nextPageToken string
-	if len(results) > 0 {
-		lastSummary := summaries[len(results)-1]
+	if len(verdicts) > 0 {
+		lastSummary := summaries[len(verdicts)-1]
 		nextPageToken = q.makePageToken(lastSummary)
 	} else {
 		return nil, "", errors.New("fetch is returning zero verdicts. This should never happen, as progress will never be made.")
 	}
-	return results, nextPageToken, nil
+	return verdicts, nextPageToken, nil
 }
 
 // run queries test verdicts for a given root invocation, calling the given row callback
@@ -224,8 +290,11 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string) ([]*pb.
 // page token.
 //
 // It is an error to return `false` for consumed and not return an error.
-func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*TestVerdictSummary) (consumed bool, err error)) (string, error) {
-	st, err := q.buildQuery(pageToken)
+func (q *Query) run(ctx context.Context, pageToken string, pageSize int, rowCallback func(*TestVerdictSummary) (consumed bool, err error)) (nextPageToken string, retErr error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.Query.run")
+	defer func() { tracing.End(ts, retErr) }()
+
+	st, err := q.buildQuery(pageToken, pageSize)
 	if err != nil {
 		return "", err
 	}
@@ -249,6 +318,7 @@ func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*Tes
 			&variant,
 			&tv.Status,
 			&tv.StatusOverride,
+			&tv.ResultCount,
 			&tv.IsMasked,
 			&tv.UIPriority,
 		)
@@ -284,7 +354,7 @@ func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*Tes
 		return "", err
 	}
 	// We had fewer verdicts than the page size and we didn't stop iteration early.
-	if rowsSeen < q.PageSize && err == nil {
+	if rowsSeen < pageSize && err == nil {
 		// There are no more verdicts to query. The page token is empty to signal end of iteration.
 		return "", nil
 	}
@@ -293,7 +363,6 @@ func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*Tes
 	// - Have a full page of verdicts
 	// - Stopped iteration early using iterator.Done
 	// Continue paginating.
-	var nextPageToken string
 	if lastSummary != nil {
 		nextPageToken = q.makePageToken(lastSummary)
 	} else {
@@ -304,10 +373,10 @@ func (q *Query) run(ctx context.Context, pageToken string, rowCallback func(*Tes
 	return nextPageToken, nil
 }
 
-func (q *Query) buildQuery(pageToken string) (spanner.Statement, error) {
+func (q *Query) buildQuery(pageToken string, pageSize int) (spanner.Statement, error) {
 	params := map[string]any{
 		"shards":        q.RootInvocationID.AllShardIDs().ToSpanner(),
-		"limit":         q.PageSize,
+		"limit":         pageSize,
 		"upgradeRealms": q.Access.Realms,
 	}
 
@@ -512,6 +581,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 				ELSE {{.VerdictPrecluded}}
 			END) AS Status,
 			COALESCE(ANY_VALUE(E.HasExonerations), FALSE) AS HasExonerations,
+			COUNT(1) AS ResultCount,
 			-- The test verdict is reported as masked if we do not have access to any of
 			-- its results. In this case, the verdict's module_variant is unavailable
 			-- and the test metadata (which should be the same on all results) is
@@ -540,6 +610,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			WHEN HasExonerations AND (Status = {{.VerdictFailed}} OR Status = {{.VerdictExecutionErrored}} OR Status = {{.VerdictPrecluded}} OR Status = {{.VerdictFlaky}}) THEN {{.VerdictExonerated}}
 			ELSE {{.VerdictNotOverridden}}
 		END) AS StatusOverride,
+		ResultCount,
 		IsMasked,
 		-- UI Priority Calculation
 		(CASE
@@ -571,6 +642,7 @@ SELECT
 	ModuleVariantMasked,
 	Status,
 	StatusOverride,
+	ResultCount,
 	IsMasked,
 	UIPriority
 FROM (

@@ -31,6 +31,20 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// MaxTestResultsPageSize is the maximum page test results page size.
+// It is selected to avoid Spanner spilling bytes to disk, which usually
+// appears to occur once the results exceed 16-32 MiB, which reduces
+// performance.
+//
+// Most callers currently assume this exceeds the maximum page size for
+// verdicts of 10,000 (plus one, for pagination purposes) so that verdict
+// RPCs can return the stated number of verdicts in the ideal scenario of
+// one result per verdict.
+//
+// If this number is ever reduced, callers may need to be updated to use
+// multiple pages.
+const MaxTestResultsPageSize = 10_001
+
 // MaskedFailueReasonLength is the length to which failure reasons should be masked
 // for users who only have resultdb.testResults.listLimited permission.
 const MaskedFailureReasonLength = 140

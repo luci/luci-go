@@ -82,6 +82,7 @@ func TestQuery(t *testing.T) {
 			FirstPageSize:  10,
 			SecondPageSize: 10,
 			GrowthFactor:   1.0,
+			MaxPageSize:    10_000,
 		}
 
 		// Helper to fetch all results using the iterator.

@@ -51,6 +51,8 @@ type TestVerdictSummary struct {
 	Status pb.TestVerdict_Status
 	// The status override of the test verdict.
 	StatusOverride pb.TestVerdict_StatusOverride
+	// The number of test results in the verdict.
+	ResultCount int64
 	// Whether the variant of the verdict has been masked, because the
 	// user only has limited access.
 	IsMasked bool
