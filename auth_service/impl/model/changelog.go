@@ -704,8 +704,19 @@ func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, err
 			When:       clock.Now(ctx).UTC(),
 			AppVersion: info.ImageVersion(ctx),
 		}
-		if err := datastore.Put(ctx, changes, shards, logRev); err != nil {
+		if err := datastore.Put(ctx, changes, logRev); err != nil {
 			return err
+		}
+		if len(shards) > 0 {
+			// TODO: clean up these debug logs once changelog sharding is stable.
+			logging.Debugf(ctx, "putting %d changelog shards into Datastore", len(shards))
+			for i, shard := range shards {
+				logging.Debugf(ctx, "    shard %d: %+v", i, shard)
+			}
+			if err := datastore.Put(ctx, shards); err != nil {
+				logging.Errorf(ctx, "error storing AuthDBChangeShards: %w", err)
+				return err
+			}
 		}
 
 		// Enqueue a task to process previous revision if not yet done.
