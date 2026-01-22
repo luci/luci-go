@@ -25,6 +25,24 @@ var idFieldPath = aip132.NewFieldPath("test_id_structured")
 // uiPriorityFieldPath describes the UI priority of the aggregation, which is stored in the ui_priority field.
 var uiPriorityFieldPath = aip132.NewFieldPath("ui_priority")
 
+// Ordering represents the sort order of test verdicts.
+type Ordering int
+
+const (
+	// Verdicts should be sorted by (structured) test identifier.
+	// This order is the best for RPC performance as it follows the natural table ordering.
+	OrderingByID Ordering = iota
+	// Verdicts should be sorted by UI priority.
+	// This is means the order will be:
+	// - Failed
+	// - Execution Error
+	// - Precluded
+	// - Flaky
+	// - Exonerated
+	// - Passed and Skipped (treated equivalently).
+	OrderingByUIPriority
+)
+
 // ParseOrderBy parses the order_by string.
 func ParseOrderBy(orderBy string) (Ordering, error) {
 	parts, err := aip132.ParseOrderBy(orderBy)

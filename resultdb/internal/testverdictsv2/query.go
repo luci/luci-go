@@ -65,23 +65,6 @@ type Query struct {
 	View pb.TestVerdictView
 }
 
-type Ordering int
-
-const (
-	// Verdicts should be sorted by (structured) test identifier.
-	// This order is the best for RPC performance as it follows the natural table ordering.
-	OrderingByID Ordering = iota
-	// Verdicts should be sorted by UI priority.
-	// This is means the order will be:
-	// - Failed
-	// - Execution Error
-	// - Precluded
-	// - Flaky
-	// - Exonerated
-	// - Passed and Skipped (treated equivalently).
-	OrderingByUIPriority
-)
-
 type FetchOptions struct {
 	// The number of test verdicts to return per page.
 	PageSize int

@@ -176,6 +176,7 @@ func (q *QueryDetails) List(ctx context.Context, pageToken PageToken, bufferSize
 		TestPrefixFilter: q.TestPrefixFilter,
 		VerdictIDs:       q.VerdictIDs,
 		Access:           q.Access,
+		Order:            testresultsv2.OrderingByPrimaryKey,
 	}
 	trPageToken := pageToken.toTestResultsPageToken()
 	trOpts := spanutil.BufferingOptions{

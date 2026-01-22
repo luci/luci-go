@@ -72,6 +72,11 @@ type Query struct {
 	VerdictIDs []VerdictID
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
+	// The sort order of the results.
+	//
+	// If VerdictIDs is set, this field is ignored, and Verdicts
+	// will always be returned in the same order as VerdictIDs.
+	Order Ordering
 }
 
 // PageToken represents a token that can be used to resume a query
@@ -130,8 +135,9 @@ func (q *Query) buildQuery(pageToken PageToken, pageSize int) (spanner.Statement
 		paginationClause = q.whereAfterPageToken(pageToken, params)
 	}
 
-	whereClause := "TRUE"
 	usingVerdictIDs := false
+	var shardParamNames []string
+
 	if q.VerdictIDs != nil {
 		verdicts, err := SpannerVerdictIDs(q.VerdictIDs)
 		if err != nil {
@@ -139,23 +145,37 @@ func (q *Query) buildQuery(pageToken PageToken, pageSize int) (spanner.Statement
 		}
 		params["verdictIDs"] = verdicts
 		usingVerdictIDs = true
+	} else if q.Order == OrderingByTestID {
+		// Optimization: use UNION ALL to query each shard individually.
+		// This allows Spanner to use the natural table ordering in each shard
+		// to answer the query.
+		shardParamNames = make([]string, 0, rootinvocations.RootInvocationShardCount)
+		for i := 0; i < rootinvocations.RootInvocationShardCount; i++ {
+			shardID := rootinvocations.ShardID{RootInvocationID: q.RootInvocation, ShardIndex: i}
+			parameterName := fmt.Sprintf("shard_%d", i)
+			params[parameterName] = shardID.RowID()
+			shardParamNames = append(shardParamNames, parameterName)
+		}
 	} else {
-		whereClause = "RootInvocationShardId IN UNNEST(@rootInvocationShards)"
 		params["rootInvocationShards"] = q.RootInvocation.AllShardIDs().ToSpanner()
-		if q.TestPrefixFilter != nil {
-			clause, err := PrefixWhereClause(q.TestPrefixFilter, params)
-			if err != nil {
-				return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
-			}
-			whereClause += " AND (" + clause + ")"
+	}
+
+	wherePrefixClause := "TRUE"
+	if q.TestPrefixFilter != nil {
+		var err error
+		wherePrefixClause, err = PrefixWhereClause(q.TestPrefixFilter, params)
+		if err != nil {
+			return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
 		}
 	}
 
 	tmplInput := map[string]any{
-		"PaginationClause": paginationClause,
-		"WhereClause":      whereClause,
-		"HasVerdictIDs":    usingVerdictIDs,
-		"FullAccess":       q.Access.Level == permissions.FullAccess,
+		"PaginationClause":  paginationClause,
+		"HasVerdictIDs":     usingVerdictIDs,
+		"ShardParamNames":   shardParamNames,
+		"WherePrefixClause": wherePrefixClause,
+		"FullAccess":        q.Access.Level == permissions.FullAccess,
+		"OrderingByTestID":  q.Order == OrderingByTestID,
 	}
 
 	st, err := spanutil.GenerateStatement(testResultQueryTmpl, tmplInput)
@@ -170,16 +190,22 @@ func (q *Query) buildQuery(pageToken PageToken, pageSize int) (spanner.Statement
 func (q *Query) whereAfterPageToken(token PageToken, params map[string]any) string {
 	var columns []spanutil.PageTokenElement
 	if q.VerdictIDs != nil {
+		// Order by request index.
 		columns = append(columns, spanutil.PageTokenElement{
 			ColumnName: "RequestIndex",
 			AfterValue: int64(token.RequestOrdinal - 1),
 		})
 	} else {
-		columns = append(columns, []spanutil.PageTokenElement{
-			{
+		// Ordering by primary key or test ID.
+
+		if q.Order == OrderingByPrimaryKey {
+			// If ordering by primary key, we need to order by RootInvocationShardID first.
+			columns = append(columns, spanutil.PageTokenElement{
 				ColumnName: "RootInvocationShardID",
 				AfterValue: token.ID.RootInvocationShardID.RowID(),
-			},
+			})
+		}
+		columns = append(columns, []spanutil.PageTokenElement{
 			{
 				ColumnName: "ModuleName",
 				AfterValue: token.ID.ModuleName,
@@ -243,11 +269,11 @@ var testResultQueryTmpl = template.Must(template.New("").Parse(`
 -- across WITH clause/CTE boundaries and this results in suboptimal query plans. Instead
 -- we use templates to include the nested SQL statements.
 {{define "MaskedTestResults"}}
-	-- Masked test results.
-	SELECT
-		* EXCEPT (ModuleVariant, SummaryHTML, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName, Properties),
-		-- Provide masked versions of fields to support filtering on them in the query one level up.
-		{{if eq .FullAccess true}}
+		-- Masked test results.
+		SELECT
+			* EXCEPT (ModuleVariant, SummaryHTML, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName, Properties),
+			-- Provide masked versions of fields to support filtering on them in the query one level up.
+		{{if .FullAccess}}
 			-- Directly alias the columns if full access is granted. This can provide
 			-- a performance boost as predicates can be pushed down to the storage layer.
 			ModuleVariant AS ModuleVariantMasked,
@@ -272,13 +298,33 @@ var testResultQueryTmpl = template.Must(template.New("").Parse(`
 			IF(Realm IN UNNEST(@upgradeRealms), Properties, NULL) AS PropertiesMasked,
 			(Realm NOT IN UNNEST(@upgradeRealms)) AS IsMasked,
 		{{end}}
-	{{if eq .HasVerdictIDs true}}
-	FROM UNNEST(@verdictIDs) WITH OFFSET RequestIndex
-	JOIN TestResultsV2 USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
+	{{if .HasVerdictIDs}}
+		FROM UNNEST(@verdictIDs) WITH OFFSET RequestIndex
+		JOIN TestResultsV2 USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
+		WHERE ({{.WherePrefixClause}}) AND ({{.PaginationClause}})
+	{{else if .OrderingByTestID}}
+		-- Union all the shards. This 16-way union has some overheads compared to a single table scan, but it allows Spanner
+		-- to use the natural table ordering in each shard to answer the query.
+		--
+		-- Benchmark on 1.3M test result invocation, with page size of 10,000:
+		-- With UNION ALL optimisation: 477ms elapsed, 549ms CPU time.
+		-- Without UNION ALL optimisation: 23.7s elapsed, 19.72s CPU time.
+		FROM (
+			{{range $i, $shardParamName := .ShardParamNames}}
+				{{if $i}} UNION ALL {{end}}
+				(
+					SELECT * FROM TestResultsV2
+					WHERE RootInvocationShardId = @{{$shardParamName}}
+				)
+			{{end}}
+		)
+		WHERE ({{.WherePrefixClause}}) AND ({{.PaginationClause}})
 	{{else}}
-	FROM TestResultsV2
+		-- We will be sorting in primary key order.
+		-- Benchmarked cost on 1.3M test result invocation, with page size of 10,000 test results: 99ms elapsed time, 111ms CPU time.
+		FROM TestResultsV2
+		WHERE RootInvocationShardId IN UNNEST(@rootInvocationShards) AND ({{.WherePrefixClause}}) AND ({{.PaginationClause}})
 	{{end}}
-	WHERE {{.WhereClause}}
 {{end}}
 SELECT
 	RootInvocationShardId,
@@ -308,16 +354,21 @@ SELECT
 	SkippedReason,
 	FrameworkExtensions,
 	IsMasked,
-	{{if eq .HasVerdictIDs true}}RequestIndex,{{end}}
+	{{if .HasVerdictIDs}}RequestIndex,{{end}}
 FROM (
 	{{template "MaskedTestResults" .}}
 ) R
-WHERE {{.PaginationClause}}
 ORDER BY
-	{{if eq .HasVerdictIDs true}}
-	RequestIndex,
-	{{end}}
+{{if .HasVerdictIDs}}
+	-- Sort by RequestIndex, then primary key.
+	RequestIndex, RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ResultId
+{{else if .OrderingByTestID}}
+	-- Sort by test ID.
+	ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ResultId
+{{else}}
+	-- Sort by primary key.
 	RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ResultId
+{{end}}
 LIMIT @limit
 `))
 
