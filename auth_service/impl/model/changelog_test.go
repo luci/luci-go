@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/check"
@@ -566,6 +567,13 @@ func TestGenerateChanges(t *testing.T) {
 						"1:AuthGroup$oversized-test-group:GROUP_MEMBERS_ADDED:0d11f48e8328136d51720ff89edcff1265ac2169f772b47e4fbca8f67ae4a6c5",
 					},
 				}})
+				// Check that the members added were actually stored.
+				membersAddedChange := actualChanges[1]
+				assert.Loosely(t, membersAddedChange.restoreMembersFromShards(ctx), should.BeNil)
+				added := stringset.NewFromSlice(membersAddedChange.Members...)
+				expected := stringset.NewFromSlice(group.Members...)
+				assert.Loosely(t, added.Contains(expected), should.BeTrue)
+				assert.Loosely(t, expected.Contains(added), should.BeTrue)
 
 				// Add a member to an already existing group.
 				// Sharding should not be required, as there is only one member in this
