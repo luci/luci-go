@@ -29,6 +29,8 @@ export function displayRerunStatus(rerunStatus: RerunStatus): string {
       return 'Infra failed';
     case RerunStatus.RERUN_STATUS_CANCELED:
       return 'Canceled';
+    case RerunStatus.RERUN_STATUS_TEST_SKIPPED:
+      return 'Test skipped';
   }
   return 'Unknown';
 }
