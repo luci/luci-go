@@ -236,6 +236,7 @@ func TestEndRun(t *testing.T) {
 					},
 				},
 			}))
+			assert.That(t, rs.CreditQuotaRequested, should.BeTrue)
 		})
 	})
 

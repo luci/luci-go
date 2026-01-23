@@ -532,6 +532,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 			for _, op := range res.State.OngoingLongOps.GetOps() {
 				assert.That(t, op, should.Match(quotaOp))
 			}
+			assert.That(t, res.State.CreditQuotaRequested, should.BeTrue)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.That(t, res.PreserveEvents, should.BeFalse)
 		})

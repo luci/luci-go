@@ -80,18 +80,22 @@ func enqueueCreditRunQuotaTask(ctx context.Context, rs *state.RunState) {
 			},
 		},
 	})
+	rs.CreditQuotaRequested = true
 }
 
 // shouldCreditRunQuota returns whether the run quota should be credited.
 func shouldCreditRunQuota(rs *state.RunState) bool {
-	if !run.IsEnded(rs.Status) {
+	switch {
+	case !run.IsEnded(rs.Status):
 		return false
-	}
-	// NewPatchsetRun doesn't consume run quota.
-	if rs.Mode == run.NewPatchsetRun {
+	case rs.Mode == run.NewPatchsetRun:
+		// NewPatchsetRun doesn't consume run quota.
 		return false
+	case rs.CreditQuotaRequested: // only credit once
+		return false
+	default:
+		return tryjob.AreAllCriticalTryjobsEnded(rs.Tryjobs.GetState())
 	}
-	return tryjob.AreAllCriticalTryjobsEnded(rs.Tryjobs.GetState())
 }
 
 // enqueueExecutePostActionTask enqueues internal long ops for post action and

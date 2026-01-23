@@ -214,5 +214,12 @@ func TestShouldCreditRunQuotaOnPostAction(t *testing.T) {
 			addCritical(2, tryjob.Status_ENDED)
 			assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
 		})
+
+		t.Run("returns false if already requested", func(t *ftt.Test) {
+			rs.Status = run.Status_SUCCEEDED
+			rs.CreditQuotaRequested = true
+			addCritical(1, tryjob.Status_ENDED)
+			assert.That(t, shouldCreditRunQuota(rs), should.BeFalse)
+		})
 	})
 }

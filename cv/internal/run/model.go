@@ -150,6 +150,9 @@ type Run struct {
 	// - will be submitted only after all the deps are submitted.
 	DepRuns common.RunIDs
 
+	// CreditQuotaRequested is true when the run has already requested a long
+	// op to credit the quota.
+	CreditQuotaRequested bool `gae:",noindex"`
 	// QuotaExhaustionMsgLongOpRequested is set true when the current run
 	// already has a pending msg posted.
 	QuotaExhaustionMsgLongOpRequested bool `gae:",noindex"`
