@@ -38,6 +38,8 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { Tasks } from '../common/tasks_table';
+
 import { BrowserDeviceDimensions } from './browser_device_dimensions';
 import { useBrowserDeviceData } from './use_browser_device_data';
 
@@ -169,6 +171,11 @@ export const BrowserDeviceDetailsPage = () => {
     );
   }
 
+  const swarmingInstance = device?.ufsLabels['swarming_instance']?.values?.[0];
+  const swarmingHost = swarmingInstance && `${swarmingInstance}.appspot.com`;
+
+  const botId = device?.ufsLabels['hostname']?.values?.at(0);
+
   return (
     <div
       css={{
@@ -246,12 +253,17 @@ export const BrowserDeviceDetailsPage = () => {
           <TabContext value={selectedTab || TabValue.TASKS}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
-                <Tab label="Tasks" value={TabValue.TASKS} />
+                {swarmingInstance && botId && (
+                  <Tab label="Tasks" value={TabValue.TASKS} />
+                )}
                 <Tab label="Dimensions" value={TabValue.DIMENSIONS} />
                 <Tab label="Inventory data" value={TabValue.INVENTORY_DATA} />
                 <Tab label="Bot info" value={TabValue.BOT_INFO} />
               </TabList>
             </Box>
+            <TabPanel value={TabValue.TASKS}>
+              <Tasks botId={botId} swarmingHost={swarmingHost} />
+            </TabPanel>
             <TabPanel value={TabValue.DIMENSIONS}>
               <BrowserDeviceDimensions device={device} />
             </TabPanel>

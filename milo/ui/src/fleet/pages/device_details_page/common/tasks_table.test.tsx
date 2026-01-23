@@ -133,4 +133,22 @@ describe('<Tasks />', () => {
       expect(screen.getByText(botId)).toBeVisible();
     });
   });
+
+  it('uses provided botId directly', async () => {
+    const botId = 'direct-bot-id';
+    mockListBotTasks(
+      [TaskResultResponse.fromPartial({ taskId: '1', name: 'direct-task' })],
+      '',
+    );
+
+    render(
+      <FakeContextProvider>
+        <Tasks botId={botId} />
+      </FakeContextProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('direct-task')).toBeVisible();
+    });
+  });
 });

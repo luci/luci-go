@@ -30,6 +30,7 @@ import {
 export const useBot = (
   client: DecoratedClient<BotsClientImpl>,
   dutId: string,
+  options?: { enabled?: boolean },
 ): {
   info: BotInfo | undefined;
   botFound: boolean;
@@ -46,6 +47,7 @@ export const useBot = (
       }),
     ),
     refetchInterval: 60000,
+    enabled: options?.enabled ?? true,
   });
 
   let info = undefined;

@@ -47,9 +47,11 @@ const COLUMNS: readonly TaskGridColumnKey[] = [
 
 export const Tasks = ({
   dutId,
+  botId,
   swarmingHost = DEVICE_TASKS_SWARMING_HOST,
 }: {
-  dutId: string;
+  dutId?: string;
+  botId?: string;
   swarmingHost?: string;
 }) => {
   const [searchParams] = useSyncedSearchParams();
@@ -59,47 +61,54 @@ export const Tasks = ({
   });
 
   const client = useBotsClient(swarmingHost);
-  const botData = useBot(client, dutId);
+  const botData = useBot(client, dutId || '', {
+    enabled: !!dutId && !botId,
+  });
+  const resolvedBotId = botId || botData.info?.botId;
+
   const tasksData = useBotTasks({
     client,
-    botId: botData.info?.botId || '',
+    botId: resolvedBotId ?? '',
     limit: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
   });
 
   // First, ensure we have a valid botId to work with.
-  if (botData.isError) {
-    return (
-      <Alert severity="error">
-        {getErrorMessage(botData.error, 'list bots')}{' '}
-      </Alert>
-    );
-  }
-  if (botData.isLoading) {
-    return (
-      <div
-        css={{
-          width: '100%',
-          margin: '24px 0px',
-        }}
-      >
-        <CentralizedProgress />
-      </div>
-    );
-  }
-  if (!botData.botFound) {
-    return (
-      <AlertWithFeedback
-        severity="warning"
-        title="Bot not found!"
-        bugErrorMessage={`Bot not found for device: ${dutId}`}
-      >
-        <p>
-          Oh no! No bots were found for this device (<code>dut_id={dutId}</code>
-          ).
-        </p>
-      </AlertWithFeedback>
-    );
+  if (!botId && dutId) {
+    if (botData.isError) {
+      return (
+        <Alert severity="error">
+          {getErrorMessage(botData.error, 'list bots')}{' '}
+        </Alert>
+      );
+    }
+    if (botData.isLoading) {
+      return (
+        <div
+          css={{
+            width: '100%',
+            margin: '24px 0px',
+          }}
+        >
+          <CentralizedProgress />
+        </div>
+      );
+    }
+    if (!botData.botFound) {
+      return (
+        <AlertWithFeedback
+          severity="warning"
+          title="Bot not found!"
+          bugErrorMessage={`Bot not found for device: ${dutId}`}
+        >
+          <p>
+            Oh no! No bots were found for this device (
+            <code>dut_id={dutId}</code>
+            ).
+          </p>
+        </AlertWithFeedback>
+      );
+    }
   }
 
   // Now, check the tasks request.
@@ -127,10 +136,20 @@ export const Tasks = ({
       <Alert severity="info">
         <AlertTitle>No tasks found</AlertTitle>
         <dl>
-          <dt>DUT ID</dt>
-          <dd>{dutId}</dd>
-          <dt>Bot ID</dt>
-          <dd>{botData.info?.botId}</dd>
+          {dutId && (
+            <>
+              <dt>DUT ID</dt>
+              <dd>{dutId}</dd>
+            </>
+          )}
+          {resolvedBotId ? (
+            <>
+              <dt>Bot ID</dt>
+              <dd>{resolvedBotId}</dd>
+            </>
+          ) : (
+            <dt>Missing bot ID</dt>
+          )}
         </dl>
       </Alert>
     );
