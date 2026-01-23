@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"sort"
 	"testing"
 
 	"google.golang.org/api/iterator"
@@ -61,7 +62,7 @@ func TestQuery(t *testing.T) {
 				WithModuleVariant(pbutil.Variant("k", "v1")).
 				WithCoarseName("c1").
 				WithFineName("f1").
-				WithCaseName(fmt.Sprintf("t%d", i)).
+				WithCaseName(fmt.Sprintf("t%d", 10-i)).
 				WithWorkUnitID("w1").
 				WithExonerationID("e1").
 				WithRealm(fmt.Sprintf("testproject:realm-%d", i%2)). // Alternating realms: realm-0, realm-1
@@ -173,7 +174,7 @@ func TestQuery(t *testing.T) {
 					ModuleVariantHash:     pbutil.VariantHash(pbutil.Variant("k", "v1")),
 					CoarseName:            "c1",
 					FineName:              "f1",
-					CaseName:              fmt.Sprintf("t%d", i),
+					CaseName:              fmt.Sprintf("t%d", 10-i),
 				}
 			}
 			nominated := []testresultsv2.VerdictID{
@@ -243,6 +244,42 @@ func TestQuery(t *testing.T) {
 				}
 				assert.Loosely(t, maskedCount, should.BeGreaterThan(0))
 				assert.Loosely(t, unmaskedCount, should.BeGreaterThan(0))
+			})
+		})
+
+		t.Run("Ordering by test ID", func(t *ftt.Test) {
+			q.Order = testresultsv2.OrderingByTestID
+
+			// Re-sort expectations.
+			sort.Slice(expected, func(i, j int) bool {
+				// For the example data, test IDs only differ in case name.
+				return expected[i].ID.CaseName < expected[j].ID.CaseName
+			})
+
+			t.Run("Baseline", func(t *ftt.Test) {
+				results, err := fetchAll(ctx, q, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Match(expected))
+			})
+
+			t.Run("Pagination", func(t *ftt.Test) {
+				opts.FirstPageSize = 1
+				opts.SecondPageSize = 1
+				opts.MaxPageSize = 1
+
+				results, err := fetchAll(ctx, q, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Match(expected))
+			})
+
+			t.Run("With prefix filter", func(t *ftt.Test) {
+				q.TestPrefixFilter = &pb.TestIdentifierPrefix{
+					Level: pb.AggregationLevel_CASE,
+					Id:    expected[5].ToProto().TestIdStructured,
+				}
+				results, err := fetchAll(ctx, q, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Match(expected[5:6]))
 			})
 		})
 	})

@@ -59,6 +59,11 @@ type Query struct {
 	VerdictIDs []testresultsv2.VerdictID
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
+	// The ordering to use when listing test exonerations.
+	//
+	// If VerdictIDs is set, this field is ignored, and Verdicts
+	// will always be returned in the same order as VerdictIDs.
+	Order testresultsv2.Ordering
 }
 
 // PageToken represents a token that can be used to resume a query
@@ -116,8 +121,8 @@ func (q *Query) buildQuery(pageToken PageToken, pageSize int) (spanner.Statement
 		paginationClause = q.whereAfterPageToken(pageToken, params)
 	}
 
-	whereClause := "TRUE"
 	var usingVerdictIDs bool
+	var shardParamNames []string
 	if q.VerdictIDs != nil {
 		verdicts, err := testresultsv2.SpannerVerdictIDs(q.VerdictIDs)
 		if err != nil {
@@ -125,23 +130,37 @@ func (q *Query) buildQuery(pageToken PageToken, pageSize int) (spanner.Statement
 		}
 		params["verdictIDs"] = verdicts
 		usingVerdictIDs = true
+	} else if q.Order == testresultsv2.OrderingByTestID {
+		// Optimization: use UNION ALL to query each shard individually.
+		// This allows Spanner to use the natural table ordering in each shard
+		// to answer the query.
+		shardParamNames = make([]string, 0, rootinvocations.RootInvocationShardCount)
+		for i := 0; i < rootinvocations.RootInvocationShardCount; i++ {
+			shardID := rootinvocations.ShardID{RootInvocationID: q.RootInvocation, ShardIndex: i}
+			parameterName := fmt.Sprintf("shard_%d", i)
+			params[parameterName] = shardID.RowID()
+			shardParamNames = append(shardParamNames, parameterName)
+		}
 	} else {
-		whereClause = "RootInvocationShardId IN UNNEST(@rootInvocationShards)"
 		params["rootInvocationShards"] = q.RootInvocation.AllShardIDs().ToSpanner()
-		if q.TestPrefixFilter != nil {
-			clause, err := testresultsv2.PrefixWhereClause(q.TestPrefixFilter, params)
-			if err != nil {
-				return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
-			}
-			whereClause += " AND (" + clause + ")"
+	}
+
+	wherePrefixClause := "TRUE"
+	if q.TestPrefixFilter != nil {
+		var err error
+		wherePrefixClause, err = testresultsv2.PrefixWhereClause(q.TestPrefixFilter, params)
+		if err != nil {
+			return spanner.Statement{}, errors.Fmt("test_prefix_filter: %w", err)
 		}
 	}
 
 	tmplInput := map[string]any{
-		"PaginationClause": paginationClause,
-		"WhereClause":      whereClause,
-		"HasVerdictIDs":    usingVerdictIDs,
-		"FullAccess":       q.Access.Level == permissions.FullAccess,
+		"PaginationClause":  paginationClause,
+		"HasVerdictIDs":     usingVerdictIDs,
+		"ShardParamNames":   shardParamNames,
+		"WherePrefixClause": wherePrefixClause,
+		"FullAccess":        q.Access.Level == permissions.FullAccess,
+		"OrderingByTestID":  q.Order == testresultsv2.OrderingByTestID,
 	}
 
 	st, err := spanutil.GenerateStatement(testExonerationQueryTmpl, tmplInput)
@@ -161,11 +180,13 @@ func (q *Query) whereAfterPageToken(token PageToken, params map[string]any) stri
 			AfterValue: int64(token.RequestOrdinal - 1),
 		})
 	} else {
-		columns = append(columns, []spanutil.PageTokenElement{
-			{
+		if q.Order == testresultsv2.OrderingByPrimaryKey {
+			columns = append(columns, spanutil.PageTokenElement{
 				ColumnName: "RootInvocationShardID",
 				AfterValue: token.ID.RootInvocationShardID.RowID(),
-			},
+			})
+		}
+		columns = append(columns, []spanutil.PageTokenElement{
 			{
 				ColumnName: "ModuleName",
 				AfterValue: token.ID.ModuleName,
@@ -228,23 +249,37 @@ var testExonerationQueryTmpl = template.Must(template.New("").Parse(`
 -- across WITH clause/CTE boundaries and this results in suboptimal query plans. Instead
 -- we use templates to include the nested SQL statements.
 {{define "MaskedTestExonerations"}}
-	-- Masked test exonerations.
-	SELECT
-		* EXCEPT (ModuleVariant),
-	{{if eq .FullAccess true}}
-		ModuleVariant AS ModuleVariantMasked,
-		FALSE AS IsMasked,
+		-- Masked test exonerations.
+		SELECT
+			* EXCEPT (ModuleVariant),
+		{{if .FullAccess}}
+			ModuleVariant AS ModuleVariantMasked,
+			FALSE AS IsMasked,
+		{{else}}
+			IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL) AS ModuleVariantMasked,
+			(Realm NOT IN UNNEST(@upgradeRealms)) AS IsMasked,
+		{{end}}
+	{{if .HasVerdictIDs}}
+		FROM UNNEST(@verdictIDs) WITH OFFSET RequestIndex
+		JOIN TestExonerationsV2 USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
+		WHERE {{.WherePrefixClause}} AND {{.PaginationClause}}
+	{{else if .OrderingByTestID}}
+		-- We will be sorting in test ID order. This UNION ALL construction allows Spanner to use the natural table ordering in each shard.
+		FROM (
+			{{range $i, $shardParamName := .ShardParamNames}}
+				{{if $i}} UNION ALL {{end}}
+				(
+					SELECT * FROM TestExonerationsV2
+					WHERE RootInvocationShardId = @{{$shardParamName}}
+				)
+			{{end}}
+		)
+		WHERE {{.WherePrefixClause}} AND {{.PaginationClause}}
 	{{else}}
-		IF(Realm IN UNNEST(@upgradeRealms), ModuleVariant, NULL) AS ModuleVariantMasked,
-		(Realm NOT IN UNNEST(@upgradeRealms)) AS IsMasked,
+		-- We will be sorting in primary key order.
+		FROM TestExonerationsV2
+		WHERE RootInvocationShardId IN UNNEST(@rootInvocationShards) AND {{.WherePrefixClause}} AND {{.PaginationClause}}
 	{{end}}
-	{{if eq .HasVerdictIDs true}}
-	FROM UNNEST(@verdictIDs) WITH OFFSET RequestIndex
-	JOIN TestExonerationsV2 USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
-	{{else}}
-	FROM TestExonerationsV2
-	{{end}}
-	WHERE {{.WhereClause}}
 {{end}}
 SELECT
 	RootInvocationShardId,
@@ -266,10 +301,17 @@ SELECT
 FROM (
 	{{template "MaskedTestExonerations" .}}
 ) E
-WHERE {{.PaginationClause}}
 ORDER BY
-	{{if eq .HasVerdictIDs true}}RequestIndex,{{end}}
+{{if .HasVerdictIDs}}
+	-- Sort by RequestIndex, then primary key.
+	RequestIndex, RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ExonerationId
+{{else if .OrderingByTestID}}
+	-- Sort by test ID.
+	ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ExonerationId
+{{else}}
+	-- Sort by primary key.
 	RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ExonerationId
+{{end}}
 LIMIT @limit
 `))
 
