@@ -38,6 +38,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { BotData } from '../common/bot_data';
 import { Tasks } from '../common/tasks_table';
 
 import { BrowserDeviceDimensions } from './browser_device_dimensions';
@@ -253,19 +254,28 @@ export const BrowserDeviceDetailsPage = () => {
           <TabContext value={selectedTab || TabValue.TASKS}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
-                {swarmingInstance && botId && (
-                  <Tab label="Tasks" value={TabValue.TASKS} />
-                )}
+                <Tab label="Tasks" value={TabValue.TASKS} />
                 <Tab label="Dimensions" value={TabValue.DIMENSIONS} />
                 <Tab label="Inventory data" value={TabValue.INVENTORY_DATA} />
                 <Tab label="Bot info" value={TabValue.BOT_INFO} />
               </TabList>
             </Box>
             <TabPanel value={TabValue.TASKS}>
-              <Tasks botId={botId} swarmingHost={swarmingHost} />
+              {swarmingInstance && botId ? (
+                <Tasks botId={botId} swarmingHost={swarmingHost} />
+              ) : (
+                <UnavailableSwarmingInfo />
+              )}
             </TabPanel>
             <TabPanel value={TabValue.DIMENSIONS}>
               <BrowserDeviceDimensions device={device} />
+            </TabPanel>
+            <TabPanel value={TabValue.BOT_INFO}>
+              {swarmingInstance && botId ? (
+                <BotData botId={botId} swarmingHost={swarmingHost} />
+              ) : (
+                <UnavailableSwarmingInfo />
+              )}
             </TabPanel>
           </TabContext>
         </>
@@ -296,3 +306,9 @@ export function Component() {
     </TrackLeafRoutePageView>
   );
 }
+
+const UnavailableSwarmingInfo = () => (
+  <Alert severity="warning">
+    Bot information not available (missing swarming instance or bot ID)
+  </Alert>
+);

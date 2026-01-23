@@ -35,7 +35,7 @@ describe('<SshTip />', () => {
 
   it('renders CLI command for non-satlab device', async () => {
     useBotMock.mockReturnValue({
-      info: undefined,
+      data: undefined,
     });
     render(
       <FakeAuthStateProvider>
@@ -54,7 +54,7 @@ describe('<SshTip />', () => {
 
   it('renders CLI command for satlab device with drone server', async () => {
     useBotMock.mockReturnValue({
-      info: {
+      data: {
         dimensions: [
           { key: 'ufs_zone', value: ['ZONE_SATLAB'] },
           { key: 'drone_server', value: ['drone.server'] },
@@ -82,7 +82,7 @@ describe('<SshTip />', () => {
 
   it('renders CLI command and warning for satlab device without drone server', async () => {
     useBotMock.mockReturnValue({
-      info: {
+      data: {
         dimensions: [{ key: 'ufs_zone', value: ['ZONE_SATLAB'] }],
       } as Partial<BotInfo>,
     });
@@ -109,7 +109,7 @@ describe('<SshTip />', () => {
 
   it('renders CLI command and warning for satlab device with no bot info', async () => {
     useBotMock.mockReturnValue({
-      info: undefined,
+      data: undefined,
     });
     render(
       <FakeAuthStateProvider>

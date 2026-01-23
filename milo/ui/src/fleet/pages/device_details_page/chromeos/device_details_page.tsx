@@ -46,9 +46,9 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { BotData } from '../common/bot_data';
 import { Tasks } from '../common/tasks_table';
 
-import { BotData } from './bot_data';
 import { DeviceDimensions } from './device_dimensions';
 import { InventoryData } from './inventory_data';
 import { useDeviceData } from './use_device_data';

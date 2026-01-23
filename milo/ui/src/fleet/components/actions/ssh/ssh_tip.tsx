@@ -48,7 +48,7 @@ export function SshTip({ hostname, dutId }: SshTipProps) {
 
   const client = useBotsClient(DEVICE_TASKS_SWARMING_HOST);
 
-  const { info: botInfo } = useBot(client, dutId);
+  const { data: botInfo } = useBot(client, dutId);
 
   const isUfsZoneSatlab =
     getDimensionValue(botInfo, 'ufs_zone') === ZONE_SATLAB;

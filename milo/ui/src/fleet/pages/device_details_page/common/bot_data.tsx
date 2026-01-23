@@ -35,7 +35,7 @@ import CentralizedProgress from '@/clusters/components/centralized_progress/cent
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
-import { useBot } from '@/fleet/hooks/swarming_hooks';
+import { useBot, useBotInfo } from '@/fleet/hooks/swarming_hooks';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { prettyDateTime } from '@/fleet/utils/dates';
 import { getErrorMessage } from '@/fleet/utils/errors';
@@ -80,25 +80,40 @@ const InfoRow = ({ label, value }: { label: string; value: ReactNode }) => (
   </>
 );
 
+interface BotDataProps {
+  dutId?: string;
+  botId?: string;
+  swarmingHost?: string;
+}
+
 export const BotData = ({
   dutId,
+  botId,
   swarmingHost = DEVICE_TASKS_SWARMING_HOST,
-}: {
-  dutId: string;
-  swarmingHost?: string;
-}) => {
+}: BotDataProps) => {
   const editorOptions = useRef<EditorConfiguration>(DEFAULT_CODE_MIRROR_CONFIG);
   const client = useBotsClient(swarmingHost);
-  const botData = useBot(client, dutId);
 
-  if (botData.isError) {
+  const botDataFromDut = useBot(client, dutId || '', {
+    enabled: !!dutId && !botId,
+  });
+  const botDataFromId = useBotInfo(client, botId || '', {
+    enabled: !!botId,
+  });
+  const activeData = botId ? botDataFromId : botDataFromDut;
+
+  const data = activeData.data;
+  const isLoading = activeData.isLoading;
+  const isError = activeData.isError;
+  const error = activeData.error;
+  const botFound = botId ? !!data : botDataFromDut.botFound;
+
+  if (isError) {
     return (
-      <Alert severity="error">
-        {getErrorMessage(botData.error, 'list bots')}{' '}
-      </Alert>
+      <Alert severity="error">{getErrorMessage(error, 'list bots')}</Alert>
     );
   }
-  if (botData.isLoading) {
+  if (isLoading) {
     return (
       <div
         css={{
@@ -110,26 +125,26 @@ export const BotData = ({
       </div>
     );
   }
-  if (!botData.botFound) {
+  if (!botFound) {
     return (
       <AlertWithFeedback
         severity="warning"
         title="Bot not found!"
-        bugErrorMessage={`Bot not found for device: ${dutId}`}
+        bugErrorMessage={`Bot not found for ${botId ? `bot: ${botId}` : `device: ${dutId}`}`}
       >
         <p>
-          Oh no! No bots were found for this device (<code>dut_id={dutId}</code>
-          ).
+          Oh no! No bots were found for this device{' '}
+          {botId ? <code>bot_id={botId}</code> : <code>dut_id={dutId}</code>}.
         </p>
       </AlertWithFeedback>
     );
   }
 
-  const state = JSON.parse(botData.info?.state || '{}');
+  const state = JSON.parse(data?.state || '{}');
   const prettyState = JSON.stringify(state, undefined, 2);
 
   const dimensionRows =
-    botData.info?.dimensions?.map((d, i) => ({
+    data?.dimensions?.map((d, i) => ({
       id: i,
       key: d.key,
       value: d.value.join(', '),
@@ -140,15 +155,15 @@ export const BotData = ({
     { field: 'value', headerName: 'Value', flex: 3 },
   ];
 
-  const currentTaskNode = !botData.info?.taskId ? (
+  const currentTaskNode = !data?.taskId ? (
     'idle'
   ) : (
     <Link
-      href={getTaskURL(botData.info.taskId, swarmingHost)}
+      href={getTaskURL(data.taskId, swarmingHost)}
       target="_blank"
       rel="noreferrer"
     >
-      {botData.info.taskName || botData.info.taskId}
+      {data.taskName || data.taskId}
     </Link>
   );
 
@@ -165,12 +180,12 @@ export const BotData = ({
             }}
           >
             <Typography variant="h6">Details</Typography>
-            {botData.info?.botId && (
+            {data?.botId && (
               <Button
                 color="primary"
                 startIcon={<LaunchIcon />}
                 size="small"
-                href={`https://${swarmingHost}/bot?id=${botData.info?.botId}`}
+                href={`https://${swarmingHost}/bot?id=${data?.botId}`}
                 target="_blank"
               >
                 View in Swarming
@@ -178,40 +193,50 @@ export const BotData = ({
             )}
           </Box>
           <Grid2 container spacing={1} alignItems="center">
-            <InfoRow label="Bot ID" value={botData.info?.botId || ''} />
-            {botData.info?.deleted && <InfoRow label="Deleted" value="True" />}
-            {botData.info?.quarantined && (
+            <InfoRow label="Bot ID" value={data?.botId || ''} />
+            {data?.deleted && <InfoRow label="Deleted" value="True" />}
+            {data?.quarantined && (
               <InfoRow label="Quarantined" value={quarantineMessage(state)} />
             )}
-            {botData.info?.maintenanceMsg && (
-              <InfoRow
-                label="In Maintenance"
-                value={botData.info.maintenanceMsg}
-              />
+            {data?.maintenanceMsg && (
+              <InfoRow label="In Maintenance" value={data.maintenanceMsg} />
             )}
-            {botData.info?.isDead && !botData.info?.deleted && (
+            {data?.isDead && !data?.deleted && (
               <InfoRow
                 label="Status"
                 value="Dead - Bot has been missing longer than 10 minutes"
               />
             )}
             <InfoRow
-              label={botData.info?.isDead ? 'Died on Task' : 'Current Task'}
+              label={data?.isDead ? 'Died on Task' : 'Current Task'}
               value={currentTaskNode}
             />
             <InfoRow
               label="First Seen"
-              value={prettyDateTime(botData.info?.firstSeenTs)}
+              value={prettyDateTime(data?.firstSeenTs)}
             />
             <InfoRow
               label="Last Seen"
-              value={prettyDateTime(botData.info?.lastSeenTs)}
+              value={prettyDateTime(data?.lastSeenTs)}
             />
           </Grid2>
         </CardContent>
       </Card>
 
-      <Accordion variant="outlined" sx={{ mb: 2 }}>
+      <Accordion
+        slotProps={{
+          root: {
+            sx: {
+              borderRadius: '4px',
+              '::before': {
+                display: 'none',
+              },
+            },
+          },
+        }}
+        variant="outlined"
+        elevation={2}
+      >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">Dimensions</Typography>
         </AccordionSummary>
@@ -227,7 +252,20 @@ export const BotData = ({
         </AccordionDetails>
       </Accordion>
 
-      <Accordion variant="outlined">
+      <Accordion
+        slotProps={{
+          root: {
+            sx: {
+              marginTop: '16px',
+              borderRadius: '4px',
+              '::before': {
+                display: 'none',
+              },
+            },
+          },
+        }}
+        variant="outlined"
+      >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6">State</Typography>
         </AccordionSummary>

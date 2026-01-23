@@ -64,7 +64,7 @@ export const Tasks = ({
   const botData = useBot(client, dutId || '', {
     enabled: !!dutId && !botId,
   });
-  const resolvedBotId = botId || botData.info?.botId;
+  const resolvedBotId = botId || botData.data?.botId;
 
   const tasksData = useBotTasks({
     client,

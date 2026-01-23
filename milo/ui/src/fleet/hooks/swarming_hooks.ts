@@ -17,6 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { DecoratedClient } from '@/common/hooks/prpc_query';
 import {
   BotInfo,
+  BotRequest,
   BotsClientImpl,
   BotsRequest,
   BotTasksRequest,
@@ -32,7 +33,7 @@ export const useBot = (
   dutId: string,
   options?: { enabled?: boolean },
 ): {
-  info: BotInfo | undefined;
+  data: BotInfo | undefined;
   botFound: boolean;
   error: unknown;
   isError: boolean;
@@ -57,7 +58,19 @@ export const useBot = (
     botFound = true;
   }
 
-  return { info, botFound, error, isError, isLoading };
+  return { data: info, botFound, error, isError, isLoading };
+};
+
+export const useBotInfo = (
+  client: DecoratedClient<BotsClientImpl>,
+  botId: string,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    ...client.GetBot.query(BotRequest.fromPartial({ botId })),
+    refetchInterval: 60000,
+    enabled: (options?.enabled ?? true) && !!botId,
+  });
 };
 
 export const useBotTasks = ({
