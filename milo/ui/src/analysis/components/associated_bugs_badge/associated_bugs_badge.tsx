@@ -21,7 +21,7 @@ import { OutputClusterEntry } from '@/analysis/types';
 import { BugCard } from '@/common/components/bug_card';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 
-const Badge = styled('span')`
+const Badge = styled('a')`
   margin: 0;
   background-color: #b7b7b7;
   width: 100%;
@@ -37,6 +37,11 @@ const Badge = styled('span')`
   text-align: center;
   white-space: nowrap;
   border-radius: 0.25rem;
+  text-decoration: none;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 export interface AssociatedBugsBadgeProps {
@@ -75,7 +80,15 @@ export function AssociatedBugsBadge({
         >
           <span>
             <CacheProvider value={cache}>
-              <Badge data-testid="associated-bugs-badge">{b.linkText}</Badge>
+              <Badge
+                data-testid="associated-bugs-badge"
+                href={b.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {b.linkText}
+              </Badge>
             </CacheProvider>
           </span>
         </HtmlTooltip>
