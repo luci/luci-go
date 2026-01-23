@@ -80,7 +80,7 @@ func TestQueryDetails(t *testing.T) {
 			return results
 		}
 
-		expected := ExpectedVerdictsInPrimaryKeyOrder(rootInvID, pb.TestVerdictView_TEST_VERDICT_VIEW_FULL)
+		expected := ExpectedVerdicts(rootInvID)
 		fetchOptions := FetchOptions{
 			PageSize:           100,
 			VerdictResultLimit: 10,
@@ -142,28 +142,26 @@ func TestQueryDetails(t *testing.T) {
 			assert.Loosely(t, results, should.HaveLength(len(expected)))
 
 			// Check t3 (Flaky)
-			t3 := results[2]
-			assert.Loosely(t, t3.TestId, should.ContainSubstring("t3"))
+			t3 := VerdictByCaseName(results, "t3")
 			assert.Loosely(t, t3.Results, should.HaveLength(1))
 
 			// Check t5 (Exonerated)
-			t5 := results[3]
-			assert.Loosely(t, t5.TestId, should.ContainSubstring("t5"))
+			t5 := VerdictByCaseName(results, "t5")
 			assert.Loosely(t, t5.Exonerations, should.HaveLength(1))
 		})
 
 		t.Run("With verdict size limit", func(t *ftt.Test) {
 			// Remove one result from t3 and measure its size. This will be our target.
-			assert.Loosely(t, expected[2].Results, should.HaveLength(2))
-			expected[2].Results = expected[2].Results[:1]
-			fetchOptions.VerdictSizeLimit = proto.Size(expected[2]) + protoJSONOverheadBytes
+			assert.Loosely(t, expected[1].Results, should.HaveLength(2))
+			expected[1].Results = expected[1].Results[:1]
+			fetchOptions.VerdictSizeLimit = proto.Size(expected[1]) + protoJSONOverheadBytes
 
 			// As the implementation is conservative, give it a little bit of extra room.
 			fetchOptions.VerdictSizeLimit += 2
 
 			results := fetchAll(q, fetchOptions)
 			assert.Loosely(t, results, should.HaveLength(len(expected)))
-			assert.Loosely(t, results[2], should.Match(expected[2]))
+			assert.Loosely(t, results[1], should.Match(expected[1]))
 		})
 
 		t.Run("With prefix filter", func(t *ftt.Test) {

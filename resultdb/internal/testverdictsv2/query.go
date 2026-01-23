@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 	"text/template"
 
 	"cloud.google.com/go/spanner"
@@ -41,6 +40,9 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// MaxUIPriority is the maximum value of UIPriority field.
+const MaxUIPriority = 100
 
 // Query represents a query for test verdicts.
 type Query struct {
@@ -409,7 +411,8 @@ func (q *Query) buildQuery(pageToken string, pageSize int) (spanner.Statement, e
 
 	tmplInput := map[string]any{
 		"PaginationClause":               paginationClause,
-		"OrderingByUIPriority":           q.Order == OrderingByUIPriority,
+		"OrderingByUIPriority":           q.Order.ByUIPriority,
+		"OrderingByStructuredTestID":     q.Order.ByStructuredTestID,
 		"ResultPassed":                   int64(pb.TestResult_PASSED),
 		"ResultFailed":                   int64(pb.TestResult_FAILED),
 		"ResultSkipped":                  int64(pb.TestResult_SKIPPED),
@@ -438,10 +441,11 @@ func (q *Query) buildQuery(pageToken string, pageSize int) (spanner.Statement, e
 }
 
 func (q *Query) makePageToken(last *TestVerdictSummary) string {
+	// Encode all parts possibly relevant to ordering. whereAfterPageToken will use only
+	// the elements it needs based on the ordering selected.
 	var parts []string
-	if q.Order == OrderingByUIPriority {
-		parts = append(parts, fmt.Sprintf("%d", last.UIPriority))
-	}
+	parts = append(parts, fmt.Sprintf("%d", last.UIPriority))
+	parts = append(parts, last.ID.RootInvocationShardID.RowID())
 	parts = append(parts, last.ID.ModuleName)
 	parts = append(parts, last.ID.ModuleScheme)
 	parts = append(parts, last.ID.ModuleVariantHash)
@@ -456,51 +460,70 @@ func (q *Query) whereAfterPageToken(token string, params map[string]any) (string
 	if err != nil {
 		return "", errors.Fmt("invalid page token: %s", err)
 	}
-	const testIDKeyColumns = 6
-	extraSortColumns := 0
-	if q.Order == OrderingByUIPriority {
-		extraSortColumns = 1
-	}
-	if len(parts) != (testIDKeyColumns + extraSortColumns) {
-		return "", errors.Fmt("expected %v components, got %d", testIDKeyColumns+extraSortColumns, len(parts))
+	const expectedParts = 8
+	if len(parts) != expectedParts {
+		return "", errors.Fmt("expected %v components, got %d", expectedParts, len(parts))
 	}
 
-	var builder strings.Builder
-	var commonClause string
-	if q.Order == OrderingByUIPriority {
-		uiPriority, err := strconv.Atoi(parts[0])
-		if err != nil {
-			return "", errors.Fmt("invalid page token, got non-integer UIPriority: %v", parts[0])
+	uiPriority, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return "", errors.Fmt("invalid page token, got non-integer UIPriority: %v", parts[0])
+	}
+	// See makePageToken(...) for ordering.
+	rootInvocationShardID := parts[1]
+	moduleName := parts[2]
+	moduleScheme := parts[3]
+	moduleVariantHash := parts[4]
+	coarseName := parts[5]
+	fineName := parts[6]
+	caseName := parts[7]
+
+	var columns []spanutil.PageTokenElement
+
+	if q.Order.ByUIPriority {
+		if uiPriority > MaxUIPriority {
+			return "", errors.New("invalid page token or logic error: uiPriority > MaxUIPriority")
 		}
-		// Once we have paged to the lowest UIPriority of zero, we can stop looking for lower values
-		// in the WHERE clause.
-		// This allows Spanner to push down the remaining pagination clause over ModuleName, ModuleScheme, ...
-		// to the underlying TestResultsV2 table scan, which can provide for a much enhanced query performance.
-		if uiPriority > 0 {
-			builder.WriteString(`UIPriority < @afterUIPriority OR `)
-		}
-		params["afterUIPriority"] = uiPriority
-		builder.WriteString(`(UIPriority = @afterUIPriority AND ModuleName > @afterModuleName)`)
-		commonClause = "UIPriority = @afterUIPriority AND ModuleName = @afterModuleName"
-	} else {
-		builder.WriteString(`ModuleName > @afterModuleName`)
-		commonClause = "ModuleName = @afterModuleName"
+		columns = append(columns, spanutil.PageTokenElement{
+			ColumnName: "UIPriority",
+			AfterValue: uiPriority,
+			AtLimit:    uiPriority == MaxUIPriority,
+		})
 	}
-
-	testIDParts := parts[extraSortColumns:]
-	params["afterModuleName"] = testIDParts[0]
-	params["afterModuleScheme"] = testIDParts[1]
-	params["afterModuleVariantHash"] = testIDParts[2]
-	params["afterCoarseName"] = testIDParts[3]
-	params["afterFineName"] = testIDParts[4]
-	params["afterCaseName"] = testIDParts[5]
-
-	builder.WriteString(` OR (` + commonClause + ` AND ModuleScheme > @afterModuleScheme)`)
-	builder.WriteString(` OR (` + commonClause + ` AND ModuleScheme = @afterModuleScheme AND ModuleVariantHash > @afterModuleVariantHash)`)
-	builder.WriteString(` OR (` + commonClause + ` AND ModuleScheme = @afterModuleScheme AND ModuleVariantHash = @afterModuleVariantHash AND T1CoarseName > @afterCoarseName)`)
-	builder.WriteString(` OR (` + commonClause + ` AND ModuleScheme = @afterModuleScheme AND ModuleVariantHash = @afterModuleVariantHash AND T1CoarseName = @afterCoarseName AND T2FineName > @afterFineName)`)
-	builder.WriteString(` OR (` + commonClause + ` AND ModuleScheme = @afterModuleScheme AND ModuleVariantHash = @afterModuleVariantHash AND T1CoarseName = @afterCoarseName AND T2FineName = @afterFineName AND T3CaseName > @afterCaseName)`)
-	return builder.String(), nil
+	if !q.Order.ByStructuredTestID {
+		// Order by primary key.
+		columns = append(columns, spanutil.PageTokenElement{
+			ColumnName: "RootInvocationShardID",
+			AfterValue: rootInvocationShardID,
+		})
+	}
+	columns = append(columns, []spanutil.PageTokenElement{
+		{
+			ColumnName: "ModuleName",
+			AfterValue: moduleName,
+		},
+		{
+			ColumnName: "ModuleScheme",
+			AfterValue: moduleScheme,
+		},
+		{
+			ColumnName: "ModuleVariantHash",
+			AfterValue: moduleVariantHash,
+		},
+		{
+			ColumnName: "T1CoarseName",
+			AfterValue: coarseName,
+		},
+		{
+			ColumnName: "T2FineName",
+			AfterValue: fineName,
+		},
+		{
+			ColumnName: "T3CaseName",
+			AfterValue: caseName,
+		},
+	}...)
+	return spanutil.WhereAfterClause(columns, "after", params), nil
 }
 
 var queryTmpl = template.Must(template.New("").Parse(`
@@ -551,7 +574,9 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		SELECT
 			TR.RootInvocationShardId,
 			TR.ModuleName, TR.ModuleScheme, TR.ModuleVariantHash, TR.T1CoarseName, TR.T2FineName, TR.T3CaseName,
-			ANY_VALUE(TR.ModuleVariantMasked) AS ModuleVariantMasked,
+			-- Per Spanner documentation, ANY_VALUE should prefer non-null values, but
+			-- this is not observed in Spanner emulator. Use HAVING MAX to ensure determinism.
+			ANY_VALUE(TR.ModuleVariantMasked HAVING MAX TR.ModuleVariantMasked IS NOT NULL) AS ModuleVariantMasked,
 			(CASE
 				WHEN COUNTIF(TR.StatusV2 = {{.ResultPassed}}) = 0 AND COUNTIF(TR.StatusV2 = {{.ResultFailed}}) > 0 THEN {{.VerdictFailed}}
 				WHEN COUNTIF(TR.StatusV2 = {{.ResultPassed}}) > 0 AND COUNTIF(TR.StatusV2 = {{.ResultFailed}}) > 0 THEN {{.VerdictFlaky}}
@@ -595,20 +620,20 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		END) AS StatusOverride,
 		ResultCount,
 		IsMasked,
-		-- UI Priority Calculation
+		-- UI Priority Calculation. Lower is higher priority.
 		(CASE
-			-- Has blocking failures: priority 100
-			WHEN (Status = {{.VerdictFailed}}) AND (NOT HasExonerations) THEN 100
-			-- Has blocking test execution errors: priority 70
-			WHEN (Status = {{.VerdictExecutionErrored}}) AND (NOT HasExonerations) THEN 70
-			-- Has blocking precluded results: priority 70
-			WHEN (Status = {{.VerdictPrecluded}}) AND (NOT HasExonerations) THEN 70
-			-- Has non-exonerated flakes: priority 30
-			WHEN (Status = {{.VerdictFlaky}}) AND (NOT HasExonerations) THEN 30
-			-- Exonerated: priority 10
-			WHEN HasExonerations AND (Status = {{.VerdictFailed}} OR Status = {{.VerdictExecutionErrored}} OR Status = {{.VerdictPrecluded}} OR Status = {{.VerdictFlaky}}) THEN 10
-			-- Else: only passes or skips: priority 0
-			ELSE 0
+			-- Has blocking failures: priority 0
+			WHEN (Status = {{.VerdictFailed}}) AND (NOT HasExonerations) THEN 0
+			-- Has blocking test execution errors: priority 30
+			WHEN (Status = {{.VerdictExecutionErrored}}) AND (NOT HasExonerations) THEN 30
+			-- Has blocking precluded results: priority 30
+			WHEN (Status = {{.VerdictPrecluded}}) AND (NOT HasExonerations) THEN 30
+			-- Has non-exonerated flakes: priority 70
+			WHEN (Status = {{.VerdictFlaky}}) AND (NOT HasExonerations) THEN 70
+			-- Exonerated: priority 90
+			WHEN HasExonerations AND (Status = {{.VerdictFailed}} OR Status = {{.VerdictExecutionErrored}} OR Status = {{.VerdictPrecluded}} OR Status = {{.VerdictFlaky}}) THEN 90
+			-- Else: only passes or skips: priority 100
+			ELSE 100
 		END) AS UIPriority
 	FROM (
 		{{template "VerdictsByShard" .}}
@@ -632,10 +657,16 @@ FROM (
 	{{template "Verdicts" .}}
 )
 WHERE {{.PaginationClause}} AND {{.FilterClause}}
-ORDER BY {{if .OrderingByUIPriority}}
-	UIPriority DESC, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
-{{else}}
-	ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
+ORDER BY
+{{/* Note: OrderingByUIPriority and OrderingByStructuredTestID may both be set or unset. */}}
+{{if .OrderingByUIPriority}}
+	UIPriority,
 {{end}}
+{{if not .OrderingByStructuredTestID}}
+	-- Unless structured test ID order is explicitly requested, prefer ordering by
+	-- primary key, as it is more performant.
+	RootInvocationShardId,
+{{end}}
+	ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
 LIMIT @limit
 `))

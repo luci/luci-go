@@ -47,7 +47,7 @@ func TestQuery(t *testing.T) {
 
 		q := &Query{
 			RootInvocationID: rootInvID,
-			Order:            OrderingByID,
+			Order:            Ordering{},
 			Access: permissions.RootInvocationAccess{
 				Level: permissions.FullAccess,
 			},
@@ -140,44 +140,85 @@ func TestQuery(t *testing.T) {
 			assert.Loosely(t, st.Err(), should.ErrLike("page_token: invalid page token"))
 			assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
 		})
-		t.Run("Ordering by UI Priority", func(t *ftt.Test) {
-			q.Order = OrderingByUIPriority
-			// Expected order:
-			// 1. Failed (t2) - Priority 100
-			// 2. Execution Errored (t7) - Priority 70
-			// 3. Precluded (t6) - Priority 70
-			// 4. Flaky (t3) - Priority 30
-			// 5. Exonerated (t5) - Priority 10
-			// 6. Passed (t1) - Priority 0
-			// 7. Skipped (t4) - Priority 0
-			// Note: Within same priority, sort by TestID (module, scheme, variant, coarse, fine, case).
-
+		t.Run("Ordering", func(t *ftt.Test) {
 			// Map expected items to map for easy retrieval
 			m := make(map[string]*pb.TestVerdict)
 			for _, v := range expected {
 				m[v.TestId] = v
 			}
 
-			expectedUIOrder := []*pb.TestVerdict{
-				m[flatTestID("m1", "c1", "f1", "t2")], // Failed
-				m[flatTestID("m1", "c2", "f1", "t6")], // Precluded
-				m[flatTestID("m2", "c1", "f1", "t7")], // Execution Errored
-				m[flatTestID("m1", "c1", "f1", "t3")], // Flaky
-				m[flatTestID("m1", "c1", "f2", "t5")], // Exonerated
-				m[flatTestID("m1", "c1", "f1", "t1")], // Passed
-				m[flatTestID("m1", "c1", "f1", "t4")], // Skipped
-			}
+			t.Run("By UI priority", func(t *ftt.Test) {
+				q.Order = Ordering{ByUIPriority: true}
+				expectedUIOrder := []*pb.TestVerdict{
+					m[flatTestID("m1", "c1", "f1", "t2")], // Failed, Priority 0
+					m[flatTestID("m1", "c2", "f1", "t6")], // Precluded, Priority 30
+					m[flatTestID("m2", "c1", "f1", "t7")], // Execution Errored, Priority 30
+					m[flatTestID("m1", "c1", "f1", "t3")], // Flaky, Priority 70
+					m[flatTestID("m1", "c1", "f2", "t5")], // Exonerated, Priority 90
+					m[flatTestID("m1", "c1", "f1", "t4")], // Skipped, Priority 100
+					m[flatTestID("m1", "c1", "f1", "t1")], // Passed, Priority 100. Sorted after t4 because of primary key order.
+				}
 
-			t.Run("Without pagination", func(t *ftt.Test) {
-				verdicts, token, err := fetchOne(q, "", opts)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, token, should.Equal(""))
-				assert.Loosely(t, verdicts, should.Match(expectedUIOrder))
+				t.Run("Without pagination", func(t *ftt.Test) {
+					verdicts, token, err := fetchOne(q, "", opts)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, token, should.Equal(""))
+					assert.Loosely(t, verdicts, should.Match(expectedUIOrder))
+				})
+				t.Run("With pagination", func(t *ftt.Test) {
+					opts.PageSize = 1
+					results := fetchAll(q, opts)
+					assert.Loosely(t, results, should.Match(expectedUIOrder))
+				})
 			})
-			t.Run("With pagination", func(t *ftt.Test) {
-				opts.PageSize = 1
-				results := fetchAll(q, opts)
-				assert.Loosely(t, results, should.Match(expectedUIOrder))
+			t.Run("By UI priority, then Test ID", func(t *ftt.Test) {
+				q.Order = Ordering{ByUIPriority: true, ByStructuredTestID: true}
+				expectedUIOrder := []*pb.TestVerdict{
+					m[flatTestID("m1", "c1", "f1", "t2")], // Failed, Priority 0
+					m[flatTestID("m1", "c2", "f1", "t6")], // Precluded, Priority 30
+					m[flatTestID("m2", "c1", "f1", "t7")], // Execution Errored, Priority 30
+					m[flatTestID("m1", "c1", "f1", "t3")], // Flaky, Priority 70
+					m[flatTestID("m1", "c1", "f2", "t5")], // Exonerated, Priority 90
+					m[flatTestID("m1", "c1", "f1", "t1")], // Passed, Priority 100.
+					m[flatTestID("m1", "c1", "f1", "t4")], // Skipped, Priority 100
+				}
+
+				t.Run("Without pagination", func(t *ftt.Test) {
+					verdicts, token, err := fetchOne(q, "", opts)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, token, should.Equal(""))
+					assert.Loosely(t, verdicts, should.Match(expectedUIOrder))
+				})
+				t.Run("With pagination", func(t *ftt.Test) {
+					opts.PageSize = 1
+					results := fetchAll(q, opts)
+					assert.Loosely(t, results, should.Match(expectedUIOrder))
+				})
+			})
+			t.Run("By Test ID", func(t *ftt.Test) {
+				q.Order = Ordering{ByStructuredTestID: true}
+
+				expectedUIOrder := []*pb.TestVerdict{
+					m[flatTestID("m1", "c1", "f1", "t1")],
+					m[flatTestID("m1", "c1", "f1", "t2")],
+					m[flatTestID("m1", "c1", "f1", "t3")],
+					m[flatTestID("m1", "c1", "f1", "t4")],
+					m[flatTestID("m1", "c1", "f2", "t5")],
+					m[flatTestID("m1", "c2", "f1", "t6")],
+					m[flatTestID("m2", "c1", "f1", "t7")],
+				}
+
+				t.Run("Without pagination", func(t *ftt.Test) {
+					verdicts, token, err := fetchOne(q, "", opts)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, token, should.Equal(""))
+					assert.Loosely(t, verdicts, should.Match(expectedUIOrder))
+				})
+				t.Run("With pagination", func(t *ftt.Test) {
+					opts.PageSize = 1
+					results := fetchAll(q, opts)
+					assert.Loosely(t, results, should.Match(expectedUIOrder))
+				})
 			})
 		})
 		t.Run("With page size", func(t *ftt.Test) {
@@ -240,16 +281,16 @@ func TestQuery(t *testing.T) {
 		})
 		t.Run("With verdict size limit", func(t *ftt.Test) {
 			// Remove one result from t3 and measure its size. This will be our target.
-			assert.Loosely(t, expected[2].Results, should.HaveLength(2))
-			expected[2].Results = expected[2].Results[:1]
-			opts.VerdictSizeLimit = proto.Size(expected[2]) + protoJSONOverheadBytes
+			assert.Loosely(t, expected[1].Results, should.HaveLength(2))
+			expected[1].Results = expected[1].Results[:1]
+			opts.VerdictSizeLimit = proto.Size(expected[1]) + protoJSONOverheadBytes
 
 			// As the implementation is conservative, give it a little bit of extra room.
 			opts.VerdictSizeLimit += 2
 
 			results := fetchAll(q, opts)
 			assert.Loosely(t, results, should.HaveLength(len(expected)))
-			assert.Loosely(t, results[2], should.Match(expected[2]))
+			assert.Loosely(t, results[1], should.Match(expected[1]))
 		})
 		t.Run("With total result limit", func(t *ftt.Test) {
 			t.Run("Makes progress", func(t *ftt.Test) {
@@ -313,13 +354,13 @@ func TestQuery(t *testing.T) {
 				q.Access.Level = permissions.LimitedAccess
 				q.Access.Realms = []string{"testproject:t4-r1"}
 				expectedLimited := ExpectedMaskedVerdicts(expected, q.Access.Realms)
-				expectedLimited = expectedLimited[3:4]
+				expectedLimited = []*pb.TestVerdict{VerdictByCaseName(expectedLimited, "t4")}
 				assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
 			})
 			t.Run("With implicit filter", func(t *ftt.Test) {
 				// Check an aip.dev/160 implicit filter.
-				q.ContainsTestResultFilter = `t2`
-				expected = expected[1:2]
+				q.ContainsTestResultFilter = `t3`
+				expected = []*pb.TestVerdict{VerdictByCaseName(expected, "t3")}
 				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 			})
 		})
@@ -335,20 +376,31 @@ func TestQuery(t *testing.T) {
 
 			expected := ExpectedVerdicts(rootInvID)
 			t.Run("module-level filter", func(t *ftt.Test) {
-				expected = expected[0:6]
+				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+					return v.TestIdStructured.ModuleName == "m1"
+				})
+				assert.Loosely(t, expected, should.HaveLength(6))
 				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 			})
 			t.Run("coarse name-level filter", func(t *ftt.Test) {
 				q.TestPrefixFilter.Level = pb.AggregationLevel_COARSE
 				q.TestPrefixFilter.Id.CoarseName = "c1"
-				expected = expected[0:5]
+				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+					return v.TestIdStructured.ModuleName == "m1" && v.TestIdStructured.CoarseName == "c1"
+				})
+				assert.Loosely(t, expected, should.HaveLength(5))
 				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 			})
 			t.Run("fine name-level filter", func(t *ftt.Test) {
 				q.TestPrefixFilter.Level = pb.AggregationLevel_FINE
 				q.TestPrefixFilter.Id.CoarseName = "c1"
 				q.TestPrefixFilter.Id.FineName = "f1"
-				expected = expected[0:4]
+				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+					return v.TestIdStructured.ModuleName == "m1" &&
+						v.TestIdStructured.CoarseName == "c1" &&
+						v.TestIdStructured.FineName == "f1"
+				})
+				assert.Loosely(t, expected, should.HaveLength(4))
 				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 			})
 			t.Run("case name-level filter", func(t *ftt.Test) {
@@ -356,7 +408,13 @@ func TestQuery(t *testing.T) {
 				q.TestPrefixFilter.Id.CoarseName = "c1"
 				q.TestPrefixFilter.Id.FineName = "f1"
 				q.TestPrefixFilter.Id.CaseName = "t2"
-				expected = expected[1:2]
+				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+					return v.TestIdStructured.ModuleName == "m1" &&
+						v.TestIdStructured.CoarseName == "c1" &&
+						v.TestIdStructured.FineName == "f1" &&
+						v.TestIdStructured.CaseName == "t2"
+				})
+				assert.Loosely(t, expected, should.HaveLength(1))
 				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 			})
 		})
@@ -396,14 +454,19 @@ func TestQuery(t *testing.T) {
 				q.Filter = "status = FAILED"
 				expected := ExpectedVerdicts(rootInvID)
 				// t2 is FAILED and t5 is FAILED (but exonerated).
-				expected = []*pb.TestVerdict{expected[1], expected[4]}
+				expected = []*pb.TestVerdict{
+					VerdictByCaseName(expected, "t2"),
+					VerdictByCaseName(expected, "t5"),
+				}
 				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 			})
 			t.Run("status_override", func(t *ftt.Test) {
 				q.Filter = "status_override = EXONERATED"
 				expected := ExpectedVerdicts(rootInvID)
 				// Only t5 is EXONERATED.
-				expected = expected[4:5]
+				expected = []*pb.TestVerdict{
+					VerdictByCaseName(expected, "t5"),
+				}
 				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 			})
 		})

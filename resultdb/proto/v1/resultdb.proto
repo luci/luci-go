@@ -1451,17 +1451,20 @@ message QueryTestVerdictsRequest {
   //
   // The sort orders that can be requested are:
   // - `test_id_structured` (test ID order)
-  // - `ui_priority desc, test_id_structured` (UI priority, then test ID order)
+  // - `ui_priority, test_id_structured` (UI priority, then test ID order)
+  // - `ui_priority` (UI priority, then arbitrary system-preferred order)
   //
   // Where:
-  // - `test_id_structured` sorts by the lexicographical order of the test identifier,
-  //   i.e. (module_name, module_scheme, module_variant, coarse_name, fine_name),
-  // - `ui_priority` is an opaque priority heuristic designed for LUCI UI use only and
-  //   is subject to change.
+  // - `test_id_structured` sorts by the lexicographical order of the test
+  //   identifier, i.e. (module_name, module_scheme, module_variant,
+  //   coarse_name, fine_name), and
+  // - `ui_priority` is an opaque priority heuristic designed for LUCI UI use
+  //   and is subject to change.
   //
-  // If this field is left blank, the implementation will choose the order of
-  // response items so as to minimise the response latency. This may be an
-  // ordering not listed above.
+  // If you do not require a particular ordering, it is best to leave this
+  // field unspecified. Results will be returned in the natural order of the
+  // underlying table, which is faster (usually substantially) than any
+  // specified order.
   string order_by = 3;
 
   // The set of test verdict fields to return. Currently, this RPC only supports

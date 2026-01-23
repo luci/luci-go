@@ -67,7 +67,7 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	// work unit, but for testing purposes we put each in its own realm as it makes life easier.
 	results := []*testresultsv2.TestResultRow{
 		// Verdict 1: Passed
-		baseBuilder().WithCaseName("t1").WithResultID("r1").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t1-r1").Build(),
+		baseBuilder().WithRootInvocationShardID(shardTwo).WithCaseName("t1").WithResultID("r1").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t1-r1").Build(),
 
 		// Verdict 2: Failed
 		baseBuilder().WithCaseName("t2").WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t2-r1").
@@ -78,7 +78,7 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 		baseBuilder().WithCaseName("t3").WithResultID("r2").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t3-r2").Build(),
 
 		// Verdict 4: Skipped
-		baseBuilder().WithRootInvocationShardID(shardTwo).WithCaseName("t4").WithResultID("r1").WithStatusV2(pb.TestResult_SKIPPED).WithRealm("testproject:t4-r1").
+		baseBuilder().WithCaseName("t4").WithResultID("r1").WithStatusV2(pb.TestResult_SKIPPED).WithRealm("testproject:t4-r1").
 			WithSkippedReason(longSkippedReason()).Build(),
 
 		// Verdict 5: Exonerated (Fail + Exoneration)
@@ -298,18 +298,48 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 	r7 := makeResult(testID7, "r1", pb.TestResult_EXECUTION_ERRORED)
 	v7 := makeVerdict(testID7, pb.TestVerdict_EXECUTION_ERRORED, []*pb.TestResult{r7}, nil)
 
-	return []*pb.TestVerdict{v1, v2, v3, v4, v5, v6, v7}
+	// v1 is in shard 15, so it should come last as this list is in primary key order.
+	return []*pb.TestVerdict{v2, v3, v4, v5, v6, v7, v1}
 }
 
-func ExpectedVerdictsInPrimaryKeyOrder(rootInvID rootinvocations.ID, view pb.TestVerdictView) []*pb.TestVerdict {
-	verdicts := ExpectedVerdicts(rootInvID)
-	// Verdict t4 is in shard 15 whereas all others are in shard 0, move it to the end.
-	t4 := verdicts[3]
-	var results []*pb.TestVerdict
-	results = append(results, verdicts[:3]...)
-	results = append(results, verdicts[4:]...)
-	results = append(results, t4)
-	return results
+// FilterVerdicts filters the given verdicts using the given filter function. For testing purposes.
+func FilterVerdicts(verdicts []*pb.TestVerdict, filter func(tv *pb.TestVerdict) bool) []*pb.TestVerdict {
+	result := make([]*pb.TestVerdict, 0, len(verdicts))
+	for _, v := range verdicts {
+		if filter(v) {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+// VerdictByCaseName returns the verdict with the given case name. For testing purposes.
+func VerdictByCaseName(verdicts []*pb.TestVerdict, caseName string) *pb.TestVerdict {
+	for _, v := range verdicts {
+		if v.TestIdStructured.CaseName == caseName {
+			return v
+		}
+	}
+	return nil
+}
+
+func uiPriority(v *pb.TestVerdict) int {
+	if v.StatusOverride == pb.TestVerdict_EXONERATED {
+		return 90
+	}
+	switch v.Status {
+	case pb.TestVerdict_FAILED:
+		return 0
+	case pb.TestVerdict_PRECLUDED:
+		return 30
+	case pb.TestVerdict_EXECUTION_ERRORED:
+		return 30
+	case pb.TestVerdict_FLAKY:
+		return 70
+	default:
+		// Passed or skipped.
+		return 100
+	}
 }
 
 // ExpectedMaskedVerdicts returns the expected masked versions of the given

@@ -216,16 +216,17 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, res.TestVerdicts, should.Match(expected))
 			})
 
-			t.Run(`With UI priority order`, func(t *ftt.Test) {
-				req.OrderBy = "ui_priority desc, test_id_structured"
+			t.Run(`With ordering`, func(t *ftt.Test) {
+				// We rely on unit tests in testverdictsv2/query_test.go to verify exact order correctness
+				// of all the ordering options.
+				// Here we just do a few spot checks and verify it doesn't error.
+				req.OrderBy = "ui_priority, test_id_structured"
 				res, err := srv.QueryTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				// Verify order is different from default.
-				// We rely on unit tests in testverdictsv2/query_test.go to verify exact order correctness.
-				// Here we just check it returns results and doesn't error.
 				assert.Loosely(t, res.TestVerdicts, should.HaveLength(7))
-				assert.Loosely(t, res.TestVerdicts[0].Status, should.Equal(pb.TestVerdict_FAILED)) // Highest priority
+				assert.Loosely(t, res.TestVerdicts[0].Status, should.Equal(pb.TestVerdict_FAILED))   // Highest priority first
+				assert.Loosely(t, res.TestVerdicts[6].TestIdStructured.CaseName, should.Equal("t4")) // "t4" (skipped) last.
 			})
 
 			t.Run(`With prefix filter`, func(t *ftt.Test) {
@@ -244,7 +245,10 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 
 				// Should match all verdicts except t7 (which is in m2).
-				assert.Loosely(t, res.TestVerdicts, should.Match(expected[0:6]))
+				expected = testverdictsv2.FilterVerdicts(expected, func(tv *pb.TestVerdict) bool {
+					return tv.TestIdStructured.ModuleName == "m1"
+				})
+				assert.Loosely(t, res.TestVerdicts, should.Match(expected))
 			})
 
 			t.Run(`With contains test results filter`, func(t *ftt.Test) {
@@ -255,7 +259,10 @@ func TestQueryTestVerdicts(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				// Only t4 has a SKIPPED result.
-				assert.Loosely(t, res.TestVerdicts, should.Match(expected[3:4]))
+				expected = []*pb.TestVerdict{
+					testverdictsv2.VerdictByCaseName(expected, "t4"),
+				}
+				assert.Loosely(t, res.TestVerdicts, should.Match(expected))
 			})
 
 			t.Run(`With filter`, func(t *ftt.Test) {
@@ -265,8 +272,12 @@ func TestQueryTestVerdicts(t *testing.T) {
 				res, err := srv.QueryTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				// t2 (FAILED) and t5 (FAILED and EXONERATED) match status=FAILED.
-				assert.Loosely(t, res.TestVerdicts, should.Match([]*pb.TestVerdict{expected[1], expected[4]}))
+				// t2 (FAILED) and t5 (FAILED + EXONERATED) match status=FAILED.
+				expected = []*pb.TestVerdict{
+					testverdictsv2.VerdictByCaseName(expected, "t2"),
+					testverdictsv2.VerdictByCaseName(expected, "t5"),
+				}
+				assert.Loosely(t, res.TestVerdicts, should.Match(expected))
 			})
 
 			t.Run(`With pagination`, func(t *ftt.Test) {

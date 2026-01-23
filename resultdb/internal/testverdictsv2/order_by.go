@@ -26,13 +26,14 @@ var idFieldPath = aip132.NewFieldPath("test_id_structured")
 var uiPriorityFieldPath = aip132.NewFieldPath("ui_priority")
 
 // Ordering represents the sort order of test verdicts.
-type Ordering int
+//
+// If no ordering is specified, the implementation will revert to sorting
+// by primary key, which is the most efficient order for performance.
+type Ordering struct {
+	// If multiple orders are combined, they are applied in the order they appear
+	// below. I.E. ByUIPriority sort takes priority over ByStructuredTestID sort.
 
-const (
-	// Verdicts should be sorted by (structured) test identifier.
-	// This order is the best for RPC performance as it follows the natural table ordering.
-	OrderingByID Ordering = iota
-	// Verdicts should be sorted by UI priority.
+	// Whether to order by UI priority descending (most important first).
 	// This is means the order will be:
 	// - Failed
 	// - Execution Error
@@ -40,40 +41,39 @@ const (
 	// - Flaky
 	// - Exonerated
 	// - Passed and Skipped (treated equivalently).
-	OrderingByUIPriority
-)
+	ByUIPriority bool
+	// Whether to order by structured test ID ascending ('a's before 'z's).
+	ByStructuredTestID bool
+}
 
 // ParseOrderBy parses the order_by string.
 func ParseOrderBy(orderBy string) (Ordering, error) {
 	parts, err := aip132.ParseOrderBy(orderBy)
 	if err != nil {
-		return 0, err
-	}
-	if len(parts) == 0 {
-		// Use default order: order by ID asc.
-		return OrderingByID, nil
+		return Ordering{}, err
 	}
 	var byUIPriority bool
+	var byStructuredTestID bool
 	index := 0
-	if parts[index].FieldPath.Equals(uiPriorityFieldPath) {
-		if !parts[index].Descending {
-			return 0, errors.Fmt("can only sort by %q in descending order", uiPriorityFieldPath.String())
+	if index < len(parts) && parts[index].FieldPath.Equals(uiPriorityFieldPath) {
+		if parts[index].Descending {
+			return Ordering{}, errors.Fmt("can only sort by %q in ascending order", uiPriorityFieldPath.String())
 		}
 		byUIPriority = true
 		index++
 	}
 	if index < len(parts) && parts[index].FieldPath.Equals(idFieldPath) {
 		if parts[index].Descending {
-			return 0, errors.Fmt("can only sort by %q in ascending order", idFieldPath.String())
+			return Ordering{}, errors.Fmt("can only sort by %q in ascending order", idFieldPath.String())
 		}
-		// The default (and residual) order is always test ID ascending, so no need to set anything.
+		byStructuredTestID = true
 		index++
 	}
 	if index < len(parts) {
-		return 0, errors.Fmt(`unsupported order by clause: %q; supported orders are "test_id_structured" or "ui_priority desc,test_id_structured"`, orderBy)
+		return Ordering{}, errors.Fmt(`unsupported order by clause: %q; supported orders are "test_id_structured" or "ui_priority,test_id_structured", "ui_priority" or "" (system-preferred order)`, orderBy)
 	}
-	if byUIPriority {
-		return OrderingByUIPriority, nil
-	}
-	return OrderingByID, nil
+	return Ordering{
+		ByUIPriority:       byUIPriority,
+		ByStructuredTestID: byStructuredTestID,
+	}, nil
 }

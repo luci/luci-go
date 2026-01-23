@@ -27,39 +27,36 @@ func TestParseOrderBy(t *testing.T) {
 		t.Run("Default", func(t *ftt.Test) {
 			o, err := ParseOrderBy("")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, o, should.Equal(OrderingByID))
+			assert.Loosely(t, o, should.Equal(Ordering{}))
 		})
-
 		t.Run("test_id_structured", func(t *ftt.Test) {
 			o, err := ParseOrderBy("test_id_structured")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, o, should.Equal(OrderingByID))
+			assert.Loosely(t, o, should.Equal(Ordering{ByStructuredTestID: true}))
 		})
-
 		t.Run("ui_priority", func(t *ftt.Test) {
-			o, err := ParseOrderBy("ui_priority desc, test_id_structured")
+			o, err := ParseOrderBy("ui_priority, test_id_structured")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, o, should.Equal(OrderingByUIPriority))
+			assert.Loosely(t, o, should.Equal(Ordering{ByUIPriority: true, ByStructuredTestID: true}))
 
-			o, err = ParseOrderBy("ui_priority desc")
+			o, err = ParseOrderBy("ui_priority")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, o, should.Equal(OrderingByUIPriority))
+			assert.Loosely(t, o, should.Equal(Ordering{ByUIPriority: true}))
 		})
-
 		t.Run("Invalid", func(t *ftt.Test) {
 			t.Run("test_id_structured desc", func(t *ftt.Test) {
 				_, err := ParseOrderBy("test_id_structured desc")
 				assert.Loosely(t, err, should.ErrLike(`can only sort by "test_id_structured" in ascending order`))
 			})
 
-			t.Run("ui_priority asc", func(t *ftt.Test) {
-				_, err := ParseOrderBy("ui_priority, test_id_structured")
-				assert.Loosely(t, err, should.ErrLike(`can only sort by "ui_priority" in descending order`))
+			t.Run("ui_priority desc", func(t *ftt.Test) {
+				_, err := ParseOrderBy("ui_priority desc")
+				assert.Loosely(t, err, should.ErrLike(`can only sort by "ui_priority" in ascending order`))
 			})
 
 			t.Run("unknown field", func(t *ftt.Test) {
 				_, err := ParseOrderBy("unknown")
-				assert.Loosely(t, err, should.ErrLike(`unsupported order by clause: "unknown"; supported orders are "test_id_structured" or "ui_priority desc,test_id_structured"`))
+				assert.Loosely(t, err, should.ErrLike(`unsupported order by clause: "unknown"; supported orders are "test_id_structured" or "ui_priority,test_id_structured", "ui_priority" or "" (system-preferred order)`))
 			})
 		})
 	})
