@@ -211,11 +211,11 @@ type AuthDBChange struct {
 	OldDescription string     `gae:"old_description,noindex" json:"old_description"`
 
 	// Fields specific to AuthDBGroupChange.
-	Owners    string   `gae:"owners" json:"owners"`         // Valid for ChangeGroupCreated and ChangeGroupOwnersChanged.
-	OldOwners string   `gae:"old_owners" json:"old_owners"` // Valid for ChangeGroupOwnersChanged and ChangeGroupDeleted.
-	Members   []string `gae:"members" json:"members"`       // Valid for ChangeGroupMembersAdded and ChangeGroupMembersRemoved.
-	Globs     []string `gae:"globs" json:"globs"`           // Valid for ChangeGroupGlobsAdded and ChangeGroupGlobsRemoved.
-	Nested    []string `gae:"nested" json:"nested"`         // Valid for ChangeGroupNestedAdded and ChangeGroupNestedRemoved.
+	Owners    string   `gae:"owners" json:"owners"`           // Valid for ChangeGroupCreated and ChangeGroupOwnersChanged.
+	OldOwners string   `gae:"old_owners" json:"old_owners"`   // Valid for ChangeGroupOwnersChanged and ChangeGroupDeleted.
+	Members   []string `gae:"members,noindex" json:"members"` // Valid for ChangeGroupMembersAdded and ChangeGroupMembersRemoved.
+	Globs     []string `gae:"globs" json:"globs"`             // Valid for ChangeGroupGlobsAdded and ChangeGroupGlobsRemoved.
+	Nested    []string `gae:"nested" json:"nested"`           // Valid for ChangeGroupNestedAdded and ChangeGroupNestedRemoved.
 
 	// Fields specific to AuthDBIPAllowlistChange.
 	Subnets []string `gae:"subnets" json:"subnets"` // Valid for ChangeIPWLSubnetsAdded and ChangeIPWLSubnetsRemoved.

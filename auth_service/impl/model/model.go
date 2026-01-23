@@ -338,7 +338,7 @@ type AuthGroup struct {
 	// * there are no direct members in the group; OR
 	// * the group has been sharded and requires unsharding to repopulate the members.
 	// ShardIDs will be non-empty if unsharding is required.
-	Members []string `gae:"members"`
+	Members []string `gae:"members,noindex"`
 
 	// Globs is the list of identity-glob expressions in this group.
 	//
