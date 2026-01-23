@@ -382,6 +382,16 @@ func TestUpdate(t *testing.T) {
 							Timeout: &pb.StatusDetails_Timeout{},
 						}))
 					})
+
+					t.Run("build still pending, task status failure", func(t *ftt.Test) {
+						b.Proto.Status = pb.Status_SCHEDULED
+						assert.NoErr(t, datastore.Put(ctx, b))
+						u.TaskStatus = &StatusWithDetails{Status: pb.Status_FAILURE}
+						bs, err := update(ctx, u)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
+						assert.Loosely(t, updatedStatus, should.Equal(pb.Status_INFRA_FAILURE))
+					})
 				})
 			})
 		})

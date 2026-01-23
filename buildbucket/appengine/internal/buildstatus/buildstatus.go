@@ -60,17 +60,25 @@ type Updater struct {
 }
 
 // buildEndStatus calculates the final status of a build based on its output
-// status and backend task status.
-func (u *Updater) buildEndStatus(outStatus, taskStatus *StatusWithDetails) *StatusWithDetails {
+// status, backend task status and current build status.
+func (u *Updater) buildEndStatus(outStatus, taskStatus *StatusWithDetails, oldStatus pb.Status) *StatusWithDetails {
 	switch {
 	case !outStatus.isSet() || !protoutil.IsEnded(outStatus.Status):
-		if taskStatus.Status == pb.Status_SUCCESS && !u.SucceedBuildIfTaskSucceeded {
-			// outStatus should have been an ended status since taskStatus is.
-			// Something must be wrong.
+		if taskStatus.Status == pb.Status_SUCCESS {
+			if u.SucceedBuildIfTaskSucceeded {
+				return &StatusWithDetails{Status: pb.Status_SUCCESS}
+			} else {
+				// outStatus should have been an ended status since taskStatus
+				// is SUCCESS. Something must be wrong.
+				return &StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
+			}
+		} else if oldStatus == pb.Status_SCHEDULED {
+			// The build didn't start successfully, set it to INFRA_FAILURE
+			// regardless task status.
 			return &StatusWithDetails{Status: pb.Status_INFRA_FAILURE}
 		} else {
-			// This could happen if the task crashes when running the build, or
-			// SucceedBuildIfTaskSucceeded is true, use the task status.
+			// This could happen if the task crashes when running the build,
+			// use the task status.
 			return taskStatus
 		}
 	case outStatus.Status == pb.Status_SUCCESS:
@@ -95,7 +103,7 @@ func (u *Updater) buildEndStatus(outStatus, taskStatus *StatusWithDetails) *Stat
 		return outStatus
 	}
 }
-func (u *Updater) calculateBuildStatus() *StatusWithDetails {
+func (u *Updater) calculateBuildStatus(oldStatus pb.Status) *StatusWithDetails {
 	switch {
 	case u.BuildStatus != nil && u.BuildStatus.Status != pb.Status_STATUS_UNSPECIFIED:
 		// If top level status is provided, use that directly.
@@ -110,7 +118,7 @@ func (u *Updater) calculateBuildStatus() *StatusWithDetails {
 		return u.buildEndStatus(&StatusWithDetails{
 			Status:  u.Build.Proto.Output.GetStatus(),
 			Details: u.Build.Proto.Output.GetStatusDetails()},
-			u.TaskStatus)
+			u.TaskStatus, oldStatus)
 	default:
 		// no change.
 		return &StatusWithDetails{Status: u.Build.Proto.Status, Details: u.Build.Proto.StatusDetails}
@@ -149,7 +157,7 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	newBuildStatus := u.BuildStatus
 	oldBuildStatus := u.Build.Proto.Status
 	if !newBuildStatus.isSet() {
-		newBuildStatus = u.calculateBuildStatus()
+		newBuildStatus = u.calculateBuildStatus(oldBuildStatus)
 	}
 	if !newBuildStatus.isSet() {
 		// Nothing provided to update.
