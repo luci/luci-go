@@ -18,8 +18,8 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 
-import { BrowserDeviceDimensionsProps } from '../device_list_page/browser/browser_devices_page';
-import { BROWSER_COLUMN_OVERRIDES } from '../device_list_page/browser/columns';
+import { BrowserDeviceDimensionsProps } from '../../device_list_page/browser/browser_devices_page';
+import { BROWSER_COLUMN_OVERRIDES } from '../../device_list_page/browser/columns';
 
 export const BrowserDeviceDimensions = ({
   device,

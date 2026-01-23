@@ -16,7 +16,7 @@ import { Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import { OutputBuildInfra_Backend } from '@/build/types';
-import { useDeviceData } from '@/fleet/pages/device_details_page/use_device_data';
+import { useDeviceData } from '@/fleet/pages/device_details_page/chromeos/use_device_data';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { getDutName } from '@/fleet/utils/swarming';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';

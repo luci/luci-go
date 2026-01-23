@@ -20,7 +20,7 @@ import { CellWithTooltip } from '@/fleet/components/table/cell_with_tooltip';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { CHROMEOS_COLUMN_OVERRIDES } from '../device_list_page/chromeos/columns';
+import { CHROMEOS_COLUMN_OVERRIDES } from '../../device_list_page/chromeos/columns';
 
 interface DeviceDimensionsProps {
   device?: Device;
