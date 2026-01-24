@@ -70,6 +70,9 @@ func TurboCICall(ctx context.Context) *TurboCICallInfo {
 // TurboCIStageExecutor implements executorgrpcpb.TurboCIStageExecutorServer.
 type TurboCIStageExecutor struct {
 	executorgrpcpb.UnimplementedTurboCIStageExecutorServer
+
+	// TurboCIHost is TurboCI orchestrator's hostname.
+	TurboCIHost string
 }
 
 // TurboCIInterceptor is used for all TurboCI Stage Executor unary RPCs.

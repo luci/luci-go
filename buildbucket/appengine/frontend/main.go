@@ -254,7 +254,7 @@ func main() {
 
 		grpcpb.RegisterBuildsServer(srv, &rpc.Builds{})
 		grpcpb.RegisterBuildersServer(srv, &rpc.Builders{})
-		executorgrpcpb.RegisterTurboCIStageExecutorServer(srv, &rpc.TurboCIStageExecutor{})
+		executorgrpcpb.RegisterTurboCIStageExecutorServer(srv, &rpc.TurboCIStageExecutor{TurboCIHost: *turboCIAPIEndpoint})
 
 		// Expose Turbo CI Executor service in the RPC Explorer. Turbo CI protos are
 		// compiled with more standard protoc tooling and they need to be registered

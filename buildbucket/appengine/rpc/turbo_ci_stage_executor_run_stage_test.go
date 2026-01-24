@@ -119,7 +119,9 @@ func TestRunStage(t *testing.T) {
 
 			mockOrch := &turboci.FakeOrchestratorClient{}
 			ctx = turboci.WithTurboCIOrchestratorClient(ctx, mockOrch)
-			se := &TurboCIStageExecutor{}
+			se := &TurboCIStageExecutor{
+				TurboCIHost: "turbocihost",
+			}
 			return ctx, req, attemptID, mockOrch, se
 		}
 		t.Run("OK", func(t *ftt.Test) {
@@ -140,9 +142,15 @@ func TestRunStage(t *testing.T) {
 			bld := &model.Build{
 				ID: reqID.BuildID,
 			}
-			assert.NoErr(t, datastore.Get(ctx, bld))
+			infra := &model.BuildInfra{
+				Build: datastore.KeyForObj(ctx, bld),
+			}
+			assert.NoErr(t, datastore.Get(ctx, bld, infra))
 			assert.That(t, bld.StageAttemptID, should.Equal(attemptIDStr))
 			assert.That(t, bld.StageAttemptToken, should.Equal("secret-token"))
+			assert.That(t, infra.Proto.Turboci, should.Match(&pb.BuildInfra_TurboCI{
+				Hostname: "turbocihost",
+			}))
 
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))
 			reasons := mockOrch.LastWriteNodesCall.GetReasons()

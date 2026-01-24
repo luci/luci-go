@@ -886,6 +886,12 @@ message BuildInfra {
     string hostname = 6;
   }
 
+  // TurboCI specific information.
+  message TurboCI {
+    // Hostname is the hostname for TurboCI.
+    string hostname = 1;
+  }
+
   Buildbucket buildbucket = 1 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
   Swarming swarming = 2;
   LogDog logdog = 3 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
@@ -895,4 +901,5 @@ message BuildInfra {
   Backend backend = 7;
   // It should only be set for led builds.
   Led led = 8;
+  TurboCI turboci = 9;
 }

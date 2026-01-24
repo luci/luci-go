@@ -1467,6 +1467,9 @@ type scheduleBuildsParams struct {
 	// build to schedule in this case.
 	StageAttemptID    string
 	StageAttemptToken string
+
+	// TurboCIHost is TurboCI orchestrator's hostname.
+	TurboCIHost string
 }
 
 // scheduleBuilds handles requests to schedule a batch of builds.
@@ -1616,6 +1619,12 @@ func prepareNewBuild(ctx context.Context, op *scheduleBuildOp, params *scheduleB
 		}
 	} else {
 		buildPb = buildFromScheduleRequest(ctx, req, ancestors, pRunID, cfg, op.GlobalCfg)
+	}
+
+	if params.TurboCIHost != "" {
+		buildPb.Infra.Turboci = &pb.BuildInfra_TurboCI{
+			Hostname: params.TurboCIHost,
+		}
 	}
 
 	// Wrap the proto into an entity.

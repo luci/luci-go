@@ -811,7 +811,8 @@ type BuildInfra struct {
 	Bbagent     *BuildInfra_BBAgent     `protobuf:"bytes,6,opt,name=bbagent,proto3" json:"bbagent,omitempty"`
 	Backend     *BuildInfra_Backend     `protobuf:"bytes,7,opt,name=backend,proto3" json:"backend,omitempty"`
 	// It should only be set for led builds.
-	Led           *BuildInfra_Led `protobuf:"bytes,8,opt,name=led,proto3" json:"led,omitempty"`
+	Led           *BuildInfra_Led     `protobuf:"bytes,8,opt,name=led,proto3" json:"led,omitempty"`
+	Turboci       *BuildInfra_TurboCI `protobuf:"bytes,9,opt,name=turboci,proto3" json:"turboci,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -898,6 +899,13 @@ func (x *BuildInfra) GetBackend() *BuildInfra_Backend {
 func (x *BuildInfra) GetLed() *BuildInfra_Led {
 	if x != nil {
 		return x.Led
+	}
+	return nil
+}
+
+func (x *BuildInfra) GetTurboci() *BuildInfra_TurboCI {
+	if x != nil {
+		return x.Turboci
 	}
 	return nil
 }
@@ -2304,6 +2312,52 @@ func (x *BuildInfra_Backend) GetHostname() string {
 	return ""
 }
 
+// TurboCI specific information.
+type BuildInfra_TurboCI struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Hostname is the hostname for TurboCI.
+	Hostname      string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BuildInfra_TurboCI) Reset() {
+	*x = BuildInfra_TurboCI{}
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuildInfra_TurboCI) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildInfra_TurboCI) ProtoMessage() {}
+
+func (x *BuildInfra_TurboCI) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildInfra_TurboCI.ProtoReflect.Descriptor instead.
+func (*BuildInfra_TurboCI) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDescGZIP(), []int{3, 8}
+}
+
+func (x *BuildInfra_TurboCI) GetHostname() string {
+	if x != nil {
+		return x.Hostname
+	}
+	return ""
+}
+
 // bbagent will interpret Agent.input, as well as update Agent.output.
 type BuildInfra_Buildbucket_Agent struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -2335,7 +2389,7 @@ type BuildInfra_Buildbucket_Agent struct {
 
 func (x *BuildInfra_Buildbucket_Agent) Reset() {
 	*x = BuildInfra_Buildbucket_Agent{}
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[23]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2347,7 +2401,7 @@ func (x *BuildInfra_Buildbucket_Agent) String() string {
 func (*BuildInfra_Buildbucket_Agent) ProtoMessage() {}
 
 func (x *BuildInfra_Buildbucket_Agent) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[23]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2418,7 +2472,7 @@ type BuildInfra_Buildbucket_Agent_Source struct {
 
 func (x *BuildInfra_Buildbucket_Agent_Source) Reset() {
 	*x = BuildInfra_Buildbucket_Agent_Source{}
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[26]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2430,7 +2484,7 @@ func (x *BuildInfra_Buildbucket_Agent_Source) String() string {
 func (*BuildInfra_Buildbucket_Agent_Source) ProtoMessage() {}
 
 func (x *BuildInfra_Buildbucket_Agent_Source) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[26]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2493,7 +2547,7 @@ type BuildInfra_Buildbucket_Agent_Input struct {
 
 func (x *BuildInfra_Buildbucket_Agent_Input) Reset() {
 	*x = BuildInfra_Buildbucket_Agent_Input{}
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[27]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2505,7 +2559,7 @@ func (x *BuildInfra_Buildbucket_Agent_Input) String() string {
 func (*BuildInfra_Buildbucket_Agent_Input) ProtoMessage() {}
 
 func (x *BuildInfra_Buildbucket_Agent_Input) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[27]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2567,7 +2621,7 @@ type BuildInfra_Buildbucket_Agent_Output struct {
 
 func (x *BuildInfra_Buildbucket_Agent_Output) Reset() {
 	*x = BuildInfra_Buildbucket_Agent_Output{}
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[28]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2579,7 +2633,7 @@ func (x *BuildInfra_Buildbucket_Agent_Output) String() string {
 func (*BuildInfra_Buildbucket_Agent_Output) ProtoMessage() {}
 
 func (x *BuildInfra_Buildbucket_Agent_Output) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[28]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2670,7 +2724,7 @@ type BuildInfra_Buildbucket_Agent_Source_CIPD struct {
 
 func (x *BuildInfra_Buildbucket_Agent_Source_CIPD) Reset() {
 	*x = BuildInfra_Buildbucket_Agent_Source_CIPD{}
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[30]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2682,7 +2736,7 @@ func (x *BuildInfra_Buildbucket_Agent_Source_CIPD) String() string {
 func (*BuildInfra_Buildbucket_Agent_Source_CIPD) ProtoMessage() {}
 
 func (x *BuildInfra_Buildbucket_Agent_Source_CIPD) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[30]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2793,7 +2847,7 @@ type BuildInfra_Swarming_CacheEntry struct {
 
 func (x *BuildInfra_Swarming_CacheEntry) Reset() {
 	*x = BuildInfra_Swarming_CacheEntry{}
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[35]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2805,7 +2859,7 @@ func (x *BuildInfra_Swarming_CacheEntry) String() string {
 func (*BuildInfra_Swarming_CacheEntry) ProtoMessage() {}
 
 func (x *BuildInfra_Swarming_CacheEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[35]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2859,7 +2913,7 @@ type BuildInfra_BBAgent_Input struct {
 
 func (x *BuildInfra_BBAgent_Input) Reset() {
 	*x = BuildInfra_BBAgent_Input{}
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[36]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2871,7 +2925,7 @@ func (x *BuildInfra_BBAgent_Input) String() string {
 func (*BuildInfra_BBAgent_Input) ProtoMessage() {}
 
 func (x *BuildInfra_BBAgent_Input) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[36]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2919,7 +2973,7 @@ type BuildInfra_BBAgent_Input_CIPDPackage struct {
 
 func (x *BuildInfra_BBAgent_Input_CIPDPackage) Reset() {
 	*x = BuildInfra_BBAgent_Input_CIPDPackage{}
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[37]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2931,7 +2985,7 @@ func (x *BuildInfra_BBAgent_Input_CIPDPackage) String() string {
 func (*BuildInfra_BBAgent_Input_CIPDPackage) ProtoMessage() {}
 
 func (x *BuildInfra_BBAgent_Input_CIPDPackage) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[37]
+	mi := &file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3073,7 +3127,7 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\n" +
 	"was_cached\x18\x04 \x01(\x0e2\x17.buildbucket.v2.TrinaryR\twasCached\x12>\n" +
 	"\x06timing\x18\x05 \x01(\v2&.buildbucket.v2.ResolvedDataRef.TimingR\x06timingB\v\n" +
-	"\tdata_type\"\xda)\n" +
+	"\tdata_type\"\xbf*\n" +
 	"\n" +
 	"BuildInfra\x12P\n" +
 	"\vbuildbucket\x18\x01 \x01(\v2&.buildbucket.v2.BuildInfra.BuildbucketB\x06\x8a\xc3\x1a\x02\b\x02R\vbuildbucket\x12?\n" +
@@ -3083,7 +3137,8 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\bresultdb\x18\x05 \x01(\v2#.buildbucket.v2.BuildInfra.ResultDBB\x05\xb8μ\x03\x02R\bresultdb\x12<\n" +
 	"\abbagent\x18\x06 \x01(\v2\".buildbucket.v2.BuildInfra.BBAgentR\abbagent\x12<\n" +
 	"\abackend\x18\a \x01(\v2\".buildbucket.v2.BuildInfra.BackendR\abackend\x120\n" +
-	"\x03led\x18\b \x01(\v2\x1e.buildbucket.v2.BuildInfra.LedR\x03led\x1a\xa5\x18\n" +
+	"\x03led\x18\b \x01(\v2\x1e.buildbucket.v2.BuildInfra.LedR\x03led\x12<\n" +
+	"\aturboci\x18\t \x01(\v2\".buildbucket.v2.BuildInfra.TurboCIR\aturboci\x1a\xa5\x18\n" +
 	"\vBuildbucket\x126\n" +
 	"\x17service_config_revision\x18\x02 \x01(\tR\x15serviceConfigRevision\x12J\n" +
 	"\x14requested_properties\x18\x05 \x01(\v2\x17.google.protobuf.StructR\x13requestedProperties\x12U\n" +
@@ -3204,7 +3259,9 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\x04task\x18\x02 \x01(\v2\x14.buildbucket.v2.TaskR\x04task\x122\n" +
 	"\x06caches\x18\x03 \x03(\v2\x1a.buildbucket.v2.CacheEntryR\x06caches\x12K\n" +
 	"\x0ftask_dimensions\x18\x05 \x03(\v2\".buildbucket.v2.RequestedDimensionR\x0etaskDimensions\x12\x1a\n" +
-	"\bhostname\x18\x06 \x01(\tR\bhostnameB6Z4go.chromium.org/luci/buildbucket/proto;buildbucketpbb\x06proto3"
+	"\bhostname\x18\x06 \x01(\tR\bhostname\x1a%\n" +
+	"\aTurboCI\x12\x1a\n" +
+	"\bhostname\x18\x01 \x01(\tR\bhostnameB6Z4go.chromium.org/luci/buildbucket/proto;buildbucketpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDescOnce sync.Once
@@ -3219,7 +3276,7 @@ func file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDescGZIP() []byt
 }
 
 var file_go_chromium_org_luci_buildbucket_proto_build_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
+var file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_go_chromium_org_luci_buildbucket_proto_build_proto_goTypes = []any{
 	(BuildInfra_Buildbucket_ExperimentReason)(0), // 0: buildbucket.v2.BuildInfra.Buildbucket.ExperimentReason
 	(BuildInfra_Buildbucket_Agent_Purpose)(0),    // 1: buildbucket.v2.BuildInfra.Buildbucket.Agent.Purpose
@@ -3246,61 +3303,62 @@ var file_go_chromium_org_luci_buildbucket_proto_build_proto_goTypes = []any{
 	(*BuildInfra_Led)(nil),                      // 22: buildbucket.v2.BuildInfra.Led
 	(*BuildInfra_BBAgent)(nil),                  // 23: buildbucket.v2.BuildInfra.BBAgent
 	(*BuildInfra_Backend)(nil),                  // 24: buildbucket.v2.BuildInfra.Backend
-	(*BuildInfra_Buildbucket_Agent)(nil),        // 25: buildbucket.v2.BuildInfra.Buildbucket.Agent
-	nil,                                         // 26: buildbucket.v2.BuildInfra.Buildbucket.ExperimentReasonsEntry
-	nil,                                         // 27: buildbucket.v2.BuildInfra.Buildbucket.AgentExecutableEntry
-	(*BuildInfra_Buildbucket_Agent_Source)(nil), // 28: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source
-	(*BuildInfra_Buildbucket_Agent_Input)(nil),  // 29: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input
-	(*BuildInfra_Buildbucket_Agent_Output)(nil), // 30: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output
-	nil, // 31: buildbucket.v2.BuildInfra.Buildbucket.Agent.PurposesEntry
-	(*BuildInfra_Buildbucket_Agent_Source_CIPD)(nil), // 32: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD
-	nil,                                    // 33: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD.ResolvedInstancesEntry
-	nil,                                    // 34: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.DataEntry
-	nil,                                    // 35: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.CipdSourceEntry
-	nil,                                    // 36: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.ResolvedDataEntry
-	(*BuildInfra_Swarming_CacheEntry)(nil), // 37: buildbucket.v2.BuildInfra.Swarming.CacheEntry
-	(*BuildInfra_BBAgent_Input)(nil),       // 38: buildbucket.v2.BuildInfra.BBAgent.Input
-	(*BuildInfra_BBAgent_Input_CIPDPackage)(nil), // 39: buildbucket.v2.BuildInfra.BBAgent.Input.CIPDPackage
-	(*BuilderID)(nil),             // 40: buildbucket.v2.BuilderID
-	(*timestamppb.Timestamp)(nil), // 41: google.protobuf.Timestamp
-	(Status)(0),                   // 42: buildbucket.v2.Status
-	(Trinary)(0),                  // 43: buildbucket.v2.Trinary
-	(*StatusDetails)(nil),         // 44: buildbucket.v2.StatusDetails
-	(*Step)(nil),                  // 45: buildbucket.v2.Step
-	(*StringPair)(nil),            // 46: buildbucket.v2.StringPair
-	(*Executable)(nil),            // 47: buildbucket.v2.Executable
-	(*durationpb.Duration)(nil),   // 48: google.protobuf.Duration
-	(*structpb.Struct)(nil),       // 49: google.protobuf.Struct
-	(*GitilesCommit)(nil),         // 50: buildbucket.v2.GitilesCommit
-	(*GerritChange)(nil),          // 51: buildbucket.v2.GerritChange
-	(*Log)(nil),                   // 52: buildbucket.v2.Log
-	(*RequestedDimension)(nil),    // 53: buildbucket.v2.RequestedDimension
-	(*v1.BigQueryExport)(nil),     // 54: luci.resultdb.v1.BigQueryExport
-	(*v1.HistoryOptions)(nil),     // 55: luci.resultdb.v1.HistoryOptions
-	(*Task)(nil),                  // 56: buildbucket.v2.Task
-	(*CacheEntry)(nil),            // 57: buildbucket.v2.CacheEntry
+	(*BuildInfra_TurboCI)(nil),                  // 25: buildbucket.v2.BuildInfra.TurboCI
+	(*BuildInfra_Buildbucket_Agent)(nil),        // 26: buildbucket.v2.BuildInfra.Buildbucket.Agent
+	nil,                                         // 27: buildbucket.v2.BuildInfra.Buildbucket.ExperimentReasonsEntry
+	nil,                                         // 28: buildbucket.v2.BuildInfra.Buildbucket.AgentExecutableEntry
+	(*BuildInfra_Buildbucket_Agent_Source)(nil), // 29: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source
+	(*BuildInfra_Buildbucket_Agent_Input)(nil),  // 30: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input
+	(*BuildInfra_Buildbucket_Agent_Output)(nil), // 31: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output
+	nil, // 32: buildbucket.v2.BuildInfra.Buildbucket.Agent.PurposesEntry
+	(*BuildInfra_Buildbucket_Agent_Source_CIPD)(nil), // 33: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD
+	nil,                                    // 34: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD.ResolvedInstancesEntry
+	nil,                                    // 35: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.DataEntry
+	nil,                                    // 36: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.CipdSourceEntry
+	nil,                                    // 37: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.ResolvedDataEntry
+	(*BuildInfra_Swarming_CacheEntry)(nil), // 38: buildbucket.v2.BuildInfra.Swarming.CacheEntry
+	(*BuildInfra_BBAgent_Input)(nil),       // 39: buildbucket.v2.BuildInfra.BBAgent.Input
+	(*BuildInfra_BBAgent_Input_CIPDPackage)(nil), // 40: buildbucket.v2.BuildInfra.BBAgent.Input.CIPDPackage
+	(*BuilderID)(nil),             // 41: buildbucket.v2.BuilderID
+	(*timestamppb.Timestamp)(nil), // 42: google.protobuf.Timestamp
+	(Status)(0),                   // 43: buildbucket.v2.Status
+	(Trinary)(0),                  // 44: buildbucket.v2.Trinary
+	(*StatusDetails)(nil),         // 45: buildbucket.v2.StatusDetails
+	(*Step)(nil),                  // 46: buildbucket.v2.Step
+	(*StringPair)(nil),            // 47: buildbucket.v2.StringPair
+	(*Executable)(nil),            // 48: buildbucket.v2.Executable
+	(*durationpb.Duration)(nil),   // 49: google.protobuf.Duration
+	(*structpb.Struct)(nil),       // 50: google.protobuf.Struct
+	(*GitilesCommit)(nil),         // 51: buildbucket.v2.GitilesCommit
+	(*GerritChange)(nil),          // 52: buildbucket.v2.GerritChange
+	(*Log)(nil),                   // 53: buildbucket.v2.Log
+	(*RequestedDimension)(nil),    // 54: buildbucket.v2.RequestedDimension
+	(*v1.BigQueryExport)(nil),     // 55: luci.resultdb.v1.BigQueryExport
+	(*v1.HistoryOptions)(nil),     // 56: luci.resultdb.v1.HistoryOptions
+	(*Task)(nil),                  // 57: buildbucket.v2.Task
+	(*CacheEntry)(nil),            // 58: buildbucket.v2.CacheEntry
 }
 var file_go_chromium_org_luci_buildbucket_proto_build_proto_depIdxs = []int32{
-	40, // 0: buildbucket.v2.Build.builder:type_name -> buildbucket.v2.BuilderID
+	41, // 0: buildbucket.v2.Build.builder:type_name -> buildbucket.v2.BuilderID
 	8,  // 1: buildbucket.v2.Build.builder_info:type_name -> buildbucket.v2.Build.BuilderInfo
-	41, // 2: buildbucket.v2.Build.create_time:type_name -> google.protobuf.Timestamp
-	41, // 3: buildbucket.v2.Build.start_time:type_name -> google.protobuf.Timestamp
-	41, // 4: buildbucket.v2.Build.end_time:type_name -> google.protobuf.Timestamp
-	41, // 5: buildbucket.v2.Build.update_time:type_name -> google.protobuf.Timestamp
-	41, // 6: buildbucket.v2.Build.cancel_time:type_name -> google.protobuf.Timestamp
-	42, // 7: buildbucket.v2.Build.status:type_name -> buildbucket.v2.Status
-	43, // 8: buildbucket.v2.Build.critical:type_name -> buildbucket.v2.Trinary
-	44, // 9: buildbucket.v2.Build.status_details:type_name -> buildbucket.v2.StatusDetails
+	42, // 2: buildbucket.v2.Build.create_time:type_name -> google.protobuf.Timestamp
+	42, // 3: buildbucket.v2.Build.start_time:type_name -> google.protobuf.Timestamp
+	42, // 4: buildbucket.v2.Build.end_time:type_name -> google.protobuf.Timestamp
+	42, // 5: buildbucket.v2.Build.update_time:type_name -> google.protobuf.Timestamp
+	42, // 6: buildbucket.v2.Build.cancel_time:type_name -> google.protobuf.Timestamp
+	43, // 7: buildbucket.v2.Build.status:type_name -> buildbucket.v2.Status
+	44, // 8: buildbucket.v2.Build.critical:type_name -> buildbucket.v2.Trinary
+	45, // 9: buildbucket.v2.Build.status_details:type_name -> buildbucket.v2.StatusDetails
 	6,  // 10: buildbucket.v2.Build.input:type_name -> buildbucket.v2.Build.Input
 	7,  // 11: buildbucket.v2.Build.output:type_name -> buildbucket.v2.Build.Output
-	45, // 12: buildbucket.v2.Build.steps:type_name -> buildbucket.v2.Step
+	46, // 12: buildbucket.v2.Build.steps:type_name -> buildbucket.v2.Step
 	5,  // 13: buildbucket.v2.Build.infra:type_name -> buildbucket.v2.BuildInfra
-	46, // 14: buildbucket.v2.Build.tags:type_name -> buildbucket.v2.StringPair
-	47, // 15: buildbucket.v2.Build.exe:type_name -> buildbucket.v2.Executable
-	48, // 16: buildbucket.v2.Build.scheduling_timeout:type_name -> google.protobuf.Duration
-	48, // 17: buildbucket.v2.Build.execution_timeout:type_name -> google.protobuf.Duration
-	48, // 18: buildbucket.v2.Build.grace_period:type_name -> google.protobuf.Duration
-	43, // 19: buildbucket.v2.Build.retriable:type_name -> buildbucket.v2.Trinary
+	47, // 14: buildbucket.v2.Build.tags:type_name -> buildbucket.v2.StringPair
+	48, // 15: buildbucket.v2.Build.exe:type_name -> buildbucket.v2.Executable
+	49, // 16: buildbucket.v2.Build.scheduling_timeout:type_name -> google.protobuf.Duration
+	49, // 17: buildbucket.v2.Build.execution_timeout:type_name -> google.protobuf.Duration
+	49, // 18: buildbucket.v2.Build.grace_period:type_name -> google.protobuf.Duration
+	44, // 19: buildbucket.v2.Build.retriable:type_name -> buildbucket.v2.Trinary
 	9,  // 20: buildbucket.v2.InputDataRef.cas:type_name -> buildbucket.v2.InputDataRef.CAS
 	10, // 21: buildbucket.v2.InputDataRef.cipd:type_name -> buildbucket.v2.InputDataRef.CIPD
 	14, // 22: buildbucket.v2.ResolvedDataRef.cas:type_name -> buildbucket.v2.ResolvedDataRef.CAS
@@ -3313,64 +3371,65 @@ var file_go_chromium_org_luci_buildbucket_proto_build_proto_depIdxs = []int32{
 	23, // 29: buildbucket.v2.BuildInfra.bbagent:type_name -> buildbucket.v2.BuildInfra.BBAgent
 	24, // 30: buildbucket.v2.BuildInfra.backend:type_name -> buildbucket.v2.BuildInfra.Backend
 	22, // 31: buildbucket.v2.BuildInfra.led:type_name -> buildbucket.v2.BuildInfra.Led
-	49, // 32: buildbucket.v2.Build.Input.properties:type_name -> google.protobuf.Struct
-	50, // 33: buildbucket.v2.Build.Input.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
-	51, // 34: buildbucket.v2.Build.Input.gerrit_changes:type_name -> buildbucket.v2.GerritChange
-	49, // 35: buildbucket.v2.Build.Output.properties:type_name -> google.protobuf.Struct
-	50, // 36: buildbucket.v2.Build.Output.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
-	52, // 37: buildbucket.v2.Build.Output.logs:type_name -> buildbucket.v2.Log
-	42, // 38: buildbucket.v2.Build.Output.status:type_name -> buildbucket.v2.Status
-	44, // 39: buildbucket.v2.Build.Output.status_details:type_name -> buildbucket.v2.StatusDetails
-	11, // 40: buildbucket.v2.InputDataRef.CAS.digest:type_name -> buildbucket.v2.InputDataRef.CAS.Digest
-	12, // 41: buildbucket.v2.InputDataRef.CIPD.specs:type_name -> buildbucket.v2.InputDataRef.CIPD.PkgSpec
-	48, // 42: buildbucket.v2.ResolvedDataRef.Timing.fetch_duration:type_name -> google.protobuf.Duration
-	48, // 43: buildbucket.v2.ResolvedDataRef.Timing.install_duration:type_name -> google.protobuf.Duration
-	13, // 44: buildbucket.v2.ResolvedDataRef.CAS.timing:type_name -> buildbucket.v2.ResolvedDataRef.Timing
-	16, // 45: buildbucket.v2.ResolvedDataRef.CIPD.specs:type_name -> buildbucket.v2.ResolvedDataRef.CIPD.PkgSpec
-	43, // 46: buildbucket.v2.ResolvedDataRef.CIPD.PkgSpec.was_cached:type_name -> buildbucket.v2.Trinary
-	13, // 47: buildbucket.v2.ResolvedDataRef.CIPD.PkgSpec.timing:type_name -> buildbucket.v2.ResolvedDataRef.Timing
-	49, // 48: buildbucket.v2.BuildInfra.Buildbucket.requested_properties:type_name -> google.protobuf.Struct
-	53, // 49: buildbucket.v2.BuildInfra.Buildbucket.requested_dimensions:type_name -> buildbucket.v2.RequestedDimension
-	26, // 50: buildbucket.v2.BuildInfra.Buildbucket.experiment_reasons:type_name -> buildbucket.v2.BuildInfra.Buildbucket.ExperimentReasonsEntry
-	27, // 51: buildbucket.v2.BuildInfra.Buildbucket.agent_executable:type_name -> buildbucket.v2.BuildInfra.Buildbucket.AgentExecutableEntry
-	25, // 52: buildbucket.v2.BuildInfra.Buildbucket.agent:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent
-	53, // 53: buildbucket.v2.BuildInfra.Swarming.task_dimensions:type_name -> buildbucket.v2.RequestedDimension
-	46, // 54: buildbucket.v2.BuildInfra.Swarming.bot_dimensions:type_name -> buildbucket.v2.StringPair
-	37, // 55: buildbucket.v2.BuildInfra.Swarming.caches:type_name -> buildbucket.v2.BuildInfra.Swarming.CacheEntry
-	54, // 56: buildbucket.v2.BuildInfra.ResultDB.bq_exports:type_name -> luci.resultdb.v1.BigQueryExport
-	55, // 57: buildbucket.v2.BuildInfra.ResultDB.history_options:type_name -> luci.resultdb.v1.HistoryOptions
-	38, // 58: buildbucket.v2.BuildInfra.BBAgent.input:type_name -> buildbucket.v2.BuildInfra.BBAgent.Input
-	49, // 59: buildbucket.v2.BuildInfra.Backend.config:type_name -> google.protobuf.Struct
-	56, // 60: buildbucket.v2.BuildInfra.Backend.task:type_name -> buildbucket.v2.Task
-	57, // 61: buildbucket.v2.BuildInfra.Backend.caches:type_name -> buildbucket.v2.CacheEntry
-	53, // 62: buildbucket.v2.BuildInfra.Backend.task_dimensions:type_name -> buildbucket.v2.RequestedDimension
-	29, // 63: buildbucket.v2.BuildInfra.Buildbucket.Agent.input:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Input
-	30, // 64: buildbucket.v2.BuildInfra.Buildbucket.Agent.output:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Output
-	28, // 65: buildbucket.v2.BuildInfra.Buildbucket.Agent.source:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Source
-	31, // 66: buildbucket.v2.BuildInfra.Buildbucket.Agent.purposes:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.PurposesEntry
-	57, // 67: buildbucket.v2.BuildInfra.Buildbucket.Agent.cipd_client_cache:type_name -> buildbucket.v2.CacheEntry
-	57, // 68: buildbucket.v2.BuildInfra.Buildbucket.Agent.cipd_packages_cache:type_name -> buildbucket.v2.CacheEntry
-	0,  // 69: buildbucket.v2.BuildInfra.Buildbucket.ExperimentReasonsEntry.value:type_name -> buildbucket.v2.BuildInfra.Buildbucket.ExperimentReason
-	4,  // 70: buildbucket.v2.BuildInfra.Buildbucket.AgentExecutableEntry.value:type_name -> buildbucket.v2.ResolvedDataRef
-	32, // 71: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.cipd:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD
-	34, // 72: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.data:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.DataEntry
-	35, // 73: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.cipd_source:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.CipdSourceEntry
-	36, // 74: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.resolved_data:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.ResolvedDataEntry
-	42, // 75: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.status:type_name -> buildbucket.v2.Status
-	44, // 76: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.status_details:type_name -> buildbucket.v2.StatusDetails
-	48, // 77: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.total_duration:type_name -> google.protobuf.Duration
-	1,  // 78: buildbucket.v2.BuildInfra.Buildbucket.Agent.PurposesEntry.value:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Purpose
-	33, // 79: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD.resolved_instances:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD.ResolvedInstancesEntry
-	3,  // 80: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.DataEntry.value:type_name -> buildbucket.v2.InputDataRef
-	3,  // 81: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.CipdSourceEntry.value:type_name -> buildbucket.v2.InputDataRef
-	4,  // 82: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.ResolvedDataEntry.value:type_name -> buildbucket.v2.ResolvedDataRef
-	48, // 83: buildbucket.v2.BuildInfra.Swarming.CacheEntry.wait_for_warm_cache:type_name -> google.protobuf.Duration
-	39, // 84: buildbucket.v2.BuildInfra.BBAgent.Input.cipd_packages:type_name -> buildbucket.v2.BuildInfra.BBAgent.Input.CIPDPackage
-	85, // [85:85] is the sub-list for method output_type
-	85, // [85:85] is the sub-list for method input_type
-	85, // [85:85] is the sub-list for extension type_name
-	85, // [85:85] is the sub-list for extension extendee
-	0,  // [0:85] is the sub-list for field type_name
+	25, // 32: buildbucket.v2.BuildInfra.turboci:type_name -> buildbucket.v2.BuildInfra.TurboCI
+	50, // 33: buildbucket.v2.Build.Input.properties:type_name -> google.protobuf.Struct
+	51, // 34: buildbucket.v2.Build.Input.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
+	52, // 35: buildbucket.v2.Build.Input.gerrit_changes:type_name -> buildbucket.v2.GerritChange
+	50, // 36: buildbucket.v2.Build.Output.properties:type_name -> google.protobuf.Struct
+	51, // 37: buildbucket.v2.Build.Output.gitiles_commit:type_name -> buildbucket.v2.GitilesCommit
+	53, // 38: buildbucket.v2.Build.Output.logs:type_name -> buildbucket.v2.Log
+	43, // 39: buildbucket.v2.Build.Output.status:type_name -> buildbucket.v2.Status
+	45, // 40: buildbucket.v2.Build.Output.status_details:type_name -> buildbucket.v2.StatusDetails
+	11, // 41: buildbucket.v2.InputDataRef.CAS.digest:type_name -> buildbucket.v2.InputDataRef.CAS.Digest
+	12, // 42: buildbucket.v2.InputDataRef.CIPD.specs:type_name -> buildbucket.v2.InputDataRef.CIPD.PkgSpec
+	49, // 43: buildbucket.v2.ResolvedDataRef.Timing.fetch_duration:type_name -> google.protobuf.Duration
+	49, // 44: buildbucket.v2.ResolvedDataRef.Timing.install_duration:type_name -> google.protobuf.Duration
+	13, // 45: buildbucket.v2.ResolvedDataRef.CAS.timing:type_name -> buildbucket.v2.ResolvedDataRef.Timing
+	16, // 46: buildbucket.v2.ResolvedDataRef.CIPD.specs:type_name -> buildbucket.v2.ResolvedDataRef.CIPD.PkgSpec
+	44, // 47: buildbucket.v2.ResolvedDataRef.CIPD.PkgSpec.was_cached:type_name -> buildbucket.v2.Trinary
+	13, // 48: buildbucket.v2.ResolvedDataRef.CIPD.PkgSpec.timing:type_name -> buildbucket.v2.ResolvedDataRef.Timing
+	50, // 49: buildbucket.v2.BuildInfra.Buildbucket.requested_properties:type_name -> google.protobuf.Struct
+	54, // 50: buildbucket.v2.BuildInfra.Buildbucket.requested_dimensions:type_name -> buildbucket.v2.RequestedDimension
+	27, // 51: buildbucket.v2.BuildInfra.Buildbucket.experiment_reasons:type_name -> buildbucket.v2.BuildInfra.Buildbucket.ExperimentReasonsEntry
+	28, // 52: buildbucket.v2.BuildInfra.Buildbucket.agent_executable:type_name -> buildbucket.v2.BuildInfra.Buildbucket.AgentExecutableEntry
+	26, // 53: buildbucket.v2.BuildInfra.Buildbucket.agent:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent
+	54, // 54: buildbucket.v2.BuildInfra.Swarming.task_dimensions:type_name -> buildbucket.v2.RequestedDimension
+	47, // 55: buildbucket.v2.BuildInfra.Swarming.bot_dimensions:type_name -> buildbucket.v2.StringPair
+	38, // 56: buildbucket.v2.BuildInfra.Swarming.caches:type_name -> buildbucket.v2.BuildInfra.Swarming.CacheEntry
+	55, // 57: buildbucket.v2.BuildInfra.ResultDB.bq_exports:type_name -> luci.resultdb.v1.BigQueryExport
+	56, // 58: buildbucket.v2.BuildInfra.ResultDB.history_options:type_name -> luci.resultdb.v1.HistoryOptions
+	39, // 59: buildbucket.v2.BuildInfra.BBAgent.input:type_name -> buildbucket.v2.BuildInfra.BBAgent.Input
+	50, // 60: buildbucket.v2.BuildInfra.Backend.config:type_name -> google.protobuf.Struct
+	57, // 61: buildbucket.v2.BuildInfra.Backend.task:type_name -> buildbucket.v2.Task
+	58, // 62: buildbucket.v2.BuildInfra.Backend.caches:type_name -> buildbucket.v2.CacheEntry
+	54, // 63: buildbucket.v2.BuildInfra.Backend.task_dimensions:type_name -> buildbucket.v2.RequestedDimension
+	30, // 64: buildbucket.v2.BuildInfra.Buildbucket.Agent.input:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Input
+	31, // 65: buildbucket.v2.BuildInfra.Buildbucket.Agent.output:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Output
+	29, // 66: buildbucket.v2.BuildInfra.Buildbucket.Agent.source:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Source
+	32, // 67: buildbucket.v2.BuildInfra.Buildbucket.Agent.purposes:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.PurposesEntry
+	58, // 68: buildbucket.v2.BuildInfra.Buildbucket.Agent.cipd_client_cache:type_name -> buildbucket.v2.CacheEntry
+	58, // 69: buildbucket.v2.BuildInfra.Buildbucket.Agent.cipd_packages_cache:type_name -> buildbucket.v2.CacheEntry
+	0,  // 70: buildbucket.v2.BuildInfra.Buildbucket.ExperimentReasonsEntry.value:type_name -> buildbucket.v2.BuildInfra.Buildbucket.ExperimentReason
+	4,  // 71: buildbucket.v2.BuildInfra.Buildbucket.AgentExecutableEntry.value:type_name -> buildbucket.v2.ResolvedDataRef
+	33, // 72: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.cipd:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD
+	35, // 73: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.data:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.DataEntry
+	36, // 74: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.cipd_source:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.CipdSourceEntry
+	37, // 75: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.resolved_data:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.ResolvedDataEntry
+	43, // 76: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.status:type_name -> buildbucket.v2.Status
+	45, // 77: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.status_details:type_name -> buildbucket.v2.StatusDetails
+	49, // 78: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.total_duration:type_name -> google.protobuf.Duration
+	1,  // 79: buildbucket.v2.BuildInfra.Buildbucket.Agent.PurposesEntry.value:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Purpose
+	34, // 80: buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD.resolved_instances:type_name -> buildbucket.v2.BuildInfra.Buildbucket.Agent.Source.CIPD.ResolvedInstancesEntry
+	3,  // 81: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.DataEntry.value:type_name -> buildbucket.v2.InputDataRef
+	3,  // 82: buildbucket.v2.BuildInfra.Buildbucket.Agent.Input.CipdSourceEntry.value:type_name -> buildbucket.v2.InputDataRef
+	4,  // 83: buildbucket.v2.BuildInfra.Buildbucket.Agent.Output.ResolvedDataEntry.value:type_name -> buildbucket.v2.ResolvedDataRef
+	49, // 84: buildbucket.v2.BuildInfra.Swarming.CacheEntry.wait_for_warm_cache:type_name -> google.protobuf.Duration
+	40, // 85: buildbucket.v2.BuildInfra.BBAgent.Input.cipd_packages:type_name -> buildbucket.v2.BuildInfra.BBAgent.Input.CIPDPackage
+	86, // [86:86] is the sub-list for method output_type
+	86, // [86:86] is the sub-list for method input_type
+	86, // [86:86] is the sub-list for extension type_name
+	86, // [86:86] is the sub-list for extension extendee
+	0,  // [0:86] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_buildbucket_proto_build_proto_init() }
@@ -3392,7 +3451,7 @@ func file_go_chromium_org_luci_buildbucket_proto_build_proto_init() {
 		(*ResolvedDataRef_Cas)(nil),
 		(*ResolvedDataRef_Cipd)(nil),
 	}
-	file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[26].OneofWrappers = []any{
+	file_go_chromium_org_luci_buildbucket_proto_build_proto_msgTypes[27].OneofWrappers = []any{
 		(*BuildInfra_Buildbucket_Agent_Source_Cipd)(nil),
 	}
 	type x struct{}
@@ -3401,7 +3460,7 @@ func file_go_chromium_org_luci_buildbucket_proto_build_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc), len(file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   38,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

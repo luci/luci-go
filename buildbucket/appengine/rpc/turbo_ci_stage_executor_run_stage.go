@@ -105,6 +105,7 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 			LaunchAsNative:    true,
 			StageAttemptID:    attemptIDStr,
 			StageAttemptToken: req.GetStageAttemptToken(),
+			TurboCIHost:       se.TurboCIHost,
 		})
 	err = merr[0]
 	if err != nil {
