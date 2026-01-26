@@ -18,7 +18,7 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { Alert, Box, IconButton, TextField, Typography } from '@mui/material';
 import Tab from '@mui/material/Tab';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
@@ -126,9 +126,26 @@ export const DeviceDetailsPage = () => {
   const location = useLocation();
   const { error, isError, isLoading, device } = useDeviceData(id);
 
+  const deviceIdInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     setDeviceIdInputValue(id);
   }, [id]);
+
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => {
+      if (e.key === '/') {
+        if (!deviceIdInputRef.current?.contains(document.activeElement))
+          e.preventDefault();
+        deviceIdInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', f);
+    return () => {
+      window.removeEventListener('keydown', f);
+    };
+  }, []);
 
   const navigateToDeviceIfChanged = (deviceId: string) => {
     const parts = location.pathname.toString().split('/');
@@ -143,6 +160,26 @@ export const DeviceDetailsPage = () => {
   if (isError) {
     return (
       <Alert severity="error">
+        <Typography variant="h4" sx={{ whiteSpace: 'nowrap' }}>
+          Device details:
+        </Typography>
+        <TextField
+          inputRef={deviceIdInputRef}
+          variant="standard"
+          value={deviceIdInputValue}
+          onChange={(event) => setDeviceIdInputValue(event.target.value)}
+          slotProps={{ htmlInput: { sx: { fontSize: 24 } } }}
+          fullWidth
+          onBlur={(e) => {
+            navigateToDeviceIfChanged(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            const target = e.target as HTMLInputElement;
+            if (e.key === 'Enter') {
+              navigateToDeviceIfChanged(target.value);
+            }
+          }}
+        />
         Something went wrong: {getErrorMessage(error, 'fetch device')}
       </Alert>
     );
@@ -208,6 +245,7 @@ export const DeviceDetailsPage = () => {
           Device details:
         </Typography>
         <TextField
+          inputRef={deviceIdInputRef}
           variant="standard"
           value={deviceIdInputValue}
           onChange={(event) => setDeviceIdInputValue(event.target.value)}

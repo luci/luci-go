@@ -54,6 +54,10 @@ export const generateChromeOsDeviceDetailsURL = (id: string) => {
   return generateDeviceDetailsURL(CHROMEOS_PLATFORM, id);
 };
 
+export const generateAndroidDeviceDetailsURL = (id: string) => {
+  return generateDeviceDetailsURL(ANDROID_PLATFORM, id);
+};
+
 export const generateBrowserDeviceDetailsURL = (id: string) => {
   return generateDeviceDetailsURL(CHROMIUM_PLATFORM, id);
 };
