@@ -193,7 +193,7 @@ func (q *Query) genStmt(ctx context.Context) (spanner.Statement, error) {
 	return st, err
 }
 
-func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
+func (q *Query) Run(ctx context.Context, f func(*Artifact) error) (err error) {
 	st, err := q.genStmt(ctx)
 	if err != nil {
 		return err
@@ -260,16 +260,6 @@ func (q *Query) run(ctx context.Context, f func(*Artifact) error) (err error) {
 	})
 }
 
-// Run calls f for artifacts matching the query.
-//
-// Refer to Fetch() for the ordering of returned artifacts.
-func (q *Query) Run(ctx context.Context, f func(*Artifact) error) error {
-	if q.PageSize != 0 {
-		panic("PageSize is specified when Query.Run")
-	}
-	return q.run(ctx, f)
-}
-
 // FetchProtos returns a page of artifact protos matching q.
 //
 // Returned artifacts are ordered by level (invocation or test result).
@@ -280,7 +270,7 @@ func (q *Query) FetchProtos(ctx context.Context) (arts []*pb.Artifact, nextPageT
 		panic("PageSize <= 0")
 	}
 
-	err = q.run(ctx, func(a *Artifact) error {
+	err = q.Run(ctx, func(a *Artifact) error {
 		// Always keep the name field because it is used to generate the pagination token.
 		name := a.Name
 		if err := q.Mask.Trim(a.Artifact); err != nil {

@@ -62,6 +62,11 @@ const (
 
 	// Number of workers to download artifact content.
 	artifactWorkers = 10
+
+	// maxArtifactCount is the maximum number of artifacts to export per invocation.
+	// Artifacts beyond this limit are skipped to ensure the export task
+	// completes within the 10-minute Cloud Task timeout.
+	maxArtifactCount = 200_000
 )
 
 func init() {
@@ -243,6 +248,7 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 			ContentTypeRegexp:   contentTypeRegexp,
 			ArtifactIDRegexp:    bqExport.GetTextArtifacts().GetPredicate().GetArtifactIdRegexp(),
 			WithRBECASHash:      true,
+			PageSize:            maxArtifactCount,
 		}
 
 		invs, err := invocations.ReadBatch(ctx, q.InvocationIDs, invocations.ExcludeExtendedProperties)
