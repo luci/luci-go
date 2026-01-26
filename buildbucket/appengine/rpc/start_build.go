@@ -16,10 +16,10 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -27,12 +27,15 @@ import (
 	"go.chromium.org/luci/common/proto/protowalk"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/turboci/id"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildstatus"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildtoken"
 	"go.chromium.org/luci/buildbucket/appengine/internal/metrics"
+	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -55,7 +58,7 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 	taskID := infra.Proto.Backend.Task.GetId()
 	if taskID.GetId() != "" && taskID.GetId() != req.TaskId {
 		// The build has been associated with another task, possible from a previous
-		// RegisterBuildTask call from a different task.
+		// StartBuild call from a different task.
 		return false, buildbucket.DuplicateTask.Apply(appstatus.Errorf(codes.AlreadyExists, "build %d has associated with task %q", req.BuildId, taskID.Id))
 	}
 
@@ -112,19 +115,28 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 	return true, nil
 }
 
-func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (*model.Build, bool, error) {
+type startBuildResult struct {
+	bld                *model.Build
+	infra              *model.BuildInfra
+	buildStatusChanged bool
+}
+
+func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (startBuildResult, error) {
 	var b *model.Build
+	var infra *model.BuildInfra
 	buildStatusChanged := false
 	txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Reset buildStatusChanged in case the transaction callback is retried.
+		buildStatusChanged = false
 		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
 			return errors.Fmt("failed to get build %d: %w", req.BuildId, err)
 		}
 		b = entities[0].(*model.Build)
-		infra := entities[1].(*model.BuildInfra)
+		infra = entities[1].(*model.BuildInfra)
 
 		if infra.Proto.GetBackend().GetTask() == nil {
-			return errors.Fmt("the build %d does not run on task backend", req.BuildId)
+			return appstatus.Errorf(codes.FailedPrecondition, "the build %d does not run on task backend", req.BuildId)
 		}
 
 		if b.StartBuildRequestID == "" {
@@ -136,9 +148,16 @@ func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (*model
 		return checkSubsequentRequest(req, b.StartBuildRequestID, infra.Proto.Backend.Task.GetId().GetId())
 	}, nil)
 	if txErr != nil {
-		return nil, false, txErr
+		// On transient errors, we'll ask bbagent to retry without communicating
+		// with TurboCI, so no need to return b.
+		if errIsTransient(txErr) {
+			return startBuildResult{}, txErr
+		}
+		// On fatal error we need to set the build stage attempt to INCOMPLETE
+		// in TurboCI, return the entities to do that.
+		return startBuildResult{bld: b, infra: infra, buildStatusChanged: false}, txErr
 	}
-	return b, buildStatusChanged, nil
+	return startBuildResult{bld: b, infra: infra, buildStatusChanged: buildStatusChanged}, nil
 }
 
 func checkSubsequentRequest(req *pb.StartBuildRequest, savedReqID, savedTaskID string) error {
@@ -150,24 +169,19 @@ func checkSubsequentRequest(req *pb.StartBuildRequest, savedReqID, savedTaskID s
 
 	if savedTaskID != req.TaskId {
 		// Same request id, different task id.
-		return buildbucket.TaskWithCollidedRequestID.Apply(errors.
-
-			// Idempotent
-			Fmt("build %d has associated with task id %q with StartBuild request id %q", req.BuildId, savedTaskID, savedReqID))
+		return buildbucket.TaskWithCollidedRequestID.Apply(appstatus.Errorf(codes.InvalidArgument,
+			"build %d has associated with task id %q with StartBuild request id %q", req.BuildId, savedTaskID, savedReqID))
 	}
 
+	// Idempotent
 	return nil
 }
 
 // StartBuild handles a request to start a build. Implements pb.BuildsServer.
-func (*Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb.StartBuildResponse, error) {
+func (b *Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb.StartBuildResponse, error) {
 	if err := validateStartBuildRequest(ctx, req); err != nil {
 		return nil, appstatus.BadRequest(err)
 	}
-
-	var b *model.Build
-	var buildStatusChanged bool
-	var err error
 
 	// a token is required
 	rawToken, err, _ := getBuildbucketToken(ctx, false)
@@ -180,28 +194,93 @@ func (*Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb.S
 		return nil, err
 	}
 	if tok.Purpose != pb.TokenBody_START_BUILD {
-		panic(fmt.Sprintf("impossible: invalid token purpose: %s", tok.Purpose))
+		return nil, appstatus.Errorf(codes.Unauthenticated, "impossible: invalid token purpose: %s", tok.Purpose)
 	}
 
-	b, buildStatusChanged, err = startBuildOnBackend(ctx, req)
-	if err != nil {
+	res, err := startBuildOnBackend(ctx, req)
+	// Let bbagent retry if err is transient.
+	if errIsTransient(err) {
 		return nil, err
 	}
+	bld := res.bld
 
-	if buildStatusChanged {
-		// Update metrics.
-		logging.Infof(ctx, "Build %d: started", b.ID)
-		metrics.BuildStarted(ctx, b)
+	// Report the state change metric before touching Turbo CI
+	// to make sure we record the metric correctly even if
+	// the Turbo CI call below fails.
+	if err == nil && res.buildStatusChanged {
+		logging.Infof(ctx, "Build %d: started", bld.ID)
+		metrics.BuildStarted(ctx, bld)
+	}
+
+	// Here 'startBuildOnBackend' either succeeded or failed with
+	// a fatal error. Notify Turbo CI.
+	if bld != nil && bld.StageAttemptID != "" {
+		if notifyErr := notifyTurboCI(ctx, res, err); notifyErr != nil {
+			return nil, notifyErr
+		}
+	}
+
+	// Done notifying TurboCI, return the original error.
+	if err != nil {
+		return nil, err
 	}
 
 	mask, err := model.NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
 	if err != nil {
 		return nil, errors.Fmt("failed to construct build mask: %w", err)
 	}
-	bp, err := b.ToProto(ctx, mask, nil)
+	bp, err := bld.ToProto(ctx, mask, nil)
 	if err != nil {
 		return nil, errors.Fmt("failed to generate build proto from model: %w", err)
 	}
 
-	return &pb.StartBuildResponse{Build: bp, UpdateBuildToken: b.UpdateToken}, nil
+	return &pb.StartBuildResponse{Build: bp, UpdateBuildToken: bld.UpdateToken}, nil
+}
+
+// notifyTurboCI marks the attempt as either RUNNING on INCOMPLETE depending
+// on `startErr`.
+//
+// If to RUNNING but failed, use grpcutil.WrapIfTransient to wrap the error
+// and return it so that bbagent could retry or stop the build accordingly.
+//
+// If to INCOMPLETE but failed,
+//   - On transient error return it to trigger bbagent retry.
+//   - On fatal error log it but don't return it. So the original startErr can
+//     be returned to bbagent.
+func notifyTurboCI(ctx context.Context, res startBuildResult, startErr error) error {
+	var cl *turboci.Client
+	bld := res.bld
+	creds, err := turboci.ProjectRPCCredentials(ctx, bld.Project)
+	if err != nil {
+		return err
+	}
+	cl = &turboci.Client{
+		Creds: creds,
+		Token: bld.StageAttemptToken,
+	}
+
+	bp := proto.Clone(bld.Proto).(*pb.Build)
+	if res.infra != nil {
+		bp.Infra = res.infra.Proto
+	}
+
+	if startErr != nil {
+		aID, aErr := id.FromString(bld.StageAttemptID)
+		if aErr != nil {
+			logging.Errorf(ctx, "Build %d has a malformed StageAttemptID: %s", bld.ID, aErr)
+			return nil
+		}
+		err = cl.FailCurrentAttempt(ctx, aID.GetStageAttempt(), &turboci.AttemptFailure{Err: startErr}, populateBuildDetails(bp)...)
+		if err != nil && !errIsTransient(err) {
+			logging.Errorf(ctx, "Failed to update TurboCI on failure to start build %d (attempt %s): %s", bld.ID, bld.StageAttemptID, err)
+			return nil
+		}
+		return err
+	}
+
+	return grpcutil.WrapIfTransient(updateStageAttemptToRunning(ctx, cl, bp, bld.StartBuildRequestID))
+}
+
+func errIsTransient(err error) bool {
+	return grpcutil.IsTransientCode(grpcutil.Code(err))
 }

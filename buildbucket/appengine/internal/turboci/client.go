@@ -215,7 +215,7 @@ type AttemptFailure struct {
 
 // FailCurrentAttempt sets the current stage attempt (conveyed by the c.Token
 // as StageAttemptToken) to INCOMPLETE and reports the failure.
-func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageAttempt, failure *AttemptFailure) error {
+func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageAttempt, failure *AttemptFailure, details ...proto.Message) error {
 	logging.Errorf(ctx, "Fail stage attempt: %s", failure.Err)
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(c.Token)
@@ -226,6 +226,10 @@ func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageA
 		return err
 	}
 	prog.SetIdempotencyKey("server/failure")
+
+	if len(details) > 0 {
+		curWrite.AddDetails(details...)
+	}
 
 	st := curWrite.GetStateTransition()
 	st.SetIncomplete()

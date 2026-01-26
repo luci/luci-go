@@ -1212,10 +1212,13 @@ type StartBuildResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The whole proto of the started build.
 	Build *Build `protobuf:"bytes,1,opt,name=build,proto3" json:"build,omitempty"`
-	// a build token for agent to use when making subsequent UpdateBuild calls.
+	// A build token for agent to use when making subsequent UpdateBuild calls.
 	UpdateBuildToken string `protobuf:"bytes,2,opt,name=update_build_token,json=updateBuildToken,proto3" json:"update_build_token,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// A stage attempt token for agent to pass to the executable (recipe) to
+	// make updates on the stage attempt to TurboCI.
+	StageAttemptToken string `protobuf:"bytes,3,opt,name=stage_attempt_token,json=stageAttemptToken,proto3" json:"stage_attempt_token,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *StartBuildResponse) Reset() {
@@ -1258,6 +1261,13 @@ func (x *StartBuildResponse) GetBuild() *Build {
 func (x *StartBuildResponse) GetUpdateBuildToken() string {
 	if x != nil {
 		return x.UpdateBuildToken
+	}
+	return ""
+}
+
+func (x *StartBuildResponse) GetStageAttemptToken() string {
+	if x != nil {
+		return x.StageAttemptToken
 	}
 	return ""
 }
@@ -2460,10 +2470,11 @@ const file_go_chromium_org_luci_buildbucket_proto_builds_service_proto_rawDesc =
 	"\n" +
 	"request_id\x18\x01 \x01(\tB\x03\xe0A\x02R\trequestId\x12\x1e\n" +
 	"\bbuild_id\x18\x02 \x01(\x03B\x03\xe0A\x02R\abuildId\x12\x1c\n" +
-	"\atask_id\x18\x03 \x01(\tB\x03\xe0A\x02R\x06taskId\"o\n" +
+	"\atask_id\x18\x03 \x01(\tB\x03\xe0A\x02R\x06taskId\"\x9f\x01\n" +
 	"\x12StartBuildResponse\x12+\n" +
 	"\x05build\x18\x01 \x01(\v2\x15.buildbucket.v2.BuildR\x05build\x12,\n" +
-	"\x12update_build_token\x18\x02 \x01(\tR\x10updateBuildToken\"\x7f\n" +
+	"\x12update_build_token\x18\x02 \x01(\tR\x10updateBuildToken\x12.\n" +
+	"\x13stage_attempt_token\x18\x03 \x01(\tR\x11stageAttemptToken\"\x7f\n" +
 	"\x15GetBuildStatusRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x123\n" +
 	"\abuilder\x18\x02 \x01(\v2\x19.buildbucket.v2.BuilderIDR\abuilder\x12!\n" +

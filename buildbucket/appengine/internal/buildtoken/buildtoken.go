@@ -76,21 +76,19 @@ func generateEncryptedToken(ctx context.Context, buildID int64, purpose pb.Token
 // ErrBadToken is the only error returned by ParseToTokenBody.
 //
 // This includes a codes.Unauthenticated tag.
-var ErrBadToken = grpcutil.UnauthenticatedTag.Apply(
+var ErrBadToken = grpcutil.UnauthenticatedTag.Apply(errors.New("invalid token"))
 
-	// ParseToTokenBody deserializes the build token and returns the token body.
-	//
-	// buildID will be asserted to match the token's contents.
-	// If buildID is 0, this will skip the buildID check.
-	//
-	// Additionally, the token contents must match one of the values provided in
-	// `purposes`. If `purposes` is empty, a token of any purpose will be returned
-	// without error.
-	//
-	// All parsing errors are logged and this function returns ErrBadToken which is
-	// tagged with codes.Unauthenticated.
-	errors.New("invalid token"))
-
+// ParseToTokenBody deserializes the build token and returns the token body.
+//
+// buildID will be asserted to match the token's contents.
+// If buildID is 0, this will skip the buildID check.
+//
+// Additionally, the token contents must match one of the values provided in
+// `purposes`. If `purposes` is empty, a token of any purpose will be returned
+// without error.
+//
+// All parsing errors are logged and this function returns ErrBadToken which is
+// tagged with codes.Unauthenticated.
 func ParseToTokenBody(ctx context.Context, bldTok string, buildID int64, purposes ...pb.TokenBody_Purpose) (*pb.TokenBody, error) {
 	tok, err := parseToTokenBodyImpl(ctx, bldTok, buildID, purposes...)
 	if err != nil {

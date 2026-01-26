@@ -354,6 +354,42 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, atte
 
 	curWrite := writeReq.GetCurrentAttempt()
 
+	details := populateBuildDetails(bld)
+	curWrite.AddDetails(details...)
+
+	updatedPolicy := buildToStagetAttemptExecutionPolicy(bld)
+	st := curWrite.GetStateTransition()
+	st.SetScheduled(updatedPolicy)
+
+	_, err := turboci.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(cl.Creds))
+	return turboci.HandleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
+}
+
+// updateStageAttemptToRunning sets the StageAttempt to RUNNING and reports its process_uid and details.
+func updateStageAttemptToRunning(ctx context.Context, cl *turboci.Client, bld *pb.Build, reqID string) error {
+	writeReq := write.NewRequest()
+	writeReq.Msg.SetToken(cl.Token)
+	curWrite := writeReq.GetCurrentAttempt()
+
+	details := populateBuildDetails(bld)
+	curWrite.AddDetails(details...)
+
+	st := curWrite.GetStateTransition()
+	st.SetRunning(reqID, nil)
+
+	_, err := turboci.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(cl.Creds))
+	return turboci.HandleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
+}
+
+// populateBuildDetails populates details about a build in a WriteNodes request.
+//
+// Most build stage attempt should have the details when they are advanced to
+// SCHEDULED. But to ensure the builds have the details at all cases (e.g. the
+// stage attempt could be advanced to RUNNING directly if that WriteNodes reaches
+// TurboCI before the SCHEDULED one), Buildbucket adds the same details in the
+// WriteNodes to advance the attempt to RUNNING (or to INCOMPLETE if it fails to
+// start the build).
+func populateBuildDetails(bld *pb.Build) []proto.Message {
 	bldDetails := &pb.BuildStageDetails{
 		Result: &pb.BuildStageDetails_Id{
 			Id: bld.Id,
@@ -366,12 +402,5 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, atte
 			}.Build(),
 		},
 	}.Build()
-	curWrite.AddDetails(bldDetails, commonDetails)
-
-	updatedPolicy := buildToStagetAttemptExecutionPolicy(bld)
-	st := curWrite.GetStateTransition()
-	st.SetScheduled(updatedPolicy)
-
-	_, err := turboci.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(cl.Creds))
-	return turboci.HandleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
+	return []proto.Message{bldDetails, commonDetails}
 }

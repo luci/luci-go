@@ -636,8 +636,11 @@ message StartBuildRequest {
 message StartBuildResponse {
   // The whole proto of the started build.
   Build build = 1;
-  // a build token for agent to use when making subsequent UpdateBuild calls.
+  // A build token for agent to use when making subsequent UpdateBuild calls.
   string update_build_token = 2;
+  // A stage attempt token for agent to pass to the executable (recipe) to
+  // make updates on the stage attempt to TurboCI.
+  string stage_attempt_token = 3;
 }
 
 // A request message for GetBuildStatus RPC.

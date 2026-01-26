@@ -480,40 +480,39 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 
 		origStatus = b.Proto.Status
 
+		var statusUpdater *buildstatus.Updater
+		var newStatus pb.Status
 		if mustIncludes(updateMask, req, "status") == mask.IncludeEntirely {
-			if req.Build.Status == pb.Status_STARTED {
-				logging.Debugf(ctx, "UpdateBuild is used to start build %d", b.ID)
-			}
-			statusUpdater := buildstatus.Updater{
+			statusUpdater = &buildstatus.Updater{
 				Build:       b,
 				Infra:       nil,
 				BuildStatus: &buildstatus.StatusWithDetails{Status: req.Build.Status},
 				UpdateTime:  now,
 				PostProcess: tasks.SendOnBuildStatusChange,
 			}
-			bs, err := statusUpdater.Do(ctx)
-			if err != nil {
-				return errors.Fmt("updating build status: %w", err)
-			}
-			if bs != nil {
-				toSave = append(toSave, bs)
-			}
+			newStatus = req.Build.Status
 		} else if explicitlyIncludesOutputStatus(req) {
-			if req.Build.Output.GetStatus() == pb.Status_STARTED {
-				logging.Debugf(ctx, "UpdateBuild is used to start build %d", b.ID)
-			}
-			statusUpdater := buildstatus.Updater{
+			statusUpdater = &buildstatus.Updater{
 				Build:        b,
 				OutputStatus: &buildstatus.StatusWithDetails{Status: req.Build.Output.GetStatus()},
 				UpdateTime:   now,
 				PostProcess:  tasks.SendOnBuildStatusChange,
 			}
+			newStatus = req.Build.Output.GetStatus()
+		}
+
+		if statusUpdater != nil {
 			bs, err := statusUpdater.Do(ctx)
 			if err != nil {
 				return errors.Fmt("updating build status and output.status: %w", err)
 			}
 			if bs != nil {
 				toSave = append(toSave, bs)
+
+				// Only log if the requested status change takes effect.
+				if newStatus == pb.Status_STARTED {
+					logging.Debugf(ctx, "UpdateBuild is used to start build %s, %d", b.BuilderID, b.ID)
+				}
 			}
 		}
 
