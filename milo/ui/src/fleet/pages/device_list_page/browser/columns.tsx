@@ -23,43 +23,62 @@ import { CellWithTooltip } from '@/fleet/components/table';
 import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
-import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
+import {
+  BROWSER_SWARMING_SOURCE,
+  BROWSER_UFS_SOURCE,
+} from '@/fleet/constants/browser';
 import { generateBrowserDeviceDetailsURL } from '@/fleet/constants/paths';
 import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { getStatusColor } from '../chromeos/dut_state';
 
+const destructureColumnId = (id: string) => {
+  let source: string | undefined = undefined;
+
+  if (id.startsWith(BROWSER_SWARMING_SOURCE)) {
+    source = BROWSER_SWARMING_SOURCE;
+  } else if (id.startsWith(BROWSER_UFS_SOURCE)) {
+    source = BROWSER_UFS_SOURCE;
+  }
+
+  const labelKey = source
+    ? id.replace(`${source}.`, '').replace(/^"|"$/g, '')
+    : id;
+
+  return {
+    labelKey,
+    source,
+    header: source ? `${source.replace('_labels', '')}.${labelKey}` : id,
+  };
+};
+
 export const getColumn = (id: string): DeviceTableGridColDef<BrowserDevice> => {
-  const firstDotIdx = id.indexOf('.');
-  const source =
-    firstDotIdx === -1
-      ? undefined
-      : id.slice(0, firstDotIdx).replace('_labels', '');
-  const label = firstDotIdx === -1 ? id : id.slice(firstDotIdx + 2, -1); // Trims of the quotes
+  const { labelKey, source, header } = destructureColumnId(id);
 
   return {
     field: id,
-    headerName: source ? `${source}.${label}` : label,
+    headerName: header,
     orderByField: id,
     editable: false,
     minWidth: 70,
     maxWidth: 700,
     sortable: true,
-    valueGetter: (_value, device) => {
-      if (!source) return undefined;
-      const labels =
-        source === BROWSER_SWARMING_SOURCE
-          ? device.swarmingLabels?.[label]?.values
-          : device.ufsLabels?.[label]?.values;
-      if (!labels) return undefined;
+    valueGetter: (_, device) => {
+      let values: readonly string[] | undefined = undefined;
 
-      return labelValuesToString(labels);
+      if (source === BROWSER_SWARMING_SOURCE) {
+        values = device.swarmingLabels?.[labelKey]?.values;
+      } else if (source === BROWSER_UFS_SOURCE) {
+        values = device.ufsLabels?.[labelKey]?.values;
+      }
+
+      return values ? labelValuesToString(values) : undefined;
     },
     flex: 1,
     renderCell: (param) => (
       <EllipsisTooltip>{param.value ?? ''}</EllipsisTooltip>
     ),
-    ...(BROWSER_COLUMN_OVERRIDES[source ? `${source}.${label}` : label] ?? {}),
+    ...(BROWSER_COLUMN_OVERRIDES[id] ?? {}),
   };
 };
 
@@ -76,7 +95,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       false,
     ),
   },
-  'swarming.dut_state': {
+  [`${BROWSER_SWARMING_SOURCE}."dut_state"`]: {
     valueGetter: (_, device) =>
       device.swarmingLabels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
     renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
@@ -94,7 +113,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       )({ ...params, value: stateValue.toUpperCase() });
     },
   },
-  'swarming.last_sync': {
+  [`${BROWSER_SWARMING_SOURCE}."last_sync"`]: {
     renderCell: (params) => {
       const value = params.value as string;
       if (!value) {
@@ -107,7 +126,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       return <SmartRelativeTimestamp date={dt} />;
     },
   },
-  'ufs.hostname': {
+  [`${BROWSER_UFS_SOURCE}."hostname"`]: {
     renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
       const swarmingInstance =
         params.row?.ufsLabels?.['swarming_instance']?.values?.[0];
@@ -123,7 +142,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       }
     },
   },
-  'ufs.last_sync': {
+  [`${BROWSER_UFS_SOURCE}."last_sync"`]: {
     renderCell: (params) => {
       const value = params.value as string;
       if (!value) {

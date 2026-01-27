@@ -106,14 +106,6 @@ export const BrowserDevicesPage = () => {
 
   const dimensionsQuery = useBrowserDeviceDimensions();
 
-  // TODO: b/390013758 - Use the real CountDevices RPC once it's ready for CHROMIUM platform.
-  const countQuery = {
-    data: { total: 0 },
-    isPending: false,
-    isError: false,
-    error: null,
-  };
-
   const request = ListBrowserDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
@@ -123,7 +115,11 @@ export const BrowserDevicesPage = () => {
 
   const devicesQuery = useBrowserDevices(request);
 
-  const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
+  const {
+    devices = [],
+    nextPageToken = '',
+    totalSize = 0,
+  } = devicesQuery.data || {};
   const columnIds = useMemo(() => {
     const ids: string[] = [];
     if (dimensionsQuery.isSuccess) {
@@ -291,7 +287,7 @@ export const BrowserDevicesPage = () => {
           error={devicesQuery.error || dimensionsQuery.error}
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
           isLoadingColumns={dimensionsQuery.isPending}
-          totalRowCount={countQuery?.data?.total}
+          totalRowCount={totalSize}
         />
       </div>
     </div>
