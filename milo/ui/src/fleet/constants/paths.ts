@@ -50,6 +50,29 @@ export const generateDeviceDetailsURL = (platform: string, id: string) => {
   return `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${DEVICES_SUBROUTE}/${id}`;
 };
 
+export const generateAnotherPlatformCorrespondingURL = (
+  platform: Platform,
+  newPlatform: Platform,
+) => {
+  const currentUrl = window.location.href;
+
+  if (
+    currentUrl.includes(`/${DEVICES_SUBROUTE}/`) ||
+    currentUrl.endsWith(`/${DEVICES_SUBROUTE}`)
+  )
+    return generateDeviceListURL(Platform[newPlatform].toLowerCase());
+  else if (
+    currentUrl.includes(`/${REPAIRS_SUBROUTE}/`) ||
+    currentUrl.endsWith(`/${REPAIRS_SUBROUTE}`)
+  )
+    return generateRepairsURL(Platform[newPlatform].toLowerCase());
+
+  return location.pathname.replace(
+    'p/' + platformToURL(platform),
+    'p/' + platformToURL(newPlatform),
+  );
+};
+
 export const generateChromeOsDeviceDetailsURL = (id: string) => {
   return generateDeviceDetailsURL(CHROMEOS_PLATFORM, id);
 };
