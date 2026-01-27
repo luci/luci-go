@@ -23,7 +23,7 @@ import "go.chromium.org/luci/analysis/proto/bq/legacy/ants_common.proto";
 option go_package = "go.chromium.org/luci/analysis/proto/bq/legacy;bqpb";
 
 // AntsTestResultRow represents a row in a BigQuery table for an AnTS test result.
-// Next ID: 30.
+// Next ID: 31.
 message AntsTestResultRow {
 
   // The possible statuses that a TestResult can report.
@@ -129,8 +129,19 @@ message AntsTestResultRow {
     int64 num = 2;
   }
 
-  // The test identifier.
+  // This is the ResultDB test identifier converted to an AnTS test ID format.
+  // as follows:
+  // module_parameters = module_variant. This differs from the AnTS test module_parameters; it includes all module parameters (with sanitized keys) and also captures invocation-level parameters.
+  // package_name = coarse_name
+  // class_name = fine_name
+  // test_class = coarse_name + "." + fine_name
+  // method = case_name
   TestIdentifier test_identifier = 9;
+
+  // The test identifier which fully matches AnTS test id.
+  // This only exists to facilitate migration.
+  // Clients shouldn't rely on it being set forward.
+  TestIdentifier previous_test_identifier = 30;
 
   // The status of the test.
   TestStatus test_status = 10;

@@ -15,7 +15,6 @@
 package utils
 
 import (
-	"slices"
 	"sort"
 	"strings"
 
@@ -24,22 +23,11 @@ import (
 	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
 )
 
-// moduleParameterExcludeKeys lists variant keys flattened from the root invocation level that should be excluded from AnTS module parameters.
-var moduleParameterExcludeKeys = []string{"build_target", "atp_test", "run_target", "cluster_id", "suite_version", "suite_plan"}
-
 func ModuleParametersFromVariants(moduleVariants *rdbpb.Variant) []*bqpb.StringPair {
 	moduleParameters := []*bqpb.StringPair{}
 	for key, val := range moduleVariants.GetDef() {
-		if slices.Contains(moduleParameterExcludeKeys, key) {
-			continue
-		}
-		name := key
-		if key == "module_abi" || key == "module_param" {
-			// AnTS keys are module-abi and module-param (dash instead of underscore).
-			name = strings.ReplaceAll(key, "_", "-")
-		}
 		moduleParameters = append(moduleParameters, &bqpb.StringPair{
-			Name:  name,
+			Name:  key,
 			Value: val,
 		})
 	}

@@ -19,7 +19,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -212,18 +215,25 @@ func prepareExportRow(verdicts []*rdbpb.TestVariant, opts ExportOptions) ([]*bqp
 				workUnitID = parts.WorkUnitID
 			}
 
+			// Find the legacy AnTS test identifier.
+			previousTestIdentifier, err := extractPreviousTestIdentifier(tr.Properties)
+			if err != nil {
+				return nil, err
+			}
+
 			// AnTS attempt_number and run_number are unused, no mapping exists from ResultDB.
 
 			// Aggregation is not included in this export, so flaky_test_cases, aggregation_detail,
 			// flaky_modules and parent_test_identifier_id are not populated.
 
 			antsTR := &bqpb.AntsTestResultRow{
-				TestResultId:       tr.ResultId,
-				InvocationId:       invocationIDInDestTable,
-				WorkUnitId:         workUnitID,
-				TestIdentifier:     testIdentifier,
-				TestStatus:         testStatus,
-				TestIdentifierHash: testIdentifierHash,
+				TestResultId:           tr.ResultId,
+				InvocationId:           invocationIDInDestTable,
+				WorkUnitId:             workUnitID,
+				TestIdentifier:         testIdentifier,
+				PreviousTestIdentifier: previousTestIdentifier,
+				TestStatus:             testStatus,
+				TestIdentifierHash:     testIdentifierHash,
 				// TODO: populate these hashes.
 				TestIdentifierId: "",
 				TestDefinitionId: "",
@@ -294,4 +304,58 @@ func convertToAnTSStatusV2(status rdbpb.TestResult_Status, failureReason *rdbpb.
 	default:
 		return bqpb.AntsTestResultRow_TEST_STATUS_UNSPECIFIED
 	}
+}
+
+func extractPreviousTestIdentifier(properties *structpb.Struct) (*bqpb.AntsTestResultRow_TestIdentifier, error) {
+	if properties == nil {
+		return nil, nil
+	}
+	propertiesType := "type.googleapis.com/wireless.android.busytown.proto.TestResultProperties"
+	if properties.Fields["@type"].GetStringValue() != propertiesType {
+		// Properties is not the supported TestResultProperties type.
+		return nil, nil
+	}
+	// Marshal the field value to JSON.
+	b, err := protojson.Marshal(properties)
+	if err != nil {
+		return nil, errors.Fmt("marshal properties to json: %w", err)
+	}
+
+	// Unmarshal JSON to the target proto.
+	testResultProperties := &bqpb.TestResultProperties{}
+	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
+	if err := unmarshaler.Unmarshal(b, testResultProperties); err != nil {
+		return nil, errors.Fmt("unmarshal test result properties from json: %w", err)
+	}
+
+	antsTestID := testResultProperties.AntsTestId
+	if antsTestID == nil {
+		return nil, nil
+	}
+
+	// Convert the test id in properties into the test identitifer for BigQuery row.
+	moduleParametersHash := ""
+	if len(antsTestID.ModuleParameters) > 0 {
+		moduleParametersHash = hashParameters(antsTestID.ModuleParameters)
+	}
+
+	className := antsTestID.TestClass
+	packageName := ""
+	lastDotPos := strings.LastIndex(antsTestID.TestClass, ".")
+	if lastDotPos >= 0 {
+		packageName = antsTestID.TestClass[:lastDotPos]
+		className = antsTestID.TestClass[lastDotPos+1:]
+	}
+
+	testIdentifier := &bqpb.AntsTestResultRow_TestIdentifier{
+		Module:               antsTestID.Module,
+		ModuleParameters:     antsTestID.ModuleParameters,
+		ModuleParametersHash: moduleParametersHash,
+		TestClass:            antsTestID.TestClass,
+		ClassName:            className,
+		PackageName:          packageName,
+		Method:               antsTestID.Method,
+	}
+
+	return testIdentifier, nil
 }

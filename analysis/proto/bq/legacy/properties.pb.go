@@ -92,6 +92,137 @@ func (x *WorkUnitProperties) GetAntsWorkUnitId() string {
 	return ""
 }
 
+// TestResultProperties replicates the TestResultProperties in AnTS codebase.
+type TestResultProperties struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Aconfig flags that were overridden at the test result level. Aconfig flags
+	// should be overwritten at the module level.
+	AconfigFlagOverrides *AconfigFlagOverrides `protobuf:"bytes,1,opt,name=aconfig_flag_overrides,json=aconfigFlagOverrides,proto3" json:"aconfig_flag_overrides,omitempty"`
+	// Required. Specify the legacy AnTS test ID corresponding to this test
+	// result for data matching. This field will be removed in future.
+	AntsTestId    *AntsTestIdentifier `protobuf:"bytes,2,opt,name=ants_test_id,json=antsTestId,proto3" json:"ants_test_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestResultProperties) Reset() {
+	*x = TestResultProperties{}
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestResultProperties) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestResultProperties) ProtoMessage() {}
+
+func (x *TestResultProperties) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestResultProperties.ProtoReflect.Descriptor instead.
+func (*TestResultProperties) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *TestResultProperties) GetAconfigFlagOverrides() *AconfigFlagOverrides {
+	if x != nil {
+		return x.AconfigFlagOverrides
+	}
+	return nil
+}
+
+func (x *TestResultProperties) GetAntsTestId() *AntsTestIdentifier {
+	if x != nil {
+		return x.AntsTestId
+	}
+	return nil
+}
+
+// A copy of AnTS TestIdentifier proto.
+type AntsTestIdentifier struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Name of the module this test belongs to.
+	Module string `protobuf:"bytes,1,opt,name=module,proto3" json:"module,omitempty"`
+	// Parameters for the test module.
+	ModuleParameters []*StringPair `protobuf:"bytes,2,rep,name=module_parameters,json=moduleParameters,proto3" json:"module_parameters,omitempty"`
+	// The name for a group of tests that are logically grouped together.
+	// Typically in the format of <package name>.<class name>.
+	TestClass string `protobuf:"bytes,3,opt,name=test_class,json=testClass,proto3" json:"test_class,omitempty"`
+	// The name of the test that is the smallest test execution unit.
+	Method        string `protobuf:"bytes,4,opt,name=method,proto3" json:"method,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AntsTestIdentifier) Reset() {
+	*x = AntsTestIdentifier{}
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AntsTestIdentifier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AntsTestIdentifier) ProtoMessage() {}
+
+func (x *AntsTestIdentifier) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AntsTestIdentifier.ProtoReflect.Descriptor instead.
+func (*AntsTestIdentifier) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AntsTestIdentifier) GetModule() string {
+	if x != nil {
+		return x.Module
+	}
+	return ""
+}
+
+func (x *AntsTestIdentifier) GetModuleParameters() []*StringPair {
+	if x != nil {
+		return x.ModuleParameters
+	}
+	return nil
+}
+
+func (x *AntsTestIdentifier) GetTestClass() string {
+	if x != nil {
+		return x.TestClass
+	}
+	return ""
+}
+
+func (x *AntsTestIdentifier) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_rawDesc = "" +
@@ -99,7 +230,17 @@ const file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_rawDes
 	">go.chromium.org/luci/analysis/proto/bq/legacy/properties.proto\x12\x17luci.analysis.bq.legacy\x1a?go.chromium.org/luci/analysis/proto/bq/legacy/ants_common.proto\"\xa4\x01\n" +
 	"\x12WorkUnitProperties\x12c\n" +
 	"\x16aconfig_flag_overrides\x18\x01 \x01(\v2-.luci.analysis.bq.legacy.AconfigFlagOverridesR\x14aconfigFlagOverrides\x12)\n" +
-	"\x11ants_work_unit_id\x18\x02 \x01(\tR\x0eantsWorkUnitIdB4Z2go.chromium.org/luci/analysis/proto/bq/legacy;bqpbb\x06proto3"
+	"\x11ants_work_unit_id\x18\x02 \x01(\tR\x0eantsWorkUnitId\"\xca\x01\n" +
+	"\x14TestResultProperties\x12c\n" +
+	"\x16aconfig_flag_overrides\x18\x01 \x01(\v2-.luci.analysis.bq.legacy.AconfigFlagOverridesR\x14aconfigFlagOverrides\x12M\n" +
+	"\fants_test_id\x18\x02 \x01(\v2+.luci.analysis.bq.legacy.AntsTestIdentifierR\n" +
+	"antsTestId\"\xb5\x01\n" +
+	"\x12AntsTestIdentifier\x12\x16\n" +
+	"\x06module\x18\x01 \x01(\tR\x06module\x12P\n" +
+	"\x11module_parameters\x18\x02 \x03(\v2#.luci.analysis.bq.legacy.StringPairR\x10moduleParameters\x12\x1d\n" +
+	"\n" +
+	"test_class\x18\x03 \x01(\tR\ttestClass\x12\x16\n" +
+	"\x06method\x18\x04 \x01(\tR\x06methodB4Z2go.chromium.org/luci/analysis/proto/bq/legacy;bqpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_rawDescOnce sync.Once
@@ -113,18 +254,24 @@ func file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_rawDesc
 	return file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_goTypes = []any{
 	(*WorkUnitProperties)(nil),   // 0: luci.analysis.bq.legacy.WorkUnitProperties
-	(*AconfigFlagOverrides)(nil), // 1: luci.analysis.bq.legacy.AconfigFlagOverrides
+	(*TestResultProperties)(nil), // 1: luci.analysis.bq.legacy.TestResultProperties
+	(*AntsTestIdentifier)(nil),   // 2: luci.analysis.bq.legacy.AntsTestIdentifier
+	(*AconfigFlagOverrides)(nil), // 3: luci.analysis.bq.legacy.AconfigFlagOverrides
+	(*StringPair)(nil),           // 4: luci.analysis.bq.legacy.StringPair
 }
 var file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_depIdxs = []int32{
-	1, // 0: luci.analysis.bq.legacy.WorkUnitProperties.aconfig_flag_overrides:type_name -> luci.analysis.bq.legacy.AconfigFlagOverrides
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 0: luci.analysis.bq.legacy.WorkUnitProperties.aconfig_flag_overrides:type_name -> luci.analysis.bq.legacy.AconfigFlagOverrides
+	3, // 1: luci.analysis.bq.legacy.TestResultProperties.aconfig_flag_overrides:type_name -> luci.analysis.bq.legacy.AconfigFlagOverrides
+	2, // 2: luci.analysis.bq.legacy.TestResultProperties.ants_test_id:type_name -> luci.analysis.bq.legacy.AntsTestIdentifier
+	4, // 3: luci.analysis.bq.legacy.AntsTestIdentifier.module_parameters:type_name -> luci.analysis.bq.legacy.StringPair
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_init() }
@@ -139,7 +286,7 @@ func file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_init() 
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_bq_legacy_properties_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

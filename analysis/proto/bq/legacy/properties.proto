@@ -30,3 +30,27 @@ message WorkUnitProperties {
   // AnTS work unit. This field will be removed in future.
   string ants_work_unit_id = 2;
 }
+
+// TestResultProperties replicates the TestResultProperties in AnTS codebase.
+message TestResultProperties {
+  // Aconfig flags that were overridden at the test result level. Aconfig flags
+  // should be overwritten at the module level.
+  AconfigFlagOverrides aconfig_flag_overrides = 1;
+
+  // Required. Specify the legacy AnTS test ID corresponding to this test
+  // result for data matching. This field will be removed in future.
+  AntsTestIdentifier ants_test_id = 2;
+}
+
+// A copy of AnTS TestIdentifier proto.
+message AntsTestIdentifier {
+  // Name of the module this test belongs to.
+  string module = 1;
+  // Parameters for the test module.
+  repeated StringPair module_parameters = 2;
+  // The name for a group of tests that are logically grouped together.
+  // Typically in the format of <package name>.<class name>.
+  string test_class = 3;
+  // The name of the test that is the smallest test execution unit.
+  string method = 4;
+}

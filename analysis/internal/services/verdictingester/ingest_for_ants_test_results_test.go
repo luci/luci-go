@@ -19,8 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -42,6 +44,24 @@ func TestExportAntsTestResults(t *testing.T) {
 	ftt.Run("TestExportTestVerdicts", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		partitionTime := clock.Now(ctx).Add(-1 * time.Hour)
+
+		jsonStr := `{
+		"@type": "type.googleapis.com/wireless.android.busytown.proto.TestResultProperties",
+		"antsTestId": {
+			"module": "ants-module",
+			"moduleParameters": [
+                  {
+                    "name": "test-param",
+                    "value": "xxx"
+                  }
+                ],
+			"testClass": "ants-package.ants-class",
+			"method": "ants-method"
+		}
+	}`
+		properties := &structpb.Struct{}
+		err := protojson.Unmarshal([]byte(jsonStr), properties)
+		assert.NoErr(t, err)
 
 		verdicts := []*rdbpb.TestVariant{
 			{
@@ -99,6 +119,7 @@ func TestExportAntsTestResults(t *testing.T) {
 								{Key: "primary_error_origin", Value: "test error origin"},
 								{Key: "tag1", Value: "tag1-val"},
 							},
+							Properties: properties,
 						},
 					},
 				},
@@ -126,14 +147,14 @@ func TestExportAntsTestResults(t *testing.T) {
 				InvocationId: invocationID,
 				TestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
 					Module:               "module",
-					ModuleParameters:     []*bqpblegacy.StringPair{{Name: "module-abi", Value: "v1"}},
-					ModuleParametersHash: "a97a3e62fb4fa57e2d30c1d1ace158eca3c87afb9f3e2d097587c6dc993b44c6",
+					ModuleParameters:     []*bqpblegacy.StringPair{{Name: "atp_test", Value: "test"}, {Name: "module_abi", Value: "v1"}},
+					ModuleParametersHash: "6ed65901f2594de7bae063d8b4d68bc3f5383f3e2e5ef507862581de366f0b30",
 					TestClass:            "package.class",
 					ClassName:            "class",
 					PackageName:          "package",
 					Method:               "test1",
 				},
-				TestIdentifierHash: "d064bad880712fc5b11b048f5075f52d23d7a470a770f4fb914c03560cfe4c16",
+				TestIdentifierHash: "8dde0d1825e5aeb98c779ae62635873c34bd225a21036c56fd084683869c3de1",
 				TestStatus:         bqpblegacy.AntsTestResultRow_PASS,
 				Timing: &bqpblegacy.Timing{
 					CreationTimestamp: 1735693200000, // 2025-01-01 01:00:00 UTC
@@ -180,6 +201,15 @@ func TestExportAntsTestResults(t *testing.T) {
 					ClassName:            "class",
 					PackageName:          "package",
 					Method:               "test2",
+				},
+				PreviousTestIdentifier: &bqpblegacy.AntsTestResultRow_TestIdentifier{
+					Module:               "ants-module",
+					ModuleParameters:     []*bqpblegacy.StringPair{{Name: "test-param", Value: "xxx"}},
+					ModuleParametersHash: "816d7cd0565d7017b6adcf98025c195ce95a85bd0dce3dd22486e99022569407",
+					TestClass:            "ants-package.ants-class",
+					ClassName:            "ants-class",
+					PackageName:          "ants-package",
+					Method:               "ants-method",
 				},
 				TestIdentifierHash: "49a5f3b27583ccf99c7c32e4d69420b77c9480f1687a4f9325f6a7220bf01836",
 				TestStatus:         bqpblegacy.AntsTestResultRow_FAIL,

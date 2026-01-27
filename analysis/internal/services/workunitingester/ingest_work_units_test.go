@@ -228,8 +228,8 @@ func TestWorkUnitIngesterRun(t *testing.T) {
 					ModuleInfo: &bqpb.AntsWorkUnitRow_ModuleInfo{
 						Name: "test-module-name",
 						ModuleParameters: []*bqpb.StringPair{
-							{Name: "module-abi", Value: "test-abi"},
-							{Name: "module-param", Value: "test-param"},
+							{Name: "module_abi", Value: "test-abi"},
+							{Name: "module_param", Value: "test-param"},
 							{Name: "platform_name", Value: "test-platform"},
 						},
 					},

@@ -171,7 +171,7 @@ func (AntsTestResultRow_AggregationLevel) EnumDescriptor() ([]byte, []int) {
 }
 
 // AntsTestResultRow represents a row in a BigQuery table for an AnTS test result.
-// Next ID: 30.
+// Next ID: 31.
 type AntsTestResultRow struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The type of the build.
@@ -190,8 +190,18 @@ type AntsTestResultRow struct {
 	WorkUnitId string `protobuf:"bytes,7,opt,name=work_unit_id,json=workUnitId,proto3" json:"work_unit_id,omitempty"`
 	// The ID of the invocation.
 	InvocationId string `protobuf:"bytes,8,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
-	// The test identifier.
+	// This is the ResultDB test identifier converted to an AnTS test ID format.
+	// as follows:
+	// module_parameters = module_variant. This differs from the AnTS test module_parameters; it includes all module parameters (with sanitized keys) and also captures invocation-level parameters.
+	// package_name = coarse_name
+	// class_name = fine_name
+	// test_class = coarse_name + "." + fine_name
+	// method = case_name
 	TestIdentifier *AntsTestResultRow_TestIdentifier `protobuf:"bytes,9,opt,name=test_identifier,json=testIdentifier,proto3" json:"test_identifier,omitempty"`
+	// The test identifier which fully matches AnTS test id.
+	// This only exists to facilitate migration.
+	// Clients shouldn't rely on it being set forward.
+	PreviousTestIdentifier *AntsTestResultRow_TestIdentifier `protobuf:"bytes,30,opt,name=previous_test_identifier,json=previousTestIdentifier,proto3" json:"previous_test_identifier,omitempty"`
 	// The status of the test.
 	TestStatus AntsTestResultRow_TestStatus `protobuf:"varint,10,opt,name=test_status,json=testStatus,proto3,enum=luci.analysis.bq.legacy.AntsTestResultRow_TestStatus" json:"test_status,omitempty"`
 	// The debug information.
@@ -335,6 +345,13 @@ func (x *AntsTestResultRow) GetInvocationId() string {
 func (x *AntsTestResultRow) GetTestIdentifier() *AntsTestResultRow_TestIdentifier {
 	if x != nil {
 		return x.TestIdentifier
+	}
+	return nil
+}
+
+func (x *AntsTestResultRow) GetPreviousTestIdentifier() *AntsTestResultRow_TestIdentifier {
+	if x != nil {
+		return x.PreviousTestIdentifier
 	}
 	return nil
 }
@@ -696,7 +713,7 @@ var File_go_chromium_org_luci_analysis_proto_bq_legacy_ants_test_result_row_prot
 
 const file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_test_result_row_proto_rawDesc = "" +
 	"\n" +
-	"Hgo.chromium.org/luci/analysis/proto/bq/legacy/ants_test_result_row.proto\x12\x17luci.analysis.bq.legacy\x1a\x1fgoogle/protobuf/timestamp.proto\x1a/go.chromium.org/luci/common/bq/pb/options.proto\x1a?go.chromium.org/luci/analysis/proto/bq/legacy/ants_common.proto\"\x86\x13\n" +
+	"Hgo.chromium.org/luci/analysis/proto/bq/legacy/ants_test_result_row.proto\x12\x17luci.analysis.bq.legacy\x1a\x1fgoogle/protobuf/timestamp.proto\x1a/go.chromium.org/luci/common/bq/pb/options.proto\x1a?go.chromium.org/luci/analysis/proto/bq/legacy/ants_common.proto\"\xfb\x13\n" +
 	"\x11AntsTestResultRow\x12A\n" +
 	"\n" +
 	"build_type\x18\x01 \x01(\x0e2\".luci.analysis.bq.legacy.BuildTypeR\tbuildType\x12\x19\n" +
@@ -708,7 +725,8 @@ const file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_test_result_row_pr
 	"\fwork_unit_id\x18\a \x01(\tR\n" +
 	"workUnitId\x12#\n" +
 	"\rinvocation_id\x18\b \x01(\tR\finvocationId\x12b\n" +
-	"\x0ftest_identifier\x18\t \x01(\v29.luci.analysis.bq.legacy.AntsTestResultRow.TestIdentifierR\x0etestIdentifier\x12V\n" +
+	"\x0ftest_identifier\x18\t \x01(\v29.luci.analysis.bq.legacy.AntsTestResultRow.TestIdentifierR\x0etestIdentifier\x12s\n" +
+	"\x18previous_test_identifier\x18\x1e \x01(\v29.luci.analysis.bq.legacy.AntsTestResultRow.TestIdentifierR\x16previousTestIdentifier\x12V\n" +
 	"\vtest_status\x18\n" +
 	" \x01(\x0e25.luci.analysis.bq.legacy.AntsTestResultRow.TestStatusR\n" +
 	"testStatus\x12A\n" +
@@ -805,24 +823,25 @@ var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_test_result_row_prot
 var file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_test_result_row_proto_depIdxs = []int32{
 	6,  // 0: luci.analysis.bq.legacy.AntsTestResultRow.build_type:type_name -> luci.analysis.bq.legacy.BuildType
 	3,  // 1: luci.analysis.bq.legacy.AntsTestResultRow.test_identifier:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.TestIdentifier
-	0,  // 2: luci.analysis.bq.legacy.AntsTestResultRow.test_status:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.TestStatus
-	7,  // 3: luci.analysis.bq.legacy.AntsTestResultRow.debug_info:type_name -> luci.analysis.bq.legacy.DebugInfo
-	8,  // 4: luci.analysis.bq.legacy.AntsTestResultRow.timing:type_name -> luci.analysis.bq.legacy.Timing
-	9,  // 5: luci.analysis.bq.legacy.AntsTestResultRow.properties:type_name -> luci.analysis.bq.legacy.StringPair
-	4,  // 6: luci.analysis.bq.legacy.AntsTestResultRow.aggregation_detail:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.AggregationDetail
-	10, // 7: luci.analysis.bq.legacy.AntsTestResultRow.test:type_name -> luci.analysis.bq.legacy.Test
-	11, // 8: luci.analysis.bq.legacy.AntsTestResultRow.skipped_reason:type_name -> luci.analysis.bq.legacy.SkippedReason
-	12, // 9: luci.analysis.bq.legacy.AntsTestResultRow.completion_time:type_name -> google.protobuf.Timestamp
-	12, // 10: luci.analysis.bq.legacy.AntsTestResultRow.insert_time:type_name -> google.protobuf.Timestamp
-	9,  // 11: luci.analysis.bq.legacy.AntsTestResultRow.TestIdentifier.module_parameters:type_name -> luci.analysis.bq.legacy.StringPair
-	1,  // 12: luci.analysis.bq.legacy.AntsTestResultRow.AggregationDetail.aggregation_level:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.AggregationLevel
-	5,  // 13: luci.analysis.bq.legacy.AntsTestResultRow.AggregationDetail.status_aggregation:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.StatusAggregation
-	0,  // 14: luci.analysis.bq.legacy.AntsTestResultRow.StatusAggregation.status:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.TestStatus
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	3,  // 2: luci.analysis.bq.legacy.AntsTestResultRow.previous_test_identifier:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.TestIdentifier
+	0,  // 3: luci.analysis.bq.legacy.AntsTestResultRow.test_status:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.TestStatus
+	7,  // 4: luci.analysis.bq.legacy.AntsTestResultRow.debug_info:type_name -> luci.analysis.bq.legacy.DebugInfo
+	8,  // 5: luci.analysis.bq.legacy.AntsTestResultRow.timing:type_name -> luci.analysis.bq.legacy.Timing
+	9,  // 6: luci.analysis.bq.legacy.AntsTestResultRow.properties:type_name -> luci.analysis.bq.legacy.StringPair
+	4,  // 7: luci.analysis.bq.legacy.AntsTestResultRow.aggregation_detail:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.AggregationDetail
+	10, // 8: luci.analysis.bq.legacy.AntsTestResultRow.test:type_name -> luci.analysis.bq.legacy.Test
+	11, // 9: luci.analysis.bq.legacy.AntsTestResultRow.skipped_reason:type_name -> luci.analysis.bq.legacy.SkippedReason
+	12, // 10: luci.analysis.bq.legacy.AntsTestResultRow.completion_time:type_name -> google.protobuf.Timestamp
+	12, // 11: luci.analysis.bq.legacy.AntsTestResultRow.insert_time:type_name -> google.protobuf.Timestamp
+	9,  // 12: luci.analysis.bq.legacy.AntsTestResultRow.TestIdentifier.module_parameters:type_name -> luci.analysis.bq.legacy.StringPair
+	1,  // 13: luci.analysis.bq.legacy.AntsTestResultRow.AggregationDetail.aggregation_level:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.AggregationLevel
+	5,  // 14: luci.analysis.bq.legacy.AntsTestResultRow.AggregationDetail.status_aggregation:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.StatusAggregation
+	0,  // 15: luci.analysis.bq.legacy.AntsTestResultRow.StatusAggregation.status:type_name -> luci.analysis.bq.legacy.AntsTestResultRow.TestStatus
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_bq_legacy_ants_test_result_row_proto_init() }
