@@ -663,45 +663,67 @@ func runAuthDBChange(ctx context.Context, historicalComment string, f func(conte
 	}, nil)
 }
 
-// GetAuthGroup gets the AuthGroup with the given id(groupName).
-// Members will be unsharded if necessary.
-//
-// Returns datastore.ErrNoSuchEntity if the group given is not present.
-// Returns an annotated error for other errors.
-func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
+// getRawAuthGroup is a helper function to get the AuthGroup entity from
+// Datastore. Owners may be set to AdminGroup if currently empty.
+// Note: Members will NOT be unsharded.
+func getRawAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 	if groupName == "" {
 		return nil, fmt.Errorf("%w: empty group name", customerrors.ErrInvalidName)
 	}
 
 	authGroup := makeAuthGroup(ctx, groupName)
-	err := datastore.Get(ctx, authGroup)
-	if err != nil {
+	if err := datastore.Get(ctx, authGroup); err != nil {
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
 			return nil, err
 		}
 		return nil, errors.Fmt("error getting AuthGroup: %w", err)
 	}
 
-	// Set the Owners field to the admin group if it's empty, which may
-	// happen if the group was created by the Python version of
-	// Auth Service.
+	// Set the Owners field to the admin group if it's empty, which may happen if
+	// the group was created by the Python version of Auth Service.
 	if authGroup.Owners == "" {
 		authGroup.Owners = AdminGroup
 	}
 
-	if err := authGroup.restoreMembersFromShards(ctx); err != nil {
+	return authGroup, nil
+}
+
+// GetAuthGroup gets the AuthGroup with the given id(groupName).
+// Members will be unsharded if necessary.
+//
+// Returns datastore.ErrNoSuchEntity if the group given is not present.
+// Returns an annotated error for other errors.
+func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
+	authGroup, err := getRawAuthGroup(ctx, groupName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := authGroup.restoreMembers(ctx); err != nil {
 		return nil, err
 	}
 
 	return authGroup, nil
 }
 
+// getRawAuthGroups is a helper function to get all AuthGroup entities from
+// Datastore. Owners may be set to AdminGroup if currently empty.
+// Note: Members will NOT be unsharded.
 func getRawAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 	query := datastore.NewQuery("AuthGroup").Ancestor(RootKey(ctx))
 	var authGroups []*AuthGroup
 	err := datastore.GetAll(ctx, query, &authGroups)
 	if err != nil {
 		return nil, errors.Fmt("error getting all AuthGroup entities: %w", err)
+	}
+
+	for _, authGroup := range authGroups {
+		// Set the Owners field to the admin group if it's empty, which may
+		// happen if the group was created by the Python version of
+		// Auth Service.
+		if authGroup.Owners == "" {
+			authGroup.Owners = AdminGroup
+		}
 	}
 
 	return authGroups, nil
@@ -729,14 +751,7 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 					return nil
 				}
 
-				// Set the Owners field to the admin group if it's empty, which may
-				// happen if the group was created by the Python version of
-				// Auth Service.
-				if authGroup.Owners == "" {
-					authGroup.Owners = AdminGroup
-				}
-
-				if err := authGroup.restoreMembersFromShards(ctx); err != nil {
+				if err := authGroup.restoreMembers(ctx); err != nil {
 					return err
 				}
 
@@ -1093,13 +1108,12 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 	}
 
 	err := runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
-		var ok bool
 		// Fetch the group and check the user is an admin or a group owner.
-		authGroup, err := GetAuthGroup(ctx, groupUpdate.ID)
+		authGroup, err := getRawAuthGroup(ctx, groupUpdate.ID)
 		if err != nil {
 			return err
 		}
-		ok, err = auth.IsMember(ctx, AdminGroup, authGroup.Owners)
+		ok, err := auth.IsMember(ctx, AdminGroup, authGroup.Owners)
 		if err != nil {
 			return errors.Fmt("permission check failed: %w", err)
 		}
@@ -1111,6 +1125,15 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		// Verify etag (if provided) to protect against concurrent modifications.
 		if etag != "" && authGroup.etag() != etag {
 			return errors.Fmt("group %q was updated by someone else: %w", authGroup.ID, customerrors.ErrConcurrentModification)
+		}
+
+		// Get the existing shards and ensure Members have been restored.
+		oldShards, err := authGroup.getShards(ctx)
+		if err != nil {
+			return err
+		}
+		if err := authGroup.restoreMembers(ctx); err != nil {
+			return err
 		}
 
 		// Update fields according to the mask.
@@ -1193,10 +1216,6 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 
 		// The shards for the old revision of this group should be removed if they
 		// are no longer referenced.
-		oldShards, err := authGroup.getShards(ctx)
-		if err != nil {
-			return err
-		}
 		unreferencedShards := make(map[string]*AuthGroupShard, len(oldShards))
 		for _, shard := range oldShards {
 			unreferencedShards[shard.ID] = shard
@@ -1308,8 +1327,8 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		// Fetch the group and check the user is an admin or a group owner.
-		authGroup := makeAuthGroup(ctx, groupName)
-		if err := datastore.Get(ctx, authGroup); err != nil {
+		authGroup, err := getRawAuthGroup(ctx, groupName)
+		if err != nil {
 			return err
 		}
 		ok, err := auth.IsMember(ctx, AdminGroup, authGroup.Owners)
@@ -2147,7 +2166,8 @@ func (group *AuthGroup) getShards(ctx context.Context) ([]*AuthGroupShard, error
 
 // getMembersFromShards gets the group's shards from Datastore and unshards them
 // to get the members value used to create the shards.
-// Note: this method *DOES NOT* modify the group.
+// Note: this method *DOES NOT* modify the group. If the group isn't sharded,
+// returns (nil, nil).
 func (group *AuthGroup) getMembersFromShards(ctx context.Context) ([]string, error) {
 	shards, err := group.getShards(ctx)
 	if err != nil {
@@ -2180,10 +2200,11 @@ func (group *AuthGroup) setShardIDs(ctx context.Context, shards []*AuthGroupShar
 	group.Members = nil
 }
 
-// restoreMembersFromShards restores the group's Members field from its shards,
+// restoreMembers restores the group's Members field from its shards,
 // if sharded. The group's ShardIDs will be cleared to denote the Members field
 // has been restored.
-func (group *AuthGroup) restoreMembersFromShards(ctx context.Context) error {
+// Note: this is a no-op for groups which aren't sharded.
+func (group *AuthGroup) restoreMembers(ctx context.Context) error {
 	if len(group.ShardIDs) == 0 {
 		// Nothing to do.
 		return nil

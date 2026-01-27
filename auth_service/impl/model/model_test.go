@@ -1097,11 +1097,13 @@ func TestUpdateAuthGroup(t *testing.T) {
 			})
 
 			t.Run("sharded -> unsharded", func(t *ftt.Test) {
-				expectedMembers := group.Members
+				expectedMembers := []string{"user:tester@example.com"}
 
 				// Put a sharded group into Datastore.
+				group.Members = expectedMembers
 				shards, err := createAuthGroupShards(ctx, group, 10)
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, shards, should.NotBeEmpty)
 				group.setShardIDs(ctx, shards)
 				assert.Loosely(t, datastore.Put(ctx, group, shards), should.BeNil)
 
@@ -1137,6 +1139,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 				bigGroup.ModifiedTS = testModifiedTS
 				shards, err := createAuthGroupShards(ctx, bigGroup, MaxGroupShardSize)
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, shards, should.NotBeEmpty)
 				bigGroup.setShardIDs(ctx, shards)
 				assert.Loosely(t, datastore.Put(ctx, bigGroup, shards), should.BeNil)
 
@@ -1392,6 +1395,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 			group := oversizedAuthGroup(ctx, "tst-oversized-group")
 			shards, err := createAuthGroupShards(ctx, group, MaxGroupShardSize)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, shards, should.NotBeEmpty)
 			group.setShardIDs(ctx, shards)
 			assert.Loosely(t, datastore.Put(ctx, group, shards), should.BeNil)
 			fetchedGroups, err := getAllDatastoreEntities(ctx, "AuthGroup", RootKey(ctx))
@@ -2683,7 +2687,7 @@ func TestAuthGroupSharding(t *testing.T) {
 
 			assert.Loosely(t, datastore.Put(ctx, group, shards), should.BeNil)
 
-			assert.Loosely(t, group.restoreMembersFromShards(ctx), should.BeNil)
+			assert.Loosely(t, group.restoreMembers(ctx), should.BeNil)
 			assert.Loosely(t, group.Members, should.Match(expectedMembers))
 			assert.Loosely(t, group.ShardIDs, should.BeNil)
 		})

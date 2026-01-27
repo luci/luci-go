@@ -455,17 +455,19 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 	toUpdate := sysGroupsSet.Intersect(iGroupsSet).ToSlice()
 	for _, g := range toUpdate {
 		existingGroup := existingGroups[g]
-		members := existingGroup.Members
-		if len(existingGroup.ShardIDs) > 0 {
-			members, err = existingGroup.getMembersFromShards(ctx)
-			if err != nil {
-				return nil, nil, nil, err
-			}
+
+		// Get the existing shards and ensure Members have been restored.
+		oldShards, err := existingGroup.getShards(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if err := existingGroup.restoreMembers(ctx); err != nil {
+			return nil, nil, nil, err
 		}
 
 		importedMembers := identitiesToStrings(iGroups[g])
-		if len(importedMembers) == len(members) &&
-			stringset.NewFromSlice(importedMembers...).HasAll(members...) {
+		if len(importedMembers) == len(existingGroup.Members) &&
+			stringset.NewFromSlice(importedMembers...).HasAll(existingGroup.Members...) {
 			// The group hasn't changed, so skip updating it.
 			continue
 		}
@@ -476,10 +478,6 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 
 		// The shards for the old revision of this group should be removed if they
 		// are no longer referenced.
-		oldShards, err := existingGroup.getShards(ctx)
-		if err != nil {
-			return nil, nil, nil, err
-		}
 		unreferencedShards := make(map[string]*AuthGroupShard, len(oldShards))
 		for _, shard := range oldShards {
 			unreferencedShards[shard.ID] = shard
@@ -498,8 +496,6 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 				// The shard is still referenced, so it shouldn't be deleted from Datastore.
 				delete(unreferencedShards, shard.ID)
 			}
-		} else {
-			existingGroup.ShardIDs = nil
 		}
 
 		logging.Infof(ctx, "U %s", existingGroup.ID)
@@ -530,12 +526,11 @@ func prepareImport(ctx context.Context, systemName string, existingGroups map[st
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		if len(shards) > 0 {
-			// Delete this group's shards.
-			for _, shard := range shards {
-				toDel = append(toDel, shard)
-			}
+		// Delete this group's shards.
+		for _, shard := range shards {
+			toDel = append(toDel, shard)
 		}
+
 		if isSubgroup {
 			// The group is a subgroup of another so it shouldn't be deleted.
 			// Clear its members (if they haven't yet been cleared).

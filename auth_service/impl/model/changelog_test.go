@@ -569,7 +569,7 @@ func TestGenerateChanges(t *testing.T) {
 				}})
 				// Check that the members added were actually stored.
 				membersAddedChange := actualChanges[1]
-				assert.Loosely(t, membersAddedChange.restoreMembersFromShards(ctx), should.BeNil)
+				assert.Loosely(t, membersAddedChange.restoreMembers(ctx), should.BeNil)
 				added := stringset.NewFromSlice(membersAddedChange.Members...)
 				expected := stringset.NewFromSlice(group.Members...)
 				assert.Loosely(t, added.Contains(expected), should.BeTrue)
@@ -1415,7 +1415,7 @@ func TestAuthDBChangeSharding(t *testing.T) {
 
 			assert.Loosely(t, datastore.Put(ctx, change, shards), should.BeNil)
 
-			assert.Loosely(t, change.restoreMembersFromShards(ctx), should.BeNil)
+			assert.Loosely(t, change.restoreMembers(ctx), should.BeNil)
 			assert.Loosely(t, change.Members, should.Match(expectedMembers))
 			assert.Loosely(t, change.ShardIDs, should.BeNil)
 		})

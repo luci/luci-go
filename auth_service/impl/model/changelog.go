@@ -343,19 +343,17 @@ func GetAllAuthDBChange(ctx context.Context, req *rpcpb.ListChangeLogsRequest) (
 
 	var nextCur datastore.Cursor
 	err = datastore.Run(ctx, query, func(change *AuthDBChange, cb datastore.CursorCB) error {
-		if len(change.ShardIDs) > 0 {
-			if sErr := change.restoreMembersFromShards(ctx); sErr != nil {
-				// Log the error but still return the change; a problematic change shouldn't
-				// prevent other changes from being fetched.
-				logging.Errorf(ctx, "error restoring Members from shards for target %s: %w",
-					change.Target, sErr)
+		if sErr := change.restoreMembers(ctx); sErr != nil {
+			// Log the error but still return the change; a problematic change shouldn't
+			// prevent other changes from being fetched.
+			logging.Errorf(ctx, "error restoring Members from shards for target %s: %w",
+				change.Target, sErr)
 
-				if !transient.Tag.In(sErr) {
-					// Clear the ShardIDs to denote unsharding was attempted but results
-					// in a non-transient error. This prevents future unsharding attempts,
-					// such as when the change is converted to a proto.
-					change.ShardIDs = nil
-				}
+			if !transient.Tag.In(sErr) {
+				// Clear the ShardIDs to denote unsharding was attempted but results
+				// in a non-transient error. This prevents future unsharding attempts,
+				// such as when the change is converted to a proto.
+				change.ShardIDs = nil
 			}
 		}
 
@@ -385,9 +383,10 @@ func (ct ChangeType) ToString() string {
 	return val
 }
 
-// getMembersFromShards gets the AuthDBChange's shards from Datastore and unshards
-// them to get the members value used to create the shards.
-// Note: this method *DOES NOT* modify the AuthDBChange.
+// getMembersFromShards gets the AuthDBChange's shards from Datastore and
+// unshards them to get the members value used to create the shards.
+// Note: this method *DOES NOT* modify the AuthDBChange. If the change isn't
+// sharded, returns (nil, nil).
 func (change *AuthDBChange) getMembersFromShards(ctx context.Context) ([]string, error) {
 	if change == nil || len(change.ShardIDs) == 0 {
 		return nil, nil
@@ -430,10 +429,11 @@ func (change *AuthDBChange) setShardIDs(ctx context.Context, shards []*AuthDBCha
 	change.Members = nil
 }
 
-// restoreMembersFromShards restores the AuthDBChange's Members field from its
+// restoreMembers restores the AuthDBChange's Members field from its
 // shards, if sharded. The AuthDBChange's ShardIDs will be cleared to denote the
 // Members field has been restored.
-func (change *AuthDBChange) restoreMembersFromShards(ctx context.Context) error {
+// Note: this is a no-op for changes which aren't sharded.
+func (change *AuthDBChange) restoreMembers(ctx context.Context) error {
 	if len(change.ShardIDs) == 0 {
 		// Nothing to do.
 		return nil
