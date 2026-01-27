@@ -17,6 +17,7 @@ import { GridRenderCellParams } from '@mui/x-data-grid';
 import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { CellWithTooltip } from '@/fleet/components/table';
 import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
@@ -89,6 +90,22 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
         getSwarmingStateDocLinkForLabel,
         getStatusColor,
       )({ ...params, value: stateValue.toUpperCase() });
+    },
+  },
+  'ufs.hostname': {
+    renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
+      const swarmingInstance =
+        params.row?.ufsLabels?.['swarming_instance']?.values?.[0];
+      const swarmingHost =
+        swarmingInstance && `${swarmingInstance}.appspot.com`;
+
+      if (params.value && swarmingHost) {
+        return renderCellWithLink<BrowserDevice>((value) => {
+          return `https://${swarmingHost}/bot?id=${value}`;
+        })(params);
+      } else {
+        return <CellWithTooltip {...params}></CellWithTooltip>;
+      }
     },
   },
 };

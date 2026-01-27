@@ -21,6 +21,7 @@ import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { getStatusColor } from '@/fleet/pages/device_list_page/chromeos/dut_state';
+import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import {
@@ -151,6 +152,11 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<
   'label-servo_usb_state': {
     renderCell: renderCellWithLink((value) =>
       getSwarmingStateDocLinkForLabel(`${value}-2`),
+    ),
+  },
+  bot_id: {
+    renderCell: renderCellWithLink(
+      (value) => `https://${DEVICE_TASKS_SWARMING_HOST}/bot?id=${value}`,
     ),
   },
 };
