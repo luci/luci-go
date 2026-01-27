@@ -13,10 +13,12 @@
 // limitations under the License.
 
 import { GridRenderCellParams } from '@mui/x-data-grid';
+import { DateTime } from 'luxon';
 
 import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { CellWithTooltip } from '@/fleet/components/table';
 import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
@@ -92,6 +94,19 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       )({ ...params, value: stateValue.toUpperCase() });
     },
   },
+  'swarming.last_sync': {
+    renderCell: (params) => {
+      const value = params.value as string;
+      if (!value) {
+        return null;
+      }
+      const dt = DateTime.fromISO(value);
+      if (!dt.isValid) {
+        return <>{value}</>;
+      }
+      return <SmartRelativeTimestamp date={dt} />;
+    },
+  },
   'ufs.hostname': {
     renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
       const swarmingInstance =
@@ -106,6 +121,19 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       } else {
         return <CellWithTooltip {...params}></CellWithTooltip>;
       }
+    },
+  },
+  'ufs.last_sync': {
+    renderCell: (params) => {
+      const value = params.value as string;
+      if (!value) {
+        return null;
+      }
+      const dt = DateTime.fromISO(value);
+      if (!dt.isValid) {
+        return <>{value}</>;
+      }
+      return <SmartRelativeTimestamp date={dt} />;
     },
   },
 };
