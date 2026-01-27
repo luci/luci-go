@@ -28,6 +28,7 @@ import {
   OptionComponentHandle,
   OptionComponentProps,
 } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -139,17 +140,19 @@ const TestComponent = ({
     }));
 
   return (
-    <FilterBar
-      filterCategoryDatas={filterCategoryDatas}
-      selectedOptions={selectedOptionKeys}
-      onApply={() => {
-        setSelectedOptions(tempSelectedOption);
-      }}
-      getChipLabel={getChipLabel}
-      onChipDeleted={(option) => {
-        setSelectedOptions((prev) => ({ ...prev, [option.value]: [] }));
-      }}
-    />
+    <ShortcutProvider>
+      <FilterBar
+        filterCategoryDatas={filterCategoryDatas}
+        selectedOptions={selectedOptionKeys}
+        onApply={() => {
+          setSelectedOptions(tempSelectedOption);
+        }}
+        getChipLabel={getChipLabel}
+        onChipDeleted={(option) => {
+          setSelectedOptions((prev) => ({ ...prev, [option.value]: [] }));
+        }}
+      />
+    </ShortcutProvider>
   );
 };
 

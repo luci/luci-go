@@ -16,6 +16,7 @@ import { render, screen } from '@testing-library/react';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { Header } from './header';
@@ -28,9 +29,11 @@ describe('Header', () => {
       identity: '',
     });
     const { rerender } = render(
-      <FakeContextProvider>
-        <Header sidebarOpen={false} setSidebarOpen={() => {}} />,
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider>
+          <Header sidebarOpen={false} setSidebarOpen={() => {}} />,
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
 
     expect(screen.getByText('Login')).toBeInTheDocument();
@@ -39,9 +42,11 @@ describe('Header', () => {
       identity: ANONYMOUS_IDENTITY,
     });
     rerender(
-      <FakeContextProvider>
-        <Header sidebarOpen={false} setSidebarOpen={() => {}} />,
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider>
+          <Header sidebarOpen={false} setSidebarOpen={() => {}} />,
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
     expect(screen.getByText('Login')).toBeInTheDocument();
   });
@@ -53,9 +58,11 @@ describe('Header', () => {
       picture: 'avatar_url',
     });
     render(
-      <FakeContextProvider>
-        <Header sidebarOpen={false} setSidebarOpen={() => {}} />,
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider>
+          <Header sidebarOpen={false} setSidebarOpen={() => {}} />,
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
     expect(screen.getByLabelText('avatar')).toBeInTheDocument();
   });
@@ -65,9 +72,11 @@ describe('Header', () => {
       identity: ANONYMOUS_IDENTITY,
     });
     render(
-      <FakeContextProvider>
-        <Header sidebarOpen={false} setSidebarOpen={() => {}} />
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider>
+          <Header sidebarOpen={false} setSidebarOpen={() => {}} />
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
 
     const logoLink = screen.getByRole('link', { name: /logo/i });
@@ -82,14 +91,16 @@ describe('Header', () => {
       identity: ANONYMOUS_IDENTITY,
     });
     render(
-      <FakeContextProvider
-        mountedPath="/p/:platform"
-        routerOptions={{
-          initialEntries: ['/p/android'],
-        }}
-      >
-        <Header sidebarOpen={false} setSidebarOpen={() => {}} />
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider
+          mountedPath="/p/:platform"
+          routerOptions={{
+            initialEntries: ['/p/android'],
+          }}
+        >
+          <Header sidebarOpen={false} setSidebarOpen={() => {}} />
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
 
     const logoLink = screen.getByRole('link', { name: /logo/i });

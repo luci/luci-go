@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
+import { useShortcut } from '@/fleet/components/shortcut_provider';
 import { COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
 
 import {
@@ -55,24 +56,10 @@ export function FilterBar<T>({
     setValue(newValue);
   };
 
-  useEffect(() => {
-    const f = (e: KeyboardEvent) => {
-      if (e.key === '/') {
-        if (
-          searchBarRef.current &&
-          !searchBarRef.current.contains(document.activeElement)
-        ) {
-          e.preventDefault();
-          searchBarRef.current.focus();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', f);
-    return () => {
-      window.removeEventListener('keydown', f);
-    };
-  }, []);
+  useShortcut('Focus search bar', '/', (e) => {
+    e.preventDefault();
+    searchBarRef.current?.focus();
+  });
 
   return (
     <div css={{ display: 'flex', gap: 8, width: '100%', position: 'relative' }}>

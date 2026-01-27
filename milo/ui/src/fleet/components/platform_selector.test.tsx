@@ -16,37 +16,44 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import { PlatformSelector } from './platform_selector';
+import { ShortcutProvider } from './shortcut_provider';
 
 describe('PlatformSelector', () => {
   it('renders the platform selector button pages that support platforms', () => {
     render(
-      <MemoryRouter initialEntries={['/repairs/android']}>
-        <Routes>
-          <Route path="/repairs/:platform" element={<PlatformSelector />} />
-        </Routes>
-      </MemoryRouter>,
+      <ShortcutProvider>
+        <MemoryRouter initialEntries={['/repairs/android']}>
+          <Routes>
+            <Route path="/repairs/:platform" element={<PlatformSelector />} />
+          </Routes>
+        </MemoryRouter>
+      </ShortcutProvider>,
     );
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('renders the platform selector button even with an invalid platform', () => {
     render(
-      <MemoryRouter initialEntries={['/repairs/invalidplatform']}>
-        <Routes>
-          <Route path="/repairs/:platform" element={<PlatformSelector />} />
-        </Routes>
-      </MemoryRouter>,
+      <ShortcutProvider>
+        <MemoryRouter initialEntries={['/repairs/invalidplatform']}>
+          <Routes>
+            <Route path="/repairs/:platform" element={<PlatformSelector />} />
+          </Routes>
+        </MemoryRouter>
+      </ShortcutProvider>,
     );
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('does not render the platform selector button on other pages', () => {
     render(
-      <MemoryRouter initialEntries={['/randompage']}>
-        <Routes>
-          <Route path="/test/:platform" element={<PlatformSelector />} />
-        </Routes>
-      </MemoryRouter>,
+      <ShortcutProvider>
+        <MemoryRouter initialEntries={['/randompage']}>
+          <Routes>
+            <Route path="/test/:platform" element={<PlatformSelector />} />
+          </Routes>
+        </MemoryRouter>
+      </ShortcutProvider>,
     );
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });

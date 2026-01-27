@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ResourceRequestListPage } from './resource_request_insights_page';
@@ -21,9 +22,11 @@ import { ResourceRequestListPage } from './resource_request_insights_page';
 describe('<ResourceRequestListPage />', () => {
   it('renders loading by default', async () => {
     render(
-      <FakeContextProvider>
-        <ResourceRequestListPage />
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider>
+          <ResourceRequestListPage />
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
 
     expect(screen.getByTestId('loading-spinner')).toBeVisible();

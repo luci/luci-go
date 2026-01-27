@@ -38,6 +38,7 @@ import {
   prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -317,9 +318,11 @@ describe('<MaterialReactTable />', () => {
 
   it('should render all columns', async () => {
     render(
-      <FakeContextProvider>
-        <TestComponent />
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider>
+          <TestComponent />
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());
@@ -330,9 +333,11 @@ describe('<MaterialReactTable />', () => {
 
   it('should reflect page size change properly', async () => {
     render(
-      <FakeContextProvider>
-        <TestComponent />
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider>
+          <TestComponent />
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());
@@ -352,9 +357,11 @@ describe('<MaterialReactTable />', () => {
 
   it('should navigate between pages properly', async () => {
     render(
-      <FakeContextProvider>
-        <TestComponent />
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider>
+          <TestComponent />
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());

@@ -32,6 +32,8 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 
 import { getFeatureFlag } from '../config/features';
 
+import { useShortcut } from './shortcut_provider';
+
 export function PlatformSelector() {
   const platform = usePlatform();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -54,6 +56,25 @@ export function PlatformSelector() {
     platform.setPlatform(newPlatform);
     handleClose();
   };
+
+  useShortcut(
+    'Switch to Android',
+    'g a',
+    () => handlePlatformSelect(Platform.ANDROID),
+    { category: 'Navigation' },
+  );
+  useShortcut(
+    'Switch to Chrome OS',
+    'g c',
+    () => handlePlatformSelect(Platform.CHROMEOS),
+    { category: 'Navigation' },
+  );
+  useShortcut(
+    'Switch to Chrome Browser',
+    'g b',
+    () => handlePlatformSelect(Platform.CHROMIUM),
+    { category: 'Navigation', enabled: getFeatureFlag('BrowserListDevices') },
+  );
 
   return (
     <>

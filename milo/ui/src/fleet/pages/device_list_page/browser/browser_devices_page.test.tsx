@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BrowserDevicesPage } from './browser_devices_page';
@@ -21,14 +22,16 @@ import { BrowserDevicesPage } from './browser_devices_page';
 describe('<BrowserDevicesPage />', () => {
   it('should render', async () => {
     render(
-      <FakeContextProvider
-        mountedPath="/p/:platform/devices"
-        routerOptions={{
-          initialEntries: ['/p/chromium/devices'],
-        }}
-      >
-        <BrowserDevicesPage />
-      </FakeContextProvider>,
+      <ShortcutProvider>
+        <FakeContextProvider
+          mountedPath="/p/:platform/devices"
+          routerOptions={{
+            initialEntries: ['/p/chromium/devices'],
+          }}
+        >
+          <BrowserDevicesPage />
+        </FakeContextProvider>
+      </ShortcutProvider>,
     );
 
     expect(screen.getByText('Main metrics')).toBeVisible();

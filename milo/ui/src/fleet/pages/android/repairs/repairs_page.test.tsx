@@ -15,6 +15,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen } from '@testing-library/react';
 
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import * as PrpcClients from '@/fleet/hooks/prpc_clients';
 import { createMockUseFleetConsoleClient } from '@/fleet/testing_tools/mocks/fleet_console_client';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -35,9 +36,11 @@ describe('RepairListPage', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <FakeContextProvider>
-          <RepairListPage />
-        </FakeContextProvider>
+        <ShortcutProvider>
+          <FakeContextProvider>
+            <RepairListPage />
+          </FakeContextProvider>
+        </ShortcutProvider>
       </QueryClientProvider>,
     );
     act(() => {
