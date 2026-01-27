@@ -601,7 +601,7 @@ CREATE TABLE TestResultsV2 (
   -- as the realm of the work unit. Used to enforce access control.
   Realm STRING(64) NOT NULL,
 
-  -- Test status V2, see `status_v2` in test_result.proto.
+  -- Test status V2; see TestResult.Status in resultdb/proto/v1/test_result.proto.
   StatusV2 INT64 NOT NULL,
 
   -- Compressed summary of the test result for humans, in HTML.
@@ -663,8 +663,25 @@ CREATE TABLE TestResultsV2 (
   -- See `framework_extensions` in test_results.proto for details.
   -- See spanutil.Compressed type for details of compression.
   FrameworkExtensions BYTES(MAX),
+
+  -- Whether this test result is unsuccessful.
+  --
+  -- This is true for FAILED (2), EXECUTION_ERRORED (4) and PRECLUDED (5) results,
+  -- and NULL otherwise, to facilitate NULL_FILTERED indexes.
+  -- See also TestResult.Status in resultdb/proto/v1/test_result.proto.
+  IsUnsuccessful BOOL AS (IF(StatusV2 = 2 OR StatusV2 = 4 OR StatusV2 = 5, TRUE, NULL)) STORED,
 ) PRIMARY KEY (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ResultId),
   INTERLEAVE IN PARENT RootInvocationShards ON DELETE CASCADE;
+
+-- Stores test results which are FAILED, EXECUTION_ERRORED or PRECLUDED,
+-- i.e. which are uninteresting and may indicate a verdict that is prioritised
+-- for display in LUCI UI (e.g. a FAILED, EXECUTION_ERRORED, PRECLUDED or FLAKY
+-- verdict).
+-- Interleaved in RootInvocationShards.
+CREATE NULL_FILTERED INDEX UnsuccessfulTestResultsV2
+  ON TestResultsV2 (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName, WorkUnitId, ResultId, IsUnsuccessful)
+  STORING (ModuleVariant, Realm, StatusV2),
+  INTERLEAVE IN RootInvocationShards;
 
 -- Stores test exonerations in a root invocation.
 CREATE TABLE TestExonerationsV2 (
