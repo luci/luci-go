@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Chip } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
 
@@ -36,7 +35,6 @@ import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { SelectedOptions } from '@/fleet/types';
@@ -48,7 +46,6 @@ import {
 } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
-  CountDevicesRequest,
   ListDevicesRequest,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -105,7 +102,6 @@ export const AndroidDevicesPage = () => {
     ? ''
     : stringifyFilters(selectedOptions.filters);
 
-  const client = useFleetConsoleClient();
   const dimensionsQuery = useDeviceDimensions({ platform });
 
   // TODO: b/419764393, b/420287987 - In local storage REACT_QUERY_OFFLINE_CACHE can contain empty data object which causes app to crash.
@@ -113,15 +109,6 @@ export const AndroidDevicesPage = () => {
     dimensionsQuery.data &&
     dimensionsQuery.data.baseDimensions &&
     dimensionsQuery.data.labels;
-
-  const countQuery = useQuery({
-    ...client.CountDevices.query(
-      CountDevicesRequest.fromPartial({
-        filter: stringifiedSelectedOptions,
-        platform: platform,
-      }),
-    ),
-  });
 
   const request = ListDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
@@ -133,7 +120,11 @@ export const AndroidDevicesPage = () => {
 
   const devicesQuery = useAndroidDevices(request);
 
-  const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
+  const {
+    devices = [],
+    nextPageToken = '',
+    totalSize = 0,
+  } = devicesQuery.data || {};
   const columnIds = useMemo(() => {
     const ids: string[] = [];
     if (isDimensionsQueryProperlyLoaded) {
@@ -291,7 +282,7 @@ export const AndroidDevicesPage = () => {
           error={devicesQuery.error || dimensionsQuery.error}
           isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
           isLoadingColumns={dimensionsQuery.isPending || devicesQuery.isPending}
-          totalRowCount={countQuery?.data?.total}
+          totalRowCount={totalSize}
           getRowId={(row) =>
             row.id + (row.omnilabSpec?.labels?.fc_machine_type?.values ?? '')
           }
