@@ -49,9 +49,10 @@ func TestIteratorQuery(t *testing.T) {
 				Level: permissions.FullAccess,
 			},
 			// Using BASIC for testing as it tends to pick up more issues
-			// than using FULL, in particular any erroneous dependencies
-			// on fields from the FULL view.
-			View: pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC,
+			// than using FULL, in particular any dependencies on fields
+			// from the FULL view that should not exist.
+			View:  pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC,
+			Order: testresultsv2.OrderingByPrimaryKey,
 		}
 
 		fetchOne := func(q *IteratorQuery, pageToken PageToken, opts IteratorFetchOptions) ([]*pb.TestVerdict, PageToken, error) {
@@ -106,6 +107,38 @@ func TestIteratorQuery(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, token, should.Match(PageToken{}))
 			assert.Loosely(t, verdicts, should.Match(expected))
+		})
+
+		t.Run("Ordering by test ID", func(t *ftt.Test) {
+			q.Order = testresultsv2.OrderingByTestID
+
+			// Map expected items to map for easy retrieval
+			m := make(map[string]*pb.TestVerdict)
+			for _, v := range expected {
+				m[v.TestId] = v
+			}
+
+			expectedOrder := []*pb.TestVerdict{
+				m[flatTestID("m1", "c1", "f1", "t1")],
+				m[flatTestID("m1", "c1", "f1", "t2")],
+				m[flatTestID("m1", "c1", "f1", "t3")],
+				m[flatTestID("m1", "c1", "f1", "t4")],
+				m[flatTestID("m1", "c1", "f2", "t5")],
+				m[flatTestID("m1", "c2", "f1", "t6")],
+				m[flatTestID("m2", "c1", "f1", "t7")],
+			}
+
+			t.Run("Without pagination", func(t *ftt.Test) {
+				results, pageToken, err := fetchOne(q, PageToken{}, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pageToken, should.Match(PageToken{}))
+				assert.Loosely(t, results, should.Match(expectedOrder))
+			})
+			t.Run("With pagination", func(t *ftt.Test) {
+				opts.PageSize = 1
+				results := fetchAll(q, opts)
+				assert.Loosely(t, results, should.Match(expectedOrder))
+			})
 		})
 
 		t.Run("With page size limit", func(t *ftt.Test) {

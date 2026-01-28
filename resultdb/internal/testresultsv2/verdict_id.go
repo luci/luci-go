@@ -40,13 +40,15 @@ type VerdictID struct {
 }
 
 // Compare returns -1 iff id < other, 0 iff id == other and 1 iff id > other
-// in TestResultV2 / TestExonerationV2 table order.
-func (id VerdictID) Compare(other VerdictID) int {
-	if id.RootInvocationShardID != other.RootInvocationShardID {
-		if id.RootInvocationShardID.Before(other.RootInvocationShardID) {
-			return -1
+// in the given ordering.
+func (id VerdictID) Compare(other VerdictID, order Ordering) int {
+	if order == OrderingByPrimaryKey {
+		if id.RootInvocationShardID != other.RootInvocationShardID {
+			if id.RootInvocationShardID.Before(other.RootInvocationShardID) {
+				return -1
+			}
+			return 1
 		}
-		return 1
 	}
 	if id.ModuleName != other.ModuleName {
 		return strings.Compare(id.ModuleName, other.ModuleName)

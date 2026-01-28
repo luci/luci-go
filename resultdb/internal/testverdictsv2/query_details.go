@@ -41,6 +41,11 @@ import (
 type IteratorQuery struct {
 	// The root invocation.
 	RootInvocationID rootinvocations.ID
+	// The order in which to return verdicts.
+	//
+	// If VerdictIDs is set, this field is ignored, and Verdicts
+	// will always be returned in the same order as VerdictIDs.
+	Order testresultsv2.Ordering
 	// The test prefix filter to apply.
 	TestPrefixFilter *pb.TestIdentifierPrefix
 	// The specific verdicts to filter to. If this is set, both
@@ -192,7 +197,7 @@ func (q *IteratorQuery) List(ctx context.Context, pageToken PageToken, bufferSiz
 		TestPrefixFilter: q.TestPrefixFilter,
 		VerdictIDs:       q.VerdictIDs,
 		Access:           q.Access,
-		Order:            testresultsv2.OrderingByPrimaryKey,
+		Order:            q.Order,
 		BasicFieldsOnly:  q.View != pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
 	}
 	trPageToken := pageToken.toTestResultsPageToken()
@@ -225,7 +230,7 @@ func (q *IteratorQuery) List(ctx context.Context, pageToken PageToken, bufferSiz
 		TestPrefixFilter: q.TestPrefixFilter,
 		VerdictIDs:       q.VerdictIDs,
 		Access:           q.Access,
-		Order:            testresultsv2.OrderingByPrimaryKey,
+		Order:            q.Order,
 	}
 	tePageToken := pageToken.toTestExonerationsPageToken()
 	teOpts := spanutil.BufferingOptions{
@@ -255,6 +260,7 @@ func (q *IteratorQuery) List(ctx context.Context, pageToken PageToken, bufferSiz
 		testResults:        spanutil.NewPeekingIterator(trIterator),
 		testExonerations:   spanutil.NewPeekingIterator(teIterator),
 		lastRequestOrdinal: pageToken.RequestOrdinal,
+		order:              q.Order,
 	}
 }
 
@@ -266,6 +272,7 @@ type Iterator struct {
 	testResults        *spanutil.PeekingIterator[*testresultsv2.TestResultRow]
 	testExonerations   *spanutil.PeekingIterator[*testexonerationsv2.TestExonerationRow]
 	lastRequestOrdinal int
+	order              testresultsv2.Ordering
 }
 
 // Next returns the next test verdict.
@@ -330,10 +337,12 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 			return nil, fmt.Errorf("peek next exoneration: %w", err)
 		}
 
+		// Determine the position of this exoneration relative to the current verdict.
 		ePosition := positionFromExoneration(e)
-		cmp := ePosition.Compare(position)
+		cmp := ePosition.Compare(position, i.order)
 		if cmp < 0 {
-			// Exoneration for a verdict we have already passed (never saw results for).
+			// Exoneration for a verdict we have already passed
+			// (never saw results for).
 			// Skip it.
 			if _, err := i.testExonerations.Next(); err != nil {
 				return nil, fmt.Errorf("consume test exoneration: %w", err)
@@ -341,7 +350,8 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 			continue
 		}
 		if cmp > 0 {
-			// Exoneration is for a future verdict. Do not consume it.
+			// Exoneration is for a future verdict (under the current iteration order).
+			// Do not consume it.
 			break
 		}
 
@@ -431,8 +441,8 @@ type IteratorPosition struct {
 }
 
 // Compare returns -1 iff t < other, 0 iff t == other and 1 iff t > other
-// in TestResultV2 / TestExonerationV2 table order.
-func (t IteratorPosition) Compare(other IteratorPosition) int {
+// in the given ordering.
+func (t IteratorPosition) Compare(other IteratorPosition, ordering testresultsv2.Ordering) int {
 	if t.RequestOrdinal > 0 || other.RequestOrdinal > 0 {
 		// Retrieiving nominated verdicts.
 		if t.RequestOrdinal != other.RequestOrdinal {
@@ -443,8 +453,8 @@ func (t IteratorPosition) Compare(other IteratorPosition) int {
 		}
 		return 0
 	}
-	// Retrieving verdicts in ID order.
-	return t.ID.Compare(other.ID)
+	// Compare IDs under the given ordering.
+	return t.ID.Compare(other.ID, ordering)
 }
 
 func positionFromResult(result *testresultsv2.TestResultRow) IteratorPosition {
