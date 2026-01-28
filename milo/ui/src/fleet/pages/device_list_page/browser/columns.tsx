@@ -41,24 +41,22 @@ const destructureColumnId = (id: string) => {
     source = BROWSER_UFS_SOURCE;
   }
 
-  const labelKey = source
-    ? id.replace(`${source}.`, '').replace(/^"|"$/g, '')
-    : id;
+  const labelKey = source ? id.replace(`${source}.`, '') : id;
 
   return {
     labelKey,
     source,
-    header: source ? `${source.replace('_labels', '')}.${labelKey}` : id,
   };
 };
 
 export const getColumn = (id: string): DeviceTableGridColDef<BrowserDevice> => {
-  const { labelKey, source, header } = destructureColumnId(id);
+  const { labelKey, source } = destructureColumnId(id);
 
   return {
     field: id,
-    headerName: header,
+    headerName: source ? `${source.replace('_labels', '')}.${labelKey}` : id,
     orderByField: id,
+    filterByField: source ? `${source}."${labelKey}"` : id,
     editable: false,
     minWidth: 70,
     maxWidth: 700,
@@ -88,14 +86,13 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
 > = {
   id: {
     flex: 3,
-    orderByField: 'id',
     valueGetter: (_value, row) => row.id,
     renderCell: renderCellWithLink(
       (value) => generateBrowserDeviceDetailsURL(value),
       false,
     ),
   },
-  [`${BROWSER_SWARMING_SOURCE}."dut_state"`]: {
+  [`${BROWSER_SWARMING_SOURCE}.dut_state`]: {
     valueGetter: (_, device) =>
       device.swarmingLabels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
     renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
@@ -113,7 +110,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       )({ ...params, value: stateValue.toUpperCase() });
     },
   },
-  [`${BROWSER_SWARMING_SOURCE}."last_sync"`]: {
+  [`${BROWSER_SWARMING_SOURCE}.last_sync`]: {
     renderCell: (params) => {
       const value = params.value as string;
       if (!value) {
@@ -126,7 +123,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       return <SmartRelativeTimestamp date={dt} />;
     },
   },
-  [`${BROWSER_UFS_SOURCE}."hostname"`]: {
+  [`${BROWSER_UFS_SOURCE}.hostname`]: {
     renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
       const swarmingInstance =
         params.row?.ufsLabels?.['swarming_instance']?.values?.[0];
@@ -142,7 +139,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       }
     },
   },
-  [`${BROWSER_UFS_SOURCE}."last_sync"`]: {
+  [`${BROWSER_UFS_SOURCE}.last_sync`]: {
     renderCell: (params) => {
       const value = params.value as string;
       if (!value) {

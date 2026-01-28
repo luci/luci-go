@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  BROWSER_SWARMING_SOURCE,
-  BROWSER_UFS_SOURCE,
-} from '@/fleet/constants/browser';
+import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { StringListCategory } from '@/fleet/types';
 import { GetBrowserDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -38,6 +35,9 @@ describe('dimensionsToFilterOptions', () => {
 
     const labelsOverride = {
       os: { headerName: 'OS' },
+      [`${BROWSER_SWARMING_SOURCE}.zone`]: {
+        filterByField: `${BROWSER_SWARMING_SOURCE}."zone"`,
+      },
     };
 
     const options = dimensionsToFilterOptions(response, labelsOverride);
@@ -55,17 +55,18 @@ describe('dimensionsToFilterOptions', () => {
     ]);
 
     // Check Swarming Label
-    const zoneKey = `${BROWSER_SWARMING_SOURCE}."zone"`;
-    const zoneOption = options.find((o) => o.value === zoneKey);
+    const zoneLabel = `${BROWSER_SWARMING_SOURCE}.zone`;
+    const zoneFilterKey = `${BROWSER_SWARMING_SOURCE}."zone"`;
+    const zoneOption = options.find((o) => o.value === zoneFilterKey);
     expect(zoneOption).toBeDefined();
-    expect(zoneOption?.label).toBe(zoneKey);
+    expect(zoneOption?.label).toBe(zoneLabel);
     expect((zoneOption as StringListCategory)?.options).toEqual([
       { label: BLANK_VALUE, value: BLANK_VALUE },
       { label: 'us-west', value: 'us-west' },
     ]);
 
     // Check UFS Label
-    const modelKey = `${BROWSER_UFS_SOURCE}."model"`;
+    const modelKey = 'ufs_labels.model';
     const modelOption = options.find((o) => o.value === modelKey);
     expect(modelOption).toBeDefined();
     expect(modelOption?.label).toBe(modelKey);

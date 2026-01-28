@@ -25,14 +25,14 @@ import {
 
 const mapDimensionsToCategories = (
   dimensions: { [key: string]: LabelValues },
-  labelsOverride: Record<string, { headerName?: string }>,
-  formatKey: (key: string) => string,
+  columns: Record<string, { headerName?: string; filterByField?: string }>,
+  getColumnId: (key: string) => string,
 ): OptionCategory[] => {
   return Object.entries(dimensions).map(([filterKey, filterValues]) => {
-    const key = formatKey(filterKey);
+    const key = getColumnId(filterKey);
     return {
-      label: labelsOverride[key]?.headerName || key,
-      value: key,
+      label: columns[key]?.headerName || key,
+      value: columns[key]?.filterByField || key,
       options: [
         { label: BLANK_VALUE, value: BLANK_VALUE },
         ...filterValues.values.map((value) => ({ label: value, value })),
@@ -44,23 +44,19 @@ const mapDimensionsToCategories = (
 
 export const dimensionsToFilterOptions = (
   response: GetBrowserDeviceDimensionsResponse,
-  labelsOverride: Record<string, { headerName?: string }>,
+  columns: Record<string, { headerName?: string; filterByField?: string }>,
 ): OptionCategory[] => {
   return [
-    ...mapDimensionsToCategories(
-      response.baseDimensions,
-      labelsOverride,
-      (k) => k,
-    ),
+    ...mapDimensionsToCategories(response.baseDimensions, columns, (k) => k),
     ...mapDimensionsToCategories(
       response.swarmingLabels,
-      labelsOverride,
-      (k) => `${BROWSER_SWARMING_SOURCE}."${k}"`,
+      columns,
+      (k) => `${BROWSER_SWARMING_SOURCE}.${k}`,
     ),
     ...mapDimensionsToCategories(
       response.ufsLabels,
-      labelsOverride,
-      (k) => `${BROWSER_UFS_SOURCE}."${k}"`,
+      columns,
+      (k) => `${BROWSER_UFS_SOURCE}.${k}`,
     ),
   ]
     .sort((a, b) => a.label.localeCompare(b.label)) // Sort alphabetically

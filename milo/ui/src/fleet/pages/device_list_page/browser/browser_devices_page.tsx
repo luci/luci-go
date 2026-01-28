@@ -128,12 +128,12 @@ export const BrowserDevicesPage = () => {
           .concat(
             ...Object.keys(dimensionsQuery.data.swarmingLabels)
               .filter((l) => !EXTRA_COLUMN_IDS.includes(l))
-              .map((l) => `${BROWSER_SWARMING_SOURCE}."${l}"`),
+              .map((l) => `${BROWSER_SWARMING_SOURCE}.${l}`),
           )
           .concat(
             ...Object.keys(dimensionsQuery.data.ufsLabels)
               .filter((l) => !EXTRA_COLUMN_IDS.includes(l))
-              .map((l) => `${BROWSER_UFS_SOURCE}."${l}"`),
+              .map((l) => `${BROWSER_UFS_SOURCE}.${l}`),
           ),
       );
     }
@@ -142,10 +142,10 @@ export const BrowserDevicesPage = () => {
       ids.push(
         ...devicesQuery.data.devices.flatMap((d) => [
           ...Object.keys(d.swarmingLabels ?? {}).map(
-            (l) => `${BROWSER_SWARMING_SOURCE}."${l}"`,
+            (l) => `${BROWSER_SWARMING_SOURCE}.${l}`,
           ),
           ...Object.keys(d.ufsLabels ?? {}).map(
-            (l) => `${BROWSER_UFS_SOURCE}."${l}"`,
+            (l) => `${BROWSER_UFS_SOURCE}.${l}`,
           ),
         ]),
       );
@@ -189,12 +189,27 @@ export const BrowserDevicesPage = () => {
     setSearchParams,
   ]);
 
+  const columnsRecord = useMemo(
+    () => Object.fromEntries(columnIds.map((id) => [id, getColumn(id)])),
+    [columnIds],
+  );
+
+  const validFilterByFields = useMemo(
+    () =>
+      new Set(
+        Object.values(columnsRecord).map(
+          (col) => col.filterByField || col.field,
+        ),
+      ),
+    [columnsRecord],
+  );
+
   useEffect(() => {
     if (selectedOptions.error) return;
     if (!dimensionsQuery.isSuccess) return;
 
     const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
-      (filterKey) => !columnIds.includes(filterKey),
+      (filterKey) => !validFilterByFields.has(filterKey),
     );
     if (missingParamsFilters.length === 0) return;
     addWarning(
@@ -210,7 +225,7 @@ export const BrowserDevicesPage = () => {
     dimensionsQuery,
     selectedOptions,
     setSearchParams,
-    columnIds,
+    validFilterByFields,
   ]);
 
   useEffect(() => {
@@ -218,11 +233,6 @@ export const BrowserDevicesPage = () => {
     addWarning('Invalid filters');
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
-
-  const columnsRecord = useMemo(
-    () => Object.fromEntries(columnIds.map((id) => [id, getColumn(id)])),
-    [columnIds],
-  );
 
   return (
     <div

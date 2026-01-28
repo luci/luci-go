@@ -113,6 +113,7 @@ const getSortModelFromOrderBy = <R extends GridValidRowModel>(
 export type DeviceTableGridColDef<R extends GridValidRowModel> =
   GridColDef<R> & {
     orderByField: string;
+    filterByField?: string;
   };
 
 interface DeviceTableProps<R extends GridValidRowModel> {
