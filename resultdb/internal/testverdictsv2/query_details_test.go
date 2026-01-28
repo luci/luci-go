@@ -43,14 +43,20 @@ func TestQueryDetails(t *testing.T) {
 		ms = append(ms, CreateTestData(rootInvID)...)
 		testutil.MustApply(ctx, t, ms...)
 
-		q := &QueryDetails{
+		q := &IteratorQuery{
 			RootInvocationID: rootInvID,
 			Access: permissions.RootInvocationAccess{
 				Level: permissions.FullAccess,
 			},
 		}
 
-		fetchAll := func(q *QueryDetails, opts FetchOptions) []*pb.TestVerdict {
+		fetchOne := func(q *IteratorQuery, pageToken PageToken, opts IteratorFetchOptions) ([]*pb.TestVerdict, PageToken, error) {
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			return q.Fetch(ctx, pageToken, opts)
+		}
+
+		fetchAll := func(q *IteratorQuery, opts IteratorFetchOptions) []*pb.TestVerdict {
 			var results []*pb.TestVerdict
 			var token PageToken
 			for {
@@ -61,18 +67,18 @@ func TestQueryDetails(t *testing.T) {
 				results = append(results, verdicts...)
 				if nextToken == (PageToken{}) {
 					// This is the last page.
-					assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(opts.PageSize))
+					assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(opts.PageSize), truth.LineContext(1))
 					break
 				} else {
-					if opts.ResponseLimitBytes == 0 {
+					if opts.ResponseLimitBytes == 0 && opts.TotalResultLimit == 0 {
 						// If there were no secondary constraints on the page size,
 						// verify the page is exactly opts.PageSize, not simply less than or equal.
-						assert.Loosely(t, len(verdicts), should.Equal(opts.PageSize))
+						assert.Loosely(t, len(verdicts), should.Equal(opts.PageSize), truth.LineContext(1))
 					} else {
-						// If there was a secondary constraint, there should be between 1
+						// If there was a secondary constraint, there should be between 0
 						// and opts.PageSize results.
-						assert.Loosely(t, len(verdicts), should.BeGreaterThan(0))
-						assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(opts.PageSize))
+						assert.Loosely(t, len(verdicts), should.BeGreaterThanOrEqual(0), truth.LineContext(1))
+						assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(opts.PageSize), truth.LineContext(1))
 					}
 				}
 				token = nextToken
@@ -81,24 +87,26 @@ func TestQueryDetails(t *testing.T) {
 		}
 
 		expected := ExpectedVerdicts(rootInvID)
-		fetchOptions := FetchOptions{
-			PageSize:           100,
-			VerdictResultLimit: 10,
-			VerdictSizeLimit:   1024 * 1024,
+		opts := IteratorFetchOptions{
+			FetchOptions: FetchOptions{
+				PageSize:           100,
+				VerdictResultLimit: 10,
+				VerdictSizeLimit:   1024 * 1024,
+			},
 		}
 
 		t.Run("Baseline", func(t *ftt.Test) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
-			verdicts, token, err := q.Fetch(ctx, PageToken{}, fetchOptions)
+			verdicts, token, err := q.Fetch(ctx, PageToken{}, opts)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, token, should.Match(PageToken{}))
 			assert.Loosely(t, verdicts, should.Match(expected))
 		})
 
 		t.Run("With page size limit", func(t *ftt.Test) {
-			fetchOptions.PageSize = 1
-			results := fetchAll(q, fetchOptions)
+			opts.PageSize = 1
+			results := fetchAll(q, opts)
 			assert.Loosely(t, results, should.Match(expected))
 		})
 
@@ -112,21 +120,21 @@ func TestQueryDetails(t *testing.T) {
 						limit = size
 					}
 				}
-				fetchOptions.ResponseLimitBytes = limit
+				opts.ResponseLimitBytes = limit
 
 				// While results may be split over multiple pages, they should all be
 				// returned.
-				results := fetchAll(q, fetchOptions)
+				results := fetchAll(q, opts)
 				assert.Loosely(t, results, should.Match(expected))
 			})
 			t.Run("Limit is applied correctly", func(t *ftt.Test) {
 				// Should return two rows, as the limit fits only
 				// the first two rows and the limit is hard.
-				fetchOptions.ResponseLimitBytes = (proto.Size(expected[0]) + 1000) + (proto.Size(expected[1]) + 1000) + 1
+				opts.ResponseLimitBytes = (proto.Size(expected[0]) + 1000) + (proto.Size(expected[1]) + 1000) + 1
 
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				verdicts, token, err := q.Fetch(ctx, PageToken{}, fetchOptions)
+				verdicts, token, err := q.Fetch(ctx, PageToken{}, opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, token, should.NotMatch(PageToken{}))
 				assert.Loosely(t, verdicts, should.Match(expected[:2]))
@@ -137,8 +145,8 @@ func TestQueryDetails(t *testing.T) {
 			// t3 has 2 results.
 			// t5 has 2 exonerations.
 			// Limit to 1 result/exoneration.
-			fetchOptions.VerdictResultLimit = 1
-			results := fetchAll(q, fetchOptions)
+			opts.VerdictResultLimit = 1
+			results := fetchAll(q, opts)
 			assert.Loosely(t, results, should.HaveLength(len(expected)))
 
 			// Check t3 (Flaky)
@@ -154,16 +162,71 @@ func TestQueryDetails(t *testing.T) {
 			// Remove one result from t3 and measure its size. This will be our target.
 			assert.Loosely(t, expected[1].Results, should.HaveLength(2))
 			expected[1].Results = expected[1].Results[:1]
-			fetchOptions.VerdictSizeLimit = proto.Size(expected[1]) + protoJSONOverheadBytes
+			opts.VerdictSizeLimit = proto.Size(expected[1]) + protoJSONOverheadBytes
 
 			// As the implementation is conservative, give it a little bit of extra room.
-			fetchOptions.VerdictSizeLimit += 2
+			opts.VerdictSizeLimit += 2
 
-			results := fetchAll(q, fetchOptions)
+			results := fetchAll(q, opts)
 			assert.Loosely(t, results, should.HaveLength(len(expected)))
 			assert.Loosely(t, results[1], should.Match(expected[1]))
 		})
 
+		t.Run("With total result limit", func(t *ftt.Test) {
+			t.Run("Makes progress", func(t *ftt.Test) {
+				// Should return all verdicts, just split over more pages.
+				// The result limit may be violated for the first verdict on each page
+				// to make sure the query always makes progress.
+				opts.TotalResultLimit = 1
+				results := fetchAll(q, opts)
+				assert.Loosely(t, results, should.Match(expected))
+			})
+			t.Run("Limit is applied correctly", func(t *ftt.Test) {
+				// Should return t2 (1 result), t3 (2 result). The underlying
+				// iterator consumes 1 extra result to determine it has reached
+				// end of t3.
+				opts.TotalResultLimit = 4
+				verdicts, token, err := fetchOne(q, PageToken{}, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.NotEqual(PageToken{}))
+				assert.Loosely(t, verdicts, should.Match(expected[:2]))
+			})
+			t.Run("Limit is applied correctly (case 2)", func(t *ftt.Test) {
+				// Should return t2 (1), t3 (2), t4 (1).
+				// Total results = 4, plus one overhead for end of verdict
+				// detection which makes 5.
+				opts.TotalResultLimit = 5
+				verdicts, token, err := fetchOne(q, PageToken{}, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.NotEqual(PageToken{}))
+				assert.Loosely(t, verdicts, should.Match(expected[:3]))
+			})
+		})
+		t.Run("With predicate", func(t *ftt.Test) {
+			opts.Predicate = func(tv *TestVerdict) bool {
+				return tv.Status == pb.TestVerdict_PASSED || tv.Status == pb.TestVerdict_SKIPPED
+			}
+			results := fetchAll(q, opts)
+			expected := []*pb.TestVerdict{
+				VerdictByCaseName(expected, "t4"),
+				VerdictByCaseName(expected, "t1"),
+			}
+			t.Run("Baseline", func(t *ftt.Test) {
+				assert.Loosely(t, results, should.Match(expected))
+			})
+			t.Run("With result limit", func(t *ftt.Test) {
+				// This may produce pages with zero verdicts. We need to verify
+				// the page tokens advance and allow progress to be made.
+				opts.TotalResultLimit = 1
+				results := fetchAll(q, opts)
+				assert.Loosely(t, results, should.Match(expected))
+			})
+			t.Run("With page limit", func(t *ftt.Test) {
+				opts.PageSize = 1
+				results := fetchAll(q, opts)
+				assert.Loosely(t, results, should.Match(expected))
+			})
+		})
 		t.Run("With prefix filter", func(t *ftt.Test) {
 			q.TestPrefixFilter = &pb.TestIdentifierPrefix{
 				Level: pb.AggregationLevel_MODULE,
@@ -181,7 +244,7 @@ func TestQueryDetails(t *testing.T) {
 						moduleVerdicts = append(moduleVerdicts, v)
 					}
 				}
-				assert.Loosely(t, fetchAll(q, fetchOptions), should.Match(moduleVerdicts))
+				assert.Loosely(t, fetchAll(q, opts), should.Match(moduleVerdicts))
 			})
 			t.Run("coarse name-level filter", func(t *ftt.Test) {
 				var coarseVerdicts []*pb.TestVerdict
@@ -192,7 +255,7 @@ func TestQueryDetails(t *testing.T) {
 				}
 				q.TestPrefixFilter.Level = pb.AggregationLevel_COARSE
 				q.TestPrefixFilter.Id.CoarseName = "c1"
-				assert.Loosely(t, fetchAll(q, fetchOptions), should.Match(coarseVerdicts))
+				assert.Loosely(t, fetchAll(q, opts), should.Match(coarseVerdicts))
 			})
 		})
 
@@ -236,11 +299,11 @@ func TestQueryDetails(t *testing.T) {
 			}
 
 			t.Run("Baseline", func(t *ftt.Test) {
-				assert.Loosely(t, fetchAll(q, fetchOptions), should.Match(expectedSubset))
+				assert.Loosely(t, fetchAll(q, opts), should.Match(expectedSubset))
 			})
 			t.Run("With small page size", func(t *ftt.Test) {
-				fetchOptions.PageSize = 1
-				assert.Loosely(t, fetchAll(q, fetchOptions), should.Match(expectedSubset))
+				opts.PageSize = 1
+				assert.Loosely(t, fetchAll(q, opts), should.Match(expectedSubset))
 			})
 		})
 
@@ -248,13 +311,13 @@ func TestQueryDetails(t *testing.T) {
 			q.Access.Level = permissions.LimitedAccess
 			t.Run("Baseline", func(t *ftt.Test) {
 				expectedLimited := ExpectedMaskedVerdicts(expected, nil)
-				assert.Loosely(t, fetchAll(q, fetchOptions), should.Match(expectedLimited))
+				assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
 			})
 
 			t.Run("With upgraded realms", func(t *ftt.Test) {
 				q.Access.Realms = []string{"testproject:t3-r1", "testproject:t4-r1"}
 				expectedLimited := ExpectedMaskedVerdicts(expected, q.Access.Realms)
-				assert.Loosely(t, fetchAll(q, fetchOptions), should.Match(expectedLimited))
+				assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
 			})
 		})
 
@@ -262,29 +325,29 @@ func TestQueryDetails(t *testing.T) {
 			t.Run("Invalid page size", func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				fetchOptions.PageSize = 0
-				_, _, err := q.Fetch(ctx, PageToken{}, fetchOptions)
+				opts.PageSize = 0
+				_, _, err := q.Fetch(ctx, PageToken{}, opts)
 				assert.Loosely(t, err, should.ErrLike("page size must be positive"))
 			})
 			t.Run("Invalid response limit bytes", func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				fetchOptions.ResponseLimitBytes = -1
-				_, _, err := q.Fetch(ctx, PageToken{}, fetchOptions)
+				opts.ResponseLimitBytes = -1
+				_, _, err := q.Fetch(ctx, PageToken{}, opts)
 				assert.Loosely(t, err, should.ErrLike("response limit bytes must be positive"))
 			})
 			t.Run("Invalid verdict result limit", func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				fetchOptions.VerdictResultLimit = 0
-				_, _, err := q.Fetch(ctx, PageToken{}, fetchOptions)
+				opts.VerdictResultLimit = 0
+				_, _, err := q.Fetch(ctx, PageToken{}, opts)
 				assert.Loosely(t, err, should.ErrLike("verdict result limit must be positive"))
 			})
 			t.Run("Invalid verdict size limit", func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
-				fetchOptions.VerdictSizeLimit = 0
-				_, _, err := q.Fetch(ctx, PageToken{}, fetchOptions)
+				opts.VerdictSizeLimit = 0
+				_, _, err := q.Fetch(ctx, PageToken{}, opts)
 				assert.Loosely(t, err, should.ErrLike("verdict size limit must be positive"))
 			})
 		})

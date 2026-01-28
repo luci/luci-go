@@ -32,13 +32,13 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// QueryDetails represents a query for test verdicts that is based on
+// IteratorQuery represents a query for test verdicts that is based on
 // simple iterators over test results and exoneration rows.
 //
 // It is more efficient than aggregating verdicts in Spanner but has
 // fewer options. Crucially, it is performant enough to query detail
 // fields like test results and exonerations.
-type QueryDetails struct {
+type IteratorQuery struct {
 	// The root invocation.
 	RootInvocationID rootinvocations.ID
 	// The test prefix filter to apply.
@@ -64,8 +64,17 @@ type QueryDetails struct {
 // beyond its wire proto-encoded size.
 const protoJSONOverheadBytes = 1000
 
+// IteratorFetchOptions represents options for fetching verdicts.
+type IteratorFetchOptions struct {
+	FetchOptions
+	// The predicate to apply to each verdict.
+	// If non-nil, it is called for each verdict. If it returns false, the verdict is
+	// skipped, but it is still counted towards `FetchOptions.TotalResultLimit`.
+	Predicate func(*TestVerdict) bool
+}
+
 // Fetch fetches a page of verdicts starting at the given page token.
-func (q *QueryDetails) Fetch(ctx context.Context, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
+func (q *IteratorQuery) Fetch(ctx context.Context, pageToken PageToken, opts IteratorFetchOptions) ([]*pb.TestVerdict, PageToken, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, PageToken{}, err
 	}
@@ -73,29 +82,46 @@ func (q *QueryDetails) Fetch(ctx context.Context, pageToken PageToken, opts Fetc
 	var verdicts []*pb.TestVerdict
 	var nextPageToken PageToken
 	var totalSize int
+
+	// The underlying iterator always needs to peek ahead one result, to cut
+	// a verdict. So we start with a count of 1.
+	totalResults := 1
 	it := q.List(ctx, pageToken, opts.PageSize)
 	err := it.Do(ctx, func(tv *TestVerdict) error {
-		verdict := tv.ToProto(opts.VerdictResultLimit, opts.VerdictSizeLimit)
+		if opts.Predicate == nil || opts.Predicate(tv) {
+			// Add the verdict to the page.
+			verdict := tv.ToProto(opts.VerdictResultLimit, opts.VerdictSizeLimit)
 
-		if opts.ResponseLimitBytes != 0 {
-			// Apply response size limiting by bytes.
-			// Estimate size as per comment on FetchOptions.ResponseLimitBytes.
-			resultSize := proto.Size(verdict) + protoJSONOverheadBytes
-			if (totalSize + resultSize) > opts.ResponseLimitBytes {
-				if len(verdicts) == 0 {
-					// This should not normally happen.
-					return errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", resultSize, opts.ResponseLimitBytes)
+			if opts.ResponseLimitBytes != 0 {
+				// Apply response size limiting by bytes.
+				// Estimate size as per comment on FetchOptions.ResponseLimitBytes.
+				resultSize := proto.Size(verdict) + protoJSONOverheadBytes
+				if (totalSize + resultSize) > opts.ResponseLimitBytes {
+					if len(verdicts) == 0 {
+						// This should not normally happen.
+						return errors.Fmt("a single verdict (%v bytes) was larger than the total response limit (%v bytes)", resultSize, opts.ResponseLimitBytes)
+					}
+					// Stop iteration before appending the result.
+					return iterator.Done
 				}
-				// Stop iteration before appending the result.
-				return iterator.Done
+				totalSize += resultSize
 			}
-			totalSize += resultSize
-		}
 
-		verdicts = append(verdicts, verdict)
+			verdicts = append(verdicts, verdict)
+		}
+		// Advance the page token, even if the verdict was not used on the page.
+		// This ensures that pagination will eventually progress through large regions
+		// of verdicts that don't match the predicate, even if some pages are empty
+		// because opts.TotalResultLimit was hit.
 		nextPageToken = makePageToken(tv)
+
 		if len(verdicts) >= opts.PageSize {
 			// We have met the page size target. Stop iteration.
+			return iterator.Done
+		}
+		totalResults += len(tv.Results)
+		if opts.TotalResultLimit != 0 && totalResults >= opts.TotalResultLimit {
+			// We have exceeded the total result limit, so end early.
 			return iterator.Done
 		}
 		return nil
@@ -155,7 +181,7 @@ func statusV2FromResults(results []*testresultsv2.TestResultRow) pb.TestVerdict_
 //
 // Using the iterator, rows are streamed from Spanner which prevents
 // the need to keep the entire result set in memory.
-func (q *QueryDetails) List(ctx context.Context, pageToken PageToken, bufferSize int) *Iterator {
+func (q *IteratorQuery) List(ctx context.Context, pageToken PageToken, bufferSize int) *Iterator {
 	if bufferSize <= 0 {
 		bufferSize = 1_000 // Set a sensible default size.
 	}

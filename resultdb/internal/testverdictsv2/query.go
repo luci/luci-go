@@ -179,7 +179,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken PageToken, opts
 	logging.Debugf(ctx, "Fetched summaries in %v.", clock.Since(ctx, startTime))
 
 	// For each verdict summary, query the details.
-	detailsQuery := QueryDetails{
+	detailsQuery := IteratorQuery{
 		VerdictIDs: ids,
 		Access:     q.Access,
 	}
