@@ -77,6 +77,13 @@ type Query struct {
 	// If VerdictIDs is set, this field is ignored, and Verdicts
 	// will always be returned in the same order as VerdictIDs.
 	Order Ordering
+	// If set, returns only the following basic fields:
+	// - ID
+	// - ModuleVariant
+	// - StatusV2
+	// - IsMasked
+	// This matches what is needed for the BASIC view of TestVerdict.
+	BasicFieldsOnly bool
 }
 
 // PageToken represents a token that can be used to resume a query
@@ -176,6 +183,7 @@ func (q *Query) buildQuery(pageToken PageToken, pageSize int) (spanner.Statement
 		"WherePrefixClause": wherePrefixClause,
 		"FullAccess":        q.Access.Level == permissions.FullAccess,
 		"OrderingByTestID":  q.Order == OrderingByTestID,
+		"BasicFieldsOnly":   q.BasicFieldsOnly,
 	}
 
 	st, err := spanutil.GenerateStatement(testResultQueryTmpl, tmplInput)
@@ -337,9 +345,11 @@ SELECT
 	WorkUnitId,
 	ResultId,
 	ModuleVariantMasked,
+	StatusV2,
+	IsMasked,
+{{if not .BasicFieldsOnly}}
 	CreateTime,
 	Realm,
-	StatusV2,
 	SummaryHTMLMasked,
 	StartTime,
 	RunDurationNanos,
@@ -353,7 +363,7 @@ SELECT
 	SkipReason,
 	SkippedReason,
 	FrameworkExtensions,
-	IsMasked,
+{{end}}
 	{{if .HasVerdictIDs}}RequestIndex,{{end}}
 FROM (
 	{{template "MaskedTestResults" .}}
@@ -392,23 +402,27 @@ func (q *Query) decodeRow(spanRow *spanner.Row, b *spanutil.Buffer, decoder *Dec
 		&row.ID.WorkUnitID,
 		&row.ID.ResultID,
 		&variant,
-		&row.CreateTime,
-		&row.Realm,
 		&statusV2,
-		&summaryHTML,
-		&row.StartTime,
-		&row.RunDurationNanos,
-		&row.Tags,
-		&testMetadata,
-		&testMetadataName,
-		&testMetadataLocationRepo,
-		&testMetadataLocationFileName,
-		&failureReason,
-		&properties,
-		&skipReason,
-		&skippedReason,
-		&frameworkExtensions,
 		&row.IsMasked,
+	}
+	if !q.BasicFieldsOnly {
+		dest = append(dest,
+			&row.CreateTime,
+			&row.Realm,
+			&summaryHTML,
+			&row.StartTime,
+			&row.RunDurationNanos,
+			&row.Tags,
+			&testMetadata,
+			&testMetadataName,
+			&testMetadataLocationRepo,
+			&testMetadataLocationFileName,
+			&failureReason,
+			&properties,
+			&skipReason,
+			&skippedReason,
+			&frameworkExtensions,
+		)
 	}
 	if q.VerdictIDs != nil {
 		dest = append(dest, &requestIndex)
@@ -429,28 +443,30 @@ func (q *Query) decodeRow(spanRow *spanner.Row, b *spanutil.Buffer, decoder *Dec
 		}
 	}
 
-	if row.SummaryHTML, err = decoder.DecompressText(summaryHTML); err != nil {
-		return nil, errors.Fmt("decompress SummaryHTML: %w", err)
-	}
+	if !q.BasicFieldsOnly {
+		if row.SummaryHTML, err = decoder.DecompressText(summaryHTML); err != nil {
+			return nil, errors.Fmt("decompress SummaryHTML: %w", err)
+		}
 
-	if row.TestMetadata, err = decoder.DecodeTestMetadata(testMetadata, testMetadataName, testMetadataLocationRepo, testMetadataLocationFileName); err != nil {
-		return nil, errors.Fmt("decode TestMetadata: %w", err)
-	}
+		if row.TestMetadata, err = decoder.DecodeTestMetadata(testMetadata, testMetadataName, testMetadataLocationRepo, testMetadataLocationFileName); err != nil {
+			return nil, errors.Fmt("decode TestMetadata: %w", err)
+		}
 
-	if row.FailureReason, err = decoder.DecodeFailureReason(failureReason); err != nil {
-		return nil, errors.Fmt("decode FailureReason: %w", err)
-	}
+		if row.FailureReason, err = decoder.DecodeFailureReason(failureReason); err != nil {
+			return nil, errors.Fmt("decode FailureReason: %w", err)
+		}
 
-	if row.Properties, err = decoder.DecodeProperties(properties); err != nil {
-		return nil, errors.Fmt("decode Properties: %w", err)
-	}
+		if row.Properties, err = decoder.DecodeProperties(properties); err != nil {
+			return nil, errors.Fmt("decode Properties: %w", err)
+		}
 
-	if row.SkippedReason, err = decoder.DecodeSkippedReason(skippedReason); err != nil {
-		return nil, errors.Fmt("decode SkippedReason: %w", err)
-	}
+		if row.SkippedReason, err = decoder.DecodeSkippedReason(skippedReason); err != nil {
+			return nil, errors.Fmt("decode SkippedReason: %w", err)
+		}
 
-	if row.FrameworkExtensions, err = decoder.DecodeFrameworkExtensions(frameworkExtensions); err != nil {
-		return nil, errors.Fmt("decode FrameworkExtensions: %w", err)
+		if row.FrameworkExtensions, err = decoder.DecodeFrameworkExtensions(frameworkExtensions); err != nil {
+			return nil, errors.Fmt("decode FrameworkExtensions: %w", err)
+		}
 	}
 
 	if row.IsMasked {

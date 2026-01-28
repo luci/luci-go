@@ -58,6 +58,8 @@ type IteratorQuery struct {
 	VerdictIDs []testresultsv2.VerdictID
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
+	// The view to return.
+	View pb.TestVerdictView
 }
 
 // protoJSONOverheadBytes is the assumed overhead of a protojson-encoding a TestVerdict proto,
@@ -90,7 +92,7 @@ func (q *IteratorQuery) Fetch(ctx context.Context, pageToken PageToken, opts Ite
 	err := it.Do(ctx, func(tv *TestVerdict) error {
 		if opts.Predicate == nil || opts.Predicate(tv) {
 			// Add the verdict to the page.
-			verdict := tv.ToProto(opts.VerdictResultLimit, opts.VerdictSizeLimit)
+			verdict := tv.ToProto(q.View, opts.VerdictResultLimit, opts.VerdictSizeLimit)
 
 			if opts.ResponseLimitBytes != 0 {
 				// Apply response size limiting by bytes.
@@ -191,6 +193,7 @@ func (q *IteratorQuery) List(ctx context.Context, pageToken PageToken, bufferSiz
 		VerdictIDs:       q.VerdictIDs,
 		Access:           q.Access,
 		Order:            testresultsv2.OrderingByPrimaryKey,
+		BasicFieldsOnly:  q.View != pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
 	}
 	trPageToken := pageToken.toTestResultsPageToken()
 	trOpts := spanutil.BufferingOptions{
@@ -349,6 +352,7 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 		}
 	}
 
+	// Compute verdict status.
 	verdict.Status = statusV2FromResults(verdict.Results)
 	isExonerable := (verdict.Status == pb.TestVerdict_FAILED ||
 		verdict.Status == pb.TestVerdict_EXECUTION_ERRORED ||
@@ -360,6 +364,29 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 		verdict.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
 	}
 
+	var moduleVariant *pb.Variant
+	var testMetadata *pb.TestMetadata
+	isMasked := true
+	for _, result := range verdict.Results {
+		if result.IsMasked {
+			continue
+		}
+		isMasked = false
+
+		// Take the module variant from the first non-masked result.
+		if moduleVariant == nil {
+			// Invariant: result.ModuleVariant != nil because !result.IsMasked.
+			moduleVariant = result.ModuleVariant
+		}
+
+		// Take the first non-nil test metadata.
+		if testMetadata == nil && result.TestMetadata != nil {
+			testMetadata = result.TestMetadata
+		}
+	}
+	verdict.ModuleVariant = moduleVariant
+	verdict.TestMetadata = testMetadata
+	verdict.IsMasked = isMasked
 	return verdict, nil
 }
 

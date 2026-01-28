@@ -34,8 +34,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-func TestQueryDetails(t *testing.T) {
-	ftt.Run("QueryDetails", t, func(t *ftt.Test) {
+func TestIteratorQuery(t *testing.T) {
+	ftt.Run("IteratorQuery", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		rootInvID := rootinvocations.ID("root-inv")
 		rootInvRow := rootinvocations.NewBuilder(rootInvID).Build()
@@ -48,6 +48,10 @@ func TestQueryDetails(t *testing.T) {
 			Access: permissions.RootInvocationAccess{
 				Level: permissions.FullAccess,
 			},
+			// Using BASIC for testing as it tends to pick up more issues
+			// than using FULL, in particular any erroneous dependencies
+			// on fields from the FULL view.
+			View: pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC,
 		}
 
 		fetchOne := func(q *IteratorQuery, pageToken PageToken, opts IteratorFetchOptions) ([]*pb.TestVerdict, PageToken, error) {
@@ -86,7 +90,7 @@ func TestQueryDetails(t *testing.T) {
 			return results
 		}
 
-		expected := ExpectedVerdicts(rootInvID)
+		expected := ToBasicView(ExpectedVerdicts(rootInvID))
 		opts := IteratorFetchOptions{
 			FetchOptions: FetchOptions{
 				PageSize:           100,
@@ -142,6 +146,10 @@ func TestQueryDetails(t *testing.T) {
 		})
 
 		t.Run("With verdict result limit", func(t *ftt.Test) {
+			// This is only worth testing with view FULL, otherwise there is
+			// nothing to limit.
+			q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
+
 			// t3 has 2 results.
 			// t5 has 2 exonerations.
 			// Limit to 1 result/exoneration.
@@ -159,6 +167,11 @@ func TestQueryDetails(t *testing.T) {
 		})
 
 		t.Run("With verdict size limit", func(t *ftt.Test) {
+			// This is only worth testing with view FULL, the basic fields
+			// of a verdict are never limited.
+			q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
+			expected := ExpectedVerdicts(rootInvID)
+
 			// Remove one result from t3 and measure its size. This will be our target.
 			assert.Loosely(t, expected[1].Results, should.HaveLength(2))
 			expected[1].Results = expected[1].Results[:1]
@@ -310,17 +323,41 @@ func TestQueryDetails(t *testing.T) {
 		t.Run("With limited access", func(t *ftt.Test) {
 			q.Access.Level = permissions.LimitedAccess
 			t.Run("Baseline", func(t *ftt.Test) {
-				expectedLimited := ExpectedMaskedVerdicts(expected, nil)
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
-			})
+				expectedLimited := ExpectedMaskedVerdicts(ExpectedVerdicts(rootInvID), nil)
 
+				t.Run("With full view", func(t *ftt.Test) {
+					q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
+					assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
+				})
+				t.Run("With basic view", func(t *ftt.Test) {
+					q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
+					assert.Loosely(t, fetchAll(q, opts), should.Match(ToBasicView(expectedLimited)))
+				})
+			})
 			t.Run("With upgraded realms", func(t *ftt.Test) {
 				q.Access.Realms = []string{"testproject:t3-r1", "testproject:t4-r1"}
-				expectedLimited := ExpectedMaskedVerdicts(expected, q.Access.Realms)
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
+				expectedLimited := ExpectedMaskedVerdicts(ExpectedVerdicts(rootInvID), q.Access.Realms)
+
+				t.Run("With full view", func(t *ftt.Test) {
+					q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
+					assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
+				})
+				t.Run("With basic view", func(t *ftt.Test) {
+					q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
+					assert.Loosely(t, fetchAll(q, opts), should.Match(ToBasicView(expectedLimited)))
+				})
 			})
 		})
-
+		t.Run("Views", func(t *ftt.Test) {
+			t.Run("Full view", func(t *ftt.Test) {
+				q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
+				assert.Loosely(t, fetchAll(q, opts), should.Match(ExpectedVerdicts(rootInvID)))
+			})
+			t.Run("Basic view", func(t *ftt.Test) {
+				q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
+				assert.Loosely(t, fetchAll(q, opts), should.Match(ToBasicView(ExpectedVerdicts(rootInvID))))
+			})
+		})
 		t.Run("Errors", func(t *ftt.Test) {
 			t.Run("Invalid page size", func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)

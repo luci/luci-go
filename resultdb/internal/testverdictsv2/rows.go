@@ -79,30 +79,42 @@ func (v *TestVerdictSummary) ToProto() *pb.TestVerdict {
 	return tv
 }
 
-// TestVerdict represents a test verdict. It corresponds to the fields
-// present on the FULL test verdict view.
+// TestVerdict represents a test verdict.
 //
 // If an attempt was made to retrieve verdicts by ID, and the verdict was not
 // found, an empty TestVerdict with only Ordinal set may be retruend.
 type TestVerdict struct {
+	// The following fields are part of the BASIC view.
+
 	// The identifier of the test verdict.
 	ID testresultsv2.VerdictID
 	// The status of the verdict.
 	Status pb.TestVerdict_Status
 	// The status override of the verdict.
 	StatusOverride pb.TestVerdict_StatusOverride
+	// The module variant.
+	ModuleVariant *pb.Variant
+	// Whether the variant and test metadata of the verdict has been masked,
+	// because the user only has limited access.
+	IsMasked bool
+	// The one-based index into Query.VerdictIDs this result relates to. Only set
+	// if the result is retrieved using a query for nominated verdict IDs. Output only.
+	RequestOrdinal int
+
+	// The following fields will not be useful on the BASIC view. They are set
+	// only in so far as was necessary to compute the values of the fields above.
+
+	// The test metadata.
+	TestMetadata *pb.TestMetadata
 	// The test results in the verdict.
 	Results []*testresultsv2.TestResultRow
 	// The test exonerations that make up the verdict.
 	Exonerations []*testexonerationsv2.TestExonerationRow
-	// The one-based index into Query.VerdictIDs this result relates to. Only set
-	// if the result is retrieved using a query for nominated verdict IDs. Output only.
-	RequestOrdinal int
 }
 
 // ToProto converts the given TestVerdict into its proto representation, obeying
 // dual (result count and size) limits.
-func (v *TestVerdict) ToProto(resultLimit int, verdictSizeLimit int) *pb.TestVerdict {
+func (v *TestVerdict) ToProto(view pb.TestVerdictView, resultLimit int, verdictSizeLimit int) *pb.TestVerdict {
 	if len(v.Results) == 0 {
 		// This is an empty verdict, e.g. placeholder for a requested verdict that was
 		// not found.
@@ -111,37 +123,26 @@ func (v *TestVerdict) ToProto(resultLimit int, verdictSizeLimit int) *pb.TestVer
 
 	tv := &pb.TestVerdict{}
 
-	// Take the first non-nil test metadata and module variant.
-	var moduleVariant *pb.Variant
-	var testMetadata *pb.TestMetadata
-	for _, result := range v.Results {
-		if testMetadata == nil && result.TestMetadata != nil {
-			testMetadata = result.TestMetadata
-		}
-		if moduleVariant == nil && result.ModuleVariant != nil {
-			moduleVariant = result.ModuleVariant
-		}
-	}
-
 	tv.TestIdStructured = &pb.TestIdentifier{
 		ModuleName:        v.Results[0].ID.ModuleName,
 		ModuleScheme:      v.Results[0].ID.ModuleScheme,
-		ModuleVariant:     moduleVariant,
+		ModuleVariant:     v.ModuleVariant,
 		ModuleVariantHash: v.Results[0].ID.ModuleVariantHash,
 		CoarseName:        v.Results[0].ID.CoarseName,
 		FineName:          v.Results[0].ID.FineName,
 		CaseName:          v.Results[0].ID.CaseName,
 	}
-	if moduleVariant == nil {
-		tv.IsMasked = true
-	}
+	tv.IsMasked = v.IsMasked
 	tv.TestId = pbutil.EncodeTestID(pbutil.ExtractBaseTestIdentifier(tv.TestIdStructured))
-	tv.TestMetadata = testMetadata
 
-	// To avoid inaccurate statuses, the status should be computed from all results before
-	// truncation.
 	tv.Status = v.Status
 	tv.StatusOverride = v.StatusOverride
+
+	if view != pb.TestVerdictView_TEST_VERDICT_VIEW_FULL {
+		return tv
+	}
+
+	tv.TestMetadata = v.TestMetadata
 
 	totalSize := protoJSONOverheadBytes + proto.Size(tv)
 

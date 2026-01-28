@@ -182,6 +182,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken PageToken, opts
 	detailsQuery := IteratorQuery{
 		VerdictIDs: ids,
 		Access:     q.Access,
+		View:       pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
 	}
 
 	// If querying all details for all the verdicts would retrieve too
@@ -222,7 +223,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken PageToken, opts
 	it := detailsQuery.List(ctx, PageToken{}, opts.PageSize)
 	err = it.Do(ctx, func(tv *TestVerdict) error {
 		// Verdicts come in the order requested.
-		verdict := tv.ToProto(opts.VerdictResultLimit, opts.VerdictSizeLimit)
+		verdict := tv.ToProto(pb.TestVerdictView_TEST_VERDICT_VIEW_FULL, opts.VerdictResultLimit, opts.VerdictSizeLimit)
 		if opts.ResponseLimitBytes > 0 {
 			// Estimate row size using formula documented on q.ResponseLimitBytes.
 			size := proto.Size(verdict) + protoJSONOverheadBytes

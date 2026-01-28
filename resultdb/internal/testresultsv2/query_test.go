@@ -295,6 +295,13 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, results, should.Match(expected[5:6]))
 			})
 		})
+
+		t.Run("With BasicFieldsOnly", func(t *ftt.Test) {
+			q.BasicFieldsOnly = true
+			results, err := fetchAll(ctx, q, opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.Match(withBasicFieldsOnly(expected)))
+		})
 	})
 }
 
@@ -331,6 +338,22 @@ func maskedResults(results []*TestResultRow, allowedRealms []string) []*TestResu
 		masked = append(masked, &m)
 	}
 	return masked
+}
+
+func withBasicFieldsOnly(results []*TestResultRow) []*TestResultRow {
+	var basicRows []*TestResultRow
+	for _, r := range results {
+		// Copy the basic fields only.
+		basicRow := &TestResultRow{
+			ID:            r.ID,
+			ModuleVariant: r.ModuleVariant,
+			StatusV2:      r.StatusV2,
+			IsMasked:      r.IsMasked,
+		}
+
+		basicRows = append(basicRows, basicRow)
+	}
+	return basicRows
 }
 
 func withRequestOrdinal(row *TestResultRow, ordinal int) *TestResultRow {
