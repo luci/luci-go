@@ -18,7 +18,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
-	"fmt"
 	"math"
 	"slices"
 	"time"
@@ -42,12 +41,12 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
-	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -338,7 +337,7 @@ func pollStage(ctx context.Context, cl *turboci.Client, stageID *idspb.Stage) (i
 // updateStageAttemptToScheduled sets the current stage attempt (conveyed by
 // cl.Token as StageAttemptToken) to SCHEDULED and report the build details
 // (e.g. build ID).
-func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, attemptID *idspb.StageAttempt, bld *pb.Build) error {
+func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld *pb.Build) error {
 	// This can happen if a previous RunTask created the build but failed to
 	// update TurboCI, so TurboCI retries the RunTask. And after TurboCI sends
 	// the retry, the build starts running.
@@ -350,11 +349,11 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, atte
 
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(cl.Token)
-	writeReq.AddReason(fmt.Sprintf("Buildbucket build for stage attempt %s SCHEDULED", id.ToString(attemptID)))
+	writeReq.AddReason("Buildbucket build scheduled")
 
 	curWrite := writeReq.GetCurrentAttempt()
 
-	details := populateBuildDetails(bld)
+	details := tasks.PopulateBuildDetails(bld)
 	curWrite.AddDetails(details...)
 
 	updatedPolicy := buildToStagetAttemptExecutionPolicy(bld)
@@ -362,45 +361,23 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, atte
 	st.SetScheduled(updatedPolicy)
 
 	_, err := turboci.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(cl.Creds))
-	return turboci.HandleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
+	return handleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
 }
 
 // updateStageAttemptToRunning sets the StageAttempt to RUNNING and reports its process_uid and details.
 func updateStageAttemptToRunning(ctx context.Context, cl *turboci.Client, bld *pb.Build, reqID string) error {
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(cl.Token)
+	writeReq.AddReason("Buildbucket build started")
+
 	curWrite := writeReq.GetCurrentAttempt()
 
-	details := populateBuildDetails(bld)
+	details := tasks.PopulateBuildDetails(bld)
 	curWrite.AddDetails(details...)
 
 	st := curWrite.GetStateTransition()
 	st.SetRunning(reqID, nil)
 
 	_, err := turboci.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(cl.Creds))
-	return turboci.HandleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
-}
-
-// populateBuildDetails populates details about a build in a WriteNodes request.
-//
-// Most build stage attempt should have the details when they are advanced to
-// SCHEDULED. But to ensure the builds have the details at all cases (e.g. the
-// stage attempt could be advanced to RUNNING directly if that WriteNodes reaches
-// TurboCI before the SCHEDULED one), Buildbucket adds the same details in the
-// WriteNodes to advance the attempt to RUNNING (or to INCOMPLETE if it fails to
-// start the build).
-func populateBuildDetails(bld *pb.Build) []proto.Message {
-	bldDetails := &pb.BuildStageDetails{
-		Result: &pb.BuildStageDetails_Id{
-			Id: bld.Id,
-		},
-	}
-	commonDetails := stagepb.CommonStageAttemptDetails_builder{
-		ViewUrls: map[string]*stagepb.CommonStageAttemptDetails_UrlDetails{
-			"Buildbucket": stagepb.CommonStageAttemptDetails_UrlDetails_builder{
-				Url: proto.String(fmt.Sprintf("https://%s/build/%d", bld.GetInfra().GetBuildbucket().GetHostname(), bld.Id)),
-			}.Build(),
-		},
-	}.Build()
-	return []proto.Message{bldDetails, commonDetails}
+	return handleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
 }

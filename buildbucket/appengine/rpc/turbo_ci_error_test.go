@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package turboci
+package rpc
 
 import (
 	"context"
@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
+	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -40,7 +41,7 @@ import (
 func TestHandleStageAttemptStatusConflict(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("HandleStageAttemptStatusConflict", t, func(t *ftt.Test) {
+	ftt.Run("handleStageAttemptStatusConflict", t, func(t *ftt.Test) {
 		ctx := txndefer.FilterRDS(memory.Use(context.Background()))
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
@@ -62,50 +63,50 @@ func TestHandleStageAttemptStatusConflict(t *testing.T) {
 
 		t.Run("no StageAttemptCurrentState in error", func(t *ftt.Test) {
 			err := status.Error(codes.FailedPrecondition, "some error")
-			assert.ErrIsLike(t, HandleStageAttemptStatusConflict(ctx, b, err), err)
+			assert.ErrIsLike(t, handleStageAttemptStatusConflict(ctx, b, err), err)
 		})
 
 		t.Run("unsupported state", func(t *ftt.Test) {
-			turboCIErr := ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_PENDING.Enum(), t)
-			err := HandleStageAttemptStatusConflict(ctx, b, turboCIErr)
+			turboCIErr := turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_PENDING.Enum(), t)
+			err := handleStageAttemptStatusConflict(ctx, b, turboCIErr)
 			assert.ErrIsLike(t, err, "status STAGE_ATTEMPT_STATE_PENDING is not supported")
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 		})
 
 		t.Run("running state", func(t *ftt.Test) {
-			turboCIErr := ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_RUNNING.Enum(), t)
-			assert.NoErr(t, HandleStageAttemptStatusConflict(ctx, b, turboCIErr))
+			turboCIErr := turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_RUNNING.Enum(), t)
+			assert.NoErr(t, handleStageAttemptStatusConflict(ctx, b, turboCIErr))
 		})
 
 		t.Run("tearing down state", func(t *ftt.Test) {
-			turboCIErr := ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_RUNNING.Enum(), t)
-			assert.NoErr(t, HandleStageAttemptStatusConflict(ctx, b, turboCIErr))
+			turboCIErr := turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_RUNNING.Enum(), t)
+			assert.NoErr(t, handleStageAttemptStatusConflict(ctx, b, turboCIErr))
 		})
 
 		t.Run("cancelling state", func(t *ftt.Test) {
-			turboCIErr := ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_CANCELLING.Enum(), t)
+			turboCIErr := turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_CANCELLING.Enum(), t)
 
 			t.Run("build not found", func(t *ftt.Test) {
-				assert.ErrIsLike(t, HandleStageAttemptStatusConflict(ctx, &pb.Build{Id: 2}, turboCIErr), "build not found")
+				assert.ErrIsLike(t, handleStageAttemptStatusConflict(ctx, &pb.Build{Id: 2}, turboCIErr), "build not found")
 			})
 
 			t.Run("build already cancelled", func(t *ftt.Test) {
 				bld.Proto.Status = pb.Status_CANCELED
 				assert.NoErr(t, datastore.Put(ctx, bld))
-				assert.NoErr(t, HandleStageAttemptStatusConflict(ctx, b, turboCIErr))
+				assert.NoErr(t, handleStageAttemptStatusConflict(ctx, b, turboCIErr))
 			})
 
 			t.Run("build already ended", func(t *ftt.Test) {
 				bld.Proto.Status = pb.Status_SUCCESS
 				assert.NoErr(t, datastore.Put(ctx, bld))
-				assert.NoErr(t, HandleStageAttemptStatusConflict(ctx, b, turboCIErr))
+				assert.NoErr(t, handleStageAttemptStatusConflict(ctx, b, turboCIErr))
 			})
 
 			t.Run("build already being cancelled", func(t *ftt.Test) {
 				bld.Proto.Status = pb.Status_STARTED
 				bld.Proto.CancelTime = timestamppb.New(testclock.TestRecentTimeUTC)
 				assert.NoErr(t, datastore.Put(ctx, bld))
-				assert.NoErr(t, HandleStageAttemptStatusConflict(ctx, b, turboCIErr))
+				assert.NoErr(t, handleStageAttemptStatusConflict(ctx, b, turboCIErr))
 			})
 
 			t.Run("cancel build", func(t *ftt.Test) {
@@ -114,7 +115,7 @@ func TestHandleStageAttemptStatusConflict(t *testing.T) {
 				bld.Proto.CancelTime = nil
 				assert.NoErr(t, datastore.Put(ctx, bld))
 
-				err := HandleStageAttemptStatusConflict(ctx, b, turboCIErr)
+				err := handleStageAttemptStatusConflict(ctx, b, turboCIErr)
 				assert.Loosely(t, err, should.BeNil)
 
 				tasks := sch.Tasks()
@@ -130,22 +131,22 @@ func TestHandleStageAttemptStatusConflict(t *testing.T) {
 
 		t.Run("ended state", func(t *ftt.Test) {
 			t.Run("incomplete", func(t *ftt.Test) {
-				turboCIErr := ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE.Enum(), t)
+				turboCIErr := turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE.Enum(), t)
 
 				t.Run("build not found", func(t *ftt.Test) {
-					assert.ErrIsLike(t, HandleStageAttemptStatusConflict(ctx, &pb.Build{Id: 2}, turboCIErr), "build not found")
+					assert.ErrIsLike(t, handleStageAttemptStatusConflict(ctx, &pb.Build{Id: 2}, turboCIErr), "build not found")
 				})
 
 				t.Run("build already ended with matching status", func(t *ftt.Test) {
 					bld.Proto.Status = pb.Status_CANCELED
 					assert.NoErr(t, datastore.Put(ctx, bld))
-					assert.NoErr(t, HandleStageAttemptStatusConflict(ctx, b, turboCIErr))
+					assert.NoErr(t, handleStageAttemptStatusConflict(ctx, b, turboCIErr))
 				})
 
 				t.Run("build already ended with mismatching status", func(t *ftt.Test) {
 					bld.Proto.Status = pb.Status_SUCCESS
 					assert.NoErr(t, datastore.Put(ctx, bld))
-					assert.NoErr(t, HandleStageAttemptStatusConflict(ctx, b, turboCIErr))
+					assert.NoErr(t, handleStageAttemptStatusConflict(ctx, b, turboCIErr))
 				})
 
 				t.Run("cancel build", func(t *ftt.Test) {
@@ -153,7 +154,7 @@ func TestHandleStageAttemptStatusConflict(t *testing.T) {
 					bld.Proto.Status = pb.Status_STARTED
 					assert.NoErr(t, datastore.Put(ctx, bld))
 
-					err := HandleStageAttemptStatusConflict(ctx, b, turboCIErr)
+					err := handleStageAttemptStatusConflict(ctx, b, turboCIErr)
 					assert.Loosely(t, err, should.BeNil)
 
 					tasks := sch.Tasks()
@@ -168,18 +169,18 @@ func TestHandleStageAttemptStatusConflict(t *testing.T) {
 			})
 
 			t.Run("complete", func(t *ftt.Test) {
-				turboCIErr := ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_COMPLETE.Enum(), t)
+				turboCIErr := turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_COMPLETE.Enum(), t)
 
 				t.Run("build already ended with matching status", func(t *ftt.Test) {
 					bld.Proto.Status = pb.Status_SUCCESS
 					assert.NoErr(t, datastore.Put(ctx, bld))
-					assert.NoErr(t, HandleStageAttemptStatusConflict(ctx, b, turboCIErr))
+					assert.NoErr(t, handleStageAttemptStatusConflict(ctx, b, turboCIErr))
 				})
 
 				t.Run("build already ended with mismatching status", func(t *ftt.Test) {
 					bld.Proto.Status = pb.Status_CANCELED
 					assert.NoErr(t, datastore.Put(ctx, bld))
-					assert.NoErr(t, HandleStageAttemptStatusConflict(ctx, b, turboCIErr))
+					assert.NoErr(t, handleStageAttemptStatusConflict(ctx, b, turboCIErr))
 				})
 
 				t.Run("cancel build", func(t *ftt.Test) {
@@ -187,7 +188,7 @@ func TestHandleStageAttemptStatusConflict(t *testing.T) {
 					bld.Proto.Status = pb.Status_STARTED
 					assert.NoErr(t, datastore.Put(ctx, bld))
 
-					err := HandleStageAttemptStatusConflict(ctx, b, turboCIErr)
+					err := handleStageAttemptStatusConflict(ctx, b, turboCIErr)
 					assert.Loosely(t, err, should.BeNil)
 
 					tasks := sch.Tasks()

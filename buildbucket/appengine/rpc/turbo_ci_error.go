@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package turboci
+package rpc
 
 import (
 	"context"
@@ -33,9 +33,9 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-// HandleStageAttemptStatusConflict handles the *orchestratorpb.StageAttemptCurrentState
+// handleStageAttemptStatusConflict handles the *orchestratorpb.StageAttemptCurrentState
 // from err's details.
-func HandleStageAttemptStatusConflict(ctx context.Context, b *pb.Build, err error) error {
+func handleStageAttemptStatusConflict(ctx context.Context, b *pb.Build, err error) error {
 	sacs, sErr := rpc.StageAttemptCurrentState(err)
 	if sErr != nil {
 		logging.Errorf(ctx, "Failed to extract StageAttemptCurrentState from error: %s, original error: %s", sErr, err)

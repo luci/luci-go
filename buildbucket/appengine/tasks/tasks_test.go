@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdef "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -291,6 +292,24 @@ func TestTasks(t *testing.T) {
 					BuildId:   123,
 					BuilderId: &pb.BuilderID{Builder: "builder", Bucket: "bucket", Project: "project"},
 				}, ""), should.BeNil)
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+			})
+		})
+
+		t.Run("endTurboCIStageAttempt", func(t *ftt.Test) {
+			t.Run("bypass", func(t *ftt.Test) {
+				assert.NoErr(t, endTurboCIStageAttempt(ctx, &model.Build{}, pb.Status_SCHEDULED))
+			})
+
+			t.Run("valid", func(t *ftt.Test) {
+				err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+					return endTurboCIStageAttempt(ctx, &model.Build{
+						ID:                123,
+						StageAttemptID:    "stage-attempt-id",
+						StageAttemptToken: "token",
+					}, pb.Status_STARTED)
+				}, nil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})

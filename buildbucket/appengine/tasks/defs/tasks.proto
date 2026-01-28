@@ -9,6 +9,7 @@ package taskdefs;
 option go_package = "go.chromium.org/luci/buildbucket/appengine/tasks/defs;taskdefs";
 
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/project_config.proto";
 import "go.chromium.org/luci/buildbucket/proto/builder_common.proto";
 
@@ -172,4 +173,13 @@ message BatchCreateBackendBuildTasks {
   // * enqueueing CreateBackendBuildTasks non-transactionally.
   // * enqueueing a retry of BatchCreateBackendBuildTasks non-transactionally.
   string deduplication_key_prefix = 4;
+}
+
+// EndTurboCIStageAttempt updates the build's StageAttempt to an end state to TurboCI.
+message EndTurboCIStageAttempt {
+  // ID of the build whose stage attempt is being started.
+  int64 build_id = 1;
+
+  // Old build status before it ends.
+  buildbucket.v2.Status old_status = 2;
 }

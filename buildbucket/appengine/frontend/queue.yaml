@@ -49,3 +49,6 @@ queue:
 - name: batch-create-backend-tasks
   target: default
   rate: 500/s
+- name: end-turboci-stage-attempt
+  target: default
+  rate: 500/s

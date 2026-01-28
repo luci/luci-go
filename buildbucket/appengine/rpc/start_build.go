@@ -270,7 +270,7 @@ func notifyTurboCI(ctx context.Context, res startBuildResult, startErr error) er
 			logging.Errorf(ctx, "Build %d has a malformed StageAttemptID: %s", bld.ID, aErr)
 			return nil
 		}
-		err = cl.FailCurrentAttempt(ctx, aID.GetStageAttempt(), &turboci.AttemptFailure{Err: startErr}, populateBuildDetails(bp)...)
+		err = cl.FailCurrentAttempt(ctx, aID.GetStageAttempt(), &turboci.AttemptFailure{Err: startErr}, tasks.PopulateBuildDetails(bp)...)
 		if err != nil && !errIsTransient(err) {
 			logging.Errorf(ctx, "Failed to update TurboCI on failure to start build %d (attempt %s): %s", bld.ID, bld.StageAttemptID, err)
 			return nil

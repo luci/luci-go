@@ -120,7 +120,7 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 		return &executorpb.RunStageResponse{}, nil
 	}
 
-	return &executorpb.RunStageResponse{}, updateStageAttemptToScheduled(ctx, cl, attemptID, blds[0])
+	return &executorpb.RunStageResponse{}, updateStageAttemptToScheduled(ctx, cl, blds[0])
 }
 
 func sha256hex(str string) string {

@@ -237,3 +237,38 @@ func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageA
 	_, err = WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
 	return AdjustTurboCIRPCError(err)
 }
+
+// AbortCurrentAttempt sets the current stage attempt (by c.Token as StageAttemptToken)
+// to INCOMPLETE and report the cancellation through progress.
+func (c *Client) AbortCurrentAttempt(ctx context.Context, attemptID string, details ...proto.Message) error {
+	logging.Infof(ctx, "Abort stage attempt: %s", attemptID)
+	writeReq := write.NewRequest()
+	writeReq.Msg.SetToken(c.Token)
+	writeReq.AddReason("Buildbucket build cancelled")
+
+	curWrite := writeReq.GetCurrentAttempt()
+	curWrite.AddProgress("Cancelled via Buildbucket")
+
+	if len(details) > 0 {
+		curWrite.AddDetails(details...)
+	}
+
+	st := curWrite.GetStateTransition()
+	st.SetIncomplete()
+
+	_, nErr := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
+	return AdjustTurboCIRPCError(nErr)
+}
+
+// CompleteCurrentAttempt sets the current stage attempt (by c.Token as StageAttemptToken)
+// to COMPLETE.
+func (c *Client) CompleteCurrentAttempt(ctx context.Context, attemptID string) error {
+	logging.Infof(ctx, "Complete stage attempt: %s", attemptID)
+	writeReq := write.NewRequest()
+	writeReq.Msg.SetToken(c.Token)
+	writeReq.AddReason("Buildbucket build completed")
+	st := writeReq.GetCurrentAttempt().GetStateTransition()
+	st.SetComplete()
+	_, nErr := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
+	return AdjustTurboCIRPCError(nErr)
+}

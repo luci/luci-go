@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/resultdb"
+	"go.chromium.org/luci/buildbucket/appengine/model"
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 
@@ -226,6 +227,17 @@ func init() {
 			return BatchCreateBackendBuildTasks(ctx, t)
 		},
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "end-turboci-stage-attempt",
+		Kind:      tq.Transactional,
+		Prototype: (*taskdefs.EndTurboCIStageAttempt)(nil),
+		Queue:     "end-turboci-stage-attempt",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.EndTurboCIStageAttempt)
+			return writeStageAttemptOnBuildCompletion(ctx, t.BuildId, t.OldStatus)
+		},
+	})
 }
 
 // CancelBackendTask enqueues a task queue task to cancel the given Backend
@@ -395,4 +407,17 @@ func createBatchCreateBackendBuildTasks(ctx context.Context, task *taskdefs.Batc
 		Payload:          task,
 		DeduplicationKey: dedupKey,
 	})
+}
+
+// endTurboCIStageAttempt enqueues an EndTurboCIStageAttempt task.
+func endTurboCIStageAttempt(ctx context.Context, bld *model.Build, oldStatus pb.Status) error {
+	if bld.StageAttemptToken == "" {
+		return nil
+	}
+
+	return tq.AddTask(ctx, &tq.Task{
+		Payload: &taskdefs.EndTurboCIStageAttempt{
+			BuildId:   bld.ID,
+			OldStatus: oldStatus,
+		}})
 }

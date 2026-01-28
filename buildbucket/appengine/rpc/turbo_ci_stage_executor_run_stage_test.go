@@ -155,7 +155,7 @@ func TestRunStage(t *testing.T) {
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))
 			reasons := mockOrch.LastWriteNodesCall.GetReasons()
 			assert.That(t, len(reasons), should.Equal(1))
-			assert.That(t, reasons[0].GetMessage(), should.Equal(`Buildbucket build for stage attempt Lplan-id:Sstage-id:A1 SCHEDULED`))
+			assert.That(t, reasons[0].GetMessage(), should.Equal(`Buildbucket build scheduled`))
 			assert.That(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().HasScheduled(), should.BeTrue)
 			assert.That(t, len(mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()), should.Equal(2))
 			bldDetails := &pb.BuildStageDetails{}
