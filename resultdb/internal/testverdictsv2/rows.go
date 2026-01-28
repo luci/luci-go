@@ -87,6 +87,10 @@ func (v *TestVerdictSummary) ToProto() *pb.TestVerdict {
 type TestVerdict struct {
 	// The identifier of the test verdict.
 	ID testresultsv2.VerdictID
+	// The status of the verdict.
+	Status pb.TestVerdict_Status
+	// The status override of the verdict.
+	StatusOverride pb.TestVerdict_StatusOverride
 	// The test results in the verdict.
 	Results []*testresultsv2.TestResultRow
 	// The test exonerations that make up the verdict.
@@ -136,13 +140,8 @@ func (v *TestVerdict) ToProto(resultLimit int, verdictSizeLimit int) *pb.TestVer
 
 	// To avoid inaccurate statuses, the status should be computed from all results before
 	// truncation.
-	tv.Status = statusV2FromResults(v.Results)
-	isExonerable := (tv.Status == pb.TestVerdict_FAILED || tv.Status == pb.TestVerdict_EXECUTION_ERRORED || tv.Status == pb.TestVerdict_PRECLUDED || tv.Status == pb.TestVerdict_FLAKY)
-	if len(v.Exonerations) > 0 && isExonerable {
-		tv.StatusOverride = pb.TestVerdict_EXONERATED
-	} else {
-		tv.StatusOverride = pb.TestVerdict_NOT_OVERRIDDEN
-	}
+	tv.Status = v.Status
+	tv.StatusOverride = v.StatusOverride
 
 	totalSize := protoJSONOverheadBytes + proto.Size(tv)
 

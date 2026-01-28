@@ -181,7 +181,7 @@ func TestQueryTestVerdicts(t *testing.T) {
 					req.PageToken = "some invalid token"
 					_, err := srv.QueryTestVerdicts(ctx, req)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("page_token: invalid page token"))
+					assert.Loosely(t, err, should.ErrLike("page_token: invalid page token: "))
 				})
 			})
 		})

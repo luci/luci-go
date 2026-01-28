@@ -61,7 +61,12 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 	order, err := testverdictsv2.ParseOrderBy(req.OrderBy)
 	if err != nil {
 		// Internal error. This should have been caught in validateQueryTestVerdictsRequest already.
-		return nil, err
+		return nil, errors.Fmt("order_by: %w", err)
+	}
+	pageToken, err := testverdictsv2.ParsePageToken(req.PageToken)
+	if err != nil {
+		// Internal error. This should have been caught in validateQueryTestVerdictsRequest already.
+		return nil, errors.Fmt("page_token: %w", err)
 	}
 
 	view := req.View
@@ -88,14 +93,14 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 		VerdictSizeLimit:   testverdictsv2.StandardVerdictSizeLimit,
 	}
 
-	verdicts, nextPageToken, err := q.Fetch(ctx, req.PageToken, fetchOpts)
+	verdicts, nextPageToken, err := q.Fetch(ctx, pageToken, fetchOpts)
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.QueryTestVerdictsResponse{
 		TestVerdicts:  verdicts,
-		NextPageToken: nextPageToken,
+		NextPageToken: nextPageToken.Serialize(),
 	}, nil
 }
 
@@ -135,7 +140,9 @@ func validateQueryTestVerdictsRequest(req *pb.QueryTestVerdictsRequest) error {
 		return errors.Fmt("page_size: %w", err)
 	}
 
-	// PageToken is verified by the query backend.
+	if _, err := testverdictsv2.ParsePageToken(req.PageToken); err != nil {
+		return errors.Fmt("page_token: invalid page token: %w", err)
+	}
 
 	return nil
 }

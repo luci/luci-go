@@ -323,25 +323,6 @@ func VerdictByCaseName(verdicts []*pb.TestVerdict, caseName string) *pb.TestVerd
 	return nil
 }
 
-func uiPriority(v *pb.TestVerdict) int {
-	if v.StatusOverride == pb.TestVerdict_EXONERATED {
-		return 90
-	}
-	switch v.Status {
-	case pb.TestVerdict_FAILED:
-		return 0
-	case pb.TestVerdict_PRECLUDED:
-		return 30
-	case pb.TestVerdict_EXECUTION_ERRORED:
-		return 30
-	case pb.TestVerdict_FLAKY:
-		return 70
-	default:
-		// Passed or skipped.
-		return 100
-	}
-}
-
 // ExpectedMaskedVerdicts returns the expected masked versions of the given
 // unmasked full verdicts, with the user having full access only to the given realms.
 func ExpectedMaskedVerdicts(originalVerdicts []*pb.TestVerdict, realms []string) []*pb.TestVerdict {

@@ -16,8 +16,6 @@ package testverdictsv2
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"text/template"
 
 	"cloud.google.com/go/spanner"
@@ -31,7 +29,6 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
-	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -109,17 +106,17 @@ func (opts FetchOptions) Validate() error {
 }
 
 // Fetch fetches a page of test verdicts.
-func (q *Query) Fetch(ctx context.Context, pageToken string, opts FetchOptions) ([]*pb.TestVerdict, string, error) {
+func (q *Query) Fetch(ctx context.Context, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
 	ctx = logging.SetFields(ctx, logging.Fields{
 		"RootInvocationID": q.RootInvocationID,
 		"PageSize":         opts.PageSize,
 	})
 
 	if err := opts.Validate(); err != nil {
-		return nil, "", errors.Fmt("opts: %w", err)
+		return nil, PageToken{}, errors.Fmt("opts: %w", err)
 	}
 	if q.Access.Level == permissions.NoAccess {
-		return nil, "", errors.New("no access to root invocation")
+		return nil, PageToken{}, errors.New("no access to root invocation")
 	}
 
 	switch q.View {
@@ -128,12 +125,12 @@ func (q *Query) Fetch(ctx context.Context, pageToken string, opts FetchOptions) 
 	case pb.TestVerdictView_TEST_VERDICT_VIEW_FULL:
 		return q.fetchDetailedView(ctx, pageToken, opts)
 	default:
-		return nil, "", errors.Fmt("unknown view %q", q.View)
+		return nil, PageToken{}, errors.Fmt("unknown view %q", q.View)
 	}
 }
 
 // fetchSimpleView fetches a page of test verdicts with a view of TEST_VERDICT_VIEW_BASIC.
-func (q *Query) fetchSimpleView(ctx context.Context, pageToken string, opts FetchOptions) (verdicts []*pb.TestVerdict, nextPageToken string, retErr error) {
+func (q *Query) fetchSimpleView(ctx context.Context, pageToken PageToken, opts FetchOptions) (verdicts []*pb.TestVerdict, nextPageToken PageToken, retErr error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.Query.fetchSimpleView")
 	defer func() { tracing.End(ts, retErr) }()
 
@@ -156,13 +153,13 @@ func (q *Query) fetchSimpleView(ctx context.Context, pageToken string, opts Fetc
 		return true, nil
 	})
 	if err != nil {
-		return nil, "", err
+		return nil, PageToken{}, err
 	}
 	return verdicts, nextPageToken, nil
 }
 
 // fetchDetailedView fetches a page of test verdicts with view of TEST_VERDICT_VIEW_FULL.
-func (q *Query) fetchDetailedView(ctx context.Context, pageToken string, opts FetchOptions) (verdicts []*pb.TestVerdict, nextPageToken string, retErr error) {
+func (q *Query) fetchDetailedView(ctx context.Context, pageToken PageToken, opts FetchOptions) (verdicts []*pb.TestVerdict, nextPageToken PageToken, retErr error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.Query.fetchDetailedView")
 	defer func() { tracing.End(ts, retErr) }()
 
@@ -177,7 +174,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string, opts Fe
 		return true, nil
 	})
 	if err != nil {
-		return nil, "", err
+		return nil, PageToken{}, err
 	}
 	logging.Debugf(ctx, "Fetched summaries in %v.", clock.Since(ctx, startTime))
 
@@ -243,7 +240,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string, opts Fe
 	})
 	if err != nil && !errors.Is(err, iterator.Done) {
 		// There was an error when retrieving the verdicts.
-		return nil, "", err
+		return nil, PageToken{}, err
 	}
 	logging.Debugf(ctx, "Fetched details in %v.", clock.Since(ctx, startTime))
 
@@ -251,7 +248,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string, opts Fe
 	// and we retrieved all of them (didn't stop iteration early).
 	if len(ids) < opts.PageSize && len(verdicts) == len(ids) {
 		// There are no more verdicts to query. The page token is empty to signal end of iteration.
-		return verdicts, "", nil
+		return verdicts, PageToken{}, nil
 	}
 
 	// We either:
@@ -260,9 +257,9 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string, opts Fe
 	// Continue paginating from the last result we are returning.
 	if len(verdicts) > 0 {
 		lastSummary := summaries[len(verdicts)-1]
-		nextPageToken = q.makePageToken(lastSummary)
+		nextPageToken = makePageTokenForSummary(lastSummary)
 	} else {
-		return nil, "", errors.New("fetch is returning zero verdicts. This should never happen, as progress will never be made.")
+		return nil, PageToken{}, errors.New("fetch is returning zero verdicts. This should never happen, as progress will never be made.")
 	}
 	return verdicts, nextPageToken, nil
 }
@@ -275,13 +272,13 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken string, opts Fe
 // page token.
 //
 // It is an error to return `false` for consumed and not return an error.
-func (q *Query) run(ctx context.Context, pageToken string, pageSize int, rowCallback func(*TestVerdictSummary) (consumed bool, err error)) (nextPageToken string, retErr error) {
+func (q *Query) run(ctx context.Context, pageToken PageToken, pageSize int, rowCallback func(*TestVerdictSummary) (consumed bool, err error)) (nextPageToken PageToken, retErr error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.Query.run")
 	defer func() { tracing.End(ts, retErr) }()
 
 	st, err := q.buildQuery(pageToken, pageSize)
 	if err != nil {
-		return "", err
+		return PageToken{}, err
 	}
 
 	var lastSummary *TestVerdictSummary
@@ -336,12 +333,12 @@ func (q *Query) run(ctx context.Context, pageToken string, pageSize int, rowCall
 	})
 	if err != nil && !errors.Is(err, iterator.Done) {
 		// There was an error during iteration.
-		return "", err
+		return PageToken{}, err
 	}
 	// We had fewer verdicts than the page size and we didn't stop iteration early.
 	if rowsSeen < pageSize && err == nil {
 		// There are no more verdicts to query. The page token is empty to signal end of iteration.
-		return "", nil
+		return PageToken{}, nil
 	}
 
 	// We either:
@@ -349,7 +346,7 @@ func (q *Query) run(ctx context.Context, pageToken string, pageSize int, rowCall
 	// - Stopped iteration early using iterator.Done
 	// Continue paginating.
 	if lastSummary != nil {
-		nextPageToken = q.makePageToken(lastSummary)
+		nextPageToken = makePageTokenForSummary(lastSummary)
 	} else {
 		// The very first callback returned (consumed = false, iterator.Done), so
 		// the page token did not advance.
@@ -358,7 +355,7 @@ func (q *Query) run(ctx context.Context, pageToken string, pageSize int, rowCall
 	return nextPageToken, nil
 }
 
-func (q *Query) buildQuery(pageToken string, pageSize int) (spanner.Statement, error) {
+func (q *Query) buildQuery(pageToken PageToken, pageSize int) (spanner.Statement, error) {
 	params := map[string]any{
 		"shards":        q.RootInvocationID.AllShardIDs().ToSpanner(),
 		"limit":         pageSize,
@@ -366,7 +363,7 @@ func (q *Query) buildQuery(pageToken string, pageSize int) (spanner.Statement, e
 	}
 
 	paginationClause := "TRUE"
-	if pageToken != "" {
+	if pageToken != (PageToken{}) {
 		var err error
 		paginationClause, err = q.whereAfterPageToken(pageToken, params)
 		if err != nil {
@@ -440,87 +437,53 @@ func (q *Query) buildQuery(pageToken string, pageSize int) (spanner.Statement, e
 	return st, nil
 }
 
-func (q *Query) makePageToken(last *TestVerdictSummary) string {
-	// Encode all parts possibly relevant to ordering. whereAfterPageToken will use only
-	// the elements it needs based on the ordering selected.
-	var parts []string
-	parts = append(parts, fmt.Sprintf("%d", last.UIPriority))
-	parts = append(parts, last.ID.RootInvocationShardID.RowID())
-	parts = append(parts, last.ID.ModuleName)
-	parts = append(parts, last.ID.ModuleScheme)
-	parts = append(parts, last.ID.ModuleVariantHash)
-	parts = append(parts, last.ID.CoarseName)
-	parts = append(parts, last.ID.FineName)
-	parts = append(parts, last.ID.CaseName)
-	return pagination.Token(parts...)
-}
-
-func (q *Query) whereAfterPageToken(token string, params map[string]any) (string, error) {
-	parts, err := pagination.ParseToken(token)
-	if err != nil {
-		return "", errors.Fmt("invalid page token: %s", err)
-	}
-	const expectedParts = 8
-	if len(parts) != expectedParts {
-		return "", errors.Fmt("expected %v components, got %d", expectedParts, len(parts))
-	}
-
-	uiPriority, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return "", errors.Fmt("invalid page token, got non-integer UIPriority: %v", parts[0])
-	}
-	// See makePageToken(...) for ordering.
-	rootInvocationShardID := parts[1]
-	moduleName := parts[2]
-	moduleScheme := parts[3]
-	moduleVariantHash := parts[4]
-	coarseName := parts[5]
-	fineName := parts[6]
-	caseName := parts[7]
-
+func (q *Query) whereAfterPageToken(token PageToken, params map[string]any) (string, error) {
 	var columns []spanutil.PageTokenElement
 
 	if q.Order.ByUIPriority {
-		if uiPriority > MaxUIPriority {
-			return "", errors.New("invalid page token or logic error: uiPriority > MaxUIPriority")
+		if token.UIPriority > MaxUIPriority {
+			return "", errors.New("invalid page token or logic error: uiPriority > maxUIPriority")
 		}
 		columns = append(columns, spanutil.PageTokenElement{
 			ColumnName: "UIPriority",
-			AfterValue: uiPriority,
-			AtLimit:    uiPriority == MaxUIPriority,
+			AfterValue: token.UIPriority,
+			// Once this column is at its limit, fix its value in the pagination clause.
+			// This allows the corresponding `ORDER BY UIPriority` clause to be ignored by the
+			// query planner, and the reversion to a more efficient query plan.
+			AtLimit: token.UIPriority == MaxUIPriority,
 		})
 	}
 	if !q.Order.ByStructuredTestID {
 		// Order by primary key.
 		columns = append(columns, spanutil.PageTokenElement{
 			ColumnName: "RootInvocationShardID",
-			AfterValue: rootInvocationShardID,
+			AfterValue: token.ID.RootInvocationShardID.RowID(),
 		})
 	}
 	columns = append(columns, []spanutil.PageTokenElement{
 		{
 			ColumnName: "ModuleName",
-			AfterValue: moduleName,
+			AfterValue: token.ID.ModuleName,
 		},
 		{
 			ColumnName: "ModuleScheme",
-			AfterValue: moduleScheme,
+			AfterValue: token.ID.ModuleScheme,
 		},
 		{
 			ColumnName: "ModuleVariantHash",
-			AfterValue: moduleVariantHash,
+			AfterValue: token.ID.ModuleVariantHash,
 		},
 		{
 			ColumnName: "T1CoarseName",
-			AfterValue: coarseName,
+			AfterValue: token.ID.CoarseName,
 		},
 		{
 			ColumnName: "T2FineName",
-			AfterValue: fineName,
+			AfterValue: token.ID.FineName,
 		},
 		{
 			ColumnName: "T3CaseName",
-			AfterValue: caseName,
+			AfterValue: token.ID.CaseName,
 		},
 	}...)
 	return spanutil.WhereAfterClause(columns, "after", params), nil
@@ -621,6 +584,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		ResultCount,
 		IsMasked,
 		-- UI Priority Calculation. Lower is higher priority.
+		-- Keep in sync with go implementation in page_token.go.
 		(CASE
 			-- Has blocking failures: priority 0
 			WHEN (Status = {{.VerdictFailed}}) AND (NOT HasExonerations) THEN 0
