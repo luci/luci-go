@@ -35,6 +35,7 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
 import { parseOrderByParam } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
 import { useColumnManagement } from '../columns/use_column_management';
@@ -158,6 +159,20 @@ export function DeviceTable<R extends GridValidRowModel>({
   const getFilteredColumnIds = () => {
     const filters = getFilters(searchParams)?.filters;
     if (!filters) return [];
+
+    // TODO make this implementation consistent across other platforms.
+    if (platform === Platform.CHROMIUM) {
+      const columnIdByFilterField = availableColumns.reduce(
+        (acc, { field, filterByField }) => ({
+          ...acc,
+          [filterByField || field]: field,
+        }),
+        {} as Record<string, string>,
+      );
+      return Object.keys(filters).map(
+        (key) => columnIdByFilterField[key] || key,
+      );
+    }
 
     // TODO - b/449694092 this is a temporary fix until we have a streamlined solution for managing filters that puts the logic in one place
     return Object.keys(filters).map((key) =>
