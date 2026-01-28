@@ -81,6 +81,7 @@ export function FleetToolbar({
       })(),
 
       [Platform.ANDROID]: selectedRows.length > 0 && <CopyButton />,
+      [Platform.CHROMIUM]: selectedRows.length > 0 && <CopyButton />,
     }),
     [selectedRows],
   );
