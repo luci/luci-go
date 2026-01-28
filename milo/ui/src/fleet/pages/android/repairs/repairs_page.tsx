@@ -332,18 +332,19 @@ const COLUMNS = {
         <Typography variant="body2" noWrap={true}>
           {x.cell.getValue()}
         </Typography>
-        <Typography variant="caption" sx={{ color: colors.grey[500] }}>
-          /{' '}
-          {x.cell.getValue() && x.row.original.total_devices
-            ? // Capping the value if the percentage is higher than 100%, see b/473028358.
+        {x.cell.getValue() >= 0 && x.row.original.total_devices && (
+          <Typography variant="caption" sx={{ color: colors.grey[500] }}>
+            {
+              // Capping the value if the percentage is higher than 100%, see b/473028358.
               (x.cell.getValue() / x.row.original.total_devices <= 1
                 ? x.cell.getValue() / x.row.original.total_devices
                 : 1
               ).toLocaleString('en-US', {
                 style: 'percent',
               })
-            : ''}
-        </Typography>
+            }
+          </Typography>
+        )}
       </div>
     ),
 
@@ -363,16 +364,16 @@ const COLUMNS = {
           </Typography>
           <InfoTooltip infoCss={{ marginLeft: '10px' }}>
             <Typography variant="body2">
-              The maxiumum number of busy devices in the past 14 days
+              The maximum number of busy devices in the past 14 days
             </Typography>
 
             <Typography
               variant="caption"
               css={{ marginTop: 10, display: 'block' }}
             >
-              If some devices has been deleted in the past 14 days it&apos;s
-              possible for this figure to be higher than the total number of
-              devices.
+              The percentage is calculated as the ratio of 14 day peak active
+              devices to the current total number of devices and is capped at
+              100%.
             </Typography>
           </InfoTooltip>
         </div>
