@@ -27,6 +27,9 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// MaxUIPriority is the maximum value of UIPriority field.
+const MaxUIPriority = 100
+
 // PageToken is a page token for a query. It represents the last row retrieved.
 // Not all fields are used for all queries, but for consistency all are populated.
 type PageToken struct {

@@ -15,7 +15,6 @@
 package testverdictsv2
 
 import (
-	"fmt"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -93,140 +92,91 @@ func TestQuery(t *testing.T) {
 			return results
 		}
 
-		expected := ExpectedVerdicts(rootInvID)
+		type QueryType struct {
+			Name     string
+			View     pb.TestVerdictView
+			Expected []*pb.TestVerdict
+		}
+		queries := []QueryType{
+			{
+				Name:     "Summary query",
+				View:     pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC,
+				Expected: ToBasicView(ExpectedVerdicts(rootInvID)),
+			},
+			{
+				Name:     "Summary -> Details query",
+				View:     pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
+				Expected: ExpectedVerdicts(rootInvID),
+			},
+		}
+		for _, query := range queries {
+			t.Run(query.Name, func(t *ftt.Test) {
+				expected := query.Expected
+				q.View = query.View
 
-		t.Run("Baseline", func(t *ftt.Test) {
-			verdicts, token, err := fetchOne(q, PageToken{}, opts)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, token, should.Equal(PageToken{}))
-			assert.Loosely(t, verdicts, should.Match(expected))
-		})
-		t.Run("With basic view", func(t *ftt.Test) {
-			q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
-			expectedBasic := ToBasicView(expected)
-
-			t.Run("Baseline", func(t *ftt.Test) {
-				verdicts, token, err := fetchOne(q, PageToken{}, opts)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, token, should.Equal(PageToken{}))
-				assert.Loosely(t, verdicts, should.Match(expectedBasic))
-			})
-			t.Run("With pagination", func(t *ftt.Test) {
-				// The basic view uses a different query, so we need to verify pagination
-				// separately.
-				opts.PageSize = 1
-				results := fetchAll(q, opts)
-				assert.Loosely(t, results, should.Match(expectedBasic))
-			})
-		})
-		t.Run("With empty invocation", func(t *ftt.Test) {
-			emptyInvID := rootinvocations.ID("empty-inv")
-			emptyInvRow := rootinvocations.NewBuilder(emptyInvID).Build()
-			ms := insert.RootInvocationWithRootWorkUnit(emptyInvRow)
-			testutil.MustApply(ctx, t, ms...)
-			q.RootInvocationID = emptyInvID
-
-			verdicts, token, err := fetchOne(q, PageToken{}, opts)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, token, should.Equal(PageToken{}))
-			assert.Loosely(t, verdicts, should.HaveLength(0))
-		})
-		t.Run("Ordering", func(t *ftt.Test) {
-			// Map expected items to map for easy retrieval
-			m := make(map[string]*pb.TestVerdict)
-			for _, v := range expected {
-				m[v.TestId] = v
-			}
-
-			t.Run("By UI priority", func(t *ftt.Test) {
-				q.Order = Ordering{ByUIPriority: true}
-				expectedUIOrder := []*pb.TestVerdict{
-					m[flatTestID("m1", "c1", "f1", "t2")], // Failed, Priority 0
-					m[flatTestID("m1", "c2", "f1", "t6")], // Precluded, Priority 30
-					m[flatTestID("m2", "c1", "f1", "t7")], // Execution Errored, Priority 30
-					m[flatTestID("m1", "c1", "f1", "t3")], // Flaky, Priority 70
-					m[flatTestID("m1", "c1", "f2", "t5")], // Exonerated, Priority 90
-					m[flatTestID("m1", "c1", "f1", "t4")], // Skipped, Priority 100
-					m[flatTestID("m1", "c1", "f1", "t1")], // Passed, Priority 100. Sorted after t4 because of primary key order.
-				}
-
-				t.Run("Without pagination", func(t *ftt.Test) {
-					verdicts, token, err := fetchOne(q, PageToken{}, opts)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, token, should.Equal(PageToken{}))
-					assert.Loosely(t, verdicts, should.Match(expectedUIOrder))
+				t.Run("Baseline", func(t *ftt.Test) {
+					assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 				})
-				t.Run("With pagination", func(t *ftt.Test) {
+				// The underlying queries already have extensive test cases to test correctness
+				// of individual options. The tests below are to verify these options are
+				// correctly passed to the underlying queries and responses integrated correctly.
+				t.Run("Order", func(t *ftt.Test) {
+					q.Order = Ordering{
+						ByUIPriority: true,
+					}
+					gotVerdicts := fetchAll(q, opts)
+					// The first verdict should be failing.
+					assert.Loosely(t, gotVerdicts[0].Status, should.Equal(pb.TestVerdict_FAILED))
+					assert.Loosely(t, gotVerdicts[0].StatusOverride, should.Equal(pb.TestVerdict_NOT_OVERRIDDEN))
+				})
+				t.Run("Filter", func(t *ftt.Test) {
+					q.Filter = "status = FAILED"
+					// t2 is FAILED and t5 is FAILED (but exonerated).
+					expected = []*pb.TestVerdict{
+						VerdictByCaseName(expected, "t2"),
+						VerdictByCaseName(expected, "t5"),
+					}
+					assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
+				})
+				t.Run("Contains test result filter", func(t *ftt.Test) {
+					q.ContainsTestResultFilter = "t3"
+					gotVerdicts := fetchAll(q, opts)
+					expected = []*pb.TestVerdict{
+						VerdictByCaseName(expected, "t3"),
+					}
+					assert.Loosely(t, gotVerdicts, should.Match(expected))
+				})
+				t.Run("Test prefix filter", func(t *ftt.Test) {
+					q.TestPrefixFilter = &pb.TestIdentifierPrefix{
+						Level: pb.AggregationLevel_CASE,
+						Id: &pb.TestIdentifier{
+							ModuleName:        "m1",
+							ModuleScheme:      "junit",
+							ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
+							CoarseName:        "c1",
+							FineName:          "f1",
+							CaseName:          "t3",
+						},
+					}
+					gotVerdicts := fetchAll(q, opts)
+					expected = []*pb.TestVerdict{
+						VerdictByCaseName(expected, "t3"),
+					}
+					assert.Loosely(t, gotVerdicts, should.Match(expected))
+				})
+				t.Run("Access", func(t *ftt.Test) {
+					q.Access.Level = permissions.LimitedAccess
+					q.Access.Realms = []string{}
+					gotVerdicts := fetchAll(q, opts)
+					expected = ExpectedMaskedVerdicts(expected, []string{})
+					assert.Loosely(t, gotVerdicts, should.Match(expected))
+				})
+				t.Run("With page size", func(t *ftt.Test) {
 					opts.PageSize = 1
 					results := fetchAll(q, opts)
-					assert.Loosely(t, results, should.Match(expectedUIOrder))
+					assert.Loosely(t, results, should.Match(expected))
 				})
-			})
-			t.Run("By UI priority, then Test ID", func(t *ftt.Test) {
-				q.Order = Ordering{ByUIPriority: true, ByStructuredTestID: true}
-				expectedUIOrder := []*pb.TestVerdict{
-					m[flatTestID("m1", "c1", "f1", "t2")], // Failed, Priority 0
-					m[flatTestID("m1", "c2", "f1", "t6")], // Precluded, Priority 30
-					m[flatTestID("m2", "c1", "f1", "t7")], // Execution Errored, Priority 30
-					m[flatTestID("m1", "c1", "f1", "t3")], // Flaky, Priority 70
-					m[flatTestID("m1", "c1", "f2", "t5")], // Exonerated, Priority 90
-					m[flatTestID("m1", "c1", "f1", "t1")], // Passed, Priority 100.
-					m[flatTestID("m1", "c1", "f1", "t4")], // Skipped, Priority 100
-				}
-
-				t.Run("Without pagination", func(t *ftt.Test) {
-					verdicts, token, err := fetchOne(q, PageToken{}, opts)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, token, should.Equal(PageToken{}))
-					assert.Loosely(t, verdicts, should.Match(expectedUIOrder))
-				})
-				t.Run("With pagination", func(t *ftt.Test) {
-					opts.PageSize = 1
-					results := fetchAll(q, opts)
-					assert.Loosely(t, results, should.Match(expectedUIOrder))
-				})
-			})
-			t.Run("By Test ID", func(t *ftt.Test) {
-				q.Order = Ordering{ByStructuredTestID: true}
-
-				expectedUIOrder := []*pb.TestVerdict{
-					m[flatTestID("m1", "c1", "f1", "t1")],
-					m[flatTestID("m1", "c1", "f1", "t2")],
-					m[flatTestID("m1", "c1", "f1", "t3")],
-					m[flatTestID("m1", "c1", "f1", "t4")],
-					m[flatTestID("m1", "c1", "f2", "t5")],
-					m[flatTestID("m1", "c2", "f1", "t6")],
-					m[flatTestID("m2", "c1", "f1", "t7")],
-				}
-
-				t.Run("Without pagination", func(t *ftt.Test) {
-					verdicts, token, err := fetchOne(q, PageToken{}, opts)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, token, should.Equal(PageToken{}))
-					assert.Loosely(t, verdicts, should.Match(expectedUIOrder))
-				})
-				t.Run("With pagination", func(t *ftt.Test) {
-					opts.PageSize = 1
-					results := fetchAll(q, opts)
-					assert.Loosely(t, results, should.Match(expectedUIOrder))
-				})
-			})
-		})
-		t.Run("With page size", func(t *ftt.Test) {
-			opts.PageSize = 1
-			results := fetchAll(q, opts)
-			assert.Loosely(t, results, should.Match(expected))
-		})
-		t.Run("With response limit bytes", func(t *ftt.Test) {
-			// Response limiting implementation is different based on the view used, so make sure both work.
-			views := []pb.TestVerdictView{pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC, pb.TestVerdictView_TEST_VERDICT_VIEW_FULL}
-			for _, view := range views {
-				expected := expected
-				if view == pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC {
-					expected = ToBasicView(expected)
-				}
-				t.Run(fmt.Sprintf("With view %s", view), func(t *ftt.Test) {
-					q.View = view
+				t.Run("With response limit bytes", func(t *ftt.Test) {
 					t.Run("Makes progress", func(t *ftt.Test) {
 						// While results may be split over multiple pages, they should all be
 						// returned.
@@ -256,210 +206,66 @@ func TestQuery(t *testing.T) {
 						assert.Loosely(t, verdicts, should.Match(expected[:2]))
 					})
 				})
-			}
-		})
-		t.Run("With verdict result limit", func(t *ftt.Test) {
-			opts.VerdictResultLimit = 1
-			for _, e := range expected {
-				e.Results = e.Results[:1]
-				if len(e.Exonerations) > 1 {
-					e.Exonerations = e.Exonerations[:1]
+				if q.View == pb.TestVerdictView_TEST_VERDICT_VIEW_FULL {
+					// For queries using view = FULL which use the IteratedQuery for all or part,
+					// verify verdict and total result limits are respected.
+					t.Run("With verdict result limit", func(t *ftt.Test) {
+						opts.VerdictResultLimit = 1
+						for _, e := range expected {
+							e.Results = e.Results[:1]
+							if len(e.Exonerations) > 1 {
+								e.Exonerations = e.Exonerations[:1]
+							}
+						}
+
+						results := fetchAll(q, opts)
+						assert.Loosely(t, results, should.Match(expected))
+					})
+					t.Run("With verdict size limit", func(t *ftt.Test) {
+						// Remove one result from t3 and measure its size. This will be our target.
+						assert.Loosely(t, expected[1].Results, should.HaveLength(2))
+						expected[1].Results = expected[1].Results[:1]
+						opts.VerdictSizeLimit = proto.Size(expected[1]) + protoJSONOverheadBytes
+
+						// As the implementation is conservative, give it a little bit of extra room.
+						opts.VerdictSizeLimit += 2
+
+						results := fetchAll(q, opts)
+						assert.Loosely(t, results, should.HaveLength(len(expected)))
+						assert.Loosely(t, results[1], should.Match(expected[1]))
+					})
+					t.Run("With total result limit", func(t *ftt.Test) {
+						t.Run("Makes progress", func(t *ftt.Test) {
+							// Should return all verdicts, just split over more pages.
+							// The result limit may be violated for the first verdict on each page
+							// to make sure the query always makes progress.
+							opts.TotalResultLimit = 1
+							results := fetchAll(q, opts)
+							assert.Loosely(t, results, should.Match(expected))
+						})
+						t.Run("Limit is applied correctly", func(t *ftt.Test) {
+							// Should return t1 (1 result) and t2 (1 result).
+							// t3 (2 results) would make total 4 results, plus 1 for
+							// end of verdict detection and 5 > 4.
+							opts.TotalResultLimit = 4
+							verdicts, token, err := fetchOne(q, PageToken{}, opts)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, token, should.NotEqual(PageToken{}))
+							assert.Loosely(t, verdicts, should.Match(expected[:2]))
+						})
+						t.Run("Limit is applied correctly (case 2)", func(t *ftt.Test) {
+							// Should return t1 (1), t2 (1), t3 (2).
+							// Total results = 4, plus one overhead for end of verdict
+							// detection which makes 5.
+							opts.TotalResultLimit = 5
+							verdicts, token, err := fetchOne(q, PageToken{}, opts)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, token, should.NotEqual(PageToken{}))
+							assert.Loosely(t, verdicts, should.Match(expected[:3]))
+						})
+					})
 				}
-			}
-
-			results := fetchAll(q, opts)
-			assert.Loosely(t, results, should.Match(expected))
-		})
-		t.Run("With verdict size limit", func(t *ftt.Test) {
-			// Remove one result from t3 and measure its size. This will be our target.
-			assert.Loosely(t, expected[1].Results, should.HaveLength(2))
-			expected[1].Results = expected[1].Results[:1]
-			opts.VerdictSizeLimit = proto.Size(expected[1]) + protoJSONOverheadBytes
-
-			// As the implementation is conservative, give it a little bit of extra room.
-			opts.VerdictSizeLimit += 2
-
-			results := fetchAll(q, opts)
-			assert.Loosely(t, results, should.HaveLength(len(expected)))
-			assert.Loosely(t, results[1], should.Match(expected[1]))
-		})
-		t.Run("With total result limit", func(t *ftt.Test) {
-			t.Run("Makes progress", func(t *ftt.Test) {
-				// Should return all verdicts, just split over more pages.
-				// The result limit may be violated for the first verdict on each page
-				// to make sure the query always makes progress.
-				opts.TotalResultLimit = 1
-				results := fetchAll(q, opts)
-				assert.Loosely(t, results, should.Match(expected))
 			})
-			t.Run("Limit is applied correctly", func(t *ftt.Test) {
-				// Should return t1 (1 result) and t2 (1 result).
-				// t3 (2 results) would make total 4 results, plus 1 for
-				// end of verdict detection and 5 > 4.
-				opts.TotalResultLimit = 4
-				verdicts, token, err := fetchOne(q, PageToken{}, opts)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, token, should.NotEqual(PageToken{}))
-				assert.Loosely(t, verdicts, should.Match(expected[:2]))
-			})
-			t.Run("Limit is applied correctly (case 2)", func(t *ftt.Test) {
-				// Should return t1 (1), t2 (1), t3 (2).
-				// Total results = 4, plus one overhead for end of verdict
-				// detection which makes 5.
-				opts.TotalResultLimit = 5
-				verdicts, token, err := fetchOne(q, PageToken{}, opts)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, token, should.NotEqual(PageToken{}))
-				assert.Loosely(t, verdicts, should.Match(expected[:3]))
-			})
-		})
-		t.Run("With contains test result filter", func(t *ftt.Test) {
-			expected := ExpectedVerdicts(rootInvID)
-
-			// These tests do not seek to comprehensively validate filter semantics (the
-			// parser-generator library does most of that), they validate the AIP-160 filter
-			// from `testresultsv2` package is correctly integrated and all required columns exist
-			// (no invalid SQL is generated).
-			q.ContainsTestResultFilter = `test_id_structured.module_name != "module"` +
-				` AND test_id_structured.module_scheme != "scheme"` +
-				` AND test_id_structured.module_variant.key = "value"` +
-				` AND test_id_structured.module_variant_hash != "varianthash"` +
-				` AND test_id_structured.coarse_name != "coarse"` +
-				` AND test_id_structured.fine_name != "fine"` +
-				` AND test_id_structured.case_name != "case"` +
-				` AND test_metadata.name != "somename"` +
-				` AND tags.mytag = "myvalue"` +
-				` AND test_metadata.location.repo != "repo"` +
-				` AND test_metadata.location.file_name != "filename"` +
-				` AND (status != PRECLUDED OR status = PRECLUDED)` +
-				` AND duration < 100s`
-
-			t.Run("With full access", func(t *ftt.Test) {
-				q.Access.Level = permissions.FullAccess
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
-			})
-			t.Run("With limited access (some upgraded to full)", func(t *ftt.Test) {
-				// Only some results should match, because we filter on
-				// tags and variant and these fields are only visible to us on those
-				// results we have full access to.
-				q.Access.Level = permissions.LimitedAccess
-				q.Access.Realms = []string{"testproject:t4-r1"}
-				expectedLimited := ExpectedMaskedVerdicts(expected, q.Access.Realms)
-				expectedLimited = []*pb.TestVerdict{VerdictByCaseName(expectedLimited, "t4")}
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
-			})
-			t.Run("With implicit filter", func(t *ftt.Test) {
-				// Check an aip.dev/160 implicit filter.
-				q.ContainsTestResultFilter = `t3`
-				expected = []*pb.TestVerdict{VerdictByCaseName(expected, "t3")}
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
-			})
-		})
-		t.Run("With prefix filter", func(t *ftt.Test) {
-			q.TestPrefixFilter = &pb.TestIdentifierPrefix{
-				Level: pb.AggregationLevel_MODULE,
-				Id: &pb.TestIdentifier{
-					ModuleName:        "m1",
-					ModuleScheme:      "junit",
-					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
-				},
-			}
-
-			expected := ExpectedVerdicts(rootInvID)
-			t.Run("module-level filter", func(t *ftt.Test) {
-				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
-					return v.TestIdStructured.ModuleName == "m1"
-				})
-				assert.Loosely(t, expected, should.HaveLength(6))
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
-			})
-			t.Run("coarse name-level filter", func(t *ftt.Test) {
-				q.TestPrefixFilter.Level = pb.AggregationLevel_COARSE
-				q.TestPrefixFilter.Id.CoarseName = "c1"
-				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
-					return v.TestIdStructured.ModuleName == "m1" && v.TestIdStructured.CoarseName == "c1"
-				})
-				assert.Loosely(t, expected, should.HaveLength(5))
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
-			})
-			t.Run("fine name-level filter", func(t *ftt.Test) {
-				q.TestPrefixFilter.Level = pb.AggregationLevel_FINE
-				q.TestPrefixFilter.Id.CoarseName = "c1"
-				q.TestPrefixFilter.Id.FineName = "f1"
-				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
-					return v.TestIdStructured.ModuleName == "m1" &&
-						v.TestIdStructured.CoarseName == "c1" &&
-						v.TestIdStructured.FineName == "f1"
-				})
-				assert.Loosely(t, expected, should.HaveLength(4))
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
-			})
-			t.Run("case name-level filter", func(t *ftt.Test) {
-				q.TestPrefixFilter.Level = pb.AggregationLevel_CASE
-				q.TestPrefixFilter.Id.CoarseName = "c1"
-				q.TestPrefixFilter.Id.FineName = "f1"
-				q.TestPrefixFilter.Id.CaseName = "t2"
-				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
-					return v.TestIdStructured.ModuleName == "m1" &&
-						v.TestIdStructured.CoarseName == "c1" &&
-						v.TestIdStructured.FineName == "f1" &&
-						v.TestIdStructured.CaseName == "t2"
-				})
-				assert.Loosely(t, expected, should.HaveLength(1))
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
-			})
-		})
-		t.Run("With limited access", func(t *ftt.Test) {
-			q.Access.Level = permissions.LimitedAccess
-
-			t.Run("Full view", func(t *ftt.Test) {
-				q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
-				t.Run("Baseline", func(t *ftt.Test) {
-					expectedLimited := ExpectedMaskedVerdicts(expected, nil)
-					assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
-				})
-
-				t.Run("With upgraded realms", func(t *ftt.Test) {
-					q.Access.Realms = []string{"testproject:t3-r1", "testproject:t4-r1"}
-					expectedLimited := ExpectedMaskedVerdicts(expected, q.Access.Realms)
-					assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
-				})
-			})
-			t.Run("Basic view", func(t *ftt.Test) {
-				// This runs through a different path with a different masking implementation.
-				q.View = pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC
-				t.Run("Baseline", func(t *ftt.Test) {
-					expectedLimited := ToBasicView(ExpectedMaskedVerdicts(expected, nil))
-					assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
-				})
-
-				t.Run("With upgraded realms", func(t *ftt.Test) {
-					q.Access.Realms = []string{"testproject:t3-r1", "testproject:t4-r1"}
-					expectedLimited := ToBasicView(ExpectedMaskedVerdicts(expected, q.Access.Realms))
-					assert.Loosely(t, fetchAll(q, opts), should.Match(expectedLimited))
-				})
-			})
-		})
-		t.Run("With verdict filter", func(t *ftt.Test) {
-			t.Run("status", func(t *ftt.Test) {
-				q.Filter = "status = FAILED"
-				expected := ExpectedVerdicts(rootInvID)
-				// t2 is FAILED and t5 is FAILED (but exonerated).
-				expected = []*pb.TestVerdict{
-					VerdictByCaseName(expected, "t2"),
-					VerdictByCaseName(expected, "t5"),
-				}
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
-			})
-			t.Run("status_override", func(t *ftt.Test) {
-				q.Filter = "status_override = EXONERATED"
-				expected := ExpectedVerdicts(rootInvID)
-				// Only t5 is EXONERATED.
-				expected = []*pb.TestVerdict{
-					VerdictByCaseName(expected, "t5"),
-				}
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
-			})
-		})
+		}
 	})
 }
