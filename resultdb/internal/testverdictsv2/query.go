@@ -16,6 +16,7 @@ package testverdictsv2
 
 import (
 	"context"
+	"strings"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -93,7 +94,10 @@ func (opts FetchOptions) Validate() error {
 }
 
 // Fetch fetches a page of test verdicts.
-func (q *Query) Fetch(ctx context.Context, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
+func (q *Query) Fetch(ctx context.Context, pageToken PageToken, opts FetchOptions) (verdicts []*pb.TestVerdict, nextPageToken PageToken, retErr error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.Query.Fetch")
+	defer func() { tracing.End(ts, retErr) }()
+
 	ctx = logging.SetFields(ctx, logging.Fields{
 		"RootInvocationID": q.RootInvocationID,
 		"PageSize":         opts.PageSize,
@@ -106,12 +110,30 @@ func (q *Query) Fetch(ctx context.Context, pageToken PageToken, opts FetchOption
 		return nil, PageToken{}, errors.New("no access to root invocation")
 	}
 
+	// The result order is suitable for an iterator query if:
+	// - the query is not sorted by UI priority, or
+	// - it is sorted by UI priority, but the UI priority is no
+	//   longer a factor in the result order (we are in the region
+	//   of the result set where we are paging over passing
+	//   and skipped verdicts).
+	isOrderSuitableForIteratorQuery := !q.Order.ByUIPriority || (q.Order.ByUIPriority && pageToken.UIPriority == MaxUIPriority)
+	if strings.TrimSpace(q.ContainsTestResultFilter) == "" && strings.TrimSpace(q.Filter) == "" && isOrderSuitableForIteratorQuery {
+		// Use the iterator query. It is fast and cheap.
+		logging.Debugf(ctx, "Using iterator query.")
+		return q.fetchUsingIteratorQuery(ctx, pageToken, opts)
+	}
+
+	// The query is a complex query. We need to use QuerySummaries
+	// to identify the verdicts to return, and if the view is FULL,
+	// we then need to fetch the details using a follow-up query.
 	switch q.View {
 	case pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC:
+		logging.Debugf(ctx, "Using summary query.")
 		summaryQuery := q.toSummaryQuery()
 		return summaryQuery.Fetch(ctx, pageToken, opts)
 	case pb.TestVerdictView_TEST_VERDICT_VIEW_FULL:
-		return q.fetchDetailedView(ctx, pageToken, opts)
+		logging.Debugf(ctx, "Using summary then iterator query.")
+		return q.fetchSummariesThenDetails(ctx, pageToken, opts)
 	default:
 		return nil, PageToken{}, errors.Fmt("unknown view %q", q.View)
 	}
@@ -128,11 +150,52 @@ func (q *Query) toSummaryQuery() *QuerySummaries {
 	}
 }
 
-// fetchDetailedView fetches a page of test verdicts with view of TEST_VERDICT_VIEW_FULL.
-func (q *Query) fetchDetailedView(ctx context.Context, pageToken PageToken, opts FetchOptions) (verdicts []*pb.TestVerdict, nextPageToken PageToken, retErr error) {
-	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.Query.fetchDetailedView")
-	defer func() { tracing.End(ts, retErr) }()
+func (q *Query) fetchUsingIteratorQuery(ctx context.Context, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
+	var predicate func(*TestVerdict) bool
+	order := testresultsv2.OrderingByPrimaryKey
+	if q.Order.ByStructuredTestID {
+		order = testresultsv2.OrderingByTestID
+	}
+	if q.Order.ByUIPriority {
+		if pageToken.UIPriority != MaxUIPriority {
+			return nil, PageToken{}, errors.New("page token must be in the region of the response where only passing & skipped verdicts are being returned")
+		}
+		predicate = func(tv *TestVerdict) bool {
+			return tv.Status == pb.TestVerdict_PASSED || tv.Status == pb.TestVerdict_SKIPPED
+		}
+	}
 
+	// For each verdict summary, query the details.
+	detailsQuery := IteratorQuery{
+		RootInvocationID: q.RootInvocationID,
+		Order:            order,
+		TestPrefixFilter: q.TestPrefixFilter,
+		Access:           q.Access,
+		View:             q.View,
+	}
+
+	fetchOpts := IteratorFetchOptions{
+		FetchOptions: opts,
+		Predicate:    predicate,
+	}
+
+	verdicts, nextPageToken, err := detailsQuery.Fetch(ctx, pageToken, fetchOpts)
+	if err != nil {
+		return nil, PageToken{}, err
+	}
+
+	if q.Order.ByUIPriority {
+		// The page token returned by the query may be based on verdicts not included in the response.
+		// This is a consequence of the iterator advancing the page token even for verdicts it may not
+		// include in the response. To avoid this triggering us back into an earlier part of the query,
+		// we need to pin the UI priority in the response token to MaxUIPriority.
+		nextPageToken.UIPriority = MaxUIPriority
+	}
+	return verdicts, nextPageToken, nil
+}
+
+// fetchSummariesThenDetails fetches a page of test verdicts with view of TEST_VERDICT_VIEW_FULL.
+func (q *Query) fetchSummariesThenDetails(ctx context.Context, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
 	var ids []testresultsv2.VerdictID
 	var summaries []*TestVerdictSummary
 
@@ -194,7 +257,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken PageToken, opts
 	// We already applied a result limit above, don't apply it again.
 	fetchOpts.TotalResultLimit = 0
 
-	verdicts, _, err = detailsQuery.Fetch(ctx, PageToken{}, fetchOpts)
+	verdicts, _, err := detailsQuery.Fetch(ctx, PageToken{}, fetchOpts)
 	if err != nil {
 		// There was an error when retrieving the verdicts.
 		return nil, PageToken{}, err
@@ -214,6 +277,7 @@ func (q *Query) fetchDetailedView(ctx context.Context, pageToken PageToken, opts
 	// - The second stage didn't retrieve all verdicts (e.g. due to
 	//   hitting response size limits.)
 	// Continue paginating from the last result we are returning.
+	var nextPageToken PageToken
 	if len(verdicts) > 0 {
 		lastSummary := summaries[len(verdicts)-1]
 		nextPageToken = makePageTokenForSummary(lastSummary)

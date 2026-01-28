@@ -22,6 +22,7 @@ import (
 	"cloud.google.com/go/spanner"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/permissions"
@@ -114,6 +115,7 @@ func (q *Query) List(ctx context.Context, pageToken PageToken, opts spanutil.Buf
 		if err != nil {
 			return nil, err
 		}
+		logging.Debugf(ctx, "Query test results with page size %v.", pageSize)
 		it := span.Query(ctx, st)
 		var buf spanutil.Buffer
 		var decoder Decoder

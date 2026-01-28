@@ -81,13 +81,14 @@ type IteratorFetchOptions struct {
 }
 
 // Fetch fetches a page of verdicts starting at the given page token.
-func (q *IteratorQuery) Fetch(ctx context.Context, pageToken PageToken, opts IteratorFetchOptions) ([]*pb.TestVerdict, PageToken, error) {
+func (q *IteratorQuery) Fetch(ctx context.Context, pageToken PageToken, opts IteratorFetchOptions) (verdicts []*pb.TestVerdict, nextPageToken PageToken, retErr error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/testverdictsv2.IteratorQuery.Fetch")
+	defer func() { tracing.End(ts, retErr) }()
+
 	if err := opts.Validate(); err != nil {
 		return nil, PageToken{}, err
 	}
 
-	var verdicts []*pb.TestVerdict
-	var nextPageToken PageToken
 	var totalSize int
 
 	// The underlying iterator always needs to peek ahead one result, to cut

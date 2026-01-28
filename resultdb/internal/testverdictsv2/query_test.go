@@ -93,18 +93,32 @@ func TestQuery(t *testing.T) {
 		}
 
 		type QueryType struct {
-			Name     string
-			View     pb.TestVerdictView
-			Expected []*pb.TestVerdict
+			Name                     string
+			View                     pb.TestVerdictView
+			ContainsTestResultFilter string
+			Expected                 []*pb.TestVerdict
 		}
 		queries := []QueryType{
 			{
-				Name:     "Summary query",
-				View:     pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC,
-				Expected: ToBasicView(ExpectedVerdicts(rootInvID)),
+				Name: "Summary query",
+				// This filter doesn't achieve anything useful, but it forces the query
+				// to be ineligble for the iterator query (fast path).
+				ContainsTestResultFilter: "status = FAILED OR status != FAILED",
+				View:                     pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC,
+				Expected:                 ToBasicView(ExpectedVerdicts(rootInvID)),
 			},
 			{
-				Name:     "Summary -> Details query",
+				Name: "Summary -> Iterator query",
+				// This filter doesn't achieve anything useful, but it forces the query
+				// to be ineligble for the iterator query (fast path).
+				ContainsTestResultFilter: "status = FAILED OR status != FAILED",
+				View:                     pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
+				Expected:                 ExpectedVerdicts(rootInvID),
+			},
+			{
+				// Some test cases below might force this to be ineligible for the fast path,
+				// that is OK.
+				Name:     "Iterator query (fast path)",
 				View:     pb.TestVerdictView_TEST_VERDICT_VIEW_FULL,
 				Expected: ExpectedVerdicts(rootInvID),
 			},
@@ -112,6 +126,7 @@ func TestQuery(t *testing.T) {
 		for _, query := range queries {
 			t.Run(query.Name, func(t *ftt.Test) {
 				expected := query.Expected
+				q.ContainsTestResultFilter = query.ContainsTestResultFilter
 				q.View = query.View
 
 				t.Run("Baseline", func(t *ftt.Test) {
