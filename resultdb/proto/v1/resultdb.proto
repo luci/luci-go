@@ -57,14 +57,6 @@ service ResultDB {
   // Retrieves a list of work units based on a predicate.
   rpc QueryWorkUnits(QueryWorkUnitsRequest) returns (QueryWorkUnitsResponse) {};
 
-  // == Invocations ============================================================
-  // Retrieves an invocation.
-  rpc GetInvocation(GetInvocationRequest) returns (Invocation) {};
-
-  // Retrieve names of all root invocations for a given invocation.
-  rpc QueryRootInvocationNames(QueryRootInvocationNamesRequest)
-      returns (QueryRootInvocationNamesResponse) {};
-
   // == Test results ===========================================================
 
   // Retrieves a test result.
@@ -101,47 +93,11 @@ service ResultDB {
   rpc QueryTestExonerations(QueryTestExonerationsRequest)
       returns (QueryTestExonerationsResponse) {};
 
-  // Retrieves the test result statistics of an invocation.
-  // Currently supports total number of test results belong to the invocation,
-  // directly and indirectly.
-  rpc QueryTestResultStatistics(QueryTestResultStatisticsRequest)
-      returns (QueryTestResultStatisticsResponse) {};
-
   // Calculate new test variants by running the difference between the tests
   // run in the given invocation against the submitted test history for the
   // source.
   rpc QueryNewTestVariants(QueryNewTestVariantsRequest)
       returns (QueryNewTestVariantsResponse) {};
-
-  // Retrieves test verdicts for a test run. A test run comprises only
-  // the test results from a single invocation and not its included
-  // invocations.
-  //
-  // Useful to incrementally ingest test results for an export root as its
-  // individual constituent invocations finalize, in conjunction with
-  // the invocations-ready-for-export pub/sub.
-  //
-  // Compared to the ListTestResults RPC, this RPC ensures all results
-  // for a test variant are returned together, which is useful when
-  // ingesting results into analyses that treat retried test results
-  // in a given test run differently to the first retry.
-  //
-  // To use, the caller must have `resultdb.testResults.list` permission
-  // on the queried invocation.
-  rpc QueryRunTestVerdicts(QueryRunTestVerdictsRequest)
-      returns (QueryRunTestVerdictsResponse) {};
-
-  // Retrieves test verdicts from an invocation, recursively.
-  // Supports invocation inclusions.
-  // TODO(meiring): Update guidance usage to prefer QueryTestVerdicts
-  // for use cases where staleness is acceptable once we stablise that RPC.
-  rpc QueryTestVariants(QueryTestVariantsRequest)
-      returns (QueryTestVariantsResponse) {};
-
-  // Retrieves test variants from a single invocation, matching the specified
-  // test IDs and hashes.
-  rpc BatchGetTestVariants(BatchGetTestVariantsRequest)
-      returns (BatchGetTestVariantsResponse) {};
 
   // Retrieves test metadata from a LUCI project, matching the predicate.
   rpc QueryTestMetadata(QueryTestMetadataRequest)
@@ -248,6 +204,50 @@ service ResultDB {
   // variant_union_hash and artifact_id.
   rpc QueryInvocationVariantArtifacts(QueryInvocationVariantArtifactsRequest)
       returns (QueryInvocationVariantArtifactsResponse) {}
+
+  // == Invocations ============================================================
+  // Retrieves an invocation.
+  //
+  // DEPRECATED: Use root invocations/work units, and GetRootInvocation/GetWorkUnit
+  // instead.
+  rpc GetInvocation(GetInvocationRequest) returns (Invocation) {};
+
+  // Retrieve names of all legacy invocation roots for a given invocation.
+  //
+  // DEPRECATED: Use root invocations. Then the root invocation of any
+  // work unit will always be known.
+  rpc QueryRootInvocationNames(QueryRootInvocationNamesRequest)
+      returns (QueryRootInvocationNamesResponse) {};
+
+  // Retrieves test verdicts for a test run. A test run comprises only
+  // the test results from a single invocation and not its included
+  // invocations.
+  //
+  // DEPRECATED: Use root invocations and the test results pub/sub instead.
+  rpc QueryRunTestVerdicts(QueryRunTestVerdictsRequest)
+      returns (QueryRunTestVerdictsResponse) {};
+
+  // Retrieves test verdicts from an invocation, recursively.
+  // Supports invocation inclusions.
+  //
+  // DEPRECATED: Use root invocations and QueryTestVerdicts instead.
+  rpc QueryTestVariants(QueryTestVariantsRequest)
+      returns (QueryTestVariantsResponse) {};
+
+  // Retrieves test variants from a single invocation, matching the specified
+  // test IDs and hashes.
+  // INTENT TO DEPRECATE: A BatchGetTestVerdicts RPC is planned to replace this
+  // RPC.
+  rpc BatchGetTestVariants(BatchGetTestVariantsRequest)
+      returns (BatchGetTestVariantsResponse) {};
+
+  // Retrieves the test result statistics of an invocation.
+  // Currently supports total number of test results belong to the invocation,
+  // directly and indirectly.
+  //
+  // DEPRECATED: Use QueryTestAggregations instead.
+  rpc QueryTestResultStatistics(QueryTestResultStatisticsRequest)
+      returns (QueryTestResultStatisticsResponse) {};
 }
 
 // A request message for GetInvocation RPC.

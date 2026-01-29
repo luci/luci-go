@@ -91,40 +91,6 @@ func (s *DecoratedResultDB) QueryWorkUnits(ctx context.Context, req *QueryWorkUn
 	return
 }
 
-func (s *DecoratedResultDB) GetInvocation(ctx context.Context, req *GetInvocationRequest) (rsp *Invocation, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "GetInvocation", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.GetInvocation(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "GetInvocation", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedResultDB) QueryRootInvocationNames(ctx context.Context, req *QueryRootInvocationNamesRequest) (rsp *QueryRootInvocationNamesResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "QueryRootInvocationNames", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.QueryRootInvocationNames(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "QueryRootInvocationNames", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedResultDB) GetTestResult(ctx context.Context, req *GetTestResultRequest) (rsp *TestResult, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
@@ -227,23 +193,6 @@ func (s *DecoratedResultDB) QueryTestExonerations(ctx context.Context, req *Quer
 	return
 }
 
-func (s *DecoratedResultDB) QueryTestResultStatistics(ctx context.Context, req *QueryTestResultStatisticsRequest) (rsp *QueryTestResultStatisticsResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "QueryTestResultStatistics", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.QueryTestResultStatistics(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "QueryTestResultStatistics", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedResultDB) QueryNewTestVariants(ctx context.Context, req *QueryNewTestVariantsRequest) (rsp *QueryNewTestVariantsResponse, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
@@ -257,57 +206,6 @@ func (s *DecoratedResultDB) QueryNewTestVariants(ctx context.Context, req *Query
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(ctx, "QueryNewTestVariants", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedResultDB) QueryRunTestVerdicts(ctx context.Context, req *QueryRunTestVerdictsRequest) (rsp *QueryRunTestVerdictsResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "QueryRunTestVerdicts", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.QueryRunTestVerdicts(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "QueryRunTestVerdicts", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedResultDB) QueryTestVariants(ctx context.Context, req *QueryTestVariantsRequest) (rsp *QueryTestVariantsResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "QueryTestVariants", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.QueryTestVariants(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "QueryTestVariants", rsp, err)
-	}
-	return
-}
-
-func (s *DecoratedResultDB) BatchGetTestVariants(ctx context.Context, req *BatchGetTestVariantsRequest) (rsp *BatchGetTestVariantsResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "BatchGetTestVariants", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.BatchGetTestVariants(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "BatchGetTestVariants", rsp, err)
 	}
 	return
 }
@@ -546,6 +444,108 @@ func (s *DecoratedResultDB) QueryInvocationVariantArtifacts(ctx context.Context,
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(ctx, "QueryInvocationVariantArtifacts", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) GetInvocation(ctx context.Context, req *GetInvocationRequest) (rsp *Invocation, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "GetInvocation", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.GetInvocation(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "GetInvocation", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) QueryRootInvocationNames(ctx context.Context, req *QueryRootInvocationNamesRequest) (rsp *QueryRootInvocationNamesResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryRootInvocationNames", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryRootInvocationNames(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryRootInvocationNames", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) QueryRunTestVerdicts(ctx context.Context, req *QueryRunTestVerdictsRequest) (rsp *QueryRunTestVerdictsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryRunTestVerdicts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryRunTestVerdicts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryRunTestVerdicts", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) QueryTestVariants(ctx context.Context, req *QueryTestVariantsRequest) (rsp *QueryTestVariantsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryTestVariants", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryTestVariants(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryTestVariants", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) BatchGetTestVariants(ctx context.Context, req *BatchGetTestVariantsRequest) (rsp *BatchGetTestVariantsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchGetTestVariants", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchGetTestVariants(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchGetTestVariants", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedResultDB) QueryTestResultStatistics(ctx context.Context, req *QueryTestResultStatisticsRequest) (rsp *QueryTestResultStatisticsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QueryTestResultStatistics", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QueryTestResultStatistics(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QueryTestResultStatistics", rsp, err)
 	}
 	return
 }
