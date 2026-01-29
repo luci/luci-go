@@ -28,6 +28,7 @@ import {
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
 import { generateBrowserDeviceDetailsURL } from '@/fleet/constants/paths';
+import { getTaskURL } from '@/fleet/utils/swarming';
 import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { getStatusColor } from '../chromeos/dut_state';
@@ -92,6 +93,22 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       false,
     ),
   },
+  [`${BROWSER_SWARMING_SOURCE}.current_task`]: {
+    renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
+      const swarmingInstance =
+        params.row?.ufsLabels?.['swarming_instance']?.values?.[0];
+      const swarmingHost =
+        swarmingInstance && `${swarmingInstance}.appspot.com`;
+
+      if (params.value && params.value !== 'idle' && swarmingHost) {
+        return renderCellWithLink<BrowserDevice>((value) => {
+          return getTaskURL(value, swarmingHost);
+        })(params);
+      } else {
+        return <CellWithTooltip {...params}></CellWithTooltip>;
+      }
+    },
+  },
   [`${BROWSER_SWARMING_SOURCE}.dut_state`]: {
     valueGetter: (_, device) =>
       device.swarmingLabels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
@@ -108,6 +125,19 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
         getSwarmingStateDocLinkForLabel,
         getStatusColor,
       )({ ...params, value: stateValue.toUpperCase() });
+    },
+  },
+  [`${BROWSER_SWARMING_SOURCE}.last_seen`]: {
+    renderCell: (params) => {
+      const value = params.value as string;
+      if (!value) {
+        return null;
+      }
+      const dt = DateTime.fromISO(value);
+      if (!dt.isValid) {
+        return <>{value}</>;
+      }
+      return <SmartRelativeTimestamp date={dt} />;
     },
   },
   [`${BROWSER_SWARMING_SOURCE}.last_sync`]: {
