@@ -36,60 +36,117 @@ func TestToFromString(t *testing.T) {
 	type testCase struct {
 		expect  string
 		mkIdent func() (*idspb.Identifier, error)
+		kind    idspb.IdentifierKind
 	}
 
 	tcs := []testCase{
-		{":Cmeep", func() (*idspb.Identifier, error) {
-			return shouldWrap(CheckErr("meep"))
-		}},
-		{":Cmeep:O2", func() (*idspb.Identifier, error) {
-			return shouldWrap(CheckOptionErr("meep", 2))
-		}},
-		{":Cmeep:R2", func() (*idspb.Identifier, error) {
-			return shouldWrap(CheckResultErr("meep", 2))
-		}},
-		{":Cmeep:R2:D3", func() (*idspb.Identifier, error) {
-			return shouldWrap(CheckResultDatumErr("meep", 2, 3))
-		}},
-		{":Cmeep:V12345/6789", func() (*idspb.Identifier, error) {
-			ts := time.Unix(12345, 6789)
-			return shouldWrap(CheckEditErr("meep", ts))
-		}},
-		{":Cmeep:V12345/6789:R2", func() (*idspb.Identifier, error) {
-			ts := time.Unix(12345, 6789)
-			return shouldWrap(CheckEditReasonErr("meep", ts, 2))
-		}},
-		{":Cmeep:V12345/6789:O10", func() (*idspb.Identifier, error) {
-			ts := time.Unix(12345, 6789)
-			return shouldWrap(CheckEditOptionErr("meep", ts, 10))
-		}},
-		{":Smeep", func() (*idspb.Identifier, error) {
-			return shouldWrap(StageErr(StageNotWorknode, "meep"))
-		}},
-		{":?meep", func() (*idspb.Identifier, error) {
-			return shouldWrap(StageErr(StageIsUnknown, "meep"))
-		}},
-		{":Nmeep", func() (*idspb.Identifier, error) {
-			return shouldWrap(StageErr(StageIsWorknode, "meep"))
-		}},
-		{":Smeep:A2", func() (*idspb.Identifier, error) {
-			return shouldWrap(StageAttemptErr(StageNotWorknode, "meep", 2))
-		}},
-		{":Nmeep:A2", func() (*idspb.Identifier, error) {
-			return shouldWrap(StageAttemptErr(StageIsWorknode, "meep", 2))
-		}},
-		{":Smeep:V12345/6789", func() (*idspb.Identifier, error) {
-			ts := time.Unix(12345, 6789)
-			return shouldWrap(StageEditErr(StageNotWorknode, "meep", ts))
-		}},
-		{":Nmeep:V12345/6789", func() (*idspb.Identifier, error) {
-			ts := time.Unix(12345, 6789)
-			return shouldWrap(StageEditErr(StageIsWorknode, "meep", ts))
-		}},
-		{":Smeep:V12345/6789:R2", func() (*idspb.Identifier, error) {
-			ts := time.Unix(12345, 6789)
-			return shouldWrap(StageEditReasonErr(StageNotWorknode, "meep", ts, 2))
-		}},
+		{
+			":Cmeep",
+			func() (*idspb.Identifier, error) {
+				return shouldWrap(CheckErr("meep"))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK,
+		},
+		{
+			":Cmeep:O2", func() (*idspb.Identifier, error) {
+				return shouldWrap(CheckOptionErr("meep", 2))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_OPTION},
+		{
+			":Cmeep:R2", func() (*idspb.Identifier, error) {
+				return shouldWrap(CheckResultErr("meep", 2))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_RESULT,
+		},
+		{
+			":Cmeep:R2:D3", func() (*idspb.Identifier, error) {
+				return shouldWrap(CheckResultDatumErr("meep", 2, 3))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_RESULT_DATUM,
+		},
+		{
+			":Cmeep:V12345/6789",
+			func() (*idspb.Identifier, error) {
+				ts := time.Unix(12345, 6789)
+				return shouldWrap(CheckEditErr("meep", ts))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT,
+		},
+		{
+			":Cmeep:V12345/6789:R2",
+			func() (*idspb.Identifier, error) {
+				ts := time.Unix(12345, 6789)
+				return shouldWrap(CheckEditReasonErr("meep", ts, 2))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT_REASON,
+		},
+		{
+			":Cmeep:V12345/6789:O10",
+			func() (*idspb.Identifier, error) {
+				ts := time.Unix(12345, 6789)
+				return shouldWrap(CheckEditOptionErr("meep", ts, 10))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT_OPTION,
+		},
+		{
+			":Smeep",
+			func() (*idspb.Identifier, error) {
+				return shouldWrap(StageErr(StageNotWorknode, "meep"))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE,
+		},
+		{
+			":?meep",
+			func() (*idspb.Identifier, error) {
+				return shouldWrap(StageErr(StageIsUnknown, "meep"))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE,
+		},
+		{
+			":Nmeep",
+			func() (*idspb.Identifier, error) {
+				return shouldWrap(StageErr(StageIsWorknode, "meep"))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE,
+		},
+		{
+			":Smeep:A2",
+			func() (*idspb.Identifier, error) {
+				return shouldWrap(StageAttemptErr(StageNotWorknode, "meep", 2))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_ATTEMPT,
+		},
+		{
+			":Nmeep:A2",
+			func() (*idspb.Identifier, error) {
+				return shouldWrap(StageAttemptErr(StageIsWorknode, "meep", 2))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_ATTEMPT,
+		},
+		{
+			":Smeep:V12345/6789",
+			func() (*idspb.Identifier, error) {
+				ts := time.Unix(12345, 6789)
+				return shouldWrap(StageEditErr(StageNotWorknode, "meep", ts))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_EDIT,
+		},
+		{
+			":Nmeep:V12345/6789",
+			func() (*idspb.Identifier, error) {
+				ts := time.Unix(12345, 6789)
+				return shouldWrap(StageEditErr(StageIsWorknode, "meep", ts))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_EDIT,
+		},
+		{
+			":Smeep:V12345/6789:R2",
+			func() (*idspb.Identifier, error) {
+				ts := time.Unix(12345, 6789)
+				return shouldWrap(StageEditReasonErr(StageNotWorknode, "meep", ts, 2))
+			},
+			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_EDIT_REASON,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -99,6 +156,8 @@ func TestToFromString(t *testing.T) {
 			assert.NoErr(t, err)
 
 			assert.That(t, ToString(id), should.Equal(tc.expect))
+
+			assert.That(t, KindOf(id), should.Equal(tc.kind))
 
 			ident, err := FromString(tc.expect)
 			assert.That(t, ident, should.Match(id))

@@ -223,34 +223,31 @@ func Root[Id Identifier](id Id) (wp *idspb.WorkPlan, check *idspb.Check, stage *
 
 // KindOf describes any type of Identifier as an IdentifierKind enum.
 func KindOf[Id Identifier](id Id) idspb.IdentifierKind {
-	switch typ := unwrap(id); typ {
-	case idspb.Identifier_WorkPlan_case:
+	switch typ := unwrap(id); typ.(type) {
+	case *idspb.WorkPlan:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_WORK_PLAN
-	case idspb.Identifier_Check_case:
+	case *idspb.Check:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK
-	case idspb.Identifier_CheckOption_case:
+	case *idspb.CheckOption:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_OPTION
-	case idspb.Identifier_CheckResult_case:
+	case *idspb.CheckResult:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_RESULT
-	case idspb.Identifier_CheckResultDatum_case:
+	case *idspb.CheckResultDatum:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_RESULT_DATUM
-	case idspb.Identifier_CheckEdit_case:
+	case *idspb.CheckEdit:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT
-	case idspb.Identifier_CheckEditReason_case:
+	case *idspb.CheckEditReason:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT_REASON
-	case idspb.Identifier_CheckEditOption_case:
+	case *idspb.CheckEditOption:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT_OPTION
-	case idspb.Identifier_Stage_case:
+	case *idspb.Stage:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_STAGE
-	case idspb.Identifier_StageAttempt_case:
+	case *idspb.StageAttempt:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_ATTEMPT
-	case idspb.Identifier_StageEdit_case:
+	case *idspb.StageEdit:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_EDIT
-	case idspb.Identifier_StageEditReason_case:
-		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT_REASON
-
-	case idspb.Identifier_Type_not_set_case:
-		return idspb.IdentifierKind_IDENTIFIER_KIND_UNKNOWN
+	case *idspb.StageEditReason:
+		return idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_EDIT_REASON
 
 	default:
 		panic(fmt.Sprintf("impossible type: %s", typ))

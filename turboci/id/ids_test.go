@@ -300,25 +300,6 @@ func TestStage(t *testing.T) {
 	})
 }
 
-func TestWrap(t *testing.T) {
-	t.Run("Check", func(t *testing.T) {
-		id := must(CheckErr("c"))
-		wrapped := Wrap(id)
-		assert.That(t, wrapped, should.Match(
-			idspb.Identifier_builder{Check: id}.Build(),
-		))
-		assert.That(t, Wrap(wrapped), should.Equal(wrapped))
-	})
-
-	t.Run("WorkPlan", func(t *testing.T) {
-		id := idspb.WorkPlan_builder{Id: proto.String("Lwp")}.Build()
-		wrapped := Wrap(id)
-		assert.That(t, wrapped, should.Match(
-			idspb.Identifier_builder{WorkPlan: id}.Build(),
-		))
-	})
-}
-
 func ExampleSetWorkplan() {
 	id := SetWorkplan(Check("my-check"), "my-workplan")
 	fmt.Println(ToString(id))
