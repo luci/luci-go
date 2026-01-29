@@ -17,5 +17,5 @@ import { FeaturesSchema } from './features_dev';
 export const features = {
   UnifiedFilterBar: true,
   ColumnFilter: false,
-  BrowserListDevices: false,
+  BrowserListDevices: true,
 } satisfies FeaturesSchema;
