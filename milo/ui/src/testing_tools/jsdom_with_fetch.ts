@@ -18,7 +18,7 @@ import JSDOMEnvironment from 'jest-environment-jsdom';
  * A custom Jest environment that patches JSDOM with the native Node.js Fetch API.
  *
  * JSDOM does not support the Fetch API by default. This environment copies the
- * native `fetch`, `Headers`, `Request`, and `Response` implementations from the
+ * native `fetch`, `Headers`, `Request`, `Response`, `AbortController` and `AbortSignal` implementations from the
  * Node.js global scope into the JSDOM global scope.
  *
  * This allows tests to use `fetch` as if it were running in a browser environment
@@ -32,6 +32,8 @@ export default class JSDOMWithFetchEnvironment extends JSDOMEnvironment {
       this.global.Headers = Headers;
       this.global.Request = Request;
       this.global.Response = Response;
+      this.global.AbortController = AbortController;
+      this.global.AbortSignal = AbortSignal;
     } else {
       // eslint-disable-next-line no-console
       console.warn(
