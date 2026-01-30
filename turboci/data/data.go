@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,20 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
-const typePrefix = "type.googleapis.com/"
+// TypePrefix is the constant prefix for all TypeURLs used by TurboCI (via the
+// standard `Any` proto message).
+const TypePrefix = "type.googleapis.com/"
+
+// URLPatternPackageOf returns a wildcard glob for all proto messages in the
+// same package as `T` suitable for use with the TurboCI TypeSet type.
+//
+// For example, if `T` is `my.proto.package.Message`, then this will return a
+// pattern matching all types in `my.proto.package`.
+func URLPatternPackageOf[T proto.Message]() string {
+	var zero T
+	return fmt.Sprintf("%s%s.*",
+		TypePrefix, zero.ProtoReflect().Descriptor().ParentFile().Package())
+}
 
 // URL returns the full proto `type_url` for a given message type.
 func URL[T proto.Message]() string {
@@ -42,7 +55,7 @@ func URL[T proto.Message]() string {
 //
 // It's allowed for `msg` to be a nil pointer (e.g. `(*MyMessage)(nil)`).
 func URLMsg(msg proto.Message) string {
-	return fmt.Sprintf("%s%s", typePrefix, msg.ProtoReflect().Descriptor().FullName())
+	return fmt.Sprintf("%s%s", TypePrefix, msg.ProtoReflect().Descriptor().FullName())
 }
 
 // FromMultiple retrieves the value of the first Datum whose type matches T.
