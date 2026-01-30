@@ -144,7 +144,9 @@ message ArtifactPredicate {
   // this predicate.
   // Note: this predicate does NOT apply to invocation-level artifacts.
   // To exclude them from the response, use follow_edges.
-  TestResultPredicate test_result_predicate = 2;
+  //
+  // DEPRECATED: This option is not supported for root invocations.
+  TestResultPredicate test_result_predicate = 2 [ deprecated = true ];
 
   // An artifact must have a content type matching this regular expression
   // entirely, i.e. the expression is implicitly wrapped with ^ and $.

@@ -372,11 +372,8 @@ func TestQueryArtifacts(t *testing.T) {
 			assert.Loosely(t, embedded["project"], should.Equal("testproject"))
 		})
 
-		t.Run(`WorkUnits`, func(t *ftt.Test) {
-			// Insert a work unit invocation.
-			// Work units are mapped to invocations with prefix "workunit:".
-			// Format: workunit:{RootInvocationID}:{WorkUnitID}
-			wuID := invocations.ID("workunit:inv1:wu1")
+		t.Run(`Root invocations`, func(t *ftt.Test) {
+			// Insert a root invocation.
 
 			// We need to insert the RootInvocation and WorkUnit for WorkUnitInclusion
 			// to work.
@@ -396,10 +393,14 @@ func TestQueryArtifacts(t *testing.T) {
 					Realm:             "testproject:testrealm",
 				})...)
 
+			wuID := invocations.ID("workunit:inv1:wu1")
 			testutil.MustApply(ctx, t,
 				insert.Artifact(wuID, "", "wu_artifact", nil),
 				insert.Artifact(wuID, "tr/t t/r", "tr_artifact", nil),
 			)
+
+			// This option is not supported for root invocations.
+			req.Predicate.TestResultPredicate = nil
 
 			t.Run(`Query by Parent (Root Invocation)`, func(t *ftt.Test) {
 				req.Invocations = nil

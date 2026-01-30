@@ -95,9 +95,6 @@ func ValidateArtifactPredicate(p *pb.ArtifactPredicate, isRootInvocationQuery bo
 	if p == nil {
 		return nil
 	}
-	if err := ValidateTestResultPredicate(p.GetTestResultPredicate()); err != nil {
-		return errors.Fmt("text_result_predicate: %w", err)
-	}
 	if err := validate.RegexpFragment(p.GetContentTypeRegexp()); err != nil {
 		return errors.Fmt("content_type_regexp: %w", err)
 	}
@@ -116,7 +113,12 @@ func ValidateArtifactPredicate(p *pb.ArtifactPredicate, isRootInvocationQuery bo
 				return errors.Fmt("artifact_kind: invalid value %d", p.ArtifactKind)
 			}
 		}
-
+		if p.TestResultPredicate != nil {
+			// This predicate will be hard to migrate to the new TestResultsV2 table
+			// as it includes a test_id regexp and status v1-based filters.
+			// Do not support it for now.
+			return errors.New("test_result_predicate: not supported for root invocation queries")
+		}
 		if p.FollowEdges != nil {
 			return errors.New("follow_edges: not supported for root invocation queries")
 		}
@@ -126,6 +128,9 @@ func ValidateArtifactPredicate(p *pb.ArtifactPredicate, isRootInvocationQuery bo
 		}
 		if p.ArtifactKind != pb.ArtifactPredicate_ARTIFACT_KIND_UNSPECIFIED {
 			return errors.New("artifact_kind: not supported for invocation queries")
+		}
+		if err := ValidateTestResultPredicate(p.GetTestResultPredicate()); err != nil {
+			return errors.Fmt("text_result_predicate: %w", err)
 		}
 	}
 	return nil

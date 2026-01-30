@@ -164,6 +164,14 @@ func TestValidateArtifactPredicate(t *testing.T) {
 				errLike:               "work_units: \"invalid\": does not match",
 			},
 			{
+				name: "Root Invocation Query - Test result predicate",
+				predicate: &pb.ArtifactPredicate{
+					TestResultPredicate: &pb.TestResultPredicate{},
+				},
+				isRootInvocationQuery: true,
+				errLike:               "test_result_predicate: not supported for root invocation queries",
+			},
+			{
 				name: "Root Invocation Query - Invalid Artifact Kind",
 				predicate: &pb.ArtifactPredicate{
 					ArtifactKind: pb.ArtifactPredicate_ArtifactKind(999),
