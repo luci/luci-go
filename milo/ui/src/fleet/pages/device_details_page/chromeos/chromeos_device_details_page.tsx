@@ -51,7 +51,7 @@ import { Tasks } from '../common/tasks_table';
 
 import { ChromeOSDeviceDimensions } from './chromeos_device_dimensions';
 import { ChromeOSInventoryData } from './chromeos_inventory_data';
-import { useDeviceData } from './use_device_data';
+import { useChromeOSDeviceData } from './use_chromeos_device_data';
 
 enum TabValue {
   TASKS = 'tasks',
@@ -124,7 +124,7 @@ export const ChromeOSDeviceDetailsPage = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { error, isError, isLoading, device } = useDeviceData(id);
+  const { error, isError, isLoading, device } = useChromeOSDeviceData(id);
 
   const deviceIdInputRef = useRef<HTMLInputElement>(null);
 

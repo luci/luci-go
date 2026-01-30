@@ -16,7 +16,7 @@ import { Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import { OutputBuildInfra_Backend } from '@/build/types';
-import { useDeviceData } from '@/fleet/pages/device_details_page/chromeos/use_device_data';
+import { useChromeOSDeviceData } from '@/fleet/pages/device_details_page/chromeos/use_chromeos_device_data';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { getDutName } from '@/fleet/utils/swarming';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
@@ -45,7 +45,7 @@ export function DutRows({ backend }: DutRowsProps) {
   // We can't call hooks conditionally, so we need to provide a failing ID
   // when the query is not successful. This ensures that the hook is always
   // called, even if the query fails.
-  const deviceQuery = useDeviceData(
+  const deviceQuery = useChromeOSDeviceData(
     dutNameQuery.isSuccess ? dutNameQuery.data : 'failing id',
   );
 

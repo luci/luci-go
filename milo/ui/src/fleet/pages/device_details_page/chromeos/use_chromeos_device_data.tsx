@@ -35,7 +35,7 @@ export type UseChromeOSDeviceDataResult = {
  *
  * @param deviceId - the id of the device to query
  */
-export const useDeviceData = (
+export const useChromeOSDeviceData = (
   deviceId: string,
 ): UseChromeOSDeviceDataResult => {
   const queryClient = useQueryClient();

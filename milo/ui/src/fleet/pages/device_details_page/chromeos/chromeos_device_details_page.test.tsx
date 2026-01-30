@@ -17,11 +17,11 @@ import { render, screen } from '@testing-library/react';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSDeviceDetailsPage } from './chromeos_device_details_page';
-import { useDeviceData } from './use_device_data';
+import { useChromeOSDeviceData } from './use_chromeos_device_data';
 
-jest.mock('./use_device_data');
+jest.mock('./use_chromeos_device_data');
 
-const mockUseChromeOSDeviceData = useDeviceData as jest.Mock;
+const mockUseChromeOSDeviceData = useChromeOSDeviceData as jest.Mock;
 
 describe('<ChromeOSDeviceDetailsPage />', () => {
   it('renders loading by default', async () => {
