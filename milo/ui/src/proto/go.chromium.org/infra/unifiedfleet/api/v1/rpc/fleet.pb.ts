@@ -185,6 +185,13 @@ export interface DeleteVMRequest {
   readonly name: string;
 }
 
+export interface RenameVMRequest {
+  /** The current name of the VM to rename */
+  readonly name: string;
+  /** The new name of the VM */
+  readonly newName: string;
+}
+
 export interface ListVMsRequest {
   /**
    * The maximum number of vlans to return. The service may return fewer than
@@ -3614,6 +3621,82 @@ export const DeleteVMRequest: MessageFns<DeleteVMRequest> = {
   fromPartial(object: DeepPartial<DeleteVMRequest>): DeleteVMRequest {
     const message = createBaseDeleteVMRequest() as any;
     message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseRenameVMRequest(): RenameVMRequest {
+  return { name: "", newName: "" };
+}
+
+export const RenameVMRequest: MessageFns<RenameVMRequest> = {
+  encode(message: RenameVMRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.newName !== "") {
+      writer.uint32(18).string(message.newName);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RenameVMRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRenameVMRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.newName = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RenameVMRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      newName: isSet(object.newName) ? globalThis.String(object.newName) : "",
+    };
+  },
+
+  toJSON(message: RenameVMRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.newName !== "") {
+      obj.newName = message.newName;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RenameVMRequest>): RenameVMRequest {
+    return RenameVMRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RenameVMRequest>): RenameVMRequest {
+    const message = createBaseRenameVMRequest() as any;
+    message.name = object.name ?? "";
+    message.newName = object.newName ?? "";
     return message;
   },
 };
@@ -19654,6 +19737,8 @@ export interface Fleet {
   GetVM(request: GetVMRequest): Promise<VM>;
   /** ListVMs gets all the Vms */
   ListVMs(request: ListVMsRequest): Promise<ListVMsResponse>;
+  /** RenameVM rename a VM */
+  RenameVM(request: RenameVMRequest): Promise<VM>;
   /** CreateAsset creates a new asset */
   CreateAsset(request: CreateAssetRequest): Promise<asset>;
   /** Update updates the asset */
@@ -19871,6 +19956,7 @@ export class FleetClientImpl implements Fleet {
     this.DeleteVM = this.DeleteVM.bind(this);
     this.GetVM = this.GetVM.bind(this);
     this.ListVMs = this.ListVMs.bind(this);
+    this.RenameVM = this.RenameVM.bind(this);
     this.CreateAsset = this.CreateAsset.bind(this);
     this.UpdateAsset = this.UpdateAsset.bind(this);
     this.GetAsset = this.GetAsset.bind(this);
@@ -20460,6 +20546,12 @@ export class FleetClientImpl implements Fleet {
     const data = ListVMsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListVMs", data);
     return promise.then((data) => ListVMsResponse.fromJSON(data));
+  }
+
+  RenameVM(request: RenameVMRequest): Promise<VM> {
+    const data = RenameVMRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "RenameVM", data);
+    return promise.then((data) => VM.fromJSON(data));
   }
 
   CreateAsset(request: CreateAssetRequest): Promise<asset> {

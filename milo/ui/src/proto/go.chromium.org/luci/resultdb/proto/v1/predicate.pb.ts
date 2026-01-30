@@ -165,6 +165,10 @@ export interface ArtifactPredicate {
    * this predicate.
    * Note: this predicate does NOT apply to invocation-level artifacts.
    * To exclude them from the response, use follow_edges.
+   *
+   * DEPRECATED: This option is not supported for root invocations.
+   *
+   * @deprecated
    */
   readonly testResultPredicate:
     | TestResultPredicate
@@ -390,18 +394,102 @@ export interface TestVerdictPredicate {
    */
   readonly containsTestResultFilter: string;
   /**
-   * A free-form filter on the returned `TestVerdict`s.
+   * If set, filters the verdicts to the given effective status(es).
    *
-   * The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
-   * with the following fields available:
-   * - status (luci.resultdb.v1.TestVerdict.Status)
-   * - status_override (luci.resultdb.v1.TestVerdict.StatusOverride)
-   *
-   * For example, the following filter filters to verdicts with a status of failed
-   * or execution_errored (that were not exonerated):
-   * `(status = FAILED OR status = EXECUTION_ERRORED) AND status_override = NOT_OVERRIDDEN`
+   * The effective verdict status is the status of the test verdict after
+   * applying any status overrides.
    */
-  readonly filter: string;
+  readonly effectiveVerdictStatus: readonly TestVerdictPredicate_VerdictEffectiveStatus[];
+}
+
+/**
+ * Represents a filter on the effective status of a test verdict,
+ * the result of combining the TestVerdict.Status and TestVerdict.StatusOverride.
+ */
+export enum TestVerdictPredicate_VerdictEffectiveStatus {
+  /** VERDICT_EFFECTIVE_STATUS_UNSPECIFIED - Do not use. */
+  VERDICT_EFFECTIVE_STATUS_UNSPECIFIED = 0,
+  /** FAILED - The test failed, and was not exonerated. */
+  FAILED = 10,
+  /** EXECUTION_ERRORED - The test execution errored, and was not exonerated. */
+  EXECUTION_ERRORED = 20,
+  /** PRECLUDED - The test execution was precluded, and was not exonerated. */
+  PRECLUDED = 30,
+  /** FLAKY - The test was flaky, and was not exonerated. */
+  FLAKY = 40,
+  /** SKIPPED - The test was skipped. */
+  SKIPPED = 50,
+  /** PASSED - The test passed. */
+  PASSED = 60,
+  /**
+   * EXONERATED - The test was originally failed, execution errored, precluded or flaky,
+   * but the subject of the test (e.g. the CL under test) was absolved from blame.
+   * For example, because the failure also existed in the tree without the
+   * changelist applied.
+   */
+  EXONERATED = 70,
+}
+
+export function testVerdictPredicate_VerdictEffectiveStatusFromJSON(
+  object: any,
+): TestVerdictPredicate_VerdictEffectiveStatus {
+  switch (object) {
+    case 0:
+    case "VERDICT_EFFECTIVE_STATUS_UNSPECIFIED":
+      return TestVerdictPredicate_VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_UNSPECIFIED;
+    case 10:
+    case "FAILED":
+      return TestVerdictPredicate_VerdictEffectiveStatus.FAILED;
+    case 20:
+    case "EXECUTION_ERRORED":
+      return TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED;
+    case 30:
+    case "PRECLUDED":
+      return TestVerdictPredicate_VerdictEffectiveStatus.PRECLUDED;
+    case 40:
+    case "FLAKY":
+      return TestVerdictPredicate_VerdictEffectiveStatus.FLAKY;
+    case 50:
+    case "SKIPPED":
+      return TestVerdictPredicate_VerdictEffectiveStatus.SKIPPED;
+    case 60:
+    case "PASSED":
+      return TestVerdictPredicate_VerdictEffectiveStatus.PASSED;
+    case 70:
+    case "EXONERATED":
+      return TestVerdictPredicate_VerdictEffectiveStatus.EXONERATED;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum TestVerdictPredicate_VerdictEffectiveStatus",
+      );
+  }
+}
+
+export function testVerdictPredicate_VerdictEffectiveStatusToJSON(
+  object: TestVerdictPredicate_VerdictEffectiveStatus,
+): string {
+  switch (object) {
+    case TestVerdictPredicate_VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_UNSPECIFIED:
+      return "VERDICT_EFFECTIVE_STATUS_UNSPECIFIED";
+    case TestVerdictPredicate_VerdictEffectiveStatus.FAILED:
+      return "FAILED";
+    case TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED:
+      return "EXECUTION_ERRORED";
+    case TestVerdictPredicate_VerdictEffectiveStatus.PRECLUDED:
+      return "PRECLUDED";
+    case TestVerdictPredicate_VerdictEffectiveStatus.FLAKY:
+      return "FLAKY";
+    case TestVerdictPredicate_VerdictEffectiveStatus.SKIPPED:
+      return "SKIPPED";
+    case TestVerdictPredicate_VerdictEffectiveStatus.PASSED:
+      return "PASSED";
+    case TestVerdictPredicate_VerdictEffectiveStatus.EXONERATED:
+      return "EXONERATED";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum TestVerdictPredicate_VerdictEffectiveStatus",
+      );
+  }
 }
 
 function createBaseTestResultPredicate(): TestResultPredicate {
@@ -1171,7 +1259,7 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
 };
 
 function createBaseTestVerdictPredicate(): TestVerdictPredicate {
-  return { testPrefixFilter: undefined, containsTestResultFilter: "", filter: "" };
+  return { testPrefixFilter: undefined, containsTestResultFilter: "", effectiveVerdictStatus: [] };
 }
 
 export const TestVerdictPredicate: MessageFns<TestVerdictPredicate> = {
@@ -1182,9 +1270,11 @@ export const TestVerdictPredicate: MessageFns<TestVerdictPredicate> = {
     if (message.containsTestResultFilter !== "") {
       writer.uint32(18).string(message.containsTestResultFilter);
     }
-    if (message.filter !== "") {
-      writer.uint32(26).string(message.filter);
+    writer.uint32(34).fork();
+    for (const v of message.effectiveVerdictStatus) {
+      writer.int32(v);
     }
+    writer.join();
     return writer;
   },
 
@@ -1211,13 +1301,23 @@ export const TestVerdictPredicate: MessageFns<TestVerdictPredicate> = {
           message.containsTestResultFilter = reader.string();
           continue;
         }
-        case 3: {
-          if (tag !== 26) {
-            break;
+        case 4: {
+          if (tag === 32) {
+            message.effectiveVerdictStatus.push(reader.int32() as any);
+
+            continue;
           }
 
-          message.filter = reader.string();
-          continue;
+          if (tag === 34) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.effectiveVerdictStatus.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -1236,7 +1336,9 @@ export const TestVerdictPredicate: MessageFns<TestVerdictPredicate> = {
       containsTestResultFilter: isSet(object.containsTestResultFilter)
         ? globalThis.String(object.containsTestResultFilter)
         : "",
-      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      effectiveVerdictStatus: globalThis.Array.isArray(object?.effectiveVerdictStatus)
+        ? object.effectiveVerdictStatus.map((e: any) => testVerdictPredicate_VerdictEffectiveStatusFromJSON(e))
+        : [],
     };
   },
 
@@ -1248,8 +1350,10 @@ export const TestVerdictPredicate: MessageFns<TestVerdictPredicate> = {
     if (message.containsTestResultFilter !== "") {
       obj.containsTestResultFilter = message.containsTestResultFilter;
     }
-    if (message.filter !== "") {
-      obj.filter = message.filter;
+    if (message.effectiveVerdictStatus?.length) {
+      obj.effectiveVerdictStatus = message.effectiveVerdictStatus.map((e) =>
+        testVerdictPredicate_VerdictEffectiveStatusToJSON(e)
+      );
     }
     return obj;
   },
@@ -1263,7 +1367,7 @@ export const TestVerdictPredicate: MessageFns<TestVerdictPredicate> = {
       ? TestIdentifierPrefix.fromPartial(object.testPrefixFilter)
       : undefined;
     message.containsTestResultFilter = object.containsTestResultFilter ?? "";
-    message.filter = object.filter ?? "";
+    message.effectiveVerdictStatus = object.effectiveVerdictStatus?.map((e) => e) || [];
     return message;
   },
 };

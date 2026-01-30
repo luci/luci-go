@@ -653,8 +653,13 @@ export interface StartBuildResponse {
   readonly build:
     | Build
     | undefined;
-  /** a build token for agent to use when making subsequent UpdateBuild calls. */
+  /** A build token for agent to use when making subsequent UpdateBuild calls. */
   readonly updateBuildToken: string;
+  /**
+   * A stage attempt token for agent to pass to the executable (recipe) to
+   * make updates on the stage attempt to TurboCI.
+   */
+  readonly stageAttemptToken: string;
 }
 
 /** A request message for GetBuildStatus RPC. */
@@ -3011,7 +3016,7 @@ export const StartBuildRequest: MessageFns<StartBuildRequest> = {
 };
 
 function createBaseStartBuildResponse(): StartBuildResponse {
-  return { build: undefined, updateBuildToken: "" };
+  return { build: undefined, updateBuildToken: "", stageAttemptToken: "" };
 }
 
 export const StartBuildResponse: MessageFns<StartBuildResponse> = {
@@ -3021,6 +3026,9 @@ export const StartBuildResponse: MessageFns<StartBuildResponse> = {
     }
     if (message.updateBuildToken !== "") {
       writer.uint32(18).string(message.updateBuildToken);
+    }
+    if (message.stageAttemptToken !== "") {
+      writer.uint32(26).string(message.stageAttemptToken);
     }
     return writer;
   },
@@ -3048,6 +3056,14 @@ export const StartBuildResponse: MessageFns<StartBuildResponse> = {
           message.updateBuildToken = reader.string();
           continue;
         }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.stageAttemptToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3061,6 +3077,7 @@ export const StartBuildResponse: MessageFns<StartBuildResponse> = {
     return {
       build: isSet(object.build) ? Build.fromJSON(object.build) : undefined,
       updateBuildToken: isSet(object.updateBuildToken) ? globalThis.String(object.updateBuildToken) : "",
+      stageAttemptToken: isSet(object.stageAttemptToken) ? globalThis.String(object.stageAttemptToken) : "",
     };
   },
 
@@ -3072,6 +3089,9 @@ export const StartBuildResponse: MessageFns<StartBuildResponse> = {
     if (message.updateBuildToken !== "") {
       obj.updateBuildToken = message.updateBuildToken;
     }
+    if (message.stageAttemptToken !== "") {
+      obj.stageAttemptToken = message.stageAttemptToken;
+    }
     return obj;
   },
 
@@ -3082,6 +3102,7 @@ export const StartBuildResponse: MessageFns<StartBuildResponse> = {
     const message = createBaseStartBuildResponse() as any;
     message.build = (object.build !== undefined && object.build !== null) ? Build.fromPartial(object.build) : undefined;
     message.updateBuildToken = object.updateBuildToken ?? "";
+    message.stageAttemptToken = object.stageAttemptToken ?? "";
     return message;
   },
 };

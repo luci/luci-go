@@ -13,22 +13,34 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /**
  * Dependencies represents a group of edges (the predicate) needed to unblock
- * a containing node (a Check or a Stage), as well as timestamps and
- * satisfaction of those edges, and finally an overall assessment of the
+ * progression of a containing node (a Check or a Stage), as well as timestamps
+ * and satisfaction of those edges, and finally an overall assessment of the
  * resolution of the predicate.
  *
- * During PLANNING, the `edges` and `predicate` fields are mutable. These
- * contain all dependency targets and any criteria for them, plus the boolean
- * logic of which subset of these edges are necessary to unblock the node. The
- * orchestrator will convert WriteNodesRequest.DependencyGroup into `edges` and
- * `predicate` for the client.
+ * The orchestrator will convert WriteNodesRequest.DependencyGroup into `edges`
+ * and `predicate` for the client.
  *
- * As soon as the containing node is PLANNED, the orchestrator will begin
- * tracking resolution of the edges. As they are resolved, these 'resolution
- * events' are recorded to the the `resolution_events` field.
+ * A Dependencies group as a whole goes through 3 states:
+ *  - Planning: the `edges` and `predicate` fields are mutable (e.g. edges can
+ *    be added or removed), but no tracking of resolved edges is done. Fields
+ *    `resolution_events` and `resolution` are unset.
+ *  - Tracking: the `edges` and `predicate` fields are immutable, but
+ *    `resolution_events` gets progressively populated by the Orchestrator
+ *    based on what happens in the graph.
+ *  - Resolved: there were enough data in `resolution_events` to resolve the
+ *    predicate and get this final verdict in `resolution`. All fields are
+ *    immutable after that point.
  *
- * Finally, once enough resolution events are present such that the `predicate`
- * Group can be resolved, the orchestrator will set the `resolution` field.
+ * Dependencies are used in 3 places currently. Each usage has its own rules
+ * for when dependencies switch into the tracking state. In particular:
+ *  - `Stage.dependencies` are created by a WriteNodes call in the tracking
+ *    state right away. They are thus immutable and start accumulating
+ *    `resolution_events` immediately.
+ *  - `Stage.continuation_group` starts tracking once the stage switches into
+ *     AWAITING_GROUP state by the Orchestrator after it finishes running all
+ *     its attempts.
+ *  - `Check.dependencies` starts tracking once the check switches into
+ *    PLANNED state by a WriteNodes call.
  */
 export interface Dependencies {
   /**

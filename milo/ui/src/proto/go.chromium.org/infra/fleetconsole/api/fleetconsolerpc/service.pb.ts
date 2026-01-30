@@ -190,6 +190,7 @@ export interface AndroidDevice {
   readonly id: string;
   readonly omnilabSpec: DeviceSpec | undefined;
   readonly runTarget: string;
+  readonly realm: string;
 }
 
 export interface BrowserDevice {
@@ -1451,7 +1452,7 @@ export const Device: MessageFns<Device> = {
 };
 
 function createBaseAndroidDevice(): AndroidDevice {
-  return { id: "", omnilabSpec: undefined, runTarget: "" };
+  return { id: "", omnilabSpec: undefined, runTarget: "", realm: "" };
 }
 
 export const AndroidDevice: MessageFns<AndroidDevice> = {
@@ -1464,6 +1465,9 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     }
     if (message.runTarget !== "") {
       writer.uint32(26).string(message.runTarget);
+    }
+    if (message.realm !== "") {
+      writer.uint32(34).string(message.realm);
     }
     return writer;
   },
@@ -1499,6 +1503,14 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
           message.runTarget = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.realm = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1513,6 +1525,7 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
       omnilabSpec: isSet(object.omnilabSpec) ? DeviceSpec.fromJSON(object.omnilabSpec) : undefined,
       runTarget: isSet(object.runTarget) ? globalThis.String(object.runTarget) : "",
+      realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
     };
   },
 
@@ -1527,6 +1540,9 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     if (message.runTarget !== "") {
       obj.runTarget = message.runTarget;
     }
+    if (message.realm !== "") {
+      obj.realm = message.realm;
+    }
     return obj;
   },
 
@@ -1540,6 +1556,7 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
       ? DeviceSpec.fromPartial(object.omnilabSpec)
       : undefined;
     message.runTarget = object.runTarget ?? "";
+    message.realm = object.realm ?? "";
     return message;
   },
 };

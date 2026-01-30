@@ -115,8 +115,16 @@ export interface Stage {
   /**
    * Dependencies on other objects in the graph.
    *
-   * Stages are allowed to depend on other Checks and Stages, and will not be
-   * sent to an Executor until dependencies is resolved.
+   * Stages are allowed to depend on other Checks and Stages.
+   *
+   * All dependencies must be specified at once when the stage is
+   * inserted (unlike Check dependencies, which can be built incrementally via
+   * multiple WriteNodes calls). The Orchestrator will start tracking their
+   * resolution right away. In particular, if all dependencies are already
+   * resolved when the stage is inserted, it will appear in ATTEMPTING state
+   * right away. Otherwise it will be inserted in PLANNED state and the
+   * Orchestrator will move it into ATTEMPTING state at a later time, when
+   * dependencies are resolved.
    */
   readonly dependencies?:
     | Dependencies
@@ -141,7 +149,7 @@ export interface Stage {
   /** The workflow's intent for this Stage. */
   readonly assignments: readonly Stage_Assignment[];
   /**
-   * A set of dependencies edges o Stages whose resolution should be treated as
+   * A set of dependencies edges of Stages whose resolution should be treated as
    * a logical part of this Stage.
    *
    * Stages included in this continuation_group MUST be created BY THIS STAGE.
@@ -156,7 +164,7 @@ export interface Stage {
    * this Stage would need to be directly informed of, and wait for, these new
    * Stages, which introduces a leaky abstraction.
    *
-   * If needed, this could be expanded to allow Checks later.
+   * These dependencies are mutable as long as the stage is in ATTEMPTING state.
    */
   readonly continuationGroup?:
     | Dependencies
@@ -328,11 +336,11 @@ export interface Stage_Attempt {
   /**
    * Details provided by the Executor about this Stage Attempt.
    *
-   * This field is effectively an append-only map. The Executor and/or Stage
-   * Attempt can only write data *of a given type* ONCE to this field, and
-   * that data type must be unique within this field. If you need to add data
-   * here multiple times during the lifecycle of the attempt, use different
-   * types for each stage of that lifecycle.
+   * This may only be written once per data type.
+   *
+   * If a CurrentAttemptWrite would overwrite a detail with a different value,
+   * a Progress message with ProgressIgnoredDetail will be added
+   * to the Attempt instead.
    *
    * It can be updated by the Executor or Stage Attempt as long as the Stage
    * Attempt is not final (i.e. a state prior to COMPLETE or INCOMPLETE).
@@ -349,7 +357,7 @@ export interface Stage_Attempt {
    * executor will reevaluate the previous validated attempt execution
    * template in stage execution policy and make adjustments when necessary.
    * The validated execution policy is sent to the Orchestrator as part of
-   * CurrentStageWrite when the executor advances the StageAttempt state
+   * CurrentAttemptWrite when the executor advances the StageAttempt state
    * PENDING -> (SCHEDULED|RUNNING).
    */
   readonly executionPolicy?: StageAttemptExecutionPolicy | undefined;
@@ -397,6 +405,7 @@ export interface Stage_Attempt_Progress {
    * If created_by is Orchestrator, then `details` may contain the
    * following:
    *   * turboci.graph.orchestrator.v1.ProgressEvolvePending
+   *   * turboci.graph.orchestrator.v1.ProgressIgnoredDetail
    */
   readonly createdBy?:
     | Actor

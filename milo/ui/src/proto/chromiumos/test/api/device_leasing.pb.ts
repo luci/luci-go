@@ -47,6 +47,44 @@ export function vMTypeToJSON(object: VMType): string {
   }
 }
 
+/** The state of the DUT in UFS. */
+export enum DutState {
+  DUT_STATE_UNSPECIFIED = 0,
+  /** DUT_STATE_NORMAL - Device is in good shape and ready for testing. */
+  DUT_STATE_NORMAL = 1,
+  /** DUT_STATE_NEEDS_REPAIR - Device is broken and needs repair. */
+  DUT_STATE_NEEDS_REPAIR = 2,
+}
+
+export function dutStateFromJSON(object: any): DutState {
+  switch (object) {
+    case 0:
+    case "DUT_STATE_UNSPECIFIED":
+      return DutState.DUT_STATE_UNSPECIFIED;
+    case 1:
+    case "DUT_STATE_NORMAL":
+      return DutState.DUT_STATE_NORMAL;
+    case 2:
+    case "DUT_STATE_NEEDS_REPAIR":
+      return DutState.DUT_STATE_NEEDS_REPAIR;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum DutState");
+  }
+}
+
+export function dutStateToJSON(object: DutState): string {
+  switch (object) {
+    case DutState.DUT_STATE_UNSPECIFIED:
+      return "DUT_STATE_UNSPECIFIED";
+    case DutState.DUT_STATE_NORMAL:
+      return "DUT_STATE_NORMAL";
+    case DutState.DUT_STATE_NEEDS_REPAIR:
+      return "DUT_STATE_NEEDS_REPAIR";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum DutState");
+  }
+}
+
 /** NEXT TAG: 13 */
 export interface VMRequirements {
   readonly gceImage: string;
@@ -98,6 +136,8 @@ export interface ExtendLeaseRequest {
   readonly idempotencyKey: string;
   /** New user payload to update. */
   readonly userPayload: { [key: string]: string };
+  /** The state of the DUT should be set to if the lease expires. */
+  readonly onExpirationDutState: DutState;
 }
 
 export interface ExtendLeaseRequest_UserPayloadEntry {
@@ -589,7 +629,7 @@ export const HardwareRequirements_SchedulableLabelsEntry: MessageFns<HardwareReq
 };
 
 function createBaseExtendLeaseRequest(): ExtendLeaseRequest {
-  return { leaseId: "", extendDuration: undefined, idempotencyKey: "", userPayload: {} };
+  return { leaseId: "", extendDuration: undefined, idempotencyKey: "", userPayload: {}, onExpirationDutState: 0 };
 }
 
 export const ExtendLeaseRequest: MessageFns<ExtendLeaseRequest> = {
@@ -606,6 +646,9 @@ export const ExtendLeaseRequest: MessageFns<ExtendLeaseRequest> = {
     Object.entries(message.userPayload).forEach(([key, value]) => {
       ExtendLeaseRequest_UserPayloadEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).join();
     });
+    if (message.onExpirationDutState !== 0) {
+      writer.uint32(40).int32(message.onExpirationDutState);
+    }
     return writer;
   },
 
@@ -651,6 +694,14 @@ export const ExtendLeaseRequest: MessageFns<ExtendLeaseRequest> = {
           }
           continue;
         }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.onExpirationDutState = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -671,6 +722,7 @@ export const ExtendLeaseRequest: MessageFns<ExtendLeaseRequest> = {
           return acc;
         }, {})
         : {},
+      onExpirationDutState: isSet(object.onExpirationDutState) ? dutStateFromJSON(object.onExpirationDutState) : 0,
     };
   },
 
@@ -694,6 +746,9 @@ export const ExtendLeaseRequest: MessageFns<ExtendLeaseRequest> = {
         });
       }
     }
+    if (message.onExpirationDutState !== 0) {
+      obj.onExpirationDutState = dutStateToJSON(message.onExpirationDutState);
+    }
     return obj;
   },
 
@@ -716,6 +771,7 @@ export const ExtendLeaseRequest: MessageFns<ExtendLeaseRequest> = {
       },
       {},
     );
+    message.onExpirationDutState = object.onExpirationDutState ?? 0;
     return message;
   },
 };

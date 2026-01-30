@@ -566,10 +566,9 @@ export interface WriteNodesRequest_StageWrite {
  */
 export interface WriteNodesRequest_CurrentAttemptWrite {
   /**
-   * Adds details to the Stage Attempt.details field.
+   * Sets details in the Stage Attempt.details field.
    *
-   * If a data type here is already present in the database, the data here
-   * must exactly equal the existing data; Otherwise the write is rejected.
+   * Overwrites any existing detail of the same type.
    */
   readonly details: readonly Value[];
   /**

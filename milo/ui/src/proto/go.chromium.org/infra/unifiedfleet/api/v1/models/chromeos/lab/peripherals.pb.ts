@@ -108,10 +108,20 @@ export function cableTypeToJSON(object: CableType): string {
   }
 }
 
-/** Peripherals of device. Next Tag: 27 */
+/** Peripherals of device. Next Tag: 28 */
 export interface Peripherals {
-  readonly servo: Servo | undefined;
-  readonly chameleon: Chameleon | undefined;
+  readonly servo:
+    | Servo
+    | undefined;
+  /**
+   * Indicate if the DUT is connected to a chameleon. Note that chameleons=27 is preferred.
+   * TODO(b/477391417): Remove chameleon and use chameleons(27) instead.
+   */
+  readonly chameleon:
+    | Chameleon
+    | undefined;
+  /** Indicate if the DUT is connected to one or more chameleon(s). */
+  readonly chameleons: readonly Chameleon[];
   readonly rpm:
     | OSRPM
     | undefined;
@@ -575,6 +585,7 @@ function createBasePeripherals(): Peripherals {
   return {
     servo: undefined,
     chameleon: undefined,
+    chameleons: [],
     rpm: undefined,
     connectedCamera: [],
     audio: undefined,
@@ -606,6 +617,9 @@ export const Peripherals: MessageFns<Peripherals> = {
     }
     if (message.chameleon !== undefined) {
       Chameleon.encode(message.chameleon, writer.uint32(18).fork()).join();
+    }
+    for (const v of message.chameleons) {
+      Chameleon.encode(v!, writer.uint32(218).fork()).join();
     }
     if (message.rpm !== undefined) {
       OSRPM.encode(message.rpm, writer.uint32(26).fork()).join();
@@ -694,6 +708,14 @@ export const Peripherals: MessageFns<Peripherals> = {
           }
 
           message.chameleon = Chameleon.decode(reader, reader.uint32());
+          continue;
+        }
+        case 27: {
+          if (tag !== 218) {
+            break;
+          }
+
+          message.chameleons.push(Chameleon.decode(reader, reader.uint32()));
           continue;
         }
         case 3: {
@@ -877,6 +899,9 @@ export const Peripherals: MessageFns<Peripherals> = {
     return {
       servo: isSet(object.servo) ? Servo.fromJSON(object.servo) : undefined,
       chameleon: isSet(object.chameleon) ? Chameleon.fromJSON(object.chameleon) : undefined,
+      chameleons: globalThis.Array.isArray(object?.chameleons)
+        ? object.chameleons.map((e: any) => Chameleon.fromJSON(e))
+        : [],
       rpm: isSet(object.rpm) ? OSRPM.fromJSON(object.rpm) : undefined,
       connectedCamera: globalThis.Array.isArray(object?.connectedCamera)
         ? object.connectedCamera.map((e: any) => Camera.fromJSON(e))
@@ -916,6 +941,9 @@ export const Peripherals: MessageFns<Peripherals> = {
     }
     if (message.chameleon !== undefined) {
       obj.chameleon = Chameleon.toJSON(message.chameleon);
+    }
+    if (message.chameleons?.length) {
+      obj.chameleons = message.chameleons.map((e) => Chameleon.toJSON(e));
     }
     if (message.rpm !== undefined) {
       obj.rpm = OSRPM.toJSON(message.rpm);
@@ -992,6 +1020,7 @@ export const Peripherals: MessageFns<Peripherals> = {
     message.chameleon = (object.chameleon !== undefined && object.chameleon !== null)
       ? Chameleon.fromPartial(object.chameleon)
       : undefined;
+    message.chameleons = object.chameleons?.map((e) => Chameleon.fromPartial(e)) || [];
     message.rpm = (object.rpm !== undefined && object.rpm !== null) ? OSRPM.fromPartial(object.rpm) : undefined;
     message.connectedCamera = object.connectedCamera?.map((e) => Camera.fromPartial(e)) || [];
     message.audio = (object.audio !== undefined && object.audio !== null) ? Audio.fromPartial(object.audio) : undefined;

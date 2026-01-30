@@ -1524,17 +1524,20 @@ export interface QueryTestVerdictsRequest {
    *
    * The sort orders that can be requested are:
    * - `test_id_structured` (test ID order)
-   * - `ui_priority desc, test_id_structured` (UI priority, then test ID order)
+   * - `ui_priority, test_id_structured` (UI priority, then test ID order)
+   * - `ui_priority` (UI priority, then arbitrary system-preferred order)
    *
    * Where:
-   * - `test_id_structured` sorts by the lexicographical order of the test identifier,
-   *   i.e. (module_name, module_scheme, module_variant, coarse_name, fine_name),
-   * - `ui_priority` is an opaque priority heuristic designed for LUCI UI use only and
-   *   is subject to change.
+   * - `test_id_structured` sorts by the lexicographical order of the test
+   *   identifier, i.e. (module_name, module_scheme, module_variant,
+   *   coarse_name, fine_name), and
+   * - `ui_priority` is an opaque priority heuristic designed for LUCI UI use
+   *   and is subject to change.
    *
-   * If this field is left blank, the implementation will choose the order of
-   * response items so as to minimise the response latency. This may be an
-   * ordering not listed above.
+   * If you do not require a particular ordering, it is best to leave this
+   * field unspecified. Results will be returned in the natural order of the
+   * underlying table, which is faster (usually substantially) than any
+   * specified order.
    */
   readonly orderBy: string;
   /**
@@ -7700,13 +7703,6 @@ export interface ResultDB {
   BatchGetWorkUnits(request: BatchGetWorkUnitsRequest): Promise<BatchGetWorkUnitsResponse>;
   /** Retrieves a list of work units based on a predicate. */
   QueryWorkUnits(request: QueryWorkUnitsRequest): Promise<QueryWorkUnitsResponse>;
-  /**
-   * == Invocations ============================================================
-   * Retrieves an invocation.
-   */
-  GetInvocation(request: GetInvocationRequest): Promise<Invocation>;
-  /** Retrieve names of all root invocations for a given invocation. */
-  QueryRootInvocationNames(request: QueryRootInvocationNamesRequest): Promise<QueryRootInvocationNamesResponse>;
   /** Retrieves a test result. */
   GetTestResult(request: GetTestResultRequest): Promise<TestResult>;
   /**
@@ -7739,47 +7735,11 @@ export interface ResultDB {
    */
   QueryTestExonerations(request: QueryTestExonerationsRequest): Promise<QueryTestExonerationsResponse>;
   /**
-   * Retrieves the test result statistics of an invocation.
-   * Currently supports total number of test results belong to the invocation,
-   * directly and indirectly.
-   */
-  QueryTestResultStatistics(request: QueryTestResultStatisticsRequest): Promise<QueryTestResultStatisticsResponse>;
-  /**
    * Calculate new test variants by running the difference between the tests
    * run in the given invocation against the submitted test history for the
    * source.
    */
   QueryNewTestVariants(request: QueryNewTestVariantsRequest): Promise<QueryNewTestVariantsResponse>;
-  /**
-   * Retrieves test verdicts for a test run. A test run comprises only
-   * the test results from a single invocation and not its included
-   * invocations.
-   *
-   * Useful to incrementally ingest test results for an export root as its
-   * individual constituent invocations finalize, in conjunction with
-   * the invocations-ready-for-export pub/sub.
-   *
-   * Compared to the ListTestResults RPC, this RPC ensures all results
-   * for a test variant are returned together, which is useful when
-   * ingesting results into analyses that treat retried test results
-   * in a given test run differently to the first retry.
-   *
-   * To use, the caller must have `resultdb.testResults.list` permission
-   * on the queried invocation.
-   */
-  QueryRunTestVerdicts(request: QueryRunTestVerdictsRequest): Promise<QueryRunTestVerdictsResponse>;
-  /**
-   * Retrieves test verdicts from an invocation, recursively.
-   * Supports invocation inclusions.
-   * TODO(meiring): Update guidance usage to prefer QueryTestVerdicts
-   * for use cases where staleness is acceptable once we stablise that RPC.
-   */
-  QueryTestVariants(request: QueryTestVariantsRequest): Promise<QueryTestVariantsResponse>;
-  /**
-   * Retrieves test variants from a single invocation, matching the specified
-   * test IDs and hashes.
-   */
-  BatchGetTestVariants(request: BatchGetTestVariantsRequest): Promise<BatchGetTestVariantsResponse>;
   /** Retrieves test metadata from a LUCI project, matching the predicate. */
   QueryTestMetadata(request: QueryTestMetadataRequest): Promise<QueryTestMetadataResponse>;
   /**
@@ -7887,6 +7847,51 @@ export interface ResultDB {
   QueryInvocationVariantArtifacts(
     request: QueryInvocationVariantArtifactsRequest,
   ): Promise<QueryInvocationVariantArtifactsResponse>;
+  /**
+   * == Invocations ============================================================
+   * Retrieves an invocation.
+   *
+   * DEPRECATED: Use root invocations/work units, and GetRootInvocation/GetWorkUnit
+   * instead.
+   */
+  GetInvocation(request: GetInvocationRequest): Promise<Invocation>;
+  /**
+   * Retrieve names of all legacy invocation roots for a given invocation.
+   *
+   * DEPRECATED: Use root invocations. Then the root invocation of any
+   * work unit will always be known.
+   */
+  QueryRootInvocationNames(request: QueryRootInvocationNamesRequest): Promise<QueryRootInvocationNamesResponse>;
+  /**
+   * Retrieves test verdicts for a test run. A test run comprises only
+   * the test results from a single invocation and not its included
+   * invocations.
+   *
+   * DEPRECATED: Use root invocations and the test results pub/sub instead.
+   */
+  QueryRunTestVerdicts(request: QueryRunTestVerdictsRequest): Promise<QueryRunTestVerdictsResponse>;
+  /**
+   * Retrieves test verdicts from an invocation, recursively.
+   * Supports invocation inclusions.
+   *
+   * DEPRECATED: Use root invocations and QueryTestVerdicts instead.
+   */
+  QueryTestVariants(request: QueryTestVariantsRequest): Promise<QueryTestVariantsResponse>;
+  /**
+   * Retrieves test variants from a single invocation, matching the specified
+   * test IDs and hashes.
+   * INTENT TO DEPRECATE: A BatchGetTestVerdicts RPC is planned to replace this
+   * RPC.
+   */
+  BatchGetTestVariants(request: BatchGetTestVariantsRequest): Promise<BatchGetTestVariantsResponse>;
+  /**
+   * Retrieves the test result statistics of an invocation.
+   * Currently supports total number of test results belong to the invocation,
+   * directly and indirectly.
+   *
+   * DEPRECATED: Use QueryTestAggregations instead.
+   */
+  QueryTestResultStatistics(request: QueryTestResultStatisticsRequest): Promise<QueryTestResultStatisticsResponse>;
 }
 
 export const ResultDBServiceName = "luci.resultdb.v1.ResultDB";
@@ -7901,19 +7906,13 @@ export class ResultDBClientImpl implements ResultDB {
     this.GetWorkUnit = this.GetWorkUnit.bind(this);
     this.BatchGetWorkUnits = this.BatchGetWorkUnits.bind(this);
     this.QueryWorkUnits = this.QueryWorkUnits.bind(this);
-    this.GetInvocation = this.GetInvocation.bind(this);
-    this.QueryRootInvocationNames = this.QueryRootInvocationNames.bind(this);
     this.GetTestResult = this.GetTestResult.bind(this);
     this.ListTestResults = this.ListTestResults.bind(this);
     this.GetTestExoneration = this.GetTestExoneration.bind(this);
     this.ListTestExonerations = this.ListTestExonerations.bind(this);
     this.QueryTestResults = this.QueryTestResults.bind(this);
     this.QueryTestExonerations = this.QueryTestExonerations.bind(this);
-    this.QueryTestResultStatistics = this.QueryTestResultStatistics.bind(this);
     this.QueryNewTestVariants = this.QueryNewTestVariants.bind(this);
-    this.QueryRunTestVerdicts = this.QueryRunTestVerdicts.bind(this);
-    this.QueryTestVariants = this.QueryTestVariants.bind(this);
-    this.BatchGetTestVariants = this.BatchGetTestVariants.bind(this);
     this.QueryTestMetadata = this.QueryTestMetadata.bind(this);
     this.GetInstruction = this.GetInstruction.bind(this);
     this.QueryInstruction = this.QueryInstruction.bind(this);
@@ -7928,6 +7927,12 @@ export class ResultDBClientImpl implements ResultDB {
     this.QueryTestVariantArtifacts = this.QueryTestVariantArtifacts.bind(this);
     this.QueryInvocationVariantArtifactGroups = this.QueryInvocationVariantArtifactGroups.bind(this);
     this.QueryInvocationVariantArtifacts = this.QueryInvocationVariantArtifacts.bind(this);
+    this.GetInvocation = this.GetInvocation.bind(this);
+    this.QueryRootInvocationNames = this.QueryRootInvocationNames.bind(this);
+    this.QueryRunTestVerdicts = this.QueryRunTestVerdicts.bind(this);
+    this.QueryTestVariants = this.QueryTestVariants.bind(this);
+    this.BatchGetTestVariants = this.BatchGetTestVariants.bind(this);
+    this.QueryTestResultStatistics = this.QueryTestResultStatistics.bind(this);
   }
   GetRootInvocation(request: GetRootInvocationRequest): Promise<RootInvocation> {
     const data = GetRootInvocationRequest.toJSON(request);
@@ -7951,18 +7956,6 @@ export class ResultDBClientImpl implements ResultDB {
     const data = QueryWorkUnitsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryWorkUnits", data);
     return promise.then((data) => QueryWorkUnitsResponse.fromJSON(data));
-  }
-
-  GetInvocation(request: GetInvocationRequest): Promise<Invocation> {
-    const data = GetInvocationRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "GetInvocation", data);
-    return promise.then((data) => Invocation.fromJSON(data));
-  }
-
-  QueryRootInvocationNames(request: QueryRootInvocationNamesRequest): Promise<QueryRootInvocationNamesResponse> {
-    const data = QueryRootInvocationNamesRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "QueryRootInvocationNames", data);
-    return promise.then((data) => QueryRootInvocationNamesResponse.fromJSON(data));
   }
 
   GetTestResult(request: GetTestResultRequest): Promise<TestResult> {
@@ -8001,34 +7994,10 @@ export class ResultDBClientImpl implements ResultDB {
     return promise.then((data) => QueryTestExonerationsResponse.fromJSON(data));
   }
 
-  QueryTestResultStatistics(request: QueryTestResultStatisticsRequest): Promise<QueryTestResultStatisticsResponse> {
-    const data = QueryTestResultStatisticsRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "QueryTestResultStatistics", data);
-    return promise.then((data) => QueryTestResultStatisticsResponse.fromJSON(data));
-  }
-
   QueryNewTestVariants(request: QueryNewTestVariantsRequest): Promise<QueryNewTestVariantsResponse> {
     const data = QueryNewTestVariantsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryNewTestVariants", data);
     return promise.then((data) => QueryNewTestVariantsResponse.fromJSON(data));
-  }
-
-  QueryRunTestVerdicts(request: QueryRunTestVerdictsRequest): Promise<QueryRunTestVerdictsResponse> {
-    const data = QueryRunTestVerdictsRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "QueryRunTestVerdicts", data);
-    return promise.then((data) => QueryRunTestVerdictsResponse.fromJSON(data));
-  }
-
-  QueryTestVariants(request: QueryTestVariantsRequest): Promise<QueryTestVariantsResponse> {
-    const data = QueryTestVariantsRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "QueryTestVariants", data);
-    return promise.then((data) => QueryTestVariantsResponse.fromJSON(data));
-  }
-
-  BatchGetTestVariants(request: BatchGetTestVariantsRequest): Promise<BatchGetTestVariantsResponse> {
-    const data = BatchGetTestVariantsRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "BatchGetTestVariants", data);
-    return promise.then((data) => BatchGetTestVariantsResponse.fromJSON(data));
   }
 
   QueryTestMetadata(request: QueryTestMetadataRequest): Promise<QueryTestMetadataResponse> {
@@ -8119,6 +8088,42 @@ export class ResultDBClientImpl implements ResultDB {
     const data = QueryInvocationVariantArtifactsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryInvocationVariantArtifacts", data);
     return promise.then((data) => QueryInvocationVariantArtifactsResponse.fromJSON(data));
+  }
+
+  GetInvocation(request: GetInvocationRequest): Promise<Invocation> {
+    const data = GetInvocationRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetInvocation", data);
+    return promise.then((data) => Invocation.fromJSON(data));
+  }
+
+  QueryRootInvocationNames(request: QueryRootInvocationNamesRequest): Promise<QueryRootInvocationNamesResponse> {
+    const data = QueryRootInvocationNamesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryRootInvocationNames", data);
+    return promise.then((data) => QueryRootInvocationNamesResponse.fromJSON(data));
+  }
+
+  QueryRunTestVerdicts(request: QueryRunTestVerdictsRequest): Promise<QueryRunTestVerdictsResponse> {
+    const data = QueryRunTestVerdictsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryRunTestVerdicts", data);
+    return promise.then((data) => QueryRunTestVerdictsResponse.fromJSON(data));
+  }
+
+  QueryTestVariants(request: QueryTestVariantsRequest): Promise<QueryTestVariantsResponse> {
+    const data = QueryTestVariantsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryTestVariants", data);
+    return promise.then((data) => QueryTestVariantsResponse.fromJSON(data));
+  }
+
+  BatchGetTestVariants(request: BatchGetTestVariantsRequest): Promise<BatchGetTestVariantsResponse> {
+    const data = BatchGetTestVariantsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "BatchGetTestVariants", data);
+    return promise.then((data) => BatchGetTestVariantsResponse.fromJSON(data));
+  }
+
+  QueryTestResultStatistics(request: QueryTestResultStatisticsRequest): Promise<QueryTestResultStatisticsResponse> {
+    const data = QueryTestResultStatisticsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "QueryTestResultStatistics", data);
+    return promise.then((data) => QueryTestResultStatisticsResponse.fromJSON(data));
   }
 }
 

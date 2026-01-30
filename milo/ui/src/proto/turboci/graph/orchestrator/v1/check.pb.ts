@@ -106,7 +106,13 @@ export interface Check {
    *
    * Checks may only depend on other Checks.
    *
-   * Once the Check is WAITING, this field is immutable.
+   * While the check is in PLANNING state, its dependencies can be mutated
+   * freely via WriteNodes calls.
+   *
+   * Once the Check is moved into PLANNED state by a WriteNodes call,
+   * dependencies are "locked" and the Orchestrator starts tracking their
+   * resolution. Once they are resolved, the Orchestrator will switch the check
+   * into WAITING state.
    */
   readonly dependencies?:
     | Dependencies

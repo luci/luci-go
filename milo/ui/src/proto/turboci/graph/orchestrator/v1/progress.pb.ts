@@ -44,6 +44,16 @@ export interface ProgressEvolvePending {
   readonly rpc?: Status | undefined;
 }
 
+/**
+ * ProgressIgnoredDetail is a Progress detail message attached to Stage Attempts
+ * when a CurrentAttemptWrite call writes a Stage Attempt detail whose type is
+ * already present, but with a different value.
+ */
+export interface ProgressIgnoredDetail {
+  /** The type_url(s) of the detail(s) which had an overwrite attempt. */
+  readonly typeUrl: readonly string[];
+}
+
 function createBaseProgressEvolvePending(): ProgressEvolvePending {
   return { nextTry: undefined, preRpc: undefined, rpc: undefined };
 }
@@ -134,6 +144,66 @@ export const ProgressEvolvePending: MessageFns<ProgressEvolvePending> = {
       ? Status.fromPartial(object.preRpc)
       : undefined;
     message.rpc = (object.rpc !== undefined && object.rpc !== null) ? Status.fromPartial(object.rpc) : undefined;
+    return message;
+  },
+};
+
+function createBaseProgressIgnoredDetail(): ProgressIgnoredDetail {
+  return { typeUrl: [] };
+}
+
+export const ProgressIgnoredDetail: MessageFns<ProgressIgnoredDetail> = {
+  encode(message: ProgressIgnoredDetail, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.typeUrl) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ProgressIgnoredDetail {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProgressIgnoredDetail() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.typeUrl.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ProgressIgnoredDetail {
+    return {
+      typeUrl: globalThis.Array.isArray(object?.typeUrl) ? object.typeUrl.map((e: any) => globalThis.String(e)) : [],
+    };
+  },
+
+  toJSON(message: ProgressIgnoredDetail): unknown {
+    const obj: any = {};
+    if (message.typeUrl?.length) {
+      obj.typeUrl = message.typeUrl;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ProgressIgnoredDetail>): ProgressIgnoredDetail {
+    return ProgressIgnoredDetail.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ProgressIgnoredDetail>): ProgressIgnoredDetail {
+    const message = createBaseProgressIgnoredDetail() as any;
+    message.typeUrl = object.typeUrl?.map((e) => e) || [];
     return message;
   },
 };

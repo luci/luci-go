@@ -8,7 +8,15 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Duration } from "../../../google/protobuf/duration.pb";
 import { Timestamp } from "../../../google/protobuf/timestamp.pb";
-import { ExtendLeaseRequest, ExtendLeaseResponse, HardwareRequirements, VMRequirements } from "./device_leasing.pb";
+import {
+  DutState,
+  dutStateFromJSON,
+  dutStateToJSON,
+  ExtendLeaseRequest,
+  ExtendLeaseResponse,
+  HardwareRequirements,
+  VMRequirements,
+} from "./device_leasing.pb";
 
 export const protobufPackage = "chromiumos.test.api";
 
@@ -337,6 +345,8 @@ export interface LeaseDeviceRequest {
    * This map provides relevant information may interested to users.
    */
   readonly userPayload: { [key: string]: string };
+  /** The state of the DUT should be set to if the lease expires. */
+  readonly onExpirationDutState: DutState;
 }
 
 export interface LeaseDeviceRequest_UserPayloadEntry {
@@ -371,6 +381,8 @@ export interface BulkLeaseDevicesResponse {
 
 export interface ReleaseDeviceRequest {
   readonly leaseId: string;
+  /** The state of the DUT should be set to after the lease is released. */
+  readonly dutAfterLeaseState: DutState;
 }
 
 export interface ReleaseDeviceResponse {
@@ -1135,6 +1147,7 @@ function createBaseLeaseDeviceRequest(): LeaseDeviceRequest {
     vmHostReqs: undefined,
     hardwareDeviceReqs: undefined,
     userPayload: {},
+    onExpirationDutState: 0,
   };
 }
 
@@ -1161,6 +1174,9 @@ export const LeaseDeviceRequest: MessageFns<LeaseDeviceRequest> = {
     Object.entries(message.userPayload).forEach(([key, value]) => {
       LeaseDeviceRequest_UserPayloadEntry.encode({ key: key as any, value }, writer.uint32(58).fork()).join();
     });
+    if (message.onExpirationDutState !== 0) {
+      writer.uint32(64).int32(message.onExpirationDutState);
+    }
     return writer;
   },
 
@@ -1230,6 +1246,14 @@ export const LeaseDeviceRequest: MessageFns<LeaseDeviceRequest> = {
           }
           continue;
         }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.onExpirationDutState = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1255,6 +1279,7 @@ export const LeaseDeviceRequest: MessageFns<LeaseDeviceRequest> = {
           return acc;
         }, {})
         : {},
+      onExpirationDutState: isSet(object.onExpirationDutState) ? dutStateFromJSON(object.onExpirationDutState) : 0,
     };
   },
 
@@ -1287,6 +1312,9 @@ export const LeaseDeviceRequest: MessageFns<LeaseDeviceRequest> = {
         });
       }
     }
+    if (message.onExpirationDutState !== 0) {
+      obj.onExpirationDutState = dutStateToJSON(message.onExpirationDutState);
+    }
     return obj;
   },
 
@@ -1316,6 +1344,7 @@ export const LeaseDeviceRequest: MessageFns<LeaseDeviceRequest> = {
       },
       {},
     );
+    message.onExpirationDutState = object.onExpirationDutState ?? 0;
     return message;
   },
 };
@@ -1647,13 +1676,16 @@ export const BulkLeaseDevicesResponse: MessageFns<BulkLeaseDevicesResponse> = {
 };
 
 function createBaseReleaseDeviceRequest(): ReleaseDeviceRequest {
-  return { leaseId: "" };
+  return { leaseId: "", dutAfterLeaseState: 0 };
 }
 
 export const ReleaseDeviceRequest: MessageFns<ReleaseDeviceRequest> = {
   encode(message: ReleaseDeviceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.leaseId !== "") {
       writer.uint32(10).string(message.leaseId);
+    }
+    if (message.dutAfterLeaseState !== 0) {
+      writer.uint32(16).int32(message.dutAfterLeaseState);
     }
     return writer;
   },
@@ -1673,6 +1705,14 @@ export const ReleaseDeviceRequest: MessageFns<ReleaseDeviceRequest> = {
           message.leaseId = reader.string();
           continue;
         }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.dutAfterLeaseState = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1683,13 +1723,19 @@ export const ReleaseDeviceRequest: MessageFns<ReleaseDeviceRequest> = {
   },
 
   fromJSON(object: any): ReleaseDeviceRequest {
-    return { leaseId: isSet(object.leaseId) ? globalThis.String(object.leaseId) : "" };
+    return {
+      leaseId: isSet(object.leaseId) ? globalThis.String(object.leaseId) : "",
+      dutAfterLeaseState: isSet(object.dutAfterLeaseState) ? dutStateFromJSON(object.dutAfterLeaseState) : 0,
+    };
   },
 
   toJSON(message: ReleaseDeviceRequest): unknown {
     const obj: any = {};
     if (message.leaseId !== "") {
       obj.leaseId = message.leaseId;
+    }
+    if (message.dutAfterLeaseState !== 0) {
+      obj.dutAfterLeaseState = dutStateToJSON(message.dutAfterLeaseState);
     }
     return obj;
   },
@@ -1700,6 +1746,7 @@ export const ReleaseDeviceRequest: MessageFns<ReleaseDeviceRequest> = {
   fromPartial(object: DeepPartial<ReleaseDeviceRequest>): ReleaseDeviceRequest {
     const message = createBaseReleaseDeviceRequest() as any;
     message.leaseId = object.leaseId ?? "";
+    message.dutAfterLeaseState = object.dutAfterLeaseState ?? 0;
     return message;
   },
 };

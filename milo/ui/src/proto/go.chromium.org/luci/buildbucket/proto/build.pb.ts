@@ -538,6 +538,7 @@ export interface BuildInfra {
     | undefined;
   /** It should only be set for led builds. */
   readonly led: BuildInfra_Led | undefined;
+  readonly turboci: BuildInfra_TurboCI | undefined;
 }
 
 /** Buildbucket-specific information, captured at the build creation time. */
@@ -1133,6 +1134,12 @@ export interface BuildInfra_Backend {
   /** Dimensions for the task. */
   readonly taskDimensions: readonly RequestedDimension[];
   /** Hostname is the hostname for the backend itself. */
+  readonly hostname: string;
+}
+
+/** TurboCI specific information. */
+export interface BuildInfra_TurboCI {
+  /** Hostname is the hostname for TurboCI. */
   readonly hostname: string;
 }
 
@@ -2916,6 +2923,7 @@ function createBaseBuildInfra(): BuildInfra {
     bbagent: undefined,
     backend: undefined,
     led: undefined,
+    turboci: undefined,
   };
 }
 
@@ -2944,6 +2952,9 @@ export const BuildInfra: MessageFns<BuildInfra> = {
     }
     if (message.led !== undefined) {
       BuildInfra_Led.encode(message.led, writer.uint32(66).fork()).join();
+    }
+    if (message.turboci !== undefined) {
+      BuildInfra_TurboCI.encode(message.turboci, writer.uint32(74).fork()).join();
     }
     return writer;
   },
@@ -3019,6 +3030,14 @@ export const BuildInfra: MessageFns<BuildInfra> = {
           message.led = BuildInfra_Led.decode(reader, reader.uint32());
           continue;
         }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.turboci = BuildInfra_TurboCI.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3038,6 +3057,7 @@ export const BuildInfra: MessageFns<BuildInfra> = {
       bbagent: isSet(object.bbagent) ? BuildInfra_BBAgent.fromJSON(object.bbagent) : undefined,
       backend: isSet(object.backend) ? BuildInfra_Backend.fromJSON(object.backend) : undefined,
       led: isSet(object.led) ? BuildInfra_Led.fromJSON(object.led) : undefined,
+      turboci: isSet(object.turboci) ? BuildInfra_TurboCI.fromJSON(object.turboci) : undefined,
     };
   },
 
@@ -3066,6 +3086,9 @@ export const BuildInfra: MessageFns<BuildInfra> = {
     }
     if (message.led !== undefined) {
       obj.led = BuildInfra_Led.toJSON(message.led);
+    }
+    if (message.turboci !== undefined) {
+      obj.turboci = BuildInfra_TurboCI.toJSON(message.turboci);
     }
     return obj;
   },
@@ -3098,6 +3121,9 @@ export const BuildInfra: MessageFns<BuildInfra> = {
       : undefined;
     message.led = (object.led !== undefined && object.led !== null)
       ? BuildInfra_Led.fromPartial(object.led)
+      : undefined;
+    message.turboci = (object.turboci !== undefined && object.turboci !== null)
+      ? BuildInfra_TurboCI.fromPartial(object.turboci)
       : undefined;
     return message;
   },
@@ -5685,6 +5711,64 @@ export const BuildInfra_Backend: MessageFns<BuildInfra_Backend> = {
     message.task = (object.task !== undefined && object.task !== null) ? Task.fromPartial(object.task) : undefined;
     message.caches = object.caches?.map((e) => CacheEntry.fromPartial(e)) || [];
     message.taskDimensions = object.taskDimensions?.map((e) => RequestedDimension.fromPartial(e)) || [];
+    message.hostname = object.hostname ?? "";
+    return message;
+  },
+};
+
+function createBaseBuildInfra_TurboCI(): BuildInfra_TurboCI {
+  return { hostname: "" };
+}
+
+export const BuildInfra_TurboCI: MessageFns<BuildInfra_TurboCI> = {
+  encode(message: BuildInfra_TurboCI, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.hostname !== "") {
+      writer.uint32(10).string(message.hostname);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BuildInfra_TurboCI {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBuildInfra_TurboCI() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.hostname = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BuildInfra_TurboCI {
+    return { hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "" };
+  },
+
+  toJSON(message: BuildInfra_TurboCI): unknown {
+    const obj: any = {};
+    if (message.hostname !== "") {
+      obj.hostname = message.hostname;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BuildInfra_TurboCI>): BuildInfra_TurboCI {
+    return BuildInfra_TurboCI.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BuildInfra_TurboCI>): BuildInfra_TurboCI {
+    const message = createBaseBuildInfra_TurboCI() as any;
     message.hostname = object.hostname ?? "";
     return message;
   },
