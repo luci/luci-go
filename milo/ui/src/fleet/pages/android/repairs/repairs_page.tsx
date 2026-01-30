@@ -334,6 +334,7 @@ const COLUMNS = {
         </Typography>
         {x.cell.getValue() >= 0 && x.row.original.total_devices && (
           <Typography variant="caption" sx={{ color: colors.grey[500] }}>
+            (
             {
               // Capping the value if the percentage is higher than 100%, see b/473028358.
               (x.cell.getValue() / x.row.original.total_devices <= 1
@@ -343,6 +344,7 @@ const COLUMNS = {
                 style: 'percent',
               })
             }
+            )
           </Typography>
         )}
       </div>
