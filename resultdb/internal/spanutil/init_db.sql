@@ -278,6 +278,16 @@ CREATE TABLE RootInvocationShards (
   -- delete data from storage after the row is deleted.
   ROW DELETION POLICY (OLDER_THAN(CreateTime, INTERVAL 510 DAY));
 
+-- Used to find all shards of a root invocation. Useful mostly when manually
+-- running SQL statements against the database for debugging.
+--
+-- Example usage:
+-- SELECT * FROM RootInvocationShards
+-- WHERE RootInvocationId = CONCAT(SUBSTR(TO_HEX(SHA256(${user_provided_id})), 0, 8), ':', ${user_provided_id})
+-- where ${user_provided_id} is the externally provided root invocation ID, e.g. "build-1234567890".
+CREATE UNIQUE INDEX RootInvocationShardsByRootInvocation
+  ON RootInvocationShards (RootInvocationId, ShardIndex);
+
 -- Work units represent a process step that contributes results to
 -- a root invocation. Work units contain test results, artifacts and
 -- exonerations. Work units may also contain other work units and
