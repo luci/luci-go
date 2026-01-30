@@ -33,6 +33,12 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
+  borderRight: `1px solid ${colors.grey[300]}`,
+  marginRight: 16,
+  paddingRight: 8,
+};
+
 const METRIC_CONTAINER_STYLES: CSSObject = {
   display: 'flex',
   justifyContent: 'flex-start',
@@ -83,9 +89,16 @@ export function AndroidSummaryHeader({
         css={{
           display: 'flex',
           maxWidth: 1400,
+          alignItems: 'stretch', // Ensure children stretch to fill height
+          minHeight: 100,
         }}
       >
-        <div css={{ flexGrow: 2 }}>
+        <div
+          css={{
+            ...HAS_RIGHT_SIBLING_STYLES,
+            flexGrow: 2, // Give more space to Device state (more metrics)
+          }}
+        >
           <Typography variant="subhead1">Device state</Typography>
           <div css={METRIC_CONTAINER_STYLES}>
             <SingleMetric
@@ -178,6 +191,38 @@ export function AndroidSummaryHeader({
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString({
                 state: ['DIRTY'],
+              })}
+            />
+          </div>
+        </div>
+
+        <div css={{ flexGrow: 1, paddingLeft: 16 }}>
+          <Typography variant="subhead1">Host state</Typography>
+          <div css={METRIC_CONTAINER_STYLES}>
+            <SingleMetric
+              name="Total Hosts"
+              value={countQuery.data?.androidCount?.totalHosts}
+              loading={countQuery.isPending}
+            />
+            <SingleMetric
+              name="Hosts Running"
+              value={countQuery.data?.androidCount?.labRunningHosts}
+              total={countQuery.data?.androidCount?.totalHosts}
+              loading={countQuery.isPending}
+              filterUrl={getFilterQueryString({
+                state: ['LAB_RUNNING'],
+                fc_machine_type: ['host'],
+              })}
+            />
+            <SingleMetric
+              name="Hosts Missing"
+              value={countQuery.data?.androidCount?.labMissingHosts}
+              total={countQuery.data?.androidCount?.totalHosts}
+              loading={countQuery.isPending}
+              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
+              filterUrl={getFilterQueryString({
+                state: ['LAB_MISSING'],
+                fc_machine_type: ['host'],
               })}
             />
           </div>

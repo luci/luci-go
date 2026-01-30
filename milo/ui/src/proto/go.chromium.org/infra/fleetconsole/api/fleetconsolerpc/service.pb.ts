@@ -404,6 +404,9 @@ export interface AndroidCount {
   readonly lameduckDevices: number;
   readonly failedDevices: number;
   readonly dirtyDevices: number;
+  readonly totalHosts: number;
+  readonly labMissingHosts: number;
+  readonly labRunningHosts: number;
 }
 
 export interface TaskStateCounts {
@@ -3892,6 +3895,9 @@ function createBaseAndroidCount(): AndroidCount {
     lameduckDevices: 0,
     failedDevices: 0,
     dirtyDevices: 0,
+    totalHosts: 0,
+    labMissingHosts: 0,
+    labRunningHosts: 0,
   };
 }
 
@@ -3926,6 +3932,15 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     }
     if (message.dirtyDevices !== 0) {
       writer.uint32(80).int32(message.dirtyDevices);
+    }
+    if (message.totalHosts !== 0) {
+      writer.uint32(88).int32(message.totalHosts);
+    }
+    if (message.labMissingHosts !== 0) {
+      writer.uint32(96).int32(message.labMissingHosts);
+    }
+    if (message.labRunningHosts !== 0) {
+      writer.uint32(104).int32(message.labRunningHosts);
     }
     return writer;
   },
@@ -4017,6 +4032,30 @@ export const AndroidCount: MessageFns<AndroidCount> = {
           message.dirtyDevices = reader.int32();
           continue;
         }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.totalHosts = reader.int32();
+          continue;
+        }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.labMissingHosts = reader.int32();
+          continue;
+        }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.labRunningHosts = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4038,6 +4077,9 @@ export const AndroidCount: MessageFns<AndroidCount> = {
       lameduckDevices: isSet(object.lameduckDevices) ? globalThis.Number(object.lameduckDevices) : 0,
       failedDevices: isSet(object.failedDevices) ? globalThis.Number(object.failedDevices) : 0,
       dirtyDevices: isSet(object.dirtyDevices) ? globalThis.Number(object.dirtyDevices) : 0,
+      totalHosts: isSet(object.totalHosts) ? globalThis.Number(object.totalHosts) : 0,
+      labMissingHosts: isSet(object.labMissingHosts) ? globalThis.Number(object.labMissingHosts) : 0,
+      labRunningHosts: isSet(object.labRunningHosts) ? globalThis.Number(object.labRunningHosts) : 0,
     };
   },
 
@@ -4073,6 +4115,15 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     if (message.dirtyDevices !== 0) {
       obj.dirtyDevices = Math.round(message.dirtyDevices);
     }
+    if (message.totalHosts !== 0) {
+      obj.totalHosts = Math.round(message.totalHosts);
+    }
+    if (message.labMissingHosts !== 0) {
+      obj.labMissingHosts = Math.round(message.labMissingHosts);
+    }
+    if (message.labRunningHosts !== 0) {
+      obj.labRunningHosts = Math.round(message.labRunningHosts);
+    }
     return obj;
   },
 
@@ -4091,6 +4142,9 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     message.lameduckDevices = object.lameduckDevices ?? 0;
     message.failedDevices = object.failedDevices ?? 0;
     message.dirtyDevices = object.dirtyDevices ?? 0;
+    message.totalHosts = object.totalHosts ?? 0;
+    message.labMissingHosts = object.labMissingHosts ?? 0;
+    message.labRunningHosts = object.labRunningHosts ?? 0;
     return message;
   },
 };
