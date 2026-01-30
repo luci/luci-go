@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -751,8 +752,19 @@ func GetAllAuthGroups(ctx context.Context) ([]*AuthGroup, error) {
 					return nil
 				}
 
-				if err := authGroup.restoreMembers(ctx); err != nil {
-					return err
+				if rErr := authGroup.restoreMembers(ctx); rErr != nil {
+					// Only log the error; an unsharding issue for a single group
+					// shouldn't prevent other groups from being fetched. The group will
+					// still be returned, but its direct Members will be empty.
+					logging.Errorf(ctx, "error restoring Members from shards for group %q: %w",
+						authGroup.ID, rErr)
+
+					if !transient.Tag.In(rErr) {
+						// Clear the ShardIDs to denote unsharding was attempted but results
+						// in a non-transient error. This prevents future unsharding
+						// attempts, such as when the group is converted to a proto.
+						authGroup.ShardIDs = nil
+					}
 				}
 
 				return nil

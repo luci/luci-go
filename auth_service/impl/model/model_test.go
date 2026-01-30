@@ -377,14 +377,21 @@ func TestGetAllAuthGroups(t *testing.T) {
 		t.Run("handles sharded groups", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 
-			// Put a sharded group with a couple of non-sharded groups into Datastore.
+			// Set up a sharded group.
 			bigGroup := oversizedAuthGroup(ctx, "test-auth-group-2")
 			shards, err := createAuthGroupShards(ctx, bigGroup, MaxGroupShardSize)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, shards, should.NotBeEmpty)
 			bigGroup.setShardIDs(ctx, shards)
+
+			// Set up an invalidly-sharded group.
+			invalidShardedGroup := testAuthGroup(ctx, "test-auth-group-4")
+			invalidShardedGroup.Members = nil
+			invalidShardedGroup.ShardIDs = []string{"non", "sense"}
+
+			// Put the sharded groups and some non-sharded groups in Datastore.
 			assert.Loosely(t, datastore.Put(ctx,
-				bigGroup, shards,
+				bigGroup, shards, invalidShardedGroup,
 				testAuthGroup(ctx, "test-auth-group-1"),
 				testAuthGroup(ctx, "test-auth-group-3"),
 			), should.BeNil)
@@ -392,10 +399,14 @@ func TestGetAllAuthGroups(t *testing.T) {
 			actualAuthGroups, err := GetAllAuthGroups(ctx)
 			assert.Loosely(t, err, should.BeNil)
 
+			expectedInvalidGroup := testAuthGroup(ctx, "test-auth-group-4")
+			expectedInvalidGroup.Members = nil
+
 			assert.Loosely(t, actualAuthGroups, should.Match([]*AuthGroup{
 				testAuthGroup(ctx, "test-auth-group-1"),
 				oversizedAuthGroup(ctx, "test-auth-group-2"),
 				testAuthGroup(ctx, "test-auth-group-3"),
+				expectedInvalidGroup,
 			}))
 		})
 	})
