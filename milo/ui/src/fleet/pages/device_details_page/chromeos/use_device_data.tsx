@@ -22,7 +22,7 @@ import {
   ListDevicesResponse,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-export type UseDeviceDataResult = {
+export type UseChromeOSDeviceDataResult = {
   error?: unknown;
   isError: boolean;
   isLoading: boolean;
@@ -35,7 +35,9 @@ export type UseDeviceDataResult = {
  *
  * @param deviceId - the id of the device to query
  */
-export const useDeviceData = (deviceId: string): UseDeviceDataResult => {
+export const useDeviceData = (
+  deviceId: string,
+): UseChromeOSDeviceDataResult => {
   const queryClient = useQueryClient();
   const listDevicesQueryKey = useListDevicesQueryKey();
 

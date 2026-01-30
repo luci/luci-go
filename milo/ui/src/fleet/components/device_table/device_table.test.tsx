@@ -27,8 +27,7 @@ import {
   getPrevFullRowCount,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { formatDeviceColumn } from '@/fleet/pages/device_list_page/chromeos/chromeos_devices_page';
-import { getColumns } from '@/fleet/pages/device_list_page/chromeos/columns';
+import { getChromeOSColumns } from '@/fleet/pages/device_list_page/chromeos/chromeos_columns';
 import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -152,6 +151,16 @@ const MOCK_DEVICES: Device[] = [
   },
 ];
 
+const formatDeviceColumn = (value: string, columnName: string): string => {
+  switch (columnName) {
+    case 'current_task':
+      if (value !== undefined && value !== '') return value;
+      else return 'idle';
+    default:
+      return value;
+  }
+};
+
 function TestComponent({
   withKnownTotalRowCount = false,
   isLoadingColumns = false,
@@ -182,7 +191,7 @@ function TestComponent({
   return (
     <DeviceTable
       rows={currentDevices}
-      availableColumns={getColumns(COLUMN_IDS)}
+      availableColumns={getChromeOSColumns(COLUMN_IDS)}
       nextPageToken={nextPageToken}
       pagerCtx={pagerCtx}
       isError={false}

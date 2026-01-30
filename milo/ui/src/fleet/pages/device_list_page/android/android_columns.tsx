@@ -28,7 +28,7 @@ import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fl
 
 import { RunTargetColumnHeader } from './run_target_column_header';
 
-export const getColumns = (
+export const getAndroidColumns = (
   columnIds: string[],
 ): DeviceTableGridColDef<AndroidDevice>[] => {
   return columnIds.map((id) => {

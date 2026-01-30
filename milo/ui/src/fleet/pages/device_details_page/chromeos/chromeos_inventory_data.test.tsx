@@ -17,7 +17,7 @@ import { render, screen } from '@testing-library/react';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { InventoryData } from './inventory_data';
+import { ChromeOSInventoryData } from './chromeos_inventory_data';
 
 describe('<InventoryData />', () => {
   const mockDeviceOs = {
@@ -41,7 +41,7 @@ describe('<InventoryData />', () => {
   it('renders CLI command for default namespace', async () => {
     render(
       <FakeContextProvider>
-        <InventoryData device={mockDeviceOs} />
+        <ChromeOSInventoryData device={mockDeviceOs} />
       </FakeContextProvider>,
     );
 
@@ -53,7 +53,7 @@ describe('<InventoryData />', () => {
   it('renders CLI command for os-partner namespace', async () => {
     render(
       <FakeContextProvider>
-        <InventoryData device={mockDeviceOsPartner} />
+        <ChromeOSInventoryData device={mockDeviceOsPartner} />
       </FakeContextProvider>,
     );
 

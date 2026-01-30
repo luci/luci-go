@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getColumns } from '@/fleet/pages/device_list_page/chromeos/columns';
+import { getChromeOSColumns } from '@/fleet/pages/device_list_page/chromeos/chromeos_columns';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { orderColumns } from './columns';
@@ -31,7 +31,7 @@ describe('getColumns - Ordering Tests', () => {
 
     const result = orderColumns(
       Platform.CHROMEOS,
-      getColumns(columnIds),
+      getChromeOSColumns(columnIds),
       visibleColumnIds,
     ).map((col) => col.field); // Extract just the field for ordering check
 
@@ -44,7 +44,7 @@ describe('getColumns - Ordering Tests', () => {
 
     const result = orderColumns(
       Platform.CHROMEOS,
-      getColumns(columnIds),
+      getChromeOSColumns(columnIds),
       visibleColumnIds,
     ).map((col) => col.field);
 

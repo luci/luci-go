@@ -63,18 +63,18 @@ import {
 } from '../common/helpers';
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
+import {
+  CHROMEOS_COLUMN_OVERRIDES,
+  getChromeOSColumns,
+} from './chromeos_columns';
 import { ChromeOSSummaryHeader } from './chromeos_summary_header';
-import { CHROMEOS_COLUMN_OVERRIDES, getColumns } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
 type DeviceWithCurrentTask = Device & { current_task?: string };
 
-export const formatDeviceColumn = (
-  value: string,
-  columnName: string,
-): string => {
+const formatDeviceColumn = (value: string, columnName: string): string => {
   switch (columnName) {
     case 'current_task':
       if (value !== undefined && value !== '') return value;
@@ -84,7 +84,7 @@ export const formatDeviceColumn = (
   }
 };
 
-export const ChromeOsDevicesPage = () => {
+export const ChromeOSDevicesPage = () => {
   const { trackEvent } = useGoogleAnalytics();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
@@ -309,7 +309,7 @@ export const ChromeOsDevicesPage = () => {
           defaultColumnIds={CHROMEOS_DEFAULT_COLUMNS}
           localStorageKey={CHROMEOS_DEVICES_LOCAL_STORAGE_KEY}
           rows={rows}
-          availableColumns={getColumns(columnIds)}
+          availableColumns={getChromeOSColumns(columnIds)}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
           isError={
@@ -340,7 +340,7 @@ export function Component() {
         key="fleet-device-list-page"
       >
         <LoggedInBoundary>
-          <ChromeOsDevicesPage />
+          <ChromeOSDevicesPage />
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>

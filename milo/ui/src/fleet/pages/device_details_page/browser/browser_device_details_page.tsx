@@ -42,7 +42,7 @@ import { BotData } from '../common/bot_data';
 import { Tasks } from '../common/tasks_table';
 
 import { BrowserDeviceDimensions } from './browser_device_dimensions';
-import { InventoryData } from './inventory_data';
+import { BrowserInventoryData } from './browser_inventory_data';
 import { useBrowserDeviceData } from './use_browser_device_data';
 
 enum TabValue {
@@ -272,7 +272,7 @@ export const BrowserDeviceDetailsPage = () => {
               <BrowserDeviceDimensions device={device} />
             </TabPanel>
             <TabPanel value={TabValue.INVENTORY_DATA}>
-              <InventoryData device={device} />
+              <BrowserInventoryData device={device} />
             </TabPanel>
             <TabPanel value={TabValue.BOT_INFO}>
               {swarmingInstance && botId ? (

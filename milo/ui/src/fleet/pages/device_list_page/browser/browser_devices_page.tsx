@@ -60,8 +60,8 @@ import {
 import { AutorepairJobsAlert } from '../common/autorepair_jobs_alert';
 import { filterOptionsPlaceholder } from '../common/helpers';
 
+import { getBrowserColumn } from './browser_columns';
 import { BrowserSummaryHeader } from './browser_summary_header';
-import { getColumn } from './columns';
 import { dimensionsToFilterOptions } from './dimensions_to_filter_options';
 import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
 
@@ -190,7 +190,7 @@ export const BrowserDevicesPage = () => {
   ]);
 
   const columnsRecord = useMemo(
-    () => Object.fromEntries(columnIds.map((id) => [id, getColumn(id)])),
+    () => Object.fromEntries(columnIds.map((id) => [id, getBrowserColumn(id)])),
     [columnIds],
   );
 

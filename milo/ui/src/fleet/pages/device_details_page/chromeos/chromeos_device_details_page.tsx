@@ -49,8 +49,8 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 import { BotData } from '../common/bot_data';
 import { Tasks } from '../common/tasks_table';
 
-import { DeviceDimensions } from './device_dimensions';
-import { InventoryData } from './inventory_data';
+import { ChromeOSDeviceDimensions } from './chromeos_device_dimensions';
+import { ChromeOSInventoryData } from './chromeos_inventory_data';
 import { useDeviceData } from './use_device_data';
 
 enum TabValue {
@@ -116,7 +116,7 @@ const useNavigatedFromLink = () => {
 };
 
 // This page is only used in chrome os
-export const DeviceDetailsPage = () => {
+export const ChromeOSDeviceDetailsPage = () => {
   const { id = '' } = useParams();
   const [deviceIdInputValue, setDeviceIdInputValue] = useState(id);
   const navigatedFromLink = useNavigatedFromLink();
@@ -311,10 +311,10 @@ export const DeviceDetailsPage = () => {
               )}
             </TabPanel>
             <TabPanel value={TabValue.INVENTORY_DATA}>
-              <InventoryData device={device} />
+              <ChromeOSInventoryData device={device} />
             </TabPanel>
             <TabPanel value={TabValue.DIMENSIONS}>
-              <DeviceDimensions device={device} />
+              <ChromeOSDeviceDimensions device={device} />
             </TabPanel>
             <TabPanel value={TabValue.BOT_INFO}>
               {dutId === '' ? (
@@ -347,7 +347,7 @@ export function Component() {
           {platform !== Platform.CHROMEOS ? (
             <PlatformNotAvailable availablePlatforms={[Platform.CHROMEOS]} />
           ) : (
-            <DeviceDetailsPage />
+            <ChromeOSDeviceDetailsPage />
           )}
         </LoggedInBoundary>
       </RecoverableErrorBoundary>

@@ -17,9 +17,9 @@ import { render, screen } from '@testing-library/react';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { ChromeOsDevicesPage } from './chromeos_devices_page';
+import { ChromeOSDevicesPage } from './chromeos_devices_page';
 
-describe('<ChromeOsDevicesPage />', () => {
+describe('<ChromeOSDevicesPage />', () => {
   it('should render', async () => {
     render(
       <ShortcutProvider>
@@ -29,7 +29,7 @@ describe('<ChromeOsDevicesPage />', () => {
             initialEntries: ['/test/chromeos'],
           }}
         >
-          <ChromeOsDevicesPage />
+          <ChromeOSDevicesPage />
         </FakeContextProvider>
       </ShortcutProvider>,
     );

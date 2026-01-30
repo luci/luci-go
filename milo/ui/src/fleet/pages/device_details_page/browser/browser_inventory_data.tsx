@@ -42,7 +42,7 @@ import {
   GetMachineRequest,
 } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
-export const InventoryData = ({ device }: { device: BrowserDevice }) => {
+export const BrowserInventoryData = ({ device }: { device: BrowserDevice }) => {
   const editorOptions = useRef<EditorConfiguration>(DEFAULT_CODE_MIRROR_CONFIG);
 
   const ufsClient = useUfsClient('browser');

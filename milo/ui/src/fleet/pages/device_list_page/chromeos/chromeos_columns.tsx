@@ -33,7 +33,7 @@ import {
 // API, requiring device data to be merged with task data.
 type ChromeOSDevice = Device & { current_task?: string };
 
-export const getColumns = (
+export const getChromeOSColumns = (
   columnIds: string[],
 ): DeviceTableGridColDef<Device>[] => {
   return columnIds.map((id) => {

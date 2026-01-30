@@ -50,7 +50,9 @@ const destructureColumnId = (id: string) => {
   };
 };
 
-export const getColumn = (id: string): DeviceTableGridColDef<BrowserDevice> => {
+export const getBrowserColumn = (
+  id: string,
+): DeviceTableGridColDef<BrowserDevice> => {
   const { labelKey, source } = destructureColumnId(id);
 
   return {

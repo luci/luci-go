@@ -27,7 +27,7 @@ import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { GetMachineLSERequest } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
-export const InventoryData = ({ device }: { device: Device }) => {
+export const ChromeOSInventoryData = ({ device }: { device: Device }) => {
   const editorOptions = useRef<EditorConfiguration>(DEFAULT_CODE_MIRROR_CONFIG);
   const ufsNamespace = extractDutLabel('ufs_namespace', device);
 

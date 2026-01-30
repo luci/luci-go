@@ -57,8 +57,8 @@ import {
 } from '../common/helpers';
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
+import { ANDROID_COLUMN_OVERRIDES, getAndroidColumns } from './android_columns';
 import { AndroidSummaryHeader } from './android_summary_header';
-import { ANDROID_COLUMN_OVERRIDES, getColumns } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
@@ -275,7 +275,7 @@ export const AndroidDevicesPage = () => {
           defaultColumnIds={ANDROID_DEFAULT_COLUMNS}
           localStorageKey={ANDROID_DEVICES_LOCAL_STORAGE_KEY}
           rows={devices}
-          availableColumns={getColumns(columnIds)}
+          availableColumns={getAndroidColumns(columnIds)}
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
           isError={devicesQuery.isError || dimensionsQuery.isError}
