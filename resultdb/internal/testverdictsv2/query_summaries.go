@@ -53,9 +53,8 @@ type QuerySummaries struct {
 	TestPrefixFilter *pb.TestIdentifierPrefix
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
-	// An AIP-160 filter on the test verdicts returned. Optional.
-	// See filter.go for details.
-	Filter string
+	// The filter on the effective status of test verdicts returned. Optional.
+	EffectiveStatusFilter []pb.TestVerdictPredicate_VerdictEffectiveStatus
 }
 
 // Fetch fetches a page of test verdicts with a view of TEST_VERDICT_VIEW_BASIC.
@@ -217,14 +216,10 @@ func (q *QuerySummaries) buildQuery(pageToken PageToken, pageSize int) (spanner.
 	}
 
 	filterClause := "TRUE"
-	if q.Filter != "" {
-		clause, additionalParams, err := whereClause(q.Filter, "", "f_")
+	if len(q.EffectiveStatusFilter) > 0 {
+		clause, err := whereClause(q.EffectiveStatusFilter, params)
 		if err != nil {
 			return spanner.Statement{}, errors.Fmt("filter: %w", err)
-		}
-		for _, p := range additionalParams {
-			// All parameters should be prefixed by "f_" so should not conflict with existing parameters.
-			params[p.Name] = p.Value
 		}
 		filterClause = "(" + clause + ")"
 	}

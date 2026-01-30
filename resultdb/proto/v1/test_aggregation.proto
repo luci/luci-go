@@ -38,7 +38,7 @@ message TestAggregation {
 
   // Counts of test case verdicts, by status v2.
   message VerdictCounts {
-    // Counts by final status (after any status override like exoneration).
+    // Counts by effective status (after any status override like exoneration).
 
     // The number of failed test cases.
     // A test case is failed if it has a failed result and no passed results.

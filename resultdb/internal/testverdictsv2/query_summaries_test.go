@@ -339,23 +339,17 @@ func TestQuerySummaries(t *testing.T) {
 			})
 		})
 		t.Run("With verdict filter", func(t *ftt.Test) {
-			t.Run("status", func(t *ftt.Test) {
-				q.Filter = "status = FAILED"
-				// t2 is FAILED and t5 is FAILED (but exonerated).
-				expected = []*pb.TestVerdict{
-					VerdictByCaseName(expected, "t2"),
-					VerdictByCaseName(expected, "t5"),
-				}
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
+			q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+				pb.TestVerdictPredicate_PRECLUDED,
+				pb.TestVerdictPredicate_EXONERATED,
+				pb.TestVerdictPredicate_PASSED,
+			}
+			expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+				return v.TestIdStructured.CaseName == "t1" || // Passed
+					v.TestIdStructured.CaseName == "t5" || // Exonerated
+					v.TestIdStructured.CaseName == "t6" // Precluded
 			})
-			t.Run("status_override", func(t *ftt.Test) {
-				q.Filter = "status_override = EXONERATED"
-				// Only t5 is EXONERATED.
-				expected = []*pb.TestVerdict{
-					VerdictByCaseName(expected, "t5"),
-				}
-				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
-			})
+			assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 		})
 	})
 }

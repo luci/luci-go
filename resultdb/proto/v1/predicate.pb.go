@@ -148,6 +148,83 @@ func (ArtifactPredicate_ArtifactKind) EnumDescriptor() ([]byte, []int) {
 	return file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDescGZIP(), []int{3, 0}
 }
 
+// Represents a filter on the effective status of a test verdict,
+// the result of combining the TestVerdict.Status and TestVerdict.StatusOverride.
+type TestVerdictPredicate_VerdictEffectiveStatus int32
+
+const (
+	// Do not use.
+	TestVerdictPredicate_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED TestVerdictPredicate_VerdictEffectiveStatus = 0
+	// The test failed, and was not exonerated.
+	TestVerdictPredicate_FAILED TestVerdictPredicate_VerdictEffectiveStatus = 10
+	// The test execution errored, and was not exonerated.
+	TestVerdictPredicate_EXECUTION_ERRORED TestVerdictPredicate_VerdictEffectiveStatus = 20
+	// The test execution was precluded, and was not exonerated.
+	TestVerdictPredicate_PRECLUDED TestVerdictPredicate_VerdictEffectiveStatus = 30
+	// The test was flaky, and was not exonerated.
+	TestVerdictPredicate_FLAKY TestVerdictPredicate_VerdictEffectiveStatus = 40
+	// The test was skipped.
+	TestVerdictPredicate_SKIPPED TestVerdictPredicate_VerdictEffectiveStatus = 50
+	// The test passed.
+	TestVerdictPredicate_PASSED TestVerdictPredicate_VerdictEffectiveStatus = 60
+	// The test was originally failed, execution errored, precluded or flaky,
+	// but the subject of the test (e.g. the CL under test) was absolved from blame.
+	// For example, because the failure also existed in the tree without the
+	// changelist applied.
+	TestVerdictPredicate_EXONERATED TestVerdictPredicate_VerdictEffectiveStatus = 70
+)
+
+// Enum value maps for TestVerdictPredicate_VerdictEffectiveStatus.
+var (
+	TestVerdictPredicate_VerdictEffectiveStatus_name = map[int32]string{
+		0:  "VERDICT_EFFECTIVE_STATUS_UNSPECIFIED",
+		10: "FAILED",
+		20: "EXECUTION_ERRORED",
+		30: "PRECLUDED",
+		40: "FLAKY",
+		50: "SKIPPED",
+		60: "PASSED",
+		70: "EXONERATED",
+	}
+	TestVerdictPredicate_VerdictEffectiveStatus_value = map[string]int32{
+		"VERDICT_EFFECTIVE_STATUS_UNSPECIFIED": 0,
+		"FAILED":                               10,
+		"EXECUTION_ERRORED":                    20,
+		"PRECLUDED":                            30,
+		"FLAKY":                                40,
+		"SKIPPED":                              50,
+		"PASSED":                               60,
+		"EXONERATED":                           70,
+	}
+)
+
+func (x TestVerdictPredicate_VerdictEffectiveStatus) Enum() *TestVerdictPredicate_VerdictEffectiveStatus {
+	p := new(TestVerdictPredicate_VerdictEffectiveStatus)
+	*p = x
+	return p
+}
+
+func (x TestVerdictPredicate_VerdictEffectiveStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TestVerdictPredicate_VerdictEffectiveStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_enumTypes[2].Descriptor()
+}
+
+func (TestVerdictPredicate_VerdictEffectiveStatus) Type() protoreflect.EnumType {
+	return &file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_enumTypes[2]
+}
+
+func (x TestVerdictPredicate_VerdictEffectiveStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TestVerdictPredicate_VerdictEffectiveStatus.Descriptor instead.
+func (TestVerdictPredicate_VerdictEffectiveStatus) EnumDescriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDescGZIP(), []int{7, 0}
+}
+
 // Represents a function TestResult -> bool.
 // Empty message matches all test results.
 //
@@ -796,17 +873,11 @@ type TestVerdictPredicate struct {
 	// components when injecting them into filter strings, filtering on a variant is exact
 	// and not simply checking for presence of a subset of key/value pairs).
 	ContainsTestResultFilter string `protobuf:"bytes,2,opt,name=contains_test_result_filter,json=containsTestResultFilter,proto3" json:"contains_test_result_filter,omitempty"`
-	// A free-form filter on the returned `TestVerdict`s.
+	// If set, filters the verdicts to the given effective status(es).
 	//
-	// The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
-	// with the following fields available:
-	// - status (luci.resultdb.v1.TestVerdict.Status)
-	// - status_override (luci.resultdb.v1.TestVerdict.StatusOverride)
-	//
-	// For example, the following filter filters to verdicts with a status of failed
-	// or execution_errored (that were not exonerated):
-	// `(status = FAILED OR status = EXECUTION_ERRORED) AND status_override = NOT_OVERRIDDEN`
-	Filter string `protobuf:"bytes,3,opt,name=filter,proto3" json:"filter,omitempty"`
+	// The effective verdict status is the status of the test verdict after
+	// applying any status overrides.
+	EffectiveVerdictStatus []TestVerdictPredicate_VerdictEffectiveStatus `protobuf:"varint,4,rep,packed,name=effective_verdict_status,json=effectiveVerdictStatus,proto3,enum=luci.resultdb.v1.TestVerdictPredicate_VerdictEffectiveStatus" json:"effective_verdict_status,omitempty"`
 }
 
 func (x *TestVerdictPredicate) Reset() {
@@ -855,11 +926,11 @@ func (x *TestVerdictPredicate) GetContainsTestResultFilter() string {
 	return ""
 }
 
-func (x *TestVerdictPredicate) GetFilter() string {
+func (x *TestVerdictPredicate) GetEffectiveVerdictStatus() []TestVerdictPredicate_VerdictEffectiveStatus {
 	if x != nil {
-		return x.Filter
+		return x.EffectiveVerdictStatus
 	}
-	return ""
+	return nil
 }
 
 // A set of Invocation's outgoing edge types.
@@ -1039,7 +1110,7 @@ var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDesc = []byte
 	0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x18, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e,
 	0x73, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x46, 0x69, 0x6c, 0x74, 0x65,
 	0x72, 0x12, 0x16, 0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x04, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x22, 0xc3, 0x01, 0x0a, 0x14, 0x54, 0x65,
+	0x09, 0x52, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x22, 0xdd, 0x03, 0x0a, 0x14, 0x54, 0x65,
 	0x73, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61,
 	0x74, 0x65, 0x12, 0x54, 0x0a, 0x12, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x70, 0x72, 0x65, 0x66, 0x69,
 	0x78, 0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26,
@@ -1050,14 +1121,32 @@ var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDesc = []byte
 	0x61, 0x69, 0x6e, 0x73, 0x5f, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
 	0x5f, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x18, 0x63,
 	0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x73, 0x54, 0x65, 0x73, 0x74, 0x52, 0x65, 0x73, 0x75, 0x6c,
-	0x74, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x16, 0x0a, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65,
-	0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x42,
-	0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75,
-	0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01,
-	0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72,
-	0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70,
-	0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x46, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x12, 0x77, 0x0a, 0x18, 0x65, 0x66, 0x66, 0x65, 0x63,
+	0x74, 0x69, 0x76, 0x65, 0x5f, 0x76, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x5f, 0x73, 0x74, 0x61,
+	0x74, 0x75, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0e, 0x32, 0x3d, 0x2e, 0x6c, 0x75, 0x63, 0x69,
+	0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x65, 0x73,
+	0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x50, 0x72, 0x65, 0x64, 0x69, 0x63, 0x61, 0x74,
+	0x65, 0x2e, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x45, 0x66, 0x66, 0x65, 0x63, 0x74, 0x69,
+	0x76, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x16, 0x65, 0x66, 0x66, 0x65, 0x63, 0x74,
+	0x69, 0x76, 0x65, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x22, 0xa8, 0x01, 0x0a, 0x16, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x45, 0x66, 0x66, 0x65,
+	0x63, 0x74, 0x69, 0x76, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x28, 0x0a, 0x24, 0x56,
+	0x45, 0x52, 0x44, 0x49, 0x43, 0x54, 0x5f, 0x45, 0x46, 0x46, 0x45, 0x43, 0x54, 0x49, 0x56, 0x45,
+	0x5f, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46,
+	0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x46, 0x41, 0x49, 0x4c, 0x45, 0x44, 0x10,
+	0x0a, 0x12, 0x15, 0x0a, 0x11, 0x45, 0x58, 0x45, 0x43, 0x55, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x45,
+	0x52, 0x52, 0x4f, 0x52, 0x45, 0x44, 0x10, 0x14, 0x12, 0x0d, 0x0a, 0x09, 0x50, 0x52, 0x45, 0x43,
+	0x4c, 0x55, 0x44, 0x45, 0x44, 0x10, 0x1e, 0x12, 0x09, 0x0a, 0x05, 0x46, 0x4c, 0x41, 0x4b, 0x59,
+	0x10, 0x28, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x4b, 0x49, 0x50, 0x50, 0x45, 0x44, 0x10, 0x32, 0x12,
+	0x0a, 0x0a, 0x06, 0x50, 0x41, 0x53, 0x53, 0x45, 0x44, 0x10, 0x3c, 0x12, 0x0e, 0x0a, 0x0a, 0x45,
+	0x58, 0x4f, 0x4e, 0x45, 0x52, 0x41, 0x54, 0x45, 0x44, 0x10, 0x46, 0x4a, 0x04, 0x08, 0x03, 0x10,
+	0x04, 0x52, 0x06, 0x66, 0x69, 0x6c, 0x74, 0x65, 0x72, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73,
+	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63,
+	0x68, 0x72, 0x6f, 0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69,
+	0x2f, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
+	0x76, 0x31, 0x3b, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1072,41 +1161,43 @@ func file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDescGZIP() [
 	return file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_goTypes = []interface{}{
-	(TestResultPredicate_Expectancy)(0),   // 0: luci.resultdb.v1.TestResultPredicate.Expectancy
-	(ArtifactPredicate_ArtifactKind)(0),   // 1: luci.resultdb.v1.ArtifactPredicate.ArtifactKind
-	(*TestResultPredicate)(nil),           // 2: luci.resultdb.v1.TestResultPredicate
-	(*TestExonerationPredicate)(nil),      // 3: luci.resultdb.v1.TestExonerationPredicate
-	(*VariantPredicate)(nil),              // 4: luci.resultdb.v1.VariantPredicate
-	(*ArtifactPredicate)(nil),             // 5: luci.resultdb.v1.ArtifactPredicate
-	(*TestMetadataPredicate)(nil),         // 6: luci.resultdb.v1.TestMetadataPredicate
-	(*WorkUnitPredicate)(nil),             // 7: luci.resultdb.v1.WorkUnitPredicate
-	(*TestAggregationPredicate)(nil),      // 8: luci.resultdb.v1.TestAggregationPredicate
-	(*TestVerdictPredicate)(nil),          // 9: luci.resultdb.v1.TestVerdictPredicate
-	(*ArtifactPredicate_EdgeTypeSet)(nil), // 10: luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
-	(*Variant)(nil),                       // 11: luci.resultdb.v1.Variant
-	(AggregationLevel)(0),                 // 12: luci.resultdb.v1.AggregationLevel
-	(*TestIdentifierPrefix)(nil),          // 13: luci.resultdb.v1.TestIdentifierPrefix
+	(TestResultPredicate_Expectancy)(0),              // 0: luci.resultdb.v1.TestResultPredicate.Expectancy
+	(ArtifactPredicate_ArtifactKind)(0),              // 1: luci.resultdb.v1.ArtifactPredicate.ArtifactKind
+	(TestVerdictPredicate_VerdictEffectiveStatus)(0), // 2: luci.resultdb.v1.TestVerdictPredicate.VerdictEffectiveStatus
+	(*TestResultPredicate)(nil),                      // 3: luci.resultdb.v1.TestResultPredicate
+	(*TestExonerationPredicate)(nil),                 // 4: luci.resultdb.v1.TestExonerationPredicate
+	(*VariantPredicate)(nil),                         // 5: luci.resultdb.v1.VariantPredicate
+	(*ArtifactPredicate)(nil),                        // 6: luci.resultdb.v1.ArtifactPredicate
+	(*TestMetadataPredicate)(nil),                    // 7: luci.resultdb.v1.TestMetadataPredicate
+	(*WorkUnitPredicate)(nil),                        // 8: luci.resultdb.v1.WorkUnitPredicate
+	(*TestAggregationPredicate)(nil),                 // 9: luci.resultdb.v1.TestAggregationPredicate
+	(*TestVerdictPredicate)(nil),                     // 10: luci.resultdb.v1.TestVerdictPredicate
+	(*ArtifactPredicate_EdgeTypeSet)(nil),            // 11: luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
+	(*Variant)(nil),                                  // 12: luci.resultdb.v1.Variant
+	(AggregationLevel)(0),                            // 13: luci.resultdb.v1.AggregationLevel
+	(*TestIdentifierPrefix)(nil),                     // 14: luci.resultdb.v1.TestIdentifierPrefix
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_depIdxs = []int32{
-	4,  // 0: luci.resultdb.v1.TestResultPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
+	5,  // 0: luci.resultdb.v1.TestResultPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
 	0,  // 1: luci.resultdb.v1.TestResultPredicate.expectancy:type_name -> luci.resultdb.v1.TestResultPredicate.Expectancy
-	4,  // 2: luci.resultdb.v1.TestExonerationPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
-	11, // 3: luci.resultdb.v1.VariantPredicate.equals:type_name -> luci.resultdb.v1.Variant
-	11, // 4: luci.resultdb.v1.VariantPredicate.contains:type_name -> luci.resultdb.v1.Variant
-	10, // 5: luci.resultdb.v1.ArtifactPredicate.follow_edges:type_name -> luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
+	5,  // 2: luci.resultdb.v1.TestExonerationPredicate.variant:type_name -> luci.resultdb.v1.VariantPredicate
+	12, // 3: luci.resultdb.v1.VariantPredicate.equals:type_name -> luci.resultdb.v1.Variant
+	12, // 4: luci.resultdb.v1.VariantPredicate.contains:type_name -> luci.resultdb.v1.Variant
+	11, // 5: luci.resultdb.v1.ArtifactPredicate.follow_edges:type_name -> luci.resultdb.v1.ArtifactPredicate.EdgeTypeSet
 	1,  // 6: luci.resultdb.v1.ArtifactPredicate.artifact_kind:type_name -> luci.resultdb.v1.ArtifactPredicate.ArtifactKind
-	2,  // 7: luci.resultdb.v1.ArtifactPredicate.test_result_predicate:type_name -> luci.resultdb.v1.TestResultPredicate
-	12, // 8: luci.resultdb.v1.TestAggregationPredicate.aggregation_level:type_name -> luci.resultdb.v1.AggregationLevel
-	13, // 9: luci.resultdb.v1.TestAggregationPredicate.test_prefix_filter:type_name -> luci.resultdb.v1.TestIdentifierPrefix
-	13, // 10: luci.resultdb.v1.TestVerdictPredicate.test_prefix_filter:type_name -> luci.resultdb.v1.TestIdentifierPrefix
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	3,  // 7: luci.resultdb.v1.ArtifactPredicate.test_result_predicate:type_name -> luci.resultdb.v1.TestResultPredicate
+	13, // 8: luci.resultdb.v1.TestAggregationPredicate.aggregation_level:type_name -> luci.resultdb.v1.AggregationLevel
+	14, // 9: luci.resultdb.v1.TestAggregationPredicate.test_prefix_filter:type_name -> luci.resultdb.v1.TestIdentifierPrefix
+	14, // 10: luci.resultdb.v1.TestVerdictPredicate.test_prefix_filter:type_name -> luci.resultdb.v1.TestIdentifierPrefix
+	2,  // 11: luci.resultdb.v1.TestVerdictPredicate.effective_verdict_status:type_name -> luci.resultdb.v1.TestVerdictPredicate.VerdictEffectiveStatus
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_init() }
@@ -1234,7 +1325,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_predicate_proto_rawDesc,
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,

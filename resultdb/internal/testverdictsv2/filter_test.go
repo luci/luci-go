@@ -20,25 +20,83 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestValidateFilter(t *testing.T) {
 	ftt.Run("ValidateFilter", t, func(t *ftt.Test) {
-		t.Run("Invalid syntax", func(t *ftt.Test) {
-			err := ValidateFilter("status =")
-			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err, should.ErrLike("expected arg after ="))
+		t.Run("Invalid", func(t *ftt.Test) {
+			t.Run("Unspecified", func(t *ftt.Test) {
+				err := ValidateFilter([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
+					pb.TestVerdictPredicate_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED,
+				})
+				assert.Loosely(t, err, should.ErrLike("must not contain VERDICT_EFFECTIVE_STATUS_UNSPECIFIED"))
+			})
+			t.Run("Duplicate", func(t *ftt.Test) {
+				err := ValidateFilter([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
+					pb.TestVerdictPredicate_FAILED,
+					pb.TestVerdictPredicate_FAILED,
+				})
+				assert.Loosely(t, err, should.ErrLike("must not contain duplicates (FAILED appears twice)"))
+			})
+			t.Run("Out of range", func(t *ftt.Test) {
+				err := ValidateFilter([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
+					pb.TestVerdictPredicate_FAILED,
+					pb.TestVerdictPredicate_VerdictEffectiveStatus(51),
+				})
+				assert.Loosely(t, err, should.ErrLike("contains unknown verdict effective status 51"))
+			})
 		})
-
-		t.Run("Invalid column", func(t *ftt.Test) {
-			err := ValidateFilter("invalid_column = 1")
-			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err, should.ErrLike(`no filterable field "invalid_column"`))
-		})
-
 		t.Run("Valid", func(t *ftt.Test) {
-			err := ValidateFilter("(status_override = NOT_OVERRIDDEN AND (status = FAILED OR status = EXECUTION_ERRORED)) OR status_override = EXONERATED")
+			err := ValidateFilter([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
+				pb.TestVerdictPredicate_FAILED,
+				pb.TestVerdictPredicate_EXONERATED,
+			})
 			assert.Loosely(t, err, should.BeNil)
+		})
+	})
+}
+
+func TestWhereClause(t *testing.T) {
+	ftt.Run("whereClause", t, func(t *ftt.Test) {
+		params := make(map[string]any)
+
+		t.Run("Empty", func(t *ftt.Test) {
+			got, err := whereClause(nil, params)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.Equal("FALSE"))
+		})
+
+		t.Run("Exonerated", func(t *ftt.Test) {
+			got, err := whereClause([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
+				pb.TestVerdictPredicate_EXONERATED,
+			}, params)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.Equal("(StatusOverride = 2)"))
+		})
+
+		t.Run("Failed", func(t *ftt.Test) {
+			got, err := whereClause([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
+				pb.TestVerdictPredicate_FAILED,
+			}, params)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.Equal("(StatusOverride = 1 AND Status IN UNNEST(@effectiveStatusFilterStatuses))"))
+			assert.Loosely(t, params["effectiveStatusFilterStatuses"], should.Match([]int64{int64(pb.TestVerdict_FAILED)}))
+		})
+
+		t.Run("Mixed", func(t *ftt.Test) {
+			got, err := whereClause([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
+				pb.TestVerdictPredicate_EXONERATED,
+				pb.TestVerdictPredicate_FAILED,
+				pb.TestVerdictPredicate_FLAKY,
+			}, params)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.Equal("((StatusOverride = 2) OR (StatusOverride = 1 AND Status IN UNNEST(@effectiveStatusFilterStatuses)))"))
+			assert.Loosely(t, params["effectiveStatusFilterStatuses"], should.Match([]int64{
+				int64(pb.TestVerdict_FAILED),
+				int64(pb.TestVerdict_FLAKY),
+			}))
 		})
 	})
 }

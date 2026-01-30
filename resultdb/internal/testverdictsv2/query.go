@@ -45,9 +45,8 @@ type Query struct {
 	TestPrefixFilter *pb.TestIdentifierPrefix
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
-	// An AIP-160 filter on the test verdicts returned. Optional.
-	// See filter.go for details.
-	Filter string
+	// The filter on the effective status of test verdicts returned. Optional.
+	EffectiveStatusFilter []pb.TestVerdictPredicate_VerdictEffectiveStatus
 	// The view to return.
 	View pb.TestVerdictView
 }
@@ -117,7 +116,7 @@ func (q *Query) Fetch(ctx context.Context, pageToken PageToken, opts FetchOption
 	//   of the result set where we are paging over passing
 	//   and skipped verdicts).
 	isOrderSuitableForIteratorQuery := !q.Order.ByUIPriority || (q.Order.ByUIPriority && pageToken.UIPriority == MaxUIPriority)
-	if strings.TrimSpace(q.ContainsTestResultFilter) == "" && strings.TrimSpace(q.Filter) == "" && isOrderSuitableForIteratorQuery {
+	if strings.TrimSpace(q.ContainsTestResultFilter) == "" && len(q.EffectiveStatusFilter) == 0 && isOrderSuitableForIteratorQuery {
 		// Use the iterator query. It is fast and cheap.
 		logging.Debugf(ctx, "Using iterator query.")
 		return q.fetchUsingIteratorQuery(ctx, pageToken, opts)
@@ -146,7 +145,7 @@ func (q *Query) toSummaryQuery() *QuerySummaries {
 		ContainsTestResultFilter: q.ContainsTestResultFilter,
 		TestPrefixFilter:         q.TestPrefixFilter,
 		Access:                   q.Access,
-		Filter:                   q.Filter,
+		EffectiveStatusFilter:    q.EffectiveStatusFilter,
 	}
 }
 
@@ -184,10 +183,10 @@ func (q *Query) fetchUsingIteratorQuery(ctx context.Context, pageToken PageToken
 		return nil, PageToken{}, err
 	}
 
-	if q.Order.ByUIPriority {
+	if q.Order.ByUIPriority && nextPageToken != (PageToken{}) {
 		// The page token returned by the query may be based on verdicts not included in the response.
 		// This is a consequence of the iterator advancing the page token even for verdicts it may not
-		// include in the response. To avoid this triggering us back into an earlier part of the query,
+		// include in the response. To avoid this jumping us back into an earlier part of the query,
 		// we need to pin the UI priority in the response token to MaxUIPriority.
 		nextPageToken.UIPriority = MaxUIPriority
 	}

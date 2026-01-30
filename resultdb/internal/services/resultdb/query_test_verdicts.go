@@ -81,7 +81,7 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 		ContainsTestResultFilter: req.Predicate.GetContainsTestResultFilter(),
 		TestPrefixFilter:         req.Predicate.GetTestPrefixFilter(),
 		Access:                   access,
-		Filter:                   req.Predicate.GetFilter(),
+		EffectiveStatusFilter:    req.Predicate.GetEffectiveVerdictStatus(),
 		View:                     view,
 	}
 
@@ -164,9 +164,9 @@ func validateQueryTestVerdictsPredicate(predicate *pb.TestVerdictPredicate) erro
 		}
 	}
 
-	if predicate.Filter != "" {
-		if err := testverdictsv2.ValidateFilter(predicate.Filter); err != nil {
-			return errors.Fmt("filter: %w", err)
+	if len(predicate.EffectiveVerdictStatus) > 0 {
+		if err := testverdictsv2.ValidateFilter(predicate.EffectiveVerdictStatus); err != nil {
+			return errors.Fmt("effective_verdict_status: %w", err)
 		}
 	}
 	return nil

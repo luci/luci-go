@@ -137,20 +137,39 @@ func TestQuery(t *testing.T) {
 				// correctly passed to the underlying queries and responses integrated correctly.
 				t.Run("Order", func(t *ftt.Test) {
 					q.Order = Ordering{
-						ByUIPriority: true,
+						ByUIPriority:       true,
+						ByStructuredTestID: true,
 					}
-					gotVerdicts := fetchAll(q, opts)
-					// The first verdict should be failing.
-					assert.Loosely(t, gotVerdicts[0].Status, should.Equal(pb.TestVerdict_FAILED))
-					assert.Loosely(t, gotVerdicts[0].StatusOverride, should.Equal(pb.TestVerdict_NOT_OVERRIDDEN))
+					expected := []*pb.TestVerdict{
+						VerdictByCaseName(expected, "t2"), // Failed
+						VerdictByCaseName(expected, "t6"), // Execution Errored
+						VerdictByCaseName(expected, "t7"), // Precluded
+						VerdictByCaseName(expected, "t3"), // Flaky
+						VerdictByCaseName(expected, "t5"), // Exonerated
+						VerdictByCaseName(expected, "t1"), // Passed
+						VerdictByCaseName(expected, "t4"), // Skipped
+					}
+
+					t.Run("Baseline", func(t *ftt.Test) {
+						gotVerdicts := fetchAll(q, opts)
+						assert.Loosely(t, gotVerdicts, should.Match(expected))
+					})
+					t.Run("With small page size", func(t *ftt.Test) {
+						opts.PageSize = 1
+						gotVerdicts := fetchAll(q, opts)
+						assert.Loosely(t, gotVerdicts, should.Match(expected))
+					})
 				})
 				t.Run("Filter", func(t *ftt.Test) {
-					q.Filter = "status = FAILED"
-					// t2 is FAILED and t5 is FAILED (but exonerated).
-					expected = []*pb.TestVerdict{
-						VerdictByCaseName(expected, "t2"),
-						VerdictByCaseName(expected, "t5"),
+					q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+						pb.TestVerdictPredicate_FAILED,
+						pb.TestVerdictPredicate_PRECLUDED,
 					}
+					// t2 is FAILED and t6 is PRECLUDED.
+					expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+						return v.TestIdStructured.CaseName == "t2" || // Failed
+							v.TestIdStructured.CaseName == "t6" // Precluded
+					})
 					assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 				})
 				t.Run("Contains test result filter", func(t *ftt.Test) {

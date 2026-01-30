@@ -15,42 +15,74 @@
 package testverdictsv2
 
 import (
-	"go.chromium.org/luci/common/data/aip160"
+	"fmt"
+	"strings"
+
+	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-var verdictStatusEnumDef = aip160.NewEnumDefinition("pb.TestVerdict.Status", pb.TestVerdict_Status_value, int32(pb.TestVerdict_STATUS_UNSPECIFIED))
-var verdictStatusOverrideEnumDef = aip160.NewEnumDefinition("pb.TestVerdict.StatusOverride", pb.TestVerdict_StatusOverride_value, int32(pb.TestVerdict_STATUS_OVERRIDE_UNSPECIFIED))
-
-// Defines the TestVerdict message fields that are filterable. This set is fairly
-// limited owing to the fact that other fields (e.g. test ID, test metadata) can be
-// filtered using the test result filter support.
-var filterSchema = aip160.NewDatabaseTable().WithFields(
-	aip160.NewField().WithFieldPath("status").WithBackend(aip160.NewEnumColumn("Status").WithDefinition(verdictStatusEnumDef).Build()).Filterable().Build(),
-	aip160.NewField().WithFieldPath("status_override").WithBackend(aip160.NewEnumColumn("StatusOverride").WithDefinition(verdictStatusOverrideEnumDef).Build()).Filterable().Build(),
-).Build()
-
-// ValidateFilter validates an AIP-160 filter string.
-func ValidateFilter(filter string) error {
-	f, err := aip160.ParseFilter(filter)
-	if err != nil {
-		return err
-	}
-	// Trial generate the filter SQL. This will pick up any errors not found
-	// at parse time.
-	_, _, err = filterSchema.WhereClause(f, "", "f_")
-	if err != nil {
-		return err
+// ValidateFilter validates a verdict effective status filter.
+func ValidateFilter(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) error {
+	seen := make(map[pb.TestVerdictPredicate_VerdictEffectiveStatus]bool)
+	for _, s := range filter {
+		if s == pb.TestVerdictPredicate_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED {
+			return errors.New("must not contain VERDICT_EFFECTIVE_STATUS_UNSPECIFIED")
+		}
+		if _, ok := pb.TestVerdictPredicate_VerdictEffectiveStatus_name[int32(s)]; !ok {
+			return errors.Fmt("contains unknown verdict effective status %v", s)
+		}
+		if seen[s] {
+			return errors.Fmt("must not contain duplicates (%v appears twice)", s)
+		}
+		seen[s] = true
 	}
 	return nil
 }
 
-// whereClause generates a WHERE clause for the given AIP-160 filter string.
-func whereClause(filter, tableAlias, parameterPrefix string) (string, []aip160.SqlQueryParameter, error) {
-	f, err := aip160.ParseFilter(filter)
-	if err != nil {
-		return "", nil, err
+// whereClause generates a WHERE clause for the given filter.
+// This method assumes the presence of the columns Status and StatusOverride.
+func whereClause(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus, params map[string]any) (string, error) {
+	includeExonerated := false
+	var statuses []int64
+
+	for _, s := range filter {
+		switch s {
+		case pb.TestVerdictPredicate_EXONERATED:
+			includeExonerated = true
+		case pb.TestVerdictPredicate_FAILED:
+			statuses = append(statuses, int64(pb.TestVerdict_FAILED))
+		case pb.TestVerdictPredicate_EXECUTION_ERRORED:
+			statuses = append(statuses, int64(pb.TestVerdict_EXECUTION_ERRORED))
+		case pb.TestVerdictPredicate_PRECLUDED:
+			statuses = append(statuses, int64(pb.TestVerdict_PRECLUDED))
+		case pb.TestVerdictPredicate_FLAKY:
+			statuses = append(statuses, int64(pb.TestVerdict_FLAKY))
+		case pb.TestVerdictPredicate_SKIPPED:
+			statuses = append(statuses, int64(pb.TestVerdict_SKIPPED))
+		case pb.TestVerdictPredicate_PASSED:
+			statuses = append(statuses, int64(pb.TestVerdict_PASSED))
+		default:
+			return "", errors.Fmt("unsupported effective verdict status %s", s)
+		}
 	}
-	return filterSchema.WhereClause(f, tableAlias, parameterPrefix)
+
+	var conditions []string
+	if includeExonerated {
+		conditions = append(conditions, fmt.Sprintf("(StatusOverride = %d)", int64(pb.TestVerdict_EXONERATED)))
+	}
+	if len(statuses) > 0 {
+		paramName := "effectiveStatusFilterStatuses"
+		params[paramName] = statuses
+		conditions = append(conditions, fmt.Sprintf("(StatusOverride = %d AND Status IN UNNEST(@%s))", int64(pb.TestVerdict_NOT_OVERRIDDEN), paramName))
+	}
+
+	if len(conditions) == 0 {
+		return "FALSE", nil
+	}
+	if len(conditions) == 1 {
+		return conditions[0], nil
+	}
+	return "(" + strings.Join(conditions, " OR ") + ")", nil
 }

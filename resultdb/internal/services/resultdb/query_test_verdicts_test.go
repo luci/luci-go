@@ -115,11 +115,13 @@ func TestQueryTestVerdicts(t *testing.T) {
 				})
 				t.Run(`Filter`, func(t *ftt.Test) {
 					req.Predicate = &pb.TestVerdictPredicate{}
-					t.Run(`Invalid syntax`, func(t *ftt.Test) {
-						req.Predicate.Filter = "status ="
+					t.Run(`Invalid`, func(t *ftt.Test) {
+						req.Predicate.EffectiveVerdictStatus = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+							pb.TestVerdictPredicate_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED,
+						}
 						_, err := srv.QueryTestVerdicts(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("predicate: filter: expected arg after ="))
+						assert.Loosely(t, err, should.ErrLike("predicate: effective_verdict_status: must not contain VERDICT_EFFECTIVE_STATUS_UNSPECIFIED"))
 					})
 				})
 				t.Run(`View`, func(t *ftt.Test) {
@@ -267,16 +269,18 @@ func TestQueryTestVerdicts(t *testing.T) {
 
 			t.Run(`With filter`, func(t *ftt.Test) {
 				req.Predicate = &pb.TestVerdictPredicate{
-					Filter: "status = FAILED",
+					EffectiveVerdictStatus: []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+						pb.TestVerdictPredicate_FAILED,
+						pb.TestVerdictPredicate_PRECLUDED,
+					},
 				}
 				res, err := srv.QueryTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				// t2 (FAILED) and t5 (FAILED + EXONERATED) match status=FAILED.
-				expected = []*pb.TestVerdict{
-					testverdictsv2.VerdictByCaseName(expected, "t2"),
-					testverdictsv2.VerdictByCaseName(expected, "t5"),
-				}
+				expected = testverdictsv2.FilterVerdicts(expected, func(tv *pb.TestVerdict) bool {
+					return tv.TestIdStructured.CaseName == "t2" || // Failed
+						tv.TestIdStructured.CaseName == "t6" // Precluded
+				})
 				assert.Loosely(t, res.TestVerdicts, should.Match(expected))
 			})
 

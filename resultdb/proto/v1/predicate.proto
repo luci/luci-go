@@ -294,15 +294,37 @@ message TestVerdictPredicate {
   // and not simply checking for presence of a subset of key/value pairs).
   string contains_test_result_filter = 2;
 
-  // A free-form filter on the returned `TestVerdict`s.
+  // Represents a filter on the effective status of a test verdict,
+  // the result of combining the TestVerdict.Status and TestVerdict.StatusOverride.
+  enum VerdictEffectiveStatus {
+    // Do not use.
+    VERDICT_EFFECTIVE_STATUS_UNSPECIFIED = 0;
+    // The test failed, and was not exonerated.
+    FAILED = 10;
+    // The test execution errored, and was not exonerated.
+    EXECUTION_ERRORED = 20;
+    // The test execution was precluded, and was not exonerated.
+    PRECLUDED = 30;
+    // The test was flaky, and was not exonerated.
+    FLAKY = 40;
+    // The test was skipped.
+    SKIPPED = 50;
+    // The test passed.
+    PASSED = 60;
+    // The test was originally failed, execution errored, precluded or flaky,
+    // but the subject of the test (e.g. the CL under test) was absolved from blame.
+    // For example, because the failure also existed in the tree without the
+    // changelist applied.
+    EXONERATED = 70;
+  }
+
+  // If set, filters the verdicts to the given effective status(es).
   //
-  // The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
-  // with the following fields available:
-  // - status (luci.resultdb.v1.TestVerdict.Status)
-  // - status_override (luci.resultdb.v1.TestVerdict.StatusOverride)
-  //
-  // For example, the following filter filters to verdicts with a status of failed
-  // or execution_errored (that were not exonerated):
-  // `(status = FAILED OR status = EXECUTION_ERRORED) AND status_override = NOT_OVERRIDDEN`
-  string filter = 3;
+  // The effective verdict status is the status of the test verdict after
+  // applying any status overrides.
+  repeated VerdictEffectiveStatus effective_verdict_status = 4;
+
+  // For free-form AIP-160 filter.
+  reserved 3;
+  reserved "filter";
 }
