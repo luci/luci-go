@@ -16,7 +16,6 @@ import { TestIdentifier } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/c
 
 import {
   generateTestInvestigateUrl,
-  generateTestInvestigateUrlForLegacyInvocations,
   generateTestInvestigateUrlFromOld,
   getBuilderURLPath,
   getSwarmingBotListURL,
@@ -67,43 +66,6 @@ describe('setSingleQueryParam', () => {
     const parameterString = 'a=b&c=d';
     const updatedParams = setSingleQueryParam(parameterString, 'a', 'f');
     expect(updatedParams.toString()).toEqual('a=f&c=d');
-  });
-});
-
-describe('generateTestInvestigateUrlForLegacyInvocations', () => {
-  it('should construct a basic structured legacy URL', () => {
-    const url = generateTestInvestigateUrlForLegacyInvocations(
-      'inv-123',
-      'test.name.basic',
-      'abc',
-    );
-    expect(url).toBe(
-      '/ui/test-investigate/invocations/inv-123/modules/legacy/schemes/legacy/variants/abc/cases/test.name.basic',
-    );
-  });
-
-  it('should correctly URL-encode slashes in the testId', () => {
-    const url = generateTestInvestigateUrlForLegacyInvocations(
-      'inv-456',
-      'test.suite/test.name/with/slashes',
-      'def',
-    );
-    expect(url).toBe(
-      '/ui/test-investigate/invocations/inv-456/modules' +
-        '/legacy/schemes/legacy/variants/def/cases/test.suite%2Ftest.name%2Fwith%2Fslashes',
-    );
-  });
-
-  it('should add extra query params', () => {
-    const url = generateTestInvestigateUrlForLegacyInvocations(
-      'inv-789',
-      'Test: My Test!',
-      'ghi',
-    );
-    expect(url).toBe(
-      '/ui/test-investigate/invocations/inv-789/modules' +
-        '/legacy/schemes/legacy/variants/ghi/cases/Test%3A%20My%20Test!',
-    );
   });
 });
 
@@ -171,7 +133,7 @@ describe('generateTestInvestigateUrl (from TestIdentifier)', () => {
     );
   });
 
-  it('should correctly route legacy tests to the pluralized legacy URL generator', () => {
+  it('should generate a structured URL for legacy module', () => {
     const legacyTestId = TestIdentifier.fromPartial({
       moduleName: 'legacy',
       moduleScheme: 'legacy',

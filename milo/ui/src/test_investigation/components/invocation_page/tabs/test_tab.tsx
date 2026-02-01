@@ -23,10 +23,7 @@ import {
   SemanticStatusType,
 } from '@/common/styles/status_styles';
 import { logging } from '@/common/tools/logging';
-import {
-  generateTestInvestigateUrl,
-  generateTestInvestigateUrlForLegacyInvocations,
-} from '@/common/tools/url_utils';
+import { generateTestInvestigateUrl } from '@/common/tools/url_utils';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Invocation_State } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
@@ -168,7 +165,6 @@ export function TestTab() {
     const readMask = [
       'test_id',
       'test_id_structured',
-      'variant_hash',
       'variant.def',
       'status_v2',
       'results.*.result.failure_reason',
@@ -258,22 +254,10 @@ export function TestTab() {
       }
 
       const variantToRedirect = finalFilteredVariants[0];
-      let newPath: string;
-      if (
-        variantToRedirect.testIdStructured &&
-        variantToRedirect.testIdStructured.moduleName !== 'legacy'
-      ) {
-        newPath = generateTestInvestigateUrl(
-          invocationId,
-          variantToRedirect.testIdStructured,
-        );
-      } else {
-        newPath = generateTestInvestigateUrlForLegacyInvocations(
-          invocationId,
-          variantToRedirect.testId,
-          variantToRedirect.variantHash,
-        );
-      }
+      const newPath = generateTestInvestigateUrl(
+        invocationId,
+        variantToRedirect.testIdStructured!, // We assume testIdStructured is always present as per plan
+      );
       navigate(newPath, { replace: true });
     }
   }, [
@@ -340,7 +324,6 @@ export function TestTab() {
           parsedVariantDef={parsedVariantDef}
           selectedStatuses={selectedStatuses}
           setSelectedStatuses={handleSelectedStatusesChange}
-          isLegacyInvocation={isLegacyInvocation}
         />
       </Box>
     </>

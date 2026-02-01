@@ -30,8 +30,8 @@ import {
   VirtualTreeTable,
 } from '@/generic_libs/components/table';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { VariantDisplay } from '@/test_investigation/components/common/variant_display';
 import { NodeLabelPrefix } from '@/test_investigation/components/node_label_prefix';
-import { VariantDisplay } from '@/test_investigation/components/test_info/variant_display';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
 import { StructuredTreeLevel } from '@/test_investigation/utils/drawer_tree_utils';
 
@@ -58,7 +58,6 @@ interface TestVariantsTableProps {
   parsedVariantDef: Readonly<Record<string, string>> | null;
   selectedStatuses: Set<SemanticStatusType>;
   setSelectedStatuses: (newSelection: Set<SemanticStatusType>) => void;
-  isLegacyInvocation: boolean;
 }
 
 /**
@@ -73,7 +72,6 @@ export function TestVariantsTable({
   parsedVariantDef,
   selectedStatuses,
   setSelectedStatuses,
-  isLegacyInvocation,
 }: TestVariantsTableProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [_, setSearchParams] = useSyncedSearchParams();
@@ -137,7 +135,6 @@ export function TestVariantsTable({
                 testVariant={testVariant}
                 testTextToCopy={testTextToCopy}
                 rowLabel={rowData.label}
-                isLegacyInvocation={isLegacyInvocation}
                 node={rowData}
               />
             );
@@ -170,7 +167,7 @@ export function TestVariantsTable({
         },
       },
     ];
-  }, [isLegacyInvocation]);
+  }, []);
 
   useEffect(() => {
     const idsToExpand = getIdsOfAllNodes(filteredHierarchyTreeData);

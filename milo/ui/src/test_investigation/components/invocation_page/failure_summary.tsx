@@ -22,7 +22,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
-import { useParams } from 'react-router';
+import { Link as RouterLink, useParams } from 'react-router';
 
 import { TestResultSummary } from '@/common/components/test_result_summary';
 import {
@@ -35,8 +35,8 @@ import {
   TestResult_Status,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { VariantDisplay } from '@/test_investigation/components/common/variant_display';
 import { NodeLabelPrefix } from '@/test_investigation/components/node_label_prefix';
-import { VariantDisplay } from '@/test_investigation/components/test_info/variant_display';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
 import { StructuredTreeLevel } from '@/test_investigation/utils/drawer_tree_utils';
 import { getTestVariantURL } from '@/test_investigation/utils/test_info_utils';
@@ -45,7 +45,6 @@ export interface FailureSummaryProps {
   testVariant: TestVariant;
   testTextToCopy: string;
   rowLabel: string;
-  isLegacyInvocation: boolean;
   node?: TestNavigationTreeNode;
 }
 
@@ -62,7 +61,6 @@ export function FailureSummary({
   testVariant,
   testTextToCopy,
   rowLabel,
-  isLegacyInvocation,
   node,
 }: FailureSummaryProps) {
   const { invocationId } = useParams<{ invocationId: string }>();
@@ -136,11 +134,8 @@ export function FailureSummary({
                 }}
               >
                 <Link
-                  href={getTestVariantURL(
-                    invocationId,
-                    testVariant,
-                    isLegacyInvocation,
-                  )}
+                  component={RouterLink}
+                  to={getTestVariantURL(invocationId, testVariant)}
                   variant="body2"
                   sx={{
                     textAlign: 'left',
@@ -214,11 +209,8 @@ export function FailureSummary({
       ) : (
         <>
           <Link
-            href={getTestVariantURL(
-              invocationId,
-              testVariant,
-              isLegacyInvocation,
-            )}
+            component={RouterLink}
+            to={getTestVariantURL(invocationId, testVariant)}
             variant="body2"
             sx={{
               textAlign: 'left',

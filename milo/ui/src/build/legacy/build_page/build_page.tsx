@@ -47,7 +47,7 @@ import { usePermCheck } from '@/common/hooks/perm_check';
 import { Build as JsonBuild } from '@/common/services/buildbucket';
 import { useStore } from '@/common/store';
 import { InvocationProvider } from '@/common/store/invocation_state';
-import { generateTestInvestigateUrlForLegacyInvocations } from '@/common/tools/url_utils';
+import { generateTestInvestigateUrl } from '@/common/tools/url_utils';
 import {
   ContentGroup,
   useGoogleAnalytics,
@@ -56,6 +56,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+import { TestIdentifier } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { RedirectToNewPageBanner } from '@/test_investigation/components/redirect_back_banner';
 import {
   NEW_TEST_INVESTIGATION_PAGE_FLAG,
@@ -216,10 +217,14 @@ export const BuildPage = observer(() => {
 
     // Deep link with a pre-computed variant hash.
     if (testId && variantHash) {
-      const newPath = generateTestInvestigateUrlForLegacyInvocations(
+      const newPath = generateTestInvestigateUrl(
         `build-${build.id}`,
-        testId,
-        variantHash,
+        TestIdentifier.fromPartial({
+          moduleName: 'legacy',
+          moduleScheme: 'legacy',
+          moduleVariantHash: variantHash,
+          caseName: testId,
+        }),
       );
       navigate(newPath, { replace: true });
       return;
@@ -238,7 +243,7 @@ export const BuildPage = observer(() => {
           search.append('v', `${key}:${value}`);
         });
       }
-      const newPath = `/ui/test-investigate/invocations/build-${build.id}?${search.toString()}&invMode=legacy`;
+      const newPath = `/ui/test-investigate/invocations/build-${build.id}?${search.toString()}`;
       navigate(newPath, { replace: true });
       return;
     }

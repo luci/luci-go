@@ -301,23 +301,6 @@ export function generateTestInvestigateUrlFromOld(oldUrl: string): string {
 }
 
 /**
- * Generates the new, structured URL for a "legacy" test,
- * given the core components from the old URL format.
- * This correctly URL-encodes the testId and adds the legacy query param.
- */
-export function generateTestInvestigateUrlForLegacyInvocations(
-  invocationId: string,
-  testId: string,
-  variantHash: string,
-): string {
-  const encodedTestId = encodeURIComponent(testId);
-  return (
-    `/ui/test-investigate/invocations/${invocationId}/` +
-    `modules/legacy/schemes/legacy/variants/${variantHash}/cases/${encodedTestId}`
-  );
-}
-
-/**
  * Generates the correct test investigation URL (either structured or legacy)
  * from an invocation ID and a structured TestIdentifier proto.
  *
@@ -327,15 +310,6 @@ export function generateTestInvestigateUrl(
   invocationId: string,
   testId: TestIdentifier,
 ): string {
-  // Check for the special legacy case first, as defined in the proto.
-  if (testId.moduleName === 'legacy' && testId.moduleScheme === 'legacy') {
-    return generateTestInvestigateUrlForLegacyInvocations(
-      invocationId,
-      testId.caseName, // The full legacy ID is stored in caseName
-      testId.moduleVariantHash, // The variant hash
-    );
-  }
-
   // It's a structured URL.
   let path =
     `/ui/test-investigate/invocations/${invocationId}` +
@@ -352,6 +326,5 @@ export function generateTestInvestigateUrl(
   // Append the required case, which must be encoded
   path += `/cases/${encodeURIComponent(testId.caseName)}`;
 
-  // This is the non-legacy URL, so no  is added.
   return path;
 }

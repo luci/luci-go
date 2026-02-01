@@ -28,9 +28,10 @@ import {
 import { getDisplayInvocationId } from '@/test_investigation/utils/invocation_utils';
 import { getFullMethodName } from '@/test_investigation/utils/test_info_utils';
 
+import { VariantDisplay } from '../common/variant_display';
+
 import { useTestVariantBranch } from './context';
 import { TestInfoMarkers } from './test_info_markers';
-import { VariantDisplay } from './variant_display';
 
 function TestNameTooltip() {
   const invocation = useInvocation();

@@ -24,10 +24,7 @@ import {
 import { useNavigate } from 'react-router';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
-import {
-  generateTestInvestigateUrl,
-  generateTestInvestigateUrlForLegacyInvocations,
-} from '@/common/tools/url_utils';
+import { generateTestInvestigateUrl } from '@/common/tools/url_utils';
 import {
   QueryTestVariantsRequest,
   QueryTestVariantsResponse,
@@ -43,7 +40,6 @@ import {
   buildFailureReasonTree,
   HierarchyBuildResult,
 } from '@/test_investigation/utils/drawer_tree_utils';
-import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
 
 import { TestDrawerContext } from './context';
 
@@ -147,10 +143,7 @@ export function TestDrawerProvider({
 
   const handleDrawerTestSelection = useCallback(
     (selectedTestVariant: TestVariant) => {
-      if (
-        isRootInvocation(invocation) &&
-        selectedTestVariant.testIdStructured
-      ) {
+      if (selectedTestVariant.testIdStructured) {
         navigate(
           generateTestInvestigateUrl(
             rawInvocationId,
@@ -158,16 +151,22 @@ export function TestDrawerProvider({
           ),
         );
       } else {
+        // Fallback for when structured ID is missing (should be rare/impossible with new backend).
+        // Construct a legacy identifier.
         navigate(
-          generateTestInvestigateUrlForLegacyInvocations(
-            rawInvocationId,
-            selectedTestVariant.testId,
-            selectedTestVariant.variantHash,
-          ),
+          generateTestInvestigateUrl(rawInvocationId, {
+            moduleName: 'legacy',
+            moduleScheme: 'legacy',
+            moduleVariantHash: selectedTestVariant.variantHash,
+            caseName: selectedTestVariant.testId,
+            coarseName: '',
+            fineName: '',
+            moduleVariant: { def: {} },
+          }),
         );
       }
     },
-    [invocation, navigate, rawInvocationId],
+    [navigate, rawInvocationId],
   );
 
   const contextValue = useMemo(

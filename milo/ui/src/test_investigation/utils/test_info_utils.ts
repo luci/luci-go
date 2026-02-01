@@ -13,10 +13,7 @@
 // limitations under the License.
 
 import { SemanticStatusType } from '@/common/styles/status_styles';
-import {
-  generateTestInvestigateUrl,
-  generateTestInvestigateUrlForLegacyInvocations,
-} from '@/common/tools/url_utils';
+import { generateTestInvestigateUrl } from '@/common/tools/url_utils';
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import {
@@ -24,6 +21,7 @@ import {
   GerritChange,
   Variant,
   Sources,
+  TestIdentifier,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { TestLocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_metadata.pb';
 import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
@@ -344,32 +342,21 @@ export function getSourcesFromInvocation(
 export function getTestVariantURL(
   invocationId: string,
   testVariant: TestVariant,
-  isLegacyInvocation: boolean,
 ): string {
-  // If the invocation is legacy, always generate the legacy-structured URL.
-  if (isLegacyInvocation) {
-    return generateTestInvestigateUrlForLegacyInvocations(
-      invocationId,
-      testVariant.testId,
-      testVariant.variantHash,
-    );
-  }
+  // Always prefer the fully-structured URL if the structured ID is available.
+  // We assume that even for legacy invocations, the backend populates `testIdStructured`
+  // (possibly with "legacy" module/scheme if it really is legacy).
+  // If testIdStructured is missing, we fallback to a constructed one using legacy fields.
+  const testId =
+    testVariant.testIdStructured ||
+    TestIdentifier.fromPartial({
+      moduleName: 'legacy',
+      moduleScheme: 'legacy',
+      moduleVariantHash: testVariant.variantHash || '',
+      caseName: testVariant.testId || '',
+    });
 
-  // Otherwise, we are on a RootInvocation.
-  // Prefer the fully-structured URL if the structured ID is available.
-  if (testVariant.testIdStructured) {
-    return generateTestInvestigateUrl(
-      invocationId,
-      testVariant.testIdStructured,
-    );
-  }
-
-  // Fallback for root invocations that might have non-structured test variants.
-  return generateTestInvestigateUrlForLegacyInvocations(
-    invocationId,
-    testVariant.testId,
-    testVariant.variantHash,
-  );
+  return generateTestInvestigateUrl(invocationId, testId);
 }
 
 export function isAnTSInvocation(invocation: AnyInvocation) {
