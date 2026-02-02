@@ -16,10 +16,16 @@ package resultdb
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -31,6 +37,19 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testverdictsv2"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+var (
+	// queryTestVerdictsLatency tracks the latency of the QueryTestVerdicts RPC,
+	// based on the sharding algorithm used to place results.
+	queryTestVerdictsLatencyByShardingAlgorithm = metric.NewCumulativeDistribution(
+		"resultdb/rpc/query_test_verdicts_latency_by_sharding_algorithm",
+		"Distribution of QueryTestVerdicts fetch latencies, broken down by sharding algorithm",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		distribution.DefaultBucketer,
+		// The sharding algorithm used.
+		field.String("sharding_algorithm"),
+	)
 )
 
 // queryTestVerdictsResponseLimitBytes is the soft limit on the number of bytes
@@ -93,10 +112,23 @@ func (s *resultDBServer) QueryTestVerdicts(ctx context.Context, req *pb.QueryTes
 		VerdictSizeLimit:   testverdictsv2.StandardVerdictSizeLimit,
 	}
 
+	startTime := clock.Now(ctx)
+
 	verdicts, nextPageToken, err := q.Fetch(ctx, pageToken, fetchOpts)
 	if err != nil {
 		return nil, err
 	}
+
+	duration := clock.Since(ctx, startTime)
+
+	shardingInfo, err := rootinvocations.ReadTestShardingInformationFromShard(ctx, rootinvocations.ShardID{
+		RootInvocationID: rootInvID,
+		ShardIndex:       0, // Any shard will do.
+	})
+	if err != nil {
+		return nil, err
+	}
+	queryTestVerdictsLatencyByShardingAlgorithm.Add(ctx, float64(int64(duration)/int64(time.Millisecond)), string(shardingInfo.Algorithm))
 
 	return &pb.QueryTestVerdictsResponse{
 		TestVerdicts:  verdicts,

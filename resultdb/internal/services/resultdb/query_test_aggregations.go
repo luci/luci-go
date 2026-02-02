@@ -16,10 +16,16 @@ package resultdb
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/tsmon/distribution"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/common/validate"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
@@ -31,6 +37,22 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
+)
+
+var (
+	// queryTestAggregationsLatencyByShardingAlgorithm tracks the latency of the
+	// QueryTestAggregations RPC, based on the aggregation level requested and
+	// the sharding algorithm used to place results.
+	queryTestAggregationsLatencyByShardingAlgorithm = metric.NewCumulativeDistribution(
+		"resultdb/rpc/query_test_aggregations_latency_by_sharding_algorithm",
+		"Distribution of QueryTestAggregations fetch latencies, broken down by sharding algorithm and aggregation level.",
+		&types.MetricMetadata{Units: types.Milliseconds},
+		distribution.DefaultBucketer,
+		// The sharding algorithm used.
+		field.String("sharding_algorithm"),
+		// The aggregation level.
+		field.String("aggregation_level"),
+	)
 )
 
 // QueryTestAggregations implements pb.ResultDBServer. Refer to
@@ -70,10 +92,23 @@ func (s *resultDBServer) QueryTestAggregations(ctx context.Context, req *pb.Quer
 		Order:                    order,
 	}
 
+	startTime := clock.Now(ctx)
+
 	aggregations, nextPageToken, err := q.Fetch(ctx, req.PageToken)
 	if err != nil {
 		return nil, err
 	}
+
+	duration := clock.Since(ctx, startTime)
+
+	shardingInfo, err := rootinvocations.ReadTestShardingInformationFromShard(ctx, rootinvocations.ShardID{
+		RootInvocationID: rootInvID,
+		ShardIndex:       1, // Any shard will do.
+	})
+	if err != nil {
+		return nil, err
+	}
+	queryTestAggregationsLatencyByShardingAlgorithm.Add(ctx, float64(int64(duration)/int64(time.Millisecond)), string(shardingInfo.Algorithm), req.Predicate.AggregationLevel.String())
 
 	return &pb.QueryTestAggregationsResponse{
 		Aggregations:  aggregations,
