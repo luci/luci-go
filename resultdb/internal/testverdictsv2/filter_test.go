@@ -65,7 +65,7 @@ func TestWhereClause(t *testing.T) {
 		t.Run("Empty", func(t *ftt.Test) {
 			got, err := whereClause(nil, params)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, got, should.Equal("FALSE"))
+			assert.Loosely(t, got, should.Equal("TRUE"))
 		})
 
 		t.Run("Exonerated", func(t *ftt.Test) {

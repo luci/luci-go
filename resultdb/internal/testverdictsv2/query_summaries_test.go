@@ -339,17 +339,40 @@ func TestQuerySummaries(t *testing.T) {
 			})
 		})
 		t.Run("With verdict filter", func(t *ftt.Test) {
-			q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-				pb.TestVerdictPredicate_PRECLUDED,
-				pb.TestVerdictPredicate_EXONERATED,
-				pb.TestVerdictPredicate_PASSED,
-			}
-			expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
-				return v.TestIdStructured.CaseName == "t1" || // Passed
-					v.TestIdStructured.CaseName == "t5" || // Exonerated
-					v.TestIdStructured.CaseName == "t6" // Precluded
+			t.Run("Mixed successful and unsuccessful", func(t *ftt.Test) {
+				q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+					pb.TestVerdictPredicate_PRECLUDED,
+					pb.TestVerdictPredicate_EXONERATED,
+					pb.TestVerdictPredicate_PASSED,
+				}
+				assert.Loosely(t, hasOnlyPriorityVerdicts(q.EffectiveStatusFilter), should.BeFalse)
+
+				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+					return v.TestIdStructured.CaseName == "t1" || // Passed
+						v.TestIdStructured.CaseName == "t5" || // Exonerated
+						v.TestIdStructured.CaseName == "t6" // Precluded
+				})
+				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 			})
-			assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
+			t.Run("Unsuccessful only", func(t *ftt.Test) {
+				q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+					pb.TestVerdictPredicate_PRECLUDED,
+					pb.TestVerdictPredicate_EXONERATED,
+					pb.TestVerdictPredicate_EXECUTION_ERRORED,
+					pb.TestVerdictPredicate_FAILED,
+					pb.TestVerdictPredicate_FLAKY,
+				}
+				assert.Loosely(t, hasOnlyPriorityVerdicts(q.EffectiveStatusFilter), should.BeTrue)
+
+				expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+					return v.TestIdStructured.CaseName == "t2" || // Failed
+						v.TestIdStructured.CaseName == "t3" || // Flaky
+						v.TestIdStructured.CaseName == "t5" || // Exonerated
+						v.TestIdStructured.CaseName == "t6" || // Precluded
+						v.TestIdStructured.CaseName == "t7" // Execution Errored
+				})
+				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
+			})
 		})
 	})
 }

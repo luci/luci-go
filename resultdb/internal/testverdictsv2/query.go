@@ -116,26 +116,74 @@ func (q *Query) Fetch(ctx context.Context, pageToken PageToken, opts FetchOption
 	//   of the result set where we are paging over passing
 	//   and skipped verdicts).
 	isOrderSuitableForIteratorQuery := !q.Order.ByUIPriority || (q.Order.ByUIPriority && pageToken.UIPriority == MaxUIPriority)
-	if strings.TrimSpace(q.ContainsTestResultFilter) == "" && len(q.EffectiveStatusFilter) == 0 && isOrderSuitableForIteratorQuery {
+
+	// The iterator query is suitable if:
+	// - the query order is suitable,
+	// - the query does not have a contains test result filter (such
+	//   filters can be very selective and the iterator query does not
+	//   perform well with selective queries that cannot be pushed down
+	//   to Spanner)
+	// - the query does not have a selective status filter.
+	if strings.TrimSpace(q.ContainsTestResultFilter) == "" &&
+		len(q.EffectiveStatusFilter) == 0 &&
+		isOrderSuitableForIteratorQuery {
 		// Use the iterator query. It is fast and cheap.
 		logging.Debugf(ctx, "Using iterator query.")
 		return q.fetchUsingIteratorQuery(ctx, pageToken, opts)
 	}
 
 	// The query is a complex query. We need to use QuerySummaries
-	// to identify the verdicts to return, and if the view is FULL,
+	// to identify the verdicts to return.
+	summaryQuery := q.toSummaryQuery()
+
+	// The summaries query is faster if it is only returning priority verdicts
+	// (failed, execution errored, flaky, precluded, exonerated) as it can use an index.
+	//
+	// We should filter to priority verdicts only for this page of results if:
+	// - results are ordered in priority order, AND
+	// - we are in the region of the result set where we are paging over priority
+	//   verdicts, AND
+	// - the statuses filtered to (if any) include BOTH priority and non-priority
+	//   (i.e. passed, skipped) verdicts. We need BOTH because:
+	//   - If the user filtered only to non-priority verdicts, then it does not make sense
+	//     to filter as we will produce an empty page for no reason.
+	//   - If there are only priority verdicts, then the query will already use the index
+	//     and again we do not need to do anything.
+	filterToPriorityVerdictsOnly := q.Order.ByUIPriority && pageToken.UIPriority < MaxUIPriority &&
+		filterHasBothPriorityAndNonPriorityVerdicts(q.EffectiveStatusFilter)
+	if filterToPriorityVerdictsOnly {
+		// Filter the current page to priority verdicts only.
+		// This does not affect the result order, but might shrink the page size as
+		// we are excluding passed and skipped verdicts.
+		summaryQuery.EffectiveStatusFilter = filterToPriorityStatuses(q.EffectiveStatusFilter)
+	}
+
+	// As QuerySummaries only returns summaries, if the view is FULL,
 	// we then need to fetch the details using a follow-up query.
 	switch q.View {
 	case pb.TestVerdictView_TEST_VERDICT_VIEW_BASIC:
 		logging.Debugf(ctx, "Using summary query.")
-		summaryQuery := q.toSummaryQuery()
-		return summaryQuery.Fetch(ctx, pageToken, opts)
+		verdicts, nextPageToken, retErr = summaryQuery.Fetch(ctx, pageToken, opts)
 	case pb.TestVerdictView_TEST_VERDICT_VIEW_FULL:
 		logging.Debugf(ctx, "Using summary then iterator query.")
-		return q.fetchSummariesThenDetails(ctx, pageToken, opts)
+		verdicts, nextPageToken, retErr = fetchSummariesThenDetails(ctx, summaryQuery, pageToken, opts)
 	default:
 		return nil, PageToken{}, errors.Fmt("unknown view %q", q.View)
 	}
+
+	if filterToPriorityVerdictsOnly && nextPageToken == (PageToken{}) {
+		// We excluded the passed and skipped verdicts from the query, so we need to
+		// intercept the empty page token and instead connect it to the first page of
+		// non-priority verdicts.
+		nextPageToken = PageToken{
+			// For passed and skipped verdicts, which have the lowest priority (highest priority number).
+			UIPriority: MaxUIPriority,
+			// The empty verdict key appear before all actual verdicts.
+			ID: testresultsv2.VerdictID{},
+		}
+	}
+
+	return verdicts, nextPageToken, retErr
 }
 
 func (q *Query) toSummaryQuery() *QuerySummaries {
@@ -194,13 +242,13 @@ func (q *Query) fetchUsingIteratorQuery(ctx context.Context, pageToken PageToken
 }
 
 // fetchSummariesThenDetails fetches a page of test verdicts with view of TEST_VERDICT_VIEW_FULL.
-func (q *Query) fetchSummariesThenDetails(ctx context.Context, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
+func fetchSummariesThenDetails(ctx context.Context, q *QuerySummaries, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
 	var ids []testresultsv2.VerdictID
 	var summaries []*TestVerdictSummary
 
 	startTime := clock.Now(ctx)
 	// Fetch up to q.PageSize verdict summaries.
-	_, err := q.toSummaryQuery().Run(ctx, pageToken, opts.PageSize, func(tv *TestVerdictSummary) (bool, error) {
+	_, err := q.Run(ctx, pageToken, opts.PageSize, func(tv *TestVerdictSummary) (bool, error) {
 		ids = append(ids, tv.ID)
 		summaries = append(summaries, tv)
 		return true, nil
@@ -284,4 +332,56 @@ func (q *Query) fetchSummariesThenDetails(ctx context.Context, pageToken PageTok
 		return nil, PageToken{}, errors.New("fetch is returning zero verdicts. This should never happen, as progress will never be made.")
 	}
 	return verdicts, nextPageToken, nil
+}
+
+// filterHasBothPriorityAndNonPriorityVerdicts returns true if the given filter contains both:
+// - priority (FAILED, FLAKY, EXECUTION_ERRORED, PRECLUDED, EXONERATED) and
+// - non-priority (PASSED, SKIPPED) verdicts.
+func filterHasBothPriorityAndNonPriorityVerdicts(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) bool {
+	if len(filter) == 0 {
+		// The empty filter is a special case, as it matches all verdicts.
+		return true
+	}
+	hasPriorityVerdicts := false
+	hasNonPriorityVerdicts := false
+	for _, s := range filter {
+		switch s {
+		case pb.TestVerdictPredicate_FAILED,
+			pb.TestVerdictPredicate_FLAKY,
+			pb.TestVerdictPredicate_EXECUTION_ERRORED,
+			pb.TestVerdictPredicate_PRECLUDED,
+			pb.TestVerdictPredicate_EXONERATED:
+			hasPriorityVerdicts = true
+		case pb.TestVerdictPredicate_PASSED,
+			pb.TestVerdictPredicate_SKIPPED:
+			hasNonPriorityVerdicts = true
+		}
+	}
+	return hasPriorityVerdicts && hasNonPriorityVerdicts
+}
+
+// filterToPriorityStatuses filters the given filter to only the priority verdict statuses.
+func filterToPriorityStatuses(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) []pb.TestVerdictPredicate_VerdictEffectiveStatus {
+	if len(filter) == 0 {
+		// The empty filter matches all statuses. Return all priority verdict statuses.
+		return []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+			pb.TestVerdictPredicate_FAILED,
+			pb.TestVerdictPredicate_FLAKY,
+			pb.TestVerdictPredicate_EXECUTION_ERRORED,
+			pb.TestVerdictPredicate_PRECLUDED,
+			pb.TestVerdictPredicate_EXONERATED,
+		}
+	}
+	var result []pb.TestVerdictPredicate_VerdictEffectiveStatus
+	for _, s := range filter {
+		switch s {
+		case pb.TestVerdictPredicate_FAILED,
+			pb.TestVerdictPredicate_FLAKY,
+			pb.TestVerdictPredicate_EXECUTION_ERRORED,
+			pb.TestVerdictPredicate_PRECLUDED,
+			pb.TestVerdictPredicate_EXONERATED:
+			result = append(result, s)
+		}
+	}
+	return result
 }

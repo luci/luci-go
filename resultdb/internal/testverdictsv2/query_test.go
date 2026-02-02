@@ -68,16 +68,29 @@ func TestQuery(t *testing.T) {
 		fetchAll := func(q *Query, opts FetchOptions) []*pb.TestVerdict {
 			var results []*pb.TestVerdict
 			var token PageToken
+			seenTokens := make(map[PageToken]struct{})
 			for {
 				verdicts, nextToken, err := fetchOne(q, token, opts)
+				if _, ok := seenTokens[nextToken]; ok {
+					assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
+					t.Fatalf("token %q is repeated", nextToken)
+				}
+				seenTokens[nextToken] = struct{}{}
+
 				assert.Loosely(t, err, should.BeNil, truth.LineContext(1))
 				results = append(results, verdicts...)
 				if nextToken == (PageToken{}) {
 					assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(opts.PageSize))
 					break
 				} else {
-					if opts.ResponseLimitBytes == 0 && opts.TotalResultLimit == 0 {
+					if q.Order.ByUIPriority {
+						// The implementation may divide this case into two queries.
+						// The page size may be inconsistent; verify only that each page is
+						// less than the maximum size allowed.
+						assert.Loosely(t, len(verdicts), should.BeLessThanOrEqual(opts.PageSize))
+					} else if opts.ResponseLimitBytes == 0 && opts.TotalResultLimit == 0 && !q.Order.ByUIPriority {
 						// If there were no secondary constraints on the page size,
+						// or optimisations that might lead to shorter pages,
 						// verify the page is exactly opts.PageSize, not simply less than or equal.
 						assert.Loosely(t, len(verdicts), should.Equal(opts.PageSize))
 					} else {
@@ -134,8 +147,10 @@ func TestQuery(t *testing.T) {
 				})
 				// The underlying queries already have extensive test cases to test correctness
 				// of individual options. The tests below are to verify these options are
-				// correctly passed to the underlying queries and responses integrated correctly.
-				t.Run("Order", func(t *ftt.Test) {
+				// correctly passed to the underlying queries, and that multi-query strategies
+				// are implemented correctly.
+				t.Run("UI Order", func(t *ftt.Test) {
+					// UI ordering has various optimisations associated with it.
 					q.Order = Ordering{
 						ByUIPriority:       true,
 						ByStructuredTestID: true,
@@ -158,6 +173,42 @@ func TestQuery(t *testing.T) {
 						opts.PageSize = 1
 						gotVerdicts := fetchAll(q, opts)
 						assert.Loosely(t, gotVerdicts, should.Match(expected))
+					})
+					t.Run("With filter", func(t *ftt.Test) {
+						t.Run("Priority verdicts only", func(t *ftt.Test) {
+							q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+								pb.TestVerdictPredicate_FAILED,
+								pb.TestVerdictPredicate_PRECLUDED,
+							}
+							// t2 is FAILED and t6 is PRECLUDED.
+							expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+								return v.TestIdStructured.CaseName == "t2" || // Failed
+									v.TestIdStructured.CaseName == "t6" // Precluded
+							})
+							assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
+						})
+						t.Run("Non-priority verdicts only", func(t *ftt.Test) {
+							q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+								pb.TestVerdictPredicate_SKIPPED,
+								pb.TestVerdictPredicate_PASSED,
+							}
+							expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+								return v.TestIdStructured.CaseName == "t1" || // Passed
+									v.TestIdStructured.CaseName == "t4" // Skipped
+							})
+							assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
+						})
+						t.Run("Mixed verdicts", func(t *ftt.Test) {
+							q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+								pb.TestVerdictPredicate_FAILED,
+								pb.TestVerdictPredicate_PASSED,
+							}
+							expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
+								return v.TestIdStructured.CaseName == "t1" || // Passed
+									v.TestIdStructured.CaseName == "t2" // Failed
+							})
+							assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
+						})
 					})
 				})
 				t.Run("Filter", func(t *ftt.Test) {

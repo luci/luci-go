@@ -221,14 +221,12 @@ func TestQueryTestVerdicts(t *testing.T) {
 			t.Run(`With ordering`, func(t *ftt.Test) {
 				// We rely on unit tests in testverdictsv2/query_test.go to verify exact order correctness
 				// of all the ordering options.
-				// Here we just do a few spot checks and verify it doesn't error.
+				// Here we just do a spot check.
 				req.OrderBy = "ui_priority, test_id_structured"
 				res, err := srv.QueryTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				assert.Loosely(t, res.TestVerdicts, should.HaveLength(7))
-				assert.Loosely(t, res.TestVerdicts[0].Status, should.Equal(pb.TestVerdict_FAILED))   // Highest priority first
-				assert.Loosely(t, res.TestVerdicts[6].TestIdStructured.CaseName, should.Equal("t4")) // "t4" (skipped) last.
+				assert.Loosely(t, res.TestVerdicts[0].Status, should.Equal(pb.TestVerdict_FAILED)) // Highest priority first
 			})
 
 			t.Run(`With prefix filter`, func(t *ftt.Test) {

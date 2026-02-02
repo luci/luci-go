@@ -216,12 +216,14 @@ func (q *QuerySummaries) buildQuery(pageToken PageToken, pageSize int) (spanner.
 	}
 
 	filterClause := "TRUE"
+	useUnsuccessfulIndex := false
 	if len(q.EffectiveStatusFilter) > 0 {
 		clause, err := whereClause(q.EffectiveStatusFilter, params)
 		if err != nil {
 			return spanner.Statement{}, errors.Fmt("filter: %w", err)
 		}
 		filterClause = "(" + clause + ")"
+		useUnsuccessfulIndex = hasOnlyPriorityVerdicts(q.EffectiveStatusFilter)
 	}
 
 	tmplInput := map[string]any{
@@ -242,6 +244,7 @@ func (q *QuerySummaries) buildQuery(pageToken PageToken, pageSize int) (spanner.
 		"VerdictExonerated":              int64(pb.TestVerdict_EXONERATED),
 		"VerdictNotOverridden":           int64(pb.TestVerdict_NOT_OVERRIDDEN),
 		"ContainsTestResultFilterClause": containsTestResultFilterClause,
+		"UseUnsuccessfulIndex":           useUnsuccessfulIndex,
 		"WherePrefixClause":              wherePrefixClause,
 		"FilterClause":                   filterClause,
 		"FullAccess":                     q.Access.Level == permissions.FullAccess,
@@ -262,13 +265,23 @@ func (q *QuerySummaries) whereAfterPageToken(token PageToken, params map[string]
 		if token.UIPriority > MaxUIPriority {
 			return "", errors.New("invalid page token or logic error: uiPriority > maxUIPriority")
 		}
+		uiPriority := token.UIPriority
+
+		// If the filter only references non-priority verdicts, we can already advance the starting
+		// page token to the last priority level. This has some benefits for query performance as it
+		// allows the query planner to ignore the `ORDER BY UIPriority` clause (as UIPriority
+		// will always be constant) and use the secondary ordering.
+		if hasOnlyNonPriorityVerdicts(q.EffectiveStatusFilter) && token == (PageToken{}) {
+			uiPriority = MaxUIPriority
+		}
+
 		columns = append(columns, spanutil.PageTokenElement{
 			ColumnName: "UIPriority",
-			AfterValue: token.UIPriority,
+			AfterValue: uiPriority,
 			// Once this column is at its limit, fix its value in the pagination clause.
 			// This allows the corresponding `ORDER BY UIPriority` clause to be ignored by the
 			// query planner, and the reversion to a more efficient query plan.
-			AtLimit: token.UIPriority == MaxUIPriority,
+			AtLimit: uiPriority == MaxUIPriority,
 		})
 	}
 	if !q.Order.ByStructuredTestID {
@@ -316,7 +329,7 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			SELECT
 				* EXCEPT (ModuleVariant, SummaryHTML, Tags, TestMetadataName, TestMetadataLocationRepo, TestMetadataLocationFileName, Properties),
 				-- Provide masked versions of fields to support filtering on them in the query one level up.
-				{{if eq .FullAccess true}}
+				{{if .FullAccess}}
 					-- Directly alias the columns if full access is granted. This can provide
 					-- a performance boost as predicates can be pushed down to the storage layer.
 					ModuleVariant AS ModuleVariantMasked,
@@ -336,8 +349,22 @@ var queryTmpl = template.Must(template.New("").Parse(`
 					IF(Realm IN UNNEST(@upgradeRealms), TestMetadataLocationFileName, NULL) AS TestMetadataLocationFileNameMasked,
 					(Realm IN UNNEST(@upgradeRealms)) AS HasAccess,
 				{{end}}
+		{{if .UseUnsuccessfulIndex}}
+			FROM (
+				-- Use the UnsuccessfulTestResultsV2 index to identify the test verdicts which are at risk
+				-- of being (FAILED, FLAKY, EXECUTION ERRORED, PRECLUDED or EXONERATED). This is performance
+				-- optimisation to avoid needing to scan the entire TestResultsV2 table.
+				SELECT RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
+				FROM TestResultsV2@{FORCE_INDEX=UnsuccessfulTestResultsV2, spanner_emulator.disable_query_null_filtered_index_check=true}
+				WHERE IsUnsuccessful AND RootInvocationShardId IN UNNEST(@shards) AND {{.WherePrefixClause}}
+				GROUP BY RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName
+			)
+			JOIN@{JOIN_METHOD=MERGE_JOIN, FORCE_JOIN_ORDER=TRUE} TestResultsV2 USING (RootInvocationShardId, ModuleName, ModuleScheme, ModuleVariantHash, T1CoarseName, T2FineName, T3CaseName)
+			WHERE RootInvocationShardId IN UNNEST(@shards) AND {{.WherePrefixClause}}
+		{{else}}
 			FROM TestResultsV2
 			WHERE RootInvocationShardId IN UNNEST(@shards) AND {{.WherePrefixClause}}
+		{{end}}
 {{end}}
 {{define "TestExonerations"}}
 			-- Test Exonerations.

@@ -44,6 +44,11 @@ func ValidateFilter(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) err
 // whereClause generates a WHERE clause for the given filter.
 // This method assumes the presence of the columns Status and StatusOverride.
 func whereClause(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus, params map[string]any) (string, error) {
+	if len(filter) == 0 {
+		// Empty filter means no filter.
+		return "TRUE", nil
+	}
+
 	includeExonerated := false
 	var statuses []int64
 
@@ -78,11 +83,45 @@ func whereClause(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus, params
 		conditions = append(conditions, fmt.Sprintf("(StatusOverride = %d AND Status IN UNNEST(@%s))", int64(pb.TestVerdict_NOT_OVERRIDDEN), paramName))
 	}
 
-	if len(conditions) == 0 {
-		return "FALSE", nil
-	}
 	if len(conditions) == 1 {
 		return conditions[0], nil
 	}
 	return "(" + strings.Join(conditions, " OR ") + ")", nil
+}
+
+// hasOnlyPriorityVerdicts returns true if the given filter contains only non-priority verdicts
+// (failed, flaky, execution errored, precluded or exonerated).
+func hasOnlyPriorityVerdicts(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) bool {
+	if len(filter) == 0 {
+		// Empty filter means no filter.
+		return false
+	}
+
+	for _, s := range filter {
+		if s == pb.TestVerdictPredicate_PASSED || s == pb.TestVerdictPredicate_SKIPPED {
+			return false
+		}
+		// Otherwise, the underlying status will be one of:
+		// - FAILED
+		// - FLAKY
+		// - EXECUTION_ERRORED
+		// - PRECLUDED
+		// These require one of the test results to be failed, execution errored or precluded.
+	}
+	return true
+}
+
+// hasOnlyNonPriorityVerdicts returns true if the given filter contains only non-priority verdicts
+// (passed or skipped).
+func hasOnlyNonPriorityVerdicts(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) bool {
+	if len(filter) == 0 {
+		// Empty filter means no filter.
+		return false
+	}
+	for _, s := range filter {
+		if s != pb.TestVerdictPredicate_PASSED && s != pb.TestVerdictPredicate_SKIPPED {
+			return false
+		}
+	}
+	return true
 }
