@@ -124,6 +124,26 @@ func (mr *MockResultDBClientMockRecorder) BatchGetTestVariants(ctx, in interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetTestVariants", reflect.TypeOf((*MockResultDBClient)(nil).BatchGetTestVariants), varargs...)
 }
 
+// BatchGetTestVerdicts mocks base method.
+func (m *MockResultDBClient) BatchGetTestVerdicts(ctx context.Context, in *BatchGetTestVerdictsRequest, opts ...grpc.CallOption) (*BatchGetTestVerdictsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BatchGetTestVerdicts", varargs...)
+	ret0, _ := ret[0].(*BatchGetTestVerdictsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetTestVerdicts indicates an expected call of BatchGetTestVerdicts.
+func (mr *MockResultDBClientMockRecorder) BatchGetTestVerdicts(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetTestVerdicts", reflect.TypeOf((*MockResultDBClient)(nil).BatchGetTestVerdicts), varargs...)
+}
+
 // BatchGetWorkUnits mocks base method.
 func (m *MockResultDBClient) BatchGetWorkUnits(ctx context.Context, in *BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*BatchGetWorkUnitsResponse, error) {
 	m.ctrl.T.Helper()
@@ -760,6 +780,21 @@ func (m *MockResultDBServer) BatchGetTestVariants(arg0 context.Context, arg1 *Ba
 func (mr *MockResultDBServerMockRecorder) BatchGetTestVariants(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetTestVariants", reflect.TypeOf((*MockResultDBServer)(nil).BatchGetTestVariants), arg0, arg1)
+}
+
+// BatchGetTestVerdicts mocks base method.
+func (m *MockResultDBServer) BatchGetTestVerdicts(arg0 context.Context, arg1 *BatchGetTestVerdictsRequest) (*BatchGetTestVerdictsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchGetTestVerdicts", arg0, arg1)
+	ret0, _ := ret[0].(*BatchGetTestVerdictsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BatchGetTestVerdicts indicates an expected call of BatchGetTestVerdicts.
+func (mr *MockResultDBServerMockRecorder) BatchGetTestVerdicts(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchGetTestVerdicts", reflect.TypeOf((*MockResultDBServer)(nil).BatchGetTestVerdicts), arg0, arg1)
 }
 
 // BatchGetWorkUnits mocks base method.

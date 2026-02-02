@@ -117,27 +117,17 @@ service ResultDB {
   rpc QueryInstruction(QueryInstructionRequest)
       returns (QueryInstructionResponse) {};
 
-  // UNSTABLE (until launched): This RPC is in development and API may change
-  // without notice.
-  //
   // Retrieves test aggregations for a single root invocation.
-  //
-  // Unlike QueryTestResults and QueryTestVariants which are guaranteed to read
-  // all test results uploaded to Recorder service up to the time of query, this
-  // RPC only guarantees eventual consistency (i.e. there may be a lag). Once an
-  // invocation is finalized, data is guaranteed to be consistent.
   rpc QueryTestAggregations(QueryTestAggregationsRequest)
       returns (QueryTestAggregationsResponse) {};
 
-  // UNSTABLE (until launched): This RPC is in development and API may change
-  // without notice. Retrieves test verdicts for a single root invocation.
-  //
-  // Unlike QueryTestResults and QueryTestVariants which are guaranteed to read
-  // all test results uploaded to Recorder service up to the time of query, this
-  // RPC only guarantees eventual consistency (i.e. there may be a lag). Once an
-  // invocation is finalized, data is guaranteed to be consistent.
+  // Retrieves test verdicts for a single root invocation.
   rpc QueryTestVerdicts(QueryTestVerdictsRequest)
       returns (QueryTestVerdictsResponse) {};
+
+  // Retrieves specified test verdicts from a given root invocation.
+  rpc BatchGetTestVerdicts(BatchGetTestVerdictsRequest)
+      returns (BatchGetTestVerdictsResponse) {};
 
   // == Artifacts =============================================================
 
@@ -236,8 +226,7 @@ service ResultDB {
 
   // Retrieves test variants from a single invocation, matching the specified
   // test IDs and hashes.
-  // INTENT TO DEPRECATE: A BatchGetTestVerdicts RPC is planned to replace this
-  // RPC.
+  // DEPRECATED: Use root invocations and BatchGetTestVerdicts instead.
   rpc BatchGetTestVariants(BatchGetTestVariantsRequest)
       returns (BatchGetTestVariantsResponse) {};
 
@@ -922,6 +911,67 @@ message BatchGetTestVariantsResponse {
   map<string, Sources> sources = 2;
 }
 
+// A request message for BatchGetTestVerdicts RPC.
+//
+// This RPC retrieves verdicts corresponding to a specified list
+// of tests.
+message BatchGetTestVerdictsRequest {
+  message NominatedTest {
+    // Option 1: Structured test identifier.
+
+    // The structured test identifier. See the comment on
+    // TestResult.test_id_structured for full documentation.
+    //
+    // Either this should be specified, or both test_id and variant_hash below.
+    TestIdentifier test_id_structured = 1;
+
+    // Option 2: Flat test identifier and variant.
+
+    // The unique identifier of the test in a LUCI project. See the comment on
+    // TestResult.test_id for full documentation.
+    string test_id = 2;
+
+    // Hash of the variant. See the comment on TestResult.variant_hash for full
+    // documentation.
+    string variant_hash = 3;
+  }
+
+  // Name of the root invocation that the test variants are in, see
+  // RootInvocation.name.
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A list of tests to query.
+  //
+  // Size is limited to 500 for TEST_VERDICT_VIEW_BASIC and 50 for
+  // TEST_VERDICT_VIEW_FULL. Any request for more than this number of tests
+  // will return an error.
+  //
+  // This list may contain duplicates. (If so, the response will contain
+  // duplicates.)
+  repeated NominatedTest tests = 2;
+
+  // The set of test verdict fields to return.
+  // The default is TEST_VERDICT_VIEW_BASIC.
+  TestVerdictView view = 3;
+}
+
+// A response message for BatchGetTestVerdicts RPC.
+message BatchGetTestVerdictsResponse {
+  // Test verdicts matching the requests.
+  //
+  // Verdicts in this list correspond 1:1 with those in the request,
+  // i.e. test_variants[i] in the request will correspond to test_verdicts[i]
+  // in the response.
+  //
+  // In the event that no results exist for one of the tests requested, an
+  // empty TestVerdict will be returned in its place with only the test information
+  // specified in the request and the status STATUS_UNSPECIFIED.
+  //
+  // Each verdict has its test results and exonerations truncated to a total
+  // size of 2 MB or 500 test results, whichever is less.
+  repeated TestVerdict test_verdicts = 1;
+}
+
 // A request message for QueryTestMetadata RPC.
 message QueryTestMetadataRequest {
   // The LUCI Project to query.
@@ -1467,8 +1517,8 @@ message QueryTestVerdictsRequest {
   // specified order.
   string order_by = 3;
 
-  // The set of test verdict fields to return. Currently, this RPC only supports
-  // the view TEST_VERDICT_VIEW_BASIC. The default is TEST_VERDICT_VIEW_BASIC.
+  // The set of test verdict fields to return.
+  // The default is TEST_VERDICT_VIEW_BASIC.
   TestVerdictView view = 7;
 
   // For result limit, if support added in future. Currently the implementation

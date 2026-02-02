@@ -295,6 +295,23 @@ func (s *DecoratedResultDB) QueryTestVerdicts(ctx context.Context, req *QueryTes
 	return
 }
 
+func (s *DecoratedResultDB) BatchGetTestVerdicts(ctx context.Context, req *BatchGetTestVerdictsRequest) (rsp *BatchGetTestVerdictsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "BatchGetTestVerdicts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.BatchGetTestVerdicts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "BatchGetTestVerdicts", rsp, err)
+	}
+	return
+}
+
 func (s *DecoratedResultDB) GetArtifact(ctx context.Context, req *GetArtifactRequest) (rsp *Artifact, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
