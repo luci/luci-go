@@ -43,18 +43,18 @@ export const ANDROID_DEFAULT_COLUMNS = [
   'version',
 ];
 
-export const CHROMIUM_DEFAULT_COLUMNS = [
+export const BROWSER_DEFAULT_COLUMNS = [
   'id',
   'ufs_labels.hostname',
   'ufs_labels.resource_state',
-  'ufs_labels.rack',
   'ufs_labels.zone',
-  'ufs_labels.swarming_instance',
   'ufs_labels.chrome_platform',
   'ufs_labels.serial_number',
   'ufs_labels.associated_hostname',
   'ufs_labels.model',
   'swarming_labels.state',
+  'swarming_labels.device_os',
+  'swarming_labels.device_type',
 ];
 
 // Define a list of device filters commonly used by FLOPS to show in the

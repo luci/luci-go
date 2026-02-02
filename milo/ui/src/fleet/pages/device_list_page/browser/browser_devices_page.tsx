@@ -31,7 +31,7 @@ import {
 } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
-import { CHROMIUM_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
+import { BROWSER_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { getFeatureFlag } from '@/fleet/config/features';
 import { BROWSER_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
@@ -122,7 +122,7 @@ export const BrowserDevicesPage = () => {
     const missingParamsColoumns = getWrongColumnsFromParams(
       searchParams,
       columnIds,
-      CHROMIUM_DEFAULT_COLUMNS,
+      BROWSER_DEFAULT_COLUMNS,
     );
     if (missingParamsColoumns.length === 0) return;
     addWarning(
@@ -242,7 +242,7 @@ export const BrowserDevicesPage = () => {
         }}
       >
         <DeviceTable
-          defaultColumnIds={CHROMIUM_DEFAULT_COLUMNS}
+          defaultColumnIds={BROWSER_DEFAULT_COLUMNS}
           localStorageKey={BROWSER_DEVICES_LOCAL_STORAGE_KEY}
           rows={devices}
           availableColumns={Object.values(columnsRecord)}

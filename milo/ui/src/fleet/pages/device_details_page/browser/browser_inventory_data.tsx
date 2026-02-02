@@ -152,6 +152,7 @@ const EmptySection = ({ title, warning, sx }: EmptySectionProps) => {
       }}
       variant="outlined"
       elevation={2}
+      defaultExpanded
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography variant="h6">{title}</Typography>
@@ -219,6 +220,7 @@ const InventoryDataSection = ({
       }}
       variant="outlined"
       elevation={2}
+      defaultExpanded
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography variant="h6">{title}</Typography>

@@ -23,7 +23,12 @@ const COMMON_COLUMNS: Record<Platform, string[]> = {
   [Platform.UNSPECIFIED]: [],
   [Platform.ANDROID]: ['id', 'state', 'device_type'],
   [Platform.CHROMEOS]: ['id', 'dut_id', 'state'],
-  [Platform.CHROMIUM]: ['id'],
+  [Platform.CHROMIUM]: [
+    'id',
+    'ufs_labels.hostname',
+    'swarming_labels.state',
+    'ufs_labels.serial_number',
+  ],
 };
 
 /**

@@ -140,6 +140,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
   Partial<DeviceTableGridColDef<BrowserDevice>>
 > = {
   id: {
+    headerName: 'machine',
     flex: 3,
     valueGetter: (_, row) => row.id,
     renderCell: renderCellWithLink(
@@ -208,6 +209,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
     },
   },
   [`${BROWSER_UFS_SOURCE}.hostname`]: {
+    headerName: 'host/bot_id',
     renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
       const swarmingInstance =
         params.row?.ufsLabels?.['swarming_instance']?.values?.[0];
