@@ -11,38 +11,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { Box } from '@mui/material';
+import { useState } from 'react';
 
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 
-import { TestHistorySegmentSummary } from './test_history_segment_summary';
-import { TestHistorySourceVerdicts } from './test_history_source_verdicts';
+import { SourceVerdictsCollapsed } from './source_verdicts_collapsed';
+import { SourceVerdictsExpanded } from './source_verdicts_expanded';
+
 interface TestHistorySegmentProps {
   segment: Segment;
-  isStartSegment: boolean;
-  isEndSegment: boolean;
 }
 
-export function TestHistorySegment({
+export function TestHistorySourceVerdicts({
   segment,
-  isStartSegment,
-  isEndSegment,
 }: TestHistorySegmentProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const expandSegment = () => {
+    setIsExpanded(true);
+  };
+
   return (
-    <Box
-      sx={{
-        display: 'inline-grid',
-        gridTemplateColumns: '1fr',
-        gap: 1,
-        ml: '2px',
-      }}
-    >
-      <TestHistorySourceVerdicts segment={segment}></TestHistorySourceVerdicts>
-      <TestHistorySegmentSummary
-        segment={segment}
-        isStartSegment={isStartSegment}
-        isEndSegment={isEndSegment}
-      ></TestHistorySegmentSummary>
-    </Box>
+    <>
+      {!isExpanded ? (
+        <SourceVerdictsCollapsed
+          segment={segment}
+          expandSegment={expandSegment}
+        ></SourceVerdictsCollapsed>
+      ) : (
+        <SourceVerdictsExpanded segment={segment}></SourceVerdictsExpanded>
+      )}
+    </>
   );
 }
