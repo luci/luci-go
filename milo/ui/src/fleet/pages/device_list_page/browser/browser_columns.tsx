@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { GridRenderCellParams } from '@mui/x-data-grid';
+import _ from 'lodash';
 import { DateTime } from 'luxon';
 
 import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
@@ -29,7 +30,10 @@ import {
 } from '@/fleet/constants/browser';
 import { generateBrowserDeviceDetailsURL } from '@/fleet/constants/paths';
 import { getTaskURL } from '@/fleet/utils/swarming';
-import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  BrowserDevice,
+  GetBrowserDeviceDimensionsResponse,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { getStatusColor } from '../chromeos/dut_state';
 
@@ -50,6 +54,54 @@ const destructureColumnId = (id: string) => {
   };
 };
 
+const getColumnHeader = (labelKey: string, source?: string) => {
+  if (source === BROWSER_SWARMING_SOURCE) {
+    return `sw.${labelKey}`;
+  } else if (source === BROWSER_UFS_SOURCE) {
+    return `ufs.${labelKey}`;
+  } else {
+    return labelKey;
+  }
+};
+
+export const getBrowserColumnIds = (
+  dimensions: GetBrowserDeviceDimensionsResponse | undefined,
+  devices: readonly BrowserDevice[] | undefined,
+): string[] => {
+  const ids: string[] = [];
+  if (dimensions) {
+    ids.push(
+      ...Object.keys(dimensions.baseDimensions)
+        .concat(
+          ...Object.keys(dimensions.swarmingLabels).map(
+            (l) => `${BROWSER_SWARMING_SOURCE}.${l}`,
+          ),
+        )
+        .concat(
+          ...Object.keys(dimensions.ufsLabels).map(
+            (l) => `${BROWSER_UFS_SOURCE}.${l}`,
+          ),
+        ),
+    );
+  }
+
+  if (devices) {
+    ids.push(
+      ...['id'],
+      ...devices.flatMap((d) => [
+        ...Object.keys(d.swarmingLabels ?? {}).map(
+          (l) => `${BROWSER_SWARMING_SOURCE}.${l}`,
+        ),
+        ...Object.keys(d.ufsLabels ?? {}).map(
+          (l) => `${BROWSER_UFS_SOURCE}.${l}`,
+        ),
+      ]),
+    );
+  }
+
+  return _.uniq(ids);
+};
+
 export const getBrowserColumn = (
   id: string,
 ): DeviceTableGridColDef<BrowserDevice> => {
@@ -57,7 +109,7 @@ export const getBrowserColumn = (
 
   return {
     field: id,
-    headerName: source ? `${source.replace('_labels', '')}.${labelKey}` : id,
+    headerName: getColumnHeader(labelKey, source),
     orderByField: id,
     filterByField: source ? `${source}."${labelKey}"` : id,
     editable: false,
@@ -89,7 +141,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
 > = {
   id: {
     flex: 3,
-    valueGetter: (_value, row) => row.id,
+    valueGetter: (_, row) => row.id,
     renderCell: renderCellWithLink(
       (value) => generateBrowserDeviceDetailsURL(value),
       false,

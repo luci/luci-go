@@ -13,60 +13,72 @@
 // limitations under the License.
 
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import { useMemo } from 'react';
 
-import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
+import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { BROWSER_COLUMN_OVERRIDES } from '../../device_list_page/browser/browser_columns';
-import { BrowserDeviceDimensionsProps } from '../../device_list_page/browser/browser_devices_page';
+import {
+  BROWSER_COLUMN_OVERRIDES,
+  getBrowserColumn,
+  getBrowserColumnIds,
+} from '../../device_list_page/browser/browser_columns';
+
+export interface BrowserDeviceDimensionsProps {
+  device?: BrowserDevice;
+}
 
 export const BrowserDeviceDimensions = ({
   device,
 }: BrowserDeviceDimensionsProps) => {
+  const rows = useMemo(() => {
+    if (device?.id === undefined) {
+      return [];
+    }
+    const columnsRecord = getBrowserColumnIds(undefined, [device]).map((id) =>
+      getBrowserColumn(id),
+    );
+
+    return columnsRecord
+      .map((col) => {
+        return {
+          key: col.headerName ?? col.field,
+          value:
+            col.valueGetter?.('' as never, device, col, {
+              current: {} as never,
+            }) ?? '',
+          // This field is unique and will be used
+          // to find custom renderCell functions.
+          id: col.field,
+        };
+      })
+      .sort((a, b) => {
+        if (a.id === 'id') return -1;
+        if (b.id === 'id') return 1;
+        return a.id.localeCompare(b.id);
+      });
+  }, [device]);
+
   if (device?.id === undefined) {
     return <></>;
   }
 
-  const customRows = [{ id: 'id', value: device.id }];
-
-  const customRowsId = customRows.map((r) => r.id);
-
-  const labelRows = Object.keys(device.swarmingLabels)
-    .filter((key) => !customRowsId.includes(key))
-    .map((label) => {
-      return {
-        id: 'swarming.' + label,
-        value: labelValuesToString(device!.swarmingLabels![label].values),
-      };
-    })
-    .concat(
-      Object.keys(device.ufsLabels)
-        .filter((key) => !customRowsId.includes(key))
-        .map((label) => {
-          return {
-            id: 'ufs.' + label,
-            value: labelValuesToString(device!.ufsLabels![label].values),
-          };
-        }),
-    )
-    .sort((a, b) => a.id.localeCompare(b.id));
-
-  const rows = [...customRows, ...labelRows];
-
   const columns: GridColDef[] = [
-    { field: 'id', headerName: 'Key', flex: 1 },
+    { field: 'id' },
+    { field: 'key', headerName: 'Key', flex: 1 },
     {
       field: 'value',
       headerName: 'Value',
       flex: 3,
       renderCell: (params: GridRenderCellParams) => {
-        const override = BROWSER_COLUMN_OVERRIDES[params.id as string];
+        const override = BROWSER_COLUMN_OVERRIDES[params.id];
 
         if (override?.renderCell && params.id.toString() !== 'id') {
-          return override.renderCell(params);
+          // This imitates the behavior of the renderCell of the list page.
+          return override.renderCell({ ...params, row: device });
         }
-        return <EllipsisTooltip>{params.value ?? ''}</EllipsisTooltip>;
+        return <EllipsisTooltip>{params.value}</EllipsisTooltip>;
       },
     },
   ];
@@ -79,6 +91,13 @@ export const BrowserDeviceDimensions = ({
         disableRowSelectionOnClick
         rows={rows}
         columns={columns}
+        initialState={{
+          columns: {
+            columnVisibilityModel: {
+              id: false,
+            },
+          },
+        }}
         hideFooterPagination
       />
     )

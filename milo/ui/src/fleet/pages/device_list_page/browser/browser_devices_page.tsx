@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Chip } from '@mui/material';
-import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -34,10 +33,6 @@ import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { CHROMIUM_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { getFeatureFlag } from '@/fleet/config/features';
-import {
-  BROWSER_SWARMING_SOURCE,
-  BROWSER_UFS_SOURCE,
-} from '@/fleet/constants/browser';
 import { BROWSER_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
@@ -52,7 +47,6 @@ import {
 } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
-  BrowserDevice,
   ListBrowserDevicesRequest,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -60,18 +54,13 @@ import {
 import { AutorepairJobsAlert } from '../common/autorepair_jobs_alert';
 import { filterOptionsPlaceholder } from '../common/helpers';
 
-import { getBrowserColumn } from './browser_columns';
+import { getBrowserColumn, getBrowserColumnIds } from './browser_columns';
 import { BrowserSummaryHeader } from './browser_summary_header';
 import { dimensionsToFilterOptions } from './dimensions_to_filter_options';
 import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
 
-export interface BrowserDeviceDimensionsProps {
-  device?: BrowserDevice;
-}
-
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
-const EXTRA_COLUMN_IDS = ['id'];
 
 export const BrowserDevicesPage = () => {
   const { trackEvent } = useGoogleAnalytics();
@@ -120,45 +109,11 @@ export const BrowserDevicesPage = () => {
     nextPageToken = '',
     totalSize = 0,
   } = devicesQuery.data || {};
-  const columnIds = useMemo(() => {
-    const ids: string[] = [];
-    if (dimensionsQuery.isSuccess) {
-      ids.push(
-        ...Object.keys(dimensionsQuery.data.baseDimensions)
-          .concat(
-            ...Object.keys(dimensionsQuery.data.swarmingLabels)
-              .filter((l) => !EXTRA_COLUMN_IDS.includes(l))
-              .map((l) => `${BROWSER_SWARMING_SOURCE}.${l}`),
-          )
-          .concat(
-            ...Object.keys(dimensionsQuery.data.ufsLabels)
-              .filter((l) => !EXTRA_COLUMN_IDS.includes(l))
-              .map((l) => `${BROWSER_UFS_SOURCE}.${l}`),
-          ),
-      );
-    }
 
-    if (devicesQuery.data) {
-      ids.push(
-        ...devicesQuery.data.devices.flatMap((d) => [
-          ...Object.keys(d.swarmingLabels ?? {}).map(
-            (l) => `${BROWSER_SWARMING_SOURCE}.${l}`,
-          ),
-          ...Object.keys(d.ufsLabels ?? {}).map(
-            (l) => `${BROWSER_UFS_SOURCE}.${l}`,
-          ),
-        ]),
-      );
-    }
-
-    return _.uniq([...ids, ...EXTRA_COLUMN_IDS]);
-  }, [
-    devicesQuery.data,
-    dimensionsQuery.data?.baseDimensions,
-    dimensionsQuery.data?.swarmingLabels,
-    dimensionsQuery.data?.ufsLabels,
-    dimensionsQuery.isSuccess,
-  ]);
+  const columnIds = useMemo(
+    () => getBrowserColumnIds(dimensionsQuery.data, devicesQuery.data?.devices),
+    [devicesQuery.data?.devices, dimensionsQuery.data],
+  );
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
