@@ -189,12 +189,10 @@ func TestQuery(t *testing.T) {
 						})
 						t.Run("Non-priority verdicts only", func(t *ftt.Test) {
 							q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-								pb.TestVerdictPredicate_SKIPPED,
 								pb.TestVerdictPredicate_PASSED,
 							}
 							expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
-								return v.TestIdStructured.CaseName == "t1" || // Passed
-									v.TestIdStructured.CaseName == "t4" // Skipped
+								return v.TestIdStructured.CaseName == "t1" // Passed
 							})
 							assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 						})

@@ -16,6 +16,7 @@ package testverdictsv2
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"go.chromium.org/luci/common/clock"
@@ -123,9 +124,10 @@ func (q *Query) Fetch(ctx context.Context, pageToken PageToken, opts FetchOption
 	//   filters can be very selective and the iterator query does not
 	//   perform well with selective queries that cannot be pushed down
 	//   to Spanner)
-	// - the query does not have a selective status filter.
+	// - the query does not have a selective status filter (if it allows
+	//   passed verdicts, we consider it to be not very selective).
 	if strings.TrimSpace(q.ContainsTestResultFilter) == "" &&
-		len(q.EffectiveStatusFilter) == 0 &&
+		matchesStatus(q.EffectiveStatusFilter, pb.TestVerdictPredicate_PASSED) &&
 		isOrderSuitableForIteratorQuery {
 		// Use the iterator query. It is fast and cheap.
 		logging.Debugf(ctx, "Using iterator query.")
@@ -155,7 +157,7 @@ func (q *Query) Fetch(ctx context.Context, pageToken PageToken, opts FetchOption
 		// Filter the current page to priority verdicts only.
 		// This does not affect the result order, but might shrink the page size as
 		// we are excluding passed and skipped verdicts.
-		summaryQuery.EffectiveStatusFilter = filterToPriorityStatuses(q.EffectiveStatusFilter)
+		summaryQuery.EffectiveStatusFilter = intersectStatuses(q.EffectiveStatusFilter, PriorityStatuses)
 	}
 
 	// As QuerySummaries only returns summaries, if the view is FULL,
@@ -198,18 +200,17 @@ func (q *Query) toSummaryQuery() *QuerySummaries {
 }
 
 func (q *Query) fetchUsingIteratorQuery(ctx context.Context, pageToken PageToken, opts FetchOptions) ([]*pb.TestVerdict, PageToken, error) {
-	var predicate func(*TestVerdict) bool
 	order := testresultsv2.OrderingByPrimaryKey
 	if q.Order.ByStructuredTestID {
 		order = testresultsv2.OrderingByTestID
 	}
+	statusFilter := q.EffectiveStatusFilter
 	if q.Order.ByUIPriority {
 		if pageToken.UIPriority != MaxUIPriority {
 			return nil, PageToken{}, errors.New("page token must be in the region of the response where only passing & skipped verdicts are being returned")
 		}
-		predicate = func(tv *TestVerdict) bool {
-			return tv.Status == pb.TestVerdict_PASSED || tv.Status == pb.TestVerdict_SKIPPED
-		}
+		// Filter to skipped and passed verdicts only.
+		statusFilter = intersectStatuses(statusFilter, NonPriorityStatuses)
 	}
 
 	// For each verdict summary, query the details.
@@ -223,7 +224,7 @@ func (q *Query) fetchUsingIteratorQuery(ctx context.Context, pageToken PageToken
 
 	fetchOpts := IteratorFetchOptions{
 		FetchOptions: opts,
-		Predicate:    predicate,
+		Predicate:    filterAsPredicate(statusFilter),
 	}
 
 	verdicts, nextPageToken, err := detailsQuery.Fetch(ctx, pageToken, fetchOpts)
@@ -360,28 +361,63 @@ func filterHasBothPriorityAndNonPriorityVerdicts(filter []pb.TestVerdictPredicat
 	return hasPriorityVerdicts && hasNonPriorityVerdicts
 }
 
-// filterToPriorityStatuses filters the given filter to only the priority verdict statuses.
-func filterToPriorityStatuses(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) []pb.TestVerdictPredicate_VerdictEffectiveStatus {
+// matchesStatus returns true if the given filter matches the given status.
+func matchesStatus(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus, status pb.TestVerdictPredicate_VerdictEffectiveStatus) bool {
 	if len(filter) == 0 {
-		// The empty filter matches all statuses. Return all priority verdict statuses.
-		return []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-			pb.TestVerdictPredicate_FAILED,
-			pb.TestVerdictPredicate_FLAKY,
-			pb.TestVerdictPredicate_EXECUTION_ERRORED,
-			pb.TestVerdictPredicate_PRECLUDED,
-			pb.TestVerdictPredicate_EXONERATED,
+		// The empty filter matches all statuses.
+		return true
+	}
+	for _, s := range filter {
+		if s == status {
+			return true
 		}
 	}
+	return false
+}
+
+// intersectStatuses returns the intersection of the given filter and the priority verdict statuses.
+func intersectStatuses(filter, statusList []pb.TestVerdictPredicate_VerdictEffectiveStatus) []pb.TestVerdictPredicate_VerdictEffectiveStatus {
+	if len(filter) == 0 {
+		// The empty filter matches all statuses. Return the RHS set.
+		return statusList
+	}
+	// Compute the intersection of the LHS and RHS sets.
 	var result []pb.TestVerdictPredicate_VerdictEffectiveStatus
 	for _, s := range filter {
-		switch s {
-		case pb.TestVerdictPredicate_FAILED,
-			pb.TestVerdictPredicate_FLAKY,
-			pb.TestVerdictPredicate_EXECUTION_ERRORED,
-			pb.TestVerdictPredicate_PRECLUDED,
-			pb.TestVerdictPredicate_EXONERATED:
-			result = append(result, s)
+		for _, status := range statusList {
+			if s == status {
+				result = append(result, s)
+				break
+			}
 		}
 	}
 	return result
+}
+
+// filterAsPredicate returns a predicate function that returns true if the given verdict matches the filter.
+func filterAsPredicate(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) func(*TestVerdict) bool {
+	return func(tv *TestVerdict) bool {
+		var effectiveStatus pb.TestVerdictPredicate_VerdictEffectiveStatus
+		if tv.StatusOverride == pb.TestVerdict_EXONERATED {
+			effectiveStatus = pb.TestVerdictPredicate_EXONERATED
+		} else {
+			switch tv.Status {
+			case pb.TestVerdict_FAILED:
+				effectiveStatus = pb.TestVerdictPredicate_FAILED
+			case pb.TestVerdict_FLAKY:
+				effectiveStatus = pb.TestVerdictPredicate_FLAKY
+			case pb.TestVerdict_EXECUTION_ERRORED:
+				effectiveStatus = pb.TestVerdictPredicate_EXECUTION_ERRORED
+			case pb.TestVerdict_PRECLUDED:
+				effectiveStatus = pb.TestVerdictPredicate_PRECLUDED
+			case pb.TestVerdict_SKIPPED:
+				effectiveStatus = pb.TestVerdictPredicate_SKIPPED
+			case pb.TestVerdict_PASSED:
+				effectiveStatus = pb.TestVerdictPredicate_PASSED
+			default:
+				panic(fmt.Errorf("unknown status %v", tv.Status))
+			}
+		}
+		return matchesStatus(filter, effectiveStatus)
+	}
 }

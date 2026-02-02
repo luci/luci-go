@@ -23,6 +23,21 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// PriorityStatuses are statuses that are given priority in UI priority order.
+var PriorityStatuses = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+	pb.TestVerdictPredicate_FAILED,
+	pb.TestVerdictPredicate_FLAKY,
+	pb.TestVerdictPredicate_EXECUTION_ERRORED,
+	pb.TestVerdictPredicate_PRECLUDED,
+	pb.TestVerdictPredicate_EXONERATED,
+}
+
+// NonPriorityStatuses are statuses that are not given priority in the UI priority order.
+var NonPriorityStatuses = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
+	pb.TestVerdictPredicate_PASSED,
+	pb.TestVerdictPredicate_SKIPPED,
+}
+
 // ValidateFilter validates a verdict effective status filter.
 func ValidateFilter(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) error {
 	seen := make(map[pb.TestVerdictPredicate_VerdictEffectiveStatus]bool)
