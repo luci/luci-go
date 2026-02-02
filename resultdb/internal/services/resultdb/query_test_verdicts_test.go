@@ -15,6 +15,7 @@
 package resultdb
 
 import (
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -30,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
+	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/testverdictsv2"
@@ -111,6 +113,12 @@ func TestQueryTestVerdicts(t *testing.T) {
 						_, err := srv.QueryTestVerdicts(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 						assert.Loosely(t, err, should.ErrLike("predicate: contains_test_result_filter: expected arg after ="))
+					})
+					t.Run(`Too long`, func(t *ftt.Test) {
+						req.Predicate.ContainsTestResultFilter = strings.Repeat("a", testresultsv2.MaxFilterLengthBytes+1)
+						_, err := srv.QueryTestVerdicts(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("predicate: contains_test_result_filter: filter is too long"))
 					})
 				})
 				t.Run(`Filter`, func(t *ftt.Test) {

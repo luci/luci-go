@@ -16,9 +16,15 @@ package testresultsv2
 
 import (
 	"go.chromium.org/luci/common/data/aip160"
+	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
+
+// MaxFilterLengthBytes is the maximum length, in bytes, of an AIP-160 filter on the test results.
+// This is intended to avoid timeouts related to overly complex filters and limit the size of
+// the generated SQL.
+const MaxFilterLengthBytes = 16 * 1024
 
 var statusEnumDef = aip160.NewEnumDefinition("pb.TestResult.Status", pb.TestResult_Status_value, int32(pb.TestResult_STATUS_UNSPECIFIED))
 var testIDColumnDefs = StructuredTestIDColumnNames{
@@ -69,6 +75,9 @@ var filterSchema = aip160.NewDatabaseTable().WithFields(
 
 // ValidateFilter validates an AIP-160 filter string.
 func ValidateFilter(filter string) error {
+	if len(filter) > MaxFilterLengthBytes {
+		return errors.Fmt("filter is too long (got %v bytes, want at most %v bytes)", len(filter), MaxFilterLengthBytes)
+	}
 	f, err := aip160.ParseFilter(filter)
 	if err != nil {
 		return err
