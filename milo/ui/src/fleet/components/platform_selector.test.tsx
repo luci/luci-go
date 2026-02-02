@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router';
+
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { PlatformSelector } from './platform_selector';
 import { ShortcutProvider } from './shortcut_provider';
@@ -21,39 +22,42 @@ import { ShortcutProvider } from './shortcut_provider';
 describe('PlatformSelector', () => {
   it('renders the platform selector button pages that support platforms', () => {
     render(
-      <ShortcutProvider>
-        <MemoryRouter initialEntries={['/repairs/android']}>
-          <Routes>
-            <Route path="/repairs/:platform" element={<PlatformSelector />} />
-          </Routes>
-        </MemoryRouter>
-      </ShortcutProvider>,
+      <FakeContextProvider
+        routerOptions={{ initialEntries: ['/repairs/android'] }}
+        mountedPath="/repairs/:platform"
+      >
+        <ShortcutProvider>
+          <PlatformSelector />
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('renders the platform selector button even with an invalid platform', () => {
     render(
-      <ShortcutProvider>
-        <MemoryRouter initialEntries={['/repairs/invalidplatform']}>
-          <Routes>
-            <Route path="/repairs/:platform" element={<PlatformSelector />} />
-          </Routes>
-        </MemoryRouter>
-      </ShortcutProvider>,
+      <FakeContextProvider
+        routerOptions={{ initialEntries: ['/repairs/invalidplatform'] }}
+        mountedPath="/repairs/:platform"
+      >
+        <ShortcutProvider>
+          <PlatformSelector />
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('does not render the platform selector button on other pages', () => {
     render(
-      <ShortcutProvider>
-        <MemoryRouter initialEntries={['/randompage']}>
-          <Routes>
-            <Route path="/test/:platform" element={<PlatformSelector />} />
-          </Routes>
-        </MemoryRouter>
-      </ShortcutProvider>,
+      <FakeContextProvider
+        routerOptions={{ initialEntries: ['/randompage'] }}
+        mountedPath="/test/:platform"
+      >
+        <ShortcutProvider>
+          <PlatformSelector />
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });

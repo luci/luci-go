@@ -22,11 +22,11 @@ import { ResourceRequestListPage } from './resource_request_insights_page';
 describe('<ResourceRequestListPage />', () => {
   it('renders loading by default', async () => {
     render(
-      <ShortcutProvider>
-        <FakeContextProvider>
+      <FakeContextProvider>
+        <ShortcutProvider>
           <ResourceRequestListPage />
-        </FakeContextProvider>
-      </ShortcutProvider>,
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
 
     expect(screen.getByTestId('loading-spinner')).toBeVisible();

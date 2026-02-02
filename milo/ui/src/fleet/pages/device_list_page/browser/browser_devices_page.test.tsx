@@ -22,16 +22,16 @@ import { BrowserDevicesPage } from './browser_devices_page';
 describe('<BrowserDevicesPage />', () => {
   it('should render', async () => {
     render(
-      <ShortcutProvider>
-        <FakeContextProvider
-          mountedPath="/p/:platform/devices"
-          routerOptions={{
-            initialEntries: ['/p/chromium/devices'],
-          }}
-        >
+      <FakeContextProvider
+        mountedPath="/p/:platform/devices"
+        routerOptions={{
+          initialEntries: ['/p/chromium/devices'],
+        }}
+      >
+        <ShortcutProvider>
           <BrowserDevicesPage />
-        </FakeContextProvider>
-      </ShortcutProvider>,
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
 
     expect(screen.getByText('Main metrics')).toBeVisible();

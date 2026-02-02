@@ -22,16 +22,16 @@ import { ChromeOSDevicesPage } from './chromeos_devices_page';
 describe('<ChromeOSDevicesPage />', () => {
   it('should render', async () => {
     render(
-      <ShortcutProvider>
-        <FakeContextProvider
-          mountedPath="/test/:platform"
-          routerOptions={{
-            initialEntries: ['/test/chromeos'],
-          }}
-        >
+      <FakeContextProvider
+        mountedPath="/test/:platform"
+        routerOptions={{
+          initialEntries: ['/test/chromeos'],
+        }}
+      >
+        <ShortcutProvider>
           <ChromeOSDevicesPage />
-        </FakeContextProvider>
-      </ShortcutProvider>,
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
 
     expect(screen.getByText('Main metrics')).toBeVisible();

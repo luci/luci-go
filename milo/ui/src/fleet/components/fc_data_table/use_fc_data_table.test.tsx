@@ -318,11 +318,11 @@ describe('<MaterialReactTable />', () => {
 
   it('should render all columns', async () => {
     render(
-      <ShortcutProvider>
-        <FakeContextProvider>
+      <FakeContextProvider>
+        <ShortcutProvider>
           <TestComponent />
-        </FakeContextProvider>
-      </ShortcutProvider>,
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());
@@ -333,11 +333,11 @@ describe('<MaterialReactTable />', () => {
 
   it('should reflect page size change properly', async () => {
     render(
-      <ShortcutProvider>
-        <FakeContextProvider>
+      <FakeContextProvider>
+        <ShortcutProvider>
           <TestComponent />
-        </FakeContextProvider>
-      </ShortcutProvider>,
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());
@@ -357,11 +357,11 @@ describe('<MaterialReactTable />', () => {
 
   it('should navigate between pages properly', async () => {
     render(
-      <ShortcutProvider>
-        <FakeContextProvider>
+      <FakeContextProvider>
+        <ShortcutProvider>
           <TestComponent />
-        </FakeContextProvider>
-      </ShortcutProvider>,
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
 
     await act(() => jest.runAllTimersAsync());

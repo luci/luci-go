@@ -14,6 +14,8 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+
 import { ShortcutContext, ShortcutDefinition } from './context';
 import { ShortcutModal } from './shortcut_modal';
 import { ShortcutsTip } from './shortcuts_tip';
@@ -90,6 +92,7 @@ export const ShortcutProvider = ({
 }) => {
   const [shortcuts, setShortcuts] = useState<ParsedShortcut[]>([]);
   const bufferRef = useRef<KeyChord[]>([]);
+  const { trackEvent } = useGoogleAnalytics();
 
   const register = useCallback((def: ShortcutDefinition) => {
     const keyList = Array.isArray(def.keys) ? def.keys : [def.keys];
@@ -132,6 +135,9 @@ export const ShortcutProvider = ({
       }
 
       const execute = (s: ParsedShortcut) => {
+        trackEvent('shortcut_triggered', {
+          componentName: s.description,
+        });
         s.handler(e);
         e.preventDefault();
         bufferRef.current = [];
@@ -188,7 +194,7 @@ export const ShortcutProvider = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcuts]);
+  }, [shortcuts, trackEvent]);
 
   const value = useMemo(
     () => ({

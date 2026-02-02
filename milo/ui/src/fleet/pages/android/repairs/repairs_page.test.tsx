@@ -36,11 +36,11 @@ describe('RepairListPage', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <ShortcutProvider>
-          <FakeContextProvider>
+        <FakeContextProvider>
+          <ShortcutProvider>
             <RepairListPage />
-          </FakeContextProvider>
-        </ShortcutProvider>
+          </ShortcutProvider>
+        </FakeContextProvider>
       </QueryClientProvider>,
     );
     act(() => {
