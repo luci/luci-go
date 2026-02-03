@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 import { Box } from '@mui/material';
 
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
@@ -21,23 +22,24 @@ interface TestHistorySegmentProps {
   segment: Segment;
   isStartSegment: boolean;
   isEndSegment: boolean;
+  setExpandedTestHistory: (expand: boolean) => void;
+  testHistoryHasExpandedSegment: boolean;
 }
 
 export function TestHistorySegment({
   segment,
   isStartSegment,
   isEndSegment,
+  setExpandedTestHistory,
+  testHistoryHasExpandedSegment,
 }: TestHistorySegmentProps) {
   return (
-    <Box
-      sx={{
-        display: 'inline-grid',
-        gridTemplateColumns: '1fr',
-        gap: 1,
-        ml: '2px',
-      }}
-    >
-      <TestHistorySourceVerdicts segment={segment}></TestHistorySourceVerdicts>
+    <Box>
+      <TestHistorySourceVerdicts
+        segment={segment}
+        setExpandedTestHistory={setExpandedTestHistory}
+        testHistoryHasExpandedSegment={testHistoryHasExpandedSegment}
+      ></TestHistorySourceVerdicts>{' '}
       <TestHistorySegmentSummary
         segment={segment}
         isStartSegment={isStartSegment}

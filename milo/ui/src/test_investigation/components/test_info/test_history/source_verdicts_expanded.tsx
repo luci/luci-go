@@ -202,7 +202,15 @@ export function SourceVerdictsExpanded({
   // Wait until all start and end verdicts have been fetched, otherwise the pass/fail will potentially be wrong.
   if (isLoadingEndVerdicts || isLoadingStartVerdicts) {
     return (
-      <Box sx={{ height: '72px' }}>
+      <Box
+        sx={{
+          height: '72px',
+          width: '206px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <CircularProgress></CircularProgress>
       </Box>
     );

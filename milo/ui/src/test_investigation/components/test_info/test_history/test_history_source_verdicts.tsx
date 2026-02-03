@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 
@@ -20,16 +20,28 @@ import { SourceVerdictsExpanded } from './source_verdicts_expanded';
 
 interface TestHistorySegmentProps {
   segment: Segment;
+  setExpandedTestHistory: (expand: boolean) => void;
+  testHistoryHasExpandedSegment: boolean;
 }
 
 export function TestHistorySourceVerdicts({
   segment,
+  setExpandedTestHistory,
+  testHistoryHasExpandedSegment,
 }: TestHistorySegmentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const expandSegment = () => {
     setIsExpanded(true);
+    setExpandedTestHistory(true);
   };
+
+  useEffect(() => {
+    // If no segments are expanded in parent container (ie. collapse all has been pressed), collapse this segment.
+    if (!testHistoryHasExpandedSegment) {
+      setIsExpanded(false);
+    }
+  }, [testHistoryHasExpandedSegment]);
 
   return (
     <>
