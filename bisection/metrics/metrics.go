@@ -93,6 +93,8 @@ var (
 		&types.MetricMetadata{Units: "seconds"},
 		// The LUCI Project.
 		field.String("project"),
+		// The message explaining the reason for the tree closure.
+		field.String("message"),
 	)
 
 	// Metric to track tree state explicitly
@@ -419,6 +421,7 @@ func rerunAgeInSeconds(c context.Context, rerun *model.SingleRerun) float64 {
 type treeStatus struct {
 	status    string
 	timestamp time.Time
+	message   string
 }
 
 func getTreeStatus(ctx context.Context, client tspb.TreeStatusClient, treeName string) (*treeStatus, error) {
@@ -436,9 +439,14 @@ func getTreeStatus(ctx context.Context, client tspb.TreeStatusClient, treeName s
 		status = "Closed"
 	}
 	t := response.CreateTime.AsTime()
+	message := response.Message
+	if message == "" {
+		message = "unknown"
+	}
 	return &treeStatus{
 		status:    status,
 		timestamp: t,
+		message:   message,
 	}, nil
 }
 
@@ -474,10 +482,10 @@ func updateTreeMetricsWithClient(c context.Context, client tspb.TreeStatusClient
 		treeIsOpen.Set(c, isOpen, project)
 
 		if isOpen {
-			treeClosedDuration.Set(c, 0, project)
+			treeClosedDuration.Set(c, 0, project, "unknown")
 		} else {
 			closedDuration := clock.Now(c).Sub(status.timestamp)
-			treeClosedDuration.Set(c, int64(closedDuration.Seconds()), project)
+			treeClosedDuration.Set(c, int64(closedDuration.Seconds()), project, status.message)
 		}
 	}
 	return nil

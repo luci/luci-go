@@ -246,7 +246,7 @@ func TestUpdateTreeMetrics(t *testing.T) {
 		err := updateTreeMetricsWithClient(c, client)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, treeIsOpen.Get(c, "chromium"), should.BeTrue)
-		assert.Loosely(t, treeClosedDuration.Get(c, "chromium"), should.Equal(int64(0)))
+		assert.Loosely(t, treeClosedDuration.Get(c, "chromium", "unknown"), should.Equal(int64(0)))
 	})
 
 	ftt.Run("Tree is closed", t, func(t *ftt.Test) {
@@ -264,7 +264,26 @@ func TestUpdateTreeMetrics(t *testing.T) {
 		err := updateTreeMetricsWithClient(ctx, client)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, treeIsOpen.Get(ctx, "chromium"), should.BeFalse)
-		assert.Loosely(t, treeClosedDuration.Get(ctx, "chromium"), should.Equal(int64(1000)))
+		assert.Loosely(t, treeClosedDuration.Get(ctx, "chromium", "unknown"), should.Equal(int64(1000)))
+	})
+
+	ftt.Run("Tree is closed with message", t, func(t *ftt.Test) {
+		ctx := c
+		cl := testclock.New(testclock.TestTimeUTC)
+		ctx = clock.Set(ctx, cl)
+		cl.Set(time.Unix(3000, 0))
+
+		client := &mockTreeStatusClient{
+			getStatusResponse: &tspb.Status{
+				GeneralState: tspb.GeneralState_CLOSED,
+				CreateTime:   timestamppb.New(time.Unix(1500, 0)),
+				Message:      "closed for testing",
+			},
+		}
+		err := updateTreeMetricsWithClient(ctx, client)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, treeIsOpen.Get(ctx, "chromium"), should.BeFalse)
+		assert.Loosely(t, treeClosedDuration.Get(ctx, "chromium", "closed for testing"), should.Equal(int64(1500)))
 	})
 
 	ftt.Run("For GenAI vindicated suspects", t, func(t *ftt.Test) {
