@@ -12,17 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Typography } from '@mui/material';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import { EChartsOption } from 'echarts';
+import ReactECharts from 'echarts-for-react';
+import { useMemo } from 'react';
 
 /**
  * When not using a responsive container, the line chart height will fall back
@@ -37,62 +29,34 @@ const DEFAULT_LINE_CHART_HEIGHT_PX = 400;
 const DEFAULT_LINE_CHART_WIDTH_PX = 600;
 
 /**
- * The line chart supports custom x-axis and y-axis data accessor keys. By
- * default, the line chart will use "time" as the x-axis data key and "value" as
- * the y-axis data key.
+ * Represents a single series to be plotted on the time series chart.
  */
-export interface TimeSeriesDefaultDataPoint {
+export interface TimeSeriesDataSet {
   /**
-   * Default x-axis data accessor key.
+   * The name of the series, used in the legend and tooltips.
    */
-  time: number;
-
+  name: string;
   /**
-   * Default y-axis data accessor key.
+   * The data points for this series, where each tuple is [time, value].
+   * 'time' should be a Unix timestamp (number).
+   * 'value' should be a number.
    */
-  value: number;
-}
-
-/**
- * Specify the y-axis data accessor key and stroke color for a line to be
- * rendered on the time series chart.
- */
-export interface TimeSeriesLine {
-  /**
-   * The y-axis data accessor key.
-   */
-  dataKey: string;
-
+  data: Array<[number, number]>;
   /**
    * CSS color for the line.
    */
   stroke: string;
-
-  /**
-   * Optional name for the line.
-   */
-  name?: string;
 }
 
 /**
  * Props for the TimeSeriesChart.
  */
-interface TimeSeriesChartProps<TDataPoint> {
+interface TimeSeriesChartProps {
   /**
-   * List of generic data points for the line data. By default,
-   * TimeSeriesDefaultDataPoint can be used as the generic interface.
+   * An array of datasets to render on the time series chart.
+   * Each element represents a distinct line.
    */
-  data: TDataPoint[];
-
-  /**
-   * List of lines to render on the time series chart.
-   */
-  lines: TimeSeriesLine[];
-
-  /**
-   * Data key for accessing x-axis data.
-   */
-  xAxisDataKey: string;
+  series: TimeSeriesDataSet[];
 
   /**
    * Optional label string for the y-axis.
@@ -108,21 +72,10 @@ interface TimeSeriesChartProps<TDataPoint> {
    * Optional flag for using a ResponsiveContainer, defaults to true.
    */
   useResponsiveContainer?: boolean;
-
-  /**
-   * Optional width for the y-axis to accommodate large numbers.
-   * Adjust this value as needed.
-   */
-  yAxisWidth?: number;
-
-  /**
-   * Optional margin for the left side of the chart.
-   */
-  marginLeft?: number;
 }
 
 /**
- * Format large numbers for display on the Y-axis.
+ * Format large numbers for display on the Y-axis and tooltips.
  * @param num - any number value to be formatted.
  * @returns a formatted number display string.
  */
@@ -139,83 +92,131 @@ function formatLargeNumber(num: number): string {
 }
 
 /**
- * Uses recharts to render a time series chart.
+ * Formats a number for the X-axis time display.
  */
-export function TimeSeriesChart<TDataPoint>({
-  data,
-  lines,
-  xAxisDataKey,
+function xAxisFormatter(val: number) {
+  const date = new Date(val);
+  return `${date.toLocaleDateString()}\n${date.toLocaleTimeString(
+    /* locales= */ undefined,
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+    },
+  )}`;
+}
+
+const BASE_OPTION: Partial<EChartsOption> = {
+  title: {
+    left: 'left',
+    top: 0,
+    textStyle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+  },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'cross',
+    },
+  },
+  legend: {
+    bottom: 0,
+    type: 'scroll',
+  },
+  grid: {
+    top: 40,
+    left: 20,
+    right: 60,
+    bottom: 80,
+    containLabel: true,
+  },
+  toolbox: {
+    right: 20,
+    top: 0,
+    feature: {
+      restore: {},
+      saveAsImage: {},
+    },
+  },
+  dataZoom: [
+    {
+      type: 'slider',
+      xAxisIndex: 0,
+      filterMode: 'none',
+      bottom: 30,
+      height: 20,
+    },
+    {
+      type: 'inside',
+      xAxisIndex: 0,
+      filterMode: 'none',
+      zoomOnMouseWheel: true,
+      moveOnMouseMove: true,
+    },
+  ],
+  xAxis: {
+    type: 'time',
+    splitLine: { show: true, lineStyle: { type: 'dashed' } },
+    axisLabel: {
+      formatter: xAxisFormatter,
+    },
+  },
+  yAxis: {
+    type: 'value',
+    nameLocation: 'middle',
+    nameGap: 30,
+    axisLabel: { formatter: formatLargeNumber },
+    splitLine: { show: true, lineStyle: { type: 'dashed' } },
+  },
+};
+
+/**
+ * Uses echarts to render a time series chart.
+ */
+export function TimeSeriesChart({
+  series,
   yAxisLabel,
   chartTitle,
   useResponsiveContainer = true,
-  yAxisWidth = 80,
-  marginLeft = 30,
-}: TimeSeriesChartProps<TDataPoint>) {
-  let timeSeriesChart = (
-    <LineChart
-      data={data}
-      // Default for height and width is undefined, and only need to be
-      // specified when not using a responsive container.
-      height={useResponsiveContainer ? undefined : DEFAULT_LINE_CHART_HEIGHT_PX}
-      width={useResponsiveContainer ? undefined : DEFAULT_LINE_CHART_WIDTH_PX}
-      margin={{
-        top: 5,
-        right: 30,
-        left: marginLeft,
-        bottom: 5,
-      }}
-    >
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis
-        dataKey={xAxisDataKey}
-        type="number"
-        domain={['dataMin', 'dataMax']}
-        tickFormatter={(unixTime) => new Date(unixTime).toLocaleDateString()}
-        name="Time"
-      />
-      <YAxis
-        label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }}
-        width={yAxisWidth}
-        tickFormatter={formatLargeNumber}
-      />
-      <Tooltip
-        labelFormatter={(unixTime) => new Date(unixTime).toLocaleString()}
-        formatter={(value) =>
-          typeof value === 'number' ? value.toLocaleString() : value
-        }
-      />
-      <Legend />
-      {lines.map((line) => (
-        <Line
-          key={line.dataKey}
-          type="monotone"
-          dataKey={line.dataKey}
-          stroke={line.stroke}
-          name={line.name || line.dataKey}
-          dot={false}
-        />
-      ))}
-    </LineChart>
+}: TimeSeriesChartProps) {
+  const option: EChartsOption = useMemo(() => {
+    return {
+      ...BASE_OPTION,
+      title: {
+        ...BASE_OPTION.title,
+        text: chartTitle,
+      },
+      yAxis: {
+        ...BASE_OPTION.yAxis,
+        name: yAxisLabel,
+      },
+      series: series.map((s) => ({
+        name: s.name,
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        data: s.data,
+        itemStyle: { color: s.stroke },
+        valueFormatter: (val: number | string) => {
+          if (typeof val === 'number') {
+            return val.toLocaleString();
+          }
+          return val;
+        },
+      })),
+    };
+  }, [series, chartTitle, yAxisLabel]);
+
+  const style = useMemo(
+    () => ({
+      height: `${DEFAULT_LINE_CHART_HEIGHT_PX}px`,
+      width: useResponsiveContainer
+        ? '100%'
+        : `${DEFAULT_LINE_CHART_WIDTH_PX}px`,
+    }),
+    [useResponsiveContainer],
   );
 
-  // By default, wrap the chart in a ResponsiveContainer that adjusts width to
-  // 100%.
-  if (useResponsiveContainer) {
-    timeSeriesChart = (
-      <ResponsiveContainer width="100%" height={400}>
-        {timeSeriesChart}
-      </ResponsiveContainer>
-    );
-  }
-
-  return (
-    <>
-      {chartTitle && (
-        <Typography variant="h6" component="h2" align="center" gutterBottom>
-          {chartTitle}
-        </Typography>
-      )}
-      {timeSeriesChart}
-    </>
-  );
+  return <ReactECharts option={option} style={style} />;
 }

@@ -16,12 +16,12 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import {
   SearchMeasurementsForm,
   TimeSeriesChart,
-  TimeSeriesLine,
+  TimeSeriesDataSet,
 } from '@/crystal_ball/components';
 import {
   useSearchMeasurements,
@@ -33,13 +33,7 @@ import {
 } from '@/crystal_ball/types';
 import { validateSearchRequest } from '@/crystal_ball/utils';
 
-/**
- * Represents a single build create time to various metric key value mappings.
- */
-interface Measurement {
-  time: number;
-  [valueKey: string]: number | undefined;
-}
+const GOLDEN_RATIO_CONJUGATE = 0.618033988749895;
 
 /**
  * On a per timestamp and metric key basis, total values based on build ids.
@@ -54,12 +48,12 @@ interface AggregationData {
  * aggregating by mean across buildId.
  * @param rows - from the API response.
  * @param metricKeys - from the SearchMeasurementsRequest.
- * @returns a list of measurements to be used by the Time Series chart.
+ * @returns a list of time series datasets.
  */
 const transformDataForChart = (
   rows: MeasurementRow[],
   metricKeys: string[],
-): Measurement[] => {
+): TimeSeriesDataSet[] => {
   const dataMap: {
     [time: number]: { [metricKey: string]: AggregationData };
   } = {};
@@ -93,29 +87,27 @@ const transformDataForChart = (
     dataMap[time][row.metricKey].count += 1;
   });
 
-  const chartData: Measurement[] = Object.keys(dataMap)
+  const sortedTimes = Object.keys(dataMap)
     .map(Number)
-    .sort((a, b) => a - b)
-    .map((time) => {
-      const measurement: Measurement = { time };
+    .sort((a, b) => a - b);
 
-      // Initialize all requested metric keys to undefined for this time slot
-      metricKeys.forEach((key) => {
-        measurement[key] = undefined;
-      });
-
-      // Calculate the mean for each metricKey at this time
-      metricKeys.forEach((key) => {
-        if (dataMap[time][key]) {
-          const agg = dataMap[time][key];
-          measurement[key] = agg.sum / agg.count;
-        }
-      });
-
-      return measurement;
+  return metricKeys.map((key, index) => {
+    const data: [number, number][] = [];
+    sortedTimes.forEach((time) => {
+      // Calculate the mean for the metricKey at this time
+      const agg = dataMap[time][key];
+      if (agg) {
+        data.push([time, agg.sum / agg.count]);
+      }
     });
 
-  return chartData;
+    return {
+      name: key,
+      data,
+      // Use golden ratio to generate distinct colors
+      stroke: `hsl(${((index * GOLDEN_RATIO_CONJUGATE) % 1) * 360}, 70%, 50%)`,
+    };
+  });
 };
 
 /**
@@ -164,20 +156,12 @@ export function LandingPage() {
     [updateSearchQuery],
   );
 
-  const requestedMetricKeys = searchRequest?.metricKeys || [];
-
-  const chartData = searchResponse?.rows
-    ? transformDataForChart(searchResponse.rows, requestedMetricKeys)
-    : [];
-
-  const chartLines: TimeSeriesLine[] = requestedMetricKeys.map(
-    (key, index) => ({
-      dataKey: key,
-      // Cycle through some colors
-      stroke: ['#1976d2', '#d21976', '#76d219', '#d27619'][index % 4],
-      name: key,
-    }),
-  );
+  const chartSeries = useMemo(() => {
+    const requestedMetricKeys = searchRequest?.metricKeys || [];
+    return searchResponse?.rows
+      ? transformDataForChart(searchResponse.rows, requestedMetricKeys)
+      : [];
+  }, [searchResponse, searchRequest]);
 
   return (
     <Box sx={{ padding: 2 }}>
@@ -203,12 +187,10 @@ export function LandingPage() {
         </Alert>
       )}
 
-      {searchResponse && chartData.length > 0 && (
+      {searchResponse && chartSeries.length > 0 && (
         <TimeSeriesChart
-          data={chartData}
-          lines={chartLines}
+          series={chartSeries}
           chartTitle="Performance Metrics"
-          xAxisDataKey="time"
           yAxisLabel="Value"
         />
       )}
@@ -222,7 +204,7 @@ export function LandingPage() {
       {searchRequest &&
         !isSearchLoading &&
         !isSearchError &&
-        chartData.length === 0 && (
+        chartSeries.length === 0 && (
           <Typography variant="body1" sx={{ mt: 2 }}>
             No data found for the given parameters.
           </Typography>
