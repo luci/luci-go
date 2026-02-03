@@ -18,8 +18,11 @@ import (
 	"context"
 	"strings"
 
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
 	milopb "go.chromium.org/luci/milo/proto/v1"
@@ -28,7 +31,7 @@ import (
 // ProxyGitilesLog implements milopb.MiloInternal service
 func (s *MiloInternalService) ProxyGitilesLog(ctx context.Context, req *milopb.ProxyGitilesLogRequest) (_ *gitiles.LogResponse, err error) {
 	if err := validateProxyGitilesLogRequest(req); err != nil {
-		return nil, err
+		return nil, appstatus.BadRequest(err)
 	}
 
 	// The ACL check, request validation happens on the gitiles server.
@@ -36,22 +39,28 @@ func (s *MiloInternalService) ProxyGitilesLog(ctx context.Context, req *milopb.P
 	if err != nil {
 		return nil, err
 	}
-	return gitilesClient.Log(ctx, req.Request)
+	rsp, err := gitilesClient.Log(ctx, req.Request)
+	if err != nil {
+		// Pass through the returned gRPC status code as the status code of this RPC, by
+		// turning it into an appstatus error.
+		return nil, appstatus.Error(status.Code(err), err.Error())
+	}
+	return rsp, nil
 }
 
 func validateProxyGitilesLogRequest(req *milopb.ProxyGitilesLogRequest) error {
 	if req.GetHost() == "" {
-		return errors.New("host is required")
+		return errors.New("host: required")
 	}
 	if !strings.HasSuffix(req.Host, ".googlesource.com") {
-		return errors.New("host must be a subdomain of .googlesource.com")
+		return errors.New("host: must be a subdomain of .googlesource.com")
 	}
 
 	// We only validate that the request is defined.
 	//
 	// Field validation is delegated to the actual gitiles service implementation.
 	if req.Request == nil {
-		return errors.New("request is required")
+		return errors.New("request: required")
 	}
 
 	return nil

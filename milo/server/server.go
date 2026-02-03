@@ -20,13 +20,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/protobuf/proto"
-
 	bbgrpcbb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/api/gitiles"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server"
@@ -114,12 +111,7 @@ func RegisterPRPCHandlers(srv *server.Server, service *rpc.MiloInternalService) 
 	srv.ConfigurePRPC(func(s *prpc.Server) {
 		s.AccessControl = prpc.AllowOriginAll
 	})
-	milopb.RegisterMiloInternalServer(srv, &milopb.DecoratedMiloInternal{
-		Service: service,
-		Postlude: func(ctx context.Context, methodName string, rsp proto.Message, err error) error {
-			return appstatus.GRPCifyAndLog(ctx, err)
-		},
-	})
+	milopb.RegisterMiloInternalServer(srv, rpc.WithStatusDecorator(service))
 }
 
 func RegisterCrons(srv *server.Server, service *rpc.MiloInternalService) {

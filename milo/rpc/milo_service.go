@@ -17,11 +17,15 @@ package rpc
 import (
 	"context"
 
+	"github.com/golang/protobuf/proto"
+
 	bbgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 
 	configpb "go.chromium.org/luci/milo/proto/config"
+	milopb "go.chromium.org/luci/milo/proto/v1"
 )
 
 // MiloInternalService implements milopb.MiloInternal
@@ -35,4 +39,15 @@ type MiloInternalService struct {
 	// GetBuildersClient returns a buildbucket builders service for the given
 	// context.
 	GetBuildersClient func(c context.Context, host string, as auth.RPCAuthorityKind) (bbgrpcpb.BuildersClient, error)
+}
+
+// WithStatusDecorator returns a MiloInternal service wrapped with a postlude needed to
+// return correct gRPC status codes.
+func WithStatusDecorator(service *MiloInternalService) *milopb.DecoratedMiloInternal {
+	return &milopb.DecoratedMiloInternal{
+		Service: service,
+		Postlude: func(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+			return appstatus.GRPCifyAndLog(ctx, err)
+		},
+	}
 }
