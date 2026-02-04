@@ -2133,9 +2133,10 @@ type TestVariantBranchesClient interface {
 	GetRaw(ctx context.Context, in *GetRawTestVariantBranchRequest, opts ...grpc.CallOption) (*TestVariantBranchRaw, error)
 	// Retrieves the current state of segments of test variant branch analysis in batches.
 	BatchGet(ctx context.Context, in *BatchGetTestVariantBranchRequest, opts ...grpc.CallOption) (*BatchGetTestVariantBranchResponse, error)
-	// Query queries test variant branches for a given test id and ref.
+	// Query queries test variant branches for a given bare test id and source ref.
 	Query(ctx context.Context, in *QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*QueryTestVariantBranchResponse, error)
-	// Lists source verdicts for a test variant branch.
+	// Lists source verdicts for a given test and source ref. Deprecated,
+	// replaced by TestHistory.QuerySourceVerdictsV2.
 	QuerySourceVerdicts(ctx context.Context, in *QuerySourceVerdictsRequest, opts ...grpc.CallOption) (*QuerySourceVerdictsResponse, error)
 	// Query for AI analysis of the possible culprits of a test changepoint.
 	// Note: to use this RPC, you must be a member of the group `googlers`.
@@ -2258,9 +2259,10 @@ type TestVariantBranchesServer interface {
 	GetRaw(context.Context, *GetRawTestVariantBranchRequest) (*TestVariantBranchRaw, error)
 	// Retrieves the current state of segments of test variant branch analysis in batches.
 	BatchGet(context.Context, *BatchGetTestVariantBranchRequest) (*BatchGetTestVariantBranchResponse, error)
-	// Query queries test variant branches for a given test id and ref.
+	// Query queries test variant branches for a given bare test id and source ref.
 	Query(context.Context, *QueryTestVariantBranchRequest) (*QueryTestVariantBranchResponse, error)
-	// Lists source verdicts for a test variant branch.
+	// Lists source verdicts for a given test and source ref. Deprecated,
+	// replaced by TestHistory.QuerySourceVerdictsV2.
 	QuerySourceVerdicts(context.Context, *QuerySourceVerdictsRequest) (*QuerySourceVerdictsResponse, error)
 	// Query for AI analysis of the possible culprits of a test changepoint.
 	// Note: to use this RPC, you must be a member of the group `googlers`.

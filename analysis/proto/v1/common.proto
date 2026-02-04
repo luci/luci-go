@@ -54,6 +54,100 @@ message Variant {
   map<string, string> def = 1;
 }
 
+// TestIdentifier represents the identity of a test in structured form.
+// It includes information about the configuration the test was run in (e.g.
+// build configuration, CPU architecture, OS).
+//
+// This proto is a copy of luci.resultdb.v1.TestIdentifier, to avoid requiring
+// users of LUCI Analysis to import all ResultDB protos.
+//
+// Refer to that proto for detailed documentation.
+message TestIdentifier {
+  // The name of the module being tested. A module is a set of tests which run
+  // with the same test harness, and typically corresponds with a unit of
+  // build, such as a bazel test target.
+  //
+  // See luci.resultdb.v1.TestIdentifier.module_name for more details.
+  string module_name = 1;
+
+  // The scheme of the module, for example, "junit" or "gtest".
+  //
+  // Must match one of the schemes in the ResultDB service configuration (see
+  // go/resultdb-schemes). Additional values can be configured as needed.
+  //
+  // See luci.resultdb.v1.TestIdentifier.module_scheme for more details.
+  string module_scheme = 2;
+
+  // Description of one specific way of running the tests in a module,
+  // e.g. specific ABI (x64/x86/...), build flags and/or operating system.
+  //
+  // Variants identify the unique ways the module was run compared to every other way
+  // the module is run by the LUCI project. As such, some variant key-value pairs
+  // may be repeated for all modules in an invocation.
+  //
+  // See luci.resultdb.v1.TestIdentifier.module_variant for more details.
+  Variant module_variant = 3;
+
+  // Hash of the module variant.
+  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in module_variant.items()))))[:8].
+  //
+  // In the context of ResultDB Query RPCs accepting this type as a request filter,
+  // this field may be specified as an alternative to module_variant.
+  //
+  // See luci.resultdb.v1.TestIdentifier.module_variant_hash for more details.
+  string module_variant_hash = 4;
+
+  // Intermediate hierarchy - coarse name.
+  //
+  // For example "com.android.os.ext".
+  //
+  // A scheme dependent value used to organise the test into a coarse group of related tests,
+  // such as a package or directory.
+  // If the scheme does not define a coarse grouping, this must be blank.
+  // If only one intermediate hierarchy level is used for a scheme, it is always the
+  // fine hierarchy level.
+  //
+  // See luci.resultdb.v1.TestIdentifier.coarse_name for more details.
+  string coarse_name = 5;
+
+  // Interemdiate hierarchy - fine name.
+  //
+  // For example "SdkExtensionsTest" or "WebDialogBrowserTest".
+  //
+  // A finer grouping within the above coarse grouping (if any), e.g. class or file.
+  // If the scheme does not define a fine grouping, this must be blank.
+  //
+  // See luci.resultdb.v1.TestIdentifier.fine_name for more details.
+  string fine_name = 6;
+
+  // The identifier of test case within the above fine grouping.
+  //
+  // For example "testBadArgument" or "topLevelTest:with_context:does_something".
+  //
+  // This is the finest granularity component of the test identifier, and typically
+  // refers to sub-file granularity unless no such granularity exists.
+  //
+  // See luci.resultdb.v1.TestIdentifier.case_name for more details.
+  string case_name = 7;
+}
+
+// FlatTestIdentifier is a flattened form of TestIdentifier.
+//
+// See luci.resultdb.v1.FlatTestIdentifier for more details.
+message FlatTestIdentifier {
+  // The unique identifier of the test in a LUCI project. See the comment on
+  // luci.resultdb.v1.TestResult.test_id for full documentation.
+  string test_id = 1;
+
+  // Reserved for variant in future.
+  reserved 2;
+  reserved "variant";
+
+  // Hash of the variant. See the comment on
+  // luci.resultdb.v1.TestResult.variant_hash for full documentation.
+  string variant_hash = 3;
+}
+
 message StringPair {
   // Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
   // Max length: 64.

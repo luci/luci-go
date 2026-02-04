@@ -494,3 +494,8 @@ func validateQueryRecentPassesRequest(req *pb.QueryRecentPassesRequest) error {
 
 	return nil
 }
+
+// QuerySourceVerdicts queries source verdicts for a given test and source ref.
+func (s *testHistoryServer) QuerySourceVerdicts(ctx context.Context, req *pb.QuerySourceVerdictsV2Request) (*pb.QuerySourceVerdictsV2Response, error) {
+	return nil, appstatus.Error(codes.Unimplemented, "not implemented")
+}

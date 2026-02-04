@@ -107,3 +107,20 @@ func (s *DecoratedTestHistory) QueryRecentPasses(ctx context.Context, req *Query
 	}
 	return
 }
+
+func (s *DecoratedTestHistory) QuerySourceVerdicts(ctx context.Context, req *QuerySourceVerdictsV2Request) (rsp *QuerySourceVerdictsV2Response, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "QuerySourceVerdicts", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.QuerySourceVerdicts(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "QuerySourceVerdicts", rsp, err)
+	}
+	return
+}

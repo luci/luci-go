@@ -61,7 +61,11 @@ service TestHistory {
   // ResultDB to perform log comparison.
   rpc QueryRecentPasses(QueryRecentPassesRequest)
       returns (QueryRecentPassesResponse) {};
+
+  // Queries source verdicts for a given test and source ref.
+  rpc QuerySourceVerdicts(QuerySourceVerdictsV2Request) returns (QuerySourceVerdictsV2Response) {};
 }
+
 // A request message for `TestHistory.Query` RPC.
 message QueryTestHistoryRequest {
   // Required. The LUCI Project of the test results.
@@ -338,6 +342,7 @@ message QueryTestsResponse {
   // request.
   string next_page_token = 2;
 }
+
 // A request message for the `QueryRecentPasses` RPC.
 message QueryRecentPassesRequest {
   // Required. The LUCI Project of the failing test result.
@@ -373,4 +378,125 @@ message QueryRecentPassesResponse {
   // May be empty if no recent passing results could be found, e.g. if the test
   // has been failing for more than 14 days, or has never passed.
   repeated PassingResult passing_results = 1;
+}
+
+// Queries source verdicts from the history of a specific (test, ref), for culprit finding.
+// Source verdicts aggregate all test results at a source position (e.g. git commit).
+//
+// Only the last ~90 days worth of data can be queried.
+message QuerySourceVerdictsV2Request {
+  // The LUCI Project.
+  string project = 1;
+
+  // The test identifier.
+  oneof test {
+    // The test identifier, in structured form.
+    TestIdentifier test_id_structured = 2;
+
+    // The test identifier, in flat form.
+    FlatTestIdentifier test_id_flat = 3;
+  }
+
+  // The source ref (e.g. git branch).
+  SourceRef source_ref = 4;
+
+  // An AIP-160 filter clause on the returned source verdicts.
+  // Currently, the only field supported field is `position`.
+  string filter = 5;
+
+  // An AIP-132 order by clause controlling the sort order of the returned
+  // source verdicts.
+  // Currently, the only field supported field is `position`.
+  //
+  // See https://google.aip.dev/132#ordering
+  string order_by = 6;
+
+  // The maximum number of source verdicts to return per page. The server may
+  // return fewer than this number. If unspecified, the server will decide a
+  // reasonable default. The maximum value is 1,000.
+  int32 page_size = 7;
+
+  // A page token, received from a previous QuerySourceVerdictsV2 call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 8;
+}
+
+// QuerySourceVerdictsV2Response contains the source verdicts for a specific (test, branch).
+message QuerySourceVerdictsV2Response {
+  // Source verdicts in descending source position order. Only source verdicts
+  // with test results are returned.
+  repeated SourceVerdict source_verdicts = 1;
+
+  // A token to retrieve the next page of results. If this is empty, there are
+  // no more pages to retrieve.
+  string next_page_token = 2;
+}
+
+// Source verdict summarises all results of a single test at a single source position
+// (e.g. git commit).
+message SourceVerdict {
+  // The source position.
+  // If source_ref was a GitilesRef, this is the git commit number assigned by goto.google.com/git-numberer.
+  // If source_ref was an AndroidBuildBranch, this is the submitted Android build number.
+  int64 position = 1;
+
+  // The overall status of the test at this position.
+  //
+  // This field represents a 'clean' signal of the state of the test
+  // and excludes results from presubmit (sources.changelists set) or derived sources
+  // (sources.is_dirty set).
+  //
+  // If this field is set to UNSPECIFIED, it means there is no clean postsubmit result
+  // at this position.
+  TestVerdict.Status status = 2;
+
+  // The approximate status of the test at this position, using results from presubmit runs
+  // as well as postsubmit.
+  //
+  // By using data from presubmit runs (which test CLs patched on top of this position),
+  // we obtain additional signal about the likely health of the test at the position but
+  // at the cost of some additional noise (because the patched CL could break or fix the
+  // test). In practice, we observe the realised noise to be low and the value of the
+  // signal obtained to be high so use this status on LUCI UI.
+  //
+  // In future, we could try to reduce this noise by filtering out unsuccessful presubmit
+  // runs, which are the most common source of presubmit noise.
+  //
+  // Like `status`, other types of derived sources (sources.is_dirty) are filtered out.
+  TestVerdict.Status approximate_status = 3;
+
+  // InvocationTestVerdict represents an invocation test verdict that contributed to the
+  // source verdict.
+  // An invocation test verdict summarises results of a single test in a single root
+  // invocation.
+  //
+  // As multiple invocations can run the same test on the same base sources, there may be
+  // many test verdicts at one source position.
+  message InvocationTestVerdict {
+    // The identity of the root invocation this test verdict belongs to.
+    // Format: rootInvocations/{root_invocation_id}
+    //
+    // Alternatively, if the test verdict belongs to a legacy invocation, this field
+    // will be empty and `invocation` below will be set instead.
+    string root_invocation = 1;
+    // The identity of the invocation this test verdict belongs to.
+    // Format: invocations/{invocation_id}
+    string invocation = 2;
+    // The partition time of the test verdict.
+    google.protobuf.Timestamp partition_time = 3;
+    // The status of the test verdict.
+    TestVerdict.Status status = 4;
+    // The changelist(s) that were tested, if any. If there are more 10, only
+    // the first 10 are listed here.
+    repeated Changelist changelists = 5;
+  }
+
+  // The invocation test verdicts at the source position. Note some of these
+  // test verdicts may be for presubmit runs (i.e. for CLs that have not been
+  // submitted).
+  //
+  // Test verdicts will be ordered by ascending partition time, i.e. earliest test
+  // verdict first.
+  // Limited to at most 20 test verdicts.
+  repeated InvocationTestVerdict invocation_verdicts = 4;
 }

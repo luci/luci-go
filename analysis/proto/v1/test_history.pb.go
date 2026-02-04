@@ -839,6 +839,316 @@ func (x *QueryRecentPassesResponse) GetPassingResults() []*QueryRecentPassesResp
 	return nil
 }
 
+// Queries source verdicts from the history of a specific (test, ref), for culprit finding.
+// Source verdicts aggregate all test results at a source position (e.g. git commit).
+//
+// Only the last ~90 days worth of data can be queried.
+type QuerySourceVerdictsV2Request struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The LUCI Project.
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// The test identifier.
+	//
+	// Types that are valid to be assigned to Test:
+	//
+	//	*QuerySourceVerdictsV2Request_TestIdStructured
+	//	*QuerySourceVerdictsV2Request_TestIdFlat
+	Test isQuerySourceVerdictsV2Request_Test `protobuf_oneof:"test"`
+	// The source ref (e.g. git branch).
+	SourceRef *SourceRef `protobuf:"bytes,4,opt,name=source_ref,json=sourceRef,proto3" json:"source_ref,omitempty"`
+	// An AIP-160 filter clause on the returned source verdicts.
+	// Currently, the only field supported field is `position`.
+	Filter string `protobuf:"bytes,5,opt,name=filter,proto3" json:"filter,omitempty"`
+	// An AIP-132 order by clause controlling the sort order of the returned
+	// source verdicts.
+	// Currently, the only field supported field is `position`.
+	//
+	// See https://google.aip.dev/132#ordering
+	OrderBy string `protobuf:"bytes,6,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
+	// The maximum number of source verdicts to return per page. The server may
+	// return fewer than this number. If unspecified, the server will decide a
+	// reasonable default. The maximum value is 1,000.
+	PageSize int32 `protobuf:"varint,7,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// A page token, received from a previous QuerySourceVerdictsV2 call.
+	// Provide this to retrieve the subsequent page.
+	PageToken     string `protobuf:"bytes,8,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuerySourceVerdictsV2Request) Reset() {
+	*x = QuerySourceVerdictsV2Request{}
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuerySourceVerdictsV2Request) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuerySourceVerdictsV2Request) ProtoMessage() {}
+
+func (x *QuerySourceVerdictsV2Request) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuerySourceVerdictsV2Request.ProtoReflect.Descriptor instead.
+func (*QuerySourceVerdictsV2Request) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *QuerySourceVerdictsV2Request) GetProject() string {
+	if x != nil {
+		return x.Project
+	}
+	return ""
+}
+
+func (x *QuerySourceVerdictsV2Request) GetTest() isQuerySourceVerdictsV2Request_Test {
+	if x != nil {
+		return x.Test
+	}
+	return nil
+}
+
+func (x *QuerySourceVerdictsV2Request) GetTestIdStructured() *TestIdentifier {
+	if x != nil {
+		if x, ok := x.Test.(*QuerySourceVerdictsV2Request_TestIdStructured); ok {
+			return x.TestIdStructured
+		}
+	}
+	return nil
+}
+
+func (x *QuerySourceVerdictsV2Request) GetTestIdFlat() *FlatTestIdentifier {
+	if x != nil {
+		if x, ok := x.Test.(*QuerySourceVerdictsV2Request_TestIdFlat); ok {
+			return x.TestIdFlat
+		}
+	}
+	return nil
+}
+
+func (x *QuerySourceVerdictsV2Request) GetSourceRef() *SourceRef {
+	if x != nil {
+		return x.SourceRef
+	}
+	return nil
+}
+
+func (x *QuerySourceVerdictsV2Request) GetFilter() string {
+	if x != nil {
+		return x.Filter
+	}
+	return ""
+}
+
+func (x *QuerySourceVerdictsV2Request) GetOrderBy() string {
+	if x != nil {
+		return x.OrderBy
+	}
+	return ""
+}
+
+func (x *QuerySourceVerdictsV2Request) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *QuerySourceVerdictsV2Request) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type isQuerySourceVerdictsV2Request_Test interface {
+	isQuerySourceVerdictsV2Request_Test()
+}
+
+type QuerySourceVerdictsV2Request_TestIdStructured struct {
+	// The test identifier, in structured form.
+	TestIdStructured *TestIdentifier `protobuf:"bytes,2,opt,name=test_id_structured,json=testIdStructured,proto3,oneof"`
+}
+
+type QuerySourceVerdictsV2Request_TestIdFlat struct {
+	// The test identifier, in flat form.
+	TestIdFlat *FlatTestIdentifier `protobuf:"bytes,3,opt,name=test_id_flat,json=testIdFlat,proto3,oneof"`
+}
+
+func (*QuerySourceVerdictsV2Request_TestIdStructured) isQuerySourceVerdictsV2Request_Test() {}
+
+func (*QuerySourceVerdictsV2Request_TestIdFlat) isQuerySourceVerdictsV2Request_Test() {}
+
+// QuerySourceVerdictsV2Response contains the source verdicts for a specific (test, branch).
+type QuerySourceVerdictsV2Response struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Source verdicts in descending source position order. Only source verdicts
+	// with test results are returned.
+	SourceVerdicts []*SourceVerdict `protobuf:"bytes,1,rep,name=source_verdicts,json=sourceVerdicts,proto3" json:"source_verdicts,omitempty"`
+	// A token to retrieve the next page of results. If this is empty, there are
+	// no more pages to retrieve.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuerySourceVerdictsV2Response) Reset() {
+	*x = QuerySourceVerdictsV2Response{}
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuerySourceVerdictsV2Response) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuerySourceVerdictsV2Response) ProtoMessage() {}
+
+func (x *QuerySourceVerdictsV2Response) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuerySourceVerdictsV2Response.ProtoReflect.Descriptor instead.
+func (*QuerySourceVerdictsV2Response) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *QuerySourceVerdictsV2Response) GetSourceVerdicts() []*SourceVerdict {
+	if x != nil {
+		return x.SourceVerdicts
+	}
+	return nil
+}
+
+func (x *QuerySourceVerdictsV2Response) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// Source verdict summarises all results of a single test at a single source position
+// (e.g. git commit).
+type SourceVerdict struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The source position.
+	// If source_ref was a GitilesRef, this is the git commit number assigned by goto.google.com/git-numberer.
+	// If source_ref was an AndroidBuildBranch, this is the submitted Android build number.
+	Position int64 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
+	// The overall status of the test at this position.
+	//
+	// This field represents a 'clean' signal of the state of the test
+	// and excludes results from presubmit (sources.changelists set) or derived sources
+	// (sources.is_dirty set).
+	//
+	// If this field is set to UNSPECIFIED, it means there is no clean postsubmit result
+	// at this position.
+	Status TestVerdict_Status `protobuf:"varint,2,opt,name=status,proto3,enum=luci.analysis.v1.TestVerdict_Status" json:"status,omitempty"`
+	// The approximate status of the test at this position, using results from presubmit runs
+	// as well as postsubmit.
+	//
+	// By using data from presubmit runs (which test CLs patched on top of this position),
+	// we obtain additional signal about the likely health of the test at the position but
+	// at the cost of some additional noise (because the patched CL could break or fix the
+	// test). In practice, we observe the realised noise to be low and the value of the
+	// signal obtained to be high so use this status on LUCI UI.
+	//
+	// In future, we could try to reduce this noise by filtering out unsuccessful presubmit
+	// runs, which are the most common source of presubmit noise.
+	//
+	// Like `status`, other types of derived sources (sources.is_dirty) are filtered out.
+	ApproximateStatus TestVerdict_Status `protobuf:"varint,3,opt,name=approximate_status,json=approximateStatus,proto3,enum=luci.analysis.v1.TestVerdict_Status" json:"approximate_status,omitempty"`
+	// The invocation test verdicts at the source position. Note some of these
+	// test verdicts may be for presubmit runs (i.e. for CLs that have not been
+	// submitted).
+	//
+	// Test verdicts will be ordered by ascending partition time, i.e. earliest test
+	// verdict first.
+	// Limited to at most 20 test verdicts.
+	InvocationVerdicts []*SourceVerdict_InvocationTestVerdict `protobuf:"bytes,4,rep,name=invocation_verdicts,json=invocationVerdicts,proto3" json:"invocation_verdicts,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *SourceVerdict) Reset() {
+	*x = SourceVerdict{}
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SourceVerdict) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SourceVerdict) ProtoMessage() {}
+
+func (x *SourceVerdict) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SourceVerdict.ProtoReflect.Descriptor instead.
+func (*SourceVerdict) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SourceVerdict) GetPosition() int64 {
+	if x != nil {
+		return x.Position
+	}
+	return 0
+}
+
+func (x *SourceVerdict) GetStatus() TestVerdict_Status {
+	if x != nil {
+		return x.Status
+	}
+	return TestVerdict_STATUS_UNSPECIFIED
+}
+
+func (x *SourceVerdict) GetApproximateStatus() TestVerdict_Status {
+	if x != nil {
+		return x.ApproximateStatus
+	}
+	return TestVerdict_STATUS_UNSPECIFIED
+}
+
+func (x *SourceVerdict) GetInvocationVerdicts() []*SourceVerdict_InvocationTestVerdict {
+	if x != nil {
+		return x.InvocationVerdicts
+	}
+	return nil
+}
+
 type QueryTestHistoryStatsResponse_Group struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The start time of this group.
@@ -878,7 +1188,7 @@ type QueryTestHistoryStatsResponse_Group struct {
 
 func (x *QueryTestHistoryStatsResponse_Group) Reset() {
 	*x = QueryTestHistoryStatsResponse_Group{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[10]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -890,7 +1200,7 @@ func (x *QueryTestHistoryStatsResponse_Group) String() string {
 func (*QueryTestHistoryStatsResponse_Group) ProtoMessage() {}
 
 func (x *QueryTestHistoryStatsResponse_Group) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[10]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1004,7 +1314,7 @@ type QueryTestHistoryStatsResponse_Group_VerdictCounts struct {
 
 func (x *QueryTestHistoryStatsResponse_Group_VerdictCounts) Reset() {
 	*x = QueryTestHistoryStatsResponse_Group_VerdictCounts{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[11]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1016,7 +1326,7 @@ func (x *QueryTestHistoryStatsResponse_Group_VerdictCounts) String() string {
 func (*QueryTestHistoryStatsResponse_Group_VerdictCounts) ProtoMessage() {}
 
 func (x *QueryTestHistoryStatsResponse_Group_VerdictCounts) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[11]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1108,7 +1418,7 @@ type QueryVariantsResponse_VariantInfo struct {
 
 func (x *QueryVariantsResponse_VariantInfo) Reset() {
 	*x = QueryVariantsResponse_VariantInfo{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[12]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1120,7 +1430,7 @@ func (x *QueryVariantsResponse_VariantInfo) String() string {
 func (*QueryVariantsResponse_VariantInfo) ProtoMessage() {}
 
 func (x *QueryVariantsResponse_VariantInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[12]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1162,7 +1472,7 @@ type QueryRecentPassesResponse_PassingResult struct {
 
 func (x *QueryRecentPassesResponse_PassingResult) Reset() {
 	*x = QueryRecentPassesResponse_PassingResult{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[13]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1174,7 +1484,7 @@ func (x *QueryRecentPassesResponse_PassingResult) String() string {
 func (*QueryRecentPassesResponse_PassingResult) ProtoMessage() {}
 
 func (x *QueryRecentPassesResponse_PassingResult) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[13]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1195,6 +1505,100 @@ func (x *QueryRecentPassesResponse_PassingResult) GetName() string {
 		return x.Name
 	}
 	return ""
+}
+
+// InvocationTestVerdict represents an invocation test verdict that contributed to the
+// source verdict.
+// An invocation test verdict summarises results of a single test in a single root
+// invocation.
+//
+// As multiple invocations can run the same test on the same base sources, there may be
+// many test verdicts at one source position.
+type SourceVerdict_InvocationTestVerdict struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The identity of the root invocation this test verdict belongs to.
+	// Format: rootInvocations/{root_invocation_id}
+	//
+	// Alternatively, if the test verdict belongs to a legacy invocation, this field
+	// will be empty and `invocation` below will be set instead.
+	RootInvocation string `protobuf:"bytes,1,opt,name=root_invocation,json=rootInvocation,proto3" json:"root_invocation,omitempty"`
+	// The identity of the invocation this test verdict belongs to.
+	// Format: invocations/{invocation_id}
+	Invocation string `protobuf:"bytes,2,opt,name=invocation,proto3" json:"invocation,omitempty"`
+	// The partition time of the test verdict.
+	PartitionTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=partition_time,json=partitionTime,proto3" json:"partition_time,omitempty"`
+	// The status of the test verdict.
+	Status TestVerdict_Status `protobuf:"varint,4,opt,name=status,proto3,enum=luci.analysis.v1.TestVerdict_Status" json:"status,omitempty"`
+	// The changelist(s) that were tested, if any. If there are more 10, only
+	// the first 10 are listed here.
+	Changelists   []*Changelist `protobuf:"bytes,5,rep,name=changelists,proto3" json:"changelists,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SourceVerdict_InvocationTestVerdict) Reset() {
+	*x = SourceVerdict_InvocationTestVerdict{}
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SourceVerdict_InvocationTestVerdict) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SourceVerdict_InvocationTestVerdict) ProtoMessage() {}
+
+func (x *SourceVerdict_InvocationTestVerdict) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SourceVerdict_InvocationTestVerdict.ProtoReflect.Descriptor instead.
+func (*SourceVerdict_InvocationTestVerdict) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDescGZIP(), []int{12, 0}
+}
+
+func (x *SourceVerdict_InvocationTestVerdict) GetRootInvocation() string {
+	if x != nil {
+		return x.RootInvocation
+	}
+	return ""
+}
+
+func (x *SourceVerdict_InvocationTestVerdict) GetInvocation() string {
+	if x != nil {
+		return x.Invocation
+	}
+	return ""
+}
+
+func (x *SourceVerdict_InvocationTestVerdict) GetPartitionTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PartitionTime
+	}
+	return nil
+}
+
+func (x *SourceVerdict_InvocationTestVerdict) GetStatus() TestVerdict_Status {
+	if x != nil {
+		return x.Status
+	}
+	return TestVerdict_STATUS_UNSPECIFIED
+}
+
+func (x *SourceVerdict_InvocationTestVerdict) GetChangelists() []*Changelist {
+	if x != nil {
+		return x.Changelists
+	}
+	return nil
 }
 
 var File_go_chromium_org_luci_analysis_proto_v1_test_history_proto protoreflect.FileDescriptor
@@ -1280,7 +1684,36 @@ const file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDesc = "
 	"\x19QueryRecentPassesResponse\x12b\n" +
 	"\x0fpassing_results\x18\x01 \x03(\v29.luci.analysis.v1.QueryRecentPassesResponse.PassingResultR\x0epassingResults\x1a#\n" +
 	"\rPassingResult\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name2\x8f\x04\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\x87\x03\n" +
+	"\x1cQuerySourceVerdictsV2Request\x12\x18\n" +
+	"\aproject\x18\x01 \x01(\tR\aproject\x12P\n" +
+	"\x12test_id_structured\x18\x02 \x01(\v2 .luci.analysis.v1.TestIdentifierH\x00R\x10testIdStructured\x12H\n" +
+	"\ftest_id_flat\x18\x03 \x01(\v2$.luci.analysis.v1.FlatTestIdentifierH\x00R\n" +
+	"testIdFlat\x12:\n" +
+	"\n" +
+	"source_ref\x18\x04 \x01(\v2\x1b.luci.analysis.v1.SourceRefR\tsourceRef\x12\x16\n" +
+	"\x06filter\x18\x05 \x01(\tR\x06filter\x12\x19\n" +
+	"\border_by\x18\x06 \x01(\tR\aorderBy\x12\x1b\n" +
+	"\tpage_size\x18\a \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\b \x01(\tR\tpageTokenB\x06\n" +
+	"\x04test\"\x91\x01\n" +
+	"\x1dQuerySourceVerdictsV2Response\x12H\n" +
+	"\x0fsource_verdicts\x18\x01 \x03(\v2\x1f.luci.analysis.v1.SourceVerdictR\x0esourceVerdicts\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xca\x04\n" +
+	"\rSourceVerdict\x12\x1a\n" +
+	"\bposition\x18\x01 \x01(\x03R\bposition\x12<\n" +
+	"\x06status\x18\x02 \x01(\x0e2$.luci.analysis.v1.TestVerdict.StatusR\x06status\x12S\n" +
+	"\x12approximate_status\x18\x03 \x01(\x0e2$.luci.analysis.v1.TestVerdict.StatusR\x11approximateStatus\x12f\n" +
+	"\x13invocation_verdicts\x18\x04 \x03(\v25.luci.analysis.v1.SourceVerdict.InvocationTestVerdictR\x12invocationVerdicts\x1a\xa1\x02\n" +
+	"\x15InvocationTestVerdict\x12'\n" +
+	"\x0froot_invocation\x18\x01 \x01(\tR\x0erootInvocation\x12\x1e\n" +
+	"\n" +
+	"invocation\x18\x02 \x01(\tR\n" +
+	"invocation\x12A\n" +
+	"\x0epartition_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\rpartitionTime\x12<\n" +
+	"\x06status\x18\x04 \x01(\x0e2$.luci.analysis.v1.TestVerdict.StatusR\x06status\x12>\n" +
+	"\vchangelists\x18\x05 \x03(\v2\x1c.luci.analysis.v1.ChangelistR\vchangelists2\x89\x05\n" +
 	"\vTestHistory\x12`\n" +
 	"\x05Query\x12).luci.analysis.v1.QueryTestHistoryRequest\x1a*.luci.analysis.v1.QueryTestHistoryResponse\"\x00\x12o\n" +
 	"\n" +
@@ -1288,7 +1721,8 @@ const file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDesc = "
 	"\rQueryVariants\x12&.luci.analysis.v1.QueryVariantsRequest\x1a'.luci.analysis.v1.QueryVariantsResponse\"\x00\x12Y\n" +
 	"\n" +
 	"QueryTests\x12#.luci.analysis.v1.QueryTestsRequest\x1a$.luci.analysis.v1.QueryTestsResponse\"\x00\x12n\n" +
-	"\x11QueryRecentPasses\x12*.luci.analysis.v1.QueryRecentPassesRequest\x1a+.luci.analysis.v1.QueryRecentPassesResponse\"\x00B3Z1go.chromium.org/luci/analysis/proto/v1;analysispbb\x06proto3"
+	"\x11QueryRecentPasses\x12*.luci.analysis.v1.QueryRecentPassesRequest\x1a+.luci.analysis.v1.QueryRecentPassesResponse\"\x00\x12x\n" +
+	"\x13QuerySourceVerdicts\x12..luci.analysis.v1.QuerySourceVerdictsV2Request\x1a/.luci.analysis.v1.QuerySourceVerdictsV2Response\"\x00B3Z1go.chromium.org/luci/analysis/proto/v1;analysispbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDescOnce sync.Once
@@ -1302,7 +1736,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDescGZIP(
 	return file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_goTypes = []any{
 	(*QueryTestHistoryRequest)(nil),                           // 0: luci.analysis.v1.QueryTestHistoryRequest
 	(*QueryTestHistoryResponse)(nil),                          // 1: luci.analysis.v1.QueryTestHistoryResponse
@@ -1314,46 +1748,67 @@ var file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_goTypes = []a
 	(*QueryTestsResponse)(nil),                                // 7: luci.analysis.v1.QueryTestsResponse
 	(*QueryRecentPassesRequest)(nil),                          // 8: luci.analysis.v1.QueryRecentPassesRequest
 	(*QueryRecentPassesResponse)(nil),                         // 9: luci.analysis.v1.QueryRecentPassesResponse
-	(*QueryTestHistoryStatsResponse_Group)(nil),               // 10: luci.analysis.v1.QueryTestHistoryStatsResponse.Group
-	(*QueryTestHistoryStatsResponse_Group_VerdictCounts)(nil), // 11: luci.analysis.v1.QueryTestHistoryStatsResponse.Group.VerdictCounts
-	(*QueryVariantsResponse_VariantInfo)(nil),                 // 12: luci.analysis.v1.QueryVariantsResponse.VariantInfo
-	(*QueryRecentPassesResponse_PassingResult)(nil),           // 13: luci.analysis.v1.QueryRecentPassesResponse.PassingResult
-	(*TestVerdictPredicate)(nil),                              // 14: luci.analysis.v1.TestVerdictPredicate
-	(*TestVerdict)(nil),                                       // 15: luci.analysis.v1.TestVerdict
-	(*VariantPredicate)(nil),                                  // 16: luci.analysis.v1.VariantPredicate
-	(*Sources)(nil),                                           // 17: luci.analysis.v1.Sources
-	(*timestamppb.Timestamp)(nil),                             // 18: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),                               // 19: google.protobuf.Duration
-	(*Variant)(nil),                                           // 20: luci.analysis.v1.Variant
+	(*QuerySourceVerdictsV2Request)(nil),                      // 10: luci.analysis.v1.QuerySourceVerdictsV2Request
+	(*QuerySourceVerdictsV2Response)(nil),                     // 11: luci.analysis.v1.QuerySourceVerdictsV2Response
+	(*SourceVerdict)(nil),                                     // 12: luci.analysis.v1.SourceVerdict
+	(*QueryTestHistoryStatsResponse_Group)(nil),               // 13: luci.analysis.v1.QueryTestHistoryStatsResponse.Group
+	(*QueryTestHistoryStatsResponse_Group_VerdictCounts)(nil), // 14: luci.analysis.v1.QueryTestHistoryStatsResponse.Group.VerdictCounts
+	(*QueryVariantsResponse_VariantInfo)(nil),                 // 15: luci.analysis.v1.QueryVariantsResponse.VariantInfo
+	(*QueryRecentPassesResponse_PassingResult)(nil),           // 16: luci.analysis.v1.QueryRecentPassesResponse.PassingResult
+	(*SourceVerdict_InvocationTestVerdict)(nil),               // 17: luci.analysis.v1.SourceVerdict.InvocationTestVerdict
+	(*TestVerdictPredicate)(nil),                              // 18: luci.analysis.v1.TestVerdictPredicate
+	(*TestVerdict)(nil),                                       // 19: luci.analysis.v1.TestVerdict
+	(*VariantPredicate)(nil),                                  // 20: luci.analysis.v1.VariantPredicate
+	(*Sources)(nil),                                           // 21: luci.analysis.v1.Sources
+	(*TestIdentifier)(nil),                                    // 22: luci.analysis.v1.TestIdentifier
+	(*FlatTestIdentifier)(nil),                                // 23: luci.analysis.v1.FlatTestIdentifier
+	(*SourceRef)(nil),                                         // 24: luci.analysis.v1.SourceRef
+	(TestVerdict_Status)(0),                                   // 25: luci.analysis.v1.TestVerdict.Status
+	(*timestamppb.Timestamp)(nil),                             // 26: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),                               // 27: google.protobuf.Duration
+	(*Variant)(nil),                                           // 28: luci.analysis.v1.Variant
+	(*Changelist)(nil),                                        // 29: luci.analysis.v1.Changelist
 }
 var file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_depIdxs = []int32{
-	14, // 0: luci.analysis.v1.QueryTestHistoryRequest.predicate:type_name -> luci.analysis.v1.TestVerdictPredicate
-	15, // 1: luci.analysis.v1.QueryTestHistoryResponse.verdicts:type_name -> luci.analysis.v1.TestVerdict
-	14, // 2: luci.analysis.v1.QueryTestHistoryStatsRequest.predicate:type_name -> luci.analysis.v1.TestVerdictPredicate
-	10, // 3: luci.analysis.v1.QueryTestHistoryStatsResponse.groups:type_name -> luci.analysis.v1.QueryTestHistoryStatsResponse.Group
-	16, // 4: luci.analysis.v1.QueryVariantsRequest.variant_predicate:type_name -> luci.analysis.v1.VariantPredicate
-	12, // 5: luci.analysis.v1.QueryVariantsResponse.variants:type_name -> luci.analysis.v1.QueryVariantsResponse.VariantInfo
-	17, // 6: luci.analysis.v1.QueryRecentPassesRequest.sources:type_name -> luci.analysis.v1.Sources
-	13, // 7: luci.analysis.v1.QueryRecentPassesResponse.passing_results:type_name -> luci.analysis.v1.QueryRecentPassesResponse.PassingResult
-	18, // 8: luci.analysis.v1.QueryTestHistoryStatsResponse.Group.partition_time:type_name -> google.protobuf.Timestamp
-	11, // 9: luci.analysis.v1.QueryTestHistoryStatsResponse.Group.verdict_counts:type_name -> luci.analysis.v1.QueryTestHistoryStatsResponse.Group.VerdictCounts
-	19, // 10: luci.analysis.v1.QueryTestHistoryStatsResponse.Group.passed_avg_duration:type_name -> google.protobuf.Duration
-	20, // 11: luci.analysis.v1.QueryVariantsResponse.VariantInfo.variant:type_name -> luci.analysis.v1.Variant
-	0,  // 12: luci.analysis.v1.TestHistory.Query:input_type -> luci.analysis.v1.QueryTestHistoryRequest
-	2,  // 13: luci.analysis.v1.TestHistory.QueryStats:input_type -> luci.analysis.v1.QueryTestHistoryStatsRequest
-	4,  // 14: luci.analysis.v1.TestHistory.QueryVariants:input_type -> luci.analysis.v1.QueryVariantsRequest
-	6,  // 15: luci.analysis.v1.TestHistory.QueryTests:input_type -> luci.analysis.v1.QueryTestsRequest
-	8,  // 16: luci.analysis.v1.TestHistory.QueryRecentPasses:input_type -> luci.analysis.v1.QueryRecentPassesRequest
-	1,  // 17: luci.analysis.v1.TestHistory.Query:output_type -> luci.analysis.v1.QueryTestHistoryResponse
-	3,  // 18: luci.analysis.v1.TestHistory.QueryStats:output_type -> luci.analysis.v1.QueryTestHistoryStatsResponse
-	5,  // 19: luci.analysis.v1.TestHistory.QueryVariants:output_type -> luci.analysis.v1.QueryVariantsResponse
-	7,  // 20: luci.analysis.v1.TestHistory.QueryTests:output_type -> luci.analysis.v1.QueryTestsResponse
-	9,  // 21: luci.analysis.v1.TestHistory.QueryRecentPasses:output_type -> luci.analysis.v1.QueryRecentPassesResponse
-	17, // [17:22] is the sub-list for method output_type
-	12, // [12:17] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	18, // 0: luci.analysis.v1.QueryTestHistoryRequest.predicate:type_name -> luci.analysis.v1.TestVerdictPredicate
+	19, // 1: luci.analysis.v1.QueryTestHistoryResponse.verdicts:type_name -> luci.analysis.v1.TestVerdict
+	18, // 2: luci.analysis.v1.QueryTestHistoryStatsRequest.predicate:type_name -> luci.analysis.v1.TestVerdictPredicate
+	13, // 3: luci.analysis.v1.QueryTestHistoryStatsResponse.groups:type_name -> luci.analysis.v1.QueryTestHistoryStatsResponse.Group
+	20, // 4: luci.analysis.v1.QueryVariantsRequest.variant_predicate:type_name -> luci.analysis.v1.VariantPredicate
+	15, // 5: luci.analysis.v1.QueryVariantsResponse.variants:type_name -> luci.analysis.v1.QueryVariantsResponse.VariantInfo
+	21, // 6: luci.analysis.v1.QueryRecentPassesRequest.sources:type_name -> luci.analysis.v1.Sources
+	16, // 7: luci.analysis.v1.QueryRecentPassesResponse.passing_results:type_name -> luci.analysis.v1.QueryRecentPassesResponse.PassingResult
+	22, // 8: luci.analysis.v1.QuerySourceVerdictsV2Request.test_id_structured:type_name -> luci.analysis.v1.TestIdentifier
+	23, // 9: luci.analysis.v1.QuerySourceVerdictsV2Request.test_id_flat:type_name -> luci.analysis.v1.FlatTestIdentifier
+	24, // 10: luci.analysis.v1.QuerySourceVerdictsV2Request.source_ref:type_name -> luci.analysis.v1.SourceRef
+	12, // 11: luci.analysis.v1.QuerySourceVerdictsV2Response.source_verdicts:type_name -> luci.analysis.v1.SourceVerdict
+	25, // 12: luci.analysis.v1.SourceVerdict.status:type_name -> luci.analysis.v1.TestVerdict.Status
+	25, // 13: luci.analysis.v1.SourceVerdict.approximate_status:type_name -> luci.analysis.v1.TestVerdict.Status
+	17, // 14: luci.analysis.v1.SourceVerdict.invocation_verdicts:type_name -> luci.analysis.v1.SourceVerdict.InvocationTestVerdict
+	26, // 15: luci.analysis.v1.QueryTestHistoryStatsResponse.Group.partition_time:type_name -> google.protobuf.Timestamp
+	14, // 16: luci.analysis.v1.QueryTestHistoryStatsResponse.Group.verdict_counts:type_name -> luci.analysis.v1.QueryTestHistoryStatsResponse.Group.VerdictCounts
+	27, // 17: luci.analysis.v1.QueryTestHistoryStatsResponse.Group.passed_avg_duration:type_name -> google.protobuf.Duration
+	28, // 18: luci.analysis.v1.QueryVariantsResponse.VariantInfo.variant:type_name -> luci.analysis.v1.Variant
+	26, // 19: luci.analysis.v1.SourceVerdict.InvocationTestVerdict.partition_time:type_name -> google.protobuf.Timestamp
+	25, // 20: luci.analysis.v1.SourceVerdict.InvocationTestVerdict.status:type_name -> luci.analysis.v1.TestVerdict.Status
+	29, // 21: luci.analysis.v1.SourceVerdict.InvocationTestVerdict.changelists:type_name -> luci.analysis.v1.Changelist
+	0,  // 22: luci.analysis.v1.TestHistory.Query:input_type -> luci.analysis.v1.QueryTestHistoryRequest
+	2,  // 23: luci.analysis.v1.TestHistory.QueryStats:input_type -> luci.analysis.v1.QueryTestHistoryStatsRequest
+	4,  // 24: luci.analysis.v1.TestHistory.QueryVariants:input_type -> luci.analysis.v1.QueryVariantsRequest
+	6,  // 25: luci.analysis.v1.TestHistory.QueryTests:input_type -> luci.analysis.v1.QueryTestsRequest
+	8,  // 26: luci.analysis.v1.TestHistory.QueryRecentPasses:input_type -> luci.analysis.v1.QueryRecentPassesRequest
+	10, // 27: luci.analysis.v1.TestHistory.QuerySourceVerdicts:input_type -> luci.analysis.v1.QuerySourceVerdictsV2Request
+	1,  // 28: luci.analysis.v1.TestHistory.Query:output_type -> luci.analysis.v1.QueryTestHistoryResponse
+	3,  // 29: luci.analysis.v1.TestHistory.QueryStats:output_type -> luci.analysis.v1.QueryTestHistoryStatsResponse
+	5,  // 30: luci.analysis.v1.TestHistory.QueryVariants:output_type -> luci.analysis.v1.QueryVariantsResponse
+	7,  // 31: luci.analysis.v1.TestHistory.QueryTests:output_type -> luci.analysis.v1.QueryTestsResponse
+	9,  // 32: luci.analysis.v1.TestHistory.QueryRecentPasses:output_type -> luci.analysis.v1.QueryRecentPassesResponse
+	11, // 33: luci.analysis.v1.TestHistory.QuerySourceVerdicts:output_type -> luci.analysis.v1.QuerySourceVerdictsV2Response
+	28, // [28:34] is the sub-list for method output_type
+	22, // [22:28] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_init() }
@@ -1365,13 +1820,17 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_init() {
 	file_go_chromium_org_luci_analysis_proto_v1_predicate_proto_init()
 	file_go_chromium_org_luci_analysis_proto_v1_sources_proto_init()
 	file_go_chromium_org_luci_analysis_proto_v1_test_verdict_proto_init()
+	file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_msgTypes[10].OneofWrappers = []any{
+		(*QuerySourceVerdictsV2Request_TestIdStructured)(nil),
+		(*QuerySourceVerdictsV2Request_TestIdFlat)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1419,6 +1878,8 @@ type TestHistoryClient interface {
 	// The response contains root invocation IDs that are typically passed to
 	// ResultDB to perform log comparison.
 	QueryRecentPasses(ctx context.Context, in *QueryRecentPassesRequest, opts ...grpc.CallOption) (*QueryRecentPassesResponse, error)
+	// Queries source verdicts for a given test and source ref.
+	QuerySourceVerdicts(ctx context.Context, in *QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*QuerySourceVerdictsV2Response, error)
 }
 type testHistoryPRPCClient struct {
 	client *prpc.Client
@@ -1467,6 +1928,15 @@ func (c *testHistoryPRPCClient) QueryTests(ctx context.Context, in *QueryTestsRe
 func (c *testHistoryPRPCClient) QueryRecentPasses(ctx context.Context, in *QueryRecentPassesRequest, opts ...grpc.CallOption) (*QueryRecentPassesResponse, error) {
 	out := new(QueryRecentPassesResponse)
 	err := c.client.Call(ctx, "luci.analysis.v1.TestHistory", "QueryRecentPasses", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *testHistoryPRPCClient) QuerySourceVerdicts(ctx context.Context, in *QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*QuerySourceVerdictsV2Response, error) {
+	out := new(QuerySourceVerdictsV2Response)
+	err := c.client.Call(ctx, "luci.analysis.v1.TestHistory", "QuerySourceVerdicts", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1526,6 +1996,15 @@ func (c *testHistoryClient) QueryRecentPasses(ctx context.Context, in *QueryRece
 	return out, nil
 }
 
+func (c *testHistoryClient) QuerySourceVerdicts(ctx context.Context, in *QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*QuerySourceVerdictsV2Response, error) {
+	out := new(QuerySourceVerdictsV2Response)
+	err := c.cc.Invoke(ctx, "/luci.analysis.v1.TestHistory/QuerySourceVerdicts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TestHistoryServer is the server API for TestHistory service.
 type TestHistoryServer interface {
 	// Retrieves test verdicts for a given test ID in a given project and in a
@@ -1551,6 +2030,8 @@ type TestHistoryServer interface {
 	// The response contains root invocation IDs that are typically passed to
 	// ResultDB to perform log comparison.
 	QueryRecentPasses(context.Context, *QueryRecentPassesRequest) (*QueryRecentPassesResponse, error)
+	// Queries source verdicts for a given test and source ref.
+	QuerySourceVerdicts(context.Context, *QuerySourceVerdictsV2Request) (*QuerySourceVerdictsV2Response, error)
 }
 
 // UnimplementedTestHistoryServer can be embedded to have forward compatible implementations.
@@ -1571,6 +2052,9 @@ func (*UnimplementedTestHistoryServer) QueryTests(context.Context, *QueryTestsRe
 }
 func (*UnimplementedTestHistoryServer) QueryRecentPasses(context.Context, *QueryRecentPassesRequest) (*QueryRecentPassesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryRecentPasses not implemented")
+}
+func (*UnimplementedTestHistoryServer) QuerySourceVerdicts(context.Context, *QuerySourceVerdictsV2Request) (*QuerySourceVerdictsV2Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QuerySourceVerdicts not implemented")
 }
 
 func RegisterTestHistoryServer(s prpc.Registrar, srv TestHistoryServer) {
@@ -1667,6 +2151,24 @@ func _TestHistory_QueryRecentPasses_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TestHistory_QuerySourceVerdicts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySourceVerdictsV2Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestHistoryServer).QuerySourceVerdicts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.analysis.v1.TestHistory/QuerySourceVerdicts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestHistoryServer).QuerySourceVerdicts(ctx, req.(*QuerySourceVerdictsV2Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _TestHistory_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "luci.analysis.v1.TestHistory",
 	HandlerType: (*TestHistoryServer)(nil),
@@ -1690,6 +2192,10 @@ var _TestHistory_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryRecentPasses",
 			Handler:    _TestHistory_QueryRecentPasses_Handler,
+		},
+		{
+			MethodName: "QuerySourceVerdicts",
+			Handler:    _TestHistory_QuerySourceVerdicts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

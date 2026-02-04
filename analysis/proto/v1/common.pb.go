@@ -483,7 +483,7 @@ func (x TestResult_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TestResult_Status.Descriptor instead.
 func (TestResult_Status) EnumDescriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{9, 0}
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{11, 0}
 }
 
 // A range of timestamps.
@@ -651,6 +651,218 @@ func (x *Variant) GetDef() map[string]string {
 	return nil
 }
 
+// TestIdentifier represents the identity of a test in structured form.
+// It includes information about the configuration the test was run in (e.g.
+// build configuration, CPU architecture, OS).
+//
+// This proto is a copy of luci.resultdb.v1.TestIdentifier, to avoid requiring
+// users of LUCI Analysis to import all ResultDB protos.
+//
+// Refer to that proto for detailed documentation.
+type TestIdentifier struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The name of the module being tested. A module is a set of tests which run
+	// with the same test harness, and typically corresponds with a unit of
+	// build, such as a bazel test target.
+	//
+	// See luci.resultdb.v1.TestIdentifier.module_name for more details.
+	ModuleName string `protobuf:"bytes,1,opt,name=module_name,json=moduleName,proto3" json:"module_name,omitempty"`
+	// The scheme of the module, for example, "junit" or "gtest".
+	//
+	// Must match one of the schemes in the ResultDB service configuration (see
+	// go/resultdb-schemes). Additional values can be configured as needed.
+	//
+	// See luci.resultdb.v1.TestIdentifier.module_scheme for more details.
+	ModuleScheme string `protobuf:"bytes,2,opt,name=module_scheme,json=moduleScheme,proto3" json:"module_scheme,omitempty"`
+	// Description of one specific way of running the tests in a module,
+	// e.g. specific ABI (x64/x86/...), build flags and/or operating system.
+	//
+	// Variants identify the unique ways the module was run compared to every other way
+	// the module is run by the LUCI project. As such, some variant key-value pairs
+	// may be repeated for all modules in an invocation.
+	//
+	// See luci.resultdb.v1.TestIdentifier.module_variant for more details.
+	ModuleVariant *Variant `protobuf:"bytes,3,opt,name=module_variant,json=moduleVariant,proto3" json:"module_variant,omitempty"`
+	// Hash of the module variant.
+	// hex(sha256(sorted(”.join('%s:%s\n' for k, v in module_variant.items()))))[:8].
+	//
+	// In the context of ResultDB Query RPCs accepting this type as a request filter,
+	// this field may be specified as an alternative to module_variant.
+	//
+	// See luci.resultdb.v1.TestIdentifier.module_variant_hash for more details.
+	ModuleVariantHash string `protobuf:"bytes,4,opt,name=module_variant_hash,json=moduleVariantHash,proto3" json:"module_variant_hash,omitempty"`
+	// Intermediate hierarchy - coarse name.
+	//
+	// For example "com.android.os.ext".
+	//
+	// A scheme dependent value used to organise the test into a coarse group of related tests,
+	// such as a package or directory.
+	// If the scheme does not define a coarse grouping, this must be blank.
+	// If only one intermediate hierarchy level is used for a scheme, it is always the
+	// fine hierarchy level.
+	//
+	// See luci.resultdb.v1.TestIdentifier.coarse_name for more details.
+	CoarseName string `protobuf:"bytes,5,opt,name=coarse_name,json=coarseName,proto3" json:"coarse_name,omitempty"`
+	// Interemdiate hierarchy - fine name.
+	//
+	// For example "SdkExtensionsTest" or "WebDialogBrowserTest".
+	//
+	// A finer grouping within the above coarse grouping (if any), e.g. class or file.
+	// If the scheme does not define a fine grouping, this must be blank.
+	//
+	// See luci.resultdb.v1.TestIdentifier.fine_name for more details.
+	FineName string `protobuf:"bytes,6,opt,name=fine_name,json=fineName,proto3" json:"fine_name,omitempty"`
+	// The identifier of test case within the above fine grouping.
+	//
+	// For example "testBadArgument" or "topLevelTest:with_context:does_something".
+	//
+	// This is the finest granularity component of the test identifier, and typically
+	// refers to sub-file granularity unless no such granularity exists.
+	//
+	// See luci.resultdb.v1.TestIdentifier.case_name for more details.
+	CaseName      string `protobuf:"bytes,7,opt,name=case_name,json=caseName,proto3" json:"case_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestIdentifier) Reset() {
+	*x = TestIdentifier{}
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestIdentifier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestIdentifier) ProtoMessage() {}
+
+func (x *TestIdentifier) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestIdentifier.ProtoReflect.Descriptor instead.
+func (*TestIdentifier) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *TestIdentifier) GetModuleName() string {
+	if x != nil {
+		return x.ModuleName
+	}
+	return ""
+}
+
+func (x *TestIdentifier) GetModuleScheme() string {
+	if x != nil {
+		return x.ModuleScheme
+	}
+	return ""
+}
+
+func (x *TestIdentifier) GetModuleVariant() *Variant {
+	if x != nil {
+		return x.ModuleVariant
+	}
+	return nil
+}
+
+func (x *TestIdentifier) GetModuleVariantHash() string {
+	if x != nil {
+		return x.ModuleVariantHash
+	}
+	return ""
+}
+
+func (x *TestIdentifier) GetCoarseName() string {
+	if x != nil {
+		return x.CoarseName
+	}
+	return ""
+}
+
+func (x *TestIdentifier) GetFineName() string {
+	if x != nil {
+		return x.FineName
+	}
+	return ""
+}
+
+func (x *TestIdentifier) GetCaseName() string {
+	if x != nil {
+		return x.CaseName
+	}
+	return ""
+}
+
+// FlatTestIdentifier is a flattened form of TestIdentifier.
+//
+// See luci.resultdb.v1.FlatTestIdentifier for more details.
+type FlatTestIdentifier struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The unique identifier of the test in a LUCI project. See the comment on
+	// luci.resultdb.v1.TestResult.test_id for full documentation.
+	TestId string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
+	// Hash of the variant. See the comment on
+	// luci.resultdb.v1.TestResult.variant_hash for full documentation.
+	VariantHash   string `protobuf:"bytes,3,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FlatTestIdentifier) Reset() {
+	*x = FlatTestIdentifier{}
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FlatTestIdentifier) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FlatTestIdentifier) ProtoMessage() {}
+
+func (x *FlatTestIdentifier) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FlatTestIdentifier.ProtoReflect.Descriptor instead.
+func (*FlatTestIdentifier) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *FlatTestIdentifier) GetTestId() string {
+	if x != nil {
+		return x.TestId
+	}
+	return ""
+}
+
+func (x *FlatTestIdentifier) GetVariantHash() string {
+	if x != nil {
+		return x.VariantHash
+	}
+	return ""
+}
+
 type StringPair struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
@@ -664,7 +876,7 @@ type StringPair struct {
 
 func (x *StringPair) Reset() {
 	*x = StringPair{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -676,7 +888,7 @@ func (x *StringPair) String() string {
 func (*StringPair) ProtoMessage() {}
 
 func (x *StringPair) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[3]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -689,7 +901,7 @@ func (x *StringPair) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StringPair.ProtoReflect.Descriptor instead.
 func (*StringPair) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{3}
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *StringPair) GetKey() string {
@@ -726,7 +938,7 @@ type BugTrackingComponent struct {
 
 func (x *BugTrackingComponent) Reset() {
 	*x = BugTrackingComponent{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -738,7 +950,7 @@ func (x *BugTrackingComponent) String() string {
 func (*BugTrackingComponent) ProtoMessage() {}
 
 func (x *BugTrackingComponent) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[4]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -751,7 +963,7 @@ func (x *BugTrackingComponent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BugTrackingComponent.ProtoReflect.Descriptor instead.
 func (*BugTrackingComponent) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{4}
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *BugTrackingComponent) GetSystem() string {
@@ -787,7 +999,7 @@ type PresubmitRunId struct {
 
 func (x *PresubmitRunId) Reset() {
 	*x = PresubmitRunId{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -799,7 +1011,7 @@ func (x *PresubmitRunId) String() string {
 func (*PresubmitRunId) ProtoMessage() {}
 
 func (x *PresubmitRunId) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[5]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -812,7 +1024,7 @@ func (x *PresubmitRunId) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PresubmitRunId.ProtoReflect.Descriptor instead.
 func (*PresubmitRunId) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{5}
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PresubmitRunId) GetSystem() string {
@@ -851,7 +1063,7 @@ type AssociatedBug struct {
 
 func (x *AssociatedBug) Reset() {
 	*x = AssociatedBug{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -863,7 +1075,7 @@ func (x *AssociatedBug) String() string {
 func (*AssociatedBug) ProtoMessage() {}
 
 func (x *AssociatedBug) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[6]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -876,7 +1088,7 @@ func (x *AssociatedBug) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssociatedBug.ProtoReflect.Descriptor instead.
 func (*AssociatedBug) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{6}
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AssociatedBug) GetSystem() string {
@@ -930,7 +1142,7 @@ type ClusterId struct {
 
 func (x *ClusterId) Reset() {
 	*x = ClusterId{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -942,7 +1154,7 @@ func (x *ClusterId) String() string {
 func (*ClusterId) ProtoMessage() {}
 
 func (x *ClusterId) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[7]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -955,7 +1167,7 @@ func (x *ClusterId) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClusterId.ProtoReflect.Descriptor instead.
 func (*ClusterId) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{7}
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ClusterId) GetAlgorithm() string {
@@ -985,7 +1197,7 @@ type NumericRange struct {
 
 func (x *NumericRange) Reset() {
 	*x = NumericRange{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -997,7 +1209,7 @@ func (x *NumericRange) String() string {
 func (*NumericRange) ProtoMessage() {}
 
 func (x *NumericRange) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[8]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1010,7 +1222,7 @@ func (x *NumericRange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NumericRange.ProtoReflect.Descriptor instead.
 func (*NumericRange) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{8}
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *NumericRange) GetLowerBound() float32 {
@@ -1037,7 +1249,7 @@ type TestResult struct {
 
 func (x *TestResult) Reset() {
 	*x = TestResult{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1049,7 +1261,7 @@ func (x *TestResult) String() string {
 func (*TestResult) ProtoMessage() {}
 
 func (x *TestResult) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[9]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1062,7 +1274,7 @@ func (x *TestResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestResult.ProtoReflect.Descriptor instead.
 func (*TestResult) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{9}
+	return file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP(), []int{11}
 }
 
 var File_go_chromium_org_luci_analysis_proto_v1_common_proto protoreflect.FileDescriptor
@@ -1080,7 +1292,20 @@ const file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDesc = "" +
 	"\x03def\x18\x01 \x03(\v2\".luci.analysis.v1.Variant.DefEntryR\x03def\x1a6\n" +
 	"\bDefEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"4\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xa3\x02\n" +
+	"\x0eTestIdentifier\x12\x1f\n" +
+	"\vmodule_name\x18\x01 \x01(\tR\n" +
+	"moduleName\x12#\n" +
+	"\rmodule_scheme\x18\x02 \x01(\tR\fmoduleScheme\x12@\n" +
+	"\x0emodule_variant\x18\x03 \x01(\v2\x19.luci.analysis.v1.VariantR\rmoduleVariant\x12.\n" +
+	"\x13module_variant_hash\x18\x04 \x01(\tR\x11moduleVariantHash\x12\x1f\n" +
+	"\vcoarse_name\x18\x05 \x01(\tR\n" +
+	"coarseName\x12\x1b\n" +
+	"\tfine_name\x18\x06 \x01(\tR\bfineName\x12\x1b\n" +
+	"\tcase_name\x18\a \x01(\tR\bcaseName\"_\n" +
+	"\x12FlatTestIdentifier\x12\x17\n" +
+	"\atest_id\x18\x01 \x01(\tR\x06testId\x12!\n" +
+	"\fvariant_hash\x18\x03 \x01(\tR\vvariantHashJ\x04\b\x02\x10\x03R\avariant\"4\n" +
 	"\n" +
 	"StringPair\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -1156,7 +1381,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDescGZIP() []by
 }
 
 var file_go_chromium_org_luci_analysis_proto_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_go_chromium_org_luci_analysis_proto_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_go_chromium_org_luci_analysis_proto_v1_common_proto_goTypes = []any{
 	(BuildStatus)(0),              // 0: luci.analysis.v1.BuildStatus
 	(ExonerationReason)(0),        // 1: luci.analysis.v1.ExonerationReason
@@ -1167,25 +1392,28 @@ var file_go_chromium_org_luci_analysis_proto_v1_common_proto_goTypes = []any{
 	(*TimeRange)(nil),             // 6: luci.analysis.v1.TimeRange
 	(*TestResultId)(nil),          // 7: luci.analysis.v1.TestResultId
 	(*Variant)(nil),               // 8: luci.analysis.v1.Variant
-	(*StringPair)(nil),            // 9: luci.analysis.v1.StringPair
-	(*BugTrackingComponent)(nil),  // 10: luci.analysis.v1.BugTrackingComponent
-	(*PresubmitRunId)(nil),        // 11: luci.analysis.v1.PresubmitRunId
-	(*AssociatedBug)(nil),         // 12: luci.analysis.v1.AssociatedBug
-	(*ClusterId)(nil),             // 13: luci.analysis.v1.ClusterId
-	(*NumericRange)(nil),          // 14: luci.analysis.v1.NumericRange
-	(*TestResult)(nil),            // 15: luci.analysis.v1.TestResult
-	nil,                           // 16: luci.analysis.v1.Variant.DefEntry
-	(*timestamppb.Timestamp)(nil), // 17: google.protobuf.Timestamp
+	(*TestIdentifier)(nil),        // 9: luci.analysis.v1.TestIdentifier
+	(*FlatTestIdentifier)(nil),    // 10: luci.analysis.v1.FlatTestIdentifier
+	(*StringPair)(nil),            // 11: luci.analysis.v1.StringPair
+	(*BugTrackingComponent)(nil),  // 12: luci.analysis.v1.BugTrackingComponent
+	(*PresubmitRunId)(nil),        // 13: luci.analysis.v1.PresubmitRunId
+	(*AssociatedBug)(nil),         // 14: luci.analysis.v1.AssociatedBug
+	(*ClusterId)(nil),             // 15: luci.analysis.v1.ClusterId
+	(*NumericRange)(nil),          // 16: luci.analysis.v1.NumericRange
+	(*TestResult)(nil),            // 17: luci.analysis.v1.TestResult
+	nil,                           // 18: luci.analysis.v1.Variant.DefEntry
+	(*timestamppb.Timestamp)(nil), // 19: google.protobuf.Timestamp
 }
 var file_go_chromium_org_luci_analysis_proto_v1_common_proto_depIdxs = []int32{
-	17, // 0: luci.analysis.v1.TimeRange.earliest:type_name -> google.protobuf.Timestamp
-	17, // 1: luci.analysis.v1.TimeRange.latest:type_name -> google.protobuf.Timestamp
-	16, // 2: luci.analysis.v1.Variant.def:type_name -> luci.analysis.v1.Variant.DefEntry
-	3,  // [3:3] is the sub-list for method output_type
-	3,  // [3:3] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	19, // 0: luci.analysis.v1.TimeRange.earliest:type_name -> google.protobuf.Timestamp
+	19, // 1: luci.analysis.v1.TimeRange.latest:type_name -> google.protobuf.Timestamp
+	18, // 2: luci.analysis.v1.Variant.def:type_name -> luci.analysis.v1.Variant.DefEntry
+	8,  // 3: luci.analysis.v1.TestIdentifier.module_variant:type_name -> luci.analysis.v1.Variant
+	4,  // [4:4] is the sub-list for method output_type
+	4,  // [4:4] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_common_proto_init() }
@@ -1199,7 +1427,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_v1_common_proto_rawDesc)),
 			NumEnums:      6,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
