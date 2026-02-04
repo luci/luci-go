@@ -93,9 +93,9 @@ var sha1Regex = regexp.MustCompile(`^[a-f0-9]{40}$`)
 
 var (
 	// androidBuildIDRE defines valid Android build identifiers.
-	// P indicates a Pending build, E an external build, L a local build. If no
-	// prefix is present, it indicates a submitted build.
-	androidBuildIDRE = regexp.MustCompile(`^[ELP]?[1-9][0-9]*$`)
+	// P indicates a Pending build, E an external build, L a local build, T a train build (used for mainline testing).
+	// If no prefix is present, it indicates a submitted build.
+	androidBuildIDRE = regexp.MustCompile(`^[ELPT]?[1-9][0-9]*$`)
 	// androidBuildDataRealmRE defines the valid alphabet for android build
 	// data realm identifiers.
 	// Note that CreateRootInvocation applies additional validation
