@@ -503,7 +503,7 @@ CREATE TABLE TestResults (
 -- feed. Note that as data is coming from low-latency feed, not all results
 -- for a verdict may be populated at once.
 -- Test results without sources are not retained.
--- Currently only retained for 15 days, to meet needs of exoneration analysis.
+-- Currently only retained for 90 days, to meet needs of test history.
 CREATE TABLE TestResultsBySourcePosition (
   -- Primary key fields.
   -- Note: SourceRefHash, SourcePosition are not included in the primary
@@ -600,8 +600,9 @@ CREATE TABLE TestResultsBySourcePosition (
   -- making the sources dirty as it is reported separately above.
   HasDirtySources BOOL NOT NULL,
 ) PRIMARY KEY(Project, TestId, VariantHash, SourceRefHash, SourcePosition DESC, RootInvocationId, InvocationId, ResultId)
-, ROW DELETION POLICY (OLDER_THAN(PartitionTime, INTERVAL 15 DAY));
-
+-- 90 days is the retention in prod; staging environments will
+-- remain at 15 days to control cost.
+, ROW DELETION POLICY (OLDER_THAN(PartitionTime, INTERVAL 90 DAY));
 
 -- Stores whether gerrit changes are user or authomation authored.
 -- This is used as a cache to avoid excessive RPCs to gerrit.
