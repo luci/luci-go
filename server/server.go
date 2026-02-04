@@ -401,6 +401,7 @@ type Options struct {
 	EnableExperiments []string // names of go.chromium.org/luci/server/experiments to enable
 
 	CloudErrorReporting bool // set to true to enable Cloud Error Reporting
+	FatalErrorReporter func(srv *Server, err error)
 
 	startTime time.Time // when the server (including options) started initialization
 
@@ -1815,7 +1816,11 @@ func (s *Server) shutdownPorts() bool {
 // recoverable.
 func (s *Server) Fatal(err error) {
 	if err != nil {
-		errors.Log(s.Context, err)
+		if s.Options.FatalErrorReporter != nil {
+			s.Options.FatalErrorReporter(s, err)
+		} else {
+			errors.Log(s.Context, err)
+		}
 	}
 	if s.errloggerSink != nil {
 		s.errloggerSink.Close(s.Context)
