@@ -49,7 +49,7 @@ func TestRedact(t *testing.T) {
 func TestFilterUnwanted(t *testing.T) {
 	t.Parallel()
 
-	ti, err := ParseTypeInfo(orchestratorpb.QueryNodesRequest_TypeInfo_builder{}.Build())
+	ti, err := ParseTypeInfo(orchestratorpb.TypeInfo_builder{}.Build())
 	assert.NoErr(t, err)
 
 	val := Value(&emptypb.Empty{})
@@ -64,7 +64,7 @@ func TestFilterUnwanted(t *testing.T) {
 func TestFilterNoJSON(t *testing.T) {
 	t.Parallel()
 
-	ti, err := ParseTypeInfo(orchestratorpb.QueryNodesRequest_TypeInfo_builder{
+	ti, err := ParseTypeInfo(orchestratorpb.TypeInfo_builder{
 		Wanted: TypeSetBuilder{}.WithMessages((*emptypb.Empty)(nil)).MustBuild(),
 	}.Build())
 	assert.NoErr(t, err)
@@ -78,7 +78,7 @@ func TestFilterNoJSON(t *testing.T) {
 func TestFilterJSONKnown(t *testing.T) {
 	t.Parallel()
 
-	ti, err := ParseTypeInfo(orchestratorpb.QueryNodesRequest_TypeInfo_builder{
+	ti, err := ParseTypeInfo(orchestratorpb.TypeInfo_builder{
 		Wanted:        TypeSetBuilder{}.WithMessages((*emptypb.Empty)(nil)).MustBuild(),
 		UnknownJsonpb: proto.Bool(true),
 		Known:         TypeSetBuilder{}.WithMessages((*emptypb.Empty)(nil)).MustBuild(),
@@ -94,7 +94,7 @@ func TestFilterJSONKnown(t *testing.T) {
 func TestFilterJSONUnknown(t *testing.T) {
 	t.Parallel()
 
-	ti, err := ParseTypeInfo(orchestratorpb.QueryNodesRequest_TypeInfo_builder{
+	ti, err := ParseTypeInfo(orchestratorpb.TypeInfo_builder{
 		Wanted:        TypeSetBuilder{}.WithMessages((*emptypb.Empty)(nil)).MustBuild(),
 		UnknownJsonpb: proto.Bool(true),
 	}.Build())
@@ -140,7 +140,7 @@ var _ interface {
 func TestFilterJSONUnknownNoResolver(t *testing.T) {
 	t.Parallel()
 
-	ti, err := ParseTypeInfo(orchestratorpb.QueryNodesRequest_TypeInfo_builder{
+	ti, err := ParseTypeInfo(orchestratorpb.TypeInfo_builder{
 		Wanted:        TypeSetBuilder{}.WithMessages((*emptypb.Empty)(nil)).MustBuild(),
 		UnknownJsonpb: proto.Bool(true),
 	}.Build())
@@ -155,7 +155,7 @@ func TestFilterJSONUnknownNoResolver(t *testing.T) {
 func TestFilterJSONUnknownWithUnknownFields(t *testing.T) {
 	t.Parallel()
 
-	ti, err := ParseTypeInfo(orchestratorpb.QueryNodesRequest_TypeInfo_builder{
+	ti, err := ParseTypeInfo(orchestratorpb.TypeInfo_builder{
 		Wanted:        TypeSetBuilder{}.WithMessages((*emptypb.Empty)(nil)).MustBuild(),
 		UnknownJsonpb: proto.Bool(true),
 	}.Build())

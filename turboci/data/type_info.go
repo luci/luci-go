@@ -35,7 +35,7 @@ type TypeInfo struct {
 }
 
 // ParseTypeInfo parses the TypeInfo proto message into a usable [TypeInfo].
-func ParseTypeInfo(ti *orchestratorpb.QueryNodesRequest_TypeInfo) (*TypeInfo, error) {
+func ParseTypeInfo(ti *orchestratorpb.TypeInfo) (*TypeInfo, error) {
 	wanted, err := MakeTypeMatcher(ti.GetWanted())
 	if err != nil {
 		return nil, fmt.Errorf("wanted: %w", err)

@@ -121,6 +121,11 @@ func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.S
 	return AdjustTurboCIRPCError(err)
 }
 
+// buildStageDetailsTypeSet is a TypeSet composed of just BuildStageDetails.
+var buildStageDetailsTypeSet = ((data.TypeSetBuilder{}).
+	WithMessages((*pb.BuildStageDetails)(nil)).
+	MustBuild())
+
 // QueryStage queries the state of a submitted ScheduleBuildRequest stage.
 //
 // Returns (nil, nil) if the stage hasn't started yet. Returns BuildStageDetails
@@ -135,12 +140,8 @@ func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.Buil
 
 	queryReq := orchestratorpb.QueryNodesRequest_builder{
 		Token: proto.String(c.Token),
-		TypeInfo: orchestratorpb.QueryNodesRequest_TypeInfo_builder{
-			Wanted: orchestratorpb.TypeSet_builder{
-				TypeUrls: []string{
-					data.URL[*pb.BuildStageDetails](),
-				},
-			}.Build(),
+		TypeInfo: orchestratorpb.TypeInfo_builder{
+			Wanted: buildStageDetailsTypeSet,
 		}.Build(),
 		Query: []*orchestratorpb.Query{
 			orchestratorpb.Query_builder{

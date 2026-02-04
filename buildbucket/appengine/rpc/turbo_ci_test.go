@@ -132,7 +132,7 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 
 		assert.That(t, orch.LastQueryNodesRequest, should.Match(orchestratorpb.QueryNodesRequest_builder{
 			Token: proto.String(orch.Token),
-			TypeInfo: orchestratorpb.QueryNodesRequest_TypeInfo_builder{
+			TypeInfo: orchestratorpb.TypeInfo_builder{
 				Wanted: orchestratorpb.TypeSet_builder{
 					TypeUrls: []string{"type.googleapis.com/buildbucket.v2.BuildStageDetails"},
 				}.Build(),
