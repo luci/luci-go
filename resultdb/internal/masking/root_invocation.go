@@ -75,6 +75,23 @@ func RootInvocation(r *rootinvocations.RootInvocationRow, cfg *config.CompiledSe
 	return result
 }
 
+// RootInvocationMetadata constructs a *pb.RootInvocationMetadata from the given fields.
+// The producer resource URL is computed based on the service configuration.
+func RootInvocationMetadata(r *rootinvocations.RootInvocationRow, cfg *config.CompiledServiceConfig) *pb.RootInvocationMetadata {
+	rootInvocation := RootInvocation(r, cfg)
+	return &pb.RootInvocationMetadata{
+		Name:             rootInvocation.Name,
+		RootInvocationId: rootInvocation.RootInvocationId,
+		Realm:            rootInvocation.Realm,
+		CreateTime:       rootInvocation.CreateTime,
+		Definition:       rootInvocation.Definition,
+		Sources:          rootInvocation.Sources,
+		ProducerResource: rootInvocation.ProducerResource,
+		PrimaryBuild:     rootInvocation.PrimaryBuild,
+		ExtraBuilds:      rootInvocation.ExtraBuilds,
+	}
+}
+
 // buildDescriptorWithURL returns a new BuildDescriptor with the URL field set.
 func buildDescriptorWithURL(b *pb.BuildDescriptor, cfg *config.CompiledServiceConfig) *pb.BuildDescriptor {
 	// Clone to avoid modifying the original proto.

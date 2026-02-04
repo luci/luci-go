@@ -334,3 +334,57 @@ message GetRootInvocationRequest {
   // The name of the root invocation to read, see RootInvocation.name.
   string name = 1 [ (google.api.field_behavior) = REQUIRED ];
 }
+
+// RootInvocationMetadata contains RootInvocation fields which are immutable at
+// the time the RootInvocation's streaming_export_state is set to METADATA_FINAL.
+//
+// This record is attached to streaming exports to provide context about
+// the root invocation being exported, without including fields which may be
+// incomplete and subject to data races.
+//
+// Follows the same field IDs as RootInvocation.
+message RootInvocationMetadata {
+  // The resource name of the root invocation.
+  // Format: `rootInvocations/{ROOT_INVOCATION_ID}`
+  // See also https://aip.dev/122.
+  string name = 1;
+
+  // The root invocation ID.
+  //
+  // Output only.
+  string root_invocation_id = 2;
+
+  // The realm of the root invocation. This controls the ACLs that apply to the
+  // root invocation and its contents.
+  //
+  // For example, 'chromium:try'.
+  //
+  // See go/luci-authorization for more information.
+  string realm = 4;
+
+  // When the invocation was created.
+  // Output only.
+  google.protobuf.Timestamp create_time = 5;
+
+  // The producer resource.
+  ProducerResource producer_resource = 25;
+
+  // The process definition of the root invocation. Root invocations with the same
+  // definition share the same root invocation history.
+  //
+  // Setting this field is recommended but can be elided in case of local and
+  // other emphemeral test runs which are not suitable to be plotted into a history.
+  RootInvocationDefinition definition = 21;
+
+  // The code sources which were tested by this root invocation.
+  // This is used to index test results for test history, and for
+  // related analyses (e.g. culprit analysis / changepoint analyses).
+  Sources sources = 11;
+
+  // The primary build which was tested by this root invocation.
+  BuildDescriptor primary_build = 23;
+
+  // Extra builds which were tested by this root invocation.
+  // Limit of 10 extra builds.
+  repeated BuildDescriptor extra_builds = 24;
+}

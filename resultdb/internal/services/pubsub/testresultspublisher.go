@@ -29,7 +29,9 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/checkpoints"
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -95,6 +97,11 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 		return errors.Fmt("CurrentWorkUnitIndex %d is out of bounds for WorkUnitIds list of size %d", task.CurrentWorkUnitIndex, len(task.WorkUnitIds))
 	}
 
+	cfg, err := config.Service(ctx)
+	if err != nil {
+		return errors.Fmt("read service config: %w", err)
+	}
+
 	// 1. Reads Root Invocation to check its state and get sources.
 	rootInvID := rootinvocations.ID(task.RootInvocationId)
 	rootInv, err := rootinvocations.Read(span.Single(ctx), rootInvID)
@@ -124,7 +131,8 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 	}
 
 	// 5. Partitions test results into notifications.
-	notifications, err := p.partitionTestResults(ctx, collectedResults, rootInv.Sources)
+	rootInvocationMetadata := masking.RootInvocationMetadata(rootInv, cfg)
+	notifications, err := p.partitionTestResults(ctx, collectedResults, rootInvocationMetadata)
 	if err != nil {
 		return errors.Fmt("partition test results: %w", err)
 	}
@@ -243,18 +251,18 @@ func (p *testResultsPublisher) collectTestResults(ctx context.Context, rootInvID
 }
 
 // createNotification creates a new notification.
-func (p *testResultsPublisher) createNotification(batch []*pb.TestResultsNotification_TestResultsByWorkUnit, sources *pb.Sources) *pb.TestResultsNotification {
+func (p *testResultsPublisher) createNotification(batch []*pb.TestResultsNotification_TestResultsByWorkUnit, metadata *pb.RootInvocationMetadata) *pb.TestResultsNotification {
 	return &pb.TestResultsNotification{
-		TestResultsByWorkUnit: batch,
-		ResultdbHost:          p.resultDBHostname,
-		Sources:               sources,
-		DeduplicationKey:      generateDeduplicationKey(batch),
+		TestResultsByWorkUnit:  batch,
+		ResultdbHost:           p.resultDBHostname,
+		RootInvocationMetadata: metadata,
+		DeduplicationKey:       generateDeduplicationKey(batch),
 	}
 }
 
 // partitionTestResults splits the collected test results into notification
 // messages.
-func (p *testResultsPublisher) partitionTestResults(ctx context.Context, collectedResults []*pb.TestResultsNotification_TestResultsByWorkUnit, sources *pb.Sources) (notifications []*pb.TestResultsNotification, err error) {
+func (p *testResultsPublisher) partitionTestResults(ctx context.Context, collectedResults []*pb.TestResultsNotification_TestResultsByWorkUnit, metadata *pb.RootInvocationMetadata) (notifications []*pb.TestResultsNotification, err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/pubsub.partitionTestResults")
 	defer func() { tracing.End(s, err) }()
 
@@ -270,7 +278,7 @@ func (p *testResultsPublisher) partitionTestResults(ctx context.Context, collect
 		// Handle a single work unit block that's already too large.
 		// This requires splitting the TestResults within this block.
 		if blockSize > maxPubSubMessageSize {
-			wuNotifications, err := p.splitWorkUnitBlock(wuBlock, sources)
+			wuNotifications, err := p.splitWorkUnitBlock(wuBlock, metadata)
 			if err != nil {
 				return nil, err
 			}
@@ -280,7 +288,7 @@ func (p *testResultsPublisher) partitionTestResults(ctx context.Context, collect
 
 		// Current batch is full, create a notification.
 		if currentSize > 0 && currentSize+blockSize > maxPubSubMessageSize {
-			notifications = append(notifications, p.createNotification(currentBatch, sources))
+			notifications = append(notifications, p.createNotification(currentBatch, metadata))
 			currentBatch = nil
 			currentSize = 0
 		}
@@ -291,14 +299,14 @@ func (p *testResultsPublisher) partitionTestResults(ctx context.Context, collect
 
 	// Add the last batch.
 	if len(currentBatch) > 0 {
-		notifications = append(notifications, p.createNotification(currentBatch, sources))
+		notifications = append(notifications, p.createNotification(currentBatch, metadata))
 	}
 	return notifications, nil
 }
 
 // splitWorkUnitBlock splits a single large TestResultsByWorkUnit into multiple
 // notifications.
-func (p *testResultsPublisher) splitWorkUnitBlock(wuBlock *pb.TestResultsNotification_TestResultsByWorkUnit, sources *pb.Sources) ([]*pb.TestResultsNotification, error) {
+func (p *testResultsPublisher) splitWorkUnitBlock(wuBlock *pb.TestResultsNotification_TestResultsByWorkUnit, metadata *pb.RootInvocationMetadata) ([]*pb.TestResultsNotification, error) {
 	var notifications []*pb.TestResultsNotification
 	var trBatch []*pb.TestResult
 	baseWUSize := proto.Size(&pb.TestResultsNotification_TestResultsByWorkUnit{WorkUnitName: wuBlock.WorkUnitName})
@@ -316,7 +324,7 @@ func (p *testResultsPublisher) splitWorkUnitBlock(wuBlock *pb.TestResultsNotific
 				WorkUnitName: wuBlock.WorkUnitName,
 				TestResults:  trBatch,
 			}}
-			notifications = append(notifications, p.createNotification(wuResults, sources))
+			notifications = append(notifications, p.createNotification(wuResults, metadata))
 			trBatch = nil
 			trCurrentSize = baseWUSize
 		}
@@ -330,7 +338,7 @@ func (p *testResultsPublisher) splitWorkUnitBlock(wuBlock *pb.TestResultsNotific
 			WorkUnitName: wuBlock.WorkUnitName,
 			TestResults:  trBatch,
 		}}
-		notifications = append(notifications, p.createNotification(wuResults, sources))
+		notifications = append(notifications, p.createNotification(wuResults, metadata))
 	}
 	return notifications, nil
 }

@@ -140,7 +140,7 @@ message InvocationReadyForExportNotification {
 // The message is sent over the `v1.test_results` Cloud Pub/Sub topic in
 // binary-serialized form. The size limit of the message is 10MB.
 //
-// Next id: 5
+// Next id: 6
 message TestResultsNotification {
     // A message representing the batch of test results grouped by work unit.
     // Next id: 3
@@ -162,13 +162,14 @@ message TestResultsNotification {
     // message.
     string resultdb_host = 2;
 
-    // The code sources tested, if known. This field is sourced from the root
-    // invocation.
-    luci.resultdb.v1.Sources sources = 3;
+    reserved 3;
 
     // A deduplication key identifying this batch of test results within the
     // same root invocation.
     string deduplication_key = 4;
+
+    // Details of the root invocation.
+    RootInvocationMetadata root_invocation_metadata = 5;
 }
 
 // A message notifying that work units have been finalized.

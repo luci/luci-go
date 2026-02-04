@@ -637,6 +637,151 @@ func (x *GetRootInvocationRequest) GetName() string {
 	return ""
 }
 
+// RootInvocationMetadata contains RootInvocation fields which are immutable at
+// the time the RootInvocation's streaming_export_state is set to METADATA_FINAL.
+//
+// This record is attached to streaming exports to provide context about
+// the root invocation being exported, without including fields which may be
+// incomplete and subject to data races.
+//
+// Follows the same field IDs as RootInvocation.
+type RootInvocationMetadata struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The resource name of the root invocation.
+	// Format: `rootInvocations/{ROOT_INVOCATION_ID}`
+	// See also https://aip.dev/122.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The root invocation ID.
+	//
+	// Output only.
+	RootInvocationId string `protobuf:"bytes,2,opt,name=root_invocation_id,json=rootInvocationId,proto3" json:"root_invocation_id,omitempty"`
+	// The realm of the root invocation. This controls the ACLs that apply to the
+	// root invocation and its contents.
+	//
+	// For example, 'chromium:try'.
+	//
+	// See go/luci-authorization for more information.
+	Realm string `protobuf:"bytes,4,opt,name=realm,proto3" json:"realm,omitempty"`
+	// When the invocation was created.
+	// Output only.
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	// The producer resource.
+	ProducerResource *ProducerResource `protobuf:"bytes,25,opt,name=producer_resource,json=producerResource,proto3" json:"producer_resource,omitempty"`
+	// The process definition of the root invocation. Root invocations with the same
+	// definition share the same root invocation history.
+	//
+	// Setting this field is recommended but can be elided in case of local and
+	// other emphemeral test runs which are not suitable to be plotted into a history.
+	Definition *RootInvocationDefinition `protobuf:"bytes,21,opt,name=definition,proto3" json:"definition,omitempty"`
+	// The code sources which were tested by this root invocation.
+	// This is used to index test results for test history, and for
+	// related analyses (e.g. culprit analysis / changepoint analyses).
+	Sources *Sources `protobuf:"bytes,11,opt,name=sources,proto3" json:"sources,omitempty"`
+	// The primary build which was tested by this root invocation.
+	PrimaryBuild *BuildDescriptor `protobuf:"bytes,23,opt,name=primary_build,json=primaryBuild,proto3" json:"primary_build,omitempty"`
+	// Extra builds which were tested by this root invocation.
+	// Limit of 10 extra builds.
+	ExtraBuilds []*BuildDescriptor `protobuf:"bytes,24,rep,name=extra_builds,json=extraBuilds,proto3" json:"extra_builds,omitempty"`
+}
+
+func (x *RootInvocationMetadata) Reset() {
+	*x = RootInvocationMetadata{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RootInvocationMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RootInvocationMetadata) ProtoMessage() {}
+
+func (x *RootInvocationMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RootInvocationMetadata.ProtoReflect.Descriptor instead.
+func (*RootInvocationMetadata) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RootInvocationMetadata) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *RootInvocationMetadata) GetRootInvocationId() string {
+	if x != nil {
+		return x.RootInvocationId
+	}
+	return ""
+}
+
+func (x *RootInvocationMetadata) GetRealm() string {
+	if x != nil {
+		return x.Realm
+	}
+	return ""
+}
+
+func (x *RootInvocationMetadata) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *RootInvocationMetadata) GetProducerResource() *ProducerResource {
+	if x != nil {
+		return x.ProducerResource
+	}
+	return nil
+}
+
+func (x *RootInvocationMetadata) GetDefinition() *RootInvocationDefinition {
+	if x != nil {
+		return x.Definition
+	}
+	return nil
+}
+
+func (x *RootInvocationMetadata) GetSources() *Sources {
+	if x != nil {
+		return x.Sources
+	}
+	return nil
+}
+
+func (x *RootInvocationMetadata) GetPrimaryBuild() *BuildDescriptor {
+	if x != nil {
+		return x.PrimaryBuild
+	}
+	return nil
+}
+
+func (x *RootInvocationMetadata) GetExtraBuilds() []*BuildDescriptor {
+	if x != nil {
+		return x.ExtraBuilds
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto protoreflect.FileDescriptor
 
 var file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_rawDesc = []byte{
@@ -760,7 +905,40 @@ var file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_rawDesc = 
 	0x02, 0x22, 0x33, 0x0a, 0x18, 0x47, 0x65, 0x74, 0x52, 0x6f, 0x6f, 0x74, 0x49, 0x6e, 0x76, 0x6f,
 	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x17, 0x0a,
 	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x03, 0xe0, 0x41, 0x02,
-	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f,
+	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x8d, 0x04, 0x0a, 0x16, 0x52, 0x6f, 0x6f, 0x74, 0x49,
+	0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x2c, 0x0a, 0x12, 0x72, 0x6f, 0x6f, 0x74, 0x5f, 0x69, 0x6e,
+	0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x10, 0x72, 0x6f, 0x6f, 0x74, 0x49, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x49, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x72, 0x65, 0x61, 0x6c, 0x6d, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x05, 0x72, 0x65, 0x61, 0x6c, 0x6d, 0x12, 0x3b, 0x0a, 0x0b, 0x63, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a,
+	0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0a, 0x63, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x4f, 0x0a, 0x11, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63,
+	0x65, 0x72, 0x5f, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x19, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x22, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64,
+	0x62, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x65, 0x72, 0x52, 0x65, 0x73,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x10, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x65, 0x72, 0x52,
+	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x4a, 0x0a, 0x0a, 0x64, 0x65, 0x66, 0x69, 0x6e,
+	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x15, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x6c, 0x75,
+	0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x52,
+	0x6f, 0x6f, 0x74, 0x49, 0x6e, 0x76, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x65, 0x66,
+	0x69, 0x6e, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0a, 0x64, 0x65, 0x66, 0x69, 0x6e, 0x69, 0x74,
+	0x69, 0x6f, 0x6e, 0x12, 0x33, 0x0a, 0x07, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x18, 0x0b,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x52,
+	0x07, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x12, 0x46, 0x0a, 0x0d, 0x70, 0x72, 0x69, 0x6d,
+	0x61, 0x72, 0x79, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x18, 0x17, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x21, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e,
+	0x76, 0x31, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x44, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74,
+	0x6f, 0x72, 0x52, 0x0c, 0x70, 0x72, 0x69, 0x6d, 0x61, 0x72, 0x79, 0x42, 0x75, 0x69, 0x6c, 0x64,
+	0x12, 0x44, 0x0a, 0x0c, 0x65, 0x78, 0x74, 0x72, 0x61, 0x5f, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x73,
+	0x18, 0x18, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x75, 0x69, 0x6c, 0x64, 0x44,
+	0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x52, 0x0b, 0x65, 0x78, 0x74, 0x72, 0x61,
+	0x42, 0x75, 0x69, 0x6c, 0x64, 0x73, 0x42, 0x50, 0x0a, 0x1b, 0x63, 0x6f, 0x6d, 0x2e, 0x67, 0x6f,
 	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
 	0x64, 0x62, 0x2e, 0x76, 0x31, 0x50, 0x01, 0x5a, 0x2f, 0x67, 0x6f, 0x2e, 0x63, 0x68, 0x72, 0x6f,
 	0x6d, 0x69, 0x75, 0x6d, 0x2e, 0x6f, 0x72, 0x67, 0x2f, 0x6c, 0x75, 0x63, 0x69, 0x2f, 0x72, 0x65,
@@ -781,41 +959,48 @@ func file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_rawDescGZ
 }
 
 var file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_goTypes = []interface{}{
 	(RootInvocation_FinalizationState)(0),    // 0: luci.resultdb.v1.RootInvocation.FinalizationState
 	(RootInvocation_State)(0),                // 1: luci.resultdb.v1.RootInvocation.State
 	(RootInvocation_StreamingExportState)(0), // 2: luci.resultdb.v1.RootInvocation.StreamingExportState
 	(*RootInvocation)(nil),                   // 3: luci.resultdb.v1.RootInvocation
 	(*GetRootInvocationRequest)(nil),         // 4: luci.resultdb.v1.GetRootInvocationRequest
-	(*timestamppb.Timestamp)(nil),            // 5: google.protobuf.Timestamp
-	(*ProducerResource)(nil),                 // 6: luci.resultdb.v1.ProducerResource
-	(*RootInvocationDefinition)(nil),         // 7: luci.resultdb.v1.RootInvocationDefinition
-	(*Sources)(nil),                          // 8: luci.resultdb.v1.Sources
-	(*BuildDescriptor)(nil),                  // 9: luci.resultdb.v1.BuildDescriptor
-	(*StringPair)(nil),                       // 10: luci.resultdb.v1.StringPair
-	(*structpb.Struct)(nil),                  // 11: google.protobuf.Struct
+	(*RootInvocationMetadata)(nil),           // 5: luci.resultdb.v1.RootInvocationMetadata
+	(*timestamppb.Timestamp)(nil),            // 6: google.protobuf.Timestamp
+	(*ProducerResource)(nil),                 // 7: luci.resultdb.v1.ProducerResource
+	(*RootInvocationDefinition)(nil),         // 8: luci.resultdb.v1.RootInvocationDefinition
+	(*Sources)(nil),                          // 9: luci.resultdb.v1.Sources
+	(*BuildDescriptor)(nil),                  // 10: luci.resultdb.v1.BuildDescriptor
+	(*StringPair)(nil),                       // 11: luci.resultdb.v1.StringPair
+	(*structpb.Struct)(nil),                  // 12: google.protobuf.Struct
 }
 var file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_depIdxs = []int32{
 	0,  // 0: luci.resultdb.v1.RootInvocation.finalization_state:type_name -> luci.resultdb.v1.RootInvocation.FinalizationState
 	1,  // 1: luci.resultdb.v1.RootInvocation.state:type_name -> luci.resultdb.v1.RootInvocation.State
-	5,  // 2: luci.resultdb.v1.RootInvocation.create_time:type_name -> google.protobuf.Timestamp
-	5,  // 3: luci.resultdb.v1.RootInvocation.last_updated:type_name -> google.protobuf.Timestamp
-	5,  // 4: luci.resultdb.v1.RootInvocation.finalize_start_time:type_name -> google.protobuf.Timestamp
-	5,  // 5: luci.resultdb.v1.RootInvocation.finalize_time:type_name -> google.protobuf.Timestamp
-	6,  // 6: luci.resultdb.v1.RootInvocation.producer_resource:type_name -> luci.resultdb.v1.ProducerResource
-	7,  // 7: luci.resultdb.v1.RootInvocation.definition:type_name -> luci.resultdb.v1.RootInvocationDefinition
-	8,  // 8: luci.resultdb.v1.RootInvocation.sources:type_name -> luci.resultdb.v1.Sources
-	9,  // 9: luci.resultdb.v1.RootInvocation.primary_build:type_name -> luci.resultdb.v1.BuildDescriptor
-	9,  // 10: luci.resultdb.v1.RootInvocation.extra_builds:type_name -> luci.resultdb.v1.BuildDescriptor
-	10, // 11: luci.resultdb.v1.RootInvocation.tags:type_name -> luci.resultdb.v1.StringPair
-	11, // 12: luci.resultdb.v1.RootInvocation.properties:type_name -> google.protobuf.Struct
+	6,  // 2: luci.resultdb.v1.RootInvocation.create_time:type_name -> google.protobuf.Timestamp
+	6,  // 3: luci.resultdb.v1.RootInvocation.last_updated:type_name -> google.protobuf.Timestamp
+	6,  // 4: luci.resultdb.v1.RootInvocation.finalize_start_time:type_name -> google.protobuf.Timestamp
+	6,  // 5: luci.resultdb.v1.RootInvocation.finalize_time:type_name -> google.protobuf.Timestamp
+	7,  // 6: luci.resultdb.v1.RootInvocation.producer_resource:type_name -> luci.resultdb.v1.ProducerResource
+	8,  // 7: luci.resultdb.v1.RootInvocation.definition:type_name -> luci.resultdb.v1.RootInvocationDefinition
+	9,  // 8: luci.resultdb.v1.RootInvocation.sources:type_name -> luci.resultdb.v1.Sources
+	10, // 9: luci.resultdb.v1.RootInvocation.primary_build:type_name -> luci.resultdb.v1.BuildDescriptor
+	10, // 10: luci.resultdb.v1.RootInvocation.extra_builds:type_name -> luci.resultdb.v1.BuildDescriptor
+	11, // 11: luci.resultdb.v1.RootInvocation.tags:type_name -> luci.resultdb.v1.StringPair
+	12, // 12: luci.resultdb.v1.RootInvocation.properties:type_name -> google.protobuf.Struct
 	2,  // 13: luci.resultdb.v1.RootInvocation.streaming_export_state:type_name -> luci.resultdb.v1.RootInvocation.StreamingExportState
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	6,  // 14: luci.resultdb.v1.RootInvocationMetadata.create_time:type_name -> google.protobuf.Timestamp
+	7,  // 15: luci.resultdb.v1.RootInvocationMetadata.producer_resource:type_name -> luci.resultdb.v1.ProducerResource
+	8,  // 16: luci.resultdb.v1.RootInvocationMetadata.definition:type_name -> luci.resultdb.v1.RootInvocationDefinition
+	9,  // 17: luci.resultdb.v1.RootInvocationMetadata.sources:type_name -> luci.resultdb.v1.Sources
+	10, // 18: luci.resultdb.v1.RootInvocationMetadata.primary_build:type_name -> luci.resultdb.v1.BuildDescriptor
+	10, // 19: luci.resultdb.v1.RootInvocationMetadata.extra_builds:type_name -> luci.resultdb.v1.BuildDescriptor
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_init() }
@@ -849,6 +1034,18 @@ func file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_init() {
 				return nil
 			}
 		}
+		file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RootInvocationMetadata); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -856,7 +1053,7 @@ func file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_go_chromium_org_luci_resultdb_proto_v1_root_invocation_proto_rawDesc,
 			NumEnums:      3,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

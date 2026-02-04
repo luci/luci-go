@@ -17,15 +17,22 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
+	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -89,7 +96,7 @@ func createExpectedTR(b *testresults.Builder, rootInvID string, wuID string) *pb
 }
 
 // runTasks runs all pending publish-test-results tasks in the scheduler.
-func runTasks(ctx context.Context, t *testing.T, sched *tqtesting.Scheduler, rdbHost string, pageSize int) {
+func runTasks(ctx context.Context, t *ftt.Test, sched *tqtesting.Scheduler, rdbHost string, pageSize int) {
 	processed := 0
 	for {
 		allTasks := sched.Tasks()
@@ -117,281 +124,282 @@ func runTasks(ctx context.Context, t *testing.T, sched *tqtesting.Scheduler, rdb
 
 // TestHandlePublishTestResultsTask tests the handlePublishTestResultsTask function.
 func TestHandlePublishTestResultsTask(t *testing.T) {
-	t.Run("HandlePublishTestResultsTask", func(t *testing.T) {
+	ftt.Run("HandlePublishTestResultsTask", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		// Set up a placeholder service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
+
+		ctx, sched := tq.TestingContext(ctx, nil)
+
 		rootInvID := rootinvocations.ID("test-root-inv")
 		rdbHost := "results.api.cr.dev"
 
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
 
+		// Prepare TestResults.
+		tr1 := testresults.NewBuilder(wuID1.LegacyInvocationID(), "testA", "0").WithMinimalFields().WithStatus(pb.TestStatus_PASS).WithDuration(&durationpb.Duration{Seconds: 0})
+		tr2 := testresults.NewBuilder(wuID2.LegacyInvocationID(), "testB", "0").WithMinimalFields().WithStatus(pb.TestStatus_FAIL).WithDuration(&durationpb.Duration{Seconds: 0})
+
+		// Insert the root invocation for this test case.
+		builder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL)
+		muts := rootinvocations.InsertForTesting(builder.Build())
+		testutil.MustApply(ctx, t, muts...)
+
 		// Insert legacy Invocations based on work unit IDs.
 		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
 		testutil.MustApply(ctx, t, insert.Invocation(wuID2.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
 
 		// Insert TestResults.
-		tr1 := testresults.NewBuilder(wuID1.LegacyInvocationID(), "testA", "0").WithMinimalFields().WithStatus(pb.TestStatus_PASS).WithDuration(&durationpb.Duration{Seconds: 0})
-		tr2 := testresults.NewBuilder(wuID2.LegacyInvocationID(), "testB", "0").WithMinimalFields().WithStatus(pb.TestStatus_FAIL).WithDuration(&durationpb.Duration{Seconds: 0})
+		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
+		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr2.Build()))
+
+		type message struct {
+			Attrs map[string]string
+			Body  *pb.TestResultsNotification
+		}
+
+		runTaskAndContinuations := func(workUnits []string) ([]message, error) {
+			task := &taskspb.PublishTestResultsTask{
+				RootInvocationId: string(rootInvID),
+				WorkUnitIds:      workUnits,
+			}
+			p := &testResultsPublisher{
+				task:             task,
+				resultDBHostname: rdbHost,
+				pageSize:         100,
+			}
+			err := p.handleTestResultsPublisher(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			// Run all continuation tasks.
+			runTasks(ctx, t, sched, rdbHost, 100)
+
+			allTasks := sched.Tasks()
+			var messages []message
+			for _, task := range allTasks {
+				if task.Class == "notify-test-results" {
+					// Ignore TQ internal attribute.
+					attrs := task.Message.GetAttributes()
+					delete(attrs, "X-Luci-Tq-Reminder-Id")
+
+					messages = append(messages, message{
+						Attrs: attrs,
+						Body:  task.Payload.(*taskspb.PublishTestResults).Message,
+					})
+				}
+			}
+			return messages, nil
+		}
 
 		expectedTRs1 := []*pb.TestResult{createExpectedTR(tr1, string(rootInvID), wuID1.WorkUnitID)}
 		expectedTRs2 := []*pb.TestResult{createExpectedTR(tr2, string(rootInvID), wuID2.WorkUnitID)}
 
-		gitilesSources := &pb.Sources{
-			BaseSources: &pb.Sources_GitilesCommit{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "test.googlesource.com",
-					Project:    "test/project",
-					Ref:        "refs/heads/main",
-					CommitHash: "abcdef",
-				},
+		expectedNotification := &pb.TestResultsNotification{
+			ResultdbHost: rdbHost,
+			TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+				{WorkUnitName: wuID1.Name(), TestResults: expectedTRs1},
+				{WorkUnitName: wuID2.Name(), TestResults: expectedTRs2},
 			},
+			DeduplicationKey:       "d1c858729cc402d6b95b4b172de7de046e7010294d98558549d6c67a734bb3b9",
+			RootInvocationMetadata: expectedInvocationMetadata(),
 		}
-		androidBuildDescriptor := &pb.BuildDescriptor{
-			Definition: &pb.BuildDescriptor_AndroidBuild{
-				AndroidBuild: &pb.AndroidBuildDescriptor{
-					Branch:      "git_main",
-					BuildTarget: "test-target",
-				},
-			},
-		}
-		rootInvDefinition := &pb.RootInvocationDefinition{
-			System: "atp",
-			Name:   "test-definition",
+		expectedAttrs := map[string]string{
+			luciProjectFilter:    "testproject",
+			androidBranchFilter:  "git_main",
+			androidTargetFilter:  "some-target",
+			definitionNameFilter: "project/bucket/builder",
 		}
 
-		testCases := []struct {
-			name                 string
-			rootInvBuilder       *rootinvocations.Builder
-			finalizedWUIDs       []string
-			expectedAttributes   map[string]string
-			expectedNotification *pb.TestResultsNotification
-		}{
-			{
-				name:           "StreamingExportState not METADATA_FINAL",
-				rootInvBuilder: rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_STREAMING_EXPORT_STATE_UNSPECIFIED),
-				finalizedWUIDs: []string{wuID1.WorkUnitID},
-			},
-			{
-				name:               "No Sources or PrimaryBuild",
-				rootInvBuilder:     rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(nil).WithPrimaryBuild(nil).WithDefinition(rootInvDefinition),
-				finalizedWUIDs:     []string{wuID1.WorkUnitID},
-				expectedAttributes: map[string]string{luciProjectFilter: "testproject", definitionNameFilter: "test-definition"},
-				expectedNotification: &pb.TestResultsNotification{
-					ResultdbHost: rdbHost,
-					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-						{WorkUnitName: wuID1.Name(), TestResults: expectedTRs1},
-					},
+		finalizedWorkUnits := []string{wuID1.WorkUnitID, wuID2.WorkUnitID}
+
+		t.Run("Baseline", func(t *ftt.Test) {
+			messages, err := runTaskAndContinuations(finalizedWorkUnits)
+			assert.NoErr(t, err)
+			assert.Loosely(t, messages, should.HaveLength(1))
+			assert.Loosely(t, messages[0].Body, should.Match(expectedNotification))
+			assert.Loosely(t, messages[0].Attrs, should.Match(expectedAttrs))
+		})
+		t.Run("StreamingExportState not METADATA_FINAL", func(t *ftt.Test) {
+			update := rootinvocations.NewMutationBuilder(rootInvID)
+			update.UpdateStreamingExportState(pb.RootInvocation_WAIT_FOR_METADATA)
+			testutil.MustApply(ctx, t, update.Build()...)
+
+			messages, err := runTaskAndContinuations(finalizedWorkUnits)
+			assert.NoErr(t, err)
+			assert.Loosely(t, messages, should.HaveLength(0))
+		})
+		t.Run("Single result too large", func(t *ftt.Test) {
+			// This test result is larger than the max size.
+			tr1 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testC", "res1", 10*1024*1024)
+			testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
+
+			messages, err := runTaskAndContinuations([]string{wuID1.WorkUnitID})
+			assert.Loosely(t, messages, should.HaveLength(0))
+			assert.Loosely(t, err, should.ErrLike("exceeds Pub/Sub size limit"))
+		})
+		t.Run("Only one work unit", func(t *ftt.Test) {
+			expectedNotification.TestResultsByWorkUnit = expectedNotification.TestResultsByWorkUnit[:1]
+
+			messages, err := runTaskAndContinuations(finalizedWorkUnits[:1])
+			assert.NoErr(t, err)
+			assert.Loosely(t, messages, should.HaveLength(1))
+			assert.Loosely(t, messages[0].Body, should.Match(expectedNotification))
+			assert.Loosely(t, messages[0].Attrs, should.Match(expectedAttrs))
+		})
+		t.Run("Checkpoints", func(t *ftt.Test) {
+			messages, err := runTaskAndContinuations(finalizedWorkUnits)
+			assert.NoErr(t, err)
+			assert.Loosely(t, messages, should.HaveLength(1))
+			assert.Loosely(t, messages[0].Body, should.Match(expectedNotification))
+
+			// Reset scheduler to clear tasks.
+			ctx, sched = tq.TestingContext(ctx, nil)
+
+			// Re-running the task has no effect.
+			messages, err = runTaskAndContinuations(finalizedWorkUnits)
+			assert.NoErr(t, err)
+			assert.Loosely(t, messages, should.HaveLength(0))
+		})
+		t.Run("Batching", func(t *ftt.Test) {
+			// WU1 has two results, each ~6MB. These should be in separate batches for this WU.
+			tr1 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testA", "res1", 6*1024*1024)
+			tr2 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testA", "res2", 6*1024*1024)
+
+			// WU2 has two results, ~3MB each. These should be in the same batch.
+			tr3 := sizeLimitedTestResult(string(wuID2.LegacyInvocationID()), "testB", "res1", 3*1024*1024)
+			tr4 := sizeLimitedTestResult(string(wuID2.LegacyInvocationID()), "testB", "res2", 3*1024*1024)
+
+			// Replace the test results stored.
+			testutil.MustApply(ctx, t, spanner.Delete("TestResults", spanner.AllKeys()))
+			testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
+			testutil.MustApply(ctx, t, testresults.InsertForTesting(tr2.Build()))
+			testutil.MustApply(ctx, t, testresults.InsertForTesting(tr3.Build()))
+			testutil.MustApply(ctx, t, testresults.InsertForTesting(tr4.Build()))
+
+			// Prepare expectations for comparison.
+			expectedTR1 := createExpectedTR(tr1, string(rootInvID), wuID1.WorkUnitID)
+			expectedTR2 := createExpectedTR(tr2, string(rootInvID), wuID1.WorkUnitID)
+			expectedTR3 := createExpectedTR(tr3, string(rootInvID), wuID2.WorkUnitID)
+			expectedTR4 := createExpectedTR(tr4, string(rootInvID), wuID2.WorkUnitID)
+
+			// Expected messages based on size and batching logic.
+			// WU1's results are batched separately because each is > testMaxSize/2.
+			// WU2's results fit in one batch.
+			expectedWUBatch1 := &pb.TestResultsNotification{
+				ResultdbHost:           rdbHost,
+				RootInvocationMetadata: expectedInvocationMetadata(),
+				TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+					{WorkUnitName: wuID1.Name(), TestResults: []*pb.TestResult{expectedTR1}},
 				},
-			},
-			{
-				name:               "Android Branch from PrimaryBuild",
-				rootInvBuilder:     rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithPrimaryBuild(androidBuildDescriptor).WithSources(gitilesSources).WithDefinition(rootInvDefinition),
-				finalizedWUIDs:     []string{wuID1.WorkUnitID},
-				expectedAttributes: map[string]string{luciProjectFilter: "testproject", androidBranchFilter: "git_main", androidTargetFilter: "test-target", definitionNameFilter: "test-definition"},
-				expectedNotification: &pb.TestResultsNotification{
-					ResultdbHost: rdbHost,
-					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-						{WorkUnitName: wuID1.Name(), TestResults: expectedTRs1},
-					},
-					Sources: gitilesSources,
+			}
+			expectedWUBatch1.DeduplicationKey = generateDeduplicationKey(expectedWUBatch1.TestResultsByWorkUnit)
+
+			expectedWUBatch2 := &pb.TestResultsNotification{
+				ResultdbHost:           rdbHost,
+				RootInvocationMetadata: expectedInvocationMetadata(),
+				TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+					{WorkUnitName: wuID1.Name(), TestResults: []*pb.TestResult{expectedTR2}},
 				},
-			},
-			{
-				name:               "Multiple Work Units",
-				rootInvBuilder:     rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithPrimaryBuild(androidBuildDescriptor).WithSources(gitilesSources).WithDefinition(rootInvDefinition),
-				finalizedWUIDs:     []string{wuID1.WorkUnitID, wuID2.WorkUnitID},
-				expectedAttributes: map[string]string{luciProjectFilter: "testproject", androidBranchFilter: "git_main", androidTargetFilter: "test-target", definitionNameFilter: "test-definition"},
-				expectedNotification: &pb.TestResultsNotification{
-					ResultdbHost: rdbHost,
-					TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-						{WorkUnitName: wuID1.Name(), TestResults: expectedTRs1},
-						{WorkUnitName: wuID2.Name(), TestResults: expectedTRs2},
-					},
-					Sources: gitilesSources,
+			}
+			expectedWUBatch2.DeduplicationKey = generateDeduplicationKey(expectedWUBatch2.TestResultsByWorkUnit)
+
+			expectedWUBatch3 := &pb.TestResultsNotification{
+				ResultdbHost:           rdbHost,
+				RootInvocationMetadata: expectedInvocationMetadata(),
+				TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
+					{WorkUnitName: wuID2.Name(), TestResults: []*pb.TestResult{expectedTR3, expectedTR4}},
 				},
-			},
-		}
+			}
+			expectedWUBatch3.DeduplicationKey = generateDeduplicationKey(expectedWUBatch3.TestResultsByWorkUnit)
 
-		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
-				ctx := testutil.SpannerTestContext(t)
-				ctx, sched := tq.TestingContext(ctx, nil)
-				t.Logf("Running test case: %s", tc.name)
-
-				// Insert the root invocation for this test case.
-				muts := rootinvocations.InsertForTesting(tc.rootInvBuilder.Build())
-				testutil.MustApply(ctx, t, muts...)
-				t.Logf("Inserted root invocation: %s", tc.rootInvBuilder.Build().RootInvocationID)
-
-				// Insert legacy Invocations based on work unit IDs.
-				testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
-				testutil.MustApply(ctx, t, insert.Invocation(wuID2.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
-
-				// Insert TestResults.
-				testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
-				testutil.MustApply(ctx, t, testresults.InsertForTesting(tr2.Build()))
-
-				task := &taskspb.PublishTestResultsTask{
-					RootInvocationId: string(rootInvID),
-					WorkUnitIds:      tc.finalizedWUIDs,
-				}
-				p := &testResultsPublisher{
-					task:             task,
-					resultDBHostname: rdbHost,
-					pageSize:         100,
-				}
-				err := p.handleTestResultsPublisher(ctx)
-				if tc.name == "StreamingExportState not METADATA_FINAL" {
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
-					return
-				}
-				assert.Loosely(t, err, should.BeNil)
-
-				// Run all continuation tasks.
-				runTasks(ctx, t, sched, rdbHost, 100)
-
-				allTasks := sched.Tasks()
-				var tasks tqtesting.TaskList
-				for _, task := range allTasks {
-					if task.Class == "notify-test-results" {
-						tasks = append(tasks, task)
-					}
-				}
-
-				if tc.expectedNotification == nil {
-					assert.Loosely(t, tasks, should.HaveLength(0))
-					return
-				}
-				assert.Loosely(t, tasks, should.HaveLength(1))
-				notifyTask := tasks[0]
-
-				// Ignore TQ internal attribute.
-				attrs := notifyTask.Message.GetAttributes()
-				delete(attrs, "X-Luci-Tq-Reminder-Id")
-				assert.Loosely(t, attrs, should.Match(tc.expectedAttributes))
-
-				payload := notifyTask.Payload.(*taskspb.PublishTestResults)
-
-				// Calculate the expected deduplication key separately.
-				tc.expectedNotification.DeduplicationKey = generateDeduplicationKey(payload.Message.TestResultsByWorkUnit)
-				assert.Loosely(t, payload.Message, should.Match(tc.expectedNotification))
-			})
-		}
+			messages, err := runTaskAndContinuations([]string{wuID1.WorkUnitID, wuID2.WorkUnitID})
+			assert.NoErr(t, err)
+			assert.Loosely(t, messages, should.HaveLength(3))
+			assert.Loosely(t, messages[0].Body, should.Match(expectedWUBatch1))
+			assert.Loosely(t, messages[1].Body, should.Match(expectedWUBatch2))
+			assert.Loosely(t, messages[2].Body, should.Match(expectedWUBatch3))
+		})
 	})
 }
 
-// TestHandlePublishTestResultsTask_Batching tests the batching logic in handlePublishTestResultsTask.
-func TestHandlePublishTestResultsTask_Batching(t *testing.T) {
-	t.Run("HandlePublishTestResultsTask_Batching", func(t *testing.T) {
-		ctx := testutil.SpannerTestContext(t)
-		rootInvID := rootinvocations.ID("test-root-inv-batch")
-		rdbHost := "results.api.cr.dev"
-
-		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
-		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
-
-		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
-		testutil.MustApply(ctx, t, insert.Invocation(wuID2.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
-
-		// WU1 has two results, each ~6MB. These should be in separate batches for this WU.
-		tr1 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testA", "res1", 6*1024*1024)
-		tr2 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testA", "res2", 6*1024*1024)
-
-		// WU2 has two results, ~3MB each. These should be in the same batch.
-		tr3 := sizeLimitedTestResult(string(wuID2.LegacyInvocationID()), "testB", "res1", 3*1024*1024)
-		tr4 := sizeLimitedTestResult(string(wuID2.LegacyInvocationID()), "testB", "res2", 3*1024*1024)
-
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr2.Build()))
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr3.Build()))
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr4.Build()))
-
-		gitilesSources := &pb.Sources{
+func expectedInvocationMetadata() *pb.RootInvocationMetadata {
+	// This is based on the default values used in rootinvocations.NewBuilder().
+	return &pb.RootInvocationMetadata{
+		Name:             "rootInvocations/test-root-inv",
+		RootInvocationId: "test-root-inv",
+		Realm:            "testproject:testrealm",
+		CreateTime:       timestamppb.New(time.Date(2025, 4, 25, 1, 2, 3, 4000, time.UTC)),
+		ProducerResource: &pb.ProducerResource{
+			System:    "buildbucket",
+			DataRealm: "prod",
+			Name:      "builds/654",
+			Url:       "https://milo-prod/ui/b/654",
+		},
+		Definition: &pb.RootInvocationDefinition{
+			System:         "buildbucket",
+			Name:           "project/bucket/builder",
+			Properties:     pbutil.DefinitionProperties("key", "value"),
+			PropertiesHash: "5d8482c3056d8635",
+		},
+		Sources: &pb.Sources{
 			BaseSources: &pb.Sources_GitilesCommit{
 				GitilesCommit: &pb.GitilesCommit{
-					Host:       "test.googlesource.com",
-					Project:    "test/project",
+					Host:       "chromium.googlesource.com",
+					Project:    "chromium/src",
 					Ref:        "refs/heads/main",
-					CommitHash: "abcdef",
+					CommitHash: "1234567890abcdef1234567890abcdef12345678",
+					Position:   12345,
 				},
 			},
-		}
-		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(gitilesSources)
-		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInvBuilder.Build())...)
-		ctx, sched := tq.TestingContext(ctx, nil)
-		task := &taskspb.PublishTestResultsTask{
-			RootInvocationId: string(rootInvID),
-			WorkUnitIds:      []string{wuID1.WorkUnitID, wuID2.WorkUnitID},
-		}
-
-		p := &testResultsPublisher{
-			task:             task,
-			resultDBHostname: rdbHost,
-			pageSize:         100,
-		}
-		err := p.handleTestResultsPublisher(ctx)
-		assert.Loosely(t, err, should.BeNil)
-
-		// Run all continuation tasks.
-		runTasks(ctx, t, sched, rdbHost, 100)
-
-		allTasks := sched.Tasks()
-		var actualMessages []*pb.TestResultsNotification
-
-		for _, task := range allTasks {
-			if task.Class == "notify-test-results" {
-				payload := task.Payload.(*taskspb.PublishTestResults)
-				actualMessages = append(actualMessages, payload.Message)
-			}
-		}
-
-		// Prepare expected results for comparison
-		expectedTR1 := createExpectedTR(tr1, string(rootInvID), wuID1.WorkUnitID)
-		expectedTR2 := createExpectedTR(tr2, string(rootInvID), wuID1.WorkUnitID)
-		expectedTR3 := createExpectedTR(tr3, string(rootInvID), wuID2.WorkUnitID)
-		expectedTR4 := createExpectedTR(tr4, string(rootInvID), wuID2.WorkUnitID)
-
-		// Expected messages based on size and batching logic.
-		// WU1's results are batched separately because each is > testMaxSize/2.
-		// WU2's results fit in one batch.
-		expectedWUBatch1 := &pb.TestResultsNotification{
-			ResultdbHost: rdbHost,
-			Sources:      gitilesSources,
-			TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-				{WorkUnitName: wuID1.Name(), TestResults: []*pb.TestResult{expectedTR1}},
+		},
+		PrimaryBuild: &pb.BuildDescriptor{
+			Definition: &pb.BuildDescriptor_AndroidBuild{
+				AndroidBuild: &pb.AndroidBuildDescriptor{
+					DataRealm:   "prod",
+					Branch:      "git_main",
+					BuildTarget: "some-target",
+					BuildId:     "P1234567890",
+				},
 			},
-		}
-		expectedWUBatch1.DeduplicationKey = generateDeduplicationKey(expectedWUBatch1.TestResultsByWorkUnit)
-
-		expectedWUBatch2 := &pb.TestResultsNotification{
-			ResultdbHost: rdbHost,
-			Sources:      gitilesSources,
-			TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-				{WorkUnitName: wuID1.Name(), TestResults: []*pb.TestResult{expectedTR2}},
+			Url: "https://android-build.googleplex.com/build_explorer/build_details/P1234567890/some-target/",
+		},
+		ExtraBuilds: []*pb.BuildDescriptor{
+			{
+				Definition: &pb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &pb.AndroidBuildDescriptor{
+						DataRealm:   "prod",
+						Branch:      "git_main",
+						BuildTarget: "second-target",
+						BuildId:     "9876543210",
+					},
+				},
+				Url: "https://android-build.googleplex.com/build_explorer/build_details/9876543210/second-target/",
 			},
-		}
-		expectedWUBatch2.DeduplicationKey = generateDeduplicationKey(expectedWUBatch2.TestResultsByWorkUnit)
-
-		expectedWUBatch3 := &pb.TestResultsNotification{
-			ResultdbHost: rdbHost,
-			Sources:      gitilesSources,
-			TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-				{WorkUnitName: wuID2.Name(), TestResults: []*pb.TestResult{expectedTR3, expectedTR4}},
-			},
-		}
-		expectedWUBatch3.DeduplicationKey = generateDeduplicationKey(expectedWUBatch3.TestResultsByWorkUnit)
-
-		assert.Loosely(t, actualMessages, should.HaveLength(3))
-		assert.Loosely(t, actualMessages, should.Match([]*pb.TestResultsNotification{expectedWUBatch1, expectedWUBatch2, expectedWUBatch3}))
-	})
+		},
+	}
 }
 
 // TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLarge tests that if a single page
 // of results is too large, we flush previously collected results first.
 func TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLarge(t *testing.T) {
-	t.Run("HandlePublishTestResultsTask_Scenario1_Flush", func(t *testing.T) {
+	ftt.Run("HandlePublishTestResultsTask_Scenario1_Flush", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
+
+		// Set up a placeholder service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
+
 		rootInvID := rootinvocations.ID("test-root-inv-flush")
 		rdbHost := "results.api.cr.dev"
 
@@ -440,7 +448,7 @@ func TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLar
 		}
 
 		// Run the first task.
-		err := p.handleTestResultsPublisher(ctx)
+		err = p.handleTestResultsPublisher(ctx)
 		assert.Loosely(t, err, should.BeNil)
 
 		// Check tasks in queue.
@@ -509,10 +517,17 @@ func TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLar
 
 // TestHandlePublishTestResultsTask_Pagination tests the pagination logic in handlePublishTestResultsTask.
 func TestHandlePublishTestResultsTask_Pagination(t *testing.T) {
-	t.Run("HandlePublishTestResultsTask_Pagination", func(t *testing.T) {
+	ftt.Run("HandlePublishTestResultsTask_Pagination", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
+		ctx = caching.WithEmptyProcessCache(ctx) // For config in-process cache.
+		ctx = memory.Use(ctx)                    // For config datastore cache.
 
-		rootInvID := rootinvocations.ID("test-root-inv-page")
+		// Set up a placeholder service config.
+		cfg := config.CreatePlaceholderServiceConfig()
+		err := config.SetServiceConfigForTesting(ctx, cfg)
+		assert.Loosely(t, err, should.BeNil)
+
+		rootInvID := rootinvocations.ID("test-root-inv")
 		rdbHost := "results.api.cr.dev"
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 
@@ -527,17 +542,7 @@ func TestHandlePublishTestResultsTask_Pagination(t *testing.T) {
 
 		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr3.Build()))
 
-		gitilesSources := &pb.Sources{
-			BaseSources: &pb.Sources_GitilesCommit{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "test.googlesource.com",
-					Project:    "test/project",
-					Ref:        "refs/heads/main",
-					CommitHash: "abcdef",
-				},
-			},
-		}
-		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(gitilesSources)
+		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL)
 		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInvBuilder.Build())...)
 		ctx, sched := tq.TestingContext(ctx, nil)
 
@@ -552,7 +557,7 @@ func TestHandlePublishTestResultsTask_Pagination(t *testing.T) {
 			resultDBHostname: rdbHost,
 			pageSize:         2, // Set pageSize to 2 to force pagination.
 		}
-		err := p.handleTestResultsPublisher(ctx)
+		err = p.handleTestResultsPublisher(ctx)
 		assert.Loosely(t, err, should.BeNil)
 		runTasks(ctx, t, sched, rdbHost, 2)
 
@@ -565,13 +570,15 @@ func TestHandlePublishTestResultsTask_Pagination(t *testing.T) {
 		assert.Loosely(t, notifyTasks, should.HaveLength(1))
 
 		notifyPayload := notifyTasks[0].Payload.(*taskspb.PublishTestResults)
+
+		// Prepare expectations for comparison.
 		expectedTR1 := createExpectedTR(tr1, string(rootInvID), wuID1.WorkUnitID)
 		expectedTR2 := createExpectedTR(tr2, string(rootInvID), wuID1.WorkUnitID)
 		expectedTR3 := createExpectedTR(tr3, string(rootInvID), wuID1.WorkUnitID)
 
 		expectedMsg := &pb.TestResultsNotification{
-			ResultdbHost: rdbHost,
-			Sources:      gitilesSources,
+			ResultdbHost:           rdbHost,
+			RootInvocationMetadata: expectedInvocationMetadata(),
 			TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
 				{
 					WorkUnitName: wuID1.Name(),
@@ -581,99 +588,6 @@ func TestHandlePublishTestResultsTask_Pagination(t *testing.T) {
 		}
 		expectedMsg.DeduplicationKey = generateDeduplicationKey(expectedMsg.TestResultsByWorkUnit)
 		assert.Loosely(t, notifyPayload.Message, should.Match(expectedMsg))
-	})
-}
-
-// TestHandlePublishTestResultsTask_SingleResultTooLarge tests the case where a single test result exceeds the Pub/Sub size limit.
-func TestHandlePublishTestResultsTask_SingleResultTooLarge(t *testing.T) {
-	t.Run("HandlePublishTestResultsTask_SingleResultTooLarge", func(t *testing.T) {
-		ctx := testutil.SpannerTestContext(t)
-		rootInvID := rootinvocations.ID("test-root-inv-large")
-		rdbHost := "results.api.cr.dev"
-		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
-
-		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
-
-		// This test result is larger than the max size.
-		tr1 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testC", "res1", 10*1024*1024)
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
-
-		gitilesSources := &pb.Sources{
-			BaseSources: &pb.Sources_GitilesCommit{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "test.googlesource.com",
-					Project:    "test/project",
-					Ref:        "refs/heads/main",
-					CommitHash: "abcdef",
-				},
-			},
-		}
-
-		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(gitilesSources)
-		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInvBuilder.Build())...)
-		ctx, sched := tq.TestingContext(ctx, nil)
-
-		task := &taskspb.PublishTestResultsTask{
-			RootInvocationId: string(rootInvID),
-			WorkUnitIds:      []string{wuID1.WorkUnitID},
-		}
-
-		p := &testResultsPublisher{
-			task:             task,
-			resultDBHostname: rdbHost,
-			pageSize:         100,
-		}
-		err := p.handleTestResultsPublisher(ctx)
-
-		assert.Loosely(t, err, should.NotBeNil)
-		assert.Loosely(t, strings.Contains(err.Error(), "exceeds Pub/Sub size limit"), should.BeTrue)
-
-		// No tasks should be enqueued.
-		assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
-	})
-}
-
-// TestHandlePublishTestResultsTask_Checkpoints tests that checkpoints prevent redundant processing.
-func TestHandlePublishTestResultsTask_Checkpoints(t *testing.T) {
-	t.Run("HandlePublishTestResultsTask_Checkpoints", func(t *testing.T) {
-		ctx := testutil.SpannerTestContext(t)
-		rootInvID := rootinvocations.ID("test-root-inv-checkpoints")
-		rdbHost := "results.api.cr.dev"
-		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
-		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
-
-		tr1 := testresults.NewBuilder(wuID1.LegacyInvocationID(), "testA", "res1").WithMinimalFields()
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
-
-		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL)
-		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInvBuilder.Build())...)
-		ctx, sched := tq.TestingContext(ctx, nil)
-
-		task := &taskspb.PublishTestResultsTask{
-			RootInvocationId:     string(rootInvID),
-			WorkUnitIds:          []string{wuID1.WorkUnitID},
-			CurrentWorkUnitIndex: 0,
-			PageToken:            "",
-		}
-
-		p := &testResultsPublisher{
-			task:             task,
-			resultDBHostname: rdbHost,
-			pageSize:         100,
-		}
-
-		// First run should process and create checkpoint.
-		err := p.handleTestResultsPublisher(ctx)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, sched.Tasks().Filter(func(t *tqtesting.Task) bool { return t.Class == "notify-test-results" }), should.HaveLength(1))
-
-		// Reset scheduler to clear tasks.
-		ctx, sched = tq.TestingContext(ctx, nil)
-
-		// Second run with same task should be skipped by checkpoint.
-		err = p.handleTestResultsPublisher(ctx)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, sched.Tasks().Filter(func(t *tqtesting.Task) bool { return t.Class == "notify-test-results" }), should.HaveLength(0))
 	})
 }
 
