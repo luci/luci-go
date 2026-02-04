@@ -20,6 +20,8 @@ import (
 	"slices"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -136,17 +138,25 @@ func validateCheckPattern(typeURL string) error {
 // MakeTypeMatcher accepts a `TypeSet` and returns a TypeMatcher which can be
 // used to match Value and Datum objects by their TypeURL.
 func MakeTypeMatcher(ts *orchestratorpb.TypeSet) (TypeMatcher, error) {
-	if len(ts.GetTypeUrls()) == 0 {
-		return TypeMatcher{}, nil
+	pats, err := normalizeTypeSetPatterns(ts.GetTypeUrls())
+	if err != nil {
+		return TypeMatcher{}, err
+	}
+	return TypeMatcher{pats}, err
+}
+
+func normalizeTypeSetPatterns(patterns []string) ([]string, error) {
+	if len(patterns) == 0 {
+		return nil, nil
 	}
 
 	var errs []error
 
 	// We add patterns in order.
-	urls := slices.Clone(ts.GetTypeUrls())
+	urls := slices.Clone(patterns)
 	slices.Sort(urls)
 
-	ret := TypeMatcher{patterns: make([]string, 0, len(urls))}
+	ret := make([]string, 0, len(urls))
 
 	// prev tracks the most recently added pattern; since we are following urls
 	// in sorted order, we only need to check this most recently inserted rule
@@ -162,12 +172,69 @@ func MakeTypeMatcher(ts *orchestratorpb.TypeSet) (TypeMatcher, error) {
 			// We have a rule in ret which already matches this pattern; skip it.
 			continue
 		}
-		ret.patterns = append(ret.patterns, typeURL)
+		ret = append(ret, typeURL)
 		prev = typeURL
 	}
 
 	if len(errs) > 0 {
-		return TypeMatcher{}, errors.Join(errs...)
+		return nil, errors.Join(errs...)
 	}
 	return ret, nil
+}
+
+// TypeSetBuilder helps you compose an orchestratorpb.TypeSet from one or more
+// patterns, messages or raw pattern strings.
+type TypeSetBuilder []string
+
+// WithPackagesOf adds wildcard patterns for the packages of all the given
+// message instances.
+//
+// Uses [URLPatternPackageOfMsg] for each message.
+func (t TypeSetBuilder) WithPackagesOf(msgs ...proto.Message) TypeSetBuilder {
+	t = slices.Grow(t, len(msgs))
+	for _, msg := range msgs {
+		t = append(t, URLPatternPackageOfMsg(msg))
+	}
+	return t
+}
+
+// WithMessages adds exact patterns for all the given message instances.
+//
+// Uses [URLMsg] for each message.
+func (t TypeSetBuilder) WithMessages(msgs ...proto.Message) TypeSetBuilder {
+	t = slices.Grow(t, len(msgs))
+	for _, msg := range msgs {
+		t = append(t, URLMsg(msg))
+	}
+	return t
+}
+
+// WithPatterns adds raw string patterns to this TypeSetBuilder.
+//
+// Note that all patterns must start with TypePrefix.
+func (t TypeSetBuilder) WithPatterns(pat ...string) TypeSetBuilder {
+	return append(t, pat...)
+}
+
+// Build returns a normalized TypeSet from all patterns in this builder.
+//
+// If this TypeSetBuilder is empty, returns nil.
+func (t TypeSetBuilder) Build() (*orchestratorpb.TypeSet, error) {
+	if len(t) == 0 {
+		return nil, nil
+	}
+	ret, err := normalizeTypeSetPatterns(t)
+	if err != nil {
+		return nil, err
+	}
+	return orchestratorpb.TypeSet_builder{TypeUrls: ret}.Build(), nil
+}
+
+// MustBuild is the same as [Build], except it panics on error.
+func (t TypeSetBuilder) MustBuild() *orchestratorpb.TypeSet {
+	ret, err := t.Build()
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }

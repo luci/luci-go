@@ -166,3 +166,36 @@ func TestMakeTypeMatcher(t *testing.T) {
 		})
 	}
 }
+
+func TestTypeSetBuilder(t *testing.T) {
+	t.Parallel()
+
+	t.Run(`empty`, func(t *testing.T) {
+		t.Parallel()
+
+		tb, err := TypeSetBuilder{}.Build()
+		assert.NoErr(t, err)
+		assert.Loosely(t, tb, should.BeNil)
+	})
+
+	t.Run(`fixed`, func(t *testing.T) {
+		t.Parallel()
+
+		tb, err := TypeSetBuilder{}.WithMessages(&emptypb.Empty{}, &structpb.Struct{}).Build()
+		assert.NoErr(t, err)
+		assert.Loosely(t, tb.GetTypeUrls(), should.HaveLength(2))
+	})
+
+	t.Run(`normalized`, func(t *testing.T) {
+		t.Parallel()
+
+		tb, err := (TypeSetBuilder{}.
+			WithMessages(&emptypb.Empty{}, &structpb.Struct{}).
+			WithPackagesOf(&structpb.ListValue{}).
+			Build())
+		assert.NoErr(t, err)
+		assert.Loosely(t, tb.GetTypeUrls(), should.HaveLength(1))
+		assert.That(t, tb.GetTypeUrls()[0], should.Equal(
+			TypePrefix+"google.protobuf.*"))
+	})
+}
