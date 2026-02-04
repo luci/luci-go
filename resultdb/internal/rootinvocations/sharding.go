@@ -99,6 +99,10 @@ type ShardingAlgorithm interface {
 	//
 	// This method must be deterministic; query code assumes that the same test identifier
 	// in the same root invocation will always be assigned to the same shard.
+	//
+	// The method does not use testID.ModuleVariant (only testID.ModuleVariantHash),
+	// to ensure it works correctly in query scenarios where the ModuleVariant may
+	// not be known.
 	ShardTestID(rootInvocationID ID, testID *pb.TestIdentifier) int
 }
 
