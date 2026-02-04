@@ -306,16 +306,17 @@ func TestQuery(t *testing.T) {
 					})
 					t.Run("With verdict size limit", func(t *ftt.Test) {
 						// Remove one result from t3 and measure its size. This will be our target.
-						assert.Loosely(t, expected[1].Results, should.HaveLength(2))
-						expected[1].Results = expected[1].Results[:1]
-						opts.VerdictSizeLimit = proto.Size(expected[1]) + protoJSONOverheadBytes
+						t3 := VerdictByCaseName(expected, "t3")
+						assert.Loosely(t, t3.Results, should.HaveLength(2))
+						t3.Results = t3.Results[:1]
+						opts.VerdictSizeLimit = proto.Size(t3) + protoJSONOverheadBytes
 
 						// As the implementation is conservative, give it a little bit of extra room.
 						opts.VerdictSizeLimit += 2
 
 						results := fetchAll(q, opts)
 						assert.Loosely(t, results, should.HaveLength(len(expected)))
-						assert.Loosely(t, results[1], should.Match(expected[1]))
+						assert.Loosely(t, VerdictByCaseName(results, "t3"), should.Match(t3))
 					})
 					t.Run("With total result limit", func(t *ftt.Test) {
 						t.Run("Makes progress", func(t *ftt.Test) {
@@ -327,16 +328,22 @@ func TestQuery(t *testing.T) {
 							assert.Loosely(t, results, should.Match(expected))
 						})
 						t.Run("Limit is applied correctly", func(t *ftt.Test) {
+							q.Order = Ordering{ByStructuredTestID: true}
 							// Should return t1 (1 result) and t2 (1 result).
 							// t3 (2 results) would make total 4 results, plus 1 for
-							// end of verdict detection and 5 > 4.
-							opts.TotalResultLimit = 4
+							// end of verdict detection and 5 > 3.
+							opts.TotalResultLimit = 3
 							verdicts, token, err := fetchOne(q, PageToken{}, opts)
 							assert.Loosely(t, err, should.BeNil)
 							assert.Loosely(t, token, should.NotEqual(PageToken{}))
-							assert.Loosely(t, verdicts, should.Match(expected[:2]))
+							expected := []*pb.TestVerdict{
+								VerdictByCaseName(expected, "t1"),
+								VerdictByCaseName(expected, "t2"),
+							}
+							assert.Loosely(t, verdicts, should.Match(expected))
 						})
 						t.Run("Limit is applied correctly (case 2)", func(t *ftt.Test) {
+							q.Order = Ordering{ByStructuredTestID: true}
 							// Should return t1 (1), t2 (1), t3 (2).
 							// Total results = 4, plus one overhead for end of verdict
 							// detection which makes 5.
@@ -344,7 +351,12 @@ func TestQuery(t *testing.T) {
 							verdicts, token, err := fetchOne(q, PageToken{}, opts)
 							assert.Loosely(t, err, should.BeNil)
 							assert.Loosely(t, token, should.NotEqual(PageToken{}))
-							assert.Loosely(t, verdicts, should.Match(expected[:3]))
+							expected := []*pb.TestVerdict{
+								VerdictByCaseName(expected, "t1"),
+								VerdictByCaseName(expected, "t2"),
+								VerdictByCaseName(expected, "t3"),
+							}
+							assert.Loosely(t, verdicts, should.Match(expected))
 						})
 					})
 				}

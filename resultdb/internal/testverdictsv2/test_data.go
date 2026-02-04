@@ -17,6 +17,7 @@ package testverdictsv2
 import (
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -36,29 +37,37 @@ import (
 
 const exonerationsTestRealm = "testproject:exonerations"
 
+// The sharding algorithm used for test data.
+var TestShardingAlgorithm = &rootinvocations.ByCaseNameShardingAlgorithm{}
+
 // CreateTestData creates test data used for testing test verdicts.
 func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
-	// Pick a few shards. In reality each test may be in a different shard.
-	shardOne := rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 0}
-	shardTwo := rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 15}
+	shardFor := func(testID *pb.TestIdentifier) rootinvocations.ShardID {
+		return rootinvocations.ShardID{
+			RootInvocationID: rootInvID,
+			ShardIndex:       TestShardingAlgorithm.ShardTestID(rootInvID, testID),
+		}
+	}
 
-	baseBuilder := func() *testresultsv2.Builder {
-		return testresultsv2.NewBuilder().WithRootInvocationShardID(shardOne).
-			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).
-			WithCoarseName("c1").WithFineName("f1").WithCaseName("t1").WithTags(pbutil.StringPairs("mytag", "myvalue")).
+	baseBuilder := func(testID *pb.TestIdentifier) *testresultsv2.Builder {
+		return testresultsv2.NewBuilder().WithRootInvocationShardID(shardFor(testID)).
+			WithModuleName(testID.ModuleName).WithModuleScheme(testID.ModuleScheme).WithModuleVariant(testID.ModuleVariant).
+			WithCoarseName(testID.CoarseName).WithFineName(testID.FineName).WithCaseName(testID.CaseName).WithTags(pbutil.StringPairs("mytag", "myvalue")).
 			WithTestMetadata(&pb.TestMetadata{Name: "tmd", Location: &pb.TestLocation{Repo: "https://repo", FileName: "file"}}).
 			WithProperties(&structpb.Struct{Fields: map[string]*structpb.Value{"key": structpb.NewStringValue("value")}})
 	}
-	baseExonerationBuilder := func() *testexonerationsv2.Builder {
-		return testexonerationsv2.NewBuilder().WithRootInvocationShardID(shardOne).
-			WithModuleName("m1").WithModuleScheme("junit").WithModuleVariant(pbutil.Variant("key", "value")).
-			WithCoarseName("c1").WithFineName("f1").WithCaseName("t1").WithRealm(exonerationsTestRealm)
+	baseExonerationBuilder := func(testID *pb.TestIdentifier) *testexonerationsv2.Builder {
+		return testexonerationsv2.NewBuilder().WithRootInvocationShardID(shardFor(testID)).
+			WithModuleName(testID.ModuleName).WithModuleScheme(testID.ModuleScheme).WithModuleVariant(testID.ModuleVariant).
+			WithCoarseName(testID.CoarseName).WithFineName(testID.FineName).WithCaseName(testID.CaseName).WithRealm(exonerationsTestRealm)
 	}
-	workUnitBuilder := func(workUnitID string) *workunits.Builder {
+	workUnitBuilder := func(workUnitID string, moduleName string) *workunits.Builder {
 		id := &pb.ModuleIdentifier{
-			ModuleName:    "m1",
-			ModuleScheme:  "junit",
-			ModuleVariant: pbutil.Variant("key", "value"),
+			ModuleName:   moduleName,
+			ModuleScheme: "junit",
+			ModuleVariant: &pb.Variant{
+				Def: map[string]string{"key": "value"},
+			},
 		}
 		return workunits.NewBuilder(rootInvID, workUnitID).WithModuleID(id)
 	}
@@ -67,47 +76,47 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	// work unit, but for testing purposes we put each in its own realm as it makes life easier.
 	results := []*testresultsv2.TestResultRow{
 		// Verdict 1: Passed
-		baseBuilder().WithRootInvocationShardID(shardTwo).WithCaseName("t1").WithResultID("r1").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t1-r1").Build(),
+		baseBuilder(testID("m1", "c1", "f1", "t1")).WithResultID("r1").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t1-r1").Build(),
 
 		// Verdict 2: Failed
-		baseBuilder().WithCaseName("t2").WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t2-r1").
+		baseBuilder(testID("m1", "c1", "f1", "t2")).WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t2-r1").
 			WithFailureReason(longFailureReason()).Build(),
 
 		// Verdict 3: Flaky (Pass + Fail)
-		baseBuilder().WithCaseName("t3").WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t3-r1").Build(),
-		baseBuilder().WithCaseName("t3").WithResultID("r2").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t3-r2").Build(),
+		baseBuilder(testID("m1", "c1", "f1", "t3")).WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t3-r1").Build(),
+		baseBuilder(testID("m1", "c1", "f1", "t3")).WithResultID("r2").WithStatusV2(pb.TestResult_PASSED).WithRealm("testproject:t3-r2").Build(),
 
 		// Verdict 4: Skipped
-		baseBuilder().WithCaseName("t4").WithResultID("r1").WithStatusV2(pb.TestResult_SKIPPED).WithRealm("testproject:t4-r1").
+		baseBuilder(testID("m1", "c1", "f1", "t4")).WithResultID("r1").WithStatusV2(pb.TestResult_SKIPPED).WithRealm("testproject:t4-r1").
 			WithSkippedReason(longSkippedReason()).Build(),
 
 		// Verdict 5: Exonerated (Fail + Exoneration)
-		baseBuilder().WithCaseName("t5").WithFineName("f2").WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t5-r1").Build(),
+		baseBuilder(testID("m1", "c1", "f2", "t5")).WithResultID("r1").WithStatusV2(pb.TestResult_FAILED).WithRealm("testproject:t5-r1").Build(),
 
 		// Verdict 6: Precluded
-		baseBuilder().WithCaseName("t6").WithCoarseName("c2").WithResultID("r1").WithStatusV2(pb.TestResult_PRECLUDED).WithRealm("testproject:t6-r1").Build(),
+		baseBuilder(testID("m1", "c2", "f1", "t6")).WithResultID("r1").WithStatusV2(pb.TestResult_PRECLUDED).WithRealm("testproject:t6-r1").Build(),
 
 		// Verdict 7: Execution Errored
-		baseBuilder().WithCaseName("t7").WithModuleName("m2").WithResultID("r1").WithStatusV2(pb.TestResult_EXECUTION_ERRORED).WithRealm("testproject:t7-r1").Build(),
+		baseBuilder(testID("m2", "c1", "f1", "t7")).WithResultID("r1").WithStatusV2(pb.TestResult_EXECUTION_ERRORED).WithRealm("testproject:t7-r1").Build(),
 	}
 
 	exonerations := []*testexonerationsv2.TestExonerationRow{
 		// Exonerate t5 (twice)
-		baseExonerationBuilder().WithFineName("f2").WithCaseName("t5").WithExonerationID("e1").WithReason(pb.ExonerationReason_OCCURS_ON_OTHER_CLS).Build(),
-		baseExonerationBuilder().WithFineName("f2").WithCaseName("t5").WithExonerationID("e2").WithReason(pb.ExonerationReason_NOT_CRITICAL).Build(),
+		baseExonerationBuilder(testID("m1", "c1", "f2", "t5")).WithExonerationID("e1").WithReason(pb.ExonerationReason_OCCURS_ON_OTHER_CLS).Build(),
+		baseExonerationBuilder(testID("m1", "c1", "f2", "t5")).WithExonerationID("e2").WithReason(pb.ExonerationReason_NOT_CRITICAL).Build(),
 	}
 
 	// Define work units with realms corresponding to the test results. QueryTestVerdicts RPC
 	// relies upon this to identify all realms used in the root invocation.
 	wus := []*workunits.WorkUnitRow{
-		workUnitBuilder("t1-r1-wu").WithRealm("testproject:t1-r1").Build(),
-		workUnitBuilder("t2-r1-wu").WithRealm("testproject:t2-r1").Build(),
-		workUnitBuilder("t3-r1-wu").WithRealm("testproject:t3-r1").Build(),
-		workUnitBuilder("t3-r2-wu").WithRealm("testproject:t3-r2").Build(),
-		workUnitBuilder("t4-r1-wu").WithRealm("testproject:t4-r1").Build(),
-		workUnitBuilder("t5-r1-wu").WithRealm("testproject:t5-r1").Build(),
-		workUnitBuilder("t6-r1-wu").WithRealm("testproject:t6-r1").Build(),
-		workUnitBuilder("t7-r1-wu").WithRealm("testproject:t7-r1").Build(),
+		workUnitBuilder("t1-r1-wu", "m1").WithRealm("testproject:t1-r1").Build(),
+		workUnitBuilder("t2-r1-wu", "m1").WithRealm("testproject:t2-r1").Build(),
+		workUnitBuilder("t3-r1-wu", "m1").WithRealm("testproject:t3-r1").Build(),
+		workUnitBuilder("t3-r2-wu", "m1").WithRealm("testproject:t3-r2").Build(),
+		workUnitBuilder("t4-r1-wu", "m1").WithRealm("testproject:t4-r1").Build(),
+		workUnitBuilder("t5-r1-wu", "m1").WithRealm("testproject:t5-r1").Build(),
+		workUnitBuilder("t6-r1-wu", "m1").WithRealm("testproject:t6-r1").Build(),
+		workUnitBuilder("t7-r1-wu", "m2").WithRealm("testproject:t7-r1").Build(),
 	}
 
 	// Prepare mutations.
@@ -298,8 +307,24 @@ func ExpectedVerdicts(rootInvID rootinvocations.ID) []*pb.TestVerdict {
 	r7 := makeResult(testID7, "r1", pb.TestResult_EXECUTION_ERRORED)
 	v7 := makeVerdict(testID7, pb.TestVerdict_EXECUTION_ERRORED, []*pb.TestResult{r7}, nil)
 
-	// v1 is in shard 15, so it should come last as this list is in primary key order.
-	return []*pb.TestVerdict{v2, v3, v4, v5, v6, v7, v1}
+	verdicts := []*pb.TestVerdict{v1, v2, v3, v4, v5, v6, v7}
+
+	// Sort verdicts by primary key order.
+	sort.Slice(verdicts, func(i, j int) bool {
+		a, b := verdicts[i], verdicts[j]
+		shardNumberA := TestShardingAlgorithm.ShardTestID(rootInvID, a.TestIdStructured)
+		shardNumberB := TestShardingAlgorithm.ShardTestID(rootInvID, b.TestIdStructured)
+		if shardNumberA != shardNumberB {
+			return shardNumberA < shardNumberB
+		}
+		// For the test data in this method, sorting by the case name is enough to
+		// sort the test data by full ID.
+		if a.TestIdStructured.CaseName != b.TestIdStructured.CaseName {
+			return a.TestIdStructured.CaseName < b.TestIdStructured.CaseName
+		}
+		return false
+	})
+	return verdicts
 }
 
 // FilterVerdicts filters the given verdicts using the given filter function. For testing purposes.

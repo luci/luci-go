@@ -258,10 +258,12 @@ func (q *IteratorQuery) List(ctx context.Context, pageToken PageToken, bufferSiz
 	teIterator := teQuery.List(ctx, tePageToken, teOpts)
 
 	return &Iterator{
-		testResults:        spanutil.NewPeekingIterator(trIterator),
-		testExonerations:   spanutil.NewPeekingIterator(teIterator),
-		lastRequestOrdinal: pageToken.RequestOrdinal,
-		order:              q.Order,
+		testResults:                 spanutil.NewPeekingIterator(trIterator),
+		testExonerations:            spanutil.NewPeekingIterator(teIterator),
+		isFetchingNominatedVerdicts: q.VerdictIDs != nil,
+		lastRequestOrdinal:          pageToken.RequestOrdinal,
+		endRequestOrdinal:           len(q.VerdictIDs),
+		order:                       q.Order,
 	}
 }
 
@@ -270,10 +272,19 @@ func (q *IteratorQuery) List(ctx context.Context, pageToken PageToken, bufferSiz
 // Internally, it implements a merge join between test result and test exoneration
 // iterators.
 type Iterator struct {
-	testResults        *spanutil.PeekingIterator[*testresultsv2.TestResultRow]
-	testExonerations   *spanutil.PeekingIterator[*testexonerationsv2.TestExonerationRow]
+	testResults      *spanutil.PeekingIterator[*testresultsv2.TestResultRow]
+	testExonerations *spanutil.PeekingIterator[*testexonerationsv2.TestExonerationRow]
+	// If set, indicates the query is for a specific set of verdict IDs.
+	// lastRequestOrdinal and endRequestOrdinal are used to track the progress
+	// of the query and insert placeholder verdicts for missing verdicts.
+	isFetchingNominatedVerdicts bool
+	// The ordinal (one-based index) of the last retrieved verdict. Only used
+	// if isFetchingSpecificVerdicts is set.
 	lastRequestOrdinal int
-	order              testresultsv2.Ordering
+	// The ordinal (one-based index) of the last requested verdict. Only used
+	// if isFetchingSpecificVerdicts is set.
+	endRequestOrdinal int
+	order             testresultsv2.Ordering
 }
 
 // Next returns the next test verdict.
@@ -283,12 +294,19 @@ func (i *Iterator) Next() (*TestVerdict, error) {
 	res, err := i.testResults.Peek()
 	if err != nil {
 		if err == iterator.Done {
+			// The underlying iterator has finished before we have returned
+			// all nominated verdicts. Return placeholder verdicts for the
+			// remaining verdicts.
+			if i.isFetchingNominatedVerdicts && i.lastRequestOrdinal < i.endRequestOrdinal {
+				i.lastRequestOrdinal++
+				return &TestVerdict{RequestOrdinal: i.lastRequestOrdinal}, nil
+			}
 			return nil, iterator.Done
 		}
 		return nil, err
 	}
 
-	if res.RequestOrdinal != 0 && res.RequestOrdinal > (i.lastRequestOrdinal+1) {
+	if i.isFetchingNominatedVerdicts && res.RequestOrdinal > (i.lastRequestOrdinal+1) {
 		// We are querying specific verdicts via q.VerdictIDs and one or more
 		// verdicts are missing. Return a placeholder verdict in place of
 		// the missing verdict.

@@ -206,16 +206,15 @@ func TestIteratorQuery(t *testing.T) {
 			expected := ExpectedVerdicts(rootInvID)
 
 			// Remove one result from t3 and measure its size. This will be our target.
-			assert.Loosely(t, expected[1].Results, should.HaveLength(2))
-			expected[1].Results = expected[1].Results[:1]
-			opts.VerdictSizeLimit = proto.Size(expected[1]) + protoJSONOverheadBytes
-
+			t3 := VerdictByCaseName(expected, "t3")
+			assert.Loosely(t, t3.Results, should.HaveLength(2))
+			t3.Results = t3.Results[:1]
+			opts.VerdictSizeLimit = proto.Size(t3) + protoJSONOverheadBytes
 			// As the implementation is conservative, give it a little bit of extra room.
 			opts.VerdictSizeLimit += 2
 
 			results := fetchAll(q, opts)
-			assert.Loosely(t, results, should.HaveLength(len(expected)))
-			assert.Loosely(t, results[1], should.Match(expected[1]))
+			assert.Loosely(t, VerdictByCaseName(results, "t3"), should.Match(t3))
 		})
 
 		t.Run("With total result limit", func(t *ftt.Test) {
@@ -228,24 +227,37 @@ func TestIteratorQuery(t *testing.T) {
 				assert.Loosely(t, results, should.Match(expected))
 			})
 			t.Run("Limit is applied correctly", func(t *ftt.Test) {
-				// Should return t2 (1 result), t3 (2 result). The underlying
-				// iterator consumes 1 extra result to determine it has reached
-				// end of t3.
-				opts.TotalResultLimit = 4
-				verdicts, token, err := fetchOne(q, PageToken{}, opts)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, token, should.NotEqual(PageToken{}))
-				assert.Loosely(t, verdicts, should.Match(expected[:2]))
-			})
-			t.Run("Limit is applied correctly (case 2)", func(t *ftt.Test) {
-				// Should return t2 (1), t3 (2), t4 (1).
-				// Total results = 4, plus one overhead for end of verdict
-				// detection which makes 5.
+				q.Order = testresultsv2.OrderingByTestID
+				// Should return t1 (1 result), t2 (1 result), t3 (2 result).
+				// The underlying iterator consumes 1 extra result to
+				// determine it has reached end of t3.
 				opts.TotalResultLimit = 5
 				verdicts, token, err := fetchOne(q, PageToken{}, opts)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, token, should.NotEqual(PageToken{}))
-				assert.Loosely(t, verdicts, should.Match(expected[:3]))
+				expected := []*pb.TestVerdict{
+					VerdictByCaseName(expected, "t1"),
+					VerdictByCaseName(expected, "t2"),
+					VerdictByCaseName(expected, "t3"),
+				}
+				assert.Loosely(t, verdicts, should.Match(expected))
+			})
+			t.Run("Limit is applied correctly (case 2)", func(t *ftt.Test) {
+				q.Order = testresultsv2.OrderingByTestID
+				// Should return t1 (1), t2 (1), t3 (2), t4 (1).
+				// Total results = 5, plus one overhead for end of verdict
+				// detection which makes 6.
+				opts.TotalResultLimit = 6
+				verdicts, token, err := fetchOne(q, PageToken{}, opts)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token, should.NotEqual(PageToken{}))
+				expected := []*pb.TestVerdict{
+					VerdictByCaseName(expected, "t1"),
+					VerdictByCaseName(expected, "t2"),
+					VerdictByCaseName(expected, "t3"),
+					VerdictByCaseName(expected, "t4"),
+				}
+				assert.Loosely(t, verdicts, should.Match(expected))
 			})
 		})
 		t.Run("With predicate", func(t *ftt.Test) {
@@ -308,7 +320,7 @@ func TestIteratorQuery(t *testing.T) {
 		t.Run("With nominated IDs", func(t *ftt.Test) {
 			verdictID := func(v *pb.TestVerdict) testresultsv2.VerdictID {
 				return testresultsv2.VerdictID{
-					RootInvocationShardID: rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 0},
+					RootInvocationShardID: rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: TestShardingAlgorithm.ShardTestID(rootInvID, v.TestIdStructured)},
 					ModuleName:            v.TestIdStructured.ModuleName,
 					ModuleScheme:          v.TestIdStructured.ModuleScheme,
 					ModuleVariantHash:     v.TestIdStructured.ModuleVariantHash,
@@ -331,6 +343,14 @@ func TestIteratorQuery(t *testing.T) {
 				},
 				verdictID(expected[2]),
 				verdictID(expected[2]),
+				{
+					// Does not exist.
+					RootInvocationShardID: rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 10},
+					ModuleName:            "non_existant_module",
+					ModuleVariantHash:     "1234567890abcdef",
+					ModuleScheme:          "junit",
+					CaseName:              "MyTest",
+				},
 			}
 			q.VerdictIDs = nominated
 
@@ -342,6 +362,7 @@ func TestIteratorQuery(t *testing.T) {
 				nil,
 				expected[2],
 				expected[2],
+				nil,
 			}
 
 			t.Run("Baseline", func(t *ftt.Test) {
