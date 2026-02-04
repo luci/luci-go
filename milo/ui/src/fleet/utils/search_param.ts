@@ -72,7 +72,7 @@ export function parseOrderByParam(orderByParam: string): OrderBy | null {
 
 export function getFilterQueryString(
   filters: Record<string, string[]>,
-  searchParams: URLSearchParams,
+  searchParams: URLSearchParams | undefined,
   pagerContext?: PagerContext,
 ): string {
   let newSearchParams = new URLSearchParams(searchParams);

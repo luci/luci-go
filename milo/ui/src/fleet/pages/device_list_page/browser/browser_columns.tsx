@@ -29,6 +29,7 @@ import {
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
 import { generateBrowserDeviceDetailsURL } from '@/fleet/constants/paths';
+import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import {
   BrowserDevice,
@@ -99,12 +100,18 @@ export const getBrowserColumnIds = (
     );
   }
 
+  ids.push(...Object.keys(CUSTOM_COLUMNS));
   return _.uniq(ids);
 };
 
 export const getBrowserColumn = (
   id: string,
 ): DeviceTableGridColDef<BrowserDevice> => {
+  const customColumn = CUSTOM_COLUMNS[id];
+  if (customColumn) {
+    return customColumn;
+  }
+
   const { labelKey, source } = destructureColumnId(id);
 
   return {
@@ -133,6 +140,42 @@ export const getBrowserColumn = (
     ),
     ...(BROWSER_COLUMN_OVERRIDES[id] ?? {}),
   };
+};
+
+const CUSTOM_COLUMNS: Record<string, DeviceTableGridColDef<BrowserDevice>> = {
+  unhealthy_devices_ratio: {
+    field: 'unhealthy_devices_ratio',
+    headerName: 'unhealthy/total devices',
+    flex: 1,
+    sortable: false,
+    orderByField: `unhealthy_devices_ratio`,
+    valueGetter: (_, row) => {
+      const total_devices = row.ufsLabels?.['total_devices']?.values?.[0];
+      const unhealthy_devices =
+        row.ufsLabels?.['unhealthy_devices']?.values?.[0];
+
+      if (!total_devices || !unhealthy_devices) {
+        return '';
+      }
+
+      return `${unhealthy_devices} / ${total_devices}`;
+    },
+    renderCell: (params) => {
+      const hostname = params.row.ufsLabels?.['hostname']?.values?.[0];
+      if (!hostname) {
+        return <CellWithTooltip {...params} />;
+      }
+      return renderCellWithLink(
+        (_, __) =>
+          getFilterQueryString(
+            { [`${BROWSER_UFS_SOURCE}.associated_hostname`]: [hostname] },
+            undefined,
+            undefined,
+          ),
+        false,
+      )(params);
+    },
+  },
 };
 
 export const BROWSER_COLUMN_OVERRIDES: Record<
