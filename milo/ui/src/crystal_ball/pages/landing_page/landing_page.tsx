@@ -19,6 +19,7 @@ import Typography from '@mui/material/Typography';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import {
+  EditableMarkdown,
   SearchMeasurementsForm,
   TimeSeriesChart,
   TimeSeriesDataSet,
@@ -120,6 +121,9 @@ export function LandingPage() {
     useState<SearchMeasurementsRequest | null>(null);
 
   const [isInitialValid, setIsInitialValid] = useState(false);
+  const [aboutMarkdown, setAboutMarkdown] = useState(
+    '**Welcome to Crystal Ball!**\n\nThis is a placeholder.',
+  );
 
   useEffect(() => {
     const hasInitialRequest = Object.keys(searchRequestFromUrl).length > 0;
@@ -168,6 +172,11 @@ export function LandingPage() {
       <Typography variant="h5" gutterBottom>
         Crystal Ball Performance Metrics
       </Typography>
+
+      <EditableMarkdown
+        initialMarkdown={aboutMarkdown}
+        onSave={setAboutMarkdown}
+      />
 
       <SearchMeasurementsForm
         onSubmit={handleSearchSubmit}
