@@ -81,6 +81,41 @@ func (mr *MockisIDMatcher_MatcherMockRecorder) isIDMatcher_Matcher() *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isIDMatcher_Matcher", reflect.TypeOf((*MockisIDMatcher_Matcher)(nil).isIDMatcher_Matcher))
 }
 
+// MockisBatchGetTestVerdictsRequest_NominatedTest_Test is a mock of isBatchGetTestVerdictsRequest_NominatedTest_Test interface.
+type MockisBatchGetTestVerdictsRequest_NominatedTest_Test struct {
+	ctrl     *gomock.Controller
+	recorder *MockisBatchGetTestVerdictsRequest_NominatedTest_TestMockRecorder
+}
+
+// MockisBatchGetTestVerdictsRequest_NominatedTest_TestMockRecorder is the mock recorder for MockisBatchGetTestVerdictsRequest_NominatedTest_Test.
+type MockisBatchGetTestVerdictsRequest_NominatedTest_TestMockRecorder struct {
+	mock *MockisBatchGetTestVerdictsRequest_NominatedTest_Test
+}
+
+// NewMockisBatchGetTestVerdictsRequest_NominatedTest_Test creates a new mock instance.
+func NewMockisBatchGetTestVerdictsRequest_NominatedTest_Test(ctrl *gomock.Controller) *MockisBatchGetTestVerdictsRequest_NominatedTest_Test {
+	mock := &MockisBatchGetTestVerdictsRequest_NominatedTest_Test{ctrl: ctrl}
+	mock.recorder = &MockisBatchGetTestVerdictsRequest_NominatedTest_TestMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockisBatchGetTestVerdictsRequest_NominatedTest_Test) EXPECT() *MockisBatchGetTestVerdictsRequest_NominatedTest_TestMockRecorder {
+	return m.recorder
+}
+
+// isBatchGetTestVerdictsRequest_NominatedTest_Test mocks base method.
+func (m *MockisBatchGetTestVerdictsRequest_NominatedTest_Test) isBatchGetTestVerdictsRequest_NominatedTest_Test() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "isBatchGetTestVerdictsRequest_NominatedTest_Test")
+}
+
+// isBatchGetTestVerdictsRequest_NominatedTest_Test indicates an expected call of isBatchGetTestVerdictsRequest_NominatedTest_Test.
+func (mr *MockisBatchGetTestVerdictsRequest_NominatedTest_TestMockRecorder) isBatchGetTestVerdictsRequest_NominatedTest_Test() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "isBatchGetTestVerdictsRequest_NominatedTest_Test", reflect.TypeOf((*MockisBatchGetTestVerdictsRequest_NominatedTest_Test)(nil).isBatchGetTestVerdictsRequest_NominatedTest_Test))
+}
+
 // MockResultDBClient is a mock of ResultDBClient interface.
 type MockResultDBClient struct {
 	ctrl     *gomock.Controller

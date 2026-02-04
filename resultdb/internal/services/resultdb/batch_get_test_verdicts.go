@@ -68,9 +68,9 @@ func (s *resultDBServer) BatchGetTestVerdicts(ctx context.Context, req *pb.Batch
 	verdictIDs := make([]testresultsv2.VerdictID, 0, len(req.Tests))
 	for i, tv := range req.Tests {
 		var testID *pb.TestIdentifier
-		if tv.TestIdStructured != nil {
+		if tv.GetTestIdStructured() != nil {
 			// Structured test ID.
-			testID = tv.TestIdStructured
+			testID = tv.GetTestIdStructured()
 
 			// We allow either the ModuleVariant or ModuleVariantHash to be set.
 			// If the ModuleVariantHash isn't set, compute it from the ModuleVariant.
@@ -78,9 +78,10 @@ func (s *resultDBServer) BatchGetTestVerdicts(ctx context.Context, req *pb.Batch
 				testID = proto.Clone(testID).(*pb.TestIdentifier)
 				pbutil.PopulateStructuredTestIdentifierHashes(testID)
 			}
-		} else {
+		} else if tv.GetTestIdFlat() != nil {
+			testIdFlat := tv.GetTestIdFlat()
 			// Flat test ID. Parse it into a structured ID.
-			base, err := pbutil.ParseAndValidateTestID(tv.TestId)
+			base, err := pbutil.ParseAndValidateTestID(testIdFlat.TestId)
 			if err != nil {
 				// This should not happen if validateBatchGetTestVerdictsRequest is correct,
 				// but check just in case.
@@ -89,11 +90,14 @@ func (s *resultDBServer) BatchGetTestVerdicts(ctx context.Context, req *pb.Batch
 			testID = &pb.TestIdentifier{
 				ModuleName:        base.ModuleName,
 				ModuleScheme:      base.ModuleScheme,
-				ModuleVariantHash: tv.VariantHash,
+				ModuleVariantHash: testIdFlat.VariantHash,
 				CoarseName:        base.CoarseName,
 				FineName:          base.FineName,
 				CaseName:          base.CaseName,
 			}
+		} else {
+			// This should never happen due to validation in validateBatchGetTestVerdictsRequest.
+			panic("neither test_id_structured or test_id_flat was set")
 		}
 		testIDs = append(testIDs, testID)
 
@@ -196,26 +200,17 @@ func validateBatchGetTestVerdictsRequest(req *pb.BatchGetTestVerdictsRequest) er
 	}
 
 	for i, tvID := range req.Tests {
-		if tvID.TestIdStructured != nil {
-			if err := pbutil.ValidateStructuredTestIdentifierForQuery(tvID.TestIdStructured); err != nil {
+		if tvID.GetTestIdStructured() != nil {
+			if err := pbutil.ValidateStructuredTestIdentifierForQuery(tvID.GetTestIdStructured()); err != nil {
 				return errors.Fmt("test_variants[%v]: test_id_structured: %w", i, err)
 			}
-			if tvID.TestId != "" {
-				return errors.Fmt("test_variants[%v]: test_id: may not be set at same time as test_id_structured", i)
-			}
-			if tvID.VariantHash != "" {
-				return errors.Fmt("test_variants[%v]: variant_hash: may not be set at same time as test_id_structured", i)
-			}
-		} else if tvID.TestId != "" {
+		} else if tvID.GetTestIdFlat() != nil {
 			// Flat test ID.
-			if err := pbutil.ValidateTestID(tvID.TestId); err != nil {
-				return errors.Fmt("test_variants[%v]: test_id: %w", i, err)
-			}
-			if err := pbutil.ValidateVariantHash(tvID.VariantHash); err != nil {
-				return errors.Fmt("test_variants[%v]: variant_hash: %w", i, err)
+			if err := pbutil.ValidateFlatTestIdentifier(tvID.GetTestIdFlat()); err != nil {
+				return errors.Fmt("test_variants[%v]: test_id_flat: %w", i, err)
 			}
 		} else {
-			return errors.Fmt("test_variants[%v]: either test_id_structured or (test_id and variant_hash) must be set", i)
+			return errors.Fmt("test_variants[%v]: either test_id_structured or test_id_flat must be set", i)
 		}
 	}
 

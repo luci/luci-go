@@ -53,6 +53,20 @@ func ValidateTestID(testID string) error {
 	return err
 }
 
+// ValidateFlatTestIdentifier returns a non-nil error if id is invalid.
+func ValidateFlatTestIdentifier(id *pb.FlatTestIdentifier) error {
+	if id == nil {
+		return validate.Unspecified()
+	}
+	if err := ValidateTestID(id.TestId); err != nil {
+		return errors.Fmt("test_id: %w", err)
+	}
+	if err := ValidateVariantHash(id.VariantHash); err != nil {
+		return errors.Fmt("variant_hash: %w", err)
+	}
+	return nil
+}
+
 // BaseTestIdentifier represents a structured test identifier, without
 // variant information.
 type BaseTestIdentifier struct {

@@ -362,6 +362,26 @@ message ModuleIdentifier {
   string module_variant_hash = 4;
 }
 
+// FlatTestIdentifier is a flattened form of TestIdentifier.
+//
+// This style of test identifier was common before structured test identifiers
+// were introduced. Often the fields in this message are directly embedded in a
+// resource (e.g. test result) but can be convenient to package them as a message
+// for queries that accept either structured or flat test identifiers.
+message FlatTestIdentifier {
+  // The unique identifier of the test in a LUCI project. See the comment on
+  // TestResult.test_id for full documentation.
+  string test_id = 1;
+
+  // Reserved for variant in future.
+  reserved 2;
+  reserved "variant";
+
+  // Hash of the variant. See the comment on TestResult.variant_hash for full
+  // documentation.
+  string variant_hash = 3;
+}
+
 // GitilesCommit specifies the position of the gitiles commit an invocation
 // ran against, in a repository's commit log. More specifically, a ref's commit
 // log.

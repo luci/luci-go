@@ -916,29 +916,23 @@ message BatchGetTestVariantsResponse {
 // This RPC retrieves verdicts corresponding to a specified list
 // of tests.
 message BatchGetTestVerdictsRequest {
-  message NominatedTest {
-    // Option 1: Structured test identifier.
-
-    // The structured test identifier. See the comment on
-    // TestResult.test_id_structured for full documentation.
-    //
-    // Either this should be specified, or both test_id and variant_hash below.
-    TestIdentifier test_id_structured = 1;
-
-    // Option 2: Flat test identifier and variant.
-
-    // The unique identifier of the test in a LUCI project. See the comment on
-    // TestResult.test_id for full documentation.
-    string test_id = 2;
-
-    // Hash of the variant. See the comment on TestResult.variant_hash for full
-    // documentation.
-    string variant_hash = 3;
-  }
-
   // Name of the root invocation that the test variants are in, see
   // RootInvocation.name.
   string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // NominatedTest represents a test to query the verdict for.
+  // Either test_id_structured or test_id_flat should be specified.
+  message NominatedTest {
+    oneof test {
+      // Option 1: Structured test identifier.
+      //
+      // See the comment on TestResult.test_id_structured for full documentation.
+      TestIdentifier test_id_structured = 1;
+
+      // Option 2: Flat test identifier.
+      FlatTestIdentifier test_id_flat = 2;
+    }
+  }
 
   // A list of tests to query.
   //

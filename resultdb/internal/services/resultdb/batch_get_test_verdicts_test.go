@@ -80,8 +80,12 @@ func TestBatchGetTestVerdicts(t *testing.T) {
 		req := &pb.BatchGetTestVerdictsRequest{
 			Parent: "rootInvocations/root-inv1",
 			Tests: []*pb.BatchGetTestVerdictsRequest_NominatedTest{
-				{TestIdStructured: verdictByCaseName("t1").TestIdStructured},
-				{TestIdStructured: verdictByCaseName("t2").TestIdStructured},
+				{Test: &pb.BatchGetTestVerdictsRequest_NominatedTest_TestIdStructured{
+					TestIdStructured: verdictByCaseName("t1").TestIdStructured,
+				}},
+				{Test: &pb.BatchGetTestVerdictsRequest_NominatedTest_TestIdStructured{
+					TestIdStructured: verdictByCaseName("t2").TestIdStructured,
+				}},
 			},
 		}
 
@@ -114,65 +118,62 @@ func TestBatchGetTestVerdicts(t *testing.T) {
 						}
 						_, err := srv.BatchGetTestVerdicts(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("test_variants[0]: either test_id_structured or (test_id and variant_hash) must be set"))
+						assert.Loosely(t, err, should.ErrLike("test_variants[0]: either test_id_structured or test_id_flat must be set"))
 					})
-					t.Run(`Invalid flat test ID`, func(t *ftt.Test) {
+					t.Run(`Flat test ID`, func(t *ftt.Test) {
 						req.Tests = []*pb.BatchGetTestVerdictsRequest_NominatedTest{
 							{
-								TestId:      "\x01", // Invalid printable
-								VariantHash: "0000000000000000",
+								Test: &pb.BatchGetTestVerdictsRequest_NominatedTest_TestIdFlat{
+									TestIdFlat: &pb.FlatTestIdentifier{
+										TestId:      "some_test",
+										VariantHash: "0000000000000000",
+									},
+								},
 							},
 						}
-						_, err := srv.BatchGetTestVerdicts(ctx, req)
-						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id: non-printable rune"))
-					})
-					t.Run(`Missing variant hash`, func(t *ftt.Test) {
-						req.Tests = []*pb.BatchGetTestVerdictsRequest_NominatedTest{
-							{
-								TestId:      "my_test",
-								VariantHash: "",
-							},
-						}
-						_, err := srv.BatchGetTestVerdicts(ctx, req)
-						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("test_variants[0]: variant_hash: unspecified"))
+						t.Run(`Missing test ID`, func(t *ftt.Test) {
+							req.Tests[0].GetTestIdFlat().TestId = ""
+							_, err := srv.BatchGetTestVerdicts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id_flat: test_id: unspecified"))
+						})
+						t.Run(`Invalid test ID`, func(t *ftt.Test) {
+							req.Tests[0].GetTestIdFlat().TestId = "\x01" // Invalid printable
+							_, err := srv.BatchGetTestVerdicts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id_flat: test_id: non-printable rune"))
+						})
+						t.Run(`Missing variant_hash`, func(t *ftt.Test) {
+							req.Tests[0].GetTestIdFlat().VariantHash = ""
+							_, err := srv.BatchGetTestVerdicts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id_flat: variant_hash: unspecified"))
+						})
+						t.Run(`Invalid variant_hash`, func(t *ftt.Test) {
+							req.Tests[0].GetTestIdFlat().VariantHash = "invalid"
+							_, err := srv.BatchGetTestVerdicts(ctx, req)
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id_flat: variant_hash: variant hash invalid must match ^[0-9a-f]{16}$"))
+						})
 					})
 					t.Run(`Invalid structured test ID`, func(t *ftt.Test) {
 						req.Tests = []*pb.BatchGetTestVerdictsRequest_NominatedTest{
 							{
-								TestIdStructured: &pb.TestIdentifier{
-									ModuleName:        "\x01",
-									ModuleScheme:      "junit",
-									ModuleVariantHash: "0000000000000000",
-									CoarseName:        "my.package",
-									FineName:          "MyTestClass",
-									CaseName:          "testMethod",
+								Test: &pb.BatchGetTestVerdictsRequest_NominatedTest_TestIdStructured{
+									TestIdStructured: &pb.TestIdentifier{
+										ModuleName:        "\x01",
+										ModuleScheme:      "junit",
+										ModuleVariantHash: "0000000000000000",
+										CoarseName:        "my.package",
+										FineName:          "MyTestClass",
+										CaseName:          "testMethod",
+									},
 								},
 							},
 						}
 						_, err := srv.BatchGetTestVerdicts(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 						assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id_structured: module_name: non-printable rune '\\x01' at byte index 0"))
-					})
-					t.Run(`Specified both flat and structured`, func(t *ftt.Test) {
-						req.Tests = []*pb.BatchGetTestVerdictsRequest_NominatedTest{
-							{
-								TestIdStructured: &pb.TestIdentifier{
-									ModuleName:        "module",
-									ModuleScheme:      "junit",
-									ModuleVariantHash: "0000000000000000",
-									CoarseName:        "my.package",
-									FineName:          "MyTestClass",
-									CaseName:          "testMethod",
-								},
-								TestId:      "some_test_id",
-								VariantHash: "0000000000000000",
-							},
-						}
-						_, err := srv.BatchGetTestVerdicts(ctx, req)
-						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("test_variants[0]: test_id: may not be set at same time as test_id_structured"))
 					})
 				})
 				t.Run(`Too many items`, func(t *ftt.Test) {
@@ -213,19 +214,27 @@ func TestBatchGetTestVerdicts(t *testing.T) {
 		})
 
 		t.Run(`End-to-end`, func(t *ftt.Test) {
+			nominatedStructuredTest := func(testName string) *pb.BatchGetTestVerdictsRequest_NominatedTest {
+				return &pb.BatchGetTestVerdictsRequest_NominatedTest{
+					Test: &pb.BatchGetTestVerdictsRequest_NominatedTest_TestIdStructured{
+						TestIdStructured: proto.Clone(verdictByCaseName(testName).TestIdStructured).(*pb.TestIdentifier),
+					},
+				}
+			}
+
 			t.Run(`With Structured IDs`, func(t *ftt.Test) {
 				req.Tests = []*pb.BatchGetTestVerdictsRequest_NominatedTest{
-					{TestIdStructured: proto.Clone(verdictByCaseName("t1").TestIdStructured).(*pb.TestIdentifier)},
-					{TestIdStructured: proto.Clone(verdictByCaseName("t3").TestIdStructured).(*pb.TestIdentifier)},
-					{TestIdStructured: proto.Clone(verdictByCaseName("t2").TestIdStructured).(*pb.TestIdentifier)},
-					{TestIdStructured: proto.Clone(verdictByCaseName("t5").TestIdStructured).(*pb.TestIdentifier)},
+					nominatedStructuredTest("t1"),
+					nominatedStructuredTest("t3"),
+					nominatedStructuredTest("t2"),
+					nominatedStructuredTest("t5"),
 					// Include a duplicate for good measure.
-					{TestIdStructured: proto.Clone(verdictByCaseName("t2").TestIdStructured).(*pb.TestIdentifier)},
+					nominatedStructuredTest("t2"),
 				}
 				// On one request, leave module variant empty, on another leave module variant
 				// hash empty. The caller is only required to specify one.
-				req.Tests[0].TestIdStructured.ModuleVariant = nil
-				req.Tests[1].TestIdStructured.ModuleVariantHash = ""
+				req.Tests[0].GetTestIdStructured().ModuleVariant = nil
+				req.Tests[1].GetTestIdStructured().ModuleVariantHash = ""
 
 				res, err := srv.BatchGetTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
@@ -244,8 +253,12 @@ func TestBatchGetTestVerdicts(t *testing.T) {
 				t1 := verdictByCaseName("t1")
 				req.Tests = []*pb.BatchGetTestVerdictsRequest_NominatedTest{
 					{
-						TestId:      t1.TestId,
-						VariantHash: t1.TestIdStructured.ModuleVariantHash,
+						Test: &pb.BatchGetTestVerdictsRequest_NominatedTest_TestIdFlat{
+							TestIdFlat: &pb.FlatTestIdentifier{
+								TestId:      t1.TestId,
+								VariantHash: t1.TestIdStructured.ModuleVariantHash,
+							},
+						},
 					},
 				}
 				res, err := srv.BatchGetTestVerdicts(ctx, req)
@@ -268,13 +281,24 @@ func TestBatchGetTestVerdicts(t *testing.T) {
 					}
 				}
 
+				flatTestID := func(testID, variantHash string) *pb.BatchGetTestVerdictsRequest_NominatedTest {
+					return &pb.BatchGetTestVerdictsRequest_NominatedTest{
+						Test: &pb.BatchGetTestVerdictsRequest_NominatedTest_TestIdFlat{
+							TestIdFlat: &pb.FlatTestIdentifier{
+								TestId:      testID,
+								VariantHash: variantHash,
+							},
+						},
+					}
+				}
+
 				// Try verdicts with no results in different positions.
 				req.Tests = []*pb.BatchGetTestVerdictsRequest_NominatedTest{
-					{TestId: "non-existent1", VariantHash: "0000000000000001"},
-					{TestIdStructured: verdictByCaseName("t2").TestIdStructured},
-					{TestId: "non-existent3", VariantHash: "0000000000000003"},
-					{TestIdStructured: verdictByCaseName("t1").TestIdStructured},
-					{TestId: "non-existent2", VariantHash: "0000000000000002"},
+					flatTestID("non-existent1", "0000000000000001"),
+					nominatedStructuredTest("t2"),
+					flatTestID("non-existent3", "0000000000000003"),
+					nominatedStructuredTest("t1"),
+					flatTestID("non-existent2", "0000000000000002"),
 				}
 				rsp, err := srv.BatchGetTestVerdicts(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
@@ -291,7 +315,7 @@ func TestBatchGetTestVerdicts(t *testing.T) {
 
 			t.Run(`With view FULL`, func(t *ftt.Test) {
 				req.Tests = []*pb.BatchGetTestVerdictsRequest_NominatedTest{
-					{TestIdStructured: verdictByCaseName("t5").TestIdStructured}, // t5 has exonerations
+					nominatedStructuredTest("t5"), // t5 has exonerations
 				}
 				req.View = pb.TestVerdictView_TEST_VERDICT_VIEW_FULL
 				res, err := srv.BatchGetTestVerdicts(ctx, req)
@@ -317,8 +341,8 @@ func TestBatchGetTestVerdicts(t *testing.T) {
 
 				// Request t3 (mixed access) and t2 (full masked).
 				req.Tests = []*pb.BatchGetTestVerdictsRequest_NominatedTest{
-					{TestIdStructured: verdictByCaseName("t3").TestIdStructured},
-					{TestIdStructured: verdictByCaseName("t2").TestIdStructured},
+					nominatedStructuredTest("t3"),
+					nominatedStructuredTest("t2"),
 				}
 
 				res, err := srv.BatchGetTestVerdicts(ctx, req)
