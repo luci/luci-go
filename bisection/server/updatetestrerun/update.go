@@ -479,11 +479,15 @@ func divergedFromPrimary(testResult *pb.TestResult, primaryResult *pb.TestResult
 
 // findTestResult returns TestResult given testID and variantHash.
 func findTestResult(ctx context.Context, results []*pb.TestResult, testID string, variantHash string) *pb.TestResult {
-	for _, r := range results {
+	logging.Infof(ctx, "findTestResult: looking for testID=%q, variantHash=%q", testID, variantHash)
+	for i, r := range results {
+		logging.Infof(ctx, "findTestResult: result[%d] testID=%q, variantHash=%q", i, r.TestId, r.VariantHash)
 		if r.TestId == testID && r.VariantHash == variantHash {
+			logging.Infof(ctx, "findTestResult: found match at index %d", i)
 			return r
 		}
 	}
+	logging.Warningf(ctx, "findTestResult: no match found among %d results", len(results))
 	return nil
 }
 
