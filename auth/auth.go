@@ -57,6 +57,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/lucictx"
 )
 
@@ -490,8 +491,7 @@ type Options struct {
 	// input. They are all invoked with an empty stdin and their stdout and stderr
 	// is buffered until they finish running.
 	//
-	// Only OAuth access tokens are supported currently. Tokens are not cached
-	// in the disk cache.
+	// Only OAuth access tokens are supported currently.
 	CredentialHelper *credhelperpb.Config
 
 	// GoogleADCPolicy controls when to use Google ADC if Method is
@@ -655,16 +655,21 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 		return ServiceAccountMethod
 	}
 
-	// Asked to use a credential helper. If it is missing, we'll crash a bit later
-	// when actually invoking it.
-	if opts.CredentialHelper != nil {
-		return CredentialHelperMethod
-	}
-
 	// Have a local auth server and an account we are allowed to pick by default.
 	// If no default account is given, don't automatically pick up this method.
 	if la := lucictx.GetLocalAuth(ctx); la != nil && la.DefaultAccountId != "" {
 		return LUCIContextMethod
+	}
+
+	// Asked to use a credential helper. If it is missing, we'll crash a bit later
+	// when actually invoking it. If ID tokens are requested we should not
+	// select this method as credential helpers currently don't support ID
+	// tokens.
+	if opts.CredentialHelper != nil {
+		if !opts.UseIDTokens {
+			return CredentialHelperMethod
+		}
+		logging.Debugf(ctx, "Skipping CredentialHelperMethod: ID tokens are requested but not supported by credential helpers")
 	}
 
 	// Running on GCE and callers are fine with automagically picking up GCE
@@ -1255,6 +1260,22 @@ func (a *Authenticator) ensureInitialized() error {
 	if a.opts.ActViaLUCIRealm != "" && a.opts.ActAsServiceAccount == "" {
 		a.err = ErrBadOptions
 		return a.err
+	}
+
+	if a.opts.CredentialHelper == nil {
+		// LUCI_AUTH_CREDENTIAL_HELPER binary must satisfy the RECLIENT
+		// protocol and accept a scopes flag with a comma separated list of
+		// requested scopes.
+		if exe := environ.FromCtx(a.ctx).Get("LUCI_AUTH_CREDENTIAL_HELPER"); exe != "" {
+			a.opts.CredentialHelper = &credhelperpb.Config{
+				Exec:     exe,
+				Protocol: credhelperpb.Protocol_RECLIENT,
+				Args:     []string{"-scopes", strings.Join(a.opts.Scopes, ",")},
+				// The above scopes args will be used in the cache key so
+				// we know when to mint new tokens or use existing ones.
+				CacheTokensOnDisk: true,
+			}
+		}
 	}
 
 	// SelectBestMethod may do heavy calls like talking to GCE metadata server,

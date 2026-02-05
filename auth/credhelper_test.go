@@ -56,6 +56,14 @@ func TestCredentialHelper(t *testing.T) {
 			}))
 		})
 
+		t.Run("MemoryCacheOnly", func(t *ftt.Test) {
+			p.cfg.CacheTokensOnDisk = true
+			assert.That(t, p.MemoryCacheOnly(), should.BeFalse)
+
+			p.cfg.CacheTokensOnDisk = false
+			assert.That(t, p.MemoryCacheOnly(), should.BeTrue)
+		})
+
 		t.Run("OK", func(t *ftt.Test) {
 			uses := execmock.Simple.Mock(ctx, execmock.SimpleInput{
 				Stdout: fmt.Sprintf(`{

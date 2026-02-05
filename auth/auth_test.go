@@ -21,11 +21,13 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/auth/credhelperpb"
 	"go.chromium.org/luci/auth/internal"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -33,9 +35,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/lucictx"
 )
 
 var (
@@ -43,6 +47,10 @@ var (
 	past   = time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
 	future = now.Add(24 * time.Hour)
 )
+
+func init() {
+	os.Unsetenv("LUCI_AUTH_CREDENTIAL_HELPER")
+}
 
 func TestTransportFactory(t *testing.T) {
 	t.Parallel()
@@ -889,6 +897,51 @@ func TestMetadata(t *testing.T) {
 		err = auth.UnpackTokenMetadata("nahi", &got)
 		assert.Loosely(t, err, should.BeNil)
 		assert.That(t, got, should.Equal("teri"))
+	})
+}
+
+func TestCredentialHelperEnv(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("cred helper method is chosen", t, func(t *ftt.Test) {
+		env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
+		ctx := env.SetInCtx(context.Background())
+		ctx = lucictx.SetLocalAuth(ctx, nil)
+
+		a := NewAuthenticator(ctx, SilentLogin, Options{
+			Scopes: []string{"scope2", "scope1"},
+		})
+
+		a.lock.Lock()
+		err := a.ensureInitialized()
+		a.lock.Unlock()
+
+		assert.Loosely(t, err, should.ErrLike("bad credential helper path \"some-helper\""))
+
+		assert.Loosely(t, a.opts.CredentialHelper, should.Match(&credhelperpb.Config{
+			Exec:              "some-helper",
+			Protocol:          credhelperpb.Protocol_RECLIENT,
+			Args:              []string{"-scopes", "scope1,scope2"},
+			CacheTokensOnDisk: true,
+		}))
+		assert.Loosely(t, a.opts.Method, should.Equal(CredentialHelperMethod))
+	})
+
+	ftt.Run("cred helper with ID tokens requested falls back", t, func(t *ftt.Test) {
+		env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
+		ctx := env.SetInCtx(context.Background())
+		ctx = lucictx.SetLocalAuth(ctx, nil)
+
+		a := NewAuthenticator(ctx, SilentLogin, Options{
+			Scopes:      []string{"scope2", "scope1"},
+			UseIDTokens: true,
+		})
+
+		a.lock.Lock()
+		err := a.ensureInitialized()
+		a.lock.Unlock()
+
+		assert.Loosely(t, err, should.ErrLike("OAuth client is not configured"))
 	})
 }
 

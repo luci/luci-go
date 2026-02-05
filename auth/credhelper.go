@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/credhelperpb"
 	"go.chromium.org/luci/auth/internal"
@@ -60,13 +61,12 @@ func newCredHelperTokenProvider(cfg *credhelperpb.Config) (internal.TokenProvide
 	if err != nil {
 		return nil, errors.Fmt("bad credential helper path %q: %w", cfg.Exec, err)
 	}
+
 	handler, _ := externalHandler(cfg.Protocol)
+	cfg = proto.CloneOf(cfg)
+	cfg.Exec = exe
 	return &credHelperTokenProvider{
-		cfg: &credhelperpb.Config{
-			Protocol: cfg.Protocol,
-			Exec:     exe,
-			Args:     cfg.Args,
-		},
+		cfg:     cfg,
 		handler: handler,
 	}, nil
 }
@@ -83,7 +83,7 @@ func (p *credHelperTokenProvider) RequiresWarmup() bool {
 
 // MemoryCacheOnly implements internal.TokenProvider.
 func (p *credHelperTokenProvider) MemoryCacheOnly() bool {
-	return true
+	return !p.cfg.CacheTokensOnDisk
 }
 
 // Email implements internal.TokenProvider.

@@ -27,7 +27,7 @@ enum Protocol {
 
   // Indicates to use a reclient-compatible helper.
   //
-  // A reclient-compatible compatible helper expects no stdin and produces
+  // A reclient-compatible helper expects no stdin and produces
   // stdout that looks like this:
   //
   //  {
@@ -64,4 +64,11 @@ message Config {
   //
   // If unset, the default is 1 min.
   google.protobuf.Duration timeout = 4;
+
+  // If true, tokens returned by the helper will be cached on disk as well as
+  // in memory.
+  //
+  // This is useful if the helper itself doesn't implement its own persistent
+  // caching.
+  bool cache_tokens_on_disk = 5;
 }
