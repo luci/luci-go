@@ -37,7 +37,7 @@ func Redact(val *orchestratorpb.Value) {
 	}
 	val.ClearHasUnknownFields()
 	val.ClearValueJson()
-	val.SetOmitted(orchestratorpb.Value_OMIT_REASON_NO_ACCESS)
+	val.SetOmitReason(orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS)
 	if anyVal := val.GetValue(); anyVal != nil {
 		anyVal.Value = nil
 	}
@@ -55,7 +55,7 @@ func Redact(val *orchestratorpb.Value) {
 func Filter(val *orchestratorpb.Value, ti *TypeInfo, mopt protojson.MarshalOptions) error {
 	if !ti.Wanted.MatchValue(val) {
 		Redact(val)
-		val.SetOmitted(orchestratorpb.Value_OMIT_REASON_UNWANTED)
+		val.SetOmitReason(orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
 		return nil
 	}
 
@@ -100,7 +100,7 @@ func doJSONPB(val *orchestratorpb.Value, mopt protojson.MarshalOptions) error {
 	if val == nil {
 		return nil
 	}
-	if val.HasOmitted() {
+	if val.GetOmitReason() != 0 {
 		return nil
 	}
 	resolver := mopt.Resolver

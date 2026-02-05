@@ -68,6 +68,21 @@ func TestExtractMismatch(t *testing.T) {
 	assert.That(t, extracted, should.Match((*structpb.Value)(nil)))
 }
 
+func TestExtractOmitted(t *testing.T) {
+	st, err := structpb.NewStruct(map[string]any{
+		"hello": 100,
+		"world": 200,
+	})
+	assert.NoErr(t, err)
+
+	val, err := ValueErr(st)
+	assert.NoErr(t, err)
+
+	Redact(val)
+	assert.Loosely(t, val.GetValue().Value, should.BeNil)
+	assert.Loosely(t, ExtractValue[*structpb.Struct](val), should.BeNil)
+}
+
 func must[T any](val T, err error) T {
 	if err != nil {
 		panic(err)

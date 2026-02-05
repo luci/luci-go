@@ -214,16 +214,14 @@ func mockQueryNodesResponse(planID *idspb.WorkPlan, stageID *idspb.Stage, state 
 		)
 	}
 	return orchestratorpb.QueryNodesResponse_builder{
-		Graph: map[string]*orchestratorpb.GraphView{
-			id.ToString(planID): orchestratorpb.GraphView_builder{
+		Workplans: []*orchestratorpb.WorkPlan{
+			orchestratorpb.WorkPlan_builder{
 				Identifier: planID,
-				Stages: map[string]*orchestratorpb.StageView{
-					id.ToString(stageID): orchestratorpb.StageView_builder{
-						Stage: orchestratorpb.Stage_builder{
-							Identifier: stageID,
-							State:      state.Enum(),
-							Attempts:   attempts,
-						}.Build(),
+				Stages: []*orchestratorpb.Stage{
+					orchestratorpb.Stage_builder{
+						Identifier: stageID,
+						State:      state.Enum(),
+						Attempts:   attempts,
 					}.Build(),
 				},
 			}.Build(),

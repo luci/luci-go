@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/workplan"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
@@ -162,7 +163,7 @@ func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.Buil
 	if err != nil {
 		return nil, AdjustTurboCIRPCError(err)
 	}
-	stage := resp.GetGraph()[id.ToString(stageID.GetWorkPlan())].GetStages()[id.ToString(stageID)].GetStage()
+	stage := workplan.ToNodeBag(resp.GetWorkplans()...).Stage(stageID)
 	if stage == nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "the stage is unexpectedly missing")
 	}

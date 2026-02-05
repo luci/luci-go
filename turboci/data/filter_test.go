@@ -41,8 +41,8 @@ func TestRedact(t *testing.T) {
 	Redact(val)
 
 	assert.That(t, val, should.Match(orchestratorpb.Value_builder{
-		Value:   &anypb.Any{TypeUrl: URL[*structpb.Value]()},
-		Omitted: orchestratorpb.Value_OMIT_REASON_NO_ACCESS.Enum(),
+		Value:      &anypb.Any{TypeUrl: URL[*structpb.Value]()},
+		OmitReason: orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS.Enum(),
 	}.Build()))
 }
 
@@ -56,8 +56,8 @@ func TestFilterUnwanted(t *testing.T) {
 	assert.NoErr(t, Filter(val, ti, protojson.MarshalOptions{}))
 
 	assert.That(t, val, should.Match(orchestratorpb.Value_builder{
-		Omitted: orchestratorpb.Value_OMIT_REASON_UNWANTED.Enum(),
-		Value:   &anypb.Any{TypeUrl: URL[*emptypb.Empty]()},
+		OmitReason: orchestratorpb.OmitReason_OMIT_REASON_UNWANTED.Enum(),
+		Value:      &anypb.Any{TypeUrl: URL[*emptypb.Empty]()},
 	}.Build()))
 }
 

@@ -71,36 +71,38 @@ func URLMsg(msg proto.Message) string {
 
 // FromMultiple retrieves the value of the first Datum whose type matches T.
 //
-// If T is not in the data, returns nil.
+// If T is not in the data, or is omitted, returns nil.
 //
 // Panics if the data is present but fails to unmarshal. This is considered
 // an invariant violation, as the data should have been marshaled from the same
 // type.
-func FromMultiple[T proto.Message](data ...*orchestratorpb.Datum) (ret T) {
+func FromMultiple[T proto.Message](data ...*orchestratorpb.Datum) T {
 	typeURL := URL[T]()
 	for _, datum := range data {
 		if datum.GetValue().GetValue().GetTypeUrl() == typeURL {
 			return ExtractValue[T](datum.GetValue())
 		}
 	}
-	return
+	var zero T
+	return zero
 }
 
 // FromMultipleValues retrieves the first Value whose type matches T.
 //
-// If T is not in the values, returns nil.
+// If T is not in the values, or is omitted, returns nil.
 //
 // Panics if the data is present but fails to unmarshal. This is considered
 // an invariant violation, as the data should have been marshaled from the same
 // type.
-func FromMultipleValues[T proto.Message](values ...*orchestratorpb.Value) (ret T) {
+func FromMultipleValues[T proto.Message](values ...*orchestratorpb.Value) T {
 	typeURL := URL[T]()
 	for _, val := range values {
 		if val.GetValue().GetTypeUrl() == typeURL {
 			return ExtractValue[T](val)
 		}
 	}
-	return
+	var zero T
+	return zero
 }
 
 // GetOption retrieves an option of the given type from a CheckView.
@@ -111,7 +113,7 @@ func FromMultipleValues[T proto.Message](values ...*orchestratorpb.Value) (ret T
 // Panics if the data is present but fails to unmarshal. This is considered
 // an invariant violation, as the data should have been marshaled from the same
 // type.
-func GetOption[T proto.Message](c *orchestratorpb.Check) (ret T) {
+func GetOption[T proto.Message](c *orchestratorpb.Check) T {
 	return FromMultiple[T](c.GetOptions()...)
 }
 
@@ -175,10 +177,26 @@ func Value(msg proto.Message) *orchestratorpb.Value {
 	return ret
 }
 
+// Values wraps proto.Messages into `*orchestratorpb.Value`s, panicking on any
+// error.
+func Values(msgs ...proto.Message) []*orchestratorpb.Value {
+	ret, err := ValuesErr(msgs...)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 // ExtractValue unwraps a proto.Message from a `*orchestratorpb.Value`.
 //
-// Returns a nil message if `val` is not of a matching type.
+// Returns a nil message if `val` is not of a matching type, or if `val` is
+// omitted.
 func ExtractValue[T proto.Message](val *orchestratorpb.Value) T {
+	if val.GetOmitReason() != 0 || val.GetValue().GetTypeUrl() != URL[T]() {
+		var zero T
+		return zero
+	}
+
 	retMsg, err := val.GetValue().UnmarshalNew()
 	if err != nil {
 		panic(
@@ -186,6 +204,5 @@ func ExtractValue[T proto.Message](val *orchestratorpb.Value) T {
 				URL[T]()))
 	}
 
-	ret, _ := retMsg.(T)
-	return ret
+	return retMsg.(T)
 }
