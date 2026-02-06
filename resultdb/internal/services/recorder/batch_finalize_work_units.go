@@ -58,8 +58,8 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 		for i, wuRow := range wuRows {
 			if wuRow.FinalizationState != pb.WorkUnit_ACTIVE {
 				// Finalization already started. Do not start finalization
-				// again as doing so would overwrite the existing FinalizeStartTime
-				// and create an unnecessary task.
+				// again as doing so would overwrite the existing FinalizeStartTime,
+				// state, summary markdown, and create an unnecessary task.
 				// This RPC should be idempotent so do not return an error.
 				continue
 			}
@@ -87,7 +87,7 @@ func (s *recorderServer) BatchFinalizeWorkUnits(ctx context.Context, in *pb.Batc
 			hasWorkUnitFinalizing = true
 		}
 		if hasWorkUnitFinalizing {
-			// Transactionally schedule a work unit finalization task if any work unit transitions to finalizing state.
+			// Transactionally schedule work unit finalization task for the root invocation.
 			if err := tasks.ScheduleWorkUnitsFinalization(ctx, wuRows[0].ID.RootInvocationID); err != nil {
 				return err
 			}

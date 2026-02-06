@@ -19,6 +19,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -1037,4 +1038,58 @@ func rootInvocationShardShardKey(i, count int) (string, error) {
 	var shardKeyBytes [4]byte
 	binary.BigEndian.PutUint32(shardKeyBytes[:], uint32(split))
 	return fmt.Sprintf("%x~", shardKeyBytes), nil
+}
+
+// ReadPrefixedDescendants reads all work units that are descendants of the given
+// base (unprefixed) work unit and have a matching prefix.
+//
+// The prefix is inferred from the base work unit ID by appending a colon.
+// For example, if the base work unit ID is "base", the prefix is "base:".
+func ReadPrefixedDescendants(ctx context.Context, baseID ID) (ids []ID, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/workunits.ReadPrefixedDescendants")
+	defer func() { tracing.End(ts, err) }()
+
+	if err := validateID(baseID); err != nil {
+		return nil, err
+	}
+	if strings.Contains(baseID.WorkUnitID, ":") {
+		return nil, errors.New("work unit ID must not be a prefixed ID")
+	}
+
+	// All work units prefixed by the base work unit ID are automatically also descendants
+	// of the base work unit, due to validation in the (Batch)CreateWorkUnits RPC.
+	stmt := spanner.NewStatement(`
+		SELECT
+			RootInvocationShardId,
+			WorkUnitId
+		FROM WorkUnits
+		WHERE RootInvocationShardId IN UNNEST(@shards)
+		  AND STARTS_WITH(WorkUnitId, @prefix)
+	`)
+
+	stmt.Params = map[string]any{
+		"shards": baseID.RootInvocationID.AllShardIDs().ToSpanner(),
+		"prefix": baseID.WorkUnitID + ":",
+	}
+
+	var b spanutil.Buffer
+	err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
+		var rootInvocationShardID string
+		var workUnitID string
+		if err := b.FromSpanner(row, &rootInvocationShardID, &workUnitID); err != nil {
+			return err
+		}
+		ids = append(ids, IDFromRowID(rootInvocationShardID, workUnitID))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort for determinism.
+	slices.SortFunc(ids, func(a, b ID) int {
+		return strings.Compare(a.WorkUnitID, b.WorkUnitID)
+	})
+
+	return ids, nil
 }

@@ -1087,3 +1087,52 @@ func TestRootInvocationShardShardKey(t *testing.T) {
 		})
 	})
 }
+
+func TestReadPrefixedDescendants(t *testing.T) {
+	ftt.Run("ReadPrefixedDescendants", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		// Insert some work units.
+		invID := rootinvocations.ID("inv")
+
+		// Insert RootInvocation and Root WorkUnit
+		var ms []*spanner.Mutation
+		ms = append(ms, rootinvocations.InsertForTesting(
+			rootinvocations.NewBuilder(invID).Build(),
+		)...)
+		ms = append(ms, InsertForTesting(NewBuilder(invID, "root").Build())...)
+
+		insertWorkUnit := func(wuID string, parentID string) []*spanner.Mutation {
+			return InsertForTesting(NewBuilder(invID, wuID).WithParentWorkUnitID(parentID).Build())
+		}
+		ms = append(ms, insertWorkUnit("base", "root")...)
+		ms = append(ms, insertWorkUnit("base:child1", "base")...)
+		ms = append(ms, insertWorkUnit("base:child2", "base")...)
+		ms = append(ms, insertWorkUnit("base:grand_child", "base:child1")...)
+		ms = append(ms, insertWorkUnit("other", "root")...)
+		testutil.MustApply(ctx, t, ms...)
+
+		baseID := ID{RootInvocationID: invID, WorkUnitID: "base"}
+
+		t.Run("Reads descendants", func(t *ftt.Test) {
+			ids, err := ReadPrefixedDescendants(span.Single(ctx), baseID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids, should.Match([]ID{
+				{RootInvocationID: invID, WorkUnitID: "base:child1"},
+				{RootInvocationID: invID, WorkUnitID: "base:child2"},
+				{RootInvocationID: invID, WorkUnitID: "base:grand_child"},
+			}))
+		})
+		t.Run("Returns empty if no descendants", func(t *ftt.Test) {
+			// "other" has no descendants.
+			ids, err := ReadPrefixedDescendants(span.Single(ctx), ID{RootInvocationID: invID, WorkUnitID: "other"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids, should.BeEmpty)
+
+			// "root" has descendants, but no prefixed descendants
+			ids, err = ReadPrefixedDescendants(span.Single(ctx), ID{RootInvocationID: invID, WorkUnitID: "root"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids, should.BeEmpty)
+		})
+	})
+}
