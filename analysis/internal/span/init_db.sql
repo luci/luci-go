@@ -559,6 +559,9 @@ CREATE TABLE TestResultsBySourcePosition (
   -- The test result status.
   Status INT64 NOT NULL,
 
+  -- The test result status (v2).
+  StatusV2 INT64,
+
   -- The following fields capture information about any unsubmitted
   -- changelists that were tested by the test execution. The arrays
   -- are matched in length and correspond in index, i.e.
