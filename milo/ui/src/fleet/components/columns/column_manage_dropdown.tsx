@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  GridColDef,
-  gridColumnDefinitionsSelector,
-  gridColumnVisibilityModelSelector,
-  useGridApiContext,
-} from '@mui/x-data-grid';
+import { useMemo } from 'react';
 
 import { OptionsDropdown } from '@/fleet/components/options_dropdown';
 import { OptionValue } from '@/fleet/types/option';
@@ -33,6 +28,9 @@ interface ColumnsButtonProps {
   onReset?: () => void;
   temporaryColumns?: string[];
   addUserVisibleColumn?: (column: string) => void;
+  allColumns: { id: string; label: string }[];
+  visibleColumns: string[];
+  onToggleColumn: (id: string) => void;
 }
 
 /**
@@ -45,44 +43,39 @@ export function ColumnsManageDropDown({
   onReset,
   temporaryColumns,
   addUserVisibleColumn,
+  allColumns,
+  visibleColumns,
+  onToggleColumn,
 }: ColumnsButtonProps) {
-  const apiRef = useGridApiContext();
-  const columnVisibilityModel = gridColumnVisibilityModelSelector(apiRef);
-  const columnDefinitions = gridColumnDefinitionsSelector(apiRef);
-
   const toggleColumn = (field: string) => {
-    if (!columnVisibilityModel) {
-      return;
-    }
     if (temporaryColumns?.includes(field)) {
       // Toggling a temporary column makes it permanent.
       addUserVisibleColumn?.(field);
       return;
     }
-
-    apiRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
+    onToggleColumn(field);
   };
 
-  const renderLabel = (col: GridColDef) => {
-    const label = col.headerName || col.field;
-    return temporaryColumns?.includes(col.field) ? `${label} *` : label;
-  };
+  const columns = useMemo(
+    () =>
+      allColumns.map(
+        (d) =>
+          ({
+            label: temporaryColumns?.includes(d.id) ? `${d.label} *` : d.label,
+            value: d.id,
+          }) as OptionValue,
+      ),
+    [allColumns, temporaryColumns],
+  );
 
-  const columns = columnDefinitions
-    .filter((column) => column.field !== '__check__')
-    .map(
-      (d) =>
-        ({
-          label: renderLabel(d),
-          value: d.field,
-        }) as OptionValue,
-    );
+  const defaultSortedColumns = useMemo(
+    () => fuzzySort('')(columns, (x: OptionValue) => x.label),
+    [columns],
+  );
 
-  const selectedColumns = columnVisibilityModel
-    ? Object.keys(columnVisibilityModel).filter(
-        (key) => columnVisibilityModel[key] && !temporaryColumns?.includes(key),
-      )
-    : [];
+  const selectedColumns = visibleColumns.filter(
+    (key) => !temporaryColumns?.includes(key),
+  );
 
   return (
     <OptionsDropdown
@@ -103,7 +96,9 @@ export function ColumnsManageDropDown({
           return <MenuSkeleton itemCount={columns.length} maxHeight={200} />;
         }
 
-        const sortedColumns = fuzzySort(searchQuery)(columns, (x) => x.label);
+        const sortedColumns = searchQuery
+          ? fuzzySort(searchQuery)(columns, (x: OptionValue) => x.label)
+          : defaultSortedColumns;
         return (
           <OptionsMenu
             elements={sortedColumns}

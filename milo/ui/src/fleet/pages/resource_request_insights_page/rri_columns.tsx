@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { IconButton } from '@mui/material';
+import { Box, IconButton } from '@mui/material';
 import { GridColDef } from '@mui/x-data-grid';
 import { Duration } from 'luxon';
 
@@ -85,7 +84,7 @@ const getDateWithOverdueData = (
 };
 
 const getOverdueColor = (overdueDays: number) => {
-  return overdueDays < 30 ? 'orange' : 'red';
+  return overdueDays < 30 ? 'warning.main' : 'error.main';
 };
 
 const renderDateCellWithOverdueIndicator = (date: DateWithOverdueData) => {
@@ -95,11 +94,14 @@ const renderDateCellWithOverdueIndicator = (date: DateWithOverdueData) => {
     <>
       <span>{date.value}</span>
       {overdueDays > 0 && (
-        <span css={{ color: getOverdueColor(overdueDays), marginLeft: 20 }}>
+        <Box
+          component="span"
+          sx={{ color: getOverdueColor(overdueDays), ml: 2.5 }}
+        >
           {'('}
           {date.overdue.shiftTo('days').toHuman({ unitDisplay: 'narrow' })}
           {')'}
-        </span>
+        </Box>
       )}
     </>
   );
@@ -107,9 +109,12 @@ const renderDateCellWithOverdueIndicator = (date: DateWithOverdueData) => {
 
 const renderSlippageCell = (slippage: number) => {
   return (
-    <span css={slippage > 0 ? { color: getOverdueColor(slippage) } : undefined}>
+    <Box
+      component="span"
+      sx={slippage > 0 ? { color: getOverdueColor(slippage) } : undefined}
+    >
       {slippage}d
-    </span>
+    </Box>
   );
 };
 
@@ -122,11 +127,7 @@ export const RRI_COLUMNS = [
       flex: 2,
       renderCell: (params) => {
         return (
-          <div
-            css={{
-              display: 'flex',
-            }}
-          >
+          <Box sx={{ display: 'flex' }}>
             <span>
               <sup>
                 <IconButton
@@ -142,7 +143,7 @@ export const RRI_COLUMNS = [
               </sup>
               {params.value}
             </span>
-          </div>
+          </Box>
         );
       },
     },

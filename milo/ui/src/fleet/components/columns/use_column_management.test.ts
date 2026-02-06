@@ -67,7 +67,7 @@ describe('useColumnManagement', () => {
     });
   });
 
-  it('should initialize with default columns and dynamic order', () => {
+  it('should initialize with default columns and dynamic order', async () => {
     const { result: result1 } = renderHook(useColumnManagement, {
       initialProps: config, // saves it to local storage in a separate render
     });
@@ -80,6 +80,11 @@ describe('useColumnManagement', () => {
         cpu: true,
         memory: false,
       });
+    });
+
+    // wait for local storage update
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
     });
 
     // new render will dehydrate from local storage

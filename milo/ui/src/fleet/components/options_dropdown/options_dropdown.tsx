@@ -20,7 +20,8 @@ import {
   Popper,
   PopperPlacementType,
 } from '@mui/material';
-import React, { ReactNode, useRef, useState } from 'react';
+import type { KeyboardEvent, MouseEventHandler, ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { hasAnyModifier, keyboardListNavigationHandler } from '../../utils';
 import { SearchInput } from '../search_input';
@@ -32,14 +33,14 @@ type OptionsDropdownProps = Omit<MenuProps, 'open' | 'maxHeight'> & {
   onApply: () => void;
   renderChild: (
     searchQuery: string,
-    onNavigateUp: (e: React.KeyboardEvent) => void,
+    onNavigateUp: (e: KeyboardEvent) => void,
   ) => ReactNode;
   anchorEl: HTMLElement | null;
   open: boolean;
   anchorOrigin?: PopoverOrigin | undefined;
   enableSearchInput?: boolean;
   maxHeight?: number;
-  onResetClick?: React.MouseEventHandler<HTMLButtonElement>;
+  onResetClick?: MouseEventHandler<HTMLButtonElement>;
   footerButtons?: ('reset' | 'cancel' | 'apply')[];
   disableEnforceFocus?: boolean;
   disableRestoreFocus?: boolean;
@@ -98,7 +99,7 @@ export function OptionsDropdown({
 
   const placement = mapOriginToPlacement(anchorOrigin, transformOrigin);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (open && enableSearchInput) {
       // Small timeout to allow the popover to mount and settle
       setTimeout(() => {
@@ -176,6 +177,9 @@ export function OptionsDropdown({
                 case 'Delete':
                 case 'Cancel':
                 case 'Backspace':
+                  if (document.activeElement === searchInput.current) {
+                    return;
+                  }
                   setSearchQuery('');
                   searchInput?.current?.focus();
               }

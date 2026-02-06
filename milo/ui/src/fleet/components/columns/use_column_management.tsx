@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
+import _ from 'lodash';
 import { useMemo } from 'react';
 
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
@@ -76,10 +77,18 @@ export function useColumnManagement({
 }: ColumnManagementConfig) {
   // Manages columns the user has explicitly chosen to see.
   // This state is persisted in local storage and the URL.
+  const memoizedDefaultColumns = useMemo(
+    () => [...defaultColumns],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [_.sortBy(defaultColumns).join(',')],
+  );
+
+  // Manages columns the user has explicitly chosen to see.
+  // This state is persisted in local storage and the URL.
   const [userVisibleColumns, setUserVisibleColumns] = useParamsAndLocalStorage(
     COLUMNS_PARAM_KEY,
     localStorageKey,
-    [...defaultColumns],
+    memoizedDefaultColumns,
   );
 
   // Columns not visible initially but filtered on.
@@ -105,11 +114,26 @@ export function useColumnManagement({
   const onColumnVisibilityModelChange = (
     newModel: GridColumnVisibilityModel,
   ) => {
-    const newVisible = Object.keys(newModel).filter((field) =>
-      // Prevent temporary columns from being saved to the user's preferences.
-      temporaryColumnIds.includes(field) ? false : newModel[field],
-    );
-    setUserVisibleColumns(newVisible);
+    setUserVisibleColumns((prevVisible) => {
+      const wantedVisible = Object.keys(newModel).filter((field) =>
+        temporaryColumnIds.includes(field) ? false : newModel[field],
+      );
+
+      const staleVisible = Object.keys(columnVisibilityModel).filter((field) =>
+        temporaryColumnIds.includes(field)
+          ? false
+          : columnVisibilityModel[field],
+      );
+
+      const added = wantedVisible.filter((c) => !staleVisible.includes(c));
+      const removed = staleVisible.filter((c) => !wantedVisible.includes(c));
+
+      const nextVisible = prevVisible.filter((c) => !removed.includes(c));
+      added.forEach((c) => {
+        if (!nextVisible.includes(c)) nextVisible.push(c);
+      });
+      return nextVisible;
+    });
   };
 
   // Generates the final column definitions for the DataGrid.

@@ -112,7 +112,9 @@ export function keyboardListNavigationHandler(
 }
 
 const findNeighborsInList = (target: HTMLElement) => {
-  const listContainer = target.closest('ul');
+  // We typically look for a UL, but also accept menu/listbox containers
+  // (e.g. for virtualized lists that don't use UL/LI structure).
+  const listContainer = target.closest('ul, [role="menu"], [role="listbox"]');
   if (!listContainer) {
     return undefined;
   }

@@ -16,7 +16,11 @@ import { Box } from '@mui/material';
 import {
   GridToolbarContainer,
   GridToolbarDensitySelector,
+  gridColumnDefinitionsSelector,
+  gridColumnVisibilityModelSelector,
+  useGridApiContext,
 } from '@mui/x-data-grid';
+import { startTransition } from 'react';
 
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
 
@@ -28,11 +32,37 @@ export function RriTableToolbar({
 }: {
   resetDefaultColumns?: () => void;
 }) {
+  const apiRef = useGridApiContext();
+  const columnVisibilityModel = gridColumnVisibilityModelSelector(apiRef);
+  const columnDefinitions = gridColumnDefinitionsSelector(apiRef);
+
+  const onToggleColumn = (field: string) => {
+    if (!columnVisibilityModel) return;
+    startTransition(() => {
+      apiRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
+    });
+  };
+
+  const allColumns = columnDefinitions
+    .filter((column) => column.field !== '__check__')
+    .map((d) => ({ id: d.field, label: d.headerName || d.field }));
+
+  const visibleColumns = columnVisibilityModel
+    ? Object.keys(columnVisibilityModel).filter(
+        (key) => columnVisibilityModel[key],
+      )
+    : [];
+
   return (
     <GridToolbarContainer>
       <Box sx={{ flexGrow: 1 }} />
       <GridToolbarDensitySelector />
-      <ColumnsButton resetDefaultColumns={resetDefaultColumns} />
+      <ColumnsButton
+        resetDefaultColumns={resetDefaultColumns}
+        allColumns={allColumns}
+        visibleColumns={visibleColumns}
+        onToggleColumn={onToggleColumn}
+      />
     </GridToolbarContainer>
   );
 }

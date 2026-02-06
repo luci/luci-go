@@ -15,8 +15,9 @@
 import DoneIcon from '@mui/icons-material/Done';
 import ErrorIcon from '@mui/icons-material/Error';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Alert, Chip, Divider, Typography } from '@mui/material';
+import { Alert, Button, Chip, Divider, Typography } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import {
@@ -39,6 +40,8 @@ import {
   prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { ColumnsButton } from '@/fleet/components/columns/columns_button';
+import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
 import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
@@ -569,24 +572,65 @@ export const RepairListPage = () => {
     [pagerCtx, searchParams],
   );
 
-  const columns = useMemo(() => Object.values(COLUMNS), []);
+  const columns = useMemo(
+    () => Object.values(COLUMNS) as MRT_ColumnDef<Row>[],
+    [],
+  );
+
+  const defaultColumnIds = useMemo(
+    () => columns.map((c) => c.accessorKey || c.id || ''),
+    [columns],
+  );
+
+  const mrtColumnManager = useMRTColumnManagement({
+    columns,
+    defaultColumnIds,
+    localStorageKey: 'fleet-console-repairs-columns',
+  });
 
   const table = useFCDataTable({
-    positionToolbarAlertBanner: 'none',
-    enableRowSelection: true,
+    enableHiding: false,
     renderTopToolbarCustomActions: ({ table }) => (
-      <FCDataTableCopy table={table} />
+      <div
+        css={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: '8px',
+        }}
+      >
+        <FCDataTableCopy table={table} />
+        <ColumnsButton
+          allColumns={mrtColumnManager.allColumns}
+          visibleColumns={mrtColumnManager.visibleColumnIds}
+          onToggleColumn={mrtColumnManager.onToggleColumn}
+          resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
+          renderTrigger={({ onClick }) => (
+            <Button
+              startIcon={<ViewColumnOutlined sx={{ fontSize: '26px' }} />}
+              onClick={onClick}
+              color="inherit"
+              sx={{ color: colors.grey[600], height: '40px' }}
+            >
+              Columns
+            </Button>
+          )}
+        />
+      </div>
     ),
     columns: columns,
     data: repairMetricsList.data?.repairMetrics.map(getRow) ?? [],
     getRowId: (row) => row.lab_name + row.host_group + row.run_target,
     state: {
       sorting,
+      columnVisibility: mrtColumnManager.columnVisibility,
       showProgressBars:
         repairMetricsList.isPending || repairMetricsList.isPlaceholderData,
       showAlertBanner: repairMetricsList.isError,
       pagination: pagination,
     },
+    onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
     muiPaginationProps: {
       rowsPerPageOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     },

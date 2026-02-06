@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Button from '@mui/material/Button';
+import { Button } from '@mui/material';
 import { GridColumnIcon } from '@mui/x-data-grid';
 import { useState } from 'react';
 
@@ -23,6 +23,12 @@ interface ColumnsButtonProps {
   resetDefaultColumns?: () => void;
   temporaryColumns?: string[];
   addUserVisibleColumn?: (column: string) => void;
+  allColumns: { id: string; label: string }[];
+  visibleColumns: string[];
+  onToggleColumn: (id: string) => void;
+  renderTrigger?: (props: {
+    onClick: (event: React.MouseEvent<HTMLElement>) => void;
+  }) => React.ReactNode;
 }
 
 /**
@@ -33,18 +39,32 @@ export function ColumnsButton({
   resetDefaultColumns,
   temporaryColumns,
   addUserVisibleColumn,
+  allColumns,
+  visibleColumns,
+  onToggleColumn,
+  renderTrigger,
 }: ColumnsButtonProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
   return (
     <>
-      <Button
-        onClick={(event) => setAnchorEL(event.currentTarget)}
-        size="small"
-        startIcon={<GridColumnIcon />}
-      >
-        Columns
-      </Button>
+      {renderTrigger ? (
+        renderTrigger({
+          onClick: (event) =>
+            setAnchorEL(anchorEl ? null : event.currentTarget),
+        })
+      ) : (
+        <Button
+          onClick={(event) =>
+            setAnchorEL(anchorEl ? null : event.currentTarget)
+          }
+          startIcon={<GridColumnIcon />}
+          color="primary"
+          size="small"
+        >
+          Columns
+        </Button>
+      )}
       <ColumnsManageDropDown
         isLoading={isLoading}
         anchorEl={anchorEl}
@@ -52,6 +72,9 @@ export function ColumnsButton({
         onReset={resetDefaultColumns}
         temporaryColumns={temporaryColumns}
         addUserVisibleColumn={addUserVisibleColumn}
+        allColumns={allColumns}
+        visibleColumns={visibleColumns}
+        onToggleColumn={onToggleColumn}
       />
     </>
   );

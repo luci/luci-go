@@ -68,6 +68,7 @@ export const OptionsMenu = ({
 
   return (
     <div
+      role="menu"
       ref={parentRef}
       css={{
         overflow: 'auto',

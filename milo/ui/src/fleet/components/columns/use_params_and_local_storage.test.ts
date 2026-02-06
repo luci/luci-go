@@ -12,11 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { act, renderHook } from '@testing-library/react';
+import { useLocalStorage } from 'react-use';
+
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+
 import {
   getInitialValue,
   getNewStates,
   synchSearchParamToLocalStorage,
+  useParamsAndLocalStorage,
 } from './use_params_and_local_storage';
+
+// Mock dependencies
+jest.mock('@/generic_libs/hooks/synced_search_params', () => ({
+  useSyncedSearchParams: jest.fn(),
+}));
+
+jest.mock('react-use', () => ({
+  useLocalStorage: jest.fn(),
+}));
 
 describe('useParamsAndLocalStorage', () => {
   describe('getInitialValue', () => {
@@ -178,5 +193,115 @@ describe('useParamsAndLocalStorage', () => {
         searchParams: new URLSearchParams([['other', 'value']]),
       });
     });
+  });
+});
+
+describe('useParamsAndLocalStorage Hook', () => {
+  let mockSetSearchParams: jest.Mock;
+  let mockSetLocalStorage: jest.Mock;
+  let mockClearLocalStorage: jest.Mock;
+
+  beforeEach(() => {
+    mockSetSearchParams = jest.fn();
+    mockSetLocalStorage = jest.fn();
+    mockClearLocalStorage = jest.fn();
+
+    (useSyncedSearchParams as jest.Mock).mockReturnValue([
+      new URLSearchParams(),
+      mockSetSearchParams,
+    ]);
+
+    (useLocalStorage as jest.Mock).mockReturnValue([
+      undefined,
+      mockSetLocalStorage,
+      mockClearLocalStorage,
+    ]);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('Example Scenario: Race Condition (Stale URL Update)', () => {
+    // 1. Initial State
+    // URL: []
+    // LocalStorage: undefined
+    // Default: ['default']
+    const initParams = new URLSearchParams();
+
+    // Setup a mechanism to allow tests to update the mocked hook return values
+    // and trigger re-renders.
+    let currentParams = initParams;
+    const currentLocalStorage = undefined;
+
+    (useSyncedSearchParams as jest.Mock).mockImplementation(() => [
+      currentParams,
+      mockSetSearchParams,
+    ]);
+    (useLocalStorage as jest.Mock).mockImplementation(() => [
+      currentLocalStorage,
+      mockSetLocalStorage,
+      mockClearLocalStorage,
+    ]);
+
+    const { result, rerender } = renderHook(() =>
+      useParamsAndLocalStorage('c', 'ls-key', ['default']),
+    );
+
+    // Initial check
+    const [cols] = result.current;
+    expect(cols).toEqual(['default']);
+
+    // 2. User updates columns to ['A']
+    const [, setCols] = result.current;
+    act(() => {
+      setCols(['A']);
+    });
+
+    // Verify optimistic update (CHECK 1: Optimistic update works)
+    expect(result.current[0]).toEqual(['A']);
+    expect(mockSetSearchParams).toHaveBeenCalled();
+
+    // 3. RACE CONDITION SIMULATION:
+    // Force a re-render while the external hook (useSyncedSearchParams) still returns the OLD value.
+    // This simulates the gap between calling setSearchParams and the URL actually updating.
+    //
+    // Notes for maintainers:
+    // This tests that the hook ignores stale updates from the URL.
+    // If the hook implemented a naive synchronization (e.g. syncing from URL on every render),
+    // this re-render would revert the state back to ['default'] because the URL hasn't been updated in the mock yet.
+    //
+    // The previous implementation had a bug where this re-render would revert 'syncedState' to ['default'].
+    rerender();
+
+    // Verify state is STILL ['A'] (robustness check)
+    expect(result.current[0]).toEqual(['A']);
+
+    // 4. Finally, URL updates to ['A']
+    currentParams = new URLSearchParams([['c', 'A']]);
+    rerender();
+    expect(result.current[0]).toEqual(['A']);
+  });
+
+  it('Example Scenario: External URL Update', () => {
+    // 1. Initial State
+    let currentParams = new URLSearchParams([['c', 'A']]);
+    (useSyncedSearchParams as jest.Mock).mockImplementation(() => [
+      currentParams,
+      mockSetSearchParams,
+    ]);
+
+    const { result, rerender } = renderHook(() =>
+      useParamsAndLocalStorage('c', 'ls-key', ['default']),
+    );
+
+    expect(result.current[0]).toEqual(['A']);
+
+    // 2. External Navigation (e.g. user clicks back button) -> URL changes to ['B']
+    currentParams = new URLSearchParams([['c', 'B']]);
+    rerender();
+
+    // Verify state updates to match URL
+    expect(result.current[0]).toEqual(['B']);
   });
 });

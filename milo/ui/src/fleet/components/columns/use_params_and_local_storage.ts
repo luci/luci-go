@@ -28,83 +28,123 @@ export const useParamsAndLocalStorage = (
   searchParamsKey: string,
   localStorageKey: string,
   defaultValue: string[],
-): [string[], (new_value: string[]) => void] => {
+): [
+  string[],
+  (new_value: string[] | ((prev: string[]) => string[])) => void,
+] => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const [localStorage, setLocalStorage, clearLocalStorage] =
+  const [localStorageState, setLocalStorageState, clearLocalStorage] =
     useLocalStorage<string[]>(localStorageKey);
 
-  // improves performance
-  const justCalledSetter = useRef(false);
-
-  // We also keep an internal state, this allows us to return this to the user
-  // so they can speedup their computations and not wait for
-  // query parameters and local storage to update
+  // We keep an internal state for optimistic updates
   const [syncedState, setSyncedState] = useState(
-    getInitialValue(searchParams, searchParamsKey, localStorage, defaultValue),
+    getInitialValue(
+      searchParams,
+      searchParamsKey,
+      localStorageState,
+      defaultValue,
+    ),
   );
 
-  // Sets the query parameters if they are not set and only local storage is present
-  // useful on page load
+  // Keep track of the last params we successfully processed from the URL/LocalStorage
+  // This allows us to ignore "stale" updates where the URL hasn't actually changed yet
+  const lastProcessedParams = useRef<string[] | undefined>(undefined);
+  // Mirror of syncedState to allow access inside useEffect without adding
+  // syncedState to the dependency array (which would cause infinite loops).
+  const stateRef = useRef(syncedState);
+
+  // Sync from URL/LocalStorage to internal state
+  const currentParamsValue = getInitialValue(
+    searchParams,
+    searchParamsKey,
+    localStorageState,
+    defaultValue,
+  );
+
   useEffect(() => {
+    // Stringify for stable comparison
+    const currentStr = JSON.stringify([...currentParamsValue].sort());
+    const lastStr = lastProcessedParams.current
+      ? JSON.stringify([...lastProcessedParams.current].sort())
+      : undefined;
+
+    // Check 1: Did the external source (URL) actually change?
+    // This is crucial for ignoring "stale" re-renders where the URL hasn't updated yet,
+    // but the component re-rendered (e.g. due to optimistic state change).
+    if (currentStr !== lastStr) {
+      // Check 2: Does the new external source match our current internal state?
+      // If the user optimistically updated state, and the URL is stale (caught by Check 1), we skip this.
+      // If the URL *did* change (e.g. back button), we want to sync our internal state to it.
+      if (!_.isEqual(currentParamsValue, stateRef.current)) {
+        setSyncedState(currentParamsValue);
+        stateRef.current = currentParamsValue;
+      }
+      lastProcessedParams.current = currentParamsValue;
+    }
+  }, [currentParamsValue]);
+
+  const isInitialized = useRef(false);
+
+  // Initial sync on mount
+  useEffect(() => {
+    if (isInitialized.current) return;
+    // Wait for localStorage to be ready
+    if (localStorageState === undefined) return;
+
     synchSearchParamToLocalStorage(
       searchParams,
       searchParamsKey,
-      localStorage,
+      localStorageState,
       setSearchParams,
       defaultValue,
     );
+    isInitialized.current = true;
   }, [
-    defaultValue,
-    localStorage,
     searchParams,
     searchParamsKey,
+    localStorageState,
     setSearchParams,
-  ]);
-
-  // Reset internal state if underlying locaStorage or searchParams change
-  useEffect(() => {
-    if (justCalledSetter.current) {
-      justCalledSetter.current = false;
-      return;
-    }
-
-    const newValue = getInitialValue(
-      searchParams,
-      searchParamsKey,
-      localStorage,
-      defaultValue,
-    );
-    if (!_.isEqual(newValue, syncedState)) {
-      setSyncedState(newValue);
-    }
-  }, [
-    searchParamsKey,
-    localStorageKey,
-    searchParams,
-    localStorage,
     defaultValue,
-    syncedState,
   ]);
 
-  const setter = (newList: string[]) => {
-    justCalledSetter.current = true;
+  const setter = (update: string[] | ((prev: string[]) => string[])) => {
+    let newList: string[];
+    if (typeof update === 'function') {
+      newList = update(stateRef.current);
+    } else {
+      newList = update;
+    }
+
+    // Optimistic update
+    stateRef.current = newList;
     setSyncedState(newList);
 
-    const newState = getNewStates(
-      newList,
-      searchParams,
-      searchParamsKey,
-      defaultValue,
-    );
-    if (newState.localStorage === undefined) clearLocalStorage();
-    else setLocalStorage(newState.localStorage);
+    // We anticipate this new state, but we MUST NOT update lastProcessedParams here.
+    // We want the useEffect to see the "stale" params as "unchanged" from the previous render
+    // so it doesn't revert our optimistic update.
 
-    setSearchParams(newState.searchParams);
+    setSearchParams(
+      (prevSearchParams) => {
+        const newState = getNewStates(
+          newList,
+          prevSearchParams,
+          searchParamsKey,
+          defaultValue,
+        );
+        // Important: Update localStorage synchronously with URL update request
+        if (newState.localStorage === undefined) {
+          clearLocalStorage();
+        } else {
+          setLocalStorageState(newState.localStorage);
+        }
+        return newState.searchParams;
+      },
+      { replace: true },
+    );
   };
 
   return [syncedState, setter];
 };
-
 export const getInitialValue = (
   searchParams: URLSearchParams,
   searchParamsKey: string,

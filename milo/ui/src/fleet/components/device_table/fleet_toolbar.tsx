@@ -16,6 +16,9 @@ import {
   GridRowModel,
   GridToolbarContainer,
   GridToolbarDensitySelector,
+  gridColumnDefinitionsSelector,
+  gridColumnVisibilityModelSelector,
+  useGridApiContext,
 } from '@mui/x-data-grid';
 import { useMemo } from 'react';
 
@@ -52,6 +55,10 @@ export function FleetToolbar({
   addUserVisibleColumn,
   platform,
 }: FleetToolbarProps) {
+  const apiRef = useGridApiContext();
+  const columnVisibilityModel = gridColumnVisibilityModelSelector(apiRef);
+  const columnDefinitions = gridColumnDefinitionsSelector(apiRef);
+
   const tools: Partial<Record<Platform, React.ReactNode>> = useMemo(
     () => ({
       [Platform.CHROMEOS]: (() => {
@@ -86,6 +93,25 @@ export function FleetToolbar({
     [selectedRows],
   );
 
+  const onToggleColumn = (field: string) => {
+    if (!columnVisibilityModel) return;
+    apiRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
+  };
+
+  const allColumns = useMemo(
+    () =>
+      columnDefinitions
+        .filter((column) => column.field !== '__check__')
+        .map((d) => ({ id: d.field, label: d.headerName || d.field })),
+    [columnDefinitions],
+  );
+
+  const visibleColumns = columnVisibilityModel
+    ? Object.keys(columnVisibilityModel).filter(
+        (key) => columnVisibilityModel[key] && !temporaryColumns?.includes(key),
+      )
+    : [];
+
   return (
     <GridToolbarContainer>
       {tools[platform] ?? null}
@@ -96,6 +122,9 @@ export function FleetToolbar({
         resetDefaultColumns={resetDefaultColumns}
         temporaryColumns={temporaryColumns}
         addUserVisibleColumn={addUserVisibleColumn}
+        allColumns={allColumns}
+        visibleColumns={visibleColumns}
+        onToggleColumn={onToggleColumn}
       />
     </GridToolbarContainer>
   );
