@@ -159,7 +159,9 @@ export function TestInvestigatePage() {
       });
     } else {
       return BatchGetTestVariantsRequest.fromPartial({
-        parent: invocationNameForTestVariants,
+        ...(isLegacyInvocation
+          ? { invocation: invocationNameForTestVariants }
+          : { parent: invocationNameForTestVariants }),
         testVariants: [
           {
             testIdStructured: TestIdentifier.fromPartial({
@@ -176,10 +178,11 @@ export function TestInvestigatePage() {
       });
     }
   }, [
+    module,
     invocationNameForTestVariants,
     decodedTestId,
     rawVariantHash,
-    module,
+    isLegacyInvocation,
     scheme,
     coarse,
     fine,

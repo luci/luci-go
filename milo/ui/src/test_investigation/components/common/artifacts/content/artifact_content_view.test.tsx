@@ -134,25 +134,21 @@ describe('<ArtifactContentView />', () => {
       </FakeContextProvider>,
     );
 
-    // Should show initial content first
-    await waitFor(() =>
-      expect(screen.getByText(INITIAL_CONTENT)).toBeInTheDocument(),
-    );
+    // Should show initial content and loading notification first
+    await waitFor(() => {
+      expect(screen.getByText(INITIAL_CONTENT)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Displaying preview. Still loading full/),
+      ).toBeInTheDocument();
+    });
 
-    // Should show loading notification
-    expect(
-      screen.getByText(/Displaying preview. Still loading full/),
-    ).toBeInTheDocument();
-
-    // Should eventually show full content
-    await waitFor(() =>
-      expect(screen.getByText(FULL_CONTENT)).toBeInTheDocument(),
-    );
-
-    // Loading notification should disappear
-    expect(
-      screen.queryByText(/Displaying preview. Still loading full/),
-    ).not.toBeInTheDocument();
+    // Should eventually show full content and hide loading notification
+    await waitFor(() => {
+      expect(screen.getByText(FULL_CONTENT)).toBeInTheDocument();
+      expect(
+        screen.queryByText(/Displaying preview. Still loading full/),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it('given a large artifact with GCS signed URL, then should use Range header', async () => {
@@ -219,15 +215,21 @@ describe('<ArtifactContentView />', () => {
       </FakeContextProvider>,
     );
 
-    // Should show initial content first
-    await waitFor(() =>
-      expect(screen.getByText(INITIAL_CONTENT)).toBeInTheDocument(),
-    );
+    // Should show initial content and loading notification first
+    await waitFor(() => {
+      expect(screen.getByText(INITIAL_CONTENT)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Displaying preview. Still loading full/),
+      ).toBeInTheDocument();
+    });
 
-    // Should eventually show full content
-    await waitFor(() =>
-      expect(screen.getByText(FULL_CONTENT)).toBeInTheDocument(),
-    );
+    // Should eventually show full content and hide loading notification
+    await waitFor(() => {
+      expect(screen.getByText(FULL_CONTENT)).toBeInTheDocument();
+      expect(
+        screen.queryByText(/Displaying preview. Still loading full/),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it('given a text diff artifact, then should display Open Raw option in formatted view', async () => {
