@@ -39,3 +39,12 @@ export const USE_ROOT_INVOCATION_FLAG = createFeatureFlag({
   percentage: 0,
   trackingBug: 'None',
 });
+
+export const TEST_AGGREGATION_DRAWER_FLAG = createFeatureFlag({
+  namespace: 'test_investigation',
+  name: 'test_aggregation_drawer',
+  description:
+    'Enable the new Test Aggregation Drawer backed by ResultDB Aggregations.',
+  percentage: 0,
+  trackingBug: 'None',
+});

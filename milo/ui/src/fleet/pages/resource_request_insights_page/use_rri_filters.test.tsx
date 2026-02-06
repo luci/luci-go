@@ -18,7 +18,6 @@ import { ReactNode } from 'react';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { fakeUseSyncedSearchParams } from '@/fleet/testing_tools/mocks/fake_search_params';
-// eslint-disable-next-line max-len
 import { GetResourceRequestsMultiselectFilterValuesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { getSortedMultiselectElements, useRriFilters } from './use_rri_filters';

@@ -23,9 +23,22 @@ export interface TestInfoContextValue {
   associatedBugs: AssociatedBug[];
   isLoadingAssociatedBugs: boolean;
   testVariantBranch: TestVariantBranch | null | undefined;
+  isDrawerOpen: boolean;
+  onToggleDrawer: () => void;
 }
 
 export const TestInfoContext = createContext<TestInfoContextValue | null>(null);
+
+export function useDrawerWrapper() {
+  const ctx = useContext(TestInfoContext);
+  if (!ctx) {
+    throw new Error('useDrawerWrapper must be used within a TestInfoProvider');
+  }
+  return {
+    isDrawerOpen: ctx.isDrawerOpen,
+    onToggleDrawer: ctx.onToggleDrawer,
+  };
+}
 
 export function useFormattedCLs() {
   const ctx = useContext(TestInfoContext);

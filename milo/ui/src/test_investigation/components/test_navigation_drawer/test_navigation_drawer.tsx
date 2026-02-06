@@ -17,7 +17,7 @@ import { Drawer, IconButton, Paper, Tooltip, useTheme } from '@mui/material';
 
 import { DrawerContent } from './drawer_content';
 
-const DRAWER_WIDTH_OPEN = 600;
+const DRAWER_WIDTH_OPEN = 800;
 
 export interface TestNavigationDrawerProps {
   isOpen: boolean;
@@ -39,7 +39,7 @@ export function TestNavigationDrawer({
           top: '20%',
           left: isOpen ? DRAWER_WIDTH_OPEN : 0,
           transform: 'translateY(-50%)',
-          zIndex: theme.zIndex.drawer + (isOpen ? 1 : 2),
+          zIndex: theme.zIndex.drawer + 2, // Ensure it's above the drawer itself
           borderTopLeftRadius: 0,
           borderBottomLeftRadius: 0,
           borderTopRightRadius: '8px',

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Divider, Typography } from '@mui/material';
 
 import { PageSummaryLine } from '@/common/components/page_summary_line';
 import { PageTitle } from '@/common/components/page_title';
@@ -26,7 +26,7 @@ import { getFullMethodName } from '@/test_investigation/utils/test_info_utils';
 
 import { VariantDisplay } from '../common/variant_display';
 
-import { useTestVariantBranch } from './context';
+import { useDrawerWrapper, useTestVariantBranch } from './context';
 import { TestInfoBreadcrumbs } from './test_info_breadcrumbs';
 import { TestInfoMarkers } from './test_info_markers';
 
@@ -35,6 +35,7 @@ export function TestInfoHeader() {
   const invocation = useInvocation();
   const project = useProject();
   const testVariantBranch = useTestVariantBranch();
+  const { onToggleDrawer } = useDrawerWrapper();
 
   const testDisplayName =
     testVariant?.testIdStructured?.caseName ||
@@ -45,10 +46,30 @@ export function TestInfoHeader() {
     <Box
       sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 3, py: 2 }}
     >
-      <TestInfoBreadcrumbs
-        invocation={invocation.name}
-        testIdStructured={testVariant?.testIdStructured || undefined}
-      />
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
+        <Button
+          id="test-investigation-toggle-drawer"
+          variant="contained"
+          onClick={onToggleDrawer}
+          sx={{
+            fontWeight: 'bold',
+            height: '32px',
+          }}
+        >
+          View Tests
+        </Button>
+        <Divider orientation="vertical" flexItem />
+        <TestInfoBreadcrumbs
+          invocation={invocation.name}
+          testIdStructured={testVariant?.testIdStructured || undefined}
+        />
+      </Box>
       <PageTitle viewName="Test case" resourceName={testDisplayName} />
       {testVariant?.testIdStructured?.moduleScheme === 'junit' && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pt: 0 }}>

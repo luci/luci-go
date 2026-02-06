@@ -68,7 +68,9 @@ export default [
         '@typescript-eslint/parser': ['.ts', '.tsx'],
       },
       'import/resolver': {
-        typescript: {},
+        typescript: {
+          project: './tsconfig.json',
+        },
       },
     },
     // Apply all configs.

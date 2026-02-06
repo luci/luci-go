@@ -70,6 +70,8 @@ describe('<AnalysisSubsection />', () => {
       formattedCls: [] as FormattedCLInfo[],
       associatedBugs: [] as AssociatedBug[],
       isLoadingAssociatedBugs: false,
+      isDrawerOpen: false,
+      onToggleDrawer: jest.fn(),
     };
 
     (generateAnalysisPoints as jest.Mock).mockReturnValue([]);

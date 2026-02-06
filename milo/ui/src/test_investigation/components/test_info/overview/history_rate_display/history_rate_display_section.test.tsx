@@ -88,6 +88,8 @@ describe('<HistoryRateDisplaySection />', () => {
       formattedCls: [] as FormattedCLInfo[],
       associatedBugs: [] as AssociatedBug[],
       isLoadingAssociatedBugs: false,
+      isDrawerOpen: false,
+      onToggleDrawer: jest.fn(),
     };
   });
 

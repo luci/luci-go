@@ -45,9 +45,15 @@ import {
 import { TestInfoContext } from './context';
 interface Props {
   children: React.ReactNode;
+  isDrawerOpen: boolean;
+  onToggleDrawer: () => void;
 }
 
-export function TestInfoProvider({ children }: Props) {
+export function TestInfoProvider({
+  children,
+  isDrawerOpen,
+  onToggleDrawer,
+}: Props) {
   const invocation = useInvocation();
   const testVariant = useTestVariant();
   const project = useProject();
@@ -200,6 +206,8 @@ export function TestInfoProvider({ children }: Props) {
         isLoadingAssociatedBugs,
         formattedCls: allFormattedCLs,
         testVariantBranch,
+        isDrawerOpen,
+        onToggleDrawer,
       }}
     >
       {children}

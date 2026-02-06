@@ -14,6 +14,7 @@
 
 import { SemanticStatusType } from '@/common/styles/status_styles';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { TestAggregation_ModuleStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_aggregation.pb';
 import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import {
   TestVariant,
@@ -116,15 +117,15 @@ export function getSemanticStatusFromResultV2(
   if (statusV2 === undefined) return 'unknown';
   switch (statusV2) {
     case TestResult_Status.PASSED:
-      return 'success';
+      return 'passed';
     case TestResult_Status.FAILED:
-      return 'error';
+      return 'failed';
     case TestResult_Status.SKIPPED:
       return 'skipped';
     case TestResult_Status.EXECUTION_ERRORED:
-      return 'infra_failure';
+      return 'execution_errored';
     case TestResult_Status.PRECLUDED:
-      return 'skipped'; // Or a specific 'precluded'
+      return 'precluded';
     case TestResult_Status.STATUS_UNSPECIFIED:
     default:
       return 'unknown';
@@ -138,9 +139,9 @@ export function getSemanticStatusFromTestVariant(
   if (status === undefined) return 'unknown';
   switch (status) {
     case TestVariantStatus.EXPECTED:
-      return 'expected';
+      return 'passed';
     case TestVariantStatus.UNEXPECTED:
-      return 'error'; // Maps to "failing"
+      return 'failed';
     case TestVariantStatus.UNEXPECTEDLY_SKIPPED:
       return 'unexpectedly_skipped';
     case TestVariantStatus.FLAKY:
@@ -159,17 +160,42 @@ export function getSemanticStatusFromVerdict(
   if (statusV2 === undefined) return 'unknown';
   switch (statusV2) {
     case TestVerdict_Status.FLAKY:
-      return 'warning';
+      return 'flaky';
     case TestVerdict_Status.PASSED:
-      return 'success';
+      return 'passed';
     case TestVerdict_Status.FAILED:
-      return 'error';
+      return 'failed';
     case TestVerdict_Status.SKIPPED:
       return 'skipped';
     case TestVerdict_Status.EXECUTION_ERRORED:
-      return 'infra_failure';
+      return 'execution_errored';
     case TestVerdict_Status.PRECLUDED:
+      return 'precluded';
+    default:
+      return 'unknown';
+  }
+}
+
+// Helper to map TestAggregation_ModuleStatus to SemanticStatusType.
+export function getSemanticStatusFromModuleStatus(
+  status?: TestAggregation_ModuleStatus,
+): SemanticStatusType {
+  if (status === undefined) return 'unknown';
+  switch (status) {
+    case TestAggregation_ModuleStatus.SUCCEEDED:
+      return 'success';
+    case TestAggregation_ModuleStatus.FAILED:
+      return 'failed';
+    case TestAggregation_ModuleStatus.FLAKY:
+      return 'flaky';
+    case TestAggregation_ModuleStatus.SKIPPED:
       return 'skipped';
+    case TestAggregation_ModuleStatus.CANCELLED:
+      return 'canceled';
+    case TestAggregation_ModuleStatus.RUNNING:
+      return 'started';
+    case TestAggregation_ModuleStatus.PENDING:
+      return 'scheduled';
     default:
       return 'unknown';
   }

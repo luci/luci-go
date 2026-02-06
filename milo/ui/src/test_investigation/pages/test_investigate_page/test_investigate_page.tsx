@@ -65,6 +65,7 @@ import { CollapsedTestInfoHeader } from '@/test_investigation/components/test_in
 import { TestInfoProvider } from '@/test_investigation/components/test_info/context/provider';
 import { TestInfoHeader } from '@/test_investigation/components/test_info/test_info_header';
 import { ArtifactsSection } from '@/test_investigation/components/test_investigate_page/artifacts/artifacts_section';
+import { TestAggregationDrawer } from '@/test_investigation/components/test_investigate_page/test_aggregation_drawer';
 import { TestNavigationDrawer } from '@/test_investigation/components/test_navigation_drawer';
 import { TestDrawerProvider } from '@/test_investigation/components/test_navigation_drawer/context';
 import {
@@ -73,7 +74,10 @@ import {
   TestVariantProvider,
 } from '@/test_investigation/context';
 import { useInvocationQuery } from '@/test_investigation/hooks/queries';
-import { USE_ROOT_INVOCATION_FLAG } from '@/test_investigation/pages/features';
+import {
+  USE_ROOT_INVOCATION_FLAG,
+  TEST_AGGREGATION_DRAWER_FLAG,
+} from '@/test_investigation/pages/features';
 import {
   isAnTSInvocation,
   isPresubmitRun,
@@ -98,6 +102,7 @@ export function TestInvestigatePage() {
   const authState = useAuthState();
   const resultDbClient = useResultDbClient();
   const testHistoryClient = useTestHistoryClient();
+  const enableAggregationDrawer = useFeatureFlag(TEST_AGGREGATION_DRAWER_FLAG);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -384,17 +389,20 @@ export function TestInvestigatePage() {
                 testVariant={testVariant}
               />
             )}
-            <Box component="main" sx={{ height: '100%' }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  maxWidth: '100vw',
-                  boxSizing: 'border-box',
-                  height: '100%',
-                }}
-              >
-                <TestInfoProvider>
+            <TestInfoProvider
+              isDrawerOpen={isDrawerOpen}
+              onToggleDrawer={handleToggleDrawer}
+            >
+              <Box component="main" sx={{ height: '100%' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    maxWidth: '100vw',
+                    boxSizing: 'border-box',
+                    height: '100%',
+                  }}
+                >
                   <Sticky
                     top
                     sx={{ backgroundColor: '#fff', zIndex: 20 }}
@@ -413,15 +421,22 @@ export function TestInvestigatePage() {
                     <TestInfo />
                     <ArtifactsSection />
                   </StickyOffset>
-                </TestInfoProvider>
+                </Box>
               </Box>
-            </Box>
-            <TestDrawerProvider isDrawerOpen={isDrawerOpen}>
-              <TestNavigationDrawer
-                isOpen={isDrawerOpen}
-                onToggleDrawer={handleToggleDrawer}
-              />
-            </TestDrawerProvider>
+              {enableAggregationDrawer ? (
+                <TestAggregationDrawer
+                  isOpen={isDrawerOpen}
+                  onClose={() => setIsDrawerOpen(false)}
+                />
+              ) : (
+                <TestDrawerProvider isDrawerOpen={isDrawerOpen}>
+                  <TestNavigationDrawer
+                    isOpen={isDrawerOpen}
+                    onToggleDrawer={handleToggleDrawer}
+                  />
+                </TestDrawerProvider>
+              )}
+            </TestInfoProvider>
           </ThemeProvider>
         </RecentPassesProvider>
       </TestVariantProvider>
