@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/testrealms"
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -418,7 +419,7 @@ func (s *testHistoryServer) QueryRecentPasses(ctx context.Context, req *pb.Query
 	srcRefHash := pbutil.SourceRefHash(srcRef)
 	maxPosition := pbutil.SourcePosition(req.Sources)
 
-	opts := testresults.ReadPassingRootInvocationsBySourceOptions{
+	opts := lowlatency.ReadPassingRootInvocationsBySourceOptions{
 		Project:           req.Project,
 		SubRealms:         subRealms,
 		TestID:            req.TestId,
@@ -428,7 +429,7 @@ func (s *testHistoryServer) QueryRecentPasses(ctx context.Context, req *pb.Query
 		Limit:             limit,
 	}
 
-	ids, err := testresults.ReadPassingResultsBySource(spanCtx, opts)
+	ids, err := lowlatency.ReadPassingResultsBySource(spanCtx, opts)
 	if err != nil {
 		return nil, fmt.Errorf("reading passing invocations by source: %w", err)
 	}

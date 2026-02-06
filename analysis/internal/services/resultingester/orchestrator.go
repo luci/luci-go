@@ -87,7 +87,7 @@ func RegisterTaskHandler(srv *server.Server) error {
 
 	o := &orchestrator{
 		sinks: []IngestionSink{
-			IngestForExoneration{},
+			IngestForLowLatencyTestResults{},
 			NewTestResultsExporter(resultsClient),
 			NewIngestForChangepointAnalysis(tvbexporter.NewExporter(tvbBQClient)),
 		},

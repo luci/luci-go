@@ -119,7 +119,7 @@ func TestIngestForExoneration(t *testing.T) {
 			// Base case should already have sources set.
 			assert.Loosely(t, inputs.Sources, should.NotBeNil)
 
-			ingester := IngestForExoneration{}
+			ingester := IngestForLowLatencyTestResults{}
 			err := ingester.Ingest(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
@@ -135,7 +135,7 @@ func TestIngestForExoneration(t *testing.T) {
 			// Base case should already have sources set.
 			assert.Loosely(t, inputs.Sources, should.NotBeNil)
 
-			ingester := IngestForExoneration{}
+			ingester := IngestForLowLatencyTestResults{}
 			err := ingester.Ingest(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
@@ -146,7 +146,7 @@ func TestIngestForExoneration(t *testing.T) {
 		t.Run(`Without sources`, func(t *ftt.Test) {
 			inputs.Sources = nil
 
-			ingester := IngestForExoneration{}
+			ingester := IngestForLowLatencyTestResults{}
 			err := ingester.Ingest(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 

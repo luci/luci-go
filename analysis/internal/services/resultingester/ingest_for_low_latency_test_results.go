@@ -36,18 +36,18 @@ import (
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-// IngestForExoneration implements an ingestion stage that writes test
+// IngestForLowLatencyTestResults implements an ingestion stage that writes test
 // results to the TestResultsBySourcePosition table.
-type IngestForExoneration struct{}
+type IngestForLowLatencyTestResults struct{}
 
 // Name returns a unique name for the ingestion stage.
-func (IngestForExoneration) Name() string {
+func (IngestForLowLatencyTestResults) Name() string {
 	return "ingest-for-exoneration"
 }
 
 // Ingest writes test results to the TestResultsBySourcePosition table.
-func (IngestForExoneration) Ingest(ctx context.Context, input Inputs) (err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForExoneration.Ingest")
+func (IngestForLowLatencyTestResults) Ingest(ctx context.Context, input Inputs) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForLowLatencyTestResults.Ingest")
 	defer func() { tracing.End(s, err) }()
 
 	if input.Sources == nil || input.Sources.BaseSources == nil {

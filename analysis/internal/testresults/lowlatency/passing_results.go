@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testresults
+package lowlatency
 
 import (
 	"context"
@@ -20,9 +20,10 @@ import (
 
 	"cloud.google.com/go/spanner"
 
-	pb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/server/span"
+
+	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
 // ReadPassingRootInvocationsBySourceOptions specifies options for ReadPassingRootInvocationsBySource.
