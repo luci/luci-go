@@ -374,7 +374,7 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 
 	recipeResults := req.Results
 	// We expect primary failure to have result.
-	primaryResult := findTestResult(ctx, recipeResults, primary.TestID, primary.VariantHash)
+	primaryResult := findTestResult(ctx, recipeResults, primary.TestID)
 	if primaryResult == nil {
 		return ErrPrimaryFailureResultNotFound
 	}
@@ -398,7 +398,7 @@ func updateRerun(ctx context.Context, rerun *model.TestSingleRerun, tfa *model.T
 		if err != nil {
 			return errors.Fmt("could not find test failure %d", tf.ID)
 		}
-		recipeTestResult := findTestResult(ctx, recipeResults, tf.TestID, tf.VariantHash)
+		recipeTestResult := findTestResult(ctx, recipeResults, tf.TestID)
 		if divergedFromPrimary(recipeTestResult, primaryResult) {
 			tf.IsDiverged = true
 			divergedTestFailures = append(divergedTestFailures, tf)
@@ -477,17 +477,18 @@ func divergedFromPrimary(testResult *pb.TestResult, primaryResult *pb.TestResult
 	return testResult.IsExpected != primaryResult.IsExpected
 }
 
-// findTestResult returns TestResult given testID and variantHash.
-func findTestResult(ctx context.Context, results []*pb.TestResult, testID string, variantHash string) *pb.TestResult {
-	logging.Infof(ctx, "findTestResult: looking for testID=%q, variantHash=%q", testID, variantHash)
-	for i, r := range results {
-		logging.Infof(ctx, "findTestResult: result[%d] testID=%q, variantHash=%q", i, r.TestId, r.VariantHash)
-		if r.TestId == testID && r.VariantHash == variantHash {
-			logging.Infof(ctx, "findTestResult: found match at index %d", i)
+// findTestResult returns TestResult given testID.
+// We match by testID only because the variantHash may differ between
+// the original CI builder (bucket:ci) and the bisection rerun builder
+// (bucket:findit), even though the test is the same.
+// TODO: bring back variant comparison (ignoring "bucket" key) to
+// disambiguate when multiple results share the same testID.
+func findTestResult(ctx context.Context, results []*pb.TestResult, testID string) *pb.TestResult {
+	for _, r := range results {
+		if r.TestId == testID {
 			return r
 		}
 	}
-	logging.Warningf(ctx, "findTestResult: no match found among %d results", len(results))
 	return nil
 }
 
