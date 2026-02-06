@@ -1449,7 +1449,8 @@ message QueryTestAggregationsRequest {
   string order_by = 3;
 
   // The maximum number of items to return. The service may return fewer than
-  // this value.
+  // this value (including zero items), even if not at the end of the collection.
+  //
   // If unspecified, at most 1_000 items will be returned.
   // The maximum value is 10_000; values above 10_000 will be coerced to 10_000.
   int32 page_size = 4;
@@ -1520,7 +1521,8 @@ message QueryTestVerdictsRequest {
   reserved 4; reserved "result_limit";
 
   // The maximum number of verdicts to return. The service may return fewer than
-  // this value.
+  // this value (including zero verdicts), even if not at the end of the collection.
+  //
   // If unspecified, at most 1_000 verdicts will be returned.
   // The maximum value is 10_000; values above 10_000 will be coerced to 10_000.
   int32 page_size = 5;

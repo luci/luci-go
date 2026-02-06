@@ -4013,7 +4013,8 @@ type QueryTestAggregationsRequest struct {
 	// implicit and can be omitted.
 	OrderBy string `protobuf:"bytes,3,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
 	// The maximum number of items to return. The service may return fewer than
-	// this value.
+	// this value (including zero items), even if not at the end of the collection.
+	//
 	// If unspecified, at most 1_000 items will be returned.
 	// The maximum value is 10_000; values above 10_000 will be coerced to 10_000.
 	PageSize int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -4195,7 +4196,8 @@ type QueryTestVerdictsRequest struct {
 	// The default is TEST_VERDICT_VIEW_BASIC.
 	View TestVerdictView `protobuf:"varint,7,opt,name=view,proto3,enum=luci.resultdb.v1.TestVerdictView" json:"view,omitempty"`
 	// The maximum number of verdicts to return. The service may return fewer than
-	// this value.
+	// this value (including zero verdicts), even if not at the end of the collection.
+	//
 	// If unspecified, at most 1_000 verdicts will be returned.
 	// The maximum value is 10_000; values above 10_000 will be coerced to 10_000.
 	PageSize int32 `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
