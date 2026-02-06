@@ -12,53 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UseQueryResult } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 
-import * as useAndroidPerfApi from '@/crystal_ball/hooks/use_android_perf_api';
 import { LandingPage } from '@/crystal_ball/pages/landing_page';
-import { SearchMeasurementsResponse } from '@/crystal_ball/types';
-import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-
-// Mock the hook
-const mockUseSearchMeasurements = jest.spyOn(
-  useAndroidPerfApi,
-  'useSearchMeasurements',
-);
-
-// Mock DateTimePicker as it's used in the child form
-jest.mock('@mui/x-date-pickers/DateTimePicker', () => ({
-  DateTimePicker: jest.fn(({ label, value, onChange, disabled }) => (
-    <input
-      type="text"
-      aria-label={label}
-      value={value ? value.toISO() : ''}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
-    />
-  )),
-}));
 
 describe('<LandingPage />', () => {
   it('should render the landing page', () => {
-    mockUseSearchMeasurements.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      isSuccess: false,
-      isFetching: false,
-    } as UseQueryResult<SearchMeasurementsResponse, Error>);
-
     render(
-      <FakeContextProvider>
+      <MemoryRouter>
         <LandingPage />
-      </FakeContextProvider>,
+      </MemoryRouter>,
     );
+    expect(screen.getByText(/Welcome to Crystal Ball/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Crystal Ball Performance Metrics/i),
+      screen.getByRole('link', { name: /Go to Demo Page/i }),
     ).toBeInTheDocument();
-    // Check that the form is rendered by looking for one of its labels
-    expect(screen.getByLabelText('Test Name Filter')).toBeInTheDocument();
   });
 });
