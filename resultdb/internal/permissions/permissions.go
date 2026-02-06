@@ -253,7 +253,7 @@ func VerifyWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts VerifyW
 	rootInvRealm, err := rootinvocations.ReadRealmFromShard(ctx, ids[0].RootInvocationShardID())
 	if err != nil {
 		// If the root invocation is not found, returns NotFound appstatus error.
-		return nil, err
+		return nil, fmt.Errorf("read realm from shard: %w", err)
 	}
 
 	// Note: HasPermission does not make RPCs.
@@ -282,7 +282,7 @@ func VerifyWorkUnitsAccess(ctx context.Context, ids []workunits.ID, opts VerifyW
 	workUnitRealms, err := workunits.ReadRealms(ctx, ids)
 	if err != nil {
 		// If any work unit is not found, returns NotFound appstatus error.
-		return nil, err
+		return nil, fmt.Errorf("read realms: %w", err)
 	}
 
 	accessLevels = make([]AccessLevel, len(ids))

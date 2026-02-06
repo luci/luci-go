@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
@@ -31,6 +32,15 @@ import (
 )
 
 func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error) {
+	if ctx.Err() != nil {
+		logging.Warningf(ctx, "context cancelled at start of BatchGetWorkUnits request: %w", ctx.Err())
+	}
+	defer func() {
+		if ctx.Err() != nil {
+			logging.Warningf(ctx, "context cancelled at end of BatchGetWorkUnits request: %w", ctx.Err())
+		}
+	}()
+
 	// Use one transaction for the entire RPC so that we work with a
 	// consistent snapshot of the system state. This is important to
 	// prevent subtle bugs and TOC-TOU vulnerabilities.
@@ -61,7 +71,7 @@ func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetW
 	// Read the work units.
 	wus, err := workunits.ReadBatch(ctx, ids, readMask)
 	if err != nil {
-		return nil, err
+		return nil, errors.Fmt("read batch: %w", err)
 	}
 
 	cfg, err := config.Service(ctx)
@@ -111,7 +121,7 @@ func verifyBatchGetWorkUnitAccess(ctx context.Context, in *pb.BatchGetWorkUnitsR
 		// Returns NotFound appstatus error if one of the work units was not found,
 		// PermissionDenied if sufficient access was not attained,
 		// or an internal error.
-		return nil, nil, err
+		return nil, nil, errors.Fmt("verify access: %w", err)
 	}
 
 	return ids, accessLevels, nil
