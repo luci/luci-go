@@ -18,6 +18,7 @@ import { MRT_RowData, MRT_TableInstance } from 'material-react-table';
 import { useState } from 'react';
 
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
+import { useShortcut } from '../shortcut_provider';
 
 export function FCDataTableCopy<T extends MRT_RowData>({
   table,
@@ -27,23 +28,27 @@ export function FCDataTableCopy<T extends MRT_RowData>({
   const [showCopySuccess, setShowCopySuccess] = useState(false);
 
   const rows = table.getSelectedRowModel().rows;
-  if (rows.length === 0) return <div />;
 
+  const copy = () => {
+    const keys = Object.keys(rows[0]?.original);
+    const textToCopy =
+      keys.join('\t') +
+      '\n' +
+      rows.map((r) => keys.map((key) => r.original[key]).join('\t')).join('\n');
+
+    setShowCopySuccess(true);
+    navigator.clipboard.writeText(textToCopy);
+  };
+
+  useShortcut('Copy the selected rows', ['Ctrl+c', 'Cmd+c'], copy, {
+    enabled: rows.length > 0,
+  });
+
+  if (rows.length === 0) return <div />;
   return (
     <>
       <Button
-        onClick={() => {
-          const keys = Object.keys(rows[0]?.original);
-          const textToCopy =
-            keys.join('\t') +
-            '\n' +
-            rows
-              .map((r) => keys.map((key) => r.original[key]).join('\t'))
-              .join('\n');
-
-          setShowCopySuccess(true);
-          navigator.clipboard.writeText(textToCopy);
-        }}
+        onClick={copy}
         startIcon={<ContentCopyIcon />}
         aria-label="Copy selected rows"
       >

@@ -590,12 +590,14 @@ export const RepairListPage = () => {
 
   const table = useFCDataTable({
     enableHiding: false,
+    positionToolbarAlertBanner: 'none',
+    enableRowSelection: true,
     renderTopToolbarCustomActions: ({ table }) => (
       <div
         css={{
           width: '100%',
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           alignItems: 'center',
           gap: '8px',
         }}
