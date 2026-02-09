@@ -28,6 +28,7 @@ interface SearchBarProps<T> {
   onChange: (value: string) => void;
   selectedOptions: FilterCategoryData<T>[];
   onDropdownFocus: () => void;
+  isDropdownOpen: boolean;
   onChangeDropdownOpen: (isOpen: boolean) => void;
   onChipDeleted: (option: FilterCategoryData<T>) => void;
   getLabel: (option: FilterCategoryData<T>) => string; // TODO: could be part of FilterCategoryData itself
@@ -43,6 +44,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
       onChange,
       selectedOptions,
       onDropdownFocus,
+      isDropdownOpen,
       onChangeDropdownOpen,
       getLabel,
       onChipDeleted,
@@ -171,6 +173,9 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
         }}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
+            if (!isDropdownOpen) {
+              (e.target as HTMLElement).blur();
+            }
             onChangeDropdownOpen(false);
           }
           if (

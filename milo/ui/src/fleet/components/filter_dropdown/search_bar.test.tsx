@@ -58,6 +58,7 @@ describe('SearchBar', () => {
         value={value}
         onChange={onChange}
         selectedOptions={selectedOptions}
+        isDropdownOpen={false}
         onDropdownFocus={onDropdownFocus}
         onChangeDropdownOpen={onChangeDropdownOpen}
         onChipDeleted={onChipDeleted}

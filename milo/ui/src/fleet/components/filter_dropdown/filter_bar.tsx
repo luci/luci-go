@@ -75,6 +75,7 @@ export function FilterBar<T>({
           filterDropdownRef.current?.focus();
           setIsDropdownOpen(true);
         }}
+        isDropdownOpen={isDropdownOpen}
         onChangeDropdownOpen={setIsDropdownOpen}
         isLoading={isLoading}
         ref={searchBarRef}
