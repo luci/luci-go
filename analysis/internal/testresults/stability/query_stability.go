@@ -28,6 +28,7 @@ import (
 
 	spanutil "go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testresults"
+	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -796,9 +797,10 @@ type sourceVerdict struct {
 	ChangelistChange    spanner.NullInt64
 	ChangelistPatchset  spanner.NullInt64
 	ChangelistOwnerKind spanner.NullString
-	RootInvocationIds   []string
-	UnexpectedRuns      int64
-	ExpectedRuns        int64
+	// A list of raw Spanner root invocation row IDs, see lowlatency.RootInvocationID.
+	RootInvocationIds []string
+	UnexpectedRuns    int64
+	ExpectedRuns      int64
 }
 
 func toPBFailureRateRecentVerdict(verdicts []*sourceVerdict) []*pb.TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
@@ -814,22 +816,36 @@ func toPBFailureRateRecentVerdict(verdicts []*sourceVerdict) []*pb.TestVariantSt
 			})
 		}
 
+		rootInvocations, legacyInvocations := parseAndSortRootInvocationIDs(v.RootInvocationIds)
+
 		results = append(results, &pb.TestVariantStabilityAnalysis_FailureRate_RecentVerdict{
-			Position:       v.SourcePosition,
-			Changelists:    changelists,
-			Invocations:    sortStrings(v.RootInvocationIds),
-			UnexpectedRuns: int32(v.UnexpectedRuns),
-			TotalRuns:      int32(v.ExpectedRuns + v.UnexpectedRuns),
+			Position:        v.SourcePosition,
+			Changelists:     changelists,
+			RootInvocations: rootInvocations,
+			Invocations:     legacyInvocations,
+			UnexpectedRuns:  int32(v.UnexpectedRuns),
+			TotalRuns:       int32(v.ExpectedRuns + v.UnexpectedRuns),
 		})
 	}
 	return results
 }
 
-func sortStrings(ids []string) []string {
-	idsCopy := make([]string, len(ids))
-	copy(idsCopy, ids)
-	sort.Strings(idsCopy)
-	return idsCopy
+// parseAndSortRootInvocationIDs converts a list of raw Spanner root
+// invocation IDs to a list of root and legacy invocation IDs, sorted.
+func parseAndSortRootInvocationIDs(rowIDs []string) (rootInvocations []string, legacyInvocations []string) {
+	rootInvocations = make([]string, 0, len(rowIDs))
+	legacyInvocations = make([]string, 0, len(rowIDs))
+	for _, rowID := range rowIDs {
+		id := lowlatency.RootInvocationIDFromRowID(rowID)
+		if id.IsLegacy {
+			legacyInvocations = append(legacyInvocations, id.Value)
+		} else {
+			rootInvocations = append(rootInvocations, id.Value)
+		}
+	}
+	sort.Strings(rootInvocations)
+	sort.Strings(legacyInvocations)
+	return rootInvocations, legacyInvocations
 }
 
 func toPBFlakeRateVerdictExample(verdicts []*sourceVerdict) []*pb.TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
@@ -845,10 +861,12 @@ func toPBFlakeRateVerdictExample(verdicts []*sourceVerdict) []*pb.TestVariantSta
 			})
 		}
 
+		rootInvocations, legacyInvocations := parseAndSortRootInvocationIDs(v.RootInvocationIds)
 		results = append(results, &pb.TestVariantStabilityAnalysis_FlakeRate_VerdictExample{
-			Position:    v.SourcePosition,
-			Changelists: changelists,
-			Invocations: sortStrings(v.RootInvocationIds),
+			Position:        v.SourcePosition,
+			Changelists:     changelists,
+			RootInvocations: rootInvocations,
+			Invocations:     legacyInvocations,
 		})
 	}
 	return results

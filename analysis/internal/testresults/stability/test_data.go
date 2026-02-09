@@ -55,11 +55,12 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 	})
 
 	type verdict struct {
-		partitionTime time.Time
-		variant       *pb.Variant
-		invocationID  string
-		runStatuses   []lowlatency.RunStatus
-		sources       testresults.Sources
+		partitionTime    time.Time
+		variant          *pb.Variant
+		rootInvocationID string
+		invocationID     string // The legacy export root invocation ID, specified as an alternative to the root invocation ID.
+		runStatuses      []lowlatency.RunStatus
+		sources          testresults.Sources
 	}
 
 	changelists := func(clOwnerKind pb.ChangelistOwnerKind, numbers ...int64) []testresults.Changelist {
@@ -96,38 +97,38 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				partitionTime: referenceTime.Add(-14*day - time.Microsecond),
 				variant:       var1,
 				// Partition time too early, so should be ignored.
-				invocationID: "sourceverdict0-ignore-partitiontime",
-				runStatuses:  failPass,
+				rootInvocationID: "sourceverdict0-ignore-partitiontime",
+				runStatuses:      failPass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 1,
 				},
 			},
 			{
-				partitionTime: referenceTime.Add(-13*day - 1*time.Hour),
-				variant:       var1,
-				invocationID:  "sourceverdict1",
-				runStatuses:   failPass,
+				partitionTime:    referenceTime.Add(-13*day - 1*time.Hour),
+				variant:          var1,
+				rootInvocationID: "sourceverdict1",
+				runStatuses:      failPass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 90,
 				},
 			},
 			{
-				partitionTime: referenceTime.Add(-12 * day),
-				variant:       var1,
-				invocationID:  "sourceverdict2",
-				runStatuses:   failPass,
+				partitionTime:    referenceTime.Add(-12 * day),
+				variant:          var1,
+				rootInvocationID: "sourceverdict2",
+				runStatuses:      failPass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 100,
 				},
 			},
 			{
-				partitionTime: referenceTime.Add(-10 * day),
-				variant:       var1,
-				invocationID:  "sourceverdict3-part1",
-				runStatuses:   fail,
+				partitionTime:    referenceTime.Add(-10 * day),
+				variant:          var1,
+				rootInvocationID: "sourceverdict3-part1",
+				runStatuses:      fail,
 				sources: testresults.Sources{
 					RefHash:     onBranch,
 					Position:    100,
@@ -139,8 +140,8 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				variant:       var1,
 				// Should combine with sourceverdict3-part1 to produce a run-flaky verdict, as it
 				// has the same sources under test.
-				invocationID: "sourceverdict3-part2",
-				runStatuses:  pass,
+				rootInvocationID: "sourceverdict3-part2",
+				runStatuses:      pass,
 				sources: testresults.Sources{
 					RefHash:     onBranch,
 					Position:    100,
@@ -152,8 +153,8 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				variant:       var1,
 				// source verdict 3 should be used preferentially as it is flaky
 				// and tests the same CL.
-				invocationID: "sourceverdict4-ignore",
-				runStatuses:  pass,
+				rootInvocationID: "sourceverdict4-ignore",
+				runStatuses:      pass,
 				sources: testresults.Sources{
 					RefHash:     onBranch,
 					Position:    120,
@@ -161,10 +162,10 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				},
 			},
 			{
-				partitionTime: referenceTime.Add(-8*day - 2*time.Hour),
-				variant:       var1,
-				invocationID:  "sourceverdict5",
-				runStatuses:   pass,
+				partitionTime:    referenceTime.Add(-8*day - 2*time.Hour),
+				variant:          var1,
+				rootInvocationID: "sourceverdict5",
+				runStatuses:      pass,
 				sources: testresults.Sources{
 					RefHash:     onBranch,
 					Position:    120,
@@ -172,10 +173,10 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				},
 			},
 			{
-				partitionTime: referenceTime.Add(-8*day - time.Hour),
-				variant:       var1,
-				invocationID:  "sourceverdict6",
-				runStatuses:   failPass,
+				partitionTime:    referenceTime.Add(-8*day - time.Hour),
+				variant:          var1,
+				rootInvocationID: "sourceverdict6",
+				runStatuses:      failPass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 120,
@@ -187,8 +188,8 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				variant:       var1,
 				// Should be distinct from source verdict 5 because both have
 				// IsDirty set, so we cannot confirm the soruces are identical.
-				invocationID: "sourceverdict7",
-				runStatuses:  failPassPass,
+				rootInvocationID: "sourceverdict7",
+				runStatuses:      failPassPass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 120,
@@ -199,8 +200,8 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				partitionTime: referenceTime.Add(-8 * day),
 				variant:       var1,
 				// Automation-authored, so should be ignored.
-				invocationID: "sourceverdict8-ignore",
-				runStatuses:  failPass,
+				rootInvocationID: "sourceverdict8-ignore",
+				runStatuses:      failPass,
 				sources: testresults.Sources{
 					RefHash:     onBranch,
 					Position:    120,
@@ -208,10 +209,10 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				},
 			},
 			{
-				partitionTime: referenceTime.Add(-7*day - 1*time.Hour),
-				variant:       var1,
-				invocationID:  "sourceverdict9-part1",
-				runStatuses:   failFail,
+				partitionTime:    referenceTime.Add(-7*day - 1*time.Hour),
+				variant:          var1,
+				rootInvocationID: "sourceverdict9-part1",
+				runStatuses:      failFail,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 128,
@@ -222,8 +223,8 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				variant:       var1,
 				// Should merge with sourceverdict8-part1 due to sharing
 				// same sources.
-				invocationID: "sourceverdict9-part2",
-				runStatuses:  pass,
+				rootInvocationID: "sourceverdict9-part2",
+				runStatuses:      pass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 128,
@@ -233,8 +234,8 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				partitionTime: referenceTime.Add(-7 * day),
 				variant:       var2,
 				// Different variant, so should be ignored.
-				invocationID: "sourceverdict10-ignore-var2",
-				runStatuses:  failPass,
+				rootInvocationID: "sourceverdict10-ignore-var2",
+				runStatuses:      failPass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 130,
@@ -244,8 +245,8 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				partitionTime: referenceTime.Add(-7 * day),
 				variant:       var3,
 				// For variant 3.
-				invocationID: "sourceverdict11",
-				runStatuses:  failPass,
+				rootInvocationID: "sourceverdict11",
+				runStatuses:      failPass,
 				sources: testresults.Sources{
 					RefHash:  otherBranch,
 					Position: 130,
@@ -255,8 +256,8 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				partitionTime: referenceTime.Add(-7 * day),
 				variant:       var1,
 				// Other branch, so should be ignored.
-				invocationID: "sourceverdict12-ignore-offbranch",
-				runStatuses:  failPass,
+				rootInvocationID: "sourceverdict12-ignore-offbranch",
+				runStatuses:      failPass,
 				sources: testresults.Sources{
 					RefHash:  otherBranch,
 					Position: 130,
@@ -267,8 +268,8 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				variant:       var1,
 				// A result for the same CL as being queried, so should be ignored
 				// to avoid CLs contributing to their own exoneration.
-				invocationID: "sourceverdict14-ignore-same-cl-as-query",
-				runStatuses:  failPass,
+				rootInvocationID: "sourceverdict14-ignore-same-cl-as-query",
+				runStatuses:      failPass,
 				sources: testresults.Sources{
 					RefHash:     otherBranch,
 					Position:    130,
@@ -278,8 +279,9 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 			{
 				partitionTime: referenceTime.Add(-6 * day),
 				variant:       var1,
-				invocationID:  "sourceverdict15",
-				runStatuses:   pass,
+				// Uses legacy invocation.
+				invocationID: "sourceverdict15",
+				runStatuses:  pass,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 129,
@@ -287,10 +289,10 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 			},
 			// Begin consecutive failure streak.
 			{
-				partitionTime: referenceTime.Add(-6 * day),
-				variant:       var1,
-				invocationID:  "sourceverdict16-part1",
-				runStatuses:   failFail,
+				partitionTime:    referenceTime.Add(-6 * day),
+				variant:          var1,
+				rootInvocationID: "sourceverdict16-part1",
+				runStatuses:      failFail,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 130,
@@ -301,17 +303,17 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				variant:       var1,
 				// Should merge with sourceverdict13-part1 due to sharing
 				// same sources.
-				invocationID: "sourceverdict16-part2",
-				runStatuses:  failFail,
+				rootInvocationID: "sourceverdict16-part2",
+				runStatuses:      failFail,
 				sources: testresults.Sources{
 					RefHash:  onBranch,
 					Position: 130,
 				},
 			},
 			{
-				partitionTime: referenceTime.Add(-1 * day),
-				variant:       var1,
-				invocationID:  "sourceverdict17",
+				partitionTime:    referenceTime.Add(-1 * day),
+				variant:          var1,
+				rootInvocationID: "sourceverdict17",
 				// Only one run should be used as the verdict relates to presubmit testing.
 				runStatuses: failPass,
 				sources: testresults.Sources{
@@ -328,10 +330,20 @@ func CreateQueryStabilityTestData(ctx context.Context) error {
 				WithTestID("test_id").
 				WithVariantHash(pbutil.VariantHash(v.variant)).
 				WithPartitionTime(v.partitionTime).
-				WithRootInvocationID(v.invocationID).
+				WithLegacyRootInvocationID(v.invocationID).
 				WithSubRealm("realm").
 				WithStatus(pb.TestResultStatus_PASS).
 				WithSources(v.sources)
+
+			if v.invocationID != "" {
+				baseTestResult = baseTestResult.
+					WithLegacyRootInvocationID(v.invocationID).
+					WithLegacyInvocationID("legacy-inv-id")
+			} else {
+				baseTestResult = baseTestResult.
+					WithRootInvocationID(v.rootInvocationID).
+					WithWorkUnitID("wu-id")
+			}
 
 			trs := lowlatency.NewTestVerdict().
 				WithBaseTestResult(baseTestResult.Build()).
@@ -442,17 +454,17 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 								OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 							},
 						},
-						Invocations: []string{"sourceverdict17"},
+						RootInvocations: []string{"sourceverdict17"},
 						// Unexpected + expected run flattened down to only an unexpected run due to
 						// presubmit results only being allowed to contribute 1 test run.
 						UnexpectedRuns: 1,
 						TotalRuns:      1,
 					},
 					{
-						Position:       130, // Query position.
-						Invocations:    []string{"sourceverdict16-part1", "sourceverdict16-part2"},
-						UnexpectedRuns: 4,
-						TotalRuns:      4,
+						Position:        130, // Query position.
+						RootInvocations: []string{"sourceverdict16-part1", "sourceverdict16-part2"},
+						UnexpectedRuns:  4,
+						TotalRuns:       4,
 					},
 					{
 						Position:    129,
@@ -460,16 +472,16 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 						TotalRuns:   1,
 					},
 					{
-						Position:       128,
-						Invocations:    []string{"sourceverdict9-part1", "sourceverdict9-part2"},
-						UnexpectedRuns: 2,
-						TotalRuns:      3,
+						Position:        128,
+						RootInvocations: []string{"sourceverdict9-part1", "sourceverdict9-part2"},
+						UnexpectedRuns:  2,
+						TotalRuns:       3,
 					},
 					{
-						Position:       120,
-						Invocations:    []string{"sourceverdict7"},
-						UnexpectedRuns: 1,
-						TotalRuns:      2, // Verdict truncated to 2 runs to keep total runs on or before query position <= 10.
+						Position:        120,
+						RootInvocations: []string{"sourceverdict7"},
+						UnexpectedRuns:  1,
+						TotalRuns:       2, // Verdict truncated to 2 runs to keep total runs on or before query position <= 10.
 					},
 				},
 			},
@@ -488,23 +500,23 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 								OwnerKind: pb.ChangelistOwnerKind_HUMAN,
 							},
 						},
-						Invocations: []string{"sourceverdict17"},
+						RootInvocations: []string{"sourceverdict17"},
 					},
 					{
-						Position:    128,
-						Invocations: []string{"sourceverdict9-part1", "sourceverdict9-part2"},
+						Position:        128,
+						RootInvocations: []string{"sourceverdict9-part1", "sourceverdict9-part2"},
 					},
 					{
-						Position:    120,
-						Invocations: []string{"sourceverdict7"},
+						Position:        120,
+						RootInvocations: []string{"sourceverdict7"},
 					},
 					{
-						Position:    120,
-						Invocations: []string{"sourceverdict6"},
+						Position:        120,
+						RootInvocations: []string{"sourceverdict6"},
 					},
 					{
-						Position:    100,
-						Invocations: []string{"sourceverdict3-part1", "sourceverdict3-part2"},
+						Position:        100,
+						RootInvocations: []string{"sourceverdict3-part1", "sourceverdict3-part2"},
 						Changelists: []*pb.Changelist{
 							{
 								Host:      "mygerrit-review.googlesource.com",
@@ -515,8 +527,8 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 						},
 					},
 					{
-						Position:    100,
-						Invocations: []string{"sourceverdict2"},
+						Position:        100,
+						RootInvocations: []string{"sourceverdict2"},
 					},
 				},
 				StartPosition: 100,
@@ -537,10 +549,10 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 				ConsecutiveUnexpectedTestRuns: 1,
 				RecentVerdicts: []*pb.TestVariantStabilityAnalysis_FailureRate_RecentVerdict{
 					{
-						Position:       130,
-						Invocations:    []string{"sourceverdict11"},
-						UnexpectedRuns: 1,
-						TotalRuns:      2,
+						Position:        130,
+						RootInvocations: []string{"sourceverdict11"},
+						UnexpectedRuns:  1,
+						TotalRuns:       2,
 					},
 				},
 			},
@@ -550,8 +562,8 @@ func QueryStabilitySampleResponse() []*pb.TestVariantStabilityAnalysis {
 				TotalVerdicts:    1,
 				FlakeExamples: []*pb.TestVariantStabilityAnalysis_FlakeRate_VerdictExample{
 					{
-						Position:    130,
-						Invocations: []string{"sourceverdict11"},
+						Position:        130,
+						RootInvocations: []string{"sourceverdict11"},
 					},
 				},
 				StartPosition: 130,
@@ -577,8 +589,8 @@ func QueryStabilitySampleResponseLargeWindow() []*pb.TestVariantStabilityAnalysi
 
 	// Include verdicts outside the normal window, but within the last 14 days.
 	fr.FlakeExamples = append(fr.FlakeExamples, &pb.TestVariantStabilityAnalysis_FlakeRate_VerdictExample{
-		Position:    90,
-		Invocations: []string{"sourceverdict1"},
+		Position:        90,
+		RootInvocations: []string{"sourceverdict1"},
 	})
 	fr.StartPosition = 90
 

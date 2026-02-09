@@ -552,8 +552,12 @@ func aggregateStatus(verdicts []*pb.QuerySourceVerdictsResponse_TestVerdict) pb.
 func toTestVerdictsSpanner(tvs []lowlatency.SourceVerdictTestVerdict) []*pb.QuerySourceVerdictsResponse_TestVerdict {
 	result := make([]*pb.QuerySourceVerdictsResponse_TestVerdict, 0, len(tvs))
 	for _, tv := range tvs {
+		if !tv.RootInvocationID.IsLegacy {
+			// Root invocation source verdicts not currently supported via this RPC.
+			continue
+		}
 		result = append(result, &pb.QuerySourceVerdictsResponse_TestVerdict{
-			InvocationId:  tv.RootInvocationID,
+			InvocationId:  tv.RootInvocationID.Value,
 			PartitionTime: timestamppb.New(tv.PartitionTime),
 			Status:        tv.Status,
 			Changelists:   toChangelistSpanner(tv.Changelists),

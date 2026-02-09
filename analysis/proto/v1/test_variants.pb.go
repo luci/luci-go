@@ -1473,7 +1473,11 @@ type TestVariantStabilityAnalysis_FailureRate_RecentVerdict struct {
 	Position int64 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
 	// The changelist(s) tested, if any.
 	Changelists []*Changelist `protobuf:"bytes,2,rep,name=changelists,proto3" json:"changelists,omitempty"`
-	// The invocations included in this source verdict.
+	// The root invocations included in this source verdict.
+	RootInvocations []string `protobuf:"bytes,6,rep,name=root_invocations,json=rootInvocations,proto3" json:"root_invocations,omitempty"`
+	// The legacy invocations included in this source verdict.
+	//
+	// Deprecated: Marked as deprecated in go.chromium.org/luci/analysis/proto/v1/test_variants.proto.
 	Invocations []string `protobuf:"bytes,3,rep,name=invocations,proto3" json:"invocations,omitempty"`
 	// The number of unexpected runs associated with the verdict.
 	// An unexpected run is a run (e.g. swarming task) which
@@ -1533,6 +1537,14 @@ func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) GetChangelists(
 	return nil
 }
 
+func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) GetRootInvocations() []string {
+	if x != nil {
+		return x.RootInvocations
+	}
+	return nil
+}
+
+// Deprecated: Marked as deprecated in go.chromium.org/luci/analysis/proto/v1/test_variants.proto.
 func (x *TestVariantStabilityAnalysis_FailureRate_RecentVerdict) GetInvocations() []string {
 	if x != nil {
 		return x.Invocations
@@ -1563,7 +1575,11 @@ type TestVariantStabilityAnalysis_FlakeRate_VerdictExample struct {
 	Position int64 `protobuf:"varint,1,opt,name=position,proto3" json:"position,omitempty"`
 	// The changelist(s) tested, if any.
 	Changelists []*Changelist `protobuf:"bytes,2,rep,name=changelists,proto3" json:"changelists,omitempty"`
-	// The invocations included in this source verdict.
+	// The root invocations included in this source verdict.
+	RootInvocations []string `protobuf:"bytes,4,rep,name=root_invocations,json=rootInvocations,proto3" json:"root_invocations,omitempty"`
+	// The legacy invocations included in this source verdict.
+	//
+	// Deprecated: Marked as deprecated in go.chromium.org/luci/analysis/proto/v1/test_variants.proto.
 	Invocations   []string `protobuf:"bytes,3,rep,name=invocations,proto3" json:"invocations,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1613,6 +1629,14 @@ func (x *TestVariantStabilityAnalysis_FlakeRate_VerdictExample) GetChangelists()
 	return nil
 }
 
+func (x *TestVariantStabilityAnalysis_FlakeRate_VerdictExample) GetRootInvocations() []string {
+	if x != nil {
+		return x.RootInvocations
+	}
+	return nil
+}
+
+// Deprecated: Marked as deprecated in go.chromium.org/luci/analysis/proto/v1/test_variants.proto.
 func (x *TestVariantStabilityAnalysis_FlakeRate_VerdictExample) GetInvocations() []string {
 	if x != nil {
 		return x.Invocations
@@ -1684,26 +1708,27 @@ const file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDesc = 
 	"min_window\x18\x01 \x01(\x05R\tminWindow\x12'\n" +
 	"\x0fflake_threshold\x18\x02 \x01(\x05R\x0eflakeThreshold\x120\n" +
 	"\x14flake_rate_threshold\x18\x03 \x01(\x01R\x12flakeRateThreshold\x12.\n" +
-	"\x13flake_threshold_1wd\x18\x04 \x01(\x05R\x11flakeThreshold1wd\"\xbb\v\n" +
+	"\x13flake_threshold_1wd\x18\x04 \x01(\x05R\x11flakeThreshold1wd\"\x99\f\n" +
 	"\x1cTestVariantStabilityAnalysis\x12\x17\n" +
 	"\atest_id\x18\x01 \x01(\tR\x06testId\x123\n" +
 	"\avariant\x18\x02 \x01(\v2\x19.luci.analysis.v1.VariantR\avariant\x12!\n" +
 	"\fvariant_hash\x18\x03 \x01(\tR\vvariantHash\x12]\n" +
 	"\ffailure_rate\x18\x04 \x01(\v2:.luci.analysis.v1.TestVariantStabilityAnalysis.FailureRateR\vfailureRate\x12W\n" +
 	"\n" +
-	"flake_rate\x18\x05 \x01(\v28.luci.analysis.v1.TestVariantStabilityAnalysis.FlakeRateR\tflakeRate\x1a\xea\x03\n" +
+	"flake_rate\x18\x05 \x01(\v28.luci.analysis.v1.TestVariantStabilityAnalysis.FlakeRateR\tflakeRate\x1a\x99\x04\n" +
 	"\vFailureRate\x12\x15\n" +
 	"\x06is_met\x18\x01 \x01(\bR\x05isMet\x120\n" +
 	"\x14unexpected_test_runs\x18\x02 \x01(\x05R\x12unexpectedTestRuns\x12G\n" +
 	" consecutive_unexpected_test_runs\x18\x03 \x01(\x05R\x1dconsecutiveUnexpectedTestRuns\x12q\n" +
-	"\x0frecent_verdicts\x18\x04 \x03(\v2H.luci.analysis.v1.TestVariantStabilityAnalysis.FailureRate.RecentVerdictR\x0erecentVerdicts\x1a\xd5\x01\n" +
+	"\x0frecent_verdicts\x18\x04 \x03(\v2H.luci.analysis.v1.TestVariantStabilityAnalysis.FailureRate.RecentVerdictR\x0erecentVerdicts\x1a\x84\x02\n" +
 	"\rRecentVerdict\x12\x1a\n" +
 	"\bposition\x18\x01 \x01(\x03R\bposition\x12>\n" +
-	"\vchangelists\x18\x02 \x03(\v2\x1c.luci.analysis.v1.ChangelistR\vchangelists\x12 \n" +
-	"\vinvocations\x18\x03 \x03(\tR\vinvocations\x12'\n" +
+	"\vchangelists\x18\x02 \x03(\v2\x1c.luci.analysis.v1.ChangelistR\vchangelists\x12)\n" +
+	"\x10root_invocations\x18\x06 \x03(\tR\x0frootInvocations\x12$\n" +
+	"\vinvocations\x18\x03 \x03(\tB\x02\x18\x01R\vinvocations\x12'\n" +
 	"\x0funexpected_runs\x18\x04 \x01(\x05R\x0eunexpectedRuns\x12\x1d\n" +
 	"\n" +
-	"total_runs\x18\x05 \x01(\x05R\ttotalRuns\x1a\x84\x05\n" +
+	"total_runs\x18\x05 \x01(\x05R\ttotalRuns\x1a\xb3\x05\n" +
 	"\tFlakeRate\x12\x15\n" +
 	"\x06is_met\x18\x01 \x01(\bR\x05isMet\x12,\n" +
 	"\x12run_flaky_verdicts\x18\x02 \x01(\x05R\x10runFlakyVerdicts\x12%\n" +
@@ -1715,11 +1740,12 @@ const file_go_chromium_org_luci_analysis_proto_v1_test_variants_proto_rawDesc = 
 	"\x12start_position_1wd\x18\b \x01(\x03R\x10startPosition1wd\x12(\n" +
 	"\x10end_position_1wd\x18\t \x01(\x03R\x0eendPosition1wd\x123\n" +
 	"\x16run_flaky_verdicts_12h\x18\n" +
-	" \x01(\x05R\x13runFlakyVerdicts12h\x1a\x8e\x01\n" +
+	" \x01(\x05R\x13runFlakyVerdicts12h\x1a\xbd\x01\n" +
 	"\x0eVerdictExample\x12\x1a\n" +
 	"\bposition\x18\x01 \x01(\x03R\bposition\x12>\n" +
-	"\vchangelists\x18\x02 \x03(\v2\x1c.luci.analysis.v1.ChangelistR\vchangelists\x12 \n" +
-	"\vinvocations\x18\x03 \x03(\tR\vinvocations2\x8f\x02\n" +
+	"\vchangelists\x18\x02 \x03(\v2\x1c.luci.analysis.v1.ChangelistR\vchangelists\x12)\n" +
+	"\x10root_invocations\x18\x04 \x03(\tR\x0frootInvocations\x12$\n" +
+	"\vinvocations\x18\x03 \x03(\tB\x02\x18\x01R\vinvocations2\x8f\x02\n" +
 	"\fTestVariants\x12\x81\x01\n" +
 	"\x10QueryFailureRate\x124.luci.analysis.v1.QueryTestVariantFailureRateRequest\x1a5.luci.analysis.v1.QueryTestVariantFailureRateResponse\"\x00\x12{\n" +
 	"\x0eQueryStability\x122.luci.analysis.v1.QueryTestVariantStabilityRequest\x1a3.luci.analysis.v1.QueryTestVariantStabilityResponse\"\x00B3Z1go.chromium.org/luci/analysis/proto/v1;analysispbb\x06proto3"

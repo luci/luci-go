@@ -107,27 +107,27 @@ func TestReadSourceVerdicts(t *testing.T) {
 			verdicts := []testVerdicts{
 				{
 					// Should not be returned, source position too early.
-					baseResult: baseTestResult.WithSources(onBranchAt(1000)).WithRootInvocationID("unexpected-1"),
+					baseResult: baseTestResult.WithSources(onBranchAt(1000)).WithLegacyRootInvocationID("unexpected-1"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should be returned, just within source position range.
-					baseResult: baseTestResult.WithSources(onBranchAt(1001)).WithRootInvocationID("expected-1"),
+					baseResult: baseTestResult.WithSources(onBranchAt(1001)).WithLegacyRootInvocationID("expected-1"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should be returned, test multiple test verdict at one position (1/2).
-					baseResult: baseTestResult.WithSources(onBranchAt(1200)).WithRootInvocationID("expected-2"),
+					baseResult: baseTestResult.WithSources(onBranchAt(1200)).WithLegacyRootInvocationID("expected-2"),
 					status:     pb.QuerySourceVerdictsResponse_UNEXPECTED,
 				},
 				{
 					// Should be returned, test multiple test verdict at one position (2/4).
-					baseResult: baseTestResult.WithSources(onBranchAt(1200)).WithRootInvocationID("expected-3"),
+					baseResult: baseTestResult.WithSources(onBranchAt(1200)).WithLegacyRootInvocationID("expected-3"),
 					status:     pb.QuerySourceVerdictsResponse_FLAKY,
 				},
 				{
 					// Should be returned, test multiple test verdict at one position (3/4).
-					baseResult: baseTestResult.WithSources(onBranchAt(1200)).WithRootInvocationID("expected-4"),
+					baseResult: baseTestResult.WithSources(onBranchAt(1200)).WithLegacyRootInvocationID("expected-4"),
 					status:     pb.QuerySourceVerdictsResponse_SKIPPED,
 				},
 				{
@@ -138,42 +138,42 @@ func TestReadSourceVerdicts(t *testing.T) {
 						Change:    1,
 						Patchset:  2,
 						OwnerKind: pb.ChangelistOwnerKind_AUTOMATION,
-					})).WithRootInvocationID("expected-5"),
+					})).WithLegacyRootInvocationID("expected-5"),
 					status: pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should be returned, just within source position range.
-					baseResult: baseTestResult.WithSources(onBranchAt(2000)).WithRootInvocationID("expected-6"),
+					baseResult: baseTestResult.WithSources(onBranchAt(2000)).WithLegacyRootInvocationID("expected-6"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should not be returned, source position too late.
-					baseResult: baseTestResult.WithSources(onBranchAt(2001)).WithRootInvocationID("unexpected-2"),
+					baseResult: baseTestResult.WithSources(onBranchAt(2001)).WithLegacyRootInvocationID("unexpected-2"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should be returned, just within partition time range.
-					baseResult: baseTestResult.WithPartitionTime(partitionTime).WithRootInvocationID("expected-7"),
+					baseResult: baseTestResult.WithPartitionTime(partitionTime).WithLegacyRootInvocationID("expected-7"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should not be returned, just outside partition time range.
-					baseResult: baseTestResult.WithPartitionTime(partitionTime.Add(-1 * time.Microsecond)).WithRootInvocationID("unexpected-3"),
+					baseResult: baseTestResult.WithPartitionTime(partitionTime.Add(-1 * time.Microsecond)).WithLegacyRootInvocationID("unexpected-3"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should not be returned, wrong project.
-					baseResult: baseTestResult.WithProject("wrongproject").WithRootInvocationID("unexpected-4"),
+					baseResult: baseTestResult.WithProject("wrongproject").WithLegacyRootInvocationID("unexpected-4"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should not be returned, wrong test ID.
-					baseResult: baseTestResult.WithTestID("wrong_test_id").WithRootInvocationID("unexpected-5"),
+					baseResult: baseTestResult.WithTestID("wrong_test_id").WithLegacyRootInvocationID("unexpected-5"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should not be returned, wrong variant hash.
-					baseResult: baseTestResult.WithVariantHash("0123456789abcdef").WithRootInvocationID("unexpected-6"),
+					baseResult: baseTestResult.WithVariantHash("0123456789abcdef").WithLegacyRootInvocationID("unexpected-6"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
@@ -181,7 +181,7 @@ func TestReadSourceVerdicts(t *testing.T) {
 					baseResult: baseTestResult.WithSources(testresults.Sources{
 						RefHash:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Position: 1555,
-					}).WithRootInvocationID("unexpected-7"),
+					}).WithLegacyRootInvocationID("unexpected-7"),
 					status: pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
@@ -190,12 +190,17 @@ func TestReadSourceVerdicts(t *testing.T) {
 						RefHash:  sourceRefHash,
 						Position: 1666,
 						IsDirty:  true,
-					}).WithRootInvocationID("unexpected-8"),
+					}).WithLegacyRootInvocationID("unexpected-8"),
 					status: pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 				{
 					// Should not be returned, wrong realm.
-					baseResult: baseTestResult.WithSubRealm("wrongsubrealm").WithRootInvocationID("unexpected-9"),
+					baseResult: baseTestResult.WithSubRealm("wrongsubrealm").WithLegacyRootInvocationID("unexpected-9"),
+					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
+				},
+				{
+					// Should be returned, has root invocation instead of legacy invocation.
+					baseResult: baseTestResult.WithRootInvocationID("unexpected-10"),
 					status:     pb.QuerySourceVerdictsResponse_EXPECTED,
 				},
 			}
@@ -214,7 +219,7 @@ func TestReadSourceVerdicts(t *testing.T) {
 					Position: 2000,
 					Verdicts: []SourceVerdictTestVerdict{
 						{
-							RootInvocationID: "expected-6",
+							RootInvocationID: RootInvocationID{Value: "expected-6", IsLegacy: true},
 							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
 						},
@@ -224,22 +229,22 @@ func TestReadSourceVerdicts(t *testing.T) {
 					Position: 1200,
 					Verdicts: []SourceVerdictTestVerdict{
 						{
-							RootInvocationID: "expected-2",
+							RootInvocationID: RootInvocationID{Value: "expected-2", IsLegacy: true},
 							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_UNEXPECTED,
 						},
 						{
-							RootInvocationID: "expected-3",
+							RootInvocationID: RootInvocationID{Value: "expected-3", IsLegacy: true},
 							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_FLAKY,
 						},
 						{
-							RootInvocationID: "expected-4",
+							RootInvocationID: RootInvocationID{Value: "expected-4", IsLegacy: true},
 							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_SKIPPED,
 						},
 						{
-							RootInvocationID: "expected-5",
+							RootInvocationID: RootInvocationID{Value: "expected-5", IsLegacy: true},
 							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
 							Changelists: []testresults.Changelist{
@@ -257,8 +262,13 @@ func TestReadSourceVerdicts(t *testing.T) {
 					Position: 1111,
 					Verdicts: []SourceVerdictTestVerdict{
 						{
-							RootInvocationID: "expected-7",
+							RootInvocationID: RootInvocationID{Value: "expected-7", IsLegacy: true},
 							PartitionTime:    partitionTime,
+							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
+						},
+						{
+							RootInvocationID: RootInvocationID{Value: "unexpected-10"},
+							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
 						},
 					},
@@ -267,7 +277,7 @@ func TestReadSourceVerdicts(t *testing.T) {
 					Position: 1001,
 					Verdicts: []SourceVerdictTestVerdict{
 						{
-							RootInvocationID: "expected-1",
+							RootInvocationID: RootInvocationID{Value: "expected-1", IsLegacy: true},
 							PartitionTime:    partitionTime.Add(2 * time.Hour),
 							Status:           pb.QuerySourceVerdictsResponse_EXPECTED,
 						},

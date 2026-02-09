@@ -23,11 +23,12 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	"go.chromium.org/luci/server/span"
 
+	spanutil "go.chromium.org/luci/analysis/internal/span"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-// ReadPassingRootInvocationsBySourceOptions specifies options for ReadPassingRootInvocationsBySource.
-type ReadPassingRootInvocationsBySourceOptions struct {
+// ReadPassingTestResultsBySourceOptions specifies options for ReadPassingTestResultsBySource.
+type ReadPassingTestResultsBySourceOptions struct {
 	// The LUCI Project.
 	Project string
 	// The sub-realms the user is authorized to query.
@@ -40,7 +41,7 @@ type ReadPassingRootInvocationsBySourceOptions struct {
 	SourceRefHash []byte
 	// The maximum source position to search for passes at or before.
 	MaxSourcePosition int64
-	// The maximum number of root invocation IDs to return.
+	// The maximum number of test results to return.
 	Limit int
 }
 
@@ -48,9 +49,9 @@ type ReadPassingRootInvocationsBySourceOptions struct {
 // test variant, ordered by proximity to a given source position.
 // This function queries the TestResultsBySourcePosition table.
 // Must be called in a Spanner transactional context.
-func ReadPassingResultsBySource(ctx context.Context, opts ReadPassingRootInvocationsBySourceOptions) ([]string, error) {
+func ReadPassingResultsBySource(ctx context.Context, opts ReadPassingTestResultsBySourceOptions) ([]string, error) {
 	stmt := spanner.NewStatement(`
-		SELECT t.InvocationId, t.ResultId
+		SELECT ANY_VALUE(t.RootInvocationId) as RootInvocationId, t.InvocationId, t.ResultId
 		FROM TestResultsBySourcePosition AS t
 		WHERE t.Project = @project
 		  AND t.SubRealm IN UNNEST(@subRealms)
@@ -59,7 +60,7 @@ func ReadPassingResultsBySource(ctx context.Context, opts ReadPassingRootInvocat
 		  AND t.SourceRefHash = @sourceRefHash
 		  AND t.SourcePosition <= @maxSourcePosition
 		  AND t.Status = @passStatus
-		GROUP BY t.InvocationId, t.ResultId
+		GROUP BY IF(STARTS_WITH(t.RootInvocationId, "root:"), t.RootInvocationId, ""), t.InvocationId, t.ResultId
 		ORDER BY MAX(t.SourcePosition) DESC
 		LIMIT @limit
 	`)
@@ -75,13 +76,21 @@ func ReadPassingResultsBySource(ctx context.Context, opts ReadPassingRootInvocat
 	}
 
 	var results []string
+	var b spanutil.Buffer
 	err := span.Query(ctx, stmt).Do(func(r *spanner.Row) error {
-		var invocationID, resultID string
-		if err := r.Columns(&invocationID, &resultID); err != nil {
-			return fmt.Errorf("read root invocation id column: %w", err)
+		var rootInvocationRowID string
+		var workUnitID WorkUnitID
+		var resultID string
+		if err := b.FromSpanner(r, &rootInvocationRowID, &workUnitID, &resultID); err != nil {
+			return fmt.Errorf("read passing result: %w", err)
 		}
-
-		results = append(results, pbutil.LegacyTestResultName(invocationID, opts.TestID, resultID))
+		if workUnitID.IsLegacy {
+			// The work unit is actually a legacy invocation.
+			results = append(results, pbutil.LegacyTestResultName(workUnitID.Value, opts.TestID, resultID))
+		} else {
+			rootInvocationID := RootInvocationIDFromRowID(rootInvocationRowID)
+			results = append(results, pbutil.TestResultName(rootInvocationID.Value, workUnitID.Value, opts.TestID, resultID))
+		}
 		return nil
 	})
 	if err != nil {

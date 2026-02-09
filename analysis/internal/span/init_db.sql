@@ -532,11 +532,24 @@ CREATE TABLE TestResultsBySourcePosition (
   -- noted separately in the Changelist... fields below.
   SourcePosition INT64 NOT NULL,
 
-  -- The root invocation from which these test results were ingested.
-  -- This is the top-level invocation that was ingested.
+  -- The root invocation or top-level legacy invocation from which these test
+  -- results were ingested.
+  --
+  -- If this is a ResultDB root invocation, the value is prefixed with
+  -- 'root:'. If it is a legacy invocation, the value is prefixed with 'legacy:'.
+  -- Writes made prior to mid-February 2026 are not prefixed and always refer
+  -- to legacy invocations.
   RootInvocationId STRING(MAX) NOT NULL,
 
-  -- The invocation which was the immediate parent of the test result.
+  -- The work unit or invocation which was the immediate parent of the test result.
+  --
+  -- If this is a work unit, the value is prefixed with 'wu:'.
+  -- If it is a legacy invocation, the value is prefixed with 'legacy:'.
+  -- Writes made prior to mid-February 2026 are not prefixed and always refer
+  -- to legacy invocations.
+  --
+  -- The name of this column is unfortunate and reflects historical intent,
+  -- not current usage.
   InvocationId STRING(MAX) NOT NULL,
 
   -- The identifier of the test result within the invocation.

@@ -35,8 +35,8 @@ type TestResult struct {
 	TestID           string
 	VariantHash      string
 	Sources          testresults.Sources
-	RootInvocationID string
-	InvocationID     string
+	RootInvocationID RootInvocationID
+	WorkUnitID       WorkUnitID // For legacy reasons, in SQL this column is called InvocationId.
 	ResultID         string
 	PartitionTime    time.Time
 	SubRealm         string
@@ -74,7 +74,7 @@ func ReadAllForTesting(ctx context.Context) ([]*TestResult, error) {
 			&tr.Sources.RefHash,
 			&tr.Sources.Position,
 			&tr.RootInvocationID,
-			&tr.InvocationID,
+			&tr.WorkUnitID,
 			&tr.ResultID,
 			&tr.PartitionTime,
 			&tr.SubRealm,
@@ -152,7 +152,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	// needed for a *spanner.Mutation using InsertOrUpdateMap.
 	vals := []any{
 		tr.Project, tr.TestID, tr.VariantHash, tr.Sources.RefHash, tr.Sources.Position,
-		tr.RootInvocationID, tr.InvocationID, tr.ResultID, tr.PartitionTime, tr.SubRealm,
+		tr.RootInvocationID.RowID(), tr.WorkUnitID.RowID(), tr.ResultID, tr.PartitionTime, tr.SubRealm,
 		tr.IsUnexpected, int64(tr.Status), changelistHosts, changelistChanges,
 		changelistPatchsets, changelistOwnerKinds, tr.Sources.IsDirty,
 	}
@@ -170,7 +170,7 @@ type SourceVerdict struct {
 // SourceVerdictTestVerdict is a test verdict that is part of a source verdict.
 type SourceVerdictTestVerdict struct {
 	// The root invocation for the verdict.
-	RootInvocationID string
+	RootInvocationID RootInvocationID
 	// Partition time of the test verdict.
 	PartitionTime time.Time
 	// Status is one of SKIPPED, EXPECTED, UNEXPECTED, FLAKY.
@@ -271,7 +271,7 @@ func ReadSourceVerdicts(ctx context.Context, opts ReadSourceVerdictsOptions) ([]
 	f := func(row *spanner.Row) error {
 		var position int64
 		var partitionTime time.Time
-		var rootInvocationID string
+		var rootInvocationID RootInvocationID
 		var changelistHosts []string
 		var changelistChanges []int64
 		var changelistPatchsets []int64

@@ -46,7 +46,7 @@ func TestReadPassingResults(t *testing.T) {
 
 		t.Run("BySource", func(t *ftt.Test) {
 			t.Run("Gitiles - Found", func(t *ftt.Test) {
-				opts := ReadPassingRootInvocationsBySourceOptions{
+				opts := ReadPassingTestResultsBySourceOptions{
 					Project:           "testproject",
 					SubRealms:         []string{"testrealm-a", "testrealm-b"},
 					TestID:            "ninja://test/id",
@@ -66,7 +66,7 @@ func TestReadPassingResults(t *testing.T) {
 				}))
 			})
 			t.Run("Android - Found", func(t *ftt.Test) {
-				opts := ReadPassingRootInvocationsBySourceOptions{
+				opts := ReadPassingTestResultsBySourceOptions{
 					Project:           "testproject",
 					SubRealms:         []string{"testrealm-a", "testrealm-b"},
 					TestID:            "ninja://test/id",
@@ -77,14 +77,14 @@ func TestReadPassingResults(t *testing.T) {
 				}
 				results, err := ReadPassingResultsBySource(ctx, opts)
 				assert.Loosely(t, err, should.BeNil)
-				// Should return inv-android-2 (pos 2002) and inv-android-1 (pos 2001) in order.
+				// Should return wu-android-2 (pos 2002) and wu-android-1 (pos 2001) in order.
 				assert.Loosely(t, results, should.Resemble([]string{
-					"invocations/inv-android-2/tests/ninja:%2F%2Ftest%2Fid/results/result-0",
-					"invocations/inv-android-1/tests/ninja:%2F%2Ftest%2Fid/results/result-0",
+					"rootInvocations/rootinv-android-2/workUnits/wu-android-2/tests/ninja:%2F%2Ftest%2Fid/results/result-0",
+					"rootInvocations/rootinv-android-1/workUnits/wu-android-1/tests/ninja:%2F%2Ftest%2Fid/results/result-0",
 				}))
 			})
 			t.Run("Limit", func(t *ftt.Test) {
-				opts := ReadPassingRootInvocationsBySourceOptions{
+				opts := ReadPassingTestResultsBySourceOptions{
 					Project:           "testproject",
 					SubRealms:         []string{"testrealm-a", "testrealm-b"},
 					TestID:            "ninja://test/id",
@@ -98,7 +98,7 @@ func TestReadPassingResults(t *testing.T) {
 				assert.Loosely(t, results, should.Resemble([]string{"invocations/inv-3/tests/ninja:%2F%2Ftest%2Fid/results/result-0"}))
 			})
 			t.Run("Realm filter", func(t *ftt.Test) {
-				opts := ReadPassingRootInvocationsBySourceOptions{
+				opts := ReadPassingTestResultsBySourceOptions{
 					Project:           "testproject",
 					SubRealms:         []string{"testrealm-b"}, // only this realm
 					TestID:            "ninja://test/id",
@@ -113,7 +113,7 @@ func TestReadPassingResults(t *testing.T) {
 				assert.Loosely(t, results, should.Resemble([]string{"invocations/inv-3/tests/ninja:%2F%2Ftest%2Fid/results/result-0"}))
 			})
 			t.Run("No results", func(t *ftt.Test) {
-				opts := ReadPassingRootInvocationsBySourceOptions{
+				opts := ReadPassingTestResultsBySourceOptions{
 					Project:           "testproject",
 					SubRealms:         []string{"testrealm-a", "testrealm-b"},
 					TestID:            "ninja://test/nonexistent",
@@ -155,30 +155,30 @@ func createPassingResultsTestData(ctx context.Context) error {
 	// Create rows for TestResultsBySourcePosition.
 	var sourcePosMutations []*spanner.Mutation
 	// Gitiles passes
-	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, gitilesRefHash, 101, "inv-2", time.Unix(200, 0), true))
-	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-b", testID, variantHash, gitilesRefHash, 102, "inv-3", time.Unix(300, 0), true))
-	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, gitilesRefHash, 106, "inv-4", time.Unix(400, 0), true))
+	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, gitilesRefHash, 101, "export-inv-2", "inv-2", time.Unix(200, 0), true))
+	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-b", testID, variantHash, gitilesRefHash, 102, "legacy:export-inv-3", "legacy:inv-3", time.Unix(300, 0), true))
+	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, gitilesRefHash, 106, "legacy:export-inv-4", "legacy:inv-4", time.Unix(400, 0), true))
 	// A fail to ensure we filter by status.
-	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, gitilesRefHash, 103, "inv-fail", time.Unix(350, 0), false))
+	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, gitilesRefHash, 103, "legacy:export-inv-fail", "legacy:inv-fail", time.Unix(350, 0), false))
 	// A pass in an unauthorized realm.
-	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "unauthorized-realm", testID, variantHash, gitilesRefHash, 104, "inv-unauth", time.Unix(360, 0), true))
+	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "unauthorized-realm", testID, variantHash, gitilesRefHash, 104, "legacy:export-inv-unauth", "legacy:inv-unauth", time.Unix(360, 0), true))
 	// An old pass that should be filtered by time.
-	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, gitilesRefHash, 100, "inv-1", time.Unix(1, 0), true))
+	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, gitilesRefHash, 100, "export-inv-1", "inv-1", time.Unix(1, 0), true))
 
 	// Android passes
-	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, androidRefHash, 2001, "inv-android-1", time.Unix(500, 0), true))
-	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, androidRefHash, 2002, "inv-android-2", time.Unix(600, 0), true))
+	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, androidRefHash, 2001, "root:rootinv-android-1", "wu:wu-android-1", time.Unix(500, 0), true))
+	sourcePosMutations = append(sourcePosMutations, sourcePosTestResult(project, "testrealm-a", testID, variantHash, androidRefHash, 2002, "root:rootinv-android-2", "wu:wu-android-2", time.Unix(600, 0), true))
 
 	_, err := span.Apply(ctx, sourcePosMutations)
 	return err
 }
 
-func sourcePosTestResult(project, realm, testID, variantHash string, sourceRefHash []byte, pos int64, invID string, partitionTime time.Time, passed bool) *spanner.Mutation {
+func sourcePosTestResult(project, realm, testID, variantHash string, sourceRefHash []byte, pos int64, rootInvID, wuID string, partitionTime time.Time, passed bool) *spanner.Mutation {
 	status := rdbpb.TestStatus_FAIL
 	if passed {
 		status = rdbpb.TestStatus_PASS
 	}
 	return spanner.Insert("TestResultsBySourcePosition",
 		[]string{"Project", "SubRealm", "TestId", "VariantHash", "SourceRefHash", "SourcePosition", "RootInvocationId", "InvocationId", "ResultId", "PartitionTime", "Status", "IsUnexpected", "ChangelistHosts", "ChangelistChanges", "ChangelistPatchsets", "ChangelistOwnerKinds", "HasDirtySources"},
-		[]interface{}{project, realm, testID, variantHash, sourceRefHash, pos, invID, invID, "result-0", partitionTime, int64(status), false, []string{}, []int64{}, []int64{}, []string{}, false})
+		[]interface{}{project, realm, testID, variantHash, sourceRefHash, pos, rootInvID, wuID, "result-0", partitionTime, int64(status), false, []string{}, []int64{}, []int64{}, []string{}, false})
 }

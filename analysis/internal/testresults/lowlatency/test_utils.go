@@ -56,8 +56,8 @@ func NewTestResult() TestResultBuilder {
 			},
 			IsDirty: true,
 		},
-		RootInvocationID: "root-inv-id",
-		InvocationID:     "inv-id",
+		RootInvocationID: RootInvocationID{Value: "root-inv-id"},
+		WorkUnitID:       WorkUnitID{Value: "wu-id"},
 		ResultID:         "result-id",
 		PartitionTime:    time.Date(2020, 1, 2, 3, 4, 5, 6, time.UTC),
 		SubRealm:         "realm",
@@ -92,13 +92,23 @@ func (b TestResultBuilder) WithSources(sources testresults.Sources) TestResultBu
 	return b
 }
 
-func (b TestResultBuilder) WithRootInvocationID(rootInvID string) TestResultBuilder {
-	b.result.RootInvocationID = rootInvID
+func (b TestResultBuilder) WithLegacyRootInvocationID(rootInvID string) TestResultBuilder {
+	b.result.RootInvocationID = RootInvocationID{Value: rootInvID, IsLegacy: true}
 	return b
 }
 
-func (b TestResultBuilder) WithInvocationID(invID string) TestResultBuilder {
-	b.result.InvocationID = invID
+func (b TestResultBuilder) WithRootInvocationID(rootInvID string) TestResultBuilder {
+	b.result.RootInvocationID = RootInvocationID{Value: rootInvID}
+	return b
+}
+
+func (b TestResultBuilder) WithLegacyInvocationID(invID string) TestResultBuilder {
+	b.result.WorkUnitID = WorkUnitID{Value: invID, IsLegacy: true}
+	return b
+}
+
+func (b TestResultBuilder) WithWorkUnitID(wuID string) TestResultBuilder {
+	b.result.WorkUnitID = WorkUnitID{Value: wuID}
 	return b
 }
 
@@ -205,7 +215,7 @@ func (b *TestVerdictBuilder) Build() []*TestResult {
 	for i := 0; i < runs*2; i++ {
 		tr := new(TestResult)
 		*tr = b.baseResult
-		tr.InvocationID = fmt.Sprintf("child-%s-run-%v", b.baseResult.RootInvocationID, i/2)
+		tr.WorkUnitID = WorkUnitID{Value: fmt.Sprintf("child-%s-run-%v", b.baseResult.RootInvocationID.Value, i/2)}
 		tr.ResultID = fmt.Sprintf("result-%v", i%2)
 		trs = append(trs, tr)
 	}

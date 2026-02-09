@@ -419,7 +419,7 @@ func (s *testHistoryServer) QueryRecentPasses(ctx context.Context, req *pb.Query
 	srcRefHash := pbutil.SourceRefHash(srcRef)
 	maxPosition := pbutil.SourcePosition(req.Sources)
 
-	opts := lowlatency.ReadPassingRootInvocationsBySourceOptions{
+	opts := lowlatency.ReadPassingTestResultsBySourceOptions{
 		Project:           req.Project,
 		SubRealms:         subRealms,
 		TestID:            req.TestId,

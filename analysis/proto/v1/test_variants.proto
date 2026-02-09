@@ -477,8 +477,11 @@ message TestVariantStabilityAnalysis {
             // The changelist(s) tested, if any.
             repeated Changelist changelists = 2;
 
-            // The invocations included in this source verdict.
-            repeated string invocations = 3;
+            // The root invocations included in this source verdict.
+            repeated string root_invocations = 6;
+
+            // The legacy invocations included in this source verdict.
+            repeated string invocations = 3 [ deprecated = true ];
 
             // The number of unexpected runs associated with the verdict.
             // An unexpected run is a run (e.g. swarming task) which
@@ -525,8 +528,11 @@ message TestVariantStabilityAnalysis {
             // The changelist(s) tested, if any.
             repeated Changelist changelists = 2;
 
-            // The invocations included in this source verdict.
-            repeated string invocations = 3;
+            // The root invocations included in this source verdict.
+            repeated string root_invocations = 4;
+
+            // The legacy invocations included in this source verdict.
+            repeated string invocations = 3 [ deprecated = true ];
         }
 
         // Examples of source verdicts which had both expected and unexpected runs,

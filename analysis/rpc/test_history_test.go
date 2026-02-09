@@ -992,20 +992,19 @@ func TestTestHistoryServer(t *testing.T) {
 
 			t.Run("e2e - source position only (gitiles)", func(t *ftt.Test) {
 				req := proto.Clone(baseReq).(*pb.QueryRecentPassesRequest)
-				req.Limit = 2 // Set limit to prevent fallback.
 				res, err := server.QueryRecentPasses(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				// inv-3 has position 102, inv-2 has position 101. Both are <= 105.
-				// inv-4 (pos 106) is excluded.
-				// inv-1 (time 1) is excluded because failureTime(1000) - 14d is > 1.
-				assert.Loosely(t, res.PassingResults, should.HaveLength(2))
-				assert.That(t, res.PassingResults[0].Name, should.Equal("invocations/inv-3/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
-				assert.That(t, res.PassingResults[1].Name, should.Equal("invocations/inv-2/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				// inv-3 has position 102, inv-2 has position 101, inv-legacy-1 & inv-legacy-2 have position 103 & 104. All are <= 105.
+				// inv-1 (pos 106) is excluded.
+				assert.Loosely(t, res.PassingResults, should.HaveLength(3))
+				// From both inv-legacy-1 & inv-legacy-2.
+				assert.That(t, res.PassingResults[0].Name, should.Equal("invocations/task-1/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				assert.That(t, res.PassingResults[1].Name, should.Equal("rootInvocations/inv-3/workUnits/wu-id/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				assert.That(t, res.PassingResults[2].Name, should.Equal("rootInvocations/inv-2/workUnits/wu-id/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
 			})
 
 			t.Run("e2e - source position only (android)", func(t *ftt.Test) {
 				req := proto.Clone(baseReq).(*pb.QueryRecentPassesRequest)
-				req.Limit = 2 // Set limit to prevent fallback.
 				req.Sources = &pb.Sources{
 					BaseSources: &pb.Sources_SubmittedAndroidBuild{
 						SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
@@ -1018,8 +1017,8 @@ func TestTestHistoryServer(t *testing.T) {
 				res, err := server.QueryRecentPasses(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.PassingResults, should.HaveLength(2))
-				assert.That(t, res.PassingResults[0].Name, should.Equal("invocations/inv-android-2/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
-				assert.That(t, res.PassingResults[1].Name, should.Equal("invocations/inv-android-1/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				assert.That(t, res.PassingResults[0].Name, should.Equal("rootInvocations/inv-android-2/workUnits/wu-id/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				assert.That(t, res.PassingResults[1].Name, should.Equal("rootInvocations/inv-android-1/workUnits/wu-id/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
 			})
 
 			t.Run("e2e - limit is respected", func(t *ftt.Test) {
@@ -1028,8 +1027,8 @@ func TestTestHistoryServer(t *testing.T) {
 				res, err := server.QueryRecentPasses(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.PassingResults, should.HaveLength(2))
-				assert.That(t, res.PassingResults[0].Name, should.Equal("invocations/inv-3/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
-				assert.That(t, res.PassingResults[1].Name, should.Equal("invocations/inv-2/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				assert.That(t, res.PassingResults[0].Name, should.Equal("invocations/task-1/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
+				assert.That(t, res.PassingResults[1].Name, should.Equal("rootInvocations/inv-3/workUnits/wu-id/tests/ninja:%2F%2Ftest%2Fid/results/result-id"))
 			})
 		})
 	})
@@ -1296,19 +1295,20 @@ func createPassingResultsTestData(ctx context.Context, t *ftt.Test) error {
 
 	results := []*lowlatency.TestResult{
 		// Gitiles passes
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 101}).WithInvocationID("inv-2").WithStatus(pb.TestResultStatus_PASS).Build(),
-		baseBuilder.WithSubRealm("other-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 102}).WithInvocationID("inv-3").WithStatus(pb.TestResultStatus_PASS).Build(),
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 106}).WithInvocationID("inv-4").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 101}).WithRootInvocationID("inv-2").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("other-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 102}).WithRootInvocationID("inv-3").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 103}).WithLegacyRootInvocationID("inv-legacy1").WithLegacyInvocationID("task-1").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 104}).WithLegacyRootInvocationID("inv-legacy2").WithLegacyInvocationID("task-1").WithStatus(pb.TestResultStatus_PASS).Build(),
 		// A fail to ensure we filter by status.
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 103}).WithInvocationID("inv-fail").WithStatus(pb.TestResultStatus_FAIL).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 103}).WithRootInvocationID("inv-fail").WithStatus(pb.TestResultStatus_FAIL).Build(),
 		// A pass in an unauthorized realm.
-		baseBuilder.WithSubRealm("forbidden-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 104}).WithInvocationID("inv-unauth").WithStatus(pb.TestResultStatus_PASS).Build(),
-		// An old pass that should be filtered by time.
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 100}).WithInvocationID("inv-1").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("forbidden-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 104}).WithRootInvocationID("inv-unauth").WithStatus(pb.TestResultStatus_PASS).Build(),
+		// Should be excluded because position is > 105.
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 106}).WithRootInvocationID("inv-1").WithStatus(pb.TestResultStatus_PASS).Build(),
 
 		// Android passes
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2001}).WithInvocationID("inv-android-1").WithStatus(pb.TestResultStatus_PASS).Build(),
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2002}).WithInvocationID("inv-android-2").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2001}).WithRootInvocationID("inv-android-1").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2002}).WithRootInvocationID("inv-android-2").WithStatus(pb.TestResultStatus_PASS).Build(),
 	}
 
 	return lowlatency.SetForTesting(ctx, t, results)
