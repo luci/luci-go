@@ -13,24 +13,26 @@
 // limitations under the License.
 
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { Button, Tooltip } from '@mui/material';
-import { useState } from 'react';
+import { Button, Tooltip, Zoom } from '@mui/material';
+
+interface CopyButtonProps {
+  onClick: () => void;
+}
 
 /**
  * A button that, when clicked, displays a tooltip instructing the user to
  * press Ctrl+C to copy the selected rows in a spreadsheet-friendly format.
  */
-export function CopyButton() {
-  const [tooltipOpen, setTooltipOpen] = useState(false);
+export function CopyButton({ onClick }: CopyButtonProps) {
   return (
     <Tooltip
-      open={tooltipOpen}
-      onClose={() => setTooltipOpen(false)}
-      title="Press Ctrl+C to copy selected rows"
-      leaveDelay={1000}
+      title={'Copy to clipboard (Ctrl + C)'}
+      arrow
+      TransitionComponent={Zoom}
+      placement="top"
     >
       <Button
-        onClick={() => setTooltipOpen(true)}
+        onClick={onClick}
         startIcon={<ContentCopyIcon />}
         aria-label="Copy selected rows"
       >

@@ -203,6 +203,37 @@ export function DeviceTable<R extends GridValidRowModel>({
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
+  const selectedRows = computeSelectedRows(rowSelectionModel, rows, getRowId);
+
+  const handleCopy = () => {
+    const visibleColumns = columns.filter(
+      (c) => columnVisibilityModel[c.field] !== false,
+    );
+
+    const headers = visibleColumns
+      .map((c) => c.headerName ?? c.field)
+      .join('\t');
+
+    const body = selectedRows
+      .map((row) => {
+        const rowId = getRowId ? getRowId(row) : row.id;
+
+        return visibleColumns
+          .map((c) =>
+            formatDeviceColumn(
+              apiRef.current.getCellValue(rowId, c.field),
+              c.field,
+            ),
+          )
+          .join('\t');
+      })
+      .join('\n');
+
+    const finalString = `${headers}\n${body}`;
+    navigator.clipboard.writeText(finalString);
+    setShowCopySuccess(true);
+  };
+
   if (isError) {
     if (error?.message.includes('invalid_page_token'))
       return (
@@ -235,11 +266,8 @@ export function DeviceTable<R extends GridValidRowModel>({
             totalRowCount: totalRowCount,
           },
           toolbar: {
-            selectedRows: computeSelectedRows(
-              rowSelectionModel,
-              rows,
-              getRowId,
-            ),
+            selectedRows: selectedRows,
+            onCopy: handleCopy,
             isLoadingColumns: isLoadingColumns,
             resetDefaultColumns: resetDefaultColumns,
             temporaryColumns: temporaryColumns,
@@ -270,29 +298,7 @@ export function DeviceTable<R extends GridValidRowModel>({
         getRowId={getRowId}
         loading={isLoading}
         apiRef={apiRef}
-        onClipboardCopy={() => {
-          const visibleColumns = columns.filter(
-            (c) => columnVisibilityModel[c.field],
-          );
-          const headers = visibleColumns
-            .map((c) => c.headerName ?? c.field)
-            .join('\t');
-          const body = rows
-            .filter((row) => rowSelectionModel.find((u) => u === row.id))
-            .map((row) =>
-              visibleColumns
-                .map((c) =>
-                  formatDeviceColumn(
-                    apiRef.current.getCellValue(row.id, c.field),
-                    c.field,
-                  ),
-                )
-                .join('\t'),
-            )
-            .join('\n');
-          navigator.clipboard.writeText(headers + '\n' + body);
-          setShowCopySuccess(true);
-        }}
+        onClipboardCopy={handleCopy}
       />
       <CopySnackbar
         open={showCopySuccess}

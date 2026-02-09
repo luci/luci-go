@@ -42,6 +42,7 @@ export interface FleetToolbarProps {
   temporaryColumns?: string[];
   addUserVisibleColumn?: (column: string) => void;
   platform: Platform;
+  onCopy: () => void;
 }
 
 /**
@@ -54,6 +55,7 @@ export function FleetToolbar({
   temporaryColumns,
   addUserVisibleColumn,
   platform,
+  onCopy,
 }: FleetToolbarProps) {
   const apiRef = useGridApiContext();
   const columnVisibilityModel = gridColumnVisibilityModelSelector(apiRef);
@@ -78,7 +80,7 @@ export function FleetToolbar({
         return (
           <>
             <RunAutorepair selectedDuts={selectedDuts} />
-            <CopyButton />
+            <CopyButton onClick={onCopy} />
             <RequestRepair selectedDuts={selectedDuts} />
             <ExportButton
               selectedRowIds={selectedRows.map((row) => `${row.id}`)}
@@ -87,10 +89,15 @@ export function FleetToolbar({
         );
       })(),
 
-      [Platform.ANDROID]: selectedRows.length > 0 && <CopyButton />,
-      [Platform.CHROMIUM]: selectedRows.length > 0 && <CopyButton />,
+      [Platform.ANDROID]: selectedRows.length > 0 && (
+        <CopyButton onClick={onCopy} />
+      ),
+
+      [Platform.CHROMIUM]: selectedRows.length > 0 && (
+        <CopyButton onClick={onCopy} />
+      ),
     }),
-    [selectedRows],
+    [onCopy, selectedRows],
   );
 
   const onToggleColumn = (field: string) => {
