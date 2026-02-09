@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { Link } from 'react-router';
 
 import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import {
@@ -136,6 +138,40 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
   },
   fc_is_offline: {
     orderByField: 'fc_is_offline',
+    renderHeader: () => {
+      return (
+        <div
+          css={{
+            display: 'flex',
+            alignItems: 'center',
+            maxWidth: '100%',
+          }}
+        >
+          <Typography
+            variant="subhead2"
+            sx={{
+              overflowX: 'hidden',
+              textOverflow: 'ellipsis',
+              fontWeight: 500,
+            }}
+          >
+            fc_is_offline
+          </Typography>
+          <InfoTooltip infoCss={{ marginLeft: '10px' }}>
+            Whether the device is actually offline as defined by the{' '}
+            <span css={{ whiteSpace: 'nowrap' }}>
+              <Link
+                to="https://g3doc.corp.google.com/company/teams/omnilab/products/lmp/monitoring/alert_config_manual.md?cl=head#Q3"
+                target="_blank"
+              >
+                omnilab docs
+                <OpenInNewIcon css={{ width: '15px', height: 'auto' }} />
+              </Link>
+            </span>
+          </InfoTooltip>
+        </div>
+      );
+    },
   },
   ['label-run_target']: {
     orderByField: 'labels.run_target',
