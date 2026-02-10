@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   forwardRef,
@@ -942,10 +948,12 @@ describe('FilterBar', () => {
     await user.keyboard('{ArrowDown}');
 
     const dropdownSearchInput = within(
-      screen.getByTestId('search-input'),
+      await screen.findByTestId('search-input', {}, { timeout: 3000 }),
     ).getByRole('textbox');
 
-    expect(dropdownSearchInput).toHaveFocus();
+    await waitFor(() => {
+      expect(dropdownSearchInput).toHaveFocus();
+    });
 
     // type in chip's search input
     await user.keyboard('test_search');
@@ -1013,7 +1021,7 @@ describe('FilterBar', () => {
     await user.keyboard('{ArrowDown}');
 
     expect(
-      screen.queryByTestId('test-option-component-button'),
+      await screen.findByTestId('test-option-component-button'),
     ).toBeInTheDocument();
 
     await user.keyboard('{Escape}');

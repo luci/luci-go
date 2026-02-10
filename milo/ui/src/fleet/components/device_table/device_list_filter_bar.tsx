@@ -18,18 +18,19 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 
 import {
+  DateFilterValue,
   OptionCategory,
   SelectedOptions,
   StringListCategory,
 } from '@/fleet/types';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
+import { DateFilter } from '../filter_dropdown/date_filter';
 import { FilterBar } from '../filter_dropdown/filter_bar';
 import {
   FilterCategoryData,
@@ -49,11 +50,6 @@ export function DeviceListFilterBar({
   onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   isLoading?: boolean;
 }) {
-  const sortedFilterOptions = useMemo(
-    () => elevateSelectedFiltersToTheTop(filterOptions, selectedOptions),
-    [filterOptions, selectedOptions],
-  );
-
   const [tempSelectedOptions, setTempSelectedOptions] =
     useState<SelectedOptions>(selectedOptions);
 
@@ -65,11 +61,34 @@ export function DeviceListFilterBar({
     setTempSelectedOptions(selectedOptions);
   }, [setTempSelectedOptions, selectedOptions]);
 
-  const filterCategoryDatas: FilterCategoryData<StringOnlyFilterOptionComponentProps>[] =
-    sortedFilterOptions.map((option) => {
-      // We assume that the device list only has string list filters
+  const filterCategoryDatas = filterOptions.map((option) => {
+    if (option.type === 'date') {
+      const dateFilter: FilterCategoryData<DateOnlyFilterOptionComponentProps> =
+        {
+          type: 'date',
+          label: option.label,
+          value: option.value,
+          getChildrenSearchScore: () => 0,
+          optionsComponent: DateOptionComponent,
+          optionsComponentProps: {
+            option,
+            selectedOptions:
+              (tempSelectedOptions[option.value] as DateFilterValue) || {},
+            onSelectedOptionsChange: (newSelectedOptions: DateFilterValue) =>
+              setTempSelectedOptions({
+                ...tempSelectedOptions,
+                [option.value]: newSelectedOptions,
+              }),
+            onClose: clearSelections,
+          },
+        };
+      return dateFilter;
+    }
+
+    if (option.type === 'string_list' || option.type === undefined) {
       const stringListOption = option as StringListCategory;
       return {
+        type: 'string_list',
         label: option.label,
         value: option.value,
         getChildrenSearchScore: (childrenSearchQuery: string) => {
@@ -82,36 +101,65 @@ export function DeviceListFilterBar({
         optionsComponent: OptionComponent,
         optionsComponentProps: {
           option: option,
-          selectedOptions: tempSelectedOptions[option.value] ?? [],
-          onSelectedOptionsChange: (newSelectedOptions) =>
+          selectedOptions: (tempSelectedOptions[option.value] ?? []) as unknown,
+          onSelectedOptionsChange: (newSelectedOptions: string[]) =>
             setTempSelectedOptions({
               ...tempSelectedOptions,
               [option.value]: newSelectedOptions,
             }),
           onClose: clearSelections,
         },
-      } as FilterCategoryData<StringOnlyFilterOptionComponentProps>;
-    });
+      };
+    }
+
+    throw new Error(`Unsupported filter type: ${option.type}`);
+  }) as FilterCategoryData<unknown>[];
 
   const getChipLabel = (filterCategory: FilterCategoryData<unknown>) => {
-    const selectedValuesValues = selectedOptions[filterCategory.value];
-
-    const filterOption = filterOptions.find(
-      (opt) => opt.value === filterCategory.value,
-    );
-    if (!filterOption) {
+    if (filterCategory.type === 'date') {
+      const dateValue = selectedOptions[
+        filterCategory.value
+      ] as DateFilterValue;
+      if (dateValue?.min && dateValue?.max) {
+        return `[ ${filterCategory.label} ]: ${dateValue.min.toISOString().slice(0, 10)} - ${dateValue.max.toISOString().slice(0, 10)}`;
+      }
+      if (dateValue?.min) {
+        return `[ ${filterCategory.label} ]: >= ${dateValue.min.toISOString().slice(0, 10)}`;
+      }
+      if (dateValue?.max) {
+        return `[ ${filterCategory.label} ]: <= ${dateValue.max.toISOString().slice(0, 10)}`;
+      }
       return '';
     }
 
-    const stringListOption = filterOption as StringListCategory;
+    if (
+      filterCategory.type === 'string_list' ||
+      filterCategory.type === undefined
+    ) {
+      const filterOption = filterOptions.find(
+        (opt) => opt.value === filterCategory.value,
+      );
+      if (!filterOption) {
+        return '';
+      }
 
-    const optionLabels = selectedValuesValues.map(
-      (v) => stringListOption.options?.find((o) => o.value === v)?.label ?? v,
-    );
+      const stringListOption = filterOption as StringListCategory;
 
-    return `${selectedOptions[filterCategory.value].length ?? 0} | [ ${filterCategory.label} ]: ${optionLabels.join(
-      ', ',
-    )}`;
+      const selectedValues = selectedOptions[filterCategory.value] as
+        | string[]
+        | undefined;
+      if (!selectedValues) return '';
+
+      const optionLabels = selectedValues.map(
+        (v) => stringListOption.options?.find((o) => o.value === v)?.label ?? v,
+      );
+
+      return `${selectedValues.length ?? 0} | [ ${filterCategory.label} ]: ${optionLabels.join(
+        ', ',
+      )}`;
+    }
+
+    throw new Error(`Unsupported filter type: ${filterCategory.type}`);
   };
 
   return (
@@ -119,13 +167,11 @@ export function DeviceListFilterBar({
       filterCategoryDatas={filterCategoryDatas}
       selectedOptions={Object.keys(selectedOptions)}
       onApply={() => onSelectedOptionsChange(tempSelectedOptions)}
-      getChipLabel={(o) => getChipLabel(o as FilterCategoryData<unknown>)}
+      getChipLabel={(o) => getChipLabel(o)}
       onChipDeleted={(o) => {
-        delete selectedOptions[o.value];
-        onSelectedOptionsChange({
-          ...selectedOptions,
-          [o.value]: [],
-        });
+        const newOptions = { ...selectedOptions };
+        delete newOptions[o.value];
+        onSelectedOptionsChange(newOptions);
       }}
       isLoading={isLoading}
     />
@@ -139,27 +185,35 @@ interface StringOnlyFilterOptionComponentProps {
   onClose: () => void;
 }
 
-function elevateSelectedFiltersToTheTop(
-  filterOptions: OptionCategory[],
-  selectedOptions: SelectedOptions,
-): OptionCategory[] {
-  // Unselected filters are also considered for reorganizing,
-  // as they are included in the selectedOptions with an empty array.
-  return filterOptions.map((filter) => {
-    if (filter.value in selectedOptions) {
-      (filter as StringListCategory).options?.sort((a, b) => {
-        const aIsSelected = selectedOptions[filter.value].includes(a.value);
-        const bIsSelected = selectedOptions[filter.value].includes(b.value);
-        if (aIsSelected && !bIsSelected) return -1;
-        if (!aIsSelected && bIsSelected) return 1;
-
-        return a.value.localeCompare(b.value);
-      });
-    }
-
-    return filter;
-  });
+interface DateOnlyFilterOptionComponentProps {
+  option: OptionCategory;
+  selectedOptions: DateFilterValue;
+  onSelectedOptionsChange: (newSelectedOptions: DateFilterValue) => void;
+  onClose: () => void;
 }
+
+const DateOptionComponent = forwardRef<
+  OptionComponentHandle,
+  OptionComponentProps<DateOnlyFilterOptionComponentProps>
+>(function DateOptionComponent(
+  { optionComponentProps: { selectedOptions, onSelectedOptionsChange } },
+  ref,
+) {
+  const innerRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      innerRef.current?.focus();
+    },
+  }));
+
+  return (
+    <DateFilter
+      ref={ref}
+      value={selectedOptions}
+      onChange={onSelectedOptionsChange}
+    />
+  );
+});
 
 const OptionComponent = forwardRef<
   OptionComponentHandle,

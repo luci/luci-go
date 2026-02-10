@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { MonitoredRecord } from "../../omnilab/omnilab-pubsub.pb";
 import { DateOnly } from "./common_types.pb";
 
@@ -191,6 +192,7 @@ export interface AndroidDevice {
   readonly omnilabSpec: DeviceSpec | undefined;
   readonly runTarget: string;
   readonly realm: string;
+  readonly fcOfflineSince: string | undefined;
 }
 
 export interface BrowserDevice {
@@ -1455,7 +1457,7 @@ export const Device: MessageFns<Device> = {
 };
 
 function createBaseAndroidDevice(): AndroidDevice {
-  return { id: "", omnilabSpec: undefined, runTarget: "", realm: "" };
+  return { id: "", omnilabSpec: undefined, runTarget: "", realm: "", fcOfflineSince: undefined };
 }
 
 export const AndroidDevice: MessageFns<AndroidDevice> = {
@@ -1471,6 +1473,9 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     }
     if (message.realm !== "") {
       writer.uint32(34).string(message.realm);
+    }
+    if (message.fcOfflineSince !== undefined) {
+      Timestamp.encode(toTimestamp(message.fcOfflineSince), writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -1514,6 +1519,14 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
           message.realm = reader.string();
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.fcOfflineSince = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1529,6 +1542,7 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
       omnilabSpec: isSet(object.omnilabSpec) ? DeviceSpec.fromJSON(object.omnilabSpec) : undefined,
       runTarget: isSet(object.runTarget) ? globalThis.String(object.runTarget) : "",
       realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
+      fcOfflineSince: isSet(object.fcOfflineSince) ? globalThis.String(object.fcOfflineSince) : undefined,
     };
   },
 
@@ -1546,6 +1560,9 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     if (message.realm !== "") {
       obj.realm = message.realm;
     }
+    if (message.fcOfflineSince !== undefined) {
+      obj.fcOfflineSince = message.fcOfflineSince;
+    }
     return obj;
   },
 
@@ -1560,6 +1577,7 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
       : undefined;
     message.runTarget = object.runTarget ?? "";
     message.realm = object.realm ?? "";
+    message.fcOfflineSince = object.fcOfflineSince ?? undefined;
     return message;
   },
 };
@@ -8903,6 +8921,19 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function toTimestamp(dateStr: string): Timestamp {
+  const date = new globalThis.Date(dateStr);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): string {
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis).toISOString();
+}
 
 function isObject(value: any): boolean {
   return typeof value === "object" && value !== null;

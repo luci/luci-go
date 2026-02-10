@@ -58,6 +58,7 @@ import {
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
 import { ANDROID_COLUMN_OVERRIDES, getAndroidColumns } from './android_columns';
+import { ANDROID_EXTRA_FILTERS } from './android_filters';
 import { AndroidSummaryHeader } from './android_summary_header';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -69,6 +70,7 @@ const EXTRA_COLUMN_IDS = [
   'label-id',
   'label-run_target',
   'label-hostname',
+  'fc_offline_since',
 ] satisfies (keyof typeof ANDROID_COLUMN_OVERRIDES)[];
 
 export const AndroidDevicesPage = () => {
@@ -191,7 +193,8 @@ export const AndroidDevicesPage = () => {
         !dimensionsQuery.data.labels[
           filterKey.replace(/labels\."?([^"]+)"?/, '$1')
         ] &&
-        !dimensionsQuery.data.baseDimensions[filterKey],
+        !dimensionsQuery.data.baseDimensions[filterKey] &&
+        !ANDROID_EXTRA_FILTERS.some((f) => f.value === filterKey),
     );
     if (missingParamsFilters.length === 0) return;
     addWarning(
@@ -248,17 +251,18 @@ export const AndroidDevicesPage = () => {
           />
         ) : (
           <DeviceListFilterBar
-            filterOptions={
-              isDimensionsQueryProperlyLoaded
+            filterOptions={[
+              ...ANDROID_EXTRA_FILTERS,
+              ...(isDimensionsQueryProperlyLoaded
                 ? dimensionsToFilterOptions(
-                    dimensionsQuery.data,
+                    dimensionsQuery.data!,
                     ANDROID_COLUMN_OVERRIDES,
                   )
                 : filterOptionsPlaceholder(
                     selectedOptions.filters,
                     ANDROID_COLUMN_OVERRIDES,
-                  )
-            }
+                  )),
+            ].sort((a, b) => a.label.localeCompare(b.label))}
             selectedOptions={selectedOptions.filters}
             onSelectedOptionsChange={onSelectedOptionsChange}
             isLoading={dimensionsQuery.isPending}

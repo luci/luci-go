@@ -17,11 +17,7 @@ import { DateTime } from 'luxon';
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
-
-export interface DateFilterValue {
-  min?: string; // ISO string
-  max?: string; // ISO string
-}
+import { DateFilterValue } from '@/fleet/types';
 
 export interface DateFilterProps {
   value: DateFilterValue;
@@ -87,10 +83,10 @@ export const DateFilter = forwardRef(function DateFilter(
     onChange(newDate);
   };
 
-  const getValidDate = (isoDate?: string) => {
-    if (!isoDate) return null;
-    const date = DateTime.fromISO(isoDate);
-    return date.isValid ? date : null;
+  const getValidDate = (date?: Date) => {
+    if (!date) return null;
+    const dateTime = DateTime.fromJSDate(date);
+    return dateTime.isValid ? dateTime : null;
   };
 
   return (
@@ -113,7 +109,7 @@ export const DateFilter = forwardRef(function DateFilter(
         value={getValidDate(value.min)}
         onChange={(date) => {
           updateFilter({
-            min: date?.toISODate() || undefined,
+            min: date?.toJSDate() || undefined,
             max: value.max,
           });
         }}
@@ -125,7 +121,7 @@ export const DateFilter = forwardRef(function DateFilter(
         onChange={(date) => {
           updateFilter({
             min: value.min,
-            max: date?.toISODate() || undefined,
+            max: date?.toJSDate() || undefined,
           });
         }}
       />

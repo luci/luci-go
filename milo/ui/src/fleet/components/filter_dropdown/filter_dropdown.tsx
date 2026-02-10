@@ -271,21 +271,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
 
     let content;
 
-    if (openCategoryData.type === 'date') {
-      content = (
-        <DateFilter
-          ref={openCategoryRef}
-          {...(openCategoryData.optionsComponentProps as DateFilterProps)}
-        />
-      );
-    } else if (openCategoryData.type === 'range') {
-      content = (
-        <RangeFilter
-          ref={openCategoryRef}
-          {...(openCategoryData.optionsComponentProps as RangeFilterProps)}
-        />
-      );
-    } else {
+    if (openCategoryData.optionsComponent) {
       const OptionComponent = openCategoryData.optionsComponent!;
       content = (
         <OptionComponent
@@ -301,6 +287,31 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
           maxHeight={400}
         />
       );
+    } else {
+      switch (openCategoryData.type) {
+        case 'date': {
+          content = (
+            <DateFilter
+              ref={openCategoryRef}
+              {...(openCategoryData.optionsComponentProps as DateFilterProps)}
+            />
+          );
+          break;
+        }
+        case 'range': {
+          content = (
+            <RangeFilter
+              ref={openCategoryRef}
+              {...(openCategoryData.optionsComponentProps as RangeFilterProps)}
+            />
+          );
+          break;
+        }
+        default:
+          throw new Error(
+            `Type ${openCategoryData.type} not supported by FilterDropdown`,
+          );
+      }
     }
 
     return (

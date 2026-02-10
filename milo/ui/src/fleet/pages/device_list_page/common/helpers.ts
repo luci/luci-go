@@ -88,10 +88,10 @@ export const filterOptionsPlaceholder = (
   labelsOverride: Record<string, { headerName?: string }>,
 ): OptionCategory[] => {
   return Object.entries(selectedOptions)
+    .filter(([, values]) => Array.isArray(values))
     .map(([key, values]) =>
-      filterOptionPlaceholder(key, values, labelsOverride),
-    )
-    .sort((a, b) => a.label.localeCompare(b.label)); // Sort alphabetically
+      filterOptionPlaceholder(key, values as string[], labelsOverride),
+    );
 };
 
 const filterOptionPlaceholder = (

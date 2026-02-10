@@ -26,6 +26,7 @@ export interface SelectedChipProps {
     onNavigateUp: (e: React.KeyboardEvent) => void,
   ) => ReactNode;
   label: string;
+  enableSearchInput?: boolean;
   onApply: () => void;
 }
 
@@ -34,6 +35,8 @@ export function SelectedChip({
   label,
   onApply,
   onDelete,
+  enableSearchInput = true,
+  onKeyDown,
   ...chipProps
 }: ChipProps & SelectedChipProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
@@ -41,7 +44,6 @@ export function SelectedChip({
   return (
     <>
       <Chip
-        {...chipProps}
         onClick={(event) => {
           event.stopPropagation();
           if (anchorEl) {
@@ -87,8 +89,9 @@ export function SelectedChip({
             e.preventDefault();
             e.stopPropagation();
           });
-          chipProps.onKeyDown?.(e);
+          onKeyDown?.(e);
         }}
+        {...chipProps}
       />
       <ClickAwayListener
         onClickAway={() => {
@@ -116,7 +119,7 @@ export function SelectedChip({
               },
             },
           }}
-          enableSearchInput
+          enableSearchInput={enableSearchInput}
           renderChild={dropdownContent}
           onApply={() => {
             anchorEl?.focus();

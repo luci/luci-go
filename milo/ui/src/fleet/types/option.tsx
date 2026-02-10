@@ -24,11 +24,7 @@ export interface OptionValue {
   value: string;
 }
 
-export type FilterType =
-  | 'string_list'
-  | 'date'
-  | 'range'
-  | 'async_multi_select';
+export type FilterType = 'string_list' | 'date' | 'range';
 
 interface BaseCategory {
   label: string;
@@ -49,25 +45,22 @@ export interface RangeCategory extends BaseCategory {
   type: 'range';
 }
 
-export interface AsyncMultiSelectCategory extends BaseCategory {
-  type: 'async_multi_select';
-}
-
 /**
  * Type for values in the first category of the multi-select menu. ie: For
  * Fleet Console devices, "dut_name" might be an example of an OptionCategory.
  *
  * The `value` property is used to uniquely identify this category
  */
-export type OptionCategory =
-  | StringListCategory
-  | DateCategory
-  | RangeCategory
-  | AsyncMultiSelectCategory;
+export type OptionCategory = StringListCategory | DateCategory | RangeCategory;
+
+export interface DateFilterValue {
+  min?: Date;
+  max?: Date;
+}
 
 /**
  * An Object capturing the set of options selected in this filter. The key is
  * the value of the OptionCategory for the selection, and the value is the
  * value for the OptionValue.
  */
-export type SelectedOptions = Record<string, string[]>;
+export type SelectedOptions = Record<string, string[] | DateFilterValue>;

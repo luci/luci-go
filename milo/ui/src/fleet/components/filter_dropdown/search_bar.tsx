@@ -61,30 +61,36 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
       return (
         <SelectedChip
           dropdownContent={(searchQuery, onNavigateUp) => {
-            if (option.type === 'date') {
+            if (option.optionsComponent) {
+              const OptionComponent = option.optionsComponent!;
               return (
-                <DateFilter
-                  {...(option.optionsComponentProps as DateFilterProps)}
-                />
-              );
-            } else if (option.type === 'range') {
-              return (
-                <RangeFilter
-                  {...(option.optionsComponentProps as RangeFilterProps)}
+                <OptionComponent
+                  childrenSearchQuery={searchQuery}
+                  optionComponentProps={option.optionsComponentProps}
+                  onNavigateUp={onNavigateUp}
                 />
               );
             }
-
-            const OptionComponent = option.optionsComponent!;
-
-            return (
-              <OptionComponent
-                childrenSearchQuery={searchQuery}
-                optionComponentProps={option.optionsComponentProps}
-                onNavigateUp={onNavigateUp}
-              />
-            );
+            switch (option.type) {
+              case 'date':
+                return (
+                  <DateFilter
+                    {...(option.optionsComponentProps as DateFilterProps)}
+                  />
+                );
+              case 'range':
+                return (
+                  <RangeFilter
+                    {...(option.optionsComponentProps as RangeFilterProps)}
+                  />
+                );
+              default:
+                throw new Error(
+                  `Type ${option.type} not supported by SearchBar`,
+                );
+            }
           }}
+          enableSearchInput={option.type !== 'date'}
           ref={(el) => {
             chipListRef.current[i] = el;
             chipListRef.current = chipListRef.current.filter((x) => x !== null);
@@ -93,9 +99,6 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
             // close the dropdown on text field blur
             // onBlur is not optimal, as it triggers when dropdown is clicked, so we change it manually here
             onChangeDropdownOpen(false);
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
           }}
           onBlur={(e) => {
             e.stopPropagation();

@@ -20,8 +20,14 @@ import {
   Popper,
   PopperPlacementType,
 } from '@mui/material';
-import type { KeyboardEvent, MouseEventHandler, ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEventHandler,
+  type ReactNode,
+} from 'react';
 
 import { hasAnyModifier, keyboardListNavigationHandler } from '../../utils';
 import { SearchInput } from '../search_input';

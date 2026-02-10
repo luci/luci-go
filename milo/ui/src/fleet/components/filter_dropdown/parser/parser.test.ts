@@ -55,6 +55,14 @@ describe('stringifyFilters', () => {
       'key1 = "v1" NOT key2 key3 = ("v2" OR "v3") (NOT key4 OR key4 = "v4")',
     );
   });
+
+  it('should stringify date filters', () => {
+    expect(
+      stringifyFilters({
+        dateKey: { min: new Date('2026-02-01'), max: new Date('2026-02-03') },
+      }),
+    ).toBe('dateKey >= "2026-02-01" AND dateKey <= "2026-02-03"');
+  });
 });
 
 describe('parseFilters', () => {
@@ -115,5 +123,14 @@ describe('parseFilters', () => {
     expect(parseFilters('key = (v1 OR v2').error).toBeInstanceOf(Error);
     expect(parseFilters('(NOT key OR key = "v1"').error).toBeInstanceOf(Error);
     expect(parseFilters('key = ').error).toBeInstanceOf(Error);
+  });
+
+  it('should parse date filters', () => {
+    expect(
+      parseFilters('dateKey >= "2026-02-01" AND dateKey <= "2026-02-03"')
+        .filters,
+    ).toEqual({
+      dateKey: { min: new Date('2026-02-01'), max: new Date('2026-02-03') },
+    });
   });
 });

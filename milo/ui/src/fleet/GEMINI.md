@@ -108,3 +108,7 @@ The recommended local development environment uses Visual Studio Code (VSC) with
 
 - **Sandbox Page:** `https://ci.chromium.org/ui/fleet/labs/sandbox` for development and experimentation.
 
+# Style guide
+
+# Avoid any
+Do not ever use `any` in typescript code without permission. You should try very hard to avoid it all together but if you truly think that it is necessary get explicit permission before using it. This includes usage of any inside generics IE: `MyType<any>`.

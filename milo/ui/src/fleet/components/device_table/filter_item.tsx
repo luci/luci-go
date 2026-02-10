@@ -92,7 +92,8 @@ export function FilterItem({ platform, ...props }: FilterItemProps) {
   useEffect(() => {
     if (open && filterKey) {
       const existingFilters = getFilters(searchParams).filters || {};
-      setSelectedValues(new Set(existingFilters[filterKey] || []));
+      const val = existingFilters[filterKey];
+      setSelectedValues(new Set(Array.isArray(val) ? val : []));
     }
   }, [open, filterKey, searchParams]);
 

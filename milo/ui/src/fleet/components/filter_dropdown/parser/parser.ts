@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
-import { SelectedOptions } from '@/fleet/types';
+import { DateFilterValue, SelectedOptions } from '@/fleet/types';
 
 export type GetFiltersResult =
   | { filters: SelectedOptions; error: undefined }
@@ -143,6 +143,7 @@ const parseRhs = (
 /** The input is expected to follow AIP - 160.
  * For now it's limited to inputs following the format:
  *   'key1 = ("value1" OR "value2") key = "value" NOT key3 (NOT key4 OR key4 =...)'.
+ *   'key >= "value" AND key <= "value"' for date comparisons.
  * Nested parentheses are not supported.
  * E.g.: 'fleet_labels.pool = ("default" OR "test")'
  * TODO: Consider moving this to a shared location
@@ -171,9 +172,12 @@ export const parseFilters = (
     const key = match[1].replace(/labels\.([^"]+)/, 'labels."$1"');
     const rest = match[2] || '';
 
+    const currentFilter = filters[key];
+    const newValues = Array.isArray(currentFilter) ? currentFilter : [];
+
     return parseFilters(rest, {
       ...filters,
-      [key]: [...(filters[key] ?? []), BLANK_VALUE],
+      [key]: [...newValues, BLANK_VALUE],
     });
   }
   // Case 2: (NOT key OR ...)
@@ -207,7 +211,46 @@ export const parseFilters = (
     trimmedStr = trimmedStr.replace('OR', '');
   }
 
-  // Case 4: key =...
+  // Case 4: AND key ...
+  // Note: if there is no whitespace between AND and key
+  // we will treat AND as part of the key
+  else if (trimmedStr.startsWith('AND ')) {
+    trimmedStr = trimmedStr.replace('AND', '').trim();
+  }
+
+  // Case 5: key >=, <=, >, < ...
+  const comparisonMatch = trimmedStr.match(/^(\S+)\s*(>=|<=|>|<)\s*"([^"]+)"/);
+  if (comparisonMatch) {
+    const key = comparisonMatch[1].replace(/labels\.([^"]+)/, 'labels."$1"');
+    const operator = comparisonMatch[2];
+    const value = comparisonMatch[3];
+    const rest = trimmedStr.substring(comparisonMatch[0].length).trim();
+
+    const currentFilter = filters[key];
+    let newFilter: DateFilterValue = {};
+
+    if (currentFilter && !Array.isArray(currentFilter)) {
+      newFilter = { ...currentFilter };
+    }
+
+    const dateValue = new Date(value);
+    const isValidDate = !isNaN(dateValue.getTime());
+
+    if (isValidDate) {
+      if (operator === '>=' || operator === '>') {
+        newFilter.min = dateValue;
+      } else if (operator === '<=' || operator === '<') {
+        newFilter.max = dateValue;
+      }
+    }
+
+    return parseFilters(rest, {
+      ...filters,
+      [key]: newFilter,
+    });
+  }
+
+  // Case 6: key =...
   const firstEqIdx = trimmedStr.indexOf('=');
   if (firstEqIdx === -1) return { filters, error: undefined };
 
@@ -229,7 +272,10 @@ export const parseFilters = (
 
   return parseFilters(rest.substring(rhsEndIdx + 1), {
     ...filters,
-    [key]: [...(filters[key] ?? []), ...values],
+    [key]: [
+      ...((Array.isArray(filters[key]) ? filters[key] : []) as string[]),
+      ...values,
+    ],
   });
 };
 
@@ -237,6 +283,7 @@ export const parseFilters = (
  * The output is expected to follow AIP - 160.
  * For now it's limited to outputs following the format:
  *   "key1 = (value1 OR value2) key = value".
+ *   "key >= "value" AND key <= "value"" for date comparisons.
  * E.g.: "fleet_labels.pool = (default OR test)"
  * It also encloses values in quotes, as values can contain whitespaces,
  * and AIP-160 treats them as a whole.
@@ -246,8 +293,29 @@ export const parseFilters = (
  */
 export const stringifyFilters = (filters: SelectedOptions): string =>
   Object.entries(filters)
-    .filter(([_key, values]) => values && values[0])
+    .filter(
+      ([_key, values]) =>
+        values &&
+        (Array.isArray(values) ? values[0] : values.min || values.max),
+    )
     .map(([key, values]) => {
+      if (!Array.isArray(values)) {
+        // Handle DateFilterValue
+        const parts = [];
+        const safeKey = key.trim();
+        if (values.min) {
+          parts.push(
+            `${safeKey} >= "${values.min.toISOString().slice(0, 10)}"`,
+          );
+        }
+        if (values.max) {
+          parts.push(
+            `${safeKey} <= "${values.max.toISOString().slice(0, 10)}"`,
+          );
+        }
+        return parts.join(' AND ');
+      }
+
       const actualValues = values.filter((v) => v !== BLANK_VALUE);
       const hasBlankFilter = values.length > actualValues.length;
 

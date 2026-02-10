@@ -228,4 +228,46 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
       return <SmartRelativeTimestamp date={dt} />;
     },
   },
+  fc_offline_since: {
+    headerName: 'Offline since',
+    renderHeader: () => {
+      return (
+        <div
+          css={{
+            display: 'flex',
+            alignItems: 'center',
+            maxWidth: '100%',
+          }}
+        >
+          <Typography
+            variant="subhead2"
+            sx={{
+              overflowX: 'hidden',
+              textOverflow: 'ellipsis',
+              fontWeight: 500,
+            }}
+          >
+            Offline since
+          </Typography>
+          <InfoTooltip infoCss={{ marginLeft: '10px' }}>
+            Last seen online (±10 min), per the fc_is_offline
+            <br />
+          </InfoTooltip>
+        </div>
+      );
+    },
+    orderByField: 'fc_offline_since',
+    renderCell: (params) => {
+      const value = params.value as string | undefined;
+      if (!value) {
+        return null;
+      }
+      const dt = DateTime.fromISO(value);
+      if (!dt.isValid) {
+        return <>{value}</>;
+      }
+      return <SmartRelativeTimestamp date={dt} />;
+    },
+    valueGetter: (_, device) => device.fcOfflineSince,
+  },
 };
