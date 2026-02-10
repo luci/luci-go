@@ -12,31 +12,68 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import AddIcon from '@mui/icons-material/Add';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router';
 
+import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
+
+import { mockDashboards } from './mock_data';
+
 /**
- * A simple landing page component.
+ * A landing page component that displays a list of dashboards.
  */
 export function LandingPage() {
+  const [toastOpen, setToastOpen] = useState(false);
+
+  const handleFeatureNotReady = () => {
+    setToastOpen(true);
+  };
+
+  const handleCloseToast = () => {
+    setToastOpen(false);
+  };
+
   return (
-    <Box
-      sx={{
-        padding: 4,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 2,
-      }}
-    >
-      <Typography variant="h4" gutterBottom>
-        Welcome to Crystal Ball
-      </Typography>
-      <Button variant="contained" component={RouterLink} to="demo">
-        Go to Demo Page
-      </Button>
+    <Box sx={{ p: 3 }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="h4" component="h1">
+          CrystalBall Dashboards
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button variant="outlined" component={RouterLink} to="demo">
+            Demo Page
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleFeatureNotReady}
+          >
+            New Dashboard
+          </Button>
+        </Box>
+      </Box>
+      <DashboardListTable
+        dashboards={mockDashboards}
+        onDashboardClick={handleFeatureNotReady}
+      />
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={4000}
+        onClose={handleCloseToast}
+        message="Feature under construction"
+      />
     </Box>
   );
 }

@@ -24,9 +24,49 @@ describe('<LandingPage />', () => {
         <LandingPage />
       </MemoryRouter>,
     );
-    expect(screen.getByText(/Welcome to Crystal Ball/i)).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: /Go to Demo Page/i }),
+      screen.getByRole('heading', { name: /CrystalBall Dashboards/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /Demo Page/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/Search dashboards.../i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /New Dashboard/i }),
+    ).toBeInTheDocument();
+  });
+
+  test('shows toast when clicking New Dashboard', async () => {
+    render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    );
+
+    const newDashboardButton = screen.getByRole('button', {
+      name: /New Dashboard/i,
+    });
+    newDashboardButton.click();
+
+    expect(
+      await screen.findByText(/Feature under construction/i),
+    ).toBeVisible();
+  });
+
+  test('shows toast when clicking a dashboard row', async () => {
+    render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    );
+
+    const dashboardName = await screen.findByText(/Generic Dashboard Alpha/i);
+    dashboardName.click();
+
+    expect(
+      await screen.findByText(/Feature under construction/i),
+    ).toBeVisible();
   });
 });
