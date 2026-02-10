@@ -49,10 +49,10 @@ func TestExecutePrompt(t *testing.T) {
 			server := &PromptServer{LlmClient: mockClient}
 
 			req := &pb.ExecutePromptRequest{
-				Name: "promptTemplates/compilefailureanalysis",
+				Name: "promptTemplates/compile_failure",
 				PromptParams: map[string]string{
-					"Failure":   "compilation error in main.cpp",
-					"Blamelist": "commit abc123, commit def456",
+					"failure":   "compilation error in main.cpp",
+					"blamelist": "commit abc123, commit def456",
 				},
 			}
 
@@ -96,10 +96,10 @@ func TestExecutePrompt(t *testing.T) {
 			server := &PromptServer{LlmClient: mockClient}
 
 			req := &pb.ExecutePromptRequest{
-				Name: "promptTemplates/compilefailureanalysis",
+				Name: "promptTemplates/compile_failure",
 				PromptParams: map[string]string{
-					"Failure":   "compilation error",
-					"Blamelist": "commit abc123",
+					"failure":   "compilation error",
+					"blamelist": "commit abc123",
 				},
 			}
 
@@ -150,22 +150,20 @@ func TestProcessTemplate(t *testing.T) {
 	})
 }
 
-func TestLoadPromptTemplate(t *testing.T) {
+func TestGetPromptTemplate(t *testing.T) {
 	t.Parallel()
-	ftt.Run("loadPromptTemplate", t, func(t *ftt.Test) {
-		server := &PromptServer{}
-
+	ftt.Run("GetPromptTemplate", t, func(t *ftt.Test) {
 		t.Run("Success with existing template", func(t *ftt.Test) {
-			// Test with the actual compilefailureanalysis.md file
-			content, err := server.loadPromptTemplate("compilefailureanalysis")
+			// Test with the actual compile_failure.md file
+			content, err := GetPromptTemplate("compile_failure")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, content, should.ContainSubstring("Software engineer"))
-			assert.Loosely(t, content, should.ContainSubstring("{{.Failure}}"))
-			assert.Loosely(t, content, should.ContainSubstring("{{.Blamelist}}"))
+			assert.Loosely(t, content, should.ContainSubstring("{{.failure}}"))
+			assert.Loosely(t, content, should.ContainSubstring("{{.blamelist}}"))
 		})
 
 		t.Run("File not found", func(t *ftt.Test) {
-			content, err := server.loadPromptTemplate("nonexistent")
+			content, err := GetPromptTemplate("nonexistent")
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, content, should.BeEmpty)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("template file not found"))

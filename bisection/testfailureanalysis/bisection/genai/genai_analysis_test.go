@@ -124,7 +124,8 @@ func TestConstructPrompt(t *testing.T) {
 		failureSummary := "Failure Kind: CRASH\n\nPrimary Error Message:\nSegmentation fault"
 		blamelist := "Commits in regression range (newest to oldest):\n\nCL 1:\n  Commit ID: abc123\n  Message: Fix bug"
 
-		prompt := constructPrompt(testID, failureSummary, blamelist)
+		prompt, err := constructPrompt(testID, failureSummary, blamelist)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Verify the prompt contains all the input components
 		assert.Loosely(t, prompt, should.ContainSubstring(testID))

@@ -19,31 +19,22 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"text/template"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"go.chromium.org/luci/resultai/server"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
 	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/changelogutil"
-)
-
-const (
-	promptTemplate = `You are an experienced Software engineer who is looking into the build failures and below are the details.
-
-Failure: %s
-
-Blamelist: %s
-
-Find the culprit CL from the log range which caused the compile failure, provide the output with the commit ID and a short justification (less than 512 characters) for the failure in the following format:
-Commit ID: <commit_id>
-Justification: <justification>`
 )
 
 // Analyze performs LLM-powered analysis to identify the culprit CL
@@ -94,7 +85,27 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 	}
 
 	// Generate prompt from template
-	prompt := fmt.Sprintf(promptTemplate, stackTrace, blamelist)
+	promptTemplate, err := server.GetPromptTemplate("compile_failure")
+	if err != nil {
+		setStatusError(c, genaiAnalysis)
+		return genaiAnalysis, errors.Fmt("failed to get prompt template: %w", err)
+	}
+
+	tmpl, err := template.New("prompt").Parse(promptTemplate)
+	if err != nil {
+		setStatusError(c, genaiAnalysis)
+		return genaiAnalysis, errors.Fmt("failed to parse prompt template: %w", err)
+	}
+
+	var promptBuf strings.Builder
+	if err := tmpl.Execute(&promptBuf, map[string]string{
+		"failure":   stackTrace,
+		"blamelist": blamelist,
+	}); err != nil {
+		setStatusError(c, genaiAnalysis)
+		return genaiAnalysis, errors.Fmt("failed to execute prompt template: %w", err)
+	}
+	prompt := promptBuf.String()
 
 	// Call genai model
 	rawResponse, err := client.GenerateContent(c, prompt)

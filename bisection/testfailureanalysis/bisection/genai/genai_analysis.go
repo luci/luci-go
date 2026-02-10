@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"text/template"
 	"time"
 
 	"google.golang.org/genai"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/resultai/server"
 
 	"go.chromium.org/luci/bisection/culpritverification/task"
 	"go.chromium.org/luci/bisection/internal/resultdb"
@@ -38,22 +40,6 @@ import (
 	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/util/changelogutil"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
-)
-
-const (
-	promptTemplate = `You are an experienced software engineer analyzing test failures, below are the details
-
-Test failure information:
-Test ID: %s
-Test failure summary: %s
-
-Blamelist: %s
-
-Instructions:
-Analyze the test failure and identify the TOP 3 most likely culprit commits from the blamelist that caused this test to start failing.
-For each suspect, provide the commit ID, a confidence score (from 0 to 10, where 10 is most confident), and a short justification (less than 512 characters).
-If there are fewer than 3 commits in the blamelist, just provide all of them ranked by confidence.
-`
 )
 
 // Response schema for structured output
@@ -160,7 +146,10 @@ func Analyze(ctx context.Context, tfa *model.TestFailureAnalysis, client llm.Cli
 	}
 
 	// Construct the prompt
-	prompt := constructPrompt(primaryFailure.TestID, failureSummary, blamelist)
+	prompt, err := constructPrompt(primaryFailure.TestID, failureSummary, blamelist)
+	if err != nil {
+		return errors.Fmt("failed to construct prompt: %w", err)
+	}
 
 	// Call GenAI API with structured output
 	rawResponse, err := client.GenerateContentWithSchema(ctx, prompt, responseSchema)
@@ -211,8 +200,26 @@ func Analyze(ctx context.Context, tfa *model.TestFailureAnalysis, client llm.Cli
 }
 
 // constructPrompt constructs the prompt for GenAI analysis from the test ID, failure summary, and blamelist.
-func constructPrompt(testID, failureSummary, blamelist string) string {
-	return fmt.Sprintf(promptTemplate, testID, failureSummary, blamelist)
+func constructPrompt(testID, failureSummary, blamelist string) (string, error) {
+	promptTemplate, err := server.GetPromptTemplate("test_failure")
+	if err != nil {
+		return "", errors.Fmt("failed to get prompt template: %w", err)
+	}
+
+	tmpl, err := template.New("prompt").Parse(promptTemplate)
+	if err != nil {
+		return "", errors.Fmt("failed to parse prompt template: %w", err)
+	}
+
+	var promptBuf strings.Builder
+	if err := tmpl.Execute(&promptBuf, map[string]string{
+		"test_id":         testID,
+		"failure_summary": failureSummary,
+		"blamelist":       blamelist,
+	}); err != nil {
+		return "", errors.Fmt("failed to execute prompt template: %w", err)
+	}
+	return promptBuf.String(), nil
 }
 
 // prepareBlamelist formats changeLogs into a readable blamelist for the LLM

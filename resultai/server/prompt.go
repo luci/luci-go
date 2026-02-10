@@ -48,7 +48,7 @@ func (s *PromptServer) ExecutePrompt(ctx context.Context, req *pb.ExecutePromptR
 	templateName := parts[1]
 
 	// Load prompt template
-	promptContent, err := s.loadPromptTemplate(templateName)
+	promptContent, err := GetPromptTemplate(templateName)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "failed to load prompt template: %s", err)
 	}
@@ -70,7 +70,9 @@ func (s *PromptServer) ExecutePrompt(ctx context.Context, req *pb.ExecutePromptR
 	}, nil
 }
 
-func (s *PromptServer) loadPromptTemplate(templateName string) (string, error) {
+// GetPromptTemplate returns the content of a prompt template by name.
+// valid names are file names in prompts/ directory without extension.
+func GetPromptTemplate(templateName string) (string, error) {
 	filePath := fmt.Sprintf("prompts/%s.md", templateName)
 	content, err := promptTemplates.ReadFile(filePath)
 	if err != nil {

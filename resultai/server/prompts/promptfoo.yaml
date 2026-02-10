@@ -1,0 +1,404 @@
+prompts:
+  - file://render_template.js
+
+providers: [echo]
+
+tests:
+  # Compile Failure Tests
+  - vars:
+      _templatePath: "compile_failure.md"
+      failure: |
+        [6625/30898] CXX obj/chromecast/media/cma/backend/android/cast_media_android/audio_sink_android_audiotrack_impl.o ../../third_party/llvm-build/Release+Asserts/bin/clang++ -MMD -MF obj/chromecast/media/cma/backend/android/cast_media_android/audio_sink_andro...(too long) ../../chromecast/media/cma/backend/android/audio_sink_android_audiotrack_impl.cc:193:57: error: no viable conversion from 'const JavaParamRef<jobject>' (aka 'const JavaParamRef<_jobject *>') to 'jobject' (aka '_jobject *') 193 |       static_cast<uint8_t*>(env->GetDirectBufferAddress(pcm_byte_buffer)); |                                                         ^~~~~~~~~~~~~~~ ../../third_party/android_toolchain/ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/jni.h:1020:42: note: passing argument to parameter 'buf' here 1020 |     void* GetDirectBufferAddress(jobject buf)
+      blamelist: |
+        1.      ef9ae73a        gyuyoung@igalia.com     2025-07-17 07:48 [iOS Blink] Fix a build break in ShellColorChooserIOS
+        2.      1e4cfe47        cdesouza@chromium.org   2025-07-17 07:46 [exit-time-destructors] Exclude target with warnings
+        3.      0990204a        alshawwa@chromium.org   2025-07-17 07:46 Add runtime logging to data protection navigation observer
+        4.      5fbc6349        asamidoi@chromium.org   2025-07-17 07:45 [ios] Fix testLastTabClosedAlerts on iOS 26
+        5.      1df13528        agrieve@chromium.org    2025-07-17 07:40 JNI Zero: Remove implicit conversion from JavaParamRef -> T
+        6.      d20b8b49        rsailer@google.com      2025-07-17 07:40 [FPF] Change when DumpWithoutCrashing occurs for list compile errors.
+        7.      4bd375ef        cdesouza@chromium.org   2025-07-17 07:38 [exit-time-destructors] Disable for libc++
+        8.      d67e7e47        titouan@chromium.org    2025-07-17 07:38 [Chrome Fuzzing] Refactor libfuzzer builder configs.
+        9.      e9e7e348        radunitescu@google.com  2025-07-17 07:37 [iOS][NTP] Allow extended buttons touch area to overflow their container
+        10.     728e76f6        elabadysayed@chromium.org       2025-07-17 07:35 [AW] Fix issue with calling ProfileStore.getProfile
+        11.     8f931cff        battre@chromium.org     2025-07-17 07:34 Increase PasswordManager.ImportFileSize(2) to cover 10MB file sizes
+        12.     4630730f        kevers@google.com       2025-07-17 07:33 Ensure length interpolation endpoints have compatible types
+        13.     f02c9633        cdesouza@chromium.org   2025-07-17 07:32 [exit-time-destructors] Exclude target with warnings
+        14.     04443245        titouan@chromium.org    2025-07-17 07:32 [Chrome Fuzzing] Refactor chrome builder configuration.
+        15.     6a8d8931        cdesouza@chromium.org   2025-07-17 07:31 [docs] Guidance for compile-time constants
+        16.     e1a40266        chromium-autoroll@skia-public.iam.gserviceaccount.com   2025-07-17 07:26 Roll Chrome Android Desktop x64 PGO Profile
+        17.     1d8d17b1        philipp.hancke@googlemail.com   2025-07-17 07:24 webrtc-internals: fix SDP munging detection (again)
+        18.     a478f1f6        ntfschr@google.com      2025-07-17 07:24 AW docs: clarify renderer support
+        19.     a7c498e5        ydago@chromium.org      2025-07-17 07:21 [EM2]Ensure ProfileManagementDisclaimerService does not lead to the management disclaimer shown twice in a row.
+    assert:
+      - type: contains
+        value: "1df13528"
+
+  - vars:
+      _templatePath: "compile_failure.md"
+      failure: |
+        ERROR at //chrome/android/BUILD.gn:3536:7: Undefined identifier. sources += [ \"$_toolchain_out_dir/${_libname}_unwind_table_v2/$unwind_table_asset_v2_filename\" ]
+              ^------
+        See //chrome/android/BUILD.gn:3540:3: whence it was called.
+          chrome_unwind_assets(\"libmonochrome_unwind_table_assets\") {
+          ^----------------------------------------------------------
+        See //BUILD.gn:429:11: which caused the file to be included.
+                  \"//chrome/android:chrome_public_test_apk\",
+      blamelist: |
+        1.	b6f8c2ef	morlovich@chromium.org	2025-07-17 06:38	net/ntlm spanification
+        2.	ac2fbe51	mdb.chrome-release-translation-dump@google.com	2025-07-17 06:32	Updating XTBs based on .GRDs from branch main
+        3.	b09a4033	lamzin@google.com	2025-07-17 06:31	rcaps: Clear invalid dynamic CountryID pref
+        4.	32a40baa	agrieve@chromium.org	2025-07-17 06:28	Android: Enable RELR relocations by default
+        5.	94907254	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-17 06:23	Roll Chrome Win32 PGO Profile
+        6.	c85c901b	danieltwhite@google.com	2025-07-17 06:21	[Safe Browsing] Migrate content analysis functions to util
+        7.	ee01539b	vidhanj@google.com	2025-07-17 06:20	[iOS] Enable payments swapping on iOS
+        8.	cb9b565d	ylahodiuk@google.com	2025-07-17 06:20	[iOS] Add metrics for presenter of the Trusted Vault notification
+        9.	0541b685	gambard@chromium.org	2025-07-17 06:19	Format compile_xcassets.py
+        10.	95c7dc30	thefrog@chromium.org	2025-07-17 06:18	Remove histogram SafeBrowsing.WarningBypassAllowlist.SchemeOnWrite
+        11.	edf0cf5d	radunitescu@google.com	2025-07-17 06:18	[iOS][LO] Factor in the expected height of the UILabel for Lens consent
+        12.	161bcaae	ahijazi@chromium.org	2025-07-17 06:17	Add a VideoCaptureHost MojoJS fuzzer
+        13.	fd3d6b2e	ahijazi@chromium.org	2025-07-17 06:17	Add a StorageAccessHandle MojoJS fuzzer
+        14.	0861a98a	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-17 06:15	Roll Chrome Mac Arm PGO Profile
+        15.	bc0cacca	thefrog@chromium.org	2025-07-17 06:14	Extend histogram SafeBrowsing.HPRT.CacheDuration.InitialOnSet
+        16.	f6463f12	hanxi@google.com	2025-07-17 06:13	[Composeplate] Add ComposeplateCoordinator#Destroy.
+        17.	ef7b8992	stephenlin@google.com	2025-07-17 06:07	Update RLZ brand codes map for M139+
+        18.	b4006cec	chromium-internal-autoroll@skia-corp.google.com.iam.gserviceaccount.com	2025-07-17 06:06	Roll ios_internal from 2763b015708c to 0aeec19d178f
+        19.	f30ec061	fedegermi@google.com	2025-07-17 06:05	[ios] Update configurable widgets when multi-profile is disabled
+        20.	d96600e8	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-17 06:04	Roll Perfetto from 2956216bc45c to 22cd21a7c2b4 (2 revisions)
+        21.	4b7086d2	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-17 05:59	Roll V8 from 6eea4516b422 to aacc6bbe8024 (7 revisions)
+        22.	7045441e	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-17 05:58	Roll DevTools Frontend from dc693750988f to 4f382732262e (3 revisions)
+        23.	4f0b4992	fmacintosh@google.com	2025-07-17 05:58	[Settings] Standardize bespoke PS WO/TTC padding with rest of settings
+        24.	38e6fdca	olesiamarukhno@google.com	2025-07-17 05:52	[DNS] Add flag
+        25.	e41a3202	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-17 05:51	Roll Perfetto Trace Processor Linux from 06a43941a831 to 2956216bc45c
+        26.	7db6d999	kuchyn@google.com	2025-07-17 05:50	Fix dangling-pointer bug in CreateVirtualCardEnrollmentFields function
+        27.	52b7eb3e	bling-autoroll-builder@chops-service-accounts.iam.gserviceaccount.com	2025-07-17 05:47	[Frameworks roll] Roll to 784053397 piper revision
+        28.	8135494e	agrieve@chromium.org	2025-07-17 05:46	Android: Delete obsolete "unwind_table_v1"
+        29.	93d10a98	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-17 05:46	Roll Perfetto Trace Processor Win from 941c8ad24a06 to 06a43941a831
+        30.	e5f479e7	tonikitoo@igalia.com	2025-07-17 05:45	Pull some headers from chrome/browser/webauthn into their own GN target
+    assert:
+      - type: contains
+        value: "8135494e"
+
+  - vars:
+      _templatePath: "compile_failure.md"
+      failure: |
+        ERROR at //gpu/command_buffer/service/metal_context_provider.mm:12:11: Include not allowed. #include "components/metal_util/device.h" ^----------------------------- It is not in any dependency of //gpu/command_buffer/service:gles2_sources The include file is in the target(s):   //components/metal_util:metal_util which should somehow be reachable. This might be a false alarm if you are using conditional include. See "gn help nogncheck".
+      blamelist: |
+        1.	a3bc14b3	hocheung@chromium.org	2025-07-15 16:47	[bookmarks] Make BookmarkBarController use UnownedUserData
+        2.	06d8b30e	yiwenqian@google.com	2025-07-15 16:44	[CVC storage IOS] Add AutofillEnableCvcStorageAndFilling flag on IOS
+        3.	aa9d74b9	yiwenqian@google.com	2025-07-15 16:43	[CVC storage IOS] Add SyncAutofillWalletCredentialData flag on IOS
+        4.	5610426f	rajendrant@chromium.org	2025-07-15 16:43	Remove OptimizationGuideModelDownloading feature
+        5.	89366cb9	cdesouza@chromium.org	2025-07-15 16:42	[exit-time-destructors] Exclude target with warnings
+        6.	dbe47751	yiwenqian@google.com	2025-07-15 16:42	[CVC storage IOS] Add kAutofillEnableCvcStorageAndFillingEnhancement flag on IOS
+        7.	2d45707b	cdesouza@chromium.org	2025-07-15 16:41	[exit-time-destructors] Exclude target with warnings
+        8.	b105ed43	uwyiming@google.com	2025-07-15 16:41	Change the string for the app menu item for exploring extensions.
+        9.	0a2eda0f	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 16:40	Roll Chrome Win64 PGO Profile
+        10.	3cb39e1a	jacobstanley@google.com	2025-07-15 16:39	[Actor Overlay] Refactor ActorUI features
+        11.	346b61d7	yyanagisawa@chromium.org	2025-07-15 16:38	[SharedWorker] Use feature flag for checking availability in tests
+        12.	d8309562	jonathanjlee@google.com	2025-07-15 16:38	[ios][wptrunner] Upgrade vpython3 from 3.8 to 3.11
+        13.	ba423a67	yiwenqian@google.com	2025-07-15 16:37	[CVC storage IOS] Add kAutofillEnableCvcStorageAndFillingStandaloneFormEnhancement flag on IOS
+        14.	3f46f056	nrosenthal@chromium.org	2025-07-15 16:37	Allow <template patchfor> inside declarative shadow DOM
+        15.	e96aaccf	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 16:36	Roll BoringSSL from cb12d9e84a58 to 42396c54aca5 (1 revision)
+        16.	28833148	carlosk@chromium.org	2025-07-15 16:36	Add harringtond@ to //chrome/browser/glic/OWNERS
+        17.	594264c0	michaeldo@chromium.org	2025-07-15 16:35	[iOS] [Find in page] Use local matches array directly
+        18.	484d0ee2	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 16:35	Roll Chrome Win32 PGO Profile
+        19.	5e83563c	chromium-internal-autoroll@skia-corp.google.com.iam.gserviceaccount.com	2025-07-15 16:34	Roll clank/internal/apps from 53f12750fc4c to 16044873f17e (1 revision)
+        20.	ff7f4bbf	hiroshige@chromium.org	2025-07-15 16:33	Use PrefetchContainer::Observer in prefetch_test_util_internal.cc
+        21.	de0b8572	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 16:32	Roll Depot Tools from fa0292bfbe4c to a0932204cd89 (1 revision)
+        22.	aa92120b	iwells@chromium.org	2025-07-15 16:32	Clean up GlicSizingFitWindow
+        23.	6d01c4a9	jacobstanley@google.com	2025-07-15 16:31	[Actor Overlay] Change naming of AgentOverlay -> ActorOverlay
+        24.	b6b10078	chromium-internal-autoroll@skia-corp.google.com.iam.gserviceaccount.com	2025-07-15 16:31	Roll ios_internal from 73ca2c0beb4c to a2513367321a
+        25.	6fd9cfce	hnakashima@chromium.org	2025-07-15 16:30	[Android] Document what ChromeActivityTestRule does in class javadoc
+        26.	229bd6e7	rathomas@google.com	2025-07-15 16:30	Reland "Disable instance switcher dialog positive button when selected instance is closed."
+        27.	0aa42adb	crisrael@google.com	2025-07-15 16:29	Roll nearby-connections from 2df88546beaf to a8889d12a27e (17 revisions)
+        28.	16cce159	wylieb@chromium.org	2025-07-15 16:29	Add new hub panes to fieldtrial_testing_config
+        29.	192a03ca	mattreynolds@chromium.org	2025-07-15 16:27	Revert "Move GN enable_plugins variable out of //ppapi"
+        30.	fb7da08d	osaul@google.com	2025-07-15 16:17	[AF] Clean up offers-based histograms
+        31.	deee96fd	sunnyps@chromium.org	2025-07-15 16:16	[ios blink] Upgrade deployment target to iOS 26.0
+        32.	cd9b9f71	thegreenfrog@google.com	2025-07-15 16:16	[ios] Delete InfobarModalViewController
+        33.	d3bddfc2	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 16:15	Roll Chrome Android ARM64 PGO Profile
+        34.	8fa2e467	bsheedy@chromium.org	2025-07-15 16:15	Add build host information MCP server
+        35.	5b24b0a6	mcnee@chromium.org	2025-07-15 16:14	Glic actor: Allow initially insecure HTTP URLs with navigate tool
+        36.	e4dd3789	javiercon@microsoft.com	2025-07-15 16:14	[gap-decorations] Base interpolation for *-rule-color
+        37.	9ca172bc	rakina@chromium.org	2025-07-15 16:13	Add BFCache settings toggle to WebView API
+        38.	3e31836a	wry@chromium.org	2025-07-15 16:13	[MultiTab] Load tabs if necessary on pin.
+        39.	02345394	thestig@chromium.org	2025-07-15 16:12	Move GN enable_plugins variable out of //ppapi
+        40.	91f5f3bb	averina@google.com	2025-07-15 16:11	[Save and Fill] Fix crash when tab is closed while dialog is open
+        41.	5b2f8c94	pkotwicz@google.com	2025-07-15 16:10	Remove RunLoop::RunUntilIdle() in PhishingTermFeatureExtractorTest
+        42.	f2f6db49	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 16:10	Roll Skia from fec78c0da2e6 to ab79199bd0f3 (4 revisions)
+        43.	fa14746f	dayeung@chromium.org	2025-07-15 16:09	[TabStripApi] Implement moving a TabGroup collection
+        44.	25f52557	sunnyps@chromium.org	2025-07-15 16:09	[graphite] Move metal_context_provider to //gpu/command_buffer/service
+    assert:
+      - type: contains
+        value: "25f52557"
+  - vars:
+      _templatePath: "compile_failure.md"
+      failure: |
+        ERROR at //pdf/BUILD.gn:356:5: Assertion failed. assert(enable_plugins, "The PDF viewer relies on plugin infrastructure") ^----- The PDF viewer relies on plugin infrastructure See //headless/BUILD.gn:724:5: which caused the file to be included.
+            "//pdf:buildflags",
+            ^-----------------
+      blamelist: |
+        1.	5b24b0a6	mcnee@chromium.org	2025-07-15 16:14	Glic actor: Allow initially insecure HTTP URLs with navigate tool
+        2.	e4dd3789	javiercon@microsoft.com	2025-07-15 16:14	[gap-decorations] Base interpolation for *-rule-color
+        3.	9ca172bc	rakina@chromium.org	2025-07-15 16:13	Add BFCache settings toggle to WebView API
+        4.	3e31836a	wry@chromium.org	2025-07-15 16:13	[MultiTab] Load tabs if necessary on pin.
+        5.	02345394	thestig@chromium.org	2025-07-15 16:12	Move GN enable_plugins variable out of //ppapi
+        6.	91f5f3bb	averina@google.com	2025-07-15 16:11	[Save and Fill] Fix crash when tab is closed while dialog is open
+        7.	5b2f8c94	pkotwicz@google.com	2025-07-15 16:10	Remove RunLoop::RunUntilIdle() in PhishingTermFeatureExtractorTest
+        8.	f2f6db49	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 16:10	Roll Skia from fec78c0da2e6 to ab79199bd0f3 (4 revisions)
+        9.	fa14746f	dayeung@chromium.org	2025-07-15 16:09	[TabStripApi] Implement moving a TabGroup collection
+        10.	25f52557	sunnyps@chromium.org	2025-07-15 16:09	[graphite] Move metal_context_provider to //gpu/command_buffer/service
+        11.	e524b905	ferny@google.com	2025-07-15 16:08	[Card Benefits][Clank] Expose Curinos flat rate benefit flag to Java
+        12.	b4d8644b	2mesaqlain@gmail.com	2025-07-15 16:08	[webaudio] Migrate audiobuffersource-playbackrate.html to testharness
+    assert:
+      - type: contains
+        value: "02345394"
+
+  - vars:
+      _templatePath: "compile_failure.md"
+      failure: |
+        [9360/13428] CXX obj/chrome/browser/glic/interactive_ui_tests/glic_actor_controller_interactive_uitest.o ../../third_party/llvm-build/Release+Asserts/bin/clang++ -MMD -MF obj/chrome/browser/glic/interactive_ui_tests/glic_actor_controller_interacti...(too long) ../../chrome/browser/glic/host/glic_actor_controller_interactive_uitest.cc:685:63: error: too few arguments to function call, expected 2, have 1
+          685 |   BrowserAction navigate = actor::MakeNavigate(task_url.spec());
+              |                            ~~~~~~~~~~~~~~~~~~~                ^
+        ../../chrome/browser/actor/actor_test_util.h:57:42: note: 'MakeNavigate' declared here
+          57 | optimization_guide::proto::BrowserAction MakeNavigate(
+              |                                          ^
+          58 |     tabs::TabHandle tab_handle,
+              |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          59 |     std::string_view target_url);
+              |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      blamelist: |
+        1.	cd7dbf35	agrieve@chromium.org	2025-07-15 14:15	Reland "Remove obsolete entries from //third_party/android_deps/build.gradle"
+        2.	e516dbaf	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 14:14	Roll Chrome Mac PGO Profile
+        3.	d2a8ffdc	greengrape@google.com	2025-07-15 14:13	Move SignedWebBundleReader to components/webapps/isolated_web_apps
+        4.	723ac753	bokan@chromium.org	2025-07-15 14:13	Actor: Remove implicit task creation
+        5.	0ba995c4	eugene@chromium.org	2025-07-15 14:12	Make chrome://gpu OS-version on Android more informative
+        6.	4c058b59	hnakashima@chromium.org	2025-07-15 14:11	[Android] Migrate chrome/browser tests to PT rules (part 1)
+        7.	36fb019d	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 14:10	Roll Chrome Mac Arm PGO Profile
+        8.	f38aaddc	kmg@google.com	2025-07-15 14:10	Add support for MockUiEventDispatcher in ActorTask
+        9.	df7d1b91	hanxi@google.com	2025-07-15 14:09	[Theme] Set NTP background type before notifying observers.
+        10.	361bea1f	andyphan@chromium.org	2025-07-15 14:09	[PDF Ink Signatures] Use PageCharacterIndex more frequently in PdfCaret
+    assert:
+      - type: contains
+        value: "723ac753"
+
+  - vars:
+      _templatePath: "compile_failure.md"
+      failure: |
+        [8562/16969] CXX obj/chrome/browser/browser/configuration_policy_handler_list_factory.o ../../third_party/llvm-build/Release+Asserts/bin/clang++ -MMD -MF obj/chrome/browser/browser/configuration_policy_handler_list_factory.o.d -DZ...(too long) ../../chrome/browser/policy/configuration_policy_handler_list_factory.cc:3112:12: error: no member named 'kArcGoogleLocationServicesEnabled' in namespace 'policy::key'; did you mean 'kGoogleLocationServicesEnabled'? 3112 |       key::kArcGoogleLocationServicesEnabled,
+              |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+              |            kGoogleLocationServicesEnabled
+        gen/components/policy/policy_constants.h:498:19: note: 'kGoogleLocationServicesEnabled' declared here
+          498 | extern const char kGoogleLocationServicesEnabled[];
+              |                   ^
+        1 error generated. remote-exec f6f0746edf4a9672ccb796b73f3ac38d869d9074357b1e4e6aba43f6a2a1c2e0/355 failed: exit=1
+      blamelist: |
+        1.	51c803a5	zauri@google.com	2025-07-15 05:23	privacy-hub: Deprecate ArcGoogleLocationServicesEnabled policy
+        2.	eb91c78c	arthursonzogni@chromium.org	2025-07-15 05:19	spanification: remove `#pragma allow_unsafe_buffers` where unneeded
+        3.	6c671126	chromium-autoroll@skia-public.iam.gserviceaccount.com	2025-07-15 05:17	Roll Perfetto Trace Processor Win from 09456327e0ea to 10a4c29a8366
+        4.	c68630d3	hempjudith@google.com	2025-07-15 05:17	[Permissions] Refactor PermissionChipUnittest
+        5.	1a14b413	tobson@google.com	2025-07-15 05:16	Extract `HasKatakanaCharacter`
+        6.	eae1416d	arthursonzogni@chromium.org	2025-07-15 05:15	spanification: remove `#pragma allow_unsafe_buffers` where unneeded
+        7.	1a275bce	chromium-internal-autoroll@skia-corp.google.com.iam.gserviceaccount.com	2025-07-15 05:13	Roll clank/internal/apps from 1d2c2f690b40 to f6c55cfa216c (1 revision)
+        8.	bb6e293e	arthursonzogni@chromium.org	2025-07-15 05:09	spanification: remove `#pragma allow_unsafe_buffers` where unneeded
+        9.	91d895d8	chromium-internal-autoroll@skia-corp.google.com.iam.gserviceaccount.com	2025-07-15 05:03	Roll Platform Experience Win from f0cd116dce14 to c47cec3e28d3 (1 revision)
+        10.	c5509294	olesiamarukhno@google.com	2025-07-15 05:03	[SH] Enable tests on android
+    assert:
+      - type: contains
+        value: "51c803a5"
+  # Test Failure Tests
+  - vars:
+      _templatePath: "test_failure.md"
+      test_id: "://chrome/android:chrome_junit_tests!junit:org.chromium.chrome.browser.ui.google_bottom_bar:GoogleBottomBarActionsHandlerTest#testOnSearchboxLensTap_lensNotEnabled_lensNotStarted[29]"
+      failure_summary: |
+        Test Suite(s) failed.
+
+        chrome_junit_tests failed because of:
+
+        org.chromium.chrome.browser.ui.google_bottom_bar.GoogleBottomBarActionsHandlerTest#testOnSearchboxLensTap_lensNotEnabled_lensNotStarted[29]
+      blamelist: |
+        1.	6eb2bf70	martinkong@google.com	2026-01-20 12:39	Tie cached flag's defaultValueInTests with isOfficialBuild
+        2.	f1b5ed07	aaronmoss@google.com	2026-01-20 12:39	[a11y] Fix cursor blink interval on Clank	a04ce05
+        3.	523b169e	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 12:38	Roll Chromium Variations from ae2rr7a9og2qpugR7... to i1ZbeN4ySB9xC6Qv7...
+        4.	6b62321e	pasko@chromium.org	2026-01-20 12:37	mojo: Remove kMojoInlineMessagePayloads flag
+        5.	dbc8997d	ikilpatrick@chromium.org	2026-01-20 12:37	[cleanup] Remove ClearOverrideContainingBlockContentSize
+        6.	d2370d01	yyanting@google.com	2026-01-20 12:36	[Theme] Fix Theme Collections daily refresh histograms type.
+        7.	aed283b4	kyraseevers@google.com	2026-01-20 12:34	[a11y] Fix the FieldTrialTestConfig for Live Regions
+        8.	3c5f82de	davidben@chromium.org	2026-01-20 12:30	Unexpire Net.NeedsHWCAP2Workaround one last time
+        9.	45e89eee	fiorellab@google.com	2026-01-20 12:29	Record UMA for time passed between an attempt login and successful submission
+        10.	8855602f	wnwen@google.com	2026-01-20 12:28	android: Use ResettersForTesting for test state	be295de
+        11.	04b6344e	josefraska@google.com	2026-01-20 12:26	[Autofill] Add feature flag kAutofillFixIsAutofilled
+        12.	a84db58a	rathomas@google.com	2026-01-20 12:25	Clips ripple when switching between tabs in window manager.
+        13.	e7187f88	hanxi@chromium.org	2026-01-20 12:24	Revert "metrics: Use string_view in variations_seed.proto"
+        14.	756a94e3	joemerramos@google.com	2026-01-20 12:23	[iOS] Fix Floaty Disappearing When Scrolling Past Top of Page
+        15.	343c27c4	ravjit@chromium.org	2026-01-20 12:22	[PEPC] Override ParseAttribute instead of AttributeChanged
+        16.	bfc09e8b	hartmanng@chromium.org	2026-01-20 12:18	Set up cross-platform structure for GlobalBrowserCollection.
+        17.	c4fdb3c5	rgod@google.com	2026-01-20 12:16	[iOS][CX] Add metrics for user actions in credential export screen
+        18.	c2ea589c	aishwaryarj@google.com	2026-01-20 12:14	[RWM][RecentlyClosed] Fix two Recently Closed entries added to Recent
+        19.	6e9fa399	hnakashima@chromium.org	2026-01-20 12:12	[Android] Convert testing/buildbot/filters/android.desktop.chrome_public_test_apk_desktop.filter to @DisableIf
+        20.	6eb7d697	polardz@google.com	2026-01-20 12:10	[Media Indicator] Set media state in tab strip placeholder
+        21.	61738329	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 12:09	Roll Dawn from 006099b2611c to 036817cd366f (1 revision)
+        22.	9eb25aba	zgroza@chromium.org	2026-01-20 12:08	[IWA] Add PermissionsPolicyParser::ParseIsolatedAppPermissionsPolicy
+        23.	0cff39af	shuyng@google.com	2026-01-20 12:07	Fix RTL text alignment for TabbedAppMenuItemType.NEW_INCOGNITO
+        24.	40445e9d	jamescook@chromium.org	2026-01-20 12:06	extensions: Port ExtensionDeveloperModeSettings to desktop Android
+        25.	97dd7cdc	janellelee@google.com	2026-01-20 12:06	Register Skills Optimization type
+        26.	35892d82	fdoray@chromium.org	2026-01-20 12:01	[base] Provide specific location for WaitableEvent/ConditionVariable trace events.
+        27.	528c265e	chromeos-ci-prod@chromeos-bot.iam.gserviceaccount.com	2026-01-20 11:59	Automated Commit: LKGM 16561.0.0-1074706 for chromeos.
+        28.	4b9e50ed	wittman@google.com	2026-01-20 11:59	Move PageContextFetcher to //components
+        29.	9286eb82	chlily@chromium.org	2026-01-20 11:58	Android downloads UI: Do not display invalid or non-standard URLs
+        30.	4daaf91d	hartmanng@chromium.org	2026-01-20 11:57	[bedrock] Migrate app_shortcut_shelf_item_controller_browsertest.cc away from BrowserListObserver.
+        31.	514906df	zijiehe@google.com	2026-01-20 11:57	[fuchsia] Disable TaskEnvironmentTest.ParallelExecutionFence on Fuchsia
+        32.	7cb66653	abdoeed@google.com	2026-01-20 11:55	[Document PiP] Add support for requesting a pinned windowing layer
+        33.	681d6a7e	kjarosz@google.com	2026-01-20 11:52	metrics: Use string_view in variations_seed.proto	e7187f8
+        34.	e981224b	smaier@chromium.org	2026-01-20 11:51	Fix LeakCanary test for desktop emulator
+        35.	1945fa1d	ananyaseelam@google.com	2026-01-20 11:51	Reland "[aim-tools-models] Add linear scan for allowed items"
+        36.	e529bb0a	birnie@google.com	2026-01-20 11:50	Remove Obsolete Glic.Modal.DeepScanAccessPoint Histogram
+        37.	fdc5ffa3	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 11:41	Roll Chrome Mac Arm PGO Profile
+        38.	e4c79923	mych@chromium.org	2026-01-20 11:39	[WaaP] Split first run from startup metrics
+        39.	41a8915c	lbarczynski@google.com	2026-01-20 11:37	[CodeHealth] Remove TranslateAutoSnackbars feature flag
+        40.	b2f670fa	tsepez@google.com	2026-01-20 11:32	Remove base::MakeClampedNum()
+        41.	148de760	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 11:29	Roll Chrome Android Desktop x64 PGO Profile
+        42.	b04f9b50	wutao@chromium.org	2026-01-20 11:27	Settings: Update OWNERS list
+        43.	c113e6db	martinkong@google.com	2026-01-20 11:26	Replace jlong with int64_t (Part 1)
+        44.	027b1ba5	lichon@google.com	2026-01-20 11:26	[TDR] Remove TODOs linked to issue 40242947
+        45.	a614b232	mtatarski@google.com	2026-01-20 11:25	Add metric for bookmarks limit exceeded on signout
+        46.	724eef6a	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 11:25	Roll ANGLE from 7933c0274c75 to 3a32bdf0b668 (1 revision)
+        47.	7eae00c4	agrieve@chromium.org	2026-01-20 11:18	Android: Filter some build spam from aapt2 when using preview SDKs
+        48.	f3416324	yuhengh@chromium.org	2026-01-20 11:17	[Contextual tasks] Do not reanimate the side panel if already open
+        49.	9d6b9189	drott@chromium.org	2026-01-20 11:16	Introduce histograms for measuring XML parsing times
+        50.	d26b2b56	chominskib@google.com	2026-01-20 11:14	[7/7] Remove all occurrences of isTaskMoveAllowedOnDisplay API
+        51.	2c031faa	jamessun@google.com	2026-01-20 11:14	[AIAE] add translateable=false for merge M145
+        52.	3dac6750	magchen@chromium.org	2026-01-20 11:12	Clean up the feature kUseRefreshRateRange and remove SetPreferredIntervalRange()
+        53.	e3964ee0	yishuil@google.com	2026-01-20 11:12	`GetStrikeDatabase` returns nullptr if web content was destroyed.
+        54.	5be694d7	nicolaso@chromium.org	2026-01-20 11:11	Show source location in chrome://policy/logs
+        55.	4a15c583	diwux@google.com	2026-01-20 11:11	Add COLUMN_FLAGS support to TestDocumentsProvider
+        56.	dae4c013	wpt-autoroller@chops-service-accounts.iam.gserviceaccount.com	2026-01-20 11:10	Import wpt@aa2301a6697949ebfb1c94f18eeaad4b59324ee7
+        57.	cb9efe8c	agrieve@chromium.org	2026-01-20 11:10	Android: Convert ObservableSupplierImpl usages in ChromeActivity
+        58.	946c5954	shuyng@google.com	2026-01-20 11:07	Extend histograms Android.RequestDesktopSite.*
+        59.	513587d1	spvm@chromium.org	2026-01-20 11:07	pdf: Intersect the highlighted Rect with the plugin bounds
+        60.	b060dffe	mercerd@google.com	2026-01-20 11:04	Copy internal aim_eligibility_response.proto
+        61.	7198b662	emshack@chromium.org	2026-01-20 11:02	Revert "Support signin errors in the profile picker"
+        62.	ec99c03b	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 11:01	Roll Chrome Android ARM64 Orderfile from VD1xxcy-KdGm0eVwF... to WZQ24Xg8uQy2LMw5D...
+        63.	f2051e85	jamescook@chromium.org	2026-01-20 11:01	android: Limit one SensitiveContentTest to PHONE_OR_TABLET
+        64.	a84b7d89	alshawwa@chromium.org	2026-01-20 11:00	[Force Save to Cloud] Update download page string
+        65.	92186696	dpapad@chromium.org	2026-01-20 10:59	WebUI: Fix violations of @stylestic/string-quotes check.
+        66.	7cf7b7d7	afie@google.com	2026-01-20 10:59	Simplify HistogramSnapshotManager API
+        67.	83f1cbe7	agale@chromium.org	2026-01-20 10:58	[Vertical Tabs] Log Tabs.TabCount by vertical/horizontal
+        68.	65f68d74	jonnalad@google.com	2026-01-20 10:58	[ntp-composebox] Define new types to support enums for model,
+        69.	e4f8f244	zhangshengluobogan@gmail.com	2026-01-20 10:54	Blink: notify media queries on color-gamut change
+        70.	044ee963	chromium-internal-autoroll@skia-corp.google.com.iam.gserviceaccount.com	2026-01-20 10:54	Roll ios_internal from da7c139ba801 to 766fc521f3a8
+        71.	f7027763	mklw@google.com	2026-01-20 10:53	Add histogram to measure when we initialize a CTA with restored state
+        72.	b2346af8	lbarczynski@google.com	2026-01-20 10:53	[CodeHealth] Clean up stale base::Feature "LauncherPlayStoreSearch"
+        73.	3958a42e	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 10:52	Roll WebView ARM64 Orderfile from CxyRTC766GFD2CkOl... to GgdSZM9y__xdgGkWZ...
+        74.	222e3ba0	bokan@chromium.org	2026-01-20 10:51	Fix nullptr deref in CreateActorTab
+        75.	8036008d	joepeplowski@google.com	2026-01-20 10:49	Add metrics for Image Remix context menu entry point
+        76.	3b0721e4	lukasza@chromium.org	2026-01-20 10:48	[rust] Support for building `rust-toolchain/bin/cc_bindings_from_rs`.
+        77.	887dfde1	qihuizhao@google.com	2026-01-20 10:48	Update CVC-only save on Bling to use wallet-branded message
+        78.	0cde9ce3	zork@google.com	2026-01-20 10:47	[TreesInViz] Clip layer damage to the visible layer.
+        79.	af652aa2	cechen@google.com	2026-01-20 10:46	[omnibox] binary launch on device tail model i18n on Android/iOS.
+        80.	61153297	ckitagawa@chromium.org	2026-01-20 10:45	[RecentTabs] Save chrome: and about: scheme URLs
+        81.	d99621f4	boujane@google.com	2026-01-20 10:44	Remove stale feature kGlicHandoffButtonHiddenClientControl
+        82.	fb1829c2	fs@opera.com	2026-01-20 10:43	Replace *STRICTLY_TYPED_ARG macros with base::StrictNumeric
+        83.	9a6d30bd	ananyaseelam@google.com	2026-01-20 10:41	Reland "[aim-tools-models] Implement `updateSelectedState` in `InputStateModel`"
+        84.	8b12436d	skym@chromium.org	2026-01-20 10:39	Reduce scrim usage of INVALID_COLOR.
+        85.	375276a1	joemerramos@google.com	2026-01-20 10:38	Reland "[iOS] Floaty Reappears After Settings Menu Dismisses"
+    assert:
+      - type: contains
+        value: "8855602f"
+
+  - vars:
+      _templatePath: "test_failure.md"
+      test_id: "://chrome/android:chrome_public_test_apk!junit:org.chromium.chrome.browser.browserservices.permissiondelegation:TrustedWebActivityLocationDelegationTest#getLocationFromTestTwaService"
+      failure_summary: |
+        chrome_junit_tests failed because of:
+
+        org.chromium.chrome.browser.ui.google_bottom_bar.GoogleBottomBarActionsHandlerTest#testOnSearchboxLensTap_lensNotEnabled_lensNotStarted[29]
+      blamelist: |
+        1.	5cd3982c	kunaldaftari@google.com	2026-01-20 12:54	[Vertical Tabs] TopContainer Alignment with Toolbar.
+        2.	a71b1dfc	wpt-autoroller@chops-service-accounts.iam.gserviceaccount.com	2026-01-20 12:54	Update `TestExpectations` with bugs filed for crrev.com/c/7494153
+        3.	14009bac	hanxi@chromium.org	2026-01-20 12:53	Revert "[Signin][Android] NTP Seamless Signin Full Flow with Snackbar Test"
+        4.	e6a43fbb	xinghuilu@chromium.org	2026-01-20 12:52	Make sure the async check tracker is alive before transferring.
+        5.	8e2c18e5	danft@google.com	2026-01-20 12:51	Add a on_ready callback to TranslateKitLanguagePackComponentInstallerPolicy
+        6.	0f6d7314	kristislee@google.com	2026-01-20 12:50	[Reading mode] Pull adjusted offsets logic into utility
+        7.	c7cb39a2	wnwen@google.com	2026-01-20 12:50	android: Fix NPE in isMultiInstanceApi31Enabled
+        8.	bf3a4b38	dibyapal@google.com	2026-01-20 12:49	[PWA] Deflake integration tests by waiting for web app launch
+        9.	501dcb15	novakovica@google.com	2026-01-20 12:48	[iOS][PRDBD] Moves Quick Delete strings from /chrome/app to /components
+        10.	3f27f589	pmonette@chromium.org	2026-01-20 12:47	Correctly populate `outcome` in PageDiscarder::DiscardPageNode
+        11.	f682b0ef	corising@chromium.org	2026-01-20 12:46	[Vertical tabs] Update group editor bubble anchoring and triggering
+        12.	9bd845bf	emshack@chromium.org	2026-01-20 12:44	Revert "[SidePanel] Fix side panel scroll reset during bookmark modifications"
+        13.	49cbf1a7	asvitkine@chromium.org	2026-01-20 12:43	Clean up some unused structured metrics code.
+        14.	4f056977	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 12:40	Roll BoringSSL from 173bea7b53b1 to fab5bd43e78a (1 revision)
+        15.	6eb2bf70	martinkong@google.com	2026-01-20 12:39	Tie cached flag's defaultValueInTests with isOfficialBuild
+        16.	f1b5ed07	aaronmoss@google.com	2026-01-20 12:39	[a11y] Fix cursor blink interval on Clank	a04ce05
+        17.	523b169e	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 12:38	Roll Chromium Variations from ae2rr7a9og2qpugR7... to i1ZbeN4ySB9xC6Qv7...
+        18.	6b62321e	pasko@chromium.org	2026-01-20 12:37	mojo: Remove kMojoInlineMessagePayloads flag
+        19.	dbc8997d	ikilpatrick@chromium.org	2026-01-20 12:37	[cleanup] Remove ClearOverrideContainingBlockContentSize
+        20.	d2370d01	yyanting@google.com	2026-01-20 12:36	[Theme] Fix Theme Collections daily refresh histograms type.
+        21.	aed283b4	kyraseevers@google.com	2026-01-20 12:34	[a11y] Fix the FieldTrialTestConfig for Live Regions
+        22.	3c5f82de	davidben@chromium.org	2026-01-20 12:30	Unexpire Net.NeedsHWCAP2Workaround one last time
+        23.	45e89eee	fiorellab@google.com	2026-01-20 12:29	Record UMA for time passed between an attempt login and successful submission
+        24.	8855602f	wnwen@google.com	2026-01-20 12:28	android: Use ResettersForTesting for test state	be295de
+        25.	04b6344e	josefraska@google.com	2026-01-20 12:26	[Autofill] Add feature flag kAutofillFixIsAutofilled
+        26.	a84db58a	rathomas@google.com	2026-01-20 12:25	Clips ripple when switching between tabs in window manager.
+        27.	e7187f88	hanxi@chromium.org	2026-01-20 12:24	Revert "metrics: Use string_view in variations_seed.proto"
+        28.	756a94e3	joemerramos@google.com	2026-01-20 12:23	[iOS] Fix Floaty Disappearing When Scrolling Past Top of Page
+        29.	343c27c4	ravjit@chromium.org	2026-01-20 12:22	[PEPC] Override ParseAttribute instead of AttributeChanged
+        30.	bfc09e8b	hartmanng@chromium.org	2026-01-20 12:18	Set up cross-platform structure for GlobalBrowserCollection.
+        31.	c4fdb3c5	rgod@google.com	2026-01-20 12:16	[iOS][CX] Add metrics for user actions in credential export screen
+        32.	c2ea589c	aishwaryarj@google.com	2026-01-20 12:14	[RWM][RecentlyClosed] Fix two Recently Closed entries added to Recent
+        33.	6e9fa399	hnakashima@chromium.org	2026-01-20 12:12	[Android] Convert testing/buildbot/filters/android.desktop.chrome_public_test_apk_desktop.filter to @DisableIf
+        34.	6eb7d697	polardz@google.com	2026-01-20 12:10	[Media Indicator] Set media state in tab strip placeholder
+        35.	61738329	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 12:09	Roll Dawn from 006099b2611c to 036817cd366f (1 revision)
+        36.	9eb25aba	zgroza@chromium.org	2026-01-20 12:08	[IWA] Add PermissionsPolicyParser::ParseIsolatedAppPermissionsPolicy
+        37.	0cff39af	shuyng@google.com	2026-01-20 12:07	Fix RTL text alignment for TabbedAppMenuItemType.NEW_INCOGNITO
+        38.	40445e9d	jamescook@chromium.org	2026-01-20 12:06	extensions: Port ExtensionDeveloperModeSettings to desktop Android
+        39.	97dd7cdc	janellelee@google.com	2026-01-20 12:06	Register Skills Optimization type
+        40.	35892d82	fdoray@chromium.org	2026-01-20 12:01	[base] Provide specific location for WaitableEvent/ConditionVariable trace events.
+        41.	528c265e	chromeos-ci-prod@chromeos-bot.iam.gserviceaccount.com	2026-01-20 11:59	Automated Commit: LKGM 16561.0.0-1074706 for chromeos.
+        42.	4b9e50ed	wittman@google.com	2026-01-20 11:59	Move PageContextFetcher to //components
+        43.	9286eb82	chlily@chromium.org	2026-01-20 11:58	Android downloads UI: Do not display invalid or non-standard URLs
+        44.	4daaf91d	hartmanng@chromium.org	2026-01-20 11:57	[bedrock] Migrate app_shortcut_shelf_item_controller_browsertest.cc away from BrowserListObserver.
+        45.	514906df	zijiehe@google.com	2026-01-20 11:57	[fuchsia] Disable TaskEnvironmentTest.ParallelExecutionFence on Fuchsia
+        46.	7cb66653	abdoeed@google.com	2026-01-20 11:55	[Document PiP] Add support for requesting a pinned windowing layer
+        47.	681d6a7e	kjarosz@google.com	2026-01-20 11:52	metrics: Use string_view in variations_seed.proto	e7187f8
+        48.	e981224b	smaier@chromium.org	2026-01-20 11:51	Fix LeakCanary test for desktop emulator
+        49.	1945fa1d	ananyaseelam@google.com	2026-01-20 11:51	Reland "[aim-tools-models] Add linear scan for allowed items"
+        50.	e529bb0a	birnie@google.com	2026-01-20 11:50	Remove Obsolete Glic.Modal.DeepScanAccessPoint Histogram
+        51.	fdc5ffa3	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 11:41	Roll Chrome Mac Arm PGO Profile
+        52.	e4c79923	mych@chromium.org	2026-01-20 11:39	[WaaP] Split first run from startup metrics
+        53.	41a8915c	lbarczynski@google.com	2026-01-20 11:37	[CodeHealth] Remove TranslateAutoSnackbars feature flag
+        54.	b2f670fa	tsepez@google.com	2026-01-20 11:32	Remove base::MakeClampedNum()
+        55.	148de760	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 11:29	Roll Chrome Android Desktop x64 PGO Profile
+        56.	b04f9b50	wutao@chromium.org	2026-01-20 11:27	Settings: Update OWNERS list
+        57.	c113e6db	martinkong@google.com	2026-01-20 11:26	Replace jlong with int64_t (Part 1)
+        58.	027b1ba5	lichon@google.com	2026-01-20 11:26	[TDR] Remove TODOs linked to issue 40242947
+        59.	a614b232	mtatarski@google.com	2026-01-20 11:25	Add metric for bookmarks limit exceeded on signout
+        60.	724eef6a	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 11:25	Roll ANGLE from 7933c0274c75 to 3a32bdf0b668 (1 revision)
+        61.	7eae00c4	agrieve@chromium.org	2026-01-20 11:18	Android: Filter some build spam from aapt2 when using preview SDKs
+        62.	f3416324	yuhengh@chromium.org	2026-01-20 11:17	[Contextual tasks] Do not reanimate the side panel if already open
+        63.	9d6b9189	drott@chromium.org	2026-01-20 11:16	Introduce histograms for measuring XML parsing times
+        64.	d26b2b56	chominskib@google.com	2026-01-20 11:14	[7/7] Remove all occurrences of isTaskMoveAllowedOnDisplay API
+        65.	2c031faa	jamessun@google.com	2026-01-20 11:14	[AIAE] add translateable=false for merge M145
+        66.	3dac6750	magchen@chromium.org	2026-01-20 11:12	Clean up the feature kUseRefreshRateRange and remove SetPreferredIntervalRange()
+        67.	e3964ee0	yishuil@google.com	2026-01-20 11:12	`GetStrikeDatabase` returns nullptr if web content was destroyed.
+        68.	5be694d7	nicolaso@chromium.org	2026-01-20 11:11	Show source location in chrome://policy/logs
+        69.	4a15c583	diwux@google.com	2026-01-20 11:11	Add COLUMN_FLAGS support to TestDocumentsProvider
+        70.	dae4c013	wpt-autoroller@chops-service-accounts.iam.gserviceaccount.com	2026-01-20 11:10	Import wpt@aa2301a6697949ebfb1c94f18eeaad4b59324ee7
+        71.	cb9efe8c	agrieve@chromium.org	2026-01-20 11:10	Android: Convert ObservableSupplierImpl usages in ChromeActivity
+        72.	946c5954	shuyng@google.com	2026-01-20 11:07	Extend histograms Android.RequestDesktopSite.*
+        73.	513587d1	spvm@chromium.org	2026-01-20 11:07	pdf: Intersect the highlighted Rect with the plugin bounds
+        74.	b060dffe	mercerd@google.com	2026-01-20 11:04	Copy internal aim_eligibility_response.proto
+        75.	7198b662	emshack@chromium.org	2026-01-20 11:02	Revert "Support signin errors in the profile picker"
+        76.	ec99c03b	chromium-autoroll@skia-public.iam.gserviceaccount.com	2026-01-20 11:01	Roll Chrome Android ARM64 Orderfile from VD1xxcy-KdGm0eVwF... to WZQ24Xg8uQy2LMw5D...
+        77.	f2051e85	jamescook@chromium.org	2026-01-20 11:01	android: Limit one SensitiveContentTest to PHONE_OR_TABLET
+        78.	a84b7d89	alshawwa@chromium.org	2026-01-20 11:00	[Force Save to Cloud] Update download page string
+        79.	92186696	dpapad@chromium.org	2026-01-20 10:59	WebUI: Fix violations of @stylestic/string-quotes check.
+        80.	7cf7b7d7	afie@google.com	2026-01-20 10:59	Simplify HistogramSnapshotManager API
+        81.	83f1cbe7	agale@chromium.org	2026-01-20 10:58	[Vertical Tabs] Log Tabs.TabCount by vertical/horizontal
+        82.	65f68d74	jonnalad@google.com	2026-01-20 10:58	[ntp-composebox] Define new types to support enums for model,
+        83.	e4f8f244	zhangshengluobogan@gmail.com	2026-01-20 10:54	Blink: notify media queries on color-gamut change
+        84.	044ee963	chromium-internal-autoroll@skia-corp.google.com.iam.gserviceaccount.com	2026-01-20 10:54	Roll ios_internal from da7c139ba801 to 766fc521f3a8
+        85.	f7027763	mklw@google.com	2026-01-20 10:53	Add histogram to measure when we initialize a CTA with restored state
+        86.	b2346af8	lbarczynski@google.com	2026-01-20 10:53	[CodeHealth] Clean up stale base::Feature "LauncherPlayStoreSearch"
+    assert:
+      - type: contains
+        value: "9eb25aba"
