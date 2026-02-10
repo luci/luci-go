@@ -14,30 +14,44 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { ShortcutProvider } from '../shortcut_provider';
+
 import { ColumnsButton } from './columns_button';
 
 describe('<ColumnsButton />', () => {
   it('renders "Columns" text by default', () => {
     render(
-      <ColumnsButton
-        allColumns={[]}
-        visibleColumns={[]}
-        onToggleColumn={() => {}}
-      />,
+      <FakeContextProvider>
+        <ShortcutProvider>
+          <ColumnsButton
+            allColumns={[]}
+            visibleColumns={[]}
+            onToggleColumn={() => {}}
+          />
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
     expect(screen.getByText('Columns')).toBeVisible();
   });
 
   it('renders custom trigger if provided', () => {
     render(
-      <ColumnsButton
-        allColumns={[]}
-        visibleColumns={[]}
-        onToggleColumn={() => {}}
-        renderTrigger={(props) => (
-          <button onClick={props.onClick}>Custom</button>
-        )}
-      />,
+      <FakeContextProvider>
+        <ShortcutProvider>
+          <ColumnsButton
+            allColumns={[]}
+            visibleColumns={[]}
+            onToggleColumn={() => {}}
+            renderTrigger={(props, ref) => (
+              <button ref={ref} onClick={props.onClick}>
+                Custom
+              </button>
+            )}
+          />
+        </ShortcutProvider>
+      </FakeContextProvider>,
     );
     expect(screen.getByText('Custom')).toBeVisible();
     expect(screen.queryByText('Columns')).not.toBeInTheDocument();

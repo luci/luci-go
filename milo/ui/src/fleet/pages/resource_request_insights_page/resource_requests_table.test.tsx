@@ -15,6 +15,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ResourceRequestTable } from './resource_requests_table';
@@ -141,7 +142,9 @@ describe('<ResourceRequestTable />', () => {
   it('renders data rows', async () => {
     render(
       <FakeContextProvider>
-        <ResourceRequestTable />
+        <ShortcutProvider>
+          <ResourceRequestTable />
+        </ShortcutProvider>
       </FakeContextProvider>,
     );
 
@@ -158,7 +161,9 @@ describe('<ResourceRequestTable />', () => {
 
     render(
       <FakeContextProvider>
-        <ResourceRequestTable />
+        <ShortcutProvider>
+          <ResourceRequestTable />
+        </ShortcutProvider>
       </FakeContextProvider>,
     );
 

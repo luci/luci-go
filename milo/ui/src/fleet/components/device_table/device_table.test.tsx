@@ -38,6 +38,8 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import { ShortcutProvider } from '../shortcut_provider';
+
 import { DeviceTable } from './device_table';
 
 const COLUMN_IDS: string[] = ['id', 'dut_id', 'state', 'type'];
@@ -189,20 +191,22 @@ function TestComponent({
   const nextPageToken =
     currentRowCount < totalRowCount ? String(currentRowCount) : '';
   return (
-    <DeviceTable
-      rows={currentDevices}
-      availableColumns={getChromeOSColumns(COLUMN_IDS)}
-      nextPageToken={nextPageToken}
-      pagerCtx={pagerCtx}
-      isError={false}
-      error={null}
-      isLoading={false}
-      isLoadingColumns={isLoadingColumns}
-      totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
-      defaultColumnIds={DEFAULT_COLUMNS}
-      localStorageKey={'testLocalStorageKey'}
-      formatDeviceColumn={formatDeviceColumn}
-    />
+    <ShortcutProvider>
+      <DeviceTable
+        rows={currentDevices}
+        availableColumns={getChromeOSColumns(COLUMN_IDS)}
+        nextPageToken={nextPageToken}
+        pagerCtx={pagerCtx}
+        isError={false}
+        error={null}
+        isLoading={false}
+        isLoadingColumns={isLoadingColumns}
+        totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
+        defaultColumnIds={DEFAULT_COLUMNS}
+        localStorageKey={'testLocalStorageKey'}
+        formatDeviceColumn={formatDeviceColumn}
+      />
+    </ShortcutProvider>
   );
 }
 

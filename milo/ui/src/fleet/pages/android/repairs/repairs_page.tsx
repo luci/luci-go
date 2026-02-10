@@ -608,8 +608,9 @@ export const RepairListPage = () => {
           visibleColumns={mrtColumnManager.visibleColumnIds}
           onToggleColumn={mrtColumnManager.onToggleColumn}
           resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
-          renderTrigger={({ onClick }) => (
+          renderTrigger={({ onClick }, ref) => (
             <Button
+              ref={ref}
               startIcon={<ViewColumnOutlined sx={{ fontSize: '26px' }} />}
               onClick={onClick}
               color="inherit"

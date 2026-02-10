@@ -14,7 +14,9 @@
 
 import { Button } from '@mui/material';
 import { GridColumnIcon } from '@mui/x-data-grid';
-import { useState } from 'react';
+import { RefObject, useRef, useState } from 'react';
+
+import { useShortcut } from '../shortcut_provider';
 
 import { ColumnsManageDropDown } from './column_manage_dropdown';
 
@@ -26,9 +28,12 @@ interface ColumnsButtonProps {
   allColumns: { id: string; label: string }[];
   visibleColumns: string[];
   onToggleColumn: (id: string) => void;
-  renderTrigger?: (props: {
-    onClick: (event: React.MouseEvent<HTMLElement>) => void;
-  }) => React.ReactNode;
+  renderTrigger?: (
+    props: {
+      onClick: (event: React.MouseEvent<HTMLElement>) => void;
+    },
+    ref: RefObject<HTMLButtonElement | null>,
+  ) => React.ReactNode;
 }
 
 /**
@@ -45,19 +50,25 @@ export function ColumnsButton({
   renderTrigger,
 }: ColumnsButtonProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+
+  useShortcut('Open column picker', 'c', () => {
+    setAnchorEL(buttonRef.current);
+  });
 
   return (
     <>
       {renderTrigger ? (
-        renderTrigger({
-          onClick: (event) =>
-            setAnchorEL(anchorEl ? null : event.currentTarget),
-        })
+        renderTrigger(
+          {
+            onClick: (_) => setAnchorEL(anchorEl ? null : buttonRef.current),
+          },
+          buttonRef,
+        )
       ) : (
         <Button
-          onClick={(event) =>
-            setAnchorEL(anchorEl ? null : event.currentTarget)
-          }
+          ref={buttonRef}
+          onClick={(_) => setAnchorEL(anchorEl ? null : buttonRef.current)}
           startIcon={<GridColumnIcon />}
           color="primary"
           size="small"
