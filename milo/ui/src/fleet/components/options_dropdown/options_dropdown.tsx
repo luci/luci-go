@@ -27,6 +27,7 @@ import {
   type KeyboardEvent,
   type MouseEventHandler,
   type ReactNode,
+  CSSProperties,
 } from 'react';
 
 import { hasAnyModifier, keyboardListNavigationHandler } from '../../utils';
@@ -45,7 +46,7 @@ type OptionsDropdownProps = Omit<MenuProps, 'open' | 'maxHeight'> & {
   open: boolean;
   anchorOrigin?: PopoverOrigin | undefined;
   enableSearchInput?: boolean;
-  maxHeight?: number;
+  maxHeight?: CSSProperties['maxHeight'];
   onResetClick?: MouseEventHandler<HTMLButtonElement>;
   footerButtons?: ('reset' | 'cancel' | 'apply')[];
   disableEnforceFocus?: boolean;
@@ -94,7 +95,7 @@ export function OptionsDropdown({
   transformOrigin,
   onKeyDown,
   enableSearchInput = false,
-  maxHeight = 215,
+  maxHeight = 'auto',
   onResetClick,
   footerButtons = ['apply', 'cancel'],
   sx,
@@ -137,7 +138,7 @@ export function OptionsDropdown({
         {
           name: 'offset',
           options: {
-            offset: [0, 8],
+            offset: [0, 4],
           },
         },
       ]}
@@ -239,7 +240,6 @@ export function OptionsDropdown({
             css={{
               maxHeight: maxHeight,
               overflow: 'auto',
-              width: 500, //since some values are much longer than others we want to have a constant width to avoid flickering
               paddingTop: '8px',
             }}
             tabIndex={-1}

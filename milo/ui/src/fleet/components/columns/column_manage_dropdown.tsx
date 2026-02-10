@@ -79,12 +79,13 @@ export function ColumnsManageDropDown({
 
   return (
     <OptionsDropdown
+      sx={{ width: '500px' }}
       onClose={() => setAnchorEL(null)}
       anchorEl={anchorEl}
       open={!!anchorEl}
       anchorOrigin={{
         vertical: 'bottom',
-        horizontal: 'center',
+        horizontal: 'right',
       }}
       enableSearchInput={true}
       maxHeight={500}

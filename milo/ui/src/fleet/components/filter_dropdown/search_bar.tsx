@@ -68,6 +68,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
                   childrenSearchQuery={searchQuery}
                   optionComponentProps={option.optionsComponentProps}
                   onNavigateUp={onNavigateUp}
+                  maxHeight={400}
                 />
               );
             }
