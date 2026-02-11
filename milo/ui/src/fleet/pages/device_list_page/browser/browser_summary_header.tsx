@@ -30,6 +30,12 @@ import { getErrorMessage } from '@/fleet/utils/errors';
 import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
+const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
+  borderRight: `1px solid ${colors.grey[300]}`,
+  marginRight: 16,
+  paddingRight: 8,
+};
+
 const METRIC_CONTAINER_STYLES: CSSObject = {
   display: 'flex',
   justifyContent: 'flex-start',
@@ -67,18 +73,32 @@ export function BrowserSummaryHeader({
 
     return (
       <div css={{ display: 'flex', maxWidth: 1400 }}>
-        <div css={{ flexGrow: 1 }}>
-          <Typography variant="subhead1">Swarming state</Typography>
+        <div
+          css={{
+            ...HAS_RIGHT_SIBLING_STYLES,
+          }}
+        >
+          <Typography variant="subhead1">Total</Typography>
           <div css={METRIC_CONTAINER_STYLES}>
             <SingleMetric
-              name="Total"
+              name="Devices"
               value={countQuery.data?.total}
               loading={countQuery.isPending}
             />
             <SingleMetric
+              name="Bots"
+              value={countQuery.data?.swarmingState?.total}
+              loading={countQuery.isPending}
+            />
+          </div>
+        </div>
+        <div>
+          <Typography variant="subhead1">Bot health</Typography>
+          <div css={METRIC_CONTAINER_STYLES}>
+            <SingleMetric
               name="Alive"
               value={countQuery.data?.swarmingState?.alive}
-              total={countQuery.data?.total}
+              total={countQuery.data?.swarmingState?.total}
               loading={countQuery.isPending}
               filterUrl={getFilterQueryString(
                 {
@@ -91,7 +111,7 @@ export function BrowserSummaryHeader({
             <SingleMetric
               name="Dead"
               value={countQuery.data?.swarmingState?.dead}
-              total={countQuery.data?.total}
+              total={countQuery.data?.swarmingState?.total}
               loading={countQuery.isPending}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               filterUrl={getFilterQueryString(
@@ -105,7 +125,7 @@ export function BrowserSummaryHeader({
             <SingleMetric
               name="Quarantined"
               value={countQuery.data?.swarmingState?.quarantined}
-              total={countQuery.data?.total}
+              total={countQuery.data?.swarmingState?.total}
               loading={countQuery.isPending}
               Icon={
                 <WarningIcon
@@ -123,7 +143,7 @@ export function BrowserSummaryHeader({
             <SingleMetric
               name="Maintenance"
               value={countQuery.data?.swarmingState?.maintenance}
-              total={countQuery.data?.total}
+              total={countQuery.data?.swarmingState?.total}
               loading={countQuery.isPending}
               Icon={
                 <WarningIcon

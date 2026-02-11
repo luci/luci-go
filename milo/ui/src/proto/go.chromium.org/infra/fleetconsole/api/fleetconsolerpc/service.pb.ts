@@ -443,6 +443,7 @@ export interface SwarmingStateCounts {
   readonly dead: number;
   readonly quarantined: number;
   readonly maintenance: number;
+  readonly total: number;
 }
 
 export interface RepopulateCacheRequest {
@@ -496,7 +497,10 @@ export interface ExportDevicesToCSVResponse {
 export interface ScheduleAutorepairRequest {
   /** The list of device names to schedule autorepair for. */
   readonly unitNames: readonly string[];
-  /** The list of autorepair flags to apply to the devices. */
+  /**
+   * The list of autorepair flags to apply to the devices.
+   * flag `VERIFY` should not be used with `DEEP_REPAIR` in same request
+   */
   readonly flags: readonly ScheduleAutorepairRequest_AutorepairFlag[];
 }
 
@@ -504,6 +508,7 @@ export enum ScheduleAutorepairRequest_AutorepairFlag {
   FLAG_UNSPECIFIED = 0,
   DEEP_REPAIR = 1,
   LATEST = 2,
+  VERIFY = 3,
 }
 
 export function scheduleAutorepairRequest_AutorepairFlagFromJSON(
@@ -519,6 +524,9 @@ export function scheduleAutorepairRequest_AutorepairFlagFromJSON(
     case 2:
     case "LATEST":
       return ScheduleAutorepairRequest_AutorepairFlag.LATEST;
+    case 3:
+    case "VERIFY":
+      return ScheduleAutorepairRequest_AutorepairFlag.VERIFY;
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum ScheduleAutorepairRequest_AutorepairFlag",
@@ -536,6 +544,8 @@ export function scheduleAutorepairRequest_AutorepairFlagToJSON(
       return "DEEP_REPAIR";
     case ScheduleAutorepairRequest_AutorepairFlag.LATEST:
       return "LATEST";
+    case ScheduleAutorepairRequest_AutorepairFlag.VERIFY:
+      return "VERIFY";
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum ScheduleAutorepairRequest_AutorepairFlag",
@@ -4520,7 +4530,7 @@ export const CountBrowserDevicesResponse: MessageFns<CountBrowserDevicesResponse
 };
 
 function createBaseSwarmingStateCounts(): SwarmingStateCounts {
-  return { alive: 0, dead: 0, quarantined: 0, maintenance: 0 };
+  return { alive: 0, dead: 0, quarantined: 0, maintenance: 0, total: 0 };
 }
 
 export const SwarmingStateCounts: MessageFns<SwarmingStateCounts> = {
@@ -4536,6 +4546,9 @@ export const SwarmingStateCounts: MessageFns<SwarmingStateCounts> = {
     }
     if (message.maintenance !== 0) {
       writer.uint32(32).int32(message.maintenance);
+    }
+    if (message.total !== 0) {
+      writer.uint32(40).int32(message.total);
     }
     return writer;
   },
@@ -4579,6 +4592,14 @@ export const SwarmingStateCounts: MessageFns<SwarmingStateCounts> = {
           message.maintenance = reader.int32();
           continue;
         }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4594,6 +4615,7 @@ export const SwarmingStateCounts: MessageFns<SwarmingStateCounts> = {
       dead: isSet(object.dead) ? globalThis.Number(object.dead) : 0,
       quarantined: isSet(object.quarantined) ? globalThis.Number(object.quarantined) : 0,
       maintenance: isSet(object.maintenance) ? globalThis.Number(object.maintenance) : 0,
+      total: isSet(object.total) ? globalThis.Number(object.total) : 0,
     };
   },
 
@@ -4611,6 +4633,9 @@ export const SwarmingStateCounts: MessageFns<SwarmingStateCounts> = {
     if (message.maintenance !== 0) {
       obj.maintenance = Math.round(message.maintenance);
     }
+    if (message.total !== 0) {
+      obj.total = Math.round(message.total);
+    }
     return obj;
   },
 
@@ -4623,6 +4648,7 @@ export const SwarmingStateCounts: MessageFns<SwarmingStateCounts> = {
     message.dead = object.dead ?? 0;
     message.quarantined = object.quarantined ?? 0;
     message.maintenance = object.maintenance ?? 0;
+    message.total = object.total ?? 0;
     return message;
   },
 };
