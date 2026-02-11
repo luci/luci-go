@@ -21,7 +21,8 @@ import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { FilterCategoryData } from '@/fleet/components/filter_dropdown/filter_dropdown';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { fromLuxonDateTime, toIsoString } from '@/fleet/utils/dates';
+import { DateFilterValue } from '@/fleet/types';
+import { fromLuxonDateTime, toLuxonDateTime } from '@/fleet/utils/dates';
 import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -56,18 +57,18 @@ const createDateFilterAdapter = (
     type: 'date',
     optionsComponentProps: {
       value: {
-        min: toIsoString(val?.min),
-        max: toIsoString(val?.max),
+        min: toLuxonDateTime(val?.min)?.toJSDate(),
+        max: toLuxonDateTime(val?.max)?.toJSDate(),
       },
-      onChange: (newVal: { min?: string; max?: string }) => {
+      onChange: (newVal: DateFilterValue) => {
         setCurrentFilters({
           ...currentFilters,
           [option.value]: {
             min: fromLuxonDateTime(
-              newVal.min ? DateTime.fromISO(newVal.min) : undefined,
+              newVal.min ? DateTime.fromJSDate(newVal.min) : undefined,
             ),
             max: fromLuxonDateTime(
-              newVal.max ? DateTime.fromISO(newVal.max) : undefined,
+              newVal.max ? DateTime.fromJSDate(newVal.max) : undefined,
             ),
           },
         });
