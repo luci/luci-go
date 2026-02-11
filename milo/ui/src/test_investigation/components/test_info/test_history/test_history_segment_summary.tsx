@@ -11,10 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { Box, Typography } from '@mui/material';
+import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import { Box, Tooltip, Typography } from '@mui/material';
 
 import { getStatusStyle } from '@/common/styles/status_styles';
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { useInvocation } from '@/test_investigation/context';
 import {
   getFailureRateStatusTypeFromSegment,
   getFormattedFailureRateFromSegment,
@@ -26,13 +29,18 @@ interface TestHistorySegmentProps {
   isEndSegment: boolean;
 }
 
-export function TestHistorySegmentSummary({
+interface SegmentBoxProps {
+  segment: Segment;
+  isStartSegment: boolean;
+  isEndSegment: boolean;
+}
+
+function SegmentBox({
   segment,
   isStartSegment,
   isEndSegment,
-}: TestHistorySegmentProps) {
+}: SegmentBoxProps) {
   const formattedRate = getFormattedFailureRateFromSegment(segment);
-
   const style = getStatusStyle(
     getFailureRateStatusTypeFromSegment(segment),
     'outlined',
@@ -98,5 +106,85 @@ export function TestHistorySegmentSummary({
         </>
       )}
     </Box>
+  );
+}
+
+export function TestHistorySegmentSummary({
+  segment,
+  isStartSegment,
+  isEndSegment,
+}: TestHistorySegmentProps) {
+  const invocation = useInvocation() as Invocation;
+  const currentTestResultPosition =
+    invocation?.sourceSpec?.sources?.gitilesCommit?.position;
+
+  const isCurrentTestResultSegment = (pos: string | undefined) => {
+    if (!pos) return false;
+    return (
+      Number(pos) >= Number(segment.startPosition) &&
+      Number(pos) <= Number(segment.endPosition)
+    );
+  };
+
+  const ThisResultTooltip = (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: '70px',
+      }}
+    >
+      <ArrowDropUpIcon
+        sx={{ width: '16px', height: '16px', p: 0 }}
+      ></ArrowDropUpIcon>
+      <Typography variant="caption" align="center">
+        This result on {currentTestResultPosition}
+      </Typography>
+    </Box>
+  );
+
+  return (
+    <>
+      {isCurrentTestResultSegment(currentTestResultPosition) ? (
+        <Tooltip
+          title={ThisResultTooltip}
+          open
+          placement="bottom"
+          slotProps={{
+            popper: {
+              modifiers: [
+                {
+                  name: 'offset',
+                  options: {
+                    offset: [0, -14],
+                  },
+                },
+              ],
+            },
+            tooltip: {
+              sx: {
+                bgcolor: 'transparent',
+                color: 'text.secondary',
+              },
+            },
+          }}
+        >
+          <Box>
+            <SegmentBox
+              segment={segment}
+              isStartSegment={isStartSegment}
+              isEndSegment={isEndSegment}
+            ></SegmentBox>
+          </Box>
+        </Tooltip>
+      ) : (
+        <SegmentBox
+          segment={segment}
+          isStartSegment={isStartSegment}
+          isEndSegment={isEndSegment}
+        ></SegmentBox>
+      )}
+    </>
   );
 }

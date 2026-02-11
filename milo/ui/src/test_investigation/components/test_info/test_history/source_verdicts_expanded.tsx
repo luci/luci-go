@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { CheckCircle } from '@mui/icons-material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ErrorIcon from '@mui/icons-material/Error';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { Box, Button, ButtonGroup, Tooltip, Typography } from '@mui/material';
@@ -27,8 +28,29 @@ import {
   QuerySourceVerdictsResponse_VerdictStatus,
   Segment,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
+import { useInvocation } from '@/test_investigation/context';
+import { getSourcesFromInvocation } from '@/test_investigation/utils/test_info_utils';
 
 import { useTestVariantBranch } from '../context';
+
+const CurrentResultTooltip = (pos: string) => {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: '70px',
+      }}
+    >
+      <Typography variant="caption" align="center">
+        This result on {pos}
+      </Typography>
+      <ArrowDropDownIcon sx={{ width: '16px', height: '16px', p: 0 }} />
+    </Box>
+  );
+};
 
 interface SourceVerdictsExpandedProps {
   segment: Segment;
@@ -144,25 +166,69 @@ const PassFailSourceVerdictBox = (
   pos: string,
   endSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
   startSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
+  currentTestResultPosition: string | undefined,
 ) => {
   if (!endSourceVerdicts || !startSourceVerdicts) {
     return <></>;
   }
   return (
-    <Box
-      sx={{
-        width: '8px',
-        height: '60px',
-        backgroundColor: isFailingSourceVerdict(
-          pos,
-          endSourceVerdicts,
-          startSourceVerdicts,
-        )
-          ? 'var(--gm3-color-error)'
-          : 'var(--gm3-color-success)',
-        display: 'flex',
-      }}
-    ></Box>
+    <>
+      {currentTestResultPosition && pos === currentTestResultPosition ? (
+        <Tooltip
+          title={CurrentResultTooltip(pos)}
+          open
+          placement="top"
+          slotProps={{
+            popper: {
+              modifiers: [
+                {
+                  name: 'offset',
+                  options: {
+                    offset: [0, -14],
+                  },
+                },
+              ],
+            },
+            tooltip: {
+              sx: {
+                bgcolor: 'transparent',
+                color: 'text.secondary',
+              },
+            },
+          }}
+        >
+          <Box
+            sx={{
+              width: '8px',
+              height: '60px',
+              backgroundColor: isFailingSourceVerdict(
+                pos,
+                endSourceVerdicts,
+                startSourceVerdicts,
+              )
+                ? 'var(--gm3-color-error)'
+                : 'var(--gm3-color-success)',
+              display: 'flex',
+            }}
+          ></Box>
+        </Tooltip>
+      ) : (
+        <Box
+          sx={{
+            width: '8px',
+            height: '60px',
+            backgroundColor: isFailingSourceVerdict(
+              pos,
+              endSourceVerdicts,
+              startSourceVerdicts,
+            )
+              ? 'var(--gm3-color-error)'
+              : 'var(--gm3-color-success)',
+            display: 'flex',
+          }}
+        ></Box>
+      )}
+    </>
   );
 };
 
@@ -171,10 +237,13 @@ export function SourceVerdictsExpanded({
 }: SourceVerdictsExpandedProps) {
   const testVariantBranch = useTestVariantBranch();
   const tvbClient = useTestVariantBranchesClient();
+  const invocation = useInvocation() as Invocation;
+  const sources = getSourcesFromInvocation(invocation);
   // How many source verdicts shown (from both start and end position) when component is expanded.
   const [sourceVerdictCount, setSourceVerdictCount] = useState(15);
   const endPos = Number(segment.endPosition);
   const endPosEnd = Number(segment.endPosition) - 1000;
+  const currentTestResultPosition = sources?.gitilesCommit?.position;
 
   const { data: response, isLoading: isLoadingEndVerdicts } = useQuery({
     ...tvbClient.QuerySourceVerdicts.query(
@@ -278,6 +347,7 @@ export function SourceVerdictsExpanded({
               sourceVerdict.position,
               endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
               startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
+              currentTestResultPosition,
             ),
           )}
       {ExpandButton}
@@ -289,6 +359,7 @@ export function SourceVerdictsExpanded({
               sourceVerdict.position,
               endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
               startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
+              currentTestResultPosition,
             ),
           )}
 

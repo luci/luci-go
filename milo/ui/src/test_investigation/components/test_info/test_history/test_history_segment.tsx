@@ -34,12 +34,12 @@ export function TestHistorySegment({
   testHistoryHasExpandedSegment,
 }: TestHistorySegmentProps) {
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <TestHistorySourceVerdicts
         segment={segment}
         setExpandedTestHistory={setExpandedTestHistory}
         testHistoryHasExpandedSegment={testHistoryHasExpandedSegment}
-      ></TestHistorySourceVerdicts>{' '}
+      ></TestHistorySourceVerdicts>
       <TestHistorySegmentSummary
         segment={segment}
         isStartSegment={isStartSegment}

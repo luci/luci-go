@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { Box, IconButton, Typography } from '@mui/material';
+import InfoOutlineIcon from '@mui/icons-material/InfoOutlined';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
 
 import { useTestVariantBranch } from '../context';
 
 import { TestHistorySegment } from './test_history_segment';
-
 export function TestHistory() {
   const testVariantBranch = useTestVariantBranch();
   const [hasExpandedSegment, setHasExpandedSegment] = useState(false);
@@ -31,8 +31,14 @@ export function TestHistory() {
     setHasExpandedSegment(false);
   };
 
+  const testFailureRateInfo = `
+  The failure rate is not based on a fixed time window or number of runs.
+  Instead, it looks at the current failure rate and determines if new test runs deviate from the expected value.
+  If it does, then it will create a new segment and move the current failure rate to the previous slot.
+  `;
+
   return (
-    <Box sx={{ minHeight: '400px', p: 1.5 }}>
+    <Box sx={{ minHeight: '400px', p: 2 }}>
       <Box
         sx={{
           display: 'flex',
@@ -53,9 +59,54 @@ export function TestHistory() {
           </>
         )}
       </Box>
-      <Box sx={{ display: 'flex', flexDirection: 'row', mt: 1 }}>
-        {testVariantBranch?.segments.map((segment, index) => {
-          return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          mt: 3,
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            mt: 1,
+            mr: 2,
+            minWidth: '125px',
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ height: '72px', color: 'text.secondary', pt: 1 }}
+          >
+            Build
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+              }}
+            >
+              Test failure rate
+            </Typography>
+            <Tooltip title={testFailureRateInfo}>
+              <InfoOutlineIcon
+                sx={{ width: '16px', color: 'text.secondary' }}
+              ></InfoOutlineIcon>
+            </Tooltip>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'row', mt: 1 }}>
+          {testVariantBranch?.segments.map((segment, index) => (
             <TestHistorySegment
               setExpandedTestHistory={expandOneSegment}
               testHistoryHasExpandedSegment={hasExpandedSegment}
@@ -66,8 +117,8 @@ export function TestHistory() {
                 index === testVariantBranch.segments.length - 1 ? true : false
               }
             ></TestHistorySegment>
-          );
-        })}
+          ))}
+        </Box>
       </Box>
     </Box>
   );
