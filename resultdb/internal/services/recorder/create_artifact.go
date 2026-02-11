@@ -136,33 +136,6 @@ type artifactCreationHandler struct {
 	bufSize                        int
 }
 
-// HandlePUT implements router.Handler.
-// Invocation artifact uploads happen via this path. It expects the full artifact
-// resource name in the URL and implements idempotent artifact creation semantics
-// (create or replace).
-func (h *artifactCreationHandler) HandlePUT(c *router.Context) {
-	ac := &artifactCreator{artifactCreationHandler: h}
-	mw := artifactcontent.NewMetricsWriter(c)
-	defer func() {
-		mw.Upload(c.Request.Context(), ac.size)
-	}()
-
-	const isLegacyEndpoint = true
-	err := ac.handle(c, isLegacyEndpoint)
-	st, ok := appstatus.Get(err)
-	switch {
-	case ok:
-		logging.Warningf(c.Request.Context(), "Responding with %s: %s", st.Code(), err)
-		http.Error(c.Writer, st.Message(), grpcutil.CodeStatus(st.Code()))
-	case err != nil:
-		logging.Errorf(c.Request.Context(), "Internal server error: %s", err)
-		http.Error(c.Writer, "Internal server error", http.StatusInternalServerError)
-	default:
-		// For PUT requests, status 204 (no content) is the normal success code.
-		c.Writer.WriteHeader(http.StatusNoContent)
-	}
-}
-
 // HandlePOST implements router.Handler.
 // Work unit artifact uploads happen via this path. It expects the work unit resource name
 // in the URL only. The test identifier, result id (if any) and artifact id are passed
@@ -179,8 +152,7 @@ func (h *artifactCreationHandler) HandlePOST(c *router.Context) {
 		mw.Upload(c.Request.Context(), ac.size)
 	}()
 
-	const isLegacyEndpoint = false
-	err := ac.handle(c, isLegacyEndpoint)
+	err := ac.handle(c)
 	st, ok := appstatus.Get(err)
 	switch {
 	case ok:
@@ -201,11 +173,11 @@ type artifactCreator struct {
 	size int64
 }
 
-func (ac *artifactCreator) handle(c *router.Context, isLegacyEndpoint bool) error {
+func (ac *artifactCreator) handle(c *router.Context) error {
 	ctx := c.Request.Context()
 
 	// Parse and validate the request.
-	req, err := parseStreamingArtifactUploadRequest(c, isLegacyEndpoint, ac.MaxArtifactContentStreamLength)
+	req, err := parseStreamingArtifactUploadRequest(c, ac.MaxArtifactContentStreamLength)
 	if err != nil {
 		return err
 	}
@@ -353,11 +325,7 @@ func (ac *artifactCreator) genWriteResourceName(ctx context.Context, req *artifa
 // parseStreamingArtifactUploadRequest parses an artifactCreationRequest based on the HTTP request.
 // The request payload is not parsed so that it can be handled in streaming fashion; as such
 // the `data` field is not populated.
-//
-// isLegacyEndpoint indicates whether the endpoint being handled is the legacy PUT endpoint that
-// accepts the full artifact resource name as the URL instead of the newer POST endpoint that
-// uses the parent invocation / work unit name as the URL.
-func parseStreamingArtifactUploadRequest(c *router.Context, isLegacyEndpoint bool, maxStreamLength int64) (*artifactCreationRequest, error) {
+func parseStreamingArtifactUploadRequest(c *router.Context, maxStreamLength int64) (*artifactCreationRequest, error) {
 	cfg, err := config.Service(c.Request.Context())
 	if err != nil {
 		return nil, err
@@ -373,109 +341,74 @@ func parseStreamingArtifactUploadRequest(c *router.Context, isLegacyEndpoint boo
 	// This may be missing the ModuleVariant.
 	var testIDStructured *pb.TestIdentifier
 
-	if isLegacyEndpoint {
-		// Read the artifact name.
-		// We must use EscapedPath(), not Path, to preserve test ID's own encoding.
-		artifactName := strings.TrimPrefix(c.Request.URL.EscapedPath(), "/")
+	// The endpoint should be:
+	// - invocations/{INVOCATION_ID}/artifacts
+	// - rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}/artifacts
+	// To stick closely to aip.dev/133.
+	collectionName := strings.TrimPrefix(c.Request.URL.EscapedPath(), "/")
+	workUnitOrInvocationName, found := strings.CutSuffix(collectionName, "/artifacts")
+	if !found {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "URL: expected suffix '/artifacts' for artifacts upload endpoint")
+	}
 
-		// Parse and validate the artifact name.
+	// Read the work unit or invocation name from the URL.
+	if strings.HasPrefix(workUnitOrInvocationName, "invocations/") {
 		var invIDString string
-		invIDString, testID, resultID, artifactID, err = pbutil.ParseLegacyArtifactName(artifactName)
+		invIDString, err = pbutil.ParseInvocationName(workUnitOrInvocationName)
 		if err != nil {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "URL: bad artifact name: %s", err)
+			return nil, appstatus.Errorf(codes.InvalidArgument, "URL: bad invocation name: %s", err)
 		}
 		invocationID = invocations.ID(invIDString)
+	} else {
+		workUnitID, err = workunits.ParseName(workUnitOrInvocationName)
+		if err != nil {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "URL: bad work unit name: %s", err)
+		}
+	}
 
-		// Validate the test ID with respect to the configured test schemes.
-		if testID != "" {
-			testIDBase, err := pbutil.ParseAndValidateTestID(testID)
-			if err != nil {
-				panic("logic error: ParseLegacyArtifactName did not validate the TestID")
-			}
-			if err := validateTestIDToScheme(cfg, testIDBase); err != nil {
-				return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: test_id_structured: %s", err)
-			}
-			testIDStructured = &pb.TestIdentifier{
-				ModuleName:   testIDBase.ModuleName,
-				ModuleScheme: testIDBase.ModuleScheme,
-				// Use nil instead of &pb.Variant{} to indicate we don't know the variant,
-				// as opposed to the variant being the empty variant.
-				ModuleVariant: nil,
-				CoarseName:    testIDBase.CoarseName,
-				FineName:      testIDBase.FineName,
-				CaseName:      testIDBase.CaseName,
-			}
+	// Read test ID, result ID and artifact ID from request headers.
+	testIDStructured, err = parseOptionalTestIDHeaders(c.Request.Header)
+	if err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
+	}
+
+	resultID, err = readRequestHeaderUnescaped(c.Request.Header, resultIDHeaderKey)
+	if err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "%s header: %s", resultIDHeaderKey, err)
+	}
+
+	// Validate the test ID and result ID.
+	if testIDStructured != nil {
+		if err := pbutil.ValidateStructuredTestIdentifierForStorage(testIDStructured); err != nil {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: test_id_structured: %s", err)
+		}
+		testIDBase := pbutil.ExtractBaseTestIdentifier(testIDStructured)
+		if err := validateTestIDToScheme(cfg, testIDBase); err != nil {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: test_id_structured: %s", err)
+		}
+		testID = pbutil.EncodeTestID(testIDBase)
+
+		if resultID == "" {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "%s header is missing", resultIDHeaderKey)
+		}
+		if err := pbutil.ValidateResultID(resultID); err != nil {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: result_id: %s", err)
 		}
 	} else {
-		// The endpoint should be:
-		// - invocations/{INVOCATION_ID}/artifacts
-		// - rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}/artifacts
-		// To stick closely to aip.dev/133.
-		collectionName := strings.TrimPrefix(c.Request.URL.EscapedPath(), "/")
-		workUnitOrInvocationName, found := strings.CutSuffix(collectionName, "/artifacts")
-		if !found {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "URL: expected suffix '/artifacts' for artifacts upload endpoint")
+		if resultID != "" {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: result_id: specified, but no test ID is specified; did you forget to set %s and other Test- headers?", testModuleNameHeaderKey)
 		}
+	}
 
-		// Read the work unit or invocation name from the URL.
-		if strings.HasPrefix(workUnitOrInvocationName, "invocations/") {
-			var invIDString string
-			invIDString, err = pbutil.ParseInvocationName(workUnitOrInvocationName)
-			if err != nil {
-				return nil, appstatus.Errorf(codes.InvalidArgument, "URL: bad invocation name: %s", err)
-			}
-			invocationID = invocations.ID(invIDString)
-		} else {
-			workUnitID, err = workunits.ParseName(workUnitOrInvocationName)
-			if err != nil {
-				return nil, appstatus.Errorf(codes.InvalidArgument, "URL: bad work unit name: %s", err)
-			}
-		}
-
-		// Read test ID, result ID and artifact ID from request headers.
-		testIDStructured, err = parseOptionalTestIDHeaders(c.Request.Header)
-		if err != nil {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
-		}
-
-		resultID, err = readRequestHeaderUnescaped(c.Request.Header, resultIDHeaderKey)
-		if err != nil {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "%s header: %s", resultIDHeaderKey, err)
-		}
-
-		// Validate the test ID and result ID.
-		if testIDStructured != nil {
-			if err := pbutil.ValidateStructuredTestIdentifierForStorage(testIDStructured); err != nil {
-				return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: test_id_structured: %s", err)
-			}
-			testIDBase := pbutil.ExtractBaseTestIdentifier(testIDStructured)
-			if err := validateTestIDToScheme(cfg, testIDBase); err != nil {
-				return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: test_id_structured: %s", err)
-			}
-			testID = pbutil.EncodeTestID(testIDBase)
-
-			if resultID == "" {
-				return nil, appstatus.Errorf(codes.InvalidArgument, "%s header is missing", resultIDHeaderKey)
-			}
-			if err := pbutil.ValidateResultID(resultID); err != nil {
-				return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: result_id: %s", err)
-			}
-		} else {
-			if resultID != "" {
-				return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: result_id: specified, but no test ID is specified; did you forget to set %s and other Test- headers?", testModuleNameHeaderKey)
-			}
-		}
-
-		artifactID, err = readRequestHeaderUnescaped(c.Request.Header, artifactIDHeaderKey)
-		if err != nil {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "%s header: %s", artifactIDHeaderKey, err)
-		}
-		if artifactID == "" {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "%s header is missing", artifactIDHeaderKey)
-		}
-		if err := pbutil.ValidateArtifactID(artifactID); err != nil {
-			return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: artifact_id: %s", err)
-		}
+	artifactID, err = readRequestHeaderUnescaped(c.Request.Header, artifactIDHeaderKey)
+	if err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "%s header: %s", artifactIDHeaderKey, err)
+	}
+	if artifactID == "" {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "%s header is missing", artifactIDHeaderKey)
+	}
+	if err := pbutil.ValidateArtifactID(artifactID); err != nil {
+		return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: artifact_id: %s", err)
 	}
 
 	// Parse and validate the update token.

@@ -107,8 +107,6 @@ type createArtifactRequest struct {
 	ArtifactID string
 	// The artifact type header value.
 	ArtifactType string
-	// Whether PUT should be used instead of POST.
-	UsePUT bool
 }
 
 func prepareCreateArtifactRequest(req createArtifactRequest) *http.Request {
@@ -241,12 +239,7 @@ func TestCreateArtifact(t *testing.T) {
 				Request: prepareCreateArtifactRequest(req).WithContext(ctx),
 				Writer:  rec,
 			}
-			if req.UsePUT {
-				// Legacy requests.
-				ach.HandlePUT(c)
-			} else {
-				ach.HandlePOST(c)
-			}
+			ach.HandlePOST(c)
 			return rec
 		}
 
@@ -264,7 +257,6 @@ func TestCreateArtifact(t *testing.T) {
 			ResultID:     "result-id",
 			ArtifactID:   "artifact-id",
 			ArtifactType: "COVERAGE_REPORT",
-			UsePUT:       false,
 		}
 
 		// Each t.Run(...) runs isolated from the other cases, so there is no need to reset state
@@ -290,14 +282,6 @@ func TestCreateArtifact(t *testing.T) {
 					rsp := send(ctx, req)
 					assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
 					assert.Loosely(t, rsp.Body.String(), should.HavePrefix(`URL: bad invocation name: does not match pattern`))
-				})
-				t.Run(`legacy endpoint`, func(t *ftt.Test) {
-					req.UsePUT = true
-					// The path should be an artifact name, not an invocation name.
-					req.URLPath = "invocations/a"
-					rsp := send(ctx, req)
-					assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
-					assert.Loosely(t, rsp.Body.String(), should.HavePrefix("URL: bad artifact name: does not match pattern"))
 				})
 			})
 			t.Run(`test ID`, func(t *ftt.Test) {
@@ -476,23 +460,6 @@ func TestCreateArtifact(t *testing.T) {
 			})
 			t.Run(`with invocations`, func(t *ftt.Test) {
 				req.URLPath = "invocations/inv/artifacts"
-
-				t.Run(`missing update token`, func(t *ftt.Test) {
-					req.UpdateToken = ""
-					rsp := send(ctx, req)
-					assert.Loosely(t, rsp.Code, should.Equal(http.StatusUnauthorized))
-					assert.Loosely(t, rsp.Body.String(), should.HavePrefix(`Update-Token header is missing`))
-				})
-				t.Run(`invalid update token`, func(t *ftt.Test) {
-					req.UpdateToken = "invalid"
-					rsp := send(ctx, req)
-					assert.Loosely(t, rsp.Code, should.Equal(http.StatusForbidden))
-					assert.Loosely(t, rsp.Body.String(), should.HavePrefix(`invalid Update-Token header value`))
-				})
-			})
-			t.Run(`with legacy request construction`, func(t *ftt.Test) {
-				req.UsePUT = true
-				req.URLPath = "invocations/inv/artifacts/a"
 
 				t.Run(`missing update token`, func(t *ftt.Test) {
 					req.UpdateToken = ""
@@ -742,24 +709,6 @@ func TestCreateArtifact(t *testing.T) {
 					assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.Equal(1))
 				})
 			})
-			t.Run(`legacy-form request`, func(t *ftt.Test) {
-				req.UsePUT = true
-				// Pass Test ID, Result ID and Artifact ID via URL, not via headers.
-				req.URLPath = pbutil.LegacyTestResultArtifactName(string(invID), pbutil.TestIDFromStructuredTestIdentifier(tvID), "result-id", "artifact-id")
-				req.TestID = nil
-				req.ResultID = ""
-				req.ArtifactID = ""
-
-				rsp := send(ctx, req)
-				// 204 (No Content) is the expected status code for successful PUT requests.
-				assert.Loosely(t, rsp.Code, should.Equal(http.StatusNoContent))
-
-				// Verify with the database.
-				got, err := artifacts.Read(span.Single(ctx), expectedArtifact.Name)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, got.Artifact, should.Match(expectedArtifact))
-				assert.Loosely(t, got.RBECASHash, should.Match(req.ContentHash))
-			})
 			t.Run(`invocation-level artifact`, func(t *ftt.Test) {
 				req.TestID = nil
 				req.ResultID = ""
@@ -772,21 +721,6 @@ func TestCreateArtifact(t *testing.T) {
 				t.Run(`base case`, func(t *ftt.Test) {
 					rsp := send(ctx, req)
 					assert.Loosely(t, rsp.Code, should.Equal(http.StatusCreated))
-
-					// Verify with the database.
-					got, err := artifacts.Read(span.Single(ctx), expectedArtifact.Name)
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, got.Artifact, should.Match(expectedArtifact))
-					assert.Loosely(t, got.RBECASHash, should.Match(req.ContentHash))
-				})
-				t.Run(`legacy-form request`, func(t *ftt.Test) {
-					req.UsePUT = true
-					req.URLPath = pbutil.LegacyInvocationArtifactName(string(invID), "artifact-id")
-					req.ArtifactID = "" // Do not pass artifact ID via header.
-
-					rsp := send(ctx, req)
-					// 204 (No Content) is the expected status code for successful PUT requests.
-					assert.Loosely(t, rsp.Code, should.Equal(http.StatusNoContent))
 
 					// Verify with the database.
 					got, err := artifacts.Read(span.Single(ctx), expectedArtifact.Name)
