@@ -12,50 +12,73 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, CircularProgress, Typography } from '@mui/material';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { Box, Tab, Tabs, Tooltip, IconButton } from '@mui/material';
+import { useRef, useState } from 'react';
 
-import { TestAggregationProvider, useTestAggregationContext } from './context';
+import { AggregationView } from './aggregation_view/aggregation_view';
+import { TestAggregationProvider } from './context/provider';
 import { TestAggregationToolbar } from './test_aggregation_toolbar';
-import { TestAggregationVirtualTree } from './test_aggregation_virtual_tree';
+import { TriageView } from './triage_view';
 
 export interface TestAggregationViewerProps {
   initialExpandedIds?: string[];
 }
 
-export function TestAggregationViewer(props: TestAggregationViewerProps) {
-  return (
-    <TestAggregationProvider {...props}>
-      <TestAggregationDataDisplay />
-    </TestAggregationProvider>
-  );
+export interface TestInvestigationViewHandle {
+  locateCurrentTest: () => void;
 }
 
-function TestAggregationDataDisplay() {
-  const { flattenedItems, isLoading } = useTestAggregationContext();
+export function TestAggregationViewer(props: TestAggregationViewerProps) {
+  const [activeTab, setActiveTab] = useState(0);
+  const activeViewRef = useRef<TestInvestigationViewHandle>(null);
+
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
+  const handleLocateCurrentTest = () => {
+    activeViewRef.current?.locateCurrentTest();
+  };
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <TestAggregationToolbar />
-      <Box
-        sx={{
-          flexGrow: 1,
-          overflow:
-            !isLoading && flattenedItems.length === 0 ? 'auto' : 'hidden',
-        }}
-      >
-        {isLoading ? (
-          <Box display="flex" justifyContent="center" p={2}>
-            <CircularProgress />
-          </Box>
-        ) : flattenedItems.length === 0 ? (
-          <Box p={2}>
-            <Typography variant="body2" color="text.secondary">
-              No failures found.
-            </Typography>
-          </Box>
-        ) : (
-          <TestAggregationVirtualTree />
-        )}
+    <TestAggregationProvider>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <TestAggregationToolbar onLocateCurrentTest={handleLocateCurrentTest} />
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            aria-label="test aggregation views"
+            variant="fullWidth"
+            centered
+          >
+            <Tab label="Test Results" />
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  Triage
+                  <Tooltip
+                    title="Tests are grouped by status and failure reason, statuses are ordered by severity."
+                    arrow
+                    placement="top"
+                  >
+                    <IconButton size="small" sx={{ p: 0 }}>
+                      <HelpOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              }
+            />
+          </Tabs>
+        </Box>
+        <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+          {activeTab === 0 && (
+            <AggregationView ref={activeViewRef} {...props} />
+          )}
+          {activeTab === 1 && <TriageView ref={activeViewRef} {...props} />}
+        </Box>
       </Box>
-    </Box>
+    </TestAggregationProvider>
   );
 }

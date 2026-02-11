@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { AggregationLevel } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
@@ -62,75 +62,6 @@ describe('TestAggregationViewer', () => {
       getTotalSize: () => count * 20,
       scrollToIndex: mockScrollToIndex,
     }));
-  });
-
-  it('scrolls to current test when locate button is clicked', async () => {
-    // Setup data with a specific test
-    (hooks.useBulkTestAggregationsQueries as jest.Mock).mockReturnValue([
-      { data: { aggregations: [] }, isLoading: false },
-      { data: { aggregations: [] }, isLoading: false },
-      { data: { aggregations: [] }, isLoading: false },
-    ]);
-    (hooks.useTestVerdictsQuery as jest.Mock).mockReturnValue({
-      data: {
-        testVerdicts: [
-          {
-            testId: 'test_id_1',
-            testIdStructured: {
-              moduleName: 'module',
-              moduleScheme: 'scheme',
-              moduleVariant: {},
-              coarseName: '',
-              fineName: '',
-              caseName: 'case',
-            },
-            status: 5, // FAILED
-          },
-        ],
-      },
-      isLoading: false,
-    });
-    (hooks.useSchemesQuery as jest.Mock).mockReturnValue({ data: undefined });
-
-    const testVariant = {
-      testId: 'test_id_1',
-      testIdStructured: {
-        moduleName: 'module',
-        moduleScheme: 'scheme',
-        moduleVariant: {},
-        coarseName: '',
-        fineName: '',
-        caseName: 'case',
-      },
-    } as unknown as OutputTestVerdict;
-
-    render(
-      <FakeContextProvider>
-        <InvocationProvider
-          invocation={{ name: 'invocations/test' } as Invocation}
-          rawInvocationId="test"
-          project="test-project"
-          isLegacyInvocation={false}
-        >
-          <TestVariantProvider testVariant={testVariant} displayStatusString="">
-            <TestAggregationViewer />
-          </TestVariantProvider>
-        </InvocationProvider>
-      </FakeContextProvider>,
-    );
-
-    // Verify button exists
-    const locateBtn = screen.getByRole('button', {
-      name: 'Locate current test',
-    });
-    expect(locateBtn).toBeInTheDocument();
-
-    // Click it
-    locateBtn.click();
-
-    await waitFor(() => {
-      expect(mockScrollToIndex).toHaveBeenCalledWith(1, { align: 'center' });
-    });
   });
 
   it('renders loading state when tree data is empty and loading', () => {

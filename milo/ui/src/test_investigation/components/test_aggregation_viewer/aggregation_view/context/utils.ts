@@ -20,25 +20,9 @@ import {
   TestVerdict_Status,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 
-import { AggregationNode } from '../aggregation_view/context/context';
-import { createPrefixForTest, getTestIdentifierPrefixId } from '../utils';
+import { createPrefixForTest, getTestIdentifierPrefixId } from '../../utils';
 
-export function getVerdictNodeId(v: TestVerdict): string {
-  if (v.testIdStructured?.moduleVariantHash) {
-    return `${v.testId}/${v.testIdStructured.moduleVariantHash}`;
-  }
-  return v.testId;
-}
-
-export function getVariantDefinitionString(def?: {
-  [key: string]: string;
-}): string {
-  if (!def) return '';
-  return Object.entries(def)
-    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-    .map(([k, v]) => `${k}=${v}`)
-    .join(', ');
-}
+import { AggregationNode } from './context';
 
 export function buildAggregationFilterString(
   selectedStatuses: Set<string>,
@@ -88,10 +72,10 @@ export function registerNode(
   } else {
     // Merge updates
     const existing = nodes.get(node.id)!;
-    if (!existing.isLeaf && !node.isLeaf && node.aggregationData) {
+    if (!node.isLeaf && node.aggregationData && !existing.isLeaf) {
       existing.aggregationData = node.aggregationData;
     }
-    if (existing.isLeaf && node.isLeaf && node.verdict) {
+    if (node.isLeaf && node.verdict && existing.isLeaf) {
       existing.verdict = node.verdict;
     }
   }
@@ -287,11 +271,9 @@ export function mergeAndFlatten(
     const node = { ...original };
     node.depth = depth;
 
-    if (aggDataMap.has(nodeId)) {
-      if (!node.isLeaf) {
-        node.aggregationData = aggDataMap.get(nodeId);
-        node.isLoading = false;
-      }
+    if (!node.isLeaf && aggDataMap.has(nodeId)) {
+      node.aggregationData = aggDataMap.get(nodeId);
+      node.isLoading = false;
     }
 
     node.label = resolveLabel(node, schemes);

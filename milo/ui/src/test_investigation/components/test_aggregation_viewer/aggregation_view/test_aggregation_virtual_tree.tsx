@@ -17,10 +17,10 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useEffect, useRef } from 'react';
 
 import { AggregationTreeItem } from './aggregation_tree_item';
-import { useTestAggregationContext } from './context';
+import { useAggregationViewContext } from './context/context';
 
 export function TestAggregationVirtualTree() {
-  const { flattenedItems, scrollRequest } = useTestAggregationContext();
+  const { flattenedItems, scrollRequest } = useAggregationViewContext();
   const parentRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({

@@ -38,9 +38,14 @@ const STATUS_OPTIONS: CategoryOption[] = [
   },
 ];
 
-export function TestAggregationToolbar() {
-  const { selectedStatuses, setSelectedStatuses, locateCurrentTest } =
-    useTestAggregationContext();
+export interface TestAggregationToolbarProps {
+  onLocateCurrentTest?: () => void;
+}
+
+export function TestAggregationToolbar({
+  onLocateCurrentTest,
+}: TestAggregationToolbarProps) {
+  const { selectedStatuses, setSelectedStatuses } = useTestAggregationContext();
 
   return (
     <Box
@@ -53,9 +58,15 @@ export function TestAggregationToolbar() {
       }}
     >
       <Tooltip title="Locate current test">
-        <IconButton size="small" onClick={locateCurrentTest}>
-          <GpsFixed fontSize="small" />
-        </IconButton>
+        <span>
+          <IconButton
+            size="small"
+            onClick={onLocateCurrentTest}
+            disabled={!onLocateCurrentTest}
+          >
+            <GpsFixed fontSize="small" />
+          </IconButton>
+        </span>
       </Tooltip>
       <MultiSelectCategoryChip
         categoryName="Status"

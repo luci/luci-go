@@ -40,12 +40,14 @@ import {
   getSemanticStatusFromVerdict,
 } from '@/test_investigation/utils/drawer_tree_utils';
 
+import { getVariantDefinitionString } from '../context/utils';
+
 import {
   AggregationNode,
   IntermediateAggregationNode,
   LeafAggregationNode,
-  useTestAggregationContext,
-} from './context';
+  useAggregationViewContext,
+} from './context/context';
 
 interface AggregationTreeItemProps {
   node: AggregationNode;
@@ -59,7 +61,7 @@ export function AggregationTreeItem({
   measureRef,
 }: AggregationTreeItemProps) {
   const { expandedIds, toggleExpansion, highlightedNodeId } =
-    useTestAggregationContext();
+    useAggregationViewContext();
   const rawInvocationId = useRawInvocationId();
 
   const isExpanded = expandedIds.has(node.id);
@@ -224,9 +226,7 @@ function IntermediateTreeItemContent({
     node.aggregationData.id.id?.moduleVariant?.def
   ) {
     const def = node.aggregationData.id.id.moduleVariant.def;
-    const text = Object.entries(def)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(', ');
+    const text = getVariantDefinitionString(def);
     if (text) {
       variantSuffix = (
         <Tooltip title={text}>

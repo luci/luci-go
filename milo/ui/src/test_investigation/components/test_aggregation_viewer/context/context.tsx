@@ -24,11 +24,11 @@ export const TestAggregationContext =
   createContext<TestAggregationContextValue | null>(null);
 
 export function useTestAggregationContext() {
-  const context = useContext(TestAggregationContext);
-  if (!context) {
+  const ctx = useContext(TestAggregationContext);
+  if (!ctx) {
     throw new Error(
-      'useTestAggregation must be used within a TestAggregationProvider',
+      'useTestAggregationContext must be used within a TestAggregationProvider',
     );
   }
-  return context;
+  return ctx;
 }
