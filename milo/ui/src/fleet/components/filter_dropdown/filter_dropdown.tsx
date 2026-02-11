@@ -170,7 +170,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew<T>(
       return {
         isCategoryScoped: true,
         parentSearchQuery: parts[0],
-        childrenSearchQuery: parts[1],
+        childrenSearchQuery: parts.slice(1).join(categoryValueSeparator),
       };
     } else {
       return {
