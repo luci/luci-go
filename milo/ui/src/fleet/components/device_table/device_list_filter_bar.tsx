@@ -18,6 +18,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -250,9 +251,22 @@ const OptionComponent = forwardRef<
     onSelectedOptionsChange(newValues);
   };
 
-  const fuzzySorted = fuzzySort(childrenSearchQuery)(
-    (option as StringListCategory).options || [],
-    (o) => o.label,
+  const initialSelections = useRef(selectedOptions);
+  const fuzzySorted = useMemo(
+    () =>
+      fuzzySort(childrenSearchQuery)(
+        (option as StringListCategory).options || [],
+        (o) => o.label,
+      ).sort((a, b) => {
+        const isASelected = initialSelections.current.includes(a.el.value);
+        const isBSelected = initialSelections.current.includes(b.el.value);
+
+        if (isASelected && !isBSelected && a.score >= 0) return -1;
+        if (isBSelected && !isASelected && b.score >= 0) return 1;
+
+        return b.score - a.score;
+      }),
+    [childrenSearchQuery, option],
   );
 
   return (
