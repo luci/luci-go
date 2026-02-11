@@ -71,6 +71,7 @@ const EXTRA_COLUMN_IDS = [
   'label-run_target',
   'label-hostname',
   'fc_offline_since',
+  'realm',
 ] satisfies (keyof typeof ANDROID_COLUMN_OVERRIDES)[];
 
 export const AndroidDevicesPage = () => {

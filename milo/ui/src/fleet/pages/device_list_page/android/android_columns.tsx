@@ -130,6 +130,10 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
     minWidth: 100,
     renderHeader: () => <RunTargetColumnHeader />,
   },
+  realm: {
+    valueGetter: (_, device) => device.realm,
+    orderByField: 'realm',
+  },
   lab_name: {
     orderByField: 'lab_name',
   },
