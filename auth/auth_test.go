@@ -945,6 +945,28 @@ func TestCredentialHelperEnv(t *testing.T) {
 	})
 }
 
+func TestSelectBestMethod(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("SelectBestMethod", t, func(t *ftt.Test) {
+		ctx := context.Background()
+
+		t.Run("Defaults to UserCredentialsMethod", func(t *ftt.Test) {
+			ctx := lucictx.SetLocalAuth(ctx, nil)
+			m := SelectBestMethod(ctx, Options{})
+			assert.Loosely(t, m, should.Equal(UserCredentialsMethod))
+		})
+
+		t.Run("Detects env var", func(t *ftt.Test) {
+			env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
+			ctx := env.SetInCtx(ctx)
+			ctx = lucictx.SetLocalAuth(ctx, nil)
+			m := SelectBestMethod(ctx, Options{})
+			assert.Loosely(t, m, should.Equal(CredentialHelperMethod))
+		})
+	})
+}
+
 func newAuth(loginMode LoginMode, base, iam internal.TokenProvider, actAs string) (*Authenticator, context.Context) {
 	// Use auto-advancing fake time.
 	ctx := mathrand.Set(context.Background(), rand.New(rand.NewSource(123)))

@@ -665,7 +665,7 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 	// when actually invoking it. If ID tokens are requested we should not
 	// select this method as credential helpers currently don't support ID
 	// tokens.
-	if opts.CredentialHelper != nil {
+	if opts.CredentialHelper != nil || environ.FromCtx(ctx).Get("LUCI_AUTH_CREDENTIAL_HELPER") != "" {
 		if !opts.UseIDTokens {
 			return CredentialHelperMethod
 		}
