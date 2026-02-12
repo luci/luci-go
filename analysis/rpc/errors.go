@@ -20,13 +20,13 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 )
 
-// invalidArgumentError annotates err as having an invalid argument.
+// InvalidArgumentError annotates err as having an invalid argument.
 // The error message is shared with the requester as is.
 //
 // Note that this differs from FailedPrecondition. It indicates arguments
 // that are problematic regardless of the state of the system
 // (e.g., a malformed file name).
-func invalidArgumentError(err error) error {
+func InvalidArgumentError(err error) error {
 	return appstatus.Attachf(err, codes.InvalidArgument, "%s", err)
 }
 

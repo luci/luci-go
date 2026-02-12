@@ -27,7 +27,7 @@ func NewBuganizerTesterServer() *pb.DecoratedBuganizerTester {
 	return &pb.DecoratedBuganizerTester{
 		Prelude:  checkAllowedAdminPrelude,
 		Service:  &buganizerTesterServer{},
-		Postlude: gRPCifyAndLogPostlude,
+		Postlude: GRPCifyAndLogPostlude,
 	}
 }
 

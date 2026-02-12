@@ -90,7 +90,7 @@ func NewRulesServer(uiBaseURL string, client buganizer.Client, selfEmail string)
 			client:    client,
 			selfEmail: selfEmail,
 		},
-		Postlude: gRPCifyAndLogPostlude,
+		Postlude: GRPCifyAndLogPostlude,
 	}
 }
 
@@ -98,7 +98,7 @@ func NewRulesServer(uiBaseURL string, client buganizer.Client, selfEmail string)
 func (*rulesServer) Get(ctx context.Context, req *pb.GetRuleRequest) (*pb.Rule, error) {
 	project, ruleID, err := parseRuleName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("name: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetRule); err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ func ruleFieldAccess(ctx context.Context, project string) (ruleMask, error) {
 func (*rulesServer) List(ctx context.Context, req *pb.ListRulesRequest) (*pb.ListRulesResponse, error) {
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermListRules); err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func (*rulesServer) List(ctx context.Context, req *pb.ListRulesRequest) (*pb.Lis
 func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.Rule, error) {
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermCreateRule, perms.PermGetRuleDefinition); err != nil {
 		return nil, err
@@ -201,7 +201,7 @@ func (*rulesServer) Create(ctx context.Context, req *pb.CreateRuleRequest) (*pb.
 		return nil, err
 	}
 	if err := validateCreateRuleRequest(req, cfg.Config); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 
 	ruleMask, err := ruleFieldAccess(ctx, project)
@@ -275,14 +275,14 @@ func (s *rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRule
 	}
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	// Check standard rule creation permissions.
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermCreateRule, perms.PermGetRuleDefinition); err != nil {
 		return nil, err
 	}
 	if err := validateCreateRuleWithNewIssueRequest(req); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 	if err := s.checkComponentAccess(ctx, req.Issue.Component.GetIssueTracker()); err != nil {
 		return nil, err
@@ -315,7 +315,7 @@ func (s *rulesServer) CreateWithNewIssue(ctx context.Context, req *pb.CreateRule
 			code == codes.OutOfRange {
 			// Error indicates something wrong with the request,
 			// surface these back to the caller.
-			return nil, invalidArgumentError(errors.Fmt("creating issue: %w", err))
+			return nil, InvalidArgumentError(errors.Fmt("creating issue: %w", err))
 		}
 
 		// GRPCifyAndLog will log this, and report an internal error to the caller.
@@ -422,7 +422,7 @@ func toBuganizerAccessLevel(accessLevel pb.CreateRuleWithNewIssueRequest_Issue_I
 func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.Rule, error) {
 	project, ruleID, err := parseRuleName(req.Rule.GetName())
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("rule: name: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("rule: name: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermUpdateRule, perms.PermGetRuleDefinition); err != nil {
 		return nil, err
@@ -432,7 +432,7 @@ func (*rulesServer) Update(ctx context.Context, req *pb.UpdateRuleRequest) (*pb.
 		return nil, err
 	}
 	if err := validateUpdateRuleRequest(req, cfg.Config); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 	ruleMask, err := ruleFieldAccess(ctx, project)
 	if err != nil {
@@ -628,7 +628,7 @@ func (*rulesServer) LookupBug(ctx context.Context, req *pb.LookupBugRequest) (*p
 		ID:     req.Id,
 	}
 	if err := bug.Validate(); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 	rules, err := rules.ReadByBug(span.Single(ctx), bug)
 	if err != nil {
@@ -653,13 +653,13 @@ func (*rulesServer) LookupBug(ctx context.Context, req *pb.LookupBugRequest) (*p
 func (*rulesServer) PrepareDefaults(ctx context.Context, req *pb.PrepareRuleDefaultsRequest) (*pb.PrepareRuleDefaultsResponse, error) {
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetConfig); err != nil {
 		return nil, err
 	}
 	if err := validatePrepareRuleDefaultsRequest(req); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 	cfg, err := readProjectConfig(ctx, project)
 	if err != nil {

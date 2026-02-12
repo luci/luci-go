@@ -55,6 +55,7 @@ import (
 	"go.chromium.org/luci/analysis/internal/views"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/analysis/rpc"
+	"go.chromium.org/luci/analysis/rpc/testhistory"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/grpc/prpc"
@@ -150,7 +151,7 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 	analysispb.RegisterRulesServer(srv, rpc.NewRulesServer(uiBaseURL(basePath), bc, selfEmail))
 
 	analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
-	analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer(tsc))
+	analysispb.RegisterTestHistoryServer(srv, testhistory.NewTestHistoryServer(tsc))
 	analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
 	analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc, trc, sc))
 	analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))

@@ -35,14 +35,14 @@ func NewProjectsServer() *pb.DecoratedProjects {
 	return &pb.DecoratedProjects{
 		Prelude:  checkAllowedPrelude,
 		Service:  &projectServer{},
-		Postlude: gRPCifyAndLogPostlude,
+		Postlude: GRPCifyAndLogPostlude,
 	}
 }
 
 func (*projectServer) GetConfig(ctx context.Context, req *pb.GetProjectConfigRequest) (*pb.ProjectConfig, error) {
 	project, err := parseProjectConfigName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("name: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetConfig); err != nil {

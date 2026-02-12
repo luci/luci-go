@@ -70,14 +70,14 @@ func NewClustersServer(analysisClient AnalysisClient) *pb.DecoratedClusters {
 	return &pb.DecoratedClusters{
 		Prelude:  checkAllowedPrelude,
 		Service:  &clustersServer{analysisClient: analysisClient},
-		Postlude: gRPCifyAndLogPostlude,
+		Postlude: GRPCifyAndLogPostlude,
 	}
 }
 
 // Cluster clusters a list of test failures. See proto definition for more.
 func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb.ClusterResponse, error) {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	// We could make an implementation that gracefully degrades if
 	// perms.PermGetRule is not available (i.e. by not returning the
@@ -89,7 +89,7 @@ func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb
 	}
 
 	if len(req.TestResults) > MaxClusterRequestSize {
-		return nil, invalidArgumentError(fmt.Errorf(
+		return nil, InvalidArgumentError(fmt.Errorf(
 			"too many test results: at most %v test results can be clustered in one request", MaxClusterRequestSize))
 	}
 
@@ -172,7 +172,7 @@ func cluster(ctx context.Context, cfg *compiledcfg.ProjectConfig, ruleset *cache
 
 func validateTestResult(i int, tr *pb.ClusterRequest_TestResult) error {
 	if tr.TestId == "" {
-		return invalidArgumentError(fmt.Errorf("test result %v: test ID must not be empty", i))
+		return InvalidArgumentError(fmt.Errorf("test result %v: test ID must not be empty", i))
 	}
 	return nil
 }
@@ -180,7 +180,7 @@ func validateTestResult(i int, tr *pb.ClusterRequest_TestResult) error {
 func (c *clustersServer) Get(ctx context.Context, req *pb.GetClusterRequest) (*pb.Cluster, error) {
 	project, clusterID, err := parseClusterName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("name: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
@@ -351,7 +351,7 @@ func suggestedClusterTitle(clusterID clustering.ClusterID, exampleFailure *clust
 func (c *clustersServer) GetReclusteringProgress(ctx context.Context, req *pb.GetReclusteringProgressRequest) (*pb.ReclusteringProgress, error) {
 	project, err := parseReclusteringProgressName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("name: %w", err))
 	}
 	// Getting reclustering progress is considered part of getting a cluster:
 	// whenever you retrieve a cluster, you should be able to tell if the
@@ -383,12 +383,12 @@ func (c *clustersServer) GetReclusteringProgress(ctx context.Context, req *pb.Ge
 
 func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.QueryClusterSummariesRequest) (*pb.QueryClusterSummariesResponse, error) {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("project: %w", err))
 	}
 
 	if err := pbutil.ValidateTimeRange(ctx, req.TimeRange); err != nil {
 		err = errors.Fmt("time_range: %w", err)
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 
 	// TODO(b/239768873): Provide some sort of fallback for users who do not
@@ -450,17 +450,17 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 
 			opts.FailureFilter, err = aip160.ParseFilter(req.FailureFilter)
 			if err != nil {
-				bqErr = invalidArgumentError(errors.Fmt("failure_filter: %w", err))
+				bqErr = InvalidArgumentError(errors.Fmt("failure_filter: %w", err))
 				return nil
 			}
 			opts.OrderBy, err = aip132.ParseOrderBy(req.OrderBy)
 			if err != nil {
-				bqErr = invalidArgumentError(errors.Fmt("order_by: %w", err))
+				bqErr = InvalidArgumentError(errors.Fmt("order_by: %w", err))
 				return nil
 			}
 			opts.Metrics, err = metricsByName(req.Project, cfg, req.Metrics)
 			if err != nil {
-				bqErr = invalidArgumentError(errors.Fmt("metrics: %w", err))
+				bqErr = InvalidArgumentError(errors.Fmt("metrics: %w", err))
 				return nil
 			}
 			opts.Realms, err = perms.QueryRealmsNonEmpty(ctx, req.Project, nil, perms.ListTestResultsAndExonerations...)
@@ -472,7 +472,7 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 			clusters, err = c.analysisClient.QueryClusterSummaries(ctx, req.Project, opts)
 			if err != nil {
 				if analysis.InvalidArgumentTag.In(err) {
-					bqErr = invalidArgumentError(err)
+					bqErr = InvalidArgumentError(err)
 					return nil
 				}
 				bqErr = errors.Fmt("query clusters for failures: %w", err)
@@ -583,7 +583,7 @@ func metricsByName(project string, cfg *compiledcfg.ProjectConfig, names []strin
 func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.QueryClusterFailuresRequest) (*pb.QueryClusterFailuresResponse, error) {
 	project, clusterID, err := parseClusterFailuresName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
@@ -613,7 +613,7 @@ func (c *clustersServer) QueryClusterFailures(ctx context.Context, req *pb.Query
 	if req.MetricFilter != "" {
 		metric, err := metricByName(project, cfg, req.MetricFilter)
 		if err != nil {
-			return nil, invalidArgumentError(errors.Fmt("filter_metric: %w", err))
+			return nil, InvalidArgumentError(errors.Fmt("filter_metric: %w", err))
 		}
 		opts.MetricFilter = &metric
 	}
@@ -693,7 +693,7 @@ func createVariantPB(variant []*analysis.Variant) *pb.Variant {
 func (c *clustersServer) QueryExoneratedTestVariants(ctx context.Context, req *pb.QueryClusterExoneratedTestVariantsRequest) (*pb.QueryClusterExoneratedTestVariantsResponse, error) {
 	project, clusterID, err := parseClusterExoneratedTestVariantsName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
@@ -737,7 +737,7 @@ func createClusterExoneratedTestVariant(tv *analysis.ExoneratedTestVariant) *pb.
 func (c *clustersServer) QueryExoneratedTestVariantBranches(ctx context.Context, req *pb.QueryClusterExoneratedTestVariantBranchesRequest) (*pb.QueryClusterExoneratedTestVariantBranchesResponse, error) {
 	project, clusterID, err := parseClusterExoneratedTestVariantBranchesName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetCluster); err != nil {
@@ -797,7 +797,7 @@ func createSourceRef(sourceRef analysis.SourceRef) *pb.SourceRef {
 // QueryHistory clusters a list of test failures. See proto definition for more.
 func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterHistoryRequest) (*pb.QueryClusterHistoryResponse, error) {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
-		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("project: %w", err))
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetConfig); err != nil {
@@ -816,12 +816,12 @@ func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterH
 
 	opts.FailureFilter, err = aip160.ParseFilter(req.FailureFilter)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("failure_filter: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("failure_filter: %w", err))
 	}
 
 	opts.Metrics, err = metricsByName(req.Project, cfg, req.Metrics)
 	if err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 
 	realms, err := perms.QueryRealmsNonEmpty(ctx, req.Project, nil, perms.ListTestResultsAndExonerations...)

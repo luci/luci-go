@@ -49,7 +49,7 @@ func NewChangepointsServer(changePointClient ChangePointClient) pb.ChangepointsS
 	return &pb.DecoratedChangepoints{
 		Prelude:  checkAllowedPrelude,
 		Service:  &changepointsServer{changePointClient: changePointClient},
-		Postlude: gRPCifyAndLogPostlude,
+		Postlude: GRPCifyAndLogPostlude,
 	}
 }
 
@@ -61,13 +61,13 @@ type changepointsServer struct {
 // QueryChangepointGroupSummaries groups changepoints in a LUCI project and returns a summary of each group.
 func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context, request *pb.QueryChangepointGroupSummariesRequestLegacy) (*pb.QueryChangepointGroupSummariesResponseLegacy, error) {
 	if err := pbutil.ValidateProject(request.GetProject()); err != nil {
-		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, request.Project, perms.PermListChangepointGroups); err != nil {
 		return nil, err
 	}
 	if err := validateQueryChangepointGroupSummariesRequestLegacy(request); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 	week := time.Now().UTC()
 	if request.BeginOfWeek != nil {
@@ -117,15 +117,15 @@ func (c *changepointsServer) QueryChangepointGroupSummaries(ctx context.Context,
 // QueryChangepointGroupSummaries groups changepoints in a LUCI project and returns a summary of each group.
 func (c *changepointsServer) QueryGroupSummaries(ctx context.Context, request *pb.QueryChangepointGroupSummariesRequest) (*pb.QueryChangepointGroupSummariesResponse, error) {
 	if err := pbutil.ValidateProject(request.GetProject()); err != nil {
-		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, request.Project, perms.PermListChangepointGroups); err != nil {
 		return nil, err
 	}
 	if err := validateQueryChangepointGroupSummariesRequest(request); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
-	pageSize := int(pageSizeLimiter.Adjust(request.PageSize))
+	pageSize := int(PageSizeLimiter.Adjust(request.PageSize))
 	opts := changepoints.ReadChangepointGroupSummariesOptions{
 		Project:       request.Project,
 		TestIDContain: request.Predicate.GetTestIdContain(),
@@ -150,13 +150,13 @@ func (c *changepointsServer) QueryGroupSummaries(ctx context.Context, request *p
 // QueryChangepointsInGroup finds and returns changepoints in a particular group.
 func (c *changepointsServer) QueryChangepointsInGroup(ctx context.Context, req *pb.QueryChangepointsInGroupRequest) (*pb.QueryChangepointsInGroupResponse, error) {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetChangepointGroup); err != nil {
 		return nil, err
 	}
 	if err := validateQueryChangepointsInGroupRequest(req); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 	opts := changepoints.ReadChangepointsInGroupOptions{
 		Project:       req.Project,
@@ -431,7 +431,7 @@ func validateChangepointPredicate(predicate *pb.ChangepointPredicate) error {
 		return errors.New("unspecified")
 	}
 	if predicate.TestIdContain != "" {
-		if err := validateTestIDPart(predicate.TestIdContain); err != nil {
+		if err := ValidateTestIDPart(predicate.TestIdContain); err != nil {
 			return errors.Fmt("test_id_prefix: %w", err)
 		}
 	}
@@ -443,7 +443,7 @@ func validateChangepointPredicateLegacy(predicate *pb.ChangepointPredicateLegacy
 		return errors.New("unspecified")
 	}
 	if predicate.TestIdPrefix != "" {
-		if err := validateTestIDPart(predicate.TestIdPrefix); err != nil {
+		if err := ValidateTestIDPart(predicate.TestIdPrefix); err != nil {
 			return errors.Fmt("test_id_prefix: %w", err)
 		}
 	}

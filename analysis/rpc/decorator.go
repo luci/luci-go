@@ -51,7 +51,7 @@ func checkAllowedAdminPrelude(ctx context.Context, methodName string, req proto.
 }
 
 // Logs and converts the errors to GRPC type errors.
-func gRPCifyAndLogPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
+func GRPCifyAndLogPostlude(ctx context.Context, methodName string, rsp proto.Message, err error) error {
 	return appstatus.GRPCifyAndLog(ctx, err)
 }
 

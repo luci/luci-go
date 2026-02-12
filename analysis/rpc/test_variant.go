@@ -43,7 +43,7 @@ func NewTestVariantsServer() pb.TestVariantsServer {
 	return &pb.DecoratedTestVariants{
 		Prelude:  checkAllowedPrelude,
 		Service:  &testVariantsServer{},
-		Postlude: gRPCifyAndLogPostlude,
+		Postlude: GRPCifyAndLogPostlude,
 	}
 }
 
@@ -53,7 +53,7 @@ func NewTestVariantsServer() pb.TestVariantsServer {
 func (*testVariantsServer) QueryFailureRate(ctx context.Context, req *pb.QueryTestVariantFailureRateRequest) (*pb.QueryTestVariantFailureRateResponse, error) {
 	now := clock.Now(ctx)
 	if err := validateQueryTestVariantFailureRateRequest(req); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 
 	opts := testresults.QueryFailureRateOptions{
@@ -129,7 +129,7 @@ func validateQueryTestVariantFailureRateRequest(req *pb.QueryTestVariantFailureR
 
 func (*testVariantsServer) QueryStability(ctx context.Context, req *pb.QueryTestVariantStabilityRequest) (*pb.QueryTestVariantStabilityResponse, error) {
 	if err := validateQueryTestVariantStabilityRequest(req); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetConfig); err != nil {

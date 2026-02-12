@@ -29,7 +29,7 @@ func NewMetricsServer() *pb.DecoratedMetrics {
 	return &pb.DecoratedMetrics{
 		Prelude:  checkAllowedPrelude,
 		Service:  &metricsServer{},
-		Postlude: gRPCifyAndLogPostlude,
+		Postlude: GRPCifyAndLogPostlude,
 	}
 }
 
@@ -37,7 +37,7 @@ func NewMetricsServer() *pb.DecoratedMetrics {
 func (*metricsServer) ListForProject(ctx context.Context, req *pb.ListProjectMetricsRequest) (*pb.ListProjectMetricsResponse, error) {
 	project, err := parseProjectName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetConfig); err != nil {
 		return nil, err

@@ -64,7 +64,7 @@ func NewTestVariantBranchesServer(tvc TestVerdictClient, trc TestResultClient, s
 			testResultClient: trc,
 			sorbetAnalyzer:   sorbet.NewAnalyzer(sc, tvc),
 		},
-		Postlude: gRPCifyAndLogPostlude,
+		Postlude: GRPCifyAndLogPostlude,
 	}
 }
 
@@ -84,7 +84,7 @@ func (*testVariantBranchesServer) GetRaw(ctx context.Context, req *pb.GetRawTest
 	}
 	project, testID, variantHash, refHash, err := parseTestVariantBranchName(req.Name)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("name: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetTestVariantBranch); err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (*testVariantBranchesServer) GetRaw(ctx context.Context, req *pb.GetRawTest
 	// Check ref hash.
 	refHashBytes, err := hex.DecodeString(refHash)
 	if err != nil {
-		return nil, invalidArgumentError(errors.New("name: ref component must be an encoded hexadecimal string"))
+		return nil, InvalidArgumentError(errors.New("name: ref component must be an encoded hexadecimal string"))
 	}
 	tvbk := testvariantbranch.Key{
 		Project:     project,
@@ -130,14 +130,14 @@ func (*testVariantBranchesServer) BatchGet(ctx context.Context, req *pb.BatchGet
 	for i, name := range req.Names {
 		project, _, _, _, err := parseTestVariantBranchName(name)
 		if err != nil {
-			return nil, invalidArgumentError(errors.Fmt("names[%d]: %w", i, err))
+			return nil, InvalidArgumentError(errors.Fmt("names[%d]: %w", i, err))
 		}
 		if err := perms.VerifyProjectPermissions(ctx, project, perms.PermGetTestVariantBranch); err != nil {
 			return nil, err
 		}
 	}
 	if err := validateBatchGetTestVariantBranchRequest(req); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 
 	keys := make([]testvariantbranch.Key, 0, len(req.Names))
@@ -369,7 +369,7 @@ func (s *testVariantBranchesServer) QuerySourceVerdicts(ctx context.Context, req
 	// necessary to perform the authorisation check.
 	project, testID, variantHash, refHash, err := parseTestVariantBranchName(req.Parent)
 	if err != nil {
-		return nil, invalidArgumentError(errors.Fmt("parent: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("parent: %w", err))
 	}
 
 	// Perform authorization check first as per https://google.aip.dev/211.
@@ -380,7 +380,7 @@ func (s *testVariantBranchesServer) QuerySourceVerdicts(ctx context.Context, req
 	}
 
 	if err := validateQuerySourceVerdictsRequest(req); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 
 	// Check ref hash.
@@ -608,15 +608,15 @@ func toChangelistBigQuery(cls []testresults.BQChangelist) []*pb.Changelist {
 // Query queries test variant branches with a given test id and ref.
 func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTestVariantBranchRequest) (*pb.QueryTestVariantBranchResponse, error) {
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return nil, invalidArgumentError(errors.Fmt("project: %w", err))
+		return nil, InvalidArgumentError(errors.Fmt("project: %w", err))
 	}
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermListTestVariantBranches); err != nil {
 		return nil, err
 	}
 	if err := validateQueryTestVariantBranchRequest(req); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
-	pageSize := int(pageSizeLimiter.Adjust(req.PageSize))
+	pageSize := int(PageSizeLimiter.Adjust(req.PageSize))
 	txn, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 	opts := testvariantbranch.QueryVariantBranchesOptions{
@@ -659,7 +659,7 @@ func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Conte
 		return nil, err
 	}
 	if err := validateQueryChangepointAIAnalysisRequest(req); err != nil {
-		return nil, invalidArgumentError(err)
+		return nil, InvalidArgumentError(err)
 	}
 	allowedRealms, err := perms.QueryRealmsNonEmpty(ctx, req.Project, nil, perms.ListTestResultsAndExonerations...)
 	if err != nil {
@@ -669,7 +669,7 @@ func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Conte
 	refHashBytes, err := hex.DecodeString(req.RefHash)
 	if err != nil {
 		// This line is unreachable as ref hash should be validated already.
-		return nil, invalidArgumentError(errors.New("ref hash must be an encoded hexadecimal string"))
+		return nil, InvalidArgumentError(errors.New("ref hash must be an encoded hexadecimal string"))
 	}
 
 	request := sorbet.AnalysisRequest{
