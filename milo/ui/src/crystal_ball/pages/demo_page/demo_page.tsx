@@ -24,6 +24,7 @@ import {
   TimeSeriesChart,
   TimeSeriesDataSet,
 } from '@/crystal_ball/components';
+import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import {
   useSearchMeasurements,
   useSearchQuerySync,
@@ -115,6 +116,7 @@ const transformDataForChart = (
  * A simple demo page component.
  */
 export function DemoPage() {
+  useTopBarConfig('Demo Page');
   const { searchRequestFromUrl, updateSearchQuery } = useSearchQuerySync();
 
   const [searchRequest, setSearchRequest] =

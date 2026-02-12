@@ -16,11 +16,10 @@ import AddIcon from '@mui/icons-material/Add';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
-import Typography from '@mui/material/Typography';
-import { useState } from 'react';
-import { Link as RouterLink } from 'react-router';
+import { useState, useMemo } from 'react';
 
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
+import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 
 import { mockDashboards } from './mock_data';
 
@@ -38,32 +37,23 @@ export function LandingPage() {
     setToastOpen(false);
   };
 
+  const actions = useMemo(
+    () => (
+      <Button
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={handleFeatureNotReady}
+      >
+        New Dashboard
+      </Button>
+    ),
+    [],
+  );
+
+  useTopBarConfig(null, actions);
+
   return (
     <Box sx={{ p: 3 }}>
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="h4" component="h1">
-          CrystalBall Dashboards
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" component={RouterLink} to="demo">
-            Demo Page
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleFeatureNotReady}
-          >
-            New Dashboard
-          </Button>
-        </Box>
-      </Box>
       <DashboardListTable
         dashboards={mockDashboards}
         onDashboardClick={handleFeatureNotReady}

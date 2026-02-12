@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { createElement } from 'react';
 import type { RouteObject } from 'react-router';
+
+import { Layout } from '@/crystal_ball/components/layout/layout';
 
 export const crystalBallRoutes: RouteObject[] = [
   {
+    element: createElement(Layout),
     children: [
       {
         path: '',

@@ -12,27 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { fireEvent, render, screen } from '@testing-library/react';
 
+import { TopBar } from '@/crystal_ball/components/layout/top_bar';
+import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
 import { LandingPage } from '@/crystal_ball/pages/landing_page';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 describe('<LandingPage />', () => {
-  it('should render the landing page', () => {
+  it('should render the landing page', async () => {
     render(
-      <MemoryRouter>
-        <LandingPage />
-      </MemoryRouter>,
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/ui/labs/crystal-ball'],
+        }}
+        mountedPath="/ui/labs/crystal-ball"
+      >
+        <TopBarProvider>
+          <TopBar />
+          <LandingPage />
+        </TopBarProvider>
+      </FakeContextProvider>,
     );
+
     expect(
-      screen.getByRole('heading', { name: /CrystalBall Dashboards/i }),
+      await screen.findByRole('link', { name: /CrystalBall Dashboards/i }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: /Demo Page/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText(/Search dashboards.../i),
-    ).toBeInTheDocument();
+
     expect(
       screen.getByRole('button', { name: /New Dashboard/i }),
     ).toBeInTheDocument();
@@ -40,15 +46,23 @@ describe('<LandingPage />', () => {
 
   test('shows toast when clicking New Dashboard', async () => {
     render(
-      <MemoryRouter>
-        <LandingPage />
-      </MemoryRouter>,
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/ui/labs/crystal-ball'],
+        }}
+        mountedPath="/ui/labs/crystal-ball"
+      >
+        <TopBarProvider>
+          <TopBar />
+          <LandingPage />
+        </TopBarProvider>
+      </FakeContextProvider>,
     );
 
     const newDashboardButton = screen.getByRole('button', {
       name: /New Dashboard/i,
     });
-    newDashboardButton.click();
+    fireEvent.click(newDashboardButton);
 
     expect(
       await screen.findByText(/Feature under construction/i),
@@ -57,13 +71,21 @@ describe('<LandingPage />', () => {
 
   test('shows toast when clicking a dashboard row', async () => {
     render(
-      <MemoryRouter>
-        <LandingPage />
-      </MemoryRouter>,
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/ui/labs/crystal-ball'],
+        }}
+        mountedPath="/ui/labs/crystal-ball"
+      >
+        <TopBarProvider>
+          <TopBar />
+          <LandingPage />
+        </TopBarProvider>
+      </FakeContextProvider>,
     );
 
     const dashboardName = await screen.findByText(/Generic Dashboard Alpha/i);
-    dashboardName.click();
+    fireEvent.click(dashboardName);
 
     expect(
       await screen.findByText(/Feature under construction/i),

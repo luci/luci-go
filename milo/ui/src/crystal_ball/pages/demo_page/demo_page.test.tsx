@@ -15,6 +15,8 @@
 import { UseQueryResult } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 
+import { TopBar } from '@/crystal_ball/components/layout/top_bar';
+import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
 import * as useAndroidPerfApi from '@/crystal_ball/hooks/use_android_perf_api';
 import { SearchMeasurementsResponse } from '@/crystal_ball/types';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -52,14 +54,22 @@ describe('<DemoPage />', () => {
     } as UseQueryResult<SearchMeasurementsResponse, Error>);
 
     render(
-      <FakeContextProvider>
-        <DemoPage />
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/ui/labs/crystal-ball/demo'],
+        }}
+        mountedPath="/ui/labs/crystal-ball/demo"
+      >
+        <TopBarProvider>
+          <TopBar />
+          <DemoPage />
+        </TopBarProvider>
       </FakeContextProvider>,
     );
-    expect(
-      screen.getByText(/Crystal Ball Performance Metrics/i),
-    ).toBeInTheDocument();
-    // Check that the form is rendered by looking for one of its labels
+
     expect(screen.getByLabelText('Test Name Filter')).toBeInTheDocument();
+    expect(
+      screen.getByText('Crystal Ball Performance Metrics'),
+    ).toBeInTheDocument();
   });
 });
