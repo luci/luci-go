@@ -42,7 +42,7 @@ func TestExportTestResults(t *testing.T) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
 
-		inputs := testInputs()
+		inputs := testLegacyInputs()
 		exportClient := exporter.NewFakeClient()
 		ingester := NewTestResultsExporter(exportClient)
 
@@ -299,7 +299,7 @@ func TestExportTestResults(t *testing.T) {
 		}
 
 		t.Run(`Baseline`, func(t *ftt.Test) {
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.HaveLength(2))
@@ -310,7 +310,7 @@ func TestExportTestResults(t *testing.T) {
 			t.Run(`Results are not exported again if the process is re-run`, func(t *ftt.Test) {
 				exportClient.InsertionsByDestinationKey = map[string][]*bqpb.TestResultRow{}
 
-				err = ingester.Ingest(ctx, inputs)
+				err = ingester.IngestLegacy(ctx, inputs)
 				assert.Loosely(t, err, should.BeNil)
 
 				// Nothing should be exported because the checkpoint already exists.
@@ -322,7 +322,7 @@ func TestExportTestResults(t *testing.T) {
 			assert.Loosely(t, inputs.Sources, should.NotBeNil)
 			inputs.Sources = nil
 
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			for _, r := range expectedResults {

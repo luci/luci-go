@@ -48,9 +48,9 @@ func (IngestForChangepointAnalysis) Name() string {
 	return "ingest-for-changepoint-analysis"
 }
 
-// Ingest ingests test results into the changepoint analysis.
-func (a *IngestForChangepointAnalysis) Ingest(ctx context.Context, input Inputs) (err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForChangepointAnalysis.Ingest")
+// IngestLegacy ingests test results into the changepoint analysis.
+func (a *IngestForChangepointAnalysis) IngestLegacy(ctx context.Context, input LegacyInputs) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForChangepointAnalysis.IngestLegacy")
 	defer func() { tracing.End(s, err) }()
 
 	cfg, err := config.Get(ctx)
@@ -64,7 +64,7 @@ func (a *IngestForChangepointAnalysis) Ingest(ctx context.Context, input Inputs)
 	opts := changepoints.AnalysisOptions{
 		Project:          input.Project,
 		ResultDBHost:     input.ResultDBHost,
-		RootInvocationID: input.RootInvocationID,
+		RootInvocationID: input.ExportRootInvocationID,
 		InvocationID:     input.InvocationID,
 		Sources:          input.Sources,
 		PartitionTime:    input.PartitionTime,
@@ -74,5 +74,11 @@ func (a *IngestForChangepointAnalysis) Ingest(ctx context.Context, input Inputs)
 		return errors.Fmt("analyze test variants: %w", err)
 	}
 
+	return nil
+}
+
+// IngestRootInvocation ingests test results into the changepoint analysis.
+func (a *IngestForChangepointAnalysis) IngestRootInvocation(ctx context.Context, input RootInvocationInputs) (err error) {
+	// Not yet supported.
 	return nil
 }

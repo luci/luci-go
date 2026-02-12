@@ -32,11 +32,11 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
 )
 
-func TestIngestForExoneration(t *testing.T) {
-	ftt.Run("TestIngestForExoneration", t, func(t *ftt.Test) {
+func TestIngestForExonerationLegacy(t *testing.T) {
+	ftt.Run("TestIngestForExoneration - IngestLegacy", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
-		inputs := testInputs()
+		inputs := testLegacyInputs()
 
 		sources := testresults.Sources{
 			RefHash: pbutil.SourceRefHash(&analysispb.SourceRef{
@@ -120,7 +120,7 @@ func TestIngestForExoneration(t *testing.T) {
 			assert.Loosely(t, inputs.Sources, should.NotBeNil)
 
 			ingester := IngestForLowLatencyTestResults{}
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))
@@ -136,7 +136,7 @@ func TestIngestForExoneration(t *testing.T) {
 			assert.Loosely(t, inputs.Sources, should.NotBeNil)
 
 			ingester := IngestForLowLatencyTestResults{}
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))
@@ -147,7 +147,121 @@ func TestIngestForExoneration(t *testing.T) {
 			inputs.Sources = nil
 
 			ingester := IngestForLowLatencyTestResults{}
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
+			assert.Loosely(t, err, should.BeNil)
+
+			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.HaveLength(0))
+		})
+	})
+}
+
+func TestIngestForExoneration(t *testing.T) {
+	ftt.Run("TestIngestForExoneration - IngestRootInvocation", t, func(t *ftt.Test) {
+		ctx := testutil.IntegrationTestContext(t)
+
+		inputs := testRootInvocationInputs()
+
+		sources := testresults.Sources{
+			RefHash: pbutil.SourceRefHash(&analysispb.SourceRef{
+				System: &analysispb.SourceRef_Gitiles{
+					Gitiles: &analysispb.GitilesRef{
+						Host:    "project.googlesource.com",
+						Project: "myproject/src",
+						Ref:     "refs/heads/main",
+					},
+				},
+			}),
+			Position: 16801,
+			Changelists: []testresults.Changelist{
+				{
+					Host:      "project-review.googlesource.com",
+					Change:    9991,
+					Patchset:  82,
+					OwnerKind: analysispb.ChangelistOwnerKind_HUMAN,
+				},
+			},
+			IsDirty: true,
+		}
+
+		partitionTime := time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)
+
+		expectedResults := []*lowlatency.TestResult{
+			{
+				Project:          "rootproject",
+				TestID:           ":module!junit:package:class#test_flaky",
+				VariantHash:      "hash",
+				Sources:          sources,
+				RootInvocationID: lowlatency.RootInvocationID{Value: "test-root-invocation-id"},
+				WorkUnitID:       lowlatency.WorkUnitID{Value: "work-unit-one"},
+				ResultID:         "one",
+				PartitionTime:    partitionTime,
+				SubRealm:         "root",
+				IsUnexpected:     true,
+				Status:           analysispb.TestResultStatus_FAIL,
+			},
+			{
+				Project:          "rootproject",
+				TestID:           ":module!junit:package:class#test_flaky",
+				VariantHash:      "hash",
+				Sources:          sources,
+				RootInvocationID: lowlatency.RootInvocationID{Value: "test-root-invocation-id"},
+				WorkUnitID:       lowlatency.WorkUnitID{Value: "work-unit-two"},
+				ResultID:         "two",
+				PartitionTime:    partitionTime,
+				SubRealm:         "root",
+				Status:           analysispb.TestResultStatus_PASS,
+			},
+			{
+				Project:          "rootproject",
+				TestID:           ":module!junit:package:class#test_passed",
+				VariantHash:      "hash",
+				Sources:          sources,
+				RootInvocationID: lowlatency.RootInvocationID{Value: "test-root-invocation-id"},
+				WorkUnitID:       lowlatency.WorkUnitID{Value: "work-unit-one"},
+				ResultID:         "one",
+				PartitionTime:    partitionTime,
+				SubRealm:         "root",
+				Status:           analysispb.TestResultStatus_PASS,
+			},
+			{
+				Project:          "rootproject",
+				TestID:           ":module!junit:package:class#test_skipped",
+				VariantHash:      "hash",
+				Sources:          sources,
+				RootInvocationID: lowlatency.RootInvocationID{Value: "test-root-invocation-id"},
+				WorkUnitID:       lowlatency.WorkUnitID{Value: "work-unit-two"},
+				ResultID:         "one",
+				PartitionTime:    partitionTime,
+				SubRealm:         "root",
+				IsUnexpected:     false,
+				Status:           analysispb.TestResultStatus_SKIP,
+			},
+		}
+
+		t.Run(`With full sources`, func(t *ftt.Test) {
+			// Base case should already have sources set.
+			assert.Loosely(t, inputs.Sources, should.NotBeNil)
+
+			ingester := IngestForLowLatencyTestResults{}
+			err := ingester.IngestRootInvocation(ctx, inputs)
+			assert.Loosely(t, err, should.BeNil)
+
+			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.Match(expectedResults))
+		})
+		t.Run(`With no actual sources`, func(t *ftt.Test) {
+			inputs.Sources = &analysispb.Sources{
+				IsDirty: true,
+			}
+
+			// Base case should already have sources set.
+			assert.Loosely(t, inputs.Sources, should.NotBeNil)
+
+			ingester := IngestForLowLatencyTestResults{}
+			err := ingester.IngestRootInvocation(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			results, err := lowlatency.ReadAllForTesting(span.Single(ctx))

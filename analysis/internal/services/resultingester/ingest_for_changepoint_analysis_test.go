@@ -53,7 +53,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 		exportClient := bqexporter.NewFakeClient()
 		ingester := NewIngestForChangepointAnalysis(bqexporter.NewExporter(exportClient))
 
-		inputs := testInputs()
+		inputs := testLegacyInputs()
 		// Changepoint analysis will not ingest test results with unsubmitted changes
 		// in this low-latency pipeline.
 		inputs.Sources.Changelists = nil
@@ -83,7 +83,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 		}
 
 		t.Run(`Baseline`, func(t *ftt.Test) {
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Match(expectedExports))
@@ -95,7 +95,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			t.Run(`Results are not exported again if the process is re-run`, func(t *ftt.Test) {
 				exportClient.Insertions = nil
 
-				err = ingester.Ingest(ctx, inputs)
+				err = ingester.IngestLegacy(ctx, inputs)
 				assert.Loosely(t, err, should.BeNil)
 
 				// Nothing should be exported because the checkpoint already exists.
@@ -106,11 +106,11 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 		t.Run(`With invocation claimed by this root invocation`, func(t *ftt.Test) {
 			// E.g. this invocation was claimed for the root invocation in an
 			// earlier page of test results.
-			m := changepoints.ClaimInvocationMutation(inputs.Project, inputs.InvocationID, inputs.RootInvocationID)
+			m := changepoints.ClaimInvocationMutation(inputs.Project, inputs.InvocationID, inputs.ExportRootInvocationID)
 			_, err := span.Apply(ctx, []*spanner.Mutation{m})
 			assert.Loosely(t, err, should.BeNil)
 
-			err = ingester.Ingest(ctx, inputs)
+			err = ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, removeVersions(exportClient.Insertions), should.Match(expectedExports))
@@ -126,7 +126,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			_, err := span.Apply(ctx, []*spanner.Mutation{m})
 			assert.Loosely(t, err, should.BeNil)
 
-			err = ingester.Ingest(ctx, inputs)
+			err = ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
@@ -142,7 +142,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 				},
 			}
 
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
@@ -151,7 +151,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 		t.Run(`Without sources`, func(t *ftt.Test) {
 			inputs.Sources = nil
 
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
@@ -160,7 +160,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 		t.Run(`With dirty sources`, func(t *ftt.Test) {
 			inputs.Sources.IsDirty = true
 
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))
@@ -172,7 +172,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			// in which re-ordering can occur.
 			inputs.Sources.GetGitilesCommit().Position = 1
 
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			// Only ":module!junit:package:class#test_expected" should be ingested as it is has no
@@ -193,7 +193,7 @@ func TestIngestForChangepointAnalysis(t *testing.T) {
 			err = config.SetTestConfig(ctx, cfg)
 			assert.Loosely(t, err, should.BeNil)
 
-			err := ingester.Ingest(ctx, inputs)
+			err := ingester.IngestLegacy(ctx, inputs)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, exportClient.Insertions, should.HaveLength(0))

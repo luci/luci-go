@@ -49,9 +49,9 @@ func (TestResultsExporter) Name() string {
 	return "export-test-results"
 }
 
-// Ingest exports the provided test results to BigQuery.
-func (e *TestResultsExporter) Ingest(ctx context.Context, input Inputs) (err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.TestResultsExporter.Ingest")
+// IngestLegacy exports the provided test results to BigQuery.
+func (e *TestResultsExporter) IngestLegacy(ctx context.Context, input LegacyInputs) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.TestResultsExporter.IngestLegacy")
 	defer func() { tracing.End(s, err) }()
 
 	destinations := []exporter.ExportDestination{
@@ -67,15 +67,21 @@ func (e *TestResultsExporter) Ingest(ctx context.Context, input Inputs) (err err
 	return nil
 }
 
+// IngestRootInvocation exports the provided test results from a root invocation to BigQuery.
+func (e *TestResultsExporter) IngestRootInvocation(ctx context.Context, input RootInvocationInputs) (err error) {
+	// Not yet supported.
+	return nil
+}
+
 // Ingest exports the provided test results to BigQuery.
-func (e *TestResultsExporter) exportTo(ctx context.Context, input Inputs, dest exporter.ExportDestination) (err error) {
+func (e *TestResultsExporter) exportTo(ctx context.Context, input LegacyInputs, dest exporter.ExportDestination) (err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.TestResultsExporter.exportTo",
 		attribute.String("destination", dest.Key))
 	defer func() { tracing.End(s, err) }()
 
 	key := checkpoints.Key{
 		Project:    input.Project,
-		ResourceID: fmt.Sprintf("%s/%s/%s", input.ResultDBHost, input.RootInvocationID, input.InvocationID),
+		ResourceID: fmt.Sprintf("%s/%s/%s", input.ResultDBHost, input.ExportRootInvocationID, input.InvocationID),
 		ProcessID:  fmt.Sprintf("result-ingestion/export-test-results/%s", dest.Key),
 		Uniquifier: fmt.Sprintf("%v", input.PageNumber),
 	}
@@ -91,7 +97,7 @@ func (e *TestResultsExporter) exportTo(ctx context.Context, input Inputs, dest e
 
 	// Export test verdicts.
 	exportOptions := exporter.Options{
-		RootInvocationID: input.RootInvocationID,
+		RootInvocationID: input.ExportRootInvocationID,
 		RootRealm:        realms.Join(input.Project, input.SubRealm),
 		PartitionTime:    input.PartitionTime,
 		Parent:           input.Parent,

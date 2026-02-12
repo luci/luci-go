@@ -27,7 +27,11 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
@@ -45,18 +49,55 @@ func (IngestForLowLatencyTestResults) Name() string {
 	return "ingest-for-exoneration"
 }
 
-// Ingest writes test results to the TestResultsBySourcePosition table.
-func (IngestForLowLatencyTestResults) Ingest(ctx context.Context, input Inputs) (err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForLowLatencyTestResults.Ingest")
+// IngestLegacy writes test results to the TestResultsBySourcePosition table.
+func (IngestForLowLatencyTestResults) IngestLegacy(ctx context.Context, input LegacyInputs) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForLowLatencyTestResults.IngestLegacy")
 	defer func() { tracing.End(s, err) }()
 
-	if input.Sources == nil || input.Sources.BaseSources == nil {
+	if input.Sources.GetBaseSources() == nil {
 		// Test results without base sources are not ingested into this process.
 		return nil
 	}
-	err = recordTestResults(ctx, input)
+
+	testResultSources, err := toTestResultSources(input.Sources)
 	if err != nil {
-		return transient.Tag.Apply(errors.Fmt("record test results: %w", err))
+		return errors.Fmt("convert sources: %w", err)
+	}
+
+	generator := func(outputC chan batch) error {
+		batchTestResults(input, testResultSources, outputC)
+		return nil
+	}
+
+	err = recordTestResults(ctx, generator)
+	if err != nil {
+		return errors.Fmt("record test results: %w", err)
+	}
+	return nil
+}
+
+func (IngestForLowLatencyTestResults) IngestRootInvocation(ctx context.Context, input RootInvocationInputs) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForLowLatencyTestResults.IngestRootInvocation")
+	defer func() { tracing.End(s, err) }()
+
+	if input.Sources.GetBaseSources() == nil {
+		// Test results without base sources are not ingested into this process.
+		return nil
+	}
+
+	testResultSources, err := toTestResultSources(input.Sources)
+	if err != nil {
+		return errors.Fmt("convert sources: %w", err)
+	}
+
+	generator := func(outputC chan batch) error {
+		batchPubSubTestResults(input.Notification, testResultSources, outputC)
+		return nil
+	}
+
+	err = recordTestResults(ctx, generator)
+	if err != nil {
+		return errors.Fmt("record test results: %w", err)
 	}
 	return nil
 }
@@ -64,24 +105,22 @@ func (IngestForLowLatencyTestResults) Ingest(ctx context.Context, input Inputs) 
 // recordTestResults records test results into the TestResultsBySourcePosition table.
 // This operation is idempotent and may be safely called multiple times.
 // This method should only be called if sources are available.
-func recordTestResults(ctx context.Context, input Inputs) error {
-	if input.Sources == nil {
-		panic("ingestion.Sources must not be nil")
-	}
-
+//
+// The generator function is called in a separate goroutine and is expected to
+// push batches of test results into the output channel. It should not close the
+// channel.
+func recordTestResults(ctx context.Context, generator func(outputC chan batch) error) error {
 	const workerCount = 8
-
-	testResultSources, err := toTestResultSources(input.Sources)
-	if err != nil {
-		return errors.Fmt("convert sources: %w", err)
-	}
 
 	return parallel.WorkPool(workerCount, func(c chan<- func() error) {
 		batchC := make(chan batch)
 
 		c <- func() error {
 			defer close(batchC)
-			batchTestResults(input, testResultSources, batchC)
+			err := generator(batchC)
+			if err != nil {
+				return errors.Fmt("batch test results: %w", err)
+			}
 			return nil
 		}
 
@@ -92,7 +131,7 @@ func recordTestResults(ctx context.Context, input Inputs) error {
 					return nil
 				})
 				if err != nil {
-					return errors.Fmt("inserting test results: %w", err)
+					return transient.Tag.Apply(errors.Fmt("inserting test results: %w", err))
 				}
 				return nil
 			}
@@ -126,7 +165,67 @@ type batch struct {
 	testResults []*spanner.Mutation
 }
 
-func batchTestResults(input Inputs, sources testresults.Sources, outputC chan batch) {
+func batchTestResults(input LegacyInputs, sources testresults.Sources, outputC chan batch) {
+	// Must be selected such that no more than 80,000 mutations occur in
+	// one transaction in the worst case.
+	// See https://cloud.google.com/spanner/quotas#limits-for
+	// 1000 results requires around 20,000 mutations which is well within
+	// this limit.
+	const batchSize = 1000
+
+	var trs []*spanner.Mutation
+	startBatch := func() {
+		trs = make([]*spanner.Mutation, 0, batchSize)
+	}
+	outputBatch := func() {
+		if len(trs) == 0 {
+			// This should never happen.
+			panic("Pushing empty batch")
+		}
+
+		outputC <- batch{
+			testResults: trs,
+		}
+	}
+
+	startBatch()
+	for _, tv := range input.Verdicts {
+		for _, inputTR := range tv.Results {
+			// Limit batch size.
+			// Keep all results for one test variant in one batch, so that the
+			// TestVariantRealm record is kept together with the test results.
+			if len(trs) > batchSize {
+				outputBatch()
+				startBatch()
+			}
+
+			tr := lowlatency.TestResult{
+				Project:          input.Project,
+				TestID:           tv.TestId,
+				VariantHash:      tv.VariantHash,
+				Sources:          sources,
+				RootInvocationID: lowlatency.RootInvocationID{Value: input.ExportRootInvocationID, IsLegacy: true},
+				WorkUnitID:       lowlatency.WorkUnitID{Value: input.InvocationID, IsLegacy: true},
+				ResultID:         inputTR.Result.ResultId,
+				PartitionTime:    input.PartitionTime,
+				SubRealm:         input.SubRealm,
+				IsUnexpected:     !inputTR.Result.Expected,
+				Status:           pbutil.LegacyTestStatusFromResultDB(inputTR.Result.Status),
+			}
+
+			// Convert the test result into a mutation immediately
+			// to avoid storing both the TestResult object and
+			// mutation object in memory until the transaction
+			// commits.
+			trs = append(trs, tr.SaveUnverified())
+		}
+	}
+	if len(trs) > 0 {
+		outputBatch()
+	}
+}
+
+func batchPubSubTestResults(n *rdbpb.TestResultsNotification, sources testresults.Sources, outputC chan batch) error {
 	// Must be selected such that no more than 80,000 mutations occur in
 	// one transaction in the worst case.
 	// See https://cloud.google.com/spanner/quotas#limits-for
@@ -149,29 +248,35 @@ func batchTestResults(input Inputs, sources testresults.Sources, outputC chan ba
 		}
 	}
 
+	project, subRealm := realms.Split(n.RootInvocationMetadata.Realm)
+	partitionTime := n.RootInvocationMetadata.CreateTime.AsTime()
+
 	startBatch()
-	for _, tv := range input.Verdicts {
-		// Limit batch size.
-		// Keep all results for one test variant in one batch, so that the
-		// TestVariantRealm record is kept together with the test results.
-		if len(trs) > batchSize {
-			outputBatch()
-			startBatch()
+	for _, workUnit := range n.TestResultsByWorkUnit {
+		rootInvocationID, workUnitID, err := rdbpbutil.ParseWorkUnitName(workUnit.WorkUnitName)
+		if err != nil {
+			return tq.Fatal.Apply(errors.Fmt("invalid work unit name %q: %w", workUnit.WorkUnitName, err))
 		}
 
-		for _, inputTR := range tv.Results {
+		for _, inputTR := range workUnit.TestResults {
+			// Limit batch size.
+			if len(trs) > batchSize {
+				outputBatch()
+				startBatch()
+			}
+
 			tr := lowlatency.TestResult{
-				Project:          input.Project,
-				TestID:           tv.TestId,
-				VariantHash:      tv.VariantHash,
+				Project:          project,
+				TestID:           inputTR.TestId,
+				VariantHash:      inputTR.VariantHash,
 				Sources:          sources,
-				RootInvocationID: lowlatency.RootInvocationID{Value: input.RootInvocationID, IsLegacy: true},
-				WorkUnitID:       lowlatency.WorkUnitID{Value: input.InvocationID, IsLegacy: true},
-				ResultID:         inputTR.Result.ResultId,
-				PartitionTime:    input.PartitionTime,
-				SubRealm:         input.SubRealm,
-				IsUnexpected:     !inputTR.Result.Expected,
-				Status:           pbutil.LegacyTestStatusFromResultDB(inputTR.Result.Status),
+				RootInvocationID: lowlatency.RootInvocationID{Value: rootInvocationID},
+				WorkUnitID:       lowlatency.WorkUnitID{Value: workUnitID},
+				ResultID:         inputTR.ResultId,
+				PartitionTime:    partitionTime,
+				SubRealm:         subRealm,
+				IsUnexpected:     !inputTR.Expected,
+				Status:           pbutil.LegacyTestStatusFromResultDB(inputTR.Status),
 			}
 
 			// Convert the test result into a mutation immediately
@@ -184,4 +289,5 @@ func batchTestResults(input Inputs, sources testresults.Sources, outputC chan ba
 	if len(trs) > 0 {
 		outputBatch()
 	}
+	return nil
 }

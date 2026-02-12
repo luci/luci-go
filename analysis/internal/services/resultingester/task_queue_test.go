@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,8 +80,8 @@ func TestSchedule(t *testing.T) {
 	})
 }
 
-func TestOrchestrator(t *testing.T) {
-	ftt.Run(`TestOrchestrator`, t, func(t *ftt.Test) {
+func TestHandleTask(t *testing.T) {
+	ftt.Run(`TestHandleTask`, t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx, skdr := tq.TestingContext(ctx, nil)
 		ctx = memory.Use(ctx)
@@ -136,17 +136,17 @@ func TestOrchestrator(t *testing.T) {
 			Sources:             resultdbSourcesForTesting(),
 		}
 
-		expectedInputs := Inputs{
-			Project:          "rootproject",
-			SubRealm:         "root",
-			ResultDBHost:     "fake.rdb.host",
-			RootInvocationID: "test-root-invocation-name",
-			InvocationID:     "test-invocation-name",
-			PageNumber:       1,
-			PartitionTime:    time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC),
-			Sources:          resolvedSourcesForTesting(),
-			Parent:           resultdbParentInvocationForTesting(),
-			Verdicts:         mockedQueryRunTestVerdictsRsp().RunTestVerdicts,
+		expectedInputs := LegacyInputs{
+			Project:                "rootproject",
+			SubRealm:               "root",
+			ResultDBHost:           "fake.rdb.host",
+			ExportRootInvocationID: "test-root-invocation-name",
+			InvocationID:           "test-invocation-name",
+			PageNumber:             1,
+			PartitionTime:          time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC),
+			Sources:                resolvedSourcesForTesting(),
+			Parent:                 resultdbParentInvocationForTesting(),
+			Verdicts:               mockedQueryRunTestVerdictsRsp().RunTestVerdicts,
 		}
 
 		task := &taskspb.IngestTestResults{
@@ -177,7 +177,7 @@ func TestOrchestrator(t *testing.T) {
 		t.Run(`Baseline`, func(t *ftt.Test) {
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
-			err := o.run(ctx, task)
+			err := o.handleTask(ctx, task)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, testIngestor.called, should.BeTrue)
@@ -193,7 +193,7 @@ func TestOrchestrator(t *testing.T) {
 
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
-			err := o.run(ctx, task)
+			err := o.handleTask(ctx, task)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, testIngestor.called, should.BeTrue)
@@ -211,7 +211,7 @@ func TestOrchestrator(t *testing.T) {
 
 			setupGetParentInvocationMock()
 			setupQueryRunTestVariantsMock()
-			err = o.run(ctx, task)
+			err = o.handleTask(ctx, task)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, testIngestor.called, should.BeTrue)
@@ -226,7 +226,7 @@ func TestOrchestrator(t *testing.T) {
 			setupQueryRunTestVariantsMock(func(qrtvr *rdbpb.QueryRunTestVerdictsResponse) {
 				qrtvr.NextPageToken = ""
 			})
-			err := o.run(ctx, task)
+			err := o.handleTask(ctx, task)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, testIngestor.called, should.BeTrue)
@@ -245,7 +245,7 @@ func TestOrchestrator(t *testing.T) {
 			err := config.SetTestConfig(ctx, cfg)
 			assert.Loosely(t, err, should.BeNil)
 
-			err = o.run(ctx, task)
+			err = o.handleTask(ctx, task)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, testIngestor.called, should.BeFalse)
@@ -254,19 +254,29 @@ func TestOrchestrator(t *testing.T) {
 }
 
 type testIngester struct {
-	called    bool
-	gotInputs Inputs
+	called                  bool
+	gotInputs               LegacyInputs
+	gotRootInvocationInputs RootInvocationInputs
 }
 
 func (t *testIngester) Name() string {
 	return "test-ingestor"
 }
 
-func (t *testIngester) Ingest(ctx context.Context, inputs Inputs) error {
+func (t *testIngester) IngestLegacy(ctx context.Context, inputs LegacyInputs) error {
 	if t.called {
 		return errors.New("already called")
 	}
 	t.gotInputs = inputs
+	t.called = true
+	return nil
+}
+
+func (t *testIngester) IngestRootInvocation(ctx context.Context, inputs RootInvocationInputs) error {
+	if t.called {
+		return errors.New("already called")
+	}
+	t.gotRootInvocationInputs = inputs
 	t.called = true
 	return nil
 }

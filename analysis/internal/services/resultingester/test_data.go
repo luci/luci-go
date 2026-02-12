@@ -258,17 +258,149 @@ func resolvedSourcesForTesting() *analysispb.Sources {
 	}
 }
 
-func testInputs() Inputs {
-	return Inputs{
-		Project:          "rootproject",
-		SubRealm:         "root",
-		ResultDBHost:     "fake.rdb.host",
-		RootInvocationID: "test-root-invocation-name",
-		InvocationID:     "test-invocation-name",
-		PageNumber:       1,
-		PartitionTime:    time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC),
-		Sources:          resolvedSourcesForTesting(),
-		Parent:           resultdbParentInvocationForTesting(),
-		Verdicts:         mockedQueryRunTestVerdictsRsp().RunTestVerdicts,
+func testLegacyInputs() LegacyInputs {
+	return LegacyInputs{
+		Project:                "rootproject",
+		SubRealm:               "root",
+		ResultDBHost:           "fake.rdb.host",
+		ExportRootInvocationID: "test-root-invocation-name",
+		InvocationID:           "test-invocation-name",
+		PageNumber:             1,
+		PartitionTime:          time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC),
+		Sources:                resolvedSourcesForTesting(),
+		Parent:                 resultdbParentInvocationForTesting(),
+		Verdicts:               mockedQueryRunTestVerdictsRsp().RunTestVerdicts,
+	}
+}
+
+func testTestResultNotification() *rdbpb.TestResultsNotification {
+	testResultsByWorkUnit := []*rdbpb.TestResultsNotification_TestResultsByWorkUnit{
+		{
+			WorkUnitName: "rootInvocations/test-root-invocation-id/workUnits/work-unit-one",
+			TestResults: []*rdbpb.TestResult{
+				{
+					TestIdStructured: &rdbpb.TestIdentifier{
+						ModuleName:    "module",
+						ModuleScheme:  "junit",
+						ModuleVariant: &rdbpb.Variant{},
+						CoarseName:    "package",
+						FineName:      "class",
+						CaseName:      "test_passed",
+					},
+					TestId:      ":module!junit:package:class#test_passed",
+					VariantHash: "hash",
+					ResultId:    "one",
+					Name:        "rootInvocations/test-root-invocation-id/workUnits/work-unit-one/tests/:module%21junit:package:class%23test_passed/results/one",
+					Status:      rdbpb.TestStatus_PASS,
+					StatusV2:    rdbpb.TestResult_PASSED,
+					SummaryHtml: "SummaryHTML for test_passed/one",
+					Expected:    true,
+					StartTime:   timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
+					Duration:    durationpb.New(time.Second*3 + time.Microsecond),
+					Tags:        []*rdbpb.StringPair{{Key: "test-key", Value: "test-value"}},
+					FrameworkExtensions: &rdbpb.FrameworkExtensions{
+						WebTest: &rdbpb.WebTest{
+							Status:     rdbpb.WebTest_PASS,
+							IsExpected: true,
+						},
+					},
+				},
+				{
+					TestIdStructured: &rdbpb.TestIdentifier{
+						ModuleName:    "module",
+						ModuleScheme:  "junit",
+						ModuleVariant: &rdbpb.Variant{},
+						CoarseName:    "package",
+						FineName:      "class",
+						CaseName:      "test_flaky",
+					},
+					TestId:      ":module!junit:package:class#test_flaky",
+					VariantHash: "hash",
+					ResultId:    "one",
+					Name:        "rootInvocations/test-root-invocation-id/workUnits/work-unit-one/tests/:module%21junit:package:class%23test_flaky/results/one",
+					StartTime:   timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
+					Status:      rdbpb.TestStatus_FAIL,
+					StatusV2:    rdbpb.TestResult_FAILED,
+					SummaryHtml: "SummaryHTML for test_flaky/one",
+					FailureReason: &rdbpb.FailureReason{
+						PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
+						Errors: []*rdbpb.FailureReason_Error{
+							{
+								Message: "abc.def(123): unexpected nil-deference",
+							},
+						},
+					},
+					Expected: false,
+				},
+			},
+		},
+		{
+			WorkUnitName: "rootInvocations/test-root-invocation-id/workUnits/work-unit-two",
+			TestResults: []*rdbpb.TestResult{
+				{
+					TestIdStructured: &rdbpb.TestIdentifier{
+						ModuleName:    "module",
+						ModuleScheme:  "junit",
+						ModuleVariant: &rdbpb.Variant{},
+						CoarseName:    "package",
+						FineName:      "class",
+						CaseName:      "test_flaky",
+					},
+					TestId:      ":module!junit:package:class#test_flaky",
+					VariantHash: "hash",
+					ResultId:    "two",
+					Name:        "rootInvocations/test-root-invocation-id/workUnits/work-unit-two/tests/:module%21junit:package:class%23test_flaky/results/two",
+					StartTime:   timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
+					Status:      rdbpb.TestStatus_PASS,
+					StatusV2:    rdbpb.TestResult_PASSED,
+					SummaryHtml: "SummaryHTML for test_flaky/two",
+					Expected:    true,
+				},
+				{
+					TestIdStructured: &rdbpb.TestIdentifier{
+						ModuleName:    "module",
+						ModuleScheme:  "junit",
+						ModuleVariant: &rdbpb.Variant{},
+						CoarseName:    "package",
+						FineName:      "class",
+						CaseName:      "test_skipped",
+					},
+					TestId:      ":module!junit:package:class#test_skipped",
+					VariantHash: "hash",
+					ResultId:    "one",
+					Name:        "rootInvocations/test-root-invocation-id/workUnits/work-unit-two/tests/:module%21junit:package:class%23test_skipped/results/one",
+					Expected:    true,
+					Status:      rdbpb.TestStatus_SKIP,
+					StatusV2:    rdbpb.TestResult_SKIPPED,
+					SummaryHtml: "SummaryHTML for test_skipped/one",
+					SkipReason:  rdbpb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
+					SkippedReason: &rdbpb.SkippedReason{
+						Kind:          rdbpb.SkippedReason_DISABLED_AT_DECLARATION,
+						ReasonMessage: "Test has @Ignored annotation.",
+					},
+					Properties: testProperties,
+				},
+			},
+		},
+	}
+
+	return &rdbpb.TestResultsNotification{
+		TestResultsByWorkUnit: testResultsByWorkUnit,
+		ResultdbHost:          "fake.rdb.host",
+		DeduplicationKey:      "dedup-key",
+		RootInvocationMetadata: &rdbpb.RootInvocationMetadata{
+			Name:             "rootInvocations/test-root-invocation-id",
+			RootInvocationId: "test-root-invocation-id",
+			Realm:            "rootproject:root",
+			Sources:          resultdbSourcesForTesting(),
+			CreateTime:       timestamppb.New(time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)),
+		},
+	}
+}
+
+func testRootInvocationInputs() RootInvocationInputs {
+	return RootInvocationInputs{
+		Notification: testTestResultNotification(),
+		Sources:      resolvedSourcesForTesting(),
 	}
 }
