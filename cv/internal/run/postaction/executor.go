@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/quota/quotapb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -147,7 +146,7 @@ func (exe *Executor) voteGerritLabels(ctx context.Context, votes []*cfgpb.Config
 					}
 					err := util.MutateGerritCL(ctx, exe.GFactory, rcl, req, 2*time.Minute,
 						fmt.Sprintf("post-action-%s", exe.Payload.GetName()))
-					if status.Code(err) == codes.FailedPrecondition && isCLClosed(ctx, rcl) {
+					if status, ok := status.FromError(err); ok && status.Code() == codes.FailedPrecondition && strings.Contains(strings.ToLower(status.Message()), "change is closed") {
 						logging.Infof(ctx, "CL %d is closed; skip post action", rcl.ID)
 						return nil
 					}
@@ -199,19 +198,4 @@ func (exe *Executor) voteSummary(ctx context.Context, rcls []*run.RunCL, errs er
 		}
 	}
 	return s.String()
-}
-
-// isCLClosed returns true if the CL has been closed.
-func isCLClosed(ctx context.Context, rcl *run.RunCL) bool {
-	latest := &changelist.CL{ID: rcl.ID}
-	if err := datastore.Get(ctx, latest); err != nil {
-		// return false so that the callsite can return the original error
-		// from SetReview().
-		return false
-	}
-	switch latest.Snapshot.GetGerrit().GetInfo().GetStatus() {
-	case gerritpb.ChangeStatus_ABANDONED, gerritpb.ChangeStatus_MERGED:
-		return true
-	}
-	return false
 }

@@ -278,12 +278,12 @@ func TestExecutePostActionOp(t *testing.T) {
 			})
 		})
 
-		t.Run("if FailedPrecondition", func(t *ftt.Test) {
+		t.Run("skip if change is closed", func(t *ftt.Test) {
 			// fake the ACL to return FailedPrecondition always for the CL.
 			ci := gf.CI(gChange1)
 			run := makeRunWithCLs(ci)
 			fakeResponseStatus := func(_ gf.Operation, _ string) *status.Status {
-				return status.New(codes.FailedPrecondition, "error")
+				return status.New(codes.FailedPrecondition, "change is closed")
 			}
 			ct.GFake.MutateChange(gHost, int(ci.GetNumber()), func(c *gf.Change) {
 				c.ACLs = fakeResponseStatus
@@ -293,38 +293,9 @@ func TestExecutePostActionOp(t *testing.T) {
 			configPostVote("label-1", 2)
 			exe := newExecutor(ctx, run)
 			_, err := exe.Do(ctx)
-			assert.ErrIsLike(t, err, "FailedPrecondition")
+			assert.NoErr(t, err)
+			// No vote should have been performed. (It can't be, anyways)
 			assert.That(t, listLabels(gChange1), should.Match(map[string]int32{}))
-
-			t.Run("skip the post action, if the CL abandoned", func(t *ftt.Test) {
-				// mark the CL as abandoned.
-				cl := &changelist.CL{ID: run.CLs[0]}
-				assert.NoErr(t, datastore.Get(ctx, cl))
-				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_ABANDONED
-				cl.EVersion++
-				assert.NoErr(t, datastore.Put(ctx, cl))
-
-				// give it another try
-				_, err := exe.Do(ctx)
-				assert.NoErr(t, err)
-				// No vote should have been performed. (It can't be, anyways)
-				assert.That(t, listLabels(gChange1), should.Match(map[string]int32{}))
-			})
-
-			t.Run("skip the post action, if the CL submitted", func(t *ftt.Test) {
-				// mark the CL as abandoned.
-				cl := &changelist.CL{ID: run.CLs[0]}
-				assert.NoErr(t, datastore.Get(ctx, cl))
-				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
-				cl.EVersion++
-				assert.NoErr(t, datastore.Put(ctx, cl))
-
-				// give it another try
-				_, err := exe.Do(ctx)
-				assert.NoErr(t, err)
-				// No vote should have been performed. (It can't be, anyways)
-				assert.That(t, listLabels(gChange1), should.Match(map[string]int32{}))
-			})
 		})
 	})
 }
