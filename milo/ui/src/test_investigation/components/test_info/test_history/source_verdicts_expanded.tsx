@@ -15,12 +15,20 @@ import { CheckCircle } from '@mui/icons-material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ErrorIcon from '@mui/icons-material/Error';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import { Box, Button, ButtonGroup, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Link,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { ParsedTestVariantBranchName } from '@/analysis/types';
+import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { useTestVariantBranchesClient } from '@/common/hooks/prpc_clients';
 import {
   QuerySourceVerdictsRequest,
@@ -29,10 +37,16 @@ import {
   Segment,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { useInvocation } from '@/test_investigation/context';
+import {
+  useInvocation,
+  useProject,
+  useTestVariant,
+} from '@/test_investigation/context';
 import { getSourcesFromInvocation } from '@/test_investigation/utils/test_info_utils';
 
 import { useTestVariantBranch } from '../context';
+
+import { SourceVerdictTooltip } from './source_verdict_tooltip';
 
 const CurrentResultTooltip = (pos: string) => {
   return (
@@ -102,80 +116,94 @@ const isFailingSourceVerdict = (
   );
 };
 
-const PassSourceVerdictBox = (
-  <Box
-    sx={{
-      backgroundColor: 'var(--gm3-color-success)',
-      display: 'flex',
-      borderRadius: 0,
-      minWidth: '82px',
-      minHeight: '72px',
-      width: '82px',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 0,
-    }}
-  >
-    <Typography
-      variant="subtitle1"
+const PassSourceVerdictBox = (blamelistLink: string) => {
+  return (
+    <Box
       sx={{
-        color: 'white',
-        fontWeight: 'bold',
+        backgroundColor: 'var(--gm3-color-success)',
         display: 'flex',
+        borderRadius: 0,
+        minWidth: '82px',
+        minHeight: '72px',
+        width: '82px',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '4px',
+        padding: 0,
       }}
     >
-      <CheckCircle sx={{ width: '20px' }} /> P
-    </Typography>
-  </Box>
-);
+      <Typography
+        variant="subtitle1"
+        sx={{
+          color: 'white',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '4px',
+        }}
+        component={Link}
+        href={blamelistLink}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <CheckCircle sx={{ width: '20px' }} /> P
+      </Typography>
+    </Box>
+  );
+};
 
-const FailSourceVerdictBox = (
-  <Box
-    sx={{
-      backgroundColor: 'var(--gm3-color-error)',
-      display: 'flex',
-      borderRadius: 0,
-      minWidth: '82px',
-      height: '72px',
-      width: '82px',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 0,
-    }}
-  >
-    <Typography
-      variant="subtitle1"
+const FailSourceVerdictBox = (blamelistLink: string) => {
+  return (
+    <Box
       sx={{
-        color: 'white',
-        fontWeight: 'bold',
+        backgroundColor: 'var(--gm3-color-error)',
         display: 'flex',
+        borderRadius: 0,
+        minWidth: '82px',
+        height: '72px',
+        width: '82px',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '4px',
+        padding: 0,
       }}
+      component={Link}
+      href={blamelistLink}
+      target="_blank"
+      rel="noopener noreferrer"
     >
-      <ErrorIcon sx={{ width: '20px' }} /> F
-    </Typography>
-  </Box>
-);
+      <Typography
+        variant="subtitle1"
+        sx={{
+          color: 'white',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '4px',
+        }}
+      >
+        <ErrorIcon sx={{ width: '20px' }} /> F
+      </Typography>
+    </Box>
+  );
+};
 
 const PassFailSourceVerdictBox = (
-  pos: string,
+  sourceVerdict: QuerySourceVerdictsResponse_SourceVerdict,
   endSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
   startSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
   currentTestResultPosition: string | undefined,
+  blamelistLink: string,
 ) => {
   if (!endSourceVerdicts || !startSourceVerdicts) {
     return <></>;
   }
   return (
     <>
-      {currentTestResultPosition && pos === currentTestResultPosition ? (
+      {currentTestResultPosition &&
+      sourceVerdict.position === currentTestResultPosition ? (
         <Tooltip
-          title={CurrentResultTooltip(pos)}
+          title={CurrentResultTooltip(sourceVerdict.position)}
           open
           placement="top"
           slotProps={{
@@ -197,12 +225,47 @@ const PassFailSourceVerdictBox = (
             },
           }}
         >
+          <HtmlTooltip
+            title={
+              <SourceVerdictTooltip
+                sourceVerdict={sourceVerdict}
+              ></SourceVerdictTooltip>
+            }
+          >
+            <Box
+              sx={{
+                width: '8px',
+                height: '60px',
+                backgroundColor: isFailingSourceVerdict(
+                  sourceVerdict.position,
+                  endSourceVerdicts,
+                  startSourceVerdicts,
+                )
+                  ? 'var(--gm3-color-error)'
+                  : 'var(--gm3-color-success)',
+                display: 'flex',
+              }}
+              component={Link}
+              href={blamelistLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            ></Box>
+          </HtmlTooltip>
+        </Tooltip>
+      ) : (
+        <HtmlTooltip
+          title={
+            <SourceVerdictTooltip
+              sourceVerdict={sourceVerdict}
+            ></SourceVerdictTooltip>
+          }
+        >
           <Box
             sx={{
               width: '8px',
               height: '60px',
               backgroundColor: isFailingSourceVerdict(
-                pos,
+                sourceVerdict.position,
                 endSourceVerdicts,
                 startSourceVerdicts,
               )
@@ -211,22 +274,7 @@ const PassFailSourceVerdictBox = (
               display: 'flex',
             }}
           ></Box>
-        </Tooltip>
-      ) : (
-        <Box
-          sx={{
-            width: '8px',
-            height: '60px',
-            backgroundColor: isFailingSourceVerdict(
-              pos,
-              endSourceVerdicts,
-              startSourceVerdicts,
-            )
-              ? 'var(--gm3-color-error)'
-              : 'var(--gm3-color-success)',
-            display: 'flex',
-          }}
-        ></Box>
+        </HtmlTooltip>
       )}
     </>
   );
@@ -238,12 +286,25 @@ export function SourceVerdictsExpanded({
   const testVariantBranch = useTestVariantBranch();
   const tvbClient = useTestVariantBranchesClient();
   const invocation = useInvocation() as Invocation;
+  const testVariant = useTestVariant();
+  const project = useProject();
   const sources = getSourcesFromInvocation(invocation);
   // How many source verdicts shown (from both start and end position) when component is expanded.
   const [sourceVerdictCount, setSourceVerdictCount] = useState(15);
   const endPos = Number(segment.endPosition);
   const endPosEnd = Number(segment.endPosition) - 1000;
+  const testId = testVariant.testId;
+  const variantHash = testVariant.variantHash;
+  const refHash = testVariantBranch?.refHash;
   const currentTestResultPosition = sources?.gitilesCommit?.position;
+
+  const blamelistBaseUrl = refHash
+    ? `/ui/labs/p/${project}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/refs/${refHash}/blamelist`
+    : undefined;
+
+  const createBlamelistLink = (position: string) => {
+    return `${blamelistBaseUrl}?expand=${`CP-${position}`}#CP-${position}`;
+  };
 
   const { data: response, isLoading: isLoadingEndVerdicts } = useQuery({
     ...tvbClient.QuerySourceVerdicts.query(
@@ -328,8 +389,8 @@ export function SourceVerdictsExpanded({
         endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
         startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
       )
-        ? FailSourceVerdictBox
-        : PassSourceVerdictBox}
+        ? FailSourceVerdictBox(createBlamelistLink(segment.endPosition))
+        : PassSourceVerdictBox(createBlamelistLink(segment.endPosition))}
       <Box
         sx={{
           width: '8px',
@@ -344,10 +405,11 @@ export function SourceVerdictsExpanded({
           .slice(0, sourceVerdictCount)
           .map((sourceVerdict) =>
             PassFailSourceVerdictBox(
-              sourceVerdict.position,
+              sourceVerdict,
               endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
               startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
               currentTestResultPosition,
+              createBlamelistLink(sourceVerdict.position),
             ),
           )}
       {ExpandButton}
@@ -356,10 +418,11 @@ export function SourceVerdictsExpanded({
           .slice(0, sourceVerdictCount)
           .map((sourceVerdict) =>
             PassFailSourceVerdictBox(
-              sourceVerdict.position,
+              sourceVerdict,
               endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
               startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
               currentTestResultPosition,
+              createBlamelistLink(sourceVerdict.position),
             ),
           )}
 
@@ -378,8 +441,8 @@ export function SourceVerdictsExpanded({
         endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
         startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
       )
-        ? FailSourceVerdictBox
-        : PassSourceVerdictBox}
+        ? FailSourceVerdictBox(createBlamelistLink(segment.startPosition))
+        : PassSourceVerdictBox(createBlamelistLink(segment.startPosition))}
     </ButtonGroup>
   );
 }
