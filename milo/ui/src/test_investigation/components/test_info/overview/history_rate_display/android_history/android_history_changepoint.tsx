@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { Box } from '@mui/material';
+import { Box, Link } from '@mui/material';
 import { memo } from 'react';
 
 import { SegmentSummary } from '@/common/hooks/gapi_query/android_fluxgate/android_fluxgate';
@@ -39,26 +39,32 @@ export const AndroidHistoryChangepoint = memo(
 
     return (
       <Box
-        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          mx: 1,
+        }}
       >
-        {url ? (
-          <a
+        <ArrowBackIcon
+          data-testid="ArrowBackIcon"
+          sx={{
+            color: url ? 'action.active' : 'text.disabled',
+            my: 0.25,
+            fontSize: '20px',
+          }}
+        />
+        {url && (
+          <Link
             href={url}
             target="_blank"
             rel="noopener noreferrer"
             title="View Blamelist"
-            style={{ display: 'flex', alignItems: 'center' }}
+            variant="caption"
+            sx={{ lineHeight: 1 }}
           >
-            <ArrowBackIcon
-              data-testid="ArrowBackIcon"
-              sx={{ color: 'action.active', my: 0.25, fontSize: '20px' }}
-            />
-          </a>
-        ) : (
-          <ArrowBackIcon
-            data-testid="ArrowBackIcon"
-            sx={{ color: 'text.disabled', my: 0.25, fontSize: '20px' }}
-          />
+            blamelist
+          </Link>
         )}
       </Box>
     );
