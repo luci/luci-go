@@ -42,6 +42,7 @@ type TestResult struct {
 	SubRealm         string
 	IsUnexpected     bool
 	Status           pb.TestResultStatus
+	StatusV2         pb.TestResult_Status
 }
 
 // ReadAllForTesting reads all test results from the
@@ -50,7 +51,8 @@ type TestResult struct {
 func ReadAllForTesting(ctx context.Context) ([]*TestResult, error) {
 	sql := `SELECT Project, TestId, VariantHash, SourceRefHash, SourcePosition,
 		RootInvocationId, InvocationId, ResultId, PartitionTime, SubRealm,
-		IsUnexpected, Status, ChangelistHosts, ChangelistChanges,
+		IsUnexpected, Status, COALESCE(StatusV2, 0) as StatusV2,
+		ChangelistHosts, ChangelistChanges,
 		ChangelistPatchsets, ChangelistOwnerKinds, HasDirtySources
 	FROM TestResultsBySourcePosition
 	ORDER BY Project, TestId, VariantHash, RootInvocationId, InvocationId, ResultId`
@@ -80,6 +82,7 @@ func ReadAllForTesting(ctx context.Context) ([]*TestResult, error) {
 			&tr.SubRealm,
 			&tr.IsUnexpected,
 			&tr.Status,
+			&tr.StatusV2,
 			&changelistHosts, &changelistChanges, &changelistPatchsets, &changelistOwnerKinds,
 			&tr.Sources.IsDirty,
 		)
@@ -126,7 +129,7 @@ func ReadAllForTesting(ctx context.Context) ([]*TestResult, error) {
 var TestResultSaveCols = []string{
 	"Project", "TestId", "VariantHash", "SourceRefHash", "SourcePosition",
 	"RootInvocationId", "InvocationId", "ResultId", "PartitionTime", "SubRealm",
-	"IsUnexpected", "Status", "ChangelistHosts", "ChangelistChanges",
+	"IsUnexpected", "Status", "StatusV2", "ChangelistHosts", "ChangelistChanges",
 	"ChangelistPatchsets", "ChangelistOwnerKinds", "HasDirtySources",
 }
 
@@ -153,7 +156,7 @@ func (tr *TestResult) SaveUnverified() *spanner.Mutation {
 	vals := []any{
 		tr.Project, tr.TestID, tr.VariantHash, tr.Sources.RefHash, tr.Sources.Position,
 		tr.RootInvocationID.RowID(), tr.WorkUnitID.RowID(), tr.ResultID, tr.PartitionTime, tr.SubRealm,
-		tr.IsUnexpected, int64(tr.Status), changelistHosts, changelistChanges,
+		tr.IsUnexpected, int64(tr.Status), int64(tr.StatusV2), changelistHosts, changelistChanges,
 		changelistPatchsets, changelistOwnerKinds, tr.Sources.IsDirty,
 	}
 	return spanner.InsertOrUpdate("TestResultsBySourcePosition", TestResultSaveCols, vals)

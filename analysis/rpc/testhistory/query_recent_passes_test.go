@@ -179,20 +179,20 @@ func createPassingResultsTestData(ctx context.Context, t *ftt.Test) error {
 
 	results := []*lowlatency.TestResult{
 		// Gitiles passes
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 101}).WithRootInvocationID("inv-2").WithStatus(pb.TestResultStatus_PASS).Build(),
-		baseBuilder.WithSubRealm("other-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 102}).WithRootInvocationID("inv-3").WithStatus(pb.TestResultStatus_PASS).Build(),
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 103}).WithLegacyRootInvocationID("inv-legacy1").WithLegacyInvocationID("task-1").WithStatus(pb.TestResultStatus_PASS).Build(),
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 104}).WithLegacyRootInvocationID("inv-legacy2").WithLegacyInvocationID("task-1").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 101}).WithRootInvocationID("inv-2").WithStatusV2(pb.TestResult_PASSED).Build(),
+		baseBuilder.WithSubRealm("other-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 102}).WithRootInvocationID("inv-3").WithStatusV2(pb.TestResult_PASSED).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 103}).WithLegacyRootInvocationID("inv-legacy1").WithLegacyInvocationID("task-1").WithStatusV2(pb.TestResult_PASSED).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 104}).WithLegacyRootInvocationID("inv-legacy2").WithLegacyInvocationID("task-1").WithStatusV2(pb.TestResult_PASSED).Build(),
 		// A fail to ensure we filter by status.
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 103}).WithRootInvocationID("inv-fail").WithStatus(pb.TestResultStatus_FAIL).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 103}).WithRootInvocationID("inv-fail").WithStatusV2(pb.TestResult_FAILED).Build(),
 		// A pass in an unauthorized realm.
-		baseBuilder.WithSubRealm("forbidden-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 104}).WithRootInvocationID("inv-unauth").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("forbidden-realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 104}).WithRootInvocationID("inv-unauth").WithStatusV2(pb.TestResult_PASSED).Build(),
 		// Should be excluded because position is > 105.
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 106}).WithRootInvocationID("inv-1").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: gitilesRefHash, Position: 106}).WithRootInvocationID("inv-1").WithStatusV2(pb.TestResult_PASSED).Build(),
 
 		// Android passes
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2001}).WithRootInvocationID("inv-android-1").WithStatus(pb.TestResultStatus_PASS).Build(),
-		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2002}).WithRootInvocationID("inv-android-2").WithStatus(pb.TestResultStatus_PASS).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2001}).WithRootInvocationID("inv-android-1").WithStatusV2(pb.TestResult_PASSED).Build(),
+		baseBuilder.WithSubRealm("realm").WithSources(testresults.Sources{RefHash: androidRefHash, Position: 2002}).WithRootInvocationID("inv-android-2").WithStatusV2(pb.TestResult_PASSED).Build(),
 	}
 
 	return lowlatency.SetForTesting(ctx, t, results)

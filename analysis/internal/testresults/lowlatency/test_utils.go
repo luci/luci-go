@@ -63,6 +63,7 @@ func NewTestResult() TestResultBuilder {
 		SubRealm:         "realm",
 		IsUnexpected:     true,
 		Status:           pb.TestResultStatus_PASS,
+		StatusV2:         pb.TestResult_PASSED,
 	}
 	return TestResultBuilder{
 		result: result,
@@ -138,6 +139,12 @@ func (b TestResultBuilder) WithIsUnexpected(isUnexpected bool) TestResultBuilder
 // WithStatus specifies the status of the test result.
 func (b TestResultBuilder) WithStatus(status pb.TestResultStatus) TestResultBuilder {
 	b.result.Status = status
+	return b
+}
+
+// WithStatusV2 specifies the status V2 of the test result.
+func (b TestResultBuilder) WithStatusV2(status pb.TestResult_Status) TestResultBuilder {
+	b.result.StatusV2 = status
 	return b
 }
 

@@ -59,7 +59,10 @@ func ReadPassingResultsBySource(ctx context.Context, opts ReadPassingTestResults
 		  AND t.VariantHash = @variantHash
 		  AND t.SourceRefHash = @sourceRefHash
 		  AND t.SourcePosition <= @maxSourcePosition
-		  AND t.Status = @passStatus
+			AND (
+				t.StatusV2 = @passedStatusV2
+				OR (t.StatusV2 IS NULL AND t.Status = @passStatus)
+			)
 		GROUP BY IF(STARTS_WITH(t.RootInvocationId, "root:"), t.RootInvocationId, ""), t.InvocationId, t.ResultId
 		ORDER BY MAX(t.SourcePosition) DESC
 		LIMIT @limit
@@ -71,6 +74,7 @@ func ReadPassingResultsBySource(ctx context.Context, opts ReadPassingTestResults
 		"variantHash":       opts.VariantHash,
 		"sourceRefHash":     opts.SourceRefHash,
 		"maxSourcePosition": opts.MaxSourcePosition,
+		"passedStatusV2":    int64(pb.TestResult_PASSED),
 		"passStatus":        int64(pb.TestResultStatus_PASS),
 		"limit":             opts.Limit,
 	}

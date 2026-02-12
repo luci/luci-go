@@ -74,6 +74,7 @@ func TestIngestForExonerationLegacy(t *testing.T) {
 				PartitionTime:    partitionTime,
 				SubRealm:         "root",
 				Status:           analysispb.TestResultStatus_PASS,
+				StatusV2:         analysispb.TestResult_PASSED,
 			},
 			{
 				Project:          "rootproject",
@@ -87,6 +88,7 @@ func TestIngestForExonerationLegacy(t *testing.T) {
 				SubRealm:         "root",
 				IsUnexpected:     true,
 				Status:           analysispb.TestResultStatus_FAIL,
+				StatusV2:         analysispb.TestResult_FAILED,
 			},
 			{
 				Project:          "rootproject",
@@ -99,6 +101,7 @@ func TestIngestForExonerationLegacy(t *testing.T) {
 				PartitionTime:    partitionTime,
 				SubRealm:         "root",
 				Status:           analysispb.TestResultStatus_PASS,
+				StatusV2:         analysispb.TestResult_PASSED,
 			},
 			{
 				Project:          "rootproject",
@@ -112,6 +115,7 @@ func TestIngestForExonerationLegacy(t *testing.T) {
 				SubRealm:         "root",
 				IsUnexpected:     false,
 				Status:           analysispb.TestResultStatus_SKIP,
+				StatusV2:         analysispb.TestResult_SKIPPED,
 			},
 		}
 
@@ -200,6 +204,7 @@ func TestIngestForExoneration(t *testing.T) {
 				SubRealm:         "root",
 				IsUnexpected:     true,
 				Status:           analysispb.TestResultStatus_FAIL,
+				StatusV2:         analysispb.TestResult_FAILED,
 			},
 			{
 				Project:          "rootproject",
@@ -212,6 +217,7 @@ func TestIngestForExoneration(t *testing.T) {
 				PartitionTime:    partitionTime,
 				SubRealm:         "root",
 				Status:           analysispb.TestResultStatus_PASS,
+				StatusV2:         analysispb.TestResult_PASSED,
 			},
 			{
 				Project:          "rootproject",
@@ -224,6 +230,7 @@ func TestIngestForExoneration(t *testing.T) {
 				PartitionTime:    partitionTime,
 				SubRealm:         "root",
 				Status:           analysispb.TestResultStatus_PASS,
+				StatusV2:         analysispb.TestResult_PASSED,
 			},
 			{
 				Project:          "rootproject",
@@ -237,6 +244,7 @@ func TestIngestForExoneration(t *testing.T) {
 				SubRealm:         "root",
 				IsUnexpected:     false,
 				Status:           analysispb.TestResultStatus_SKIP,
+				StatusV2:         analysispb.TestResult_SKIPPED,
 			},
 		}
 

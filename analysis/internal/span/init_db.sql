@@ -573,6 +573,11 @@ CREATE TABLE TestResultsBySourcePosition (
   Status INT64 NOT NULL,
 
   -- The test result status (v2).
+  -- Stored as one of the pb.TestResult_Status values.
+  -- See go.chromium.org/luci/analysis/proto/v1/common.proto for details.
+  --
+  -- This column started being populated in February 2026. Given the 90
+  -- day TTL, it can be made NOT NULL in from the start of June 2026.
   StatusV2 INT64,
 
   -- The following fields capture information about any unsubmitted

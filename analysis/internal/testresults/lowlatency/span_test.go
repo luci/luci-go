@@ -297,6 +297,7 @@ func verdict(baseResult *TestResultBuilder, status pb.QuerySourceVerdictsRespons
 		tr.ResultID = "expected"
 		tr.IsUnexpected = false
 		tr.Status = pb.TestResultStatus_PASS
+		tr.StatusV2 = pb.TestResult_PASSED
 		results = append(results, tr)
 
 		// For testing purposes, add an unexpectedly skipped result to
@@ -305,12 +306,14 @@ func verdict(baseResult *TestResultBuilder, status pb.QuerySourceVerdictsRespons
 		tr.ResultID = "additional-skip"
 		tr.IsUnexpected = true
 		tr.Status = pb.TestResultStatus_SKIP
+		tr.StatusV2 = pb.TestResult_EXECUTION_ERRORED
 		results = append(results, tr)
 	case pb.QuerySourceVerdictsResponse_UNEXPECTED:
 		tr := baseResult.Build()
 		tr.ResultID = "unexpected"
 		tr.IsUnexpected = true
 		tr.Status = pb.TestResultStatus_FAIL
+		tr.StatusV2 = pb.TestResult_FAILED
 		results = append(results, tr)
 
 		// For testing purposes, add an expectedly skipped result to
@@ -319,6 +322,7 @@ func verdict(baseResult *TestResultBuilder, status pb.QuerySourceVerdictsRespons
 		tr.ResultID = "additional-skip"
 		tr.IsUnexpected = false
 		tr.Status = pb.TestResultStatus_SKIP
+		tr.StatusV2 = pb.TestResult_SKIPPED
 		results = append(results, tr)
 	case pb.QuerySourceVerdictsResponse_FLAKY:
 		// Add both expected and unexpected results.
@@ -326,16 +330,19 @@ func verdict(baseResult *TestResultBuilder, status pb.QuerySourceVerdictsRespons
 		tr.ResultID = "flaky-result-1"
 		tr.IsUnexpected = false
 		tr.Status = pb.TestResultStatus_PASS
+		tr.StatusV2 = pb.TestResult_PASSED
 		results = append(results, tr)
 
 		tr = baseResult.Build()
 		tr.ResultID = "flaky-result-2"
 		tr.IsUnexpected = true
 		tr.Status = pb.TestResultStatus_FAIL
+		tr.StatusV2 = pb.TestResult_FAILED
 		results = append(results, tr)
 	case pb.QuerySourceVerdictsResponse_SKIPPED:
 		tr := baseResult.Build()
 		tr.Status = pb.TestResultStatus_SKIP
+		tr.StatusV2 = pb.TestResult_SKIPPED
 		results = append(results, tr)
 	}
 	return results

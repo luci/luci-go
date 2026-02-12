@@ -211,6 +211,7 @@ func batchTestResults(input LegacyInputs, sources testresults.Sources, outputC c
 				SubRealm:         input.SubRealm,
 				IsUnexpected:     !inputTR.Result.Expected,
 				Status:           pbutil.LegacyTestStatusFromResultDB(inputTR.Result.Status),
+				StatusV2:         pbutil.TestStatusV2FromResultDB(inputTR.Result.StatusV2),
 			}
 
 			// Convert the test result into a mutation immediately
@@ -277,6 +278,7 @@ func batchPubSubTestResults(n *rdbpb.TestResultsNotification, sources testresult
 				SubRealm:         subRealm,
 				IsUnexpected:     !inputTR.Expected,
 				Status:           pbutil.LegacyTestStatusFromResultDB(inputTR.Status),
+				StatusV2:         pbutil.TestStatusV2FromResultDB(inputTR.StatusV2),
 			}
 
 			// Convert the test result into a mutation immediately
