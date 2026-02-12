@@ -68,7 +68,7 @@ func TestQuery(t *testing.T) {
 				WithRealm(fmt.Sprintf("testproject:realm-%d", i%2)). // Alternating realms: realm-0, realm-1
 				Build()
 
-			ms = append(ms, InsertForTesting(row))
+			ms = append(ms, InsertForTesting(row)...)
 			expected = append(expected, row)
 		}
 		testutil.MustApply(ctx, t, ms...)
@@ -152,7 +152,7 @@ func TestQuery(t *testing.T) {
 				WithRootInvocationShardID(rootinvocations.ShardID{RootInvocationID: rootInvID, ShardIndex: 0}).
 				WithModuleName("m2"). // Different module
 				Build()
-			testutil.MustApply(ctx, t, InsertForTesting(otherRow))
+			testutil.MustApply(ctx, t, InsertForTesting(otherRow)...)
 
 			q.TestPrefixFilter = &pb.TestIdentifierPrefix{
 				Level: pb.AggregationLevel_MODULE,

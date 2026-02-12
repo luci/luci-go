@@ -122,7 +122,7 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	// Prepare mutations.
 	var ms []*spanner.Mutation
 	for _, r := range results {
-		ms = append(ms, testresultsv2.InsertForTesting(r))
+		ms = append(ms, testresultsv2.InsertForTesting(r)...)
 	}
 	for _, e := range exonerations {
 		ms = append(ms, testexonerationsv2.InsertForTesting(e))

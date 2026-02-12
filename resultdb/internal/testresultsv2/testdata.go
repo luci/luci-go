@@ -42,7 +42,7 @@ func NewBuilder() *Builder {
 					ShardIndex:       1,
 				},
 				ModuleName:        "module-name",
-				ModuleScheme:      "module-scheme",
+				ModuleScheme:      "scheme",
 				ModuleVariantHash: "variant-hash",
 				CoarseName:        "coarse-name",
 				FineName:          "fine-name",
@@ -273,37 +273,41 @@ func (b *Builder) Build() *TestResultRow {
 }
 
 // InsertForTesting inserts the test result row for testing purposes.
-func InsertForTesting(tr *TestResultRow) *spanner.Mutation {
-	// Clone the proto to avoid changes propagating back to the caller.
-	tmd := decomposeTestMetadataForWrite(tr.TestMetadata)
+func InsertForTesting(tr ...*TestResultRow) []*spanner.Mutation {
+	var ms []*spanner.Mutation
+	for _, tr := range tr {
+		// Clone the proto to avoid changes propagating back to the caller.
+		tmd := decomposeTestMetadataForWrite(tr.TestMetadata)
 
-	row := map[string]any{
-		"RootInvocationShardId":        tr.ID.RootInvocationShardID.RowID(),
-		"ModuleName":                   tr.ID.ModuleName,
-		"ModuleScheme":                 tr.ID.ModuleScheme,
-		"ModuleVariantHash":            tr.ID.ModuleVariantHash,
-		"T1CoarseName":                 tr.ID.CoarseName,
-		"T2FineName":                   tr.ID.FineName,
-		"T3CaseName":                   tr.ID.CaseName,
-		"WorkUnitID":                   tr.ID.WorkUnitID,
-		"ResultId":                     tr.ID.ResultID,
-		"ModuleVariant":                tr.ModuleVariant,
-		"CreateTime":                   tr.CreateTime,
-		"Realm":                        tr.Realm,
-		"StatusV2":                     int64(tr.StatusV2),
-		"SummaryHTML":                  spanutil.Compressed(tr.SummaryHTML),
-		"StartTime":                    tr.StartTime,
-		"RunDurationNanos":             tr.RunDurationNanos,
-		"Tags":                         tr.Tags,
-		"TestMetadata":                 spanutil.Compressed(pbutil.MustMarshal(tmd.Remainder)),
-		"TestMetadataName":             tmd.Name,
-		"TestMetadataLocationFileName": tmd.LocationFileName,
-		"TestMetadataLocationRepo":     tmd.LocationRepo,
-		"FailureReason":                spanutil.Compressed(pbutil.MustMarshal(RemoveOutputOnlyFailureReasonFields(tr.FailureReason))),
-		"Properties":                   spanutil.Compressed(pbutil.MustMarshal(tr.Properties)),
-		"SkipReason":                   int64(tr.SkipReason),
-		"SkippedReason":                spanutil.Compressed(pbutil.MustMarshal(tr.SkippedReason)),
-		"FrameworkExtensions":          spanutil.Compressed(pbutil.MustMarshal(tr.FrameworkExtensions)),
+		row := map[string]any{
+			"RootInvocationShardId":        tr.ID.RootInvocationShardID.RowID(),
+			"ModuleName":                   tr.ID.ModuleName,
+			"ModuleScheme":                 tr.ID.ModuleScheme,
+			"ModuleVariantHash":            tr.ID.ModuleVariantHash,
+			"T1CoarseName":                 tr.ID.CoarseName,
+			"T2FineName":                   tr.ID.FineName,
+			"T3CaseName":                   tr.ID.CaseName,
+			"WorkUnitID":                   tr.ID.WorkUnitID,
+			"ResultId":                     tr.ID.ResultID,
+			"ModuleVariant":                tr.ModuleVariant,
+			"CreateTime":                   tr.CreateTime,
+			"Realm":                        tr.Realm,
+			"StatusV2":                     int64(tr.StatusV2),
+			"SummaryHTML":                  spanutil.Compressed(tr.SummaryHTML),
+			"StartTime":                    tr.StartTime,
+			"RunDurationNanos":             tr.RunDurationNanos,
+			"Tags":                         tr.Tags,
+			"TestMetadata":                 spanutil.Compressed(pbutil.MustMarshal(tmd.Remainder)),
+			"TestMetadataName":             tmd.Name,
+			"TestMetadataLocationFileName": tmd.LocationFileName,
+			"TestMetadataLocationRepo":     tmd.LocationRepo,
+			"FailureReason":                spanutil.Compressed(pbutil.MustMarshal(RemoveOutputOnlyFailureReasonFields(tr.FailureReason))),
+			"Properties":                   spanutil.Compressed(pbutil.MustMarshal(tr.Properties)),
+			"SkipReason":                   int64(tr.SkipReason),
+			"SkippedReason":                spanutil.Compressed(pbutil.MustMarshal(tr.SkippedReason)),
+			"FrameworkExtensions":          spanutil.Compressed(pbutil.MustMarshal(tr.FrameworkExtensions)),
+		}
+		ms = append(ms, spanutil.InsertMap("TestResultsV2", row))
 	}
-	return spanutil.InsertMap("TestResultsV2", row)
+	return ms
 }

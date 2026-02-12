@@ -38,7 +38,7 @@ func TestReadAllForTesting(t *testing.T) {
 
 			ms := []*spanner.Mutation{}
 			ms = append(ms, rootinvocations.InsertForTesting(ri)...)
-			ms = append(ms, InsertForTesting(testResult))
+			ms = append(ms, InsertForTesting(testResult)...)
 			_, err := span.Apply(ctx, ms)
 			assert.Loosely(t, err, should.BeNil)
 

@@ -96,7 +96,9 @@ message TestVariant {
   // test result in the test verdict and get its instruction.
   // Note: If in this test verdict, if there are different instructions for
   // test result, the result may be undeterministic.
-  VerdictInstruction instruction = 10;
+  //
+  // This field is not populated when querying root invocations.
+  VerdictInstruction instruction = 10 [ deprecated = true ];
 }
 
 message VerdictInstruction {
@@ -140,7 +142,16 @@ enum TestVariantStatus {
 // Empty message matches all test variants.
 message TestVariantPredicate {
   // A test variant must have this status.
-  TestVariantStatus status = 1;
+  //
+  // DEPRECATED: Please use QueryTestVerdicts and its TestVerdictPredicate instead.
+  // For root invocations, the semantics of the TestVariantStatus filter changes
+  // as it is implemented as a filter on the v2 verdict status instead:
+  // - UNEXPECTED yields verdicts with a v2 status of FAILED,
+  // - UNEXPECTED_MASK yields verdicts with a v2 status of FAILED,
+  //   EXECUTION_ERRORED, PRECLUDED, FLAKY or EXONERATED.
+  //
+  // Only UNEXPECTED and UNEXPECTED_MASK are supported.
+  TestVariantStatus status = 1 [ deprecated = true ];
 }
 
 // The outcome of a test variant in a test run (a single invocation,

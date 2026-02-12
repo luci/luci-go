@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testresults"
+	"go.chromium.org/luci/resultdb/internal/testresultsv2"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/internal/testvariants"
@@ -104,6 +105,14 @@ func TestQueryTestVariants(t *testing.T) {
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike(`result_limit: negative`))
 			})
+
+			t.Run(`invalid page token`, func(t *ftt.Test) {
+				// This page token is valid for the old query backend, but not for root invocations.
+				req.PageToken = pagination.Token("PASSED_OR_SKIPPED", "", "")
+				_, err := srv.QueryTestVariants(ctx, req)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`page_token: invalid page token`))
+			})
 		})
 
 		// Permission is check in TestDetermineListAccessLevel. Here we just make sure the function is called.
@@ -114,7 +123,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 			_, err := srv.QueryTestVariants(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.listLimited in realm of \"rootInvocations/root-invsecret\""))
+			assert.Loosely(t, err, should.ErrLike(`caller does not have permissions [resultdb.testResults.listLimited, resultdb.testExonerations.listLimited] (or [resultdb.testResults.list, resultdb.testExonerations.list]) in realm of root invocation "rootInvocations/root-invsecret"`))
 		})
 
 		t.Run(`e2e`, func(t *ftt.Test) {
@@ -136,19 +145,51 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 				}).
 				Build()
-			tr11 := insert.MakeTestResults(wu1.ID.LegacyInvocationID(), "test1", pbutil.Variant("a", "b"), pb.TestResult_SKIPPED)[0]
-			tr12 := insert.MakeTestResults(wu1.ID.LegacyInvocationID(), "test2", pbutil.Variant("c", "d"), pb.TestResult_PASSED)[0]
-			tr13 := insert.MakeTestResults(wu1.ID.LegacyInvocationID(), "test3", pbutil.Variant("a", "b"), pb.TestResult_FAILED)[0]
-			tr14 := insert.MakeTestResults(wu1.ID.LegacyInvocationID(), "test4", pbutil.Variant("g", "h"), pb.TestResult_EXECUTION_ERRORED)[0]
-			tr15 := insert.MakeTestResults(wu1.ID.LegacyInvocationID(), "test5", pbutil.Variant(), pb.TestResult_PRECLUDED)[0]
+
+			shardID := rootinvocations.ShardID{
+				RootInvocationID: rootInv.RootInvocationID,
+				ShardIndex:       5, // Pick a random shard, which does not matter, so long as all results from the same test are in the same shard.
+			}
+			tr11 := testresultsv2.NewBuilder().WithRootInvocationShardID(shardID).
+				// The default test result returned by the builder has FrameworkExtensions set, which will interfere
+				// with the computed v1 verdict status.
+				WithFrameworkExtensions(nil).
+				WithStatusV2(pb.TestResult_SKIPPED).
+				WithCaseName("test1").
+				WithModuleVariant(pbutil.Variant("a", "b")).
+				Build()
+			tr12 := testresultsv2.NewBuilder().WithRootInvocationShardID(shardID).
+				WithFrameworkExtensions(nil).
+				WithStatusV2(pb.TestResult_PASSED).
+				WithCaseName("test2").
+				WithModuleVariant(pbutil.Variant("c", "d")).
+				Build()
+			tr13 := testresultsv2.NewBuilder().WithRootInvocationShardID(shardID).
+				WithFrameworkExtensions(nil).
+				WithStatusV2(pb.TestResult_FAILED).
+				WithCaseName("test3").
+				WithModuleVariant(pbutil.Variant("a", "b")).
+				Build()
+			tr14 := testresultsv2.NewBuilder().WithRootInvocationShardID(shardID).
+				WithFrameworkExtensions(nil).
+				WithStatusV2(pb.TestResult_EXECUTION_ERRORED).
+				WithCaseName("test4").
+				WithModuleVariant(pbutil.Variant("g", "h")).
+				Build()
+			tr15 := testresultsv2.NewBuilder().WithRootInvocationShardID(shardID).
+				WithFrameworkExtensions(nil).
+				WithStatusV2(pb.TestResult_PRECLUDED).
+				WithCaseName("test5").
+				WithModuleVariant(pbutil.Variant()).
+				Build()
 
 			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				workunits.InsertForTesting(rootWU),
 				workunits.InsertForTesting(wu1),
-				insert.TestResultMessages(t, []*pb.TestResult{tr11, tr12, tr13, tr14, tr15}),
+				testresultsv2.InsertForTesting(tr11, tr12, tr13, tr14, tr15),
 			)...)
 
-			expectedResultsFirstPage := []*pb.TestResult{tr13, tr14, tr15}
+			expectedResultsFirstPage := []*pb.TestResult{tr13.ToProto(), tr14.ToProto(), tr15.ToProto()}
 			expectedStatusFirstPage := []struct {
 				Status         pb.TestVariantStatus
 				StatusOverride pb.TestVerdict_StatusOverride
@@ -177,6 +218,7 @@ func TestQueryTestVariants(t *testing.T) {
 				res, err := srv.QueryTestVariants(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
+				assert.Loosely(t, res.TestVariants, should.HaveLength(len(expectedResultsFirstPage)))
 				for i, tv := range res.TestVariants {
 					result := expectedResultsFirstPage[i]
 
@@ -198,7 +240,6 @@ func TestQueryTestVariants(t *testing.T) {
 						StatusV2:         expectedStatusFirstPage[i].StatusV2,
 						Results:          []*pb.TestResultBundle{{Result: expectedResult}},
 						TestMetadata:     result.TestMetadata,
-						Instruction:      &pb.VerdictInstruction{Instruction: "rootInvocations/root-inv1/workUnits/wu1/instructions/test"},
 						SourcesId:        graph.HashSources(rootInv.Sources).String(),
 					}))
 				}
@@ -206,9 +247,7 @@ func TestQueryTestVariants(t *testing.T) {
 				assert.Loosely(t, res.Sources, should.HaveLength(1))
 				assert.Loosely(t, res.Sources[graph.HashSources(rootInv.Sources).String()], should.Match(rootInv.Sources))
 				// Check token
-				tokenParts, err := pagination.ParseToken(res.NextPageToken)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tokenParts, should.Match([]string{"PASSED_OR_SKIPPED", "", ""}))
+				assert.That(t, res.NextPageToken, should.NotBeBlank)
 			})
 
 			t.Run(`limited access`, func(t *ftt.Test) {
@@ -222,6 +261,8 @@ func TestQueryTestVariants(t *testing.T) {
 
 				res, err := srv.QueryTestVariants(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
+
+				assert.Loosely(t, res.TestVariants, should.HaveLength(len(expectedResultsFirstPage)))
 				for i, tv := range res.TestVariants {
 					result := expectedResultsFirstPage[i]
 
@@ -253,7 +294,6 @@ func TestQueryTestVariants(t *testing.T) {
 						StatusV2:       expectedStatusFirstPage[i].StatusV2,
 						Results:        []*pb.TestResultBundle{{Result: expectedResult}},
 						TestMetadata:   nil, // Masked
-						Instruction:    &pb.VerdictInstruction{Instruction: "rootInvocations/root-inv1/workUnits/wu1/instructions/test"},
 						SourcesId:      graph.HashSources(rootInv.Sources).String(),
 						IsMasked:       true,
 					}))
@@ -262,35 +302,50 @@ func TestQueryTestVariants(t *testing.T) {
 				assert.Loosely(t, res.Sources, should.HaveLength(1))
 				assert.Loosely(t, res.Sources[graph.HashSources(rootInv.Sources).String()], should.Match(rootInv.Sources))
 				// verify token
-				tokenParts, err := pagination.ParseToken(res.NextPageToken)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tokenParts, should.Match([]string{"PASSED_OR_SKIPPED", "", ""}))
+				assert.That(t, res.NextPageToken, should.NotBeBlank)
 			})
 			t.Run(`valid with status v2 sort order`, func(t *ftt.Test) {
 				req.OrderBy = "status_v2_effective"
 
 				res, err := srv.QueryTestVariants(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				tokenParts, err := pagination.ParseToken(res.NextPageToken)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, tokenParts, should.Match([]string{"PASSED_OR_SKIPPED", "", ""}))
+				assert.Loosely(t, res.NextPageToken, should.NotBeBlank)
 
 				assert.Loosely(t, len(res.TestVariants), should.Equal(3))
 				assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
-					"10/test3/c467ccce5a16dc72/FAILED",
-					"20/test4/84cfbe1757a95b22/EXECUTION_ERRORED",
-					"20/test5/e3b0c44298fc1c14/PRECLUDED",
+					"10/:module-name!scheme:coarse-name:fine-name#test3/c467ccce5a16dc72/FAILED",
+					"20/:module-name!scheme:coarse-name:fine-name#test4/84cfbe1757a95b22/EXECUTION_ERRORED",
+					"20/:module-name!scheme:coarse-name:fine-name#test5/e3b0c44298fc1c14/PRECLUDED",
 				}))
 
 				// Try next page.
-				req.PageToken = pagination.Token("PASSED_OR_SKIPPED", "", "")
+				req.PageToken = res.NextPageToken
 				res, err = srv.QueryTestVariants(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.BeBlank)
 				assert.Loosely(t, len(res.TestVariants), should.Equal(2))
 				assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
-					"50/test1/c467ccce5a16dc72/SKIPPED",
-					"50/test2/ded11d2f8ab4fbb5/PASSED",
+					"50/:module-name!scheme:coarse-name:fine-name#test1/c467ccce5a16dc72/SKIPPED",
+					"50/:module-name!scheme:coarse-name:fine-name#test2/ded11d2f8ab4fbb5/PASSED",
 				}))
+			})
+			t.Run(`with filter`, func(t *ftt.Test) {
+				req.Filter = `test_id=":module-name!scheme:coarse-name:fine-name#test4" variant_hash="84cfbe1757a95b22"`
+
+				res, err := srv.QueryTestVariants(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.NotBeBlank)
+				assert.Loosely(t, len(res.TestVariants), should.Equal(1))
+				assert.Loosely(t, tvStrings(res.TestVariants), should.Match([]string{
+					"20/:module-name!scheme:coarse-name:fine-name#test4/84cfbe1757a95b22/EXECUTION_ERRORED",
+				}))
+
+				// Try next page (passed and skipped).
+				req.PageToken = res.NextPageToken
+				res, err = srv.QueryTestVariants(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(res.TestVariants), should.Equal(0))
+				assert.Loosely(t, res.NextPageToken, should.BeBlank)
 			})
 		})
 
@@ -716,6 +771,29 @@ func TestValidateQueryTestVariantsRequest(t *testing.T) {
 			err := validateQueryTestVariantsRequest(request)
 			assert.Loosely(t, err, should.BeNil)
 		})
+		t.Run(`invalid invocation name`, func(t *ftt.Test) {
+			request.Parent = ""
+			request.Invocations = []string{"rootInvocations/i0/workunits/wu0"}
+			err := validateQueryTestVariantsRequest(request)
+			assert.Loosely(t, err, should.ErrLike("does not match pattern"))
+		})
+		t.Run(`invalid parent name`, func(t *ftt.Test) {
+			request.Parent = "invocations/i0"
+			err := validateQueryTestVariantsRequest(request)
+			assert.Loosely(t, err, should.ErrLike("does not match pattern"))
+		})
+		t.Run(`parent name and invocation name both exist`, func(t *ftt.Test) {
+			request.Invocations = []string{"invocations/i0"}
+			request.Parent = "rootInvocations/i0"
+			err := validateQueryTestVariantsRequest(request)
+			assert.Loosely(t, err, should.ErrLike(`invocations: must not be specified if parent is specified`))
+		})
+		t.Run(`parent name and invocation name both missing`, func(t *ftt.Test) {
+			request.Invocations = []string{}
+			request.Parent = ""
+			err := validateQueryTestVariantsRequest(request)
+			assert.Loosely(t, err, should.ErrLike("must specify either parent or invocations"))
+		})
 		t.Run(`negative result_limit`, func(t *ftt.Test) {
 			request.ResultLimit = -1
 			err := validateQueryTestVariantsRequest(request)
@@ -765,115 +843,9 @@ func TestValidateQueryTestVariantsRequest(t *testing.T) {
 func TestDetermineListAccessLevel(t *testing.T) {
 	ftt.Run("determineListAccessLevel", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		req := &pb.QueryTestVariantsRequest{
-			Parent: "rootInvocations/root-inv",
-		}
-		t.Run(`request validation`, func(t *ftt.Test) {
-			t.Run(`invalid invocation name`, func(t *ftt.Test) {
-				req.Parent = ""
-				req.Invocations = []string{"rootInvocations/i0/workunits/wu0"}
-				_, err := determineListAccessLevel(ctx, req)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike("does not match pattern"))
-			})
-
-			t.Run(`invalid parent name`, func(t *ftt.Test) {
-				req.Parent = "invocations/i0"
-				_, err := determineListAccessLevel(ctx, req)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike("does not match pattern"))
-			})
-
-			t.Run(`parent name and invocation name both exist`, func(t *ftt.Test) {
-				req.Invocations = []string{"invocations/i0"}
-				req.Parent = "rootInvocations/i0"
-				_, err := determineListAccessLevel(ctx, req)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike(`invocations: must not be specified if parent is specified`))
-			})
-
-			t.Run(`parent name and invocation name both missing`, func(t *ftt.Test) {
-				req.Invocations = []string{}
-				req.Parent = ""
-				_, err := determineListAccessLevel(ctx, req)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike("must specify either parent or invocations"))
-			})
-		})
-		t.Run(`root invocation`, func(t *ftt.Test) {
-			ctx := testutil.SpannerTestContext(t)
-			testutil.MustApply(
-				ctx, t,
-				rootinvocations.InsertForTesting(rootinvocations.NewBuilder("root-inv1").WithRealm("testproject:rootrealm").Build())...,
-			)
-			req := &pb.QueryTestVariantsRequest{
-				Parent: "rootInvocations/root-inv",
-			}
-
-			ctx, cancel := span.ReadOnlyTransaction(ctx)
-			defer cancel()
-			t.Run("not found", func(t *ftt.Test) {
-				req.Parent = "rootInvocations/root-missing"
-				accessLevel, err := determineListAccessLevel(ctx, req)
-				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.NotFound))
-				assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelInvalid))
-			})
-			t.Run("access denied", func(t *ftt.Test) {
-				t.Run("missing permissionListLimitedTestResults", func(t *ftt.Test) {
-					ctx := auth.WithState(ctx, &authtest.FakeState{
-						Identity: "user:someone@example.com",
-						IdentityPermissions: []authtest.RealmPermission{
-							{Realm: "testproject:rootrealm", Permission: rdbperms.PermListLimitedTestExonerations},
-						},
-					})
-					req.Parent = "rootInvocations/root-inv1"
-					accessLevel, err := determineListAccessLevel(ctx, req)
-					assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-					assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelInvalid))
-				})
-				t.Run("missing permissionListLimitedTestExonerations", func(t *ftt.Test) {
-					ctx := auth.WithState(ctx, &authtest.FakeState{
-						Identity: "user:someone@example.com",
-						IdentityPermissions: []authtest.RealmPermission{
-							{Realm: "testproject:rootrealm", Permission: rdbperms.PermListLimitedTestResults},
-						},
-					})
-					req.Parent = "rootInvocations/root-inv1"
-					accessLevel, err := determineListAccessLevel(ctx, req)
-					assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
-					assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelInvalid))
-				})
-			})
-			t.Run("limited access", func(t *ftt.Test) {
-				ctx := auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:someone@example.com",
-					IdentityPermissions: []authtest.RealmPermission{
-						{Realm: "testproject:rootrealm", Permission: rdbperms.PermListLimitedTestResults},
-						{Realm: "testproject:rootrealm", Permission: rdbperms.PermListLimitedTestExonerations},
-					},
-				})
-				req.Parent = "rootInvocations/root-inv1"
-				accessLevel, err := determineListAccessLevel(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelLimited))
-			})
-			t.Run("unrestricted access", func(t *ftt.Test) {
-				ctx := auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:someone@example.com",
-					IdentityPermissions: []authtest.RealmPermission{
-						{Realm: "testproject:rootrealm", Permission: rdbperms.PermListTestResults},
-						{Realm: "testproject:rootrealm", Permission: rdbperms.PermListTestExonerations},
-					},
-				})
-				req.Parent = "rootInvocations/root-inv1"
-				accessLevel, err := determineListAccessLevel(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelUnrestricted))
-			})
-		})
 
 		t.Run(`invocations`, func(t *ftt.Test) {
-			ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
+			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "testproject:r1", Permission: rdbperms.PermListArtifacts},

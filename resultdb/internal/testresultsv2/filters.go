@@ -56,6 +56,8 @@ var testIDColumnDefs = StructuredTestIDColumnNames{
 // will simply not work.
 var filterSchema = aip160.NewDatabaseTable().WithFields(
 	aip160.NewField().WithFieldPath("test_id").WithBackend(NewFlatTestIDFieldBackend(testIDColumnDefs)).Filterable().Build(),
+	aip160.NewField().WithFieldPath("variant").WithBackend(aip160.NewKeyValueColumn("ModuleVariantMasked").WithStringArray().Build()).Filterable().Build(),
+	aip160.NewField().WithFieldPath("variant_hash").WithBackend(aip160.NewStringColumn("ModuleVariantHash")).Filterable().Build(),
 	aip160.NewField().WithFieldPath("test_id_structured", "module_name").WithBackend(aip160.NewStringColumn("ModuleName")).FilterableImplicitly().Build(),
 	aip160.NewField().WithFieldPath("test_id_structured", "module_scheme").WithBackend(aip160.NewStringColumn("ModuleScheme")).Filterable().Build(),
 	aip160.NewField().WithFieldPath("test_id_structured", "module_variant").WithBackend(aip160.NewKeyValueColumn("ModuleVariantMasked").WithStringArray().Build()).Filterable().Build(),

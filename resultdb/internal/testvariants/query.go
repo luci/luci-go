@@ -180,17 +180,17 @@ type Query struct {
 	params        map[string]any // query parameters
 }
 
-// trim is equivalent to q.Mask.Trim with the exception that "test_id",
+// TrimKeepingPageTokenFields is equivalent to q.Mask.Trim with the exception that "test_id",
 // "variant_hash", and status fields are always kept intact.
 // Those fields are needed to generate page tokens.
-func (q *Query) trim(tv *pb.TestVariant) error {
+func TrimKeepingPageTokenFields(mask *mask.Mask, tv *pb.TestVariant) error {
 	testID := tv.TestId
 	vHash := tv.VariantHash
 	status := tv.Status
 	statusV2 := tv.StatusV2
 	statusOverride := tv.StatusOverride
 
-	if err := q.Mask.Trim(tv); err != nil {
+	if err := mask.Trim(tv); err != nil {
 		return errors.Fmt("error trimming fields for test variant with ID: %s, variant hash: %s: %w", tv.TestId, tv.VariantHash, err)
 	}
 
@@ -697,7 +697,7 @@ func (q *Query) fetchTestVariantsWithUnexpectedResults(ctx context.Context) (Pag
 		}
 
 		// Apply field mask.
-		if err := q.trim(tv); err != nil {
+		if err := TrimKeepingPageTokenFields(q.Mask, tv); err != nil {
 			return errors.Fmt("applying field mask: %w", err)
 		}
 
@@ -1008,7 +1008,7 @@ func (q *Query) fetchTestVariantsWithExpectedStatus(ctx context.Context) (Page, 
 			}
 
 			// Apply field mask.
-			if err := q.trim(tv); err != nil {
+			if err := TrimKeepingPageTokenFields(q.Mask, tv); err != nil {
 				return err
 			}
 
