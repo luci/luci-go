@@ -210,4 +210,63 @@ $(function () {
   if (Cookies.get('non-default') ? !defaultExpand : defaultExpand) {
     $('.control-expand').first().click();
   }
+
+  // Hides or shows builders that are completely passing.
+  function updateColumnVisibility() {
+    const shouldHide = $('#hide-passing').is(':checked');
+    setHidePassingCookie(shouldHide);
+
+    $('.console-column').each(function () {
+      const column = $(this);
+
+      const builders = column.find('.console-builder-column');
+      if (builders.length === 0) {
+        return;
+      }
+
+      let columnHasNonSuccess = false;
+      builders.each(function () {
+        const builder = $(this);
+        const hasNonSuccess = builder.find('.console-cell-container').is(function () {
+          const cell = $(this).find('a').first()[0];
+          return cell.classList.contains('status-Failure') ||
+            cell.classList.contains('status-InfraFailure') ||
+            cell.classList.contains('status-Exception');
+        });
+        if (shouldHide && !hasNonSuccess) {
+          builder.addClass('hidden-column');
+        } else {
+          builder.removeClass('hidden-column');
+        }
+        columnHasNonSuccess = columnHasNonSuccess || hasNonSuccess;
+      });
+
+      if (shouldHide && !columnHasNonSuccess) {
+        column.addClass('hidden-column');
+      } else {
+        column.removeClass('hidden-column');
+      }
+
+      // Update flex-grow to match the number of visible builders in this
+      // column. This ensures that columns are evenly spaced.
+      const visibleBuilders = builders.not('.hidden-column').length;
+      column.css('flex-grow', visibleBuilders);
+    });
+  }
+
+  function setHidePassingCookie(hide) {
+    if (hide) {
+      Cookies.set('hide-passing', 1, {path: ''});
+    } else {
+      Cookies.remove('hide-passing', {path: ''});
+    }
+  }
+
+  $('#hide-passing').change(updateColumnVisibility);
+
+  // Restore state from cookie.
+  if (Cookies.get('hide-passing')) {
+    $('#hide-passing').prop('checked', true);
+    updateColumnVisibility();
+  }
 });
