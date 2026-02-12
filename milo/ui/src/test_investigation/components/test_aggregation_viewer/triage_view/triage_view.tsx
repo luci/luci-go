@@ -12,29 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  ExpandLess,
-  ExpandMore,
-  KeyboardArrowDown,
-  KeyboardArrowRight,
-} from '@mui/icons-material';
-import {
-  Box,
-  CircularProgress,
-  IconButton,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
-import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-
 import { TestInvestigationViewHandle } from '../test_aggregation_viewer';
 
-import { TriageViewNode, useTriageViewContext } from './context/context';
-import { TriageViewProvider } from './context/provider';
-import { VerdictNode } from './verdict_node';
+import { TriageViewProvider, useTriageViewContext } from './context';
+import { TriageRow } from './triage_row';
 
 export interface TriageViewUIProps {
   initialExpandedIds?: string[];
@@ -153,128 +138,3 @@ const TriageViewContent = forwardRef<TestInvestigationViewHandle>((_, ref) => {
   );
 });
 TriageViewContent.displayName = 'TriageViewContent';
-
-interface TriageRowProps {
-  node: TriageViewNode;
-  toggleExpansion: (id: string) => void;
-}
-
-function TriageRow({ node, toggleExpansion }: TriageRowProps) {
-  if (node.type === 'status') {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          height: '100%',
-          px: 1,
-          bgcolor: 'action.hover',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          cursor: 'pointer',
-          userSelect: 'none',
-        }}
-        onClick={() => toggleExpansion(node.id)}
-      >
-        <IconButton size="small" sx={{ mr: 1, p: 0.5 }}>
-          {node.expanded ? (
-            <ExpandLess fontSize="small" />
-          ) : (
-            <ExpandMore fontSize="small" />
-          )}
-        </IconButton>
-        <Typography
-          variant="subtitle2"
-          sx={{
-            fontWeight: 'bold',
-            flexGrow: 1,
-            ...getStatusStyle(node.id),
-          }}
-          noWrap
-        >
-          {node.id} ({node.group.count})
-        </Typography>
-      </Box>
-    );
-  }
-
-  if (node.type === 'group') {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          height: '100%',
-          pl: 3, // Indent
-          pr: 1,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          cursor: 'pointer',
-          '&:hover': { bgcolor: 'action.hover' },
-          bgcolor: 'background.paper',
-        }}
-        onClick={() => toggleExpansion(node.id)}
-      >
-        <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-          {node.expanded ? (
-            <KeyboardArrowDown
-              fontSize="small"
-              sx={{ color: 'text.secondary', fontSize: '1rem' }}
-            />
-          ) : (
-            <KeyboardArrowRight
-              fontSize="small"
-              sx={{ color: 'text.secondary', fontSize: '1rem' }}
-            />
-          )}
-        </Box>
-        <Tooltip title={node.group.reason} placement="right" enterDelay={500}>
-          <Typography
-            variant="body2"
-            sx={{
-              fontFamily: 'monospace',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              flexGrow: 1,
-              maxWidth: 'calc(100% - 80px)', // Reserve space for count
-            }}
-          >
-            {node.group.reason}
-          </Typography>
-        </Tooltip>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ ml: 1, flexShrink: 0 }}
-        >
-          ({node.group.verdicts.length})
-        </Typography>
-      </Box>
-    );
-  }
-
-  if (node.type === 'verdict') {
-    return (
-      <VerdictNode
-        verdict={node.verdict}
-        currentFailureReason={node.parentGroup}
-      />
-    );
-  }
-
-  return null;
-}
-
-function getStatusStyle(status: string) {
-  if (status === TestVerdict_Status[TestVerdict_Status.FAILED]) {
-    return { color: 'error.main' };
-  }
-  if (status === TestVerdict_Status[TestVerdict_Status.EXECUTION_ERRORED]) {
-    return { color: 'warning.main' };
-  }
-  if (status === TestVerdict_Status[TestVerdict_Status.FLAKY]) {
-    return { color: 'warning.light' };
-  }
-  return { color: 'text.primary' };
-}
