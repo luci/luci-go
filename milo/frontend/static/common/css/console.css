@@ -23,11 +23,17 @@
 .console-commits-column {
   justify-content: flex-end;
   flex: 0;
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background-color: #fff;
 }
 
 .console-row {
   display: flex;
   flex-direction: row;
+  width: max-content;
+  min-width: 100%;
 }
 
 .fill-row {
