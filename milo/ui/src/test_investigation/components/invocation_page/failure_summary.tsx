@@ -93,9 +93,11 @@ export function FailureSummary({
   }, [testVariant]);
   const IconComponent = styles.icon;
 
+  const isLongFailureSummary = failureSummaryText.length > 250;
+
   return (
     <>
-      {failureSummaryText || resultToDisplay.summaryHtml ? (
+      {resultToDisplay.summaryHtml || isLongFailureSummary ? (
         <Accordion
           sx={{
             p: 0,
@@ -160,21 +162,23 @@ export function FailureSummary({
                   aria-label="Copy text."
                   sx={{ ml: 0.5, minWidth: '18px' }}
                 />
-                <Typography
-                  variant="caption"
-                  sx={{
-                    p: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: '1',
-                    whiteSpace: 'nowrap',
-                    WebkitBoxOrient: 'vertical',
-                    color: 'text.secondary',
-                  }}
-                >
-                  {failureSummaryText}
-                </Typography>
+                {failureSummaryText && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      p: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: '1',
+                      whiteSpace: 'nowrap',
+                      WebkitBoxOrient: 'vertical',
+                      color: 'text.secondary',
+                    }}
+                  >
+                    {failureSummaryText}
+                  </Typography>
+                )}
               </Box>
             </Box>
           </AccordionSummary>
@@ -182,7 +186,7 @@ export function FailureSummary({
             {resultToDisplay.summaryHtml ? (
               <TestResultSummary testResult={resultToDisplay} />
             ) : (
-              <Box sx={{ maxWidth: '90vw' }}>
+              <Box sx={{ maxWidth: '82vw' }}>
                 {(resultToDisplay.failureReason?.primaryErrorMessage ||
                   resultToDisplay.failureReason?.errors?.[0]?.message ||
                   resultToDisplay?.skippedReason?.reasonMessage) && (
@@ -208,35 +212,60 @@ export function FailureSummary({
         </Accordion>
       ) : (
         <>
-          <Link
-            component={RouterLink}
-            to={getTestVariantURL(invocationId, testVariant)}
-            variant="body2"
+          <Box
             sx={{
-              textAlign: 'left',
-              textTransform: 'none',
-              textDecoration: 'none',
-              color: styles.textColor,
-            }}
-            onClick={(e) => {
-              {
-                e.stopPropagation();
-              }
+              display: 'flex',
+              alignItems: 'center',
+              maxWidth: '82vw',
             }}
           >
-            {node && <NodeLabelPrefix node={node} />}
-            {node?.level === StructuredTreeLevel.Variant &&
-            node.moduleVariant ? (
-              <VariantDisplay variantDef={node.moduleVariant} />
-            ) : (
-              rowLabel
+            <Link
+              component={RouterLink}
+              to={getTestVariantURL(invocationId, testVariant)}
+              variant="body2"
+              sx={{
+                textAlign: 'left',
+                textTransform: 'none',
+                textDecoration: 'none',
+                color: styles.textColor,
+              }}
+              onClick={(e) => {
+                {
+                  e.stopPropagation();
+                }
+              }}
+            >
+              {node && <NodeLabelPrefix node={node} />}
+              {node?.level === StructuredTreeLevel.Variant &&
+              node.moduleVariant ? (
+                <VariantDisplay variantDef={node.moduleVariant} />
+              ) : (
+                rowLabel
+              )}
+            </Link>
+            <CopyToClipboard
+              textToCopy={testTextToCopy}
+              aria-label="Copy text."
+              sx={{ ml: 0.5 }}
+            />
+            {failureSummaryText && (
+              <Typography
+                variant="caption"
+                sx={{
+                  p: 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: '1',
+                  whiteSpace: 'nowrap',
+                  WebkitBoxOrient: 'vertical',
+                  color: 'text.secondary',
+                }}
+              >
+                {failureSummaryText}
+              </Typography>
             )}
-          </Link>
-          <CopyToClipboard
-            textToCopy={testTextToCopy}
-            aria-label="Copy text."
-            sx={{ ml: 0.5 }}
-          />
+          </Box>
         </>
       )}
     </>
