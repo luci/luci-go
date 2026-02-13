@@ -34,6 +34,14 @@ type Options struct {
 
 // InitServer initializes a exportnotifier server.
 func InitServer(srv *server.Server, opts Options) {
+	tasks.RootInvocationPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
+		p := &rootInvocationPublisher{
+			resultDBHostname: opts.ResultDBHostname,
+			task:             msg.(*taskspb.PublishRootInvocationTask),
+		}
+		return p.handleRootInvocationPublisher(ctx)
+	})
+
 	tasks.WorkUnitPublisher.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		p := &workUnitPublisher{
 			resultDBHostname: opts.ResultDBHostname,

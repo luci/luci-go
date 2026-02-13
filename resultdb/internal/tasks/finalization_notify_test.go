@@ -85,19 +85,21 @@ func TestNotifyRootInvocationFinalized(t *testing.T) {
 				},
 			}
 			properties := rootInvProperties()
+			notification := &pb.RootInvocationFinalizedNotification{
+				RootInvocation: &pb.RootInvocation{
+					Name:         "rootInvocations/x",
+					Realm:        "myproject:myrealm",
+					State:        pb.RootInvocation_SUCCEEDED,
+					PrimaryBuild: primaryBuild,
+					Properties:   properties,
+				},
+			}
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-				msg := &pb.RootInvocationFinalizedNotification{
-					RootInvocation: &pb.RootInvocation{
-						Name:         "rootInvocations/x",
-						Realm:        "myproject:myrealm",
-						State:        pb.RootInvocation_SUCCEEDED,
-						PrimaryBuild: primaryBuild,
-						Properties:   properties,
-					},
-				}
-				NotifyRootInvocationFinalized(ctx, msg)
 				return nil
 			})
+			assert.Loosely(t, err, should.BeNil)
+
+			NotifyRootInvocationFinalized(ctx, notification)
 			assert.Loosely(t, err, should.BeNil)
 
 			tasks := tq.Tasks()

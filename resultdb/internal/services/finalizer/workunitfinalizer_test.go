@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/config"
-	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -162,12 +161,11 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 					publishWUCount := 0
 					var trTasks []*taskspb.PublishTestResultsTask
 					var wuTasks []*taskspb.PublishWorkUnitsTask
-					var rootInvocationFinalizedNotification *pb.RootInvocationFinalizedNotification
 					for _, p := range payloads {
 						switch task := p.(type) {
-						case *taskspb.NotifyRootInvocationFinalized:
+						case *taskspb.PublishRootInvocationTask:
 							notifyRootInvCount++
-							rootInvocationFinalizedNotification = task.GetMessage()
+							assert.Loosely(t, task.RootInvocationId, should.Equal(string(rootInvID)))
 						case *taskspb.PublishTestResultsTask:
 							publishTRCount++
 							trTasks = append(trTasks, task)
@@ -184,14 +182,6 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 					taskState, err := rootinvocations.ReadFinalizerTaskState(span.Single(ctx), rootInvID)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, taskState.Pending, should.BeFalse)
-
-					compiledCfg, err := config.NewCompiledServiceConfig(cfg, "revision")
-					assert.NoErr(t, err)
-					expectedRootInvocationFinalizedNotification := &pb.RootInvocationFinalizedNotification{
-						RootInvocation: masking.RootInvocation(rootInv, compiledCfg),
-						ResultdbHost:   "rdb-host",
-					}
-					assert.Loosely(t, rootInvocationFinalizedNotification, should.Match(expectedRootInvocationFinalizedNotification))
 				})
 
 				t.Run("some work units can't be finalized", func(t *ftt.Test) {

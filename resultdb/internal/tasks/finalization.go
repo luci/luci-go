@@ -56,6 +56,15 @@ var FinalizeWorkUnitsTask = tq.RegisterTaskClass(tq.TaskClass{
 	RoutingPrefix: "/internal/tasks/finalizer", // for routing to "finalizer" service
 })
 
+// RootInvocationPublisher describes how to publish a root invocation.
+var RootInvocationPublisher = tq.RegisterTaskClass(tq.TaskClass{
+	ID:            "publish-root-invocation",
+	Prototype:     &taskspb.PublishRootInvocationTask{},
+	Queue:         "rootinvocationpublisher",
+	Kind:          tq.Transactional,
+	RoutingPrefix: "/internal/tasks/pubsub", // for routing to "pubsub" service
+})
+
 // WorkUnitPublisher defines the task to publish work units.
 var WorkUnitPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	ID:            "publish-work-units",

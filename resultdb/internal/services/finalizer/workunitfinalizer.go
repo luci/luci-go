@@ -27,10 +27,7 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/resultdb/internal/config"
-	"go.chromium.org/luci/resultdb/internal/masking"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
-	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
@@ -277,11 +274,6 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 		return errors.New(fmt.Sprintf("batchSize must be between 0 and %d, got %d", defaultBatchSize, opts.batchSizeOverride))
 	}
 
-	cfg, err := config.Service(ctx)
-	if err != nil {
-		return errors.Fmt("read service config: %w", err)
-	}
-
 	batchSize := opts.batchSizeOverride
 	if batchSize == 0 {
 		batchSize = defaultBatchSize
@@ -346,10 +338,13 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 
 			if shouldFinalizeRootInvocation {
 				mutations = append(mutations, rootinvocations.MarkFinalized(rootInvID)...)
-				// Publish a finalized root invocation pubsub transactionally.
-				if err := publishFinalizedRootInvocation(ctx, rootInvID, opts.resultDBHostname, cfg); err != nil {
-					return errors.Fmt("publish finalized root invocation: %w", err)
-				}
+				// Enqueue a task to publish the finalized root invocation.
+				tq.MustAddTask(ctx, &tq.Task{
+					Payload: &taskspb.PublishRootInvocationTask{
+						RootInvocationId: string(rootInvID),
+					},
+					Title: fmt.Sprintf("root-inv-pubsub-%s-%d", rootInvID.Name(), time.Now().UnixNano()),
+				})
 			}
 
 			span.BufferWrite(ctx, mutations...)
@@ -359,25 +354,6 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 			return errors.Fmt("commit updates for finalization ready work units: %w", err)
 		}
 	}
-	return nil
-}
-
-// publishFinalizedRootInvocation publishes a pub/sub message for a finalized
-func publishFinalizedRootInvocation(ctx context.Context, rootInvID rootinvocations.ID, rdbHostName string, cfg *config.CompiledServiceConfig) error {
-	// Enqueue a notification to pub/sub listeners that the root invocation
-	// has been finalized.
-	row, err := rootinvocations.Read(ctx, rootInvID)
-	if err != nil {
-		return errors.Fmt("read finalized root notification info: %w", err)
-	}
-
-	// Note that this submits the notification transactionally,
-	// i.e. conditionally on this transaction committing.
-	notification := &pb.RootInvocationFinalizedNotification{
-		RootInvocation: masking.RootInvocation(row, cfg),
-		ResultdbHost:   rdbHostName,
-	}
-	tasks.NotifyRootInvocationFinalized(ctx, notification)
 	return nil
 }
 

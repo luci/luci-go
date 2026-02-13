@@ -213,7 +213,6 @@ func (p *testAggregationsPublisher) collectTestAggregations(ctx context.Context,
 	return collectedAggregations, nil, nil
 }
 
-
 // publishNotifications publishes the notifications to Pub/Sub.
 func (p *testAggregationsPublisher) publishNotifications(ctx context.Context, notifications []*pb.TestAggregationsNotification, attrs map[string]string) error {
 	for _, notification := range notifications {

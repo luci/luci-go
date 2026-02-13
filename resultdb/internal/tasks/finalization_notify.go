@@ -87,7 +87,7 @@ var NotifyRootInvocationFinalizedPublisher = tq.RegisterTaskClass(tq.TaskClass{
 	ID:        "notify-root-invocation-finalized",
 	Topic:     v1NotifyRootInvocationFinalizedTopic,
 	Prototype: &taskspb.NotifyRootInvocationFinalized{},
-	Kind:      tq.Transactional,
+	Kind:      tq.NonTransactional,
 	Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
 		// Custom serialisation handler needed to control how the message is
 		// sent, as the backend is Cloud Pub/Sub and not Cloud Tasks.

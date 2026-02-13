@@ -48,6 +48,11 @@ message NotifyRootInvocationFinalized {
   luci.resultdb.v1.RootInvocationFinalizedNotification message = 1;
 }
 
+// PublishRootInvocationTask defines a task to publish a root invocation.
+// Next id: 2
+message PublishRootInvocationTask {
+  string root_invocation_id = 1;
+}
 
 // PublishTestResults defines a task to publish a batch of test results to
 // the Cloud Pub/Sub.
