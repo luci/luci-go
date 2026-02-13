@@ -153,7 +153,7 @@ describe('<ArtifactTreeNode />', () => {
     expect(screen.queryByTitle('adb-icon')).toBeNull();
   });
 
-  it('given a file row then should display file icon and artifactId', async () => {
+  it('given a file row then should display artifactId', async () => {
     const fakeTreeData: TreeData<ArtifactTreeNodeData> = {
       id: 'file1',
       isLeafNode: true,
@@ -179,12 +179,9 @@ describe('<ArtifactTreeNode />', () => {
     await waitFor(() => {
       expect(screen.getByText('Test File.txt')).toBeInTheDocument();
     });
-    await waitFor(() => {
-      expect(screen.getByTitle('file-icon')).toBeInTheDocument();
-    });
   });
 
-  it('given an image artifact then should display image icon', async () => {
+  it('given an image artifact then should display file name', async () => {
     const fakeTreeData: TreeData<ArtifactTreeNodeData> = {
       id: 'file2',
       isLeafNode: true,
@@ -209,9 +206,6 @@ describe('<ArtifactTreeNode />', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Test File.png')).toBeInTheDocument();
-    });
-    await waitFor(() => {
-      expect(screen.getByTitle('image-icon')).toBeInTheDocument();
     });
   });
 

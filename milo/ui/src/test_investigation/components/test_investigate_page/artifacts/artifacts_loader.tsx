@@ -25,7 +25,7 @@ import {
   ListArtifactsRequest,
   ListArtifactsResponse,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { ArtifactsProvider } from '@/test_investigation/components/common/artifacts/context/provider';
+import { ArtifactsProvider } from '@/test_investigation/components/common/artifacts/context';
 import { useArtifactFilters } from '@/test_investigation/components/common/artifacts/tree/context/context';
 import {
   buildArtifactsTree,

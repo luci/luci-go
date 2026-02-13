@@ -17,7 +17,7 @@ import { useMemo } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
-import { useArtifacts } from '@/test_investigation/components/common/artifacts/context/context';
+import { useArtifacts } from '@/test_investigation/components/common/artifacts/context';
 import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
 
 export function InvocationArtifactSummary() {

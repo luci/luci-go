@@ -20,7 +20,7 @@ import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 import { RootInvocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import { WorkUnit } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/work_unit.pb';
-import { ArtifactsProvider } from '@/test_investigation/components/common/artifacts/context/provider';
+import { ArtifactsProvider } from '@/test_investigation/components/common/artifacts/context';
 import { ArtifactFilterProvider } from '@/test_investigation/components/common/artifacts/tree/context/provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 

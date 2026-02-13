@@ -13,11 +13,8 @@
 // limitations under the License.
 
 import AdbIcon from '@mui/icons-material/Adb';
-import ArticleIcon from '@mui/icons-material/Article';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ImageIcon from '@mui/icons-material/Image';
-import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import {
   Box,
   Typography,
@@ -36,7 +33,7 @@ import { VirtualTreeNodeActions } from '@/common/components/log_viewer/virtual_t
 import { getAndroidBugToolLink } from '@/common/tools/url_utils';
 import { isAnTSInvocation } from '@/test_investigation/utils/test_info_utils';
 
-import { useArtifacts } from '../../context/context';
+import { useArtifacts } from '../../context';
 import { ArtifactTreeNodeData } from '../../types';
 import { getArtifactType } from '../artifact_utils';
 
@@ -92,43 +89,6 @@ const getNodeBackground = (
     return blue[50];
   }
   return theme.palette.background.paper;
-};
-
-const LeafFileIcon = ({ fileType }: { fileType: string | null }) => {
-  const theme = useTheme();
-  let IconComponent = InsertDriveFileOutlinedIcon;
-  let titleAccess: string = 'file-icon';
-  if (fileType) {
-    switch (fileType) {
-      case 'image':
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-      case 'gif':
-      case 'svg':
-      case 'heic':
-        IconComponent = ImageIcon;
-        titleAccess = 'image-icon';
-        break;
-      case 'text':
-      case 'xml':
-      case 'json':
-      case 'yaml':
-      case 'md':
-      case 'log':
-        IconComponent = ArticleIcon;
-        titleAccess = 'article-icon';
-        break;
-    }
-  }
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', height: '24px' }}>
-      <IconComponent
-        sx={{ fontSize: '20px', color: theme.palette.action.active }}
-        titleAccess={titleAccess}
-      />
-    </Box>
-  );
 };
 
 export interface ArtifactTreeNodeProps {
@@ -206,129 +166,174 @@ export function ArtifactTreeNode({
       aria-expanded={isFolder ? row.isOpen : undefined}
       aria-selected={context.isSelected}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          width: '100%',
-          minHeight: '24px',
-        }}
-      >
+      {isFolder ? (
         <Box
           sx={{
-            width: '24px',
-            height: '24px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
+            gap: '4px',
+            width: '100%',
+            minHeight: '24px',
           }}
         >
-          {isFolder && !row.isLeafNode && (
-            <IconButton
-              size="small"
-              onClick={handleToggle}
-              aria-label={row.isOpen ? 'Collapse node' : 'Expand node'}
-              sx={{ padding: 0 }}
-            >
-              {row.isOpen ? (
-                <ExpandLessIcon sx={{ fontSize: '24px' }} />
-              ) : (
-                <ChevronRightIcon
-                  sx={{ fontSize: '24px', color: theme.palette.action.active }}
-                />
-              )}
-            </IconButton>
-          )}
-        </Box>
-
-        <Box
-          sx={{
-            width: '24px',
-            height: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          {isFolder ? (
-            <FolderIcon sx={{ fontSize: '24px' }} titleAccess="folder-icon" />
-          ) : (
-            <LeafFileIcon fileType={artifactType} />
-          )}
-        </Box>
-
-        {!isFolder && artifactType && artifactType !== 'file' && (
-          <Chip
-            label={artifactType}
-            size="small"
+          <Box
             sx={{
-              height: '18px',
-              fontSize: '11px',
-              lineHeight: '16px',
-              backgroundColor: theme.palette.grey[200],
-              color: theme.palette.text.secondary,
-              borderRadius: '4px',
-              mr: '4px',
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               flexShrink: 0,
             }}
-          />
-        )}
+          >
+            {!row.isLeafNode && (
+              <IconButton
+                size="small"
+                onClick={handleToggle}
+                aria-label={row.isOpen ? 'Collapse node' : 'Expand node'}
+                sx={{ padding: 0 }}
+              >
+                {row.isOpen ? (
+                  <ExpandLessIcon sx={{ fontSize: '24px' }} />
+                ) : (
+                  <ChevronRightIcon
+                    sx={{
+                      fontSize: '24px',
+                      color: theme.palette.action.active,
+                    }}
+                  />
+                )}
+              </IconButton>
+            )}
+          </Box>
 
-        <Typography
-          variant="body2"
+          <Box
+            sx={{
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <FolderIcon sx={{ fontSize: '24px' }} titleAccess="folder-icon" />
+          </Box>
+
+          <Typography
+            variant="body2"
+            sx={{
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+              fontSize: '14px',
+              lineHeight: '20px',
+              letterSpacing: '0.2px',
+              color: theme.palette.text.primary,
+              flexGrow: 1,
+              wordBreak: 'break-word',
+            }}
+          >
+            {highlightText
+              ? renderHighlightedText(row.name, highlightText)
+              : row.name}
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            {renderActions ? (
+              renderActions(row)
+            ) : (
+              <Box sx={{ width: '24px', height: '24px' }} />
+            )}
+          </Box>
+        </Box>
+      ) : (
+        <Box
           sx={{
-            fontFamily: 'Roboto, sans-serif',
-            fontWeight: 400,
-            fontSize: '14px',
-            lineHeight: '20px',
-            letterSpacing: '0.2px',
-            color: isUnsupportedLink
-              ? theme.palette.primary.main
-              : theme.palette.text.primary,
-            textDecoration: isUnsupportedLink ? 'underline' : 'none',
-            flexGrow: 1,
-            wordBreak: 'break-word',
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            gap: '0px',
+            py: 0.5,
           }}
         >
-          {highlightText
-            ? renderHighlightedText(row.name, highlightText)
-            : row.name}
-        </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          {renderActions ? (
-            renderActions(row)
-          ) : row.isLeafNode &&
-            isAnTS &&
-            invocation &&
-            row.data.artifact?.artifactId ? (
-            <Tooltip title="Open in Android Bug Tool">
-              <IconButton
-                component={Link}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              minHeight: '24px',
+            }}
+          >
+            {artifactType && artifactType !== 'file' && (
+              <Chip
+                label={artifactType}
                 size="small"
-                target="_blank"
-                aria-label={`Actions for ${row.name}`}
-                href={getAndroidBugToolLink(
-                  row.data.artifact.artifactId,
-                  invocation,
-                )}
                 sx={{
-                  '&:hover': {
-                    backgroundColor: 'action.hover',
-                  },
+                  height: '18px',
+                  fontSize: '11px',
+                  lineHeight: '16px',
+                  backgroundColor: theme.palette.grey[200],
+                  color: theme.palette.text.secondary,
+                  borderRadius: '4px',
+                  mr: '4px',
+                  flexShrink: 0,
                 }}
-              >
-                <AdbIcon fontSize="small" titleAccess="adb-icon" />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Box sx={{ width: '24px', height: '24px' }} />
-          )}
+              />
+            )}
+            <Box sx={{ flexGrow: 1 }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              {renderActions ? (
+                renderActions(row)
+              ) : row.isLeafNode &&
+                isAnTS &&
+                invocation &&
+                row.data.artifact?.artifactId ? (
+                <Tooltip title="Open in Android Bug Tool">
+                  <IconButton
+                    component={Link}
+                    size="small"
+                    target="_blank"
+                    aria-label={`Actions for ${row.name}`}
+                    href={getAndroidBugToolLink(
+                      row.data.artifact.artifactId,
+                      invocation,
+                    )}
+                    sx={{
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      },
+                    }}
+                  >
+                    <AdbIcon fontSize="small" titleAccess="adb-icon" />
+                  </IconButton>
+                </Tooltip>
+              ) : (
+                <Box sx={{ width: '24px', height: '24px' }} />
+              )}
+            </Box>
+          </Box>
+          <Typography
+            variant="body2"
+            sx={{
+              fontFamily: 'Roboto, sans-serif',
+              fontWeight: 400,
+              fontSize: '14px',
+              lineHeight: '20px',
+              letterSpacing: '0.2px',
+              color: isUnsupportedLink
+                ? theme.palette.primary.main
+                : theme.palette.text.primary,
+              textDecoration: isUnsupportedLink ? 'underline' : 'none',
+              width: '100%',
+              wordBreak: 'break-word',
+            }}
+          >
+            {highlightText
+              ? renderHighlightedText(row.name, highlightText)
+              : row.name}
+          </Typography>
         </Box>
-      </Box>
+      )}
     </Box>
   );
 }

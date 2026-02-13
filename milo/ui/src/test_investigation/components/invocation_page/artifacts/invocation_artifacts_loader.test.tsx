@@ -37,22 +37,19 @@ jest.mock('@/test_investigation/context');
 jest.mock(
   '@/test_investigation/components/common/artifacts/tree/context/context',
 );
-jest.mock(
-  '@/test_investigation/components/common/artifacts/context/provider',
-  () => ({
-    ArtifactsProvider: ({
-      nodes,
-      children,
-    }: {
-      nodes: unknown[];
-      children: React.ReactNode;
-    }) => (
-      <div data-testid="artifacts-provider" data-nodes-count={nodes.length}>
-        {children}
-      </div>
-    ),
-  }),
-);
+jest.mock('@/test_investigation/components/common/artifacts/context', () => ({
+  ArtifactsProvider: ({
+    nodes,
+    children,
+  }: {
+    nodes: unknown[];
+    children: React.ReactNode;
+  }) => (
+    <div data-testid="artifacts-provider" data-nodes-count={nodes.length}>
+      {children}
+    </div>
+  ),
+}));
 
 const mockUseResultDbClient = useResultDbClient as jest.Mock;
 const mockUseInvocation = useInvocation as jest.Mock;

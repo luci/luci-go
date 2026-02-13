@@ -16,7 +16,7 @@ import { useMemo, useEffect } from 'react';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
-import { useArtifacts } from '@/test_investigation/components/common/artifacts/context/context';
+import { useArtifacts } from '@/test_investigation/components/common/artifacts/context';
 import { WorkUnitArtifactTree } from '@/test_investigation/components/common/artifacts/tree/work_unit_artifact_tree';
 import { ArtifactTreeNodeData } from '@/test_investigation/components/common/artifacts/types';
 

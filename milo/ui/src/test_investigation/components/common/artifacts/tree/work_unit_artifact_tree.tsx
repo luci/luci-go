@@ -67,12 +67,6 @@ function buildWorkUnitTree(
   // Always add Test Result node if artifacts exist
   if (testResultArtifacts.length > 0) {
     const filteredTestResultArtifacts = filterArtifactList(testResultArtifacts);
-    // Only add the node if it matches filter or has children that match
-    // Note: If no artifacts match, filteredTestResultArtifacts is empty.
-    // The previous implementation added the node even if empty?
-    // Let's check TestResultWorkUnitTreeView implementation:
-    // It creates the node, loops artifacts, then pushes.
-    // Then 'prune' removes it if it has no children and doesn't match name.
 
     const testResultNode: ArtifactTreeNodeData = {
       id: 'test_result_root',

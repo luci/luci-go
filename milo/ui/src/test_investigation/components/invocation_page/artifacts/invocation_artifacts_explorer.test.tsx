@@ -78,12 +78,9 @@ jest.mock('@/common/tools/markdown/utils', () => ({
 
 // Mock context to control selectedNode
 const mockUseArtifacts = jest.fn();
-jest.mock(
-  '@/test_investigation/components/common/artifacts/context/context',
-  () => ({
-    useArtifacts: () => mockUseArtifacts(),
-  }),
-);
+jest.mock('@/test_investigation/components/common/artifacts/context', () => ({
+  useArtifacts: () => mockUseArtifacts(),
+}));
 
 const mockUseSyncedSearchParams = useSyncedSearchParams as jest.Mock;
 

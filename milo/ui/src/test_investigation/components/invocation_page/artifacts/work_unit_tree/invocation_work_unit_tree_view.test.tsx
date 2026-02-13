@@ -22,7 +22,7 @@ import {
   BatchGetWorkUnitsRequest,
   WorkUnit,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/work_unit.pb';
-import { ArtifactsProvider } from '@/test_investigation/components/common/artifacts/context/provider';
+import { ArtifactsProvider } from '@/test_investigation/components/common/artifacts/context';
 import {
   ArtifactFiltersContext,
   ArtifactFiltersContextValue,

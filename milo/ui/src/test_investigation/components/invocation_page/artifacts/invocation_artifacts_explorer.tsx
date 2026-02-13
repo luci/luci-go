@@ -17,7 +17,7 @@ import { useMemo, useState } from 'react';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { ArtifactsSplitView } from '@/test_investigation/components/common/artifacts/artifacts_split_view';
-import { useArtifacts } from '@/test_investigation/components/common/artifacts/context/context';
+import { useArtifacts } from '@/test_investigation/components/common/artifacts/context';
 import { ArtifactTreeView } from '@/test_investigation/components/common/artifacts/tree/artifact_tree_view/artifact_tree_view';
 import { ArtifactFilterProvider } from '@/test_investigation/components/common/artifacts/tree/context/provider';
 import { InvocationArtifactSummary } from '@/test_investigation/components/invocation_page/artifacts/invocation_artifact_summary';

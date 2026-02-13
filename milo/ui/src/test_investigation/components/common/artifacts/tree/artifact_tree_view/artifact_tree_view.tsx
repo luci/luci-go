@@ -21,7 +21,7 @@ import {
 } from '@/common/components/log_viewer';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 
-import { useArtifacts } from '../../context/context';
+import { useArtifacts } from '../../context';
 import { ArtifactTreeNodeData } from '../../types';
 import { ArtifactTreeNode } from '../artifact_tree_node';
 import { useArtifactFilters } from '../context/context';
