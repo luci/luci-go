@@ -772,6 +772,10 @@ function Metrics({
     }),
   });
 
+  const crossPageSearchParams = new URLSearchParams(searchParams);
+  crossPageSearchParams.delete(ORDER_BY_PARAM_KEY);
+  crossPageSearchParams.delete('c');
+
   const getContent = () => {
     if (countQuery.isError) {
       return (
@@ -814,7 +818,7 @@ function Metrics({
                 generateDeviceListURL(ANDROID_PLATFORM) +
                 getFilterQueryString(
                   { fc_machine_type: ['host'] },
-                  searchParams,
+                  crossPageSearchParams,
                   pagerContext,
                 )
               }
@@ -832,7 +836,7 @@ function Metrics({
                     fc_machine_type: ['host'],
                     state: ['LAB_MISSING'],
                   },
-                  searchParams,
+                  crossPageSearchParams,
                   pagerContext,
                 )
               }
@@ -869,7 +873,7 @@ function Metrics({
                 generateDeviceListURL(ANDROID_PLATFORM) +
                 getFilterQueryString(
                   { fc_machine_type: ['device'] },
-                  searchParams,
+                  crossPageSearchParams,
                   pagerContext,
                 )
               }
@@ -892,7 +896,7 @@ function Metrics({
                     fc_machine_type: ['device'],
                     fc_is_offline: ['false'],
                   },
-                  searchParams,
+                  crossPageSearchParams,
                   pagerContext,
                 )
               }
@@ -910,7 +914,7 @@ function Metrics({
                     fc_machine_type: ['device'],
                     fc_is_offline: ['true'],
                   },
-                  searchParams,
+                  crossPageSearchParams,
                   pagerContext,
                 )
               }
