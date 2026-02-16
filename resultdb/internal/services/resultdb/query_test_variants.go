@@ -189,10 +189,21 @@ func queryRootInvocationTestVariants(ctx context.Context, in *pb.QueryTestVarian
 		VerdictResultLimit: testvariants.AdjustResultLimit(in.ResultLimit),
 		VerdictSizeLimit:   testverdictsv2.StandardVerdictSizeLimit,
 	}
+	startTime := clock.Now(ctx)
 	verdicts, nextPageToken, err := q.Fetch(ctx, pageToken, opts)
 	if err != nil {
 		return nil, err
 	}
+	duration := clock.Since(ctx, startTime)
+
+	shardingInfo, err := rootinvocations.ReadTestShardingInformationFromShard(ctx, rootinvocations.ShardID{
+		RootInvocationID: rootInvID,
+		ShardIndex:       2, // Any shard will do.
+	})
+	if err != nil {
+		return nil, err
+	}
+	queryTestVerdictsLatencyByShardingAlgorithm.Add(ctx, float64(int64(duration)/int64(time.Millisecond)), string(shardingInfo.Algorithm))
 
 	sourcesID := graph.HashSources(rootInv.Sources).String()
 	testVariants := make([]*pb.TestVariant, 0, len(verdicts))
