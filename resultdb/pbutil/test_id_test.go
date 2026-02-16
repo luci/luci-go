@@ -1000,28 +1000,28 @@ func TestValidateFlatTestIdentifier(t *testing.T) {
 	t.Parallel()
 	ftt.Run("ValidateFlatTestIdentifier", t, func(t *ftt.Test) {
 		t.Run("Nil", func(t *ftt.Test) {
-			assert.Loosely(t, ValidateFlatTestIdentifier(nil), should.ErrLike("unspecified"))
+			assert.Loosely(t, ValidateFlatTestIdentifierForQuery(nil), should.ErrLike("unspecified"))
 		})
 		t.Run("Valid", func(t *ftt.Test) {
 			id := &pb.FlatTestIdentifier{
 				TestId:      "test_id",
 				VariantHash: "0000000000000000",
 			}
-			assert.Loosely(t, ValidateFlatTestIdentifier(id), should.BeNil)
+			assert.Loosely(t, ValidateFlatTestIdentifierForQuery(id), should.BeNil)
 		})
 		t.Run("Invalid Test ID", func(t *ftt.Test) {
 			id := &pb.FlatTestIdentifier{
 				TestId:      "\x01",
 				VariantHash: "0000000000000000",
 			}
-			assert.Loosely(t, ValidateFlatTestIdentifier(id), should.ErrLike("test_id: non-printable rune"))
+			assert.Loosely(t, ValidateFlatTestIdentifierForQuery(id), should.ErrLike("test_id: non-printable rune"))
 		})
 		t.Run("Invalid Variant Hash", func(t *ftt.Test) {
 			id := &pb.FlatTestIdentifier{
 				TestId:      "test_id",
 				VariantHash: "invalid",
 			}
-			assert.Loosely(t, ValidateFlatTestIdentifier(id), should.ErrLike("variant_hash: variant hash invalid must match ^[0-9a-f]{16}$"))
+			assert.Loosely(t, ValidateFlatTestIdentifierForQuery(id), should.ErrLike("variant_hash: variant hash invalid must match ^[0-9a-f]{16}$"))
 		})
 	})
 }

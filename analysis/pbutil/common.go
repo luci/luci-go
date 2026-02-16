@@ -40,6 +40,7 @@ const stringPairKeyPattern = `[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*`
 
 var stringPairKeyRe = regexp.MustCompile(fmt.Sprintf(`^%s$`, stringPairKeyPattern))
 var stringPairRe = regexp.MustCompile(fmt.Sprintf("(?s)^(%s):(.*)$", stringPairKeyPattern))
+var sourceRefHashRe = regexp.MustCompile("^[0-9a-f]{16}$")
 var variantHashRe = regexp.MustCompile("^[0-9a-f]{16}$")
 
 // ProjectRePattern is the regular expression pattern that matches
@@ -287,6 +288,21 @@ func ValidateTestID(testID string) error {
 	return pbutil.ValidateTestID(testID)
 }
 
+// ValidateStructuredTestIdentifierForQuery validates a structured test identifier
+// is suitable as an input to a query RPC.
+//
+// Unlike ResultDB's ValidateStructuredTestIdentifierForStorage, this method allows
+// either the ModuleVariant or ModuleVariantHash to be specified.
+func ValidateStructuredTestIdentifierForQuery(id *pb.TestIdentifier) error {
+	return pbutil.ValidateStructuredTestIdentifierForQuery(TestIdentifierToResultDB(id))
+}
+
+// ValidateFlatTestIdentifierForQuery validates a flat test identifier is suitable
+// as an input to a query RPC.
+func ValidateFlatTestIdentifierForQuery(id *pb.FlatTestIdentifier) error {
+	return pbutil.ValidateFlatTestIdentifierForQuery(FlatTestIdentifierToResultDB(id))
+}
+
 // ValidateFailureReason validates a failure reason.
 func ValidateFailureReason(fr *pb.FailureReason) error {
 	if fr == nil {
@@ -310,6 +326,17 @@ func ValidateSourceRef(ref *pb.SourceRef) error {
 	}
 	if ref.GetGitiles().GetRef() == "" {
 		return errors.New("gitiles: ref: unspecified")
+	}
+	return nil
+}
+
+// ValidateSourceRefHash validates a source ref hash.
+func ValidateSourceRefHash(sourceRefHash string) error {
+	if sourceRefHash == "" {
+		return errors.New("unspecified")
+	}
+	if !sourceRefHashRe.MatchString(sourceRefHash) {
+		return errors.Fmt("source ref hash %s must match %s", sourceRefHash, sourceRefHashRe)
 	}
 	return nil
 }

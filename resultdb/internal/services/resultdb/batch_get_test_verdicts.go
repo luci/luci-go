@@ -206,7 +206,7 @@ func validateBatchGetTestVerdictsRequest(req *pb.BatchGetTestVerdictsRequest) er
 			}
 		} else if tvID.GetTestIdFlat() != nil {
 			// Flat test ID.
-			if err := pbutil.ValidateFlatTestIdentifier(tvID.GetTestIdFlat()); err != nil {
+			if err := pbutil.ValidateFlatTestIdentifierForQuery(tvID.GetTestIdFlat()); err != nil {
 				return errors.Fmt("test_variants[%v]: test_id_flat: %w", i, err)
 			}
 		} else {

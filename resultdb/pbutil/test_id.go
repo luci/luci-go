@@ -53,8 +53,9 @@ func ValidateTestID(testID string) error {
 	return err
 }
 
-// ValidateFlatTestIdentifier returns a non-nil error if id is invalid.
-func ValidateFlatTestIdentifier(id *pb.FlatTestIdentifier) error {
+// ValidateFlatTestIdentifierForQuery validates the flat test identifier is suitable
+// as an input to a query RPC.
+func ValidateFlatTestIdentifierForQuery(id *pb.FlatTestIdentifier) error {
 	if id == nil {
 		return validate.Unspecified()
 	}

@@ -387,6 +387,29 @@ func SourceRefFromSources(sources *pb.Sources) *pb.SourceRef {
 	}
 }
 
+// ExtractBaseTestID returns the base test identifier from a test identifier.
+func ExtractBaseTestID(id *pb.TestIdentifier) pbutil.BaseTestIdentifier {
+	return pbutil.BaseTestIdentifier{
+		ModuleName:   id.ModuleName,
+		ModuleScheme: id.ModuleScheme,
+		CoarseName:   id.CoarseName,
+		FineName:     id.FineName,
+		CaseName:     id.CaseName,
+	}
+}
+
+// FlatTestIDFromStructured returns the flat test ID and variant hash from a structured test identifier.
+func FlatTestIDFromStructured(id *pb.TestIdentifier) (testID string, variantHash string) {
+	base := ExtractBaseTestID(id)
+	testID = pbutil.EncodeTestID(base)
+	if id.ModuleVariant != nil {
+		variantHash = VariantHash(id.ModuleVariant)
+	} else {
+		variantHash = id.ModuleVariantHash
+	}
+	return testID, variantHash
+}
+
 // SourceRefHash returns a short hash of the source ref.
 func SourceRefHash(sourceRef *pb.SourceRef) []byte {
 	return pbutil.SourceRefHash(SourceRefToResultDB(sourceRef))
@@ -398,4 +421,58 @@ func SourceRefHash(sourceRef *pb.SourceRef) []byte {
 // panics if the sources object is not valid.
 func SourcePosition(sources *pb.Sources) int64 {
 	return pbutil.SourcePosition(SourcesToResultDB(sources))
+}
+
+// TestIdentifierToResultDB converts a LUCI Analysis TestIdentifier to a ResultDB TestIdentifier.
+func TestIdentifierToResultDB(id *pb.TestIdentifier) *rdbpb.TestIdentifier {
+	if id == nil {
+		return nil
+	}
+	return &rdbpb.TestIdentifier{
+		ModuleName:        id.ModuleName,
+		ModuleScheme:      id.ModuleScheme,
+		ModuleVariant:     VariantToResultDB(id.ModuleVariant),
+		ModuleVariantHash: id.ModuleVariantHash,
+		CoarseName:        id.CoarseName,
+		FineName:          id.FineName,
+		CaseName:          id.CaseName,
+	}
+}
+
+// TestIdentifierFromResultDB converts a ResultDB TestIdentifier to a LUCI Analysis TestIdentifier.
+func TestIdentifierFromResultDB(id *rdbpb.TestIdentifier) *pb.TestIdentifier {
+	if id == nil {
+		return nil
+	}
+	return &pb.TestIdentifier{
+		ModuleName:        id.ModuleName,
+		ModuleScheme:      id.ModuleScheme,
+		ModuleVariant:     VariantFromResultDB(id.ModuleVariant),
+		ModuleVariantHash: id.ModuleVariantHash,
+		CoarseName:        id.CoarseName,
+		FineName:          id.FineName,
+		CaseName:          id.CaseName,
+	}
+}
+
+// FlatTestIdentifierToResultDB converts a LUCI Analysis FlatTestIdentifier to a ResultDB FlatTestIdentifier.
+func FlatTestIdentifierToResultDB(id *pb.FlatTestIdentifier) *rdbpb.FlatTestIdentifier {
+	if id == nil {
+		return nil
+	}
+	return &rdbpb.FlatTestIdentifier{
+		TestId:      id.TestId,
+		VariantHash: id.VariantHash,
+	}
+}
+
+// FlatTestIdentifierFromResultDB converts a ResultDB FlatTestIdentifier to a LUCI Analysis FlatTestIdentifier.
+func FlatTestIdentifierFromResultDB(id *rdbpb.FlatTestIdentifier) *pb.FlatTestIdentifier {
+	if id == nil {
+		return nil
+	}
+	return &pb.FlatTestIdentifier{
+		TestId:      id.TestId,
+		VariantHash: id.VariantHash,
+	}
 }

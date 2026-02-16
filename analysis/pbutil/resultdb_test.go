@@ -327,4 +327,62 @@ func TestResultDB(t *testing.T) {
 			assert.Loosely(t, hex.EncodeToString(SourceRefHash(sr)), should.Equal("7abd7eb5810c61dd"))
 		})
 	})
+
+	ftt.Run("TestIdentifier to/from ResultDB", t, func(t *ftt.Test) {
+		rdbObj := &rdbpb.TestIdentifier{
+			ModuleName:   "module",
+			ModuleScheme: "junit",
+			ModuleVariant: &rdbpb.Variant{
+				Def: map[string]string{
+					"key1": "val1",
+				},
+			},
+			ModuleVariantHash: "12345678",
+			CoarseName:        "coarse",
+			FineName:          "fine",
+			CaseName:          "case",
+		}
+		analysisObj := &pb.TestIdentifier{
+			ModuleName:   "module",
+			ModuleScheme: "junit",
+			ModuleVariant: &pb.Variant{
+				Def: map[string]string{
+					"key1": "val1",
+				},
+			},
+			ModuleVariantHash: "12345678",
+			CoarseName:        "coarse",
+			FineName:          "fine",
+			CaseName:          "case",
+		}
+
+		t.Run("ToResultDB", func(t *ftt.Test) {
+			assert.Loosely(t, TestIdentifierToResultDB(analysisObj), should.Match(rdbObj))
+			assert.Loosely(t, TestIdentifierToResultDB(nil), should.BeNil)
+		})
+		t.Run("FromResultDB", func(t *ftt.Test) {
+			assert.Loosely(t, TestIdentifierFromResultDB(rdbObj), should.Match(analysisObj))
+			assert.Loosely(t, TestIdentifierFromResultDB(nil), should.BeNil)
+		})
+	})
+
+	ftt.Run("FlatTestIdentifier to/from ResultDB", t, func(t *ftt.Test) {
+		rdbObj := &rdbpb.FlatTestIdentifier{
+			TestId:      "test_id",
+			VariantHash: "12345678",
+		}
+		analysisObj := &pb.FlatTestIdentifier{
+			TestId:      "test_id",
+			VariantHash: "12345678",
+		}
+
+		t.Run("ToResultDB", func(t *ftt.Test) {
+			assert.Loosely(t, FlatTestIdentifierToResultDB(analysisObj), should.Match(rdbObj))
+			assert.Loosely(t, FlatTestIdentifierToResultDB(nil), should.BeNil)
+		})
+		t.Run("FromResultDB", func(t *ftt.Test) {
+			assert.Loosely(t, FlatTestIdentifierFromResultDB(rdbObj), should.Match(analysisObj))
+			assert.Loosely(t, FlatTestIdentifierFromResultDB(nil), should.BeNil)
+		})
+	})
 }
