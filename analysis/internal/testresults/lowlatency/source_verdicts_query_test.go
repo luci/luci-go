@@ -15,6 +15,7 @@
 package lowlatency
 
 import (
+	"slices"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -39,6 +40,7 @@ func TestQuerySourceVerdicts(t *testing.T) {
 			VariantHash:      pbutil.VariantHash(pbutil.Variant("key", "value")),
 			RefHash:          pbutil.SourceRefHash(TestRef),
 			AllowedSubrealms: []string{"testrealm", "otherrealm"},
+			OrderBy:          Ordering{PositionAscending: false},
 			PageSize:         100,
 		}
 
@@ -97,6 +99,24 @@ func TestQuerySourceVerdicts(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, results, should.Match(expected))
+		})
+
+		t.Run("With ordering", func(t *ftt.Test) {
+			t.Run("Position Descending (default)", func(t *ftt.Test) {
+				q.OrderBy = Ordering{PositionAscending: false}
+				results, _, err := q.Fetch(span.Single(ctx), PageToken{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Match(ExpectedSourceVerdicts()))
+			})
+			t.Run("Position Ascending", func(t *ftt.Test) {
+				q.OrderBy = Ordering{PositionAscending: true}
+				results, _, err := q.Fetch(span.Single(ctx), PageToken{})
+				assert.Loosely(t, err, should.BeNil)
+
+				expected := ExpectedSourceVerdicts()
+				slices.Reverse(expected)
+				assert.Loosely(t, results, should.Match(expected))
+			})
 		})
 	})
 }

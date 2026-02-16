@@ -48,6 +48,13 @@ func (s *testHistoryServer) QuerySourceVerdicts(ctx context.Context, req *pb.Que
 		PageSize: adjustPageSize(req.PageSize),
 	}
 
+	var err error
+	q.OrderBy, err = lowlatency.ParseOrderBy(req.OrderBy)
+	if err != nil {
+		// Should have been picked up in request validation already.
+		return nil, errors.Fmt("order_by: %w", err)
+	}
+
 	if req.GetTestIdStructured() != nil {
 		q.TestID, q.VariantHash = pbutil.FlatTestIDFromStructured(req.GetTestIdStructured())
 	} else if req.GetTestIdFlat() != nil {
@@ -146,6 +153,10 @@ func validateQuerySourceVerdictsRequest(req *pb.QuerySourceVerdictsV2Request) er
 
 	if err := lowlatency.ValidateSourceVerdictsFilter(req.Filter); err != nil {
 		return errors.Fmt("filter: %w", err)
+	}
+
+	if _, err := lowlatency.ParseOrderBy(req.OrderBy); err != nil {
+		return errors.Fmt("order_by: %w", err)
 	}
 
 	return nil

@@ -78,6 +78,8 @@ type SourceVerdictQuery struct {
 	AllowedSubrealms []string
 	// The AIP-160 filter to apply to the returned source verdicts.
 	Filter string
+	// The sort order of the source verdicts.
+	OrderBy Ordering
 	// The maximum number of source verdicts to return.
 	PageSize int
 }
@@ -216,6 +218,7 @@ func (q *SourceVerdictQuery) buildQuery(pageToken PageToken) (spanner.Statement,
 	tmplInput := map[string]any{
 		"FilterClause":             whereClause,
 		"PaginationClause":         paginationClause,
+		"OrderPositionAscending":   q.OrderBy.PositionAscending,
 		"ResultV2Passed":           int64(pb.TestResult_PASSED),
 		"ResultV2Failed":           int64(pb.TestResult_FAILED),
 		"ResultV2Skipped":          int64(pb.TestResult_SKIPPED),
@@ -242,6 +245,9 @@ func (q *SourceVerdictQuery) buildQuery(pageToken PageToken) (spanner.Statement,
 // whereAfterPageToken returns a WHERE clause for the given page token.
 func (q *SourceVerdictQuery) whereAfterPageToken(token PageToken, params map[string]any) string {
 	params["lastSourcePosition"] = token.LastSourcePosition
+	if q.OrderBy.PositionAscending {
+		return "SourcePosition > @lastSourcePosition"
+	}
 	return "SourcePosition < @lastSourcePosition"
 }
 
@@ -349,6 +355,6 @@ FROM (
 )
 WHERE {{.FilterClause}}
 	AND {{.PaginationClause}}
-ORDER BY SourcePosition DESC
+ORDER BY SourcePosition {{if .OrderPositionAscending}}ASC{{else}}DESC{{end}}
 LIMIT @limit
 `))

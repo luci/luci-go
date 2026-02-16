@@ -16,6 +16,7 @@ package testhistory
 
 import (
 	"encoding/hex"
+	"slices"
 	"strings"
 	"testing"
 
@@ -163,6 +164,15 @@ func TestQuerySourceVerdicts(t *testing.T) {
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				})
 			})
+
+			t.Run("OrderBy", func(t *ftt.Test) {
+				t.Run("Invalid", func(t *ftt.Test) {
+					req.OrderBy = "invalid"
+					_, err := server.QuerySourceVerdicts(ctx, req)
+					assert.Loosely(t, err, should.ErrLike("order_by: unsupported order by field"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				})
+			})
 		})
 
 		t.Run("Unauthorised requests are rejected", func(t *ftt.Test) {
@@ -237,6 +247,26 @@ func TestQuerySourceVerdicts(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.SourceVerdicts, should.Match(expectedVerdicts[8:]))
 			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+		})
+
+		t.Run("With ordering", func(t *ftt.Test) {
+			t.Run("Position ascending", func(t *ftt.Test) {
+				req.OrderBy = "position"
+				res, err := server.QuerySourceVerdicts(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+
+				// Verify reversed order
+				slices.Reverse(expectedVerdicts)
+				assert.Loosely(t, res.SourceVerdicts, should.Match(expectedVerdicts))
+			})
+			t.Run("Position descending", func(t *ftt.Test) {
+				req.OrderBy = "position desc"
+				res, err := server.QuerySourceVerdicts(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+
+				// Verify order
+				assert.Loosely(t, res.SourceVerdicts, should.Match(expectedVerdicts))
+			})
 		})
 
 		t.Run("With limited access", func(t *ftt.Test) {
