@@ -13,30 +13,30 @@
 // limitations under the License.
 
 import Chip from '@mui/material/Chip';
-import {
-  GridRenderCellParams,
-  GridValidRowModel,
-  useGridApiContext,
-  useGridSelector,
-  gridDensitySelector,
-} from '@mui/x-data-grid';
+import { GridRenderCellParams, GridValidRowModel } from '@mui/x-data-grid';
 import React from 'react';
 
+import { useSettings } from '@/fleet/hooks/use_settings';
+import { androidState } from '@/fleet/pages/device_list_page/android/android_state';
 import { colors } from '@/fleet/theme/colors';
 
 import { dutState } from '../../pages/device_list_page/chromeos/dut_state';
 
+export type StateUnion = dutState | androidState;
+
 function ChipComponent<R extends GridValidRowModel>(
   props: GridRenderCellParams<R> & {
     linkGenerator: (value: string, props: GridRenderCellParams<R>) => string;
-    getColor: (value: dutState) => string;
+    getColor: (value: StateUnion) => string;
     label?: string;
     openInNewTab?: boolean;
   },
 ) {
   const { value = '', linkGenerator, getColor, label, openInNewTab } = props;
-  const apiRef = useGridApiContext();
-  const density = useGridSelector(apiRef, gridDensitySelector);
+
+  const [settings, _] = useSettings();
+
+  const density = settings?.table?.density;
 
   const chipColor = getColor(value);
   const variant = chipColor === colors.transparent ? 'outlined' : 'filled';
@@ -62,7 +62,7 @@ function ChipComponent<R extends GridValidRowModel>(
 
 export function renderChipCell<R extends GridValidRowModel = GridValidRowModel>(
   linkGenerator: (value: string, props: GridRenderCellParams<R>) => string,
-  getColor: (value: dutState) => string,
+  getColor: (value: StateUnion) => string,
   label?: string,
   openInNewTab: boolean = true,
 ): (props: GridRenderCellParams<R>) => React.ReactElement {

@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Typography } from '@mui/material';
+import PowerIcon from '@mui/icons-material/Power';
+import PowerOffOutlinedIcon from '@mui/icons-material/PowerOffOutlined';
+import { Tooltip, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { Link } from 'react-router';
 
@@ -21,13 +23,14 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
-import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
+import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import {
   generateDeviceDetailsURL,
   ANDROID_PLATFORM,
 } from '@/fleet/constants/paths';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { getAndroidStatusColor } from './android_state';
 import { RunTargetColumnHeader } from './run_target_column_header';
 
 export const getAndroidColumns = (
@@ -116,9 +119,18 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
   state: {
     orderByField: 'state',
     renderCell: (props) => {
-      return renderCellWithLink<AndroidDevice>((_1, _2) => {
+      const stateValue =
+        props.row?.omnilabSpec?.labels?.[
+          'dut_state'
+        ]?.values?.[0]?.toUpperCase() ??
+        props.value ??
+        '';
+
+      if (stateValue === '') return <></>;
+
+      return renderChipCell((_1, _2) => {
         return 'https://g3doc.corp.google.com/company/teams/chrome/ops/fleet/flops/android/labtechs.md?cl=head#device-terminology';
-      })(props);
+      }, getAndroidStatusColor)({ ...props, value: stateValue.toUpperCase() });
     },
   },
   hostname: {
@@ -173,6 +185,27 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
               </Link>
             </span>
           </InfoTooltip>
+        </div>
+      );
+    },
+    renderCell: (params) => {
+      const isOffline = params.value === 'true';
+      const title = isOffline
+        ? 'Device is offline (true)'
+        : 'Device is online (false)';
+      return (
+        <div
+          css={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            maxWidth: '100%',
+            height: '100%',
+          }}
+        >
+          <Tooltip title={title}>
+            {isOffline ? <PowerOffOutlinedIcon /> : <PowerIcon />}
+          </Tooltip>
         </div>
       );
     },

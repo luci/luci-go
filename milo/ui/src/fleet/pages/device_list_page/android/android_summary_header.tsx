@@ -132,6 +132,11 @@ export function AndroidSummaryHeader({
               filterUrl={getFilterQueryString({
                 state: ['PREPPING'],
               })}
+              Icon={
+                <WarningIcon
+                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
+                />
+              }
             />
             <SingleMetric
               name="Missing"
@@ -141,11 +146,7 @@ export function AndroidSummaryHeader({
               filterUrl={getFilterQueryString({
                 state: ['MISSING'],
               })}
-              Icon={
-                <WarningIcon
-                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
-                />
-              }
+              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />
             <SingleMetric
               name="Dying"
@@ -165,6 +166,11 @@ export function AndroidSummaryHeader({
               filterUrl={getFilterQueryString({
                 state: ['INIT'],
               })}
+              Icon={
+                <WarningIcon
+                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
+                />
+              }
             />
             <SingleMetric
               name="Lameduck"
@@ -183,6 +189,7 @@ export function AndroidSummaryHeader({
               filterUrl={getFilterQueryString({
                 state: ['FAILED'],
               })}
+              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />
             <SingleMetric
               name="Dirty"
@@ -192,6 +199,7 @@ export function AndroidSummaryHeader({
               filterUrl={getFilterQueryString({
                 state: ['DIRTY'],
               })}
+              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />
           </div>
         </div>

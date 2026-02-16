@@ -14,15 +14,9 @@
 
 import { GridDensity } from '@mui/x-data-grid';
 import { MRT_DensityState } from 'material-react-table';
-import { useLocalStorage } from 'react-use';
+import { useContext } from 'react';
 
-import { SETTINGS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
-
-export interface Settings {
-  table: {
-    density: GridDensity;
-  };
-}
+import { SettingsContext } from '../context/providers';
 
 export const mapMUIToMRT = (density: GridDensity): MRT_DensityState => {
   switch (density) {
@@ -46,16 +40,12 @@ export const mapMRTToMUI = (density: MRT_DensityState): GridDensity => {
   }
 };
 
-export function useSettings(): [Settings, (value: Settings) => void] {
-  const [settings, setSettings] = useLocalStorage<Settings>(
-    SETTINGS_LOCAL_STORAGE_KEY,
-  );
+export function useSettings() {
+  const context = useContext(SettingsContext);
+  if (!context)
+    throw new Error('useSettings must be used within SettingsProvider');
 
-  const actualSettings = {
-    table: {
-      density: settings?.table?.density ?? 'compact',
-    },
-  };
+  const [settings, setSettings] = context;
 
-  return [actualSettings, setSettings];
+  return [settings, setSettings] as const;
 }

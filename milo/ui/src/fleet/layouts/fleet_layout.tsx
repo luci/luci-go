@@ -38,7 +38,7 @@ import {
 } from '@/generic_libs/components/queued_sticky';
 
 import { ShortcutProvider } from '../components/shortcut_provider';
-import { IndexedDBPersistClientProvider } from '../context';
+import { IndexedDBPersistClientProvider, SettingsProvider } from '../context';
 import { theme } from '../theme/theme';
 
 import { Header } from './header';
@@ -149,9 +149,11 @@ export const FleetLayout = () => {
   return (
     <IndexedDBPersistClientProvider>
       <ThemeProvider theme={theme}>
-        <ShortcutProvider>
-          <FleetLayoutContent />
-        </ShortcutProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <FleetLayoutContent />
+          </ShortcutProvider>
+        </SettingsProvider>
       </ThemeProvider>
     </IndexedDBPersistClientProvider>
   );

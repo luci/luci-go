@@ -13,6 +13,7 @@
 // limitations under the License.n
 import { render, screen, waitFor } from '@testing-library/react';
 
+import { SettingsProvider } from '@/fleet/context/providers';
 import {
   mockErrorListingBots,
   mockListBots,
@@ -103,7 +104,9 @@ describe('<Tasks />', () => {
 
     render(
       <FakeContextProvider>
-        <Tasks dutId="A1234" />
+        <SettingsProvider>
+          <Tasks dutId="A1234" />
+        </SettingsProvider>
       </FakeContextProvider>,
     );
 
@@ -143,7 +146,9 @@ describe('<Tasks />', () => {
 
     render(
       <FakeContextProvider>
-        <Tasks botId={botId} />
+        <SettingsProvider>
+          <Tasks botId={botId} />
+        </SettingsProvider>
       </FakeContextProvider>,
     );
 

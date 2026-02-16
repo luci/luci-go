@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GridDensity } from '@mui/x-data-grid';
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createContext, ReactNode } from 'react';
+import { useLocalStorage } from 'react-use';
+
+import { SETTINGS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 
 import { PERSIST_INDEXED_DB } from '../constants/caching_keys';
 
@@ -24,6 +29,12 @@ import { createIDBPersister } from './indexed_db_wrapper';
 const queryClient = new QueryClient();
 
 const idbPersister = createIDBPersister();
+
+export interface Settings {
+  table: {
+    density: GridDensity;
+  };
+}
 
 export function IndexedDBPersistClientProvider({
   children,
@@ -49,3 +60,24 @@ export function IndexedDBPersistClientProvider({
     </PersistQueryClientProvider>
   );
 }
+
+export const SettingsContext = createContext<
+  [Settings, (v: Settings) => void] | null
+>(null);
+
+export const SettingsProvider = ({ children }: { children: ReactNode }) => {
+  // useLocalStorage handles persistence and cross-tab syncing
+  const [settings, setSettings] = useLocalStorage<Settings>(
+    SETTINGS_LOCAL_STORAGE_KEY,
+  );
+
+  const actualSettings = {
+    table: { density: settings?.table?.density ?? 'compact' },
+  };
+
+  return (
+    <SettingsContext.Provider value={[actualSettings, setSettings]}>
+      {children}
+    </SettingsContext.Provider>
+  );
+};

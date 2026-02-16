@@ -27,6 +27,7 @@ import {
   getPrevFullRowCount,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { SettingsProvider } from '@/fleet/context/providers';
 import { getChromeOSColumns } from '@/fleet/pages/device_list_page/chromeos/chromeos_columns';
 import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -191,22 +192,24 @@ function TestComponent({
   const nextPageToken =
     currentRowCount < totalRowCount ? String(currentRowCount) : '';
   return (
-    <ShortcutProvider>
-      <DeviceTable
-        rows={currentDevices}
-        availableColumns={getChromeOSColumns(COLUMN_IDS)}
-        nextPageToken={nextPageToken}
-        pagerCtx={pagerCtx}
-        isError={false}
-        error={null}
-        isLoading={false}
-        isLoadingColumns={isLoadingColumns}
-        totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
-        defaultColumnIds={DEFAULT_COLUMNS}
-        localStorageKey={'testLocalStorageKey'}
-        formatDeviceColumn={formatDeviceColumn}
-      />
-    </ShortcutProvider>
+    <SettingsProvider>
+      <ShortcutProvider>
+        <DeviceTable
+          rows={currentDevices}
+          availableColumns={getChromeOSColumns(COLUMN_IDS)}
+          nextPageToken={nextPageToken}
+          pagerCtx={pagerCtx}
+          isError={false}
+          error={null}
+          isLoading={false}
+          isLoadingColumns={isLoadingColumns}
+          totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
+          defaultColumnIds={DEFAULT_COLUMNS}
+          localStorageKey={'testLocalStorageKey'}
+          formatDeviceColumn={formatDeviceColumn}
+        />
+      </ShortcutProvider>
+    </SettingsProvider>
   );
 }
 

@@ -15,6 +15,7 @@
 import { render, screen } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
+import { SettingsProvider } from '@/fleet/context/providers';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { BrowserDevicesPage } from './browser_devices_page';
@@ -28,9 +29,11 @@ describe('<BrowserDevicesPage />', () => {
           initialEntries: ['/p/chromium/devices'],
         }}
       >
-        <ShortcutProvider>
-          <BrowserDevicesPage />
-        </ShortcutProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <BrowserDevicesPage />
+          </ShortcutProvider>
+        </SettingsProvider>
       </FakeContextProvider>,
     );
 

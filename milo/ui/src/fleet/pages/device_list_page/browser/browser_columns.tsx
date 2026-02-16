@@ -216,8 +216,7 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
         params.value ??
         '';
 
-      if (stateValue === '')
-        return <EllipsisTooltip>{stateValue}</EllipsisTooltip>;
+      if (stateValue === '') return <></>;
 
       return renderChipCell(
         getSwarmingStateDocLinkForLabel,

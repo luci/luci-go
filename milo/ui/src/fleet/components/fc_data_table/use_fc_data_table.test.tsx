@@ -39,6 +39,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
+import { SettingsProvider } from '@/fleet/context/providers';
 import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -319,9 +320,11 @@ describe('<MaterialReactTable />', () => {
   it('should render all columns', async () => {
     render(
       <FakeContextProvider>
-        <ShortcutProvider>
-          <TestComponent />
-        </ShortcutProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestComponent />
+          </ShortcutProvider>
+        </SettingsProvider>
       </FakeContextProvider>,
     );
 
@@ -334,9 +337,11 @@ describe('<MaterialReactTable />', () => {
   it('should reflect page size change properly', async () => {
     render(
       <FakeContextProvider>
-        <ShortcutProvider>
-          <TestComponent />
-        </ShortcutProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestComponent />
+          </ShortcutProvider>
+        </SettingsProvider>
       </FakeContextProvider>,
     );
 
@@ -358,9 +363,11 @@ describe('<MaterialReactTable />', () => {
   it('should navigate between pages properly', async () => {
     render(
       <FakeContextProvider>
-        <ShortcutProvider>
-          <TestComponent />
-        </ShortcutProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestComponent />
+          </ShortcutProvider>
+        </SettingsProvider>
       </FakeContextProvider>,
     );
 

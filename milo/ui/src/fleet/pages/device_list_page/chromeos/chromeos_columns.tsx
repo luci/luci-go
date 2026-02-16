@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 
+import { GridRenderCellParams } from '@mui/x-data-grid';
+
 import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
@@ -123,7 +125,16 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<
   dut_state: {
     valueGetter: (_, device) =>
       device.deviceSpec?.labels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
-    renderCell: renderChipCell(getSwarmingStateDocLinkForLabel, getStatusColor),
+    renderCell: (params: GridRenderCellParams<Device>) => {
+      const stateValue = params.value ?? '';
+
+      if (stateValue === '') return <></>;
+
+      return renderChipCell(
+        getSwarmingStateDocLinkForLabel,
+        getStatusColor,
+      )({ ...params, value: stateValue.toUpperCase() });
+    },
   },
   'label-servo_state': {
     renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),

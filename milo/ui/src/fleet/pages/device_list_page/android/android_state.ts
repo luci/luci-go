@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,30 +15,31 @@
 import { StateUnion } from '@/fleet/components/table/cell_with_chip';
 import { colors, unknownStateColor } from '@/fleet/theme/colors';
 
-export enum dutState {
-  NEEDS_MANUAL_REPAIR = 'NEEDS_MANUAL_REPAIR',
-  NEEDS_DEPLOY = 'NEEDS_DEPLOY',
-  NEEDS_REPLACEMENT = 'NEEDS_REPLACEMENT',
-  RESERVED = 'RESERVED',
-  READY = 'READY',
-  UNKNOWN = 'UNKNOWN',
-  NEEDS_REPAIR = 'NEEDS_REPAIR',
-  REPAIR_FAILED = 'REPAIR_FAILED',
+export enum androidState {
+  BUSY = 'BUSY',
+  DYING = 'DYING',
+  IDLE = 'IDLE',
+  INIT = 'INIT',
+  LAB_MISSING = 'LAB_MISSING',
+  LAB_RUNNING = 'LAB_RUNNING',
+  LAMEDUCK = 'LAMEDUCK',
+  MISSING = 'MISSING',
+  PREPPING = 'PREPPING',
 }
 
-export const getStatusColor = (status: StateUnion) => {
+export const getAndroidStatusColor = (status: StateUnion) => {
   switch (status.toUpperCase()) {
-    case dutState.NEEDS_MANUAL_REPAIR:
+    case androidState.DYING:
+    case androidState.LAB_RUNNING:
+    case androidState.MISSING:
       return colors.red[100];
-    case dutState.NEEDS_DEPLOY:
-    case dutState.NEEDS_REPLACEMENT:
+    case androidState.PREPPING:
+    case androidState.INIT:
       return colors.yellow[100];
-    case dutState.RESERVED:
-      return colors.purple[100];
-    case dutState.READY:
-    case dutState.UNKNOWN:
-    case dutState.NEEDS_REPAIR:
-    case dutState.REPAIR_FAILED:
+    case androidState.IDLE:
+    case androidState.BUSY:
+    case androidState.LAMEDUCK:
+    case androidState.LAB_MISSING:
       return colors.transparent;
     default:
       return unknownStateColor;
