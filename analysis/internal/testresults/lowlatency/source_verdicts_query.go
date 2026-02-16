@@ -101,11 +101,6 @@ func ValidateSourceVerdictsFilter(filter string) error {
 	return err
 }
 
-type PageToken struct {
-	// The last source position returned.
-	LastSourcePosition int64
-}
-
 // Fetch reads source verdicts matching the query.
 // Must be called in a spanner transactional context.
 func (q *SourceVerdictQuery) Fetch(ctx context.Context, pageToken PageToken) ([]SourceVerdictV2, PageToken, error) {
