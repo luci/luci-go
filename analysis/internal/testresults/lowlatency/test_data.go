@@ -283,3 +283,169 @@ func ExpectedSourceVerdicts() []SourceVerdictV2 {
 		},
 	}
 }
+
+// FilterSourceVerdictsProtos filters the given source verdicts using the given filter.
+func FilterSourceVerdictsProtos(verdicts []*pb.SourceVerdict, filter func(v *pb.SourceVerdict) bool) []*pb.SourceVerdict {
+	var res []*pb.SourceVerdict
+	for _, v := range verdicts {
+		if filter(v) {
+			res = append(res, v)
+		}
+	}
+	return res
+}
+
+// ExpectedSourceVerdictsProto returns the expected source verdicts for the test data
+// in protocol buffer format.
+func ExpectedSourceVerdictsProto() []*pb.SourceVerdict {
+	cls := []*pb.Changelist{
+		{
+			Host:      "host-review.googlesource.com",
+			Change:    123,
+			Patchset:  1,
+			OwnerKind: pb.ChangelistOwnerKind_HUMAN,
+		},
+	}
+
+	return []*pb.SourceVerdict{
+		{
+			Position:          100,
+			Status:            pb.TestVerdict_FLAKY,
+			ApproximateStatus: pb.TestVerdict_FLAKY,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "rootInvocations/root-1",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 1, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_FLAKY,
+				},
+			},
+		},
+		{
+			Position:          99,
+			Status:            pb.TestVerdict_PASSED,
+			ApproximateStatus: pb.TestVerdict_PASSED,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "rootInvocations/root-2",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 2, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_PASSED,
+				},
+			},
+		},
+		{
+			Position:          98,
+			Status:            pb.TestVerdict_PASSED,
+			ApproximateStatus: pb.TestVerdict_PASSED,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "",
+					Invocation:     "invocations/inv-3",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 3, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_PASSED,
+				},
+			},
+		},
+		{
+			Position:          97,
+			Status:            pb.TestVerdict_SKIPPED,
+			ApproximateStatus: pb.TestVerdict_SKIPPED,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "rootInvocations/root-4",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 4, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_SKIPPED,
+				},
+			},
+		},
+		{
+			Position:          96,
+			Status:            pb.TestVerdict_EXECUTION_ERRORED,
+			ApproximateStatus: pb.TestVerdict_EXECUTION_ERRORED,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "rootInvocations/root-5",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 5, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_EXECUTION_ERRORED,
+				},
+			},
+		},
+		{
+			Position:          95,
+			Status:            pb.TestVerdict_PRECLUDED,
+			ApproximateStatus: pb.TestVerdict_PRECLUDED,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "rootInvocations/root-6",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 6, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_PRECLUDED,
+				},
+			},
+		},
+		{
+			Position:          94,
+			Status:            pb.TestVerdict_STATUS_UNSPECIFIED,
+			ApproximateStatus: pb.TestVerdict_PASSED,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "rootInvocations/root-7",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 7, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_PASSED,
+					Changelists:    cls,
+				},
+			},
+		},
+		{
+			Position:          93,
+			Status:            pb.TestVerdict_PASSED,
+			ApproximateStatus: pb.TestVerdict_FLAKY,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "rootInvocations/root-8b",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 8, 1, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_PASSED,
+				},
+				{
+					RootInvocation: "rootInvocations/root-8a",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 8, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_FAILED,
+					Changelists:    cls,
+				},
+			},
+		},
+		{
+			Position:          92,
+			Status:            pb.TestVerdict_STATUS_UNSPECIFIED,
+			ApproximateStatus: pb.TestVerdict_STATUS_UNSPECIFIED,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "rootInvocations/root-9",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 9, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_PASSED,
+					IsSourcesDirty: true,
+				},
+			},
+		},
+		{
+			Position:          91,
+			Status:            pb.TestVerdict_PASSED,
+			ApproximateStatus: pb.TestVerdict_PASSED,
+			InvocationVerdicts: []*pb.SourceVerdict_InvocationTestVerdict{
+				{
+					RootInvocation: "rootInvocations/root-10",
+					Invocation:     "",
+					PartitionTime:  pbutil.MustTimestampProto(time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC)),
+					Status:         pb.TestVerdict_PASSED,
+				},
+			},
+		},
+	}
+}

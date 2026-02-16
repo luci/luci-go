@@ -856,6 +856,8 @@ type QuerySourceVerdictsV2Request struct {
 	Test isQuerySourceVerdictsV2Request_Test `protobuf_oneof:"test"`
 	// The source ref (e.g. git branch).
 	SourceRef *SourceRef `protobuf:"bytes,4,opt,name=source_ref,json=sourceRef,proto3" json:"source_ref,omitempty"`
+	// The source ref hash. Specify as an alternative to `source_ref`.
+	SourceRefHash string `protobuf:"bytes,9,opt,name=source_ref_hash,json=sourceRefHash,proto3" json:"source_ref_hash,omitempty"`
 	// An AIP-160 filter clause on the returned source verdicts.
 	// Currently, the only field supported field is `position`.
 	Filter string `protobuf:"bytes,5,opt,name=filter,proto3" json:"filter,omitempty"`
@@ -866,8 +868,11 @@ type QuerySourceVerdictsV2Request struct {
 	// See https://google.aip.dev/132#ordering
 	OrderBy string `protobuf:"bytes,6,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
 	// The maximum number of source verdicts to return per page. The server may
-	// return fewer than this number. If unspecified, the server will decide a
-	// reasonable default. The maximum value is 1,000.
+	// return fewer than this number (including zero source verdicts), even if
+	// not at the end of the collection.
+	//
+	// If unspecified, the server will decide a reasonable default. The maximum
+	// value is 1000; values above 1000 will be coerced to 1000.
 	PageSize int32 `protobuf:"varint,7,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// A page token, received from a previous QuerySourceVerdictsV2 call.
 	// Provide this to retrieve the subsequent page.
@@ -943,6 +948,13 @@ func (x *QuerySourceVerdictsV2Request) GetSourceRef() *SourceRef {
 		return x.SourceRef
 	}
 	return nil
+}
+
+func (x *QuerySourceVerdictsV2Request) GetSourceRefHash() string {
+	if x != nil {
+		return x.SourceRefHash
+	}
+	return ""
 }
 
 func (x *QuerySourceVerdictsV2Request) GetFilter() string {
@@ -1531,9 +1543,15 @@ type SourceVerdict_InvocationTestVerdict struct {
 	Status TestVerdict_Status `protobuf:"varint,4,opt,name=status,proto3,enum=luci.analysis.v1.TestVerdict_Status" json:"status,omitempty"`
 	// The changelist(s) that were tested, if any. If there are more 10, only
 	// the first 10 are listed here.
-	Changelists   []*Changelist `protobuf:"bytes,5,rep,name=changelists,proto3" json:"changelists,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// If this is set to a non-empty value, the results from this verdict are not
+	// used in `status`.
+	Changelists []*Changelist `protobuf:"bytes,5,rep,name=changelists,proto3" json:"changelists,omitempty"`
+	// Whether the sources tested by the invocation had other changes (not
+	// described by the changelists collection above).
+	// Test results from such verdicts are not used in `status` or `approximate_status`.
+	IsSourcesDirty bool `protobuf:"varint,6,opt,name=is_sources_dirty,json=isSourcesDirty,proto3" json:"is_sources_dirty,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *SourceVerdict_InvocationTestVerdict) Reset() {
@@ -1599,6 +1617,13 @@ func (x *SourceVerdict_InvocationTestVerdict) GetChangelists() []*Changelist {
 		return x.Changelists
 	}
 	return nil
+}
+
+func (x *SourceVerdict_InvocationTestVerdict) GetIsSourcesDirty() bool {
+	if x != nil {
+		return x.IsSourcesDirty
+	}
+	return false
 }
 
 var File_go_chromium_org_luci_analysis_proto_v1_test_history_proto protoreflect.FileDescriptor
@@ -1684,14 +1709,15 @@ const file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDesc = "
 	"\x19QueryRecentPassesResponse\x12b\n" +
 	"\x0fpassing_results\x18\x01 \x03(\v29.luci.analysis.v1.QueryRecentPassesResponse.PassingResultR\x0epassingResults\x1a#\n" +
 	"\rPassingResult\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\x87\x03\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xaf\x03\n" +
 	"\x1cQuerySourceVerdictsV2Request\x12\x18\n" +
 	"\aproject\x18\x01 \x01(\tR\aproject\x12P\n" +
 	"\x12test_id_structured\x18\x02 \x01(\v2 .luci.analysis.v1.TestIdentifierH\x00R\x10testIdStructured\x12H\n" +
 	"\ftest_id_flat\x18\x03 \x01(\v2$.luci.analysis.v1.FlatTestIdentifierH\x00R\n" +
 	"testIdFlat\x12:\n" +
 	"\n" +
-	"source_ref\x18\x04 \x01(\v2\x1b.luci.analysis.v1.SourceRefR\tsourceRef\x12\x16\n" +
+	"source_ref\x18\x04 \x01(\v2\x1b.luci.analysis.v1.SourceRefR\tsourceRef\x12&\n" +
+	"\x0fsource_ref_hash\x18\t \x01(\tR\rsourceRefHash\x12\x16\n" +
 	"\x06filter\x18\x05 \x01(\tR\x06filter\x12\x19\n" +
 	"\border_by\x18\x06 \x01(\tR\aorderBy\x12\x1b\n" +
 	"\tpage_size\x18\a \x01(\x05R\bpageSize\x12\x1d\n" +
@@ -1700,12 +1726,12 @@ const file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDesc = "
 	"\x04test\"\x91\x01\n" +
 	"\x1dQuerySourceVerdictsV2Response\x12H\n" +
 	"\x0fsource_verdicts\x18\x01 \x03(\v2\x1f.luci.analysis.v1.SourceVerdictR\x0esourceVerdicts\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xca\x04\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xf4\x04\n" +
 	"\rSourceVerdict\x12\x1a\n" +
 	"\bposition\x18\x01 \x01(\x03R\bposition\x12<\n" +
 	"\x06status\x18\x02 \x01(\x0e2$.luci.analysis.v1.TestVerdict.StatusR\x06status\x12S\n" +
 	"\x12approximate_status\x18\x03 \x01(\x0e2$.luci.analysis.v1.TestVerdict.StatusR\x11approximateStatus\x12f\n" +
-	"\x13invocation_verdicts\x18\x04 \x03(\v25.luci.analysis.v1.SourceVerdict.InvocationTestVerdictR\x12invocationVerdicts\x1a\xa1\x02\n" +
+	"\x13invocation_verdicts\x18\x04 \x03(\v25.luci.analysis.v1.SourceVerdict.InvocationTestVerdictR\x12invocationVerdicts\x1a\xcb\x02\n" +
 	"\x15InvocationTestVerdict\x12'\n" +
 	"\x0froot_invocation\x18\x01 \x01(\tR\x0erootInvocation\x12\x1e\n" +
 	"\n" +
@@ -1713,7 +1739,8 @@ const file_go_chromium_org_luci_analysis_proto_v1_test_history_proto_rawDesc = "
 	"invocation\x12A\n" +
 	"\x0epartition_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\rpartitionTime\x12<\n" +
 	"\x06status\x18\x04 \x01(\x0e2$.luci.analysis.v1.TestVerdict.StatusR\x06status\x12>\n" +
-	"\vchangelists\x18\x05 \x03(\v2\x1c.luci.analysis.v1.ChangelistR\vchangelists2\x89\x05\n" +
+	"\vchangelists\x18\x05 \x03(\v2\x1c.luci.analysis.v1.ChangelistR\vchangelists\x12(\n" +
+	"\x10is_sources_dirty\x18\x06 \x01(\bR\x0eisSourcesDirty2\x89\x05\n" +
 	"\vTestHistory\x12`\n" +
 	"\x05Query\x12).luci.analysis.v1.QueryTestHistoryRequest\x1a*.luci.analysis.v1.QueryTestHistoryResponse\"\x00\x12o\n" +
 	"\n" +

@@ -400,6 +400,9 @@ message QuerySourceVerdictsV2Request {
   // The source ref (e.g. git branch).
   SourceRef source_ref = 4;
 
+  // The source ref hash. Specify as an alternative to `source_ref`.
+  string source_ref_hash = 9;
+
   // An AIP-160 filter clause on the returned source verdicts.
   // Currently, the only field supported field is `position`.
   string filter = 5;
@@ -412,8 +415,11 @@ message QuerySourceVerdictsV2Request {
   string order_by = 6;
 
   // The maximum number of source verdicts to return per page. The server may
-  // return fewer than this number. If unspecified, the server will decide a
-  // reasonable default. The maximum value is 1,000.
+  // return fewer than this number (including zero source verdicts), even if
+  // not at the end of the collection.
+  //
+  // If unspecified, the server will decide a reasonable default. The maximum
+  // value is 1000; values above 1000 will be coerced to 1000.
   int32 page_size = 7;
 
   // A page token, received from a previous QuerySourceVerdictsV2 call.
@@ -488,7 +494,13 @@ message SourceVerdict {
     TestVerdict.Status status = 4;
     // The changelist(s) that were tested, if any. If there are more 10, only
     // the first 10 are listed here.
+    // If this is set to a non-empty value, the results from this verdict are not
+    // used in `status`.
     repeated Changelist changelists = 5;
+    // Whether the sources tested by the invocation had other changes (not
+    // described by the changelists collection above).
+    // Test results from such verdicts are not used in `status` or `approximate_status`.
+    bool is_sources_dirty = 6;
   }
 
   // The invocation test verdicts at the source position. Note some of these
