@@ -155,7 +155,7 @@ func prepareExportRowsLegacy(verdicts []*rdbpb.RunTestVerdict, opts LegacyOption
 	return results, nil
 }
 
-func parent(parent *rdbpb.Invocation) (*bqpb.TestResultRow_ParentInvocationRecord, error) {
+func parent(parent *rdbpb.Invocation) (*bqpb.TestResultRow_ParentRecord, error) {
 	invocationID, err := rdbpbutil.ParseInvocationName(parent.Name)
 	if err != nil {
 		return nil, errors.Fmt("invalid invocation name %q: %w", invocationID, err)
@@ -165,7 +165,7 @@ func parent(parent *rdbpb.Invocation) (*bqpb.TestResultRow_ParentInvocationRecor
 		return nil, errors.Fmt("marshal properties: %w", err)
 	}
 
-	return &bqpb.TestResultRow_ParentInvocationRecord{
+	return &bqpb.TestResultRow_ParentRecord{
 		Id:         invocationID,
 		Tags:       pbutil.StringPairFromResultDB(parent.Tags),
 		Realm:      parent.Realm,

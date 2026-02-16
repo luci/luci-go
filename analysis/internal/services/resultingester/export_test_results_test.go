@@ -50,7 +50,7 @@ func TestExportTestResults(t *testing.T) {
 			Id:    "test-root-invocation-name",
 			Realm: "rootproject:root",
 		}
-		parentInvocation := &bqpb.TestResultRow_ParentInvocationRecord{
+		parentInvocation := &bqpb.TestResultRow_ParentRecord{
 			Id: "test-invocation-name",
 			Tags: []*analysispb.StringPair{
 				{
