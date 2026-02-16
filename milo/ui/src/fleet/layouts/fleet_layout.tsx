@@ -127,7 +127,8 @@ const FleetLayoutContent = () => {
       <Sticky
         left
         sx={{
-          gridArea: 'sidebar',
+          gridRow: '2/5',
+          gridColumn: '1/2',
           zIndex: (theme) => theme.zIndex.drawer,
         }}
       >

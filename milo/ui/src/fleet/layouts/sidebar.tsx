@@ -64,6 +64,9 @@ export const Sidebar = ({ open }: { open: boolean }) => {
         '& .MuiDrawer-paper': {
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
+          height: 'min(100vh, 100%)',
+          position: 'sticky',
+          top: '0px',
         },
       }}
       variant="persistent"
