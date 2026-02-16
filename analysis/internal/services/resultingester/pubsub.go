@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
@@ -35,14 +34,13 @@ type RootInvocationInputs struct {
 }
 
 // HandlePubSub is the entry point for ingesting data from a root invocation.
-func (o *orchestrator) HandlePubSub(ctx context.Context, n *rdbpb.TestResultsNotification) (err error) {
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.IngestForLowLatencyTestResults.HandlePubSub")
+func (o *Orchestrator) HandlePubSub(ctx context.Context, n *rdbpb.TestResultsNotification) (err error) {
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/resultingester.Orchestrator.HandlePubSub")
 	defer func() { tracing.End(s, err) }()
 
 	// For reading the root invocation, use a ResultDB client acting as
 	// the project of the root invocation.
 	project, _ := realms.Split(n.RootInvocationMetadata.Realm)
-	ctx = logging.SetFields(ctx, logging.Fields{"Project": project, "RootInvocation": n.RootInvocationMetadata.RootInvocationId, "DeduplicationKey": n.DeduplicationKey})
 
 	isProjectEnabled, err := config.IsProjectEnabledForIngestion(ctx, project)
 	if err != nil {

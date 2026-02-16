@@ -21,7 +21,10 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/pubsub"
+
+	"go.chromium.org/luci/analysis/internal/services/resultingester"
 )
 
 var (
@@ -36,11 +39,14 @@ var (
 // TestResultsPubSubHandler accepts and processes ResultDB Test Results PubSub
 // messages.
 type TestResultsPubSubHandler struct {
+	orchestrator *resultingester.Orchestrator
 }
 
 // NewTestResultsPubSubHandler initialises a new TestResultsPubSubHandler.
-func NewTestResultsPubSubHandler() *TestResultsPubSubHandler {
-	return &TestResultsPubSubHandler{}
+func NewTestResultsPubSubHandler(orchestrator *resultingester.Orchestrator) *TestResultsPubSubHandler {
+	return &TestResultsPubSubHandler{
+		orchestrator: orchestrator,
+	}
 }
 
 // Handle processes the test results pubsub message.
@@ -51,15 +57,21 @@ func (h *TestResultsPubSubHandler) Handle(ctx context.Context, message pubsub.Me
 		testResultsNotificationCounter.Add(ctx, 1, status)
 	}()
 
-	// For now, we just log and acknowledge the message.
-	// This is to verify the pubsub flow.
-	status = "success"
-	workUnitCounts := make(map[string]int, len(notification.GetTestResultsByWorkUnit()))
-	for _, group := range notification.GetTestResultsByWorkUnit() {
-		workUnitCounts[group.GetWorkUnitName()] = len(group.GetTestResults())
+	// For reading the root invocation, use a ResultDB client acting as
+	// the project of the root invocation.
+	project, _ := realms.Split(notification.RootInvocationMetadata.Realm)
+	fields := logging.Fields{
+		"Project":          project,
+		"RootInvocation":   notification.RootInvocationMetadata.RootInvocationId,
+		"DeduplicationKey": notification.DeduplicationKey,
+	}
+	ctx = logging.SetFields(ctx, fields)
+
+	if err := h.orchestrator.HandlePubSub(ctx, notification); err != nil {
+		status = errStatus(err)
+		return err
 	}
 
-	// TODO(b/454120970): Remove the logging once we verify the pubsub flow.
-	logging.Infof(ctx, "Successfully received test results notification with results grouped by work unit: %v", workUnitCounts)
+	status = "success"
 	return nil
 }

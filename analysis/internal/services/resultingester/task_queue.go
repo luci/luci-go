@@ -33,13 +33,11 @@ import (
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
-	tvbexporter "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	"go.chromium.org/luci/analysis/internal/checkpoints"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/gerritchangelists"
 	"go.chromium.org/luci/analysis/internal/resultdb"
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
-	"go.chromium.org/luci/analysis/internal/testresults/exporter"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 
@@ -64,29 +62,11 @@ var resultIngestion = tq.RegisterTaskClass(tq.TaskClass{
 
 // RegisterTaskHandler registers the handler for result ingestion tasks.
 func RegisterTaskHandler(srv *server.Server) error {
-	resultsClient, err := exporter.NewClient(srv.Context, srv.Options.CloudProject)
-	if err != nil {
-		return errors.Fmt("create test results BigQuery client: %w", err)
-	}
-
-	tvbBQClient, err := tvbexporter.NewClient(srv.Context, srv.Options.CloudProject)
+	o, err := NewResultIngestionOrchestrator(srv)
 	if err != nil {
 		return err
 	}
-	srv.RegisterCleanup(func(ctx context.Context) {
-		err := tvbBQClient.Close()
-		if err != nil {
-			logging.Errorf(ctx, "Cleaning up result ingestion test variant branch BQExporter client: %s", err)
-		}
-	})
 
-	o := &orchestrator{
-		sinks: []IngestionSink{
-			IngestForLowLatencyTestResults{},
-			NewTestResultsExporter(resultsClient),
-			NewIngestForChangepointAnalysis(tvbexporter.NewExporter(tvbBQClient)),
-		},
-	}
 	resultIngestion.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskspb.IngestTestResults)
 		return o.handleTask(ctx, task)
@@ -129,7 +109,7 @@ type LegacyInputs struct {
 }
 
 // handleTask is the entry point ingesting data from a legacy invocation.
-func (o *orchestrator) handleTask(ctx context.Context, payload *taskspb.IngestTestResults) error {
+func (o *Orchestrator) handleTask(ctx context.Context, payload *taskspb.IngestTestResults) error {
 	if err := validatePayload(payload); err != nil {
 		return tq.Fatal.Apply(errors.Fmt("validate payload: %w", err))
 	}

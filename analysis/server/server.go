@@ -20,6 +20,19 @@ import (
 	"context"
 	"fmt"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/grpc/prpc"
+	luciserver "go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/encryptedcookies"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/pubsub"
+	"go.chromium.org/luci/server/secrets"
+	spanmodule "go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/analysis/app"
 	"go.chromium.org/luci/analysis/internal/admin"
 	adminpb "go.chromium.org/luci/analysis/internal/admin/proto"
@@ -56,18 +69,6 @@ import (
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/analysis/rpc"
 	"go.chromium.org/luci/analysis/rpc/testhistory"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/grpc/prpc"
-	luciserver "go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/encryptedcookies"
-	"go.chromium.org/luci/server/gaeemulation"
-	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/pubsub"
-	"go.chromium.org/luci/server/secrets"
-	spanmodule "go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
 )
 
 // Main implements the common entrypoint for all LUCI Analysis GAE services.
@@ -190,13 +191,19 @@ func RegisterCrons(srv *luciserver.Server) {
 }
 
 // RegisterPubSubHandlers registers pub/sub handlers.
-func RegisterPubSubHandlers() {
+func RegisterPubSubHandlers(srv *luciserver.Server) error {
+	o, err := resultingester.NewResultIngestionOrchestrator(srv)
+	if err != nil {
+		return err
+	}
+
 	pubsub.RegisterJSONPBHandler("buildbucket", app.BuildbucketPubSubHandler)
 	pubsub.RegisterJSONPBHandler("cvrun", app.NewCVRunHandler().Handle)
 	pubsub.RegisterJSONPBHandler("invocation-finalized", app.NewInvocationFinalizedHandler().Handle)
 	pubsub.RegisterJSONPBHandler("invocation-ready-for-export", app.NewInvocationReadyForExportHandler().Handle)
 	pubsub.RegisterWirePBHandler("root-invocation-finalized", app.NewRootInvocationFinalizedHandler().Handle)
-	pubsub.RegisterWirePBHandler("test-results", app.NewTestResultsPubSubHandler().Handle)
+	pubsub.RegisterWirePBHandler("test-results", app.NewTestResultsPubSubHandler(o).Handle)
+	return nil
 }
 
 // RegisterTaskQueueHandlers registers task queue handlers.

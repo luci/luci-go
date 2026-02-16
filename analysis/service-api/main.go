@@ -17,6 +17,7 @@ package main
 import (
 	"net/http"
 
+	"go.chromium.org/luci/common/errors"
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/router"
 
@@ -30,9 +31,11 @@ import (
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
 		if err := server.RegisterPRPCHandlers(srv); err != nil {
-			return err
+			return errors.Fmt("register rpc handlers: %w", err)
 		}
-		server.RegisterPubSubHandlers()
+		if err := server.RegisterPubSubHandlers(srv); err != nil {
+			return errors.Fmt("register pubsub handlers: %w", err)
+		}
 		server.RegisterCrons(srv)
 
 		// Redirect the frontend to RPC explorer.

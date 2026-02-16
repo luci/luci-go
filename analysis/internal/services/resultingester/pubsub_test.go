@@ -42,7 +42,7 @@ func TestHandlePubsub(t *testing.T) {
 
 		testIngestor := &testIngester{}
 
-		o := &orchestrator{}
+		o := &Orchestrator{}
 		o.sinks = []IngestionSink{
 			testIngestor,
 		}

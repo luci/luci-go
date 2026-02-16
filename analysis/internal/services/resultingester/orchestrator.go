@@ -25,7 +25,14 @@ package resultingester
 import (
 	"context"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server"
+
 	// Add support for Spanner transactions in TQ.
+	tvbexporter "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
+	"go.chromium.org/luci/analysis/internal/testresults/exporter"
+
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
 )
 
@@ -40,9 +47,41 @@ type IngestionSink interface {
 	IngestRootInvocation(ctx context.Context, input RootInvocationInputs) error
 }
 
-// orchestrator orchestrates the ingestion of test results to the
+// Orchestrator orchestrates the ingestion of test results to the
 // specified sinks.
-type orchestrator struct {
+type Orchestrator struct {
 	// The set of ingestion sinks to write to, in order.
 	sinks []IngestionSink
+}
+
+// NewOrchestrator creates a new orchestrator with the specified sinks.
+func NewOrchestrator(sinks ...IngestionSink) *Orchestrator {
+	return &Orchestrator{
+		sinks: sinks,
+	}
+}
+
+// NewResultIngestionOrchestrator creates a new orchestrator with the standard set of sinks.
+func NewResultIngestionOrchestrator(srv *server.Server) (*Orchestrator, error) {
+	resultsClient, err := exporter.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return nil, errors.Fmt("create test results BigQuery client: %w", err)
+	}
+
+	tvbBQClient, err := tvbexporter.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		return nil, err
+	}
+	srv.RegisterCleanup(func(ctx context.Context) {
+		err := tvbBQClient.Close()
+		if err != nil {
+			logging.Errorf(ctx, "Cleaning up result ingestion test variant branch BQExporter client: %s", err)
+		}
+	})
+
+	return NewOrchestrator(
+		IngestForLowLatencyTestResults{},
+		NewTestResultsExporter(resultsClient),
+		NewIngestForChangepointAnalysis(tvbexporter.NewExporter(tvbBQClient)),
+	), nil
 }
