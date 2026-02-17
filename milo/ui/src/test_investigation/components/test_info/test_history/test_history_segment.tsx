@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import { Box } from '@mui/material';
+import { useEffect, useState } from 'react';
 
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 
@@ -20,6 +20,7 @@ import { TestHistorySegmentSummary } from './test_history_segment_summary';
 import { TestHistorySourceVerdicts } from './test_history_source_verdicts';
 interface TestHistorySegmentProps {
   segment: Segment;
+  nextSegment: Segment;
   isStartSegment: boolean;
   isEndSegment: boolean;
   setExpandedTestHistory: (expand: boolean) => void;
@@ -28,22 +29,38 @@ interface TestHistorySegmentProps {
 
 export function TestHistorySegment({
   segment,
+  nextSegment,
   isStartSegment,
   isEndSegment,
   setExpandedTestHistory,
   testHistoryHasExpandedSegment,
 }: TestHistorySegmentProps) {
+  const [numShownVerdicts, setNumShownVerdicts] = useState<number>(0);
+
+  useEffect(() => {
+    if (!testHistoryHasExpandedSegment) {
+      setNumShownVerdicts(0);
+    }
+  }, [testHistoryHasExpandedSegment]);
+
+  const changeNumShownVerdicts = (num: number) => {
+    setNumShownVerdicts(num);
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <TestHistorySourceVerdicts
         segment={segment}
         setExpandedTestHistory={setExpandedTestHistory}
         testHistoryHasExpandedSegment={testHistoryHasExpandedSegment}
+        changeNumShownVerdicts={changeNumShownVerdicts}
       ></TestHistorySourceVerdicts>
       <TestHistorySegmentSummary
         segment={segment}
+        nextSegment={nextSegment}
         isStartSegment={isStartSegment}
         isEndSegment={isEndSegment}
+        numShownVerdicts={numShownVerdicts}
       ></TestHistorySegmentSummary>
     </Box>
   );

@@ -13,9 +13,17 @@
 // limitations under the License.
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import { Box, Tooltip, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 
+import { ParsedTestVariantBranchName } from '@/analysis/types';
+import { HtmlTooltip } from '@/common/components/html_tooltip';
+import { useTestVariantBranchesClient } from '@/common/hooks/prpc_clients';
 import { getStatusStyle } from '@/common/styles/status_styles';
-import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import {
+  QuerySourceVerdictsRequest,
+  Segment,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { useInvocation } from '@/test_investigation/context';
 import {
@@ -23,108 +31,174 @@ import {
   getFormattedFailureRateFromSegment,
 } from '@/test_investigation/utils/test_history_utils';
 
+import { useTestVariantBranch } from '../context';
+
+import { SegmentTooltipSection } from './segment_tooltip_section';
+
 interface TestHistorySegmentProps {
   segment: Segment;
+  nextSegment: Segment;
   isStartSegment: boolean;
   isEndSegment: boolean;
+  numShownVerdicts: number;
 }
 
 interface SegmentBoxProps {
   segment: Segment;
+  nextSegment: Segment;
   isStartSegment: boolean;
   isEndSegment: boolean;
 }
 
 function SegmentBox({
   segment,
+  nextSegment,
   isStartSegment,
   isEndSegment,
 }: SegmentBoxProps) {
-  const formattedRate = getFormattedFailureRateFromSegment(segment);
   const style = getStatusStyle(
     getFailureRateStatusTypeFromSegment(segment),
-    'outlined',
+    'filled',
   );
+  const formattedRate = getFormattedFailureRateFromSegment(segment);
   const IconComponent = style.icon;
+  const testVariantBranch = useTestVariantBranch();
+  const tvbClient = useTestVariantBranchesClient();
+
+  const { data: response } = useQuery({
+    ...tvbClient.QuerySourceVerdicts.query(
+      QuerySourceVerdictsRequest.fromPartial({
+        parent: ParsedTestVariantBranchName.toString(testVariantBranch!),
+        startSourcePosition: (Number(segment?.startPosition) - 1).toString(),
+        endSourcePosition: Math.max(
+          Number(nextSegment?.endPosition),
+          Number(segment?.startPosition) - 1000,
+        ).toString(),
+      }),
+    ),
+    enabled: !!nextSegment && !!testVariantBranch,
+  });
 
   return (
-    <Box
-      sx={{
-        backgroundColor: style.backgroundColor,
-        display: 'flex',
-        flexDirection: 'row',
-        borderRadius:
-          isStartSegment && isEndSegment
-            ? '100px'
-            : isStartSegment
-              ? '100px 0 0 100px'
-              : isEndSegment
-                ? '0 100px 100px 0'
-                : '0',
-        padding: '4px 8px',
-        boxShadow: 0,
-        gap: '4px',
-        justifyContent: 'center',
-        clipPath:
-          isStartSegment && isEndSegment
-            ? ''
-            : isStartSegment
-              ? 'polygon(0% 0%, 100% 0%, calc(100% - 5px) 50%, 100% 100%, 0% 100%, 0% 50%)'
-              : isEndSegment
-                ? 'polygon(5px 0%, 100% 0%, 100% 50%, 100% 100%, 5px 100%, 0% 50%)'
-                : 'polygon(5px 0%, 100% 0%, calc(100% - 5px) 50%, 100% 100%, 5px 100%, 0% 50%)',
+    <HtmlTooltip
+      sx={{ p: 0 }}
+      slotProps={{
+        tooltip: {
+          sx: {
+            p: 1,
+          },
+        },
       }}
-    >
-      {IconComponent && (
-        <IconComponent
-          sx={{
-            fontSize: '18px',
-            color: style.iconColor,
-          }}
-        />
-      )}
-      {segment.counts && (
-        <>
-          <Typography sx={{ color: 'text.primary' }} variant="caption">
-            {formattedRate}
-          </Typography>
-          <Typography
-            sx={{ color: 'text.primary', textTransform: 'none' }}
-            variant="caption"
-          >
-            <Typography
+      title={
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0, m: 0 }}>
+          <SegmentTooltipSection segment={segment}></SegmentTooltipSection>
+          {nextSegment && response && response.sourceVerdicts.length > 0 && (
+            <Box
               sx={{
-                color: 'text.secondary',
-                fontStyle: 'italic',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '80px',
+                backgroundColor: 'grey.100',
+                clipPath:
+                  'polygon(15px 0%, 100% 0%, calc(100% - 15px) 50%, 100% 100%, 15px 100%, 0% 50%)',
               }}
+            >
+              <Typography sx={{ color: 'primary.main' }} variant="caption">
+                {response?.sourceVerdicts.length} CLs
+              </Typography>
+            </Box>
+          )}
+          <SegmentTooltipSection
+            segment={nextSegment}
+            nextSegment
+          ></SegmentTooltipSection>
+        </Box>
+      }
+    >
+      <Box
+        sx={{
+          backgroundColor: style.backgroundColor,
+          display: 'flex',
+          flexDirection: 'row',
+          borderRadius:
+            isStartSegment && isEndSegment
+              ? '100px'
+              : isStartSegment
+                ? '100px 0 0 100px'
+                : isEndSegment
+                  ? '0 100px 100px 0'
+                  : '0',
+          padding: '4px 8px',
+          boxShadow: 0,
+          gap: '4px',
+          justifyContent: 'center',
+          clipPath:
+            isStartSegment && isEndSegment
+              ? ''
+              : isStartSegment
+                ? 'polygon(0% 0%, 100% 0%, calc(100% - 5px) 50%, 100% 100%, 0% 100%, 0% 50%)'
+                : isEndSegment
+                  ? 'polygon(5px 0%, 100% 0%, 100% 50%, 100% 100%, 5px 100%, 0% 50%)'
+                  : 'polygon(5px 0%, 100% 0%, calc(100% - 5px) 50%, 100% 100%, 5px 100%, 0% 50%)',
+        }}
+      >
+        {IconComponent && (
+          <IconComponent
+            sx={{
+              fontSize: '18px',
+              color: style.iconColor,
+            }}
+          />
+        )}
+        {segment.counts && (
+          <>
+            <Typography sx={{ color: 'text.primary' }} variant="caption">
+              {formattedRate}
+            </Typography>
+            <Typography
+              sx={{ color: 'text.primary', textTransform: 'none' }}
               variant="caption"
             >
-              ({segment?.counts.unexpectedResults}/
-              {segment?.counts.totalResults} failed)
+              <Typography
+                sx={{
+                  color: 'text.secondary',
+                  fontStyle: 'italic',
+                }}
+                variant="caption"
+              >
+                ({segment?.counts.unexpectedResults}/
+                {segment?.counts.totalResults} failed)
+              </Typography>
             </Typography>
-          </Typography>
-        </>
-      )}
-    </Box>
+          </>
+        )}
+      </Box>
+    </HtmlTooltip>
   );
 }
 
 export function TestHistorySegmentSummary({
   segment,
+  nextSegment,
   isStartSegment,
   isEndSegment,
+  numShownVerdicts,
 }: TestHistorySegmentProps) {
   const invocation = useInvocation() as Invocation;
   const currentTestResultPosition =
     invocation?.sourceSpec?.sources?.gitilesCommit?.position;
+  const [_numberShownVerdicts, setNumberShownVerdicts] = useState(0);
 
-  const isCurrentTestResultSegment = (pos: string | undefined) => {
-    if (!pos) return false;
-    return (
-      Number(pos) >= Number(segment.startPosition) &&
-      Number(pos) <= Number(segment.endPosition)
-    );
-  };
+  const isCurrentSegment = useMemo(() => {
+    if (!currentTestResultPosition || !segment) return false;
+
+    const pos = Number(currentTestResultPosition);
+    const start = Number(segment.startPosition);
+    const end = Number(segment.endPosition);
+
+    return pos >= start && pos <= end;
+  }, [currentTestResultPosition, segment]);
 
   const ThisResultTooltip = (
     <Box
@@ -144,9 +218,14 @@ export function TestHistorySegmentSummary({
     </Box>
   );
 
+  // This is to ensure the current test result tooltip to rerender, otherwise it will be positioned incorrectly when collapsing all.
+  useEffect(() => {
+    setNumberShownVerdicts(numShownVerdicts);
+  }, [numShownVerdicts]);
+
   return (
     <>
-      {isCurrentTestResultSegment(currentTestResultPosition) ? (
+      {isCurrentSegment ? (
         <Tooltip
           title={ThisResultTooltip}
           open
@@ -170,20 +249,36 @@ export function TestHistorySegmentSummary({
             },
           }}
         >
-          <Box>
+          <Box
+            sx={{
+              '&:hover': {
+                cursor: 'pointer',
+              },
+            }}
+          >
             <SegmentBox
               segment={segment}
+              nextSegment={nextSegment}
               isStartSegment={isStartSegment}
               isEndSegment={isEndSegment}
             ></SegmentBox>
           </Box>
         </Tooltip>
       ) : (
-        <SegmentBox
-          segment={segment}
-          isStartSegment={isStartSegment}
-          isEndSegment={isEndSegment}
-        ></SegmentBox>
+        <Box
+          sx={{
+            '&:hover': {
+              cursor: 'pointer',
+            },
+          }}
+        >
+          <SegmentBox
+            segment={segment}
+            nextSegment={nextSegment}
+            isStartSegment={isStartSegment}
+            isEndSegment={isEndSegment}
+          ></SegmentBox>
+        </Box>
       )}
     </>
   );

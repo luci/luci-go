@@ -20,8 +20,6 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import InfoIcon from '@mui/icons-material/Info';
 import NextPlanIcon from '@mui/icons-material/NextPlan';
-import RepeatIcon from '@mui/icons-material/Repeat';
-import RepeatOnIcon from '@mui/icons-material/RepeatOn';
 import WarningIcon from '@mui/icons-material/Warning';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
@@ -113,19 +111,9 @@ export function getStatusStyle(
         onBackgroundColor: 'var(--critical-failure-color)',
       };
     case 'warning':
-      return {
-        icon: iconStyle === 'filled' ? WarningIcon : WarningAmberIcon,
-        textColor: 'var(--gm3-color-warning, var(--warning-color))',
-        backgroundColor:
-          'var(--gm3-color-warning-container, var(--warning-bg-color))',
-        borderColor: 'var(--gm3-color-warning-outline, var(--warning-color))',
-        iconColor: 'var(--gm3-color-warning, var(--warning-color))',
-        onBackgroundColor:
-          'var(--gm3-color-on-warning-container, var(--warning-color))',
-      };
     case 'flaky':
       return {
-        icon: iconStyle === 'filled' ? RepeatOnIcon : RepeatIcon,
+        icon: iconStyle === 'filled' ? WarningIcon : WarningAmberIcon,
         textColor: 'var(--gm3-color-warning, var(--warning-color))',
         backgroundColor:
           'var(--gm3-color-warning-container, var(--warning-bg-color))',

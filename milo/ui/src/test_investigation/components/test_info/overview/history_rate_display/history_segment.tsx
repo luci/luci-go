@@ -83,7 +83,7 @@ function HistorySegmentTooltip({
           <Typography variant="body2">
             Failure Rate: {formattedRate}
             {segment.counts &&
-              ` (${segment.counts.unexpectedResults} / ${segment.counts.totalResults} failed)`}
+              ` (${segment.counts.unexpectedVerdicts} / ${segment.counts.totalVerdicts} failed)`}
           </Typography>
         </Box>
 

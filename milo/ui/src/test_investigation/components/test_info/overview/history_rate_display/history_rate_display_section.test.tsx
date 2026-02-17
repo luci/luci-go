@@ -54,8 +54,8 @@ const createMockSegment = (
     startPosition: startPos,
     endPosition: endPos,
     counts: Segment_Counts.fromPartial({
-      unexpectedResults: unexpected,
-      totalResults: total,
+      unexpectedVerdicts: unexpected,
+      totalVerdicts: total,
     }),
     startHour: startHour || undefined,
     hasStartChangepoint: true,
@@ -314,24 +314,6 @@ describe('<HistoryRateDisplaySection />', () => {
     expect(screen.getAllByTestId('ArrowBackIcon')).toHaveLength(2); // Max 2 arrows
     // TestAddedDisplay should not be rendered here as the third segment (sO1) is shown directly
     expect(screen.queryByText(/Test added/)).not.toBeInTheDocument();
-  });
-
-  it('should render the "View full history" link correctly', () => {
-    const segmentsData = [createMockSegment('s1', '100', '110', 10, 100)];
-    renderComponent(undefined, undefined, undefined, {
-      testVariantBranch: TestVariantBranch.fromPartial({
-        segments: segmentsData,
-        refHash: 'test-ref-hash',
-      }),
-    });
-    const link = screen.getByRole('link', {
-      name: /View full history/i,
-    });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute(
-      'href',
-      `/ui/test/test-project/test%2Fid%2Fsome.Test?q=V%3Akey1%3Dval1`,
-    );
   });
 
   it('should use currentTimeForAgo for formatting "ago" text', async () => {

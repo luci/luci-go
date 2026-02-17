@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link, Typography } from '@mui/material';
+import { Box, Drawer, Link, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { NO_HISTORY_DATA_TEXT } from '@/test_investigation/components/test_info/constants';
@@ -33,6 +33,7 @@ import {
 } from '@/test_investigation/utils/test_info_utils';
 
 import { useTestVariantBranch } from '../../context';
+import { TestHistory } from '../../test_history/test_history';
 
 import { AndroidTestTimeline } from './android_history';
 import { HistoryChangepoint } from './history_changepoint';
@@ -101,6 +102,7 @@ function DefaultHistoryRateDisplay({
   const project = useProject();
   const testVariantBranch = useTestVariantBranch();
   const segments = testVariantBranch?.segments;
+  const [openHistoryDrawer, setOpenHistoryDrawer] = useState(false);
 
   const allTestHistoryLink = useMemo(
     () =>
@@ -128,6 +130,10 @@ function DefaultHistoryRateDisplay({
   const blamelistBaseUrl = refHash
     ? `/ui/labs/p/${project}/tests/${encodeURIComponent(testId)}/variants/${variantHash}/refs/${refHash}/blamelist`
     : undefined;
+
+  const toggleHistoryDrawer = (open: boolean) => () => {
+    setOpenHistoryDrawer(open);
+  };
 
   return (
     <Box>
@@ -216,7 +222,7 @@ function DefaultHistoryRateDisplay({
           {allTestHistoryLink && (
             <Box>
               <Link
-                href={allTestHistoryLink}
+                onClick={toggleHistoryDrawer(true)}
                 variant="caption"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -225,10 +231,20 @@ function DefaultHistoryRateDisplay({
                   whiteSpace: 'nowrap',
                   alignSelf: 'center',
                   pl: 1,
+                  textTransform: 'none',
+                  cursor: 'pointer',
                 }}
               >
                 View full history
               </Link>
+              <Drawer
+                open={openHistoryDrawer}
+                onClose={toggleHistoryDrawer(false)}
+                anchor="bottom"
+                slotProps={{ backdrop: { invisible: true } }}
+              >
+                <TestHistory />
+              </Drawer>
             </Box>
           )}
         </Box>

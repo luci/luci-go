@@ -22,12 +22,14 @@ interface TestHistorySegmentProps {
   segment: Segment;
   setExpandedTestHistory: (expand: boolean) => void;
   testHistoryHasExpandedSegment: boolean;
+  changeNumShownVerdicts: (num: number) => void;
 }
 
 export function TestHistorySourceVerdicts({
   segment,
   setExpandedTestHistory,
   testHistoryHasExpandedSegment,
+  changeNumShownVerdicts,
 }: TestHistorySegmentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -43,6 +45,10 @@ export function TestHistorySourceVerdicts({
     }
   }, [testHistoryHasExpandedSegment]);
 
+  const sourceVerdictNumberChanged = (num: number) => {
+    changeNumShownVerdicts(num);
+  };
+
   return (
     <>
       {!isExpanded ? (
@@ -51,7 +57,10 @@ export function TestHistorySourceVerdicts({
           expandSegment={expandSegment}
         ></SourceVerdictsCollapsed>
       ) : (
-        <SourceVerdictsExpanded segment={segment}></SourceVerdictsExpanded>
+        <SourceVerdictsExpanded
+          segment={segment}
+          sourceVerdictNumberChanged={sourceVerdictNumberChanged}
+        ></SourceVerdictsExpanded>
       )}
     </>
   );

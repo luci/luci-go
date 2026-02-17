@@ -68,6 +68,7 @@ const CurrentResultTooltip = (pos: string) => {
 
 interface SourceVerdictsExpandedProps {
   segment: Segment;
+  sourceVerdictNumberChanged: (num: number) => void;
 }
 
 const getEndSourceVerdictFromPosition = (
@@ -232,7 +233,7 @@ const PassFailSourceVerdictBox = (
               ></SourceVerdictTooltip>
             }
           >
-            <Box
+            <Link
               sx={{
                 width: '8px',
                 height: '60px',
@@ -245,11 +246,10 @@ const PassFailSourceVerdictBox = (
                   : 'var(--gm3-color-success)',
                 display: 'flex',
               }}
-              component={Link}
               href={blamelistLink}
               target="_blank"
               rel="noopener noreferrer"
-            ></Box>
+            ></Link>
           </HtmlTooltip>
         </Tooltip>
       ) : (
@@ -260,7 +260,7 @@ const PassFailSourceVerdictBox = (
             ></SourceVerdictTooltip>
           }
         >
-          <Box
+          <Link
             sx={{
               width: '8px',
               height: '60px',
@@ -273,7 +273,10 @@ const PassFailSourceVerdictBox = (
                 : 'var(--gm3-color-success)',
               display: 'flex',
             }}
-          ></Box>
+            href={blamelistLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          ></Link>
         </HtmlTooltip>
       )}
     </>
@@ -282,6 +285,7 @@ const PassFailSourceVerdictBox = (
 
 export function SourceVerdictsExpanded({
   segment,
+  sourceVerdictNumberChanged,
 }: SourceVerdictsExpandedProps) {
   const testVariantBranch = useTestVariantBranch();
   const tvbClient = useTestVariantBranchesClient();
@@ -351,6 +355,7 @@ export function SourceVerdictsExpanded({
 
   const expandSegment = () => {
     setSourceVerdictCount(sourceVerdictCount + 15);
+    sourceVerdictNumberChanged(sourceVerdictCount);
   };
 
   const ExpandButton = (

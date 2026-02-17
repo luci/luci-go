@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import InfoOutlineIcon from '@mui/icons-material/InfoOutlined';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
@@ -111,6 +112,7 @@ export function TestHistory() {
               setExpandedTestHistory={expandOneSegment}
               testHistoryHasExpandedSegment={hasExpandedSegment}
               segment={segment}
+              nextSegment={testVariantBranch?.segments[index + 1] ?? null}
               key={index}
               isStartSegment={index === 0 ? true : false}
               isEndSegment={

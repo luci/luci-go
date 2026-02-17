@@ -19,9 +19,9 @@ export function getFormattedFailureRateFromSegment(segment: Segment): string {
   if (!segment || !segment.counts) {
     return 'N/A';
   }
-  const { unexpectedResults = 0, totalResults = 0 } = segment.counts;
+  const { unexpectedVerdicts = 0, totalVerdicts = 0 } = segment.counts;
   const ratePercent =
-    totalResults > 0 ? (unexpectedResults / totalResults) * 100 : 0;
+    totalVerdicts > 0 ? (unexpectedVerdicts / totalVerdicts) * 100 : 0;
   return `${ratePercent.toFixed(0)}%`;
 }
 
@@ -31,9 +31,9 @@ export function getFailureRateStatusTypeFromSegment(
   if (!segment || !segment.counts) {
     return 'unknown';
   }
-  const { unexpectedResults = 0, totalResults = 0 } = segment.counts;
+  const { unexpectedVerdicts = 0, totalVerdicts = 0 } = segment.counts;
   const ratePercent =
-    totalResults > 0 ? (unexpectedResults / totalResults) * 100 : 0;
+    totalVerdicts > 0 ? (unexpectedVerdicts / totalVerdicts) * 100 : 0;
   return determineRateStatusType(ratePercent);
 }
 
