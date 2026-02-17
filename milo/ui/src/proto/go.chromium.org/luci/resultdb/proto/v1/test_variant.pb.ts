@@ -187,6 +187,10 @@ export interface TestVariant {
    * test result in the test verdict and get its instruction.
    * Note: If in this test verdict, if there are different instructions for
    * test result, the result may be undeterministic.
+   *
+   * This field is not populated when querying root invocations.
+   *
+   * @deprecated
    */
   readonly instruction: VerdictInstruction | undefined;
 }
@@ -210,7 +214,20 @@ export interface TestResultBundle {
  * Empty message matches all test variants.
  */
 export interface TestVariantPredicate {
-  /** A test variant must have this status. */
+  /**
+   * A test variant must have this status.
+   *
+   * DEPRECATED: Please use QueryTestVerdicts and its TestVerdictPredicate instead.
+   * For root invocations, the semantics of the TestVariantStatus filter changes
+   * as it is implemented as a filter on the v2 verdict status instead:
+   * - UNEXPECTED yields verdicts with a v2 status of FAILED,
+   * - UNEXPECTED_MASK yields verdicts with a v2 status of FAILED,
+   *   EXECUTION_ERRORED, PRECLUDED, FLAKY or EXONERATED.
+   *
+   * Only UNEXPECTED and UNEXPECTED_MASK are supported.
+   *
+   * @deprecated
+   */
   readonly status: TestVariantStatus;
 }
 

@@ -8,10 +8,15 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Duration } from "../../../../../google/protobuf/duration.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
-import { Variant } from "./common.pb";
+import { FlatTestIdentifier, TestIdentifier, Variant } from "./common.pb";
 import { TestVerdictPredicate, VariantPredicate } from "./predicate.pb";
-import { Sources } from "./sources.pb";
-import { TestVerdict } from "./test_verdict.pb";
+import { Changelist, SourceRef, Sources } from "./sources.pb";
+import {
+  TestVerdict,
+  TestVerdict_Status,
+  testVerdict_StatusFromJSON,
+  testVerdict_StatusToJSON,
+} from "./test_verdict.pb";
 
 export const protobufPackage = "luci.analysis.v1";
 
@@ -365,6 +370,166 @@ export interface QueryRecentPassesResponse_PassingResult {
    * and so is suitable for passing directly to ResultDB.
    */
   readonly name: string;
+}
+
+/**
+ * Queries source verdicts from the history of a specific (test, ref), for culprit finding.
+ * Source verdicts aggregate all test results at a source position (e.g. git commit).
+ *
+ * Only the last ~90 days worth of data can be queried.
+ */
+export interface QuerySourceVerdictsV2Request {
+  /** The LUCI Project. */
+  readonly project: string;
+  /** The test identifier, in structured form. */
+  readonly testIdStructured?:
+    | TestIdentifier
+    | undefined;
+  /** The test identifier, in flat form. */
+  readonly testIdFlat?:
+    | FlatTestIdentifier
+    | undefined;
+  /** The source ref (e.g. git branch). */
+  readonly sourceRef:
+    | SourceRef
+    | undefined;
+  /** The source ref hash. Specify as an alternative to `source_ref`. */
+  readonly sourceRefHash: string;
+  /**
+   * An AIP-160 filter clause on the returned source verdicts.
+   * Currently, the only field supported field is `position`.
+   */
+  readonly filter: string;
+  /**
+   * An AIP-132 order by clause controlling the sort order of the returned
+   * source verdicts.
+   * Currently, the only field supported field is `position`.
+   *
+   * See https://google.aip.dev/132#ordering
+   */
+  readonly orderBy: string;
+  /**
+   * The maximum number of source verdicts to return per page. The server may
+   * return fewer than this number (including zero source verdicts), even if
+   * not at the end of the collection.
+   *
+   * If unspecified, the server will decide a reasonable default. The maximum
+   * value is 1000; values above 1000 will be coerced to 1000.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous QuerySourceVerdictsV2 call.
+   * Provide this to retrieve the subsequent page.
+   */
+  readonly pageToken: string;
+}
+
+/** QuerySourceVerdictsV2Response contains the source verdicts for a specific (test, branch). */
+export interface QuerySourceVerdictsV2Response {
+  /**
+   * Source verdicts in descending source position order. Only source verdicts
+   * with test results are returned.
+   */
+  readonly sourceVerdicts: readonly SourceVerdict[];
+  /**
+   * A token to retrieve the next page of results. If this is empty, there are
+   * no more pages to retrieve.
+   */
+  readonly nextPageToken: string;
+}
+
+/**
+ * Source verdict summarises all results of a single test at a single source position
+ * (e.g. git commit).
+ */
+export interface SourceVerdict {
+  /**
+   * The source position.
+   * If source_ref was a GitilesRef, this is the git commit number assigned by goto.google.com/git-numberer.
+   * If source_ref was an AndroidBuildBranch, this is the submitted Android build number.
+   */
+  readonly position: string;
+  /**
+   * The overall status of the test at this position.
+   *
+   * This field represents a 'clean' signal of the state of the test
+   * and excludes results from presubmit (sources.changelists set) or derived sources
+   * (sources.is_dirty set).
+   *
+   * If this field is set to UNSPECIFIED, it means there is no clean postsubmit result
+   * at this position.
+   */
+  readonly status: TestVerdict_Status;
+  /**
+   * The approximate status of the test at this position, using results from presubmit runs
+   * as well as postsubmit.
+   *
+   * By using data from presubmit runs (which test CLs patched on top of this position),
+   * we obtain additional signal about the likely health of the test at the position but
+   * at the cost of some additional noise (because the patched CL could break or fix the
+   * test). In practice, we observe the realised noise to be low and the value of the
+   * signal obtained to be high so use this status on LUCI UI.
+   *
+   * In future, we could try to reduce this noise by filtering out unsuccessful presubmit
+   * runs, which are the most common source of presubmit noise.
+   *
+   * Like `status`, other types of derived sources (sources.is_dirty) are filtered out.
+   */
+  readonly approximateStatus: TestVerdict_Status;
+  /**
+   * The invocation test verdicts at the source position. Note some of these
+   * test verdicts may be for presubmit runs (i.e. for CLs that have not been
+   * submitted).
+   *
+   * Test verdicts will be ordered by ascending partition time, i.e. earliest test
+   * verdict first.
+   * Limited to at most 20 test verdicts.
+   */
+  readonly invocationVerdicts: readonly SourceVerdict_InvocationTestVerdict[];
+}
+
+/**
+ * InvocationTestVerdict represents an invocation test verdict that contributed to the
+ * source verdict.
+ * An invocation test verdict summarises results of a single test in a single root
+ * invocation.
+ *
+ * As multiple invocations can run the same test on the same base sources, there may be
+ * many test verdicts at one source position.
+ */
+export interface SourceVerdict_InvocationTestVerdict {
+  /**
+   * The identity of the root invocation this test verdict belongs to.
+   * Format: rootInvocations/{root_invocation_id}
+   *
+   * Alternatively, if the test verdict belongs to a legacy invocation, this field
+   * will be empty and `invocation` below will be set instead.
+   */
+  readonly rootInvocation: string;
+  /**
+   * The identity of the invocation this test verdict belongs to.
+   * Format: invocations/{invocation_id}
+   */
+  readonly invocation: string;
+  /** The partition time of the test verdict. */
+  readonly partitionTime:
+    | string
+    | undefined;
+  /** The status of the test verdict. */
+  readonly status: TestVerdict_Status;
+  /**
+   * The changelist(s) that were tested, if any. If there are more 10, only
+   * the first 10 are listed here.
+   * If this is set to a non-empty value, the results from this verdict are not
+   * used in `status`.
+   */
+  readonly changelists: readonly Changelist[];
+  /**
+   * Whether the sources tested by the invocation had other changes (not
+   * described by the changelists collection above).
+   * Test results from such verdicts are not used in `status` or `approximate_status`.
+   */
+  readonly isSourcesDirty: boolean;
 }
 
 function createBaseQueryTestHistoryRequest(): QueryTestHistoryRequest {
@@ -2013,6 +2178,548 @@ export const QueryRecentPassesResponse_PassingResult: MessageFns<QueryRecentPass
   },
 };
 
+function createBaseQuerySourceVerdictsV2Request(): QuerySourceVerdictsV2Request {
+  return {
+    project: "",
+    testIdStructured: undefined,
+    testIdFlat: undefined,
+    sourceRef: undefined,
+    sourceRefHash: "",
+    filter: "",
+    orderBy: "",
+    pageSize: 0,
+    pageToken: "",
+  };
+}
+
+export const QuerySourceVerdictsV2Request: MessageFns<QuerySourceVerdictsV2Request> = {
+  encode(message: QuerySourceVerdictsV2Request, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.project !== "") {
+      writer.uint32(10).string(message.project);
+    }
+    if (message.testIdStructured !== undefined) {
+      TestIdentifier.encode(message.testIdStructured, writer.uint32(18).fork()).join();
+    }
+    if (message.testIdFlat !== undefined) {
+      FlatTestIdentifier.encode(message.testIdFlat, writer.uint32(26).fork()).join();
+    }
+    if (message.sourceRef !== undefined) {
+      SourceRef.encode(message.sourceRef, writer.uint32(34).fork()).join();
+    }
+    if (message.sourceRefHash !== "") {
+      writer.uint32(74).string(message.sourceRefHash);
+    }
+    if (message.filter !== "") {
+      writer.uint32(42).string(message.filter);
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(50).string(message.orderBy);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(56).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(66).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QuerySourceVerdictsV2Request {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuerySourceVerdictsV2Request() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.project = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.testIdStructured = TestIdentifier.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.testIdFlat = FlatTestIdentifier.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.sourceRef = SourceRef.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.sourceRefHash = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QuerySourceVerdictsV2Request {
+    return {
+      project: isSet(object.project) ? globalThis.String(object.project) : "",
+      testIdStructured: isSet(object.testIdStructured) ? TestIdentifier.fromJSON(object.testIdStructured) : undefined,
+      testIdFlat: isSet(object.testIdFlat) ? FlatTestIdentifier.fromJSON(object.testIdFlat) : undefined,
+      sourceRef: isSet(object.sourceRef) ? SourceRef.fromJSON(object.sourceRef) : undefined,
+      sourceRefHash: isSet(object.sourceRefHash) ? globalThis.String(object.sourceRefHash) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: QuerySourceVerdictsV2Request): unknown {
+    const obj: any = {};
+    if (message.project !== "") {
+      obj.project = message.project;
+    }
+    if (message.testIdStructured !== undefined) {
+      obj.testIdStructured = TestIdentifier.toJSON(message.testIdStructured);
+    }
+    if (message.testIdFlat !== undefined) {
+      obj.testIdFlat = FlatTestIdentifier.toJSON(message.testIdFlat);
+    }
+    if (message.sourceRef !== undefined) {
+      obj.sourceRef = SourceRef.toJSON(message.sourceRef);
+    }
+    if (message.sourceRefHash !== "") {
+      obj.sourceRefHash = message.sourceRefHash;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QuerySourceVerdictsV2Request>): QuerySourceVerdictsV2Request {
+    return QuerySourceVerdictsV2Request.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QuerySourceVerdictsV2Request>): QuerySourceVerdictsV2Request {
+    const message = createBaseQuerySourceVerdictsV2Request() as any;
+    message.project = object.project ?? "";
+    message.testIdStructured = (object.testIdStructured !== undefined && object.testIdStructured !== null)
+      ? TestIdentifier.fromPartial(object.testIdStructured)
+      : undefined;
+    message.testIdFlat = (object.testIdFlat !== undefined && object.testIdFlat !== null)
+      ? FlatTestIdentifier.fromPartial(object.testIdFlat)
+      : undefined;
+    message.sourceRef = (object.sourceRef !== undefined && object.sourceRef !== null)
+      ? SourceRef.fromPartial(object.sourceRef)
+      : undefined;
+    message.sourceRefHash = object.sourceRefHash ?? "";
+    message.filter = object.filter ?? "";
+    message.orderBy = object.orderBy ?? "";
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseQuerySourceVerdictsV2Response(): QuerySourceVerdictsV2Response {
+  return { sourceVerdicts: [], nextPageToken: "" };
+}
+
+export const QuerySourceVerdictsV2Response: MessageFns<QuerySourceVerdictsV2Response> = {
+  encode(message: QuerySourceVerdictsV2Response, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.sourceVerdicts) {
+      SourceVerdict.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): QuerySourceVerdictsV2Response {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQuerySourceVerdictsV2Response() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.sourceVerdicts.push(SourceVerdict.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): QuerySourceVerdictsV2Response {
+    return {
+      sourceVerdicts: globalThis.Array.isArray(object?.sourceVerdicts)
+        ? object.sourceVerdicts.map((e: any) => SourceVerdict.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: QuerySourceVerdictsV2Response): unknown {
+    const obj: any = {};
+    if (message.sourceVerdicts?.length) {
+      obj.sourceVerdicts = message.sourceVerdicts.map((e) => SourceVerdict.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<QuerySourceVerdictsV2Response>): QuerySourceVerdictsV2Response {
+    return QuerySourceVerdictsV2Response.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<QuerySourceVerdictsV2Response>): QuerySourceVerdictsV2Response {
+    const message = createBaseQuerySourceVerdictsV2Response() as any;
+    message.sourceVerdicts = object.sourceVerdicts?.map((e) => SourceVerdict.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseSourceVerdict(): SourceVerdict {
+  return { position: "0", status: 0, approximateStatus: 0, invocationVerdicts: [] };
+}
+
+export const SourceVerdict: MessageFns<SourceVerdict> = {
+  encode(message: SourceVerdict, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.position !== "0") {
+      writer.uint32(8).int64(message.position);
+    }
+    if (message.status !== 0) {
+      writer.uint32(16).int32(message.status);
+    }
+    if (message.approximateStatus !== 0) {
+      writer.uint32(24).int32(message.approximateStatus);
+    }
+    for (const v of message.invocationVerdicts) {
+      SourceVerdict_InvocationTestVerdict.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SourceVerdict {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSourceVerdict() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.position = reader.int64().toString();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.status = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.approximateStatus = reader.int32() as any;
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.invocationVerdicts.push(SourceVerdict_InvocationTestVerdict.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SourceVerdict {
+    return {
+      position: isSet(object.position) ? globalThis.String(object.position) : "0",
+      status: isSet(object.status) ? testVerdict_StatusFromJSON(object.status) : 0,
+      approximateStatus: isSet(object.approximateStatus) ? testVerdict_StatusFromJSON(object.approximateStatus) : 0,
+      invocationVerdicts: globalThis.Array.isArray(object?.invocationVerdicts)
+        ? object.invocationVerdicts.map((e: any) => SourceVerdict_InvocationTestVerdict.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: SourceVerdict): unknown {
+    const obj: any = {};
+    if (message.position !== "0") {
+      obj.position = message.position;
+    }
+    if (message.status !== 0) {
+      obj.status = testVerdict_StatusToJSON(message.status);
+    }
+    if (message.approximateStatus !== 0) {
+      obj.approximateStatus = testVerdict_StatusToJSON(message.approximateStatus);
+    }
+    if (message.invocationVerdicts?.length) {
+      obj.invocationVerdicts = message.invocationVerdicts.map((e) => SourceVerdict_InvocationTestVerdict.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SourceVerdict>): SourceVerdict {
+    return SourceVerdict.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SourceVerdict>): SourceVerdict {
+    const message = createBaseSourceVerdict() as any;
+    message.position = object.position ?? "0";
+    message.status = object.status ?? 0;
+    message.approximateStatus = object.approximateStatus ?? 0;
+    message.invocationVerdicts =
+      object.invocationVerdicts?.map((e) => SourceVerdict_InvocationTestVerdict.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseSourceVerdict_InvocationTestVerdict(): SourceVerdict_InvocationTestVerdict {
+  return {
+    rootInvocation: "",
+    invocation: "",
+    partitionTime: undefined,
+    status: 0,
+    changelists: [],
+    isSourcesDirty: false,
+  };
+}
+
+export const SourceVerdict_InvocationTestVerdict: MessageFns<SourceVerdict_InvocationTestVerdict> = {
+  encode(message: SourceVerdict_InvocationTestVerdict, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.rootInvocation !== "") {
+      writer.uint32(10).string(message.rootInvocation);
+    }
+    if (message.invocation !== "") {
+      writer.uint32(18).string(message.invocation);
+    }
+    if (message.partitionTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.partitionTime), writer.uint32(26).fork()).join();
+    }
+    if (message.status !== 0) {
+      writer.uint32(32).int32(message.status);
+    }
+    for (const v of message.changelists) {
+      Changelist.encode(v!, writer.uint32(42).fork()).join();
+    }
+    if (message.isSourcesDirty !== false) {
+      writer.uint32(48).bool(message.isSourcesDirty);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SourceVerdict_InvocationTestVerdict {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSourceVerdict_InvocationTestVerdict() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.rootInvocation = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.invocation = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.partitionTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.status = reader.int32() as any;
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.changelists.push(Changelist.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.isSourcesDirty = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SourceVerdict_InvocationTestVerdict {
+    return {
+      rootInvocation: isSet(object.rootInvocation) ? globalThis.String(object.rootInvocation) : "",
+      invocation: isSet(object.invocation) ? globalThis.String(object.invocation) : "",
+      partitionTime: isSet(object.partitionTime) ? globalThis.String(object.partitionTime) : undefined,
+      status: isSet(object.status) ? testVerdict_StatusFromJSON(object.status) : 0,
+      changelists: globalThis.Array.isArray(object?.changelists)
+        ? object.changelists.map((e: any) => Changelist.fromJSON(e))
+        : [],
+      isSourcesDirty: isSet(object.isSourcesDirty) ? globalThis.Boolean(object.isSourcesDirty) : false,
+    };
+  },
+
+  toJSON(message: SourceVerdict_InvocationTestVerdict): unknown {
+    const obj: any = {};
+    if (message.rootInvocation !== "") {
+      obj.rootInvocation = message.rootInvocation;
+    }
+    if (message.invocation !== "") {
+      obj.invocation = message.invocation;
+    }
+    if (message.partitionTime !== undefined) {
+      obj.partitionTime = message.partitionTime;
+    }
+    if (message.status !== 0) {
+      obj.status = testVerdict_StatusToJSON(message.status);
+    }
+    if (message.changelists?.length) {
+      obj.changelists = message.changelists.map((e) => Changelist.toJSON(e));
+    }
+    if (message.isSourcesDirty !== false) {
+      obj.isSourcesDirty = message.isSourcesDirty;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SourceVerdict_InvocationTestVerdict>): SourceVerdict_InvocationTestVerdict {
+    return SourceVerdict_InvocationTestVerdict.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SourceVerdict_InvocationTestVerdict>): SourceVerdict_InvocationTestVerdict {
+    const message = createBaseSourceVerdict_InvocationTestVerdict() as any;
+    message.rootInvocation = object.rootInvocation ?? "";
+    message.invocation = object.invocation ?? "";
+    message.partitionTime = object.partitionTime ?? undefined;
+    message.status = object.status ?? 0;
+    message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
+    message.isSourcesDirty = object.isSourcesDirty ?? false;
+    return message;
+  },
+};
+
 /**
  * Provide methods to read test histories.
  *
@@ -2053,6 +2760,8 @@ export interface TestHistory {
    * ResultDB to perform log comparison.
    */
   QueryRecentPasses(request: QueryRecentPassesRequest): Promise<QueryRecentPassesResponse>;
+  /** Queries source verdicts for a given test and source ref. */
+  QuerySourceVerdicts(request: QuerySourceVerdictsV2Request): Promise<QuerySourceVerdictsV2Response>;
 }
 
 export const TestHistoryServiceName = "luci.analysis.v1.TestHistory";
@@ -2068,6 +2777,7 @@ export class TestHistoryClientImpl implements TestHistory {
     this.QueryVariants = this.QueryVariants.bind(this);
     this.QueryTests = this.QueryTests.bind(this);
     this.QueryRecentPasses = this.QueryRecentPasses.bind(this);
+    this.QuerySourceVerdicts = this.QuerySourceVerdicts.bind(this);
   }
   Query(request: QueryTestHistoryRequest): Promise<QueryTestHistoryResponse> {
     const data = QueryTestHistoryRequest.toJSON(request);
@@ -2097,6 +2807,12 @@ export class TestHistoryClientImpl implements TestHistory {
     const data = QueryRecentPassesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryRecentPasses", data);
     return promise.then((data) => QueryRecentPassesResponse.fromJSON(data));
+  }
+
+  QuerySourceVerdicts(request: QuerySourceVerdictsV2Request): Promise<QuerySourceVerdictsV2Response> {
+    const data = QuerySourceVerdictsV2Request.toJSON(request);
+    const promise = this.rpc.request(this.service, "QuerySourceVerdicts", data);
+    return promise.then((data) => QuerySourceVerdictsV2Response.fromJSON(data));
   }
 }
 

@@ -17,23 +17,39 @@ import { Fragment } from 'react';
 
 import {
   failureLink,
+  failureLinkLegacy,
   invocationName,
 } from '@/clusters/tools/urlHandling/links';
 
 interface Props {
   testId: string;
   invocations: readonly string[];
+  rootInvocations: readonly string[];
 }
 
-const InvocationList = ({ testId, invocations }: Props) => {
+const InvocationList = ({ testId, invocations, rootInvocations }: Props) => {
   return (
     <>
       {invocations.map((invocationId: string, j: number) => {
         return (
           <Fragment key={invocationId}>
             {j > 0 && ', '}
-            <Link href={failureLink(invocationId, testId)} target="_blank">
+            <Link
+              href={failureLinkLegacy(invocationId, testId)}
+              target="_blank"
+            >
               {invocationName(invocationId)}
+            </Link>
+          </Fragment>
+        );
+      })}
+      {invocations.length > 0 && rootInvocations.length > 0 && ', '}
+      {rootInvocations.map((rootInvocationId: string, j: number) => {
+        return (
+          <Fragment key={rootInvocationId}>
+            {j > 0 && ', '}
+            <Link href={failureLink(rootInvocationId, testId)} target="_blank">
+              {invocationName(rootInvocationId)}
             </Link>
           </Fragment>
         );

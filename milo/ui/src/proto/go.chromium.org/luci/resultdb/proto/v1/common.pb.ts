@@ -550,6 +550,27 @@ export interface ModuleIdentifier {
 }
 
 /**
+ * FlatTestIdentifier is a flattened form of TestIdentifier.
+ *
+ * This style of test identifier was common before structured test identifiers
+ * were introduced. Often the fields in this message are directly embedded in a
+ * resource (e.g. test result) but can be convenient to package them as a message
+ * for queries that accept either structured or flat test identifiers.
+ */
+export interface FlatTestIdentifier {
+  /**
+   * The unique identifier of the test in a LUCI project. See the comment on
+   * TestResult.test_id for full documentation.
+   */
+  readonly testId: string;
+  /**
+   * Hash of the variant. See the comment on TestResult.variant_hash for full
+   * documentation.
+   */
+  readonly variantHash: string;
+}
+
+/**
  * GitilesCommit specifies the position of the gitiles commit an invocation
  * ran against, in a repository's commit log. More specifically, a ref's commit
  * log.
@@ -1526,6 +1547,82 @@ export const ModuleIdentifier: MessageFns<ModuleIdentifier> = {
       ? Variant.fromPartial(object.moduleVariant)
       : undefined;
     message.moduleVariantHash = object.moduleVariantHash ?? "";
+    return message;
+  },
+};
+
+function createBaseFlatTestIdentifier(): FlatTestIdentifier {
+  return { testId: "", variantHash: "" };
+}
+
+export const FlatTestIdentifier: MessageFns<FlatTestIdentifier> = {
+  encode(message: FlatTestIdentifier, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.testId !== "") {
+      writer.uint32(10).string(message.testId);
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(26).string(message.variantHash);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlatTestIdentifier {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlatTestIdentifier() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FlatTestIdentifier {
+    return {
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+    };
+  },
+
+  toJSON(message: FlatTestIdentifier): unknown {
+    const obj: any = {};
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<FlatTestIdentifier>): FlatTestIdentifier {
+    return FlatTestIdentifier.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<FlatTestIdentifier>): FlatTestIdentifier {
+    const message = createBaseFlatTestIdentifier() as any;
+    message.testId = object.testId ?? "";
+    message.variantHash = object.variantHash ?? "";
     return message;
   },
 };

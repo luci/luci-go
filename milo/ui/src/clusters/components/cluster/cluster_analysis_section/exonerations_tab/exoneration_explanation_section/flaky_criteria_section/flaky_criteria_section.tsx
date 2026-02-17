@@ -29,7 +29,7 @@ import {
 } from '@/clusters/components/cluster/cluster_analysis_section/exonerations_tab/model/model';
 import {
   invocationName,
-  failureLink,
+  failureLinkLegacy,
 } from '@/clusters/tools/urlHandling/links';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { displayApproxDuration } from '@/common/tools/time_utils';
@@ -136,7 +136,7 @@ const FlakyCriteriaSection = ({ criteria, testVariant }: Props) => {
                     <Link
                       aria-label="invocation id"
                       sx={{ mr: 2 }}
-                      href={failureLink(
+                      href={failureLinkLegacy(
                         verdict.ingestedInvocationId,
                         testVariant.testId,
                       )}

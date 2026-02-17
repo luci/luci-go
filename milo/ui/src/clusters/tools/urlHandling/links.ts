@@ -49,6 +49,16 @@ export const invocationName = (invocationId: string): string => {
 };
 
 export const failureLink = (
+  rootInvocationId: string,
+  testId: string,
+  variant?: Variant,
+): string => {
+  // For now, the link is the same because the test investigate page will try
+  // to retrieve a given ID as both a root invocation and legacy invocation.
+  return failureLinkLegacy(rootInvocationId, testId, variant);
+};
+
+export const failureLinkLegacy = (
   invocationId: string,
   testId: string,
   variant?: Variant,

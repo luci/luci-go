@@ -122,7 +122,9 @@ const FailureCriteriaSection = ({ criteria, testVariantBranch }: Props) => {
               i: number,
             ) => {
               return (
-                <TableRow key={verdict.invocations[0]}>
+                <TableRow
+                  key={verdict.rootInvocations[0] || verdict.invocations[0]}
+                >
                   <TableCell>{verdict.position}</TableCell>
                   <TableCell>
                     <CLList changelists={verdict.changelists || []}></CLList>
@@ -130,7 +132,8 @@ const FailureCriteriaSection = ({ criteria, testVariantBranch }: Props) => {
                   <TableCell>
                     <InvocationList
                       testId={testVariantBranch.testId}
-                      invocations={verdict.invocations}
+                      invocations={verdict.invocations || []}
+                      rootInvocations={verdict.rootInvocations || []}
                     />
                   </TableCell>
                   <TableCell>

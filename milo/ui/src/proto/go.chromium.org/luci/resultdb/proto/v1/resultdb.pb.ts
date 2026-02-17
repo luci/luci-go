@@ -10,6 +10,7 @@ import { FieldMask } from "../../../../../google/protobuf/field_mask.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import { Artifact, ArtifactLine } from "./artifact.pb";
 import {
+  FlatTestIdentifier,
   Sources,
   TestIdentifier,
   TestVerdictView,
@@ -872,6 +873,72 @@ export interface BatchGetTestVariantsResponse_SourcesEntry {
   readonly value: Sources | undefined;
 }
 
+/**
+ * A request message for BatchGetTestVerdicts RPC.
+ *
+ * This RPC retrieves verdicts corresponding to a specified list
+ * of tests.
+ */
+export interface BatchGetTestVerdictsRequest {
+  /**
+   * Name of the root invocation that the test variants are in, see
+   * RootInvocation.name.
+   */
+  readonly parent: string;
+  /**
+   * A list of tests to query.
+   *
+   * Size is limited to 500 for TEST_VERDICT_VIEW_BASIC and 50 for
+   * TEST_VERDICT_VIEW_FULL. Any request for more than this number of tests
+   * will return an error.
+   *
+   * This list may contain duplicates. (If so, the response will contain
+   * duplicates.)
+   */
+  readonly tests: readonly BatchGetTestVerdictsRequest_NominatedTest[];
+  /**
+   * The set of test verdict fields to return.
+   * The default is TEST_VERDICT_VIEW_BASIC.
+   */
+  readonly view: TestVerdictView;
+}
+
+/**
+ * NominatedTest represents a test to query the verdict for.
+ * Either test_id_structured or test_id_flat should be specified.
+ */
+export interface BatchGetTestVerdictsRequest_NominatedTest {
+  /**
+   * Option 1: Structured test identifier.
+   *
+   * See the comment on TestResult.test_id_structured for full documentation.
+   */
+  readonly testIdStructured?:
+    | TestIdentifier
+    | undefined;
+  /** Option 2: Flat test identifier. */
+  readonly testIdFlat?: FlatTestIdentifier | undefined;
+}
+
+/** A response message for BatchGetTestVerdicts RPC. */
+export interface BatchGetTestVerdictsResponse {
+  /**
+   * Test verdicts matching the requests.
+   *
+   * Verdicts in this list correspond 1:1 with those in the request,
+   * i.e. test_variants[i] in the request will correspond to test_verdicts[i]
+   * in the response.
+   *
+   * In the event that no results exist for one of the tests requested, an
+   * empty TestVerdict will be returned in its place with only the test information
+   * specified in the request and the status STATUS_UNSPECIFIED.
+   *
+   * Each verdict has its test results and exonerations truncated to a total
+   * size of 2 MB or 500 test results, whichever is less.
+   */
+  readonly testVerdicts: readonly TestVerdict[];
+}
+
 /** A request message for QueryTestMetadata RPC. */
 export interface QueryTestMetadataRequest {
   /** The LUCI Project to query. */
@@ -1468,7 +1535,8 @@ export interface QueryTestAggregationsRequest {
   readonly orderBy: string;
   /**
    * The maximum number of items to return. The service may return fewer than
-   * this value.
+   * this value (including zero items), even if not at the end of the collection.
+   *
    * If unspecified, at most 1_000 items will be returned.
    * The maximum value is 10_000; values above 10_000 will be coerced to 10_000.
    */
@@ -1541,13 +1609,14 @@ export interface QueryTestVerdictsRequest {
    */
   readonly orderBy: string;
   /**
-   * The set of test verdict fields to return. Currently, this RPC only supports
-   * the view TEST_VERDICT_VIEW_BASIC. The default is TEST_VERDICT_VIEW_BASIC.
+   * The set of test verdict fields to return.
+   * The default is TEST_VERDICT_VIEW_BASIC.
    */
   readonly view: TestVerdictView;
   /**
    * The maximum number of verdicts to return. The service may return fewer than
-   * this value.
+   * this value (including zero verdicts), even if not at the end of the collection.
+   *
    * If unspecified, at most 1_000 verdicts will be returned.
    * The maximum value is 10_000; values above 10_000 will be coerced to 10_000.
    */
@@ -4713,6 +4782,244 @@ export const BatchGetTestVariantsResponse_SourcesEntry: MessageFns<BatchGetTestV
   },
 };
 
+function createBaseBatchGetTestVerdictsRequest(): BatchGetTestVerdictsRequest {
+  return { parent: "", tests: [], view: 0 };
+}
+
+export const BatchGetTestVerdictsRequest: MessageFns<BatchGetTestVerdictsRequest> = {
+  encode(message: BatchGetTestVerdictsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.parent !== "") {
+      writer.uint32(10).string(message.parent);
+    }
+    for (const v of message.tests) {
+      BatchGetTestVerdictsRequest_NominatedTest.encode(v!, writer.uint32(18).fork()).join();
+    }
+    if (message.view !== 0) {
+      writer.uint32(24).int32(message.view);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BatchGetTestVerdictsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchGetTestVerdictsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.parent = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.tests.push(BatchGetTestVerdictsRequest_NominatedTest.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.view = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchGetTestVerdictsRequest {
+    return {
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
+      tests: globalThis.Array.isArray(object?.tests)
+        ? object.tests.map((e: any) => BatchGetTestVerdictsRequest_NominatedTest.fromJSON(e))
+        : [],
+      view: isSet(object.view) ? testVerdictViewFromJSON(object.view) : 0,
+    };
+  },
+
+  toJSON(message: BatchGetTestVerdictsRequest): unknown {
+    const obj: any = {};
+    if (message.parent !== "") {
+      obj.parent = message.parent;
+    }
+    if (message.tests?.length) {
+      obj.tests = message.tests.map((e) => BatchGetTestVerdictsRequest_NominatedTest.toJSON(e));
+    }
+    if (message.view !== 0) {
+      obj.view = testVerdictViewToJSON(message.view);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BatchGetTestVerdictsRequest>): BatchGetTestVerdictsRequest {
+    return BatchGetTestVerdictsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BatchGetTestVerdictsRequest>): BatchGetTestVerdictsRequest {
+    const message = createBaseBatchGetTestVerdictsRequest() as any;
+    message.parent = object.parent ?? "";
+    message.tests = object.tests?.map((e) => BatchGetTestVerdictsRequest_NominatedTest.fromPartial(e)) || [];
+    message.view = object.view ?? 0;
+    return message;
+  },
+};
+
+function createBaseBatchGetTestVerdictsRequest_NominatedTest(): BatchGetTestVerdictsRequest_NominatedTest {
+  return { testIdStructured: undefined, testIdFlat: undefined };
+}
+
+export const BatchGetTestVerdictsRequest_NominatedTest: MessageFns<BatchGetTestVerdictsRequest_NominatedTest> = {
+  encode(message: BatchGetTestVerdictsRequest_NominatedTest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.testIdStructured !== undefined) {
+      TestIdentifier.encode(message.testIdStructured, writer.uint32(10).fork()).join();
+    }
+    if (message.testIdFlat !== undefined) {
+      FlatTestIdentifier.encode(message.testIdFlat, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BatchGetTestVerdictsRequest_NominatedTest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchGetTestVerdictsRequest_NominatedTest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testIdStructured = TestIdentifier.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.testIdFlat = FlatTestIdentifier.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchGetTestVerdictsRequest_NominatedTest {
+    return {
+      testIdStructured: isSet(object.testIdStructured) ? TestIdentifier.fromJSON(object.testIdStructured) : undefined,
+      testIdFlat: isSet(object.testIdFlat) ? FlatTestIdentifier.fromJSON(object.testIdFlat) : undefined,
+    };
+  },
+
+  toJSON(message: BatchGetTestVerdictsRequest_NominatedTest): unknown {
+    const obj: any = {};
+    if (message.testIdStructured !== undefined) {
+      obj.testIdStructured = TestIdentifier.toJSON(message.testIdStructured);
+    }
+    if (message.testIdFlat !== undefined) {
+      obj.testIdFlat = FlatTestIdentifier.toJSON(message.testIdFlat);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BatchGetTestVerdictsRequest_NominatedTest>): BatchGetTestVerdictsRequest_NominatedTest {
+    return BatchGetTestVerdictsRequest_NominatedTest.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<BatchGetTestVerdictsRequest_NominatedTest>,
+  ): BatchGetTestVerdictsRequest_NominatedTest {
+    const message = createBaseBatchGetTestVerdictsRequest_NominatedTest() as any;
+    message.testIdStructured = (object.testIdStructured !== undefined && object.testIdStructured !== null)
+      ? TestIdentifier.fromPartial(object.testIdStructured)
+      : undefined;
+    message.testIdFlat = (object.testIdFlat !== undefined && object.testIdFlat !== null)
+      ? FlatTestIdentifier.fromPartial(object.testIdFlat)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseBatchGetTestVerdictsResponse(): BatchGetTestVerdictsResponse {
+  return { testVerdicts: [] };
+}
+
+export const BatchGetTestVerdictsResponse: MessageFns<BatchGetTestVerdictsResponse> = {
+  encode(message: BatchGetTestVerdictsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.testVerdicts) {
+      TestVerdict.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BatchGetTestVerdictsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchGetTestVerdictsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testVerdicts.push(TestVerdict.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchGetTestVerdictsResponse {
+    return {
+      testVerdicts: globalThis.Array.isArray(object?.testVerdicts)
+        ? object.testVerdicts.map((e: any) => TestVerdict.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: BatchGetTestVerdictsResponse): unknown {
+    const obj: any = {};
+    if (message.testVerdicts?.length) {
+      obj.testVerdicts = message.testVerdicts.map((e) => TestVerdict.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BatchGetTestVerdictsResponse>): BatchGetTestVerdictsResponse {
+    return BatchGetTestVerdictsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BatchGetTestVerdictsResponse>): BatchGetTestVerdictsResponse {
+    const message = createBaseBatchGetTestVerdictsResponse() as any;
+    message.testVerdicts = object.testVerdicts?.map((e) => TestVerdict.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseQueryTestMetadataRequest(): QueryTestMetadataRequest {
   return { project: "", predicate: undefined, pageSize: 0, pageToken: "" };
 }
@@ -7757,28 +8064,12 @@ export interface ResultDB {
    * return whatever it has found so far.
    */
   QueryInstruction(request: QueryInstructionRequest): Promise<QueryInstructionResponse>;
-  /**
-   * UNSTABLE (until launched): This RPC is in development and API may change
-   * without notice.
-   *
-   * Retrieves test aggregations for a single root invocation.
-   *
-   * Unlike QueryTestResults and QueryTestVariants which are guaranteed to read
-   * all test results uploaded to Recorder service up to the time of query, this
-   * RPC only guarantees eventual consistency (i.e. there may be a lag). Once an
-   * invocation is finalized, data is guaranteed to be consistent.
-   */
+  /** Retrieves test aggregations for a single root invocation. */
   QueryTestAggregations(request: QueryTestAggregationsRequest): Promise<QueryTestAggregationsResponse>;
-  /**
-   * UNSTABLE (until launched): This RPC is in development and API may change
-   * without notice. Retrieves test verdicts for a single root invocation.
-   *
-   * Unlike QueryTestResults and QueryTestVariants which are guaranteed to read
-   * all test results uploaded to Recorder service up to the time of query, this
-   * RPC only guarantees eventual consistency (i.e. there may be a lag). Once an
-   * invocation is finalized, data is guaranteed to be consistent.
-   */
+  /** Retrieves test verdicts for a single root invocation. */
   QueryTestVerdicts(request: QueryTestVerdictsRequest): Promise<QueryTestVerdictsResponse>;
+  /** Retrieves specified test verdicts from a given root invocation. */
+  BatchGetTestVerdicts(request: BatchGetTestVerdictsRequest): Promise<BatchGetTestVerdictsResponse>;
   /** Retrieves an artifact. */
   GetArtifact(request: GetArtifactRequest): Promise<Artifact>;
   /**
@@ -7880,8 +8171,7 @@ export interface ResultDB {
   /**
    * Retrieves test variants from a single invocation, matching the specified
    * test IDs and hashes.
-   * INTENT TO DEPRECATE: A BatchGetTestVerdicts RPC is planned to replace this
-   * RPC.
+   * DEPRECATED: Use root invocations and BatchGetTestVerdicts instead.
    */
   BatchGetTestVariants(request: BatchGetTestVariantsRequest): Promise<BatchGetTestVariantsResponse>;
   /**
@@ -7918,6 +8208,7 @@ export class ResultDBClientImpl implements ResultDB {
     this.QueryInstruction = this.QueryInstruction.bind(this);
     this.QueryTestAggregations = this.QueryTestAggregations.bind(this);
     this.QueryTestVerdicts = this.QueryTestVerdicts.bind(this);
+    this.BatchGetTestVerdicts = this.BatchGetTestVerdicts.bind(this);
     this.GetArtifact = this.GetArtifact.bind(this);
     this.ListArtifacts = this.ListArtifacts.bind(this);
     this.QueryArtifacts = this.QueryArtifacts.bind(this);
@@ -8028,6 +8319,12 @@ export class ResultDBClientImpl implements ResultDB {
     const data = QueryTestVerdictsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryTestVerdicts", data);
     return promise.then((data) => QueryTestVerdictsResponse.fromJSON(data));
+  }
+
+  BatchGetTestVerdicts(request: BatchGetTestVerdictsRequest): Promise<BatchGetTestVerdictsResponse> {
+    const data = BatchGetTestVerdictsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "BatchGetTestVerdicts", data);
+    return promise.then((data) => BatchGetTestVerdictsResponse.fromJSON(data));
   }
 
   GetArtifact(request: GetArtifactRequest): Promise<Artifact> {

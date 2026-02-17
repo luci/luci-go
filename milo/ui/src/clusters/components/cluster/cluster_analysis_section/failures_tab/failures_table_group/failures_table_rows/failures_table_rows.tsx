@@ -33,7 +33,7 @@ import CLList from '@/clusters/components/cl_list/cl_list';
 import { FailureGroup } from '@/clusters/tools/failures_tools';
 import {
   invocationName,
-  failureLink,
+  failureLinkLegacy,
   testHistoryLink,
   presubmitRunLink,
 } from '@/clusters/tools/urlHandling/links';
@@ -166,7 +166,7 @@ const FailuresTableRows = ({
               <Link
                 aria-label="Failure invocation id"
                 sx={{ mr: 2 }}
-                href={failureLink(
+                href={failureLinkLegacy(
                   group.failure.ingestedInvocationId,
                   group.failure.testId,
                   group.failure.variant,

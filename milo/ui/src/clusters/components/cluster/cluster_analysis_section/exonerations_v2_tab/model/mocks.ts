@@ -71,14 +71,16 @@ export class ExoneratedTestVariantBranchBuilder {
                 ownerKind: ChangelistOwnerKind.CHANGELIST_OWNER_UNSPECIFIED,
               },
             ],
-            invocations: ['build-444444444444', 'build-55555555555'],
+            rootInvocations: ['build-55555555555'],
+            invocations: ['build-444444444444'],
             unexpectedRuns: 1,
             totalRuns: 1,
           },
           {
             position: '9000000002',
             changelists: [],
-            invocations: ['build-333333333333'],
+            rootInvocations: ['build-333333333333'],
+            invocations: [],
             unexpectedRuns: 1,
             totalRuns: 9,
           },
@@ -95,7 +97,8 @@ export class ExoneratedTestVariantBranchBuilder {
         flakeExamples: [
           {
             position: '8000000005',
-            invocations: ['build-222222222222', 'build-111111111111'],
+            rootInvocations: ['build-222222222222'],
+            invocations: ['build-111111111111'],
             changelists: [
               {
                 host: 'myprojectone-review.googlesource.com',
@@ -113,7 +116,8 @@ export class ExoneratedTestVariantBranchBuilder {
           },
           {
             position: '8000000001',
-            invocations: ['build-0000000000'],
+            rootInvocations: ['build-0000000000'],
+            invocations: [],
             changelists: [],
           },
         ],

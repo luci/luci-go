@@ -509,7 +509,13 @@ export interface TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
   readonly position: string;
   /** The changelist(s) tested, if any. */
   readonly changelists: readonly Changelist[];
-  /** The invocations included in this source verdict. */
+  /** The root invocations included in this source verdict. */
+  readonly rootInvocations: readonly string[];
+  /**
+   * The legacy invocations included in this source verdict.
+   *
+   * @deprecated
+   */
   readonly invocations: readonly string[];
   /**
    * The number of unexpected runs associated with the verdict.
@@ -588,7 +594,13 @@ export interface TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
   readonly position: string;
   /** The changelist(s) tested, if any. */
   readonly changelists: readonly Changelist[];
-  /** The invocations included in this source verdict. */
+  /** The root invocations included in this source verdict. */
+  readonly rootInvocations: readonly string[];
+  /**
+   * The legacy invocations included in this source verdict.
+   *
+   * @deprecated
+   */
   readonly invocations: readonly string[];
 }
 
@@ -2261,7 +2273,7 @@ export const TestVariantStabilityAnalysis_FailureRate: MessageFns<TestVariantSta
 };
 
 function createBaseTestVariantStabilityAnalysis_FailureRate_RecentVerdict(): TestVariantStabilityAnalysis_FailureRate_RecentVerdict {
-  return { position: "0", changelists: [], invocations: [], unexpectedRuns: 0, totalRuns: 0 };
+  return { position: "0", changelists: [], rootInvocations: [], invocations: [], unexpectedRuns: 0, totalRuns: 0 };
 }
 
 export const TestVariantStabilityAnalysis_FailureRate_RecentVerdict: MessageFns<
@@ -2276,6 +2288,9 @@ export const TestVariantStabilityAnalysis_FailureRate_RecentVerdict: MessageFns<
     }
     for (const v of message.changelists) {
       Changelist.encode(v!, writer.uint32(18).fork()).join();
+    }
+    for (const v of message.rootInvocations) {
+      writer.uint32(50).string(v!);
     }
     for (const v of message.invocations) {
       writer.uint32(26).string(v!);
@@ -2310,6 +2325,14 @@ export const TestVariantStabilityAnalysis_FailureRate_RecentVerdict: MessageFns<
           }
 
           message.changelists.push(Changelist.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.rootInvocations.push(reader.string());
           continue;
         }
         case 3: {
@@ -2351,6 +2374,9 @@ export const TestVariantStabilityAnalysis_FailureRate_RecentVerdict: MessageFns<
       changelists: globalThis.Array.isArray(object?.changelists)
         ? object.changelists.map((e: any) => Changelist.fromJSON(e))
         : [],
+      rootInvocations: globalThis.Array.isArray(object?.rootInvocations)
+        ? object.rootInvocations.map((e: any) => globalThis.String(e))
+        : [],
       invocations: globalThis.Array.isArray(object?.invocations)
         ? object.invocations.map((e: any) => globalThis.String(e))
         : [],
@@ -2366,6 +2392,9 @@ export const TestVariantStabilityAnalysis_FailureRate_RecentVerdict: MessageFns<
     }
     if (message.changelists?.length) {
       obj.changelists = message.changelists.map((e) => Changelist.toJSON(e));
+    }
+    if (message.rootInvocations?.length) {
+      obj.rootInvocations = message.rootInvocations;
     }
     if (message.invocations?.length) {
       obj.invocations = message.invocations;
@@ -2390,6 +2419,7 @@ export const TestVariantStabilityAnalysis_FailureRate_RecentVerdict: MessageFns<
     const message = createBaseTestVariantStabilityAnalysis_FailureRate_RecentVerdict() as any;
     message.position = object.position ?? "0";
     message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
+    message.rootInvocations = object.rootInvocations?.map((e) => e) || [];
     message.invocations = object.invocations?.map((e) => e) || [];
     message.unexpectedRuns = object.unexpectedRuns ?? 0;
     message.totalRuns = object.totalRuns ?? 0;
@@ -2620,7 +2650,7 @@ export const TestVariantStabilityAnalysis_FlakeRate: MessageFns<TestVariantStabi
 };
 
 function createBaseTestVariantStabilityAnalysis_FlakeRate_VerdictExample(): TestVariantStabilityAnalysis_FlakeRate_VerdictExample {
-  return { position: "0", changelists: [], invocations: [] };
+  return { position: "0", changelists: [], rootInvocations: [], invocations: [] };
 }
 
 export const TestVariantStabilityAnalysis_FlakeRate_VerdictExample: MessageFns<
@@ -2635,6 +2665,9 @@ export const TestVariantStabilityAnalysis_FlakeRate_VerdictExample: MessageFns<
     }
     for (const v of message.changelists) {
       Changelist.encode(v!, writer.uint32(18).fork()).join();
+    }
+    for (const v of message.rootInvocations) {
+      writer.uint32(34).string(v!);
     }
     for (const v of message.invocations) {
       writer.uint32(26).string(v!);
@@ -2665,6 +2698,14 @@ export const TestVariantStabilityAnalysis_FlakeRate_VerdictExample: MessageFns<
           message.changelists.push(Changelist.decode(reader, reader.uint32()));
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.rootInvocations.push(reader.string());
+          continue;
+        }
         case 3: {
           if (tag !== 26) {
             break;
@@ -2688,6 +2729,9 @@ export const TestVariantStabilityAnalysis_FlakeRate_VerdictExample: MessageFns<
       changelists: globalThis.Array.isArray(object?.changelists)
         ? object.changelists.map((e: any) => Changelist.fromJSON(e))
         : [],
+      rootInvocations: globalThis.Array.isArray(object?.rootInvocations)
+        ? object.rootInvocations.map((e: any) => globalThis.String(e))
+        : [],
       invocations: globalThis.Array.isArray(object?.invocations)
         ? object.invocations.map((e: any) => globalThis.String(e))
         : [],
@@ -2701,6 +2745,9 @@ export const TestVariantStabilityAnalysis_FlakeRate_VerdictExample: MessageFns<
     }
     if (message.changelists?.length) {
       obj.changelists = message.changelists.map((e) => Changelist.toJSON(e));
+    }
+    if (message.rootInvocations?.length) {
+      obj.rootInvocations = message.rootInvocations;
     }
     if (message.invocations?.length) {
       obj.invocations = message.invocations;
@@ -2719,6 +2766,7 @@ export const TestVariantStabilityAnalysis_FlakeRate_VerdictExample: MessageFns<
     const message = createBaseTestVariantStabilityAnalysis_FlakeRate_VerdictExample() as any;
     message.position = object.position ?? "0";
     message.changelists = object.changelists?.map((e) => Changelist.fromPartial(e)) || [];
+    message.rootInvocations = object.rootInvocations?.map((e) => e) || [];
     message.invocations = object.invocations?.map((e) => e) || [];
     return message;
   },

@@ -131,7 +131,11 @@ const FlakyCriteriaSection = ({ criteria, testVariantBranch }: Props) => {
                     verdict: TestVariantStabilityAnalysis_FlakeRate_VerdictExample,
                   ) => {
                     return (
-                      <TableRow key={verdict.invocations[0]}>
+                      <TableRow
+                        key={
+                          verdict.rootInvocations[0] || verdict.invocations[0]
+                        }
+                      >
                         <TableCell>{verdict.position}</TableCell>
                         <TableCell>
                           <CLList
@@ -141,7 +145,8 @@ const FlakyCriteriaSection = ({ criteria, testVariantBranch }: Props) => {
                         <TableCell>
                           <InvocationList
                             testId={testVariantBranch.testId}
-                            invocations={verdict.invocations}
+                            invocations={verdict.invocations || []}
+                            rootInvocations={verdict.rootInvocations || []}
                           />
                         </TableCell>
                       </TableRow>

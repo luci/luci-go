@@ -3147,7 +3147,7 @@ export const QueryChangepointAIAnalysisResponse: MessageFns<QueryChangepointAIAn
 };
 
 /**
- * Provide methods to read data for test variant branches including
+ * Provide methods to read data for test branches including
  * results from changepoint analysis, and test verdicts.
  *
  * Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
@@ -3165,9 +3165,12 @@ export interface TestVariantBranches {
   GetRaw(request: GetRawTestVariantBranchRequest): Promise<TestVariantBranchRaw>;
   /** Retrieves the current state of segments of test variant branch analysis in batches. */
   BatchGet(request: BatchGetTestVariantBranchRequest): Promise<BatchGetTestVariantBranchResponse>;
-  /** Query queries test variant branches for a given test id and ref. */
+  /** Query queries test variant branches for a given bare test id and source ref. */
   Query(request: QueryTestVariantBranchRequest): Promise<QueryTestVariantBranchResponse>;
-  /** Lists source verdicts for a test variant branch. */
+  /**
+   * Lists source verdicts for a given test and source ref. Deprecated,
+   * replaced by TestHistory.QuerySourceVerdictsV2.
+   */
   QuerySourceVerdicts(request: QuerySourceVerdictsRequest): Promise<QuerySourceVerdictsResponse>;
   /**
    * Query for AI analysis of the possible culprits of a test changepoint.

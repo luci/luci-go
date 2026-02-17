@@ -353,6 +353,113 @@ export interface Variant_DefEntry {
   readonly value: string;
 }
 
+/**
+ * TestIdentifier represents the identity of a test in structured form.
+ * It includes information about the configuration the test was run in (e.g.
+ * build configuration, CPU architecture, OS).
+ *
+ * This proto is a copy of luci.resultdb.v1.TestIdentifier, to avoid requiring
+ * users of LUCI Analysis to import all ResultDB protos.
+ *
+ * Refer to that proto for detailed documentation.
+ */
+export interface TestIdentifier {
+  /**
+   * The name of the module being tested. A module is a set of tests which run
+   * with the same test harness, and typically corresponds with a unit of
+   * build, such as a bazel test target.
+   *
+   * See luci.resultdb.v1.TestIdentifier.module_name for more details.
+   */
+  readonly moduleName: string;
+  /**
+   * The scheme of the module, for example, "junit" or "gtest".
+   *
+   * Must match one of the schemes in the ResultDB service configuration (see
+   * go/resultdb-schemes). Additional values can be configured as needed.
+   *
+   * See luci.resultdb.v1.TestIdentifier.module_scheme for more details.
+   */
+  readonly moduleScheme: string;
+  /**
+   * Description of one specific way of running the tests in a module,
+   * e.g. specific ABI (x64/x86/...), build flags and/or operating system.
+   *
+   * Variants identify the unique ways the module was run compared to every other way
+   * the module is run by the LUCI project. As such, some variant key-value pairs
+   * may be repeated for all modules in an invocation.
+   *
+   * See luci.resultdb.v1.TestIdentifier.module_variant for more details.
+   */
+  readonly moduleVariant:
+    | Variant
+    | undefined;
+  /**
+   * Hash of the module variant.
+   * hex(sha256(sorted(''.join('%s:%s\n' for k, v in module_variant.items()))))[:8].
+   *
+   * In the context of ResultDB Query RPCs accepting this type as a request filter,
+   * this field may be specified as an alternative to module_variant.
+   *
+   * See luci.resultdb.v1.TestIdentifier.module_variant_hash for more details.
+   */
+  readonly moduleVariantHash: string;
+  /**
+   * Intermediate hierarchy - coarse name.
+   *
+   * For example "com.android.os.ext".
+   *
+   * A scheme dependent value used to organise the test into a coarse group of related tests,
+   * such as a package or directory.
+   * If the scheme does not define a coarse grouping, this must be blank.
+   * If only one intermediate hierarchy level is used for a scheme, it is always the
+   * fine hierarchy level.
+   *
+   * See luci.resultdb.v1.TestIdentifier.coarse_name for more details.
+   */
+  readonly coarseName: string;
+  /**
+   * Interemdiate hierarchy - fine name.
+   *
+   * For example "SdkExtensionsTest" or "WebDialogBrowserTest".
+   *
+   * A finer grouping within the above coarse grouping (if any), e.g. class or file.
+   * If the scheme does not define a fine grouping, this must be blank.
+   *
+   * See luci.resultdb.v1.TestIdentifier.fine_name for more details.
+   */
+  readonly fineName: string;
+  /**
+   * The identifier of test case within the above fine grouping.
+   *
+   * For example "testBadArgument" or "topLevelTest:with_context:does_something".
+   *
+   * This is the finest granularity component of the test identifier, and typically
+   * refers to sub-file granularity unless no such granularity exists.
+   *
+   * See luci.resultdb.v1.TestIdentifier.case_name for more details.
+   */
+  readonly caseName: string;
+}
+
+/**
+ * FlatTestIdentifier is a flattened form of TestIdentifier.
+ *
+ * See luci.resultdb.v1.FlatTestIdentifier for more details.
+ */
+export interface FlatTestIdentifier {
+  /**
+   * The unique identifier of the test in a LUCI project. See the comment on
+   * luci.resultdb.v1.TestResult.test_id for full documentation.
+   */
+  readonly testId: string;
+  /**
+   * Hash of the variant. See the comment on
+   * luci.resultdb.v1.TestResult.variant_hash for full documentation.
+   */
+  readonly variantHash: string;
+}
+
 export interface StringPair {
   /**
    * Regex: ^[a-z][a-z0-9_]*(/[a-z][a-z0-9_]*)*$
@@ -892,6 +999,248 @@ export const Variant_DefEntry: MessageFns<Variant_DefEntry> = {
     const message = createBaseVariant_DefEntry() as any;
     message.key = object.key ?? "";
     message.value = object.value ?? "";
+    return message;
+  },
+};
+
+function createBaseTestIdentifier(): TestIdentifier {
+  return {
+    moduleName: "",
+    moduleScheme: "",
+    moduleVariant: undefined,
+    moduleVariantHash: "",
+    coarseName: "",
+    fineName: "",
+    caseName: "",
+  };
+}
+
+export const TestIdentifier: MessageFns<TestIdentifier> = {
+  encode(message: TestIdentifier, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.moduleName !== "") {
+      writer.uint32(10).string(message.moduleName);
+    }
+    if (message.moduleScheme !== "") {
+      writer.uint32(18).string(message.moduleScheme);
+    }
+    if (message.moduleVariant !== undefined) {
+      Variant.encode(message.moduleVariant, writer.uint32(26).fork()).join();
+    }
+    if (message.moduleVariantHash !== "") {
+      writer.uint32(34).string(message.moduleVariantHash);
+    }
+    if (message.coarseName !== "") {
+      writer.uint32(42).string(message.coarseName);
+    }
+    if (message.fineName !== "") {
+      writer.uint32(50).string(message.fineName);
+    }
+    if (message.caseName !== "") {
+      writer.uint32(58).string(message.caseName);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TestIdentifier {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestIdentifier() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.moduleName = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.moduleScheme = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.moduleVariant = Variant.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.moduleVariantHash = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.coarseName = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.fineName = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.caseName = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestIdentifier {
+    return {
+      moduleName: isSet(object.moduleName) ? globalThis.String(object.moduleName) : "",
+      moduleScheme: isSet(object.moduleScheme) ? globalThis.String(object.moduleScheme) : "",
+      moduleVariant: isSet(object.moduleVariant) ? Variant.fromJSON(object.moduleVariant) : undefined,
+      moduleVariantHash: isSet(object.moduleVariantHash) ? globalThis.String(object.moduleVariantHash) : "",
+      coarseName: isSet(object.coarseName) ? globalThis.String(object.coarseName) : "",
+      fineName: isSet(object.fineName) ? globalThis.String(object.fineName) : "",
+      caseName: isSet(object.caseName) ? globalThis.String(object.caseName) : "",
+    };
+  },
+
+  toJSON(message: TestIdentifier): unknown {
+    const obj: any = {};
+    if (message.moduleName !== "") {
+      obj.moduleName = message.moduleName;
+    }
+    if (message.moduleScheme !== "") {
+      obj.moduleScheme = message.moduleScheme;
+    }
+    if (message.moduleVariant !== undefined) {
+      obj.moduleVariant = Variant.toJSON(message.moduleVariant);
+    }
+    if (message.moduleVariantHash !== "") {
+      obj.moduleVariantHash = message.moduleVariantHash;
+    }
+    if (message.coarseName !== "") {
+      obj.coarseName = message.coarseName;
+    }
+    if (message.fineName !== "") {
+      obj.fineName = message.fineName;
+    }
+    if (message.caseName !== "") {
+      obj.caseName = message.caseName;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TestIdentifier>): TestIdentifier {
+    return TestIdentifier.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TestIdentifier>): TestIdentifier {
+    const message = createBaseTestIdentifier() as any;
+    message.moduleName = object.moduleName ?? "";
+    message.moduleScheme = object.moduleScheme ?? "";
+    message.moduleVariant = (object.moduleVariant !== undefined && object.moduleVariant !== null)
+      ? Variant.fromPartial(object.moduleVariant)
+      : undefined;
+    message.moduleVariantHash = object.moduleVariantHash ?? "";
+    message.coarseName = object.coarseName ?? "";
+    message.fineName = object.fineName ?? "";
+    message.caseName = object.caseName ?? "";
+    return message;
+  },
+};
+
+function createBaseFlatTestIdentifier(): FlatTestIdentifier {
+  return { testId: "", variantHash: "" };
+}
+
+export const FlatTestIdentifier: MessageFns<FlatTestIdentifier> = {
+  encode(message: FlatTestIdentifier, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.testId !== "") {
+      writer.uint32(10).string(message.testId);
+    }
+    if (message.variantHash !== "") {
+      writer.uint32(26).string(message.variantHash);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FlatTestIdentifier {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFlatTestIdentifier() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.variantHash = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FlatTestIdentifier {
+    return {
+      testId: isSet(object.testId) ? globalThis.String(object.testId) : "",
+      variantHash: isSet(object.variantHash) ? globalThis.String(object.variantHash) : "",
+    };
+  },
+
+  toJSON(message: FlatTestIdentifier): unknown {
+    const obj: any = {};
+    if (message.testId !== "") {
+      obj.testId = message.testId;
+    }
+    if (message.variantHash !== "") {
+      obj.variantHash = message.variantHash;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<FlatTestIdentifier>): FlatTestIdentifier {
+    return FlatTestIdentifier.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<FlatTestIdentifier>): FlatTestIdentifier {
+    const message = createBaseFlatTestIdentifier() as any;
+    message.testId = object.testId ?? "";
+    message.variantHash = object.variantHash ?? "";
     return message;
   },
 };

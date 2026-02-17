@@ -440,6 +440,78 @@ export interface GetRootInvocationRequest {
   readonly name: string;
 }
 
+/**
+ * RootInvocationMetadata contains RootInvocation fields which are immutable at
+ * the time the RootInvocation's streaming_export_state is set to METADATA_FINAL.
+ *
+ * This record is attached to streaming exports to provide context about
+ * the root invocation being exported, without including fields which may be
+ * incomplete and subject to data races.
+ *
+ * Follows the same field IDs as RootInvocation.
+ */
+export interface RootInvocationMetadata {
+  /**
+   * The resource name of the root invocation.
+   * Format: `rootInvocations/{ROOT_INVOCATION_ID}`
+   * See also https://aip.dev/122.
+   */
+  readonly name: string;
+  /**
+   * The root invocation ID.
+   *
+   * Output only.
+   */
+  readonly rootInvocationId: string;
+  /**
+   * The realm of the root invocation. This controls the ACLs that apply to the
+   * root invocation and its contents.
+   *
+   * For example, 'chromium:try'.
+   *
+   * See go/luci-authorization for more information.
+   */
+  readonly realm: string;
+  /**
+   * When the invocation was created.
+   * Output only.
+   */
+  readonly createTime:
+    | string
+    | undefined;
+  /** The producer resource. */
+  readonly producerResource:
+    | ProducerResource
+    | undefined;
+  /**
+   * The process definition of the root invocation. Root invocations with the same
+   * definition share the same root invocation history.
+   *
+   * Setting this field is recommended but can be elided in case of local and
+   * other emphemeral test runs which are not suitable to be plotted into a history.
+   */
+  readonly definition:
+    | RootInvocationDefinition
+    | undefined;
+  /**
+   * The code sources which were tested by this root invocation.
+   * This is used to index test results for test history, and for
+   * related analyses (e.g. culprit analysis / changepoint analyses).
+   */
+  readonly sources:
+    | Sources
+    | undefined;
+  /** The primary build which was tested by this root invocation. */
+  readonly primaryBuild:
+    | BuildDescriptor
+    | undefined;
+  /**
+   * Extra builds which were tested by this root invocation.
+   * Limit of 10 extra builds.
+   */
+  readonly extraBuilds: readonly BuildDescriptor[];
+}
+
 function createBaseRootInvocation(): RootInvocation {
   return {
     name: "",
@@ -910,6 +982,214 @@ export const GetRootInvocationRequest: MessageFns<GetRootInvocationRequest> = {
   fromPartial(object: DeepPartial<GetRootInvocationRequest>): GetRootInvocationRequest {
     const message = createBaseGetRootInvocationRequest() as any;
     message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseRootInvocationMetadata(): RootInvocationMetadata {
+  return {
+    name: "",
+    rootInvocationId: "",
+    realm: "",
+    createTime: undefined,
+    producerResource: undefined,
+    definition: undefined,
+    sources: undefined,
+    primaryBuild: undefined,
+    extraBuilds: [],
+  };
+}
+
+export const RootInvocationMetadata: MessageFns<RootInvocationMetadata> = {
+  encode(message: RootInvocationMetadata, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.rootInvocationId !== "") {
+      writer.uint32(18).string(message.rootInvocationId);
+    }
+    if (message.realm !== "") {
+      writer.uint32(34).string(message.realm);
+    }
+    if (message.createTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.createTime), writer.uint32(42).fork()).join();
+    }
+    if (message.producerResource !== undefined) {
+      ProducerResource.encode(message.producerResource, writer.uint32(202).fork()).join();
+    }
+    if (message.definition !== undefined) {
+      RootInvocationDefinition.encode(message.definition, writer.uint32(170).fork()).join();
+    }
+    if (message.sources !== undefined) {
+      Sources.encode(message.sources, writer.uint32(90).fork()).join();
+    }
+    if (message.primaryBuild !== undefined) {
+      BuildDescriptor.encode(message.primaryBuild, writer.uint32(186).fork()).join();
+    }
+    for (const v of message.extraBuilds) {
+      BuildDescriptor.encode(v!, writer.uint32(194).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RootInvocationMetadata {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRootInvocationMetadata() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.rootInvocationId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.realm = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.createTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 25: {
+          if (tag !== 202) {
+            break;
+          }
+
+          message.producerResource = ProducerResource.decode(reader, reader.uint32());
+          continue;
+        }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.definition = RootInvocationDefinition.decode(reader, reader.uint32());
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.sources = Sources.decode(reader, reader.uint32());
+          continue;
+        }
+        case 23: {
+          if (tag !== 186) {
+            break;
+          }
+
+          message.primaryBuild = BuildDescriptor.decode(reader, reader.uint32());
+          continue;
+        }
+        case 24: {
+          if (tag !== 194) {
+            break;
+          }
+
+          message.extraBuilds.push(BuildDescriptor.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RootInvocationMetadata {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      rootInvocationId: isSet(object.rootInvocationId) ? globalThis.String(object.rootInvocationId) : "",
+      realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
+      createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
+      producerResource: isSet(object.producerResource) ? ProducerResource.fromJSON(object.producerResource) : undefined,
+      definition: isSet(object.definition) ? RootInvocationDefinition.fromJSON(object.definition) : undefined,
+      sources: isSet(object.sources) ? Sources.fromJSON(object.sources) : undefined,
+      primaryBuild: isSet(object.primaryBuild) ? BuildDescriptor.fromJSON(object.primaryBuild) : undefined,
+      extraBuilds: globalThis.Array.isArray(object?.extraBuilds)
+        ? object.extraBuilds.map((e: any) => BuildDescriptor.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: RootInvocationMetadata): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.rootInvocationId !== "") {
+      obj.rootInvocationId = message.rootInvocationId;
+    }
+    if (message.realm !== "") {
+      obj.realm = message.realm;
+    }
+    if (message.createTime !== undefined) {
+      obj.createTime = message.createTime;
+    }
+    if (message.producerResource !== undefined) {
+      obj.producerResource = ProducerResource.toJSON(message.producerResource);
+    }
+    if (message.definition !== undefined) {
+      obj.definition = RootInvocationDefinition.toJSON(message.definition);
+    }
+    if (message.sources !== undefined) {
+      obj.sources = Sources.toJSON(message.sources);
+    }
+    if (message.primaryBuild !== undefined) {
+      obj.primaryBuild = BuildDescriptor.toJSON(message.primaryBuild);
+    }
+    if (message.extraBuilds?.length) {
+      obj.extraBuilds = message.extraBuilds.map((e) => BuildDescriptor.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RootInvocationMetadata>): RootInvocationMetadata {
+    return RootInvocationMetadata.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RootInvocationMetadata>): RootInvocationMetadata {
+    const message = createBaseRootInvocationMetadata() as any;
+    message.name = object.name ?? "";
+    message.rootInvocationId = object.rootInvocationId ?? "";
+    message.realm = object.realm ?? "";
+    message.createTime = object.createTime ?? undefined;
+    message.producerResource = (object.producerResource !== undefined && object.producerResource !== null)
+      ? ProducerResource.fromPartial(object.producerResource)
+      : undefined;
+    message.definition = (object.definition !== undefined && object.definition !== null)
+      ? RootInvocationDefinition.fromPartial(object.definition)
+      : undefined;
+    message.sources = (object.sources !== undefined && object.sources !== null)
+      ? Sources.fromPartial(object.sources)
+      : undefined;
+    message.primaryBuild = (object.primaryBuild !== undefined && object.primaryBuild !== null)
+      ? BuildDescriptor.fromPartial(object.primaryBuild)
+      : undefined;
+    message.extraBuilds = object.extraBuilds?.map((e) => BuildDescriptor.fromPartial(e)) || [];
     return message;
   },
 };
