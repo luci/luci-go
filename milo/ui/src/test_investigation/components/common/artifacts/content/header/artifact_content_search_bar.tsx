@@ -41,55 +41,64 @@ export function ArtifactContentSearchBar({
   onNext,
   onPrev,
 }: ArtifactContentSearchBarProps) {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      onNext();
+    }
+  };
   return (
     <TextField
       size="small"
       placeholder="Search query"
       value={searchQuery}
       onChange={onSearchChange}
-      InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <SearchIcon fontSize="small" />
-          </InputAdornment>
-        ),
-        endAdornment: (
-          <InputAdornment position="end">
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                mr: 1,
-                minWidth: 40,
-                textAlign: 'right',
-                userSelect: 'none',
-              }}
-            >
-              {totalMatches > 0
-                ? `${currentMatchIndex + 1}/${totalMatches}`
-                : '0/0'}
-            </Typography>
-            <MuiDivider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
-            <IconButton
-              size="small"
-              onClick={onNext}
-              disabled={totalMatches === 0}
-              title="Next match"
-              sx={{ p: 0.5 }}
-            >
-              <ExpandMoreIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={onPrev}
-              disabled={totalMatches === 0}
-              title="Previous match"
-              sx={{ p: 0.5 }}
-            >
-              <ExpandLessIcon fontSize="small" />
-            </IconButton>
-          </InputAdornment>
-        ),
+      onKeyDown={handleKeyDown}
+      slotProps={{
+        input: {
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon fontSize="small" />
+            </InputAdornment>
+          ),
+          endAdornment: (
+            <InputAdornment position="end">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  mr: 1,
+                  minWidth: 40,
+                  textAlign: 'right',
+                  userSelect: 'none',
+                }}
+              >
+                {totalMatches > 0
+                  ? `${currentMatchIndex + 1}/${totalMatches}`
+                  : '0/0'}
+              </Typography>
+              <MuiDivider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+              <IconButton
+                size="small"
+                onClick={onPrev}
+                disabled={totalMatches === 0}
+                title="Previous match"
+                sx={{ p: 0.5 }}
+              >
+                <ExpandLessIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={onNext}
+                disabled={totalMatches === 0}
+                title="Next match"
+                sx={{ p: 0.5 }}
+              >
+                <ExpandMoreIcon fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ),
+        },
       }}
       sx={{
         width: '100%',
