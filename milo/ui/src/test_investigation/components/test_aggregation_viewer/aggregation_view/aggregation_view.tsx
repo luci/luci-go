@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { forwardRef, useImperativeHandle } from 'react';
 
 import { TestInvestigationViewHandle } from '../test_aggregation_viewer';
@@ -39,7 +39,7 @@ AggregationView.displayName = 'AggregationView';
 
 const AggregationViewContent = forwardRef<TestInvestigationViewHandle>(
   (_, ref) => {
-    const { flattenedItems, isLoading, locateCurrentTest } =
+    const { flattenedItems, isLoading, isError, error, locateCurrentTest } =
       useAggregationViewContext();
 
     useImperativeHandle(ref, () => ({
@@ -59,6 +59,13 @@ const AggregationViewContent = forwardRef<TestInvestigationViewHandle>(
           {isLoading ? (
             <Box display="flex" justifyContent="center" p={2}>
               <CircularProgress />
+            </Box>
+          ) : isError ? (
+            <Box p={2}>
+              <Alert severity="error">
+                {(error as Error)?.message ||
+                  'An error occurred while fetching test results.'}
+              </Alert>
             </Box>
           ) : flattenedItems.length === 0 ? (
             <Box p={2}>

@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,12 +32,33 @@ export function TestAggregationProvider({
   // 1. Status Filter State
   const [selectedStatuses, setSelectedStatuses] =
     useState<Set<string>>(DEFAULT_STATUSES);
+  // 2. AIP Filter State
+  const [aipFilter, setAipFilter] = useState('');
+
+  // 3. Pagination State
+  const [loadMoreTrigger, setLoadMoreTrigger] = useState(0);
+
+  const triggerLoadMore = () => {
+    setLoadMoreTrigger((prev) => prev + 1);
+  };
+
+  // 4. Stats State
+  const [loadedCount, setLoadedCount] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   return (
     <TestAggregationContext.Provider
       value={{
         selectedStatuses,
         setSelectedStatuses,
+        aipFilter,
+        setAipFilter,
+        loadMoreTrigger,
+        triggerLoadMore,
+        loadedCount,
+        setLoadedCount,
+        isLoadingMore,
+        setIsLoadingMore,
       }}
     >
       {children}

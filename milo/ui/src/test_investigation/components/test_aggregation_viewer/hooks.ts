@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import {
   useResultDbClient,
@@ -66,7 +66,6 @@ export function useTestVerdictsQuery(
   statuses: TestVerdictPredicate_VerdictEffectiveStatus[],
   filter: string = '',
   view: TestVerdictView = TestVerdictView.TEST_VERDICT_VIEW_UNSPECIFIED,
-  pageSize: number = 1000,
   options?: {
     staleTime?: number;
     enabled?: boolean;
@@ -93,7 +92,7 @@ export function useTestVerdictsQuery(
         },
         view,
         orderBy: 'ui_priority, test_id_structured',
-        pageSize,
+        pageSize: 1000,
       }),
     ),
     enabled: (options?.enabled ?? true) && !!invocationName,
@@ -104,27 +103,14 @@ export function useTestVerdictsQuery(
     return query.data?.pages.flatMap((p) => p.testVerdicts || []) || [];
   }, [query.data]);
 
-  useEffect(() => {
-    if (
-      query.hasNextPage &&
-      !query.isFetching &&
-      allVerdicts.length < pageSize
-    ) {
-      query.fetchNextPage();
-    }
-  }, [
-    query.hasNextPage,
-    query.isFetching,
-    allVerdicts.length,
-    pageSize,
-    query.fetchNextPage,
-    query,
-  ]);
-
   return {
     data: query.data ? { testVerdicts: allVerdicts } : undefined,
-    isLoading:
-      query.isLoading || (query.hasNextPage && allVerdicts.length < pageSize),
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    hasNextPage: query.hasNextPage,
+    fetchNextPage: query.fetchNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
   };
 }
 
@@ -139,7 +125,7 @@ function useAccumulatedAggregationsQuery(
   testPrefixFilter?: TestIdentifierPrefix,
   enabled: boolean = true,
   staleTimeOverride?: number,
-  pageSize: number = 1000,
+  testResultFilter?: string,
 ) {
   const invocationName = isRootInvocation(invocation) ? invocation.name : '';
   const isFinalized = isRootInvocation(invocation)
@@ -160,8 +146,10 @@ function useAccumulatedAggregationsQuery(
           aggregationLevel: level,
           filter: filter || undefined,
           testPrefixFilter: testPrefixFilter || undefined,
+          containsTestResultFilter: testResultFilter || undefined,
         },
-        pageSize,
+        orderBy: 'id.level, ui_priority desc, id.id',
+        pageSize: 1000,
       }),
     ),
     enabled: enabled && !!invocationName,
@@ -172,29 +160,14 @@ function useAccumulatedAggregationsQuery(
     return query.data?.pages.flatMap((p) => p.aggregations || []) || [];
   }, [query.data]);
 
-  useEffect(() => {
-    if (
-      query.hasNextPage &&
-      !query.isFetching &&
-      allAggregations.length < pageSize
-    ) {
-      query.fetchNextPage();
-    }
-  }, [
-    query.hasNextPage,
-    query.isFetching,
-    allAggregations.length,
-    pageSize,
-    query.fetchNextPage,
-    query,
-  ]);
-
   return {
     data: query.data ? { aggregations: allAggregations } : undefined,
-    // Provide a consistent interface matching useQueries output array elements
-    isLoading:
-      query.isLoading ||
-      (query.hasNextPage && allAggregations.length < pageSize),
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    hasNextPage: query.hasNextPage,
+    fetchNextPage: query.fetchNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
   };
 }
 
@@ -205,11 +178,14 @@ function useAccumulatedAggregationsQuery(
  * @param invocation - The invocation name.
  * @param filter - Filter string to apply to the aggregations.
  * @param enabled - Whether the queries should be enabled.
+ * @param testResultFilter - AIP filter string applied to filter matching aggregations.
+ * @param pageSize - The target maximum page size limit for queries.
  */
 export function useBulkTestAggregationsQueries(
   invocation: AnyInvocation | null | undefined,
   filter: string,
   enabled: boolean = true,
+  testResultFilter: string = '',
 ) {
   const modSq = useAccumulatedAggregationsQuery(
     invocation,
@@ -217,6 +193,8 @@ export function useBulkTestAggregationsQueries(
     filter,
     undefined,
     enabled,
+    undefined,
+    testResultFilter,
   );
   const crsSq = useAccumulatedAggregationsQuery(
     invocation,
@@ -224,6 +202,8 @@ export function useBulkTestAggregationsQueries(
     filter,
     undefined,
     enabled,
+    undefined,
+    testResultFilter,
   );
   const fneSq = useAccumulatedAggregationsQuery(
     invocation,
@@ -231,6 +211,8 @@ export function useBulkTestAggregationsQueries(
     filter,
     undefined,
     enabled,
+    undefined,
+    testResultFilter,
   );
 
   return [modSq, crsSq, fneSq];
@@ -242,6 +224,8 @@ export function useBulkTestAggregationsQueries(
  *
  * @param invocation - The invocation object.
  * @param testVariant - The selected test variant (context) to fetch ancestry for.
+ * @param testResultFilter - AIP filter string applied.
+ * @param pageSize - The target maximum page size.
  */
 export function useAncestryAggregationsQueries(
   invocation: AnyInvocation | null | undefined,
@@ -271,7 +255,7 @@ export function useAncestryAggregationsQueries(
     undefined,
     modFilter,
     !!(invocation && testId),
-    Infinity,
+    undefined,
   );
 
   // 2. Coarse Siblings (Children of Module)

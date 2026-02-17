@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,6 +50,12 @@ export function buildAggregationFilterString(
   }
   if (selectedStatuses.has(TestVerdict_Status[TestVerdict_Status.SKIPPED])) {
     parts.push('verdict_counts.skipped > 0');
+  }
+  if (selectedStatuses.has(TestVerdict_Status[TestVerdict_Status.PRECLUDED])) {
+    parts.push('verdict_counts.precluded > 0');
+  }
+  if (selectedStatuses.has('EXONERATED')) {
+    parts.push('verdict_counts.exonerated > 0');
   }
   return parts.length > 0 ? parts.join(' OR ') : 'false';
 }

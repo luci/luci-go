@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
 
 import { Backdrop, Box, Drawer } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 import { TestAggregationViewer } from '@/test_investigation/components/test_aggregation_viewer/test_aggregation_viewer';
 
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
-    width: '500px',
     top: '64px',
     height: 'calc(100% - 64px)',
     boxSizing: 'border-box',
@@ -28,20 +28,69 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
   },
 }));
 
+const DragHandle = styled('div')(({ theme }) => ({
+  position: 'absolute',
+  top: 0,
+  right: 0,
+  bottom: 0,
+  width: '5px',
+  cursor: 'col-resize',
+  backgroundColor: 'transparent',
+  zIndex: 1,
+  '&:hover': {
+    backgroundColor: theme.palette.divider,
+  },
+}));
+
 export interface TestAggregationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const MIN_DRAWER_WIDTH = 500;
+
 export function TestAggregationDrawer({
   isOpen,
   onClose = () => {},
 }: TestAggregationDrawerProps) {
+  const [drawerWidth, setDrawerWidth] = useState(500);
+  const isDragging = useRef(false);
   const handleClose = () => {
     if (isOpen) {
       onClose();
     }
   };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging.current) return;
+
+    // Calculate new width to the right edge
+    const newWidth = e.clientX;
+    const maxWidth = window.innerWidth * 0.5; // 50vw
+
+    setDrawerWidth(Math.max(MIN_DRAWER_WIDTH, Math.min(newWidth, maxWidth)));
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isDragging.current = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Clean up global event listeners on unmount
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
 
   return (
     <>
@@ -54,9 +103,15 @@ export function TestAggregationDrawer({
           top: '64px',
         }}
       />
-      <StyledDrawer variant="persistent" anchor="left" open={isOpen}>
-        <Box sx={{ overflow: 'auto', height: '100%' }}>
+      <StyledDrawer
+        variant="persistent"
+        anchor="left"
+        open={isOpen}
+        PaperProps={{ style: { width: drawerWidth } }}
+      >
+        <Box sx={{ overflow: 'auto', height: '100%', position: 'relative' }}>
           <TestAggregationViewer />
+          <DragHandle onMouseDown={handleMouseDown} />
         </Box>
       </StyledDrawer>
     </>

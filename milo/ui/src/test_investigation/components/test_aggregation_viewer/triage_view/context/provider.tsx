@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from 'react';
 
 import { TestVerdictView } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
@@ -79,7 +80,13 @@ export function TriageViewProvider({
   const { isDrawerOpen } = useDrawerWrapper();
 
   // 1. Consume Shared Filter Context
-  const { selectedStatuses } = useTestAggregationContext();
+  const {
+    selectedStatuses,
+    aipFilter,
+    loadMoreTrigger,
+    setLoadedCount,
+    setIsLoadingMore,
+  } = useTestAggregationContext();
 
   // 2. Data Fetching
   const verdictStatuses = useMemo(() => {
@@ -103,13 +110,49 @@ export function TriageViewProvider({
   const verdictsQuery = useTestVerdictsQuery(
     invocation,
     verdictStatuses,
-    '',
+    aipFilter,
     TestVerdictView.TEST_VERDICT_VIEW_FULL,
-    1000,
     {
       staleTime: 60 * 1000,
     },
   );
+
+  // Trigger Load More
+  const lastProcessedTrigger = useRef(loadMoreTrigger);
+  useEffect(() => {
+    if (loadMoreTrigger > lastProcessedTrigger.current) {
+      lastProcessedTrigger.current = loadMoreTrigger;
+      if (verdictsQuery.hasNextPage && !verdictsQuery.isFetchingNextPage) {
+        verdictsQuery.fetchNextPage();
+      }
+    }
+  }, [loadMoreTrigger, verdictsQuery]);
+
+  // Sync Loaded Count & Initial Load Logic
+  const loadedCount = verdictsQuery.data?.testVerdicts?.length || 0;
+  useEffect(() => {
+    setLoadedCount(loadedCount);
+
+    if (
+      loadedCount < 1000 &&
+      verdictsQuery.hasNextPage &&
+      !verdictsQuery.isFetchingNextPage
+    ) {
+      verdictsQuery.fetchNextPage();
+    }
+  }, [
+    loadedCount,
+    setLoadedCount,
+    verdictsQuery.hasNextPage,
+    verdictsQuery.isFetchingNextPage,
+    verdictsQuery.fetchNextPage,
+    verdictsQuery,
+  ]);
+
+  // Sync Loading State
+  useEffect(() => {
+    setIsLoadingMore(verdictsQuery.isFetchingNextPage);
+  }, [verdictsQuery.isFetchingNextPage, setIsLoadingMore]);
 
   // 3. Merging with Selected Test Variant
   const selectedTestVariant = useTestVariant();
@@ -329,11 +372,13 @@ export function TriageViewProvider({
         });
         if (found) {
           setExpandedIds((prev) => {
+            if (prev.has(sGroup.status) && prev.has(group.id)) return prev;
             const next = new Set(prev);
             next.add(sGroup.status);
             next.add(group.id);
             return next;
           });
+          // Update scroll request to trigger a scroll in the virtual tree
           setScrollRequest({
             id: `${group.id}|${getVerdictNodeId(found)}`,
             ts: Date.now(),
@@ -345,11 +390,17 @@ export function TriageViewProvider({
   }, [statusGroups, selectedTestVariant]);
 
   // Auto locate
+  const lastAutoLocatedRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (isDrawerOpen) {
+    if (
+      isDrawerOpen &&
+      selectedTestVariant &&
+      lastAutoLocatedRef.current !== selectedTestVariant.testId
+    ) {
       locateCurrentTest();
+      lastAutoLocatedRef.current = selectedTestVariant.testId;
     }
-  }, [isDrawerOpen, locateCurrentTest]);
+  }, [isDrawerOpen, locateCurrentTest, selectedTestVariant]);
 
   return (
     <TriageViewContext.Provider
@@ -357,6 +408,8 @@ export function TriageViewProvider({
         statusGroups,
         flattenedItems,
         isLoading: verdictsQuery.isLoading,
+        isError: verdictsQuery.isError,
+        error: verdictsQuery.error,
         expandedIds,
         toggleExpansion,
         locateCurrentTest,

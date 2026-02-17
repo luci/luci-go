@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ export interface TriageViewContextValue {
   statusGroups: TriageStatusGroup[];
   flattenedItems: TriageViewNode[];
   isLoading: boolean;
+  isError: boolean;
+  error: unknown;
 
   // State
   expandedIds: Set<string>;

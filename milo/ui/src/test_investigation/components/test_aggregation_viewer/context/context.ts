@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,17 +18,26 @@ export interface TestAggregationContextValue {
   // Filter State
   selectedStatuses: Set<string>;
   setSelectedStatuses: (statuses: Set<string>) => void;
+  aipFilter: string;
+  setAipFilter: (filter: string) => void;
+  loadMoreTrigger: number;
+  triggerLoadMore: () => void;
+  // Stats
+  loadedCount: number;
+  setLoadedCount: (count: number) => void;
+  isLoadingMore: boolean;
+  setIsLoadingMore: (loading: boolean) => void;
 }
 
 export const TestAggregationContext =
   createContext<TestAggregationContextValue | null>(null);
 
 export function useTestAggregationContext() {
-  const context = useContext(TestAggregationContext);
-  if (!context) {
+  const ctx = useContext(TestAggregationContext);
+  if (!ctx) {
     throw new Error(
-      'useTestAggregation must be used within a TestAggregationProvider',
+      'useTestAggregationContext must be used within a TestAggregationProvider',
     );
   }
-  return context;
+  return ctx;
 }

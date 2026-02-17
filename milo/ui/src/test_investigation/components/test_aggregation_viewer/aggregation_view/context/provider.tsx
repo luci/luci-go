@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from 'react';
 
 import { AggregationLevel } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
@@ -67,7 +68,13 @@ export function AggregationViewProvider({
 
   // 1. Consume Shared Filter Context
   // Ensure we are using the correct context hook from shared context
-  const { selectedStatuses } = useTestAggregationContext();
+  const {
+    selectedStatuses,
+    aipFilter,
+    loadMoreTrigger,
+    setLoadedCount,
+    setIsLoadingMore,
+  } = useTestAggregationContext();
 
   const aggregationFilterString = useMemo(() => {
     return buildAggregationFilterString(selectedStatuses);
@@ -99,9 +106,8 @@ export function AggregationViewProvider({
   const verdictsQuery = useTestVerdictsQuery(
     invocation,
     verdictStatuses,
-    '',
+    aipFilter,
     undefined, // view
-    1000,
     {
       staleTime: 60 * 1000,
     },
@@ -114,6 +120,8 @@ export function AggregationViewProvider({
   const bulkAggregationsQueries = useBulkTestAggregationsQueries(
     invocation,
     aggregationFilterString,
+    true,
+    aipFilter,
   );
 
   const ancestryAggregationsQueries = useAncestryAggregationsQueries(
@@ -127,6 +135,61 @@ export function AggregationViewProvider({
     () => [...bulkAggregationsQueries, ...ancestryAggregationsQueries],
     [bulkAggregationsQueries, ancestryAggregationsQueries],
   );
+
+  // Trigger Load More
+  const lastProcessedTrigger = useRef(loadMoreTrigger);
+  useEffect(() => {
+    if (loadMoreTrigger > lastProcessedTrigger.current) {
+      lastProcessedTrigger.current = loadMoreTrigger;
+      if (verdictsQuery.hasNextPage && !verdictsQuery.isFetchingNextPage) {
+        verdictsQuery.fetchNextPage();
+      }
+      bulkAggregationsQueries.forEach((q) => {
+        if (q.hasNextPage && !q.isFetchingNextPage) {
+          q.fetchNextPage();
+        }
+      });
+    }
+  }, [loadMoreTrigger, verdictsQuery, bulkAggregationsQueries]);
+
+  // Sync Loaded Count & Initial Load Logic
+  const loadedCount = verdictsQuery.data?.testVerdicts?.length || 0;
+  useEffect(() => {
+    setLoadedCount(loadedCount);
+
+    // Initial Load: Ensure at least 1000 items are loaded if possible
+    if (
+      loadedCount < 1000 &&
+      verdictsQuery.hasNextPage &&
+      !verdictsQuery.isFetchingNextPage
+    ) {
+      verdictsQuery.fetchNextPage();
+      bulkAggregationsQueries.forEach((q) => {
+        if (q.hasNextPage && !q.isFetchingNextPage) {
+          q.fetchNextPage();
+        }
+      });
+    }
+  }, [
+    loadedCount,
+    setLoadedCount,
+    verdictsQuery.hasNextPage,
+    verdictsQuery.isFetchingNextPage,
+    bulkAggregationsQueries,
+    verdictsQuery,
+  ]);
+
+  // Sync Loading State
+  useEffect(() => {
+    const isFetching =
+      verdictsQuery.isFetchingNextPage ||
+      bulkAggregationsQueries.some((q) => q.isFetchingNextPage);
+    setIsLoadingMore(isFetching);
+  }, [
+    verdictsQuery.isFetchingNextPage,
+    bulkAggregationsQueries,
+    setIsLoadingMore,
+  ]);
 
   // 6. Tree Construction
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
@@ -208,6 +271,7 @@ export function AggregationViewProvider({
       }
 
       setExpandedIds((prev) => {
+        if (Array.from(idsToExpand).every((id) => prev.has(id))) return prev;
         const next = new Set(prev);
         idsToExpand.forEach((id) => next.add(id));
         return next;
@@ -222,11 +286,17 @@ export function AggregationViewProvider({
   }, [selectedTestVariant]);
 
   // Deep Link Auto-Expand
+  const lastAutoLocatedRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (isDrawerOpen) {
+    if (
+      isDrawerOpen &&
+      selectedTestVariant &&
+      lastAutoLocatedRef.current !== selectedTestVariant.testId
+    ) {
       locateCurrentTest();
+      lastAutoLocatedRef.current = selectedTestVariant.testId;
     }
-  }, [isDrawerOpen, locateCurrentTest, selectedTestVariant.testId]);
+  }, [isDrawerOpen, locateCurrentTest, selectedTestVariant]);
 
   const isLoading = verdictsQuery.isLoading; // Main skeleton loading
 
@@ -237,6 +307,8 @@ export function AggregationViewProvider({
         toggleExpansion,
         flattenedItems,
         isLoading,
+        isError: verdictsQuery.isError,
+        error: verdictsQuery.error,
         scrollRequest,
         locateCurrentTest,
         highlightedNodeId: selectedTestVariant?.testId,

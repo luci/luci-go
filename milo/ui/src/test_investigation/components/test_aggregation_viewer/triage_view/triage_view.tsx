@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
@@ -41,6 +41,8 @@ const TriageViewContent = forwardRef<TestInvestigationViewHandle>((_, ref) => {
   const {
     flattenedItems,
     isLoading,
+    isError,
+    error,
     locateCurrentTest,
     scrollRequest,
     toggleExpansion,
@@ -75,15 +77,14 @@ const TriageViewContent = forwardRef<TestInvestigationViewHandle>((_, ref) => {
       flattenedItems.length > 0
     ) {
       const index = flattenedItems.findIndex(
-        (node) =>
-          (node.type === 'verdict' && node.id === scrollRequest.id) ||
-          (node.type === 'status' && node.id === scrollRequest.id) ||
-          (node.type === 'group' && node.id === scrollRequest.id),
+        (node) => node.id === scrollRequest.id,
       );
 
       if (index !== -1) {
-        rowVirtualizer.scrollToIndex(index, { align: 'center' });
         lastScrolledRef.current = scrollRequest;
+        setTimeout(() => {
+          rowVirtualizer.scrollToIndex(index, { align: 'center' });
+        }, 50);
       }
     }
   }, [scrollRequest, flattenedItems, rowVirtualizer]);
@@ -98,6 +99,13 @@ const TriageViewContent = forwardRef<TestInvestigationViewHandle>((_, ref) => {
         {isLoading ? (
           <Box display="flex" justifyContent="center" p={2}>
             <CircularProgress />
+          </Box>
+        ) : isError ? (
+          <Box p={2}>
+            <Alert severity="error">
+              {(error as Error)?.message ||
+                'An error occurred while fetching test results.'}
+            </Alert>
           </Box>
         ) : flattenedItems.length === 0 ? (
           <Box p={2}>
