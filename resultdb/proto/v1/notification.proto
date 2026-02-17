@@ -18,6 +18,7 @@ package luci.resultdb.v1;
 
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/work_unit.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/root_invocation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_aggregation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
@@ -143,14 +144,21 @@ message InvocationReadyForExportNotification {
 // Next id: 6
 message TestResultsNotification {
     // A message representing the batch of test results grouped by work unit.
-    // Next id: 3
+    // If a work unit contains many test results, it may be split over many
+    // TestResultNotification messages.
+    //
+    // Next id: 4
     message TestResultsByWorkUnit {
-        // The name of the work unit that the test results belong to.
-        // Format: rootInvocations/{ROOT_INVOCATION_ID}/workUnits/{WORK_UNIT_ID}.
-        string work_unit_name = 1;
+        reserved 1;
 
         // A batch of test results in the same parent work units.
         repeated luci.resultdb.v1.TestResult test_results = 2;
+
+        // Details of the immediate parent work unit that the test results
+        // belong to. The work unit here has a view of WORK_UNIT_VIEW_BASIC
+        // (extended properties are excluded) to limit contribution to the
+        // pub/sub message size.
+        luci.resultdb.v1.WorkUnit work_unit = 3;
     }
 
     // A list of batches of test results grouped by work unit in the same root

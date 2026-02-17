@@ -27,11 +27,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
-	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testresults/lowlatency"
@@ -254,11 +252,6 @@ func batchPubSubTestResults(n *rdbpb.TestResultsNotification, sources testresult
 
 	startBatch()
 	for _, workUnit := range n.TestResultsByWorkUnit {
-		rootInvocationID, workUnitID, err := rdbpbutil.ParseWorkUnitName(workUnit.WorkUnitName)
-		if err != nil {
-			return tq.Fatal.Apply(errors.Fmt("invalid work unit name %q: %w", workUnit.WorkUnitName, err))
-		}
-
 		for _, inputTR := range workUnit.TestResults {
 			// Limit batch size.
 			if len(trs) > batchSize {
@@ -271,8 +264,8 @@ func batchPubSubTestResults(n *rdbpb.TestResultsNotification, sources testresult
 				TestID:           inputTR.TestId,
 				VariantHash:      inputTR.VariantHash,
 				Sources:          sources,
-				RootInvocationID: lowlatency.RootInvocationID{Value: rootInvocationID},
-				WorkUnitID:       lowlatency.WorkUnitID{Value: workUnitID},
+				RootInvocationID: lowlatency.RootInvocationID{Value: n.RootInvocationMetadata.RootInvocationId},
+				WorkUnitID:       lowlatency.WorkUnitID{Value: workUnit.WorkUnit.WorkUnitId},
 				ResultID:         inputTR.ResultId,
 				PartitionTime:    partitionTime,
 				SubRealm:         subRealm,

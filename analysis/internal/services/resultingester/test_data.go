@@ -276,7 +276,10 @@ func testLegacyInputs() LegacyInputs {
 func testTestResultNotification() *rdbpb.TestResultsNotification {
 	testResultsByWorkUnit := []*rdbpb.TestResultsNotification_TestResultsByWorkUnit{
 		{
-			WorkUnitName: "rootInvocations/test-root-invocation-id/workUnits/work-unit-one",
+			WorkUnit: &rdbpb.WorkUnit{
+				Name:       "rootInvocations/test-root-invocation-id/workUnits/work-unit-one",
+				WorkUnitId: "work-unit-one",
+			},
 			TestResults: []*rdbpb.TestResult{
 				{
 					TestIdStructured: &rdbpb.TestIdentifier{
@@ -335,7 +338,10 @@ func testTestResultNotification() *rdbpb.TestResultsNotification {
 			},
 		},
 		{
-			WorkUnitName: "rootInvocations/test-root-invocation-id/workUnits/work-unit-two",
+			WorkUnit: &rdbpb.WorkUnit{
+				Name:       "rootInvocations/test-root-invocation-id/workUnits/work-unit-two",
+				WorkUnitId: "work-unit-two",
+			},
 			TestResults: []*rdbpb.TestResult{
 				{
 					TestIdStructured: &rdbpb.TestIdentifier{

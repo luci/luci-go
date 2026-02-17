@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth/realms"
@@ -61,6 +62,15 @@ func (o *Orchestrator) HandlePubSub(ctx context.Context, n *rdbpb.TestResultsNot
 	inputs := RootInvocationInputs{
 		Sources:      sources,
 		Notification: n,
+	}
+
+	for _, workUnit := range n.TestResultsByWorkUnit {
+		if workUnit.WorkUnit == nil {
+			// Ignore - work unit not yet plumbed through.
+			// TODO(b/266652251): Remove this once the new pub/sub is turned on that plumbs through the work unit.
+			logging.Warningf(ctx, "Dropping test result pub/sub message as work unit not plumbed through yet")
+			return nil
+		}
 	}
 
 	for _, sink := range o.sinks {

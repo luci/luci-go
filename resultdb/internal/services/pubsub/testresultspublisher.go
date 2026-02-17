@@ -32,13 +32,13 @@ import (
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/resultdb/internal/workunits"
-	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -125,7 +125,7 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 	}
 
 	// 4. Collects test results.
-	collectedResults, nextToken, err := p.collectTestResults(ctx, rootInvID)
+	collectedResults, nextToken, err := p.collectTestResults(ctx, rootInvID, cfg)
 	if err != nil {
 		return errors.Fmt("collect test results: %w", err)
 	}
@@ -157,7 +157,7 @@ func (p *testResultsPublisher) handleTestResultsPublisher(ctx context.Context) (
 
 // collectTestResults gathers test results across work units and pages up to a
 // total size limit.
-func (p *testResultsPublisher) collectTestResults(ctx context.Context, rootInvID rootinvocations.ID) (collectedResults []*pb.TestResultsNotification_TestResultsByWorkUnit, nextToken *WorkUnitPageToken, err error) {
+func (p *testResultsPublisher) collectTestResults(ctx context.Context, rootInvID rootinvocations.ID, cfg *config.CompiledServiceConfig) (collectedResults []*pb.TestResultsNotification_TestResultsByWorkUnit, nextToken *WorkUnitPageToken, err error) {
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/services/pubsub.collectTestResults")
 	defer func() { tracing.End(s, err) }()
 
@@ -165,13 +165,20 @@ func (p *testResultsPublisher) collectTestResults(ctx context.Context, rootInvID
 	task := p.task
 	currentPageToken := task.PageToken
 	for i := int(task.CurrentWorkUnitIndex); i < len(task.WorkUnitIds); i++ {
-		wuID := task.WorkUnitIds[i]
-		legacyInvID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: wuID}.LegacyInvocationID()
+		wuIDRaw := task.WorkUnitIds[i]
+		wuID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: wuIDRaw}
+
+		// The work unit is final, so we can safely read it outside a transaction.
+		wuRow, err := workunits.Read(span.Single(ctx), wuID, workunits.ExcludeExtendedProperties)
+		if err != nil {
+			return nil, nil, errors.Fmt("read work unit %q: %w", wuID.Name(), err)
+		}
+		wuProto := masking.WorkUnit(wuRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, cfg)
 
 		// Queries test results up to the page size for the current work unit.
 		for {
 			q := &testresults.Query{
-				InvocationIDs: invocations.NewIDSet(legacyInvID),
+				InvocationIDs: invocations.NewIDSet(wuID.LegacyInvocationID()),
 				Predicate:     &pb.TestResultPredicate{},
 				Mask:          testresults.AllFields,
 				PageSize:      p.pageSize,
@@ -180,14 +187,13 @@ func (p *testResultsPublisher) collectTestResults(ctx context.Context, rootInvID
 
 			pageTRs, nextPageToken, err := q.Fetch(span.Single(ctx))
 			if err != nil {
-				return nil, nil, errors.Fmt("query test results for work unit ID %q: %w", wuID, err)
+				return nil, nil, errors.Fmt("query test results for work unit %q: %w", wuID.Name(), err)
 			}
 
 			if len(pageTRs) > 0 {
-				wuName := pbutil.WorkUnitName(string(rootInvID), wuID)
 				newWUBlock := &pb.TestResultsNotification_TestResultsByWorkUnit{
-					WorkUnitName: wuName,
-					TestResults:  pageTRs,
+					WorkUnit:    wuProto,
+					TestResults: pageTRs,
 				}
 				newBlockSize := proto.Size(newWUBlock)
 
@@ -224,7 +230,7 @@ func (p *testResultsPublisher) collectTestResults(ctx context.Context, rootInvID
 				}
 
 				lastBlockIndex := len(collectedResults) - 1
-				if lastBlockIndex >= 0 && collectedResults[lastBlockIndex].WorkUnitName == wuName {
+				if lastBlockIndex >= 0 && collectedResults[lastBlockIndex].WorkUnit.Name == wuProto.Name {
 					// Merges the current block into the last block if they are from the same work unit.
 					lastBlock := collectedResults[lastBlockIndex]
 					currentSize -= proto.Size(lastBlock)
@@ -309,20 +315,20 @@ func (p *testResultsPublisher) partitionTestResults(ctx context.Context, collect
 func (p *testResultsPublisher) splitWorkUnitBlock(wuBlock *pb.TestResultsNotification_TestResultsByWorkUnit, metadata *pb.RootInvocationMetadata) ([]*pb.TestResultsNotification, error) {
 	var notifications []*pb.TestResultsNotification
 	var trBatch []*pb.TestResult
-	baseWUSize := proto.Size(&pb.TestResultsNotification_TestResultsByWorkUnit{WorkUnitName: wuBlock.WorkUnitName})
+	baseWUSize := proto.Size(&pb.TestResultsNotification_TestResultsByWorkUnit{WorkUnit: wuBlock.WorkUnit})
 	trCurrentSize := baseWUSize
 
 	for _, tr := range wuBlock.TestResults {
 		trSize := proto.Size(tr)
 		if trSize+baseWUSize > maxPubSubMessageSize {
-			return nil, errors.Fmt("Single test result for %q (TestID: %q, ResultID: %q) exceeds Pub/Sub size limit: %d bytes", wuBlock.WorkUnitName, tr.TestId, tr.ResultId, trSize)
+			return nil, errors.Fmt("Single test result for %q (TestID: %q, ResultID: %q) exceeds Pub/Sub size limit: %d bytes", wuBlock.WorkUnit.Name, tr.TestId, tr.ResultId, trSize)
 		}
 
 		if trCurrentSize+trSize > maxPubSubMessageSize {
 			// Current trBatch is full.
 			wuResults := []*pb.TestResultsNotification_TestResultsByWorkUnit{{
-				WorkUnitName: wuBlock.WorkUnitName,
-				TestResults:  trBatch,
+				WorkUnit:    wuBlock.WorkUnit,
+				TestResults: trBatch,
 			}}
 			notifications = append(notifications, p.createNotification(wuResults, metadata))
 			trBatch = nil
@@ -335,8 +341,8 @@ func (p *testResultsPublisher) splitWorkUnitBlock(wuBlock *pb.TestResultsNotific
 	// Add the last trBatch for this work unit.
 	if len(trBatch) > 0 {
 		wuResults := []*pb.TestResultsNotification_TestResultsByWorkUnit{{
-			WorkUnitName: wuBlock.WorkUnitName,
-			TestResults:  trBatch,
+			WorkUnit:    wuBlock.WorkUnit,
+			TestResults: trBatch,
 		}}
 		notifications = append(notifications, p.createNotification(wuResults, metadata))
 	}
@@ -464,6 +470,6 @@ func generateDeduplicationKey(wuResults []*pb.TestResultsNotification_TestResult
 		firstTRKey = "no_test_results"
 	}
 
-	keyContent := fmt.Sprintf("%s-%s", firstWU.WorkUnitName, firstTRKey)
+	keyContent := fmt.Sprintf("%s-%s", firstWU.WorkUnit.Name, firstTRKey)
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(keyContent)))
 }

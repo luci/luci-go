@@ -34,6 +34,8 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
+	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testresults"
@@ -133,6 +135,8 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 		cfg := config.CreatePlaceholderServiceConfig()
 		err := config.SetServiceConfigForTesting(ctx, cfg)
 		assert.Loosely(t, err, should.BeNil)
+		compiledCfg, err := config.NewCompiledServiceConfig(cfg, "")
+		assert.Loosely(t, err, should.BeNil)
 
 		ctx, sched := tq.TestingContext(ctx, nil)
 
@@ -142,22 +146,25 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
 
+		// Prepare the root invocation for this test case.
+		var ms []*spanner.Mutation
+		builder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL)
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(builder.Build())...)
+
+		// Prepare the work units.
+		wu1 := workunits.NewBuilder(rootInvID, "wu1").WithState(pb.WorkUnit_FAILED).Build()
+		wu2 := workunits.NewBuilder(rootInvID, "wu2").WithMinimalFields().WithState(pb.WorkUnit_SUCCEEDED).Build()
+		ms = append(ms, workunits.InsertForTesting(wu1)...)
+		ms = append(ms, workunits.InsertForTesting(wu2)...)
+
 		// Prepare TestResults.
 		tr1 := testresults.NewBuilder(wuID1.LegacyInvocationID(), "testA", "0").WithMinimalFields().WithStatus(pb.TestStatus_PASS).WithDuration(&durationpb.Duration{Seconds: 0})
 		tr2 := testresults.NewBuilder(wuID2.LegacyInvocationID(), "testB", "0").WithMinimalFields().WithStatus(pb.TestStatus_FAIL).WithDuration(&durationpb.Duration{Seconds: 0})
 
-		// Insert the root invocation for this test case.
-		builder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL)
-		muts := rootinvocations.InsertForTesting(builder.Build())
-		testutil.MustApply(ctx, t, muts...)
+		ms = append(ms, testresults.InsertForTesting(tr1.Build()))
+		ms = append(ms, testresults.InsertForTesting(tr2.Build()))
 
-		// Insert legacy Invocations based on work unit IDs.
-		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
-		testutil.MustApply(ctx, t, insert.Invocation(wuID2.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
-
-		// Insert TestResults.
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr2.Build()))
+		testutil.MustApply(ctx, t, ms...)
 
 		type message struct {
 			Attrs map[string]string
@@ -201,12 +208,14 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 
 		expectedTRs1 := []*pb.TestResult{createExpectedTR(tr1, string(rootInvID), wuID1.WorkUnitID)}
 		expectedTRs2 := []*pb.TestResult{createExpectedTR(tr2, string(rootInvID), wuID2.WorkUnitID)}
+		expectedWU1 := masking.WorkUnit(wu1, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg)
+		expectedWU2 := masking.WorkUnit(wu2, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg)
 
 		expectedNotification := &pb.TestResultsNotification{
 			ResultdbHost: rdbHost,
 			TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-				{WorkUnitName: wuID1.Name(), TestResults: expectedTRs1},
-				{WorkUnitName: wuID2.Name(), TestResults: expectedTRs2},
+				{WorkUnit: expectedWU1, TestResults: expectedTRs1},
+				{WorkUnit: expectedWU2, TestResults: expectedTRs2},
 			},
 			DeduplicationKey:       "d1c858729cc402d6b95b4b172de7de046e7010294d98558549d6c67a734bb3b9",
 			RootInvocationMetadata: expectedInvocationMetadata(),
@@ -297,7 +306,7 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 				ResultdbHost:           rdbHost,
 				RootInvocationMetadata: expectedInvocationMetadata(),
 				TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-					{WorkUnitName: wuID1.Name(), TestResults: []*pb.TestResult{expectedTR1}},
+					{WorkUnit: expectedWU1, TestResults: []*pb.TestResult{expectedTR1}},
 				},
 			}
 			expectedWUBatch1.DeduplicationKey = generateDeduplicationKey(expectedWUBatch1.TestResultsByWorkUnit)
@@ -306,7 +315,7 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 				ResultdbHost:           rdbHost,
 				RootInvocationMetadata: expectedInvocationMetadata(),
 				TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-					{WorkUnitName: wuID1.Name(), TestResults: []*pb.TestResult{expectedTR2}},
+					{WorkUnit: expectedWU1, TestResults: []*pb.TestResult{expectedTR2}},
 				},
 			}
 			expectedWUBatch2.DeduplicationKey = generateDeduplicationKey(expectedWUBatch2.TestResultsByWorkUnit)
@@ -315,7 +324,7 @@ func TestHandlePublishTestResultsTask(t *testing.T) {
 				ResultdbHost:           rdbHost,
 				RootInvocationMetadata: expectedInvocationMetadata(),
 				TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-					{WorkUnitName: wuID2.Name(), TestResults: []*pb.TestResult{expectedTR3, expectedTR4}},
+					{WorkUnit: expectedWU2, TestResults: []*pb.TestResult{expectedTR3, expectedTR4}},
 				},
 			}
 			expectedWUBatch3.DeduplicationKey = generateDeduplicationKey(expectedWUBatch3.TestResultsByWorkUnit)
@@ -399,6 +408,8 @@ func TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLar
 		cfg := config.CreatePlaceholderServiceConfig()
 		err := config.SetServiceConfigForTesting(ctx, cfg)
 		assert.Loosely(t, err, should.BeNil)
+		compiledCfg, err := config.NewCompiledServiceConfig(cfg, "")
+		assert.Loosely(t, err, should.BeNil)
 
 		rootInvID := rootinvocations.ID("test-root-inv-flush")
 		rdbHost := "results.api.cr.dev"
@@ -406,8 +417,31 @@ func TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLar
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 		wuID2 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu2"}
 
-		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
-		testutil.MustApply(ctx, t, insert.Invocation(wuID2.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+		gitilesSources := &pb.Sources{
+			BaseSources: &pb.Sources_GitilesCommit{
+				GitilesCommit: &pb.GitilesCommit{
+					Host:       "test.googlesource.com",
+					Project:    "test/project",
+					Ref:        "refs/heads/main",
+					CommitHash: "abcdef",
+				},
+			},
+		}
+
+		// Prepare root invocation.
+		var ms []*spanner.Mutation
+		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(gitilesSources)
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootInvBuilder.Build())...)
+
+		// Prepare work units.
+		wu1 := workunits.NewBuilder(rootInvID, "wu1").WithState(pb.WorkUnit_RUNNING).Build()
+		wu2 := workunits.NewBuilder(rootInvID, "wu2").WithMinimalFields().WithState(pb.WorkUnit_RUNNING).Build()
+		ms = append(ms, workunits.InsertForTesting(wu1)...)
+		ms = append(ms, workunits.InsertForTesting(wu2)...)
+		testutil.MustApply(ctx, t, ms...)
+
+		expectedWU1 := masking.WorkUnit(wu1, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg)
+		expectedWU2 := masking.WorkUnit(wu2, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg)
 
 		// WU1: Small result.
 		tr1 := sizeLimitedTestResult(string(wuID1.LegacyInvocationID()), "testA", "res1", 100)
@@ -422,18 +456,6 @@ func TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLar
 			testutil.MustApply(ctx, t, testresults.InsertForTesting(tr.Build()))
 		}
 
-		gitilesSources := &pb.Sources{
-			BaseSources: &pb.Sources_GitilesCommit{
-				GitilesCommit: &pb.GitilesCommit{
-					Host:       "test.googlesource.com",
-					Project:    "test/project",
-					Ref:        "refs/heads/main",
-					CommitHash: "abcdef",
-				},
-			},
-		}
-		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL).WithSources(gitilesSources)
-		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInvBuilder.Build())...)
 		ctx, sched := tq.TestingContext(ctx, nil)
 
 		task := &taskspb.PublishTestResultsTask{
@@ -465,7 +487,7 @@ func TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLar
 		// Verify WU1 notification.
 		notifyPayload := notifyTasks[0].Payload.(*taskspb.PublishTestResults)
 		assert.Loosely(t, notifyPayload.Message.TestResultsByWorkUnit, should.HaveLength(1))
-		assert.Loosely(t, notifyPayload.Message.TestResultsByWorkUnit[0].WorkUnitName, should.Equal(wuID1.Name()))
+		assert.Loosely(t, notifyPayload.Message.TestResultsByWorkUnit[0].WorkUnit, should.Match(expectedWU1))
 
 		// Verify Continuation Task.
 		pubPayload := pubTasks[0].Payload.(*taskspb.PublishTestResultsTask)
@@ -507,7 +529,7 @@ func TestHandlePublishTestResultsTask_FlushPriorCollectedResultsIfNextPageTooLar
 		for _, task := range notifyTasks {
 			p := task.Payload.(*taskspb.PublishTestResults)
 			for _, wu := range p.Message.TestResultsByWorkUnit {
-				assert.Loosely(t, wu.WorkUnitName, should.Equal(wuID2.Name()))
+				assert.Loosely(t, wu.WorkUnit, should.Match(expectedWU2))
 				totalResults += len(wu.TestResults)
 			}
 		}
@@ -526,24 +548,31 @@ func TestHandlePublishTestResultsTask_Pagination(t *testing.T) {
 		cfg := config.CreatePlaceholderServiceConfig()
 		err := config.SetServiceConfigForTesting(ctx, cfg)
 		assert.Loosely(t, err, should.BeNil)
+		compiledCfg, err := config.NewCompiledServiceConfig(cfg, "")
+		assert.Loosely(t, err, should.BeNil)
 
 		rootInvID := rootinvocations.ID("test-root-inv")
 		rdbHost := "results.api.cr.dev"
 		wuID1 := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: "wu1"}
 
-		testutil.MustApply(ctx, t, insert.Invocation(wuID1.LegacyInvocationID(), pb.Invocation_ACTIVE, nil))
+		var ms []*spanner.Mutation
+		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL)
+		ms = append(ms, insert.RootInvocationWithRootWorkUnit(rootInvBuilder.Build())...)
+
+		wu1 := workunits.NewBuilder(rootInvID, "wu1").WithState(pb.WorkUnit_SUCCEEDED).Build()
+		ms = append(ms, workunits.InsertForTesting(wu1)...)
+
+		expectedWU1 := masking.WorkUnit(wu1, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_BASIC, compiledCfg)
 
 		// Insert 3 test results. This should result in two pages.
 		tr1 := testresults.NewBuilder(wuID1.LegacyInvocationID(), "testA", "res1").WithMinimalFields()
 		tr2 := testresults.NewBuilder(wuID1.LegacyInvocationID(), "testA", "res2").WithMinimalFields()
 		tr3 := testresults.NewBuilder(wuID1.LegacyInvocationID(), "testB", "res1").WithMinimalFields()
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr1.Build()))
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr2.Build()))
+		ms = append(ms, testresults.InsertForTesting(tr1.Build()))
+		ms = append(ms, testresults.InsertForTesting(tr2.Build()))
+		ms = append(ms, testresults.InsertForTesting(tr3.Build()))
+		testutil.MustApply(ctx, t, ms...)
 
-		testutil.MustApply(ctx, t, testresults.InsertForTesting(tr3.Build()))
-
-		rootInvBuilder := rootinvocations.NewBuilder(rootInvID).WithStreamingExportState(pb.RootInvocation_METADATA_FINAL)
-		testutil.MustApply(ctx, t, rootinvocations.InsertForTesting(rootInvBuilder.Build())...)
 		ctx, sched := tq.TestingContext(ctx, nil)
 
 		task := &taskspb.PublishTestResultsTask{
@@ -581,8 +610,8 @@ func TestHandlePublishTestResultsTask_Pagination(t *testing.T) {
 			RootInvocationMetadata: expectedInvocationMetadata(),
 			TestResultsByWorkUnit: []*pb.TestResultsNotification_TestResultsByWorkUnit{
 				{
-					WorkUnitName: wuID1.Name(),
-					TestResults:  []*pb.TestResult{expectedTR1, expectedTR2, expectedTR3},
+					WorkUnit:    expectedWU1,
+					TestResults: []*pb.TestResult{expectedTR1, expectedTR2, expectedTR3},
 				},
 			},
 		}
@@ -611,37 +640,37 @@ func TestGenerateDeduplicationKey(t *testing.T) {
 			{
 				name: "Single work unit, single test result",
 				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr1}},
+					{WorkUnit: &pb.WorkUnit{Name: "wu1"}, TestResults: []*pb.TestResult{tr1}},
 				},
 				expected: "6148ca2bce03ca7754194e4a4ccd225e8aad492fccb1ea83dda239eae2cc2307",
 			},
 			{
 				name: "Single work unit, multiple test results",
 				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr1, tr2}},
+					{WorkUnit: &pb.WorkUnit{Name: "wu1"}, TestResults: []*pb.TestResult{tr1, tr2}},
 				},
 				expected: "6148ca2bce03ca7754194e4a4ccd225e8aad492fccb1ea83dda239eae2cc2307",
 			},
 			{
 				name: "Single work unit, multiple test results - different order",
 				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr2, tr1}},
+					{WorkUnit: &pb.WorkUnit{Name: "wu1"}, TestResults: []*pb.TestResult{tr2, tr1}},
 				},
 				expected: "dbc1036e16886afa80f0f0e6f4444d37d1490021738dce44803d2220b34a55ee",
 			},
 			{
 				name: "Multiple work units",
 				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr1, tr2}},
-					{WorkUnitName: "wu2", TestResults: []*pb.TestResult{tr3}},
+					{WorkUnit: &pb.WorkUnit{Name: "wu1"}, TestResults: []*pb.TestResult{tr1, tr2}},
+					{WorkUnit: &pb.WorkUnit{Name: "wu2"}, TestResults: []*pb.TestResult{tr3}},
 				},
 				expected: "6148ca2bce03ca7754194e4a4ccd225e8aad492fccb1ea83dda239eae2cc2307",
 			},
 			{
 				name: "Multiple work units - different order",
 				input: []*pb.TestResultsNotification_TestResultsByWorkUnit{
-					{WorkUnitName: "wu2", TestResults: []*pb.TestResult{tr3}},
-					{WorkUnitName: "wu1", TestResults: []*pb.TestResult{tr1, tr2}},
+					{WorkUnit: &pb.WorkUnit{Name: "wu2"}, TestResults: []*pb.TestResult{tr3}},
+					{WorkUnit: &pb.WorkUnit{Name: "wu1"}, TestResults: []*pb.TestResult{tr1, tr2}},
 				},
 				expected: "624dd4c0b534a66e61ea7843f009de302c73ccb3da15ae95b514a9bc06c10970",
 			},
