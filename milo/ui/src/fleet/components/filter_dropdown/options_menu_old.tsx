@@ -31,13 +31,14 @@ interface OptionsMenuProps {
   elements: SortedElement<OptionValue>[];
   selectedElements: Set<string>;
   flipOption: (value: string) => void;
+  onNavigateUp?: (e: React.KeyboardEvent<HTMLLIElement>) => void;
 }
 
 /**
  * @deprecated This component will be removed when all pages are migrated to go/fleet-console-unified-filter-bar
  */
 export const OptionsMenuOld = forwardRef(function OptionsMenuOld(
-  { elements, selectedElements, flipOption }: OptionsMenuProps,
+  { elements, selectedElements, flipOption, onNavigateUp }: OptionsMenuProps,
   ref,
 ) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -127,7 +128,17 @@ export const OptionsMenuOld = forwardRef(function OptionsMenuOld(
                   }
                   flipOption(elements[virtualRow.index].el.value);
                 }}
-                onKeyDown={keyboardListNavigationHandler}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === 'ArrowUp' &&
+                    virtualRow.index === 0 &&
+                    onNavigateUp
+                  ) {
+                    onNavigateUp(e as React.KeyboardEvent<HTMLLIElement>);
+                  } else {
+                    keyboardListNavigationHandler(e);
+                  }
+                }}
                 css={{
                   display: 'flex',
                   alignItems: 'center',

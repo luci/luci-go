@@ -21,7 +21,7 @@ import { ShortcutProvider } from '../shortcut_provider';
 import { ColumnsButton } from './columns_button';
 
 describe('<ColumnsButton />', () => {
-  it('renders "Columns" text by default', () => {
+  it('renders "Columns" tooltip by default', () => {
     render(
       <FakeContextProvider>
         <ShortcutProvider>
@@ -54,6 +54,8 @@ describe('<ColumnsButton />', () => {
       </FakeContextProvider>,
     );
     expect(screen.getByText('Custom')).toBeVisible();
-    expect(screen.queryByText('Columns')).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Customize columns'),
+    ).not.toBeInTheDocument();
   });
 });

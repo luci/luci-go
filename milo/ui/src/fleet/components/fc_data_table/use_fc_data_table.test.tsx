@@ -400,4 +400,27 @@ describe('<MaterialReactTable />', () => {
     expect(getNextPageButton()).toBeEnabled();
     expect(getPrevPageButton()).toBeEnabled();
   });
+
+  it('should render custom column action menu items', async () => {
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestComponent />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    const actionButtons = document.querySelectorAll('.ColumnActionsMenuButton');
+    expect(actionButtons.length).toBeGreaterThan(0);
+
+    await act(async () => fireEvent.click(actionButtons[0]));
+
+    expect(screen.getByText('Sort by ASC')).toBeVisible();
+    expect(screen.getByText('Sort by DESC')).toBeVisible();
+    expect(screen.getByText('Hide column')).toBeVisible();
+  });
 });

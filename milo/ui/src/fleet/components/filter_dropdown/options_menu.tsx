@@ -109,7 +109,7 @@ export const OptionsMenu = ({
                   }
                   flipOption(elements[virtualRow.index].el.value);
                 }}
-                onKeyDown={(e) =>
+                onKeyDown={(e) => {
                   keyboardListNavigationHandler(
                     e,
                     virtualRow.index === virtualRows.length - 1 &&
@@ -119,8 +119,8 @@ export const OptionsMenu = ({
                     virtualRow.index === 0 && onNavigateUp
                       ? () => onNavigateUp(e)
                       : undefined,
-                  )
-                }
+                  );
+                }}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',

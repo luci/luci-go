@@ -24,18 +24,30 @@ import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 
+export const highlightedColumnClassName = 'column-highlight';
+export const temporaryColumnClassName = `${highlightedColumnClassName} temporary-column-highlight`;
+
+export const getColumnId = <TData extends Record<string, unknown>>(
+  col: MRT_ColumnDef<TData>,
+): string => {
+  return col.id || col.accessorKey?.toString() || '';
+};
+
 export interface UseMRTColumnManagementProps<TData extends MRT_RowData> {
   columns: MRT_ColumnDef<TData>[];
   // IDs of columns that should be visible by default
   defaultColumnIds: string[];
   // Key for local storage persistence
   localStorageKey: string;
+  // IDs of columns that are currently filtered and should be highlighted
+  highlightedColumnIds?: readonly string[];
 }
 
 export function useMRTColumnManagement<TData extends MRT_RowData>({
-  columns,
+  columns: rawColumns,
   defaultColumnIds,
   localStorageKey,
+  highlightedColumnIds = [],
 }: UseMRTColumnManagementProps<TData>) {
   const [visibleColumnIds, setVisibleColumnIds] = useParamsAndLocalStorage(
     COLUMNS_PARAM_KEY,
@@ -43,16 +55,22 @@ export function useMRTColumnManagement<TData extends MRT_RowData>({
     defaultColumnIds,
   );
 
+  const temporaryColumnIds = useMemo(
+    () => highlightedColumnIds.filter((col) => !visibleColumnIds.includes(col)),
+    [highlightedColumnIds, visibleColumnIds],
+  );
+
   const columnVisibility = useMemo(() => {
     const visibility: MRT_VisibilityState = {};
-    columns.forEach((col) => {
-      const id = col.id || col.accessorKey?.toString();
+    rawColumns.forEach((col) => {
+      const id = getColumnId(col);
       if (id) {
-        visibility[id] = visibleColumnIds.includes(id);
+        visibility[id] =
+          visibleColumnIds.includes(id) || temporaryColumnIds.includes(id);
       }
     });
     return visibility;
-  }, [columns, visibleColumnIds]);
+  }, [rawColumns, visibleColumnIds, temporaryColumnIds]);
 
   const setColumnVisibility = useCallback(
     (updaterOrValue: MRT_Updater<MRT_VisibilityState>) => {
@@ -63,16 +81,22 @@ export function useMRTColumnManagement<TData extends MRT_RowData>({
         newVisibility = updaterOrValue;
       }
 
-      const newVisibleIds = Object.keys(newVisibility).filter(
-        (id) => newVisibility[id],
+      const newVisibleIds = Object.keys(newVisibility).filter((id) =>
+        temporaryColumnIds.includes(id) ? false : newVisibility[id],
       );
       setVisibleColumnIds(newVisibleIds);
     },
-    [columnVisibility, setVisibleColumnIds],
+    [columnVisibility, setVisibleColumnIds, temporaryColumnIds],
   );
 
   const onToggleColumn = useCallback(
     (columnId: string) => {
+      if (temporaryColumnIds.includes(columnId)) {
+        // Toggling a temporary column makes it permanent
+        setVisibleColumnIds([...visibleColumnIds, columnId]);
+        return;
+      }
+
       const isVisible = visibleColumnIds.includes(columnId);
       if (isVisible) {
         setVisibleColumnIds(visibleColumnIds.filter((id) => id !== columnId));
@@ -80,19 +104,77 @@ export function useMRTColumnManagement<TData extends MRT_RowData>({
         setVisibleColumnIds([...visibleColumnIds, columnId]);
       }
     },
-    [visibleColumnIds, setVisibleColumnIds],
+    [visibleColumnIds, setVisibleColumnIds, temporaryColumnIds],
   );
 
   const allColumns = useMemo(
     () =>
-      columns.map((c) => ({
-        id: c.id || c.accessorKey?.toString() || '',
-        label: c.header || c.id || c.accessorKey?.toString() || '',
+      rawColumns.map((c) => ({
+        id: getColumnId(c),
+        label: c.header || getColumnId(c),
       })),
-    [columns],
+    [rawColumns],
   );
 
+  const columns = useMemo(() => {
+    return rawColumns.map((colDef) => {
+      const colId = getColumnId(colDef);
+      if (!colId) return colDef;
+
+      let className = '';
+      let isTemp = false;
+
+      if (temporaryColumnIds.includes(colId)) {
+        className = temporaryColumnClassName;
+        isTemp = true;
+      } else if (highlightedColumnIds.includes(colId)) {
+        className = highlightedColumnClassName;
+      }
+
+      if (className || isTemp) {
+        return {
+          ...colDef,
+          enableHiding: isTemp ? false : colDef.enableHiding,
+          meta: {
+            ...colDef.meta,
+            isTemporary: isTemp,
+          },
+          muiTableHeadCellProps: {
+            ...colDef.muiTableHeadCellProps,
+            className:
+              [
+                (
+                  colDef.muiTableHeadCellProps as
+                    | { className?: string }
+                    | undefined
+                )?.className,
+                className,
+              ]
+                .filter(Boolean)
+                .join(' ') || undefined,
+          },
+          muiTableBodyCellProps: {
+            ...colDef.muiTableBodyCellProps,
+            className:
+              [
+                (
+                  colDef.muiTableBodyCellProps as
+                    | { className?: string }
+                    | undefined
+                )?.className,
+                className,
+              ]
+                .filter(Boolean)
+                .join(' ') || undefined,
+          },
+        } as MRT_ColumnDef<TData>;
+      }
+      return colDef;
+    });
+  }, [rawColumns, temporaryColumnIds, highlightedColumnIds]);
+
   return {
+    columns,
     columnVisibility,
     setColumnVisibility,
     visibleColumnIds,

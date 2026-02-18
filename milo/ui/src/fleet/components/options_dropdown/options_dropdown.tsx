@@ -19,6 +19,7 @@ import {
   PopoverOrigin,
   Popper,
   PopperPlacementType,
+  SxProps,
 } from '@mui/material';
 import {
   useEffect,
@@ -45,13 +46,17 @@ type OptionsDropdownProps = Omit<MenuProps, 'open' | 'maxHeight'> & {
   anchorEl: HTMLElement | null;
   open: boolean;
   anchorOrigin?: PopoverOrigin | undefined;
+  transformOrigin?: PopoverOrigin | undefined;
+  onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
   enableSearchInput?: boolean;
   maxHeight?: CSSProperties['maxHeight'];
   onResetClick?: MouseEventHandler<HTMLButtonElement>;
   footerButtons?: ('reset' | 'cancel' | 'apply')[];
+  disablePortal?: boolean;
   disableEnforceFocus?: boolean;
   disableRestoreFocus?: boolean;
   hideBackdrop?: boolean;
+  sx?: SxProps;
 };
 
 const mapOriginToPlacement = (
@@ -98,6 +103,7 @@ export function OptionsDropdown({
   maxHeight = 'auto',
   onResetClick,
   footerButtons = ['apply', 'cancel'],
+  disablePortal,
   sx,
 }: OptionsDropdownProps) {
   const searchInput = useRef<HTMLInputElement>(null);
@@ -117,6 +123,7 @@ export function OptionsDropdown({
 
   return (
     <Popper
+      disablePortal={disablePortal}
       open={open}
       anchorEl={anchorEl}
       placement={placement}
@@ -142,10 +149,12 @@ export function OptionsDropdown({
           },
         },
       ]}
-      sx={{
-        zIndex: 1401, // luci's cookie_consent_bar is 1400
-        ...sx,
-      }}
+      sx={[
+        {
+          zIndex: 1401, // luci's cookie_consent_bar is 1400
+        },
+        ...(sx ? (Array.isArray(sx) ? sx : [sx]) : []),
+      ]}
     >
       <ClickAwayListener
         onClickAway={(e) => {
@@ -160,6 +169,7 @@ export function OptionsDropdown({
       >
         <Paper
           elevation={2}
+          onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
             e.stopPropagation();
 
@@ -243,6 +253,7 @@ export function OptionsDropdown({
               paddingTop: '8px',
             }}
             tabIndex={-1}
+            role="menu"
             key="options-menu-container"
             ref={listContainerRef}
           >

@@ -24,8 +24,10 @@ import {
   MaterialReactTable,
   MRT_ColumnDef,
   MRT_PaginationState,
+  MRT_ColumnFiltersState,
+  MRT_Updater,
 } from 'material-react-table';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -41,7 +43,10 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
-import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
+import {
+  getColumnId,
+  useMRTColumnManagement,
+} from '@/fleet/components/columns/use_mrt_column_management';
 import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
@@ -125,6 +130,7 @@ const COLUMNS = {
   priority: {
     accessorKey: 'priority',
     header: 'Priority',
+    size: 80,
     Header: () => {
       return (
         <>
@@ -242,6 +248,7 @@ const COLUMNS = {
   lab_name: {
     accessorKey: 'lab_name',
     header: 'Lab Name',
+    size: 60,
   },
   host_group: {
     accessorKey: 'host_group',
@@ -258,6 +265,7 @@ const COLUMNS = {
     accessorKey: 'minimum_repairs',
     header: 'Minimum Repairs',
     sortDescFirst: true,
+    size: 80,
     Header: () => {
       return (
         <div
@@ -283,6 +291,7 @@ const COLUMNS = {
     accessorKey: 'devices_offline_percentage',
     header: 'Devices Offline %',
     sortDescFirst: true,
+    size: 80,
     Header: () => {
       return (
         <Typography
@@ -309,6 +318,7 @@ const COLUMNS = {
     accessorKey: 'peak_usage',
     header: 'Peak Usage',
     sortDescFirst: true,
+    size: 80,
     Cell: (x) => (
       <div
         css={{
@@ -558,24 +568,67 @@ export const RepairListPage = () => {
     [pagerCtx, searchParams],
   );
 
-  const columns = useMemo(
-    () => Object.values(COLUMNS) as MRT_ColumnDef<Row>[],
-    [],
+  const columns = useMemo(() => {
+    const filterCategories = repairMetricsFilterValues.data
+      ? dimensionsToFilterOptions(repairMetricsFilterValues.data)
+      : [];
+
+    return Object.values(COLUMNS).map((c) => {
+      const id = getColumnId(c as MRT_ColumnDef<Row>);
+      const category = filterCategories.find((cat) => cat.value === id);
+      return {
+        ...c,
+        filterVariant: 'multi-select',
+        filterSelectOptions:
+          category && 'options' in category ? category.options : [],
+      };
+    }) as MRT_ColumnDef<Row>[];
+  }, [repairMetricsFilterValues.data]);
+
+  const columnFilters = useMemo<MRT_ColumnFiltersState>(() => {
+    return Object.entries(selectedOptions?.filters || {}).map(
+      ([id, value]) => ({
+        id,
+        value,
+      }),
+    );
+  }, [selectedOptions.filters]);
+
+  const onColumnFiltersChange = useCallback(
+    (updater: MRT_Updater<MRT_ColumnFiltersState>) => {
+      const newFilters =
+        typeof updater === 'function' ? updater(columnFilters) : updater;
+      const newSelectedOptions = Object.fromEntries(
+        newFilters.map((f: { id: string; value: unknown }) => [f.id, f.value]),
+      ) as SelectedOptions;
+
+      onSelectedOptionsChange(newSelectedOptions);
+    },
+    [columnFilters, onSelectedOptionsChange],
   );
 
   const defaultColumnIds = useMemo(
-    () => columns.map((c) => c.accessorKey || c.id || ''),
+    () => columns.map((c) => getColumnId(c as MRT_ColumnDef<Row>)),
     [columns],
+  );
+
+  const highlightedColumnIds = useMemo(
+    () => Object.keys(selectedOptions.filters || {}),
+    [selectedOptions.filters],
   );
 
   const mrtColumnManager = useMRTColumnManagement({
     columns,
     defaultColumnIds,
     localStorageKey: 'fleet-console-repairs-columns',
+    highlightedColumnIds,
   });
 
   const table = useFCDataTable({
-    enableHiding: false,
+    columns: mrtColumnManager.columns,
+    enableColumnActions: true,
+    enableColumnFilters: false,
+    manualFiltering: true,
     positionToolbarAlertBanner: 'none',
     enableRowSelection: true,
     renderTopToolbarCustomActions: ({ table }) => (
@@ -608,11 +661,11 @@ export const RepairListPage = () => {
         />
       </div>
     ),
-    columns: columns,
     data: repairMetricsList.data?.repairMetrics.map(getRow) ?? [],
     getRowId: (row) => row.lab_name + row.host_group + row.run_target,
     state: {
       sorting,
+      columnFilters,
       columnVisibility: mrtColumnManager.columnVisibility,
       showProgressBars:
         repairMetricsList.isPending || repairMetricsList.isPlaceholderData,
@@ -620,6 +673,7 @@ export const RepairListPage = () => {
       pagination: pagination,
     },
     onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
+    onColumnFiltersChange,
     muiPaginationProps: {
       rowsPerPageOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     },

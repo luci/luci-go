@@ -14,12 +14,12 @@
 
 import { useMemo } from 'react';
 
-import { OptionsDropdown } from '@/fleet/components/options_dropdown';
 import { OptionValue } from '@/fleet/types/option';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
 import { OptionsMenu } from '../filter_dropdown/options_menu';
+import { OptionsDropdown } from '../options_dropdown';
 
 interface ColumnsButtonProps {
   isLoading?: boolean;

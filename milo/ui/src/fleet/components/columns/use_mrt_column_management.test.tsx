@@ -155,4 +155,41 @@ describe('useMRTColumnManagement', () => {
 
     expect(setVisibleIds).toHaveBeenCalledWith(['col1']);
   });
+
+  it('temporary columns remain visible when highlighted', () => {
+    // Return an empty visible list to mock all columns being hidden by default
+    const setVisibleIds = jest.fn();
+    (useParamsAndLocalStorage as jest.Mock).mockReturnValue([
+      ['col1'],
+      setVisibleIds,
+    ]);
+
+    // Pass in col2 and col3 as currently highlighted/filtered
+    const { result } = renderHook(() =>
+      useMRTColumnManagement({
+        columns: mockColumns,
+        defaultColumnIds: ['col1'],
+        localStorageKey: 'test-key',
+        highlightedColumnIds: ['col2', 'col3'],
+      }),
+    );
+
+    // Visibility state should contain the highlighted/temp ones dynamically added back in
+    expect(result.current.columnVisibility).toEqual({
+      col1: true,
+      col2: true,
+      col3: true,
+    });
+
+    // Original list remains unaffected
+    expect(result.current.visibleColumnIds).toEqual(['col1']);
+
+    // They should inherit isTemporary properties in the mapped columns
+    const isCol2Temp = (
+      result.current.columns.find((c) => c.id === 'col2')?.meta as {
+        isTemporary?: boolean;
+      }
+    )?.isTemporary;
+    expect(isCol2Temp).toBe(true);
+  });
 });
