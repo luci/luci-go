@@ -16,7 +16,7 @@ import {
   platformToJSON,
 } from '../../proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-export const FLEET_CONSOLE_BASE_URL = '/ui/fleet/labs';
+export const FLEET_CONSOLE_BASE_URL = '/ui/fleet';
 
 export const PLATFORM_SUBROUTE = 'p/:platform';
 export const DEVICES_SUBROUTE = 'devices';

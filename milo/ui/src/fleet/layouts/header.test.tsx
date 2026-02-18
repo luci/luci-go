@@ -80,10 +80,7 @@ describe('Header', () => {
     );
 
     const logoLink = screen.getByRole('link', { name: /logo/i });
-    expect(logoLink).toHaveAttribute(
-      'href',
-      '/ui/fleet/labs/p/chromeos/devices',
-    );
+    expect(logoLink).toHaveAttribute('href', '/ui/fleet/p/chromeos/devices');
   });
 
   it('Logo should link to current platform device list', () => {
@@ -104,9 +101,6 @@ describe('Header', () => {
     );
 
     const logoLink = screen.getByRole('link', { name: /logo/i });
-    expect(logoLink).toHaveAttribute(
-      'href',
-      '/ui/fleet/labs/p/android/devices',
-    );
+    expect(logoLink).toHaveAttribute('href', '/ui/fleet/p/android/devices');
   });
 });
