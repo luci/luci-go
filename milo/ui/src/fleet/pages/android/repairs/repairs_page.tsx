@@ -66,7 +66,7 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { RunTargetColumnHeader } from '@/fleet/pages/device_list_page/android/run_target_column_header';
 import { colors } from '@/fleet/theme/colors';
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import {
   getFilterQueryString,
@@ -76,27 +76,13 @@ import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
-  GetRepairMetricsDimensionsResponse,
   Platform,
   RepairMetric,
   RepairMetric_Priority,
   repairMetric_PriorityToJSON,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-const dimensionsToFilterOptions = (
-  dimensionData: GetRepairMetricsDimensionsResponse,
-): OptionCategory[] => {
-  return Object.entries(dimensionData.dimensions).map(([key, value]) => {
-    return {
-      label: _.startCase(key),
-      value: key,
-      options: (value as { values: string[] }).values.map((v) => ({
-        label: v,
-        value: v,
-      })),
-    };
-  });
-};
+import { dimensionsToFilterOptions } from './repairs_page_utils';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
