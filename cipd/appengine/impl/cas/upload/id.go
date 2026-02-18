@@ -30,7 +30,7 @@ import (
 // returned to clients.
 var opToken = tokens.TokenKind{
 	Algo:       tokens.TokenAlgoHmacSHA256,
-	Expiration: 5 * time.Hour,
+	Expiration: 10 * time.Hour,
 	SecretKey:  "cipd_upload_op_id_key",
 	Version:    1,
 }

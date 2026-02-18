@@ -62,7 +62,7 @@ func TestIDs(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("failed to validate"))
 
 			// Expired.
-			clk.Add(5*time.Hour + time.Minute)
+			clk.Add(10*time.Hour + time.Minute)
 			_, err = UnwrapOpID(ctx, wrapped, caller)
 			assert.Loosely(t, err, should.ErrLike("failed to validate"))
 		})
