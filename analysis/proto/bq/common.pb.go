@@ -326,6 +326,255 @@ func (x *TestIdentifierBase) GetCaseName() string {
 	return ""
 }
 
+// Represents the process definition of a root invocation.
+//
+// This proto closely follows luci.resultdb.v1.RootInvocationDefinition but is
+// altered to be better suited to BigQuery export.
+type RootInvocationDefinition struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The system name that namespaces the process definition name.
+	// Uses kebab-case as per https://google.aip.dev/126#alternatives.
+	//
+	// For example, "atp", "bazel" or "buildbucket".
+	//
+	// Limit of 64 bytes of UTF-8.
+	// Required.
+	System string `protobuf:"bytes,1,opt,name=system,proto3" json:"system,omitempty"`
+	// The name used to identify the set of tests being executed.
+	//
+	// For example, "v2/adb-team/adb/adb_integration".
+	//
+	// Limit 256 bytes of UTF-8.
+	// Required.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// A key-value map of properties used to differentiate between
+	// definitions with the same name and system. For example 'cluster_id' and
+	// 'run_target' for ATP.
+	//
+	// See luci.resultdb.v1.RootInvocationDefinition.properties for more details.
+	//
+	// The type here is JSON to allow more efficient filtering in BigQuery.
+	Properties string `protobuf:"bytes,3,opt,name=properties,proto3" json:"properties,omitempty"`
+	// Base64-encoded hash of the properties.
+	PropertiesHash string `protobuf:"bytes,4,opt,name=properties_hash,json=propertiesHash,proto3" json:"properties_hash,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RootInvocationDefinition) Reset() {
+	*x = RootInvocationDefinition{}
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RootInvocationDefinition) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RootInvocationDefinition) ProtoMessage() {}
+
+func (x *RootInvocationDefinition) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RootInvocationDefinition.ProtoReflect.Descriptor instead.
+func (*RootInvocationDefinition) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RootInvocationDefinition) GetSystem() string {
+	if x != nil {
+		return x.System
+	}
+	return ""
+}
+
+func (x *RootInvocationDefinition) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *RootInvocationDefinition) GetProperties() string {
+	if x != nil {
+		return x.Properties
+	}
+	return ""
+}
+
+func (x *RootInvocationDefinition) GetPropertiesHash() string {
+	if x != nil {
+		return x.PropertiesHash
+	}
+	return ""
+}
+
+// Represents a set of artifacts produced from source code, e.g.
+// a built software binary and associated content.
+//
+// This proto closely follows luci.resultdb.v1.BuildDescriptor but is altered
+// to be better suited to BigQuery export.
+type BuildDescriptor struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Definition:
+	//
+	//	*BuildDescriptor_AndroidBuild
+	Definition    isBuildDescriptor_Definition `protobuf_oneof:"definition"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BuildDescriptor) Reset() {
+	*x = BuildDescriptor{}
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BuildDescriptor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BuildDescriptor) ProtoMessage() {}
+
+func (x *BuildDescriptor) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BuildDescriptor.ProtoReflect.Descriptor instead.
+func (*BuildDescriptor) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *BuildDescriptor) GetDefinition() isBuildDescriptor_Definition {
+	if x != nil {
+		return x.Definition
+	}
+	return nil
+}
+
+func (x *BuildDescriptor) GetAndroidBuild() *AndroidBuildDescriptor {
+	if x != nil {
+		if x, ok := x.Definition.(*BuildDescriptor_AndroidBuild); ok {
+			return x.AndroidBuild
+		}
+	}
+	return nil
+}
+
+type isBuildDescriptor_Definition interface {
+	isBuildDescriptor_Definition()
+}
+
+type BuildDescriptor_AndroidBuild struct {
+	AndroidBuild *AndroidBuildDescriptor `protobuf:"bytes,1,opt,name=android_build,json=androidBuild,proto3,oneof"`
+}
+
+func (*BuildDescriptor_AndroidBuild) isBuildDescriptor_Definition() {}
+
+// Represents a build from Android Build (go/ab).
+//
+// Follows luci.resultdb.v1.AndroidBuildDescriptor.
+type AndroidBuildDescriptor struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The Android Build API data realm.
+	//
+	// This is usually `prod`. For a list of available data realms, see
+	// https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg.
+	// Required.
+	DataRealm string `protobuf:"bytes,1,opt,name=data_realm,json=dataRealm,proto3" json:"data_realm,omitempty"`
+	// The branch. For example, `git_main`.
+	// Limited to 255 bytes.
+	// Required.
+	Branch string `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"`
+	// The build target. For example, `cf_x86_phone-userdebug`.
+	// Limited to 255 bytes.
+	// Required.
+	BuildTarget string `protobuf:"bytes,3,opt,name=build_target,json=buildTarget,proto3" json:"build_target,omitempty"`
+	// The build identifier, such as "12345678", "P81983588" or "L17635075".
+	// Limited to 32 bytes.
+	// Required.
+	BuildId       string `protobuf:"bytes,4,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AndroidBuildDescriptor) Reset() {
+	*x = AndroidBuildDescriptor{}
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AndroidBuildDescriptor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AndroidBuildDescriptor) ProtoMessage() {}
+
+func (x *AndroidBuildDescriptor) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AndroidBuildDescriptor.ProtoReflect.Descriptor instead.
+func (*AndroidBuildDescriptor) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AndroidBuildDescriptor) GetDataRealm() string {
+	if x != nil {
+		return x.DataRealm
+	}
+	return ""
+}
+
+func (x *AndroidBuildDescriptor) GetBranch() string {
+	if x != nil {
+		return x.Branch
+	}
+	return ""
+}
+
+func (x *AndroidBuildDescriptor) GetBuildTarget() string {
+	if x != nil {
+		return x.BuildTarget
+	}
+	return ""
+}
+
+func (x *AndroidBuildDescriptor) GetBuildId() string {
+	if x != nil {
+		return x.BuildId
+	}
+	return ""
+}
+
 var File_go_chromium_org_luci_analysis_proto_bq_common_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDesc = "" +
@@ -350,7 +599,26 @@ const file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDesc = "" +
 	"\vcoarse_name\x18\x05 \x01(\tR\n" +
 	"coarseName\x12\x1b\n" +
 	"\tfine_name\x18\x06 \x01(\tR\bfineName\x12\x1b\n" +
-	"\tcase_name\x18\a \x01(\tR\bcaseNameB-Z+go.chromium.org/luci/analysis/proto/bq;bqpbb\x06proto3"
+	"\tcase_name\x18\a \x01(\tR\bcaseName\"\x9b\x01\n" +
+	"\x18RootInvocationDefinition\x12\x16\n" +
+	"\x06system\x18\x01 \x01(\tR\x06system\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12*\n" +
+	"\n" +
+	"properties\x18\x03 \x01(\tB\n" +
+	"\xe2\xbc$\x06\n" +
+	"\x04JSONR\n" +
+	"properties\x12'\n" +
+	"\x0fproperties_hash\x18\x04 \x01(\tR\x0epropertiesHash\"{\n" +
+	"\x0fBuildDescriptor\x12O\n" +
+	"\randroid_build\x18\x01 \x01(\v2(.luci.analysis.bq.AndroidBuildDescriptorH\x00R\fandroidBuildB\f\n" +
+	"\n" +
+	"definitionJ\x04\b\x02\x10\x03R\x03url\"\x8d\x01\n" +
+	"\x16AndroidBuildDescriptor\x12\x1d\n" +
+	"\n" +
+	"data_realm\x18\x01 \x01(\tR\tdataRealm\x12\x16\n" +
+	"\x06branch\x18\x02 \x01(\tR\x06branch\x12!\n" +
+	"\fbuild_target\x18\x03 \x01(\tR\vbuildTarget\x12\x19\n" +
+	"\bbuild_id\x18\x04 \x01(\tR\abuildIdB-Z+go.chromium.org/luci/analysis/proto/bq;bqpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescOnce sync.Once
@@ -364,17 +632,21 @@ func file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescGZIP() []by
 	return file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_go_chromium_org_luci_analysis_proto_bq_common_proto_goTypes = []any{
-	(*TestIdentifier)(nil),     // 0: luci.analysis.bq.TestIdentifier
-	(*TestIdentifierBase)(nil), // 1: luci.analysis.bq.TestIdentifierBase
+	(*TestIdentifier)(nil),           // 0: luci.analysis.bq.TestIdentifier
+	(*TestIdentifierBase)(nil),       // 1: luci.analysis.bq.TestIdentifierBase
+	(*RootInvocationDefinition)(nil), // 2: luci.analysis.bq.RootInvocationDefinition
+	(*BuildDescriptor)(nil),          // 3: luci.analysis.bq.BuildDescriptor
+	(*AndroidBuildDescriptor)(nil),   // 4: luci.analysis.bq.AndroidBuildDescriptor
 }
 var file_go_chromium_org_luci_analysis_proto_bq_common_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	4, // 0: luci.analysis.bq.BuildDescriptor.android_build:type_name -> luci.analysis.bq.AndroidBuildDescriptor
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_bq_common_proto_init() }
@@ -382,13 +654,16 @@ func file_go_chromium_org_luci_analysis_proto_bq_common_proto_init() {
 	if File_go_chromium_org_luci_analysis_proto_bq_common_proto != nil {
 		return
 	}
+	file_go_chromium_org_luci_analysis_proto_bq_common_proto_msgTypes[3].OneofWrappers = []any{
+		(*BuildDescriptor_AndroidBuild)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_bq_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

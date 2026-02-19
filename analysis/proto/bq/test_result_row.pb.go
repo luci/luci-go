@@ -153,6 +153,12 @@ type TestResultRow struct {
 	// hosted by `chromium.googlesource.com`.
 	// This is a subset of the information in the `sources` field.
 	SourceRef *v1.SourceRef `protobuf:"bytes,20,opt,name=source_ref,json=sourceRef,proto3" json:"source_ref,omitempty"`
+	// The process definition of the root invocation that this test result
+	// belongs to. This may be unset for ad-hoc invocations.
+	RootInvocationDefinition *RootInvocationDefinition `protobuf:"bytes,28,opt,name=root_invocation_definition,json=rootInvocationDefinition,proto3" json:"root_invocation_definition,omitempty"`
+	// The primary build of the root invocation that this test result belongs to.
+	// This is currently only set for Android invocations.
+	PrimaryBuild *BuildDescriptor `protobuf:"bytes,29,opt,name=primary_build,json=primaryBuild,proto3" json:"primary_build,omitempty"`
 	// Hash of the source_ref field, as 16 lowercase hexadecimal characters.
 	// Can be used to uniquely identify a branch in a source code
 	// version control system.
@@ -373,6 +379,20 @@ func (x *TestResultRow) GetSourceRef() *v1.SourceRef {
 	return nil
 }
 
+func (x *TestResultRow) GetRootInvocationDefinition() *RootInvocationDefinition {
+	if x != nil {
+		return x.RootInvocationDefinition
+	}
+	return nil
+}
+
+func (x *TestResultRow) GetPrimaryBuild() *BuildDescriptor {
+	if x != nil {
+		return x.PrimaryBuild
+	}
+	return nil
+}
+
 func (x *TestResultRow) GetSourceRefHash() string {
 	if x != nil {
 		return x.SourceRefHash
@@ -562,7 +582,7 @@ var File_go_chromium_org_luci_analysis_proto_bq_test_result_row_proto protorefle
 
 const file_go_chromium_org_luci_analysis_proto_bq_test_result_row_proto_rawDesc = "" +
 	"\n" +
-	"<go.chromium.org/luci/analysis/proto/bq/test_result_row.proto\x12\x10luci.analysis.bq\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/analysis/proto/bq/common.proto\x1a:go.chromium.org/luci/analysis/proto/bq/test_metadata.proto\x1a3go.chromium.org/luci/analysis/proto/v1/common.proto\x1a4go.chromium.org/luci/analysis/proto/v1/sources.proto\x1a9go.chromium.org/luci/analysis/proto/v1/test_verdict.proto\x1a;go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto\x1a;go.chromium.org/luci/resultdb/proto/v1/skipped_reason.proto\x1a8go.chromium.org/luci/resultdb/proto/v1/test_result.proto\x1a/go.chromium.org/luci/common/bq/pb/options.proto\"\x85\r\n" +
+	"<go.chromium.org/luci/analysis/proto/bq/test_result_row.proto\x12\x10luci.analysis.bq\x1a\x1fgoogle/protobuf/timestamp.proto\x1a3go.chromium.org/luci/analysis/proto/bq/common.proto\x1a:go.chromium.org/luci/analysis/proto/bq/test_metadata.proto\x1a3go.chromium.org/luci/analysis/proto/v1/common.proto\x1a4go.chromium.org/luci/analysis/proto/v1/sources.proto\x1a9go.chromium.org/luci/analysis/proto/v1/test_verdict.proto\x1a;go.chromium.org/luci/resultdb/proto/v1/failure_reason.proto\x1a;go.chromium.org/luci/resultdb/proto/v1/skipped_reason.proto\x1a8go.chromium.org/luci/resultdb/proto/v1/test_result.proto\x1a/go.chromium.org/luci/common/bq/pb/options.proto\"\xb7\x0e\n" +
 	"\rTestResultRow\x12\x18\n" +
 	"\aproject\x18\x01 \x01(\tR\aproject\x12N\n" +
 	"\x12test_id_structured\x18\x18 \x01(\v2 .luci.analysis.bq.TestIdentifierR\x10testIdStructured\x12\x17\n" +
@@ -598,7 +618,9 @@ const file_go_chromium_org_luci_analysis_proto_bq_test_result_row_proto_rawDesc 
 	"properties\x123\n" +
 	"\asources\x18\x13 \x01(\v2\x19.luci.analysis.v1.SourcesR\asources\x12:\n" +
 	"\n" +
-	"source_ref\x18\x14 \x01(\v2\x1b.luci.analysis.v1.SourceRefR\tsourceRef\x12&\n" +
+	"source_ref\x18\x14 \x01(\v2\x1b.luci.analysis.v1.SourceRefR\tsourceRef\x12h\n" +
+	"\x1aroot_invocation_definition\x18\x1c \x01(\v2*.luci.analysis.bq.RootInvocationDefinitionR\x18rootInvocationDefinition\x12F\n" +
+	"\rprimary_build\x18\x1d \x01(\v2!.luci.analysis.bq.BuildDescriptorR\fprimaryBuild\x12&\n" +
 	"\x0fsource_ref_hash\x18\x15 \x01(\tR\rsourceRefHash\x12C\n" +
 	"\rtest_metadata\x18\x16 \x01(\v2\x1e.luci.analysis.bq.TestMetadataR\ftestMetadata\x12X\n" +
 	"\x14framework_extensions\x18\x1b \x01(\v2%.luci.resultdb.v1.FrameworkExtensionsR\x13frameworkExtensions\x12;\n" +
@@ -644,8 +666,10 @@ var file_go_chromium_org_luci_analysis_proto_bq_test_result_row_proto_goTypes = 
 	(*v11.SkippedReason)(nil),              // 9: luci.resultdb.v1.SkippedReason
 	(*v1.Sources)(nil),                     // 10: luci.analysis.v1.Sources
 	(*v1.SourceRef)(nil),                   // 11: luci.analysis.v1.SourceRef
-	(*TestMetadata)(nil),                   // 12: luci.analysis.bq.TestMetadata
-	(*v11.FrameworkExtensions)(nil),        // 13: luci.resultdb.v1.FrameworkExtensions
+	(*RootInvocationDefinition)(nil),       // 12: luci.analysis.bq.RootInvocationDefinition
+	(*BuildDescriptor)(nil),                // 13: luci.analysis.bq.BuildDescriptor
+	(*TestMetadata)(nil),                   // 14: luci.analysis.bq.TestMetadata
+	(*v11.FrameworkExtensions)(nil),        // 15: luci.resultdb.v1.FrameworkExtensions
 }
 var file_go_chromium_org_luci_analysis_proto_bq_test_result_row_proto_depIdxs = []int32{
 	3,  // 0: luci.analysis.bq.TestResultRow.test_id_structured:type_name -> luci.analysis.bq.TestIdentifier
@@ -660,15 +684,17 @@ var file_go_chromium_org_luci_analysis_proto_bq_test_result_row_proto_depIdxs = 
 	9,  // 9: luci.analysis.bq.TestResultRow.skipped_reason:type_name -> luci.resultdb.v1.SkippedReason
 	10, // 10: luci.analysis.bq.TestResultRow.sources:type_name -> luci.analysis.v1.Sources
 	11, // 11: luci.analysis.bq.TestResultRow.source_ref:type_name -> luci.analysis.v1.SourceRef
-	12, // 12: luci.analysis.bq.TestResultRow.test_metadata:type_name -> luci.analysis.bq.TestMetadata
-	13, // 13: luci.analysis.bq.TestResultRow.framework_extensions:type_name -> luci.resultdb.v1.FrameworkExtensions
-	4,  // 14: luci.analysis.bq.TestResultRow.insert_time:type_name -> google.protobuf.Timestamp
-	7,  // 15: luci.analysis.bq.TestResultRow.ParentRecord.tags:type_name -> luci.analysis.v1.StringPair
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	12, // 12: luci.analysis.bq.TestResultRow.root_invocation_definition:type_name -> luci.analysis.bq.RootInvocationDefinition
+	13, // 13: luci.analysis.bq.TestResultRow.primary_build:type_name -> luci.analysis.bq.BuildDescriptor
+	14, // 14: luci.analysis.bq.TestResultRow.test_metadata:type_name -> luci.analysis.bq.TestMetadata
+	15, // 15: luci.analysis.bq.TestResultRow.framework_extensions:type_name -> luci.resultdb.v1.FrameworkExtensions
+	4,  // 16: luci.analysis.bq.TestResultRow.insert_time:type_name -> google.protobuf.Timestamp
+	7,  // 17: luci.analysis.bq.TestResultRow.ParentRecord.tags:type_name -> luci.analysis.v1.StringPair
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_bq_test_result_row_proto_init() }

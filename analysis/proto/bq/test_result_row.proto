@@ -213,6 +213,14 @@ message TestResultRow {
   // This is a subset of the information in the `sources` field.
   luci.analysis.v1.SourceRef source_ref = 20;
 
+  // The process definition of the root invocation that this test result
+  // belongs to. This may be unset for ad-hoc invocations.
+  RootInvocationDefinition root_invocation_definition = 28;
+
+  // The primary build of the root invocation that this test result belongs to.
+  // This is currently only set for Android invocations.
+  BuildDescriptor primary_build = 29;
+
   // Hash of the source_ref field, as 16 lowercase hexadecimal characters.
   // Can be used to uniquely identify a branch in a source code
   // version control system.

@@ -419,7 +419,26 @@ func testTestResultNotification() *rdbpb.TestResultsNotification {
 			Realm:            "rootproject:root",
 			Sources:          resultdbSourcesForTesting(),
 			CreateTime:       timestamppb.New(time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)),
-		},
+			Definition: &rdbpb.RootInvocationDefinition{
+				Name:   "test-root-invocation-name",
+				System: "resultdb",
+				Properties: &rdbpb.RootInvocationDefinition_Properties{
+					Def: map[string]string{
+						"my_key": "my_value",
+					},
+				},
+				PropertiesHash: "hash",
+			},
+			PrimaryBuild: &rdbpb.BuildDescriptor{
+				Definition: &rdbpb.BuildDescriptor_AndroidBuild{
+					AndroidBuild: &rdbpb.AndroidBuildDescriptor{
+						DataRealm:   "realm",
+						Branch:      "branch",
+						BuildTarget: "target",
+						BuildId:     "id",
+					},
+				},
+			}},
 	}
 }
 

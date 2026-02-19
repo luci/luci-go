@@ -362,6 +362,24 @@ func TestIngestRootInvocation(t *testing.T) {
 		properties, err := bqutil.MarshalStructPB(testProperties)
 		assert.Loosely(t, err, should.BeNil)
 
+		primaryBuild := &bqpb.BuildDescriptor{
+			Definition: &bqpb.BuildDescriptor_AndroidBuild{
+				AndroidBuild: &bqpb.AndroidBuildDescriptor{
+					DataRealm:   "realm",
+					Branch:      "branch",
+					BuildTarget: "target",
+					BuildId:     "id",
+				},
+			},
+		}
+
+		rootInvocationDefinition := &bqpb.RootInvocationDefinition{
+			Name:           "test-root-invocation-name",
+			System:         "resultdb",
+			Properties:     `{"my_key":"my_value"}`,
+			PropertiesHash: "hash",
+		}
+
 		expectedResults := []*bqpb.TestResultRow{
 			{
 				Project: "rootproject",
@@ -413,7 +431,9 @@ func TestIngestRootInvocation(t *testing.T) {
 						IsExpected: true,
 					},
 				},
-				InsertTime: timestamppb.New(testclock.TestRecentTimeLocal),
+				PrimaryBuild:             primaryBuild,
+				RootInvocationDefinition: rootInvocationDefinition,
+				InsertTime:               timestamppb.New(testclock.TestRecentTimeLocal),
 			},
 			{
 				Project: "rootproject",
@@ -461,11 +481,13 @@ func TestIngestRootInvocation(t *testing.T) {
 						},
 					},
 				},
-				Properties:    "{}",
-				Sources:       sources,
-				SourceRef:     sourceRef,
-				SourceRefHash: "5d47c679cf080cb5",
-				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
+				Properties:               "{}",
+				Sources:                  sources,
+				SourceRef:                sourceRef,
+				SourceRefHash:            "5d47c679cf080cb5",
+				PrimaryBuild:             primaryBuild,
+				RootInvocationDefinition: rootInvocationDefinition,
+				InsertTime:               timestamppb.New(testclock.TestRecentTimeLocal),
 			},
 			{
 				Project: "rootproject",
@@ -498,18 +520,20 @@ func TestIngestRootInvocation(t *testing.T) {
 					},
 					Properties: `{"property_key":"property_value"}`,
 				},
-				Name:          "rootInvocations/test-root-invocation-id/workUnits/work-unit-two/tests/:module%21junit:package:class%23test_flaky/results/two",
-				ResultId:      "two",
-				Expected:      true,
-				Status:        analysispb.TestResultStatus_PASS,
-				StatusV2:      analysispb.TestResult_PASSED,
-				SummaryHtml:   "SummaryHTML for test_flaky/two",
-				StartTime:     timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
-				Properties:    "{}",
-				Sources:       sources,
-				SourceRef:     sourceRef,
-				SourceRefHash: "5d47c679cf080cb5",
-				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
+				Name:                     "rootInvocations/test-root-invocation-id/workUnits/work-unit-two/tests/:module%21junit:package:class%23test_flaky/results/two",
+				ResultId:                 "two",
+				Expected:                 true,
+				Status:                   analysispb.TestResultStatus_PASS,
+				StatusV2:                 analysispb.TestResult_PASSED,
+				SummaryHtml:              "SummaryHTML for test_flaky/two",
+				StartTime:                timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
+				Properties:               "{}",
+				Sources:                  sources,
+				SourceRef:                sourceRef,
+				SourceRefHash:            "5d47c679cf080cb5",
+				PrimaryBuild:             primaryBuild,
+				RootInvocationDefinition: rootInvocationDefinition,
+				InsertTime:               timestamppb.New(testclock.TestRecentTimeLocal),
 			},
 			{
 				Project: "rootproject",
@@ -554,10 +578,12 @@ func TestIngestRootInvocation(t *testing.T) {
 					Kind:          rdbpb.SkippedReason_DISABLED_AT_DECLARATION,
 					ReasonMessage: "Test has @Ignored annotation.",
 				},
-				Sources:       sources,
-				SourceRef:     sourceRef,
-				SourceRefHash: "5d47c679cf080cb5",
-				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
+				Sources:                  sources,
+				SourceRef:                sourceRef,
+				SourceRefHash:            "5d47c679cf080cb5",
+				PrimaryBuild:             primaryBuild,
+				RootInvocationDefinition: rootInvocationDefinition,
+				InsertTime:               timestamppb.New(testclock.TestRecentTimeLocal),
 			},
 		}
 

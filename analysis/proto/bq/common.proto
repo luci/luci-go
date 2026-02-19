@@ -169,3 +169,83 @@ message TestIdentifierBase {
   // Equivalent of luci.resultdb.v1.TestIdentifier.case_name.
   string case_name = 7;
 }
+
+// Represents the process definition of a root invocation.
+//
+// This proto closely follows luci.resultdb.v1.RootInvocationDefinition but is
+// altered to be better suited to BigQuery export.
+message RootInvocationDefinition {
+  // The system name that namespaces the process definition name.
+  // Uses kebab-case as per https://google.aip.dev/126#alternatives.
+  //
+  // For example, "atp", "bazel" or "buildbucket".
+  //
+  // Limit of 64 bytes of UTF-8.
+  // Required.
+  string system = 1;
+
+  // The name used to identify the set of tests being executed.
+  //
+  // For example, "v2/adb-team/adb/adb_integration".
+  //
+  // Limit 256 bytes of UTF-8.
+  // Required.
+  string name = 2;
+
+  // A key-value map of properties used to differentiate between
+  // definitions with the same name and system. For example 'cluster_id' and
+  // 'run_target' for ATP.
+  //
+  // See luci.resultdb.v1.RootInvocationDefinition.properties for more details.
+  //
+  // The type here is JSON to allow more efficient filtering in BigQuery.
+  string properties = 3 [(bqschema.options).bq_type = "JSON"];
+
+  // Base64-encoded hash of the properties.
+  string properties_hash = 4;
+}
+
+// Represents a set of artifacts produced from source code, e.g.
+// a built software binary and associated content.
+//
+// This proto closely follows luci.resultdb.v1.BuildDescriptor but is altered
+// to be better suited to BigQuery export.
+message BuildDescriptor {
+  oneof definition {
+    AndroidBuildDescriptor android_build = 1;
+    // In future, other build definitions, can be defined here,
+    // such as those based on buildbucket builds or GCS folders.
+  }
+
+  // For URL fields (not currently included in BQ export to avoid storing
+  // stale link schemes).
+  reserved 2;
+  reserved "url";
+}
+
+// Represents a build from Android Build (go/ab).
+//
+// Follows luci.resultdb.v1.AndroidBuildDescriptor.
+message AndroidBuildDescriptor {
+  // The Android Build API data realm.
+  //
+  // This is usually `prod`. For a list of available data realms, see
+  // https://chrome-internal.googlesource.com/infradata/config/+/HEAD/configs/luci-resultdb/config.cfg.
+  // Required.
+  string data_realm = 1;
+
+  // The branch. For example, `git_main`.
+  // Limited to 255 bytes.
+  // Required.
+  string branch = 2;
+
+  // The build target. For example, `cf_x86_phone-userdebug`.
+  // Limited to 255 bytes.
+  // Required.
+  string build_target = 3;
+
+  // The build identifier, such as "12345678", "P81983588" or "L17635075".
+  // Limited to 32 bytes.
+  // Required.
+  string build_id = 4;
+}

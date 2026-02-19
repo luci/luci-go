@@ -18,6 +18,7 @@ package exporter
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -98,6 +99,16 @@ func prepareExportRows(results []*rdbpb.TestResultsNotification_TestResultsByWor
 
 	var out []*bqpb.TestResultRow
 
+	primaryBuild, err := buildDescriptor(opts.RootInvocation.PrimaryBuild)
+	if err != nil {
+		return nil, errors.Fmt("build descriptor: %w", err)
+	}
+
+	rootInvocationDefinition, err := rootInvocationDefinition(opts.RootInvocation.Definition)
+	if err != nil {
+		return nil, errors.Fmt("root invocation definition: %w", err)
+	}
+
 	for _, wuTestResults := range results {
 		parent, err := parentFromWorkUnit(wuTestResults.WorkUnit)
 		if err != nil {
@@ -142,27 +153,29 @@ func prepareExportRows(results []*rdbpb.TestResultsNotification_TestResultsByWor
 					Realm:            rootInvocation.Realm,
 					IsRootInvocation: true,
 				},
-				PartitionTime:       rootInvocation.CreateTime,
-				Parent:              parent,
-				Name:                tr.Name,
-				ResultId:            tr.ResultId,
-				Expected:            tr.Expected,
-				Status:              pbutil.LegacyTestStatusFromResultDB(tr.Status),
-				StatusV2:            pbutil.TestStatusV2FromResultDB(tr.StatusV2),
-				SummaryHtml:         tr.SummaryHtml,
-				StartTime:           tr.StartTime,
-				DurationSecs:        tr.Duration.AsDuration().Seconds(),
-				Tags:                pbutil.StringPairFromResultDB(tr.Tags),
-				FailureReason:       tr.FailureReason,
-				SkipReason:          skipReasonString,
-				Properties:          propertiesJSON,
-				Sources:             sources,
-				SourceRef:           sourceRef,
-				SourceRefHash:       sourceRefHash,
-				TestMetadata:        tmd,
-				SkippedReason:       tr.SkippedReason,
-				FrameworkExtensions: tr.FrameworkExtensions,
-				InsertTime:          timestamppb.New(insertTime),
+				PartitionTime:            rootInvocation.CreateTime,
+				Parent:                   parent,
+				Name:                     tr.Name,
+				ResultId:                 tr.ResultId,
+				Expected:                 tr.Expected,
+				Status:                   pbutil.LegacyTestStatusFromResultDB(tr.Status),
+				StatusV2:                 pbutil.TestStatusV2FromResultDB(tr.StatusV2),
+				SummaryHtml:              tr.SummaryHtml,
+				StartTime:                tr.StartTime,
+				DurationSecs:             tr.Duration.AsDuration().Seconds(),
+				Tags:                     pbutil.StringPairFromResultDB(tr.Tags),
+				FailureReason:            tr.FailureReason,
+				SkipReason:               skipReasonString,
+				Properties:               propertiesJSON,
+				Sources:                  sources,
+				SourceRef:                sourceRef,
+				SourceRefHash:            sourceRefHash,
+				PrimaryBuild:             primaryBuild,
+				RootInvocationDefinition: rootInvocationDefinition,
+				TestMetadata:             tmd,
+				SkippedReason:            tr.SkippedReason,
+				FrameworkExtensions:      tr.FrameworkExtensions,
+				InsertTime:               timestamppb.New(insertTime),
 			})
 		}
 	}
@@ -181,4 +194,54 @@ func parentFromWorkUnit(wu *rdbpb.WorkUnit) (*bqpb.TestResultRow_ParentRecord, e
 		Properties: propertiesJSON,
 	}
 	return parent, nil
+}
+
+// rootInvocationDefinition converts a ResultDB RootInvocationDefinition
+// into its BigQuery export format.
+func rootInvocationDefinition(def *rdbpb.RootInvocationDefinition) (*bqpb.RootInvocationDefinition, error) {
+	if def == nil {
+		// The definition is an optional field in ResultDB.
+		return nil, nil
+	}
+
+	b, err := json.Marshal(def.Properties.Def)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &bqpb.RootInvocationDefinition{
+		System:         def.System,
+		Name:           def.Name,
+		Properties:     string(b),
+		PropertiesHash: def.PropertiesHash,
+	}
+	return result, nil
+}
+
+// buildDescriptor converts a ResultDB BuildDescriptor into its BigQuery export format.
+func buildDescriptor(build *rdbpb.BuildDescriptor) (*bqpb.BuildDescriptor, error) {
+	if build == nil {
+		// The primary build is an optional field in ResultDB.
+		return nil, nil
+	}
+	switch build := build.Definition.(type) {
+	case *rdbpb.BuildDescriptor_AndroidBuild:
+		return &bqpb.BuildDescriptor{
+			Definition: &bqpb.BuildDescriptor_AndroidBuild{
+				AndroidBuild: androidBuildDescriptor(build.AndroidBuild),
+			},
+		}, nil
+	default:
+		return nil, errors.New("unknown build descriptor type")
+	}
+}
+
+// androidBuildDescriptor converts a ResultDB AndroidBuildDescriptor into its BigQuery export format.
+func androidBuildDescriptor(build *rdbpb.AndroidBuildDescriptor) *bqpb.AndroidBuildDescriptor {
+	return &bqpb.AndroidBuildDescriptor{
+		DataRealm:   build.DataRealm,
+		Branch:      build.Branch,
+		BuildTarget: build.BuildTarget,
+		BuildId:     build.BuildId,
+	}
 }
