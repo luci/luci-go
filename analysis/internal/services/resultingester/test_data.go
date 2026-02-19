@@ -279,6 +279,13 @@ func testTestResultNotification() *rdbpb.TestResultsNotification {
 			WorkUnit: &rdbpb.WorkUnit{
 				Name:       "rootInvocations/test-root-invocation-id/workUnits/work-unit-one",
 				WorkUnitId: "work-unit-one",
+				Realm:      "rootproject:wu-realm1",
+				Tags: []*rdbpb.StringPair{
+					{
+						Key:   "key",
+						Value: "value1",
+					},
+				},
 			},
 			TestResults: []*rdbpb.TestResult{
 				{
@@ -341,6 +348,18 @@ func testTestResultNotification() *rdbpb.TestResultsNotification {
 			WorkUnit: &rdbpb.WorkUnit{
 				Name:       "rootInvocations/test-root-invocation-id/workUnits/work-unit-two",
 				WorkUnitId: "work-unit-two",
+				Realm:      "rootproject:wu-realm2",
+				Tags: []*rdbpb.StringPair{
+					{
+						Key:   "key",
+						Value: "value2",
+					},
+				},
+				Properties: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"property_key": structpb.NewStringValue("property_value"),
+					},
+				},
 			},
 			TestResults: []*rdbpb.TestResult{
 				{

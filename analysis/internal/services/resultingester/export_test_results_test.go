@@ -337,3 +337,269 @@ func TestExportTestResults(t *testing.T) {
 		})
 	})
 }
+
+func TestIngestRootInvocation(t *testing.T) {
+	ftt.Run("TestIngestRootInvocation", t, func(t *ftt.Test) {
+		ctx := testutil.IntegrationTestContext(t)
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+
+		inputs := testRootInvocationInputs()
+		exportClient := exporter.NewFakeClient()
+		ingester := NewTestResultsExporter(exportClient)
+
+		sources := resolvedSourcesForTesting()
+		sourceRef := &analysispb.SourceRef{
+			System: &analysispb.SourceRef_Gitiles{
+				Gitiles: &analysispb.GitilesRef{
+					Host:    "project.googlesource.com",
+					Project: "myproject/src",
+					Ref:     "refs/heads/main",
+				},
+			},
+		}
+
+		// Expect the JSON serialisation format for this platform.
+		properties, err := bqutil.MarshalStructPB(testProperties)
+		assert.Loosely(t, err, should.BeNil)
+
+		expectedResults := []*bqpb.TestResultRow{
+			{
+				Project: "rootproject",
+				TestIdStructured: &bqpb.TestIdentifier{
+					ModuleName:        "module",
+					ModuleScheme:      "junit",
+					ModuleVariant:     "{}",
+					ModuleVariantHash: "e3b0c44298fc1c14", // Hash of the empty variant.
+					CoarseName:        "package",
+					FineName:          "class",
+					CaseName:          "test_passed",
+				},
+				TestId:      ":module!junit:package:class#test_passed",
+				Variant:     `{}`,
+				VariantHash: "hash",
+				Invocation: &bqpb.TestResultRow_InvocationRecord{
+					Id:               "test-root-invocation-id",
+					Realm:            "rootproject:root",
+					IsRootInvocation: true,
+				},
+				PartitionTime: timestamppb.New(time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)),
+				Parent: &bqpb.TestResultRow_ParentRecord{
+					Id:    "work-unit-one",
+					Realm: "rootproject:wu-realm1",
+					Tags: []*analysispb.StringPair{
+						{
+							Key:   "key",
+							Value: "value1",
+						},
+					},
+					Properties: "{}",
+				},
+				Name:          "rootInvocations/test-root-invocation-id/workUnits/work-unit-one/tests/:module%21junit:package:class%23test_passed/results/one",
+				ResultId:      "one",
+				Expected:      true,
+				Status:        analysispb.TestResultStatus_PASS,
+				StatusV2:      analysispb.TestResult_PASSED,
+				SummaryHtml:   "SummaryHTML for test_passed/one",
+				StartTime:     timestamppb.New(time.Date(2010, time.March, 1, 0, 0, 0, 0, time.UTC)),
+				DurationSecs:  3.000001,
+				Tags:          []*analysispb.StringPair{{Key: "test-key", Value: "test-value"}},
+				Properties:    "{}",
+				Sources:       sources,
+				SourceRef:     sourceRef,
+				SourceRefHash: "5d47c679cf080cb5",
+				FrameworkExtensions: &rdbpb.FrameworkExtensions{
+					WebTest: &rdbpb.WebTest{
+						Status:     rdbpb.WebTest_PASS,
+						IsExpected: true,
+					},
+				},
+				InsertTime: timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				Project: "rootproject",
+				TestIdStructured: &bqpb.TestIdentifier{
+					ModuleName:        "module",
+					ModuleScheme:      "junit",
+					ModuleVariant:     "{}",
+					ModuleVariantHash: "e3b0c44298fc1c14", // Hash of the empty variant.
+					CoarseName:        "package",
+					FineName:          "class",
+					CaseName:          "test_flaky",
+				},
+				TestId:      ":module!junit:package:class#test_flaky",
+				Variant:     `{}`,
+				VariantHash: "hash",
+				Invocation: &bqpb.TestResultRow_InvocationRecord{
+					Id:               "test-root-invocation-id",
+					Realm:            "rootproject:root",
+					IsRootInvocation: true,
+				},
+				PartitionTime: timestamppb.New(time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)),
+				Parent: &bqpb.TestResultRow_ParentRecord{
+					Id:    "work-unit-one",
+					Realm: "rootproject:wu-realm1",
+					Tags: []*analysispb.StringPair{
+						{
+							Key:   "key",
+							Value: "value1",
+						},
+					},
+					Properties: "{}",
+				},
+				Name:        "rootInvocations/test-root-invocation-id/workUnits/work-unit-one/tests/:module%21junit:package:class%23test_flaky/results/one",
+				ResultId:    "one",
+				Expected:    false,
+				Status:      analysispb.TestResultStatus_FAIL,
+				StatusV2:    analysispb.TestResult_FAILED,
+				SummaryHtml: "SummaryHTML for test_flaky/one",
+				StartTime:   timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
+				FailureReason: &rdbpb.FailureReason{
+					PrimaryErrorMessage: "abc.def(123): unexpected nil-deference",
+					Errors: []*rdbpb.FailureReason_Error{
+						{
+							Message: "abc.def(123): unexpected nil-deference",
+						},
+					},
+				},
+				Properties:    "{}",
+				Sources:       sources,
+				SourceRef:     sourceRef,
+				SourceRefHash: "5d47c679cf080cb5",
+				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				Project: "rootproject",
+				TestIdStructured: &bqpb.TestIdentifier{
+					ModuleName:        "module",
+					ModuleScheme:      "junit",
+					ModuleVariant:     "{}",
+					ModuleVariantHash: "e3b0c44298fc1c14", // Hash of the empty variant.
+					CoarseName:        "package",
+					FineName:          "class",
+					CaseName:          "test_flaky",
+				},
+				TestId:      ":module!junit:package:class#test_flaky",
+				Variant:     `{}`,
+				VariantHash: "hash",
+				Invocation: &bqpb.TestResultRow_InvocationRecord{
+					Id:               "test-root-invocation-id",
+					Realm:            "rootproject:root",
+					IsRootInvocation: true,
+				},
+				PartitionTime: timestamppb.New(time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)),
+				Parent: &bqpb.TestResultRow_ParentRecord{
+					Id:    "work-unit-two",
+					Realm: "rootproject:wu-realm2",
+					Tags: []*analysispb.StringPair{
+						{
+							Key:   "key",
+							Value: "value2",
+						},
+					},
+					Properties: `{"property_key":"property_value"}`,
+				},
+				Name:          "rootInvocations/test-root-invocation-id/workUnits/work-unit-two/tests/:module%21junit:package:class%23test_flaky/results/two",
+				ResultId:      "two",
+				Expected:      true,
+				Status:        analysispb.TestResultStatus_PASS,
+				StatusV2:      analysispb.TestResult_PASSED,
+				SummaryHtml:   "SummaryHTML for test_flaky/two",
+				StartTime:     timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
+				Properties:    "{}",
+				Sources:       sources,
+				SourceRef:     sourceRef,
+				SourceRefHash: "5d47c679cf080cb5",
+				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+			{
+				Project: "rootproject",
+				TestIdStructured: &bqpb.TestIdentifier{
+					ModuleName:        "module",
+					ModuleScheme:      "junit",
+					ModuleVariant:     "{}",
+					ModuleVariantHash: "e3b0c44298fc1c14", // Hash of the empty variant.
+					CoarseName:        "package",
+					FineName:          "class",
+					CaseName:          "test_skipped",
+				},
+				TestId:      ":module!junit:package:class#test_skipped",
+				Variant:     `{}`,
+				VariantHash: "hash",
+				Invocation: &bqpb.TestResultRow_InvocationRecord{
+					Id:               "test-root-invocation-id",
+					Realm:            "rootproject:root",
+					IsRootInvocation: true,
+				},
+				PartitionTime: timestamppb.New(time.Date(2020, 2, 3, 4, 5, 6, 7, time.UTC)),
+				Parent: &bqpb.TestResultRow_ParentRecord{
+					Id:    "work-unit-two",
+					Realm: "rootproject:wu-realm2",
+					Tags: []*analysispb.StringPair{
+						{
+							Key:   "key",
+							Value: "value2",
+						},
+					},
+					Properties: `{"property_key":"property_value"}`,
+				},
+				Name:        "rootInvocations/test-root-invocation-id/workUnits/work-unit-two/tests/:module%21junit:package:class%23test_skipped/results/one",
+				ResultId:    "one",
+				Expected:    true,
+				Status:      analysispb.TestResultStatus_SKIP,
+				StatusV2:    analysispb.TestResult_SKIPPED,
+				SummaryHtml: "SummaryHTML for test_skipped/one",
+				Properties:  properties,
+				SkipReason:  "AUTOMATICALLY_DISABLED_FOR_FLAKINESS",
+				SkippedReason: &rdbpb.SkippedReason{
+					Kind:          rdbpb.SkippedReason_DISABLED_AT_DECLARATION,
+					ReasonMessage: "Test has @Ignored annotation.",
+				},
+				Sources:       sources,
+				SourceRef:     sourceRef,
+				SourceRefHash: "5d47c679cf080cb5",
+				InsertTime:    timestamppb.New(testclock.TestRecentTimeLocal),
+			},
+		}
+
+		expectedCheckpoints := []checkpoints.Checkpoint{
+			{
+				Key: checkpoints.Key{
+					Project:    "rootproject",
+					ResourceID: "fake.rdb.host/test-root-invocation-id",
+					ProcessID:  "result-ingestion/export-test-results/partitioned-by-day",
+					Uniquifier: "dedup-key",
+				},
+				// Creation and expiry time not validated.
+			},
+			{
+				Key: checkpoints.Key{
+					Project:    "rootproject",
+					ResourceID: "fake.rdb.host/test-root-invocation-id",
+					ProcessID:  "result-ingestion/export-test-results/partitioned-by-month",
+					Uniquifier: "dedup-key",
+				},
+				// Creation and expiry time not validated.
+			},
+		}
+
+		t.Run(`Baseline`, func(t *ftt.Test) {
+			err := ingester.IngestRootInvocation(ctx, inputs)
+			assert.Loosely(t, err, should.BeNil)
+
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.HaveLength(2))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-day"], should.Match(expectedResults))
+			assert.Loosely(t, exportClient.InsertionsByDestinationKey["partitioned-by-month"], should.Match(expectedResults))
+			assert.Loosely(t, verifyCheckpoints(ctx, t, expectedCheckpoints...), should.BeNil)
+
+			t.Run(`Results are not exported again if the process is re-run`, func(t *ftt.Test) {
+				exportClient.InsertionsByDestinationKey = map[string][]*bqpb.TestResultRow{}
+
+				err = ingester.IngestRootInvocation(ctx, inputs)
+				assert.Loosely(t, err, should.BeNil)
+
+				// Nothing should be exported because the checkpoint already exists.
+				assert.Loosely(t, exportClient.InsertionsByDestinationKey, should.BeEmpty)
+			})
+		})
+	})
+}

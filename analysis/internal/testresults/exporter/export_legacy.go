@@ -82,7 +82,7 @@ func prepareExportRowsLegacy(verdicts []*rdbpb.RunTestVerdict, opts LegacyOption
 		}
 	}
 
-	parent, err := parent(opts.Parent)
+	parent, err := parentFromInvocation(opts.Parent)
 	if err != nil {
 		return nil, errors.Fmt("parent invocation: %w", err)
 	}
@@ -155,7 +155,7 @@ func prepareExportRowsLegacy(verdicts []*rdbpb.RunTestVerdict, opts LegacyOption
 	return results, nil
 }
 
-func parent(parent *rdbpb.Invocation) (*bqpb.TestResultRow_ParentRecord, error) {
+func parentFromInvocation(parent *rdbpb.Invocation) (*bqpb.TestResultRow_ParentRecord, error) {
 	invocationID, err := rdbpbutil.ParseInvocationName(parent.Name)
 	if err != nil {
 		return nil, errors.Fmt("invalid invocation name %q: %w", invocationID, err)
