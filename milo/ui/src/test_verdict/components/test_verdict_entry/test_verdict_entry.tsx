@@ -65,7 +65,9 @@ export interface TestVerdictEntryProps {
   readonly project: string;
   readonly testId: string;
   readonly variantHash: string;
-  readonly invocationId: string;
+  // One of invocationName or rootInvocationName must be provided.
+  readonly invocationName?: string;
+  readonly rootInvocationName?: string;
   readonly changes?: readonly Omit<GerritChange, 'project'>[];
   readonly defaultExpanded?: boolean;
 }
@@ -74,7 +76,8 @@ export function TestVerdictEntry({
   project,
   testId,
   variantHash,
-  invocationId,
+  invocationName,
+  rootInvocationName,
   changes = [],
   defaultExpanded = false,
 }: TestVerdictEntryProps) {
@@ -91,8 +94,9 @@ export function TestVerdictEntry({
   const client = useResultDbClient();
   const { data, isPending, isError, error } = useQuery({
     ...client.BatchGetTestVariants.query({
-      invocation: 'invocations/' + invocationId,
-      parent: '',
+      // Only one of invocation or rootInvocationName should be provided.
+      invocation: invocationName || '',
+      parent: rootInvocationName || '',
       testVariants: [
         BatchGetTestVariantsRequest_TestVariantIdentifier.fromPartial({
           testId,
@@ -127,7 +131,10 @@ export function TestVerdictEntry({
           <Skeleton variant="circular" height={24} width={24} />
         )}
         <Box>
-          <InvIdLink invId={invocationId} />
+          <InvIdLink
+            invocationName={invocationName}
+            rootInvocationName={rootInvocationName}
+          />
           {!isPending && !expanded && testVerdict && (
             <>
               {' '}

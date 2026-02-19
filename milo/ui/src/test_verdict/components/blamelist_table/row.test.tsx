@@ -22,11 +22,8 @@ import {
   CommitTableHead,
 } from '@/gitiles/components/commit_table';
 import { OutputCommit } from '@/gitiles/types';
-import {
-  QuerySourceVerdictsResponse_SourceVerdict,
-  QuerySourceVerdictsResponse_VerdictStatus,
-  TestVariantBranch,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { SourceVerdict } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
+import { TestVariantBranch } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { Commit } from '@/proto/go.chromium.org/luci/common/proto/git/commit.pb';
 import {
   BatchGetTestVariantsResponse,
@@ -49,16 +46,17 @@ const testVariantBranch = TestVariantBranch.fromPartial({
   refHash: 'ref-hash',
 }) as OutputTestVariantBranch;
 
-const sourceVerdict = QuerySourceVerdictsResponse_SourceVerdict.fromPartial({
-  status: QuerySourceVerdictsResponse_VerdictStatus.FLAKY,
-  verdicts: [
+const sourceVerdict = SourceVerdict.fromPartial({
+  status: TestVerdict_Status.FLAKY,
+  approximateStatus: TestVerdict_Status.FLAKY,
+  invocationVerdicts: [
     {
-      invocationId: 'inv1',
-      status: QuerySourceVerdictsResponse_VerdictStatus.EXPECTED,
+      rootInvocation: 'rootInvocations/inv1',
+      status: TestVerdict_Status.PASSED,
     },
     {
-      invocationId: 'inv2',
-      status: QuerySourceVerdictsResponse_VerdictStatus.UNEXPECTED,
+      invocation: 'invocation/inv2',
+      status: TestVerdict_Status.FAILED,
     },
   ],
 });
@@ -116,7 +114,7 @@ describe('<BlamelistTableContentRow />', () => {
                 {
                   result: {
                     name: `invocations/build-5678/tests/test-id/results/1`,
-                    summaryHtml: `Result #1 from ${req.invocation}`,
+                    summaryHtml: `Result #1 from ${req.invocation || req.parent}`,
                     statusV2: TestResult_Status.FAILED,
                   },
                 },
@@ -130,7 +128,7 @@ describe('<BlamelistTableContentRow />', () => {
                 {
                   result: {
                     name: `invocations/build-5678/tests/test-id/results/2`,
-                    summaryHtml: `Result #2 from ${req.invocation}`,
+                    summaryHtml: `Result #2 from ${req.invocation || req.parent}`,
                     statusV2: TestResult_Status.PASSED,
                   },
                 },
@@ -155,7 +153,9 @@ describe('<BlamelistTableContentRow />', () => {
 
     fireEvent.click(screen.getByText('warning'));
     await act(() => jest.runAllTimersAsync());
-    expect(screen.getByText('Result #1 from invocations/inv1')).toBeVisible();
+    expect(
+      screen.getByText('Result #1 from rootInvocations/inv1'),
+    ).toBeVisible();
   });
 
   it('should not expand the first verdict entry when clicking on expand icon', async () => {
@@ -169,7 +169,7 @@ describe('<BlamelistTableContentRow />', () => {
     await act(() => jest.runAllTimersAsync());
 
     expect(
-      screen.queryByText('Result #1 from invocations/inv1') ||
+      screen.queryByText('Result #1 from rootInvocations/inv1') ||
         document.createElement('div'),
     ).not.toBeVisible();
     expect(screen.queryByText('Changed files: 1')).toBeVisible();
@@ -185,13 +185,15 @@ describe('<BlamelistTableContentRow />', () => {
     // Expand entry using the verdict status column.
     fireEvent.click(screen.getByText('warning'));
     await act(() => jest.runAllTimersAsync());
-    expect(screen.getByText('Result #1 from invocations/inv1')).toBeVisible();
+    expect(
+      screen.getByText('Result #1 from rootInvocations/inv1'),
+    ).toBeVisible();
 
     // Collapse entry.
     fireEvent.click(screen.getByText('warning'));
     await act(() => jest.runAllTimersAsync());
     expect(
-      screen.getByText('Result #1 from invocations/inv1') ||
+      screen.getByText('Result #1 from rootInvocations/inv1') ||
         document.createElement('div'),
     ).not.toBeVisible();
     expect(screen.queryByText('Changed files: 1')).not.toBeVisible();
@@ -200,7 +202,7 @@ describe('<BlamelistTableContentRow />', () => {
     fireEvent.click(screen.getAllByTestId('ChevronRightIcon')[1]);
     await act(() => jest.runAllTimersAsync());
     expect(
-      screen.queryByText('Result #1 from invocations/inv1') ||
+      screen.queryByText('Result #1 from rootInvocations/inv1') ||
         document.createElement('div'),
     ).not.toBeVisible();
     expect(screen.queryByText('Changed files: 1')).toBeVisible();

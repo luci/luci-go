@@ -26,7 +26,8 @@ import {
   ToggleHeadCell,
 } from '@/gitiles/components/commit_table';
 import { OutputCommit } from '@/gitiles/types';
-import { QuerySourceVerdictsResponse_SourceVerdict } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { SourceVerdict } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 
 import { EntryContent } from './entry_content';
 import { BlamelistRowStateProvider } from './row_state_provider';
@@ -55,7 +56,7 @@ export interface BlamelistTableRowProps {
   readonly testVariantBranch: ParsedTestVariantBranchName;
   readonly commit: OutputCommit | null;
   readonly position: string;
-  readonly sourceVerdict: QuerySourceVerdictsResponse_SourceVerdict | null;
+  readonly sourceVerdict: SourceVerdict | null;
   readonly isSvLoading: boolean;
   readonly defaultExpanded?: boolean;
 }
@@ -85,7 +86,10 @@ export function BlamelistTableRow({
         <SegmentContentCell position={position} />
         <CommitToggleContentCell />
         <SourceVerdictStatusContentCell
-          status={sourceVerdict?.status || null}
+          status={
+            sourceVerdict?.approximateStatus ||
+            TestVerdict_Status.STATUS_UNSPECIFIED
+          }
           isLoading={isSvLoading}
         />
         <PositionContentCell position={position} />

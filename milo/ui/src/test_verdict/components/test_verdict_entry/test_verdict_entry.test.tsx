@@ -42,7 +42,7 @@ describe('<TestVerdictEntry />', () => {
           project="proj"
           testId="test-id"
           variantHash="v-hash"
-          invocationId="inv-id"
+          invocationName="invocations/inv-id"
           defaultExpanded={true}
         />
       </FakeContextProvider>,
@@ -56,7 +56,7 @@ describe('<TestVerdictEntry />', () => {
           project="proj"
           testId="test-id"
           variantHash="v-hash"
-          invocationId="inv-id"
+          invocationName="invocations/inv-id"
           defaultExpanded={false}
         />
       </FakeContextProvider>,
@@ -70,7 +70,7 @@ describe('<TestVerdictEntry />', () => {
           project="proj"
           testId="test-id"
           variantHash="v-hash"
-          invocationId="inv-id"
+          invocationName="invocations/inv-id"
           defaultExpanded={true}
         />
       </FakeContextProvider>,

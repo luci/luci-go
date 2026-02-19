@@ -26,7 +26,7 @@ describe('<InvIdLink />', () => {
   it('works with build invocation', () => {
     render(
       <FakeContextProvider>
-        <InvIdLink invId="build-1234" />
+        <InvIdLink rootInvocationName="rootInvocations/build-1234" />
       </FakeContextProvider>,
     );
     expect(screen.getByRole('link')).toHaveAttribute('href', '/ui/b/1234');
@@ -35,7 +35,7 @@ describe('<InvIdLink />', () => {
   it('works with swarming invocation', () => {
     render(
       <FakeContextProvider>
-        <InvIdLink invId="task-chromium-swarm-dev.appspot.com-a0134d" />
+        <InvIdLink invocationName="invocations/task-chromium-swarm-dev.appspot.com-a0134d" />
       </FakeContextProvider>,
     );
     expect(screen.getByRole('link')).toHaveAttribute(
@@ -44,10 +44,22 @@ describe('<InvIdLink />', () => {
     );
   });
 
+  it('works with regular root invocation', () => {
+    render(
+      <FakeContextProvider>
+        <InvIdLink rootInvocationName="rootInvocations/a-regular-root-invocation-id" />
+      </FakeContextProvider>,
+    );
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/ui/test-investigate/invocations/a-regular-root-invocation-id',
+    );
+  });
+
   it('works with regular invocation', () => {
     render(
       <FakeContextProvider>
-        <InvIdLink invId="a-regular-invocation-id" />
+        <InvIdLink invocationName="invocations/a-regular-invocation-id" />
       </FakeContextProvider>,
     );
     expect(screen.getByRole('link')).toHaveAttribute(

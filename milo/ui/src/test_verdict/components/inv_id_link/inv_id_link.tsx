@@ -18,16 +18,38 @@ import { Link as RouterLink } from 'react-router';
 import { parseInvId } from '@/common/tools/invocation_utils';
 import {
   getBuildURLPathFromBuildId,
+  getRootInvocationURLPath,
+  getInvURLPath,
   getSwarmingTaskURL,
 } from '@/common/tools/url_utils';
 
 export interface InvIdLinkProps {
-  readonly invId: string;
+  // The invocation name, e.g. invocations/ants-i1234567890
+  // Either this or rootInvocationName must be provided.
+  readonly invocationName?: string;
+  // The root invocation name, e.g. rootInvocations/ants-i1234567890
+  readonly rootInvocationName?: string;
 }
 
-export function InvIdLink({ invId: invId }: InvIdLinkProps) {
-  const parsedInvId = parseInvId(invId);
-  let link = `/ui/inv/${invId}`;
+export function InvIdLink({
+  invocationName,
+  rootInvocationName,
+}: InvIdLinkProps) {
+  let rootOrLegacyInvocationId = '';
+  let link = '';
+  if (rootInvocationName) {
+    const rootInvocationId = rootInvocationName.slice(
+      'rootInvocations/'.length,
+    );
+    rootOrLegacyInvocationId = rootInvocationId;
+    link = getRootInvocationURLPath(rootInvocationId);
+  } else {
+    const invId = invocationName!.slice('invocations/'.length);
+    rootOrLegacyInvocationId = invId;
+    link = getInvURLPath(invId);
+  }
+
+  const parsedInvId = parseInvId(rootOrLegacyInvocationId);
   switch (parsedInvId.type) {
     case 'build':
       link = getBuildURLPathFromBuildId(parsedInvId.buildId);
@@ -41,7 +63,7 @@ export function InvIdLink({ invId: invId }: InvIdLinkProps) {
 
   return (
     <Link component={RouterLink} to={link}>
-      {invId}
+      {rootOrLegacyInvocationId}
     </Link>
   );
 }

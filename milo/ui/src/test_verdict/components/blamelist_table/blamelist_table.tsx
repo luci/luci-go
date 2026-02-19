@@ -14,11 +14,8 @@
 
 import { ListRange } from 'react-virtuoso';
 
-import {
-  OutputTestVariantBranch,
-  ParsedTestVariantBranchName,
-} from '@/analysis/types';
-import { useTestVariantBranchesClient } from '@/common/hooks/prpc_clients';
+import { OutputTestVariantBranch } from '@/analysis/types';
+import { useTestHistoryClient } from '@/common/hooks/prpc_clients';
 import {
   UseVirtualizedQueryOption,
   useVirtualizedQuery,
@@ -32,10 +29,10 @@ import { useGitilesClient } from '@/gitiles/hooks/prpc_client';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 import { OutputCommit } from '@/gitiles/types';
 import {
-  QuerySourceVerdictsRequest,
-  QuerySourceVerdictsResponse,
-  QuerySourceVerdictsResponse_SourceVerdict,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+  QuerySourceVerdictsV2Request,
+  QuerySourceVerdictsV2Response,
+  SourceVerdict,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import { LogResponse } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
 
 import { BlamelistContextProvider } from './context';
@@ -118,15 +115,23 @@ export function BlamelistTable({
     }),
   });
 
-  const tvbClient = useTestVariantBranchesClient();
+  const thClient = useTestHistoryClient();
   const verdictQueries = useVirtualizedQuery({
     ...queryOptsBase,
     genQuery: (start, end) => ({
-      ...tvbClient.QuerySourceVerdicts.query(
-        QuerySourceVerdictsRequest.fromPartial({
-          parent: ParsedTestVariantBranchName.toString(testVariantBranch),
-          startSourcePosition: (-start).toString(),
-          endSourcePosition: (-end).toString(),
+      ...thClient.QuerySourceVerdicts.query(
+        QuerySourceVerdictsV2Request.fromPartial({
+          project: testVariantBranch.project,
+          testIdFlat: {
+            testId: testVariantBranch.testId,
+            variantHash: testVariantBranch.variantHash,
+          },
+          sourceRefHash: testVariantBranch.refHash,
+          filter:
+            'position <= ' +
+            (-start).toString() +
+            ' AND position > ' +
+            (-end).toString(),
         }),
       ),
       // QuerySourceVerdicts is somewhat expensive.
@@ -135,10 +140,8 @@ export function BlamelistTable({
       // queried less than 5 mins ago.
       staleTime:
         start - queryOptsBase.rangeBoundary[0] > 1000 ? Infinity : 300_000,
-      select: (data: QuerySourceVerdictsResponse) => {
-        const svs: Array<
-          QuerySourceVerdictsResponse_SourceVerdict | undefined
-        > = [];
+      select: (data: QuerySourceVerdictsV2Response) => {
+        const svs: Array<SourceVerdict | undefined> = [];
         for (const sv of data.sourceVerdicts) {
           svs[-start - parseInt(sv.position)] = sv;
         }

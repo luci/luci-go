@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Icon, SxProps, Theme } from '@mui/material';
+import { Icon, IconProps, SxProps, Theme } from '@mui/material';
 
 import {
   VERDICT_STATUS_COLOR_MAP,
@@ -40,7 +40,7 @@ const VERDICT_STATUS_OVERRIDE_ICON_FONT_MAP = Object.freeze({
   [TestVerdict_StatusOverride.EXONERATED]: 'remove_circle',
 });
 
-export interface VerdictStatusIconProps {
+export interface VerdictStatusIconProps extends IconProps {
   readonly statusV2: SpecifiedTestVerdictStatus;
   readonly statusOverride?: SpecifiedTestVerdictStatusOverride;
   readonly sx?: SxProps<Theme>;
@@ -50,6 +50,7 @@ export function VerdictStatusIcon({
   statusV2,
   statusOverride,
   sx,
+  ...props
 }: VerdictStatusIconProps) {
   if (
     statusOverride !== undefined &&
@@ -57,6 +58,7 @@ export function VerdictStatusIcon({
   ) {
     return (
       <Icon
+        {...props}
         sx={{ color: VERDICT_STATUS_OVERRIDE_COLOR_MAP[statusOverride], ...sx }}
       >
         {VERDICT_STATUS_OVERRIDE_ICON_FONT_MAP[statusOverride]}
@@ -64,7 +66,7 @@ export function VerdictStatusIcon({
     );
   }
   return (
-    <Icon sx={{ color: VERDICT_STATUS_COLOR_MAP[statusV2], ...sx }}>
+    <Icon {...props} sx={{ color: VERDICT_STATUS_COLOR_MAP[statusV2], ...sx }}>
       {VERDICT_STATUS_ICON_FONT_MAP[statusV2]}
     </Icon>
   );

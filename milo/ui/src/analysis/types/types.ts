@@ -30,10 +30,7 @@ import {
   Segment,
   TestVariantBranch,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
-import {
-  TestVerdict,
-  TestVerdictStatus,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 
 /**
  * @fileoverview
@@ -44,19 +41,15 @@ import {
  * coercion (i.e. `object.nullable!`) everywhere.
  */
 
-export type SpecifiedTestVerdictStatus = Exclude<
-  TestVerdictStatus,
-  TestVerdictStatus.TEST_VERDICT_STATUS_UNSPECIFIED
+export type SpecifiedTestVerdict_Status = Exclude<
+  TestVerdict_Status,
+  TestVerdict_Status.STATUS_UNSPECIFIED
 >;
 
 export type SpecifiedSourceVerdictStatus = Exclude<
   QuerySourceVerdictsResponse_VerdictStatus,
   QuerySourceVerdictsResponse_VerdictStatus.VERDICT_EXPECTATION_STATUS_UNSPECIFIED
 >;
-
-export interface OutputTestVerdict extends TestVerdict {
-  readonly status: SpecifiedTestVerdictStatus;
-}
 
 export type OutputClusterEntry = NonNullableProps<
   ClusterResponse_ClusteredTestResult_ClusterEntry,

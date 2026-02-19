@@ -14,9 +14,13 @@
 
 import { Skeleton, TableCell } from '@mui/material';
 
-import { SourceVerdictStatusIcon } from '@/analysis/components/source_verdict_status_icon';
-import { SpecifiedSourceVerdictStatus } from '@/analysis/types';
+import { VerdictStatusIcon } from '@/common/components/verdict_status_icon';
 import { useSetExpanded } from '@/gitiles/components/commit_table';
+import { TestVerdict_Status as Analysis_TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import {
+  TestVerdict_Status,
+  TestVerdict_StatusOverride,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 
 import { FocusTarget, useSetFocusTarget } from './row_state_provider';
 
@@ -32,7 +36,7 @@ export function SourceVerdictStatusHeadCell() {
 }
 
 export interface SourceVerdictStatusContentCellProps {
-  readonly status: SpecifiedSourceVerdictStatus | null;
+  readonly status: Analysis_TestVerdict_Status;
   /**
    * When `isLoading` is false and `sourceVerdict` is `null`, this entry does
    * not have an associated source verdict.
@@ -47,11 +51,16 @@ export function SourceVerdictStatusContentCell({
   const setExpanded = useSetExpanded();
   const setFocusTarget = useSetFocusTarget();
 
+  // Convert from LUCI Analysis status to ResultDB status.
+  // At time of writing, the enums are aligned 1:1 so there is
+  // no conversion issue.
+  const rdbStatus: TestVerdict_Status = status;
   return (
     <TableCell sx={{ minWidth: '30px' }}>
-      {status ? (
-        <SourceVerdictStatusIcon
-          status={status}
+      {rdbStatus !== TestVerdict_Status.STATUS_UNSPECIFIED ? (
+        <VerdictStatusIcon
+          statusV2={rdbStatus}
+          statusOverride={TestVerdict_StatusOverride.NOT_OVERRIDDEN}
           sx={{ verticalAlign: 'middle', cursor: 'pointer' }}
           onClick={() => {
             setExpanded((expanded) => !expanded);

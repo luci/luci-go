@@ -21,7 +21,7 @@ import {
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
 import { CommitContent } from '@/gitiles/components/commit_table';
-import { QuerySourceVerdictsResponse_SourceVerdict } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { SourceVerdict } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 import { TestVerdictEntry } from '@/test_verdict/components/test_verdict_entry';
 
 import { useProject } from '../context';
@@ -30,7 +30,7 @@ import { FocusTarget, useFocusTarget } from '../row_state_provider';
 export interface EntryContentProps {
   readonly testId: string;
   readonly variantHash: string;
-  readonly sourceVerdict: QuerySourceVerdictsResponse_SourceVerdict | null;
+  readonly sourceVerdict: SourceVerdict | null;
   /**
    * When `isSvLoading` is false and `sourceVerdict` is `null`, this entry does
    * not have an associated source verdict.
@@ -51,13 +51,14 @@ export function EntryContent({
   return (
     <>
       {sourceVerdict ? (
-        sourceVerdict.verdicts.map((v, i) => (
+        sourceVerdict.invocationVerdicts.map((v, i) => (
           <TestVerdictEntry
-            key={v.invocationId}
+            key={v.rootInvocation || v.invocation}
             project={project}
             testId={testId}
             variantHash={variantHash}
-            invocationId={v.invocationId}
+            invocationName={v.invocation}
+            rootInvocationName={v.rootInvocation}
             changes={v.changelists.map((c) => ({
               host: c.host,
               change: c.change,

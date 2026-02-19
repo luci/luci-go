@@ -82,6 +82,10 @@ export function getSwarmingBotListURL(
   )}`;
 }
 
+export function getRootInvocationURLPath(rootInvocationId: string): string {
+  return `/ui/test-investigate/invocations/${rootInvocationId}`;
+}
+
 export function getInvURLPath(invId: string): string {
   return `/ui/inv/${invId}`;
 }
