@@ -75,10 +75,26 @@ message Disk {
 
   // The name of a disk type to use for this disk.
   // https://cloud.google.com/compute/docs/reference/rest/v1/diskTypes/list.
+  // Examples:
+  // pd-standard
+  // pd-ssd
+  // local-ssd
+  // pd-balanced
+  // pd-extreme
+  // hyperdisk-balanced
+  // hyperdisk-extreme
+  // hyperdisk-throughput
   string type = 3;
 
   // The disk interface to use for attaching this disk.
   DiskInterface interface = 4;
+
+  // Provisioned IOPS for the disk. Only applicable to certain Hyperdisk types
+  // (e.g., hyperdisk-extreme).
+  int64 provisioned_iops = 5;
+  // Provisioned throughput (MB/s) for the disk. Only applicable to certain
+  // Hyperdisk types (e.g., hyperdisk-throughput, hyperdisk-balanced).
+  int64 provisioned_throughput = 6;
 }
 
 // A description of instance metadata.
