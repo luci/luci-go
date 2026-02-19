@@ -1601,7 +1601,7 @@ type RootInvocationDefinition struct {
 	// Limit 256 bytes of UTF-8.
 	// Required.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// A key-value map of properties the scheduler uses to differentiate between
+	// A key-value map of properties used to differentiate between
 	// definitions with the same name and system. For example 'cluster_id' and
 	// 'run_target' for ATP.
 	//
@@ -1677,7 +1677,8 @@ func (x *RootInvocationDefinition) GetPropertiesHash() string {
 	return ""
 }
 
-// Represents a set of artifacts produced from source code.
+// Represents a set of artifacts produced from source code, e.g.
+// a built software binary and associated content.
 type BuildDescriptor struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

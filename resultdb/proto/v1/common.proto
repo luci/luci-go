@@ -629,7 +629,7 @@ message RootInvocationDefinition {
     map<string, string> def = 1;
   }
 
-  // A key-value map of properties the scheduler uses to differentiate between
+  // A key-value map of properties used to differentiate between
   // definitions with the same name and system. For example 'cluster_id' and
   // 'run_target' for ATP.
   //
@@ -646,7 +646,8 @@ message RootInvocationDefinition {
   string properties_hash = 4;
 }
 
-// Represents a set of artifacts produced from source code.
+// Represents a set of artifacts produced from source code, e.g.
+// a built software binary and associated content.
 message BuildDescriptor {
   oneof definition {
     AndroidBuildDescriptor android_build = 1;
