@@ -216,7 +216,7 @@ func ListInstanceTags(ctx context.Context, inst *Instance) (out []*Tag, err erro
 	// tagged instances in our datastore have few hundred tags at most, so this is
 	// bearable.
 	q := datastore.NewQuery("InstanceTag").Ancestor(datastore.KeyForObj(ctx, inst))
-	if datastore.GetAll(ctx, q, &out); err != nil {
+	if err := datastore.GetAll(ctx, q, &out); err != nil {
 		return nil, transient.Tag.Apply(errors.Fmt("datastore query failed: %w", err))
 	}
 	sort.Slice(out, func(i, j int) bool {

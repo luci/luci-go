@@ -305,7 +305,7 @@ func (l *BigQueryEventLogger) HandlePubSubPush(ctx context.Context, body io.Read
 			MessageID  string            `json:"messageId"`
 		} `json:"message"`
 	}
-	if json.Unmarshal(blob, &msg); err != nil {
+	if err := json.Unmarshal(blob, &msg); err != nil {
 		return errors.Fmt("failed to unmarshal PubSub message: %w", err)
 	}
 	task := &tasks.LogEvents{}
