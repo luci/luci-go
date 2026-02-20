@@ -13,6 +13,66 @@
 // limitations under the License.
 
 /**
+ * google.protobuf.FieldMask
+ */
+export interface FieldMask {
+  /**
+   * List of properties associated with a given operation.
+   */
+  paths?: string[];
+}
+
+/**
+ * google.longrunning.Operation
+ */
+export interface Operation<TMetadata, TResponse, TStatusDetails> {
+  /**
+   * Operation identifier.
+   */
+  name?: string;
+
+  /**
+   * Custom metadata information.
+   */
+  metadata?: { [key: string]: TMetadata };
+
+  /**
+   * Flag to indicate whether the operation is complete or not.
+   */
+  done?: boolean;
+
+  /**
+   * If the operation had an error, the status details are contained within.
+   */
+  error?: Status<TStatusDetails>;
+
+  /**
+   * Underlying API response for the operation.
+   */
+  response?: { [key: string]: TResponse };
+}
+
+/**
+ * google.rpc.Status
+ */
+export interface Status<TStatusDetails> {
+  /**
+   * Canonical HTTP status code.
+   */
+  code?: number;
+
+  /**
+   * String representation of the status code.
+   */
+  message?: string;
+
+  /**
+   * Error details, if any.
+   */
+  details?: Array<{ [key: string]: TStatusDetails }>;
+}
+
+/**
  * google.protobuf.Timestamp
  */
 export interface Timestamp {

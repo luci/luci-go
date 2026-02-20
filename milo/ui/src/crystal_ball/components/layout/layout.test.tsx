@@ -34,6 +34,8 @@ describe('Layout', () => {
         </Routes>
       </MemoryRouter>,
     );
+
+    expect(screen.getByText(/CBD/i)).toBeInTheDocument();
   });
 
   it('displays "CBD" on landing page', () => {
