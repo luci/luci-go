@@ -82,14 +82,14 @@ func (s *resultDBServer) QueryTestAggregations(ctx context.Context, req *pb.Quer
 	}
 	// Execute the query.
 	q := &testaggregations.SingleLevelQuery{
-		RootInvocationID:         rootInvID,
-		Level:                    req.Predicate.AggregationLevel,
-		TestPrefixFilter:         req.Predicate.TestPrefixFilter,
-		ContainsTestResultFilter: req.Predicate.ContainsTestResultFilter,
-		Filter:                   req.Predicate.Filter,
-		Access:                   access,
-		PageSize:                 pageSize,
-		Order:                    order,
+		RootInvocationID: rootInvID,
+		Level:            req.Predicate.AggregationLevel,
+		TestPrefixFilter: req.Predicate.TestPrefixFilter,
+		SearchCriteria:   req.Predicate.SearchCriteria,
+		Filter:           req.Predicate.Filter,
+		Access:           access,
+		PageSize:         pageSize,
+		Order:            order,
 	}
 
 	startTime := clock.Now(ctx)
@@ -175,9 +175,9 @@ func validateQueryTestAggregationsPredicate(predicate *pb.TestAggregationPredica
 			return errors.Fmt("test_prefix_filter: level: must be equal to, or coarser than, the requested aggregation_level (%s)", predicate.AggregationLevel)
 		}
 	}
-	if predicate.ContainsTestResultFilter != "" {
-		if err := testresultsv2.ValidateFilter(predicate.ContainsTestResultFilter); err != nil {
-			return errors.Fmt("contains_test_result_filter: %w", err)
+	if predicate.SearchCriteria != "" {
+		if err := testresultsv2.ValidateFilter(predicate.SearchCriteria); err != nil {
+			return errors.Fmt("search_criteria: %w", err)
 		}
 	}
 	if predicate.Filter != "" {

@@ -25,7 +25,7 @@ import (
 func TestValidateFilter(t *testing.T) {
 	ftt.Run("ValidateFilter", t, func(t *ftt.Test) {
 		t.Run("Invalid syntax", func(t *ftt.Test) {
-			err := ValidateFilter("verdict_counts.passed =")
+			err := ValidateFilter("matched_verdict_counts.passed =")
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err, should.ErrLike("expected arg after ="))
 		})
@@ -37,7 +37,7 @@ func TestValidateFilter(t *testing.T) {
 		})
 
 		t.Run("Valid", func(t *ftt.Test) {
-			err := ValidateFilter("verdict_counts.passed > 0")
+			err := ValidateFilter("matched_verdict_counts.passed > 0")
 			assert.Loosely(t, err, should.BeNil)
 		})
 	})

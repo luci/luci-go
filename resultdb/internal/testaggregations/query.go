@@ -48,12 +48,18 @@ type SingleLevelQuery struct {
 	Level pb.AggregationLevel
 	// The prefix of test identifiers to filter by. Optional.
 	TestPrefixFilter *pb.TestIdentifierPrefix
-	// An AIP-160 filter expression for test results to filter by. Optional.
-	// See pb.TestAggregationPredicate and filtering implementation in
-	// `testresultsv2` package for details. If this is set, an aggregation
-	// will only be returned if this filter expression matches at least one
-	// test result in the aggregation.
-	ContainsTestResultFilter string
+	// An AIP-160 filter expression used to search for test results and modules. Optional.
+	// See see pb.TestAggregationPredicate for details.
+	//
+	// For test results matching, see the filter implementation in `testresultsv2` package
+	// for details.
+	// For module matching, see module_filter.go in this package for details.
+	//
+	// The filter is validated against the test result filter schema. If features
+	// are used from the test result filter schema which are not supported by the
+	// module filter schema, it is assumed that the user is filtering to test results
+	// and no modules will be returned.
+	SearchCriteria string
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
 	// The number of test aggregations to return per page.
@@ -100,6 +106,10 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 	var b spanutil.Buffer
 	var rowsSeen int
 
+	// For performance reasons, the query only selects these fields if the search criteria
+	// field is set.
+	hasSearchCriteria := q.SearchCriteria != ""
+
 	query := span.Query(ctx, st)
 	err = query.Do(func(row *spanner.Row) error {
 		prefix := &pb.TestIdentifierPrefix{
@@ -112,15 +122,21 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 		var variant []string
 		var uiPriority int64
 		var moduleStatus int64
+		var moduleMatches bool
 		var moduleStatusCounts moduleStatusCounts
-		var verdictCounts verdictCounts
+		var totalVerdictCounts verdictCounts
+		// Counts of verdicts which match the test filter criteria.
+		var matchedVerdictCounts verdictCounts
 		var nextFinerLevel pb.AggregationLevel
 		var columns []interface{}
 
 		switch q.Level {
 		case pb.AggregationLevel_INVOCATION:
 			columns = columnsForModuleCounts(&moduleStatusCounts)
-			columns = append(columns, columnsForVerdictCounts(&verdictCounts)...)
+			columns = append(columns, columnsForVerdictCounts(&matchedVerdictCounts)...)
+			if hasSearchCriteria {
+				columns = append(columns, columnsForVerdictCounts(&totalVerdictCounts)...)
+			}
 			err := b.FromSpanner(row, columns...)
 			if err != nil {
 				return err
@@ -134,8 +150,12 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 				&variant,
 				&uiPriority,
 				&moduleStatus,
+				&moduleMatches,
 			}
-			columns = append(columns, columnsForVerdictCounts(&verdictCounts)...)
+			columns = append(columns, columnsForVerdictCounts(&matchedVerdictCounts)...)
+			if hasSearchCriteria {
+				columns = append(columns, columnsForVerdictCounts(&totalVerdictCounts)...)
+			}
 			err := b.FromSpanner(row, columns...)
 			if err != nil {
 				return err
@@ -150,7 +170,10 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 				&variant,
 				&uiPriority,
 			}
-			columns = append(columns, columnsForVerdictCounts(&verdictCounts)...)
+			columns = append(columns, columnsForVerdictCounts(&matchedVerdictCounts)...)
+			if hasSearchCriteria {
+				columns = append(columns, columnsForVerdictCounts(&totalVerdictCounts)...)
+			}
 			err := b.FromSpanner(row, columns...)
 			if err != nil {
 				return err
@@ -166,7 +189,10 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 				&variant,
 				&uiPriority,
 			}
-			columns = append(columns, columnsForVerdictCounts(&verdictCounts)...)
+			columns = append(columns, columnsForVerdictCounts(&matchedVerdictCounts)...)
+			if hasSearchCriteria {
+				columns = append(columns, columnsForVerdictCounts(&totalVerdictCounts)...)
+			}
 			err := b.FromSpanner(row, columns...)
 			if err != nil {
 				return err
@@ -183,28 +209,19 @@ func (q *SingleLevelQuery) Run(ctx context.Context, pageToken string, rowCallbac
 			}
 		}
 
+		if !hasSearchCriteria {
+			// If there is no search criteria, so all verdicts match.
+			totalVerdictCounts = matchedVerdictCounts
+		}
+
 		agg := &pb.TestAggregation{
-			Id:             prefix,
-			NextFinerLevel: nextFinerLevel,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
-				// By status after overrides.
-				Failed:           int32(verdictCounts.Failed),
-				Flaky:            int32(verdictCounts.Flaky),
-				Passed:           int32(verdictCounts.Passed),
-				Skipped:          int32(verdictCounts.Skipped),
-				ExecutionErrored: int32(verdictCounts.ExecutionErrored),
-				Precluded:        int32(verdictCounts.Precluded),
-				Exonerated:       int32(verdictCounts.FailedExonerated + verdictCounts.FlakyExonerated + verdictCounts.ExecutionErroredExonerated + verdictCounts.PrecludedExonerated),
-				// By base status.
-				FailedBase:           int32(verdictCounts.Failed + verdictCounts.FailedExonerated),
-				FlakyBase:            int32(verdictCounts.Flaky + verdictCounts.FlakyExonerated),
-				PassedBase:           int32(verdictCounts.Passed),
-				SkippedBase:          int32(verdictCounts.Skipped),
-				ExecutionErroredBase: int32(verdictCounts.ExecutionErrored + verdictCounts.ExecutionErroredExonerated),
-				PrecludedBase:        int32(verdictCounts.Precluded + verdictCounts.PrecludedExonerated),
-			},
+			Id:                   prefix,
+			NextFinerLevel:       nextFinerLevel,
+			VerdictCounts:        toVerdictCountsProto(totalVerdictCounts),
+			MatchedVerdictCounts: toVerdictCountsProto(matchedVerdictCounts),
 		}
 		if q.Level == pb.AggregationLevel_MODULE {
+			agg.ModuleMatches = moduleMatches
 			agg.ModuleStatus = pb.TestAggregation_ModuleStatus(moduleStatus)
 		}
 		if q.Level == pb.AggregationLevel_INVOCATION {
@@ -293,9 +310,12 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 		wherePrefixClause = "(" + clause + ")"
 	}
 
-	containsTestResultFilterClause := ""
-	if q.ContainsTestResultFilter != "" {
-		clause, additionalParams, err := testresultsv2.WhereClause(q.ContainsTestResultFilter, "TR", "ctrf_")
+	// Leaving testResultSearchClause empty signals to the template that there is no search
+	// criteria, and certain code can be omitted for performance reasons.
+	testResultSearchClause := ""
+	moduleSearchClause := "(TRUE)"
+	if q.SearchCriteria != "" {
+		clause, additionalParams, err := testresultsv2.WhereClause(q.SearchCriteria, "TR", "trsc_")
 		if err != nil {
 			return spanner.Statement{}, errors.Fmt("contains_test_result_filter: %w", err)
 		}
@@ -303,7 +323,20 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 			// All parameters should be prefixed by "ctrf" so should not conflict with existing parameters.
 			params[p.Name] = p.Value
 		}
-		containsTestResultFilterClause = "(" + clause + ")"
+		testResultSearchClause = "(" + clause + ")"
+
+		moduleClause, additionalParams, err := moduleWhereClause(q.SearchCriteria, "", "msc_")
+		if err != nil {
+			// Because the filter is valid for test results, it is considered valid, even if it does
+			// not match the schema for a module filter. In this case, it just matches no modules.
+			moduleSearchClause = "(FALSE)"
+		} else {
+			for _, p := range additionalParams {
+				// All parameters should be prefixed by "ctrf" so should not conflict with existing parameters.
+				params[p.Name] = p.Value
+			}
+			moduleSearchClause = "(" + moduleClause + ")"
+		}
 	}
 
 	paginationClause := "TRUE"
@@ -328,13 +361,14 @@ func (q *SingleLevelQuery) buildQuery(pageToken string) (spanner.Statement, erro
 	}
 
 	templateParams := templateParameters{
-		AggregateColumns:               groupingColumns(q.Level),
-		OrderByColumns:                 orderByColumns(q.Order, q.Level),
-		WherePrefixClause:              wherePrefixClause,
-		ContainsTestResultFilterClause: containsTestResultFilterClause,
-		PaginationClause:               paginationClause,
-		FilterClause:                   filterClause,
-		FullAccess:                     q.Access.Level == permissions.FullAccess,
+		AggregateColumns:       groupingColumns(q.Level),
+		OrderByColumns:         orderByColumns(q.Order, q.Level),
+		WherePrefixClause:      wherePrefixClause,
+		TestResultSearchClause: testResultSearchClause,
+		ModuleSearchClause:     moduleSearchClause,
+		PaginationClause:       paginationClause,
+		FilterClause:           filterClause,
+		FullAccess:             q.Access.Level == permissions.FullAccess,
 		ResultStatuses: testResultStatusDefinitions{
 			Passed:           int64(pb.TestResult_PASSED),
 			Failed:           int64(pb.TestResult_FAILED),
@@ -447,8 +481,10 @@ var queryTmpl = template.Must(template.New("").Parse(`
 					ELSE {{.VerdictStatuses.Precluded}} -- Precluded
 					END) AS VerdictStatus,
 				ANY_VALUE(E.T3CaseName IS NOT NULL) AS IsExonerated,
-			{{if ne .ContainsTestResultFilterClause ""}}
-				LOGICAL_OR({{.ContainsTestResultFilterClause}}) AS ContainsTestResultMatchingFilter,
+			{{if ne .TestResultSearchClause ""}}
+				LOGICAL_OR({{.TestResultSearchClause}}) AS ContainsTestResultMatchingFilter,
+			{{else}}
+				TRUE AS ContainsTestResultMatchingFilter,
 			{{end}}
 			FROM ({{template "TestResults" .}}
 			) TR
@@ -469,6 +505,17 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			{{.AggregateColumns}},
 			ANY_VALUE(ModuleVariantMasked) AS ModuleVariantMasked,
 		{{end}}
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.Passed}}) AS MatchingAndPassed,
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.Failed}} AND NOT IsExonerated) AS MatchingAndFailed,
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.Flaky}} AND NOT IsExonerated) AS MatchingAndFlaky,
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.Skipped}}) AS MatchingAndSkipped,
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.ExecutionErrored}} AND NOT IsExonerated) AS MatchingAndExecutionErrored,
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.Precluded}} AND NOT IsExonerated) AS MatchingAndPrecluded,
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.Failed}} AND IsExonerated) AS MatchingAndFailedExonerated,
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.Flaky}} AND IsExonerated) AS MatchingAndFlakyExonerated,
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.ExecutionErrored}} AND IsExonerated) AS MatchingAndExecutionErroredExonerated,
+			COUNTIF(ContainsTestResultMatchingFilter AND VerdictStatus = {{.VerdictStatuses.Precluded}} AND IsExonerated) AS MatchingAndPrecludedExonerated,
+		{{if ne .TestResultSearchClause ""}}
 			COUNTIF(VerdictStatus = {{.VerdictStatuses.Passed}}) AS Passed,
 			COUNTIF(VerdictStatus = {{.VerdictStatuses.Failed}} AND NOT IsExonerated) AS Failed,
 			COUNTIF(VerdictStatus = {{.VerdictStatuses.Flaky}} AND NOT IsExonerated) AS Flaky,
@@ -479,8 +526,6 @@ var queryTmpl = template.Must(template.New("").Parse(`
 			COUNTIF(VerdictStatus = {{.VerdictStatuses.Flaky}} AND IsExonerated) AS FlakyExonerated,
 			COUNTIF(VerdictStatus = {{.VerdictStatuses.ExecutionErrored}} AND IsExonerated) AS ExecutionErroredExonerated,
 			COUNTIF(VerdictStatus = {{.VerdictStatuses.Precluded}} AND IsExonerated) AS PrecludedExonerated,
-		{{if ne .ContainsTestResultFilterClause ""}}
-			LOGICAL_OR(ContainsTestResultMatchingFilter) AS ContainsTestResultMatchingFilter,
 		{{end}}
 			(CASE
 				-- Has blocking failures: priority 100
@@ -508,9 +553,26 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		ANY_VALUE(ModuleVariantMasked) AS ModuleVariantMasked,
 	{{end}}
 		MAX(UIPriority) AS UIPriority,
-		-- This field is used to ensure filters on module_status for FINE and COARSE levels are not rejected.
-		-- It is always UNSPECIFIED for these levels.
-		{{.ModuleStatuses.Unspecified}} AS ModuleStatus,
+		-- Define all fields that filters may use, even if they don't make sense at
+		-- the final aggregation level, as documented in the protos.
+		({{.ModuleStatuses.Unspecified}}) AS ModuleStatus,
+		FALSE As ModuleMatches,
+		-- Matched verdict counts, should always be returned as they can be filtered on.
+		SUM(MatchingAndPassed) AS TestsMatchingAndPassed,
+		SUM(MatchingAndFailed) AS TestsMatchingAndFailed,
+		SUM(MatchingAndFlaky) AS TestsMatchingAndFlaky,
+		SUM(MatchingAndSkipped) AS TestsMatchingAndSkipped,
+		SUM(MatchingAndExecutionErrored) AS TestsMatchingAndExecutionErrored,
+		SUM(MatchingAndPrecluded) AS TestsMatchingAndPrecluded,
+		SUM(MatchingAndFailedExonerated) AS TestsMatchingAndFailedExonerated,
+		SUM(MatchingAndFlakyExonerated) AS TestsMatchingAndFlakyExonerated,
+		SUM(MatchingAndExecutionErroredExonerated) AS TestsMatchingAndExecutionErroredExonerated,
+		SUM(MatchingAndPrecludedExonerated) AS TestsMatchingAndPrecludedExonerated,
+		-- This field is used to support filtering on matched_verdict_counts.exonerated.
+		(SUM(MatchingAndFailedExonerated) + SUM(MatchingAndFlakyExonerated) + SUM(MatchingAndExecutionErroredExonerated) + SUM(MatchingAndPrecludedExonerated)) AS TestsMatchingAndExonerated,
+	{{if ne .TestResultSearchClause ""}}
+		-- Total verdict counts. As there is a test result filter, these may differ from the
+		-- matched verdict counts, so should be returned separately.
 		SUM(Passed) AS TestsPassed,
 		SUM(Failed) AS TestsFailed,
 		SUM(Flaky) AS TestsFlaky,
@@ -521,10 +583,6 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		SUM(FlakyExonerated) AS TestsFlakyExonerated,
 		SUM(ExecutionErroredExonerated) AS TestsExecutionErroredExonerated,
 		SUM(PrecludedExonerated) AS TestsPrecludedExonerated,
-		-- This field is used to support filtering on verdict_counts.exonerated.
-		(SUM(FailedExonerated) + SUM(FlakyExonerated) + SUM(ExecutionErroredExonerated) + SUM(PrecludedExonerated)) AS TestsExonerated,
-	{{if ne .ContainsTestResultFilterClause ""}}
-		LOGICAL_OR(ContainsTestResultMatchingFilter) AS ContainsTestResultMatchingFilter,
 	{{end}}
 	FROM ({{template "TestAggregationsByShard" .}}
 	)
@@ -608,6 +666,22 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		-- For legacy modules, there may no work unit(s) defining the module status.
 		-- Default the module status to UNSPECIFIED.
 		COALESCE(M.ModuleStatus, {{.ModuleStatuses.Unspecified}}) AS ModuleStatus,
+		-- Matched verdict counts, should always be returned as they can be filtered on.
+		COALESCE(TA.TestsMatchingAndPassed, 0) AS TestsMatchingAndPassed,
+		COALESCE(TA.TestsMatchingAndFailed, 0) AS TestsMatchingAndFailed,
+		COALESCE(TA.TestsMatchingAndFlaky, 0) AS TestsMatchingAndFlaky,
+		COALESCE(TA.TestsMatchingAndSkipped, 0) AS TestsMatchingAndSkipped,
+		COALESCE(TA.TestsMatchingAndExecutionErrored, 0) AS TestsMatchingAndExecutionErrored,
+		COALESCE(TA.TestsMatchingAndPrecluded, 0) AS TestsMatchingAndPrecluded,
+		COALESCE(TA.TestsMatchingAndFailedExonerated, 0) AS TestsMatchingAndFailedExonerated,
+		COALESCE(TA.TestsMatchingAndFlakyExonerated, 0) AS TestsMatchingAndFlakyExonerated,
+		COALESCE(TA.TestsMatchingAndExecutionErroredExonerated, 0) AS TestsMatchingAndExecutionErroredExonerated,
+		COALESCE(TA.TestsMatchingAndPrecludedExonerated, 0) AS TestsMatchingAndPrecludedExonerated,
+		-- This field is used to support filtering on matched_verdict_counts.exonerated.
+		COALESCE(TA.TestsMatchingAndExonerated, 0) AS TestsMatchingAndExonerated,
+	{{if ne .TestResultSearchClause ""}}
+		-- Total verdict counts. As there is a test result filter, these may differ from the
+		-- matched verdict counts, so should be returned separately.
 		COALESCE(TA.TestsPassed, 0) AS TestsPassed,
 		COALESCE(TA.TestsFailed, 0) AS TestsFailed,
 		COALESCE(TA.TestsFlaky, 0) AS TestsFlaky,
@@ -618,10 +692,6 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		COALESCE(TA.TestsFlakyExonerated, 0) AS TestsFlakyExonerated,
 		COALESCE(TA.TestsExecutionErroredExonerated, 0) AS TestsExecutionErroredExonerated,
 		COALESCE(TA.TestsPrecludedExonerated, 0) AS TestsPrecludedExonerated,
-		-- This field is used to support filtering on verdict_counts.exonerated.
-		COALESCE(TA.TestsExonerated, 0) AS TestsExonerated,
-	{{if ne .ContainsTestResultFilterClause ""}}
-		COALESCE(TA.ContainsTestResultMatchingFilter, FALSE) AS ContainsTestResultMatchingFilter,
 	{{end}}
 	FROM ({{template "ModuleSummaries" .}}
 	) M
@@ -630,6 +700,14 @@ var queryTmpl = template.Must(template.New("").Parse(`
 	-- have an associated work unit with an identical variant.
 	FULL OUTER JOIN ({{template "TestAggregations" .}}
 	) TA USING (ModuleName, ModuleScheme, ModuleVariantHash)
+{{end}}
+{{define "ModulesWithSearch"}}
+	-- Modules with search
+	SELECT
+		*,
+		({{.ModuleSearchClause}}) AS ModuleMatches,
+	FROM ({{template "ModulesWithResults" .}}
+	)
 {{end}}
 {{define "ModuleAggregations"}}
 	-- Module aggregations.
@@ -650,6 +728,17 @@ SELECT
 	{{.AggregateColumns}},
 	ModuleVariantMasked,
 	UIPriority,
+	TestsMatchingAndPassed,
+	TestsMatchingAndFailed,
+	TestsMatchingAndFlaky,
+	TestsMatchingAndSkipped,
+	TestsMatchingAndExecutionErrored,
+	TestsMatchingAndPrecluded,
+	TestsMatchingAndFailedExonerated,
+	TestsMatchingAndFlakyExonerated,
+	TestsMatchingAndExecutionErroredExonerated,
+	TestsMatchingAndPrecludedExonerated,
+{{if ne .TestResultSearchClause ""}}
 	TestsPassed,
 	TestsFailed,
 	TestsFlaky,
@@ -660,10 +749,10 @@ SELECT
 	TestsFlakyExonerated,
 	TestsExecutionErroredExonerated,
 	TestsPrecludedExonerated,
+{{end}}
 FROM ({{template "TestAggregations" .}}
 )
 WHERE {{.PaginationClause}} AND {{.FilterClause}}
-{{if ne .ContainsTestResultFilterClause ""}} AND ContainsTestResultMatchingFilter{{end}}
 ORDER BY {{.OrderByColumns}}
 LIMIT @pageSize
 {{end}}
@@ -676,6 +765,18 @@ SELECT
 	ModuleVariantMasked,
 	UIPriority,
 	ModuleStatus,
+	ModuleMatches,
+	TestsMatchingAndPassed,
+	TestsMatchingAndFailed,
+	TestsMatchingAndFlaky,
+	TestsMatchingAndSkipped,
+	TestsMatchingAndExecutionErrored,
+	TestsMatchingAndPrecluded,
+	TestsMatchingAndFailedExonerated,
+	TestsMatchingAndFlakyExonerated,
+	TestsMatchingAndExecutionErroredExonerated,
+	TestsMatchingAndPrecludedExonerated,
+{{if ne .TestResultSearchClause ""}}
 	TestsPassed,
 	TestsFailed,
 	TestsFlaky,
@@ -686,10 +787,10 @@ SELECT
 	TestsFlakyExonerated,
 	TestsExecutionErroredExonerated,
 	TestsPrecludedExonerated,
-FROM ({{template "ModulesWithResults" .}}
+{{end}}
+FROM ({{template "ModulesWithSearch" .}}
 )
 WHERE {{.PaginationClause}} AND {{.FilterClause}}
-{{if ne .ContainsTestResultFilterClause ""}} AND ContainsTestResultMatchingFilter{{end}}
 ORDER BY {{.OrderByColumns}}
 LIMIT @pageSize
 {{end}}
@@ -697,32 +798,41 @@ LIMIT @pageSize
 
 {{define "invocation"}}
 SELECT
-	COALESCE(MA.Failed, 0) AS ModulesFailed,
-	COALESCE(MA.Running, 0) AS ModulesRunning,
-	COALESCE(MA.Pending, 0) AS ModulesPending,
-	COALESCE(MA.Cancelled, 0) AS ModulesCancelled,
-	COALESCE(MA.Flaky, 0) AS ModulesFlaky,
-	COALESCE(MA.Succeeded, 0) AS ModulesSucceeded,
-	COALESCE(MA.Skipped, 0) AS ModulesSkipped,
-	COALESCE(TA.TestsPassed, 0) AS TestsPassed,
-	COALESCE(TA.TestsFailed, 0) AS TestsFailed,
-	COALESCE(TA.TestsFlaky, 0) AS TestsFlaky,
-	COALESCE(TA.TestsSkipped, 0) AS TestsSkipped,
-	COALESCE(TA.TestsExecutionErrored, 0) AS TestsExecutionErrored,
-	COALESCE(TA.TestsPrecluded, 0) AS TestsPrecluded,
-	COALESCE(TA.TestsFailedExonerated, 0) AS TestsFailedExonerated,
-	COALESCE(TA.TestsFlakyExonerated, 0) AS TestsFlakyExonerated,
-	COALESCE(TA.TestsExecutionErroredExonerated, 0) AS TestsExecutionErroredExonerated,
-	COALESCE(TA.TestsPrecludedExonerated, 0) AS TestsPrecludedExonerated
+	MA.Failed AS ModulesFailed,
+	MA.Running AS ModulesRunning,
+	MA.Pending AS ModulesPending,
+	MA.Cancelled AS ModulesCancelled,
+	MA.Flaky AS ModulesFlaky,
+	MA.Succeeded AS ModulesSucceeded,
+	MA.Skipped AS ModulesSkipped,
+	TA.TestsMatchingAndPassed,
+	TA.TestsMatchingAndFailed,
+	TA.TestsMatchingAndFlaky,
+	TA.TestsMatchingAndSkipped,
+	TA.TestsMatchingAndExecutionErrored,
+	TA.TestsMatchingAndPrecluded,
+	TA.TestsMatchingAndFailedExonerated,
+	TA.TestsMatchingAndFlakyExonerated,
+	TA.TestsMatchingAndExecutionErroredExonerated,
+	TA.TestsMatchingAndPrecludedExonerated,
+{{if ne .TestResultSearchClause ""}}
+	TA.TestsPassed,
+	TA.TestsFailed,
+	TA.TestsFlaky,
+	TA.TestsSkipped,
+	TA.TestsExecutionErrored,
+	TA.TestsPrecluded,
+	TA.TestsFailedExonerated,
+	TA.TestsFlakyExonerated,
+	TA.TestsExecutionErroredExonerated,
+	TA.TestsPrecludedExonerated
+{{end}}
 -- Each table has exactly one row.
 FROM ({{template "TestAggregations" .}}
 ) TA
 CROSS JOIN@{JOIN_TYPE=HASH_JOIN} ({{template "ModuleAggregations" .}}
 ) MA
 WHERE {{.FilterClause}}
-{{if ne .ContainsTestResultFilterClause ""}}
- AND ContainsTestResultMatchingFilter
-{{end}}
 {{end}}
 `))
 
@@ -757,11 +867,31 @@ func columnsForVerdictCounts(result *verdictCounts) []interface{} {
 	}
 }
 
+func toVerdictCountsProto(counts verdictCounts) *pb.TestAggregation_VerdictCounts {
+	return &pb.TestAggregation_VerdictCounts{
+		// By status after overrides.
+		Failed:           int32(counts.Failed),
+		Flaky:            int32(counts.Flaky),
+		Passed:           int32(counts.Passed),
+		Skipped:          int32(counts.Skipped),
+		ExecutionErrored: int32(counts.ExecutionErrored),
+		Precluded:        int32(counts.Precluded),
+		Exonerated:       int32(counts.FailedExonerated + counts.FlakyExonerated + counts.ExecutionErroredExonerated + counts.PrecludedExonerated),
+		// By base status.
+		FailedBase:           int32(counts.Failed + counts.FailedExonerated),
+		FlakyBase:            int32(counts.Flaky + counts.FlakyExonerated),
+		PassedBase:           int32(counts.Passed),
+		SkippedBase:          int32(counts.Skipped),
+		ExecutionErroredBase: int32(counts.ExecutionErrored + counts.ExecutionErroredExonerated),
+		PrecludedBase:        int32(counts.Precluded + counts.PrecludedExonerated),
+	}
+}
+
 // moduleStatusCounts stores the counts of module statuses for an invocation-level aggregation,
 // as returned by the Spanner query.
 type moduleStatusCounts struct {
 	Failed    int64
-	Flaky 		int64
+	Flaky     int64
 	Running   int64
 	Pending   int64
 	Cancelled int64
@@ -792,11 +922,13 @@ type templateParameters struct {
 	// This is pushed down as far as possible in the query to maximise the
 	// chance it will cut down the amount of data scanned.
 	WherePrefixClause string
-	// The clause defining the test results we are interested in. If set,
-	// an aggeregation will only be returned if it contains a test result
-	// that matches this filter. N.B. Setting this to TRUE will filter to
-	// only module-aggregations that contain at least one test result.
-	ContainsTestResultFilterClause string
+	// The clause defining the test results we are interested in.
+	// Test verdicts containing a test result matching this filter will be
+	// considered 'matched'.
+	TestResultSearchClause string
+	// The clause defining the modules we are interested in.
+	// Modules matching this filter will be considered 'matched'.
+	ModuleSearchClause string
 	// The WHERE clause to apply to the final query for pagination purposes.
 	PaginationClause string
 	// The WHERE clause to apply to the final query for filtering purposes.

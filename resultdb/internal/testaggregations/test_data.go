@@ -16,6 +16,7 @@ package testaggregations
 
 import (
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testexonerationsv2"
@@ -120,8 +121,32 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 	return ms
 }
 
+func SetAllVerdictsMatching(input []*pb.TestAggregation) {
+	for i := range input {
+		input[i].MatchedVerdictCounts = proto.Clone(input[i].VerdictCounts).(*pb.TestAggregation_VerdictCounts)
+	}
+}
+
+func ClearAllVerdictsMatching(input []*pb.TestAggregation) {
+	for i := range input {
+		input[i].MatchedVerdictCounts = &pb.TestAggregation_VerdictCounts{}
+	}
+}
+
+func ClearAllModulesMatching(input []*pb.TestAggregation) {
+	for i := range input {
+		input[i].ModuleMatches = false
+	}
+}
+
+func SetAllModulesMatching(input []*pb.TestAggregation) {
+	for i := range input {
+		input[i].ModuleMatches = true
+	}
+}
+
 func ExpectedRootInvocationAggregation() []*pb.TestAggregation {
-	result := &pb.TestAggregation{
+	inv := &pb.TestAggregation{
 		Id: &pb.TestIdentifierPrefix{
 			Level: pb.AggregationLevel_INVOCATION,
 			Id:    &pb.TestIdentifier{},
@@ -152,11 +177,13 @@ func ExpectedRootInvocationAggregation() []*pb.TestAggregation {
 			Skipped:   1,
 		},
 	}
-	return []*pb.TestAggregation{result}
+	result := []*pb.TestAggregation{inv}
+	SetAllVerdictsMatching(result)
+	return result
 }
 
 func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
-	return []*pb.TestAggregation{
+	result := []*pb.TestAggregation{
 		{
 			Id: &pb.TestIdentifierPrefix{
 				Level: pb.AggregationLevel_MODULE,
@@ -179,7 +206,8 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				PassedBase:  1,
 				SkippedBase: 1,
 			},
-			ModuleStatus: pb.TestAggregation_SUCCEEDED,
+			ModuleStatus:  pb.TestAggregation_SUCCEEDED,
+			ModuleMatches: true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -196,7 +224,8 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				ExecutionErrored:     1,
 				ExecutionErroredBase: 1,
 			},
-			ModuleStatus: pb.TestAggregation_RUNNING,
+			ModuleStatus:  pb.TestAggregation_RUNNING,
+			ModuleMatches: true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -213,7 +242,8 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				Precluded:     1,
 				PrecludedBase: 1,
 			},
-			ModuleStatus: pb.TestAggregation_FAILED,
+			ModuleStatus:  pb.TestAggregation_FAILED,
+			ModuleMatches: true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -228,6 +258,7 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 			NextFinerLevel: pb.AggregationLevel_COARSE,
 			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
 			ModuleStatus:   pb.TestAggregation_PENDING,
+			ModuleMatches:  true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -242,6 +273,7 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 			NextFinerLevel: pb.AggregationLevel_COARSE,
 			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
 			ModuleStatus:   pb.TestAggregation_SKIPPED,
+			ModuleMatches:  true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -256,6 +288,7 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 			NextFinerLevel: pb.AggregationLevel_COARSE,
 			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
 			ModuleStatus:   pb.TestAggregation_CANCELLED,
+			ModuleMatches:  true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -270,8 +303,11 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 			NextFinerLevel: pb.AggregationLevel_COARSE,
 			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
 			ModuleStatus:   pb.TestAggregation_FLAKY,
+			ModuleMatches:  true,
 		},
 	}
+	SetAllVerdictsMatching(result)
+	return result
 }
 
 func ExpectedModuleAggregationsUIOrder() []*pb.TestAggregation {
@@ -282,7 +318,7 @@ func ExpectedModuleAggregationsUIOrder() []*pb.TestAggregation {
 }
 
 func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
-	return []*pb.TestAggregation{
+	result := []*pb.TestAggregation{
 		{
 			Id: &pb.TestIdentifierPrefix{
 				Level: pb.AggregationLevel_COARSE,
@@ -357,6 +393,8 @@ func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
 			},
 		},
 	}
+	SetAllVerdictsMatching(result)
+	return result
 }
 
 func ExpectedCoarseAggregationsUIOrder() []*pb.TestAggregation {
@@ -367,7 +405,7 @@ func ExpectedCoarseAggregationsUIOrder() []*pb.TestAggregation {
 }
 
 func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
-	return []*pb.TestAggregation{
+	result := []*pb.TestAggregation{
 		{
 			Id: &pb.TestIdentifierPrefix{
 				Level: pb.AggregationLevel_FINE,
@@ -479,6 +517,8 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 			},
 		},
 	}
+	SetAllVerdictsMatching(result)
+	return result
 }
 
 func ExpectedFineAggregationsUIOrder() []*pb.TestAggregation {

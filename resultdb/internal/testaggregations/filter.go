@@ -23,13 +23,14 @@ import (
 var moduleStatusEnumDef = aip160.NewEnumDefinition("pb.TestAggregation.ModuleStatus", pb.TestAggregation_ModuleStatus_value, int32(pb.TestAggregation_MODULE_STATUS_UNSPECIFIED))
 
 var filterSchema = aip160.NewDatabaseTable().WithFields(
-	aip160.NewField().WithFieldPath("verdict_counts", "failed").WithBackend(aip160.NewIntegerColumn("TestsFailed")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("verdict_counts", "flaky").WithBackend(aip160.NewIntegerColumn("TestsFlaky")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("verdict_counts", "passed").WithBackend(aip160.NewIntegerColumn("TestsPassed")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("verdict_counts", "skipped").WithBackend(aip160.NewIntegerColumn("TestsSkipped")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("verdict_counts", "execution_errored").WithBackend(aip160.NewIntegerColumn("TestsExecutionErrored")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("verdict_counts", "precluded").WithBackend(aip160.NewIntegerColumn("TestsPrecluded")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("verdict_counts", "exonerated").WithBackend(aip160.NewIntegerColumn("TestsExonerated")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("matched_verdict_counts", "failed").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndFailed")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("matched_verdict_counts", "flaky").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndFlaky")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("matched_verdict_counts", "passed").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndPassed")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("matched_verdict_counts", "skipped").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndSkipped")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("matched_verdict_counts", "execution_errored").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndExecutionErrored")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("matched_verdict_counts", "precluded").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndPrecluded")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("matched_verdict_counts", "exonerated").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndExonerated")).Filterable().Build(),
+	aip160.NewField().WithFieldPath("module_matches").WithBackend(aip160.NewBoolColumn("ModuleMatches")).Filterable().Build(),
 	aip160.NewField().WithFieldPath("module_status").WithBackend(aip160.NewEnumColumn("ModuleStatus").WithDefinition(moduleStatusEnumDef).Build()).Filterable().Build(),
 ).Build()
 

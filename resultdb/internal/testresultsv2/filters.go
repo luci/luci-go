@@ -71,8 +71,6 @@ var filterSchema = aip160.NewDatabaseTable().WithFields(
 	aip160.NewField().WithFieldPath("test_metadata", "location", "file_name").WithBackend(aip160.NewStringColumn("TestMetadataLocationFileNameMasked")).FilterableImplicitly().Build(),
 	aip160.NewField().WithFieldPath("duration").WithBackend(aip160.NewDurationColumn("RunDurationNanos").Build()).Filterable().Build(),
 	aip160.NewField().WithFieldPath("status").WithBackend(aip160.NewEnumColumn("StatusV2").WithDefinition(statusEnumDef).Build()).Filterable().Build(),
-	// Future extensions: in the old Test Results tab in MILO, we also supported (test result) status and duration.
-	// As at writing, this requires extending the aip160 library to support enums and durations (stored as INT64 nanoseconds).
 ).Build()
 
 // ValidateFilter validates an AIP-160 filter string.

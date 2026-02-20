@@ -319,12 +319,13 @@ func TestQueryTestAggregations(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.Aggregations, should.Match(expected))
 			})
-			t.Run(`With contains test results filter`, func(t *ftt.Test) {
+			t.Run(`With search criteria`, func(t *ftt.Test) {
 				req.Predicate.AggregationLevel = pb.AggregationLevel_COARSE
-				req.Predicate.ContainsTestResultFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key="value"`
+				req.Predicate.SearchCriteria = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key="value"`
 
 				expected := testaggregations.ExpectedCoarseAggregationsIDOrder()
-				expected = expected[0:2]
+				testaggregations.ClearAllVerdictsMatching(expected)
+				testaggregations.SetAllVerdictsMatching(expected[0:2])
 
 				res, err := srv.QueryTestAggregations(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
@@ -332,10 +333,10 @@ func TestQueryTestAggregations(t *testing.T) {
 			})
 			t.Run(`With filter`, func(t *ftt.Test) {
 				req.Predicate.AggregationLevel = pb.AggregationLevel_FINE
-				// The filter for module_status does not contribute to the results in this example,
-				// but we test it does not blow up for this aggregation level
-				// (module_status is UNSPECIFIED for this aggregation level).
-				req.Predicate.Filter = "verdict_counts.failed > 0 OR module_status = FAILED"
+				// The filter for module_status and module_matches does not contribute to
+				// the results in this example, but we test it does not blow up for this aggregation level
+				// (module_status is UNSPECIFIED and module_matches is FALSE for this aggregation level).
+				req.Predicate.Filter = "matched_verdict_counts.failed > 0 OR module_status = FAILED OR module_matches = true"
 				expected := testaggregations.ExpectedFineAggregationsIDOrder()
 
 				res, err := srv.QueryTestAggregations(ctx, req)

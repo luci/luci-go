@@ -17,6 +17,8 @@ package pubsub
 import (
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -122,25 +124,25 @@ func TestHandleTestAggregationsPublisher(t *testing.T) {
 			{
 				RootInvocation:   rootInvID.Name(),
 				ResultdbHost:     rdbHost,
-				TestAggregations: testaggregations.ExpectedRootInvocationAggregation(),
+				TestAggregations: withoutMatchFields(testaggregations.ExpectedRootInvocationAggregation()),
 				AggregationLevel: pb.AggregationLevel_INVOCATION,
 			},
 			{
 				RootInvocation:   rootInvID.Name(),
 				ResultdbHost:     rdbHost,
-				TestAggregations: testaggregations.ExpectedModuleAggregationsIDOrder(),
+				TestAggregations: withoutMatchFields(testaggregations.ExpectedModuleAggregationsIDOrder()),
 				AggregationLevel: pb.AggregationLevel_MODULE,
 			},
 			{
 				RootInvocation:   rootInvID.Name(),
 				ResultdbHost:     rdbHost,
-				TestAggregations: testaggregations.ExpectedCoarseAggregationsIDOrder(),
+				TestAggregations: withoutMatchFields(testaggregations.ExpectedCoarseAggregationsIDOrder()),
 				AggregationLevel: pb.AggregationLevel_COARSE,
 			},
 			{
 				RootInvocation:   rootInvID.Name(),
 				ResultdbHost:     rdbHost,
-				TestAggregations: testaggregations.ExpectedFineAggregationsIDOrder(),
+				TestAggregations: withoutMatchFields(testaggregations.ExpectedFineAggregationsIDOrder()),
 				AggregationLevel: pb.AggregationLevel_FINE,
 			},
 		}
@@ -304,4 +306,15 @@ func TestHandleTestAggregationsPublisher(t *testing.T) {
 		}
 		assert.Loosely(t, len(allAggregations), should.Equal(18))
 	})
+}
+
+func withoutMatchFields(aggs []*pb.TestAggregation) []*pb.TestAggregation {
+	result := make([]*pb.TestAggregation, len(aggs))
+	for i, agg := range aggs {
+		copy := proto.Clone(agg).(*pb.TestAggregation)
+		copy.ModuleMatches = false
+		copy.MatchedVerdictCounts = nil
+		result[i] = copy
+	}
+	return result
 }
