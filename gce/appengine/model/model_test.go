@@ -285,6 +285,82 @@ func TestVM(t *testing.T) {
 				assert.Loosely(t, d[1].Type, should.Equal("SCRATCH"))
 				assert.Loosely(t, d[2].Type, should.BeEmpty)
 			})
+			t.Run("hyperdisk with performance", func(t *ftt.Test) {
+				v := &VM{
+					Attributes: config.VM{
+						Disk: []*config.Disk{
+							{
+								Type:                  "hyperdisk-balanced",
+								Image:                 "image",
+								Size:                  100,
+								Interface:             config.DiskInterface_NVME,
+								ProvisionedIops:       4000,
+								ProvisionedThroughput: 200,
+							},
+						},
+					},
+				}
+				d := v.getDisks()
+				assert.Loosely(t, d, should.HaveLength(1))
+				expectedParams := &compute.AttachedDiskInitializeParams{
+					DiskSizeGb:            100,
+					DiskType:              "hyperdisk-balanced",
+					SourceImage:           "image",
+					ProvisionedIops:       4000,
+					ProvisionedThroughput: 200,
+				}
+				assert.Loosely(t, d[0].InitializeParams, should.Match(expectedParams))
+				assert.Loosely(t, d[0].Interface, should.Equal("NVME"))
+				assert.Loosely(t, d[0].Boot, should.BeTrue)
+			})
+
+			t.Run("hyperdisk no performance", func(t *ftt.Test) {
+				v := &VM{
+					Attributes: config.VM{
+						Disk: []*config.Disk{
+							{
+								Type:      "hyperdisk-extreme",
+								Image:     "image",
+								Size:      50,
+								Interface: config.DiskInterface_NVME,
+							},
+						},
+					},
+				}
+				d := v.getDisks()
+				assert.Loosely(t, d, should.HaveLength(1))
+				expectedParams := &compute.AttachedDiskInitializeParams{
+					DiskSizeGb:  50,
+					DiskType:    "hyperdisk-extreme",
+					SourceImage: "image",
+				}
+				assert.Loosely(t, d[0].InitializeParams, should.Match(expectedParams))
+				assert.Loosely(t, d[0].InitializeParams.ProvisionedIops, should.BeZero)
+				assert.Loosely(t, d[0].InitializeParams.ProvisionedThroughput, should.BeZero)
+			})
+
+			t.Run("pd-standard no performance", func(t *ftt.Test) {
+				v := &VM{
+					Attributes: config.VM{
+						Disk: []*config.Disk{
+							{
+								Type:      "pd-standard",
+								Image:     "image",
+								Size:      20,
+								Interface: config.DiskInterface_SCSI,
+							},
+						},
+					},
+				}
+				d := v.getDisks()
+				assert.Loosely(t, d, should.HaveLength(1))
+				expectedParams := &compute.AttachedDiskInitializeParams{
+					DiskSizeGb:  20,
+					DiskType:    "pd-standard",
+					SourceImage: "image",
+				}
+				assert.Loosely(t, d[0].InitializeParams, should.Match(expectedParams))
+			})
 		})
 	})
 

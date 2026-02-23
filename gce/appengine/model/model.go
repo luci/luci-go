@@ -165,6 +165,12 @@ func (vm *VM) getDisks() []*compute.AttachedDisk {
 			},
 			Interface: disk.GetInterface().String(),
 		}
+		if disk.ProvisionedIops > 0 {
+			disks[i].InitializeParams.ProvisionedIops = disk.ProvisionedIops
+		}
+		if disk.ProvisionedThroughput > 0 {
+			disks[i].InitializeParams.ProvisionedThroughput = disk.ProvisionedThroughput
+		}
 		if disk.IsScratchDisk() {
 			disks[i].Type = "SCRATCH"
 		}
