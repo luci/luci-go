@@ -558,31 +558,33 @@ var queryTmpl = template.Must(template.New("").Parse(`
 		({{.ModuleStatuses.Unspecified}}) AS ModuleStatus,
 		FALSE As ModuleMatches,
 		-- Matched verdict counts, should always be returned as they can be filtered on.
-		SUM(MatchingAndPassed) AS TestsMatchingAndPassed,
-		SUM(MatchingAndFailed) AS TestsMatchingAndFailed,
-		SUM(MatchingAndFlaky) AS TestsMatchingAndFlaky,
-		SUM(MatchingAndSkipped) AS TestsMatchingAndSkipped,
-		SUM(MatchingAndExecutionErrored) AS TestsMatchingAndExecutionErrored,
-		SUM(MatchingAndPrecluded) AS TestsMatchingAndPrecluded,
-		SUM(MatchingAndFailedExonerated) AS TestsMatchingAndFailedExonerated,
-		SUM(MatchingAndFlakyExonerated) AS TestsMatchingAndFlakyExonerated,
-		SUM(MatchingAndExecutionErroredExonerated) AS TestsMatchingAndExecutionErroredExonerated,
-		SUM(MatchingAndPrecludedExonerated) AS TestsMatchingAndPrecludedExonerated,
+		-- COALESCE required as if there are no rows, SUM will return NULL.
+		COALESCE(SUM(MatchingAndPassed), 0) AS TestsMatchingAndPassed,
+		COALESCE(SUM(MatchingAndFailed), 0) AS TestsMatchingAndFailed,
+		COALESCE(SUM(MatchingAndFlaky), 0) AS TestsMatchingAndFlaky,
+		COALESCE(SUM(MatchingAndSkipped), 0) AS TestsMatchingAndSkipped,
+		COALESCE(SUM(MatchingAndExecutionErrored), 0) AS TestsMatchingAndExecutionErrored,
+		COALESCE(SUM(MatchingAndPrecluded), 0) AS TestsMatchingAndPrecluded,
+		COALESCE(SUM(MatchingAndFailedExonerated), 0) AS TestsMatchingAndFailedExonerated,
+		COALESCE(SUM(MatchingAndFlakyExonerated), 0) AS TestsMatchingAndFlakyExonerated,
+		COALESCE(SUM(MatchingAndExecutionErroredExonerated), 0) AS TestsMatchingAndExecutionErroredExonerated,
+		COALESCE(SUM(MatchingAndPrecludedExonerated), 0) AS TestsMatchingAndPrecludedExonerated,
 		-- This field is used to support filtering on matched_verdict_counts.exonerated.
-		(SUM(MatchingAndFailedExonerated) + SUM(MatchingAndFlakyExonerated) + SUM(MatchingAndExecutionErroredExonerated) + SUM(MatchingAndPrecludedExonerated)) AS TestsMatchingAndExonerated,
+		(COALESCE(SUM(MatchingAndFailedExonerated), 0) + COALESCE(SUM(MatchingAndFlakyExonerated), 0) + COALESCE(SUM(MatchingAndExecutionErroredExonerated), 0) + COALESCE(SUM(MatchingAndPrecludedExonerated), 0)) AS TestsMatchingAndExonerated,
 	{{if ne .TestResultSearchClause ""}}
 		-- Total verdict counts. As there is a test result filter, these may differ from the
 		-- matched verdict counts, so should be returned separately.
-		SUM(Passed) AS TestsPassed,
-		SUM(Failed) AS TestsFailed,
-		SUM(Flaky) AS TestsFlaky,
-		SUM(Skipped) AS TestsSkipped,
-		SUM(ExecutionErrored) AS TestsExecutionErrored,
-		SUM(Precluded) AS TestsPrecluded,
-		SUM(FailedExonerated) AS TestsFailedExonerated,
-		SUM(FlakyExonerated) AS TestsFlakyExonerated,
-		SUM(ExecutionErroredExonerated) AS TestsExecutionErroredExonerated,
-		SUM(PrecludedExonerated) AS TestsPrecludedExonerated,
+		-- COALESCE required as if there are no rows, SUM will return NULL.
+		COALESCE(SUM(Passed), 0) AS TestsPassed,
+		COALESCE(SUM(Failed), 0) AS TestsFailed,
+		COALESCE(SUM(Flaky), 0) AS TestsFlaky,
+		COALESCE(SUM(Skipped), 0) AS TestsSkipped,
+		COALESCE(SUM(ExecutionErrored), 0) AS TestsExecutionErrored,
+		COALESCE(SUM(Precluded), 0) AS TestsPrecluded,
+		COALESCE(SUM(FailedExonerated), 0) AS TestsFailedExonerated,
+		COALESCE(SUM(FlakyExonerated), 0) AS TestsFlakyExonerated,
+		COALESCE(SUM(ExecutionErroredExonerated), 0) AS TestsExecutionErroredExonerated,
+		COALESCE(SUM(PrecludedExonerated), 0) AS TestsPrecludedExonerated,
 	{{end}}
 	FROM ({{template "TestAggregationsByShard" .}}
 	)

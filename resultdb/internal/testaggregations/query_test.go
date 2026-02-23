@@ -17,6 +17,8 @@ package testaggregations
 import (
 	"testing"
 
+	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -123,6 +125,13 @@ func TestQuery(t *testing.T) {
 				// Should make no difference as this only relies on information
 				// that is visible to limited users.
 				query.Access.Level = permissions.LimitedAccess
+				assert.Loosely(t, fetchAll(query), should.Match(expected))
+			})
+			t.Run("With no test results", func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, spanner.Delete("TestResultsV2", spanner.AllKeys()))
+
+				expected[0].VerdictCounts = &pb.TestAggregation_VerdictCounts{}
+				expected[0].MatchedVerdictCounts = &pb.TestAggregation_VerdictCounts{}
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 		})
