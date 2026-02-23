@@ -1267,6 +1267,17 @@ func (a *Authenticator) ensureInitialized() error {
 		// protocol and accept a scopes flag with a comma separated list of
 		// requested scopes.
 		if exe := environ.FromCtx(a.ctx).Get("LUCI_AUTH_CREDENTIAL_HELPER"); exe != "" {
+			// Firebase scope cannot be used with a credential helper.
+
+			// TODO(dlf): Either remove the scope entirely or fix the scope
+			// so it can be used with a credential helper. The Firebase scope
+			// is hardcoded into the Firebase CLI tool.
+			// https://github.com/firebase/firebase-tools/blob/main/src/auth.ts#L277
+			if i := slices.Index(a.opts.Scopes, scopes.Firebase); i > -1 {
+				a.opts.Scopes = slices.Delete(a.opts.Scopes, i, i+1)
+				logging.Debugf(a.ctx, "Firebase scope cannot be used with a credential helper, removing scope from requested scopes")
+			}
+
 			a.opts.CredentialHelper = &credhelperpb.Config{
 				Exec:     exe,
 				Protocol: credhelperpb.Protocol_RECLIENT,

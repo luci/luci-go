@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/auth/credhelperpb"
 	"go.chromium.org/luci/auth/internal"
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -942,6 +943,30 @@ func TestCredentialHelperEnv(t *testing.T) {
 		a.lock.Unlock()
 
 		assert.Loosely(t, err, should.ErrLike("OAuth client is not configured"))
+	})
+
+	ftt.Run("firebase scope is ignored", t, func(t *ftt.Test) {
+		env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
+		ctx := env.SetInCtx(context.Background())
+		ctx = lucictx.SetLocalAuth(ctx, nil)
+
+		a := NewAuthenticator(ctx, SilentLogin, Options{
+			Scopes: []string{"scope2", "scope1", scopes.Firebase},
+		})
+
+		a.lock.Lock()
+		err := a.ensureInitialized()
+		a.lock.Unlock()
+
+		assert.Loosely(t, err, should.ErrLike("bad credential helper path \"some-helper\""))
+
+		assert.Loosely(t, a.opts.CredentialHelper, should.Match(&credhelperpb.Config{
+			Exec:              "some-helper",
+			Protocol:          credhelperpb.Protocol_RECLIENT,
+			Args:              []string{"-scopes", "scope1,scope2"},
+			CacheTokensOnDisk: true,
+		}))
+		assert.Loosely(t, a.opts.Method, should.Equal(CredentialHelperMethod))
 	})
 }
 
