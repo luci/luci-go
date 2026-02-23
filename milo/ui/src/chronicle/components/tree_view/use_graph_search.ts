@@ -14,13 +14,13 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
-import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
-import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
+import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 
 import { Graph, transitiveDescendants } from './build_tree';
 
-function isStageView(view: CheckView | StageView): view is StageView {
-  return (view as StageView).stage !== undefined;
+function isStage(view: Check | Stage): view is Stage {
+  return (view as Stage).assignments !== undefined;
 }
 
 /**
@@ -59,10 +59,10 @@ export function useGraphSearch(graph: Graph, searchQuery: string) {
           node.label +
           ' ' +
           (node.raw
-            ? node.type === 'STAGE' && isStageView(node.raw)
+            ? node.type === 'STAGE' && isStage(node.raw)
               ? JSON.stringify({
                   ...node.raw,
-                  stage: { ...node.raw.stage, assignments: undefined },
+                  assignments: undefined,
                 })
               : JSON.stringify(node.raw)
             : '')

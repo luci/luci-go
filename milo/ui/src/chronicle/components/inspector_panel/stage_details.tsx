@@ -14,23 +14,22 @@
 
 import { Box, Chip, Divider, Typography } from '@mui/material';
 
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { stageAttemptStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import {
   StageState,
   stageStateToJSON,
 } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
-import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
 import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
 
 export interface StageDetailsProps {
-  view: StageView;
+  view: Stage;
 }
 
 export function StageDetails({ view }: StageDetailsProps) {
-  const stage = view.stage;
-  if (!stage) return null;
+  const stage = view;
 
   const assignmentIds = stage.assignments
     .map((a) => a.target?.id)

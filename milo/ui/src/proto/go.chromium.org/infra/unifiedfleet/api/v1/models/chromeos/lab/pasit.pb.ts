@@ -66,6 +66,7 @@ export interface Pasit_Device {
     | undefined;
   /** Optional RPM if one exists */
   readonly rpm: OSRPM | undefined;
+  readonly switchFixtureDetails?: Pasit_Device_SwitchFixtureDetails | undefined;
 }
 
 /** The type of device represented. */
@@ -83,6 +84,7 @@ export enum Pasit_Device_Type {
   SPEAKER = 10,
   IP_POWER = 11,
   USB_TESTER = 12,
+  VIDEO_TESTER = 13,
 }
 
 export function pasit_Device_TypeFromJSON(object: any): Pasit_Device_Type {
@@ -126,6 +128,9 @@ export function pasit_Device_TypeFromJSON(object: any): Pasit_Device_Type {
     case 12:
     case "USB_TESTER":
       return Pasit_Device_Type.USB_TESTER;
+    case 13:
+    case "VIDEO_TESTER":
+      return Pasit_Device_Type.VIDEO_TESTER;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Pasit_Device_Type");
   }
@@ -159,6 +164,8 @@ export function pasit_Device_TypeToJSON(object: Pasit_Device_Type): string {
       return "IP_POWER";
     case Pasit_Device_Type.USB_TESTER:
       return "USB_TESTER";
+    case Pasit_Device_Type.VIDEO_TESTER:
+      return "VIDEO_TESTER";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Pasit_Device_Type");
   }
@@ -169,6 +176,20 @@ export interface Pasit_Device_PowerSupply {
   readonly current: number;
   readonly voltage: number;
   readonly power: number;
+}
+
+/** Extra details for Switch Fixtures. */
+export interface Pasit_Device_SwitchFixtureDetails {
+  /**
+   * Should the switch be initialized to "enabled" state, if missing then the switch will
+   * be left in the 'disabled' state.
+   */
+  readonly initialStateEnabled: boolean;
+  /**
+   * If initial_state_enabled and the switch supports multiple ports, this
+   * is the port that will be configured on reset.
+   */
+  readonly initialPort: string;
 }
 
 function createBasePasit(): Pasit {
@@ -408,7 +429,7 @@ export const Pasit_Connection: MessageFns<Pasit_Connection> = {
 };
 
 function createBasePasit_Device(): Pasit_Device {
-  return { id: "", model: "", type: 0, powerSupply: undefined, rpm: undefined };
+  return { id: "", model: "", type: 0, powerSupply: undefined, rpm: undefined, switchFixtureDetails: undefined };
 }
 
 export const Pasit_Device: MessageFns<Pasit_Device> = {
@@ -427,6 +448,9 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
     }
     if (message.rpm !== undefined) {
       OSRPM.encode(message.rpm, writer.uint32(42).fork()).join();
+    }
+    if (message.switchFixtureDetails !== undefined) {
+      Pasit_Device_SwitchFixtureDetails.encode(message.switchFixtureDetails, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -478,6 +502,14 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
           message.rpm = OSRPM.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.switchFixtureDetails = Pasit_Device_SwitchFixtureDetails.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -494,6 +526,9 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
       type: isSet(object.type) ? pasit_Device_TypeFromJSON(object.type) : 0,
       powerSupply: isSet(object.powerSupply) ? Pasit_Device_PowerSupply.fromJSON(object.powerSupply) : undefined,
       rpm: isSet(object.rpm) ? OSRPM.fromJSON(object.rpm) : undefined,
+      switchFixtureDetails: isSet(object.switchFixtureDetails)
+        ? Pasit_Device_SwitchFixtureDetails.fromJSON(object.switchFixtureDetails)
+        : undefined,
     };
   },
 
@@ -514,6 +549,9 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
     if (message.rpm !== undefined) {
       obj.rpm = OSRPM.toJSON(message.rpm);
     }
+    if (message.switchFixtureDetails !== undefined) {
+      obj.switchFixtureDetails = Pasit_Device_SwitchFixtureDetails.toJSON(message.switchFixtureDetails);
+    }
     return obj;
   },
 
@@ -529,6 +567,9 @@ export const Pasit_Device: MessageFns<Pasit_Device> = {
       ? Pasit_Device_PowerSupply.fromPartial(object.powerSupply)
       : undefined;
     message.rpm = (object.rpm !== undefined && object.rpm !== null) ? OSRPM.fromPartial(object.rpm) : undefined;
+    message.switchFixtureDetails = (object.switchFixtureDetails !== undefined && object.switchFixtureDetails !== null)
+      ? Pasit_Device_SwitchFixtureDetails.fromPartial(object.switchFixtureDetails)
+      : undefined;
     return message;
   },
 };
@@ -621,6 +662,82 @@ export const Pasit_Device_PowerSupply: MessageFns<Pasit_Device_PowerSupply> = {
     message.current = object.current ?? 0;
     message.voltage = object.voltage ?? 0;
     message.power = object.power ?? 0;
+    return message;
+  },
+};
+
+function createBasePasit_Device_SwitchFixtureDetails(): Pasit_Device_SwitchFixtureDetails {
+  return { initialStateEnabled: false, initialPort: "" };
+}
+
+export const Pasit_Device_SwitchFixtureDetails: MessageFns<Pasit_Device_SwitchFixtureDetails> = {
+  encode(message: Pasit_Device_SwitchFixtureDetails, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.initialStateEnabled !== false) {
+      writer.uint32(8).bool(message.initialStateEnabled);
+    }
+    if (message.initialPort !== "") {
+      writer.uint32(18).string(message.initialPort);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Pasit_Device_SwitchFixtureDetails {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePasit_Device_SwitchFixtureDetails() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.initialStateEnabled = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.initialPort = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Pasit_Device_SwitchFixtureDetails {
+    return {
+      initialStateEnabled: isSet(object.initialStateEnabled) ? globalThis.Boolean(object.initialStateEnabled) : false,
+      initialPort: isSet(object.initialPort) ? globalThis.String(object.initialPort) : "",
+    };
+  },
+
+  toJSON(message: Pasit_Device_SwitchFixtureDetails): unknown {
+    const obj: any = {};
+    if (message.initialStateEnabled !== false) {
+      obj.initialStateEnabled = message.initialStateEnabled;
+    }
+    if (message.initialPort !== "") {
+      obj.initialPort = message.initialPort;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Pasit_Device_SwitchFixtureDetails>): Pasit_Device_SwitchFixtureDetails {
+    return Pasit_Device_SwitchFixtureDetails.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Pasit_Device_SwitchFixtureDetails>): Pasit_Device_SwitchFixtureDetails {
+    const message = createBasePasit_Device_SwitchFixtureDetails() as any;
+    message.initialStateEnabled = object.initialStateEnabled ?? false;
+    message.initialPort = object.initialPort ?? "";
     return message;
   },
 };

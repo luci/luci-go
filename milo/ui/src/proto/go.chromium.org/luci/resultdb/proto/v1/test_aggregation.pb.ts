@@ -28,8 +28,20 @@ export interface TestAggregation {
    * is test verdicts.
    */
   readonly nextFinerLevel: AggregationLevel;
-  /** The counts of test verdict statuses rolling up to this aggregation. */
+  /** The counts of test verdicts in the aggregation. */
   readonly verdictCounts:
+    | TestAggregation_VerdictCounts
+    | undefined;
+  /**
+   * The counts of test verdicts in the test aggregation, that contained a
+   * test result that matched QueryTestAggregationsRequest.predicate.search_criteria.
+   *
+   * If search_criteria was not specified, this is the same as verdict_counts.
+   *
+   * This field is not populated when listening to test aggregations via the pub/sub
+   * (TestAggregationsNotification).
+   */
+  readonly matchedVerdictCounts:
     | TestAggregation_VerdictCounts
     | undefined;
   /**
@@ -43,6 +55,14 @@ export interface TestAggregation {
    * here will be MODULE_STATUS_UNSPECIFIED.
    */
   readonly moduleStatus: TestAggregation_ModuleStatus;
+  /**
+   * Whether the module details matched the QueryTestAggregationsRequest.predicate.search_criteria.
+   * If search_criteria was not specified, this is always true.
+   *
+   * This field is not populated when listening to test aggregations via the pub/sub
+   * (TestAggregationsNotification).
+   */
+  readonly moduleMatches: boolean;
   /** The module status counts. Set only for invocation-level aggregations. */
   readonly moduleStatusCounts: TestAggregation_ModuleStatusCounts | undefined;
 }
@@ -272,7 +292,15 @@ export interface TestAggregation_ModuleStatusCounts {
 }
 
 function createBaseTestAggregation(): TestAggregation {
-  return { id: undefined, nextFinerLevel: 0, verdictCounts: undefined, moduleStatus: 0, moduleStatusCounts: undefined };
+  return {
+    id: undefined,
+    nextFinerLevel: 0,
+    verdictCounts: undefined,
+    matchedVerdictCounts: undefined,
+    moduleStatus: 0,
+    moduleMatches: false,
+    moduleStatusCounts: undefined,
+  };
 }
 
 export const TestAggregation: MessageFns<TestAggregation> = {
@@ -286,8 +314,14 @@ export const TestAggregation: MessageFns<TestAggregation> = {
     if (message.verdictCounts !== undefined) {
       TestAggregation_VerdictCounts.encode(message.verdictCounts, writer.uint32(26).fork()).join();
     }
+    if (message.matchedVerdictCounts !== undefined) {
+      TestAggregation_VerdictCounts.encode(message.matchedVerdictCounts, writer.uint32(50).fork()).join();
+    }
     if (message.moduleStatus !== 0) {
       writer.uint32(32).int32(message.moduleStatus);
+    }
+    if (message.moduleMatches !== false) {
+      writer.uint32(56).bool(message.moduleMatches);
     }
     if (message.moduleStatusCounts !== undefined) {
       TestAggregation_ModuleStatusCounts.encode(message.moduleStatusCounts, writer.uint32(42).fork()).join();
@@ -326,12 +360,28 @@ export const TestAggregation: MessageFns<TestAggregation> = {
           message.verdictCounts = TestAggregation_VerdictCounts.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.matchedVerdictCounts = TestAggregation_VerdictCounts.decode(reader, reader.uint32());
+          continue;
+        }
         case 4: {
           if (tag !== 32) {
             break;
           }
 
           message.moduleStatus = reader.int32() as any;
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.moduleMatches = reader.bool();
           continue;
         }
         case 5: {
@@ -358,7 +408,11 @@ export const TestAggregation: MessageFns<TestAggregation> = {
       verdictCounts: isSet(object.verdictCounts)
         ? TestAggregation_VerdictCounts.fromJSON(object.verdictCounts)
         : undefined,
+      matchedVerdictCounts: isSet(object.matchedVerdictCounts)
+        ? TestAggregation_VerdictCounts.fromJSON(object.matchedVerdictCounts)
+        : undefined,
       moduleStatus: isSet(object.moduleStatus) ? testAggregation_ModuleStatusFromJSON(object.moduleStatus) : 0,
+      moduleMatches: isSet(object.moduleMatches) ? globalThis.Boolean(object.moduleMatches) : false,
       moduleStatusCounts: isSet(object.moduleStatusCounts)
         ? TestAggregation_ModuleStatusCounts.fromJSON(object.moduleStatusCounts)
         : undefined,
@@ -376,8 +430,14 @@ export const TestAggregation: MessageFns<TestAggregation> = {
     if (message.verdictCounts !== undefined) {
       obj.verdictCounts = TestAggregation_VerdictCounts.toJSON(message.verdictCounts);
     }
+    if (message.matchedVerdictCounts !== undefined) {
+      obj.matchedVerdictCounts = TestAggregation_VerdictCounts.toJSON(message.matchedVerdictCounts);
+    }
     if (message.moduleStatus !== 0) {
       obj.moduleStatus = testAggregation_ModuleStatusToJSON(message.moduleStatus);
+    }
+    if (message.moduleMatches !== false) {
+      obj.moduleMatches = message.moduleMatches;
     }
     if (message.moduleStatusCounts !== undefined) {
       obj.moduleStatusCounts = TestAggregation_ModuleStatusCounts.toJSON(message.moduleStatusCounts);
@@ -397,7 +457,11 @@ export const TestAggregation: MessageFns<TestAggregation> = {
     message.verdictCounts = (object.verdictCounts !== undefined && object.verdictCounts !== null)
       ? TestAggregation_VerdictCounts.fromPartial(object.verdictCounts)
       : undefined;
+    message.matchedVerdictCounts = (object.matchedVerdictCounts !== undefined && object.matchedVerdictCounts !== null)
+      ? TestAggregation_VerdictCounts.fromPartial(object.matchedVerdictCounts)
+      : undefined;
     message.moduleStatus = object.moduleStatus ?? 0;
+    message.moduleMatches = object.moduleMatches ?? false;
     message.moduleStatusCounts = (object.moduleStatusCounts !== undefined && object.moduleStatusCounts !== null)
       ? TestAggregation_ModuleStatusCounts.fromPartial(object.moduleStatusCounts)
       : undefined;

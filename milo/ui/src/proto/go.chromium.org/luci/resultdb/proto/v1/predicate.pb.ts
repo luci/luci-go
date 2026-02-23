@@ -300,55 +300,85 @@ export interface TestAggregationPredicate {
     | TestIdentifierPrefix
     | undefined;
   /**
-   * Limits results to only those test aggregations that *contain* a test result
-   * matching this filter.
+   * Searches aggregations for test results and modules that match the given AIP-160 filter.
    *
-   * The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
-   * with the following fields available:
+   * Each aggregation will report the number of test verdicts that match the search criteria and
+   * whether the module itself (in case of module-level aggregations) matches, via the
+   * `matched_verdict_counts` and `module_matches` fields. These can in turn be leveraged
+   * for filtering in the `filter` field below.
+   *
+   * Search criteria are specified as an AIP-160 filter string (see https://google.aip.dev/160
+   * for syntax), with the following fields available:
    * - test_id (string) - the flat-form test ID
-   * - test_id_structured.module_name (string) - the structured form test ID
+   * - test_id_structured.module_name (string) - the structured form test ID fields
    * - test_id_structured.module_scheme (string)
    * - test_id_structured.module_variant (filters behave as if this field is a map<string, string>)
    * - test_id_structured.module_variant_hash (string)
    * - test_id_structured.coarse_name (string)
    * - test_id_structured.fine_name (string)
    * - test_id_structured.case_name (string)
-   * - test_metadata.name (string)
-   * - tags (repeated (key string, value string))
-   * - test_metadata.location.repo (string)
+   * - test_metadata.name (string) - the original test name
+   * - tags (repeated (key string, value string)) - the test tags
+   * - test_metadata.location.repo (string) - the test metadata location
    * - test_metadata.location.file_name (string)
    * - status (enum luci.resultdb.v1.TestResult.Status) - the status_v2 of the test result
    * - duration (google.protobuf.Duration)
    *
-   * While this filter generally offers a superset of functionality of the `test_prefix_filter`
-   * field, clients will generally prefer to use `test_prefix_filter` if it is
-   * sufficient as its use has less sharp edges (e.g. no need to escape test ID
-   * components when injecting them into filter strings, filtering on a variant is exact
-   * and not simply checking for presence of a subset of key/value pairs).
+   * For modules, only the fields `test_id_structured.module_name`,
+   * `test_id_structured.module_scheme`, `test_id_structured.module_variant`,
+   * `test_id_structured.module_variant_hash` are available. If other fields are used,
+   * the search query will never match a module (even if joined with an 'OR', as the
+   * filter will not compile against the schema of modules).
    *
-   * Note: Setting this to a filter that will always evaluate to true yields
-   * different results to leaving this filter unset, in that the former filters to
-   * only aggregations with test results and the latter returns any test aggregation.
-   * Aggregations without test results can occur for module and invocation-level
-   * aggregations.
+   * For example:
+   *  test_id_structured.module_name="foo"
+   * will match test results and modules with a module name of "foo".
+   *
+   *  test_id_structured.module_name="bar" AND status=FAILED
+   * will match test results with a module of foo, and test result status of FAILED.
+   * No modules will ever match this query, as modules do not define a test result status.
+   *
+   *  test_id_structured.module_name="bar" OR status=FAILED
+   * will match test results with a module of foo, or test result status of FAILED.
+   * No modules will ever match this query, as modules do not define a test result status
+   * and the filter does not compile against the schema of modules.
+   *
+   * Literals like "bar" can also be searched directly; which fields they will match
+   * is an implementation detail.
+   *
+   * While this search generally offers a superset of functionality of the `test_prefix_filter`
+   * field, clients will generally prefer to use `test_prefix_filter` if it is
+   * sufficient as it performs better and its use has less sharp edges (e.g. no need to
+   * escape test ID components when injecting them into filter strings, filtering on a
+   * variant is exact and not simply checking for presence of a subset of key/value pairs).
+   *
+   * If this field is unset, it is treated by the implementation as the search criteria
+   * always matching.
    */
-  readonly containsTestResultFilter: string;
+  readonly searchCriteria: string;
   /**
    * A free-form filter on the returned `TestAggregation`s.
    *
    * The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
    * with the following fields available:
-   * - verdict_counts.failed (number)
-   * - verdict_counts.flaky (number)
-   * - verdict_counts.passed (number)
-   * - verdict_counts.skipped (number)
-   * - verdict_counts.execution_errored (number)
-   * - verdict_counts.precluded (number)
-   * - verdict_counts.exonerated (number)
+   * - matched_verdict_counts.failed (number)
+   * - matched_verdict_counts.flaky (number)
+   * - matched_verdict_counts.passed (number)
+   * - matched_verdict_counts.skipped (number)
+   * - matched_verdict_counts.execution_errored (number)
+   * - matched_verdict_counts.precluded (number)
+   * - matched_verdict_counts.exonerated (number)
+   * - module_matches (bool)
    * - module_status (luci.resultdb.v1.TestAggregation.ModuleStatus):
    *   for aggregations at Invocation, Coarse and Fine levels, this field is
-   *   be MODULE_STATUS_UNSPECIFIED, so is only useful for filtering Module-level
+   *   always MODULE_STATUS_UNSPECIFIED, so is only useful for filtering Module-level
    *   aggregations.
+   *
+   * Example: To filter to failing modules, and aggregations with at least one
+   * failing or execution errored test verdict, where the module/test verdicts
+   * also meet the `search_criteria`:
+   *  (module_status = FAILED AND module_matched) OR (matched_test_verdicts.failed > 0 OR
+   *   matched_test_verdicts.execution_errored > 0)
    */
   readonly filter: string;
 }
@@ -1145,7 +1175,7 @@ export const WorkUnitPredicate: MessageFns<WorkUnitPredicate> = {
 };
 
 function createBaseTestAggregationPredicate(): TestAggregationPredicate {
-  return { aggregationLevel: 0, testPrefixFilter: undefined, containsTestResultFilter: "", filter: "" };
+  return { aggregationLevel: 0, testPrefixFilter: undefined, searchCriteria: "", filter: "" };
 }
 
 export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
@@ -1156,8 +1186,8 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
     if (message.testPrefixFilter !== undefined) {
       TestIdentifierPrefix.encode(message.testPrefixFilter, writer.uint32(18).fork()).join();
     }
-    if (message.containsTestResultFilter !== "") {
-      writer.uint32(26).string(message.containsTestResultFilter);
+    if (message.searchCriteria !== "") {
+      writer.uint32(26).string(message.searchCriteria);
     }
     if (message.filter !== "") {
       writer.uint32(34).string(message.filter);
@@ -1193,7 +1223,7 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
             break;
           }
 
-          message.containsTestResultFilter = reader.string();
+          message.searchCriteria = reader.string();
           continue;
         }
         case 4: {
@@ -1219,9 +1249,7 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
       testPrefixFilter: isSet(object.testPrefixFilter)
         ? TestIdentifierPrefix.fromJSON(object.testPrefixFilter)
         : undefined,
-      containsTestResultFilter: isSet(object.containsTestResultFilter)
-        ? globalThis.String(object.containsTestResultFilter)
-        : "",
+      searchCriteria: isSet(object.searchCriteria) ? globalThis.String(object.searchCriteria) : "",
       filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
     };
   },
@@ -1234,8 +1262,8 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
     if (message.testPrefixFilter !== undefined) {
       obj.testPrefixFilter = TestIdentifierPrefix.toJSON(message.testPrefixFilter);
     }
-    if (message.containsTestResultFilter !== "") {
-      obj.containsTestResultFilter = message.containsTestResultFilter;
+    if (message.searchCriteria !== "") {
+      obj.searchCriteria = message.searchCriteria;
     }
     if (message.filter !== "") {
       obj.filter = message.filter;
@@ -1252,7 +1280,7 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
     message.testPrefixFilter = (object.testPrefixFilter !== undefined && object.testPrefixFilter !== null)
       ? TestIdentifierPrefix.fromPartial(object.testPrefixFilter)
       : undefined;
-    message.containsTestResultFilter = object.containsTestResultFilter ?? "";
+    message.searchCriteria = object.searchCriteria ?? "";
     message.filter = object.filter ?? "";
     return message;
   },

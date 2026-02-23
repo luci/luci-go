@@ -25,8 +25,8 @@ import {
   TopLabel,
 } from '@/common/components/timeline';
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
-import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
 import { ChronicleContext } from './chronicle_context';
 
@@ -43,7 +43,7 @@ interface TimelineItem {
   label: string;
   start: DateTime;
   end: DateTime;
-  stage: StageView;
+  stage: Stage;
 }
 
 function TimelineView() {
@@ -59,26 +59,26 @@ function TimelineView() {
         timelineEnd: DateTime.now(),
       };
 
-    const stages = Object.values(graph.stages);
+    const stages = Object.values(graph.stages) as Stage[];
     let minMs = Infinity;
     let maxMs = -Infinity;
 
     const timelineItems: TimelineItem[] = stages
       .map((sv) => {
-        if (!sv.stage || !sv.stage.stateHistory) return undefined;
+        if (!sv || !sv.stateHistory) return undefined;
 
         // Calculate start and end times based on stage edits.
         // We take the edit moving state into ATTEMPTING as the start time
         // and the edit moving state to FINAL as the end time.
-        const attemptingStateHistory = sv.stage.stateHistory.find(
+        const attemptingStateHistory = sv.stateHistory.find(
           (s) => s.state === StageState.STAGE_STATE_ATTEMPTING,
         );
-        const finalStateHistory = sv.stage.stateHistory.find(
+        const finalStateHistory = sv.stateHistory.find(
           (s) => s.state === StageState.STAGE_STATE_FINAL,
         );
 
         if (
-          !sv.stage?.identifier?.id ||
+          !sv.identifier?.id ||
           !attemptingStateHistory?.version?.ts ||
           !finalStateHistory?.version?.ts
         ) {
@@ -94,8 +94,8 @@ function TimelineView() {
         maxMs = Math.max(maxMs, end.toMillis());
 
         return {
-          id: sv.stage.identifier.id,
-          label: sv.stage.identifier.id,
+          id: sv.identifier.id,
+          label: sv.identifier.id,
           start,
           end,
           stage: sv,

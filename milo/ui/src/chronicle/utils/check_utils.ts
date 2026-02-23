@@ -18,8 +18,8 @@ import { GobSourceCheckOptions } from '@/proto/turboci/data/gerrit/v1/gob_source
 import { PiperSourceCheckOptions } from '@/proto/turboci/data/piper/v1/piper_source_check_options.pb';
 import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_check_description_option.pb';
 import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_summary_result.pb';
+import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
-import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Datum } from '@/proto/turboci/graph/orchestrator/v1/datum.pb';
 
 export enum CheckResultStatus {
@@ -58,8 +58,7 @@ function parseDatum<T>(datum: Datum, expectedTypeUrl: string): T | undefined {
   }
 }
 
-export function getCheckResultStatus(checkView: CheckView): CheckResultStatus {
-  const check = checkView.check;
+export function getCheckResultStatus(check: Check): CheckResultStatus {
   if (!check) return CheckResultStatus.UNKNOWN;
 
   for (const result of check.results) {
@@ -89,8 +88,7 @@ export function getCheckResultStatus(checkView: CheckView): CheckResultStatus {
   return CheckResultStatus.UNKNOWN;
 }
 
-export function getCheckLabel(checkView: CheckView): string {
-  const check = checkView.check;
+export function getCheckLabel(check: Check): string {
   if (!check) return 'Unknown Check';
 
   for (const datum of check.options) {

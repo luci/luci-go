@@ -362,7 +362,7 @@ function Graph() {
       if (isSelfCollapsed && selfGroupId !== undefined) {
         const members = groupData.groupIdToChecks.get(selfGroupId);
         if (members && members.length > 0) {
-          representativeId = members[0].check!.identifier!.id!;
+          representativeId = members[0].identifier!.id!;
         }
       }
 
@@ -412,8 +412,8 @@ function Graph() {
           const checks = groupData.groupIdToChecks.get(id);
           if (checks) {
             checks.forEach((c) => {
-              if (c.check?.identifier?.id) {
-                nodesToFocus.push(c.check.identifier.id);
+              if (c.identifier?.id) {
+                nodesToFocus.push(c.identifier.id);
               }
             });
           }

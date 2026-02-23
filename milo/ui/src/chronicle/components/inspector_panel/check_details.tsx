@@ -14,21 +14,18 @@
 
 import { Box, Chip, Divider, Typography } from '@mui/material';
 
+import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { checkKindToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { checkStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
-import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 
 import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
 
 export interface CheckDetailsProps {
-  view: CheckView;
+  check: Check;
 }
 
-export function CheckDetails({ view }: CheckDetailsProps) {
-  const check = view.check;
-  if (!check) return null;
-
+export function CheckDetails({ check }: CheckDetailsProps) {
   const dependencyIds = (check.dependencies?.edges || [])
     .map((edge) => edge.check?.identifier?.id || edge.stage?.identifier?.id)
     .filter((id): id is string => !!id)

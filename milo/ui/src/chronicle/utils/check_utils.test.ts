@@ -20,7 +20,6 @@ import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_ch
 import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_summary_result.pb';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
-import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Datum } from '@/proto/turboci/graph/orchestrator/v1/datum.pb';
 
 import {
@@ -35,12 +34,12 @@ import {
   TYPE_URL_TEST_RESULT,
 } from './check_utils';
 
-function createCheckView(
+function createCheck(
   kind: CheckKind,
   id: string,
   optionsData: { typeUrl: string; json: unknown }[] = [],
   resultsData: { typeUrl: string; json: unknown }[] = [],
-): CheckView {
+): Check {
   const options: Datum[] = optionsData.map((o) => ({
     value: {
       value: { typeUrl: o.typeUrl, value: new Uint8Array() },
@@ -64,15 +63,13 @@ function createCheckView(
       : [];
 
   return {
-    check: {
-      identifier: { id, workPlan: { id: 'test-wp' } },
-      kind,
-      options,
-      results,
-      stateHistory: [],
-    } as Check,
+    identifier: { id, workPlan: { id: 'test-wp' } },
+    kind,
+    options,
+    results,
+    stateHistory: [],
     edits: [],
-  };
+  } as Check;
 }
 
 describe('check_utils', () => {
@@ -156,7 +153,7 @@ describe('check_utils', () => {
 
     testCases.forEach((tc) => {
       it(`${tc.name}`, () => {
-        const view = createCheckView(tc.kind, 'check-id', [], tc.results);
+        const view = createCheck(tc.kind, 'check-id', [], tc.results);
         expect(getCheckResultStatus(view)).toBe(tc.expected);
       });
     });
@@ -292,7 +289,7 @@ describe('check_utils', () => {
 
     testCases.forEach((tc) => {
       it(`${tc.name}`, () => {
-        const view = createCheckView(tc.kind, tc.id, tc.options);
+        const view = createCheck(tc.kind, tc.id, tc.options);
         expect(getCheckLabel(view)).toBe(tc.expected);
       });
     });

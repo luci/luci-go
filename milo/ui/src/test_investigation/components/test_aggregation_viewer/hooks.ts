@@ -146,7 +146,7 @@ function useAccumulatedAggregationsQuery(
           aggregationLevel: level,
           filter: filter || undefined,
           testPrefixFilter: testPrefixFilter || undefined,
-          containsTestResultFilter: testResultFilter || undefined,
+          searchCriteria: testResultFilter || undefined,
         },
         orderBy: 'id.level, ui_priority desc, id.id',
         pageSize: 1000,

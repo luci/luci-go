@@ -68,7 +68,6 @@ import {
 import { CheckDelta } from '../proto/turboci/graph/orchestrator/v1/check_delta.pb';
 import { CheckKind } from '../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { CheckState } from '../proto/turboci/graph/orchestrator/v1/check_state.pb';
-import { CheckView } from '../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Datum } from '../proto/turboci/graph/orchestrator/v1/datum.pb';
 import {
   Dependencies,
@@ -77,7 +76,6 @@ import {
 } from '../proto/turboci/graph/orchestrator/v1/dependencies.pb';
 import { Edge } from '../proto/turboci/graph/orchestrator/v1/edge.pb';
 import { Edit } from '../proto/turboci/graph/orchestrator/v1/edit.pb';
-import { GraphView } from '../proto/turboci/graph/orchestrator/v1/graph_view.pb';
 import { Revision } from '../proto/turboci/graph/orchestrator/v1/revision.pb';
 import {
   Stage,
@@ -89,8 +87,8 @@ import { StageAttemptState } from '../proto/turboci/graph/orchestrator/v1/stage_
 import { StageDelta } from '../proto/turboci/graph/orchestrator/v1/stage_delta.pb';
 import { StageExecutionPolicy } from '../proto/turboci/graph/orchestrator/v1/stage_execution_policy.pb';
 import { StageState } from '../proto/turboci/graph/orchestrator/v1/stage_state.pb';
-import { StageView } from '../proto/turboci/graph/orchestrator/v1/stage_view.pb';
 import { Value } from '../proto/turboci/graph/orchestrator/v1/value.pb';
+import { WorkPlan as WorkPlanView } from '../proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 // Type URLs for the data protos
 const TYPE_URL_GOB_SOURCE_OPTIONS =
@@ -202,8 +200,8 @@ export class FakeGraphGenerator {
   private currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
 
   // Accumulators for generated views where the key is the identifier.id
-  private checkViews: Record<string, CheckView> = {};
-  private stageViews: Record<string, StageView> = {};
+  private checkViews: Record<string, Check> = {};
+  private stageViews: Record<string, Stage> = {};
 
   // Accumulators for planning stage assignments
   private sourceCheckIds: CheckId[] = [];
@@ -224,9 +222,9 @@ export class FakeGraphGenerator {
   }
 
   /**
-   * Generates the complete GraphView based on the configuration.
+   * Generates the complete WorkPlan based on the configuration.
    */
-  public generate(): GraphView {
+  public generate(): WorkPlanView {
     this.resetState();
 
     switch (this.config.workflowType) {
@@ -252,8 +250,8 @@ export class FakeGraphGenerator {
     return {
       identifier: this.workPlanId,
       version: this.nextRevision(),
-      checks: this.checkViews,
-      stages: this.stageViews,
+      checks: Object.values(this.checkViews),
+      stages: Object.values(this.stageViews),
     };
   }
 
@@ -661,13 +659,11 @@ export class FakeGraphGenerator {
       results: results,
       state: CheckState.CHECK_STATE_FINAL,
       stateHistory: [],
+      edits: edits,
     };
 
     if (!checkId.id) throw new Error('Check ID required');
-    this.checkViews[checkId.id] = {
-      check: check,
-      edits: edits,
-    };
+    this.checkViews[checkId.id] = check;
   }
 
   private generateStageView(
@@ -748,12 +744,10 @@ export class FakeGraphGenerator {
         { state: StageState.STAGE_STATE_ATTEMPTING, version: attemptRev },
         { state: StageState.STAGE_STATE_FINAL, version: finalRev },
       ] as Stage_StateHistoryEntry[],
-    };
-
-    this.stageViews[idStr] = {
-      stage: stage,
       edits: edits,
     };
+
+    this.stageViews[idStr] = stage;
   }
 
   // ==========================================

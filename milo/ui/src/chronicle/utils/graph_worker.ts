@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GraphView } from '../../proto/turboci/graph/orchestrator/v1/graph_view.pb';
+import { WorkPlan } from '../../proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import { GraphBuilderOptions, TurboCIGraphBuilder } from './graph_builder';
 
 interface WorkerMessage {
-  graph: GraphView;
+  graph: WorkPlan;
   options: GraphBuilderOptions;
   error: Error;
 }

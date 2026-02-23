@@ -175,9 +175,9 @@ export function collectStageAttemptsToJSON(object: CollectStageAttempts): string
  *    │collect_checks│       │collect_stages│      Collect
  *    └──────┬───────┘       └───────┬──────┘
  *           │                       │
- *           │      ┌─────────┐      │
- *           └─────►│GraphView│◄─────┘
- *                  └─────────┘
+ *           │      ┌────────┐       │
+ *           └─────►│WorkPlan│◄──────┘
+ *                  └────────┘
  *
  * See QueryNodesRequest.version for how this Query interacts with transactions.
  *

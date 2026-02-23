@@ -14,8 +14,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
-import { GraphView } from '@/proto/turboci/graph/orchestrator/v1/graph_view.pb';
+import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
+import { WorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import { GroupMode, getTopologyGroups } from '../../utils/graph_builder';
 /**
@@ -32,10 +32,10 @@ const NUM_CHECKS_COLLAPSE_ALL = 500;
  * 3. Initializes the state by collapsing all successful groups when a new graph is loaded.
  * 4. Provides actions to expand/collapse specific groups or sets of groups.
  *
- * @param graph The TurboCI GraphView data.
+ * @param graph The TurboCI WorkPlan data.
  * @returns An object containing the current collapsed state, pre-calculated group metadata, and manipulator actions.
  */
-export function useCollapsibleGroups(graph: GraphView | undefined) {
+export function useCollapsibleGroups(graph: WorkPlan | undefined) {
   // Mapping of group ID -> group mode (expand/collapsed)
   const [groupModes, setGroupModes] = useState<Map<number, GroupMode>>(
     new Map(),
@@ -44,7 +44,7 @@ export function useCollapsibleGroups(graph: GraphView | undefined) {
   const groupData = useMemo(() => {
     if (!graph) {
       return {
-        groupIdToChecks: new Map<number, CheckView[]>(),
+        groupIdToChecks: new Map<number, Check[]>(),
         nodeToGroupId: new Map<string, number>(),
         parentToGroupIds: new Map<string, number[]>(),
       };
@@ -54,7 +54,7 @@ export function useCollapsibleGroups(graph: GraphView | undefined) {
 
   // Track if we have applied the defaults for the current graph instance to avoid
   // resetting user state on re-renders.
-  const initializedGraphRef = useRef<GraphView | undefined>(undefined);
+  const initializedGraphRef = useRef<WorkPlan | undefined>(undefined);
 
   // Initialize defaults: Collapse all successful groups when a new graph loads
   useEffect(() => {

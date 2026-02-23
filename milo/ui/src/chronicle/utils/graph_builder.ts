@@ -16,11 +16,11 @@ import dagre from '@dagrejs/dagre';
 import { Edge, MarkerType, Node, Position } from '@xyflow/react';
 import { CSSProperties } from 'react';
 
+import { Check } from '../../proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '../../proto/turboci/graph/orchestrator/v1/check_kind.pb';
-import { CheckView } from '../../proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Dependencies } from '../../proto/turboci/graph/orchestrator/v1/dependencies.pb';
-import { GraphView as TurboCIGraphView } from '../../proto/turboci/graph/orchestrator/v1/graph_view.pb';
-import { StageView } from '../../proto/turboci/graph/orchestrator/v1/stage_view.pb';
+import { Stage } from '../../proto/turboci/graph/orchestrator/v1/stage.pb';
+import { WorkPlan as TurboCIGraphView } from '../../proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import {
   CheckResultStatus,
@@ -33,7 +33,7 @@ dagreGraph.setDefaultEdgeLabel(() => ({}));
 
 export type ChronicleNodeData = {
   label: string;
-  view?: CheckView | StageView;
+  view?: Check | Stage;
   groupId?: number;
   resultStatus?: CheckResultStatus;
   isCollapsed?: boolean;
@@ -315,15 +315,14 @@ function truncateLabel(
   return label.substring(0, maxLength) + '...';
 }
 
-function createCheckNode(checkView: CheckView, groupId: number): ChronicleNode {
-  const check = checkView.check!;
-  const resultStatus = getCheckResultStatus(checkView);
+function createCheckNode(check: Check, groupId: number): ChronicleNode {
+  const resultStatus = getCheckResultStatus(check);
   const colors = getCheckColors(resultStatus);
   return {
     id: check.identifier!.id!,
     data: {
-      label: truncateLabel(getCheckLabel(checkView)),
-      view: checkView,
+      label: truncateLabel(getCheckLabel(check)),
+      view: check,
       groupId,
       resultStatus,
     },
@@ -332,13 +331,12 @@ function createCheckNode(checkView: CheckView, groupId: number): ChronicleNode {
   };
 }
 
-function createStageNode(stageView: StageView): ChronicleNode {
-  const stage = stageView.stage!;
+function createStageNode(stage: Stage): ChronicleNode {
   return {
     id: stage.identifier!.id!,
     data: {
       label: truncateLabel(`Stage: ${stage.identifier!.id}`),
-      view: stageView,
+      view: stage,
     },
     style: NODE_STYLES.stage(COLORS.stage),
     ...COMMON_NODE_PROPERTIES,
@@ -374,21 +372,21 @@ function createCollapsedGroupNode(
  * @returns Lookup maps for topology groups.
  */
 export function getTopologyGroups(graphView: TurboCIGraphView): {
-  groupIdToChecks: Map<number, CheckView[]>;
+  groupIdToChecks: Map<number, Check[]>;
   nodeToGroupId: Map<string, number>;
   parentToGroupIds: Map<string, number[]>;
 } {
-  const groupIdToChecks = new Map<number, CheckView[]>();
+  const groupIdToChecks = new Map<number, Check[]>();
   const nodeToGroupId = new Map<string, number>();
   const parentToGroupIds = new Map<string, number[]>();
 
   const parentToChildren = new Map<string, string[]>();
 
   // Populate parentToChildren map
-  Object.values(graphView.checks).forEach((cv) => {
-    const childId = cv.check?.identifier?.id;
+  graphView.checks.forEach((check) => {
+    const childId = check.identifier?.id;
     if (childId) {
-      cv.check?.dependencies?.edges?.forEach((edge) => {
+      check.dependencies?.edges?.forEach((edge) => {
         const parentId =
           edge.check?.identifier?.id || edge.stage?.identifier?.id;
         if (parentId) {
@@ -402,8 +400,9 @@ export function getTopologyGroups(graphView: TurboCIGraphView): {
   });
 
   // Group checks by their parents and children
-  Object.entries(graphView.checks).forEach(([checkId, checkView]) => {
-    const deps = checkView.check?.dependencies?.edges || [];
+  graphView.checks.forEach((check) => {
+    const checkId = check.identifier!.id!;
+    const deps = check.dependencies?.edges || [];
     const parentIds = deps
       .map((e) => e.check?.identifier?.id || e.stage?.identifier?.id)
       .filter((id): id is string => !!id)
@@ -418,7 +417,7 @@ export function getTopologyGroups(graphView: TurboCIGraphView): {
     if (!groupIdToChecks.has(hash)) {
       groupIdToChecks.set(hash, []);
     }
-    groupIdToChecks.get(hash)!.push(checkView);
+    groupIdToChecks.get(hash)!.push(check);
     nodeToGroupId.set(checkId, hash);
   });
 
@@ -428,7 +427,7 @@ export function getTopologyGroups(graphView: TurboCIGraphView): {
     if (checks.length > 1) {
       // We only need to check one node in the group because they all share parents.
       const exampleCheck = checks[0];
-      const deps = exampleCheck.check?.dependencies?.edges || [];
+      const deps = exampleCheck.dependencies?.edges || [];
       deps.forEach((edge) => {
         const parentId =
           edge.check?.identifier?.id || edge.stage?.identifier?.id;
@@ -506,19 +505,20 @@ export class TurboCIGraphBuilder {
     });
 
     // 3. Create Stage Nodes
-    Object.entries(this.graphView.stages).forEach(([stageId, stageView]) => {
+    this.graphView.stages.forEach((stage) => {
+      const stageId = stage.identifier!.id!;
       // Stages hidden if executing a collapsed check.
-      if (this.shouldHideStage(stageView)) {
+      if (this.shouldHideStage(stage)) {
         return;
       }
-      this.nodes.push(createStageNode(stageView));
+      this.nodes.push(createStageNode(stage));
       this.allNodeIds.add(stageId);
     });
   }
 
-  private shouldHideStage(stageView: StageView): boolean {
+  private shouldHideStage(stage: Stage): boolean {
     const assignedCheckIds =
-      stageView.stage?.assignments
+      stage.assignments
         ?.map((a) => a.target?.id)
         .filter((id): id is string => !!id) || [];
 
@@ -531,11 +531,11 @@ export class TurboCIGraphBuilder {
     });
   }
 
-  private createCollapsedAllNode(groupId: number, checks: CheckView[]) {
+  private createCollapsedAllNode(groupId: number, checks: Check[]) {
     const nodeId = `collapsed-group-${groupId}`;
     // Map all constituent checks to this group node ID
     checks.forEach((c) =>
-      this.checkIdToVisualNodeIdMap.set(c.check!.identifier!.id!, nodeId),
+      this.checkIdToVisualNodeIdMap.set(c.identifier!.id!, nodeId),
     );
 
     let hasSuccess = false;
@@ -556,7 +556,7 @@ export class TurboCIGraphBuilder {
     else if (!hasSuccess && hasFailure) status = CheckResultStatus.FAILURE;
 
     let label = '';
-    const kind = checks[0].check?.kind;
+    const kind = checks[0].kind;
     const typeStr =
       kind === CheckKind.CHECK_KIND_BUILD
         ? 'builds'
@@ -578,9 +578,9 @@ export class TurboCIGraphBuilder {
     this.allNodeIds.add(nodeId);
   }
 
-  private createSuccessOnlyNodes(groupId: number, checks: CheckView[]) {
-    const successes: CheckView[] = [];
-    const failures: CheckView[] = [];
+  private createSuccessOnlyNodes(groupId: number, checks: Check[]) {
+    const successes: Check[] = [];
+    const failures: Check[] = [];
 
     checks.forEach((c) => {
       if (getCheckResultStatus(c) === CheckResultStatus.SUCCESS) {
@@ -595,10 +595,10 @@ export class TurboCIGraphBuilder {
     if (successes.length > 1) {
       const nodeId = `collapsed-group-${groupId}-success`;
       successes.forEach((c) =>
-        this.checkIdToVisualNodeIdMap.set(c.check!.identifier!.id!, nodeId),
+        this.checkIdToVisualNodeIdMap.set(c.identifier!.id!, nodeId),
       );
 
-      const kind = successes[0].check?.kind;
+      const kind = successes[0].kind;
       const typeStr =
         kind === CheckKind.CHECK_KIND_BUILD
           ? 'builds'
@@ -621,9 +621,9 @@ export class TurboCIGraphBuilder {
     }
   }
 
-  private createIndividualNodes(groupId: number, checks: CheckView[]) {
+  private createIndividualNodes(groupId: number, checks: Check[]) {
     checks.forEach((c) => {
-      const checkId = c.check!.identifier!.id!;
+      const checkId = c.identifier!.id!;
       this.checkIdToVisualNodeIdMap.set(checkId, checkId);
       this.nodes.push(createCheckNode(c, groupId));
       this.allNodeIds.add(checkId);
@@ -631,21 +631,19 @@ export class TurboCIGraphBuilder {
   }
 
   private identifyAssignmentGroups(options: GraphBuilderOptions) {
-    // key: checkId, value: stageIds assigned to check
     const checkAssignments = new Map<string, Set<string>>();
 
-    Object.entries(this.graphView.stages).forEach(([stageId, sv]) => {
-      if (this.shouldHideStage(sv)) {
+    this.graphView.stages.forEach((stage) => {
+      const stageId = stage.identifier!.id!;
+      if (this.shouldHideStage(stage)) {
         return;
       }
 
-      if (!sv.stage) return;
-
       // Don't group stages that are assigned multiple different checks.
       // Instead, just create edges for them.
-      const stageAssignedChecks = sv.stage.assignments
+      const stageAssignedChecks = stage.assignments
         .map((a) => a.target?.id)
-        .filter((a) => a !== undefined);
+        .filter((a): a is string => a !== undefined);
       if (stageAssignedChecks.length !== 1) {
         this.addAssignmentEdges(
           stageId,
@@ -780,18 +778,20 @@ export class TurboCIGraphBuilder {
   }
 
   private createEdges() {
-    Object.entries(this.graphView.stages).forEach(([stageId, sv]) => {
+    this.graphView.stages.forEach((stage) => {
+      const stageId = stage.identifier!.id!;
       // Don't process edges for stages that were hidden because they
       // were assigned to a collapsed check.
-      if (this.shouldHideStage(sv)) return;
-      this.addDependencyEdges(stageId, sv.stage!.dependencies);
+      if (this.shouldHideStage(stage)) return;
+      this.addDependencyEdges(stageId, stage.dependencies);
     });
 
-    Object.entries(this.graphView.checks).forEach(([rawCheckId, cv]) => {
+    this.graphView.checks.forEach((check) => {
+      const rawCheckId = check.identifier!.id!;
       const visualSourceId = this.checkIdToVisualNodeIdMap.get(rawCheckId);
       if (!visualSourceId) return;
 
-      this.addDependencyEdges(visualSourceId, cv.check!.dependencies);
+      this.addDependencyEdges(visualSourceId, check.dependencies);
     });
   }
 

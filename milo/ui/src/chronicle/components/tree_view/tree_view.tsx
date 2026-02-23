@@ -33,8 +33,8 @@ import {
 } from 'react';
 
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
-import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
-import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
+import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 
 import { CheckResultStatus } from '../../utils/check_utils';
 import { ChronicleContext } from '../chronicle_context';
@@ -337,8 +337,8 @@ function Tree() {
   const graph = useMemo(() => {
     if (!turboCiGraph) return { nodes: {}, roots: [] };
 
-    const stages = Object.values(turboCiGraph.stages) as StageView[];
-    const checks = Object.values(turboCiGraph.checks) as CheckView[];
+    const stages = Object.values(turboCiGraph.stages) as Stage[];
+    const checks = Object.values(turboCiGraph.checks) as Check[];
     return buildVisualGraph(stages, checks);
   }, [turboCiGraph]);
 

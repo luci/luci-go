@@ -42,7 +42,6 @@ describe('TestAggregationDrawer', () => {
         <TestAggregationDrawer isOpen={true} onClose={jest.fn()} />
       </FakeContextProvider>,
     );
-    // screen.debug();
     expect(
       screen.getByTestId('mock-test-aggregation-viewer'),
     ).toBeInTheDocument();

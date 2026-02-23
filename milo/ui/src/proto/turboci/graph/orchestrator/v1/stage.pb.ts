@@ -11,6 +11,8 @@ import { Check, Stage as Stage1, StageAttempt } from "../../ids/v1/identifier.pb
 import { Actor } from "./actor.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { Dependencies } from "./dependencies.pb";
+import { Edit } from "./edit.pb";
+import { OmitReason, omitReasonFromJSON, omitReasonToJSON } from "./omit_reason.pb";
 import { Revision } from "./revision.pb";
 import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
@@ -32,15 +34,27 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * match `args.type_url` to actually run the Stage.
  *
  * See also:
- *   * StageView (graph view object for a Stage and contained messages)
- *   * StageEditView (graph view object for Edits of a Stage)
+ *   * Identifier.Stage* (Identifiers for Stages, StageAttempts, etc.)
  *
- * Next ID: 15
+ * Next ID: 17
  */
 export interface Stage {
   /** The Stage's identifier. */
   readonly identifier?:
     | Stage1
+    | undefined;
+  /**
+   * If set, the reason this Stage's content was omitted. Only UNKNOWN (default
+   * value, used when the content was included) and PLACEHOLDER are valid for a
+   * Stage, since Stages that were unwanted or inaccessible will be removed from
+   * the WorkPlan entirely.
+   *
+   * A few fields may be populated even if `omit_reason` is set:
+   *   * `identifier` will always be populated.
+   *   * `edits` may be populated.
+   */
+  readonly omitReason?:
+    | OmitReason
     | undefined;
   /** Actor which created the Stage. */
   readonly createdBy?:
@@ -149,7 +163,7 @@ export interface Stage {
   /** The workflow's intent for this Stage. */
   readonly assignments: readonly Stage_Assignment[];
   /**
-   * A set of dependencies edges of Stages whose resolution should be treated as
+   * A set of dependencies edges to Stages whose resolution should be treated as
    * a logical part of this Stage.
    *
    * Stages included in this continuation_group MUST be created BY THIS STAGE.
@@ -174,7 +188,15 @@ export interface Stage {
    *
    * Set for stages that are in AWAITING_GROUP or FINAL states.
    */
-  readonly concludedReason?: StageConcludedReason | undefined;
+  readonly concludedReason?:
+    | StageConcludedReason
+    | undefined;
+  /**
+   * StageEdits for this Stage.
+   *
+   * Sorted ascending by `version`.
+   */
+  readonly edits: readonly Edit[];
 }
 
 /**
@@ -233,12 +255,24 @@ export interface Stage_ExecutionPolicyState {
  * TBD: Pull this into its own top-level StageAttempt entity because it will
  * need to have its own state and lifecycle/transactions.
  *
- * Next ID: 12
+ * Next ID: 15
  */
 export interface Stage_Attempt {
   /** The Stage Attempt's identifier. */
   readonly identifier?:
     | StageAttempt
+    | undefined;
+  /**
+   * If set, the reason this Attempt's content was omitted. Only UNKNOWN
+   * (default value, used when the content was included) and PLACEHOLDER are
+   * valid for an Attempt, since Attempts that were unwanted or inaccessible
+   * will be removed from the WorkPlan entirely.
+   *
+   * A few fields may be populated even if `omit_reason` is set:
+   *   * `identifier` will always be populated.
+   */
+  readonly omitReason?:
+    | OmitReason
     | undefined;
   /**
    * The version of this Attempt.
@@ -534,6 +568,7 @@ export interface StageAttemptCurrentState {
 function createBaseStage(): Stage {
   return {
     identifier: undefined,
+    omitReason: undefined,
     createdBy: undefined,
     realm: undefined,
     args: undefined,
@@ -547,6 +582,7 @@ function createBaseStage(): Stage {
     assignments: [],
     continuationGroup: undefined,
     concludedReason: undefined,
+    edits: [],
   };
 }
 
@@ -554,6 +590,9 @@ export const Stage: MessageFns<Stage> = {
   encode(message: Stage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.identifier !== undefined) {
       Stage1.encode(message.identifier, writer.uint32(10).fork()).join();
+    }
+    if (message.omitReason !== undefined) {
+      writer.uint32(120).int32(message.omitReason);
     }
     if (message.createdBy !== undefined) {
       Actor.encode(message.createdBy, writer.uint32(18).fork()).join();
@@ -594,6 +633,9 @@ export const Stage: MessageFns<Stage> = {
     if (message.concludedReason !== undefined) {
       writer.uint32(104).int32(message.concludedReason);
     }
+    for (const v of message.edits) {
+      Edit.encode(v!, writer.uint32(130).fork()).join();
+    }
     return writer;
   },
 
@@ -610,6 +652,14 @@ export const Stage: MessageFns<Stage> = {
           }
 
           message.identifier = Stage1.decode(reader, reader.uint32());
+          continue;
+        }
+        case 15: {
+          if (tag !== 120) {
+            break;
+          }
+
+          message.omitReason = reader.int32() as any;
           continue;
         }
         case 2: {
@@ -716,6 +766,14 @@ export const Stage: MessageFns<Stage> = {
           message.concludedReason = reader.int32() as any;
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.edits.push(Edit.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -728,6 +786,7 @@ export const Stage: MessageFns<Stage> = {
   fromJSON(object: any): Stage {
     return {
       identifier: isSet(object.identifier) ? Stage1.fromJSON(object.identifier) : undefined,
+      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       args: isSet(object.args) ? Value.fromJSON(object.args) : undefined,
@@ -749,6 +808,7 @@ export const Stage: MessageFns<Stage> = {
         : [],
       continuationGroup: isSet(object.continuationGroup) ? Dependencies.fromJSON(object.continuationGroup) : undefined,
       concludedReason: isSet(object.concludedReason) ? stageConcludedReasonFromJSON(object.concludedReason) : undefined,
+      edits: globalThis.Array.isArray(object?.edits) ? object.edits.map((e: any) => Edit.fromJSON(e)) : [],
     };
   },
 
@@ -756,6 +816,9 @@ export const Stage: MessageFns<Stage> = {
     const obj: any = {};
     if (message.identifier !== undefined) {
       obj.identifier = Stage1.toJSON(message.identifier);
+    }
+    if (message.omitReason !== undefined) {
+      obj.omitReason = omitReasonToJSON(message.omitReason);
     }
     if (message.createdBy !== undefined) {
       obj.createdBy = Actor.toJSON(message.createdBy);
@@ -796,6 +859,9 @@ export const Stage: MessageFns<Stage> = {
     if (message.concludedReason !== undefined) {
       obj.concludedReason = stageConcludedReasonToJSON(message.concludedReason);
     }
+    if (message.edits?.length) {
+      obj.edits = message.edits.map((e) => Edit.toJSON(e));
+    }
     return obj;
   },
 
@@ -807,6 +873,7 @@ export const Stage: MessageFns<Stage> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? Stage1.fromPartial(object.identifier)
       : undefined;
+    message.omitReason = object.omitReason ?? undefined;
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;
@@ -832,6 +899,7 @@ export const Stage: MessageFns<Stage> = {
       ? Dependencies.fromPartial(object.continuationGroup)
       : undefined;
     message.concludedReason = object.concludedReason ?? undefined;
+    message.edits = object.edits?.map((e) => Edit.fromPartial(e)) || [];
     return message;
   },
 };
@@ -997,6 +1065,7 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
 function createBaseStage_Attempt(): Stage_Attempt {
   return {
     identifier: undefined,
+    omitReason: undefined,
     version: undefined,
     lastHeartbeat: undefined,
     state: undefined,
@@ -1013,6 +1082,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
   encode(message: Stage_Attempt, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.identifier !== undefined) {
       StageAttempt.encode(message.identifier, writer.uint32(10).fork()).join();
+    }
+    if (message.omitReason !== undefined) {
+      writer.uint32(112).int32(message.omitReason);
     }
     if (message.version !== undefined) {
       Revision.encode(message.version, writer.uint32(18).fork()).join();
@@ -1057,6 +1129,14 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
           }
 
           message.identifier = StageAttempt.decode(reader, reader.uint32());
+          continue;
+        }
+        case 14: {
+          if (tag !== 112) {
+            break;
+          }
+
+          message.omitReason = reader.int32() as any;
           continue;
         }
         case 2: {
@@ -1143,6 +1223,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
   fromJSON(object: any): Stage_Attempt {
     return {
       identifier: isSet(object.identifier) ? StageAttempt.fromJSON(object.identifier) : undefined,
+      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       lastHeartbeat: isSet(object.lastHeartbeat) ? Revision.fromJSON(object.lastHeartbeat) : undefined,
       state: isSet(object.state) ? stageAttemptStateFromJSON(object.state) : undefined,
@@ -1165,6 +1246,9 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     const obj: any = {};
     if (message.identifier !== undefined) {
       obj.identifier = StageAttempt.toJSON(message.identifier);
+    }
+    if (message.omitReason !== undefined) {
+      obj.omitReason = omitReasonToJSON(message.omitReason);
     }
     if (message.version !== undefined) {
       obj.version = Revision.toJSON(message.version);
@@ -1204,6 +1288,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? StageAttempt.fromPartial(object.identifier)
       : undefined;
+    message.omitReason = object.omitReason ?? undefined;
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;

@@ -12,6 +12,8 @@ import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { Datum } from "./datum.pb";
 import { Dependencies } from "./dependencies.pb";
+import { Edit } from "./edit.pb";
+import { OmitReason, omitReasonFromJSON, omitReasonToJSON } from "./omit_reason.pb";
 import { Revision } from "./revision.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
 
@@ -43,8 +45,6 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  *
  * See also:
  *   * Identifier.Check* (Identifiers for Checks, CheckOptions, etc.)
- *   * CheckView (graph view object for a Check and contained messages)
- *   * CheckEditView (graph view object for Edits of a Check)
  */
 export interface Check {
   /**
@@ -54,6 +54,19 @@ export interface Check {
    */
   readonly identifier?:
     | Check1
+    | undefined;
+  /**
+   * If set, the reason this Check's content was omitted. Only UNKNOWN
+   * (default value, used when the content was included) and PLACEHOLDER are
+   * valid for a Check, since Checks that were unwanted or inaccessible will be
+   * removed from the WorkPlan entirely.
+   *
+   * A few fields may be populated even if `omit_reason` is set:
+   *   * `identifier` will always be populated.
+   *   * `options`, `results` and `edits` may be populated.
+   */
+  readonly omitReason?:
+    | OmitReason
     | undefined;
   /** Actor which created the Check. */
   readonly createdBy?:
@@ -158,6 +171,12 @@ export interface Check {
    * each write to each Result datum.
    */
   readonly results: readonly Check_Result[];
+  /**
+   * Edits for this Check.
+   *
+   * Sorted ascending by `version`.
+   */
+  readonly edits: readonly Edit[];
 }
 
 /**
@@ -189,6 +208,19 @@ export interface Check_Result {
     | CheckResult
     | undefined;
   /**
+   * If set, the reason this Result's content was omitted. Only UNKNOWN
+   * (default value, used when the content was included) and PLACEHOLDER are
+   * valid for a Result, since Results are included with their parent Check so
+   * they cannot be filtered on their own.
+   *
+   * A few fields may be populated even if `omit_reason` is set:
+   *   * `identifier` will always be populated.
+   *   * `data` may be populated.
+   */
+  readonly omitReason?:
+    | OmitReason
+    | undefined;
+  /**
    * The entity which created this Result.
    *
    * This is the only entity which can modify this Result.
@@ -197,7 +229,7 @@ export interface Check_Result {
     | Actor
     | undefined;
   /**
-   * The database revsision (commit timestamp) at which this Result was
+   * The database revision (commit timestamp) at which this Result was
    * created.
    */
   readonly createdAt?:
@@ -222,7 +254,7 @@ export interface Check_Result {
    */
   readonly data: readonly Datum[];
   /**
-   * The database revsision (commit timestamp) at which this Result is
+   * The database revision (commit timestamp) at which this Result is
    * finalized.
    *
    * This is set when:
@@ -247,6 +279,7 @@ export interface Check_Result {
 function createBaseCheck(): Check {
   return {
     identifier: undefined,
+    omitReason: undefined,
     createdBy: undefined,
     kind: undefined,
     realm: undefined,
@@ -256,6 +289,7 @@ function createBaseCheck(): Check {
     dependencies: undefined,
     options: [],
     results: [],
+    edits: [],
   };
 }
 
@@ -263,6 +297,9 @@ export const Check: MessageFns<Check> = {
   encode(message: Check, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.identifier !== undefined) {
       Check1.encode(message.identifier, writer.uint32(10).fork()).join();
+    }
+    if (message.omitReason !== undefined) {
+      writer.uint32(88).int32(message.omitReason);
     }
     if (message.createdBy !== undefined) {
       Actor.encode(message.createdBy, writer.uint32(18).fork()).join();
@@ -291,6 +328,9 @@ export const Check: MessageFns<Check> = {
     for (const v of message.results) {
       Check_Result.encode(v!, writer.uint32(82).fork()).join();
     }
+    for (const v of message.edits) {
+      Edit.encode(v!, writer.uint32(98).fork()).join();
+    }
     return writer;
   },
 
@@ -307,6 +347,14 @@ export const Check: MessageFns<Check> = {
           }
 
           message.identifier = Check1.decode(reader, reader.uint32());
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.omitReason = reader.int32() as any;
           continue;
         }
         case 2: {
@@ -381,6 +429,14 @@ export const Check: MessageFns<Check> = {
           message.results.push(Check_Result.decode(reader, reader.uint32()));
           continue;
         }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.edits.push(Edit.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -393,6 +449,7 @@ export const Check: MessageFns<Check> = {
   fromJSON(object: any): Check {
     return {
       identifier: isSet(object.identifier) ? Check1.fromJSON(object.identifier) : undefined,
+      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
       kind: isSet(object.kind) ? checkKindFromJSON(object.kind) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
@@ -406,6 +463,7 @@ export const Check: MessageFns<Check> = {
       results: globalThis.Array.isArray(object?.results)
         ? object.results.map((e: any) => Check_Result.fromJSON(e))
         : [],
+      edits: globalThis.Array.isArray(object?.edits) ? object.edits.map((e: any) => Edit.fromJSON(e)) : [],
     };
   },
 
@@ -413,6 +471,9 @@ export const Check: MessageFns<Check> = {
     const obj: any = {};
     if (message.identifier !== undefined) {
       obj.identifier = Check1.toJSON(message.identifier);
+    }
+    if (message.omitReason !== undefined) {
+      obj.omitReason = omitReasonToJSON(message.omitReason);
     }
     if (message.createdBy !== undefined) {
       obj.createdBy = Actor.toJSON(message.createdBy);
@@ -441,6 +502,9 @@ export const Check: MessageFns<Check> = {
     if (message.results?.length) {
       obj.results = message.results.map((e) => Check_Result.toJSON(e));
     }
+    if (message.edits?.length) {
+      obj.edits = message.edits.map((e) => Edit.toJSON(e));
+    }
     return obj;
   },
 
@@ -452,6 +516,7 @@ export const Check: MessageFns<Check> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? Check1.fromPartial(object.identifier)
       : undefined;
+    message.omitReason = object.omitReason ?? undefined;
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;
@@ -467,6 +532,7 @@ export const Check: MessageFns<Check> = {
       : undefined;
     message.options = object.options?.map((e) => Datum.fromPartial(e)) || [];
     message.results = object.results?.map((e) => Check_Result.fromPartial(e)) || [];
+    message.edits = object.edits?.map((e) => Edit.fromPartial(e)) || [];
     return message;
   },
 };
@@ -552,6 +618,7 @@ export const Check_StateHistoryEntry: MessageFns<Check_StateHistoryEntry> = {
 function createBaseCheck_Result(): Check_Result {
   return {
     identifier: undefined,
+    omitReason: undefined,
     owner: undefined,
     createdAt: undefined,
     data: [],
@@ -564,6 +631,9 @@ export const Check_Result: MessageFns<Check_Result> = {
   encode(message: Check_Result, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.identifier !== undefined) {
       CheckResult.encode(message.identifier, writer.uint32(10).fork()).join();
+    }
+    if (message.omitReason !== undefined) {
+      writer.uint32(88).int32(message.omitReason);
     }
     if (message.owner !== undefined) {
       Actor.encode(message.owner, writer.uint32(18).fork()).join();
@@ -596,6 +666,14 @@ export const Check_Result: MessageFns<Check_Result> = {
           }
 
           message.identifier = CheckResult.decode(reader, reader.uint32());
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.omitReason = reader.int32() as any;
           continue;
         }
         case 2: {
@@ -650,6 +728,7 @@ export const Check_Result: MessageFns<Check_Result> = {
   fromJSON(object: any): Check_Result {
     return {
       identifier: isSet(object.identifier) ? CheckResult.fromJSON(object.identifier) : undefined,
+      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
       owner: isSet(object.owner) ? Actor.fromJSON(object.owner) : undefined,
       createdAt: isSet(object.createdAt) ? Revision.fromJSON(object.createdAt) : undefined,
       data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => Datum.fromJSON(e)) : [],
@@ -662,6 +741,9 @@ export const Check_Result: MessageFns<Check_Result> = {
     const obj: any = {};
     if (message.identifier !== undefined) {
       obj.identifier = CheckResult.toJSON(message.identifier);
+    }
+    if (message.omitReason !== undefined) {
+      obj.omitReason = omitReasonToJSON(message.omitReason);
     }
     if (message.owner !== undefined) {
       obj.owner = Actor.toJSON(message.owner);
@@ -689,6 +771,7 @@ export const Check_Result: MessageFns<Check_Result> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? CheckResult.fromPartial(object.identifier)
       : undefined;
+    message.omitReason = object.omitReason ?? undefined;
     message.owner = (object.owner !== undefined && object.owner !== null) ? Actor.fromPartial(object.owner) : undefined;
     message.createdAt = (object.createdAt !== undefined && object.createdAt !== null)
       ? Revision.fromPartial(object.createdAt)

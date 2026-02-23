@@ -283,7 +283,7 @@ export interface ChromeBrowserMachine {
 
 /**
  * ChromeOSMachine refers duts and servers in Chrome OS lab
- * NEXT TAG: 21
+ * NEXT TAG: 23
  */
 export interface ChromeOSMachine {
   /**
@@ -325,12 +325,16 @@ export interface ChromeOSMachine {
   readonly hasWifiBt: boolean;
   /** The wifichip string of the DUT */
   readonly wifiBluetooth: string;
-  /** the DLM SKU ID read from VPD on the device if set */
+  /** The DLM SKU ID read from VPD on the device if set */
   readonly dlmSkuId: string;
   /** Storage type */
   readonly storageType: StorageType;
-  /** the firmware identifier for android_desktop device */
+  /** The firmware identifier for android_desktop device. */
   readonly frid: string;
+  /** The hardware identifier for android_desktop device. */
+  readonly hardwareDescriptorId: string;
+  /** The manufacturing SKU ID for android_desktop device. */
+  readonly mfgSkuId: string;
 }
 
 /**
@@ -1076,6 +1080,8 @@ function createBaseChromeOSMachine(): ChromeOSMachine {
     dlmSkuId: "",
     storageType: 0,
     frid: "",
+    hardwareDescriptorId: "",
+    mfgSkuId: "",
   };
 }
 
@@ -1140,6 +1146,12 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
     }
     if (message.frid !== "") {
       writer.uint32(162).string(message.frid);
+    }
+    if (message.hardwareDescriptorId !== "") {
+      writer.uint32(170).string(message.hardwareDescriptorId);
+    }
+    if (message.mfgSkuId !== "") {
+      writer.uint32(178).string(message.mfgSkuId);
     }
     return writer;
   },
@@ -1311,6 +1323,22 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
           message.frid = reader.string();
           continue;
         }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.hardwareDescriptorId = reader.string();
+          continue;
+        }
+        case 22: {
+          if (tag !== 178) {
+            break;
+          }
+
+          message.mfgSkuId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1342,6 +1370,8 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
       dlmSkuId: isSet(object.dlmSkuId) ? globalThis.String(object.dlmSkuId) : "",
       storageType: isSet(object.storageType) ? storageTypeFromJSON(object.storageType) : 0,
       frid: isSet(object.frid) ? globalThis.String(object.frid) : "",
+      hardwareDescriptorId: isSet(object.hardwareDescriptorId) ? globalThis.String(object.hardwareDescriptorId) : "",
+      mfgSkuId: isSet(object.mfgSkuId) ? globalThis.String(object.mfgSkuId) : "",
     };
   },
 
@@ -1407,6 +1437,12 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
     if (message.frid !== "") {
       obj.frid = message.frid;
     }
+    if (message.hardwareDescriptorId !== "") {
+      obj.hardwareDescriptorId = message.hardwareDescriptorId;
+    }
+    if (message.mfgSkuId !== "") {
+      obj.mfgSkuId = message.mfgSkuId;
+    }
     return obj;
   },
 
@@ -1435,6 +1471,8 @@ export const ChromeOSMachine: MessageFns<ChromeOSMachine> = {
     message.dlmSkuId = object.dlmSkuId ?? "";
     message.storageType = object.storageType ?? 0;
     message.frid = object.frid ?? "";
+    message.hardwareDescriptorId = object.hardwareDescriptorId ?? "";
+    message.mfgSkuId = object.mfgSkuId ?? "";
     return message;
   },
 };

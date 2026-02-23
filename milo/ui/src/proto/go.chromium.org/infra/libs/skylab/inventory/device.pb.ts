@@ -708,9 +708,97 @@ export interface ServoHostDevice {
   readonly version?: string | undefined;
 }
 
-/** NEXT TAG: 2 */
+/** NEXT TAG: 4 */
 export interface ChameleonDevice {
   readonly common: CommonDeviceSpecs | undefined;
+  readonly chameleonHardwareType?: ChameleonDevice_ChameleonHardwareType | undefined;
+  readonly chameleonConnectionType?: ChameleonDevice_ChameleonConnectionType | undefined;
+}
+
+/** NEXT TAG: 4 */
+export enum ChameleonDevice_ChameleonHardwareType {
+  CHAMELEON_TYPE_V2 = 1,
+  CHAMELEON_TYPE_V3 = 2,
+  CHAMELEON_TYPE_RPI = 3,
+}
+
+export function chameleonDevice_ChameleonHardwareTypeFromJSON(object: any): ChameleonDevice_ChameleonHardwareType {
+  switch (object) {
+    case 1:
+    case "CHAMELEON_TYPE_V2":
+      return ChameleonDevice_ChameleonHardwareType.CHAMELEON_TYPE_V2;
+    case 2:
+    case "CHAMELEON_TYPE_V3":
+      return ChameleonDevice_ChameleonHardwareType.CHAMELEON_TYPE_V3;
+    case 3:
+    case "CHAMELEON_TYPE_RPI":
+      return ChameleonDevice_ChameleonHardwareType.CHAMELEON_TYPE_RPI;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum ChameleonDevice_ChameleonHardwareType",
+      );
+  }
+}
+
+export function chameleonDevice_ChameleonHardwareTypeToJSON(object: ChameleonDevice_ChameleonHardwareType): string {
+  switch (object) {
+    case ChameleonDevice_ChameleonHardwareType.CHAMELEON_TYPE_V2:
+      return "CHAMELEON_TYPE_V2";
+    case ChameleonDevice_ChameleonHardwareType.CHAMELEON_TYPE_V3:
+      return "CHAMELEON_TYPE_V3";
+    case ChameleonDevice_ChameleonHardwareType.CHAMELEON_TYPE_RPI:
+      return "CHAMELEON_TYPE_RPI";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum ChameleonDevice_ChameleonHardwareType",
+      );
+  }
+}
+
+/** NEXT TAG: 4 */
+export enum ChameleonDevice_ChameleonConnectionType {
+  CHAMELEON_CONNECTION_TYPE_INVALID = 0,
+  CHAMELEON_CONNECTION_TYPE_AUDIOJACK = 1,
+  CHAMELEON_CONNECTION_TYPE_USB = 2,
+  CHAMELEON_CONNECTION_TYPE_HDMI = 3,
+}
+
+export function chameleonDevice_ChameleonConnectionTypeFromJSON(object: any): ChameleonDevice_ChameleonConnectionType {
+  switch (object) {
+    case 0:
+    case "CHAMELEON_CONNECTION_TYPE_INVALID":
+      return ChameleonDevice_ChameleonConnectionType.CHAMELEON_CONNECTION_TYPE_INVALID;
+    case 1:
+    case "CHAMELEON_CONNECTION_TYPE_AUDIOJACK":
+      return ChameleonDevice_ChameleonConnectionType.CHAMELEON_CONNECTION_TYPE_AUDIOJACK;
+    case 2:
+    case "CHAMELEON_CONNECTION_TYPE_USB":
+      return ChameleonDevice_ChameleonConnectionType.CHAMELEON_CONNECTION_TYPE_USB;
+    case 3:
+    case "CHAMELEON_CONNECTION_TYPE_HDMI":
+      return ChameleonDevice_ChameleonConnectionType.CHAMELEON_CONNECTION_TYPE_HDMI;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum ChameleonDevice_ChameleonConnectionType",
+      );
+  }
+}
+
+export function chameleonDevice_ChameleonConnectionTypeToJSON(object: ChameleonDevice_ChameleonConnectionType): string {
+  switch (object) {
+    case ChameleonDevice_ChameleonConnectionType.CHAMELEON_CONNECTION_TYPE_INVALID:
+      return "CHAMELEON_CONNECTION_TYPE_INVALID";
+    case ChameleonDevice_ChameleonConnectionType.CHAMELEON_CONNECTION_TYPE_AUDIOJACK:
+      return "CHAMELEON_CONNECTION_TYPE_AUDIOJACK";
+    case ChameleonDevice_ChameleonConnectionType.CHAMELEON_CONNECTION_TYPE_USB:
+      return "CHAMELEON_CONNECTION_TYPE_USB";
+    case ChameleonDevice_ChameleonConnectionType.CHAMELEON_CONNECTION_TYPE_HDMI:
+      return "CHAMELEON_CONNECTION_TYPE_HDMI";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum ChameleonDevice_ChameleonConnectionType",
+      );
+  }
 }
 
 /**
@@ -1941,7 +2029,7 @@ export function hardwareCapabilities_VideoAccelerationToJSON(object: HardwareCap
  *
  * Keep sorted by field names.
  *
- * NEXT TAG: 60
+ * NEXT TAG: 61
  */
 export interface Peripherals {
   readonly audioBoard?:
@@ -1959,8 +2047,12 @@ export interface Peripherals {
   readonly audioLoopbackDongle?:
     | boolean
     | undefined;
-  /** Is this device connected to a chameleon (GVC head). */
-  readonly chameleon?: boolean | undefined;
+  /** Is this device connected to ANY chameleon (GVC head). */
+  readonly chameleon?:
+    | boolean
+    | undefined;
+  /** List of chameleon devices. */
+  readonly chameleonDevices: readonly ChameleonDevice[];
   readonly chameleonType: readonly Peripherals_ChameleonType[];
   readonly chameleonConnectionTypes: readonly Peripherals_ChameleonConnectionType[];
   readonly chameleonState?: PeripheralState | undefined;
@@ -2194,6 +2286,7 @@ export function peripherals_ChameleonTypeToJSON(object: Peripherals_ChameleonTyp
   }
 }
 
+/** NEXT TAG: 5 */
 export enum Peripherals_ChameleonConnectionType {
   CHAMELEON_CONNECTION_TYPE_INVALID = 0,
   CHAMELEON_CONNECTION_TYPE_AUDIOJACK = 1,
@@ -3128,13 +3221,19 @@ export const ServoHostDevice: MessageFns<ServoHostDevice> = {
 };
 
 function createBaseChameleonDevice(): ChameleonDevice {
-  return { common: undefined };
+  return { common: undefined, chameleonHardwareType: 1, chameleonConnectionType: 0 };
 }
 
 export const ChameleonDevice: MessageFns<ChameleonDevice> = {
   encode(message: ChameleonDevice, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.common !== undefined) {
       CommonDeviceSpecs.encode(message.common, writer.uint32(10).fork()).join();
+    }
+    if (message.chameleonHardwareType !== undefined && message.chameleonHardwareType !== 1) {
+      writer.uint32(16).int32(message.chameleonHardwareType);
+    }
+    if (message.chameleonConnectionType !== undefined && message.chameleonConnectionType !== 0) {
+      writer.uint32(24).int32(message.chameleonConnectionType);
     }
     return writer;
   },
@@ -3154,6 +3253,22 @@ export const ChameleonDevice: MessageFns<ChameleonDevice> = {
           message.common = CommonDeviceSpecs.decode(reader, reader.uint32());
           continue;
         }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.chameleonHardwareType = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.chameleonConnectionType = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3164,13 +3279,27 @@ export const ChameleonDevice: MessageFns<ChameleonDevice> = {
   },
 
   fromJSON(object: any): ChameleonDevice {
-    return { common: isSet(object.common) ? CommonDeviceSpecs.fromJSON(object.common) : undefined };
+    return {
+      common: isSet(object.common) ? CommonDeviceSpecs.fromJSON(object.common) : undefined,
+      chameleonHardwareType: isSet(object.chameleonHardwareType)
+        ? chameleonDevice_ChameleonHardwareTypeFromJSON(object.chameleonHardwareType)
+        : 1,
+      chameleonConnectionType: isSet(object.chameleonConnectionType)
+        ? chameleonDevice_ChameleonConnectionTypeFromJSON(object.chameleonConnectionType)
+        : 0,
+    };
   },
 
   toJSON(message: ChameleonDevice): unknown {
     const obj: any = {};
     if (message.common !== undefined) {
       obj.common = CommonDeviceSpecs.toJSON(message.common);
+    }
+    if (message.chameleonHardwareType !== undefined && message.chameleonHardwareType !== 1) {
+      obj.chameleonHardwareType = chameleonDevice_ChameleonHardwareTypeToJSON(message.chameleonHardwareType);
+    }
+    if (message.chameleonConnectionType !== undefined && message.chameleonConnectionType !== 0) {
+      obj.chameleonConnectionType = chameleonDevice_ChameleonConnectionTypeToJSON(message.chameleonConnectionType);
     }
     return obj;
   },
@@ -3183,6 +3312,8 @@ export const ChameleonDevice: MessageFns<ChameleonDevice> = {
     message.common = (object.common !== undefined && object.common !== null)
       ? CommonDeviceSpecs.fromPartial(object.common)
       : undefined;
+    message.chameleonHardwareType = object.chameleonHardwareType ?? 1;
+    message.chameleonConnectionType = object.chameleonConnectionType ?? 0;
     return message;
   },
 };
@@ -5204,6 +5335,7 @@ function createBasePeripherals(): Peripherals {
     audioCable: false,
     audioLoopbackDongle: false,
     chameleon: false,
+    chameleonDevices: [],
     chameleonType: [],
     chameleonConnectionTypes: [],
     chameleonState: 0,
@@ -5273,6 +5405,9 @@ export const Peripherals: MessageFns<Peripherals> = {
     }
     if (message.chameleon !== undefined && message.chameleon !== false) {
       writer.uint32(40).bool(message.chameleon);
+    }
+    for (const v of message.chameleonDevices) {
+      ChameleonDevice.encode(v!, writer.uint32(482).fork()).join();
     }
     for (const v of message.chameleonType) {
       writer.uint32(80).int32(v!);
@@ -5472,6 +5607,14 @@ export const Peripherals: MessageFns<Peripherals> = {
           }
 
           message.chameleon = reader.bool();
+          continue;
+        }
+        case 60: {
+          if (tag !== 482) {
+            break;
+          }
+
+          message.chameleonDevices.push(ChameleonDevice.decode(reader, reader.uint32()));
           continue;
         }
         case 10: {
@@ -5930,6 +6073,9 @@ export const Peripherals: MessageFns<Peripherals> = {
       audioCable: isSet(object.audioCable) ? globalThis.Boolean(object.audioCable) : false,
       audioLoopbackDongle: isSet(object.audioLoopbackDongle) ? globalThis.Boolean(object.audioLoopbackDongle) : false,
       chameleon: isSet(object.chameleon) ? globalThis.Boolean(object.chameleon) : false,
+      chameleonDevices: globalThis.Array.isArray(object?.chameleonDevices)
+        ? object.chameleonDevices.map((e: any) => ChameleonDevice.fromJSON(e))
+        : [],
       chameleonType: globalThis.Array.isArray(object?.chameleonType)
         ? object.chameleonType.map((e: any) => peripherals_ChameleonTypeFromJSON(e))
         : [],
@@ -6023,6 +6169,9 @@ export const Peripherals: MessageFns<Peripherals> = {
     }
     if (message.chameleon !== undefined && message.chameleon !== false) {
       obj.chameleon = message.chameleon;
+    }
+    if (message.chameleonDevices?.length) {
+      obj.chameleonDevices = message.chameleonDevices.map((e) => ChameleonDevice.toJSON(e));
     }
     if (message.chameleonType?.length) {
       obj.chameleonType = message.chameleonType.map((e) => peripherals_ChameleonTypeToJSON(e));
@@ -6189,6 +6338,7 @@ export const Peripherals: MessageFns<Peripherals> = {
     message.audioCable = object.audioCable ?? false;
     message.audioLoopbackDongle = object.audioLoopbackDongle ?? false;
     message.chameleon = object.chameleon ?? false;
+    message.chameleonDevices = object.chameleonDevices?.map((e) => ChameleonDevice.fromPartial(e)) || [];
     message.chameleonType = object.chameleonType?.map((e) => e) || [];
     message.chameleonConnectionTypes = object.chameleonConnectionTypes?.map((e) => e) || [];
     message.chameleonState = object.chameleonState ?? 0;

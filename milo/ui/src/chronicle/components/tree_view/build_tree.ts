@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { checkStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
-import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { stageStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
-import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
 import {
   CheckResultStatus,
@@ -43,7 +43,7 @@ export interface GraphNode {
   resultStatus?: CheckResultStatus;
   children: Set<string>;
   parents: Set<string>;
-  raw?: CheckView | StageView;
+  raw?: Check | Stage;
 }
 
 export interface Graph {
@@ -64,10 +64,7 @@ const stageStateToStatus = (state: number | undefined): NodeStatus => {
   return stateStr.replace('STAGE_STATE_', '') as NodeStatus;
 };
 
-export function buildVisualGraph(
-  stages: StageView[],
-  checks: CheckView[],
-): Graph {
+export function buildVisualGraph(stages: Stage[], checks: Check[]): Graph {
   const nodes: Record<string, GraphNode> = {};
   const allNodeIds = new Set<string>();
   const nonRootNodes = new Set<string>();
@@ -93,28 +90,24 @@ export function buildVisualGraph(
 
   // Initialize nodes for all checks and stages.
   checks.forEach((cv) => {
-    const checkId = cv.check?.identifier?.id;
+    const checkId = cv.identifier?.id;
     if (!checkId) return;
-    const checkNode = getNode(
-      checkId,
-      'CHECK',
-      checkStateToStatus(cv.check?.state),
-    );
+    const checkNode = getNode(checkId, 'CHECK', checkStateToStatus(cv.state));
     checkNode.label = getCheckLabel(cv);
     checkNode.raw = cv;
     checkNode.resultStatus = getCheckResultStatus(cv);
   });
 
   stages.forEach((sv) => {
-    const stageId = sv.stage?.identifier?.id;
+    const stageId = sv.identifier?.id;
     if (!stageId) return;
     const stageNode = getNode(stageId, 'STAGE');
-    stageNode.status = stageStateToStatus(sv.stage?.state);
+    stageNode.status = stageStateToStatus(sv.state);
     stageNode.raw = sv;
 
     // Add assignments as edges from check to stage.
     // A check is a parent of a stage if it is assigned to that stage.
-    sv.stage?.assignments?.forEach((assignment) => {
+    sv.assignments?.forEach((assignment) => {
       const checkId = assignment.target?.id;
       if (checkId) {
         const checkNode = getNode(checkId, 'CHECK', 'UNKNOWN');
@@ -126,11 +119,11 @@ export function buildVisualGraph(
 
     // Add dependencies between checks.
     const assignedCheckIds =
-      sv.stage?.assignments
+      sv.assignments
         ?.map((a) => a.target?.id)
         .filter((id): id is string => !!id) || [];
     if (assignedCheckIds.length > 0) {
-      sv.stage?.dependencies?.edges?.forEach((edge) => {
+      sv.dependencies?.edges?.forEach((edge) => {
         const dependencyCheckId = edge?.check?.identifier?.id;
         if (dependencyCheckId) {
           getNode(dependencyCheckId, 'CHECK');

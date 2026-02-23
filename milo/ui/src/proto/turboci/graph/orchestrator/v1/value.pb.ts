@@ -7,6 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Any } from "../../../../google/protobuf/any.pb";
+import { OmitReason, omitReasonFromJSON, omitReasonToJSON } from "./omit_reason.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -55,68 +56,19 @@ export interface Value {
     | string
     | undefined;
   /**
-   * If true, `value.value` was pruned from this message either due to
-   * permissions (no read access in the realm containing this Value) or due to
-   * a Query filter (not in type_info.wanted).
+   * If set, the reason this Value's content was omitted. Only UNKNOWN (default
+   * value, used when the content was included) and UNWANTED and NO_ACCESS are
+   * valid for a Value; PLACEHOLDER is not valid because Values do not have
+   * child nodes.
    *
-   * `value.type_url`, however will always be present as metadata.
+   * A few fields may be populated even if this Value's content is omitted:
+   *   * `value.type_url` will always be populated.
    */
-  readonly omitted?: Value_OmitReason | undefined;
-}
-
-/** OmitReason details why this Value's content is omitted. */
-export enum Value_OmitReason {
-  /** OMIT_REASON_UNKNOWN - Default invalid value. */
-  OMIT_REASON_UNKNOWN = 0,
-  /**
-   * OMIT_REASON_UNWANTED - This Value has a type_url which was not requested by the caller.
-   *
-   * In this case `value.type_url` will be present, but other metadata (like
-   * orchestrator-visible index values) may be present as well.
-   */
-  OMIT_REASON_UNWANTED = 1,
-  /**
-   * OMIT_REASON_NO_ACCESS - This Value has a type_url which WAS requested by the user, but the caller
-   * doesn't have access to it. See the surrounding Datum to see the realm to
-   * which this Value belongs.
-   *
-   * In this case ONLY `value.type_url` (and in the future any other
-   * 'disambiguator/key') will be present.
-   */
-  OMIT_REASON_NO_ACCESS = 2,
-}
-
-export function value_OmitReasonFromJSON(object: any): Value_OmitReason {
-  switch (object) {
-    case 0:
-    case "OMIT_REASON_UNKNOWN":
-      return Value_OmitReason.OMIT_REASON_UNKNOWN;
-    case 1:
-    case "OMIT_REASON_UNWANTED":
-      return Value_OmitReason.OMIT_REASON_UNWANTED;
-    case 2:
-    case "OMIT_REASON_NO_ACCESS":
-      return Value_OmitReason.OMIT_REASON_NO_ACCESS;
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Value_OmitReason");
-  }
-}
-
-export function value_OmitReasonToJSON(object: Value_OmitReason): string {
-  switch (object) {
-    case Value_OmitReason.OMIT_REASON_UNKNOWN:
-      return "OMIT_REASON_UNKNOWN";
-    case Value_OmitReason.OMIT_REASON_UNWANTED:
-      return "OMIT_REASON_UNWANTED";
-    case Value_OmitReason.OMIT_REASON_NO_ACCESS:
-      return "OMIT_REASON_NO_ACCESS";
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum Value_OmitReason");
-  }
+  readonly omitReason?: OmitReason | undefined;
 }
 
 function createBaseValue(): Value {
-  return { value: undefined, hasUnknownFields: undefined, valueJson: undefined, omitted: undefined };
+  return { value: undefined, hasUnknownFields: undefined, valueJson: undefined, omitReason: undefined };
 }
 
 export const Value: MessageFns<Value> = {
@@ -130,8 +82,8 @@ export const Value: MessageFns<Value> = {
     if (message.valueJson !== undefined) {
       writer.uint32(26).string(message.valueJson);
     }
-    if (message.omitted !== undefined) {
-      writer.uint32(32).int32(message.omitted);
+    if (message.omitReason !== undefined) {
+      writer.uint32(32).int32(message.omitReason);
     }
     return writer;
   },
@@ -172,7 +124,7 @@ export const Value: MessageFns<Value> = {
             break;
           }
 
-          message.omitted = reader.int32() as any;
+          message.omitReason = reader.int32() as any;
           continue;
         }
       }
@@ -189,7 +141,7 @@ export const Value: MessageFns<Value> = {
       value: isSet(object.value) ? Any.fromJSON(object.value) : undefined,
       hasUnknownFields: isSet(object.hasUnknownFields) ? globalThis.Boolean(object.hasUnknownFields) : undefined,
       valueJson: isSet(object.valueJson) ? globalThis.String(object.valueJson) : undefined,
-      omitted: isSet(object.omitted) ? value_OmitReasonFromJSON(object.omitted) : undefined,
+      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
     };
   },
 
@@ -204,8 +156,8 @@ export const Value: MessageFns<Value> = {
     if (message.valueJson !== undefined) {
       obj.valueJson = message.valueJson;
     }
-    if (message.omitted !== undefined) {
-      obj.omitted = value_OmitReasonToJSON(message.omitted);
+    if (message.omitReason !== undefined) {
+      obj.omitReason = omitReasonToJSON(message.omitReason);
     }
     return obj;
   },
@@ -218,7 +170,7 @@ export const Value: MessageFns<Value> = {
     message.value = (object.value !== undefined && object.value !== null) ? Any.fromPartial(object.value) : undefined;
     message.hasUnknownFields = object.hasUnknownFields ?? undefined;
     message.valueJson = object.valueJson ?? undefined;
-    message.omitted = object.omitted ?? undefined;
+    message.omitReason = object.omitReason ?? undefined;
     return message;
   },
 };

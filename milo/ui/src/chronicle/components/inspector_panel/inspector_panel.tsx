@@ -16,8 +16,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Box, Divider, IconButton, Paper, Typography } from '@mui/material';
 import { ReactElement } from 'react';
 
-import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
-import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
+import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
+import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 
 import { CheckDetails } from './check_details';
 import { StageDetails } from './stage_details';
@@ -25,17 +25,17 @@ import { StageDetails } from './stage_details';
 export interface InspectorPanelProps {
   nodeId: string;
   nodeLabel?: string;
-  viewData?: CheckView | StageView;
+  viewData?: Check | Stage;
   onClose: () => void;
 }
 
-// Type guards to discriminate between CheckView and StageView
-function isCheckView(view: CheckView | StageView): view is CheckView {
-  return (view as CheckView).check !== undefined;
+// Type guards to discriminate between Check and Stage
+function isCheckView(view: Check | Stage): view is Check {
+  return (view as Check).kind !== undefined;
 }
 
-function isStageView(view: CheckView | StageView): view is StageView {
-  return (view as StageView).stage !== undefined;
+function isStageView(view: Check | Stage): view is Stage {
+  return (view as Stage).assignments !== undefined;
 }
 
 export function InspectorPanel({
@@ -49,7 +49,7 @@ export function InspectorPanel({
   if (viewData) {
     if (isCheckView(viewData)) {
       title = 'Check Details';
-      detailsComponent = <CheckDetails view={viewData} />;
+      detailsComponent = <CheckDetails check={viewData} />;
     } else if (isStageView(viewData)) {
       title = 'Stage Details';
       detailsComponent = <StageDetails view={viewData} />;

@@ -13,39 +13,34 @@
 // limitations under the License.
 
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
-import { CheckView } from '@/proto/turboci/graph/orchestrator/v1/check_view.pb';
 import { Edge } from '@/proto/turboci/graph/orchestrator/v1/edge.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
-import { StageView } from '@/proto/turboci/graph/orchestrator/v1/stage_view.pb';
 
 import { buildVisualGraph, Graph, subtreeSize } from './build_tree';
 
-const checkView = (check: Partial<Check>): CheckView => ({
-  check: {
-    identifier: { id: 'check1' },
-    state: 40, // COMPLETE
-    options: [],
-    results: [],
-    stateHistory: [],
-    ...check,
-  },
+const checkView = (check: Partial<Check>): Check => ({
+  identifier: { id: 'check1' },
+  state: 40, // COMPLETE
+  options: [],
+  results: [],
+  dependencies: { edges: [], resolutionEvents: {} },
+  stateHistory: [],
   edits: [],
+  ...check,
 });
 
-const stageView = (stage: Partial<Stage>): StageView => ({
-  stage: {
-    identifier: { id: 'stage1' },
-    state: 20, // RUNNING
-    attempts: [],
-    assignments: [],
-    dependencies: {
-      edges: [] as Edge[],
-      resolutionEvents: {},
-    },
-    stateHistory: [],
-    ...stage,
+const stageView = (stage: Partial<Stage>): Stage => ({
+  identifier: { id: 'stage1' },
+  state: 20, // RUNNING
+  attempts: [],
+  assignments: [],
+  dependencies: {
+    edges: [] as Edge[],
+    resolutionEvents: {},
   },
+  stateHistory: [],
   edits: [],
+  ...stage,
 });
 
 describe('BuildVisualGraph', () => {
@@ -56,7 +51,7 @@ describe('BuildVisualGraph', () => {
   });
 
   it('should handle a single check', () => {
-    const checks: CheckView[] = [
+    const checks: Check[] = [
       checkView({
         identifier: { id: 'check1' },
         state: 40, // COMPLETE
@@ -70,14 +65,14 @@ describe('BuildVisualGraph', () => {
   });
 
   it('should handle a single stage with one check', () => {
-    const stages: StageView[] = [
+    const stages: Stage[] = [
       stageView({
         identifier: { id: 'stage1' },
         state: 20, // RUNNING
         assignments: [{ target: { id: 'check1' } }],
       }),
     ];
-    const checks: CheckView[] = [
+    const checks: Check[] = [
       checkView({
         identifier: { id: 'check1' },
         state: 30, // WAITING
@@ -95,7 +90,7 @@ describe('BuildVisualGraph', () => {
   });
 
   it('should handle dependencies between checks', () => {
-    const stages: StageView[] = [
+    const stages: Stage[] = [
       stageView({
         identifier: { id: 'stage1' },
         assignments: [{ target: { id: 'check2' } }],
@@ -105,7 +100,7 @@ describe('BuildVisualGraph', () => {
         },
       }),
     ];
-    const checks: CheckView[] = [
+    const checks: Check[] = [
       checkView({ identifier: { id: 'check1' }, state: 40 }),
       checkView({
         identifier: { id: 'check2' },
@@ -120,7 +115,7 @@ describe('BuildVisualGraph', () => {
   });
 
   it('should handle stages with multiple assignments and dependencies', () => {
-    const stages: StageView[] = [
+    const stages: Stage[] = [
       // Build stage with multiple assignments.
       stageView({
         identifier: { id: 'build-stage' },
@@ -145,7 +140,7 @@ describe('BuildVisualGraph', () => {
         },
       }),
     ];
-    const checks: CheckView[] = [
+    const checks: Check[] = [
       checkView({ identifier: { id: 'source-check' } }),
       checkView({ identifier: { id: 'build-check' } }),
       checkView({ identifier: { id: 'test-check' } }),

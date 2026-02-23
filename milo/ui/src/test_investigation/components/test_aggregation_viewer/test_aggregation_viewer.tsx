@@ -28,10 +28,6 @@ export interface TestAggregationViewerProps {
   initialExpandedIds?: string[];
   invocation: AnyInvocation;
   testVariant?: OutputTestVerdict;
-  /**
-   * Whether to automatically locate/scroll to the testVariant when it changes or when this prop becomes true.
-   * Defaults to true.
-   */
   autoLocate?: boolean;
   defaultExpanded?: boolean;
 }

@@ -768,7 +768,7 @@ export interface RootInvocationDefinition {
    */
   readonly name: string;
   /**
-   * A key-value map of properties the scheduler uses to differentiate between
+   * A key-value map of properties used to differentiate between
    * definitions with the same name and system. For example 'cluster_id' and
    * 'run_target' for ATP.
    *
@@ -812,7 +812,10 @@ export interface RootInvocationDefinition_Properties_DefEntry {
   readonly value: string;
 }
 
-/** Represents a set of artifacts produced from source code. */
+/**
+ * Represents a set of artifacts produced from source code, e.g.
+ * a built software binary and associated content.
+ */
 export interface BuildDescriptor {
   /**
    * In future, other build definitions, can be defined here,

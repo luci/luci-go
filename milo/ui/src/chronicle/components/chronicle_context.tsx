@@ -23,7 +23,7 @@ import { useParams } from 'react-router';
 
 import { useQueryNodes } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { GraphView } from '@/proto/turboci/graph/orchestrator/v1/graph_view.pb';
+import { WorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
 
@@ -31,7 +31,7 @@ const DEMO_WORKPLAN_ID = 'demo';
 
 interface ChronicleContextType {
   workplanId: string;
-  graph: GraphView | undefined;
+  graph: WorkPlan | undefined;
 
   // Workflow type for fake data generation only.
   workflowType: WorkflowType;
@@ -124,8 +124,9 @@ export function ChronicleContextProvider({
       });
       return generator.generate();
     }
-
-    return queryNodesResponse?.graph?.[workplanId];
+    return queryNodesResponse?.workplans?.find(
+      (wp) => wp.identifier?.id === workplanId,
+    );
   }, [workplanId, workflowType, useFakeData, queryNodesResponse]);
 
   const value = useMemo(
