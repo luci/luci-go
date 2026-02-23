@@ -115,6 +115,9 @@ export type DeviceTableGridColDef<R extends GridValidRowModel> =
   GridColDef<R> & {
     orderByField: string;
     filterByField?: string;
+    meta?: {
+      infoTooltip?: React.ReactNode;
+    };
   };
 
 interface DeviceTableProps<R extends GridValidRowModel> {

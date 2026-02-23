@@ -33,6 +33,7 @@ import {
   temporaryColumnClassName,
 } from '@/fleet/components/columns/use_mrt_column_management';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { FleetColumnHeader } from '@/fleet/components/fc_data_table/fleet_column_header';
 import { MRTFilterMenuItem } from '@/fleet/components/fc_data_table/mrt_filter_menu_item';
 import {
   useSettings,
@@ -76,6 +77,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
       grow: 1,
       size: 40,
       Cell: (c) => <EllipsisTooltip>{c.renderedCellValue}</EllipsisTooltip>,
+      Header: FleetColumnHeader,
     },
     onDensityChange: (updater) => {
       const newDensity =
@@ -216,7 +218,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
           // Define the default variable for the header cell background color
           '--header-bg-color': colors.grey[100],
           backgroundColor: 'var(--header-bg-color, transparent)',
-          padding: '0px 8px',
+
           fontWeight: 500,
           justifyContent: 'center',
           [`& .Mui-TableHeadCell-ResizeHandle-Divider`]: {
