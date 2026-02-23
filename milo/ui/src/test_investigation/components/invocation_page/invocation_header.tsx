@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import CodeIcon from '@mui/icons-material/Code';
-import CommitIcon from '@mui/icons-material/Commit';
-import { Link } from '@mui/material';
+import { Code as CodeIcon, Commit as CommitIcon } from '@mui/icons-material';
+import { Box, Chip, Link } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
@@ -24,7 +23,12 @@ import {
 } from '@/common/components/page_summary_line';
 import { PageTitle } from '@/common/components/page_title';
 import { Timestamp } from '@/common/components/timestamp';
+import {
+  getStatusStyle,
+  SemanticStatusType,
+} from '@/common/styles/status_styles';
 import { Sources } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+import { useInvocationAggregationQuery } from '@/test_investigation/components/test_aggregation_viewer/hooks';
 import {
   AnyInvocation,
   getDisplayInvocationId,
@@ -89,6 +93,64 @@ export function InvocationHeader({ invocation }: InvocationHeaderProps) {
           </SummaryLineItem>
         )}
       </PageSummaryLine>
+      <InvocationVerdictCounts invocation={invocation} />
     </>
+  );
+}
+
+function InvocationVerdictCounts({
+  invocation,
+}: {
+  invocation: AnyInvocation;
+}) {
+  const { data } = useInvocationAggregationQuery(invocation);
+  const counts = data?.aggregations?.[0]?.verdictCounts;
+
+  if (!counts) return null;
+
+  const items: { label: string; status: SemanticStatusType; count: number }[] =
+    [];
+
+  if (counts.failed) {
+    items.push({ label: 'Failed', status: 'failed', count: counts.failed });
+  }
+  if (counts.executionErrored) {
+    items.push({
+      label: 'Execution Errored',
+      status: 'execution_errored',
+      count: counts.executionErrored,
+    });
+  }
+  if (counts.flaky) {
+    items.push({ label: 'Flaky', status: 'flaky', count: counts.flaky });
+  }
+  if (counts.passed) {
+    items.push({ label: 'Passed', status: 'passed', count: counts.passed });
+  }
+  if (counts.skipped) {
+    items.push({ label: 'Skipped', status: 'skipped', count: counts.skipped });
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+      {items.map((item) => {
+        const style = getStatusStyle(item.status);
+        return (
+          <Chip
+            key={item.status}
+            label={`${item.count} ${item.label}`}
+            variant="outlined"
+            size="small"
+            sx={{
+              borderColor: style.borderColor,
+              color: style.textColor,
+              fontWeight: 500,
+            }}
+          />
+        );
+      })}
+    </Box>
   );
 }

@@ -16,6 +16,9 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { Box, Tab, Tabs, Tooltip, IconButton } from '@mui/material';
 import { useRef, useState } from 'react';
 
+import { OutputTestVerdict } from '@/common/types/verdict';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+
 import { AggregationView } from './aggregation_view/aggregation_view';
 import { TestAggregationProvider } from './context/provider';
 import { TestAggregationToolbar } from './test_aggregation_toolbar';
@@ -23,6 +26,14 @@ import { TriageView } from './triage_view';
 
 export interface TestAggregationViewerProps {
   initialExpandedIds?: string[];
+  invocation: AnyInvocation;
+  testVariant?: OutputTestVerdict;
+  /**
+   * Whether to automatically locate/scroll to the testVariant when it changes or when this prop becomes true.
+   * Defaults to true.
+   */
+  autoLocate?: boolean;
+  defaultExpanded?: boolean;
 }
 
 export interface TestInvestigationViewHandle {
@@ -30,6 +41,7 @@ export interface TestInvestigationViewHandle {
 }
 
 export function TestAggregationViewer(props: TestAggregationViewerProps) {
+  const { testVariant } = props;
   const [activeTab, setActiveTab] = useState(0);
   const activeViewRef = useRef<TestInvestigationViewHandle>(null);
 
@@ -44,7 +56,11 @@ export function TestAggregationViewer(props: TestAggregationViewerProps) {
   return (
     <TestAggregationProvider>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <TestAggregationToolbar onLocateCurrentTest={handleLocateCurrentTest} />
+        <TestAggregationToolbar
+          onLocateCurrentTest={
+            testVariant ? handleLocateCurrentTest : undefined
+          }
+        />
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={activeTab}
@@ -72,11 +88,21 @@ export function TestAggregationViewer(props: TestAggregationViewerProps) {
             />
           </Tabs>
         </Box>
-        <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+        <Box sx={{ flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
           {activeTab === 0 && (
-            <AggregationView ref={activeViewRef} {...props} />
+            <AggregationView
+              ref={activeViewRef}
+              autoLocate={props.autoLocate}
+              {...props}
+            />
           )}
-          {activeTab === 1 && <TriageView ref={activeViewRef} {...props} />}
+          {activeTab === 1 && (
+            <TriageView
+              ref={activeViewRef}
+              autoLocate={props.autoLocate}
+              {...props}
+            />
+          )}
         </Box>
       </Box>
     </TestAggregationProvider>

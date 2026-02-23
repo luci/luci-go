@@ -16,6 +16,9 @@ import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
+import { OutputTestVerdict } from '@/common/types/verdict';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+
 import { TestInvestigationViewHandle } from '../test_aggregation_viewer';
 
 import { TriageViewProvider, useTriageViewContext } from './context';
@@ -23,6 +26,8 @@ import { TriageRow } from './triage_row';
 
 export interface TriageViewUIProps {
   initialExpandedIds?: string[];
+  invocation: AnyInvocation;
+  testVariant?: OutputTestVerdict;
 }
 
 export const TriageView = forwardRef<

@@ -99,7 +99,7 @@ export function TriageRow({ node, toggleExpansion }: TriageRowProps) {
             />
           )}
         </Box>
-        <Tooltip title={node.group.reason} placement="right" enterDelay={500}>
+        <Tooltip title={node.group.reason} placement="bottom" enterDelay={500}>
           <Typography
             variant="body2"
             sx={{

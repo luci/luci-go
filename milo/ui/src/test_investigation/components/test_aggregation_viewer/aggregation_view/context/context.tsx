@@ -16,11 +16,18 @@ import { createContext, useContext } from 'react';
 
 import { TestAggregation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_aggregation.pb';
 import { TestVerdict } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+
+export type VerdictCounts = TestAggregation['verdictCounts'];
 
 export interface BaseAggregationNode {
   id: string; // Unique ID for the node (e.g. prefix)
   label: string;
   depth: number;
+  labelParts?: {
+    key: string;
+    value: string;
+  };
 }
 
 export interface IntermediateAggregationNode extends BaseAggregationNode {
@@ -43,6 +50,7 @@ export interface AggregationViewContextValue {
   expandedIds: Set<string>;
   toggleExpansion: (id: string) => void;
   flattenedItems: AggregationNode[];
+  invocation: AnyInvocation;
 
   // Loading State
   isLoading: boolean;

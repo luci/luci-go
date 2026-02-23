@@ -15,6 +15,7 @@
 import { createContext, useContext } from 'react';
 
 import { TestVerdict } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
 export interface TriageGroup {
   id: string; // The fully qualified ID, e.g., "FAILED|foo reason"
@@ -41,6 +42,7 @@ export type TriageViewNode =
 
 export interface TriageViewContextValue {
   // Data
+  invocation: AnyInvocation;
   statusGroups: TriageStatusGroup[];
   flattenedItems: TriageViewNode[];
   isLoading: boolean;

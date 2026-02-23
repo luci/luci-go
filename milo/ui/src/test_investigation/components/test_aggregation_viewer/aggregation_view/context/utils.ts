@@ -97,14 +97,16 @@ export function registerNode(
   }
 }
 
-// Helper to resolve Label
+// Helper to resolve Label and Parts
 export function resolveLabel(
   node: AggregationNode,
   schemes: { [key: string]: Scheme },
-): string {
+): { label: string; labelParts?: { key: string; value: string } } {
   // If verdict, use testId
   if (node.isLeaf && node.verdict) {
-    return node.verdict.testIdStructured?.caseName || node.verdict.testId;
+    return {
+      label: node.verdict.testIdStructured?.caseName || node.verdict.testId,
+    };
   }
 
   // If aggregation
@@ -118,8 +120,8 @@ export function resolveLabel(
     let name = '';
 
     if (prefix.level === AggregationLevel.MODULE) {
-      name = `Module: ${ident?.moduleName || ''}`;
-      return name;
+      prefixLabel = 'Module';
+      name = ident?.moduleName || '';
     } else if (prefix.level === AggregationLevel.COARSE) {
       prefixLabel = scheme?.coarse?.humanReadableName || 'Coarse';
       name = ident?.coarseName || '';
@@ -128,10 +130,18 @@ export function resolveLabel(
       name = ident?.fineName || '';
     }
 
-    return `${prefixLabel}: ${name}`;
+    if (prefixLabel && name) {
+      return {
+        label: `${prefixLabel}: ${name}`,
+        labelParts: { key: prefixLabel, value: name },
+      };
+    }
+    // Fallback if name is missing but we have level logic?
+    // Current logic: if MODULE, name is moduleName.
+    return { label: name || prefixLabel || node.id };
   }
 
-  return node.label || node.id;
+  return { label: node.label || node.id };
 }
 
 // Helper to process a single verdict
@@ -282,7 +292,11 @@ export function mergeAndFlatten(
       node.isLoading = false;
     }
 
-    node.label = resolveLabel(node, schemes);
+    const { label, labelParts } = resolveLabel(node, schemes);
+    node.label = label;
+    if (labelParts) {
+      node.labelParts = labelParts;
+    }
     flatList.push(node);
 
     if (expandedIds.has(nodeId)) {

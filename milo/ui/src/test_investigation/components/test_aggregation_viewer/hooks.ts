@@ -320,3 +320,21 @@ export function useAncestryAggregationsQueries(
 
   return results;
 }
+
+/**
+ * Fetches test aggregation for the invocation itself.
+ *
+ * @param invocation - The invocation object.
+ */
+export function useInvocationAggregationQuery(
+  invocation: AnyInvocation | null | undefined,
+) {
+  return useAccumulatedAggregationsQuery(
+    invocation,
+    AggregationLevel.INVOCATION,
+    undefined,
+    undefined,
+    !!invocation,
+    undefined,
+  );
+}

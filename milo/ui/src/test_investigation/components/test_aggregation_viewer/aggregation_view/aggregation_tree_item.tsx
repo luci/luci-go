@@ -34,7 +34,6 @@ import {
 import { generateTestInvestigateUrl } from '@/common/tools/url_utils';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { AggregationLevel } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
-import { useRawInvocationId } from '@/test_investigation/context';
 import {
   getSemanticStatusFromModuleStatus,
   getSemanticStatusFromVerdict,
@@ -47,22 +46,24 @@ import {
   IntermediateAggregationNode,
   LeafAggregationNode,
   useAggregationViewContext,
+  VerdictCounts,
 } from './context/context';
 
 interface AggregationTreeItemProps {
   node: AggregationNode;
   style?: React.CSSProperties;
   measureRef?: (element: Element | null) => void;
+  rawInvocationId: string;
 }
 
 export function AggregationTreeItem({
   node,
   style,
   measureRef,
+  rawInvocationId,
 }: AggregationTreeItemProps) {
   const { expandedIds, toggleExpansion, highlightedNodeId } =
     useAggregationViewContext();
-  const rawInvocationId = useRawInvocationId();
 
   const isExpanded = expandedIds.has(node.id);
   const hasChildren = !node.isLeaf;
@@ -88,7 +89,7 @@ export function AggregationTreeItem({
         sx={{
           pl: node.depth * 3 + 1,
           width: '100%',
-          minHeight: '40px',
+          minHeight: '32px',
           py: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -177,50 +178,49 @@ interface IntermediateTreeItemContentProps {
   handleToggle: (e: React.MouseEvent) => void;
 }
 
-function IntermediateTreeItemContent({
-  node,
-  isExpanded,
-  handleToggle,
-}: IntermediateTreeItemContentProps) {
-  const label = node.label || 'Unknown';
-  const counts = node.aggregationData?.verdictCounts;
+interface IntermediateNodeSummaryProps {
+  counts: VerdictCounts | undefined;
+}
 
-  const total =
-    (counts?.passed || 0) +
-    (counts?.failed || 0) +
-    (counts?.flaky || 0) +
-    (counts?.skipped || 0) +
-    (counts?.executionErrored || 0);
-
-  const semanticStatus = getSemanticStatus(node);
-  const statusStyle = getStatusStyle(semanticStatus);
+function IntermediateNodeSummary({ counts }: IntermediateNodeSummaryProps) {
+  if (!counts) return <span>No results</span>;
 
   const parts = [];
-  if (counts?.failed) parts.push(`${counts.failed} Failed`);
-  if (counts?.executionErrored) parts.push(`${counts.executionErrored} Errors`);
-  if (counts?.flaky) parts.push(`${counts.flaky} Flaky`);
+  if (counts.failed) parts.push(`${counts.failed} Failed`);
+  if (counts.executionErrored) parts.push(`${counts.executionErrored} Errors`);
+  if (counts.flaky) parts.push(`${counts.flaky} Flaky`);
 
-  const summary = (() => {
-    if (parts.length === 0) {
-      if (counts?.passed) return `${counts.passed} Passed`;
-      return 'No results';
-    }
-    const summaryText = parts.join(', ');
-    return (
-      <span>
-        {summaryText}{' '}
-        <Box
-          component="span"
-          sx={{ fontStyle: 'italic', color: 'text.secondary' }}
-        >
-          ({total} tests ran)
-        </Box>
-      </span>
-    );
-  })();
+  if (parts.length === 0) {
+    if (counts.passed) return <span>{counts.passed} Passed</span>;
+    return <span>No results</span>;
+  }
 
-  // Variant Definition (Inline)
-  let variantSuffix = null;
+  const total =
+    (counts.passed || 0) +
+    (counts.failed || 0) +
+    (counts.flaky || 0) +
+    (counts.skipped || 0) +
+    (counts.executionErrored || 0);
+
+  const summaryText = parts.join(', ');
+  return (
+    <span>
+      {summaryText}{' '}
+      <Box
+        component="span"
+        sx={{ fontStyle: 'italic', color: 'text.secondary' }}
+      >
+        ({total} tests ran)
+      </Box>
+    </span>
+  );
+}
+
+interface VariantSuffixProps {
+  node: IntermediateAggregationNode;
+}
+
+function VariantSuffix({ node }: VariantSuffixProps) {
   if (
     node.aggregationData?.id?.level === AggregationLevel.MODULE &&
     node.aggregationData.id.id?.moduleVariant?.def
@@ -228,7 +228,7 @@ function IntermediateTreeItemContent({
     const def = node.aggregationData.id.id.moduleVariant.def;
     const text = getVariantDefinitionString(def);
     if (text) {
-      variantSuffix = (
+      return (
         <Tooltip title={text}>
           <Typography
             component="span"
@@ -241,6 +241,20 @@ function IntermediateTreeItemContent({
       );
     }
   }
+  return null;
+}
+
+function IntermediateTreeItemContent({
+  node,
+  isExpanded,
+  handleToggle,
+}: IntermediateTreeItemContentProps) {
+  const label = node.label || 'Unknown';
+  const labelParts = node.labelParts;
+  const counts = node.aggregationData?.verdictCounts;
+
+  const semanticStatus = getSemanticStatus(node);
+  const statusStyle = getStatusStyle(semanticStatus);
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
@@ -251,9 +265,15 @@ function IntermediateTreeItemContent({
           width: '24px',
           flexShrink: 0,
           color: 'action.active',
+          mt: '2px', // Align icon with text
         }}
       >
-        <IconButton size="small" onClick={handleToggle} tabIndex={-1}>
+        <IconButton
+          size="small"
+          onClick={handleToggle}
+          tabIndex={-1}
+          sx={{ p: 0 }}
+        >
           {isExpanded ? (
             <ExpandMoreIcon fontSize="inherit" />
           ) : (
@@ -262,28 +282,42 @@ function IntermediateTreeItemContent({
         </IconButton>
       </Box>
 
-      <Box sx={{ flexGrow: 1 }}>
+      <Box sx={{ flexGrow: 1, display: 'block' }}>
         <Typography
           variant="subtitle1"
-          component="div"
+          component="span"
           sx={{
             color: 'text.primary',
             fontSize: '0.9rem',
             fontWeight: 500,
             lineHeight: 1.4,
-            mb: 0.5,
             wordBreak: 'break-all',
+            mr: 1,
           }}
         >
-          {label}
-          {variantSuffix}
+          {labelParts ? (
+            <>
+              <Box
+                component="span"
+                sx={{ color: 'text.secondary', fontWeight: 'normal' }}
+              >
+                {labelParts.key}:{' '}
+              </Box>
+              {labelParts.value}
+            </>
+          ) : (
+            label
+          )}
+          <VariantSuffix node={node} />
         </Typography>
 
         <Box
+          component="span"
           sx={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: 0.5,
+            verticalAlign: 'middle',
             flexWrap: 'wrap',
           }}
         >
@@ -303,13 +337,11 @@ function IntermediateTreeItemContent({
                   semanticStatus={semanticStatus}
                 />
               )}
-              {summary && (
-                <StatusChip
-                  label={summary}
-                  statusStyle={statusStyle}
-                  semanticStatus={semanticStatus}
-                />
-              )}
+              <StatusChip
+                label={<IntermediateNodeSummary counts={counts} />}
+                statusStyle={statusStyle}
+                semanticStatus={semanticStatus}
+              />
             </>
           )}
         </Box>
@@ -331,8 +363,13 @@ function LeafTreeItemContent({
   const semanticStatus = getSemanticStatus(node);
   const statusStyle = getStatusStyle(semanticStatus);
 
+  const invocationId = rawInvocationId.replace(
+    /^(rootInvocations|invocations)\//,
+    '',
+  );
+
   const linkUrl = node.verdict?.testIdStructured
-    ? generateTestInvestigateUrl(rawInvocationId, node.verdict.testIdStructured)
+    ? generateTestInvestigateUrl(invocationId, node.verdict.testIdStructured)
     : undefined;
 
   const displayLabel = linkUrl ? (
@@ -340,7 +377,6 @@ function LeafTreeItemContent({
       component={Link}
       to={linkUrl}
       underline="hover"
-      color="inherit"
       onClick={(e) => e.stopPropagation()}
     >
       {label}
@@ -359,34 +395,37 @@ function LeafTreeItemContent({
           flexShrink: 0,
           visibility: 'hidden',
           color: 'action.active',
+          mt: '2px', // Align icon with text
         }}
       >
-        <IconButton size="small" tabIndex={-1}>
+        <IconButton size="small" tabIndex={-1} sx={{ p: 0 }}>
           <ChevronRightIcon fontSize="inherit" />
         </IconButton>
       </Box>
 
-      <Box sx={{ flexGrow: 1 }}>
+      <Box sx={{ flexGrow: 1, display: 'block' }}>
         <Typography
           variant="subtitle1"
-          component="div"
+          component="span"
           sx={{
             color: 'text.primary',
             fontSize: '0.9rem',
             fontWeight: 500,
             lineHeight: 1.4,
-            mb: 0.5,
             wordBreak: 'break-all',
+            mr: 1,
           }}
         >
           {displayLabel}
         </Typography>
 
         <Box
+          component="span"
           sx={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: 0.5,
+            verticalAlign: 'middle',
             flexWrap: 'wrap',
           }}
         >

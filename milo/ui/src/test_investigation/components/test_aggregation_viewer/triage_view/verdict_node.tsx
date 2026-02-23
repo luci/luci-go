@@ -22,7 +22,6 @@ import {
   TestVerdict,
   TestVerdict_Status,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import { useInvocation } from '@/test_investigation/context';
 import { isRootInvocation } from '@/test_investigation/utils/invocation_utils';
 import { normalizeDrawerFailureReason } from '@/test_investigation/utils/test_variant_utils';
 
@@ -39,8 +38,7 @@ export function VerdictNode({
   verdict,
   currentFailureReason,
 }: VerdictNodeProps) {
-  const { scrollRequest } = useTriageViewContext();
-  const invocation = useInvocation();
+  const { scrollRequest, invocation } = useTriageViewContext();
   const invocationName = isRootInvocation(invocation) ? invocation.name : '';
 
   const testId = verdict.testId;

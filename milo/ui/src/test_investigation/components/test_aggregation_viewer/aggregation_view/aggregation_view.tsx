@@ -15,6 +15,9 @@
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { forwardRef, useImperativeHandle } from 'react';
 
+import { OutputTestVerdict } from '@/common/types/verdict';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
+
 import { TestInvestigationViewHandle } from '../test_aggregation_viewer';
 
 import { useAggregationViewContext } from './context/context';
@@ -23,7 +26,56 @@ import { TestAggregationVirtualTree } from './test_aggregation_virtual_tree';
 
 export interface AggregationViewProps {
   initialExpandedIds?: string[];
+  invocation: AnyInvocation;
+  testVariant?: OutputTestVerdict;
+  autoLocate?: boolean;
 }
+
+const AggregationViewContent = forwardRef<
+  TestInvestigationViewHandle,
+  AggregationViewProps
+>((_props, ref) => {
+  const { flattenedItems, isLoading, isError, error, locateCurrentTest } =
+    useAggregationViewContext();
+
+  useImperativeHandle(ref, () => ({
+    locateCurrentTest,
+  }));
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Toolbar is hosted in parent */}
+      <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+        {isLoading ? (
+          <Box
+            display="flex"
+            justifyContent="center"
+            p={2}
+            data-testid="loading-spinner"
+          >
+            <CircularProgress />
+          </Box>
+        ) : isError ? (
+          <Box p={2}>
+            <Alert severity="error">
+              {(error as Error)?.message ||
+                'An error occurred while fetching test results.'}
+            </Alert>
+          </Box>
+        ) : flattenedItems.length === 0 ? (
+          <Box p={2}>
+            <Typography variant="body2" color="text.secondary">
+              No failures found.
+            </Typography>
+          </Box>
+        ) : (
+          <TestAggregationVirtualTree />
+        )}
+      </Box>
+    </Box>
+  );
+});
+AggregationViewContent.displayName = 'AggregationViewContent';
 
 export const AggregationView = forwardRef<
   TestInvestigationViewHandle,
@@ -31,54 +83,8 @@ export const AggregationView = forwardRef<
 >((props, ref) => {
   return (
     <AggregationViewProvider {...props}>
-      <AggregationViewContent ref={ref} />
+      <AggregationViewContent ref={ref} {...props} />
     </AggregationViewProvider>
   );
 });
 AggregationView.displayName = 'AggregationView';
-
-const AggregationViewContent = forwardRef<TestInvestigationViewHandle>(
-  (_, ref) => {
-    const { flattenedItems, isLoading, isError, error, locateCurrentTest } =
-      useAggregationViewContext();
-
-    useImperativeHandle(ref, () => ({
-      locateCurrentTest,
-    }));
-
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        {/* Toolbar is hosted in parent */}
-        <Box
-          sx={{
-            flexGrow: 1,
-            overflow:
-              !isLoading && flattenedItems.length === 0 ? 'auto' : 'hidden',
-          }}
-        >
-          {isLoading ? (
-            <Box display="flex" justifyContent="center" p={2}>
-              <CircularProgress />
-            </Box>
-          ) : isError ? (
-            <Box p={2}>
-              <Alert severity="error">
-                {(error as Error)?.message ||
-                  'An error occurred while fetching test results.'}
-              </Alert>
-            </Box>
-          ) : flattenedItems.length === 0 ? (
-            <Box p={2}>
-              <Typography variant="body2" color="text.secondary">
-                No failures found.
-              </Typography>
-            </Box>
-          ) : (
-            <TestAggregationVirtualTree />
-          )}
-        </Box>
-      </Box>
-    );
-  },
-);
-AggregationViewContent.displayName = 'AggregationViewContent';

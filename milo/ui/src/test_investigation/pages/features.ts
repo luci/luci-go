@@ -48,3 +48,11 @@ export const TEST_AGGREGATION_DRAWER_FLAG = createFeatureFlag({
   percentage: 0,
   trackingBug: 'None',
 });
+export const TEST_AGGREGATION_IN_INVOCATION_FLAG = createFeatureFlag({
+  namespace: 'test_investigation',
+  name: 'test_aggregation_in_invocation',
+  percentage: 0,
+  description:
+    'Enable the new Test Aggregation Viewer in the Invocation Page Test Results tab.',
+  trackingBug: 'b/321111604',
+});

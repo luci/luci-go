@@ -20,13 +20,14 @@ import { AggregationTreeItem } from './aggregation_tree_item';
 import { useAggregationViewContext } from './context/context';
 
 export function TestAggregationVirtualTree() {
-  const { flattenedItems, scrollRequest } = useAggregationViewContext();
+  const { flattenedItems, scrollRequest, invocation } =
+    useAggregationViewContext();
   const parentRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: flattenedItems.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 80,
+    estimateSize: () => 32,
     overscan: 5,
   });
 
@@ -65,7 +66,9 @@ export function TestAggregationVirtualTree() {
       >
         <div
           style={{
-            transform: `translateY(${rowVirtualizer.getVirtualItems()[0]?.start ?? 0}px)`,
+            transform: `translateY(${
+              rowVirtualizer.getVirtualItems()[0]?.start ?? 0
+            }px)`,
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualDesc) => {
@@ -75,6 +78,7 @@ export function TestAggregationVirtualTree() {
                 key={node.id}
                 node={node}
                 measureRef={rowVirtualizer.measureElement}
+                rawInvocationId={invocation.name}
               />
             );
           })}

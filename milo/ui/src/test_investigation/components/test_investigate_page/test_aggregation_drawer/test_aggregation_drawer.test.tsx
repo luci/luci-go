@@ -14,20 +14,35 @@
 
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
 import { TestAggregationDrawer } from './test_aggregation_drawer';
 
 jest.mock(
   '@/test_investigation/components/test_aggregation_viewer/test_aggregation_viewer',
   () => ({
-    TestAggregationViewer: () => (
-      <div data-testid="mock-test-aggregation-viewer" />
+    TestAggregationViewer: ({ autoLocate }: { autoLocate?: boolean }) => (
+      <div
+        data-testid="mock-test-aggregation-viewer"
+        data-is-open={String(autoLocate)}
+      />
     ),
   }),
 );
 
+jest.mock('@/test_investigation/context', () => ({
+  useInvocation: () => ({ name: 'invocations/test' }),
+  useTestVariant: () => ({ testId: 'test_id' }),
+}));
+
 describe('TestAggregationDrawer', () => {
   it('renders the drawer when isOpen is true', () => {
-    render(<TestAggregationDrawer isOpen={true} onClose={jest.fn()} />);
+    render(
+      <FakeContextProvider>
+        <TestAggregationDrawer isOpen={true} onClose={jest.fn()} />
+      </FakeContextProvider>,
+    );
+    // screen.debug();
     expect(
       screen.getByTestId('mock-test-aggregation-viewer'),
     ).toBeInTheDocument();
@@ -35,7 +50,11 @@ describe('TestAggregationDrawer', () => {
 
   it('calls onClose when backdrop is clicked', () => {
     const onClose = jest.fn();
-    render(<TestAggregationDrawer isOpen={true} onClose={onClose} />);
+    render(
+      <FakeContextProvider>
+        <TestAggregationDrawer isOpen={true} onClose={onClose} />
+      </FakeContextProvider>,
+    );
 
     // The backdrop is rendered as the previous sibling of the drawer.
     const backdrop = document.querySelector('.MuiBackdrop-root');
@@ -52,7 +71,11 @@ describe('TestAggregationDrawer', () => {
       value: 2000,
     }); // max width 50vw = 1000px
 
-    render(<TestAggregationDrawer isOpen={true} onClose={jest.fn()} />);
+    render(
+      <FakeContextProvider>
+        <TestAggregationDrawer isOpen={true} onClose={jest.fn()} />
+      </FakeContextProvider>,
+    );
 
     // To test resize, we need to trigger mousedown on the DragHandle (the div over the viewer)
     // The DragHandle has a col-resize cursor style.

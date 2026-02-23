@@ -17,6 +17,7 @@ import { styled } from '@mui/material/styles';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 import { TestAggregationViewer } from '@/test_investigation/components/test_aggregation_viewer/test_aggregation_viewer';
+import { useInvocation, useTestVariant } from '@/test_investigation/context';
 
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
@@ -53,6 +54,8 @@ export function TestAggregationDrawer({
   isOpen,
   onClose = () => {},
 }: TestAggregationDrawerProps) {
+  const invocation = useInvocation();
+  const testVariant = useTestVariant();
   const [drawerWidth, setDrawerWidth] = useState(500);
   const isDragging = useRef(false);
   const handleClose = () => {
@@ -109,8 +112,18 @@ export function TestAggregationDrawer({
         open={isOpen}
         PaperProps={{ style: { width: drawerWidth } }}
       >
-        <Box sx={{ overflow: 'auto', height: '100%', position: 'relative' }}>
-          <TestAggregationViewer />
+        <Box
+          sx={{
+            overflow: 'hidden',
+            height: '100%',
+            position: 'relative',
+          }}
+        >
+          <TestAggregationViewer
+            invocation={invocation}
+            testVariant={testVariant ?? undefined}
+            autoLocate={isOpen}
+          />
           <DragHandle onMouseDown={handleMouseDown} />
         </Box>
       </StyledDrawer>

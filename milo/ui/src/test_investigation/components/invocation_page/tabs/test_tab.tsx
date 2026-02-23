@@ -17,6 +17,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 
+import { useFeatureFlag } from '@/common/feature_flags/context';
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import {
   semanticStatusForTestVariant,
@@ -32,12 +33,14 @@ import {
   InvocationCounts,
   TestVariantsTable,
 } from '@/test_investigation/components/invocation_page';
+import { TestAggregationViewer } from '@/test_investigation/components/test_aggregation_viewer/test_aggregation_viewer';
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
 import {
   useInvocation,
   useIsLegacyInvocation,
   useRawInvocationId,
 } from '@/test_investigation/context/context';
+import { TEST_AGGREGATION_IN_INVOCATION_FLAG } from '@/test_investigation/pages/features';
 import { buildHierarchyTree } from '@/test_investigation/utils/drawer_tree_utils';
 
 /**
@@ -274,6 +277,58 @@ export function TestTab() {
   const showInitialLoader =
     isFetchingTestVariants && !hasPerformedInitialRedirect.current;
   const isRedirecting = isUniqueResult && !hasPerformedInitialRedirect.current;
+
+  // New Test Aggregation View Logic
+  const isTestAggregationEnabled = useFeatureFlag(
+    TEST_AGGREGATION_IN_INVOCATION_FLAG,
+  );
+
+  if (isTestAggregationEnabled) {
+    if (!invocation) {
+      return (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            p: 2,
+          }}
+        >
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>Loading Invocation...</Typography>
+        </Box>
+      );
+    }
+    return (
+      <Box
+        sx={{
+          height: 'calc(100vh - 200px)',
+          display: 'flex',
+          flexDirection: 'column',
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 1,
+        }}
+      >
+        <TestAggregationViewer
+          invocation={invocation}
+          autoLocate={true}
+          defaultExpanded={true}
+          initialExpandedIds={[
+            'FAILED',
+            'EXECUTION_ERRORED',
+            'FLAKY',
+            'SKIPPED',
+            'PRECLUDED',
+            'PASSED',
+            'EXONERATED',
+            'UNEXPECTEDLY_SKIPPED',
+          ]}
+        />{' '}
+      </Box>
+    );
+  }
 
   if (showInitialLoader || isRedirecting) {
     return (

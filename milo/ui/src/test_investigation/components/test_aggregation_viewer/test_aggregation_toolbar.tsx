@@ -131,192 +131,236 @@ export function TestAggregationToolbar({
         borderBottom: '1px solid',
         borderColor: 'divider',
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 1,
+        alignItems: 'center',
       }}
     >
-      {/* Row 1: Status Dropdown */}
-      <FormControl size="small" sx={{ width: '100%' }}>
-        <InputLabel id="status-filter-label" sx={{ fontSize: '0.875rem' }}>
-          Status
-        </InputLabel>
-        <Select
-          labelId="status-filter-label"
-          id="status-select"
-          multiple
-          value={Array.from(selectedStatuses)}
-          onChange={handleStatusChange}
-          label="Status"
-          sx={{ fontSize: '0.875rem' }}
-          renderValue={(selected) => {
-            let labelText = '';
-            if (selected.length === 0) labelText = 'All';
-            else if (selected.length === STATUS_OPTIONS.length)
-              labelText = 'All';
-            else {
-              labelText = selected
-                .map(
-                  (val) =>
-                    STATUS_OPTIONS.find((opt) => opt.value === val)?.label ||
-                    val,
-                )
-                .join(', ');
-            }
-            return <Typography variant="body2">{labelText}</Typography>;
-          }}
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <MenuItem key={option.value} value={option.value} dense>
-              <Checkbox
-                checked={selectedStatuses.has(option.value)}
-                size="small"
-              />
-              <ListItemText
-                primary={option.label}
-                primaryTypographyProps={{ variant: 'body2' }}
-              />
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      {/* Row 2: AIP Filter & Help */}
+      {/* Filters Section - Grows to fill available space */}
       <Box
-        sx={{ display: 'flex', gap: 0.5, width: '100%', alignItems: 'center' }}
+        sx={{
+          display: 'flex',
+          gap: 1,
+          flexGrow: 1,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          minWidth: '300px', // Prevent collapsing too small
+        }}
       >
-        <Aip160Autocomplete
-          schema={FILTER_SCHEMA}
-          value={aipFilter}
-          onValueCommit={setAipFilter}
-          placeholder="e.g. status:FAILED AND duration>50"
-          sx={{
-            flexGrow: 1,
-            '& .MuiInputBase-input': { fontSize: '0.875rem' },
-            '& .MuiInputLabel-root': { fontSize: '0.875rem' },
-          }}
-          slotProps={{
-            textField: {
-              size: 'small',
-              label: 'Contains test results matching...',
-            },
-          }}
-        />
-        <HtmlTooltip
-          title={
-            <>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                Example filters:
-                <br />
-                <code>status:FAILED AND duration&gt;50</code>
-                <br />
-                <code>
-                  test_id:&quot;my_test&quot; OR
-                  test_metadata.name:&quot;my_test&quot;
-                </code>
-              </Typography>
-              <Typography variant="body2" component="div" sx={{ mb: 1 }}>
-                Limits results to only those test verdicts that <em>contain</em>{' '}
-                a test result matching this filter.
-              </Typography>
-              <Typography variant="body2" component="div" sx={{ mb: 1 }}>
-                The filter is an AIP-160 filter string (see{' '}
-                <Link
-                  href="https://google.aip.dev/160"
-                  target="_blank"
-                  rel="noopener"
-                  underline="always"
+        <FormControl size="small" sx={{ width: '300px', flexShrink: 0 }}>
+          <InputLabel id="status-filter-label" sx={{ fontSize: '0.875rem' }}>
+            Status
+          </InputLabel>
+          <Select
+            labelId="status-filter-label"
+            id="status-select"
+            multiple
+            value={Array.from(selectedStatuses)}
+            onChange={handleStatusChange}
+            label="Status"
+            sx={{ fontSize: '0.875rem' }}
+            renderValue={(selected) => {
+              let labelText = '';
+              if (selected.length === 0) labelText = 'All';
+              else if (selected.length === STATUS_OPTIONS.length)
+                labelText = 'All';
+              else {
+                labelText = selected
+                  .map(
+                    (val) =>
+                      STATUS_OPTIONS.find((opt) => opt.value === val)?.label ||
+                      val,
+                  )
+                  .join(', ');
+              }
+              return (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
                 >
-                  https://google.aip.dev/160
-                </Link>{' '}
-                for syntax), with the following fields available:
-                <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                  <li>
-                    <strong>test_id</strong> (string) - the flat-form test ID
-                  </li>
-                  <li>
-                    <strong>test_id_structured.module_name</strong> (string) -
-                    the structured form test ID
-                  </li>
-                  <li>
-                    <strong>test_id_structured.module_scheme</strong> (string)
-                  </li>
-                  <li>
-                    <strong>test_id_structured.module_variant</strong> (filters
-                    behave as if this field is a map&lt;string, string&gt;)
-                  </li>
-                  <li>
-                    <strong>test_id_structured.module_variant_hash</strong>{' '}
-                    (string)
-                  </li>
-                  <li>
-                    <strong>test_id_structured.coarse_name</strong> (string)
-                  </li>
-                  <li>
-                    <strong>test_id_structured.fine_name</strong> (string)
-                  </li>
-                  <li>
-                    <strong>test_id_structured.case_name</strong> (string)
-                  </li>
-                  <li>
-                    <strong>test_metadata.name</strong> (string)
-                  </li>
-                  <li>
-                    <strong>tags</strong> (repeated (key string, value string))
-                  </li>
-                  <li>
-                    <strong>test_metadata.location.repo</strong> (string)
-                  </li>
-                  <li>
-                    <strong>test_metadata.location.file_name</strong> (string)
-                  </li>
-                  <li>
-                    <strong>status</strong> (enum
-                    luci.resultdb.v1.TestResult.Status) - the status_v2 of the
-                    test result
-                  </li>
-                  <li>
-                    <strong>duration</strong> (google.protobuf.Duration)
-                  </li>
-                </ul>
-              </Typography>
-            </>
-          }
+                  {labelText}
+                </Typography>
+              );
+            }}
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value} dense>
+                <Checkbox
+                  checked={selectedStatuses.has(option.value)}
+                  size="small"
+                />
+                <ListItemText
+                  primary={option.label}
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 0.5,
+            flexGrow: 1,
+            alignItems: 'center',
+            minWidth: '250px',
+          }}
         >
-          <IconButton size="small">
-            <HelpOutlineIcon fontSize="small" />
-          </IconButton>
-        </HtmlTooltip>
+          <Aip160Autocomplete
+            schema={FILTER_SCHEMA}
+            value={aipFilter}
+            onValueCommit={setAipFilter}
+            placeholder="e.g. status:FAILED AND duration>50"
+            sx={{
+              flexGrow: 1,
+              '& .MuiInputBase-input': { fontSize: '0.875rem' },
+              '& .MuiInputLabel-root': { fontSize: '0.875rem' },
+            }}
+            slotProps={{
+              textField: {
+                size: 'small',
+                label: 'Contains test results matching...',
+              },
+            }}
+          />
+          <HtmlTooltip
+            title={
+              <>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Example filters:
+                  <br />
+                  <code>status:FAILED AND duration&gt;50</code>
+                  <br />
+                  <code>
+                    test_id:&quot;my_test&quot; OR
+                    test_metadata.name:&quot;my_test&quot;
+                  </code>
+                </Typography>
+                <Typography variant="body2" component="div" sx={{ mb: 1 }}>
+                  Limits results to only those test verdicts that{' '}
+                  <em>contain</em> a test result matching this filter.
+                </Typography>
+                <Typography variant="body2" component="div" sx={{ mb: 1 }}>
+                  The filter is an AIP-160 filter string (see{' '}
+                  <Link
+                    href="https://google.aip.dev/160"
+                    target="_blank"
+                    rel="noopener"
+                    underline="always"
+                  >
+                    https://google.aip.dev/160
+                  </Link>{' '}
+                  for syntax), with the following fields available:
+                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                    <li>
+                      <strong>test_id</strong> (string) - the flat-form test ID
+                    </li>
+                    <li>
+                      <strong>test_id_structured.module_name</strong> (string) -
+                      the structured form test ID
+                    </li>
+                    <li>
+                      <strong>test_id_structured.module_scheme</strong> (string)
+                    </li>
+                    <li>
+                      <strong>test_id_structured.module_variant</strong>{' '}
+                      (filters behave as if this field is a map&lt;string,
+                      string&gt;)
+                    </li>
+                    <li>
+                      <strong>test_id_structured.module_variant_hash</strong>{' '}
+                      (string)
+                    </li>
+                    <li>
+                      <strong>test_id_structured.coarse_name</strong> (string)
+                    </li>
+                    <li>
+                      <strong>test_id_structured.fine_name</strong> (string)
+                    </li>
+                    <li>
+                      <strong>test_id_structured.case_name</strong> (string)
+                    </li>
+                    <li>
+                      <strong>test_metadata.name</strong> (string)
+                    </li>
+                    <li>
+                      <strong>tags</strong> (repeated (key string, value
+                      string))
+                    </li>
+                    <li>
+                      <strong>test_metadata.location.repo</strong> (string)
+                    </li>
+                    <li>
+                      <strong>test_metadata.location.file_name</strong> (string)
+                    </li>
+                    <li>
+                      <strong>status</strong> (enum
+                      luci.resultdb.v1.TestResult.Status) - the status_v2 of the
+                      test result
+                    </li>
+                    <li>
+                      <strong>duration</strong> (google.protobuf.Duration)
+                    </li>
+                  </ul>
+                </Typography>
+              </>
+            }
+          >
+            <IconButton size="small">
+              <HelpOutlineIcon fontSize="small" />
+            </IconButton>
+          </HtmlTooltip>
+        </Box>
       </Box>
 
-      {/* Row 3: Actions */}
+      {/* Actions Section - Keeps buttons together */}
       <Box
         sx={{
           display: 'flex',
           gap: 0.5,
           alignItems: 'center',
-          flexWrap: 'wrap',
+          flexShrink: 0,
         }}
       >
-        <HtmlTooltip title="Locate current test">
-          <span>
-            <IconButton
-              size="small"
-              onClick={onLocateCurrentTest}
-              disabled={!onLocateCurrentTest}
-              aria-label="Locate current test"
-            >
-              <GpsFixed fontSize="small" />
-            </IconButton>
-          </span>
-        </HtmlTooltip>
+        {onLocateCurrentTest && (
+          <HtmlTooltip title="Locate current test">
+            <span>
+              <IconButton
+                size="small"
+                onClick={onLocateCurrentTest}
+                aria-label="Locate current test"
+              >
+                <GpsFixed fontSize="small" />
+              </IconButton>
+            </span>
+          </HtmlTooltip>
+        )}
+        <Typography
+          variant="body2"
+          sx={{
+            fontSize: '0.8125rem',
+            lineHeight: 1.75,
+            mr: 1,
+            ml: 1,
+            color: 'text.secondary',
+          }}
+        >
+          Loaded {loadedCount} tests
+        </Typography>
         <LoadingButton
           variant="outlined"
           size="small"
           onClick={handleLoadMore}
           loading={isLoadingMore}
-          sx={{ fontSize: '0.8125rem' }}
+          sx={{ fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
         >
-          Load more test results ({loadedCount})
+          Load more
         </LoadingButton>
       </Box>
     </Box>

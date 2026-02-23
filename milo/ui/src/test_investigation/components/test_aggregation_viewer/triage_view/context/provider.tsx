@@ -21,6 +21,7 @@ import {
   useRef,
 } from 'react';
 
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { TestVerdictView } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { TestVerdictPredicate_VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/predicate.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb'; // Added import
@@ -29,10 +30,9 @@ import {
   TestVerdict,
   TestVerdict_Status,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-import { useInvocation, useTestVariant } from '@/test_investigation/context';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 import { normalizeDrawerFailureReason } from '@/test_investigation/utils/test_variant_utils';
 
-import { useDrawerWrapper } from '../../../test_info/context';
 import { useTestAggregationContext } from '../../context';
 import {
   getVariantDefinitionString,
@@ -49,6 +49,9 @@ import {
 
 export interface TriageViewProviderProps extends PropsWithChildren {
   initialExpandedIds?: string[];
+  invocation: AnyInvocation;
+  testVariant?: OutputTestVerdict;
+  autoLocate?: boolean;
 }
 
 const STATUS_ORDER = [
@@ -75,10 +78,10 @@ const STATUS_MAP: Record<string, TestVerdictPredicate_VerdictEffectiveStatus> =
 export function TriageViewProvider({
   children,
   initialExpandedIds,
+  invocation,
+  testVariant,
+  autoLocate = true,
 }: TriageViewProviderProps) {
-  const invocation = useInvocation();
-  const { isDrawerOpen } = useDrawerWrapper();
-
   // 1. Consume Shared Filter Context
   const {
     selectedStatuses,
@@ -155,7 +158,7 @@ export function TriageViewProvider({
   }, [verdictsQuery.isFetchingNextPage, setIsLoadingMore]);
 
   // 3. Merging with Selected Test Variant
-  const selectedTestVariant = useTestVariant();
+  const selectedTestVariant = testVariant;
 
   const mergedVerdicts = useMemo(() => {
     const fromQuery = verdictsQuery.data?.testVerdicts || [];
@@ -393,18 +396,19 @@ export function TriageViewProvider({
   const lastAutoLocatedRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (
-      isDrawerOpen &&
+      autoLocate &&
       selectedTestVariant &&
       lastAutoLocatedRef.current !== selectedTestVariant.testId
     ) {
       locateCurrentTest();
       lastAutoLocatedRef.current = selectedTestVariant.testId;
     }
-  }, [isDrawerOpen, locateCurrentTest, selectedTestVariant]);
+  }, [autoLocate, locateCurrentTest, selectedTestVariant]);
 
   return (
     <TriageViewContext.Provider
       value={{
+        invocation,
         statusGroups,
         flattenedItems,
         isLoading: verdictsQuery.isLoading,

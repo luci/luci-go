@@ -76,8 +76,9 @@ describe('TestAggregationToolbar', () => {
     // Toolbar elements
     expect(screen.getByTestId('mock-aip-autocomplete')).toBeInTheDocument();
     expect(screen.getByText(/Failed/i)).toBeInTheDocument(); // Chip category dropdown currently holds "Failed"
+    expect(screen.getByText(/Loaded 100 tests/i)).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /load more test results \(100\)/i }),
+      screen.getByRole('button', { name: /load more/i }),
     ).toBeInTheDocument();
 
     // Locate button should be enabled
@@ -86,13 +87,13 @@ describe('TestAggregationToolbar', () => {
     ).toBeEnabled();
   });
 
-  it('disables locate button when onLocateCurrentTest is not provided', () => {
+  it('does not render locate button when onLocateCurrentTest is not provided', () => {
     setup({}, { onLocateCurrentTest: undefined });
-    // The Locate button should be disabled
-    const locateBtn = screen.getByRole('button', {
+    // The Locate button should not be rendered
+    const locateBtn = screen.queryByRole('button', {
       name: /Locate current test/i,
     });
-    expect(locateBtn).toBeDisabled();
+    expect(locateBtn).not.toBeInTheDocument();
   });
 
   it('updates aip filter when typing', async () => {
@@ -107,7 +108,7 @@ describe('TestAggregationToolbar', () => {
   it('calls triggerLoadMore when load more is clicked', async () => {
     setup();
     const loadMoreBtn = screen.getByRole('button', {
-      name: /load more test results/i,
+      name: /load more/i,
     });
 
     await fireEvent.click(loadMoreBtn);

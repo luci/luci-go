@@ -19,10 +19,6 @@ import { OutputTestVerdict } from '@/common/types/verdict';
 import { AggregationLevel } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { TestAggregation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_aggregation.pb';
-import {
-  TestVariantProvider,
-  InvocationProvider,
-} from '@/test_investigation/context';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import * as hooks from './hooks';
@@ -32,10 +28,6 @@ import { TestAggregationViewer } from './test_aggregation_viewer';
 jest.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: jest.fn(),
 }));
-jest.mock('@/test_investigation/components/test_info/context', () => ({
-  useDrawerWrapper: () => ({ isDrawerOpen: false }),
-}));
-
 jest.mock('./hooks', () => ({
   useBulkTestAggregationsQueries: jest.fn(),
   useTestVerdictsQuery: jest.fn(),
@@ -77,25 +69,19 @@ describe('TestAggregationViewer', () => {
     });
     (hooks.useSchemesQuery as jest.Mock).mockReturnValue({ data: undefined });
 
+    const invocation = { name: 'invocations/test' } as Invocation;
+    const testVariant = {} as OutputTestVerdict;
+
     render(
       <FakeContextProvider>
-        <InvocationProvider
-          invocation={{ name: 'invocations/test' } as Invocation}
-          rawInvocationId="test"
-          project="test-project"
-          isLegacyInvocation={false}
-        >
-          <TestVariantProvider
-            testVariant={{} as OutputTestVerdict}
-            displayStatusString=""
-          >
-            <TestAggregationViewer />
-          </TestVariantProvider>
-        </InvocationProvider>
+        <TestAggregationViewer
+          invocation={invocation}
+          testVariant={testVariant}
+        />
       </FakeContextProvider>,
     );
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
   });
 
   it('renders no failures message when tree data is empty and loaded', () => {
@@ -110,21 +96,15 @@ describe('TestAggregationViewer', () => {
     });
     (hooks.useSchemesQuery as jest.Mock).mockReturnValue({ data: undefined });
 
+    const invocation = { name: 'invocations/test' } as Invocation;
+    const testVariant = {} as OutputTestVerdict;
+
     render(
       <FakeContextProvider>
-        <InvocationProvider
-          invocation={{ name: 'invocations/test' } as Invocation}
-          rawInvocationId="test"
-          project="test-project"
-          isLegacyInvocation={false}
-        >
-          <TestVariantProvider
-            testVariant={{} as OutputTestVerdict}
-            displayStatusString=""
-          >
-            <TestAggregationViewer />
-          </TestVariantProvider>
-        </InvocationProvider>
+        <TestAggregationViewer
+          invocation={invocation}
+          testVariant={testVariant}
+        />
       </FakeContextProvider>,
     );
 
@@ -185,25 +165,19 @@ describe('TestAggregationViewer', () => {
     });
     (hooks.useSchemesQuery as jest.Mock).mockReturnValue({ data: undefined });
 
+    const invocation = { name: 'invocations/test' } as Invocation;
+    const testVariant = {} as OutputTestVerdict;
+
     render(
       <FakeContextProvider>
-        <InvocationProvider
-          invocation={{ name: 'invocations/test' } as Invocation}
-          rawInvocationId="test"
-          project="test-project"
-          isLegacyInvocation={false}
-        >
-          <TestVariantProvider
-            testVariant={{} as OutputTestVerdict}
-            displayStatusString=""
-          >
-            <TestAggregationViewer />
-          </TestVariantProvider>
-        </InvocationProvider>
+        <TestAggregationViewer
+          invocation={invocation}
+          testVariant={testVariant}
+        />
       </FakeContextProvider>,
     );
-
-    expect(screen.getByText('Module: test_module')).toBeInTheDocument();
+    expect(screen.getByText('Module:')).toBeInTheDocument();
+    expect(screen.getByText('test_module')).toBeInTheDocument();
     expect(screen.getByText('(key=val)')).toBeInTheDocument();
     expect(screen.getByText(/5 failed/i)).toBeInTheDocument();
   });

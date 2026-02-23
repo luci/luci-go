@@ -21,11 +21,11 @@ import {
   useRef,
 } from 'react';
 
+import { OutputTestVerdict } from '@/common/types/verdict';
 import { AggregationLevel } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { TestVerdictPredicate_VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/predicate.pb';
-import { useInvocation, useTestVariant } from '@/test_investigation/context';
+import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
-import { useDrawerWrapper } from '../../../test_info/context';
 import { useTestAggregationContext } from '../../context';
 import {
   useAncestryAggregationsQueries,
@@ -45,6 +45,10 @@ import {
 
 export interface AggregationViewProviderProps extends PropsWithChildren {
   initialExpandedIds?: string[];
+  invocation: AnyInvocation;
+  testVariant?: OutputTestVerdict;
+  autoLocate?: boolean;
+  defaultExpanded?: boolean;
 }
 
 const STATUS_MAP: Record<string, TestVerdictPredicate_VerdictEffectiveStatus> =
@@ -62,10 +66,11 @@ const STATUS_MAP: Record<string, TestVerdictPredicate_VerdictEffectiveStatus> =
 export function AggregationViewProvider({
   children,
   initialExpandedIds,
+  invocation,
+  testVariant,
+  autoLocate = true,
+  defaultExpanded = false,
 }: AggregationViewProviderProps) {
-  const invocation = useInvocation();
-  const { isDrawerOpen } = useDrawerWrapper();
-
   // 1. Consume Shared Filter Context
   // Ensure we are using the correct context hook from shared context
   const {
@@ -114,7 +119,7 @@ export function AggregationViewProvider({
   );
 
   // 3. Deep Linking (Ancestry)
-  const selectedTestVariant = useTestVariant();
+  const selectedTestVariant = testVariant;
 
   // Aggregations (Enrichment)
   const bulkAggregationsQueries = useBulkTestAggregationsQueries(
@@ -225,6 +230,35 @@ export function AggregationViewProvider({
     expandedIds,
   ]);
 
+  // Auto-expand all logic
+  const autoExpandedIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (defaultExpanded) {
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        let changed = false;
+
+        const tryExpand = (id: string) => {
+          if (!autoExpandedIds.current.has(id)) {
+            autoExpandedIds.current.add(id);
+            if (!next.has(id)) {
+              next.add(id);
+              changed = true;
+            }
+          }
+        };
+
+        skeletonNodes.forEach((node) => tryExpand(node.id));
+        aggDataMap.forEach((_, id) => {
+          // All items in aggDataMap are intermediate nodes (TestAggregation)
+          tryExpand(id);
+        });
+
+        return changed ? next : prev;
+      });
+    }
+  }, [defaultExpanded, skeletonNodes, aggDataMap]);
+
   // Expand logic
   const toggleExpansion = (id: string) => {
     setExpandedIds((prev) => {
@@ -289,14 +323,14 @@ export function AggregationViewProvider({
   const lastAutoLocatedRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (
-      isDrawerOpen &&
+      autoLocate &&
       selectedTestVariant &&
       lastAutoLocatedRef.current !== selectedTestVariant.testId
     ) {
       locateCurrentTest();
       lastAutoLocatedRef.current = selectedTestVariant.testId;
     }
-  }, [isDrawerOpen, locateCurrentTest, selectedTestVariant]);
+  }, [autoLocate, locateCurrentTest, selectedTestVariant]);
 
   const isLoading = verdictsQuery.isLoading; // Main skeleton loading
 
@@ -306,10 +340,17 @@ export function AggregationViewProvider({
         expandedIds,
         toggleExpansion,
         flattenedItems,
+        invocation,
+
         isLoading,
-        isError: verdictsQuery.isError,
-        error: verdictsQuery.error,
-        scrollRequest,
+        isError:
+          verdictsQuery.isError ||
+          bulkAggregationsQueries.some((q) => q.isError),
+        error:
+          verdictsQuery.error ||
+          bulkAggregationsQueries.find((q) => q.error)?.error,
+
+        scrollRequest: scrollRequest || undefined,
         locateCurrentTest,
         highlightedNodeId: selectedTestVariant?.testId,
       }}
