@@ -28,6 +28,26 @@ func TestDisk(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Disk", t, func(t *ftt.Test) {
+		t.Run("IsPersistentDisk", func(t *ftt.Test) {
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/pd-standard"}).IsPersistentDisk(), should.BeTrue)
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/pd-ssd"}).IsPersistentDisk(), should.BeTrue)
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/local-ssd"}).IsPersistentDisk(), should.BeFalse)
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/hyperdisk-balanced"}).IsPersistentDisk(), should.BeFalse)
+		})
+
+		t.Run("IsScratchDisk", func(t *ftt.Test) {
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/local-ssd"}).IsScratchDisk(), should.BeTrue)
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/pd-standard"}).IsScratchDisk(), should.BeFalse)
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/hyperdisk-balanced"}).IsScratchDisk(), should.BeFalse)
+		})
+
+		t.Run("isHyperdisk", func(t *ftt.Test) {
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/hyperdisk-balanced"}).isHyperdisk(), should.BeTrue)
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/hyperdisk-throughput"}).isHyperdisk(), should.BeTrue)
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/pd-standard"}).isHyperdisk(), should.BeFalse)
+			assert.Loosely(t, (&Disk{Type: "zones/zone/diskTypes/local-ssd"}).isHyperdisk(), should.BeFalse)
+		})
+
 		t.Run("isValidImage", func(t *ftt.Test) {
 			t.Run("invalid", func(t *ftt.Test) {
 				assert.Loosely(t, isValidImage("image"), should.BeFalse)
@@ -67,7 +87,7 @@ func TestDisk(t *testing.T) {
 					d := &Disk{
 						Type:      "zones/zone/diskTypes/pd-standard",
 						Interface: DiskInterface_NVME,
-						Image:     "",
+						Image:     "global/images/image",
 					}
 					d.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
@@ -93,6 +113,50 @@ func TestDisk(t *testing.T) {
 					err := c.Finalize().(*validation.Error).Errors
 					assert.Loosely(t, err, should.ErrLike("local ssd cannot use an image"))
 				})
+				t.Run("Hyperdisk + Invalid Provisioning", func(t *ftt.Test) {
+					d := &Disk{
+						Type:                  "zones/zone/diskTypes/hyperdisk-balanced",
+						Interface:             DiskInterface_NVME,
+						Image:                 "global/images/image",
+						ProvisionedIops:       -1,
+						ProvisionedThroughput: -1,
+					}
+					d.Validate(c)
+					err := c.Finalize()
+					assert.Loosely(t, err, should.NotBeNil)
+					errs := err.(*validation.Error).Errors
+					assert.Loosely(t, errs, should.ErrLike("provisioned_iops must be non-negative"))
+					assert.Loosely(t, errs, should.ErrLike("provisioned_throughput must be non-negative"))
+				})
+				t.Run("Persistent + Provisioned", func(t *ftt.Test) {
+					d := &Disk{
+						Type:                  "zones/zone/diskTypes/pd-standard",
+						Interface:             DiskInterface_SCSI,
+						Image:                 "global/images/image",
+						ProvisionedIops:       1000,
+						ProvisionedThroughput: 100,
+					}
+					d.Validate(c)
+					err := c.Finalize()
+					assert.Loosely(t, err, should.NotBeNil)
+					errs := err.(*validation.Error).Errors
+					assert.Loosely(t, errs, should.ErrLike("provisioned_iops can only be set for Hyperdisk types"))
+					assert.Loosely(t, errs, should.ErrLike("provisioned_throughput can only be set for Hyperdisk types"))
+				})
+				t.Run("Scratch + Provisioned", func(t *ftt.Test) {
+					d := &Disk{
+						Type:                  "zones/zone/diskTypes/local-ssd",
+						Interface:             DiskInterface_NVME,
+						ProvisionedIops:       1000,
+						ProvisionedThroughput: 100,
+					}
+					d.Validate(c)
+					err := c.Finalize()
+					assert.Loosely(t, err, should.NotBeNil)
+					errs := err.(*validation.Error).Errors
+					assert.Loosely(t, errs, should.ErrLike("provisioned_iops can only be set for Hyperdisk types"))
+					assert.Loosely(t, errs, should.ErrLike("provisioned_throughput can only be set for Hyperdisk types"))
+				})
 			})
 
 			t.Run("valid", func(t *ftt.Test) {
@@ -110,6 +174,17 @@ func TestDisk(t *testing.T) {
 						Type:      "zones/zone/diskTypes/local-ssd",
 						Interface: DiskInterface_NVME,
 						Image:     "",
+					}
+					d.Validate(c)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
+				})
+				t.Run("Hyperdisk + NVME + Image", func(t *ftt.Test) {
+					d := &Disk{
+						Type:                  "zones/zone/diskTypes/hyperdisk-balanced",
+						Interface:             DiskInterface_NVME,
+						Image:                 "global/images/image",
+						ProvisionedIops:       1000,
+						ProvisionedThroughput: 100,
 					}
 					d.Validate(c)
 					assert.Loosely(t, c.Finalize(), should.BeNil)

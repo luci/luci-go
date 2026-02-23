@@ -45,6 +45,11 @@ func (d *Disk) IsScratchDisk() bool {
 	return strings.HasSuffix(d.Type, "/local-ssd")
 }
 
+// isHyperdisk returns whether or not the given disk type is a Hyperdisk type.
+func (d *Disk) isHyperdisk() bool {
+	return strings.Contains(d.Type, "hyperdisk")
+}
+
 // isValidDiskType returns whether or not the given string is a valid disk
 // type. Disk types have the form zones/<zone>/diskTypes/<type>.
 func isValidDiskType(s string) bool {
@@ -64,24 +69,46 @@ func (d *Disk) GetImageBase() string {
 // Validate validates this disk.
 //
 //	The set of valid configurations is:
-//	+-------------+-------+-----------+
-//	| Type        | Image | Interface |
-//	+-------------+-------+-----------+
-//	| local-ssd   | No    | *         |
-//	| pd-ssd      | Yes   | SCSI      |
-//	| pd-standard | Yes   | SCSI      |
-//	+-------------+-------+-----------+
+//	+-------------+-------+-----------+-----------------------------+
+//	| Type        | Image | Interface | Provisioned IOPS/Throughput |
+//	+-------------+-------+-----------+-----------------------------+
+//	| local-ssd   | No    | *         | No                          |
+//	| pd-ssd      | Yes   | SCSI      | No                          |
+//	| pd-standard | Yes   | SCSI      | No                          |
+//	| hyperdisk-* | Yes   | NVME (recommended)      | Yes (Optional)              |
+//	+-------------+-------+-----------+-----------------------------+
 func (d *Disk) Validate(c *validation.Context) {
 	if !isValidDiskType(d.Type) {
 		c.Errorf("disk type must match zones/<zone>/diskTypes/<type>")
 	}
-	if d.IsPersistentDisk() && d.GetInterface() != DiskInterface_SCSI {
-		c.Errorf("persistent disk must use SCSI")
-	}
-	if d.IsPersistentDisk() && !isValidImage(d.GetImage()) {
-		c.Errorf("image must match projects/<project>/global/images/<image> or global/images/<image>")
+
+	if d.IsPersistentDisk() {
+		// PD disks must use SCSI.
+		if d.GetInterface() != DiskInterface_SCSI {
+			c.Errorf("persistent disk must use SCSI")
+		}
+		if !isValidImage(d.GetImage()) {
+			c.Errorf("image must match projects/<project>/global/images/<image> or global/images/<image>")
+		}
 	}
 	if d.IsScratchDisk() && isValidImage(d.GetImage()) {
 		c.Errorf("local ssd cannot use an image")
+	}
+
+	if d.isHyperdisk() {
+		if d.ProvisionedIops < 0 {
+			c.Errorf("provisioned_iops must be non-negative")
+		}
+		if d.ProvisionedThroughput < 0 {
+			c.Errorf("provisioned_throughput must be non-negative")
+		}
+	} else {
+		// Provisioning fields only for Hyperdisk.
+		if d.ProvisionedIops > 0 {
+			c.Errorf("provisioned_iops can only be set for Hyperdisk types")
+		}
+		if d.ProvisionedThroughput > 0 {
+			c.Errorf("provisioned_throughput can only be set for Hyperdisk types")
+		}
 	}
 }
