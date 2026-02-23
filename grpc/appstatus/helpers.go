@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 )
 
 // BadRequest annotates err as a bad request.
@@ -59,7 +60,7 @@ func GRPCifyAndLog(ctx context.Context, err error) error {
 		return nil
 	}
 
-	s := statusFromError(err)
+	s := statusFromError(ctx, err)
 	if s.Code() == codes.Internal || s.Code() == codes.Unknown {
 		errors.Log(ctx, err)
 	}
@@ -67,14 +68,42 @@ func GRPCifyAndLog(ctx context.Context, err error) error {
 }
 
 // statusFromError returns a status to return to the client based on the error.
-func statusFromError(err error) *status.Status {
+func statusFromError(ctx context.Context, err error) *status.Status {
 	if s, ok := Get(err); ok {
 		return s
 	}
 
-	if err := errors.Unwrap(err); err == context.DeadlineExceeded || err == context.Canceled {
-		return status.FromContextError(err)
-	}
+	if ctxErr := ctx.Err(); ctxErr == context.DeadlineExceeded || ctxErr == context.Canceled {
+		// Fallback: if the context has been cancelled or the deadline was exceeded,
+		// RPC handlers often do not return an appstatus-annotated error. Check
+		// the error the RPC returned could plausibly be from this context error.
+		// If it is, return a corresponding status.
 
+		bubblingUpContextError := errors.Is(err, ctxErr)
+		if !bubblingUpContextError {
+			// Alternatively, if a nested RPC call returned codes.Cancelled or
+			// codes.DeadlineExceeded, and this matches the context error, we are
+			// bubbling up the context error.
+			code := status.Code(err)
+			bubblingUpContextError = ((code == codes.Canceled && ctxErr == context.Canceled) ||
+				(code == codes.DeadlineExceeded && ctxErr == context.DeadlineExceeded))
+		}
+
+		// The context error was bubbled up.
+		if bubblingUpContextError {
+			// The original error is not appstatus-annotated so it could contain
+			// secrets the client is not allowed to know about; log the original
+			// error here for debugging but do not return it. Instead return the
+			// context error (or its cause, if available).
+			if ctxErr == context.DeadlineExceeded {
+				logging.Warningf(ctx, "Returning request deadline exceeded error; original error: %s", err)
+				return status.New(codes.DeadlineExceeded, context.Cause(ctx).Error())
+			} else {
+				// ctxErr == context.Canceled
+				logging.Warningf(ctx, "Returning request cancelled error; original error: %s", err)
+				return status.New(codes.Canceled, context.Cause(ctx).Error())
+			}
+		}
+	}
 	return status.New(codes.Internal, "internal server error")
 }
