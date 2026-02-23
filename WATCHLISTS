@@ -1,18 +1,50 @@
 {
   'WATCHLIST_DEFINITIONS': {
+    'analysis': {
+      'filepath': '^analysis/',
+    },
+    'bisection': {
+      'filepath': '^bisection/',
+    },
+    'logdog': {
+      'filepath': '^logdog/',
+    },
     'luci_notify': {
-      'filepath': 'luci_notify',
+      'filepath': '^luci_notify/',
+    },
+    'resultai': {
+      'filepath': '^resultai/',
+    },
+    'resultdb': {
+      'filepath': '^resultdb/',
+    },
+    'source_index': {
+      'filepath': '^source_index/',
+    },
+    'teams': {
+      'filepath': '^teams/',
+    },
+    'tree_status': {
+      'filepath': '^tree_status/',
     },
     'milo': {
-      'filepath': 'milo',
+      'filepath': '^milo/',
     },
     'fleet_console_client': {
-      'filepath': 'milo/ui/src/fleet',
+      'filepath': '^milo/ui/src/fleet/',
     },
   },
   'WATCHLISTS': {
-    'luci_notify': ['chops-tfs-team+reviews@google.com'],
-    'milo': ['chops-tfs-team+reviews@google.com'],
+    'analysis': ['android-build-dx-changes@google.com'],
+    'bisection': ['android-build-dx-changes@google.com' ],
     'fleet_console_client': ['fleet-console-reviews+client@google.com'],
+    'logdog': ['android-build-dx-changes@google.com'],
+    'luci_notify': ['android-build-dx-changes@google.com'],
+    'milo': ['android-build-dx-changes@google.com'],
+    'resultai': ['android-build-dx-changes@google.com'],
+    'resultdb': ['android-build-dx-changes@google.com'],
+    'source_index': ['android-build-dx-changes@google.com'],
+    'teams': ['android-build-dx-changes@google.com'],
+    'tree_status': ['android-build-dx-changes@google.com'],
   },
 }
