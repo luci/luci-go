@@ -112,6 +112,8 @@ var (
 		&types.MetricMetadata{Units: "verifications"},
 		// The GenAI analysis ID.
 		field.Int("genai_analysis_id"),
+		// The latest tree closed message.
+		field.String("message"),
 	)
 )
 
@@ -377,6 +379,14 @@ func collectMetricsForRunningTestReruns(c context.Context) error {
 }
 
 func collectMetricsForGenAIVindication(c context.Context) error {
+	client, err := newTreeStatusClient(c)
+	if err != nil {
+		return errors.Annotate(err, "creating tree status client").Err()
+	}
+	return collectMetricsForGenAIVindicationWithClient(c, client)
+}
+
+func collectMetricsForGenAIVindicationWithClient(c context.Context, client tspb.TreeStatusClient) error {
 	cutoffTime := clock.Now(c).Add(-time.Hour * 24)
 
 	// Query for CompileGenAIAnalysis entities that ended in the last 24 hours.
@@ -385,6 +395,15 @@ func collectMetricsForGenAIVindication(c context.Context) error {
 	if err := datastore.GetAll(c, q, &genaiAnalyses); err != nil {
 		return errors.Annotate(err, "getting CompileGenAIAnalysis for genai metrics").Err()
 	}
+
+	status, err := getTreeStatus(c, client, "chromium")
+	treeClosureMessage := "unknown"
+	if err != nil {
+		logging.Warningf(c, "failed to get tree status for chromium: %v", err)
+	} else {
+		treeClosureMessage = status.message
+	}
+
 	logging.Infof(c, "DEBUG: Pre-Metric Increment VindicatedAnalysisCount. GenAI Analysis Count: %d", len(genaiAnalyses))
 	for _, genaiAnalysis := range genaiAnalyses {
 		// For each analysis, find its suspects.
@@ -405,7 +424,7 @@ func collectMetricsForGenAIVindication(c context.Context) error {
 		}
 
 		if vindicatedCount > 0 {
-			genaiVerificationVindicatedCount.Set(c, int64(vindicatedCount), genaiAnalysis.Id)
+			genaiVerificationVindicatedCount.Set(c, int64(vindicatedCount), genaiAnalysis.Id, treeClosureMessage)
 			logging.Infof(c, "DEBUG: Post-Metric Increment VindicatedAnalysisCount. GenAI Analysis ID: %d, VindicatedCount: %d", genaiAnalysis.Id, vindicatedCount)
 		}
 	}
@@ -452,10 +471,18 @@ func getTreeStatus(ctx context.Context, client tspb.TreeStatusClient, treeName s
 
 // UpdateTreeMetrics checks the status of trees and updates tsmon metrics.
 func UpdateTreeMetrics(c context.Context) error {
+	client, err := newTreeStatusClient(c)
+	if err != nil {
+		return err
+	}
+	return updateTreeMetricsWithClient(c, client)
+}
+
+func newTreeStatusClient(c context.Context) (tspb.TreeStatusClient, error) {
 	luciTreeStatusHost := "luci-tree-status.appspot.com"
 	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	rpcOpts := prpc.DefaultOptions()
 	rpcOpts.Insecure = lhttp.IsLocalHost(luciTreeStatusHost)
@@ -464,8 +491,7 @@ func UpdateTreeMetrics(c context.Context) error {
 		Host:    luciTreeStatusHost,
 		Options: rpcOpts,
 	}
-	client := tspb.NewTreeStatusPRPCClient(prpcClient)
-	return updateTreeMetricsWithClient(c, client)
+	return tspb.NewTreeStatusPRPCClient(prpcClient), nil
 }
 
 func updateTreeMetricsWithClient(c context.Context, client tspb.TreeStatusClient) error {

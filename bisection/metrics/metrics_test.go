@@ -332,16 +332,24 @@ func TestUpdateTreeMetrics(t *testing.T) {
 		assert.Loosely(t, datastore.Put(c, suspect3), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		err := collectMetricsForGenAIVindication(c)
+		client := &mockTreeStatusClient{
+			getStatusResponse: &tspb.Status{
+				GeneralState: tspb.GeneralState_CLOSED,
+				CreateTime:   timestamppb.New(time.Unix(1500, 0)),
+				Message:      "closed for testing",
+			},
+		}
+
+		err := collectMetricsForGenAIVindicationWithClient(c, client)
 		assert.Loosely(t, err, should.BeNil)
 
 		// Check that the metric was set correctly for the recent analysis
-		assert.Loosely(t, genaiVerificationVindicatedCount.Get(c, int64(1)), should.Equal(int64(1)))
+		assert.Loosely(t, genaiVerificationVindicatedCount.Get(c, int64(1), "closed for testing"), should.Equal(int64(1)))
 
 		// Check that the metric was not set for the old analysis
 		// There is no direct way to check for non-existence of a metric with a certain field value.
 		// We would have to check all cells for the metric.
 		// For simplicity, we assume if the metric for the old analysis ID is 0, it was not set.
-		assert.Loosely(t, genaiVerificationVindicatedCount.Get(c, int64(2)), should.Equal(int64(0)))
+		assert.Loosely(t, genaiVerificationVindicatedCount.Get(c, int64(2), "closed for testing"), should.Equal(int64(0)))
 	})
 }
