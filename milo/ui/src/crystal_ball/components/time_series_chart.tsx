@@ -218,5 +218,9 @@ export function TimeSeriesChart({
     [useResponsiveContainer],
   );
 
-  return <ReactECharts option={option} style={style} />;
+  return (
+    <div data-testid="time-series-chart" style={{ width: '100%' }}>
+      <ReactECharts option={option} style={style} />
+    </div>
+  );
 }

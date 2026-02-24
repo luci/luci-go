@@ -76,9 +76,6 @@ const SERIALIZATION_ORDER: SearchMeasurementsFilter[] = [
   SearchMeasurementsFilter.ATP_TEST,
   SearchMeasurementsFilter.BUILD_BRANCH,
   SearchMeasurementsFilter.BUILD_TARGET,
-  SearchMeasurementsFilter.LAST_N_DAYS,
-  SearchMeasurementsFilter.BUILD_CREATE_START_TIME,
-  SearchMeasurementsFilter.BUILD_CREATE_END_TIME,
   SearchMeasurementsFilter.METRIC_KEYS,
   SearchMeasurementsFilter.EXTRA_COLUMNS,
 ];
@@ -112,18 +109,6 @@ const serializeSearchRequest = (
         if (request.buildTarget)
           params.push(`${filter}${eq}${quoteValue(request.buildTarget)}`);
         break;
-      case SearchMeasurementsFilter.LAST_N_DAYS:
-        if (request.lastNDays !== undefined)
-          params.push(`${filter}${eq}${request.lastNDays}`);
-        break;
-      case SearchMeasurementsFilter.BUILD_CREATE_START_TIME:
-        if (request.buildCreateStartTime?.seconds)
-          params.push(`${filter}${eq}${request.buildCreateStartTime.seconds}`);
-        break;
-      case SearchMeasurementsFilter.BUILD_CREATE_END_TIME:
-        if (request.buildCreateEndTime?.seconds)
-          params.push(`${filter}${eq}${request.buildCreateEndTime.seconds}`);
-        break;
       case SearchMeasurementsFilter.METRIC_KEYS:
         if (request.metricKeys?.length)
           params.push(
@@ -139,6 +124,8 @@ const serializeSearchRequest = (
               .map(quoteValue)
               .join(QueryParts.DELIMITER)}`,
           );
+        break;
+      default:
         break;
     }
   });
@@ -198,23 +185,6 @@ const deserializeSearchRequest = (
           case SearchMeasurementsFilter.BUILD_TARGET:
             request.buildTarget = unquoteValue(value);
             break;
-          case SearchMeasurementsFilter.LAST_N_DAYS: {
-            const num = parseInt(value, 10);
-            if (!isNaN(num)) request.lastNDays = num;
-            break;
-          }
-          case SearchMeasurementsFilter.BUILD_CREATE_START_TIME: {
-            const num = parseInt(value, 10);
-            if (!isNaN(num))
-              request.buildCreateStartTime = { seconds: num, nanos: 0 };
-            break;
-          }
-          case SearchMeasurementsFilter.BUILD_CREATE_END_TIME: {
-            const num = parseInt(value, 10);
-            if (!isNaN(num))
-              request.buildCreateEndTime = { seconds: num, nanos: 0 };
-            break;
-          }
           case SearchMeasurementsFilter.METRIC_KEYS: {
             const metricValues = value.match(COMMA_SEPARATED_REGEX);
             if (metricValues) {
@@ -237,6 +207,8 @@ const deserializeSearchRequest = (
             }
             break;
           }
+          default:
+            break;
         }
       } catch {
         // Skip malformed query parts.

@@ -31,6 +31,7 @@ import {
   SearchMeasurementsRequest,
   SearchMeasurementsResponse,
 } from '@/crystal_ball/types';
+import { timestampToDate } from '@/crystal_ball/utils';
 
 /**
  * Hook for TestConnection.
@@ -60,11 +61,24 @@ export const useSearchMeasurements = (
   request: SearchMeasurementsRequest,
   options?: WrapperQueryOptions<SearchMeasurementsResponse>,
 ): UseQueryResult<SearchMeasurementsResponse> => {
+  const params: Record<string, unknown> = { ...request };
+  // Transcode Timestamp objects to RFC3339 ISO strings to satisfy the google.api.http JSON mapping rules for HTTP GET requests.
+  if (request.buildCreateStartTime) {
+    params.buildCreateStartTime = timestampToDate(
+      request.buildCreateStartTime,
+    )?.toISO();
+  }
+  if (request.buildCreateEndTime) {
+    params.buildCreateEndTime = timestampToDate(
+      request.buildCreateEndTime,
+    )?.toISO();
+  }
+
   return useGapiQuery<SearchMeasurementsResponse>(
     {
       path: `${API_BASE_URL}/v1/measurements:search`,
       method: 'GET',
-      params: request,
+      params,
     },
     options,
   );
@@ -80,11 +94,24 @@ export const useSearchMeasurementsInfinite = (
   request: Omit<SearchMeasurementsRequest, 'pageToken'>,
   options?: WrapperInfiniteQueryOptions<SearchMeasurementsResponse>,
 ): UseInfiniteQueryResult<InfiniteData<SearchMeasurementsResponse>, Error> => {
+  const params: Record<string, unknown> = { ...request };
+  // Transcode Timestamp objects to RFC3339 ISO strings to satisfy the google.api.http JSON mapping rules for HTTP GET requests.
+  if (request.buildCreateStartTime) {
+    params.buildCreateStartTime = timestampToDate(
+      request.buildCreateStartTime,
+    )?.toISO();
+  }
+  if (request.buildCreateEndTime) {
+    params.buildCreateEndTime = timestampToDate(
+      request.buildCreateEndTime,
+    )?.toISO();
+  }
+
   return useInfiniteGapiQuery<SearchMeasurementsResponse>(
     {
       path: `${API_BASE_URL}/v1/measurements:search`,
       method: 'GET',
-      params: request,
+      params,
     },
     options,
   );

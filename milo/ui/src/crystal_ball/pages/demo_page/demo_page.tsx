@@ -16,8 +16,11 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
+import { DateTime } from 'luxon';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
+import { TimeRangeSelector } from '@/common/components/time_range_selector';
+import { getAbsoluteStartEndTime } from '@/common/components/time_range_selector/time_range_selector_utils';
 import {
   EditableMarkdown,
   SearchMeasurementsForm,
@@ -34,6 +37,7 @@ import {
   SearchMeasurementsRequest,
 } from '@/crystal_ball/types';
 import { validateSearchRequest } from '@/crystal_ball/utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 const GOLDEN_RATIO_CONJUGATE = 0.618033988749895;
 
@@ -116,8 +120,27 @@ const transformDataForChart = (
  * A simple demo page component.
  */
 export function DemoPage() {
-  useTopBarConfig('Demo Page');
+  const topBarAction = useMemo(() => <TimeRangeSelector />, []);
+  useTopBarConfig('Demo Page', topBarAction);
+
   const { searchRequestFromUrl, updateSearchQuery } = useSearchQuerySync();
+  const [searchParams] = useSyncedSearchParams();
+
+  const timeOption = searchParams.get('time_option');
+  const startTimeParam = searchParams.get('start_time');
+  const endTimeParam = searchParams.get('end_time');
+
+  const { startTime, endTime } = useMemo(() => {
+    // The TimeRangeSelector syncs its state to the URL.
+    // We manually extract those specific query parameters here to calculate the
+    // absolute start and end times for the backend API request.
+    const paramsForTime = new URLSearchParams();
+    if (timeOption) paramsForTime.set('time_option', timeOption);
+    if (startTimeParam) paramsForTime.set('start_time', startTimeParam);
+    if (endTimeParam) paramsForTime.set('end_time', endTimeParam);
+
+    return getAbsoluteStartEndTime(paramsForTime, DateTime.now());
+  }, [timeOption, startTimeParam, endTimeParam]);
 
   const [searchRequest, setSearchRequest] =
     useState<SearchMeasurementsRequest | null>(null);
@@ -129,10 +152,25 @@ export function DemoPage() {
 
   useEffect(() => {
     const hasInitialRequest = Object.keys(searchRequestFromUrl).length > 0;
+
     if (hasInitialRequest) {
       const errors = validateSearchRequest(searchRequestFromUrl);
       if (Object.keys(errors).length === 0) {
-        setSearchRequest(searchRequestFromUrl as SearchMeasurementsRequest);
+        const newRequest = {
+          ...(searchRequestFromUrl as SearchMeasurementsRequest),
+          buildCreateStartTime: startTime
+            ? { seconds: startTime.toUnixInteger(), nanos: 0 }
+            : undefined,
+          buildCreateEndTime: endTime
+            ? { seconds: endTime.toUnixInteger(), nanos: 0 }
+            : undefined,
+        };
+
+        setSearchRequest((prev) => {
+          if (JSON.stringify(prev) === JSON.stringify(newRequest)) return prev;
+          return newRequest;
+        });
+
         setIsInitialValid(true);
       } else {
         setSearchRequest(null);
@@ -142,7 +180,7 @@ export function DemoPage() {
       setSearchRequest(null);
       setIsInitialValid(false);
     }
-  }, [searchRequestFromUrl]);
+  }, [searchRequestFromUrl, startTime, endTime]);
 
   const {
     data: searchResponse,
@@ -156,10 +194,21 @@ export function DemoPage() {
   const handleSearchSubmit = useCallback(
     (request: SearchMeasurementsRequest) => {
       setIsInitialValid(true);
-      setSearchRequest(request);
+
+      const fullRequest = {
+        ...request,
+        buildCreateStartTime: startTime
+          ? { seconds: startTime.toUnixInteger(), nanos: 0 }
+          : undefined,
+        buildCreateEndTime: endTime
+          ? { seconds: endTime.toUnixInteger(), nanos: 0 }
+          : undefined,
+      };
+
+      setSearchRequest(fullRequest);
       updateSearchQuery(request);
     },
-    [updateSearchQuery],
+    [updateSearchQuery, startTime, endTime],
   );
 
   const chartSeries = useMemo(() => {
@@ -168,6 +217,11 @@ export function DemoPage() {
       ? transformDataForChart(searchResponse.rows, requestedMetricKeys)
       : [];
   }, [searchResponse, searchRequest]);
+
+  const hasData = useMemo(
+    () => chartSeries.some((series) => series.data.length > 0),
+    [chartSeries],
+  );
 
   return (
     <Box sx={{ padding: 2 }}>
@@ -198,7 +252,7 @@ export function DemoPage() {
         </Alert>
       )}
 
-      {searchResponse && chartSeries.length > 0 && (
+      {searchResponse && hasData && (
         <TimeSeriesChart
           series={chartSeries}
           chartTitle="Performance Metrics"
@@ -212,14 +266,11 @@ export function DemoPage() {
         </Typography>
       )}
 
-      {searchRequest &&
-        !isSearchLoading &&
-        !isSearchError &&
-        chartSeries.length === 0 && (
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            No data found for the given parameters.
-          </Typography>
-        )}
+      {searchRequest && !isSearchLoading && !isSearchError && !hasData && (
+        <Typography variant="body1" sx={{ mt: 2 }}>
+          No data found for the given parameters.
+        </Typography>
+      )}
     </Box>
   );
 }

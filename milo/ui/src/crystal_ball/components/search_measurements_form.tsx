@@ -21,27 +21,17 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { DateTime } from 'luxon';
 import React, { useEffect, useReducer, useState } from 'react';
 
 import { MAXIMUM_PAGE_SIZE } from '@/crystal_ball/constants';
 import { SearchMeasurementsRequest } from '@/crystal_ball/types';
-import {
-  ValidationErrors,
-  dateToTimestamp,
-  timestampToDate,
-  validateSearchRequest,
-} from '@/crystal_ball/utils';
+import { ValidationErrors, validateSearchRequest } from '@/crystal_ball/utils';
 
 /**
  * State structure for the form.
  */
 interface FormState {
   testNameFilter: string;
-  buildCreateStartTime: DateTime | null;
-  buildCreateEndTime: DateTime | null;
-  lastNDays?: number;
   buildBranch: string;
   buildTarget: string;
   atpTestNameFilter: string;
@@ -54,9 +44,6 @@ interface FormState {
  */
 enum Action {
   SET_TEXT_FIELD = 'SET_TEXT_FIELD',
-  SET_N_DAYS = 'SET_N_DAYS',
-  SET_START_TIME = 'SET_START_TIME',
-  SET_END_TIME = 'SET_END_TIME',
   ADD_METRIC_KEY = 'ADD_METRIC_KEY',
   DELETE_METRIC_KEY = 'DELETE_METRIC_KEY',
   SET_CURRENT_METRIC_KEY = 'SET_CURRENT_METRIC_KEY',
@@ -68,9 +55,6 @@ enum Action {
  */
 type FormAction =
   | { type: Action.SET_TEXT_FIELD; field: keyof FormState; value: string }
-  | { type: Action.SET_N_DAYS; value: string }
-  | { type: Action.SET_START_TIME; value: DateTime | null }
-  | { type: Action.SET_END_TIME; value: DateTime | null }
   | { type: Action.ADD_METRIC_KEY; value: string }
   | { type: Action.DELETE_METRIC_KEY; value: string }
   | { type: Action.SET_CURRENT_METRIC_KEY; value: string }
@@ -83,35 +67,6 @@ function formReducer(state: FormState, action: FormAction): FormState {
   switch (action.type) {
     case Action.SET_TEXT_FIELD:
       return { ...state, [action.field]: action.value };
-    case Action.SET_N_DAYS:
-      if (!action.value) {
-        return {
-          ...state,
-          lastNDays: undefined,
-        };
-      }
-      const numValue = parseInt(action.value, 10);
-      const newLastNDays = isNaN(numValue) ? undefined : Math.max(1, numValue);
-      return {
-        ...state,
-        lastNDays: newLastNDays,
-        buildCreateStartTime:
-          newLastNDays !== undefined ? null : state.buildCreateStartTime,
-        buildCreateEndTime:
-          newLastNDays !== undefined ? null : state.buildCreateEndTime,
-      };
-    case Action.SET_START_TIME:
-      return {
-        ...state,
-        buildCreateStartTime: action.value,
-        lastNDays: undefined,
-      };
-    case Action.SET_END_TIME:
-      return {
-        ...state,
-        buildCreateEndTime: action.value,
-        lastNDays: undefined,
-      };
     case Action.ADD_METRIC_KEY: {
       const trimmedValue = action.value.trim();
       return trimmedValue && !state.metricKeys.includes(trimmedValue)
@@ -143,9 +98,6 @@ const initializeState = (
   initialRequest: Partial<SearchMeasurementsRequest>,
 ): FormState => ({
   testNameFilter: initialRequest.testNameFilter || '',
-  buildCreateStartTime: timestampToDate(initialRequest.buildCreateStartTime),
-  buildCreateEndTime: timestampToDate(initialRequest.buildCreateEndTime),
-  lastNDays: initialRequest.lastNDays,
   buildBranch: initialRequest.buildBranch || '',
   buildTarget: initialRequest.buildTarget || '',
   atpTestNameFilter: initialRequest.atpTestNameFilter || '',
@@ -208,9 +160,6 @@ export function SearchMeasurementsForm({
     setShowErrors(true);
     const request: SearchMeasurementsRequest = {
       testNameFilter: state.testNameFilter || undefined,
-      buildCreateStartTime: dateToTimestamp(state.buildCreateStartTime),
-      buildCreateEndTime: dateToTimestamp(state.buildCreateEndTime),
-      lastNDays: state.lastNDays,
       buildBranch: state.buildBranch || undefined,
       buildTarget: state.buildTarget || undefined,
       atpTestNameFilter: state.atpTestNameFilter || undefined,
@@ -239,11 +188,6 @@ export function SearchMeasurementsForm({
       {showErrors && errors.metricKeys && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {errors.metricKeys}
-        </Alert>
-      )}
-      {showErrors && errors.timeRange && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {errors.timeRange}
         </Alert>
       )}
 
@@ -317,79 +261,6 @@ export function SearchMeasurementsForm({
             helperText='e.g., "example-target"'
           />
         </Stack>
-
-        <Box>
-          <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-            Filter by Last N Days:
-          </Typography>
-          <TextField
-            label="Last N Days"
-            type="number"
-            value={state.lastNDays === undefined ? '' : String(state.lastNDays)}
-            onChange={(e) =>
-              dispatch({
-                type: Action.SET_N_DAYS,
-                value: e.target.value,
-              })
-            }
-            onWheel={(e: React.WheelEvent) => {
-              if (e.target instanceof HTMLElement) {
-                // Prevent the value from changing on mouse wheel scroll by blurring the input.
-                e.target.blur();
-              }
-            }}
-            fullWidth
-            margin="dense"
-            variant="outlined"
-            size="small"
-            slotProps={{
-              htmlInput: {
-                min: 1,
-              },
-            }}
-            error={showErrors && !!errors.timeRange}
-          />
-        </Box>
-
-        <Box>
-          <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-            OR Filter by Time Range:
-          </Typography>
-          <Stack direction="row" spacing={2}>
-            <DateTimePicker
-              label="Build Create Start Time"
-              value={state.buildCreateStartTime}
-              onChange={(newValue) =>
-                dispatch({ type: Action.SET_START_TIME, value: newValue })
-              }
-              disabled={!!state.lastNDays}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  margin: 'dense',
-                  size: 'small',
-                  error: showErrors && !!errors.timeRange,
-                },
-              }}
-            />
-            <DateTimePicker
-              label="Build Create End Time"
-              value={state.buildCreateEndTime}
-              onChange={(newValue) =>
-                dispatch({ type: Action.SET_END_TIME, value: newValue })
-              }
-              disabled={!!state.lastNDays}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  margin: 'dense',
-                  size: 'small',
-                  error: showErrors && !!errors.timeRange,
-                },
-              }}
-            />
-          </Stack>
-        </Box>
 
         <Box>
           <TextField

@@ -17,18 +17,6 @@ import { DateTime } from 'luxon';
 import { Timestamp } from '@/crystal_ball/types';
 
 /**
- * Helper to convert DateTime to Timestamp.
- * @param date - raw value from the DateTimePicker.
- * @returns date in Timestamp proto format.
- */
-export function dateToTimestamp(date: DateTime | null): Timestamp | undefined {
-  if (!date) return undefined;
-  const seconds = date.toSeconds();
-  const nanos = 0;
-  return { seconds, nanos };
-}
-
-/**
  * Helper to convert Timestamp to DateTime.
  * @param timestamp - raw Timestamp proto value.
  * @returns timestamp value converted to a DateTime value.

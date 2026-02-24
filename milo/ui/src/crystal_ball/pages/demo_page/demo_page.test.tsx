@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { UseQueryResult } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { DateTime } from 'luxon';
 
 import { TopBar } from '@/crystal_ball/components/layout/top_bar';
 import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
@@ -29,34 +30,18 @@ const mockUseSearchMeasurements = jest.spyOn(
   'useSearchMeasurements',
 );
 
-// Mock DateTimePicker as it's used in the child form
-jest.mock('@mui/x-date-pickers/DateTimePicker', () => ({
-  DateTimePicker: jest.fn(({ label, value, onChange, disabled }) => (
-    <input
-      type="text"
-      aria-label={label}
-      value={value ? value.toISO() : ''}
-      onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
-    />
-  )),
-}));
-
 describe('<DemoPage />', () => {
-  it('should render the demo page', () => {
-    mockUseSearchMeasurements.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      isSuccess: false,
-      isFetching: false,
-    } as UseQueryResult<SearchMeasurementsResponse, Error>);
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-    render(
+  const renderDemoPage = (
+    initialUrl: string = '/ui/labs/crystal-ball/demo',
+  ) => {
+    return render(
       <FakeContextProvider
         routerOptions={{
-          initialEntries: ['/ui/labs/crystal-ball/demo'],
+          initialEntries: [initialUrl],
         }}
         mountedPath="/ui/labs/crystal-ball/demo"
       >
@@ -66,10 +51,150 @@ describe('<DemoPage />', () => {
         </TopBarProvider>
       </FakeContextProvider>,
     );
+  };
 
-    expect(screen.getByLabelText('Test Name Filter')).toBeInTheDocument();
+  const defaultMockReturn = {
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    error: null,
+    isSuccess: false,
+    isFetching: false,
+  } as UseQueryResult<SearchMeasurementsResponse, Error>;
+
+  it('renders the initial empty state when no search params are provided', () => {
+    mockUseSearchMeasurements.mockReturnValue(defaultMockReturn);
+
+    renderDemoPage();
+
     expect(
       screen.getByText('Crystal Ball Performance Metrics'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText('Enter search parameters to view performance data.'),
+    ).toBeInTheDocument();
+  });
+
+  it('displays a loading spinner while fetching data', () => {
+    mockUseSearchMeasurements.mockReturnValue({
+      ...defaultMockReturn,
+      isLoading: true,
+    } as unknown as UseQueryResult<SearchMeasurementsResponse, Error>);
+
+    // Provide a URL so searchRequest gets populated and triggers the loading state branch
+    renderDemoPage('/ui/labs/crystal-ball/demo?q=metricKeys%3A%22cpu%22');
+
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Enter search parameters to view performance data.'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('displays an error alert when the API request fails', async () => {
+    mockUseSearchMeasurements.mockReturnValue({
+      ...defaultMockReturn,
+      isError: true,
+      error: new Error('Backend timeout'),
+    } as unknown as UseQueryResult<SearchMeasurementsResponse, Error>);
+
+    renderDemoPage('/ui/labs/crystal-ball/demo?q=metricKeys%3A%22cpu%22');
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Error fetching measurements: Backend timeout',
+    );
+  });
+
+  it('displays a no data message when the search returns empty rows', async () => {
+    mockUseSearchMeasurements.mockReturnValue({
+      ...defaultMockReturn,
+      data: { rows: [], nextPageToken: '' },
+    } as unknown as UseQueryResult<SearchMeasurementsResponse, Error>);
+
+    renderDemoPage('/ui/labs/crystal-ball/demo?q=metricKeys%3A%22cpu%22');
+
+    expect(
+      await screen.findByText('No data found for the given parameters.'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders the chart when data is successfully fetched', async () => {
+    mockUseSearchMeasurements.mockReturnValue({
+      ...defaultMockReturn,
+      data: {
+        nextPageToken: '',
+        rows: [
+          {
+            buildCreateTime: '2026-02-24T10:00:00Z',
+            metricKey: 'cpu',
+            value: 45.5,
+            buildId: '12345',
+          },
+        ],
+      },
+    } as unknown as UseQueryResult<SearchMeasurementsResponse, Error>);
+
+    renderDemoPage('/ui/labs/crystal-ball/demo?q=metricKeys%3A%22cpu%22');
+
+    // Assumes TimeSeriesChart renders this test-id when populated
+    const element = await screen.findByTestId('time-series-chart');
+    expect(element).toBeInTheDocument();
+  });
+
+  it('syncs TimeRangeSelector URL params into the API request', async () => {
+    mockUseSearchMeasurements.mockReturnValue(defaultMockReturn);
+
+    const now = DateTime.now();
+    const startTimeUnix = now.minus({ days: 3 }).toUTC().toUnixInteger();
+    const endTimeUnix = now.toUTC().toUnixInteger();
+    const initialUrl =
+      `/ui/labs/crystal-ball/demo?time_option=customize` +
+      `&start_time=${startTimeUnix}&end_time=${endTimeUnix}&q=metricKeys%3A%22cpu%22`;
+
+    renderDemoPage(initialUrl);
+
+    await waitFor(() => {
+      expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metricKeys: ['cpu'],
+          buildCreateStartTime: { seconds: startTimeUnix, nanos: 0 },
+          buildCreateEndTime: { seconds: endTimeUnix, nanos: 0 },
+        }),
+        expect.anything(),
+      );
+    });
+  });
+
+  it('updates the API request when submitting the form while preserving top bar dates', async () => {
+    mockUseSearchMeasurements.mockReturnValue(defaultMockReturn);
+
+    const now = DateTime.now();
+    const startTimeUnix = now.minus({ days: 1 }).toUTC().toUnixInteger();
+    const endTimeUnix = now.toUTC().toUnixInteger();
+
+    renderDemoPage(
+      `/ui/labs/crystal-ball/demo?time_option=customize&start_time=${startTimeUnix}&end_time=${endTimeUnix}`,
+    );
+
+    fireEvent.change(screen.getByLabelText('Test Name Filter'), {
+      target: { value: 'MyNewTest' },
+    });
+
+    const metricInput = screen.getByLabelText('Add Metric Key *');
+    fireEvent.change(metricInput, { target: { value: 'memory' } });
+    fireEvent.keyDown(metricInput, { key: 'Enter', code: 'Enter' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    await waitFor(() => {
+      expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          testNameFilter: 'MyNewTest',
+          metricKeys: ['memory'],
+          buildCreateStartTime: { seconds: startTimeUnix, nanos: 0 },
+          buildCreateEndTime: { seconds: endTimeUnix, nanos: 0 },
+        }),
+        expect.anything(),
+      );
+    });
   });
 });

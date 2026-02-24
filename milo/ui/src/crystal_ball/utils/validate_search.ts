@@ -13,14 +13,12 @@
 // limitations under the License.
 
 import { SearchMeasurementsRequest } from '@/crystal_ball/types';
-import { timestampToDate } from '@/crystal_ball/utils';
 
 /**
  * Possible validation errors for a search measurements request.
  */
 export interface ValidationErrors {
   metricKeys?: string;
-  timeRange?: string;
 }
 
 /**
@@ -36,28 +34,5 @@ export function validateSearchRequest(
     newErrors.metricKeys = 'At least one metric key is required.';
   }
 
-  const buildCreateStartTime = timestampToDate(request.buildCreateStartTime);
-  const buildCreateEndTime = timestampToDate(request.buildCreateEndTime);
-
-  const hasLastNDays = request.lastNDays !== undefined && request.lastNDays > 0;
-  const hasStartTime = buildCreateStartTime !== null;
-  const hasEndTime = buildCreateEndTime !== null;
-  const hasTimeRange = hasStartTime && hasEndTime;
-
-  if (!hasLastNDays && !hasTimeRange) {
-    newErrors.timeRange =
-      'Please specify either "Last N Days" or both a Start and End Time.';
-  } else if (hasLastNDays && (hasStartTime || hasEndTime)) {
-    newErrors.timeRange =
-      'Please specify either "Last N Days" or a Start/End Time range, not both.';
-  } else if (!hasLastNDays && hasTimeRange) {
-    if (
-      buildCreateStartTime &&
-      buildCreateEndTime &&
-      buildCreateStartTime >= buildCreateEndTime
-    ) {
-      newErrors.timeRange = 'Start Time must be before End Time.';
-    }
-  }
   return newErrors;
 }
