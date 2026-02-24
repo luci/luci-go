@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import { DateTime } from 'luxon';
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -22,51 +22,129 @@ import {
   type MRT_Row,
   type MRT_Cell,
 } from 'material-react-table';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
-import { Dashboard } from '@/crystal_ball/pages/landing_page/types';
+import { useListDashboardStatesInfinite } from '@/crystal_ball/hooks';
+import { DashboardState, Timestamp } from '@/crystal_ball/types';
+import { escapeRegExp, formatRelativeTime } from '@/crystal_ball/utils';
 
 interface DashboardListTableProps {
   /**
-   * List of dashboards to display in the table.
-   */
-  dashboards: Dashboard[];
-  /**
    * Callback fired when a dashboard row is clicked.
    */
-  onDashboardClick?: (dashboard: Dashboard) => void;
+  onDashboardClick?: (dashboard: DashboardState) => void;
 }
 
+const getDisplayName = (dashboard: DashboardState) =>
+  dashboard.displayName ||
+  dashboard.name?.split('/').pop() ||
+  'Unnamed Dashboard';
+
+function formatApiError(error: unknown): string {
+  if (!error) return 'An unknown error occurred while loading dashboards.';
+
+  if (typeof error === 'object' && error !== null) {
+    const gapiError = error as { result?: { error?: { message?: string } } };
+    if (gapiError.result?.error?.message) {
+      return gapiError.result.error.message;
+    }
+
+    const rawError = error as { error?: { message?: string } };
+    if (rawError.error?.message) {
+      return rawError.error.message;
+    }
+
+    if (error instanceof Error) {
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed?.error?.message) {
+          return parsed.error.message;
+        }
+      } catch {
+        // Not JSON, ignore
+      }
+      return error.message;
+    }
+  }
+
+  return String(error);
+}
+
+function useLoadMoreDashboards() {
+  const [globalFilter, setGlobalFilter] = useState('');
+
+  const requestParams = useMemo(
+    () => ({
+      pageSize: 20,
+      filter: globalFilter ? escapeRegExp(globalFilter) : '',
+    }),
+    [globalFilter],
+  );
+
+  const queryParams = useListDashboardStatesInfinite(requestParams);
+
+  const dashboards = useMemo(() => {
+    return (
+      queryParams.data?.pages.flatMap((page) => page.dashboardStates || []) ||
+      []
+    );
+  }, [queryParams.data]);
+
+  return {
+    ...queryParams,
+    dashboards,
+    globalFilter,
+    setGlobalFilter,
+    handleLoadMore: () => queryParams.fetchNextPage(),
+    hasNextPage: queryParams.hasNextPage,
+    error: queryParams.error,
+  };
+}
+
+/**
+ * A table of dashboards using a "Load More" pagination pattern.
+ */
 export function DashboardListTable({
-  dashboards,
   onDashboardClick,
 }: DashboardListTableProps) {
-  const columns = useMemo<MRT_ColumnDef<Dashboard>[]>(
+  const {
+    dashboards,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+    globalFilter,
+    setGlobalFilter,
+    handleLoadMore,
+    hasNextPage,
+  } = useLoadMoreDashboards();
+
+  const columns = useMemo<MRT_ColumnDef<DashboardState>[]>(
     () => [
       {
         accessorKey: 'name',
         header: 'Name',
         muiTableHeadCellProps: { sx: { width: '100%' } },
         muiTableBodyCellProps: { sx: { width: '100%' } },
-        Cell: ({ row }: { row: MRT_Row<Dashboard> }) => (
+        Cell: (args: { row: MRT_Row<DashboardState> }) => (
           <Box>
             <Typography variant="subtitle1" fontWeight="bold">
-              {row.original.name}
+              {getDisplayName(args.row.original)}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {row.original.description}
+              {args.row.original.description}
             </Typography>
           </Box>
         ),
       },
       {
-        accessorKey: 'lastModified',
+        accessorKey: 'updateTime',
         header: 'Last Modified',
         muiTableHeadCellProps: { sx: { whiteSpace: 'nowrap', width: 'auto' } },
         muiTableBodyCellProps: { sx: { whiteSpace: 'nowrap', width: 'auto' } },
-        Cell: ({ cell }: { cell: MRT_Cell<Dashboard> }) => (
+        Cell: (args: { cell: MRT_Cell<DashboardState> }) => (
           <Typography variant="body2" color="text.secondary">
-            {DateTime.fromISO(cell.getValue<string>()).toRelative()}
+            {formatRelativeTime(args.cell.getValue<string | Timestamp>())}
           </Typography>
         ),
       },
@@ -80,22 +158,39 @@ export function DashboardListTable({
     enableColumnActions: false,
     enableColumnFilters: false,
     enableHiding: false,
-    enablePagination: true,
-    enableSorting: true,
+    enablePagination: false,
+    enableSorting: false,
+    enableBottomToolbar: hasNextPage,
+    manualFiltering: true,
+    onGlobalFilterChange: setGlobalFilter,
+    state: {
+      globalFilter,
+      isLoading: isLoading && dashboards.length === 0,
+      showProgressBars: isFetching,
+      showAlertBanner: false,
+    },
+    renderEmptyRowsFallback: () => (
+      <Box
+        sx={{
+          p: 2,
+          textAlign: 'center',
+          color: isError ? 'error.main' : 'text.secondary',
+        }}
+      >
+        <Typography>
+          {isError ? formatApiError(error) : 'No records to display'}
+        </Typography>
+      </Box>
+    ),
     muiTablePaperProps: {
       elevation: 0,
-      sx: {
-        border: (theme) => `1px solid ${theme.palette.divider}`,
-      },
+      sx: { border: (theme) => `1px solid ${theme.palette.divider}` },
     },
-    muiTableBodyRowProps: ({ row }) => ({
-      onClick: () => onDashboardClick?.(row.original),
-      sx: {
-        cursor: onDashboardClick ? 'pointer' : 'default',
-      },
+    muiTableBodyRowProps: (args: { row: MRT_Row<DashboardState> }) => ({
+      onClick: () => onDashboardClick?.(args.row.original),
+      sx: { cursor: onDashboardClick ? 'pointer' : 'default' },
     }),
     initialState: {
-      pagination: { pageSize: 10, pageIndex: 0 },
       showGlobalFilter: true,
     },
     muiSearchTextFieldProps: {
@@ -105,6 +200,24 @@ export function DashboardListTable({
     },
     enableGlobalFilter: true,
     positionGlobalFilter: 'left',
+    renderBottomToolbarCustomActions: () => {
+      if (!hasNextPage) return null;
+
+      return (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            p: 1,
+          }}
+        >
+          <Button onClick={handleLoadMore} disabled={isFetching} variant="text">
+            {isFetching ? 'Loading...' : 'Load More'}
+          </Button>
+        </Box>
+      );
+    },
   });
 
   return <MaterialReactTable table={table} />;

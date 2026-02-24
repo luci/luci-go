@@ -39,3 +39,24 @@ export function timestampToDate(
   if (!timestamp || timestamp.seconds === undefined) return null;
   return DateTime.fromSeconds(timestamp.seconds).toUTC();
 }
+
+/**
+ * Helper to format a string or Timestamp into a relative time string.
+ * @param val - an ISO string or Timestamp object.
+ * @returns relative time string (e.g. "3 days ago").
+ */
+export function formatRelativeTime(val?: string | Timestamp): string {
+  if (!val) return 'Unknown';
+  try {
+    let dt: DateTime | null = null;
+    if (typeof val === 'string') {
+      dt = DateTime.fromISO(val);
+    } else if (val.seconds !== undefined) {
+      dt = DateTime.fromSeconds(val.seconds).toUTC();
+    }
+    if (!dt || !dt.isValid) throw new Error('Invalid date');
+    return dt.toRelative() || '';
+  } catch {
+    return 'Invalid date';
+  }
+}

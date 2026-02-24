@@ -20,6 +20,7 @@ import {
   useCreateDashboardState,
   useGetDashboardState,
   useListDashboardStates,
+  useListDashboardStatesInfinite,
   useUpdateDashboardState,
   useDeleteDashboardState,
   useUndeleteDashboardState,
@@ -44,9 +45,12 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 // Mock the imported hooks
 jest.mock('@/common/hooks/gapi_query/gapi_query', () => ({
   useGapiQuery: jest.fn(),
+  useInfiniteGapiQuery: jest.fn(),
 }));
 
 const mockedUseGapiQuery = gapiQueryHooks.useGapiQuery as jest.Mock;
+const mockedUseInfiniteGapiQuery =
+  gapiQueryHooks.useInfiniteGapiQuery as jest.Mock;
 
 const BASE_PATH = `${API_BASE_URL}/v1`;
 
@@ -155,6 +159,52 @@ describe('use_dashboard_state_api', () => {
           params: request,
         },
         undefined,
+      );
+    });
+  });
+
+  describe('useListDashboardStatesInfinite', () => {
+    const request: Omit<ListDashboardStatesRequest, 'pageToken'> = {
+      pageSize: 20,
+    };
+
+    it('should call useInfiniteGapiQuery with correct arguments', () => {
+      mockedUseInfiniteGapiQuery.mockReturnValue({
+        data: { pages: [], pageParams: [] },
+        isLoading: false,
+        fetchNextPage: jest.fn(),
+      });
+
+      renderHook(() => useListDashboardStatesInfinite(request), {
+        wrapper: FakeContextProvider,
+      });
+
+      expect(mockedUseInfiniteGapiQuery).toHaveBeenCalledTimes(1);
+      expect(mockedUseInfiniteGapiQuery).toHaveBeenCalledWith(
+        {
+          path: `${BASE_PATH}/dashboardStates`,
+          method: 'GET',
+          params: request,
+        },
+        undefined,
+      );
+    });
+
+    it('should pass through options', () => {
+      mockedUseInfiniteGapiQuery.mockReturnValue({
+        data: { pages: [], pageParams: [] },
+        isLoading: false,
+        fetchNextPage: jest.fn(),
+      });
+      const options = { gcTime: 50000 };
+
+      renderHook(() => useListDashboardStatesInfinite(request, options), {
+        wrapper: FakeContextProvider,
+      });
+
+      expect(mockedUseInfiniteGapiQuery).toHaveBeenCalledWith(
+        expect.any(Object),
+        options,
       );
     });
   });

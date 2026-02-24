@@ -14,8 +14,14 @@
 
 import { UseQueryResult } from '@tanstack/react-query';
 
-import { useGapiQuery } from '@/common/hooks/gapi_query/gapi_query';
-import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
+import {
+  useGapiQuery,
+  useInfiniteGapiQuery,
+} from '@/common/hooks/gapi_query/gapi_query';
+import {
+  WrapperInfiniteQueryOptions,
+  WrapperQueryOptions,
+} from '@/common/types/query_wrapper_options';
 import { API_BASE_URL } from '@/crystal_ball/constants';
 import {
   CreateDashboardStateRequest,
@@ -90,6 +96,26 @@ export const useListDashboardStates = (
   options?: WrapperQueryOptions<ListDashboardStatesResponse>,
 ): UseQueryResult<ListDashboardStatesResponse> => {
   return useGapiQuery<ListDashboardStatesResponse>(
+    {
+      path: `${BASE_PATH}/dashboardStates`,
+      method: 'GET',
+      params: request,
+    },
+    options,
+  );
+};
+
+/**
+ * Hook for ListDashboardStates (infinite query version).
+ * @param request - The list request payload without pageToken.
+ * @param options - Optional query options.
+ * @returns An infinite query result for DashboardStates.
+ */
+export const useListDashboardStatesInfinite = (
+  request: Omit<ListDashboardStatesRequest, 'pageToken'>,
+  options?: WrapperInfiniteQueryOptions<ListDashboardStatesResponse>,
+) => {
+  return useInfiniteGapiQuery<ListDashboardStatesResponse>(
     {
       path: `${BASE_PATH}/dashboardStates`,
       method: 'GET',

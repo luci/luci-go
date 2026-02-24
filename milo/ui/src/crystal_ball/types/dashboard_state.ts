@@ -673,17 +673,17 @@ export interface ListDashboardStatesResponse {
   /**
    * List of dashboard states.
    */
-  dashboardStates?: DashboardState[];
+  dashboardStates: DashboardState[];
 
   /**
    * If response was paged, represents the token for getting the next page of results.
    */
-  nextPageToken?: string;
+  nextPageToken: string;
 
   /**
    * Total count of available dashboard states from the original request.
    */
-  totalSize?: number;
+  totalSize: number;
 }
 
 /**

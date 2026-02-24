@@ -21,8 +21,6 @@ import { useState, useMemo } from 'react';
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 
-import { mockDashboards } from './mock_data';
-
 /**
  * A landing page component that displays a list of dashboards.
  */
@@ -54,10 +52,7 @@ export function LandingPage() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <DashboardListTable
-        dashboards={mockDashboards}
-        onDashboardClick={handleFeatureNotReady}
-      />
+      <DashboardListTable onDashboardClick={handleFeatureNotReady} />
       <Snackbar
         open={toastOpen}
         autoHideDuration={4000}

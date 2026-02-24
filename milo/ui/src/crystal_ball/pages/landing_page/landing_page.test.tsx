@@ -16,10 +16,50 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import { TopBar } from '@/crystal_ball/components/layout/top_bar';
 import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
+import * as hooks from '@/crystal_ball/hooks';
 import { LandingPage } from '@/crystal_ball/pages/landing_page';
+import { DashboardState } from '@/crystal_ball/types';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+jest.mock('@/crystal_ball/hooks', () => ({
+  ...jest.requireActual('@/crystal_ball/hooks'),
+  useListDashboardStatesInfinite: jest.fn(),
+}));
+
+const mockDashboards: DashboardState[] = [
+  {
+    name: 'dashboardStates/dashboard1',
+    dashboardContent: { widgets: [] },
+    displayName: 'Generic Dashboard Alpha',
+    description: 'A mock dashboard description',
+    updateTime: {
+      seconds: 1735689600,
+      nanos: 0,
+    },
+    createTime: {
+      seconds: 1735689600,
+      nanos: 0,
+    },
+    revisionId: 'rev1',
+    etag: 'etag1',
+    uid: 'uid1',
+    reconciling: false,
+  },
+];
+
 describe('<LandingPage />', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (hooks.useListDashboardStatesInfinite as jest.Mock).mockReturnValue({
+      data: { pages: [{ dashboardStates: mockDashboards }] },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+      hasNextPage: false,
+      fetchNextPage: jest.fn(),
+    });
+  });
+
   it('should render the landing page', async () => {
     render(
       <FakeContextProvider
