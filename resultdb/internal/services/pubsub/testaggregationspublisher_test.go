@@ -312,7 +312,7 @@ func withoutMatchFields(aggs []*pb.TestAggregation) []*pb.TestAggregation {
 	result := make([]*pb.TestAggregation, len(aggs))
 	for i, agg := range aggs {
 		copy := proto.Clone(agg).(*pb.TestAggregation)
-		copy.ModuleMatches = false
+		copy.MatchedModule = false
 		copy.MatchedVerdictCounts = nil
 		result[i] = copy
 	}

@@ -168,7 +168,7 @@ func (p *testAggregationsPublisher) collectTestAggregations(ctx context.Context,
 			batchSize := 0
 			for _, agg := range batch {
 				// Pub/Sub does not support searching, so the corresponding fields are left unset.
-				agg.ModuleMatches = false
+				agg.MatchedModule = false
 				agg.MatchedVerdictCounts = nil
 
 				batchSize += proto.Size(agg)

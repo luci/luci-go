@@ -98,7 +98,7 @@ func TestQuery(t *testing.T) {
 				t.Run("With matching filter", func(t *ftt.Test) {
 					// All test results have the tag "mytag:myvalue" so this part of the filter
 					// should have no effect.
-					query.SearchCriteria = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
+					query.ContentsFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
 						` AND tags.mytag = "myvalue"`
 
 					// Counts for module m1.
@@ -116,7 +116,7 @@ func TestQuery(t *testing.T) {
 					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
 				t.Run("With non-matching filter", func(t *ftt.Test) {
-					query.SearchCriteria = `tags.mytag = "not-found-value"`
+					query.ContentsFilter = `tags.mytag = "not-found-value"`
 
 					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
@@ -130,7 +130,7 @@ func TestQuery(t *testing.T) {
 			t.Run("With no test results", func(t *ftt.Test) {
 				testutil.MustApply(ctx, t, spanner.Delete("TestResultsV2", spanner.AllKeys()))
 
-				expected[0].VerdictCounts = &pb.TestAggregation_VerdictCounts{}
+				expected[0].TotalVerdictCounts = &pb.TestAggregation_VerdictCounts{}
 				expected[0].MatchedVerdictCounts = &pb.TestAggregation_VerdictCounts{}
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
@@ -170,6 +170,35 @@ func TestQuery(t *testing.T) {
 					all := fetchAll(query)
 					assert.Loosely(t, all, should.Match(expected))
 				})
+				t.Run("With filter criteria", func(t *ftt.Test) {
+					// Filter out the failed test from the fine aggregation m1.
+					// This should trigger a re-sort.
+
+					expected := ExpectedModuleAggregationsIDOrder()
+					newExpected := []*pb.TestAggregation{
+						expected[1], // m2 - Execution errored verdict
+						expected[2], // m3 - Precluded verdict
+						expected[0], // m1 - Flaky, exonerated, skipped and passed verdicts (failed verdict filtered out)
+					}
+					newExpected[2].MatchedVerdictCounts.Failed -= 1
+					newExpected[2].MatchedVerdictCounts.FailedBase -= 1
+
+					t.Run("With contents filter", func(t *ftt.Test) {
+						query.ContentsFilter = `test_id_structured.case_name != "failed_test"`
+						assert.Loosely(t, fetchAll(query), should.Match(newExpected))
+					})
+					t.Run("With status filter", func(t *ftt.Test) {
+						query.StatusFilter = &pb.TestAggregationPredicate_StatusFilter{
+							VerdictEffectiveStatus: exceptEffectiveStatuses(pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED),
+						}
+						for _, expected := range newExpected {
+							// The module itself no longer matches, because the module status filters are empty.
+							// But the aggregations are still being returned because their verdicts match.
+							expected.MatchedModule = false
+						}
+						assert.Loosely(t, fetchAll(query), should.Match(newExpected))
+					})
+				})
 			})
 			t.Run("With prefix filter", func(t *ftt.Test) {
 				query.TestPrefixFilter = &pb.TestIdentifierPrefix{
@@ -194,13 +223,10 @@ func TestQuery(t *testing.T) {
 			t.Run("With search criteria", func(t *ftt.Test) {
 				// m5 has no test results so this confirms the filter matches across both test results
 				// and modules.
-				query.SearchCriteria = `test_id_structured.module_name = "m4" OR test_id_structured.module_name = "m5"`
+				query.ContentsFilter = `test_id_structured.module_name = "m4" OR test_id_structured.module_name = "m5"`
 
 				expected := ExpectedModuleAggregationsIDOrder()
-				ClearAllModulesMatching(expected)
-				ClearAllVerdictsMatching(expected)
-				SetAllVerdictsMatching(expected[3:5]) // m4 is at offset 3, m5 is at offset 4
-				SetAllModulesMatching(expected[3:5])
+				expected = expected[3:5] // m4 is at offset 3, m5 is at offset 4
 
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
@@ -249,6 +275,30 @@ func TestQuery(t *testing.T) {
 					all := fetchAll(query)
 					assert.Loosely(t, all, should.Match(expected))
 				})
+				t.Run("With filters", func(t *ftt.Test) {
+					// Filter out the failed test from the fine aggregation m1/c1.
+					// This should trigger a re-sort.
+					expected := ExpectedCoarseAggregationsIDOrder()
+					newExpected := []*pb.TestAggregation{
+						expected[2], // m2/c1 - Execution errored verdict
+						expected[3], // m3/   - Precluded verdict
+						expected[0], // m1/c1 - Flaky, exonerated and passed verdicts (failed verdict filtered out)
+						expected[1], // m1/c2 - Skipped verdict
+					}
+					newExpected[2].MatchedVerdictCounts.Failed -= 1
+					newExpected[2].MatchedVerdictCounts.FailedBase -= 1
+
+					t.Run("With contents filter", func(t *ftt.Test) {
+						query.ContentsFilter = `test_id_structured.case_name != "failed_test"`
+						assert.Loosely(t, fetchAll(query), should.Match(newExpected))
+					})
+					t.Run("With status filter", func(t *ftt.Test) {
+						query.StatusFilter = &pb.TestAggregationPredicate_StatusFilter{
+							VerdictEffectiveStatus: exceptEffectiveStatuses(pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED),
+						}
+						assert.Loosely(t, fetchAll(query), should.Match(newExpected))
+					})
+				})
 			})
 			t.Run("With prefix filter", func(t *ftt.Test) {
 				query.TestPrefixFilter = &pb.TestIdentifierPrefix{
@@ -275,12 +325,11 @@ func TestQuery(t *testing.T) {
 			t.Run("With search criteria", func(t *ftt.Test) {
 				// All test results have the tag "mytag:myvalue" so this part of the filter
 				// should have no effect.
-				query.SearchCriteria = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
+				query.ContentsFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
 					` AND tags.mytag = "myvalue"`
 
 				expected := ExpectedCoarseAggregationsIDOrder()
-				ClearAllVerdictsMatching(expected)
-				SetAllVerdictsMatching(expected[0:2])
+				expected = expected[0:2]
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 			t.Run("With limited access", func(t *ftt.Test) {
@@ -328,6 +377,32 @@ func TestQuery(t *testing.T) {
 					all := fetchAll(query)
 					assert.Loosely(t, all, should.Match(expected))
 				})
+				t.Run("With filters", func(t *ftt.Test) {
+					// Filter out the failed test from the fine aggregation m1/c1/f1.
+					// This should trigger a re-sort.
+					expected := ExpectedFineAggregationsIDOrder()
+					newExpected := []*pb.TestAggregation{
+						expected[4], // m2/c1/f1 - Execution errored verdict
+						expected[5], // m3/  /   - Precluded verdict
+						expected[2], // m1/c1/f3 - Flaky verdict
+						expected[1], // m1/c1/f2 - Exonerated verdict
+						expected[0], // m1/c1/f1 - Passed verdict (failed verdict filtered out)
+						expected[3], // m1/c2/f1 - Skipped verdict
+					}
+					expected[0].MatchedVerdictCounts.Failed = 0
+					expected[0].MatchedVerdictCounts.FailedBase = 0
+
+					t.Run("With contents filter", func(t *ftt.Test) {
+						query.ContentsFilter = `test_id_structured.case_name != "failed_test"`
+						assert.Loosely(t, fetchAll(query), should.Match(newExpected))
+					})
+					t.Run("With status filter", func(t *ftt.Test) {
+						query.StatusFilter = &pb.TestAggregationPredicate_StatusFilter{
+							VerdictEffectiveStatus: exceptEffectiveStatuses(pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED),
+						}
+						assert.Loosely(t, fetchAll(query), should.Match(newExpected))
+					})
+				})
 			})
 			t.Run("With prefix filter", func(t *ftt.Test) {
 				query.TestPrefixFilter = &pb.TestIdentifierPrefix{
@@ -361,12 +436,11 @@ func TestQuery(t *testing.T) {
 			t.Run("With search criteria", func(t *ftt.Test) {
 				// All test results have the tag "mytag:myvalue" so this part of the filter
 				// should have no effect.
-				query.SearchCriteria = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
+				query.ContentsFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key = "value"` +
 					` AND tags.mytag = "myvalue"`
 
 				expected := ExpectedFineAggregationsIDOrder()
-				ClearAllVerdictsMatching(expected)
-				SetAllVerdictsMatching(expected[0:4])
+				expected = expected[0:4]
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 			t.Run("With limited access", func(t *ftt.Test) {
@@ -380,16 +454,15 @@ func TestQuery(t *testing.T) {
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 		})
-		t.Run("AIP-160 search criteria integration", func(t *ftt.Test) {
+		t.Run("AIP-160 filtering integration", func(t *ftt.Test) {
 			expected := ExpectedFineAggregationsIDOrder()
-			ClearAllVerdictsMatching(expected)
 			query.Level = pb.AggregationLevel_FINE
 
 			// These tests do not seek to comprehensively validate filter semantics (the
 			// parser-generator library does most of that), they validate the AIP-160 filter
 			// from `testresultsv2` package is correctly integrated and all required columns exist
 			// (no invalid SQL is generated).
-			query.SearchCriteria = `test_id_structured.module_name != "module"` +
+			query.ContentsFilter = `test_id_structured.module_name != "module"` +
 				` AND test_id_structured.module_scheme != "scheme"` +
 				` AND test_id_structured.module_variant.key = "value"` +
 				` AND test_id_structured.module_variant_hash != "varianthash"` +
@@ -405,7 +478,6 @@ func TestQuery(t *testing.T) {
 
 			t.Run("With full access", func(t *ftt.Test) {
 				query.Access.Level = permissions.FullAccess
-				SetAllVerdictsMatching(expected)
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 			t.Run("With limited access (some upgraded to full)", func(t *ftt.Test) {
@@ -416,12 +488,7 @@ func TestQuery(t *testing.T) {
 				query.Access.Realms = []string{"testdata:m3-s2"}
 				results := fetchAll(query)
 
-				for _, item := range expected {
-					if item.Id.Id.ModuleName != "m3" {
-						item.Id.Id.ModuleVariant = nil
-					}
-				}
-				SetAllVerdictsMatching(expected[5:6])
+				expected = expected[5:6]
 				assert.Loosely(t, results, should.Match(expected))
 			})
 			t.Run("With limited access only", func(t *ftt.Test) {
@@ -430,51 +497,59 @@ func TestQuery(t *testing.T) {
 				query.Access.Level = permissions.LimitedAccess
 				query.Access.Realms = []string{}
 				results := fetchAll(query)
-
-				for _, item := range expected {
-					item.Id.Id.ModuleVariant = nil
-				}
-				assert.Loosely(t, results, should.Match(expected))
+				assert.Loosely(t, results, should.HaveLength(0))
 			})
 			t.Run("With implicit filter", func(t *ftt.Test) {
 				// Check an aip.dev/160 implicit filter.
-				query.SearchCriteria = `exonerated_test`
-				SetAllVerdictsMatching(expected[1:2])
+				query.ContentsFilter = `exonerated_test`
+				expected = expected[1:2]
 				assert.Loosely(t, fetchAll(query), should.Match(expected))
 			})
 		})
 
-		t.Run("AIP-160 filter", func(t *ftt.Test) {
+		t.Run("Status filter", func(t *ftt.Test) {
+			query.StatusFilter = &pb.TestAggregationPredicate_StatusFilter{
+				// Matches nothing.
+			}
+
 			t.Run("matched_verdict_counts", func(t *ftt.Test) {
 				query.Level = pb.AggregationLevel_FINE
 				expected := ExpectedFineAggregationsIDOrder()
 
 				t.Run("passed", func(t *ftt.Test) {
-					query.Filter = "matched_verdict_counts.passed > 0"
-					assert.Loosely(t, fetchAll(query), should.Match(expected[0:1]))
+					query.StatusFilter.VerdictEffectiveStatus = []pb.VerdictEffectiveStatus{pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED}
+					expected = expected[0:1]
+					// This aggregation should have its non-passing verdicts filtered out.
+					expected[0].MatchedVerdictCounts.Failed = 0
+					expected[0].MatchedVerdictCounts.FailedBase = 0
+					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
 				t.Run("failed", func(t *ftt.Test) {
-					query.Filter = "matched_verdict_counts.failed > 0"
-					assert.Loosely(t, fetchAll(query), should.Match(expected[0:1]))
+					query.StatusFilter.VerdictEffectiveStatus = []pb.VerdictEffectiveStatus{pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED}
+					expected = expected[0:1]
+					// This aggregation should have its non-failing verdicts filtered out.
+					expected[0].MatchedVerdictCounts.Passed = 0
+					expected[0].MatchedVerdictCounts.PassedBase = 0
+					assert.Loosely(t, fetchAll(query), should.Match(expected))
 				})
 				t.Run("exonerated", func(t *ftt.Test) {
-					query.Filter = "matched_verdict_counts.exonerated > 0"
+					query.StatusFilter.VerdictEffectiveStatus = []pb.VerdictEffectiveStatus{pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED}
 					assert.Loosely(t, fetchAll(query), should.Match(expected[1:2]))
 				})
 				t.Run("flaky", func(t *ftt.Test) {
-					query.Filter = "matched_verdict_counts.flaky > 0"
+					query.StatusFilter.VerdictEffectiveStatus = []pb.VerdictEffectiveStatus{pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY}
 					assert.Loosely(t, fetchAll(query), should.Match(expected[2:3]))
 				})
 				t.Run("skipped", func(t *ftt.Test) {
-					query.Filter = "matched_verdict_counts.skipped > 0"
+					query.StatusFilter.VerdictEffectiveStatus = []pb.VerdictEffectiveStatus{pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_SKIPPED}
 					assert.Loosely(t, fetchAll(query), should.Match(expected[3:4]))
 				})
 				t.Run("execution_errored", func(t *ftt.Test) {
-					query.Filter = "matched_verdict_counts.execution_errored > 0"
+					query.StatusFilter.VerdictEffectiveStatus = []pb.VerdictEffectiveStatus{pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED}
 					assert.Loosely(t, fetchAll(query), should.Match(expected[4:5]))
 				})
 				t.Run("precluded", func(t *ftt.Test) {
-					query.Filter = "matched_verdict_counts.precluded > 0"
+					query.StatusFilter.VerdictEffectiveStatus = []pb.VerdictEffectiveStatus{pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED}
 					assert.Loosely(t, fetchAll(query), should.Match(expected[5:6]))
 				})
 			})
@@ -482,55 +557,45 @@ func TestQuery(t *testing.T) {
 				query.Level = pb.AggregationLevel_MODULE
 				expected := ExpectedModuleAggregationsIDOrder()
 
+				for _, e := range expected {
+					// Because the list of verdict statues to filter to is empty, no verdict statuses match.
+					e.MatchedVerdictCounts = &pb.TestAggregation_VerdictCounts{}
+				}
+
 				t.Run("FAILED", func(t *ftt.Test) {
-					query.Filter = "module_status = FAILED"
+					query.StatusFilter.ModuleStatus = []pb.TestAggregation_ModuleStatus{pb.TestAggregation_FAILED}
 					assert.Loosely(t, fetchAll(query), should.Match(expected[2:3]))
 				})
 				t.Run("RUNNING", func(t *ftt.Test) {
-					query.Filter = "module_status = RUNNING"
+					query.StatusFilter.ModuleStatus = []pb.TestAggregation_ModuleStatus{pb.TestAggregation_RUNNING}
 					assert.Loosely(t, fetchAll(query), should.Match(expected[1:2]))
 				})
 				t.Run("FLAKY", func(t *ftt.Test) {
-					query.Filter = "module_status = FLAKY"
+					query.StatusFilter.ModuleStatus = []pb.TestAggregation_ModuleStatus{pb.TestAggregation_FLAKY}
 					assert.Loosely(t, fetchAll(query), should.Match(expected[6:7]))
 				})
 			})
-			t.Run("module_matches", func(t *ftt.Test) {
-				query.Level = pb.AggregationLevel_MODULE
-				expected := ExpectedModuleAggregationsIDOrder()
-
-				t.Run("true", func(t *ftt.Test) {
-					expected = []*pb.TestAggregation{
-						expected[0], // m1
-						expected[4], // m5
-					}
-					query.SearchCriteria = `"m1" OR "m5"`
-					query.Filter = "module_matches = true"
-					assert.Loosely(t, fetchAll(query), should.Match(expected))
-				})
-				t.Run("false", func(t *ftt.Test) {
-					expected = []*pb.TestAggregation{
-						expected[1], // m2
-						expected[2], // m3
-						expected[3], // m4
-						expected[5], // m6
-						expected[6], // m7
-					}
-					query.SearchCriteria = `"m1" OR "m5"`
-					query.Filter = "module_matches = false"
-
-					// As we are filtering to modules that don't match the filter criteria.
-					ClearAllModulesMatching(expected)
-					ClearAllVerdictsMatching(expected)
-					assert.Loosely(t, fetchAll(query), should.Match(expected))
-				})
-			})
 			t.Run("All fields supported at all levels", func(t *ftt.Test) {
-				// For fine, coarse and invocation levels, the module_status should be treated as always UNSPECIFIED,
-				// and module_matches as always FALSE, as this is what is on the response row.
-				query.Filter = "matched_verdict_counts.passed > 0 OR matched_verdict_counts.flaky > 0 OR matched_verdict_counts.failed > 0" +
-					" OR matched_verdict_counts.skipped > 0 OR matched_verdict_counts.execution_errored > 0 OR matched_verdict_counts.precluded > 0" +
-					" OR matched_verdict_counts.exonerated > 0 OR module_status = FAILED OR module_matches = true"
+				query.StatusFilter.VerdictEffectiveStatus = []pb.VerdictEffectiveStatus{
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_SKIPPED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED,
+				}
+				// These are joined with a logical OR, and the module status is ignored
+				// for levels below module.
+				query.StatusFilter.ModuleStatus = []pb.TestAggregation_ModuleStatus{
+					pb.TestAggregation_FAILED,
+					pb.TestAggregation_PENDING,
+					pb.TestAggregation_SKIPPED,
+					pb.TestAggregation_CANCELLED,
+					pb.TestAggregation_FLAKY,
+					pb.TestAggregation_SUCCEEDED,
+					pb.TestAggregation_RUNNING,
+				}
 
 				t.Run("At fine-level", func(t *ftt.Test) {
 					query.Level = pb.AggregationLevel_FINE
@@ -555,4 +620,20 @@ func TestQuery(t *testing.T) {
 			})
 		})
 	})
+}
+
+func exceptEffectiveStatuses(status ...pb.VerdictEffectiveStatus) []pb.VerdictEffectiveStatus {
+	var result []pb.VerdictEffectiveStatus
+	for _, s := range pb.VerdictEffectiveStatus_value {
+		if s == int32(pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED) {
+			continue
+		}
+		for _, notAllowed := range status {
+			if s == int32(notAllowed) {
+				continue
+			}
+			result = append(result, pb.VerdictEffectiveStatus(s))
+		}
+	}
+	return result
 }

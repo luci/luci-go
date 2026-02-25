@@ -15,45 +15,133 @@
 package testaggregations
 
 import (
-	"go.chromium.org/luci/common/data/aip160"
+	"fmt"
+	"strings"
+
+	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-var moduleStatusEnumDef = aip160.NewEnumDefinition("pb.TestAggregation.ModuleStatus", pb.TestAggregation_ModuleStatus_value, int32(pb.TestAggregation_MODULE_STATUS_UNSPECIFIED))
-
-var filterSchema = aip160.NewDatabaseTable().WithFields(
-	aip160.NewField().WithFieldPath("matched_verdict_counts", "failed").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndFailed")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("matched_verdict_counts", "flaky").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndFlaky")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("matched_verdict_counts", "passed").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndPassed")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("matched_verdict_counts", "skipped").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndSkipped")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("matched_verdict_counts", "execution_errored").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndExecutionErrored")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("matched_verdict_counts", "precluded").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndPrecluded")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("matched_verdict_counts", "exonerated").WithBackend(aip160.NewIntegerColumn("TestsMatchingAndExonerated")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("module_matches").WithBackend(aip160.NewBoolColumn("ModuleMatches")).Filterable().Build(),
-	aip160.NewField().WithFieldPath("module_status").WithBackend(aip160.NewEnumColumn("ModuleStatus").WithDefinition(moduleStatusEnumDef).Build()).Filterable().Build(),
-).Build()
-
-// ValidateFilter validates an AIP-160 filter string.
-func ValidateFilter(filter string) error {
-	f, err := aip160.ParseFilter(filter)
-	if err != nil {
-		return err
-	}
-	// Trial generate the filter SQL. This will pick up any errors not found
-	// at parse time.
-	_, _, err = filterSchema.WhereClause(f, "", "f_")
-	if err != nil {
-		return err
+// ValidateVerdictStatusFilter validates a verdict effective status filter.
+func ValidateVerdictStatusFilter(filter []pb.VerdictEffectiveStatus) error {
+	seen := make(map[pb.VerdictEffectiveStatus]bool)
+	for _, s := range filter {
+		if s == pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED {
+			return errors.New("must not contain VERDICT_EFFECTIVE_STATUS_UNSPECIFIED")
+		}
+		if _, ok := pb.VerdictEffectiveStatus_name[int32(s)]; !ok {
+			return errors.Fmt("contains unknown verdict effective status %v", s)
+		}
+		if seen[s] {
+			return errors.Fmt("must not contain duplicates (%v appears twice)", s)
+		}
+		seen[s] = true
 	}
 	return nil
 }
 
-// whereClause generates a WHERE clause for the given AIP-160 filter string.
-func whereClause(filter, tableAlias, parameterPrefix string) (string, []aip160.SqlQueryParameter, error) {
-	f, err := aip160.ParseFilter(filter)
-	if err != nil {
-		return "", nil, err
+// ValidateModuleStatusFilter validates a module status filter.
+func ValidateModuleStatusFilter(filter []pb.TestAggregation_ModuleStatus) error {
+	seen := make(map[pb.TestAggregation_ModuleStatus]bool)
+	for _, s := range filter {
+		// MODULE_STATUS_UNSPECIFIED is allowed, because it is used on
+		// the legacy module.
+		if _, ok := pb.TestAggregation_ModuleStatus_name[int32(s)]; !ok {
+			return errors.Fmt("contains unknown module status %v", s)
+		}
+		if seen[s] {
+			return errors.Fmt("must not contain duplicates (%v appears twice)", s)
+		}
+		seen[s] = true
 	}
-	return filterSchema.WhereClause(f, tableAlias, parameterPrefix)
+	return nil
+}
+
+// whereVerdictStatusClause generates a WHERE clause for the given verdict status filter.
+// This method assumes the presence of the columns IsExonerated and Status (containing the verdict base status).
+func whereVerdictStatusClause(filter []pb.VerdictEffectiveStatus, params map[string]any) (string, error) {
+	if len(filter) == 0 {
+		// Empty filter means nothing matches.
+		return "FALSE", nil
+	}
+
+	includeExonerated := false
+	// The list of exonerable statuses to filter to (e.g. failed, flaky, ...).
+	var exonerableStatuses []int64
+	// The list of passed and skipped statuses to filter to.
+	var passedAndSkippedStatuses []int64
+
+	for _, s := range filter {
+		switch s {
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED:
+			includeExonerated = true
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED:
+			exonerableStatuses = append(exonerableStatuses, int64(pb.TestVerdict_FAILED))
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED:
+			exonerableStatuses = append(exonerableStatuses, int64(pb.TestVerdict_EXECUTION_ERRORED))
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED:
+			exonerableStatuses = append(exonerableStatuses, int64(pb.TestVerdict_PRECLUDED))
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY:
+			exonerableStatuses = append(exonerableStatuses, int64(pb.TestVerdict_FLAKY))
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_SKIPPED:
+			passedAndSkippedStatuses = append(passedAndSkippedStatuses, int64(pb.TestVerdict_SKIPPED))
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED:
+			passedAndSkippedStatuses = append(passedAndSkippedStatuses, int64(pb.TestVerdict_PASSED))
+		default:
+			return "", errors.Fmt("unsupported effective verdict status %s", s)
+		}
+	}
+
+	var conditions []string
+	if includeExonerated {
+		// When filtering to exonerated verdicts, don't just check for an exoneration,
+		// verify the status is exonerable.
+		var allExonerableStatuses []int64
+		allExonerableStatuses = append(allExonerableStatuses, int64(pb.TestVerdict_FAILED))
+		allExonerableStatuses = append(allExonerableStatuses, int64(pb.TestVerdict_EXECUTION_ERRORED))
+		allExonerableStatuses = append(allExonerableStatuses, int64(pb.TestVerdict_PRECLUDED))
+		allExonerableStatuses = append(allExonerableStatuses, int64(pb.TestVerdict_FLAKY))
+
+		paramName := "vsfAllExonerableStatuses"
+		params[paramName] = allExonerableStatuses
+		conditions = append(conditions, fmt.Sprintf("(IsExonerated AND VerdictStatus IN UNNEST(@%s))", paramName))
+	}
+	if len(passedAndSkippedStatuses) > 0 {
+		// When filtering to passed or skipped verdicts, it doesn't matter if they have
+		// an exoneration as it does not change the effective status.
+		const paramName = "vsfPassedOrSkippedStatuses"
+		params[paramName] = passedAndSkippedStatuses
+		conditions = append(conditions, fmt.Sprintf("(VerdictStatus IN UNNEST(@%s))", paramName))
+	}
+	if len(exonerableStatuses) > 0 {
+		// When filtering to failing, flaky, execution errored or precluded verdicts,
+		// verify they have not been exonerated.
+		const paramName = "vsfExonerableStatuses"
+		params[paramName] = exonerableStatuses
+		conditions = append(conditions, fmt.Sprintf("(NOT IsExonerated AND VerdictStatus IN UNNEST(@%s))", paramName))
+	}
+
+	if len(conditions) == 1 {
+		return conditions[0], nil
+	}
+	return "(" + strings.Join(conditions, " OR ") + ")", nil
+}
+
+// whereModuleStatusFilter generates a WHERE clause for the given module status filter.
+// This method assumes the presence of the column ModuleStatus.
+func whereModuleStatusFilter(filter []pb.TestAggregation_ModuleStatus, params map[string]any) (string, error) {
+	if len(filter) == 0 {
+		// Empty filter means nothing matches.
+		return "FALSE", nil
+	}
+
+	var statuses []int64
+	for _, s := range filter {
+		statuses = append(statuses, int64(s))
+	}
+
+	const paramName = "msfStatuses"
+	params[paramName] = statuses
+	return fmt.Sprintf("(ModuleStatus IN UNNEST(@%s))", paramName), nil
 }

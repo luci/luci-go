@@ -159,18 +159,37 @@ func TestQueryTestAggregations(t *testing.T) {
 						assert.Loosely(t, err, should.ErrLike("predicate: test_prefix_filter: level: must be equal to, or coarser than, the requested aggregation_level (MODULE)"))
 					})
 				})
-				t.Run(`Filter`, func(t *ftt.Test) {
+				t.Run(`Contents filter`, func(t *ftt.Test) {
 					t.Run(`Invalid syntax`, func(t *ftt.Test) {
-						req.Predicate.Filter = "verdict_counts.passed ="
+						req.Predicate.ContentsFilter = "test_id_structured.module_name ="
 						_, err := srv.QueryTestAggregations(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("predicate: filter: expected arg after ="))
+						assert.Loosely(t, err, should.ErrLike("predicate: contents_filter: expected arg after ="))
 					})
 					t.Run(`Invalid column`, func(t *ftt.Test) {
-						req.Predicate.Filter = "invalid_column = 1"
+						req.Predicate.ContentsFilter = "invalid_column = 1"
 						_, err := srv.QueryTestAggregations(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-						assert.Loosely(t, err, should.ErrLike("predicate: filter: no filterable field \"invalid_column\""))
+						assert.Loosely(t, err, should.ErrLike("predicate: contents_filter: no filterable field \"invalid_column\""))
+					})
+				})
+				t.Run(`Status filter`, func(t *ftt.Test) {
+					req.Predicate.StatusFilter = &pb.TestAggregationPredicate_StatusFilter{}
+					t.Run(`Invalid verdict status filter`, func(t *ftt.Test) {
+						req.Predicate.StatusFilter.VerdictEffectiveStatus = []pb.VerdictEffectiveStatus{
+							pb.VerdictEffectiveStatus(999),
+						}
+						_, err := srv.QueryTestAggregations(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("predicate: status_filter: verdict_effective_status: contains unknown verdict effective status 999"))
+					})
+					t.Run(`Invalid module status filter`, func(t *ftt.Test) {
+						req.Predicate.StatusFilter.ModuleStatus = []pb.TestAggregation_ModuleStatus{
+							pb.TestAggregation_ModuleStatus(999),
+						}
+						_, err := srv.QueryTestAggregations(ctx, req)
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("predicate: status_filter: module_status: contains unknown module status 999"))
 					})
 				})
 			})
@@ -319,29 +338,34 @@ func TestQueryTestAggregations(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.Aggregations, should.Match(expected))
 			})
-			t.Run(`With search criteria`, func(t *ftt.Test) {
+			t.Run(`With contains filter`, func(t *ftt.Test) {
 				req.Predicate.AggregationLevel = pb.AggregationLevel_COARSE
-				req.Predicate.SearchCriteria = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key="value"`
+				req.Predicate.ContentsFilter = `test_id_structured.module_name = "m1" AND test_id_structured.module_scheme = "junit" AND test_id_structured.module_variant.key="value"`
 
 				expected := testaggregations.ExpectedCoarseAggregationsIDOrder()
-				testaggregations.ClearAllVerdictsMatching(expected)
-				testaggregations.SetAllVerdictsMatching(expected[0:2])
+				expected = expected[0:2]
 
 				res, err := srv.QueryTestAggregations(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res.Aggregations, should.Match(expected))
 			})
-			t.Run(`With filter`, func(t *ftt.Test) {
+			t.Run(`With status filter`, func(t *ftt.Test) {
 				req.Predicate.AggregationLevel = pb.AggregationLevel_FINE
 				// The filter for module_status and module_matches does not contribute to
 				// the results in this example, but we test it does not blow up for this aggregation level
 				// (module_status is UNSPECIFIED and module_matches is FALSE for this aggregation level).
-				req.Predicate.Filter = "matched_verdict_counts.failed > 0 OR module_status = FAILED OR module_matches = true"
+				req.Predicate.StatusFilter = &pb.TestAggregationPredicate_StatusFilter{
+					VerdictEffectiveStatus: []pb.VerdictEffectiveStatus{pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED},
+					ModuleStatus:           []pb.TestAggregation_ModuleStatus{pb.TestAggregation_FAILED},
+				}
 				expected := testaggregations.ExpectedFineAggregationsIDOrder()
+				expected = expected[0:1]
+				expected[0].MatchedVerdictCounts.Passed = 0
+				expected[0].MatchedVerdictCounts.PassedBase = 0
 
 				res, err := srv.QueryTestAggregations(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res.Aggregations, should.Match(expected[0:1]))
+				assert.Loosely(t, res.Aggregations, should.Match(expected))
 			})
 			t.Run(`With pagination`, func(t *ftt.Test) {
 				req.PageSize = 2

@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.resultdb.v1;
 
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
+import "go.chromium.org/luci/resultdb/proto/v1/test_aggregation.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_verdict.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
@@ -210,14 +211,16 @@ message TestAggregationPredicate {
   //   test_id_prefix.aggregation_level to INVOCATION.
   TestIdentifierPrefix test_prefix_filter = 2;
 
-  // Searches aggregations for test results and modules that match the given AIP-160 filter.
+  // An AIP-160 filter string which defines the test results and/or modules of interest.
   //
-  // Each aggregation will report the number of test verdicts that match the search criteria and
-  // whether the module itself (in case of module-level aggregations) matches, via the
-  // `matched_verdict_counts` and `module_matches` fields. These can in turn be leveraged
-  // for filtering in the `filter` field below.
+  // Module, coarse and fine aggregations will only be returned if they contain
+  // at least one verdict or module matching this filter, where:
+  // - A test verdict is only matched if it contains a test result which matches this filter,
+  //   subject to any additional status_filter.verdict_effective_status filter.
+  // - A module is only matched if it matches this filter, or contains a test result which matches
+  //   this filter, subject to any additional status_filter.module_status filter.
   //
-  // Search criteria are specified as an AIP-160 filter string (see https://google.aip.dev/160
+  // The filter is an AIP-160 filter string (see https://google.aip.dev/160
   // for syntax), with the following fields available:
   // - test_id (string) - the flat-form test ID
   // - test_id_structured.module_name (string) - the structured form test ID fields
@@ -234,29 +237,30 @@ message TestAggregationPredicate {
   // - status (enum luci.resultdb.v1.TestResult.Status) - the status_v2 of the test result
   // - duration (google.protobuf.Duration)
   //
-  // For modules, only the fields `test_id_structured.module_name`,
-  // `test_id_structured.module_scheme`, `test_id_structured.module_variant`,
-  // `test_id_structured.module_variant_hash` are available. If other fields are used,
-  // the search query will never match a module (even if joined with an 'OR', as the
-  // filter will not compile against the schema of modules).
+  // For modules, only the fields available are `test_id_structured.module_name`,
+  // `test_id_structured.module_scheme`, `test_id_structured.module_variant`, and
+  // `test_id_structured.module_variant_hash`. If other fields are used,
+  // the search query will never match a module directly (even if joined with an 'OR', as the
+  // filter will not compile against the schema of modules). However, a module will
+  // still be matched if one of its test results matches the filter.
   //
   // For example:
   //  test_id_structured.module_name="foo"
-  // will match test results and modules with a module name of "foo".
+  // will match test verdicts and modules with a module name of "foo". (This includes
+  // modules with no test results.)
   //
   //  test_id_structured.module_name="bar" AND status=FAILED
-  // will match test results with a module of foo, and test result status of FAILED.
-  // No modules will ever match this query, as modules do not define a test result status.
+  // will match test verdicts and modules which have at least one test result with a
+  // module of "foo" and a status of FAILED.
   //
   //  test_id_structured.module_name="bar" OR status=FAILED
-  // will match test results with a module of foo, or test result status of FAILED.
-  // No modules will ever match this query, as modules do not define a test result status
-  // and the filter does not compile against the schema of modules.
+  // will match test verdicts and modules which have at least one test result with a
+  // module of "foo" OR a status of FAILED.
   //
   // Literals like "bar" can also be searched directly; which fields they will match
   // is an implementation detail.
   //
-  // While this search generally offers a superset of functionality of the `test_prefix_filter`
+  // While this filter generally offers a superset of functionality of the `test_prefix_filter`
   // field, clients will generally prefer to use `test_prefix_filter` if it is
   // sufficient as it performs better and its use has less sharp edges (e.g. no need to
   // escape test ID components when injecting them into filter strings, filtering on a
@@ -264,31 +268,47 @@ message TestAggregationPredicate {
   //
   // If this field is unset, it is treated by the implementation as the search criteria
   // always matching.
-  string search_criteria = 3;
+  string contents_filter = 3;
 
-  // A free-form filter on the returned `TestAggregation`s.
+  // For free-form AIP-160 filter.
+  reserved 4;
+  reserved "filter";
+
+  // Specifies the test verdicts and/or module statuses of interest.
   //
-  // The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
-  // with the following fields available:
-  // - matched_verdict_counts.failed (number)
-  // - matched_verdict_counts.flaky (number)
-  // - matched_verdict_counts.passed (number)
-  // - matched_verdict_counts.skipped (number)
-  // - matched_verdict_counts.execution_errored (number)
-  // - matched_verdict_counts.precluded (number)
-  // - matched_verdict_counts.exonerated (number)
-  // - module_matches (bool)
-  // - module_status (luci.resultdb.v1.TestAggregation.ModuleStatus):
-  //   for aggregations at Invocation, Coarse and Fine levels, this field is
-  //   always MODULE_STATUS_UNSPECIFIED, so is only useful for filtering Module-level
-  //   aggregations.
+  // Module, coarse and fine aggregations will only be returned if they contain
+  // at least one verdict or module matching this filter.
   //
-  // Example: To filter to failing modules, and aggregations with at least one
-  // failing or execution errored test verdict, where the module/test verdicts
-  // also meet the `search_criteria`:
-  //  (module_status = FAILED AND module_matched) OR (matched_test_verdicts.failed > 0 OR
-  //   matched_test_verdicts.execution_errored > 0)
-  string filter = 4;
+  // - a test verdict will only be considered `matched` if one of its effective
+  //   status matches the verdict_effective_status filter.
+  // - a module will be only be considered `matched` if its status matches the
+  //   module_status filter.
+  //
+  // Note that this filter intersects with the `contents_filter` field, see its
+  // documentation for more details.
+  message StatusFilter {
+    // The effective verdict statuses of interest.
+    //
+    // The effective verdict status is the status of the test verdict after
+    // applying any status overrides.
+    //
+    // If this field is unset, it means no verdicts are of interest and no
+    // verdicts will be matched.
+    repeated VerdictEffectiveStatus verdict_effective_status = 1;
+
+    // The module statuses of interest.
+    //
+    // This filter is only used for module-level aggregations. It is ignored for
+    // invocation, coarse and fine-level aggregations.
+    //
+    // If this field is unset, it means no modules are of interest and no modules
+    // will be matched. (They may still be returned if they contain a matching
+    // verdict.)
+    repeated TestAggregation.ModuleStatus module_status = 2;
+  }
+
+  // If set, filters the verdicts and modules used in the aggregation to the given status(es).
+  StatusFilter status_filter = 5;
 }
 
 // Represents a function TestVerdict -> bool.

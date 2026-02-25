@@ -92,13 +92,14 @@ message TestAggregation {
     int32 precluded_base = 13;
   }
 
-  // The counts of test verdicts in the aggregation.
-  VerdictCounts verdict_counts = 3;
+  // The counts of all test verdicts in the aggregation.
+  VerdictCounts total_verdict_counts = 3;
 
-  // The counts of test verdicts in the test aggregation, that contained a
-  // test result that matched QueryTestAggregationsRequest.predicate.search_criteria.
+  // The counts of test verdicts in the test aggregation, which matched:
+  // - QueryTestAggregationsRequest.predicate.contents_filter (if any) and
+  // - QueryTestAggregationsRequest.predicate.status_filter (if any).
   //
-  // If search_criteria was not specified, this is the same as verdict_counts.
+  // If neither filter was specified, this is the same as `total_verdict_counts`.
   //
   // This field is not populated when listening to test aggregations via the pub/sub
   // (TestAggregationsNotification).
@@ -179,12 +180,17 @@ message TestAggregation {
   // here will be MODULE_STATUS_UNSPECIFIED.
   ModuleStatus module_status = 4;
 
-  // Whether the module details matched the QueryTestAggregationsRequest.predicate.search_criteria.
-  // If search_criteria was not specified, this is always true.
+  // Whether the:
+  // - the module or one of its test results matched
+  //   QueryTestAggregationsRequest.predicate.contents_filter (if any), and
+  // - the module status matched QueryTestAggregationsRequest.predicate.status_filter
+  //   (if any).
+  //
+  // If neither filter was specified, this is always true.
   //
   // This field is not populated when listening to test aggregations via the pub/sub
   // (TestAggregationsNotification).
-  bool module_matches = 7;
+  bool matched_module = 7;
 
   // Counts of module statuses.
   message ModuleStatusCounts {

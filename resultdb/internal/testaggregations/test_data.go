@@ -123,7 +123,7 @@ func CreateTestData(rootInvID rootinvocations.ID) []*spanner.Mutation {
 
 func SetAllVerdictsMatching(input []*pb.TestAggregation) {
 	for i := range input {
-		input[i].MatchedVerdictCounts = proto.Clone(input[i].VerdictCounts).(*pb.TestAggregation_VerdictCounts)
+		input[i].MatchedVerdictCounts = proto.Clone(input[i].TotalVerdictCounts).(*pb.TestAggregation_VerdictCounts)
 	}
 }
 
@@ -135,13 +135,13 @@ func ClearAllVerdictsMatching(input []*pb.TestAggregation) {
 
 func ClearAllModulesMatching(input []*pb.TestAggregation) {
 	for i := range input {
-		input[i].ModuleMatches = false
+		input[i].MatchedModule = false
 	}
 }
 
 func SetAllModulesMatching(input []*pb.TestAggregation) {
 	for i := range input {
-		input[i].ModuleMatches = true
+		input[i].MatchedModule = true
 	}
 }
 
@@ -152,7 +152,7 @@ func ExpectedRootInvocationAggregation() []*pb.TestAggregation {
 			Id:    &pb.TestIdentifier{},
 		},
 		NextFinerLevel: pb.AggregationLevel_MODULE,
-		VerdictCounts: &pb.TestAggregation_VerdictCounts{
+		TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 			Failed:               1,
 			Flaky:                1,
 			Passed:               1,
@@ -195,7 +195,7 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_COARSE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Failed:      1,
 				Flaky:       1,
 				Passed:      1,
@@ -207,7 +207,7 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				SkippedBase: 1,
 			},
 			ModuleStatus:  pb.TestAggregation_SUCCEEDED,
-			ModuleMatches: true,
+			MatchedModule: true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -220,12 +220,12 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_COARSE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				ExecutionErrored:     1,
 				ExecutionErroredBase: 1,
 			},
 			ModuleStatus:  pb.TestAggregation_RUNNING,
-			ModuleMatches: true,
+			MatchedModule: true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -238,12 +238,12 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_CASE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Precluded:     1,
 				PrecludedBase: 1,
 			},
 			ModuleStatus:  pb.TestAggregation_FAILED,
-			ModuleMatches: true,
+			MatchedModule: true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -255,10 +255,10 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
-			NextFinerLevel: pb.AggregationLevel_COARSE,
-			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
-			ModuleStatus:   pb.TestAggregation_PENDING,
-			ModuleMatches:  true,
+			NextFinerLevel:     pb.AggregationLevel_COARSE,
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+			ModuleStatus:       pb.TestAggregation_PENDING,
+			MatchedModule:      true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -270,10 +270,10 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
-			NextFinerLevel: pb.AggregationLevel_COARSE,
-			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
-			ModuleStatus:   pb.TestAggregation_SKIPPED,
-			ModuleMatches:  true,
+			NextFinerLevel:     pb.AggregationLevel_COARSE,
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+			ModuleStatus:       pb.TestAggregation_SKIPPED,
+			MatchedModule:      true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -285,10 +285,10 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
-			NextFinerLevel: pb.AggregationLevel_COARSE,
-			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
-			ModuleStatus:   pb.TestAggregation_CANCELLED,
-			ModuleMatches:  true,
+			NextFinerLevel:     pb.AggregationLevel_COARSE,
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+			ModuleStatus:       pb.TestAggregation_CANCELLED,
+			MatchedModule:      true,
 		},
 		{
 			Id: &pb.TestIdentifierPrefix{
@@ -300,10 +300,10 @@ func ExpectedModuleAggregationsIDOrder() []*pb.TestAggregation {
 					ModuleVariantHash: pbutil.VariantHash(pbutil.Variant("key", "value")),
 				},
 			},
-			NextFinerLevel: pb.AggregationLevel_COARSE,
-			VerdictCounts:  &pb.TestAggregation_VerdictCounts{},
-			ModuleStatus:   pb.TestAggregation_FLAKY,
-			ModuleMatches:  true,
+			NextFinerLevel:     pb.AggregationLevel_COARSE,
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+			ModuleStatus:       pb.TestAggregation_FLAKY,
+			MatchedModule:      true,
 		},
 	}
 	SetAllVerdictsMatching(result)
@@ -331,7 +331,7 @@ func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_FINE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Failed:     1,
 				Flaky:      1,
 				Passed:     1,
@@ -353,7 +353,7 @@ func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_FINE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Skipped:     1,
 				SkippedBase: 1,
 			},
@@ -370,7 +370,7 @@ func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_FINE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				ExecutionErrored:     1,
 				ExecutionErroredBase: 1,
 			},
@@ -387,7 +387,7 @@ func ExpectedCoarseAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_CASE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Precluded:     1,
 				PrecludedBase: 1,
 			},
@@ -419,7 +419,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_CASE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Failed:     1,
 				Passed:     1,
 				FailedBase: 1,
@@ -439,7 +439,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_CASE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Exonerated: 1,
 				FailedBase: 1,
 			},
@@ -457,7 +457,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_CASE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Flaky:     1,
 				FlakyBase: 1,
 			},
@@ -475,7 +475,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_CASE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Skipped:     1,
 				SkippedBase: 1,
 			},
@@ -493,7 +493,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_CASE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				ExecutionErrored:     1,
 				ExecutionErroredBase: 1,
 			},
@@ -511,7 +511,7 @@ func ExpectedFineAggregationsIDOrder() []*pb.TestAggregation {
 				},
 			},
 			NextFinerLevel: pb.AggregationLevel_CASE,
-			VerdictCounts: &pb.TestAggregation_VerdictCounts{
+			TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 				Precluded:     1,
 				PrecludedBase: 1,
 			},

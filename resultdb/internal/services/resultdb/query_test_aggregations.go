@@ -85,8 +85,8 @@ func (s *resultDBServer) QueryTestAggregations(ctx context.Context, req *pb.Quer
 		RootInvocationID: rootInvID,
 		Level:            req.Predicate.AggregationLevel,
 		TestPrefixFilter: req.Predicate.TestPrefixFilter,
-		SearchCriteria:   req.Predicate.SearchCriteria,
-		Filter:           req.Predicate.Filter,
+		ContentsFilter:   req.Predicate.ContentsFilter,
+		StatusFilter:     req.Predicate.StatusFilter,
 		Access:           access,
 		PageSize:         pageSize,
 		Order:            order,
@@ -175,14 +175,17 @@ func validateQueryTestAggregationsPredicate(predicate *pb.TestAggregationPredica
 			return errors.Fmt("test_prefix_filter: level: must be equal to, or coarser than, the requested aggregation_level (%s)", predicate.AggregationLevel)
 		}
 	}
-	if predicate.SearchCriteria != "" {
-		if err := testresultsv2.ValidateFilter(predicate.SearchCriteria); err != nil {
-			return errors.Fmt("search_criteria: %w", err)
+	if predicate.ContentsFilter != "" {
+		if err := testresultsv2.ValidateFilter(predicate.ContentsFilter); err != nil {
+			return errors.Fmt("contents_filter: %w", err)
 		}
 	}
-	if predicate.Filter != "" {
-		if err := testaggregations.ValidateFilter(predicate.Filter); err != nil {
-			return errors.Fmt("filter: %w", err)
+	if predicate.StatusFilter != nil {
+		if err := testaggregations.ValidateVerdictStatusFilter(predicate.StatusFilter.VerdictEffectiveStatus); err != nil {
+			return errors.Fmt("status_filter: verdict_effective_status: %w", err)
+		}
+		if err := testaggregations.ValidateModuleStatusFilter(predicate.StatusFilter.ModuleStatus); err != nil {
+			return errors.Fmt("status_filter: module_status: %w", err)
 		}
 	}
 	return nil
