@@ -41,6 +41,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [deepRepair, setDeepRepair] = useState<boolean>(false);
   const [latestRepair, setLatestRepair] = useState<boolean>(false);
+  const [verifyOnly, setVerifyOnly] = useState<boolean>(false);
   const dutNames = selectedDuts.map((d) => d.name);
 
   // First, give users a modal to confirm if they want autorepair or not.
@@ -65,6 +66,9 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
     }
     if (latestRepair) {
       flags.push(ScheduleAutorepairRequest_AutorepairFlag.LATEST);
+    }
+    if (verifyOnly) {
+      flags.push(ScheduleAutorepairRequest_AutorepairFlag.VERIFY);
     }
 
     const resp = await fleetConsoleClient.ScheduleAutorepair(
@@ -92,6 +96,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
     setSessionInfo({});
     setDeepRepair(false);
     setLatestRepair(false);
+    setVerifyOnly(false);
   };
 
   return (
@@ -116,6 +121,8 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
         handleLatestRepairChange={(checked: boolean) =>
           setLatestRepair(checked)
         }
+        verifyOnly={verifyOnly}
+        handleVerifyOnlyChange={(checked: boolean) => setVerifyOnly(checked)}
         loading={loading}
       />
     </>

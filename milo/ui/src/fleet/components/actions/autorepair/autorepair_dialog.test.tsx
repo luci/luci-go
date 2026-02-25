@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
@@ -23,6 +23,7 @@ describe('<AutorepairDialog />', () => {
   let handleOkMock: jest.Mock;
   let handleDeepRepairChangeMock: jest.Mock;
   let handleLatestRepairChangeMock: jest.Mock;
+  let handleVerifyOnlyChangeMock: jest.Mock;
   let sharedTestProps: AutorepairDialogProps = {
     open: true,
     handleClose: () => undefined,
@@ -31,6 +32,8 @@ describe('<AutorepairDialog />', () => {
     handleDeepRepairChange: () => undefined,
     latestRepair: false,
     handleLatestRepairChange: () => undefined,
+    verifyOnly: false,
+    handleVerifyOnlyChange: () => undefined,
     sessionInfo: {},
     loading: false,
   };
@@ -40,6 +43,7 @@ describe('<AutorepairDialog />', () => {
     handleOkMock = jest.fn();
     handleDeepRepairChangeMock = jest.fn();
     handleLatestRepairChangeMock = jest.fn();
+    handleVerifyOnlyChangeMock = jest.fn();
 
     sharedTestProps = {
       open: true,
@@ -49,6 +53,8 @@ describe('<AutorepairDialog />', () => {
       handleDeepRepairChange: handleDeepRepairChangeMock,
       latestRepair: false,
       handleLatestRepairChange: handleLatestRepairChangeMock,
+      verifyOnly: false,
+      handleVerifyOnlyChange: handleVerifyOnlyChangeMock,
       sessionInfo: {},
       loading: false,
     };
@@ -91,6 +97,78 @@ describe('<AutorepairDialog />', () => {
     const shivas = screen.getByText('$ shivas repair test-dut dut1 dut2 dut3');
 
     expect(shivas).toBeVisible();
+  });
+
+  it('renders all checkboxes', () => {
+    render(
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{ dutNames: ['test-dut'] }}
+        />
+      </FakeAuthStateProvider>,
+    );
+    expect(
+      screen.getByRole('checkbox', { name: 'Deep repair these devices' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', { name: 'Use latest repair version' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', { name: 'Verify Only' }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows warning when both deep and verify are checked', () => {
+    const { rerender } = render(
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{ dutNames: ['test-dut'] }}
+          deepRepair={false}
+          verifyOnly={false}
+        />
+      </FakeAuthStateProvider>,
+    );
+
+    expect(
+      screen.queryByText('Unusual case: both deep and verify are checked'),
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{ dutNames: ['test-dut'] }}
+          deepRepair={true}
+          verifyOnly={true}
+        />
+      </FakeAuthStateProvider>,
+    );
+
+    const warning = screen.getByText(
+      'Unusual case: both deep and verify are checked. Verify build will be used but task will trigger a full deep recovery workflow.',
+    );
+    expect(warning).toBeVisible();
+  });
+
+  it('calls the verify only handler when clicked', () => {
+    render(
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{ dutNames: ['test-dut'] }}
+        />
+      </FakeAuthStateProvider>,
+    );
+
+    const verifyOnlyCheckbox = screen.getByRole('checkbox', {
+      name: 'Verify Only',
+    });
+
+    fireEvent.click(verifyOnlyCheckbox);
+
+    expect(handleVerifyOnlyChangeMock).toHaveBeenCalledWith(true);
   });
 
   it('renders loading spinner', async () => {

@@ -44,6 +44,8 @@ export interface AutorepairDialogProps {
   handleDeepRepairChange: (checked: boolean) => void;
   latestRepair: boolean;
   handleLatestRepairChange: (checked: boolean) => void;
+  verifyOnly: boolean;
+  handleVerifyOnlyChange: (checked: boolean) => void;
   loading: boolean;
 }
 
@@ -74,9 +76,13 @@ export default function AutorepairDialog({
   handleDeepRepairChange,
   latestRepair,
   handleLatestRepairChange,
+  verifyOnly,
+  handleVerifyOnlyChange,
   loading,
 }: AutorepairDialogProps) {
-  const shivasCommand = `shivas repair${deepRepair ? ' -deep' : ''}${latestRepair ? ' -latest' : ''} ${dutNames.join(' ')}`;
+  const shivasCommand = `shivas repair${deepRepair ? ' -deep' : ''}${
+    latestRepair ? ' -latest' : ''
+  }${verifyOnly ? ' -verify' : ''} ${dutNames.join(' ')}`;
 
   const loadingScreen = (
     <>
@@ -134,6 +140,26 @@ export default function AutorepairDialog({
               style={{ marginBottom: '8px', marginLeft: '24px' }}
               label="Use latest repair version"
             />
+            <br />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={verifyOnly}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleVerifyOnlyChange(e.target.checked)
+                  }
+                />
+              }
+              style={{ marginBottom: '8px', marginLeft: '24px' }}
+              label="Verify Only"
+            />
+            {deepRepair && verifyOnly && (
+              <p style={{ color: 'red', marginLeft: '24px' }}>
+                Unusual case: both deep and verify are checked. Verify build
+                will be used but task will trigger a full deep recovery
+                workflow.
+              </p>
+            )}
 
             <p>Equivalent shivas command:</p>
             <CodeSnippet

@@ -19,6 +19,11 @@ import {
   TASK_PRIORITY,
 } from './shared';
 
+jest.mock('@/fleet/utils/builds', () => ({
+  ...jest.requireActual('@/fleet/utils/builds'),
+  USING_BUILD_BUCKET_DEV: false,
+}));
+
 describe('autorepairRequestsFromDuts', () => {
   it('handles empty', async () => {
     const request = autorepairRequestsFromDuts([], 'fake-session-id', false);
@@ -47,7 +52,11 @@ describe('autorepairRequestsFromDuts', () => {
     expect(request[0].scheduleBuild?.priority).toEqual(TASK_PRIORITY);
 
     expect(request[0].scheduleBuild?.dimensions).toEqual([
-      { key: 'dut_state', value: 'needs_manual_repair' },
+      expect.objectContaining({ key: 'dut_id', value: 'asset-tag' }),
+      expect.objectContaining({
+        key: 'dut_state',
+        value: 'needs_manual_repair',
+      }),
     ]);
     expect(request[0].scheduleBuild?.tags).toEqual([
       {
@@ -102,7 +111,11 @@ describe('autorepairRequestsFromDuts', () => {
     expect(request[0].scheduleBuild?.priority).toEqual(TASK_PRIORITY);
 
     expect(request[0].scheduleBuild?.dimensions).toEqual([
-      { key: 'dut_state', value: 'needs_manual_repair' },
+      expect.objectContaining({ key: 'dut_id', value: 'asset-tag' }),
+      expect.objectContaining({
+        key: 'dut_state',
+        value: 'needs_manual_repair',
+      }),
     ]);
     expect(request[0].scheduleBuild?.tags).toEqual([
       {
