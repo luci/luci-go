@@ -142,8 +142,9 @@ export function DemoPage() {
     return getAbsoluteStartEndTime(paramsForTime, DateTime.now());
   }, [timeOption, startTimeParam, endTimeParam]);
 
-  const [searchRequest, setSearchRequest] =
-    useState<SearchMeasurementsRequest | null>(null);
+  const [searchRequest, setSearchRequest] = useState<SearchMeasurementsRequest>(
+    {} as SearchMeasurementsRequest,
+  );
 
   const [isInitialValid, setIsInitialValid] = useState(false);
   const [aboutMarkdown, setAboutMarkdown] = useState(
@@ -153,31 +154,27 @@ export function DemoPage() {
   useEffect(() => {
     const hasInitialRequest = Object.keys(searchRequestFromUrl).length > 0;
 
+    const baseRequest = (searchRequestFromUrl ||
+      {}) as SearchMeasurementsRequest;
+    const newRequest = {
+      ...baseRequest,
+      buildCreateStartTime: startTime
+        ? { seconds: startTime.toUnixInteger(), nanos: 0 }
+        : undefined,
+      buildCreateEndTime: endTime
+        ? { seconds: endTime.toUnixInteger(), nanos: 0 }
+        : undefined,
+    };
+
+    setSearchRequest((prev) => {
+      if (JSON.stringify(prev) === JSON.stringify(newRequest)) return prev;
+      return newRequest;
+    });
+
     if (hasInitialRequest) {
       const errors = validateSearchRequest(searchRequestFromUrl);
-      if (Object.keys(errors).length === 0) {
-        const newRequest = {
-          ...(searchRequestFromUrl as SearchMeasurementsRequest),
-          buildCreateStartTime: startTime
-            ? { seconds: startTime.toUnixInteger(), nanos: 0 }
-            : undefined,
-          buildCreateEndTime: endTime
-            ? { seconds: endTime.toUnixInteger(), nanos: 0 }
-            : undefined,
-        };
-
-        setSearchRequest((prev) => {
-          if (JSON.stringify(prev) === JSON.stringify(newRequest)) return prev;
-          return newRequest;
-        });
-
-        setIsInitialValid(true);
-      } else {
-        setSearchRequest(null);
-        setIsInitialValid(false);
-      }
+      setIsInitialValid(Object.keys(errors).length === 0);
     } else {
-      setSearchRequest(null);
       setIsInitialValid(false);
     }
   }, [searchRequestFromUrl, startTime, endTime]);
@@ -187,7 +184,7 @@ export function DemoPage() {
     isLoading: isSearchLoading,
     isError: isSearchError,
     error: searchError,
-  } = useSearchMeasurements(searchRequest!, {
+  } = useSearchMeasurements(searchRequest, {
     enabled: !!searchRequest && isInitialValid,
   });
 
@@ -260,7 +257,7 @@ export function DemoPage() {
         />
       )}
 
-      {!searchRequest && !isSearchLoading && (
+      {!isInitialValid && !isSearchLoading && (
         <Typography variant="body1" sx={{ mt: 2 }}>
           Enter search parameters to view performance data.
         </Typography>

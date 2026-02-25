@@ -164,6 +164,96 @@ describe('<DemoPage />', () => {
     });
   });
 
+  it('does not crash and passes default time range to hook on initial load', async () => {
+    mockUseSearchMeasurements.mockReturnValue(defaultMockReturn);
+
+    renderDemoPage();
+
+    expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
+      expect.objectContaining({
+        buildCreateStartTime: expect.any(Object),
+        buildCreateEndTime: expect.any(Object),
+      }),
+      expect.objectContaining({ enabled: false }),
+    );
+
+    expect(
+      screen.getByText('Enter search parameters to view performance data.'),
+    ).toBeInTheDocument();
+  });
+
+  it('correctly initializes search request from URL with all parameters filled out', async () => {
+    mockUseSearchMeasurements.mockReturnValue(defaultMockReturn);
+
+    const now = DateTime.now();
+    const startTimeUnix = now.minus({ days: 5 }).toUTC().toUnixInteger();
+    const endTimeUnix = now.minus({ days: 1 }).toUTC().toUnixInteger();
+
+    const query =
+      'testNameFilter:MyTest buildBranch:main buildTarget:x86 metricKeys:cpu,memory atpTestNameFilter:AtpTest';
+    const encodedQuery = encodeURIComponent(query);
+
+    const initialUrl =
+      `/ui/labs/crystal-ball/demo?time_option=customize` +
+      `&start_time=${startTimeUnix}&end_time=${endTimeUnix}&q=${encodedQuery}`;
+
+    renderDemoPage(initialUrl);
+
+    await waitFor(() => {
+      expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          testNameFilter: 'MyTest',
+          buildBranch: 'main',
+          buildTarget: 'x86',
+          metricKeys: ['cpu', 'memory'],
+          atpTestNameFilter: 'AtpTest',
+          buildCreateStartTime: { seconds: startTimeUnix, nanos: 0 },
+          buildCreateEndTime: { seconds: endTimeUnix, nanos: 0 },
+        }),
+        expect.anything(),
+      );
+    });
+
+    expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ enabled: true }),
+    );
+  });
+
+  it('correctly applies default time range when missing from URL but other query parameters are present', async () => {
+    mockUseSearchMeasurements.mockReturnValue(defaultMockReturn);
+
+    const query = 'metricKeys:cpu';
+    const encodedQuery = encodeURIComponent(query);
+    const initialUrl = `/ui/labs/crystal-ball/demo?q=${encodedQuery}`;
+
+    renderDemoPage(initialUrl);
+
+    const now = DateTime.now();
+    const expectedStartTimeUnix = now
+      .minus({ days: 3 })
+      .toUTC()
+      .toUnixInteger();
+    const expectedEndTimeUnix = now.toUTC().toUnixInteger();
+
+    await waitFor(() => {
+      expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metricKeys: ['cpu'],
+          buildCreateStartTime: expect.objectContaining({
+            seconds: expect.closeTo(expectedStartTimeUnix, 2),
+            nanos: 0,
+          }),
+          buildCreateEndTime: expect.objectContaining({
+            seconds: expect.closeTo(expectedEndTimeUnix, 2),
+            nanos: 0,
+          }),
+        }),
+        expect.anything(),
+      );
+    });
+  });
+
   it('updates the API request when submitting the form while preserving top bar dates', async () => {
     mockUseSearchMeasurements.mockReturnValue(defaultMockReturn);
 
