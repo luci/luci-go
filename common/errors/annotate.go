@@ -45,18 +45,6 @@ type ErrorWrapper interface {
 	Apply(err error) (wrapped error)
 }
 
-// Tag wraps the final error with `wrappers`.
-//
-// This can be used with the go.chromium.org/luci/common/errors/errtag package
-// to allow tagging errors built with Annotator.
-func (a *Annotator) Tag(wrappers ...ErrorWrapper) *Annotator {
-	if a == nil {
-		return a
-	}
-	a.wrappers = append(a.wrappers, wrappers...)
-	return a
-}
-
 // Err returns the finalized annotated error.
 func (a *Annotator) Err() error {
 	if a == nil {
