@@ -47,7 +47,7 @@ type Query struct {
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
 	// The filter on the effective status of test verdicts returned. Optional.
-	EffectiveStatusFilter []pb.TestVerdictPredicate_VerdictEffectiveStatus
+	EffectiveStatusFilter []pb.VerdictEffectiveStatus
 	// The view to return.
 	View pb.TestVerdictView
 }
@@ -127,7 +127,7 @@ func (q *Query) Fetch(ctx context.Context, pageToken PageToken, opts FetchOption
 	// - the query does not have a selective status filter (if it allows
 	//   passed verdicts, we consider it to be not very selective).
 	if strings.TrimSpace(q.ContainsTestResultFilter) == "" &&
-		matchesStatus(q.EffectiveStatusFilter, pb.TestVerdictPredicate_PASSED) &&
+		matchesStatus(q.EffectiveStatusFilter, pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED) &&
 		isOrderSuitableForIteratorQuery {
 		// Use the iterator query. It is fast and cheap.
 		logging.Debugf(ctx, "Using iterator query.")
@@ -338,7 +338,7 @@ func fetchSummariesThenDetails(ctx context.Context, q *QuerySummaries, pageToken
 // filterHasBothPriorityAndNonPriorityVerdicts returns true if the given filter contains both:
 // - priority (FAILED, FLAKY, EXECUTION_ERRORED, PRECLUDED, EXONERATED) and
 // - non-priority (PASSED, SKIPPED) verdicts.
-func filterHasBothPriorityAndNonPriorityVerdicts(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) bool {
+func filterHasBothPriorityAndNonPriorityVerdicts(filter []pb.VerdictEffectiveStatus) bool {
 	if len(filter) == 0 {
 		// The empty filter is a special case, as it matches all verdicts.
 		return true
@@ -347,14 +347,14 @@ func filterHasBothPriorityAndNonPriorityVerdicts(filter []pb.TestVerdictPredicat
 	hasNonPriorityVerdicts := false
 	for _, s := range filter {
 		switch s {
-		case pb.TestVerdictPredicate_FAILED,
-			pb.TestVerdictPredicate_FLAKY,
-			pb.TestVerdictPredicate_EXECUTION_ERRORED,
-			pb.TestVerdictPredicate_PRECLUDED,
-			pb.TestVerdictPredicate_EXONERATED:
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+			pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY,
+			pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED,
+			pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED,
+			pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED:
 			hasPriorityVerdicts = true
-		case pb.TestVerdictPredicate_PASSED,
-			pb.TestVerdictPredicate_SKIPPED:
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED,
+			pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_SKIPPED:
 			hasNonPriorityVerdicts = true
 		}
 	}
@@ -362,7 +362,7 @@ func filterHasBothPriorityAndNonPriorityVerdicts(filter []pb.TestVerdictPredicat
 }
 
 // matchesStatus returns true if the given filter matches the given status.
-func matchesStatus(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus, status pb.TestVerdictPredicate_VerdictEffectiveStatus) bool {
+func matchesStatus(filter []pb.VerdictEffectiveStatus, status pb.VerdictEffectiveStatus) bool {
 	if len(filter) == 0 {
 		// The empty filter matches all statuses.
 		return true
@@ -376,13 +376,13 @@ func matchesStatus(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus, stat
 }
 
 // intersectStatuses returns the intersection of the given filter and the priority verdict statuses.
-func intersectStatuses(filter, statusList []pb.TestVerdictPredicate_VerdictEffectiveStatus) []pb.TestVerdictPredicate_VerdictEffectiveStatus {
+func intersectStatuses(filter, statusList []pb.VerdictEffectiveStatus) []pb.VerdictEffectiveStatus {
 	if len(filter) == 0 {
 		// The empty filter matches all statuses. Return the RHS set.
 		return statusList
 	}
 	// Compute the intersection of the LHS and RHS sets.
-	var result []pb.TestVerdictPredicate_VerdictEffectiveStatus
+	var result []pb.VerdictEffectiveStatus
 	for _, s := range filter {
 		for _, status := range statusList {
 			if s == status {
@@ -395,25 +395,25 @@ func intersectStatuses(filter, statusList []pb.TestVerdictPredicate_VerdictEffec
 }
 
 // filterAsPredicate returns a predicate function that returns true if the given verdict matches the filter.
-func filterAsPredicate(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) func(*TestVerdict) bool {
+func filterAsPredicate(filter []pb.VerdictEffectiveStatus) func(*TestVerdict) bool {
 	return func(tv *TestVerdict) bool {
-		var effectiveStatus pb.TestVerdictPredicate_VerdictEffectiveStatus
+		var effectiveStatus pb.VerdictEffectiveStatus
 		if tv.StatusOverride == pb.TestVerdict_EXONERATED {
-			effectiveStatus = pb.TestVerdictPredicate_EXONERATED
+			effectiveStatus = pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED
 		} else {
 			switch tv.Status {
 			case pb.TestVerdict_FAILED:
-				effectiveStatus = pb.TestVerdictPredicate_FAILED
+				effectiveStatus = pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED
 			case pb.TestVerdict_FLAKY:
-				effectiveStatus = pb.TestVerdictPredicate_FLAKY
+				effectiveStatus = pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY
 			case pb.TestVerdict_EXECUTION_ERRORED:
-				effectiveStatus = pb.TestVerdictPredicate_EXECUTION_ERRORED
+				effectiveStatus = pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED
 			case pb.TestVerdict_PRECLUDED:
-				effectiveStatus = pb.TestVerdictPredicate_PRECLUDED
+				effectiveStatus = pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED
 			case pb.TestVerdict_SKIPPED:
-				effectiveStatus = pb.TestVerdictPredicate_SKIPPED
+				effectiveStatus = pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_SKIPPED
 			case pb.TestVerdict_PASSED:
-				effectiveStatus = pb.TestVerdictPredicate_PASSED
+				effectiveStatus = pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED
 			default:
 				panic(fmt.Errorf("unknown status %v", tv.Status))
 			}

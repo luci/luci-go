@@ -24,28 +24,28 @@ import (
 )
 
 // PriorityStatuses are statuses that are given priority in UI priority order.
-var PriorityStatuses = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-	pb.TestVerdictPredicate_FAILED,
-	pb.TestVerdictPredicate_FLAKY,
-	pb.TestVerdictPredicate_EXECUTION_ERRORED,
-	pb.TestVerdictPredicate_PRECLUDED,
-	pb.TestVerdictPredicate_EXONERATED,
+var PriorityStatuses = []pb.VerdictEffectiveStatus{
+	pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+	pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY,
+	pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED,
+	pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED,
+	pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED,
 }
 
 // NonPriorityStatuses are statuses that are not given priority in the UI priority order.
-var NonPriorityStatuses = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-	pb.TestVerdictPredicate_PASSED,
-	pb.TestVerdictPredicate_SKIPPED,
+var NonPriorityStatuses = []pb.VerdictEffectiveStatus{
+	pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED,
+	pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_SKIPPED,
 }
 
 // ValidateFilter validates a verdict effective status filter.
-func ValidateFilter(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) error {
-	seen := make(map[pb.TestVerdictPredicate_VerdictEffectiveStatus]bool)
+func ValidateFilter(filter []pb.VerdictEffectiveStatus) error {
+	seen := make(map[pb.VerdictEffectiveStatus]bool)
 	for _, s := range filter {
-		if s == pb.TestVerdictPredicate_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED {
+		if s == pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED {
 			return errors.New("must not contain VERDICT_EFFECTIVE_STATUS_UNSPECIFIED")
 		}
-		if _, ok := pb.TestVerdictPredicate_VerdictEffectiveStatus_name[int32(s)]; !ok {
+		if _, ok := pb.VerdictEffectiveStatus_name[int32(s)]; !ok {
 			return errors.Fmt("contains unknown verdict effective status %v", s)
 		}
 		if seen[s] {
@@ -58,7 +58,7 @@ func ValidateFilter(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) err
 
 // whereClause generates a WHERE clause for the given filter.
 // This method assumes the presence of the columns Status and StatusOverride.
-func whereClause(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus, params map[string]any) (string, error) {
+func whereClause(filter []pb.VerdictEffectiveStatus, params map[string]any) (string, error) {
 	if len(filter) == 0 {
 		// Empty filter means no filter.
 		return "TRUE", nil
@@ -69,19 +69,19 @@ func whereClause(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus, params
 
 	for _, s := range filter {
 		switch s {
-		case pb.TestVerdictPredicate_EXONERATED:
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED:
 			includeExonerated = true
-		case pb.TestVerdictPredicate_FAILED:
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED:
 			statuses = append(statuses, int64(pb.TestVerdict_FAILED))
-		case pb.TestVerdictPredicate_EXECUTION_ERRORED:
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED:
 			statuses = append(statuses, int64(pb.TestVerdict_EXECUTION_ERRORED))
-		case pb.TestVerdictPredicate_PRECLUDED:
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED:
 			statuses = append(statuses, int64(pb.TestVerdict_PRECLUDED))
-		case pb.TestVerdictPredicate_FLAKY:
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY:
 			statuses = append(statuses, int64(pb.TestVerdict_FLAKY))
-		case pb.TestVerdictPredicate_SKIPPED:
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_SKIPPED:
 			statuses = append(statuses, int64(pb.TestVerdict_SKIPPED))
-		case pb.TestVerdictPredicate_PASSED:
+		case pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED:
 			statuses = append(statuses, int64(pb.TestVerdict_PASSED))
 		default:
 			return "", errors.Fmt("unsupported effective verdict status %s", s)
@@ -106,14 +106,14 @@ func whereClause(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus, params
 
 // hasOnlyPriorityVerdicts returns true if the given filter contains only non-priority verdicts
 // (failed, flaky, execution errored, precluded or exonerated).
-func hasOnlyPriorityVerdicts(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) bool {
+func hasOnlyPriorityVerdicts(filter []pb.VerdictEffectiveStatus) bool {
 	if len(filter) == 0 {
 		// Empty filter means no filter.
 		return false
 	}
 
 	for _, s := range filter {
-		if s == pb.TestVerdictPredicate_PASSED || s == pb.TestVerdictPredicate_SKIPPED {
+		if s == pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED || s == pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_SKIPPED {
 			return false
 		}
 		// Otherwise, the underlying status will be one of:
@@ -128,13 +128,13 @@ func hasOnlyPriorityVerdicts(filter []pb.TestVerdictPredicate_VerdictEffectiveSt
 
 // hasOnlyNonPriorityVerdicts returns true if the given filter contains only non-priority verdicts
 // (passed or skipped).
-func hasOnlyNonPriorityVerdicts(filter []pb.TestVerdictPredicate_VerdictEffectiveStatus) bool {
+func hasOnlyNonPriorityVerdicts(filter []pb.VerdictEffectiveStatus) bool {
 	if len(filter) == 0 {
 		// Empty filter means no filter.
 		return false
 	}
 	for _, s := range filter {
-		if s != pb.TestVerdictPredicate_PASSED && s != pb.TestVerdictPredicate_SKIPPED {
+		if s != pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED && s != pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_SKIPPED {
 			return false
 		}
 	}

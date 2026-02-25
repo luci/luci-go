@@ -176,9 +176,9 @@ func TestQuery(t *testing.T) {
 					})
 					t.Run("With filter", func(t *ftt.Test) {
 						t.Run("Priority verdicts only", func(t *ftt.Test) {
-							q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-								pb.TestVerdictPredicate_FAILED,
-								pb.TestVerdictPredicate_PRECLUDED,
+							q.EffectiveStatusFilter = []pb.VerdictEffectiveStatus{
+								pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+								pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED,
 							}
 							// t2 is FAILED and t6 is PRECLUDED.
 							expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
@@ -188,8 +188,8 @@ func TestQuery(t *testing.T) {
 							assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 						})
 						t.Run("Non-priority verdicts only", func(t *ftt.Test) {
-							q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-								pb.TestVerdictPredicate_PASSED,
+							q.EffectiveStatusFilter = []pb.VerdictEffectiveStatus{
+								pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED,
 							}
 							expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
 								return v.TestIdStructured.CaseName == "t1" // Passed
@@ -197,9 +197,9 @@ func TestQuery(t *testing.T) {
 							assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 						})
 						t.Run("Mixed verdicts", func(t *ftt.Test) {
-							q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-								pb.TestVerdictPredicate_FAILED,
-								pb.TestVerdictPredicate_PASSED,
+							q.EffectiveStatusFilter = []pb.VerdictEffectiveStatus{
+								pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+								pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED,
 							}
 							expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {
 								return v.TestIdStructured.CaseName == "t1" || // Passed
@@ -210,9 +210,9 @@ func TestQuery(t *testing.T) {
 					})
 				})
 				t.Run("Filter", func(t *ftt.Test) {
-					q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-						pb.TestVerdictPredicate_FAILED,
-						pb.TestVerdictPredicate_PRECLUDED,
+					q.EffectiveStatusFilter = []pb.VerdictEffectiveStatus{
+						pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+						pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED,
 					}
 					// t2 is FAILED and t6 is PRECLUDED.
 					expected = FilterVerdicts(expected, func(v *pb.TestVerdict) bool {

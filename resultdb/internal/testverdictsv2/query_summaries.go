@@ -54,7 +54,7 @@ type QuerySummaries struct {
 	// The access the caller has to the root invocation.
 	Access permissions.RootInvocationAccess
 	// The filter on the effective status of test verdicts returned. Optional.
-	EffectiveStatusFilter []pb.TestVerdictPredicate_VerdictEffectiveStatus
+	EffectiveStatusFilter []pb.VerdictEffectiveStatus
 }
 
 // Fetch fetches a page of test verdicts with a view of TEST_VERDICT_VIEW_BASIC.

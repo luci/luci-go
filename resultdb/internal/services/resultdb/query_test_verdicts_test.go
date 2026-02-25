@@ -124,8 +124,8 @@ func TestQueryTestVerdicts(t *testing.T) {
 				t.Run(`Filter`, func(t *ftt.Test) {
 					req.Predicate = &pb.TestVerdictPredicate{}
 					t.Run(`Invalid`, func(t *ftt.Test) {
-						req.Predicate.EffectiveVerdictStatus = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-							pb.TestVerdictPredicate_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED,
+						req.Predicate.EffectiveVerdictStatus = []pb.VerdictEffectiveStatus{
+							pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED,
 						}
 						_, err := srv.QueryTestVerdicts(ctx, req)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
@@ -275,9 +275,9 @@ func TestQueryTestVerdicts(t *testing.T) {
 
 			t.Run(`With filter`, func(t *ftt.Test) {
 				req.Predicate = &pb.TestVerdictPredicate{
-					EffectiveVerdictStatus: []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-						pb.TestVerdictPredicate_FAILED,
-						pb.TestVerdictPredicate_PRECLUDED,
+					EffectiveVerdictStatus: []pb.VerdictEffectiveStatus{
+						pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+						pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED,
 					},
 				}
 				res, err := srv.QueryTestVerdicts(ctx, req)

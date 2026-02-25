@@ -28,30 +28,30 @@ func TestValidateFilter(t *testing.T) {
 	ftt.Run("ValidateFilter", t, func(t *ftt.Test) {
 		t.Run("Invalid", func(t *ftt.Test) {
 			t.Run("Unspecified", func(t *ftt.Test) {
-				err := ValidateFilter([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
-					pb.TestVerdictPredicate_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED,
+				err := ValidateFilter([]pb.VerdictEffectiveStatus{
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_UNSPECIFIED,
 				})
 				assert.Loosely(t, err, should.ErrLike("must not contain VERDICT_EFFECTIVE_STATUS_UNSPECIFIED"))
 			})
 			t.Run("Duplicate", func(t *ftt.Test) {
-				err := ValidateFilter([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
-					pb.TestVerdictPredicate_FAILED,
-					pb.TestVerdictPredicate_FAILED,
+				err := ValidateFilter([]pb.VerdictEffectiveStatus{
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
 				})
-				assert.Loosely(t, err, should.ErrLike("must not contain duplicates (FAILED appears twice)"))
+				assert.Loosely(t, err, should.ErrLike("must not contain duplicates (VERDICT_EFFECTIVE_STATUS_FAILED appears twice)"))
 			})
 			t.Run("Out of range", func(t *ftt.Test) {
-				err := ValidateFilter([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
-					pb.TestVerdictPredicate_FAILED,
-					pb.TestVerdictPredicate_VerdictEffectiveStatus(51),
+				err := ValidateFilter([]pb.VerdictEffectiveStatus{
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+					pb.VerdictEffectiveStatus(51),
 				})
 				assert.Loosely(t, err, should.ErrLike("contains unknown verdict effective status 51"))
 			})
 		})
 		t.Run("Valid", func(t *ftt.Test) {
-			err := ValidateFilter([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
-				pb.TestVerdictPredicate_FAILED,
-				pb.TestVerdictPredicate_EXONERATED,
+			err := ValidateFilter([]pb.VerdictEffectiveStatus{
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED,
 			})
 			assert.Loosely(t, err, should.BeNil)
 		})
@@ -69,16 +69,16 @@ func TestWhereClause(t *testing.T) {
 		})
 
 		t.Run("Exonerated", func(t *ftt.Test) {
-			got, err := whereClause([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
-				pb.TestVerdictPredicate_EXONERATED,
+			got, err := whereClause([]pb.VerdictEffectiveStatus{
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED,
 			}, params)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, got, should.Equal("(StatusOverride = 2)"))
 		})
 
 		t.Run("Failed", func(t *ftt.Test) {
-			got, err := whereClause([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
-				pb.TestVerdictPredicate_FAILED,
+			got, err := whereClause([]pb.VerdictEffectiveStatus{
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
 			}, params)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, got, should.Equal("(StatusOverride = 1 AND Status IN UNNEST(@effectiveStatusFilterStatuses))"))
@@ -86,10 +86,10 @@ func TestWhereClause(t *testing.T) {
 		})
 
 		t.Run("Mixed", func(t *ftt.Test) {
-			got, err := whereClause([]pb.TestVerdictPredicate_VerdictEffectiveStatus{
-				pb.TestVerdictPredicate_EXONERATED,
-				pb.TestVerdictPredicate_FAILED,
-				pb.TestVerdictPredicate_FLAKY,
+			got, err := whereClause([]pb.VerdictEffectiveStatus{
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED,
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY,
 			}, params)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, got, should.Equal("((StatusOverride = 2) OR (StatusOverride = 1 AND Status IN UNNEST(@effectiveStatusFilterStatuses)))"))

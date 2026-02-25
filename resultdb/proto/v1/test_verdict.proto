@@ -123,3 +123,27 @@ message TestVerdict {
   // Output only.
   bool is_masked = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
+
+// Represents a filter on the effective status of a test verdict,
+// the result of combining the TestVerdict.Status and TestVerdict.StatusOverride.
+enum VerdictEffectiveStatus {
+  // Do not use.
+  VERDICT_EFFECTIVE_STATUS_UNSPECIFIED = 0;
+  // The test failed, and was not exonerated.
+  VERDICT_EFFECTIVE_STATUS_FAILED = 10;
+  // The test execution errored, and was not exonerated.
+  VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED = 20;
+  // The test execution was precluded, and was not exonerated.
+  VERDICT_EFFECTIVE_STATUS_PRECLUDED = 30;
+  // The test was flaky, and was not exonerated.
+  VERDICT_EFFECTIVE_STATUS_FLAKY = 40;
+  // The test was skipped.
+  VERDICT_EFFECTIVE_STATUS_SKIPPED = 50;
+  // The test passed.
+  VERDICT_EFFECTIVE_STATUS_PASSED = 60;
+  // The test was originally failed, execution errored, precluded or flaky,
+  // but the subject of the test (e.g. the CL under test) was absolved from blame.
+  // For example, because the failure also existed in the tree without the
+  // changelist applied.
+  VERDICT_EFFECTIVE_STATUS_EXONERATED = 70;
+}

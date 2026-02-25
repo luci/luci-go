@@ -136,7 +136,7 @@ func queryRootInvocationTestVariants(ctx context.Context, in *pb.QueryTestVarian
 		return nil, err
 	}
 
-	var effectiveStatusFilter []pb.TestVerdictPredicate_VerdictEffectiveStatus
+	var effectiveStatusFilter []pb.VerdictEffectiveStatus
 	if in.Predicate != nil {
 		// Attempt a best-effort conversion of the status v1-based filters,
 		// which are not supported by the new backend. The main client still using
@@ -146,19 +146,19 @@ func queryRootInvocationTestVariants(ctx context.Context, in *pb.QueryTestVarian
 			// FAILED is approximately equivalent to the old UNEXPECTED,
 			// except that SKIPPED + FAILED results yield a verdict status_v2 of
 			// FAILED whereas in verdict status v1 it produced FLAKY.
-			effectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-				pb.TestVerdictPredicate_FAILED,
+			effectiveStatusFilter = []pb.VerdictEffectiveStatus{
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
 			}
 		case pb.TestVariantStatus_UNEXPECTED_MASK:
 			// This is approximately equivalent to the old UNEXPECTED_MASK,
 			// except that EXECUTION_ERRORED + PASSED would produce a v1
 			// verdict of FLAKY whereas it produces a v2 verdict status of PASSED.
-			effectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-				pb.TestVerdictPredicate_FAILED,
-				pb.TestVerdictPredicate_EXECUTION_ERRORED,
-				pb.TestVerdictPredicate_PRECLUDED,
-				pb.TestVerdictPredicate_FLAKY,
-				pb.TestVerdictPredicate_EXONERATED,
+			effectiveStatusFilter = []pb.VerdictEffectiveStatus{
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED,
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED,
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY,
+				pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED,
 			}
 		default:
 			// This should not be hit, as validateQueryTestVariantsRequest validates

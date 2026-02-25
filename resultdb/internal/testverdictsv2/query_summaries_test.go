@@ -340,10 +340,10 @@ func TestQuerySummaries(t *testing.T) {
 		})
 		t.Run("With verdict filter", func(t *ftt.Test) {
 			t.Run("Mixed successful and unsuccessful", func(t *ftt.Test) {
-				q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-					pb.TestVerdictPredicate_PRECLUDED,
-					pb.TestVerdictPredicate_EXONERATED,
-					pb.TestVerdictPredicate_PASSED,
+				q.EffectiveStatusFilter = []pb.VerdictEffectiveStatus{
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PASSED,
 				}
 				assert.Loosely(t, hasOnlyPriorityVerdicts(q.EffectiveStatusFilter), should.BeFalse)
 
@@ -355,12 +355,12 @@ func TestQuerySummaries(t *testing.T) {
 				assert.Loosely(t, fetchAll(q, opts), should.Match(expected))
 			})
 			t.Run("Unsuccessful only", func(t *ftt.Test) {
-				q.EffectiveStatusFilter = []pb.TestVerdictPredicate_VerdictEffectiveStatus{
-					pb.TestVerdictPredicate_PRECLUDED,
-					pb.TestVerdictPredicate_EXONERATED,
-					pb.TestVerdictPredicate_EXECUTION_ERRORED,
-					pb.TestVerdictPredicate_FAILED,
-					pb.TestVerdictPredicate_FLAKY,
+				q.EffectiveStatusFilter = []pb.VerdictEffectiveStatus{
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_PRECLUDED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXONERATED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FAILED,
+					pb.VerdictEffectiveStatus_VERDICT_EFFECTIVE_STATUS_FLAKY,
 				}
 				assert.Loosely(t, hasOnlyPriorityVerdicts(q.EffectiveStatusFilter), should.BeTrue)
 
