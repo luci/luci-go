@@ -52,9 +52,12 @@ export const BROWSER_DEFAULT_COLUMNS = [
   'ufs_labels.serial_number',
   'ufs_labels.associated_hostname',
   'ufs_labels.model',
-  'swarming_labels.state',
   'swarming_labels.device_os',
   'swarming_labels.device_type',
+  'swarming_labels.dut_state',
+  'swarming_labels.os',
+  'swarming_labels.pool',
+  'swarming_labels.state',
 ];
 
 // Define a list of device filters commonly used by FLOPS to show in the
