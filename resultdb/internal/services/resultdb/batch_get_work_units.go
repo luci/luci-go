@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
@@ -32,20 +31,6 @@ import (
 )
 
 func (s *resultDBServer) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (res *pb.BatchGetWorkUnitsResponse, err error) {
-	if ctx.Err() != nil {
-		logging.Warningf(ctx, "context cancelled at start of BatchGetWorkUnits request: %w", ctx.Err())
-	}
-	defer func() {
-		if ctx.Err() != nil {
-			logging.Warningf(ctx, "context cancelled at end of BatchGetWorkUnits request: %w", ctx.Err())
-		}
-		if err != nil {
-			if len(in.Names) > 0 {
-				logging.Infof(ctx, "example requested work unit: %s", in.Names[0])
-			}
-		}
-	}()
-
 	// Use one transaction for the entire RPC so that we work with a
 	// consistent snapshot of the system state. This is important to
 	// prevent subtle bugs and TOC-TOU vulnerabilities.
