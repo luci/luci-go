@@ -29,6 +29,7 @@ import { SshTip } from '@/fleet/components/actions/ssh/ssh_tip';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
+import { useShortcut } from '@/fleet/components/shortcut_provider';
 import {
   generateChromeOsDeviceDetailsURL,
   generateDeviceListURL,
@@ -42,6 +43,7 @@ import {
   extractDutLabel,
 } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { isTyping } from '@/fleet/utils/field_typing';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -132,20 +134,12 @@ export const ChromeOSDeviceDetailsPage = () => {
     setDeviceIdInputValue(id);
   }, [id]);
 
-  useEffect(() => {
-    const f = (e: KeyboardEvent) => {
-      if (e.key === '/') {
-        if (!deviceIdInputRef.current?.contains(document.activeElement))
-          e.preventDefault();
-        deviceIdInputRef.current?.focus();
-      }
-    };
-
-    window.addEventListener('keydown', f);
-    return () => {
-      window.removeEventListener('keydown', f);
-    };
-  }, []);
+  useShortcut('Focus device ID', '/', (e) => {
+    if (!isTyping(document.activeElement)) {
+      e.preventDefault();
+      deviceIdInputRef.current?.focus();
+    }
+  });
 
   const navigateToDeviceIfChanged = (deviceId: string) => {
     const parts = location.pathname.toString().split('/');

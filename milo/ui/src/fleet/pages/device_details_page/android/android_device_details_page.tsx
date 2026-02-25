@@ -43,6 +43,7 @@ import CentralizedProgress from '@/clusters/components/centralized_progress/cent
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
+import { useShortcut } from '@/fleet/components/shortcut_provider';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import {
   generateDeviceListURL,
@@ -50,6 +51,7 @@ import {
   generateAndroidDeviceDetailsURL,
 } from '@/fleet/constants/paths';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { isTyping } from '@/fleet/utils/field_typing';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { ANDROID_COLUMN_OVERRIDES } from '../../device_list_page/android/android_columns';
@@ -151,21 +153,12 @@ export const AndroidDeviceDetailsPage = () => {
     }
   };
 
-  useEffect(() => {
-    const f = (e: KeyboardEvent) => {
-      if (e.key === '/') {
-        if (!deviceIdInputRef.current?.contains(document.activeElement)) {
-          e.preventDefault();
-          deviceIdInputRef.current?.focus();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', f);
-    return () => {
-      window.removeEventListener('keydown', f);
-    };
-  }, []);
+  useShortcut('Focus device ID', '/', (e) => {
+    if (!isTyping(document.activeElement)) {
+      e.preventDefault();
+      deviceIdInputRef.current?.focus();
+    }
+  });
 
   const columns = useMemo<
     MRT_ColumnDef<{ key: string; value: React.ReactNode }>[]

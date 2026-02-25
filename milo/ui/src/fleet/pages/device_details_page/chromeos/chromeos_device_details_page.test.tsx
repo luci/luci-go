@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSDeviceDetailsPage } from './chromeos_device_details_page';
@@ -28,7 +29,9 @@ describe('<ChromeOSDeviceDetailsPage />', () => {
     mockUseChromeOSDeviceData.mockReturnValue({ isLoading: true });
     render(
       <FakeContextProvider>
-        <ChromeOSDeviceDetailsPage />
+        <ShortcutProvider>
+          <ChromeOSDeviceDetailsPage />
+        </ShortcutProvider>
       </FakeContextProvider>,
     );
 

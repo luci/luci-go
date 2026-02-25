@@ -16,6 +16,7 @@ import { useRef, useState } from 'react';
 
 import { useShortcut } from '@/fleet/components/shortcut_provider';
 import { COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
+import { isTyping } from '@/fleet/utils/field_typing';
 
 import {
   FilterCategoryData,
@@ -57,8 +58,10 @@ export function FilterBar<T>({
   };
 
   useShortcut('Focus search bar', '/', (e) => {
-    e.preventDefault();
-    searchBarRef.current?.focus();
+    if (!isTyping(document.activeElement)) {
+      e.preventDefault();
+      searchBarRef.current?.focus();
+    }
   });
 
   return (

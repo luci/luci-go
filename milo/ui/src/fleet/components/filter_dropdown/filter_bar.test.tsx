@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { FormControl, InputLabel, Select, MenuItem, Box } from '@mui/material';
+import Checkbox from '@mui/material/Checkbox';
+import TextField from '@mui/material/TextField';
 import {
   fireEvent,
   render,
@@ -101,8 +104,10 @@ const TEST_FILTER_OPTIONS = [
 
 const TestComponent = ({
   options,
+  renderDuplicate = false,
 }: {
   options: typeof TEST_FILTER_OPTIONS;
+  renderDuplicate?: boolean;
 }) => {
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, readonly string[]>
@@ -150,6 +155,7 @@ const TestComponent = ({
       <FilterBar
         filterCategoryDatas={filterCategoryDatas}
         selectedOptions={selectedOptionKeys}
+        data-testid="filter-bar"
         onApply={() => {
           setSelectedOptions(tempSelectedOption);
         }}
@@ -158,6 +164,35 @@ const TestComponent = ({
           setSelectedOptions((prev) => ({ ...prev, [option.value]: [] }));
         }}
       />
+      {renderDuplicate && (
+        <FilterBar
+          filterCategoryDatas={filterCategoryDatas}
+          selectedOptions={selectedOptionKeys}
+          data-testid="filter-bar-2"
+          onApply={() => {
+            setSelectedOptions(tempSelectedOption);
+          }}
+          getChipLabel={getChipLabel}
+          onChipDeleted={(option) => {
+            setSelectedOptions((prev) => ({ ...prev, [option.value]: [] }));
+          }}
+        />
+      )}
+      <TextField data-testid="text-field"></TextField>
+      <Checkbox data-testid="checkbox"></Checkbox>
+      <TextField data-testid="disabled-field" disabled label="Disabled Input" />
+
+      <FormControl fullWidth data-testid="dropdown-container">
+        <InputLabel id="dropdown-label">Age</InputLabel>
+        <Select
+          labelId="dropdown-label"
+          id="demo-simple-select"
+          label="Age"
+          defaultValue=""
+        >
+          <MenuItem value={10}>Ten</MenuItem>
+        </Select>
+      </FormControl>
     </ShortcutProvider>
   );
 };
@@ -165,6 +200,26 @@ const TestComponent = ({
 const getSearchBar = () => {
   const searchInput = screen.getByTestId('search-bar');
   return within(searchInput).getByRole('textbox');
+};
+
+const getCheckbox = () => {
+  const container = screen.getByTestId('checkbox');
+  return within(container).getByRole('checkbox');
+};
+
+const getTextField = () => {
+  const container = screen.getByTestId('text-field');
+  return within(container).getByRole('textbox');
+};
+
+const getDropdown = () => {
+  const container = screen.getByTestId('dropdown-container');
+  return within(container).getByRole('combobox');
+};
+
+const getDisabledInput = () => {
+  const container = screen.getByTestId('disabled-field');
+  return within(container).getByRole('textbox');
 };
 
 // used on our fuzzy search matches, which break up the text into separate spans
@@ -1031,5 +1086,199 @@ describe('FilterBar', () => {
     ).not.toBeInTheDocument();
     expect(document.activeElement).toContainElement(chip);
     expect(document.activeElement).not.toContainElement(searchInput);
+  });
+
+  it('should focus on filter bar after clicking slash keyboard button without adding slash character and register the word', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    expect(searchInput).not.toHaveFocus();
+
+    await user.keyboard('/');
+    expect(searchInput).toHaveFocus();
+    expect(searchInput).toHaveValue('');
+
+    await user.keyboard('TEST');
+
+    expect(searchInput).toHaveValue('TEST');
+  });
+
+  it('should focus on filter bar after clicking', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+
+    await user.click(searchInput);
+    expect(searchInput).toHaveFocus();
+
+    await user.keyboard('/');
+    expect(searchInput).toHaveFocus();
+
+    expect(searchInput).toHaveValue('/');
+  });
+
+  it('should keep focus and write slash when focused in a text field', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    const textField = getTextField();
+
+    await user.click(textField);
+    textField.focus();
+    expect(textField).toHaveFocus();
+
+    await user.keyboard('/');
+
+    expect(searchInput).not.toHaveFocus();
+    expect(textField).toHaveValue('/');
+  });
+
+  it('should focus on filter bar after having focus on checkbox', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    const checkbox = getCheckbox();
+
+    await user.click(checkbox);
+    expect(checkbox).toHaveFocus();
+
+    await user.keyboard('/');
+
+    expect(searchInput).toHaveFocus();
+    expect(searchInput).toHaveValue('');
+  });
+
+  it('should focus on filter bar after having focus on dropdown', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    const dropdown = getDropdown();
+    dropdown.focus();
+
+    expect(dropdown).toHaveFocus();
+
+    await user.keyboard('/');
+
+    expect(searchInput).toHaveFocus();
+    expect(searchInput).toHaveValue('');
+  });
+
+  it('should focus on filter bar after having focus on modal', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+        <Box role="dialog" data-testid="test-modal">
+          <button data-testid="modal-button">Modal Action</button>
+        </Box>
+      </FakeContextProvider>,
+    );
+
+    const user = userEvent.setup();
+    const searchInput = getSearchBar();
+    const modalButton = screen.getByTestId('modal-button');
+
+    expect(searchInput).not.toHaveFocus();
+    expect(modalButton).not.toHaveFocus();
+
+    await user.click(modalButton);
+    expect(modalButton).toHaveFocus();
+
+    await user.keyboard('/');
+
+    expect(searchInput).not.toHaveFocus();
+    expect(modalButton).toHaveFocus();
+  });
+
+  it('should still have focus on rich text after pressing slash', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+        <Box data-testid="rich-text-editor">
+          <div contentEditable role="textbox" />
+        </Box>
+      </FakeContextProvider>,
+    );
+
+    const user = userEvent.setup();
+    const searchInput = getSearchBar();
+    const richTextEditor = within(
+      screen.getByTestId('rich-text-editor'),
+    ).getByRole('textbox');
+
+    expect(searchInput).not.toHaveFocus();
+
+    await user.click(richTextEditor);
+    expect(richTextEditor).toHaveFocus();
+    expect(richTextEditor).toHaveTextContent('');
+
+    await user.keyboard('/');
+
+    expect(richTextEditor).toHaveFocus();
+    expect(richTextEditor).toHaveTextContent('/');
+  });
+
+  it('should focus on filter bar after having focus on disabled input', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBar();
+    const disInput = getDisabledInput();
+
+    await user.click(disInput);
+    await user.keyboard('/');
+
+    expect(searchInput).toHaveFocus();
+    expect(searchInput).toHaveValue('');
+  });
+
+  it('should throw a specific conflict error when duplicate shortcuts are detected', async () => {
+    const consoleSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    render(
+      <FakeContextProvider>
+        <TestComponent options={TEST_FILTER_OPTIONS} renderDuplicate={true} />
+      </FakeContextProvider>,
+    );
+
+    const errorMessages = await screen.findAllByText(
+      /Shortcut conflict detected/i,
+    );
+    expect(errorMessages.length).toBeGreaterThan(0);
+
+    expect(errorMessages[0]).toHaveTextContent(/Exact conflict/);
+    expect(errorMessages[0]).toHaveTextContent(/Focus search bar/);
+
+    consoleSpy.mockRestore();
   });
 });

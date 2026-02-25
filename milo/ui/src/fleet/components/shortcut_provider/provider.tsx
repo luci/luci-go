@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
+import { isTyping } from '@/fleet/utils/field_typing';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 import { ShortcutContext, ShortcutDefinition } from './context';
@@ -24,16 +25,6 @@ import { parseShortcut, KeyChord, ShortcutSequence } from './utils';
 interface ParsedShortcut extends ShortcutDefinition {
   sequences: ShortcutSequence[];
 }
-
-const isInputElement = (target: EventTarget | null): boolean => {
-  if (!target || !(target instanceof HTMLElement)) return false;
-  return (
-    target.isContentEditable ||
-    target.tagName === 'INPUT' ||
-    target.tagName === 'TEXTAREA' ||
-    target.tagName === 'SELECT'
-  );
-};
 
 const isModifierKey = (key: string) =>
   ['Control', 'Shift', 'Alt', 'Meta'].includes(key);
@@ -123,9 +114,8 @@ export const ShortcutProvider = ({
         shift: e.shiftKey,
       };
 
-      // Check if we should abort (typing in input without modifiers)
       if (
-        isInputElement(e.target) &&
+        isTyping(e.target as Element) &&
         !chord.ctrl &&
         !chord.alt &&
         !chord.meta
