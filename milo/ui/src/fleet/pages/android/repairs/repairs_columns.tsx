@@ -81,8 +81,8 @@ export const COLUMNS = {
             </div>
           </div>
           <Typography variant="body2">
-            SLO-2 is considered at risk when the Offline Ratio is above 8% and
-            this time we check for Peak Utilization to be above 80%
+            SLO-2 is considered broken when the offline ratio is above 10% and
+            the offline ratio + peak utilization ratio is above 80%
           </Typography>
           <Divider
             css={{
@@ -103,8 +103,7 @@ export const COLUMNS = {
             </div>
           </div>
           <Typography variant="body2">
-            SLO-2 is considered at risk when the Offline Ratio is above 8% and
-            this time we check for Peak Utilization to be above 80%
+            SLO-2 is considered at risk when there are offline devices
           </Typography>
           <Divider
             css={{
