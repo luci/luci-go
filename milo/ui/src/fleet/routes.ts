@@ -111,6 +111,12 @@ export const fleetRoutes: RouteObject[] = [
               import('@/fleet/pages/redirects/single_device_redirect'),
           },
           {
+            path: 'singlebrowserdevice',
+            index: true,
+            lazy: () =>
+              import('@/fleet/pages/redirects/single_browser_device_redirect'),
+          },
+          {
             path: 'swarming',
             children: [
               {
