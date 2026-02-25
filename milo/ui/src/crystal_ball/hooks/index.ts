@@ -14,4 +14,5 @@
 
 export * from './use_android_perf_api';
 export * from './use_dashboard_state_api';
+export * from './use_measurement_filter_api';
 export * from './use_search_query_sync';

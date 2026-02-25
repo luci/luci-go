@@ -13,5 +13,6 @@
 // limitations under the License.
 
 export * from './dashboard_state';
+export * from './measurement_filter';
 export * from './proto';
 export * from './search_measurements';
