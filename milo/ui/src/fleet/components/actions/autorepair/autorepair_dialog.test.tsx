@@ -94,7 +94,7 @@ describe('<AutorepairDialog />', () => {
       </FakeAuthStateProvider>,
     );
 
-    const shivas = screen.getByText('$ shivas repair test-dut dut1 dut2 dut3');
+    const shivas = screen.getByText('shivas repair test-dut dut1 dut2 dut3');
 
     expect(shivas).toBeVisible();
   });

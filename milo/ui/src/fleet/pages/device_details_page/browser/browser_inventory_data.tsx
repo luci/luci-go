@@ -263,7 +263,7 @@ const InventoryDataCodeSnippet = ({
           command:{' '}
         </span>
         <CodeSnippet
-          displayText={'$ ' + shivasCommand}
+          displayText={shivasCommand}
           copyText={shivasCommand}
           copyKind={copyKind}
         />

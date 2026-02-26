@@ -88,7 +88,7 @@ export const ChromeOSInventoryData = ({ device }: { device: Device }) => {
           command:{' '}
         </span>
         <CodeSnippet
-          displayText={'$ ' + command}
+          displayText={command}
           copyText={command}
           copyKind="get_dut"
         />

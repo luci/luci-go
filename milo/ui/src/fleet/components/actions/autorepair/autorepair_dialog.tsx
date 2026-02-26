@@ -194,7 +194,7 @@ export default function AutorepairDialog({
 
             <p>Equivalent shivas command:</p>
             <CodeSnippet
-              displayText={'$ ' + shivasCommand}
+              displayText={shivasCommand}
               copyText={shivasCommand}
               copyKind="shivas_repair"
             />

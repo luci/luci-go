@@ -46,7 +46,7 @@ describe('<InventoryData />', () => {
     );
 
     expect(
-      screen.getByText('$ shivas get dut -json test-host-name'),
+      screen.getByText('shivas get dut -json test-host-name'),
     ).toBeVisible();
   });
 
@@ -59,7 +59,7 @@ describe('<InventoryData />', () => {
 
     expect(
       screen.getByText(
-        '$ shivas get dut -json -namespace os-partner test-host-name-partner',
+        'shivas get dut -json -namespace os-partner test-host-name-partner',
       ),
     ).toBeVisible();
   });

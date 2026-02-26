@@ -109,7 +109,7 @@ export function SshTip({ hostname, dutId }: SshTipProps) {
 
           <p>To SSH:</p>
           <CodeSnippet
-            displayText={'$ ' + command}
+            displayText={command}
             copyText={command}
             copyKind="ssh"
           />

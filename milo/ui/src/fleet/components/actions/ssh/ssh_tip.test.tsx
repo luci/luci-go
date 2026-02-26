@@ -49,7 +49,7 @@ describe('<SshTip />', () => {
       button.click();
     });
 
-    expect(screen.getByText('$ ssh test-device')).toBeVisible();
+    expect(screen.getByText('ssh test-device')).toBeVisible();
   });
 
   it('renders CLI command for satlab device with drone server', async () => {
@@ -75,7 +75,7 @@ describe('<SshTip />', () => {
 
     expect(
       screen.getByText(
-        '$ ssh -o ProxyJump=moblab@drone.server root@satlab-device',
+        'ssh -o ProxyJump=moblab@drone.server root@satlab-device',
       ),
     ).toBeVisible();
   });
@@ -98,7 +98,7 @@ describe('<SshTip />', () => {
       button.click();
     });
 
-    expect(screen.getByText('$ ssh satlab-device')).toBeVisible();
+    expect(screen.getByText('ssh satlab-device')).toBeVisible();
     expect(
       screen.getByText(
         'This device is a Satlab device, but we were unable to determine the' +
@@ -123,7 +123,7 @@ describe('<SshTip />', () => {
       button.click();
     });
 
-    expect(screen.getByText('$ ssh satlab-device')).toBeVisible();
+    expect(screen.getByText('ssh satlab-device')).toBeVisible();
     expect(
       screen.getByText(
         'This device is a Satlab device, but we were unable to determine the' +
