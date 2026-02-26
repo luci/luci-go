@@ -38,6 +38,7 @@ import {
 } from '@/generic_libs/components/queued_sticky';
 
 import { ShortcutProvider } from '../components/shortcut_provider';
+import { getFeatureFlag } from '../config/features';
 import { IndexedDBPersistClientProvider, SettingsProvider } from '../context';
 import { theme } from '../theme/theme';
 
@@ -90,6 +91,15 @@ const FleetLayoutContent = () => {
     'g q',
     () => navigate('/ui/fleet/labs/requests'),
     { category: 'Navigation' },
+  );
+  useShortcut(
+    'Go to Product Catalog',
+    'g k',
+    () => navigate('/ui/fleet/labs/catalog'),
+    {
+      category: 'Navigation',
+      enabled: getFeatureFlag('ProductCatalogListPage'),
+    },
   );
   useShortcut(
     'Go to Planners',

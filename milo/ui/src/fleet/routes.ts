@@ -141,6 +141,13 @@ export const fleetRoutes: RouteObject[] = [
         ],
       },
       {
+        path: 'catalog',
+        lazy: loadRouteForGooglersOnly(
+          () =>
+            import('@/fleet/pages/product_catalogue/product_catalogue_page'),
+        ),
+      },
+      {
         path: 'metrics',
         lazy: loadRouteForGooglersOnly(
           () => import('@/fleet/pages/metrics_page'),

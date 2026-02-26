@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import ArticleIcon from '@mui/icons-material/Article';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DevicesIcon from '@mui/icons-material/Devices';
@@ -23,6 +24,7 @@ import React from 'react';
 
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { getFeatureFlag } from '../config/features';
 import {
   generateDeviceListURL,
   generateRepairsURL,
@@ -78,6 +80,15 @@ function generateResourceRequestsSection(): SidebarSection {
   return {
     title: 'Resource Requests',
     pages: [
+      ...(getFeatureFlag('ProductCatalogListPage')
+        ? [
+            {
+              label: 'Product Catalog',
+              url: '/ui/fleet/labs/catalog',
+              icon: <ArticleIcon />,
+            },
+          ]
+        : []),
       {
         label: 'Requester Insights',
         url: '/ui/fleet/labs/requests',
