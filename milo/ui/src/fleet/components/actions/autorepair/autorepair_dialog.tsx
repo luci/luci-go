@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import {
   Box,
   Button,
@@ -20,7 +21,13 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
   FormControlLabel,
+  FormGroup,
+  FormLabel,
+  IconButton,
+  Stack,
+  Tooltip,
 } from '@mui/material';
 
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
@@ -115,51 +122,75 @@ export default function AutorepairDialog({
             <ul>
               {dutNames?.map((dutName) => getDeviceDetailListItem(dutName))}
             </ul>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={deepRepair}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleDeepRepairChange(e.target.checked)
+            <FormControl component="fieldset" variant="standard">
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <FormLabel
+                  component="legend"
+                  sx={{
+                    color: 'text.primary',
+                    '&.Mui-focused': { color: 'text.primary' },
+                  }}
+                >
+                  Autorepair options
+                </FormLabel>
+                <Tooltip title="View documentation">
+                  <IconButton
+                    size="small"
+                    href="http://go/shivas-manual-os"
+                    target="_blank"
+                  >
+                    <HelpOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+              <FormGroup
+                sx={{
+                  ml: 2,
+                  '& .MuiFormControlLabel-root': { height: '30px' },
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={deepRepair}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleDeepRepairChange(e.target.checked)
+                      }
+                    />
                   }
+                  label="Deep repair these devices"
                 />
-              }
-              style={{ marginBottom: '8px', marginLeft: '24px' }}
-              label="Deep repair these devices"
-            />
-            <br />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={latestRepair}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleLatestRepairChange(e.target.checked)
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={latestRepair}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleLatestRepairChange(e.target.checked)
+                      }
+                    />
                   }
+                  label="Use latest repair version"
                 />
-              }
-              style={{ marginBottom: '8px', marginLeft: '24px' }}
-              label="Use latest repair version"
-            />
-            <br />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={verifyOnly}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleVerifyOnlyChange(e.target.checked)
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={verifyOnly}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleVerifyOnlyChange(e.target.checked)
+                      }
+                    />
                   }
+                  label="Verify Only"
                 />
-              }
-              style={{ marginBottom: '8px', marginLeft: '24px' }}
-              label="Verify Only"
-            />
-            {deepRepair && verifyOnly && (
-              <p style={{ color: 'red', marginLeft: '24px' }}>
-                Unusual case: both deep and verify are checked. Verify build
-                will be used but task will trigger a full deep recovery
-                workflow.
-              </p>
-            )}
+              </FormGroup>
+              {deepRepair && verifyOnly && (
+                <p style={{ color: 'red' }}>
+                  Unusual case: both deep and verify are checked. Verify build
+                  will be used but task will trigger a full deep recovery
+                  workflow.
+                </p>
+              )}
+            </FormControl>
 
             <p>Equivalent shivas command:</p>
             <CodeSnippet
@@ -248,7 +279,7 @@ export default function AutorepairDialog({
     return confirmationScreen;
   };
   return (
-    <Dialog onClose={handleClose} open={open}>
+    <Dialog onClose={handleClose} open={open} fullWidth maxWidth="sm">
       {getDialogContent()}
     </Dialog>
   );

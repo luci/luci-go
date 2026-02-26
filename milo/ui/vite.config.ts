@@ -66,6 +66,9 @@ export default defineConfig(({ mode }) => {
         '@root': path.resolve(__dirname, './'),
       },
     },
+    optimizeDeps: {
+      include: ['@mui/icons-material/HelpOutline'],
+    },
     build: {
       outDir: path.join(baseOutDir, '/ui'),
       assetsDir: 'immutable',
