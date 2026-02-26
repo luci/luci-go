@@ -8,3 +8,6 @@ file: ../fleet/OWNERS
 
 # AuthDB
 file: ../authdb/OWNERS
+
+# Crystal Ball
+file: ../crystal_ball/OWNERS

@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package google.android.perf.v1;
+
+import "google/protobuf/struct.proto";
+import "google/rpc/status.proto";
+
+// Service for Android performance-related data.
+service PerfService {
+  // Streams the data to populate the widgets defined within a DashboardState.
+  rpc StreamDashboardData(StreamDashboardDataRequest)
+      returns (stream StreamDashboardDataResponse) {
+  }
+}
+
+// Defines the request message for the `StreamDashboardData` method.
+message StreamDashboardDataRequest {
+  // The resource name of the DashboardState to fetch data for.
+  string name = 1;
+
+  // The core content of the dashboard to fetch data for.
+  PerfDashboardContent dashboard_content = 2;
+}
+
+// Defines the response message for the `StreamDashboardData` method.
+message StreamDashboardDataResponse {
+  // The ID of the widget this data result corresponds to.
+  string widget_id = 1;
+
+  // The type of widget data, pre-processed for the widget type.
+  oneof result_type {
+    // Data specifically prepared for a MultiMetricChart.
+    MultiMetricChartData multi_metric_chart_data = 2;
+
+    // Data for a Markdown widget
+    MarkdownWidget markdown_widget = 4;
+  }
+  google.rpc.Status status = 3;
+}
+
+// Data structured and transformed for the MultiMetricChart component.
+message MultiMetricChartData {
+  string x_axis_data_key = 1;
+  string y_axis_data_key = 2;
+  repeated MultiMetricLine lines = 3;
+}
+
+// Represents a single line series in a MultiMetricChart.
+message MultiMetricLine {
+  string series_id = 1;
+  string legend_label = 2;
+  repeated google.protobuf.Struct data_points = 3;
+  string metric_field = 4;
+}
+
+// Widget for displaying formatted text using Markdown.
+message MarkdownWidget {
+  string content = 2;
+}
+
+// Represents the content of a dashboard state.
+// NOTE: This is a minimal version. Add fields as needed by your StreamDashboardDataRequest.
+message PerfDashboardContent {
+  map<string, PerfDataSpec> data_specs = 1;
+  repeated PerfWidget widgets = 3;
+}
+
+message PerfDataSpec {
+  string display_name = 1;
+  // Add other fields if used in the request
+}
+
+message PerfWidget {
+  string id = 1;
+  oneof widget_type {
+    MarkdownWidget markdown = 3;
+    PerfChartWidget chart = 4;
+  }
+}
+
+message PerfChartWidget {
+  string data_spec_id = 1;
+  // Add other fields if used
+}
