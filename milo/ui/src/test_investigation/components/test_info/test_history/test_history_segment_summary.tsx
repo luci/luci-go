@@ -228,7 +228,7 @@ export function TestHistorySegmentSummary({
       {isCurrentSegment ? (
         <Tooltip
           title={ThisResultTooltip}
-          open
+          open={false}
           placement="bottom"
           slotProps={{
             popper: {
