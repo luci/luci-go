@@ -2635,7 +2635,7 @@ func (s *Server) initAuthDB() error {
 			if err := s.refreshAuthDB(c); err != nil {
 				// Don't log the error if the server is shutting down.
 				if !errors.Is(err, context.Canceled) {
-					logging.WithError(err).Errorf(c, "Failed to reload AuthDB, using the cached one")
+					logging.Warningf(c, "Failed to reload AuthDB, using the cached one. Error: %v", err)
 				}
 			}
 		}
