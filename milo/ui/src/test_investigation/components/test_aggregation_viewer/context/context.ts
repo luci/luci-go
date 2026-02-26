@@ -20,13 +20,6 @@ export interface TestAggregationContextValue {
   setSelectedStatuses: (statuses: Set<string>) => void;
   aipFilter: string;
   setAipFilter: (filter: string) => void;
-  loadMoreTrigger: number;
-  triggerLoadMore: () => void;
-  // Stats
-  loadedCount: number;
-  setLoadedCount: (count: number) => void;
-  isLoadingMore: boolean;
-  setIsLoadingMore: (loading: boolean) => void;
 }
 
 export const TestAggregationContext =

@@ -14,37 +14,23 @@
 
 import { PropsWithChildren, useState } from 'react';
 
-import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
-
 import { TestAggregationContext } from './context';
 
-export type TestAggregationProviderProps = PropsWithChildren;
+export interface TestAggregationProviderProps extends PropsWithChildren {
+  initialAipFilter?: string;
+}
 
-const DEFAULT_STATUSES = new Set([
-  TestVerdict_Status[TestVerdict_Status.FAILED],
-  TestVerdict_Status[TestVerdict_Status.EXECUTION_ERRORED],
-  TestVerdict_Status[TestVerdict_Status.FLAKY],
-]);
+const DEFAULT_STATUSES = new Set<string>();
 
 export function TestAggregationProvider({
   children,
+  initialAipFilter,
 }: TestAggregationProviderProps) {
   // 1. Status Filter State
   const [selectedStatuses, setSelectedStatuses] =
     useState<Set<string>>(DEFAULT_STATUSES);
   // 2. AIP Filter State
-  const [aipFilter, setAipFilter] = useState('');
-
-  // 3. Pagination State
-  const [loadMoreTrigger, setLoadMoreTrigger] = useState(0);
-
-  const triggerLoadMore = () => {
-    setLoadMoreTrigger((prev) => prev + 1);
-  };
-
-  // 4. Stats State
-  const [loadedCount, setLoadedCount] = useState(0);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [aipFilter, setAipFilter] = useState(initialAipFilter || '');
 
   return (
     <TestAggregationContext.Provider
@@ -53,12 +39,6 @@ export function TestAggregationProvider({
         setSelectedStatuses,
         aipFilter,
         setAipFilter,
-        loadMoreTrigger,
-        triggerLoadMore,
-        loadedCount,
-        setLoadedCount,
-        isLoadingMore,
-        setIsLoadingMore,
       }}
     >
       {children}

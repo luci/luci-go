@@ -91,7 +91,13 @@ export function registerNode(
     if (!existing.isLeaf && !node.isLeaf && node.aggregationData) {
       existing.aggregationData = node.aggregationData;
     }
-    if (existing.isLeaf && node.isLeaf && node.verdict) {
+    if (
+      existing.isLeaf &&
+      !existing.isLoadMore &&
+      node.isLeaf &&
+      !node.isLoadMore &&
+      node.verdict
+    ) {
       existing.verdict = node.verdict;
     }
   }
@@ -113,7 +119,7 @@ export function resolveLabel(
   schemes: { [key: string]: Scheme },
 ): string {
   // If verdict, use testId
-  if (node.isLeaf && node.verdict) {
+  if (node.isLeaf && !node.isLoadMore && node.verdict) {
     return node.verdict.testIdStructured?.caseName || node.verdict.testId;
   }
 
@@ -168,6 +174,7 @@ function processVerdict(
     id: moduleId,
     label: testId.moduleName || 'Module',
     isLeaf: false,
+    isLoadMore: false,
     depth: 0,
     isLoading: true,
   });
@@ -188,6 +195,7 @@ function processVerdict(
         id: coarseId,
         label: testId.coarseName,
         isLeaf: false,
+        isLoadMore: false,
         depth: 0,
         isLoading: true,
       },
@@ -210,6 +218,7 @@ function processVerdict(
         id: fineId,
         label: testId.fineName,
         isLeaf: false,
+        isLoadMore: false,
         depth: 0,
         isLoading: true,
       },
@@ -229,6 +238,7 @@ function processVerdict(
       verdict: v,
       label: v.testId,
       isLeaf: true,
+      isLoadMore: false,
       depth: 0,
     },
     parentId,

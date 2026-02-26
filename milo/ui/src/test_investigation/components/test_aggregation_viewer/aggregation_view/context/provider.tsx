@@ -23,24 +23,22 @@ import {
 
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { AggregationLevel } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
-import { TestVerdictPredicate_VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/predicate.pb';
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
 import { useTestAggregationContext } from '../../context';
 import {
   useAncestryAggregationsQueries,
-  useBulkTestAggregationsQueries,
+  useNodeAggregationsQuery,
   useSchemesQuery,
-  useTestVerdictsQuery,
 } from '../../hooks';
 import { createPrefixForTest, getTestIdentifierPrefixId } from '../../utils';
 
-import { AggregationViewContext } from './context';
+import { AggregationNode, AggregationViewContext } from './context';
 import {
   buildAggregationFilterString,
-  buildSkeleton,
-  mergeAndFlatten,
-  processAggregations,
+  flattenDynamicTree,
+  mapAggregationToNode,
+  NodeChildrenState,
 } from './utils';
 
 export interface AggregationViewProviderProps extends PropsWithChildren {
@@ -48,20 +46,7 @@ export interface AggregationViewProviderProps extends PropsWithChildren {
   invocation: AnyInvocation;
   testVariant?: OutputTestVerdict;
   autoLocate?: boolean;
-  defaultExpanded?: boolean;
 }
-
-const STATUS_MAP: Record<string, TestVerdictPredicate_VerdictEffectiveStatus> =
-  {
-    FAILED: TestVerdictPredicate_VerdictEffectiveStatus.FAILED,
-    EXECUTION_ERRORED:
-      TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED,
-    PRECLUDED: TestVerdictPredicate_VerdictEffectiveStatus.PRECLUDED,
-    FLAKY: TestVerdictPredicate_VerdictEffectiveStatus.FLAKY,
-    SKIPPED: TestVerdictPredicate_VerdictEffectiveStatus.SKIPPED,
-    PASSED: TestVerdictPredicate_VerdictEffectiveStatus.PASSED,
-    EXONERATED: TestVerdictPredicate_VerdictEffectiveStatus.EXONERATED,
-  };
 
 export function AggregationViewProvider({
   children,
@@ -69,195 +54,116 @@ export function AggregationViewProvider({
   invocation,
   testVariant,
   autoLocate = true,
-  defaultExpanded = false,
 }: AggregationViewProviderProps) {
   // 1. Consume Shared Filter Context
-  // Ensure we are using the correct context hook from shared context
-  const {
-    selectedStatuses,
-    aipFilter,
-    loadMoreTrigger,
-    setLoadedCount,
-    setIsLoadingMore,
-  } = useTestAggregationContext();
+  const { selectedStatuses, aipFilter } = useTestAggregationContext();
 
   const aggregationFilterString = useMemo(() => {
     return buildAggregationFilterString(selectedStatuses);
   }, [selectedStatuses]);
 
   // 2. Data Fetching
-  // Schemes (Global, Immutable)
   const schemesQuery = useSchemesQuery();
 
-  // Verdicts (Skeleton)
-  const verdictStatuses = useMemo(() => {
-    if (selectedStatuses.size === 0) {
-      return [
-        TestVerdictPredicate_VerdictEffectiveStatus.FAILED,
-        TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED,
-        TestVerdictPredicate_VerdictEffectiveStatus.FLAKY,
-      ];
-    }
-    const statuses: TestVerdictPredicate_VerdictEffectiveStatus[] = [];
-    selectedStatuses.forEach((s) => {
-      const mapped = STATUS_MAP[s];
-      if (mapped !== undefined) {
-        statuses.push(mapped);
-      }
-    });
-    return statuses;
-  }, [selectedStatuses]);
-
-  const verdictsQuery = useTestVerdictsQuery(
+  // Root level modules fetch
+  const rootAggsQuery = useNodeAggregationsQuery(
     invocation,
-    verdictStatuses,
-    aipFilter,
-    undefined, // view
-    {
-      staleTime: 60 * 1000,
-    },
-  );
-
-  // 3. Deep Linking (Ancestry)
-  const selectedTestVariant = testVariant;
-
-  // Aggregations (Enrichment)
-  const bulkAggregationsQueries = useBulkTestAggregationsQueries(
-    invocation,
+    AggregationLevel.MODULE,
     aggregationFilterString,
+    undefined,
     true,
+    undefined,
     aipFilter,
   );
 
-  const ancestryAggregationsQueries = useAncestryAggregationsQueries(
+  // Deep Linking (Ancestry eager cache warming)
+  const selectedTestVariant = testVariant;
+  useAncestryAggregationsQueries(
     invocation,
     selectedTestVariant,
+    // Note: The filter strings must be passed to cache hit the intermediate nodes,
+    // which will be addressed in a follow-up hooks.ts update if they are not already.
   );
 
-  // Combine bulk + ancestry for enrichment
-  // Note: Duplicates are handled in processAggregations via Map overwrites.
-  const enrichmentQuery = useMemo(
-    () => [...bulkAggregationsQueries, ...ancestryAggregationsQueries],
-    [bulkAggregationsQueries, ancestryAggregationsQueries],
+  // 3. Dynamic Children State Management
+  const [childrenMap, setChildrenMap] = useState<
+    Map<string, NodeChildrenState>
+  >(new Map());
+
+  const setNodeChildren = useCallback(
+    (
+      nodeId: string,
+      items: AggregationNode[],
+      hasNextPage: boolean,
+      isFetchingNextPage: boolean,
+      fetchNextPage: () => void,
+    ) => {
+      setChildrenMap((prev) => {
+        const next = new Map(prev);
+        next.set(nodeId, {
+          items,
+          hasNextPage,
+          isFetchingNextPage,
+          fetchNextPage,
+        });
+        return next;
+      });
+    },
+    [],
   );
 
-  // Trigger Load More
-  const lastProcessedTrigger = useRef(loadMoreTrigger);
-  useEffect(() => {
-    if (loadMoreTrigger > lastProcessedTrigger.current) {
-      lastProcessedTrigger.current = loadMoreTrigger;
-      if (verdictsQuery.hasNextPage && !verdictsQuery.isFetchingNextPage) {
-        verdictsQuery.fetchNextPage();
-      }
-      bulkAggregationsQueries.forEach((q) => {
-        if (q.hasNextPage && !q.isFetchingNextPage) {
-          q.fetchNextPage();
-        }
-      });
-    }
-  }, [loadMoreTrigger, verdictsQuery, bulkAggregationsQueries]);
-
-  // Sync Loaded Count & Initial Load Logic
-  const loadedCount = verdictsQuery.data?.testVerdicts?.length || 0;
-  useEffect(() => {
-    setLoadedCount(loadedCount);
-
-    // Initial Load: Ensure at least 1000 items are loaded if possible
-    if (
-      loadedCount < 1000 &&
-      verdictsQuery.hasNextPage &&
-      !verdictsQuery.isFetchingNextPage
-    ) {
-      verdictsQuery.fetchNextPage();
-      bulkAggregationsQueries.forEach((q) => {
-        if (q.hasNextPage && !q.isFetchingNextPage) {
-          q.fetchNextPage();
-        }
-      });
-    }
-  }, [
-    loadedCount,
-    setLoadedCount,
-    verdictsQuery.hasNextPage,
-    verdictsQuery.isFetchingNextPage,
-    bulkAggregationsQueries,
-    verdictsQuery,
-  ]);
-
-  // Sync Loading State
-  useEffect(() => {
-    const isFetching =
-      verdictsQuery.isFetchingNextPage ||
-      bulkAggregationsQueries.some((q) => q.isFetchingNextPage);
-    setIsLoadingMore(isFetching);
-  }, [
-    verdictsQuery.isFetchingNextPage,
-    bulkAggregationsQueries,
-    setIsLoadingMore,
-  ]);
-
-  // 6. Tree Construction
+  // 4. Tree Construction
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     new Set(initialExpandedIds),
   );
 
-  // Stage 1: Build Skeleton (Stable)
-  const { nodes: skeletonNodes, childrenMap: skeletonChildren } =
-    useMemo(() => {
-      return buildSkeleton(verdictsQuery.data?.testVerdicts);
-    }, [verdictsQuery.data?.testVerdicts]);
-
-  // Stage 2: Process Aggregations (Enrichment)
-  const { dataMap: aggDataMap } = useMemo(() => {
-    return processAggregations(enrichmentQuery);
-  }, [enrichmentQuery]);
-
-  // Stage 3: Merge and Flatten (View Generation)
-  const flattenedItems = useMemo(() => {
+  // Construct Root Nodes
+  const rootNodes = useMemo(() => {
     const schemes = schemesQuery.data?.schemes || {};
-    return mergeAndFlatten(
-      skeletonNodes,
-      skeletonChildren,
-      aggDataMap,
-      schemes,
-      expandedIds,
+    return (rootAggsQuery.data?.aggregations || []).map((agg) =>
+      mapAggregationToNode(agg, schemes),
     );
-  }, [
-    skeletonNodes,
-    skeletonChildren,
-    aggDataMap,
-    schemesQuery.data,
-    expandedIds,
-  ]);
+  }, [rootAggsQuery.data?.aggregations, schemesQuery.data?.schemes]);
 
-  // Auto-expand all logic
-  const autoExpandedIds = useRef<Set<string>>(new Set());
+  // Accumulated search pattern:
+  // Automatically fetch the next page if the current page returned fewer than 1000
+  // root modules (e.g. mostly passed modules were stripped) but more pages exist.
   useEffect(() => {
-    if (defaultExpanded) {
-      setExpandedIds((prev) => {
-        const next = new Set(prev);
-        let changed = false;
+    if (
+      rootNodes.length > 0 &&
+      rootNodes.length < 1000 &&
+      rootAggsQuery.hasNextPage &&
+      !rootAggsQuery.isFetchingNextPage &&
+      !rootAggsQuery.isLoading
+    ) {
+      rootAggsQuery.fetchNextPage();
+    }
+  }, [rootNodes.length, rootAggsQuery]);
 
-        const tryExpand = (id: string) => {
-          if (!autoExpandedIds.current.has(id)) {
-            autoExpandedIds.current.add(id);
-            if (!next.has(id)) {
-              next.add(id);
-              changed = true;
-            }
-          }
-        };
-
-        skeletonNodes.forEach((node) => tryExpand(node.id));
-        aggDataMap.forEach((_, id) => {
-          // All items in aggDataMap are intermediate nodes (TestAggregation)
-          tryExpand(id);
-        });
-
-        return changed ? next : prev;
+  // Flatten the dynamic tree
+  const flattenedItems = useMemo(() => {
+    const flatList = flattenDynamicTree(rootNodes, childrenMap, expandedIds);
+    if (rootAggsQuery.hasNextPage) {
+      flatList.push({
+        id: 'root-load-more',
+        label: 'Load more',
+        depth: 0,
+        isLeaf: true,
+        isLoadMore: true,
+        hasNextPage: rootAggsQuery.hasNextPage,
+        isFetchingNextPage: rootAggsQuery.isFetchingNextPage,
+        fetchNextPage: rootAggsQuery.fetchNextPage,
       });
     }
-  }, [defaultExpanded, skeletonNodes, aggDataMap]);
+    return flatList;
+  }, [
+    rootNodes,
+    childrenMap,
+    expandedIds,
+    rootAggsQuery.hasNextPage,
+    rootAggsQuery.isFetchingNextPage,
+    rootAggsQuery.fetchNextPage,
+  ]);
 
   // Expand logic
   const toggleExpansion = (id: string) => {
@@ -332,7 +238,7 @@ export function AggregationViewProvider({
     }
   }, [autoLocate, locateCurrentTest, selectedTestVariant]);
 
-  const isLoading = verdictsQuery.isLoading; // Main skeleton loading
+  const isLoading = rootAggsQuery.isLoading;
 
   return (
     <AggregationViewContext.Provider
@@ -341,15 +247,10 @@ export function AggregationViewProvider({
         toggleExpansion,
         flattenedItems,
         invocation,
-
+        setNodeChildren,
         isLoading,
-        isError:
-          verdictsQuery.isError ||
-          bulkAggregationsQueries.some((q) => q.isError),
-        error:
-          verdictsQuery.error ||
-          bulkAggregationsQueries.find((q) => q.error)?.error,
-
+        isError: rootAggsQuery.isError,
+        error: rootAggsQuery.error,
         scrollRequest: scrollRequest || undefined,
         locateCurrentTest,
         highlightedNodeId: selectedTestVariant?.testId,

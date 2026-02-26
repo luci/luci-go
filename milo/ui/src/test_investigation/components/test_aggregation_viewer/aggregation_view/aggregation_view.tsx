@@ -44,7 +44,6 @@ const AggregationViewContent = forwardRef<
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Toolbar is hosted in parent */}
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
         {isLoading ? (
           <Box

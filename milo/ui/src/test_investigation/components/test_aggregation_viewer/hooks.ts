@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import {
   useResultDbClient,
@@ -69,6 +69,7 @@ export function useTestVerdictsQuery(
   options?: {
     staleTime?: number;
     enabled?: boolean;
+    testPrefixFilter?: TestIdentifierPrefix;
   },
 ) {
   const invocationName = isRootInvocation(invocation) ? invocation.name : '';
@@ -89,6 +90,7 @@ export function useTestVerdictsQuery(
         predicate: {
           effectiveVerdictStatus: statuses,
           containsTestResultFilter: filter || undefined,
+          testPrefixFilter: options?.testPrefixFilter || undefined,
         },
         view,
         orderBy: 'ui_priority, test_id_structured',
@@ -102,6 +104,21 @@ export function useTestVerdictsQuery(
   const allVerdicts = useMemo(() => {
     return query.data?.pages.flatMap((p) => p.testVerdicts || []) || [];
   }, [query.data]);
+
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = query;
+
+  // Accumulated search pattern: automatically fetch the next page if the backend
+  // returned a sparse page (< 1000 items) and there are more pages. This applies
+  // to both initial loads and subsequent 'Load More' clicks.
+  useEffect(() => {
+    if (data?.pages) {
+      const lastPage = data.pages[data.pages.length - 1];
+      const itemsInLastPage = lastPage.testVerdicts?.length || 0;
+      if (itemsInLastPage < 1000 && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }
+  }, [data?.pages, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return {
     data: query.data ? { testVerdicts: allVerdicts } : undefined,
@@ -118,7 +135,7 @@ export function useTestVerdictsQuery(
  * Helper to fetch a single test aggregation level using infinite query and accumulating
  * up to a target size limit to account for empty pages during optimization.
  */
-function useAccumulatedAggregationsQuery(
+export function useNodeAggregationsQuery(
   invocation: AnyInvocation | null | undefined,
   level: AggregationLevel,
   filter?: string,
@@ -160,6 +177,21 @@ function useAccumulatedAggregationsQuery(
     return query.data?.pages.flatMap((p) => p.aggregations || []) || [];
   }, [query.data]);
 
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = query;
+
+  // Accumulated search pattern: automatically fetch the next page if the backend
+  // returned a sparse page (< 1000 items) and there are more pages. This applies
+  // to both initial loads and subsequent 'Load More' clicks.
+  useEffect(() => {
+    if (data?.pages) {
+      const lastPage = data.pages[data.pages.length - 1];
+      const itemsInLastPage = lastPage.aggregations?.length || 0;
+      if (itemsInLastPage < 1000 && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }
+  }, [data?.pages, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   return {
     data: query.data ? { aggregations: allAggregations } : undefined,
     isLoading: query.isLoading,
@@ -169,53 +201,6 @@ function useAccumulatedAggregationsQuery(
     fetchNextPage: query.fetchNextPage,
     isFetchingNextPage: query.isFetchingNextPage,
   };
-}
-
-/**
- * Fetches test aggregations for Module, Coarse, and Fine levels in parallel.
- * This "Bulk" strategy provides a broad overview of the test results structure.
- *
- * @param invocation - The invocation name.
- * @param filter - Filter string to apply to the aggregations.
- * @param enabled - Whether the queries should be enabled.
- * @param testResultFilter - AIP filter string applied to filter matching aggregations.
- * @param pageSize - The target maximum page size limit for queries.
- */
-export function useBulkTestAggregationsQueries(
-  invocation: AnyInvocation | null | undefined,
-  filter: string,
-  enabled: boolean = true,
-  testResultFilter: string = '',
-) {
-  const modSq = useAccumulatedAggregationsQuery(
-    invocation,
-    AggregationLevel.MODULE,
-    filter,
-    undefined,
-    enabled,
-    undefined,
-    testResultFilter,
-  );
-  const crsSq = useAccumulatedAggregationsQuery(
-    invocation,
-    AggregationLevel.COARSE,
-    filter,
-    undefined,
-    enabled,
-    undefined,
-    testResultFilter,
-  );
-  const fneSq = useAccumulatedAggregationsQuery(
-    invocation,
-    AggregationLevel.FINE,
-    filter,
-    undefined,
-    enabled,
-    undefined,
-    testResultFilter,
-  );
-
-  return [modSq, crsSq, fneSq];
 }
 
 /**
@@ -249,7 +234,7 @@ export function useAncestryAggregationsQueries(
       }
     : undefined;
 
-  const modSq = useAccumulatedAggregationsQuery(
+  const modSq = useNodeAggregationsQuery(
     invocation,
     AggregationLevel.MODULE,
     undefined,
@@ -274,7 +259,7 @@ export function useAncestryAggregationsQueries(
       }
     : undefined;
 
-  const crsSq = useAccumulatedAggregationsQuery(
+  const crsSq = useNodeAggregationsQuery(
     invocation,
     AggregationLevel.COARSE,
     undefined,
@@ -300,7 +285,7 @@ export function useAncestryAggregationsQueries(
         }
       : undefined;
 
-  const fneSq = useAccumulatedAggregationsQuery(
+  const fneSq = useNodeAggregationsQuery(
     invocation,
     AggregationLevel.FINE,
     undefined,
@@ -329,7 +314,7 @@ export function useAncestryAggregationsQueries(
 export function useInvocationAggregationQuery(
   invocation: AnyInvocation | null | undefined,
 ) {
-  return useAccumulatedAggregationsQuery(
+  return useNodeAggregationsQuery(
     invocation,
     AggregationLevel.INVOCATION,
     undefined,

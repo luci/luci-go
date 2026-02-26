@@ -14,6 +14,7 @@
 
 import { createContext, useContext } from 'react';
 
+import { AggregationLevel } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { TestAggregation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_aggregation.pb';
 import { TestVerdict } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
@@ -32,18 +33,32 @@ export interface BaseAggregationNode {
 
 export interface IntermediateAggregationNode extends BaseAggregationNode {
   isLeaf: false;
+  isLoadMore: false;
   aggregationData?: TestAggregation;
   children?: AggregationNode[];
   isLoading?: boolean;
   hasLoadError?: boolean;
+  nextFinerLevel?: AggregationLevel;
 }
 
 export interface LeafAggregationNode extends BaseAggregationNode {
   isLeaf: true;
+  isLoadMore: false;
   verdict?: TestVerdict;
 }
 
-export type AggregationNode = IntermediateAggregationNode | LeafAggregationNode;
+export interface LoadMoreAggregationNode extends BaseAggregationNode {
+  isLeaf: true;
+  isLoadMore: true;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: () => void;
+}
+
+export type AggregationNode =
+  | IntermediateAggregationNode
+  | LeafAggregationNode
+  | LoadMoreAggregationNode;
 
 export interface AggregationViewContextValue {
   // Tree State
@@ -51,6 +66,13 @@ export interface AggregationViewContextValue {
   toggleExpansion: (id: string) => void;
   flattenedItems: AggregationNode[];
   invocation: AnyInvocation;
+  setNodeChildren: (
+    nodeId: string,
+    items: AggregationNode[],
+    hasNextPage: boolean,
+    isFetchingNextPage: boolean,
+    fetchNextPage: () => void,
+  ) => void;
 
   // Loading State
   isLoading: boolean;

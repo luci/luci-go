@@ -20,7 +20,7 @@ import {
   TestVerdict_Status,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 
-import { createPrefixForTest, getTestIdentifierPrefixId } from '../../utils';
+import { getTestIdentifierPrefixId } from '../../utils';
 
 import { AggregationNode } from './context';
 
@@ -29,72 +29,35 @@ export function buildAggregationFilterString(
 ): string {
   if (selectedStatuses.size === 0) {
     // Default fallback
-    return 'verdict_counts.failed > 0 OR verdict_counts.execution_errored > 0 OR verdict_counts.flaky > 0';
+    return '';
   }
   const parts: string[] = [];
   if (selectedStatuses.has(TestVerdict_Status[TestVerdict_Status.FAILED])) {
-    parts.push('verdict_counts.failed > 0');
+    parts.push('matched_verdict_counts.failed > 0');
   }
   if (
     selectedStatuses.has(
       TestVerdict_Status[TestVerdict_Status.EXECUTION_ERRORED],
     )
   ) {
-    parts.push('verdict_counts.execution_errored > 0');
+    parts.push('matched_verdict_counts.execution_errored > 0');
   }
   if (selectedStatuses.has(TestVerdict_Status[TestVerdict_Status.FLAKY])) {
-    parts.push('verdict_counts.flaky > 0');
+    parts.push('matched_verdict_counts.flaky > 0');
   }
   if (selectedStatuses.has(TestVerdict_Status[TestVerdict_Status.PASSED])) {
-    parts.push('verdict_counts.passed > 0');
+    parts.push('matched_verdict_counts.passed > 0');
   }
   if (selectedStatuses.has(TestVerdict_Status[TestVerdict_Status.SKIPPED])) {
-    parts.push('verdict_counts.skipped > 0');
+    parts.push('matched_verdict_counts.skipped > 0');
   }
   if (selectedStatuses.has(TestVerdict_Status[TestVerdict_Status.PRECLUDED])) {
-    parts.push('verdict_counts.precluded > 0');
+    parts.push('matched_verdict_counts.precluded > 0');
   }
   if (selectedStatuses.has('EXONERATED')) {
-    parts.push('verdict_counts.exonerated > 0');
+    parts.push('matched_verdict_counts.exonerated > 0');
   }
   return parts.length > 0 ? parts.join(' OR ') : 'false';
-}
-
-interface EnrichmentQuery {
-  data?: {
-    readonly aggregations?: readonly TestAggregation[];
-  };
-}
-
-// Helper to register node
-export function registerNode(
-  nodes: Map<string, AggregationNode>,
-  childrenMap: Map<string, AggregationNode[]>,
-  node: AggregationNode,
-  parentId?: string,
-) {
-  if (!nodes.has(node.id)) {
-    nodes.set(node.id, node);
-  } else {
-    // Merge updates
-    const existing = nodes.get(node.id)!;
-    if (!node.isLeaf && node.aggregationData && !existing.isLeaf) {
-      existing.aggregationData = node.aggregationData;
-    }
-    if (node.isLeaf && node.verdict && existing.isLeaf) {
-      existing.verdict = node.verdict;
-    }
-  }
-
-  if (parentId) {
-    if (!childrenMap.has(parentId)) {
-      childrenMap.set(parentId, []);
-    }
-    const list = childrenMap.get(parentId)!;
-    if (!list.find((n) => n.id === node.id)) {
-      list.push(nodes.get(node.id)!);
-    }
-  }
 }
 
 // Helper to resolve Label and Parts
@@ -103,14 +66,14 @@ export function resolveLabel(
   schemes: { [key: string]: Scheme },
 ): { label: string; labelParts?: { key: string; value: string } } {
   // If verdict, use testId
-  if (node.isLeaf && node.verdict) {
+  if (node.isLeaf && !node.isLoadMore && node.verdict) {
     return {
       label: node.verdict.testIdStructured?.caseName || node.verdict.testId,
     };
   }
 
   // If aggregation
-  if (!node.isLeaf && node.aggregationData) {
+  if (!node.isLeaf && !node.isLoadMore && node.aggregationData) {
     const prefix = node.aggregationData.id!;
     const ident = prefix.id;
     const schemeId = ident?.moduleScheme || '';
@@ -136,198 +99,93 @@ export function resolveLabel(
         labelParts: { key: prefixLabel, value: name },
       };
     }
-    // Fallback if name is missing but we have level logic?
-    // Current logic: if MODULE, name is moduleName.
     return { label: name || prefixLabel || node.id };
   }
 
   return { label: node.label || node.id };
 }
 
-// Helper to process a single verdict
-// Uses top-down logic to ensure parent nodes are registered in order
-function processVerdict(
-  v: TestVerdict,
-  nodes: Map<string, AggregationNode>,
-  childrenMap: Map<string, AggregationNode[]>,
-) {
-  const testId = v.testIdStructured;
-  if (!testId) {
-    return;
-  }
-
-  // 1. Identify Hierarchy (Top-Down)
-  const modulePrefix = createPrefixForTest(
-    { testIdStructured: testId },
-    AggregationLevel.MODULE,
-  );
-  const moduleId = getTestIdentifierPrefixId(modulePrefix);
-
-  // Ensure Module exists
-  registerNode(nodes, childrenMap, {
-    id: moduleId,
-    label: testId.moduleName || 'Module',
-    isLeaf: false,
-    depth: 0,
-    isLoading: true,
-  });
-
-  let parentId = moduleId;
-
-  // Coarse
-  if (testId.coarseName) {
-    const coarsePrefix = createPrefixForTest(
-      { testIdStructured: testId },
-      AggregationLevel.COARSE,
-    );
-    const coarseId = getTestIdentifierPrefixId(coarsePrefix);
-    registerNode(
-      nodes,
-      childrenMap,
-      {
-        id: coarseId,
-        label: testId.coarseName,
-        isLeaf: false,
-        depth: 0,
-        isLoading: true,
-      },
-      parentId,
-    );
-    parentId = coarseId;
-  }
-
-  // Fine
-  if (testId.fineName) {
-    const finePrefix = createPrefixForTest(
-      { testIdStructured: testId },
-      AggregationLevel.FINE,
-    );
-    const fineId = getTestIdentifierPrefixId(finePrefix);
-    registerNode(
-      nodes,
-      childrenMap,
-      {
-        id: fineId,
-        label: testId.fineName,
-        isLeaf: false,
-        depth: 0,
-        isLoading: true,
-      },
-      parentId,
-    );
-    parentId = fineId;
-  }
-
-  // 2. Case Node (Bottom)
-  const caseId = v.testId;
-
-  registerNode(
-    nodes,
-    childrenMap,
-    {
-      id: caseId,
-      verdict: v,
-      label: v.testId,
-      isLeaf: true,
-      depth: 0,
-    },
-    parentId,
-  );
-}
-
-// 1. Build Skeleton from Verdicts
-export function buildSkeleton(verdicts: readonly TestVerdict[] | undefined): {
-  nodes: Map<string, AggregationNode>;
-  childrenMap: Map<string, AggregationNode[]>;
-} {
-  const nodes = new Map<string, AggregationNode>();
-  const childrenMap = new Map<string, AggregationNode[]>();
-
-  if (!verdicts) {
-    return { nodes, childrenMap };
-  }
-  verdicts.forEach((v) => {
-    processVerdict(v, nodes, childrenMap);
-  });
-  return { nodes, childrenMap };
-}
-
-// 2. Process Aggregations (Enrichment)
-export function processAggregations(enrichmentQuery: EnrichmentQuery[]): {
-  dataMap: Map<string, TestAggregation>;
-} {
-  const dataMap = new Map<string, TestAggregation>();
-
-  enrichmentQuery.forEach((q) => {
-    q.data?.aggregations?.forEach((agg) => {
-      const id = getTestIdentifierPrefixId(agg.id!);
-      dataMap.set(id, agg);
-    });
-  });
-  return { dataMap };
-}
-
-// 3. Merge and Flatten
-export function mergeAndFlatten(
-  nodes: Map<string, AggregationNode>,
-  childrenMap: Map<string, AggregationNode[]>,
-  aggDataMap: Map<string, TestAggregation>,
+export function mapAggregationToNode(
+  agg: TestAggregation,
   schemes: { [key: string]: Scheme },
+): AggregationNode {
+  const node: AggregationNode = {
+    id: getTestIdentifierPrefixId(agg.id!),
+    label: '',
+    depth: 0,
+    isLeaf: false,
+    isLoadMore: false,
+    aggregationData: agg,
+    nextFinerLevel: agg.nextFinerLevel,
+  };
+  const { label, labelParts } = resolveLabel(node, schemes);
+  node.label = label;
+  if (labelParts) {
+    node.labelParts = labelParts;
+  }
+  return node;
+}
+
+export function mapVerdictToNode(
+  v: TestVerdict,
+  schemes: { [key: string]: Scheme },
+): AggregationNode {
+  const node: AggregationNode = {
+    id: v.testId,
+    label: '',
+    depth: 0,
+    isLeaf: true,
+    isLoadMore: false,
+    verdict: v,
+  };
+  const { label, labelParts } = resolveLabel(node, schemes);
+  node.label = label;
+  if (labelParts) {
+    node.labelParts = labelParts;
+  }
+  return node;
+}
+
+export interface NodeChildrenState {
+  items: AggregationNode[];
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: () => void;
+}
+
+// Merge and Flatten dynamic tree
+export function flattenDynamicTree(
+  rootNodes: AggregationNode[],
+  childrenMap: Map<string, NodeChildrenState>,
   expandedIds: Set<string>,
 ): AggregationNode[] {
   const flatList: AggregationNode[] = [];
 
-  const flatten = (nodeId: string, depth: number) => {
-    const original = nodes.get(nodeId);
-    if (!original) {
-      return;
-    }
+  const flatten = (node: AggregationNode, depth: number) => {
+    const cloned = { ...node, depth };
+    flatList.push(cloned);
 
-    // Clone and Merge
-    const node = { ...original };
-    node.depth = depth;
+    if (expandedIds.has(node.id)) {
+      const childrenState = childrenMap.get(node.id);
+      if (childrenState) {
+        childrenState.items.forEach((child) => flatten(child, depth + 1));
 
-    if (!node.isLeaf && aggDataMap.has(nodeId)) {
-      node.aggregationData = aggDataMap.get(nodeId);
-      node.isLoading = false;
-    }
-
-    const { label, labelParts } = resolveLabel(node, schemes);
-    node.label = label;
-    if (labelParts) {
-      node.labelParts = labelParts;
-    }
-    flatList.push(node);
-
-    if (expandedIds.has(nodeId)) {
-      const children = childrenMap.get(nodeId) || [];
-      children.sort((a, b) => a.label.localeCompare(b.label));
-      children.forEach((child) => flatten(child.id, depth + 1));
+        if (childrenState.hasNextPage) {
+          flatList.push({
+            id: `${node.id}-load-more`,
+            label: 'Load more',
+            depth: depth + 1,
+            isLeaf: true,
+            isLoadMore: true,
+            hasNextPage: childrenState.hasNextPage,
+            isFetchingNextPage: childrenState.isFetchingNextPage,
+            fetchNextPage: childrenState.fetchNextPage,
+          });
+        }
+      }
     }
   };
 
-  const realRoots: AggregationNode[] = [];
-  nodes.forEach((node) => {
-    // Identify roots: Modules (level=MODULE=2)
-    const isModuleSkeleton =
-      !node.isLeaf && !node.aggregationData && node.id.startsWith('LEVEL:2');
-
-    if (
-      (!node.isLeaf &&
-        node.aggregationData?.id?.level === AggregationLevel.MODULE) ||
-      isModuleSkeleton
-    ) {
-      realRoots.push(node);
-    }
-  });
-
-  // Sort roots
-  realRoots.sort((a, b) => a.id.localeCompare(b.id));
-
-  // Flatten
-  realRoots.forEach((r) => {
-    flatten(r.id, 0);
-  });
-
+  rootNodes.forEach((r) => flatten(r, 0));
   return flatList;
 }

@@ -14,7 +14,6 @@
 
 import { GpsFixed } from '@mui/icons-material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import LoadingButton from '@mui/lab/LoadingButton';
 import type { SelectChangeEvent } from '@mui/material';
 import {
   Box,
@@ -44,17 +43,6 @@ import { useTestAggregationContext } from './context';
 const FILTER_SCHEMA: FieldDef = {
   staticFields: {
     test_id: {},
-    status: {
-      getValues: (partial: string): readonly ValueDef[] => {
-        const partialUpper = partial.toUpperCase();
-        return Object.keys(TestResult_Status)
-          .filter((k) => isNaN(Number(k)) && k !== 'STATUS_UNSPECIFIED')
-          .filter((k) => k.includes(partialUpper))
-          .map((k) => ({ text: k }));
-      },
-    },
-    duration: {},
-    tags: {},
     test_id_structured: {
       staticFields: {
         module_name: {},
@@ -77,6 +65,17 @@ const FILTER_SCHEMA: FieldDef = {
         },
       },
     },
+    tags: {},
+    status: {
+      getValues: (partial: string): readonly ValueDef[] => {
+        const partialUpper = partial.toUpperCase();
+        return Object.keys(TestResult_Status)
+          .filter((k) => isNaN(Number(k)) && k !== 'STATUS_UNSPECIFIED')
+          .filter((k) => k.includes(partialUpper))
+          .map((k) => ({ text: k }));
+      },
+    },
+    duration: {},
   },
 };
 
@@ -102,19 +101,8 @@ export interface TestAggregationToolbarProps {
 export function TestAggregationToolbar({
   onLocateCurrentTest,
 }: TestAggregationToolbarProps) {
-  const {
-    selectedStatuses,
-    setSelectedStatuses,
-    aipFilter,
-    setAipFilter,
-    triggerLoadMore,
-    loadedCount,
-    isLoadingMore,
-  } = useTestAggregationContext();
-
-  const handleLoadMore = () => {
-    triggerLoadMore();
-  };
+  const { selectedStatuses, setSelectedStatuses, aipFilter, setAipFilter } =
+    useTestAggregationContext();
 
   const handleStatusChange = (event: SelectChangeEvent<string[]>) => {
     const {
@@ -148,6 +136,19 @@ export function TestAggregationToolbar({
           minWidth: '300px', // Prevent collapsing too small
         }}
       >
+        {onLocateCurrentTest && (
+          <HtmlTooltip title="Locate current test">
+            <span>
+              <IconButton
+                size="small"
+                onClick={onLocateCurrentTest}
+                aria-label="Locate current test"
+              >
+                <GpsFixed fontSize="small" />
+              </IconButton>
+            </span>
+          </HtmlTooltip>
+        )}
         <FormControl size="small" sx={{ width: '300px', flexShrink: 0 }}>
           <InputLabel id="status-filter-label" sx={{ fontSize: '0.875rem' }}>
             Status
@@ -263,7 +264,7 @@ export function TestAggregationToolbar({
                     </li>
                     <li>
                       <strong>test_id_structured.module_name</strong> (string) -
-                      the structured form test ID
+                      the structured form test ID fields
                     </li>
                     <li>
                       <strong>test_id_structured.module_scheme</strong> (string)
@@ -287,14 +288,16 @@ export function TestAggregationToolbar({
                       <strong>test_id_structured.case_name</strong> (string)
                     </li>
                     <li>
-                      <strong>test_metadata.name</strong> (string)
+                      <strong>test_metadata.name</strong> (string) - the
+                      original test name
                     </li>
                     <li>
                       <strong>tags</strong> (repeated (key string, value
-                      string))
+                      string)) - the test tags
                     </li>
                     <li>
-                      <strong>test_metadata.location.repo</strong> (string)
+                      <strong>test_metadata.location.repo</strong> (string) -
+                      the test metadata location
                     </li>
                     <li>
                       <strong>test_metadata.location.file_name</strong> (string)
@@ -317,51 +320,6 @@ export function TestAggregationToolbar({
             </IconButton>
           </HtmlTooltip>
         </Box>
-      </Box>
-
-      {/* Actions Section - Keeps buttons together */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 0.5,
-          alignItems: 'center',
-          flexShrink: 0,
-        }}
-      >
-        {onLocateCurrentTest && (
-          <HtmlTooltip title="Locate current test">
-            <span>
-              <IconButton
-                size="small"
-                onClick={onLocateCurrentTest}
-                aria-label="Locate current test"
-              >
-                <GpsFixed fontSize="small" />
-              </IconButton>
-            </span>
-          </HtmlTooltip>
-        )}
-        <Typography
-          variant="body2"
-          sx={{
-            fontSize: '0.8125rem',
-            lineHeight: 1.75,
-            mr: 1,
-            ml: 1,
-            color: 'text.secondary',
-          }}
-        >
-          Loaded {loadedCount} tests
-        </Typography>
-        <LoadingButton
-          variant="outlined"
-          size="small"
-          onClick={handleLoadMore}
-          loading={isLoadingMore}
-          sx={{ fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
-        >
-          Load more
-        </LoadingButton>
       </Box>
     </Box>
   );

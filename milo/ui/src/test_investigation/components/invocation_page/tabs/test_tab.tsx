@@ -115,7 +115,6 @@ export function TestTab() {
       );
     }
 
-    // Initialize with default filters only if no other filters are set.
     if (parsedTestId || parsedVariantDef) {
       return new Set();
     }
@@ -148,18 +147,28 @@ export function TestTab() {
     );
   };
 
-  const queryRequest = useMemo(() => {
+  const aggregationViewAipFilter = useMemo(() => {
     const filterParts: string[] = [];
     if (parsedTestId) {
-      // The proto doc says a bare value is searched in test_id. Using an
-      // explicit `test_id:` with the "has" operator for a substring search.
       filterParts.push(`test_id:${JSON.stringify(parsedTestId)}`);
     }
     if (parsedVariantDef) {
       Object.entries(parsedVariantDef).forEach(([key, value]) => {
-        // The example `-variant.os:mac` in the proto suggests that filtering
-        // on variant key-value pairs is supported. We use `=` for an exact
-        // match on the value.
+        filterParts.push(
+          `test_id_structured.module_variant.${key} = ${JSON.stringify(value)}`,
+        );
+      });
+    }
+    return filterParts.join(' AND ') || '';
+  }, [parsedTestId, parsedVariantDef]);
+
+  const queryRequest = useMemo(() => {
+    const filterParts: string[] = [];
+    if (parsedTestId) {
+      filterParts.push(`test_id:${JSON.stringify(parsedTestId)}`);
+    }
+    if (parsedVariantDef) {
+      Object.entries(parsedVariantDef).forEach(([key, value]) => {
         filterParts.push(`variant.${key} = ${JSON.stringify(value)}`);
       });
     }
@@ -259,7 +268,7 @@ export function TestTab() {
       const variantToRedirect = finalFilteredVariants[0];
       const newPath = generateTestInvestigateUrl(
         invocationId,
-        variantToRedirect.testIdStructured!, // We assume testIdStructured is always present as per plan
+        variantToRedirect.testIdStructured!,
       );
       navigate(newPath, { replace: true });
     }
@@ -278,7 +287,6 @@ export function TestTab() {
     isFetchingTestVariants && !hasPerformedInitialRedirect.current;
   const isRedirecting = isUniqueResult && !hasPerformedInitialRedirect.current;
 
-  // New Test Aggregation View Logic
   const isTestAggregationEnabled = useFeatureFlag(
     TEST_AGGREGATION_IN_INVOCATION_FLAG,
   );
@@ -314,7 +322,8 @@ export function TestTab() {
         <TestAggregationViewer
           invocation={invocation}
           autoLocate={true}
-          defaultExpanded={true}
+          defaultTab={1}
+          initialAipFilter={aggregationViewAipFilter}
           initialExpandedIds={[
             'FAILED',
             'EXECUTION_ERRORED',

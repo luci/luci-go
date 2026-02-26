@@ -29,7 +29,7 @@ jest.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: jest.fn(),
 }));
 jest.mock('./hooks', () => ({
-  useBulkTestAggregationsQueries: jest.fn(),
+  useNodeAggregationsQuery: jest.fn(),
   useTestVerdictsQuery: jest.fn(),
   useSchemesQuery: jest.fn(),
   useAncestryAggregationsQueries: jest.fn(() => []),
@@ -57,11 +57,11 @@ describe('TestAggregationViewer', () => {
   });
 
   it('renders loading state when tree data is empty and loading', () => {
-    (hooks.useBulkTestAggregationsQueries as jest.Mock).mockReturnValue([
-      { data: undefined, isLoading: true, error: null }, // Module
-      { data: undefined, isLoading: true, error: null }, // Coarse
-      { data: undefined, isLoading: true, error: null }, // Fine
-    ]);
+    (hooks.useNodeAggregationsQuery as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+    });
     // Verdicts hook (Skeleton)
     (hooks.useTestVerdictsQuery as jest.Mock).mockReturnValue({
       data: undefined,
@@ -85,11 +85,10 @@ describe('TestAggregationViewer', () => {
   });
 
   it('renders no failures message when tree data is empty and loaded', () => {
-    (hooks.useBulkTestAggregationsQueries as jest.Mock).mockReturnValue([
-      { data: { aggregations: [] }, isLoading: false },
-      { data: { aggregations: [] }, isLoading: false },
-      { data: { aggregations: [] }, isLoading: false },
-    ]);
+    (hooks.useNodeAggregationsQuery as jest.Mock).mockReturnValue({
+      data: { aggregations: [] },
+      isLoading: false,
+    });
     (hooks.useTestVerdictsQuery as jest.Mock).mockReturnValue({
       data: { testVerdicts: [] },
       isLoading: false,
@@ -112,34 +111,30 @@ describe('TestAggregationViewer', () => {
   });
 
   it('renders aggregations when data is available', () => {
-    (hooks.useBulkTestAggregationsQueries as jest.Mock).mockReturnValue([
-      {
-        data: {
-          aggregations: [
-            TestAggregation.fromPartial({
+    (hooks.useNodeAggregationsQuery as jest.Mock).mockReturnValue({
+      data: {
+        aggregations: [
+          TestAggregation.fromPartial({
+            id: {
+              level: AggregationLevel.MODULE,
               id: {
-                level: AggregationLevel.MODULE,
-                id: {
-                  moduleName: 'test_module',
-                  moduleScheme: 'test_scheme',
-                  moduleVariant: {
-                    def: {
-                      key: 'val',
-                    },
+                moduleName: 'test_module',
+                moduleScheme: 'test_scheme',
+                moduleVariant: {
+                  def: {
+                    key: 'val',
                   },
                 },
               },
-              verdictCounts: {
-                failed: 5,
-              },
-            }),
-          ],
-        },
-        isLoading: false,
+            },
+            verdictCounts: {
+              failed: 5,
+            },
+          }),
+        ],
       },
-      { data: { aggregations: [] }, isLoading: false },
-      { data: { aggregations: [] }, isLoading: false },
-    ]);
+      isLoading: false,
+    });
     (hooks.useTestVerdictsQuery as jest.Mock).mockReturnValue({
       data: {
         testVerdicts: [

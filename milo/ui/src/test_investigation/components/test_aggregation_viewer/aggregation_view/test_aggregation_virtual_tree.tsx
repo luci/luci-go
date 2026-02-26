@@ -64,25 +64,33 @@ export function TestAggregationVirtualTree() {
           position: 'relative',
         }}
       >
-        <div
-          style={{
-            transform: `translateY(${
-              rowVirtualizer.getVirtualItems()[0]?.start ?? 0
-            }px)`,
-          }}
-        >
+        <>
           {rowVirtualizer.getVirtualItems().map((virtualDesc) => {
             const node = flattenedItems[virtualDesc.index];
             return (
-              <AggregationTreeItem
-                key={node.id}
-                node={node}
-                measureRef={rowVirtualizer.measureElement}
-                rawInvocationId={invocation.name}
-              />
+              <div
+                key={virtualDesc.key}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualDesc.start}px)`,
+                }}
+              >
+                <div
+                  ref={rowVirtualizer.measureElement}
+                  data-index={virtualDesc.index}
+                >
+                  <AggregationTreeItem
+                    node={node}
+                    rawInvocationId={invocation.name}
+                  />
+                </div>
+              </div>
             );
           })}
-        </div>
+        </>
       </div>
     </Box>
   );

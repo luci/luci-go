@@ -37,7 +37,6 @@ jest.mock('@/common/components/aip_160_autocomplete', () => ({
 describe('TestAggregationToolbar', () => {
   const mockSetSelectedStatuses = jest.fn();
   const mockSetAipFilter = jest.fn();
-  const mockTriggerLoadMore = jest.fn();
   const mockOnLocateCurrentTest = jest.fn();
 
   const defaultContext = {
@@ -45,12 +44,6 @@ describe('TestAggregationToolbar', () => {
     setSelectedStatuses: mockSetSelectedStatuses,
     aipFilter: '',
     setAipFilter: mockSetAipFilter,
-    loadMoreTrigger: 0,
-    triggerLoadMore: mockTriggerLoadMore,
-    loadedCount: 100,
-    setLoadedCount: jest.fn(),
-    isLoadingMore: false,
-    setIsLoadingMore: jest.fn(),
   };
 
   beforeEach(() => {
@@ -76,10 +69,6 @@ describe('TestAggregationToolbar', () => {
     // Toolbar elements
     expect(screen.getByTestId('mock-aip-autocomplete')).toBeInTheDocument();
     expect(screen.getByText(/Failed/i)).toBeInTheDocument(); // Chip category dropdown currently holds "Failed"
-    expect(screen.getByText(/Loaded 100 tests/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /load more/i }),
-    ).toBeInTheDocument();
 
     // Locate button should be enabled
     expect(
@@ -103,16 +92,5 @@ describe('TestAggregationToolbar', () => {
     await fireEvent.change(input, { target: { value: 'status:FAILED' } });
 
     expect(mockSetAipFilter).toHaveBeenLastCalledWith('status:FAILED');
-  });
-
-  it('calls triggerLoadMore when load more is clicked', async () => {
-    setup();
-    const loadMoreBtn = screen.getByRole('button', {
-      name: /load more/i,
-    });
-
-    await fireEvent.click(loadMoreBtn);
-
-    expect(mockTriggerLoadMore).toHaveBeenCalledTimes(1);
   });
 });

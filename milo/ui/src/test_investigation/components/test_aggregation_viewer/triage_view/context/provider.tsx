@@ -83,22 +83,12 @@ export function TriageViewProvider({
   autoLocate = true,
 }: TriageViewProviderProps) {
   // 1. Consume Shared Filter Context
-  const {
-    selectedStatuses,
-    aipFilter,
-    loadMoreTrigger,
-    setLoadedCount,
-    setIsLoadingMore,
-  } = useTestAggregationContext();
+  const { selectedStatuses, aipFilter } = useTestAggregationContext();
 
   // 2. Data Fetching
   const verdictStatuses = useMemo(() => {
     if (selectedStatuses.size === 0) {
-      return [
-        TestVerdictPredicate_VerdictEffectiveStatus.FAILED,
-        TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED,
-        TestVerdictPredicate_VerdictEffectiveStatus.FLAKY,
-      ];
+      return [];
     }
     const statuses: TestVerdictPredicate_VerdictEffectiveStatus[] = [];
     selectedStatuses.forEach((s) => {
@@ -120,42 +110,49 @@ export function TriageViewProvider({
     },
   );
 
-  // Trigger Load More
-  const lastProcessedTrigger = useRef(loadMoreTrigger);
-  useEffect(() => {
-    if (loadMoreTrigger > lastProcessedTrigger.current) {
-      lastProcessedTrigger.current = loadMoreTrigger;
-      if (verdictsQuery.hasNextPage && !verdictsQuery.isFetchingNextPage) {
-        verdictsQuery.fetchNextPage();
-      }
-    }
-  }, [loadMoreTrigger, verdictsQuery]);
+  const lastSyncRef = useRef<{
+    loadedCount: number;
+    hasNextPage: boolean;
+    isFetching: boolean;
+  }>({ loadedCount: 0, hasNextPage: false, isFetching: false });
 
   // Sync Loaded Count & Initial Load Logic
   const loadedCount = verdictsQuery.data?.testVerdicts?.length || 0;
   useEffect(() => {
-    setLoadedCount(loadedCount);
+    const hasNext = verdictsQuery.hasNextPage;
+    const isFetching = verdictsQuery.isFetchingNextPage;
 
     if (
-      loadedCount < 1000 &&
-      verdictsQuery.hasNextPage &&
-      !verdictsQuery.isFetchingNextPage
+      lastSyncRef.current.loadedCount !== loadedCount ||
+      lastSyncRef.current.hasNextPage !== hasNext ||
+      lastSyncRef.current.isFetching !== isFetching
     ) {
-      verdictsQuery.fetchNextPage();
+      lastSyncRef.current = {
+        loadedCount,
+        hasNextPage: hasNext,
+        isFetching,
+      };
+
+      // The initial load triggers multiple times as pages come in. As long as we haven't
+      // accumulated 1000 items from the current query context, and more pages are available,
+      // request the next page. This handles scenarios where sparse optimized pages load with 0 items.
+      if (loadedCount < 1000 && hasNext && !isFetching) {
+        verdictsQuery.fetchNextPage();
+      }
     }
   }, [
     loadedCount,
-    setLoadedCount,
     verdictsQuery.hasNextPage,
     verdictsQuery.isFetchingNextPage,
     verdictsQuery.fetchNextPage,
     verdictsQuery,
   ]);
 
-  // Sync Loading State
-  useEffect(() => {
-    setIsLoadingMore(verdictsQuery.isFetchingNextPage);
-  }, [verdictsQuery.isFetchingNextPage, setIsLoadingMore]);
+  const fetchNextPage = useCallback(() => {
+    if (verdictsQuery.hasNextPage && !verdictsQuery.isFetchingNextPage) {
+      verdictsQuery.fetchNextPage();
+    }
+  }, [verdictsQuery]);
 
   // 3. Merging with Selected Test Variant
   const selectedTestVariant = testVariant;
@@ -302,6 +299,29 @@ export function TriageViewProvider({
     });
   };
 
+  // Auto-expand status nodes when they first load
+  const autoExpandedStatusesRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (statusGroups.length > 0) {
+      setExpandedIds((prev) => {
+        let changed = false;
+        const next = new Set(prev);
+
+        statusGroups.forEach((group) => {
+          if (!autoExpandedStatusesRef.current.has(group.status)) {
+            autoExpandedStatusesRef.current.add(group.status);
+            if (!next.has(group.status)) {
+              next.add(group.status);
+              changed = true;
+            }
+          }
+        });
+
+        return changed ? next : prev;
+      });
+    }
+  }, [statusGroups]);
+
   // 6. Flattening for Virtualization
   const flattenedItems = useMemo(() => {
     const items: TriageViewNode[] = [];
@@ -418,6 +438,10 @@ export function TriageViewProvider({
         toggleExpansion,
         locateCurrentTest,
         scrollRequest,
+        loadedCount,
+        isLoadingMore: verdictsQuery.isFetchingNextPage,
+        hasNextPage: verdictsQuery.hasNextPage,
+        fetchNextPage,
       }}
     >
       {children}

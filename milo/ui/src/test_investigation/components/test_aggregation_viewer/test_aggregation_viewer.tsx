@@ -29,16 +29,23 @@ export interface TestAggregationViewerProps {
   invocation: AnyInvocation;
   testVariant?: OutputTestVerdict;
   autoLocate?: boolean;
-  defaultExpanded?: boolean;
+  defaultTab?: number;
+  initialAipFilter?: string;
 }
 
 export interface TestInvestigationViewHandle {
   locateCurrentTest: () => void;
 }
 
-export function TestAggregationViewer(props: TestAggregationViewerProps) {
-  const { testVariant } = props;
-  const [activeTab, setActiveTab] = useState(0);
+export function TestAggregationViewer({
+  initialExpandedIds,
+  invocation,
+  testVariant,
+  autoLocate,
+  defaultTab = 0,
+  initialAipFilter,
+}: TestAggregationViewerProps) {
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const activeViewRef = useRef<TestInvestigationViewHandle>(null);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -50,7 +57,7 @@ export function TestAggregationViewer(props: TestAggregationViewerProps) {
   };
 
   return (
-    <TestAggregationProvider>
+    <TestAggregationProvider initialAipFilter={initialAipFilter}>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <TestAggregationToolbar
           onLocateCurrentTest={
@@ -88,15 +95,19 @@ export function TestAggregationViewer(props: TestAggregationViewerProps) {
           {activeTab === 0 && (
             <AggregationView
               ref={activeViewRef}
-              autoLocate={props.autoLocate}
-              {...props}
+              autoLocate={autoLocate}
+              initialExpandedIds={initialExpandedIds}
+              invocation={invocation}
+              testVariant={testVariant}
             />
           )}
           {activeTab === 1 && (
             <TriageView
               ref={activeViewRef}
-              autoLocate={props.autoLocate}
-              {...props}
+              autoLocate={autoLocate}
+              initialExpandedIds={initialExpandedIds}
+              invocation={invocation}
+              testVariant={testVariant}
             />
           )}
         </Box>

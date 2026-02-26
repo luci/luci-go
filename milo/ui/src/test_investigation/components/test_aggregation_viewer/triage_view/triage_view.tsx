@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { LoadingButton } from '@mui/lab';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
@@ -28,6 +29,7 @@ export interface TriageViewUIProps {
   initialExpandedIds?: string[];
   invocation: AnyInvocation;
   testVariant?: OutputTestVerdict;
+  autoLocate?: boolean;
 }
 
 export const TriageView = forwardRef<
@@ -51,6 +53,10 @@ const TriageViewContent = forwardRef<TestInvestigationViewHandle>((_, ref) => {
     locateCurrentTest,
     scrollRequest,
     toggleExpansion,
+    loadedCount,
+    isLoadingMore,
+    hasNextPage,
+    fetchNextPage,
   } = useTriageViewContext();
 
   useImperativeHandle(ref, () => ({
@@ -96,7 +102,33 @@ const TriageViewContent = forwardRef<TestInvestigationViewHandle>((_, ref) => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Toolbar is hosted in parent */}
+      {/* Triage View Header */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          p: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <LoadingButton
+          variant="outlined"
+          size="small"
+          onClick={fetchNextPage}
+          loading={isLoadingMore}
+          disabled={!hasNextPage}
+          sx={{ fontSize: '0.8125rem', whiteSpace: 'nowrap' }}
+        >
+          Load more
+        </LoadingButton>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Loaded {loadedCount} tests {hasNextPage ? '(more available)' : ''}
+        </Typography>
+      </Box>
+
+      {/* Virtualized List Container */}
       <Box
         ref={parentRef}
         sx={{ flexGrow: 1, overflow: 'auto', p: 0, position: 'relative' }}

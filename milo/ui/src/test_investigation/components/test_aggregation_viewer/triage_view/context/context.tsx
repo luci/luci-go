@@ -56,6 +56,12 @@ export interface TriageViewContextValue {
   // Interaction
   locateCurrentTest: () => void;
   scrollRequest?: { id: string; ts: number };
+
+  // Pagination
+  loadedCount: number;
+  isLoadingMore: boolean;
+  hasNextPage: boolean;
+  fetchNextPage: () => void;
 }
 
 export const TriageViewContext = createContext<TriageViewContextValue | null>(

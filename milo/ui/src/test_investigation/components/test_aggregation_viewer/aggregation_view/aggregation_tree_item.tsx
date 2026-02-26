@@ -14,6 +14,7 @@
 
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { LoadingButton } from '@mui/lab';
 import {
   Link as MuiLink,
   ListItemButton,
@@ -24,6 +25,7 @@ import {
   Skeleton,
   Tooltip,
 } from '@mui/material';
+import { useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router';
 
 import {
@@ -34,32 +36,41 @@ import {
 import { generateTestInvestigateUrl } from '@/common/tools/url_utils';
 import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { AggregationLevel } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
+import { TestVerdictPredicate_VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/predicate.pb';
 import {
   getSemanticStatusFromModuleStatus,
   getSemanticStatusFromVerdict,
 } from '@/test_investigation/utils/drawer_tree_utils';
 
+import { useTestAggregationContext } from '../context';
 import { getVariantDefinitionString } from '../context/utils';
+import {
+  useNodeAggregationsQuery,
+  useSchemesQuery,
+  useTestVerdictsQuery,
+} from '../hooks';
 
 import {
   AggregationNode,
   IntermediateAggregationNode,
   LeafAggregationNode,
+  LoadMoreAggregationNode,
   useAggregationViewContext,
   VerdictCounts,
 } from './context/context';
+import {
+  buildAggregationFilterString,
+  mapAggregationToNode,
+  mapVerdictToNode,
+} from './context/utils';
 
 interface AggregationTreeItemProps {
   node: AggregationNode;
-  style?: React.CSSProperties;
-  measureRef?: (element: Element | null) => void;
   rawInvocationId: string;
 }
 
 export function AggregationTreeItem({
   node,
-  style,
-  measureRef,
   rawInvocationId,
 }: AggregationTreeItemProps) {
   const { expandedIds, toggleExpansion, highlightedNodeId } =
@@ -77,11 +88,7 @@ export function AggregationTreeItem({
   };
 
   return (
-    <div
-      ref={measureRef as React.Ref<HTMLDivElement>}
-      style={style}
-      data-index={node.id}
-    >
+    <div>
       <ListItemButton
         onClick={handleToggle}
         selected={isSelected}
@@ -149,11 +156,9 @@ function StatusChip({ label, statusStyle, semanticStatus }: StatusChipProps) {
   );
 }
 
-// Status Logic:
-// - Leaf: Use verdict status.
-// - Module: Use module_status if available.
-// - Others: No explicit status color generally (or neutral).
 function getSemanticStatus(node: AggregationNode): SemanticStatusType {
+  if (node.isLoadMore) return 'unknown';
+
   if (node.isLeaf) {
     if (node.verdict) {
       return getSemanticStatusFromVerdict(
@@ -163,7 +168,6 @@ function getSemanticStatus(node: AggregationNode): SemanticStatusType {
     return 'unknown';
   }
 
-  // For Module, use moduleStatus
   const moduleStatus = node.aggregationData?.moduleStatus;
   if (moduleStatus) {
     return getSemanticStatusFromModuleStatus(moduleStatus);
@@ -244,11 +248,145 @@ function VariantSuffix({ node }: VariantSuffixProps) {
   return null;
 }
 
+const STATUS_MAP: Record<string, TestVerdictPredicate_VerdictEffectiveStatus> =
+  {
+    FAILED: TestVerdictPredicate_VerdictEffectiveStatus.FAILED,
+    EXECUTION_ERRORED:
+      TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED,
+    PRECLUDED: TestVerdictPredicate_VerdictEffectiveStatus.PRECLUDED,
+    FLAKY: TestVerdictPredicate_VerdictEffectiveStatus.FLAKY,
+    SKIPPED: TestVerdictPredicate_VerdictEffectiveStatus.SKIPPED,
+    PASSED: TestVerdictPredicate_VerdictEffectiveStatus.PASSED,
+    EXONERATED: TestVerdictPredicate_VerdictEffectiveStatus.EXONERATED,
+  };
+
 function IntermediateTreeItemContent({
   node,
   isExpanded,
   handleToggle,
 }: IntermediateTreeItemContentProps) {
+  const { selectedStatuses, aipFilter } = useTestAggregationContext();
+  const { invocation, setNodeChildren } = useAggregationViewContext();
+
+  const schemesQuery = useSchemesQuery();
+  const schemes = useMemo(
+    () => schemesQuery.data?.schemes || {},
+    [schemesQuery.data?.schemes],
+  );
+
+  const aggregationFilterString = useMemo(() => {
+    return buildAggregationFilterString(selectedStatuses);
+  }, [selectedStatuses]);
+
+  const verdictStatuses = useMemo(() => {
+    if (selectedStatuses.size === 0) {
+      return [];
+    }
+    const statuses: TestVerdictPredicate_VerdictEffectiveStatus[] = [];
+    selectedStatuses.forEach((s) => {
+      const mapped = STATUS_MAP[s];
+      if (mapped !== undefined) {
+        statuses.push(mapped);
+      }
+    });
+    return statuses;
+  }, [selectedStatuses]);
+
+  const level = node.nextFinerLevel;
+  const isVerdictLevel = !level || level === AggregationLevel.CASE;
+  const type = isVerdictLevel ? 'verdict' : 'aggregation';
+
+  const shouldFetchAgg = isExpanded && type === 'aggregation';
+  const aggQuery = useNodeAggregationsQuery(
+    invocation,
+    level as AggregationLevel,
+    aggregationFilterString,
+    node.aggregationData?.id,
+    shouldFetchAgg,
+    undefined,
+    aipFilter,
+  );
+
+  const shouldFetchVerdict = isExpanded && type === 'verdict';
+  const verdictQuery = useTestVerdictsQuery(
+    invocation,
+    verdictStatuses,
+    aipFilter,
+    undefined,
+    {
+      enabled: shouldFetchVerdict,
+      testPrefixFilter: node.aggregationData?.id,
+    },
+  );
+
+  const lastSyncRef = useRef<{
+    childrenIds: string;
+    hasNext: boolean;
+    isFetching: boolean;
+  }>({ childrenIds: '', hasNext: false, isFetching: false });
+
+  // This effect synchronizes the localized fetching state of this specific node
+  // (managed by React Query) up to the global AggregationViewContext.
+  // This allows the global context to maintain a flattened list of all visible nodes
+  // for the virtualized tree, while keeping the data fetching localized.
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const isAgg = type === 'aggregation';
+    const query = isAgg ? aggQuery : verdictQuery;
+
+    const children = isAgg
+      ? (aggQuery.data?.aggregations || []).map((a) =>
+          mapAggregationToNode(a, schemes),
+        )
+      : (verdictQuery.data?.testVerdicts || []).map((v) =>
+          mapVerdictToNode(v, schemes),
+        );
+
+    const childrenIds = children.map((c) => c.id).join(',');
+    const isInitialLoading = children.length === 0 && query.isLoading;
+    const hasNext = query.hasNextPage || isInitialLoading;
+    const isFetching = query.isFetchingNextPage || query.isLoading;
+
+    // We use a manual strict bailout ref here to prevent an infinite render loop.
+    // If we called setNodeChildren unconditionally, updating the global context
+    // would trigger a re-render of this component, re-evaluating the effect,
+    // and pushing to context again. This ensures we only update the context
+    // when the actual resulting data or fetch status has meaningfully changed.
+    if (
+      lastSyncRef.current.childrenIds !== childrenIds ||
+      lastSyncRef.current.hasNext !== hasNext ||
+      lastSyncRef.current.isFetching !== isFetching
+    ) {
+      lastSyncRef.current = { childrenIds, hasNext, isFetching };
+      setNodeChildren(node.id, children, hasNext, isFetching, () => {
+        // We package the hook's fetch function into a callback for the context,
+        // so global "Load More" buttons can trigger page fetches on this local hook.
+        if (query.hasNextPage && !query.isFetchingNextPage) {
+          query.fetchNextPage();
+        }
+      });
+    }
+  }, [
+    isExpanded,
+    type,
+    aggQuery.data?.aggregations,
+    aggQuery.hasNextPage,
+    aggQuery.isFetchingNextPage,
+    aggQuery.isLoading,
+    aggQuery.fetchNextPage,
+    verdictQuery.data?.testVerdicts,
+    verdictQuery.hasNextPage,
+    verdictQuery.isFetchingNextPage,
+    verdictQuery.isLoading,
+    verdictQuery.fetchNextPage,
+    node.id,
+    setNodeChildren,
+    schemes,
+    aggQuery,
+    verdictQuery,
+  ]);
+
   const label = node.label || 'Unknown';
   const labelParts = node.labelParts;
   const counts = node.aggregationData?.verdictCounts;
@@ -442,6 +580,32 @@ function LeafTreeItemContent({
   );
 }
 
+function LoadMoreTreeItemContent({ node }: { node: LoadMoreAggregationNode }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+      <Box sx={{ width: '24px', flexShrink: 0 }} />
+      <LoadingButton
+        size="small"
+        onClick={(e) => {
+          e.stopPropagation();
+          node.fetchNextPage();
+        }}
+        loading={node.isFetchingNextPage}
+        variant="text"
+        sx={{
+          textTransform: 'none',
+          py: 0,
+          minHeight: '24px',
+          justifyContent: 'flex-start',
+        }}
+        disableRipple
+      >
+        Load more
+      </LoadingButton>
+    </Box>
+  );
+}
+
 interface AggregationTreeItemContentProps {
   node: AggregationNode;
   rawInvocationId: string;
@@ -455,6 +619,9 @@ function AggregationTreeItemContent({
   isExpanded,
   handleToggle,
 }: AggregationTreeItemContentProps) {
+  if (node.isLoadMore) {
+    return <LoadMoreTreeItemContent node={node} />;
+  }
   if (node.isLeaf) {
     return (
       <LeafTreeItemContent node={node} rawInvocationId={rawInvocationId} />
