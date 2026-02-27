@@ -22,12 +22,19 @@ jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
   useListDashboardStatesInfinite: jest.fn(),
   useDeleteDashboardState: jest.fn(),
+  useUndeleteDashboardState: jest.fn(),
 }));
 
 const mockInvalidateQueries = jest.fn();
 jest.mock('@tanstack/react-query', () => ({
   ...jest.requireActual('@tanstack/react-query'),
   useQueryClient: jest.fn(() => ({ invalidateQueries: mockInvalidateQueries })),
+}));
+
+const mockNavigate = jest.fn();
+jest.mock('react-router', () => ({
+  ...jest.requireActual('react-router'),
+  useNavigate: () => mockNavigate,
 }));
 
 const mockDashboards: DashboardState[] = [
@@ -64,7 +71,12 @@ describe('<DashboardListTable />', () => {
       mutateAsync: jest.fn(),
       isPending: false,
     });
+    (hooks.useUndeleteDashboardState as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    });
     mockInvalidateQueries.mockClear();
+    mockNavigate.mockClear();
   });
 
   it('should render the table with data from useListDashboardStates', () => {
@@ -353,6 +365,74 @@ describe('<DashboardListTable />', () => {
       });
       expect(mockInvalidateQueries).toHaveBeenCalled();
       expect(screen.getByText('Dashboard deleted successfully')).toBeVisible();
+    });
+  });
+
+  it('does not trigger onDashboardClick for deleted dashboards', () => {
+    const onDashboardClick = jest.fn();
+
+    (hooks.useListDashboardStatesInfinite as jest.Mock).mockReturnValue({
+      data: { pages: [{ dashboardStates: mockDashboards }] },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+    });
+
+    render(
+      <DashboardListTable showDeleted onDashboardClick={onDashboardClick} />,
+    );
+
+    const dashboardRow = screen.getByText('Generic Dashboard Beta');
+    dashboardRow.click();
+
+    expect(onDashboardClick).not.toHaveBeenCalled();
+  });
+
+  it('recovers the dashboard successfully', async () => {
+    const mockUndeleteAsync = jest.fn().mockResolvedValue({
+      response: { name: 'dashboardStates/dashboard1' },
+    });
+    (hooks.useUndeleteDashboardState as jest.Mock).mockReturnValue({
+      mutateAsync: mockUndeleteAsync,
+      isPending: false,
+    });
+
+    (hooks.useListDashboardStatesInfinite as jest.Mock).mockReturnValue({
+      data: { pages: [{ dashboardStates: mockDashboards }] },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+    });
+
+    render(<DashboardListTable showDeleted />);
+
+    // Verify it passes showDeleted to the API
+    expect(hooks.useListDashboardStatesInfinite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        showDeleted: true,
+      }),
+    );
+
+    // Click the Row actions menu for the first row
+    const rowActionButtons = screen.getAllByRole('button', {
+      name: /Row Actions/i,
+    });
+    fireEvent.click(rowActionButtons[0]);
+
+    // Click the Recover Dashboard menu item
+    const recoverMenuItem = await screen.findByText('Recover Dashboard');
+    fireEvent.click(recoverMenuItem);
+
+    await waitFor(() => {
+      expect(mockUndeleteAsync).toHaveBeenCalledWith({
+        name: 'dashboardStates/dashboard1',
+      });
+      expect(mockInvalidateQueries).toHaveBeenCalled();
+      expect(
+        screen.getByText('Dashboard recovered successfully'),
+      ).toBeVisible();
+      // No navigate should be called
+      expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
 });

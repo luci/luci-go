@@ -240,20 +240,34 @@ export const useDeleteDashboardState = (
 
 /**
  * Hook for UndeleteDashboardState.
- * @param request - The undelete request payload.
- * @param options - Optional query options.
- * @returns A Long Running Operation.
+ * @param options - Optional mutation options.
+ * @returns A mutation hook to undelete a dashboard state.
  */
 export const useUndeleteDashboardState = (
-  request: UndeleteDashboardStateRequest,
-  options?: WrapperQueryOptions<TypedDashboardStateOperation>,
-): UseQueryResult<TypedDashboardStateOperation> => {
-  return useGapiQuery<TypedDashboardStateOperation>(
-    {
+  options?: UseMutationOptions<
+    TypedDashboardStateOperation,
+    Error,
+    UndeleteDashboardStateRequest
+  >,
+): UseMutationResult<
+  TypedDashboardStateOperation,
+  Error,
+  UndeleteDashboardStateRequest
+> => {
+  return useGapiMutation<
+    UndeleteDashboardStateRequest,
+    TypedDashboardStateOperation
+  >(
+    (request) => ({
       path: `${BASE_PATH}/${request.name}:undelete`,
       method: 'POST',
-      body: request, // Body includes etag, requestId, validateOnly
-    },
+      body: {
+        etag: request.etag,
+        validateOnly: request.validateOnly,
+        requestId: request.requestId,
+      },
+      params: {},
+    }),
     options,
   );
 };

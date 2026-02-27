@@ -15,6 +15,8 @@
 import AddIcon from '@mui/icons-material/Add';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -31,9 +33,19 @@ import { extractIdFromName, formatApiError } from '@/crystal_ball/utils';
 export function LandingPage() {
   const navigate = useNavigate();
 
+  const [currentTab, setCurrentTab] = useState(0);
   const [isDialogsOpen, setIsDialogsOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const createMutation = useCreateDashboardState();
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setCurrentTab(newValue);
+  };
+
+  const a11yProps = (index: number) => ({
+    id: `dashboard-tab-${index}`,
+    'aria-controls': `dashboard-tabpanel-${index}`,
+  });
 
   const handleOpenDialog = () => {
     setErrorMsg('');
@@ -91,7 +103,26 @@ export function LandingPage() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <DashboardListTable onDashboardClick={handleDashboardClick} />
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs
+          value={currentTab}
+          onChange={handleTabChange}
+          aria-label="dashboard list tabs"
+        >
+          <Tab label="Active Dashboards" {...a11yProps(0)} />
+          <Tab label="Deleted Dashboards" {...a11yProps(1)} />
+        </Tabs>
+      </Box>
+      <Box
+        role="tabpanel"
+        id={`dashboard-tabpanel-${currentTab}`}
+        aria-labelledby={`dashboard-tab-${currentTab}`}
+      >
+        <DashboardListTable
+          onDashboardClick={handleDashboardClick}
+          showDeleted={currentTab === 1}
+        />
+      </Box>
       <DashboardDialog
         open={isDialogsOpen}
         onClose={handleCloseDialog}

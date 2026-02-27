@@ -205,4 +205,36 @@ describe('<LandingPage />', () => {
       );
     });
   });
+
+  test('switches to Deleted Dashboards tab and loads deleted dashboards', async () => {
+    render(
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/ui/labs/crystal-ball'],
+        }}
+        mountedPath="/ui/labs/crystal-ball"
+      >
+        <TopBarProvider>
+          <TopBar />
+          <LandingPage />
+        </TopBarProvider>
+      </FakeContextProvider>,
+    );
+
+    // Initial render should call with showDeleted: false (or undefined)
+    expect(hooks.useListDashboardStatesInfinite).toHaveBeenCalledWith(
+      expect.not.objectContaining({ showDeleted: true }),
+    );
+
+    // Click the Deleted Dashboards tab
+    const deletedTab = screen.getByRole('tab', { name: /Deleted Dashboards/i });
+    fireEvent.click(deletedTab);
+
+    // Should call useListDashboardStatesInfinite again with showDeleted: true
+    await waitFor(() => {
+      expect(hooks.useListDashboardStatesInfinite).toHaveBeenCalledWith(
+        expect.objectContaining({ showDeleted: true }),
+      );
+    });
+  });
 });

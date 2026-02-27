@@ -335,25 +335,49 @@ describe('use_dashboard_state_api', () => {
   describe('useUndeleteDashboardState', () => {
     const request: UndeleteDashboardStateRequest = {
       name: 'dashboardStates/test-id',
+      etag: 'test-etag',
+      validateOnly: true,
+      requestId: 'req-123',
     };
 
-    it('should call useGapiQuery with correct arguments', () => {
-      mockedUseGapiQuery.mockReturnValue({
-        data: sampleOperation,
-        isLoading: false,
+    it('should call useGapiMutation with correct arguments', () => {
+      mockedUseGapiMutation.mockReturnValue({
+        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        isPending: false,
       });
-      renderHook(() => useUndeleteDashboardState(request), {
+      renderHook(() => useUndeleteDashboardState(), {
         wrapper: FakeContextProvider,
       });
 
-      expect(mockedUseGapiQuery).toHaveBeenCalledTimes(1);
-      expect(mockedUseGapiQuery).toHaveBeenCalledWith(
-        {
-          path: `${BASE_PATH}/${request.name}:undelete`,
-          method: 'POST',
-          body: request,
+      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
+
+      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
+      const builtRequest = requestBuilder(request);
+
+      expect(builtRequest).toEqual({
+        path: `${BASE_PATH}/${request.name}:undelete`,
+        method: 'POST',
+        body: {
+          etag: request.etag,
+          validateOnly: request.validateOnly,
+          requestId: request.requestId,
         },
-        undefined,
+        params: {},
+      });
+    });
+
+    it('should pass through options', () => {
+      mockedUseGapiMutation.mockReturnValue({
+        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        isPending: false,
+      });
+      const options = { mutationKey: ['test-undelete'] };
+      renderHook(() => useUndeleteDashboardState(options), {
+        wrapper: FakeContextProvider,
+      });
+      expect(mockedUseGapiMutation).toHaveBeenCalledWith(
+        expect.any(Function),
+        options,
       );
     });
   });
