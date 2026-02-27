@@ -401,7 +401,11 @@ func collectMetricsForGenAIVindicationWithClient(c context.Context, client tspb.
 	if err != nil {
 		logging.Warningf(c, "failed to get tree status for chromium: %v", err)
 	} else {
-		treeClosureMessage = status.message
+		if status.status == "Open" {
+			treeClosureMessage = "tree is open, this might be a false positive due to timing issue, please check tree status page and verify, ignore this alert if tree is currently closed"
+		} else {
+			treeClosureMessage = status.message
+		}
 	}
 
 	logging.Infof(c, "DEBUG: Pre-Metric Increment VindicatedAnalysisCount. GenAI Analysis Count: %d", len(genaiAnalyses))
