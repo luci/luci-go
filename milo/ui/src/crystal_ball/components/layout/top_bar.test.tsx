@@ -24,11 +24,13 @@ import { TopBarProvider } from './top_bar_provider';
 function ConfigSetter({
   title = null,
   actions = null,
+  menuItems = null,
 }: {
   title?: ReactNode;
   actions?: ReactNode;
+  menuItems?: ReactNode;
 }) {
-  useTopBarConfig(title, actions);
+  useTopBarConfig(title, actions, menuItems);
   return null;
 }
 
@@ -37,12 +39,13 @@ describe('TopBar', () => {
     initialEntries = ['/ui/labs/crystal-ball'],
     title?: ReactNode,
     actions?: ReactNode,
+    menuItems?: ReactNode,
   ) => {
     return render(
       <TopBarProvider>
         <MemoryRouter initialEntries={initialEntries}>
           <TopBar />
-          <ConfigSetter title={title} actions={actions} />
+          <ConfigSetter title={title} actions={actions} menuItems={menuItems} />
         </MemoryRouter>
       </TopBarProvider>,
     );
@@ -95,5 +98,20 @@ describe('TopBar', () => {
     renderTopBar(['/ui/labs/crystal-ball'], 'Title');
     const divider = screen.getByRole('separator');
     expect(divider).toBeInTheDocument();
+  });
+
+  it('renders menu items when provided', () => {
+    const customMenuItem = <li>Custom Menu Item</li>;
+    renderTopBar(
+      ['/ui/labs/crystal-ball'],
+      undefined,
+      undefined,
+      customMenuItem,
+    );
+
+    const menuButton = screen.getByLabelText('show more');
+    fireEvent.click(menuButton);
+
+    expect(screen.getByText('Custom Menu Item')).toBeInTheDocument();
   });
 });

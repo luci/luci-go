@@ -290,28 +290,44 @@ describe('use_dashboard_state_api', () => {
       name: 'dashboardStates/test-id',
     };
 
-    it('should call useGapiQuery with correct arguments', () => {
-      mockedUseGapiQuery.mockReturnValue({
-        data: sampleOperation,
-        isLoading: false,
+    it('should call useGapiMutation with correct arguments', () => {
+      mockedUseGapiMutation.mockReturnValue({
+        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        isPending: false,
       });
-      renderHook(() => useDeleteDashboardState(request), {
+      renderHook(() => useDeleteDashboardState(), {
         wrapper: FakeContextProvider,
       });
 
-      expect(mockedUseGapiQuery).toHaveBeenCalledTimes(1);
-      expect(mockedUseGapiQuery).toHaveBeenCalledWith(
-        {
-          path: `${BASE_PATH}/${request.name}`,
-          method: 'DELETE',
-          params: {
-            etag: undefined,
-            validateOnly: undefined,
-            allowMissing: undefined,
-            requestId: undefined,
-          },
+      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
+
+      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
+      const builtRequest = requestBuilder(request);
+
+      expect(builtRequest).toEqual({
+        path: `${BASE_PATH}/${request.name}`,
+        method: 'DELETE',
+        params: {
+          etag: undefined,
+          validateOnly: undefined,
+          allowMissing: undefined,
+          requestId: undefined,
         },
-        undefined,
+      });
+    });
+
+    it('should pass through options', () => {
+      mockedUseGapiMutation.mockReturnValue({
+        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        isPending: false,
+      });
+      const options = { mutationKey: ['test-delete'] };
+      renderHook(() => useDeleteDashboardState(options), {
+        wrapper: FakeContextProvider,
+      });
+      expect(mockedUseGapiMutation).toHaveBeenCalledWith(
+        expect.any(Function),
+        options,
       );
     });
   });

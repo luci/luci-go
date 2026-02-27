@@ -21,6 +21,13 @@ import { DashboardState } from '@/crystal_ball/types';
 jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
   useListDashboardStatesInfinite: jest.fn(),
+  useDeleteDashboardState: jest.fn(),
+}));
+
+const mockInvalidateQueries = jest.fn();
+jest.mock('@tanstack/react-query', () => ({
+  ...jest.requireActual('@tanstack/react-query'),
+  useQueryClient: jest.fn(() => ({ invalidateQueries: mockInvalidateQueries })),
 }));
 
 const mockDashboards: DashboardState[] = [
@@ -53,6 +60,11 @@ const mockDashboards: DashboardState[] = [
 describe('<DashboardListTable />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (hooks.useDeleteDashboardState as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    });
+    mockInvalidateQueries.mockClear();
   });
 
   it('should render the table with data from useListDashboardStates', () => {
@@ -301,5 +313,46 @@ describe('<DashboardListTable />', () => {
     expect(screen.getByText('Missing Dates Dash')).toBeInTheDocument();
     expect(screen.getByText('Invalid date')).toBeInTheDocument();
     expect(screen.getByText('Unknown')).toBeInTheDocument();
+  });
+
+  it('deletes the dashboard and invalidates queries on success', async () => {
+    const mockMutateAsync = jest.fn().mockResolvedValue({});
+    (hooks.useDeleteDashboardState as jest.Mock).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    });
+
+    (hooks.useListDashboardStatesInfinite as jest.Mock).mockReturnValue({
+      data: { pages: [{ dashboardStates: mockDashboards }] },
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+    });
+
+    render(<DashboardListTable />);
+
+    // Click the Row actions menu for the first row
+    const rowActionButtons = screen.getAllByRole('button', {
+      name: /Row Actions/i,
+    });
+    fireEvent.click(rowActionButtons[0]);
+
+    // Click the Delete Dashboard menu item
+    const deleteMenuItem = await screen.findByText('Delete Dashboard');
+    fireEvent.click(deleteMenuItem);
+
+    // Dialog opens, click confirm
+    const confirmDeleteBtn = await screen.findByRole('button', {
+      name: 'Delete',
+    });
+    fireEvent.click(confirmDeleteBtn);
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        name: 'dashboardStates/dashboard1',
+      });
+      expect(mockInvalidateQueries).toHaveBeenCalled();
+      expect(screen.getByText('Dashboard deleted successfully')).toBeVisible();
+    });
   });
 });

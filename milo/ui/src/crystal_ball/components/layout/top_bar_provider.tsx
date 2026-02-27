@@ -23,9 +23,19 @@ import { TopBarContext } from './top_bar_context';
 export function TopBarProvider({ children }: { children: ReactNode }) {
   const [title, setTitle] = useState<ReactNode | null>(null);
   const [actions, setActions] = useState<ReactNode | null>(null);
+  const [menuItems, setMenuItems] = useState<ReactNode | null>(null);
 
   return (
-    <TopBarContext.Provider value={{ title, setTitle, actions, setActions }}>
+    <TopBarContext.Provider
+      value={{
+        title,
+        setTitle,
+        actions,
+        setActions,
+        menuItems,
+        setMenuItems,
+      }}
+    >
       {children}
     </TopBarContext.Provider>
   );

@@ -19,16 +19,21 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
 import Popover from '@mui/material/Popover';
 import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 
 import { TimeRangeSelector } from '@/common/components/time_range_selector';
 import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
+import { DeleteDashboardDialog } from '@/crystal_ball/components/dashboard_dialog/delete_dashboard_dialog';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import {
+  getDashboardStateQueryKey,
+  useDeleteDashboardState,
   useGetDashboardState,
   useUpdateDashboardState,
 } from '@/crystal_ball/hooks/use_dashboard_state_api';
@@ -134,6 +139,9 @@ function DashboardTitleBar({
  */
 export function DashboardPage() {
   const { dashboardId } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const {
     data: dashboardState,
@@ -188,6 +196,25 @@ export function DashboardPage() {
   const { mutateAsync: updateDashboard, isPending: isUpdating } =
     useUpdateDashboardState();
 
+  const { mutateAsync: deleteDashboard, isPending: isDeleting } =
+    useDeleteDashboardState();
+
+  const handleDelete = async () => {
+    if (!dashboardState?.name) return;
+    try {
+      await deleteDashboard({ name: dashboardState.name });
+      setToastMessage('Dashboard deleted successfully');
+      setDeleteDialogOpen(false);
+      queryClient.removeQueries({
+        queryKey: getDashboardStateQueryKey(dashboardState.name),
+      });
+      navigate('/ui/labs/crystal-ball', { replace: true });
+    } catch (e) {
+      setToastMessage(formatApiError(e, 'Failed to delete dashboard'));
+      setDeleteDialogOpen(false);
+    }
+  };
+
   const handleSaveToApi = useCallback(async () => {
     if (!localDashboardState || !localDashboardState.name) return;
     try {
@@ -233,7 +260,21 @@ export function DashboardPage() {
     return 'Loading...';
   }, [localDashboardState]);
 
-  useTopBarConfig(topBarTitle, topBarAction);
+  const topBarMenuItems = useMemo(
+    () => (
+      <MenuItem
+        onClick={() => {
+          setDeleteDialogOpen(true);
+        }}
+        sx={{ color: 'error.main' }}
+      >
+        Delete Dashboard
+      </MenuItem>
+    ),
+    [],
+  );
+
+  useTopBarConfig(topBarTitle, topBarAction, topBarMenuItems);
 
   if (isLoading) {
     return (
@@ -271,6 +312,13 @@ export function DashboardPage() {
         autoHideDuration={4000}
         onClose={handleCloseToast}
         message={toastMessage}
+      />
+      <DeleteDashboardDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+        dashboardState={dashboardState}
       />
     </Box>
   );

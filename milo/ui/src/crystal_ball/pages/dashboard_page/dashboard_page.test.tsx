@@ -20,16 +20,30 @@ import { DashboardPage } from '@/crystal_ball/pages/dashboard_page';
 import { DashboardState } from '@/crystal_ball/types';
 
 jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
+  ...jest.requireActual('@/crystal_ball/hooks/use_dashboard_state_api'),
+  getDashboardStateQueryKey: jest.fn(() => ['mock', 'query', 'key']),
   useGetDashboardState: jest.fn(),
   useUpdateDashboardState: jest.fn(() => ({
     mutateAsync: jest.fn(),
     isPending: false,
   })),
+  useDeleteDashboardState: jest.fn(() => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  })),
 }));
 
+const mockNavigate = jest.fn();
 jest.mock('react-router', () => ({
   ...jest.requireActual('react-router'),
   useParams: () => ({ dashboardId: 'abcd123' }),
+  useNavigate: () => mockNavigate,
+}));
+
+const mockRemoveQueries = jest.fn();
+jest.mock('@tanstack/react-query', () => ({
+  ...jest.requireActual('@tanstack/react-query'),
+  useQueryClient: jest.fn(() => ({ removeQueries: mockRemoveQueries })),
 }));
 
 jest.mock('@/generic_libs/hooks/synced_search_params', () => {
@@ -60,6 +74,8 @@ describe('<DashboardPage />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setMockParams('');
+    mockRemoveQueries.mockClear();
+    mockNavigate.mockClear();
   });
 
   const renderDashboard = () => {
@@ -110,6 +126,7 @@ describe('<DashboardPage />', () => {
     renderDashboard();
     expect(await screen.findByText(/abcd123/)).toBeInTheDocument();
     expect(useTopBarConfig).toHaveBeenLastCalledWith(
+      expect.anything(),
       expect.anything(),
       expect.anything(),
     );
@@ -252,6 +269,48 @@ describe('<DashboardPage />', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/API Error/i)).toBeVisible();
+    });
+  });
+
+  it('deletes the dashboard and navigates away on success', async () => {
+    const mockMutateAsync = jest.fn().mockResolvedValue({});
+    (useDashboardStateApi.useDeleteDashboardState as jest.Mock).mockReturnValue(
+      {
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      },
+    );
+    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+      data: mockDashboard,
+    });
+
+    renderDashboard();
+
+    const lastCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    const { unmount } = render(<>{lastCall[2]}</>);
+
+    fireEvent.click(screen.getByText('Delete Dashboard'));
+
+    unmount();
+
+    // The dialog should be visible now inside DashboardPage
+    const confirmDeleteBtn = await screen.findByRole('button', {
+      name: 'Delete',
+    });
+    fireEvent.click(confirmDeleteBtn);
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        name: 'dashboardStates/abcd123',
+      });
+      expect(mockRemoveQueries).toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith('/ui/labs/crystal-ball', {
+        replace: true,
+      });
+      expect(screen.getByText('Dashboard deleted successfully')).toBeVisible();
     });
   });
 });

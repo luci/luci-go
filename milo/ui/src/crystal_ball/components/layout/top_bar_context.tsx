@@ -34,6 +34,14 @@ interface TopBarContextType {
    * Function to update the TopBar actions.
    */
   setActions: (actions: ReactNode | null) => void;
+  /**
+   * Extra menu items displayed in the vertical ... menu.
+   */
+  menuItems: ReactNode | null;
+  /**
+   * Function to update the TopBar menu items.
+   */
+  setMenuItems: (items: ReactNode | null) => void;
 }
 
 /**
@@ -62,15 +70,21 @@ export function useTopBar() {
  * Hook to set the page title and actions in the TopBar.
  * Resets them when the component unmounts.
  */
-export function useTopBarConfig(title: ReactNode, actions?: ReactNode) {
-  const { setTitle, setActions } = useTopBar();
+export function useTopBarConfig(
+  title: ReactNode,
+  actions?: ReactNode,
+  menuItems?: ReactNode,
+) {
+  const { setTitle, setActions, setMenuItems } = useTopBar();
 
   useEffect(() => {
     setTitle(title);
     setActions(actions || null);
+    setMenuItems(menuItems || null);
     return () => {
       setTitle(null);
       setActions(null);
+      setMenuItems(null);
     };
-  }, [title, actions, setTitle, setActions]);
+  }, [title, actions, menuItems, setTitle, setActions, setMenuItems]);
 }

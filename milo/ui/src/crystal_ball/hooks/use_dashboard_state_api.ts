@@ -47,6 +47,26 @@ import {
 const BASE_PATH = `${API_BASE_URL}/v1`;
 
 /**
+ * Returns the query key prefix for ListDashboardStates.
+ * Useful for cache invalidation.
+ */
+export const listDashboardStatesQueryKey = () => [
+  'gapi',
+  'GET',
+  `${BASE_PATH}/dashboardStates`,
+];
+
+/**
+ * Returns the query key prefix for GetDashboardState.
+ * Useful for cache invalidation.
+ */
+export const getDashboardStateQueryKey = (name: string) => [
+  'gapi',
+  'GET',
+  `${BASE_PATH}/${name}`,
+];
+
+/**
  * A strictly typed version of DashboardStateOperation where the loosely
  * typed `response` field is explicitly cast to `DashboardState`.
  */
@@ -186,16 +206,25 @@ export const useUpdateDashboardState = (
 
 /**
  * Hook for DeleteDashboardState.
- * @param request - The delete request payload.
  * @param options - Optional query options.
  * @returns A Long Running Operation.
  */
 export const useDeleteDashboardState = (
-  request: DeleteDashboardStateRequest,
-  options?: WrapperQueryOptions<TypedDashboardStateOperation>,
-): UseQueryResult<TypedDashboardStateOperation> => {
-  return useGapiQuery<TypedDashboardStateOperation>(
-    {
+  options?: UseMutationOptions<
+    TypedDashboardStateOperation,
+    Error,
+    DeleteDashboardStateRequest
+  >,
+): UseMutationResult<
+  TypedDashboardStateOperation,
+  Error,
+  DeleteDashboardStateRequest
+> => {
+  return useGapiMutation<
+    DeleteDashboardStateRequest,
+    TypedDashboardStateOperation
+  >(
+    (request) => ({
       path: `${BASE_PATH}/${request.name}`,
       method: 'DELETE',
       params: {
@@ -204,7 +233,7 @@ export const useDeleteDashboardState = (
         allowMissing: request.allowMissing,
         requestId: request.requestId,
       },
-    },
+    }),
     options,
   );
 };

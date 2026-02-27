@@ -14,7 +14,10 @@
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
+import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -24,7 +27,12 @@ import {
 } from 'material-react-table';
 import { useMemo, useState } from 'react';
 
-import { useListDashboardStatesInfinite } from '@/crystal_ball/hooks';
+import { DeleteDashboardDialog } from '@/crystal_ball/components/dashboard_dialog/delete_dashboard_dialog';
+import {
+  listDashboardStatesQueryKey,
+  useDeleteDashboardState,
+  useListDashboardStatesInfinite,
+} from '@/crystal_ball/hooks';
 import { DashboardState, Timestamp } from '@/crystal_ball/types';
 import {
   escapeRegExp,
@@ -72,6 +80,7 @@ function useLoadMoreDashboards() {
     handleLoadMore: () => queryParams.fetchNextPage(),
     hasNextPage: queryParams.hasNextPage,
     error: queryParams.error,
+    refetch: queryParams.refetch,
   };
 }
 
@@ -92,6 +101,29 @@ export function DashboardListTable({
     handleLoadMore,
     hasNextPage,
   } = useLoadMoreDashboards();
+
+  const [dashboardToDelete, setDashboardToDelete] =
+    useState<DashboardState | null>(null);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const queryClient = useQueryClient();
+  const { mutateAsync: deleteDashboard, isPending: isDeleting } =
+    useDeleteDashboardState();
+
+  const handleDelete = async () => {
+    if (!dashboardToDelete?.name) return;
+    try {
+      await deleteDashboard({ name: dashboardToDelete.name });
+      setToastMessage('Dashboard deleted successfully');
+      setDashboardToDelete(null);
+      queryClient.invalidateQueries({
+        queryKey: listDashboardStatesQueryKey(),
+      });
+    } catch (e) {
+      setToastMessage(formatApiError(e, 'Failed to delete dashboard'));
+      setDashboardToDelete(null);
+    }
+  };
 
   const columns = useMemo<MRT_ColumnDef<DashboardState>[]>(
     () => [
@@ -134,6 +166,21 @@ export function DashboardListTable({
     enableHiding: false,
     enablePagination: false,
     enableSorting: false,
+    enableRowActions: true,
+    positionActionsColumn: 'last',
+    renderRowActionMenuItems: ({ closeMenu, row }) => [
+      <MenuItem
+        key="delete"
+        onClick={(e) => {
+          e.stopPropagation();
+          setDashboardToDelete(row.original);
+          closeMenu();
+        }}
+        sx={{ color: 'error.main' }}
+      >
+        Delete Dashboard
+      </MenuItem>,
+    ],
     enableBottomToolbar: hasNextPage,
     manualFiltering: true,
     onGlobalFilterChange: setGlobalFilter,
@@ -194,5 +241,22 @@ export function DashboardListTable({
     },
   });
 
-  return <MaterialReactTable table={table} />;
+  return (
+    <>
+      <MaterialReactTable table={table} />
+      <DeleteDashboardDialog
+        open={Boolean(dashboardToDelete)}
+        onClose={() => setDashboardToDelete(null)}
+        onConfirm={handleDelete}
+        isDeleting={isDeleting}
+        dashboardState={dashboardToDelete}
+      />
+      <Snackbar
+        open={Boolean(toastMessage)}
+        autoHideDuration={4000}
+        onClose={() => setToastMessage('')}
+        message={toastMessage}
+      />
+    </>
+  );
 }

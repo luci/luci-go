@@ -32,7 +32,7 @@ import { useTopBar } from './top_bar_context';
  * It displays the logo, page title, and actions based on the current context.
  */
 export function TopBar() {
-  const { title, actions } = useTopBar();
+  const { title, actions, menuItems } = useTopBar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -107,6 +107,7 @@ export function TopBar() {
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
           >
+            {menuItems}
             <MenuItem
               component={RouterLink}
               to="/ui/labs/crystal-ball/demo"
