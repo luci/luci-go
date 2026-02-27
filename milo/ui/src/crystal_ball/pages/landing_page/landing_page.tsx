@@ -18,11 +18,12 @@ import Button from '@mui/material/Button';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { CreateDashboardModal } from '@/crystal_ball/components/create_dashboard_modal';
+import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
+import { useCreateDashboardState } from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { DashboardState } from '@/crystal_ball/types';
-import { extractIdFromName } from '@/crystal_ball/utils';
+import { extractIdFromName, formatApiError } from '@/crystal_ball/utils';
 
 /**
  * A landing page component that displays a list of dashboards.
@@ -30,10 +31,41 @@ import { extractIdFromName } from '@/crystal_ball/utils';
 export function LandingPage() {
   const navigate = useNavigate();
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDialogsOpen, setIsDialogsOpen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const createMutation = useCreateDashboardState();
 
-  const handleOpenCreateModal = () => setIsCreateModalOpen(true);
-  const handleCloseCreateModal = () => setIsCreateModalOpen(false);
+  const handleOpenDialog = () => {
+    setErrorMsg('');
+    setIsDialogsOpen(true);
+  };
+  const handleCloseDialog = () => setIsDialogsOpen(false);
+
+  const handleCreate = async (data: {
+    displayName: string;
+    description: string;
+  }) => {
+    setErrorMsg('');
+    try {
+      const response = await createMutation.mutateAsync({
+        dashboardState: {
+          displayName: data.displayName,
+          description: data.description,
+          dashboardContent: {},
+        },
+      });
+
+      const parsedResp = response.response;
+      const newName = parsedResp?.name;
+      handleCloseDialog();
+      if (newName) {
+        const newId = extractIdFromName(newName);
+        navigate(`/ui/labs/crystal-ball/dashboards/${newId}`);
+      }
+    } catch (e) {
+      setErrorMsg(formatApiError(e, 'Failed to create dashboard'));
+    }
+  };
 
   const handleDashboardClick = (dashboard: DashboardState) => {
     if (dashboard.name) {
@@ -47,7 +79,7 @@ export function LandingPage() {
       <Button
         variant="contained"
         startIcon={<AddIcon />}
-        onClick={handleOpenCreateModal}
+        onClick={handleOpenDialog}
       >
         New Dashboard
       </Button>
@@ -60,9 +92,12 @@ export function LandingPage() {
   return (
     <Box sx={{ p: 3 }}>
       <DashboardListTable onDashboardClick={handleDashboardClick} />
-      <CreateDashboardModal
-        open={isCreateModalOpen}
-        onClose={handleCloseCreateModal}
+      <DashboardDialog
+        open={isDialogsOpen}
+        onClose={handleCloseDialog}
+        onSubmit={handleCreate}
+        isPending={createMutation.isPending}
+        errorMsg={errorMsg}
       />
     </Box>
   );

@@ -155,11 +155,21 @@ export const useListDashboardStatesInfinite = (
  * @returns A Long Running Operation.
  */
 export const useUpdateDashboardState = (
-  request: UpdateDashboardStateRequest,
-  options?: WrapperQueryOptions<TypedDashboardStateOperation>,
-): UseQueryResult<TypedDashboardStateOperation> => {
-  return useGapiQuery<TypedDashboardStateOperation>(
-    {
+  options?: UseMutationOptions<
+    TypedDashboardStateOperation,
+    Error,
+    UpdateDashboardStateRequest
+  >,
+): UseMutationResult<
+  TypedDashboardStateOperation,
+  Error,
+  UpdateDashboardStateRequest
+> => {
+  return useGapiMutation<
+    UpdateDashboardStateRequest,
+    TypedDashboardStateOperation
+  >(
+    (request) => ({
       path: `${BASE_PATH}/${request.dashboardState?.name}`,
       method: 'PATCH',
       body: request.dashboardState,
@@ -169,7 +179,7 @@ export const useUpdateDashboardState = (
         validateOnly: request.validateOnly,
         requestId: request.requestId,
       },
-    },
+    }),
     options,
   );
 };

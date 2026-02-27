@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { TopBar } from '@/crystal_ball/components/layout/top_bar';
 import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
 import * as hooks from '@/crystal_ball/hooks';
+import * as dashboardStateApi from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { LandingPage } from '@/crystal_ball/pages/landing_page';
 import { DashboardState } from '@/crystal_ball/types';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -24,6 +25,11 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
   useListDashboardStatesInfinite: jest.fn(),
+}));
+
+jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
+  ...jest.requireActual('@/crystal_ball/hooks/use_dashboard_state_api'),
+  useCreateDashboardState: jest.fn(),
 }));
 
 const mockNavigate = jest.fn();
@@ -63,6 +69,12 @@ describe('<LandingPage />', () => {
       isFetching: false,
       hasNextPage: false,
       fetchNextPage: jest.fn(),
+    });
+    (dashboardStateApi.useCreateDashboardState as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn().mockResolvedValue({
+        response: { name: 'dashboardStates/newly-created-id' },
+      }),
+      isPending: false,
     });
   });
 
@@ -136,5 +148,61 @@ describe('<LandingPage />', () => {
     expect(mockNavigate).toHaveBeenCalledWith(
       '/ui/labs/crystal-ball/dashboards/dashboard1',
     );
+  });
+
+  test('submits create dashboard form', async () => {
+    const mockMutateAsync = jest.fn().mockResolvedValue({
+      response: { name: 'dashboardStates/newly-created-id' },
+    });
+    (dashboardStateApi.useCreateDashboardState as jest.Mock).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+    });
+
+    render(
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: ['/ui/labs/crystal-ball'],
+        }}
+        mountedPath="/ui/labs/crystal-ball"
+      >
+        <TopBarProvider>
+          <TopBar />
+          <LandingPage />
+        </TopBarProvider>
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /New Dashboard/i }));
+
+    const dialog = await screen.findByRole('dialog', {
+      name: /Create New Dashboard/i,
+    });
+    expect(dialog).toBeVisible();
+
+    const nameInput = screen.getByLabelText(/Dashboard Name/i);
+    fireEvent.change(nameInput, { target: { value: 'New Test Dashboard' } });
+
+    const descInput = screen.getByLabelText(/Description/i);
+    fireEvent.change(descInput, { target: { value: 'Description here' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Save/i }));
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        dashboardState: {
+          displayName: 'New Test Dashboard',
+          description: 'Description here',
+          dashboardContent: {},
+        },
+      });
+    });
+
+    // Verify modal closed and navigate called
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/ui/labs/crystal-ball/dashboards/newly-created-id',
+      );
+    });
   });
 });

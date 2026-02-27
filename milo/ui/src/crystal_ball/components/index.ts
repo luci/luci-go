@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './create_dashboard_modal';
+export * from './dashboard_dialog';
 export * from './editable_markdown';
 export * from './search_measurements_form';
 export * from './time_series_chart';

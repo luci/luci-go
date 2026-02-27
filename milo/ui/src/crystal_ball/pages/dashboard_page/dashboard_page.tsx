@@ -12,18 +12,122 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import EditIcon from '@mui/icons-material/Edit';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Popover from '@mui/material/Popover';
 import Snackbar from '@mui/material/Snackbar';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import Typography from '@mui/material/Typography';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 
 import { TimeRangeSelector } from '@/common/components/time_range_selector';
+import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
-import { useGetDashboardState } from '@/crystal_ball/hooks/use_dashboard_state_api';
+import {
+  useGetDashboardState,
+  useUpdateDashboardState,
+} from '@/crystal_ball/hooks/use_dashboard_state_api';
+import { DashboardState } from '@/crystal_ball/types';
 import { formatApiError } from '@/crystal_ball/utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+
+/**
+ * Component to display and edit the dashboard title and description in the TopBar.
+ */
+function DashboardTitleBar({
+  dashboardState,
+  onApply,
+}: {
+  dashboardState: DashboardState;
+  onApply: (state: DashboardState) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+  const handleInfoClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleInfoClose = () => {
+    setAnchorEl(null);
+  };
+  const openInfo = Boolean(anchorEl);
+
+  return (
+    <>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          '& .edit-icon-btn': {
+            opacity: 0.3,
+            transition: 'opacity 0.2s',
+          },
+          '&:hover .edit-icon-btn, &:focus-within .edit-icon-btn': {
+            opacity: 1,
+          },
+          '& .edit-icon-btn:focus-visible': {
+            opacity: 1,
+            outline: '2px solid',
+            outlineOffset: '2px',
+          },
+        }}
+      >
+        <Typography variant="h6">{dashboardState.displayName}</Typography>
+        {dashboardState.description && (
+          <>
+            <IconButton
+              size="small"
+              onClick={handleInfoClick}
+              aria-label="View dashboard description"
+            >
+              <InfoOutlinedIcon fontSize="small" />
+            </IconButton>
+            <Popover
+              open={openInfo}
+              anchorEl={anchorEl}
+              onClose={handleInfoClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+              <Box sx={{ p: 2, maxWidth: 400 }}>
+                <Typography variant="body2">
+                  {dashboardState.description}
+                </Typography>
+              </Box>
+            </Popover>
+          </>
+        )}
+        <IconButton
+          size="small"
+          onClick={() => setIsEditing(true)}
+          className="edit-icon-btn"
+          aria-label="Edit dashboard title and description"
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+      </Box>
+      <DashboardDialog
+        open={isEditing}
+        onClose={() => setIsEditing(false)}
+        initialData={dashboardState}
+        onSubmit={async (data) => {
+          onApply({
+            ...dashboardState,
+            ...data,
+          });
+          setIsEditing(false);
+        }}
+        submitText="Apply"
+      />
+    </>
+  );
+}
 
 /**
  * Empty dashboard page that displays the response of the get call.
@@ -35,6 +139,7 @@ export function DashboardPage() {
     data: dashboardState,
     isLoading,
     error,
+    refetch,
   } = useGetDashboardState(
     {
       name: `dashboardStates/${dashboardId}`,
@@ -44,7 +149,7 @@ export function DashboardPage() {
     },
   );
 
-  const [toastOpen, setToastOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [searchParams] = useSyncedSearchParams();
   const isFirstRender = useRef(true);
 
@@ -57,16 +162,78 @@ export function DashboardPage() {
       isFirstRender.current = false;
       return;
     }
-    // Only show toast if it's not the initial mount and params change
-    setToastOpen(true);
+    setToastMessage('Feature under construction');
   }, [timeOption, startTimeParam, endTimeParam]);
 
   const handleCloseToast = () => {
-    setToastOpen(false);
+    setToastMessage('');
   };
 
-  const topBarAction = useMemo(() => <TimeRangeSelector />, []);
-  useTopBarConfig(dashboardState?.displayName || 'Loading...', topBarAction);
+  const [localDashboardState, setLocalDashboardState] =
+    useState<DashboardState | null>(null);
+
+  const hasUnsavedChanges = useMemo(() => {
+    return (
+      localDashboardState?.displayName !== dashboardState?.displayName ||
+      localDashboardState?.description !== dashboardState?.description
+    );
+  }, [localDashboardState, dashboardState]);
+
+  useEffect(() => {
+    if (dashboardState && (!localDashboardState || !hasUnsavedChanges)) {
+      setLocalDashboardState(dashboardState);
+    }
+  }, [dashboardState, localDashboardState, hasUnsavedChanges]);
+
+  const { mutateAsync: updateDashboard, isPending: isUpdating } =
+    useUpdateDashboardState();
+
+  const handleSaveToApi = useCallback(async () => {
+    if (!localDashboardState || !localDashboardState.name) return;
+    try {
+      const response = await updateDashboard({
+        dashboardState: localDashboardState,
+        updateMask: { paths: ['displayName', 'description'] },
+      });
+      if (response.response) {
+        setLocalDashboardState(response.response);
+      }
+      setToastMessage('Dashboard saved successfully');
+      refetch();
+    } catch (e) {
+      setToastMessage(formatApiError(e, 'Failed to save dashboard'));
+    }
+  }, [localDashboardState, updateDashboard, refetch]);
+
+  const topBarAction = useMemo(
+    () => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <TimeRangeSelector />
+        <Button
+          variant="contained"
+          onClick={handleSaveToApi}
+          disabled={!hasUnsavedChanges || isUpdating || isLoading}
+        >
+          {isUpdating ? 'Saving...' : 'Save'}
+        </Button>
+      </Box>
+    ),
+    [hasUnsavedChanges, isUpdating, isLoading, handleSaveToApi],
+  );
+
+  const topBarTitle = useMemo(() => {
+    if (localDashboardState) {
+      return (
+        <DashboardTitleBar
+          dashboardState={localDashboardState}
+          onApply={setLocalDashboardState}
+        />
+      );
+    }
+    return 'Loading...';
+  }, [localDashboardState]);
+
+  useTopBarConfig(topBarTitle, topBarAction);
 
   if (isLoading) {
     return (
@@ -100,10 +267,10 @@ export function DashboardPage() {
         {JSON.stringify(dashboardState, null, 2)}
       </pre>
       <Snackbar
-        open={toastOpen}
+        open={Boolean(toastMessage)}
         autoHideDuration={4000}
         onClose={handleCloseToast}
-        message="Feature under construction"
+        message={toastMessage}
       />
     </Box>
   );

@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { TimeRangeSelector } from '@/common/components/time_range_selector';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import * as useDashboardStateApi from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { DashboardPage } from '@/crystal_ball/pages/dashboard_page';
@@ -22,6 +21,10 @@ import { DashboardState } from '@/crystal_ball/types';
 
 jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
   useGetDashboardState: jest.fn(),
+  useUpdateDashboardState: jest.fn(() => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  })),
 }));
 
 jest.mock('react-router', () => ({
@@ -68,6 +71,7 @@ describe('<DashboardPage />', () => {
     (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
       isLoading: true,
       error: null,
+      refetch: jest.fn(),
       data: null,
     });
     renderDashboard();
@@ -78,6 +82,7 @@ describe('<DashboardPage />', () => {
     (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
       isLoading: false,
       error: new Error('Network error'),
+      refetch: jest.fn(),
       data: null,
     });
     renderDashboard();
@@ -88,6 +93,7 @@ describe('<DashboardPage />', () => {
     (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
       isLoading: false,
       error: null,
+      refetch: jest.fn(),
       data: null,
     });
     renderDashboard();
@@ -98,13 +104,14 @@ describe('<DashboardPage />', () => {
     (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
       isLoading: false,
       error: null,
+      refetch: jest.fn(),
       data: mockDashboard,
     });
     renderDashboard();
     expect(await screen.findByText(/abcd123/)).toBeInTheDocument();
-    expect(useTopBarConfig).toHaveBeenCalledWith(
-      'Test Dashboard',
-      expect.objectContaining({ type: TimeRangeSelector }),
+    expect(useTopBarConfig).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.anything(),
     );
   });
 
@@ -112,6 +119,7 @@ describe('<DashboardPage />', () => {
     (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
       isLoading: false,
       error: null,
+      refetch: jest.fn(),
       data: mockDashboard,
     });
 
@@ -128,6 +136,122 @@ describe('<DashboardPage />', () => {
     // Toast is visible on subsequent render with new params
     await waitFor(() => {
       expect(screen.getByText(/Feature under construction/i)).toBeVisible();
+    });
+  });
+
+  it('saves edits and shows success toast', async () => {
+    const mockMutateAsync = jest.fn().mockResolvedValue({});
+    (useDashboardStateApi.useUpdateDashboardState as jest.Mock).mockReturnValue(
+      {
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      },
+    );
+    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+      data: mockDashboard,
+    });
+
+    renderDashboard();
+
+    const lastCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    const { unmount } = render(
+      <>
+        {lastCall[0]}
+        {lastCall[1]}
+      </>,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /Edit dashboard title and description/i,
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/Dashboard Name/i), {
+      target: { value: 'Updated Name' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    unmount();
+
+    const newCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    render(
+      <>
+        {newCall[0]}
+        {newCall[1]}
+      </>,
+    );
+
+    const saveButton = screen.getByRole('button', { name: 'Save' });
+    expect(saveButton).not.toBeDisabled();
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        dashboardState: expect.objectContaining({
+          displayName: 'Updated Name',
+        }),
+        updateMask: { paths: ['displayName', 'description'] },
+      });
+      expect(screen.getByText('Dashboard saved successfully')).toBeVisible();
+    });
+  });
+
+  it('displays error toast on save failure', async () => {
+    const mockMutateAsync = jest.fn().mockRejectedValue(new Error('API Error'));
+    (useDashboardStateApi.useUpdateDashboardState as jest.Mock).mockReturnValue(
+      {
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      },
+    );
+    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
+      isLoading: false,
+      error: null,
+      refetch: jest.fn(),
+      data: mockDashboard,
+    });
+
+    renderDashboard();
+
+    const lastCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    const { unmount } = render(
+      <>
+        {lastCall[0]}
+        {lastCall[1]}
+      </>,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /Edit dashboard title and description/i,
+      }),
+    );
+
+    fireEvent.change(screen.getByLabelText(/Dashboard Name/i), {
+      target: { value: 'Updated Name' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+
+    unmount();
+
+    const newCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    render(
+      <>
+        {newCall[0]}
+        {newCall[1]}
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/API Error/i)).toBeVisible();
     });
   });
 });

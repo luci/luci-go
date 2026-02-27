@@ -19,64 +19,71 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
 
-import { useCreateDashboardState } from '@/crystal_ball/hooks/use_dashboard_state_api';
-import { extractIdFromName, formatApiError } from '@/crystal_ball/utils';
+import { DashboardState } from '@/crystal_ball/types';
 
 /**
- * Props for {@link CreateDashboardModal}.
+ * Props for {@link DashboardDialog}.
  */
-export interface CreateDashboardModalProps {
+export interface DashboardDialogProps {
   /** Whether the modal is open. */
   open: boolean;
   /** Callback for when the modal is closed. */
   onClose: () => void;
+  /** Let the parent pass initial data */
+  initialData?: DashboardState;
+  /** A single, unified submit handler */
+  onSubmit: (data: {
+    displayName: string;
+    description: string;
+  }) => Promise<void>;
+  /** Let the parent tell the dialog if it's currently saving */
+  isPending?: boolean;
+  /** Let the parent handle/pass down the error */
+  errorMsg?: string;
+  /** Optional override for the button text */
+  submitText?: string;
 }
 
 /**
- * A modal component for creating a new dashboard.
+ * A generic dialog component for creating or editing a dashboard.
+ * All API and state logic is delegated to the parent handler 'onSubmit'.
  */
-export function CreateDashboardModal({
+export function DashboardDialog({
   open,
   onClose,
-}: CreateDashboardModalProps) {
+  initialData,
+  onSubmit,
+  isPending = false,
+  errorMsg = '',
+  submitText = 'Save',
+}: DashboardDialogProps) {
+  const isEditing = !!initialData;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const createMutation = useCreateDashboardState();
-  const navigate = useNavigate();
-  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleCreate = async () => {
-    setErrorMsg('');
-    try {
-      const response = await createMutation.mutateAsync({
-        dashboardState: {
-          displayName: name,
-          description: description,
-          dashboardContent: {},
-        },
-      });
-
-      const parsedResp = response.response;
-
-      const newName = parsedResp?.name;
-      if (newName) {
-        const newId = extractIdFromName(newName);
-        navigate(`/ui/labs/crystal-ball/dashboards/${newId}`);
-      }
-      onClose();
-    } catch (e) {
-      setErrorMsg(formatApiError(e, 'Failed to create dashboard'));
+  useEffect(() => {
+    if (open) {
+      setName(initialData?.displayName || '');
+      setDescription(initialData?.description || '');
+    } else {
+      setName('');
+      setDescription('');
     }
+  }, [open, initialData]);
+
+  const handleSubmit = async () => {
+    await onSubmit({ displayName: name, description });
   };
 
   const isFormValid = name.trim().length > 0;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Create New Dashboard</DialogTitle>
+      <DialogTitle>
+        {isEditing ? 'Edit Dashboard Details' : 'Create New Dashboard'}
+      </DialogTitle>
       <DialogContent>
         {errorMsg && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -85,7 +92,6 @@ export function CreateDashboardModal({
         )}
         <TextField
           margin="dense"
-          id="name"
           label="Dashboard Name"
           type="text"
           fullWidth
@@ -96,7 +102,6 @@ export function CreateDashboardModal({
         />
         <TextField
           margin="dense"
-          id="description"
           label="Description"
           type="text"
           fullWidth
@@ -108,13 +113,15 @@ export function CreateDashboardModal({
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose} disabled={isPending}>
+          Cancel
+        </Button>
         <Button
-          onClick={handleCreate}
+          onClick={handleSubmit}
           variant="contained"
-          disabled={!isFormValid || createMutation.isPending}
+          disabled={!isFormValid || isPending}
         >
-          {createMutation.isPending ? 'Creating...' : 'Create'}
+          {isPending ? 'Saving...' : submitText}
         </Button>
       </DialogActions>
     </Dialog>
