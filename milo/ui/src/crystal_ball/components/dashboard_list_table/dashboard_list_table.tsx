@@ -26,7 +26,11 @@ import { useMemo, useState } from 'react';
 
 import { useListDashboardStatesInfinite } from '@/crystal_ball/hooks';
 import { DashboardState, Timestamp } from '@/crystal_ball/types';
-import { escapeRegExp, formatRelativeTime } from '@/crystal_ball/utils';
+import {
+  escapeRegExp,
+  formatApiError,
+  formatRelativeTime,
+} from '@/crystal_ball/utils';
 
 interface DashboardListTableProps {
   /**
@@ -39,36 +43,6 @@ const getDisplayName = (dashboard: DashboardState) =>
   dashboard.displayName ||
   dashboard.name?.split('/').pop() ||
   'Unnamed Dashboard';
-
-function formatApiError(error: unknown): string {
-  if (!error) return 'An unknown error occurred while loading dashboards.';
-
-  if (typeof error === 'object' && error !== null) {
-    const gapiError = error as { result?: { error?: { message?: string } } };
-    if (gapiError.result?.error?.message) {
-      return gapiError.result.error.message;
-    }
-
-    const rawError = error as { error?: { message?: string } };
-    if (rawError.error?.message) {
-      return rawError.error.message;
-    }
-
-    if (error instanceof Error) {
-      try {
-        const parsed = JSON.parse(error.message);
-        if (parsed?.error?.message) {
-          return parsed.error.message;
-        }
-      } catch {
-        // Not JSON, ignore
-      }
-      return error.message;
-    }
-  }
-
-  return String(error);
-}
 
 function useLoadMoreDashboards() {
   const [globalFilter, setGlobalFilter] = useState('');

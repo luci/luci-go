@@ -29,6 +29,10 @@ export const crystalBallRoutes: RouteObject[] = [
         path: 'demo',
         lazy: () => import('@/crystal_ball/pages/demo_page/demo_page'),
       },
+      {
+        path: 'dashboards/:dashboardId',
+        lazy: () => import('@/crystal_ball/pages/dashboard_page'),
+      },
     ],
   },
 ];

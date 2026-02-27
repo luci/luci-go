@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UseQueryResult } from '@tanstack/react-query';
+import {
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryResult,
+} from '@tanstack/react-query';
 
 import {
+  useGapiMutation,
   useGapiQuery,
   useInfiniteGapiQuery,
 } from '@/common/hooks/gapi_query/gapi_query';
@@ -42,17 +47,35 @@ import {
 const BASE_PATH = `${API_BASE_URL}/v1`;
 
 /**
+ * A strictly typed version of DashboardStateOperation where the loosely
+ * typed `response` field is explicitly cast to `DashboardState`.
+ */
+export interface TypedDashboardStateOperation
+  extends Omit<DashboardStateOperation, 'response'> {
+  response?: DashboardState;
+}
+
+/**
  * Hook for CreateDashboardState.
- * @param request - The create request payload.
- * @param options - Optional query options.
- * @returns A Long Running Operation.
+ * @param options - Optional mutation options.
+ * @returns A Long Running Operation mutation result.
  */
 export const useCreateDashboardState = (
-  request: CreateDashboardStateRequest,
-  options?: WrapperQueryOptions<DashboardStateOperation>,
-): UseQueryResult<DashboardStateOperation> => {
-  return useGapiQuery<DashboardStateOperation>(
-    {
+  options?: UseMutationOptions<
+    TypedDashboardStateOperation,
+    Error,
+    CreateDashboardStateRequest
+  >,
+): UseMutationResult<
+  TypedDashboardStateOperation,
+  Error,
+  CreateDashboardStateRequest
+> => {
+  return useGapiMutation<
+    CreateDashboardStateRequest,
+    TypedDashboardStateOperation
+  >(
+    (request) => ({
       path: `${BASE_PATH}/dashboardStates`,
       method: 'POST',
       body: request.dashboardState,
@@ -61,7 +84,7 @@ export const useCreateDashboardState = (
         validateOnly: request.validateOnly,
         requestId: request.requestId,
       },
-    },
+    }),
     options,
   );
 };
@@ -133,9 +156,9 @@ export const useListDashboardStatesInfinite = (
  */
 export const useUpdateDashboardState = (
   request: UpdateDashboardStateRequest,
-  options?: WrapperQueryOptions<DashboardStateOperation>,
-): UseQueryResult<DashboardStateOperation> => {
-  return useGapiQuery<DashboardStateOperation>(
+  options?: WrapperQueryOptions<TypedDashboardStateOperation>,
+): UseQueryResult<TypedDashboardStateOperation> => {
+  return useGapiQuery<TypedDashboardStateOperation>(
     {
       path: `${BASE_PATH}/${request.dashboardState?.name}`,
       method: 'PATCH',
@@ -159,9 +182,9 @@ export const useUpdateDashboardState = (
  */
 export const useDeleteDashboardState = (
   request: DeleteDashboardStateRequest,
-  options?: WrapperQueryOptions<DashboardStateOperation>,
-): UseQueryResult<DashboardStateOperation> => {
-  return useGapiQuery<DashboardStateOperation>(
+  options?: WrapperQueryOptions<TypedDashboardStateOperation>,
+): UseQueryResult<TypedDashboardStateOperation> => {
+  return useGapiQuery<TypedDashboardStateOperation>(
     {
       path: `${BASE_PATH}/${request.name}`,
       method: 'DELETE',
@@ -184,9 +207,9 @@ export const useDeleteDashboardState = (
  */
 export const useUndeleteDashboardState = (
   request: UndeleteDashboardStateRequest,
-  options?: WrapperQueryOptions<DashboardStateOperation>,
-): UseQueryResult<DashboardStateOperation> => {
-  return useGapiQuery<DashboardStateOperation>(
+  options?: WrapperQueryOptions<TypedDashboardStateOperation>,
+): UseQueryResult<TypedDashboardStateOperation> => {
+  return useGapiQuery<TypedDashboardStateOperation>(
     {
       path: `${BASE_PATH}/${request.name}:undelete`,
       method: 'POST',

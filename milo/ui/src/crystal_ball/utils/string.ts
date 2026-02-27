@@ -20,3 +20,14 @@
 export function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+/**
+ * Extracts the trailing ID from a standard slash-separated resource name.
+ * e.g., 'dashboardStates/foo-bar' -> 'foo-bar'
+ * @param name The original resource name.
+ * @returns The trailing ID from the given resource name.
+ */
+export function extractIdFromName(name: string): string {
+  const parts = name.split('/');
+  return parts[parts.length - 1];
+}

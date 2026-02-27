@@ -26,6 +26,12 @@ jest.mock('@/crystal_ball/hooks', () => ({
   useListDashboardStatesInfinite: jest.fn(),
 }));
 
+const mockNavigate = jest.fn();
+jest.mock('react-router', () => ({
+  ...jest.requireActual('react-router'),
+  useNavigate: () => mockNavigate,
+}));
+
 const mockDashboards: DashboardState[] = [
   {
     name: 'dashboardStates/dashboard1',
@@ -84,7 +90,7 @@ describe('<LandingPage />', () => {
     ).toBeInTheDocument();
   });
 
-  test('shows toast when clicking New Dashboard', async () => {
+  test('opens Create Dashboard modal when clicking New Dashboard', async () => {
     render(
       <FakeContextProvider
         routerOptions={{
@@ -105,11 +111,11 @@ describe('<LandingPage />', () => {
     fireEvent.click(newDashboardButton);
 
     expect(
-      await screen.findByText(/Feature under construction/i),
+      await screen.findByRole('dialog', { name: /Create New Dashboard/i }),
     ).toBeVisible();
   });
 
-  test('shows toast when clicking a dashboard row', async () => {
+  test('navigates to dashboard page when clicking a dashboard row', async () => {
     render(
       <FakeContextProvider
         routerOptions={{
@@ -127,8 +133,8 @@ describe('<LandingPage />', () => {
     const dashboardName = await screen.findByText(/Generic Dashboard Alpha/i);
     fireEvent.click(dashboardName);
 
-    expect(
-      await screen.findByText(/Feature under construction/i),
-    ).toBeVisible();
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/ui/labs/crystal-ball/dashboards/dashboard1',
+    );
   });
 });

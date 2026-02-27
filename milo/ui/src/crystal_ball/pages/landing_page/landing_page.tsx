@@ -15,24 +15,31 @@
 import AddIcon from '@mui/icons-material/Add';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Snackbar from '@mui/material/Snackbar';
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 
+import { CreateDashboardModal } from '@/crystal_ball/components/create_dashboard_modal';
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
+import { DashboardState } from '@/crystal_ball/types';
+import { extractIdFromName } from '@/crystal_ball/utils';
 
 /**
  * A landing page component that displays a list of dashboards.
  */
 export function LandingPage() {
-  const [toastOpen, setToastOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const handleFeatureNotReady = () => {
-    setToastOpen(true);
-  };
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const handleCloseToast = () => {
-    setToastOpen(false);
+  const handleOpenCreateModal = () => setIsCreateModalOpen(true);
+  const handleCloseCreateModal = () => setIsCreateModalOpen(false);
+
+  const handleDashboardClick = (dashboard: DashboardState) => {
+    if (dashboard.name) {
+      const dashboardId = extractIdFromName(dashboard.name);
+      navigate(`/ui/labs/crystal-ball/dashboards/${dashboardId}`);
+    }
   };
 
   const actions = useMemo(
@@ -40,7 +47,7 @@ export function LandingPage() {
       <Button
         variant="contained"
         startIcon={<AddIcon />}
-        onClick={handleFeatureNotReady}
+        onClick={handleOpenCreateModal}
       >
         New Dashboard
       </Button>
@@ -52,12 +59,10 @@ export function LandingPage() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <DashboardListTable onDashboardClick={handleFeatureNotReady} />
-      <Snackbar
-        open={toastOpen}
-        autoHideDuration={4000}
-        onClose={handleCloseToast}
-        message="Feature under construction"
+      <DashboardListTable onDashboardClick={handleDashboardClick} />
+      <CreateDashboardModal
+        open={isCreateModalOpen}
+        onClose={handleCloseCreateModal}
       />
     </Box>
   );
