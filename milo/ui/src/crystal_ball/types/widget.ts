@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './dashboard_state';
-export * from './measurement_filter';
-export * from './proto';
-export * from './search_measurements';
-export * from './widget';
+/**
+ * The type of widget to display.
+ */
+export enum WidgetType {
+  CHART_REGRESSION_METRIC = 'chart_regression_metric',
+  CHART_MULTI_METRIC = 'chart_multi_metric',
+  CHART_BREAKDOWN_TABLE = 'chart_breakdown_table',
+  CHART_INVOCATION_DISTRIBUTION = 'chart_invocation_distribution',
+  MARKDOWN = 'markdown',
+}

@@ -24,20 +24,23 @@ import Popover from '@mui/material/Popover';
 import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
 import { useQueryClient } from '@tanstack/react-query';
+import { deepEqual } from 'fast-equals';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useBlocker, useNavigate, useParams } from 'react-router';
 
 import { TimeRangeSelector } from '@/common/components/time_range_selector';
+import { AddWidgetModal, WidgetContainer } from '@/crystal_ball/components';
 import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
 import { DeleteDashboardDialog } from '@/crystal_ball/components/dashboard_dialog/delete_dashboard_dialog';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
+import { MarkdownWidget } from '@/crystal_ball/components/markdown_widget';
 import {
   getDashboardStateQueryKey,
   useDeleteDashboardState,
   useGetDashboardState,
   useUpdateDashboardState,
 } from '@/crystal_ball/hooks/use_dashboard_state_api';
-import { DashboardState } from '@/crystal_ball/types';
+import { DashboardState, PerfWidget, WidgetType } from '@/crystal_ball/types';
 import { formatApiError } from '@/crystal_ball/utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -135,13 +138,14 @@ function DashboardTitleBar({
 }
 
 /**
- * Empty dashboard page that displays the response of the get call.
+ * A customizable dashboard page that renders a dynamic collection of widgets.
  */
 export function DashboardPage() {
   const { dashboardId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [addWidgetModalOpen, setAddWidgetModalOpen] = useState(false);
 
   const {
     data: dashboardState,
@@ -183,7 +187,11 @@ export function DashboardPage() {
   const hasUnsavedChanges = useMemo(() => {
     return (
       localDashboardState?.displayName !== dashboardState?.displayName ||
-      localDashboardState?.description !== dashboardState?.description
+      localDashboardState?.description !== dashboardState?.description ||
+      !deepEqual(
+        localDashboardState?.dashboardContent?.widgets,
+        dashboardState?.dashboardContent?.widgets,
+      )
     );
   }, [localDashboardState, dashboardState]);
 
@@ -192,6 +200,36 @@ export function DashboardPage() {
       setLocalDashboardState(dashboardState);
     }
   }, [dashboardState, localDashboardState, hasUnsavedChanges]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  const blocker = useBlocker(hasUnsavedChanges);
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      if (
+        window.confirm(
+          'You have unsaved changes. Are you sure you want to leave?',
+        )
+      ) {
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker]);
 
   const { mutateAsync: updateDashboard, isPending: isUpdating } =
     useUpdateDashboardState();
@@ -220,7 +258,9 @@ export function DashboardPage() {
     try {
       const response = await updateDashboard({
         dashboardState: localDashboardState,
-        updateMask: { paths: ['displayName', 'description'] },
+        updateMask: {
+          paths: ['displayName', 'description', 'dashboardContent.widgets'],
+        },
       });
       if (response.response) {
         setLocalDashboardState(response.response);
@@ -231,6 +271,84 @@ export function DashboardPage() {
       setToastMessage(formatApiError(e, 'Failed to save dashboard'));
     }
   }, [localDashboardState, updateDashboard, refetch]);
+
+  const handleAddWidget = useCallback((widgetType: WidgetType) => {
+    setLocalDashboardState((prev) => {
+      if (!prev) return prev;
+      const newWidget: PerfWidget = {
+        id: `widget-${crypto.randomUUID()}`,
+        displayName: 'New Widget',
+      };
+      if (widgetType === WidgetType.MARKDOWN) {
+        newWidget.markdown = { content: 'This is a new markdown widget.' };
+      }
+      return {
+        ...prev,
+        dashboardContent: {
+          ...prev.dashboardContent,
+          widgets: [...(prev.dashboardContent?.widgets || []), newWidget],
+        },
+      };
+    });
+    setAddWidgetModalOpen(false);
+  }, []);
+
+  const handleUpdateWidget = useCallback(
+    (index: number, updatedWidget: PerfWidget) => {
+      setLocalDashboardState((prev) => {
+        if (!prev || !prev.dashboardContent?.widgets) return prev;
+        const newWidgets = [...prev.dashboardContent.widgets];
+        newWidgets[index] = updatedWidget;
+        return {
+          ...prev,
+          dashboardContent: {
+            ...prev.dashboardContent,
+            widgets: newWidgets,
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const handleDeleteWidget = useCallback((index: number) => {
+    setLocalDashboardState((prev) => {
+      if (!prev || !prev.dashboardContent?.widgets) return prev;
+      const newWidgets = [...prev.dashboardContent.widgets];
+      newWidgets.splice(index, 1);
+      return {
+        ...prev,
+        dashboardContent: {
+          ...prev.dashboardContent,
+          widgets: newWidgets,
+        },
+      };
+    });
+  }, []);
+
+  const handleMoveWidget = useCallback(
+    (index: number, direction: 'UP' | 'DOWN') => {
+      setLocalDashboardState((prev) => {
+        if (!prev || !prev.dashboardContent?.widgets) return prev;
+        const newWidgets = [...prev.dashboardContent.widgets];
+        const targetIndex = direction === 'UP' ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= newWidgets.length) return prev;
+
+        const temp = newWidgets[index];
+        newWidgets[index] = newWidgets[targetIndex];
+        newWidgets[targetIndex] = temp;
+
+        return {
+          ...prev,
+          dashboardContent: {
+            ...prev.dashboardContent,
+            widgets: newWidgets,
+          },
+        };
+      });
+    },
+    [],
+  );
 
   const topBarAction = useMemo(
     () => (
@@ -303,10 +421,71 @@ export function DashboardPage() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-        {JSON.stringify(dashboardState, null, 2)}
-      </pre>
+    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {(!localDashboardState?.dashboardContent?.widgets ||
+        localDashboardState.dashboardContent.widgets.length === 0) && (
+        <EmptyDashboardState onAdd={() => setAddWidgetModalOpen(true)} />
+      )}
+
+      {localDashboardState?.dashboardContent?.widgets?.map((widget, index) => {
+        if (!widget) return null;
+
+        return (
+          <WidgetContainer
+            key={widget.id || `widget-${index}`}
+            title={widget.displayName || 'Widget'}
+            onMoveUp={
+              index > 0 ? () => handleMoveWidget(index, 'UP') : undefined
+            }
+            onMoveDown={
+              index <
+              (localDashboardState.dashboardContent.widgets?.length || 0) - 1
+                ? () => handleMoveWidget(index, 'DOWN')
+                : undefined
+            }
+            onDelete={() => handleDeleteWidget(index)}
+            onTitleChange={(newTitle) =>
+              handleUpdateWidget(index, { ...widget, displayName: newTitle })
+            }
+          >
+            {widget.markdown && (
+              <MarkdownWidget
+                widget={widget}
+                onUpdate={(updatedWidget) =>
+                  handleUpdateWidget(index, updatedWidget)
+                }
+              />
+            )}
+            {widget.chart && (
+              <Box sx={{ p: 2 }}>
+                <Typography color="text.secondary">
+                  Chart functionality (type: {widget.chart.chartType}) is
+                  currently unimplemented.
+                </Typography>
+              </Box>
+            )}
+          </WidgetContainer>
+        );
+      })}
+
+      {!!localDashboardState?.dashboardContent?.widgets?.length && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Button
+            variant="contained"
+            disableElevation
+            onClick={() => setAddWidgetModalOpen(true)}
+          >
+            Add Widget
+          </Button>
+        </Box>
+      )}
+
+      <AddWidgetModal
+        open={addWidgetModalOpen}
+        onClose={() => setAddWidgetModalOpen(false)}
+        onAdd={handleAddWidget}
+      />
+
       <Snackbar
         open={Boolean(toastMessage)}
         autoHideDuration={4000}
@@ -329,4 +508,33 @@ export function DashboardPage() {
  */
 export function Component() {
   return <DashboardPage />;
+}
+
+function EmptyDashboardState({ onAdd }: { onAdd: () => void }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 6,
+        my: 4,
+        border: '1px dashed',
+        borderColor: 'divider',
+        borderRadius: 2,
+        bgcolor: 'background.default',
+      }}
+    >
+      <Typography variant="h6" color="text.secondary" gutterBottom>
+        This dashboard is empty
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Add a widget to start building your custom view.
+      </Typography>
+      <Button variant="contained" disableElevation onClick={onAdd}>
+        Add Widget
+      </Button>
+    </Box>
+  );
 }

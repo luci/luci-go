@@ -22,7 +22,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { TimeRangeSelector } from '@/common/components/time_range_selector';
 import { getAbsoluteStartEndTime } from '@/common/components/time_range_selector/time_range_selector_utils';
 import {
-  EditableMarkdown,
   SearchMeasurementsForm,
   TimeSeriesChart,
   TimeSeriesDataSet,
@@ -147,9 +146,6 @@ export function DemoPage() {
   );
 
   const [isInitialValid, setIsInitialValid] = useState(false);
-  const [aboutMarkdown, setAboutMarkdown] = useState(
-    '**Welcome to Crystal Ball!**\n\nThis is a placeholder.',
-  );
 
   useEffect(() => {
     const hasInitialRequest = Object.keys(searchRequestFromUrl).length > 0;
@@ -225,11 +221,6 @@ export function DemoPage() {
       <Typography variant="h5" gutterBottom>
         Crystal Ball Performance Metrics
       </Typography>
-
-      <EditableMarkdown
-        initialMarkdown={aboutMarkdown}
-        onSave={setAboutMarkdown}
-      />
 
       <SearchMeasurementsForm
         onSubmit={handleSearchSubmit}

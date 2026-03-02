@@ -14,7 +14,7 @@
 
 import { UseQueryResult } from '@tanstack/react-query';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { DateTime } from 'luxon';
+import { DateTime, Settings } from 'luxon';
 
 import { TopBar } from '@/crystal_ball/components/layout/top_bar';
 import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
@@ -33,6 +33,11 @@ const mockUseSearchMeasurements = jest.spyOn(
 describe('<DemoPage />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    Settings.now = () => new Date('2026-03-02T10:00:00.000Z').valueOf();
+  });
+
+  afterEach(() => {
+    Settings.now = () => Date.now();
   });
 
   const renderDemoPage = (

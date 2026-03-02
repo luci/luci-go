@@ -38,6 +38,11 @@ jest.mock('react-router', () => ({
   ...jest.requireActual('react-router'),
   useParams: () => ({ dashboardId: 'abcd123' }),
   useNavigate: () => mockNavigate,
+  useBlocker: () => ({
+    state: 'unblocked',
+    proceed: jest.fn(),
+    reset: jest.fn(),
+  }),
 }));
 
 const mockRemoveQueries = jest.fn();
@@ -64,6 +69,15 @@ const { setMockParams } = jest.requireMock(
   '@/generic_libs/hooks/synced_search_params',
 );
 
+jest.mock('@/crystal_ball/components', () => ({
+  WidgetContainer: jest.fn(({ children }) => <div>{children}</div>),
+  AddWidgetModal: jest.fn(() => <div>AddWidgetModal Mock</div>),
+}));
+
+jest.mock('@/crystal_ball/components/markdown_widget', () => ({
+  MarkdownWidget: jest.fn(() => <div>MarkdownWidget Mock</div>),
+}));
+
 const mockDashboard: DashboardState = {
   name: 'dashboardStates/abcd123',
   displayName: 'Test Dashboard',
@@ -71,6 +85,12 @@ const mockDashboard: DashboardState = {
 };
 
 describe('<DashboardPage />', () => {
+  beforeAll(() => {
+    if (!self.crypto.randomUUID) {
+      self.crypto.randomUUID = () => '00000000-0000-0000-0000-000000000000';
+    }
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     setMockParams('');
@@ -124,7 +144,7 @@ describe('<DashboardPage />', () => {
       data: mockDashboard,
     });
     renderDashboard();
-    expect(await screen.findByText(/abcd123/)).toBeInTheDocument();
+    expect(await screen.findByText(/Add Widget/i)).toBeInTheDocument();
     expect(useTopBarConfig).toHaveBeenLastCalledWith(
       expect.anything(),
       expect.anything(),
@@ -212,7 +232,9 @@ describe('<DashboardPage />', () => {
         dashboardState: expect.objectContaining({
           displayName: 'Updated Name',
         }),
-        updateMask: { paths: ['displayName', 'description'] },
+        updateMask: {
+          paths: ['displayName', 'description', 'dashboardContent.widgets'],
+        },
       });
       expect(screen.getByText('Dashboard saved successfully')).toBeVisible();
     });
@@ -268,6 +290,14 @@ describe('<DashboardPage />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith({
+        dashboardState: expect.objectContaining({
+          displayName: 'Updated Name',
+        }),
+        updateMask: {
+          paths: ['displayName', 'description', 'dashboardContent.widgets'],
+        },
+      });
       expect(screen.getByText(/API Error/i)).toBeVisible();
     });
   });
