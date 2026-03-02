@@ -219,6 +219,7 @@ function TestComponent() {
     // Pagination
     rowCount: totalRowCount,
     manualPagination: true,
+    enableRowSelection: true,
     onPaginationChange: (updater) => {
       const newPagination =
         typeof updater === 'function' ? updater(pagination) : updater;
@@ -259,10 +260,10 @@ const getTableVisibleColumns = () => {
   const headers = screen.getAllByRole('columnheader');
   return headers
     .map((h) => {
-      const headerText = h.querySelector('.Mui-TableHeadCell-Content-Wrapper');
-      return headerText !== null && headerText.textContent !== null
-        ? columnIdMap.get(headerText.textContent)
-        : null;
+      // Find the typography element which carries the title
+      const titleEl = h.querySelector('.MuiTypography-root[title]');
+      const title = titleEl?.getAttribute('title');
+      return title ? columnIdMap.get(title) : null;
     })
     .filter((id): id is string => !!id);
 };
@@ -422,5 +423,44 @@ describe('<MaterialReactTable />', () => {
     expect(screen.getByText('Sort by ASC')).toBeVisible();
     expect(screen.getByText('Sort by DESC')).toBeVisible();
     expect(screen.getByText('Hide column')).toBeVisible();
+  });
+
+  it('should have a narrowed checkbox selection column', async () => {
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestComponent />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    // The selection column header should have a fixed width of 40
+    // In MRT v2, column sizes are often applied via CSS variables on the table
+    const table = document.querySelector('table');
+    expect(table).toHaveStyle('--header-mrt_row_select-size: 40');
+  });
+
+  it('should apply density transforms to header cells', async () => {
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestComponent />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    const headers = screen.getAllByRole('columnheader');
+    // Check if the MuiTableHeadCell-Content has the expected styles from fleetTableHeaderSx
+    // or if the header itself has the background color
+    const firstHeader = headers[0];
+    expect(firstHeader).toHaveStyle('background-color: var(--header-bg-color)');
   });
 });

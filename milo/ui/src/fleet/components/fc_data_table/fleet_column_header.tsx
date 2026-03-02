@@ -12,71 +12,127 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Typography } from '@mui/material';
-import { MRT_Header, MRT_RowData } from 'material-react-table';
-import { ReactNode } from 'react';
+import { Box, Typography, useTheme } from '@mui/material';
+import {
+  MRT_Header,
+  MRT_RowData,
+  MRT_TableInstance,
+  MRT_TableHeadCellSortLabel,
+  MRT_TableHeadCellColumnActionsButton,
+} from 'material-react-table';
 
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
+import { colors } from '@/fleet/theme/colors';
 
 export interface FleetColumnHeaderProps<TData extends MRT_RowData> {
+  column: MRT_Header<TData>['column'];
   header: MRT_Header<TData>;
+  table: MRT_TableInstance<TData>;
   headerText?: string;
-  infoTooltip?: ReactNode;
+  infoTooltip?: React.ReactNode;
 }
-
-const HEADER_TEXT_STYLE = {
-  fontWeight: 500,
-  display: '-webkit-box',
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: 'vertical' as const,
-  overflow: 'hidden',
-};
-
-export interface FleetColumnHeaderContentProps {
-  text: string;
-  tooltip?: ReactNode;
-}
-
-export const FleetColumnHeaderContent = ({
-  text,
-  tooltip,
-}: FleetColumnHeaderContentProps) => {
-  return (
-    <div
-      css={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-      }}
-    >
-      <Typography
-        variant="subhead2"
-        title={text}
-        css={{ ...HEADER_TEXT_STYLE, flex: 1, minWidth: 0 }}
-      >
-        {text}
-      </Typography>
-
-      {tooltip && (
-        <InfoTooltip paperCss={{ maxWidth: '300px' }}>{tooltip}</InfoTooltip>
-      )}
-    </div>
-  );
-};
 
 export const FleetColumnHeader = <TData extends MRT_RowData>({
   header,
+  table,
   headerText,
   infoTooltip,
 }: FleetColumnHeaderProps<TData>) => {
+  const theme = useTheme();
   const { column } = header;
   const { columnDef } = column;
+  const meta = columnDef.meta;
 
-  // Resolve content: Prop > ColumnDef > ID
   const resolvedText = headerText ?? (columnDef.header as string) ?? column.id;
-  const resolvedTooltip = infoTooltip ?? columnDef.meta?.infoTooltip;
+  const resolvedTooltip = infoTooltip ?? meta?.infoTooltip;
+
+  const canSort = column.getCanSort();
+  const canAction =
+    (table.options.enableColumnActions ?? true) &&
+    (column.columnDef.enableColumnActions ?? true);
+
+  const isHighlighted = meta?.isHighlighted;
+
+  // Derive line height and max height for line clamping (up to 2 lines)
+  const typography = theme.typography.subhead2;
+  const lineHeight = typography?.lineHeight ?? '1.2rem';
+  const maxHeight =
+    typeof lineHeight === 'number'
+      ? `${lineHeight * 2}px`
+      : `calc(${lineHeight} * 2)`;
 
   return (
-    <FleetColumnHeaderContent text={resolvedText} tooltip={resolvedTooltip} />
+    <Box
+      className="fleet-column-header"
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+        minWidth: 0,
+        flexShrink: 1,
+        // Resetting pointerEvents here to let .styles handle it
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          flex: '1 1 0%',
+          minWidth: 0,
+          overflow: 'hidden',
+        }}
+      >
+        <Typography
+          variant="subhead2"
+          title={typeof resolvedText === 'string' ? resolvedText : undefined}
+          sx={{
+            fontWeight: 500,
+            color: isHighlighted ? colors.blue[600] : colors.grey[800],
+            mr: 0.5,
+            minWidth: 0,
+            flex: '1 1 0%',
+            wordBreak: 'break-word',
+            overflowWrap: 'anywhere',
+            whiteSpace: 'normal',
+            maxHeight,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            lineHeight,
+          }}
+        >
+          {resolvedText}
+        </Typography>
+
+        {resolvedTooltip && (
+          <Box sx={{ ml: 0.5, mr: 0.5, display: 'flex', flexShrink: 0 }}>
+            <InfoTooltip>{resolvedTooltip}</InfoTooltip>
+          </Box>
+        )}
+      </Box>
+
+      {/* Action Container behaves naturally - .styles control its appearance */}
+      <Box
+        className={`fleet-column-actions ${column.getIsSorted() ? 'is-sorted' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+        sx={{
+          alignItems: 'center',
+          backgroundColor: isHighlighted
+            ? `${colors.blue[50]}`
+            : 'var(--header-bg-color)',
+          pointerEvents: 'none',
+          zIndex: 999,
+          // Visibility logic is now fully centralized in fleetTableHeaderSx
+        }}
+      >
+        {canSort && (
+          <MRT_TableHeadCellSortLabel header={header} table={table} />
+        )}
+        {canAction && (
+          <MRT_TableHeadCellColumnActionsButton header={header} table={table} />
+        )}
+      </Box>
+    </Box>
   );
 };

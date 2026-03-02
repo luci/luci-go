@@ -18,7 +18,14 @@ import {
   Clear,
   VisibilityOff,
 } from '@mui/icons-material';
-import { Divider, ListItemIcon, ListItemText, MenuItem } from '@mui/material';
+import {
+  Divider,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
+  SxProps,
+  Theme,
+} from '@mui/material';
 import _ from 'lodash';
 import {
   MRT_RowData,
@@ -28,37 +35,19 @@ import {
   useMaterialReactTable,
 } from 'material-react-table';
 
-import {
-  highlightedColumnClassName,
-  temporaryColumnClassName,
-} from '@/fleet/components/columns/use_mrt_column_management';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { FleetColumnHeader } from '@/fleet/components/fc_data_table/fleet_column_header';
+import {
+  fleetTableHeaderSx,
+  getDensityPadding,
+} from '@/fleet/components/fc_data_table/fleet_column_header.styles';
 import { MRTFilterMenuItem } from '@/fleet/components/fc_data_table/mrt_filter_menu_item';
 import {
-  useSettings,
   mapMRTToMUI,
   mapMUIToMRT,
+  useSettings,
 } from '@/fleet/hooks/use_settings';
 import { colors } from '@/fleet/theme/colors';
-
-const columnHighlightSx = {
-  [`&.${highlightedColumnClassName}`]: {
-    '--header-bg-color': colors.blue[50],
-    backgroundColor: 'var(--header-bg-color)',
-    '&:hover': {
-      backgroundColor: colors.blue[100],
-    },
-    '& .Mui-TableHeadCell-Content-Labels': {
-      color: colors.blue[600],
-    },
-  },
-  [`&.${temporaryColumnClassName} .Mui-TableHeadCell-Content-Wrapper::after`]: {
-    content: '"*"',
-    marginLeft: '6px',
-    color: colors.blue[600],
-  },
-};
 
 export const useFCDataTable = <TData extends MRT_RowData>(
   tableOptions: MRT_TableOptions<TData>,
@@ -72,7 +61,12 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     enableHiding: true, // Needed for hide column in menu
     enableColumnResizing: true,
     enableColumnActions: true,
-    layoutMode: 'grid',
+    layoutMode: 'grid', // Revert to grid for robust column resizing
+    displayColumnDefOptions: {
+      'mrt-row-select': {
+        size: 40,
+      },
+    },
     defaultColumn: {
       grow: 1,
       size: 40,
@@ -207,106 +201,61 @@ export const useFCDataTable = <TData extends MRT_RowData>(
       },
     },
 
-    muiTableHeadCellProps: ({ column }) => {
-      // Temporary columns don't have visibility state explicitly tracked in MRT's column visibility state.
-      // Instead, we use a CSS class to visually indicate they are temporary. Check if it has that class.
-      // Actually we don't have direct access to the generated DOM props here.
-      // But since this is a callback we can pass down an aria-label or description.
-      // Since `columnHighlightSx` handles the UI, we can inject an aria-description if the class applies
-      return {
-        sx: {
-          // Define the default variable for the header cell background color
-          '--header-bg-color': colors.grey[100],
-          backgroundColor: 'var(--header-bg-color, transparent)',
+    muiTableHeadCellProps: ({ table, column }) => {
+      const density = table.getState().density;
+      const { vertical, horizontal } = getDensityPadding(density);
 
-          fontWeight: 500,
-          justifyContent: 'center',
-          [`& .Mui-TableHeadCell-ResizeHandle-Divider`]: {
-            borderWidth: '1px',
-          },
-          '& .ColumnActionsMenuButton': {
-            opacity: 0,
-            transition: 'all 0.2s ease',
-            backgroundColor: 'colors.transparent',
-            width: '24px',
-            height: '24px',
-            padding: 0,
-            margin: 0,
-            flexShrink: 0,
-          },
-          '&:hover .ColumnActionsMenuButton, &:focus-within .ColumnActionsMenuButton':
-            {
-              opacity: 1,
-            },
-          '& .ColumnActionsMenuButton:hover, & .ColumnActionsMenuButton[aria-expanded="true"]':
-            {
-              backgroundColor: 'rgba(0, 0, 0, 0.04) !important',
-              opacity: 1,
-            },
-          '& .MuiTableSortLabel-root': {
-            transition: 'all 0.2s ease',
-            opacity: column.getIsSorted() ? 1 : 0,
-            padding: '4px',
-            borderRadius: '50%',
-            flexShrink: 0,
-            margin: 0,
-            marginLeft: '4px',
-            width: '24px',
-            height: '24px',
-            alignItems: 'center',
-            justifyContent: 'center',
-          },
-          '& .MuiTableSortLabel-icon': {
-            margin: 0,
-            fontSize: '16px',
-            transition: 'all 0.2s ease',
-          },
-          '&:hover .MuiTableSortLabel-root:not(.Mui-active), &:focus-within .MuiTableSortLabel-root:not(.Mui-active)':
-            {
-              opacity: 1,
-              backgroundColor: 'var(--header-bg-color, transparent)',
-            },
-          '& .MuiTableSortLabel-root:hover': {
-            backgroundColor: 'rgba(0, 0, 0, 0.04) !important',
-          },
-          [`& .Mui-TableHeadCell-Content-Wrapper`]: {
-            whiteSpace: 'normal',
-            width: '100%',
-            display: '-webkit-box',
-            WebkitBoxOrient: 'vertical',
-            WebkitLineClamp: 2,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          },
-          [`& .Mui-TableHeadCell-Content-Labels`]: {
-            overflow: 'hidden',
-            flex: 1,
-          },
-          [`& .MuiTypography-root`]: {
-            lineHeight: 'normal',
-          },
-          ...columnHighlightSx,
-        },
-        // Use the meta property to determine if the column is temporary
-        'aria-description': (column.columnDef.meta as { isTemporary?: boolean })
-          ?.isTemporary
-          ? 'Column visible because of active filter'
-          : undefined,
-        title: (column.columnDef.meta as { isTemporary?: boolean })?.isTemporary
-          ? 'Column visible because of active filter'
-          : undefined,
+      const meta = column.columnDef.meta;
+      const isTemporary = meta?.isTemporary;
+      const isHighlighted = meta?.isHighlighted || column.getIsFiltered();
+      const title = isTemporary
+        ? 'Column visible because of active filter'
+        : undefined;
+
+      return {
+        className: isHighlighted ? 'column-highlight' : '',
+        sx: {
+          ...(fleetTableHeaderSx as Record<string, unknown>),
+          paddingTop: `${vertical}px !important`,
+          paddingBottom: `${vertical}px !important`,
+          paddingLeft: `${horizontal}px !important`,
+          paddingRight: `${horizontal}px !important`,
+        } as SxProps<Theme>,
+        'aria-description': title,
+        title: title,
       };
     },
+
     muiColumnActionsButtonProps: {
       className: 'ColumnActionsMenuButton',
       'aria-label': 'Column Actions',
     },
-    muiTableBodyCellProps: {
-      sx: {
-        ...columnHighlightSx,
-      },
+
+    muiTableBodyCellProps: ({ table, column }) => {
+      const density = table.getState().density;
+      const meta = column.columnDef.meta;
+      const isHighlighted = meta?.isHighlighted || column.getIsFiltered();
+
+      const { vertical, horizontal } = getDensityPadding(density);
+
+      return {
+        className: isHighlighted ? 'column-highlight' : '',
+        sx: {
+          paddingTop: `${vertical}px !important`,
+          paddingBottom: `${vertical}px !important`,
+          paddingLeft: `${horizontal}px !important`,
+          paddingRight: `${horizontal}px !important`,
+          backgroundColor: isHighlighted ? `${colors.blue[50]}` : undefined,
+          color: isHighlighted ? `${colors.blue[600]}` : undefined,
+        } as SxProps<Theme>,
+      };
     },
     muiTableContainerProps: { sx: { maxWidth: '100%', overflowX: 'auto' } },
+    muiTableProps: {
+      sx: {
+        tableLayout: 'fixed',
+      },
+    },
     muiBottomToolbarProps: {
       sx: {
         boxShadow: 'none',

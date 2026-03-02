@@ -121,53 +121,19 @@ export function useMRTColumnManagement<TData extends MRT_RowData>({
       const colId = getColumnId(colDef);
       if (!colId) return colDef;
 
-      let className = '';
-      let isTemp = false;
+      const isTemp = temporaryColumnIds.includes(colId);
+      const isHighlighted = highlightedColumnIds.includes(colId);
 
-      if (temporaryColumnIds.includes(colId)) {
-        className = temporaryColumnClassName;
-        isTemp = true;
-      } else if (highlightedColumnIds.includes(colId)) {
-        className = highlightedColumnClassName;
-      }
-
-      if (className || isTemp) {
+      if (isTemp || isHighlighted) {
         return {
           ...colDef,
           enableHiding: isTemp ? false : colDef.enableHiding,
           meta: {
             ...colDef.meta,
             isTemporary: isTemp,
+            isHighlighted: isHighlighted,
           },
-          muiTableHeadCellProps: {
-            ...colDef.muiTableHeadCellProps,
-            className:
-              [
-                (
-                  colDef.muiTableHeadCellProps as
-                    | { className?: string }
-                    | undefined
-                )?.className,
-                className,
-              ]
-                .filter(Boolean)
-                .join(' ') || undefined,
-          },
-          muiTableBodyCellProps: {
-            ...colDef.muiTableBodyCellProps,
-            className:
-              [
-                (
-                  colDef.muiTableBodyCellProps as
-                    | { className?: string }
-                    | undefined
-                )?.className,
-                className,
-              ]
-                .filter(Boolean)
-                .join(' ') || undefined,
-          },
-        } as MRT_ColumnDef<TData>;
+        };
       }
       return colDef;
     });

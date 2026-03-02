@@ -55,6 +55,7 @@ export function InfoTooltip({
   return (
     <>
       <span
+        className="fleet-info-icon"
         aria-owns={popoverId}
         aria-haspopup="true"
         onMouseEnter={handlePopoverOpen}

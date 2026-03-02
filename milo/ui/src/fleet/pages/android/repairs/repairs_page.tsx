@@ -81,7 +81,8 @@ import {
   RepairMetric_Priority,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { COLUMNS, getPriorityIcon, getRow, Row } from './repairs_columns';
+import { COLUMNS } from './repairs_columns';
+import { getPriorityIcon, getRow, type Row } from './repairs_columns.utils';
 import { dimensionsToFilterOptions } from './repairs_page_utils';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];

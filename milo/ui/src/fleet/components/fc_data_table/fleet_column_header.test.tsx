@@ -1,92 +1,297 @@
-import { render, screen } from '@testing-library/react';
-import { MRT_Column, MRT_Header, MRT_RowData } from 'material-react-table';
-// import { describe, expect, it, vi } from 'vitest'; // using jest globals
-
+import { Typography as MockedTypography } from '@mui/material';
+import { fireEvent, render, screen } from '@testing-library/react';
 import {
-  FleetColumnHeader,
-  FleetColumnHeaderContent,
-} from './fleet_column_header';
+  MRT_Column,
+  MRT_Header,
+  MRT_RowData,
+  MRT_TableInstance,
+} from 'material-react-table';
 
-describe('FleetColumnHeaderContent', () => {
-  it('renders text correctly', () => {
-    render(<FleetColumnHeaderContent text="Test Header" />);
-    expect(screen.getByText('Test Header')).toBeInTheDocument();
-  });
+import { FleetColumnHeader } from './fleet_column_header';
 
-  it('renders tooltip when provided', () => {
-    render(
-      <FleetColumnHeaderContent
-        text="Test Header"
-        tooltip={<div>Tooltip Content</div>}
-      />,
-    );
-    expect(screen.getByText('Test Header')).toBeInTheDocument();
-    // Icon should be present (InfoOutlined usually renders as an SVG with data-testid="InfoOutlinedIcon" or similar,
-    // but we can check if it exists by querying for specific semantics if we knew them,
-    // or just assume the InfoTooltip renders something.
-    // Since InfoTooltip is a bit complex, we might just check if the content is NOT visible initially
-    // (popover) or check structure if we want deep testing.
-    // For now, simpler: check if the hook/component doesn't crash.
-  });
+// Mock Typography to inspect its props
+jest.mock('@mui/material', () => {
+  const actual = jest.requireActual('@mui/material');
+  return {
+    ...actual,
+    Typography: jest.fn((props) => <actual.Typography {...props} />),
+  };
 });
 
-describe('FleetColumnHeader', () => {
-  it('renders header text from column definition', () => {
-    const mockHeader = {
-      column: {
-        id: 'test_col',
-        columnDef: {
-          header: 'Column Header',
-        },
-      } as unknown as MRT_Column<MRT_RowData>,
-    } as MRT_Header<MRT_RowData>;
+// Mock InfoTooltip since it might be complex
+jest.mock('@/fleet/components/info_tooltip/info_tooltip', () => ({
+  InfoTooltip: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="info-tooltip">{children}</div>
+  ),
+}));
 
-    render(<FleetColumnHeader header={mockHeader} />);
+jest.mock('material-react-table', () => ({
+  ...jest.requireActual('material-react-table'),
+  MRT_TableHeadCellColumnActionsButton: ({
+    table,
+  }: {
+    table: { setColumnActionMenuOpen: (open: boolean) => void };
+  }) => (
+    <button
+      data-testid="column-action-button"
+      onClick={() => table.setColumnActionMenuOpen(true)}
+    >
+      Actions
+    </button>
+  ),
+}));
+
+describe('FleetColumnHeader', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const mockTable = {
+    options: {
+      enableColumnActions: true,
+      icons: {
+        ArrowDownwardIcon: () => <div data-testid="arrow-downward" />,
+        MoreVertIcon: () => <div data-testid="more-vert" />,
+        SyncAltIcon: () => <div data-testid="sync-alt" />,
+      },
+      localization: {
+        sortByColumnAsc: 'Sort by {column} ascending',
+        sortByColumnDesc: 'Sort by {column} descending',
+        sortedByColumnAsc: 'Sorted by {column} ascending',
+        sortedByColumnDesc: 'Sorted by {column} descending',
+        columnActions: 'Column Actions',
+      },
+    },
+    getState: () => ({
+      isLoading: false,
+      showSkeletons: false,
+      sorting: [],
+      columnActionMenu: { columnId: null },
+    }),
+    setColumnActionMenuOpen: jest.fn(),
+  } as unknown as MRT_TableInstance<MRT_RowData>;
+
+  const createMockColumn = (overrides = {}) =>
+    ({
+      id: 'test_col',
+      columnDef: {
+        header: 'Column Header',
+        enableColumnActions: true,
+      },
+      getIsSorted: jest.fn().mockReturnValue(false),
+      getCanSort: jest.fn().mockReturnValue(true),
+      toggleSorting: jest.fn(),
+      getNextSortingOrder: jest.fn(() => 'asc'),
+      ...overrides,
+    }) as unknown as MRT_Column<MRT_RowData>;
+
+  const createMockHeader = (column: MRT_Column<MRT_RowData>) =>
+    ({
+      column,
+      table: mockTable,
+    }) as unknown as MRT_Header<MRT_RowData>;
+
+  it('renders header text from column definition', () => {
+    const column = createMockColumn();
+    const header = createMockHeader(column);
+
+    render(
+      <FleetColumnHeader column={column} header={header} table={mockTable} />,
+    );
     expect(screen.getByText('Column Header')).toBeInTheDocument();
   });
 
   it('renders header text from props override', () => {
-    const mockHeader = {
-      column: {
-        id: 'test_col',
-        columnDef: {
-          header: 'Column Header',
-        },
-      } as unknown as MRT_Column<MRT_RowData>,
-    } as MRT_Header<MRT_RowData>;
+    const column = createMockColumn();
+    const header = createMockHeader(column);
 
-    render(<FleetColumnHeader header={mockHeader} headerText="Override" />);
+    render(
+      <FleetColumnHeader
+        column={column}
+        header={header}
+        table={mockTable}
+        headerText="Override"
+      />,
+    );
     expect(screen.getByText('Override')).toBeInTheDocument();
   });
 
   it('renders column ID when header text is missing', () => {
-    const mockHeader = {
-      column: {
-        id: 'fallback_id',
-        columnDef: {},
-      } as unknown as MRT_Column<MRT_RowData>,
-    } as MRT_Header<MRT_RowData>;
+    const column = createMockColumn({
+      id: 'fallback_id',
+      columnDef: {},
+    });
+    const header = createMockHeader(column);
 
-    render(<FleetColumnHeader header={mockHeader} />);
+    render(
+      <FleetColumnHeader column={column} header={header} table={mockTable} />,
+    );
     expect(screen.getByText('fallback_id')).toBeInTheDocument();
   });
 
   it('renders tooltip from column meta', () => {
-    const mockHeader = {
-      column: {
-        id: 'test_col',
-        columnDef: {
-          header: 'Column Header',
-          meta: {
-            infoTooltip: <span>Meta Tooltip</span>,
-          },
+    const column = createMockColumn({
+      columnDef: {
+        header: 'Column Header',
+        meta: {
+          infoTooltip: <span>Meta Tooltip</span>,
         },
-      } as unknown as MRT_Column<MRT_RowData>,
-    } as MRT_Header<MRT_RowData>;
+      },
+    });
+    const header = createMockHeader(column);
 
-    render(<FleetColumnHeader header={mockHeader} />);
-    // The tooltip content might be in a portal or hidden, so we won't easily find "Meta Tooltip"
-    // without triggering hover. But we can ensure it renders without error.
-    expect(screen.getByText('Column Header')).toBeInTheDocument();
+    render(
+      <FleetColumnHeader column={column} header={header} table={mockTable} />,
+    );
+    expect(screen.getByTestId('info-tooltip')).toHaveTextContent(
+      'Meta Tooltip',
+    );
+  });
+
+  it('allows click propagation for sorting (handled by parent MRT cell)', () => {
+    const column = createMockColumn();
+    const header = createMockHeader(column);
+    const mockSortHandler = jest.fn();
+
+    render(
+      // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+      <div onClick={mockSortHandler}>
+        <FleetColumnHeader column={column} header={header} table={mockTable} />
+      </div>,
+    );
+    // Click the text
+    const text = screen.getByText('Column Header');
+    fireEvent.click(text);
+
+    expect(mockSortHandler).toHaveBeenCalled();
+  });
+
+  it('calls setColumnActionMenuOpen when action button is clicked', () => {
+    const column = createMockColumn();
+    const header = createMockHeader(column);
+
+    render(
+      <FleetColumnHeader column={column} header={header} table={mockTable} />,
+    );
+
+    const actionButton = screen.getByTestId('column-action-button');
+    fireEvent.click(actionButton);
+
+    expect(
+      (mockTable as unknown as { setColumnActionMenuOpen: jest.Mock })
+        .setColumnActionMenuOpen,
+    ).toHaveBeenCalledWith(true);
+  });
+
+  it('renders aria-description for temporary columns', () => {
+    const column = createMockColumn({
+      columnDef: {
+        header: 'Temp Column',
+        meta: { isTemporary: true },
+      },
+    });
+    const header = createMockHeader(column);
+
+    render(
+      <FleetColumnHeader column={column} header={header} table={mockTable} />,
+    );
+
+    expect(screen.getByText('Temp Column')).toBeInTheDocument();
+  });
+});
+
+describe('FleetColumnHeader Visuals', () => {
+  const mockTable = {
+    options: {
+      enableColumnActions: true,
+      icons: {
+        ArrowDownwardIcon: () => <div data-testid="arrow-downward" />,
+        MoreVertIcon: () => <div data-testid="more-vert" />,
+        SyncAltIcon: () => <div data-testid="sync-alt" />,
+      },
+      localization: {
+        sortByColumnAsc: 'Sort by {column} ascending',
+        sortByColumnDesc: 'Sort by {column} descending',
+        sortedByColumnAsc: 'Sorted by {column} ascending',
+        sortedByColumnDesc: 'Sorted by {column} descending',
+        columnActions: 'Column Actions',
+      },
+    },
+    getState: () => ({
+      isLoading: false,
+      showSkeletons: false,
+      sorting: [],
+      columnActionMenu: { columnId: null },
+    }),
+    setColumnActionMenuOpen: jest.fn(),
+  } as unknown as MRT_TableInstance<MRT_RowData>;
+
+  const createMockColumn = (overrides = {}) =>
+    ({
+      id: 'test_col',
+      columnDef: {
+        header: 'Column Header',
+        enableColumnActions: true,
+      },
+      getIsSorted: jest.fn().mockReturnValue(false),
+      getCanSort: jest.fn().mockReturnValue(true),
+      toggleSorting: jest.fn(),
+      getNextSortingOrder: jest.fn(() => 'asc'),
+      ...overrides,
+    }) as unknown as MRT_Column<MRT_RowData>;
+
+  const createMockHeader = (column: MRT_Column<MRT_RowData>) =>
+    ({
+      column,
+      table: mockTable,
+    }) as unknown as MRT_Header<MRT_RowData>;
+
+  it('applies text wrapping styles to Typography', () => {
+    const column = createMockColumn();
+    const header = createMockHeader(column);
+
+    render(
+      <FleetColumnHeader column={column} header={header} table={mockTable} />,
+    );
+
+    // Verify Typography was called with the expected sx props
+    const typographyCalls = (MockedTypography as jest.Mock).mock.calls;
+    const props = typographyCalls[0][0];
+
+    expect(props.sx).toMatchObject({
+      WebkitLineClamp: 2,
+      display: '-webkit-box',
+      WebkitBoxOrient: 'vertical',
+      overflow: 'hidden',
+      wordBreak: 'break-word',
+    });
+  });
+
+  it('shows action container when column is sorted', () => {
+    const column = createMockColumn({
+      getIsSorted: jest.fn().mockReturnValue('asc'),
+    });
+    const header = createMockHeader(column);
+
+    const { container } = render(
+      <FleetColumnHeader column={column} header={header} table={mockTable} />,
+    );
+
+    const actionContainer = container.querySelector('.fleet-column-actions');
+    expect(actionContainer).toHaveClass('is-sorted');
+  });
+
+  it('hides action container when column is not sorted', () => {
+    const column = createMockColumn({
+      getIsSorted: jest.fn().mockReturnValue(false),
+    });
+    const header = createMockHeader(column);
+
+    const { container } = render(
+      <FleetColumnHeader column={column} header={header} table={mockTable} />,
+    );
+
+    const actionContainer = container.querySelector('.fleet-column-actions');
+    expect(actionContainer).not.toHaveClass('is-sorted');
   });
 });
