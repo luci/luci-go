@@ -478,6 +478,13 @@ type Options struct {
 	// Default is conservative false.
 	GCESupportsArbitraryScopes bool
 
+	// DisableCredentialHelper instructs the authenticator to ignore the
+	// configured credential helper (if any).
+	//
+	// This allows tools to bypass the credential helper even if it is
+	// configured in the environment (e.g. via LUCI_AUTH_CREDENTIAL_HELPER).
+	DisableCredentialHelper bool
+
 	// CredentialHelper defines configuration of an external credential helper
 	// binary that will be used to get access tokens.
 	//
@@ -666,10 +673,14 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 	// select this method as credential helpers currently don't support ID
 	// tokens.
 	if opts.CredentialHelper != nil || environ.FromCtx(ctx).Get("LUCI_AUTH_CREDENTIAL_HELPER") != "" {
-		if !opts.UseIDTokens {
+		switch {
+		case opts.DisableCredentialHelper:
+			logging.Debugf(ctx, "Skipping CredentialHelperMethod: disabled by DisableCredentialHelper option")
+		case opts.UseIDTokens:
+			logging.Debugf(ctx, "Skipping CredentialHelperMethod: ID tokens are requested but not supported by credential helpers")
+		default:
 			return CredentialHelperMethod
 		}
-		logging.Debugf(ctx, "Skipping CredentialHelperMethod: ID tokens are requested but not supported by credential helpers")
 	}
 
 	// Running on GCE and callers are fine with automagically picking up GCE

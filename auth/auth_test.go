@@ -968,6 +968,22 @@ func TestCredentialHelperEnv(t *testing.T) {
 		}))
 		assert.Loosely(t, a.opts.Method, should.Equal(CredentialHelperMethod))
 	})
+
+	ftt.Run("cred helper disabled", t, func(t *ftt.Test) {
+		env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
+		ctx := env.SetInCtx(context.Background())
+		ctx = lucictx.SetLocalAuth(ctx, nil)
+
+		a := NewAuthenticator(ctx, SilentLogin, Options{
+			DisableCredentialHelper: true,
+		})
+
+		a.lock.Lock()
+		err := a.ensureInitialized()
+		a.lock.Unlock()
+
+		assert.Loosely(t, err, should.ErrLike("OAuth client is not configured"))
+	})
 }
 
 func TestSelectBestMethod(t *testing.T) {
@@ -988,6 +1004,14 @@ func TestSelectBestMethod(t *testing.T) {
 			ctx = lucictx.SetLocalAuth(ctx, nil)
 			m := SelectBestMethod(ctx, Options{})
 			assert.Loosely(t, m, should.Equal(CredentialHelperMethod))
+		})
+
+		t.Run("DisableCredentialHelper works", func(t *ftt.Test) {
+			env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
+			ctx := env.SetInCtx(ctx)
+			ctx = lucictx.SetLocalAuth(ctx, nil)
+			m := SelectBestMethod(ctx, Options{DisableCredentialHelper: true})
+			assert.Loosely(t, m, should.Equal(UserCredentialsMethod))
 		})
 	})
 }
