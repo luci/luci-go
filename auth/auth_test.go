@@ -1013,6 +1013,16 @@ func TestSelectBestMethod(t *testing.T) {
 			m := SelectBestMethod(ctx, Options{DisableCredentialHelper: true})
 			assert.Loosely(t, m, should.Equal(UserCredentialsMethod))
 		})
+
+		t.Run("ADC preferred over credential helper", func(t *ftt.Test) {
+			env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
+			ctx := env.SetInCtx(ctx)
+			ctx = lucictx.SetLocalAuth(ctx, nil)
+			m := SelectBestMethod(ctx, Options{
+				GoogleADCPolicy: GoogleADCAlways,
+			})
+			assert.Loosely(t, m, should.Equal(GoogleADCMethod))
+		})
 	})
 }
 

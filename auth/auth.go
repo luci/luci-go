@@ -668,21 +668,6 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 		return LUCIContextMethod
 	}
 
-	// Asked to use a credential helper. If it is missing, we'll crash a bit later
-	// when actually invoking it. If ID tokens are requested we should not
-	// select this method as credential helpers currently don't support ID
-	// tokens.
-	if opts.CredentialHelper != nil || environ.FromCtx(ctx).Get("LUCI_AUTH_CREDENTIAL_HELPER") != "" {
-		switch {
-		case opts.DisableCredentialHelper:
-			logging.Debugf(ctx, "Skipping CredentialHelperMethod: disabled by DisableCredentialHelper option")
-		case opts.UseIDTokens:
-			logging.Debugf(ctx, "Skipping CredentialHelperMethod: ID tokens are requested but not supported by credential helpers")
-		default:
-			return CredentialHelperMethod
-		}
-	}
-
 	// Running on GCE and callers are fine with automagically picking up GCE
 	// metadata server.
 	if opts.GCEAllowAsDefault && metadata.OnGCE() {
@@ -698,6 +683,21 @@ func SelectBestMethod(ctx context.Context, opts Options) Method {
 	if opts.GoogleADCPolicy == GoogleADCAllow {
 		if _, err := google.FindDefaultCredentials(ctx); err == nil {
 			return GoogleADCMethod
+		}
+	}
+
+	// Asked to use a credential helper. If it is missing, we'll crash a bit later
+	// when actually invoking it. If ID tokens are requested we should not
+	// select this method as credential helpers currently don't support ID
+	// tokens.
+	if opts.CredentialHelper != nil || environ.FromCtx(ctx).Get("LUCI_AUTH_CREDENTIAL_HELPER") != "" {
+		switch {
+		case opts.DisableCredentialHelper:
+			logging.Debugf(ctx, "Skipping CredentialHelperMethod: disabled by DisableCredentialHelper option")
+		case opts.UseIDTokens:
+			logging.Debugf(ctx, "Skipping CredentialHelperMethod: ID tokens are requested but not supported by credential helpers")
+		default:
+			return CredentialHelperMethod
 		}
 	}
 
