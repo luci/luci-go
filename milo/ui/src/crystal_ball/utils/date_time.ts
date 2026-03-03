@@ -14,7 +14,7 @@
 
 import { DateTime } from 'luxon';
 
-import { Timestamp } from '@/crystal_ball/types';
+import { Timestamp } from '@/proto/google/protobuf/timestamp.pb';
 
 /**
  * Helper to convert Timestamp to DateTime.
@@ -25,7 +25,7 @@ export function timestampToDate(
   timestamp: Timestamp | undefined,
 ): DateTime | null {
   if (!timestamp || timestamp.seconds === undefined) return null;
-  return DateTime.fromSeconds(timestamp.seconds).toUTC();
+  return DateTime.fromSeconds(parseFloat(timestamp.seconds)).toUTC();
 }
 
 /**
@@ -40,7 +40,7 @@ export function formatRelativeTime(val?: string | Timestamp): string {
     if (typeof val === 'string') {
       dt = DateTime.fromISO(val);
     } else if (val.seconds !== undefined) {
-      dt = DateTime.fromSeconds(val.seconds).toUTC();
+      dt = DateTime.fromSeconds(parseFloat(val.seconds)).toUTC();
     }
     if (!dt || !dt.isValid) throw new Error('Invalid date');
     return dt.toRelative() || '';

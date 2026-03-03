@@ -12,20 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * google.protobuf.FieldMask
- */
-export interface FieldMask {
-  /**
-   * List of properties associated with a given operation.
-   */
-  paths?: string[];
-}
+import { Struct } from '@/proto/google/protobuf/struct.pb';
+import { Status } from '@/proto/google/rpc/status.pb';
 
 /**
  * google.longrunning.Operation
  */
-export interface Operation<TMetadata, TResponse, TStatusDetails> {
+export interface Operation<TMetadata, TResponse> {
   /**
    * Operation identifier.
    */
@@ -44,55 +37,12 @@ export interface Operation<TMetadata, TResponse, TStatusDetails> {
   /**
    * If the operation had an error, the status details are contained within.
    */
-  error?: Status<TStatusDetails>;
+  error?: Status;
 
   /**
    * Underlying API response for the operation.
    */
   response?: { [key: string]: TResponse };
-}
-
-/**
- * google.rpc.Status
- */
-export interface Status<TStatusDetails> {
-  /**
-   * Canonical HTTP status code.
-   */
-  code?: number;
-
-  /**
-   * String representation of the status code.
-   */
-  message?: string;
-
-  /**
-   * Error details, if any.
-   */
-  details?: Array<{ [key: string]: TStatusDetails }>;
-}
-
-/**
- * google.protobuf.Timestamp
- */
-export interface Timestamp {
-  /**
-   * Represents seconds of UTC time since Unix epoch.
-   */
-  seconds?: number;
-
-  /**
-   * Non-negative fractions of a second at nanosecond resolution.
-   */
-  nanos?: number;
-}
-
-/**
- * google.protobuf.Struct
- * Internal interface used by the exported Value type.
- */
-interface Struct {
-  [key: string]: Value;
 }
 
 /**

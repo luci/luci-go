@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FieldMask, Operation, Timestamp } from './proto';
+import { FieldMask } from '@/proto/google/protobuf/field_mask.pb';
+import { Timestamp } from '@/proto/google/protobuf/timestamp.pb';
+
+import { Operation } from './proto';
 
 /**
  * google.android.perf.v1.PerfDashboardContent
@@ -571,8 +574,7 @@ export interface DashboardStateOperationMetadata {
  */
 export type DashboardStateOperation = Operation<
   DashboardStateOperationMetadata,
-  DashboardState,
-  string
+  DashboardState
 >;
 
 /**

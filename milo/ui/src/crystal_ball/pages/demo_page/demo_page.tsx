@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
@@ -155,10 +152,10 @@ export function DemoPage() {
     const newRequest = {
       ...baseRequest,
       buildCreateStartTime: startTime
-        ? { seconds: startTime.toUnixInteger(), nanos: 0 }
+        ? { seconds: startTime.toUnixInteger().toString(), nanos: 0 }
         : undefined,
       buildCreateEndTime: endTime
-        ? { seconds: endTime.toUnixInteger(), nanos: 0 }
+        ? { seconds: endTime.toUnixInteger().toString(), nanos: 0 }
         : undefined,
     };
 
@@ -191,10 +188,10 @@ export function DemoPage() {
       const fullRequest = {
         ...request,
         buildCreateStartTime: startTime
-          ? { seconds: startTime.toUnixInteger(), nanos: 0 }
+          ? { seconds: startTime.toUnixInteger().toString(), nanos: 0 }
           : undefined,
         buildCreateEndTime: endTime
-          ? { seconds: endTime.toUnixInteger(), nanos: 0 }
+          ? { seconds: endTime.toUnixInteger().toString(), nanos: 0 }
           : undefined,
       };
 

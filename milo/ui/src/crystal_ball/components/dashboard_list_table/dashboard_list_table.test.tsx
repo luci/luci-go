@@ -17,6 +17,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
 import * as hooks from '@/crystal_ball/hooks';
 import { DashboardState } from '@/crystal_ball/types';
+import { Timestamp } from '@/proto/google/protobuf/timestamp.pb';
 
 jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
@@ -43,8 +44,8 @@ const mockDashboards: DashboardState[] = [
     dashboardContent: { widgets: [] },
     displayName: 'Generic Dashboard Alpha',
     description: 'A mock dashboard description',
-    updateTime: { seconds: 1735689600, nanos: 0 },
-    createTime: { seconds: 1735689600, nanos: 0 },
+    updateTime: { seconds: '1735689600', nanos: 0 },
+    createTime: { seconds: '1735689600', nanos: 0 },
     revisionId: 'rev1',
     etag: 'etag1',
     uid: 'uid1',
@@ -55,8 +56,8 @@ const mockDashboards: DashboardState[] = [
     dashboardContent: { widgets: [] },
     displayName: 'Generic Dashboard Beta',
     description: 'Another mock dashboard description',
-    updateTime: { seconds: 1736689600, nanos: 0 },
-    createTime: { seconds: 1736689600, nanos: 0 },
+    updateTime: { seconds: '1736689600', nanos: 0 },
+    createTime: { seconds: '1736689600', nanos: 0 },
     revisionId: 'rev2',
     etag: 'etag2',
     uid: 'uid2',
@@ -253,8 +254,8 @@ describe('<DashboardListTable />', () => {
                 name: 'dashboardStates/fallback-dash',
                 dashboardContent: { widgets: [] },
                 description: 'No display name here',
-                updateTime: { seconds: 1735689600, nanos: 0 },
-                createTime: { seconds: 1735689600, nanos: 0 },
+                updateTime: { seconds: '1735689600', nanos: 0 },
+                createTime: { seconds: '1735689600', nanos: 0 },
                 revisionId: 'rev1',
                 etag: 'etag1',
                 uid: 'uid1',
@@ -285,11 +286,8 @@ describe('<DashboardListTable />', () => {
                 name: 'dashboardStates/invalid-dates',
                 dashboardContent: { widgets: [] },
                 displayName: 'Invalid Dates Dash',
-                updateTime: 'this-is-not-a-date' as unknown as {
-                  seconds: number;
-                  nanos: number;
-                },
-                createTime: { seconds: 1735689600, nanos: 0 },
+                updateTime: 'this-is-not-a-date' as unknown as Timestamp,
+                createTime: { seconds: '1735689600', nanos: 0 },
                 revisionId: 'rev1',
                 etag: 'etag1',
                 uid: 'uid1',
@@ -299,11 +297,8 @@ describe('<DashboardListTable />', () => {
                 name: 'dashboardStates/missing-dates',
                 dashboardContent: { widgets: [] },
                 displayName: 'Missing Dates Dash',
-                updateTime: undefined as unknown as {
-                  seconds: number;
-                  nanos: number;
-                },
-                createTime: { seconds: 1735689600, nanos: 0 },
+                updateTime: undefined as unknown as Timestamp,
+                createTime: { seconds: '1735689600', nanos: 0 },
                 revisionId: 'rev2',
                 etag: 'etag2',
                 uid: 'uid2',

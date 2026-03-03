@@ -45,11 +45,11 @@ const mockDashboards: DashboardState[] = [
     displayName: 'Generic Dashboard Alpha',
     description: 'A mock dashboard description',
     updateTime: {
-      seconds: 1735689600,
+      seconds: '1735689600',
       nanos: 0,
     },
     createTime: {
-      seconds: 1735689600,
+      seconds: '1735689600',
       nanos: 0,
     },
     revisionId: 'rev1',

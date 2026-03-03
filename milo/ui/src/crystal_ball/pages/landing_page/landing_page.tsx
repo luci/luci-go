@@ -13,17 +13,14 @@
 // limitations under the License.
 
 import AddIcon from '@mui/icons-material/Add';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
+import { Button, Box, Tab, Tabs } from '@mui/material';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
+import { DashboardDialog } from '@/crystal_ball/components';
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
-import { useCreateDashboardState } from '@/crystal_ball/hooks/use_dashboard_state_api';
+import { useCreateDashboardState } from '@/crystal_ball/hooks';
 import { DashboardState } from '@/crystal_ball/types';
 import { extractIdFromName, formatApiError } from '@/crystal_ball/utils';
 

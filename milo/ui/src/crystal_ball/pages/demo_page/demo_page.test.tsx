@@ -161,8 +161,8 @@ describe('<DemoPage />', () => {
       expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
         expect.objectContaining({
           metricKeys: ['cpu'],
-          buildCreateStartTime: { seconds: startTimeUnix, nanos: 0 },
-          buildCreateEndTime: { seconds: endTimeUnix, nanos: 0 },
+          buildCreateStartTime: { seconds: startTimeUnix.toString(), nanos: 0 },
+          buildCreateEndTime: { seconds: endTimeUnix.toString(), nanos: 0 },
         }),
         expect.anything(),
       );
@@ -212,8 +212,8 @@ describe('<DemoPage />', () => {
           buildTarget: 'x86',
           metricKeys: ['cpu', 'memory'],
           atpTestNameFilter: 'AtpTest',
-          buildCreateStartTime: { seconds: startTimeUnix, nanos: 0 },
-          buildCreateEndTime: { seconds: endTimeUnix, nanos: 0 },
+          buildCreateStartTime: { seconds: startTimeUnix.toString(), nanos: 0 },
+          buildCreateEndTime: { seconds: endTimeUnix.toString(), nanos: 0 },
         }),
         expect.anything(),
       );
@@ -246,11 +246,11 @@ describe('<DemoPage />', () => {
         expect.objectContaining({
           metricKeys: ['cpu'],
           buildCreateStartTime: expect.objectContaining({
-            seconds: expect.closeTo(expectedStartTimeUnix, 2),
+            seconds: expectedStartTimeUnix.toString(),
             nanos: 0,
           }),
           buildCreateEndTime: expect.objectContaining({
-            seconds: expect.closeTo(expectedEndTimeUnix, 2),
+            seconds: expectedEndTimeUnix.toString(),
             nanos: 0,
           }),
         }),
@@ -285,8 +285,8 @@ describe('<DemoPage />', () => {
         expect.objectContaining({
           testNameFilter: 'MyNewTest',
           metricKeys: ['memory'],
-          buildCreateStartTime: { seconds: startTimeUnix, nanos: 0 },
-          buildCreateEndTime: { seconds: endTimeUnix, nanos: 0 },
+          buildCreateStartTime: { seconds: startTimeUnix.toString(), nanos: 0 },
+          buildCreateEndTime: { seconds: endTimeUnix.toString(), nanos: 0 },
         }),
         expect.anything(),
       );

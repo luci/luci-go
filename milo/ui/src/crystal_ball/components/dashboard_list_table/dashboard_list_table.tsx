@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import MenuItem from '@mui/material/MenuItem';
-import Snackbar from '@mui/material/Snackbar';
-import Typography from '@mui/material/Typography';
+import {
+  Alert,
+  Box,
+  Button,
+  MenuItem,
+  Snackbar,
+  Typography,
+} from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   MaterialReactTable,
@@ -35,12 +37,13 @@ import {
   useListDashboardStatesInfinite,
   useUndeleteDashboardState,
 } from '@/crystal_ball/hooks';
-import { DashboardState, Timestamp } from '@/crystal_ball/types';
+import { DashboardState } from '@/crystal_ball/types';
 import {
   escapeRegExp,
   formatApiError,
   formatRelativeTime,
 } from '@/crystal_ball/utils';
+import { Timestamp } from '@/proto/google/protobuf/timestamp.pb';
 
 interface DashboardListTableProps {
   /**

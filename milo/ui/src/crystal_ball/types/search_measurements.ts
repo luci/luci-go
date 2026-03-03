@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Timestamp, Value } from '@/crystal_ball/types';
+import { Value } from '@/crystal_ball/types';
+import { Timestamp } from '@/proto/google/protobuf/timestamp.pb';
 
 /**
  * Possible filter names for the SearchMeasurementsRequest.
