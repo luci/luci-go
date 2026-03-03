@@ -36,10 +36,12 @@ export const ProductCatalogListPage = () => {
       {
         id: 'productCatalogId',
         header: 'Product Catalog ID',
+        accessorKey: 'productCatalogId',
       },
       {
         id: 'productName',
         header: 'Product Name',
+        accessorKey: 'productName',
       },
       {
         id: 'gpn',
@@ -49,29 +51,36 @@ export const ProductCatalogListPage = () => {
       {
         id: 'descriptiveName',
         header: 'Descriptive Name',
+        accessorKey: 'descriptiveName',
       },
       {
         id: 'resourceType',
         header: 'Resource Type',
+        accessorKey: 'resourceType',
       },
       {
         id: 'fleetPlmStatus',
         header: 'Fleet PLM Status',
+        accessorKey: 'fleetPlmStatus',
       },
       {
         id: 'r11n',
         header: 'R11N',
+        accessorKey: 'r11n',
       },
       {
         id: 'numberOfDevicesPerRack',
         header: 'Number of Devices Per Rack',
+        accessorKey: 'numberOfDevicesPerRack',
       },
       {
         id: 'unitCost',
         header: 'Unit Cost',
+        accessorKey: 'unitCost',
       },
     ],
-    data: [query.data?.entries ?? []],
+    data: [...(query.data?.entries ?? [])],
+    enablePagination: false,
   });
 
   return (
