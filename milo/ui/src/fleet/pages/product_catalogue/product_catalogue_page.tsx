@@ -13,9 +13,13 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
+import { useQuery } from '@tanstack/react-query';
+import { MaterialReactTable } from 'material-react-table';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -24,7 +28,57 @@ const Container = styled.div`
 `;
 
 export const ProductCatalogListPage = () => {
-  return <Container>{}</Container>;
+  const client = useFleetConsoleClient();
+  const query = useQuery(client.ListProductCatalogEntries.query({}));
+
+  const table = useFCDataTable({
+    columns: [
+      {
+        id: 'productCatalogId',
+        header: 'Product Catalog ID',
+      },
+      {
+        id: 'productName',
+        header: 'Product Name',
+      },
+      {
+        id: 'gpn',
+        header: 'GPN',
+        accessorKey: 'gpn',
+      },
+      {
+        id: 'descriptiveName',
+        header: 'Descriptive Name',
+      },
+      {
+        id: 'resourceType',
+        header: 'Resource Type',
+      },
+      {
+        id: 'fleetPlmStatus',
+        header: 'Fleet PLM Status',
+      },
+      {
+        id: 'r11n',
+        header: 'R11N',
+      },
+      {
+        id: 'numberOfDevicesPerRack',
+        header: 'Number of Devices Per Rack',
+      },
+      {
+        id: 'unitCost',
+        header: 'Unit Cost',
+      },
+    ],
+    data: [query.data?.entries ?? []],
+  });
+
+  return (
+    <Container>
+      <MaterialReactTable table={table} />
+    </Container>
+  );
 };
 
 export function Component() {

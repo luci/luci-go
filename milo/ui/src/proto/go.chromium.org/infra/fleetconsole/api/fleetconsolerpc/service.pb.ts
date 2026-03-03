@@ -128,7 +128,6 @@ export function platformToJSON(object: Platform): string {
   }
 }
 
-/** PingRequest intentionally contains nothing. */
 export interface PingRequest {
 }
 
@@ -875,6 +874,25 @@ export interface ScheduleBuildRequest {
 export interface ScheduleBuildResponse {
   readonly buildId: string;
   readonly buildUrl: string;
+}
+
+export interface ListProductCatalogEntriesRequest {
+}
+
+export interface ListProductCatalogEntriesResponse {
+  readonly entries: readonly ProductCatalogEntry[];
+}
+
+export interface ProductCatalogEntry {
+  readonly productCatalogId: string;
+  readonly productName: string;
+  readonly gpn: string;
+  readonly descriptiveName: string;
+  readonly resourceType: string;
+  readonly fleetPlmStatus: string;
+  readonly r11n: string;
+  readonly numberOfDevicesPerRack: number;
+  readonly unitCost: string;
 }
 
 function createBasePingRequest(): PingRequest {
@@ -8629,6 +8647,311 @@ export const ScheduleBuildResponse: MessageFns<ScheduleBuildResponse> = {
   },
 };
 
+function createBaseListProductCatalogEntriesRequest(): ListProductCatalogEntriesRequest {
+  return {};
+}
+
+export const ListProductCatalogEntriesRequest: MessageFns<ListProductCatalogEntriesRequest> = {
+  encode(_: ListProductCatalogEntriesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListProductCatalogEntriesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListProductCatalogEntriesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): ListProductCatalogEntriesRequest {
+    return {};
+  },
+
+  toJSON(_: ListProductCatalogEntriesRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListProductCatalogEntriesRequest>): ListProductCatalogEntriesRequest {
+    return ListProductCatalogEntriesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<ListProductCatalogEntriesRequest>): ListProductCatalogEntriesRequest {
+    const message = createBaseListProductCatalogEntriesRequest() as any;
+    return message;
+  },
+};
+
+function createBaseListProductCatalogEntriesResponse(): ListProductCatalogEntriesResponse {
+  return { entries: [] };
+}
+
+export const ListProductCatalogEntriesResponse: MessageFns<ListProductCatalogEntriesResponse> = {
+  encode(message: ListProductCatalogEntriesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.entries) {
+      ProductCatalogEntry.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListProductCatalogEntriesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListProductCatalogEntriesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.entries.push(ProductCatalogEntry.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListProductCatalogEntriesResponse {
+    return {
+      entries: globalThis.Array.isArray(object?.entries)
+        ? object.entries.map((e: any) => ProductCatalogEntry.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ListProductCatalogEntriesResponse): unknown {
+    const obj: any = {};
+    if (message.entries?.length) {
+      obj.entries = message.entries.map((e) => ProductCatalogEntry.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListProductCatalogEntriesResponse>): ListProductCatalogEntriesResponse {
+    return ListProductCatalogEntriesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListProductCatalogEntriesResponse>): ListProductCatalogEntriesResponse {
+    const message = createBaseListProductCatalogEntriesResponse() as any;
+    message.entries = object.entries?.map((e) => ProductCatalogEntry.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseProductCatalogEntry(): ProductCatalogEntry {
+  return {
+    productCatalogId: "",
+    productName: "",
+    gpn: "",
+    descriptiveName: "",
+    resourceType: "",
+    fleetPlmStatus: "",
+    r11n: "",
+    numberOfDevicesPerRack: 0,
+    unitCost: "",
+  };
+}
+
+export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
+  encode(message: ProductCatalogEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.productCatalogId !== "") {
+      writer.uint32(10).string(message.productCatalogId);
+    }
+    if (message.productName !== "") {
+      writer.uint32(18).string(message.productName);
+    }
+    if (message.gpn !== "") {
+      writer.uint32(26).string(message.gpn);
+    }
+    if (message.descriptiveName !== "") {
+      writer.uint32(34).string(message.descriptiveName);
+    }
+    if (message.resourceType !== "") {
+      writer.uint32(42).string(message.resourceType);
+    }
+    if (message.fleetPlmStatus !== "") {
+      writer.uint32(50).string(message.fleetPlmStatus);
+    }
+    if (message.r11n !== "") {
+      writer.uint32(58).string(message.r11n);
+    }
+    if (message.numberOfDevicesPerRack !== 0) {
+      writer.uint32(64).int32(message.numberOfDevicesPerRack);
+    }
+    if (message.unitCost !== "") {
+      writer.uint32(74).string(message.unitCost);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ProductCatalogEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProductCatalogEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.productCatalogId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.productName = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.gpn = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.descriptiveName = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.resourceType = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.fleetPlmStatus = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.r11n = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.numberOfDevicesPerRack = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.unitCost = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ProductCatalogEntry {
+    return {
+      productCatalogId: isSet(object.productCatalogId) ? globalThis.String(object.productCatalogId) : "",
+      productName: isSet(object.productName) ? globalThis.String(object.productName) : "",
+      gpn: isSet(object.gpn) ? globalThis.String(object.gpn) : "",
+      descriptiveName: isSet(object.descriptiveName) ? globalThis.String(object.descriptiveName) : "",
+      resourceType: isSet(object.resourceType) ? globalThis.String(object.resourceType) : "",
+      fleetPlmStatus: isSet(object.fleetPlmStatus) ? globalThis.String(object.fleetPlmStatus) : "",
+      r11n: isSet(object.r11n) ? globalThis.String(object.r11n) : "",
+      numberOfDevicesPerRack: isSet(object.numberOfDevicesPerRack)
+        ? globalThis.Number(object.numberOfDevicesPerRack)
+        : 0,
+      unitCost: isSet(object.unitCost) ? globalThis.String(object.unitCost) : "",
+    };
+  },
+
+  toJSON(message: ProductCatalogEntry): unknown {
+    const obj: any = {};
+    if (message.productCatalogId !== "") {
+      obj.productCatalogId = message.productCatalogId;
+    }
+    if (message.productName !== "") {
+      obj.productName = message.productName;
+    }
+    if (message.gpn !== "") {
+      obj.gpn = message.gpn;
+    }
+    if (message.descriptiveName !== "") {
+      obj.descriptiveName = message.descriptiveName;
+    }
+    if (message.resourceType !== "") {
+      obj.resourceType = message.resourceType;
+    }
+    if (message.fleetPlmStatus !== "") {
+      obj.fleetPlmStatus = message.fleetPlmStatus;
+    }
+    if (message.r11n !== "") {
+      obj.r11n = message.r11n;
+    }
+    if (message.numberOfDevicesPerRack !== 0) {
+      obj.numberOfDevicesPerRack = Math.round(message.numberOfDevicesPerRack);
+    }
+    if (message.unitCost !== "") {
+      obj.unitCost = message.unitCost;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ProductCatalogEntry>): ProductCatalogEntry {
+    return ProductCatalogEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ProductCatalogEntry>): ProductCatalogEntry {
+    const message = createBaseProductCatalogEntry() as any;
+    message.productCatalogId = object.productCatalogId ?? "";
+    message.productName = object.productName ?? "";
+    message.gpn = object.gpn ?? "";
+    message.descriptiveName = object.descriptiveName ?? "";
+    message.resourceType = object.resourceType ?? "";
+    message.fleetPlmStatus = object.fleetPlmStatus ?? "";
+    message.r11n = object.r11n ?? "";
+    message.numberOfDevicesPerRack = object.numberOfDevicesPerRack ?? 0;
+    message.unitCost = object.unitCost ?? "";
+    return message;
+  },
+};
+
 export interface FleetConsole {
   /**
    * Ping does not send or receive any information. It just checks that the
@@ -8719,6 +9042,7 @@ export interface FleetConsole {
   CleanupAndroidDevices(request: CleanupAndroidDevicesRequest): Promise<CleanupAndroidDevicesResponse>;
   /** ************* MISC ****** */
   ScheduleBuild(request: ScheduleBuildRequest): Promise<ScheduleBuildResponse>;
+  ListProductCatalogEntries(request: ListProductCatalogEntriesRequest): Promise<ListProductCatalogEntriesResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -8758,6 +9082,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.GetRepairMetricsDimensions = this.GetRepairMetricsDimensions.bind(this);
     this.CleanupAndroidDevices = this.CleanupAndroidDevices.bind(this);
     this.ScheduleBuild = this.ScheduleBuild.bind(this);
+    this.ListProductCatalogEntries = this.ListProductCatalogEntries.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -8933,6 +9258,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ScheduleBuildRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ScheduleBuild", data);
     return promise.then((data) => ScheduleBuildResponse.fromJSON(data));
+  }
+
+  ListProductCatalogEntries(request: ListProductCatalogEntriesRequest): Promise<ListProductCatalogEntriesResponse> {
+    const data = ListProductCatalogEntriesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListProductCatalogEntries", data);
+    return promise.then((data) => ListProductCatalogEntriesResponse.fromJSON(data));
   }
 }
 
