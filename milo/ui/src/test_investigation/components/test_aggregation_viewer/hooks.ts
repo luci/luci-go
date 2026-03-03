@@ -25,14 +25,15 @@ import {
   TestIdentifierPrefix,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
 import { Invocation_State } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
-import { TestVerdictPredicate_VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/predicate.pb';
 import {
   QueryTestAggregationsRequest,
   QueryTestVerdictsRequest,
 } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 import { RootInvocation_FinalizationState } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/root_invocation.pb';
 import { GetSchemaRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/schema.pb';
+import { TestAggregation_ModuleStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_aggregation.pb';
 import { TestVariant } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
+import { VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import {
   AnyInvocation,
   isLegacyInvocation,
@@ -63,7 +64,7 @@ export function useSchemesQuery() {
  */
 export function useTestVerdictsQuery(
   invocation: AnyInvocation | null | undefined,
-  statuses: TestVerdictPredicate_VerdictEffectiveStatus[],
+  statuses: VerdictEffectiveStatus[],
   filter: string = '',
   view: TestVerdictView = TestVerdictView.TEST_VERDICT_VIEW_UNSPECIFIED,
   options?: {
@@ -88,7 +89,7 @@ export function useTestVerdictsQuery(
       QueryTestVerdictsRequest.fromPartial({
         parent: invocationName,
         predicate: {
-          effectiveVerdictStatus: statuses,
+          effectiveVerdictStatus: statuses?.length > 0 ? statuses : undefined,
           containsTestResultFilter: filter || undefined,
           testPrefixFilter: options?.testPrefixFilter || undefined,
         },
@@ -143,6 +144,8 @@ export function useNodeAggregationsQuery(
   enabled: boolean = true,
   staleTimeOverride?: number,
   testResultFilter?: string,
+  testStatuses?: VerdictEffectiveStatus[],
+  moduleStatuses?: TestAggregation_ModuleStatus[],
 ) {
   const invocationName = isRootInvocation(invocation) ? invocation.name : '';
   const isFinalized = isRootInvocation(invocation)
@@ -161,9 +164,20 @@ export function useNodeAggregationsQuery(
         parent: invocationName,
         predicate: {
           aggregationLevel: level,
-          filter: filter || undefined,
+          contentsFilter:
+            [filter, testResultFilter]
+              .filter(Boolean)
+              .map((f) => `(${f})`)
+              .join(' AND ') || undefined,
           testPrefixFilter: testPrefixFilter || undefined,
-          searchCriteria: testResultFilter || undefined,
+          statusFilter:
+            (testStatuses && testStatuses.length > 0) ||
+            (moduleStatuses && moduleStatuses.length > 0)
+              ? {
+                  verdictEffectiveStatus: testStatuses,
+                  moduleStatus: moduleStatuses,
+                }
+              : undefined,
         },
         orderBy: 'id.level, ui_priority desc, id.id',
         pageSize: 1000,
@@ -209,12 +223,15 @@ export function useNodeAggregationsQuery(
  *
  * @param invocation - The invocation object.
  * @param testVariant - The selected test variant (context) to fetch ancestry for.
- * @param testResultFilter - AIP filter string applied.
- * @param pageSize - The target maximum page size.
+ * @param testStatuses - Active test verdict statuses.
+ * @param moduleStatuses - Active module statuses.
  */
 export function useAncestryAggregationsQueries(
   invocation: AnyInvocation | null | undefined,
   testVariant: TestVariant | undefined,
+  aipFilter?: string,
+  testStatuses?: VerdictEffectiveStatus[],
+  moduleStatuses?: TestAggregation_ModuleStatus[],
 ) {
   const testId = testVariant?.testIdStructured;
 
@@ -241,6 +258,9 @@ export function useAncestryAggregationsQueries(
     modFilter,
     !!(invocation && testId),
     undefined,
+    aipFilter,
+    testStatuses,
+    moduleStatuses,
   );
 
   // 2. Coarse Siblings (Children of Module)
@@ -266,6 +286,9 @@ export function useAncestryAggregationsQueries(
     crsFilter,
     !!(invocation && testId),
     5 * 60 * 1000,
+    aipFilter,
+    testStatuses,
+    moduleStatuses,
   );
 
   // 3. Fine Siblings (Children of Coarse)
@@ -292,6 +315,9 @@ export function useAncestryAggregationsQueries(
     fneFilter,
     !!(invocation && testId && testId.coarseName),
     5 * 60 * 1000,
+    aipFilter,
+    testStatuses,
+    moduleStatuses,
   );
 
   const results = [];
@@ -310,9 +336,13 @@ export function useAncestryAggregationsQueries(
  * Fetches test aggregation for the invocation itself.
  *
  * @param invocation - The invocation object.
+ * @param testStatuses - Active test verdict statuses.
+ * @param moduleStatuses - Active module statuses.
  */
 export function useInvocationAggregationQuery(
   invocation: AnyInvocation | null | undefined,
+  testStatuses?: VerdictEffectiveStatus[],
+  moduleStatuses?: TestAggregation_ModuleStatus[],
 ) {
   return useNodeAggregationsQuery(
     invocation,
@@ -321,5 +351,8 @@ export function useInvocationAggregationQuery(
     undefined,
     !!invocation,
     undefined,
+    undefined,
+    testStatuses,
+    moduleStatuses,
   );
 }

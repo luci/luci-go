@@ -104,7 +104,7 @@ function InvocationVerdictCounts({
   invocation: AnyInvocation;
 }) {
   const { data } = useInvocationAggregationQuery(invocation);
-  const counts = data?.aggregations?.[0]?.verdictCounts;
+  const counts = data?.aggregations?.[0]?.totalVerdictCounts;
 
   if (!counts) return null;
 

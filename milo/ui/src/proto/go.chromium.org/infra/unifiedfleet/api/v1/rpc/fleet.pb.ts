@@ -1548,6 +1548,8 @@ export interface ChromeOsRecoveryData_LabData {
     | undefined;
   /** Info on all carrier dependencies that can be satisfied by this DUT. */
   readonly supportedCarriers: readonly string[];
+  /** Indicates the connected port label */
+  readonly connectedPort: readonly string[];
 }
 
 export interface ChromeOsRecoveryData_LabData_RoVpdMapEntry {
@@ -12951,6 +12953,7 @@ function createBaseChromeOsRecoveryData_LabData(): ChromeOsRecoveryData_LabData 
     simInfos: [],
     dolos: undefined,
     supportedCarriers: [],
+    connectedPort: [],
   };
 }
 
@@ -13002,6 +13005,9 @@ export const ChromeOsRecoveryData_LabData: MessageFns<ChromeOsRecoveryData_LabDa
     }
     for (const v of message.supportedCarriers) {
       writer.uint32(122).string(v!);
+    }
+    for (const v of message.connectedPort) {
+      writer.uint32(130).string(v!);
     }
     return writer;
   },
@@ -13146,6 +13152,14 @@ export const ChromeOsRecoveryData_LabData: MessageFns<ChromeOsRecoveryData_LabDa
           message.supportedCarriers.push(reader.string());
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.connectedPort.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -13186,6 +13200,9 @@ export const ChromeOsRecoveryData_LabData: MessageFns<ChromeOsRecoveryData_LabDa
       dolos: isSet(object.dolos) ? ChromeOsRecoveryData_Dolos.fromJSON(object.dolos) : undefined,
       supportedCarriers: globalThis.Array.isArray(object?.supportedCarriers)
         ? object.supportedCarriers.map((e: any) => globalThis.String(e))
+        : [],
+      connectedPort: globalThis.Array.isArray(object?.connectedPort)
+        ? object.connectedPort.map((e: any) => globalThis.String(e))
         : [],
     };
   },
@@ -13243,6 +13260,9 @@ export const ChromeOsRecoveryData_LabData: MessageFns<ChromeOsRecoveryData_LabDa
     if (message.supportedCarriers?.length) {
       obj.supportedCarriers = message.supportedCarriers;
     }
+    if (message.connectedPort?.length) {
+      obj.connectedPort = message.connectedPort;
+    }
     return obj;
   },
 
@@ -13279,6 +13299,7 @@ export const ChromeOsRecoveryData_LabData: MessageFns<ChromeOsRecoveryData_LabDa
       ? ChromeOsRecoveryData_Dolos.fromPartial(object.dolos)
       : undefined;
     message.supportedCarriers = object.supportedCarriers?.map((e) => e) || [];
+    message.connectedPort = object.connectedPort?.map((e) => e) || [];
     return message;
   },
 };

@@ -35,7 +35,6 @@ import { createPrefixForTest, getTestIdentifierPrefixId } from '../../utils';
 
 import { AggregationNode, AggregationViewContext } from './context';
 import {
-  buildAggregationFilterString,
   flattenDynamicTree,
   mapAggregationToNode,
   NodeChildrenState,
@@ -56,11 +55,11 @@ export function AggregationViewProvider({
   autoLocate = true,
 }: AggregationViewProviderProps) {
   // 1. Consume Shared Filter Context
-  const { selectedStatuses, aipFilter } = useTestAggregationContext();
+  const { selectedTestStatuses, selectedModuleStatuses, aipFilter } =
+    useTestAggregationContext();
 
-  const aggregationFilterString = useMemo(() => {
-    return buildAggregationFilterString(selectedStatuses);
-  }, [selectedStatuses]);
+  const testStatuses = Array.from(selectedTestStatuses);
+  const moduleStatuses = Array.from(selectedModuleStatuses);
 
   // 2. Data Fetching
   const schemesQuery = useSchemesQuery();
@@ -69,11 +68,13 @@ export function AggregationViewProvider({
   const rootAggsQuery = useNodeAggregationsQuery(
     invocation,
     AggregationLevel.MODULE,
-    aggregationFilterString,
+    undefined, // Replaced by contentsFilter passing through aipFilter in hook internals
     undefined,
     true,
     undefined,
     aipFilter,
+    testStatuses,
+    moduleStatuses,
   );
 
   // Deep Linking (Ancestry eager cache warming)
@@ -81,8 +82,9 @@ export function AggregationViewProvider({
   useAncestryAggregationsQueries(
     invocation,
     selectedTestVariant,
-    // Note: The filter strings must be passed to cache hit the intermediate nodes,
-    // which will be addressed in a follow-up hooks.ts update if they are not already.
+    aipFilter,
+    testStatuses,
+    moduleStatuses,
   );
 
   // 3. Dynamic Children State Management
@@ -112,7 +114,7 @@ export function AggregationViewProvider({
     [],
   );
 
-  // 4. Tree Construction
+  // 5. Tree Construction
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     new Set(initialExpandedIds),
   );

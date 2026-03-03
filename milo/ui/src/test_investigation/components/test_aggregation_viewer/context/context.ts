@@ -14,10 +14,17 @@
 
 import { createContext, useContext } from 'react';
 
+import { TestAggregation_ModuleStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_aggregation.pb';
+import { VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
+
 export interface TestAggregationContextValue {
   // Filter State
-  selectedStatuses: Set<string>;
-  setSelectedStatuses: (statuses: Set<string>) => void;
+  selectedTestStatuses: Set<VerdictEffectiveStatus>;
+  setSelectedTestStatuses: (statuses: Set<VerdictEffectiveStatus>) => void;
+  selectedModuleStatuses: Set<TestAggregation_ModuleStatus>;
+  setSelectedModuleStatuses: (
+    statuses: Set<TestAggregation_ModuleStatus>,
+  ) => void;
   aipFilter: string;
   setAipFilter: (filter: string) => void;
 }

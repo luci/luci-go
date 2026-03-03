@@ -127,7 +127,7 @@ describe('TestAggregationViewer', () => {
                 },
               },
             },
-            verdictCounts: {
+            totalVerdictCounts: {
               failed: 5,
             },
           }),

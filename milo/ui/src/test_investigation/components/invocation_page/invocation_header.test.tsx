@@ -66,7 +66,7 @@ describe('InvocationHeader', () => {
       data: {
         aggregations: [
           {
-            verdictCounts: {
+            totalVerdictCounts: {
               failed: 5,
               executionErrored: 2,
               flaky: 3,
@@ -94,7 +94,7 @@ describe('InvocationHeader', () => {
       data: {
         aggregations: [
           {
-            verdictCounts: {
+            totalVerdictCounts: {
               failed: 1,
               passed: 50,
             },

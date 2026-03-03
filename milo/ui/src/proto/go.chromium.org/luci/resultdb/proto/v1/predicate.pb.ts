@@ -13,6 +13,16 @@ import {
   TestIdentifierPrefix,
   Variant,
 } from "./common.pb";
+import {
+  TestAggregation_ModuleStatus,
+  testAggregation_ModuleStatusFromJSON,
+  testAggregation_ModuleStatusToJSON,
+} from "./test_aggregation.pb";
+import {
+  VerdictEffectiveStatus,
+  verdictEffectiveStatusFromJSON,
+  verdictEffectiveStatusToJSON,
+} from "./test_verdict.pb";
 
 export const protobufPackage = "luci.resultdb.v1";
 
@@ -300,14 +310,16 @@ export interface TestAggregationPredicate {
     | TestIdentifierPrefix
     | undefined;
   /**
-   * Searches aggregations for test results and modules that match the given AIP-160 filter.
+   * An AIP-160 filter string which defines the test results and/or modules of interest.
    *
-   * Each aggregation will report the number of test verdicts that match the search criteria and
-   * whether the module itself (in case of module-level aggregations) matches, via the
-   * `matched_verdict_counts` and `module_matches` fields. These can in turn be leveraged
-   * for filtering in the `filter` field below.
+   * Module, coarse and fine aggregations will only be returned if they contain
+   * at least one verdict or module matching this filter, where:
+   * - A test verdict is only matched if it contains a test result which matches this filter,
+   *   subject to any additional status_filter.verdict_effective_status filter.
+   * - A module is only matched if it matches this filter, or contains a test result which matches
+   *   this filter, subject to any additional status_filter.module_status filter.
    *
-   * Search criteria are specified as an AIP-160 filter string (see https://google.aip.dev/160
+   * The filter is an AIP-160 filter string (see https://google.aip.dev/160
    * for syntax), with the following fields available:
    * - test_id (string) - the flat-form test ID
    * - test_id_structured.module_name (string) - the structured form test ID fields
@@ -324,29 +336,30 @@ export interface TestAggregationPredicate {
    * - status (enum luci.resultdb.v1.TestResult.Status) - the status_v2 of the test result
    * - duration (google.protobuf.Duration)
    *
-   * For modules, only the fields `test_id_structured.module_name`,
-   * `test_id_structured.module_scheme`, `test_id_structured.module_variant`,
-   * `test_id_structured.module_variant_hash` are available. If other fields are used,
-   * the search query will never match a module (even if joined with an 'OR', as the
-   * filter will not compile against the schema of modules).
+   * For modules, only the fields available are `test_id_structured.module_name`,
+   * `test_id_structured.module_scheme`, `test_id_structured.module_variant`, and
+   * `test_id_structured.module_variant_hash`. If other fields are used,
+   * the search query will never match a module directly (even if joined with an 'OR', as the
+   * filter will not compile against the schema of modules). However, a module will
+   * still be matched if one of its test results matches the filter.
    *
    * For example:
    *  test_id_structured.module_name="foo"
-   * will match test results and modules with a module name of "foo".
+   * will match test verdicts and modules with a module name of "foo". (This includes
+   * modules with no test results.)
    *
    *  test_id_structured.module_name="bar" AND status=FAILED
-   * will match test results with a module of foo, and test result status of FAILED.
-   * No modules will ever match this query, as modules do not define a test result status.
+   * will match test verdicts and modules which have at least one test result with a
+   * module of "foo" and a status of FAILED.
    *
    *  test_id_structured.module_name="bar" OR status=FAILED
-   * will match test results with a module of foo, or test result status of FAILED.
-   * No modules will ever match this query, as modules do not define a test result status
-   * and the filter does not compile against the schema of modules.
+   * will match test verdicts and modules which have at least one test result with a
+   * module of "foo" OR a status of FAILED.
    *
    * Literals like "bar" can also be searched directly; which fields they will match
    * is an implementation detail.
    *
-   * While this search generally offers a superset of functionality of the `test_prefix_filter`
+   * While this filter generally offers a superset of functionality of the `test_prefix_filter`
    * field, clients will generally prefer to use `test_prefix_filter` if it is
    * sufficient as it performs better and its use has less sharp edges (e.g. no need to
    * escape test ID components when injecting them into filter strings, filtering on a
@@ -355,32 +368,47 @@ export interface TestAggregationPredicate {
    * If this field is unset, it is treated by the implementation as the search criteria
    * always matching.
    */
-  readonly searchCriteria: string;
+  readonly contentsFilter: string;
+  /** If set, filters the verdicts and modules used in the aggregation to the given status(es). */
+  readonly statusFilter: TestAggregationPredicate_StatusFilter | undefined;
+}
+
+/**
+ * Specifies the test verdicts and/or module statuses of interest.
+ *
+ * Module, coarse and fine aggregations will only be returned if they contain
+ * at least one verdict or module matching this filter.
+ *
+ * - a test verdict will only be considered `matched` if one of its effective
+ *   status matches the verdict_effective_status filter.
+ * - a module will be only be considered `matched` if its status matches the
+ *   module_status filter.
+ *
+ * Note that this filter intersects with the `contents_filter` field, see its
+ * documentation for more details.
+ */
+export interface TestAggregationPredicate_StatusFilter {
   /**
-   * A free-form filter on the returned `TestAggregation`s.
+   * The effective verdict statuses of interest.
    *
-   * The filter is an AIP-160 filter string (see https://google.aip.dev/160 for syntax),
-   * with the following fields available:
-   * - matched_verdict_counts.failed (number)
-   * - matched_verdict_counts.flaky (number)
-   * - matched_verdict_counts.passed (number)
-   * - matched_verdict_counts.skipped (number)
-   * - matched_verdict_counts.execution_errored (number)
-   * - matched_verdict_counts.precluded (number)
-   * - matched_verdict_counts.exonerated (number)
-   * - module_matches (bool)
-   * - module_status (luci.resultdb.v1.TestAggregation.ModuleStatus):
-   *   for aggregations at Invocation, Coarse and Fine levels, this field is
-   *   always MODULE_STATUS_UNSPECIFIED, so is only useful for filtering Module-level
-   *   aggregations.
+   * The effective verdict status is the status of the test verdict after
+   * applying any status overrides.
    *
-   * Example: To filter to failing modules, and aggregations with at least one
-   * failing or execution errored test verdict, where the module/test verdicts
-   * also meet the `search_criteria`:
-   *  (module_status = FAILED AND module_matched) OR (matched_test_verdicts.failed > 0 OR
-   *   matched_test_verdicts.execution_errored > 0)
+   * If this field is unset, it means no verdicts are of interest and no
+   * verdicts will be matched.
    */
-  readonly filter: string;
+  readonly verdictEffectiveStatus: readonly VerdictEffectiveStatus[];
+  /**
+   * The module statuses of interest.
+   *
+   * This filter is only used for module-level aggregations. It is ignored for
+   * invocation, coarse and fine-level aggregations.
+   *
+   * If this field is unset, it means no modules are of interest and no modules
+   * will be matched. (They may still be returned if they contain a matching
+   * verdict.)
+   */
+  readonly moduleStatus: readonly TestAggregation_ModuleStatus[];
 }
 
 /** Represents a function TestVerdict -> bool. */
@@ -429,97 +457,7 @@ export interface TestVerdictPredicate {
    * The effective verdict status is the status of the test verdict after
    * applying any status overrides.
    */
-  readonly effectiveVerdictStatus: readonly TestVerdictPredicate_VerdictEffectiveStatus[];
-}
-
-/**
- * Represents a filter on the effective status of a test verdict,
- * the result of combining the TestVerdict.Status and TestVerdict.StatusOverride.
- */
-export enum TestVerdictPredicate_VerdictEffectiveStatus {
-  /** VERDICT_EFFECTIVE_STATUS_UNSPECIFIED - Do not use. */
-  VERDICT_EFFECTIVE_STATUS_UNSPECIFIED = 0,
-  /** FAILED - The test failed, and was not exonerated. */
-  FAILED = 10,
-  /** EXECUTION_ERRORED - The test execution errored, and was not exonerated. */
-  EXECUTION_ERRORED = 20,
-  /** PRECLUDED - The test execution was precluded, and was not exonerated. */
-  PRECLUDED = 30,
-  /** FLAKY - The test was flaky, and was not exonerated. */
-  FLAKY = 40,
-  /** SKIPPED - The test was skipped. */
-  SKIPPED = 50,
-  /** PASSED - The test passed. */
-  PASSED = 60,
-  /**
-   * EXONERATED - The test was originally failed, execution errored, precluded or flaky,
-   * but the subject of the test (e.g. the CL under test) was absolved from blame.
-   * For example, because the failure also existed in the tree without the
-   * changelist applied.
-   */
-  EXONERATED = 70,
-}
-
-export function testVerdictPredicate_VerdictEffectiveStatusFromJSON(
-  object: any,
-): TestVerdictPredicate_VerdictEffectiveStatus {
-  switch (object) {
-    case 0:
-    case "VERDICT_EFFECTIVE_STATUS_UNSPECIFIED":
-      return TestVerdictPredicate_VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_UNSPECIFIED;
-    case 10:
-    case "FAILED":
-      return TestVerdictPredicate_VerdictEffectiveStatus.FAILED;
-    case 20:
-    case "EXECUTION_ERRORED":
-      return TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED;
-    case 30:
-    case "PRECLUDED":
-      return TestVerdictPredicate_VerdictEffectiveStatus.PRECLUDED;
-    case 40:
-    case "FLAKY":
-      return TestVerdictPredicate_VerdictEffectiveStatus.FLAKY;
-    case 50:
-    case "SKIPPED":
-      return TestVerdictPredicate_VerdictEffectiveStatus.SKIPPED;
-    case 60:
-    case "PASSED":
-      return TestVerdictPredicate_VerdictEffectiveStatus.PASSED;
-    case 70:
-    case "EXONERATED":
-      return TestVerdictPredicate_VerdictEffectiveStatus.EXONERATED;
-    default:
-      throw new globalThis.Error(
-        "Unrecognized enum value " + object + " for enum TestVerdictPredicate_VerdictEffectiveStatus",
-      );
-  }
-}
-
-export function testVerdictPredicate_VerdictEffectiveStatusToJSON(
-  object: TestVerdictPredicate_VerdictEffectiveStatus,
-): string {
-  switch (object) {
-    case TestVerdictPredicate_VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_UNSPECIFIED:
-      return "VERDICT_EFFECTIVE_STATUS_UNSPECIFIED";
-    case TestVerdictPredicate_VerdictEffectiveStatus.FAILED:
-      return "FAILED";
-    case TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED:
-      return "EXECUTION_ERRORED";
-    case TestVerdictPredicate_VerdictEffectiveStatus.PRECLUDED:
-      return "PRECLUDED";
-    case TestVerdictPredicate_VerdictEffectiveStatus.FLAKY:
-      return "FLAKY";
-    case TestVerdictPredicate_VerdictEffectiveStatus.SKIPPED:
-      return "SKIPPED";
-    case TestVerdictPredicate_VerdictEffectiveStatus.PASSED:
-      return "PASSED";
-    case TestVerdictPredicate_VerdictEffectiveStatus.EXONERATED:
-      return "EXONERATED";
-    default:
-      throw new globalThis.Error(
-        "Unrecognized enum value " + object + " for enum TestVerdictPredicate_VerdictEffectiveStatus",
-      );
-  }
+  readonly effectiveVerdictStatus: readonly VerdictEffectiveStatus[];
 }
 
 function createBaseTestResultPredicate(): TestResultPredicate {
@@ -1175,7 +1113,7 @@ export const WorkUnitPredicate: MessageFns<WorkUnitPredicate> = {
 };
 
 function createBaseTestAggregationPredicate(): TestAggregationPredicate {
-  return { aggregationLevel: 0, testPrefixFilter: undefined, searchCriteria: "", filter: "" };
+  return { aggregationLevel: 0, testPrefixFilter: undefined, contentsFilter: "", statusFilter: undefined };
 }
 
 export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
@@ -1186,11 +1124,11 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
     if (message.testPrefixFilter !== undefined) {
       TestIdentifierPrefix.encode(message.testPrefixFilter, writer.uint32(18).fork()).join();
     }
-    if (message.searchCriteria !== "") {
-      writer.uint32(26).string(message.searchCriteria);
+    if (message.contentsFilter !== "") {
+      writer.uint32(26).string(message.contentsFilter);
     }
-    if (message.filter !== "") {
-      writer.uint32(34).string(message.filter);
+    if (message.statusFilter !== undefined) {
+      TestAggregationPredicate_StatusFilter.encode(message.statusFilter, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -1223,15 +1161,15 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
             break;
           }
 
-          message.searchCriteria = reader.string();
+          message.contentsFilter = reader.string();
           continue;
         }
-        case 4: {
-          if (tag !== 34) {
+        case 5: {
+          if (tag !== 42) {
             break;
           }
 
-          message.filter = reader.string();
+          message.statusFilter = TestAggregationPredicate_StatusFilter.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1249,8 +1187,10 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
       testPrefixFilter: isSet(object.testPrefixFilter)
         ? TestIdentifierPrefix.fromJSON(object.testPrefixFilter)
         : undefined,
-      searchCriteria: isSet(object.searchCriteria) ? globalThis.String(object.searchCriteria) : "",
-      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      contentsFilter: isSet(object.contentsFilter) ? globalThis.String(object.contentsFilter) : "",
+      statusFilter: isSet(object.statusFilter)
+        ? TestAggregationPredicate_StatusFilter.fromJSON(object.statusFilter)
+        : undefined,
     };
   },
 
@@ -1262,11 +1202,11 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
     if (message.testPrefixFilter !== undefined) {
       obj.testPrefixFilter = TestIdentifierPrefix.toJSON(message.testPrefixFilter);
     }
-    if (message.searchCriteria !== "") {
-      obj.searchCriteria = message.searchCriteria;
+    if (message.contentsFilter !== "") {
+      obj.contentsFilter = message.contentsFilter;
     }
-    if (message.filter !== "") {
-      obj.filter = message.filter;
+    if (message.statusFilter !== undefined) {
+      obj.statusFilter = TestAggregationPredicate_StatusFilter.toJSON(message.statusFilter);
     }
     return obj;
   },
@@ -1280,8 +1220,114 @@ export const TestAggregationPredicate: MessageFns<TestAggregationPredicate> = {
     message.testPrefixFilter = (object.testPrefixFilter !== undefined && object.testPrefixFilter !== null)
       ? TestIdentifierPrefix.fromPartial(object.testPrefixFilter)
       : undefined;
-    message.searchCriteria = object.searchCriteria ?? "";
-    message.filter = object.filter ?? "";
+    message.contentsFilter = object.contentsFilter ?? "";
+    message.statusFilter = (object.statusFilter !== undefined && object.statusFilter !== null)
+      ? TestAggregationPredicate_StatusFilter.fromPartial(object.statusFilter)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTestAggregationPredicate_StatusFilter(): TestAggregationPredicate_StatusFilter {
+  return { verdictEffectiveStatus: [], moduleStatus: [] };
+}
+
+export const TestAggregationPredicate_StatusFilter: MessageFns<TestAggregationPredicate_StatusFilter> = {
+  encode(message: TestAggregationPredicate_StatusFilter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    writer.uint32(10).fork();
+    for (const v of message.verdictEffectiveStatus) {
+      writer.int32(v);
+    }
+    writer.join();
+    writer.uint32(18).fork();
+    for (const v of message.moduleStatus) {
+      writer.int32(v);
+    }
+    writer.join();
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TestAggregationPredicate_StatusFilter {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestAggregationPredicate_StatusFilter() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag === 8) {
+            message.verdictEffectiveStatus.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 10) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.verdictEffectiveStatus.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+        case 2: {
+          if (tag === 16) {
+            message.moduleStatus.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 18) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.moduleStatus.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TestAggregationPredicate_StatusFilter {
+    return {
+      verdictEffectiveStatus: globalThis.Array.isArray(object?.verdictEffectiveStatus)
+        ? object.verdictEffectiveStatus.map((e: any) => verdictEffectiveStatusFromJSON(e))
+        : [],
+      moduleStatus: globalThis.Array.isArray(object?.moduleStatus)
+        ? object.moduleStatus.map((e: any) => testAggregation_ModuleStatusFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: TestAggregationPredicate_StatusFilter): unknown {
+    const obj: any = {};
+    if (message.verdictEffectiveStatus?.length) {
+      obj.verdictEffectiveStatus = message.verdictEffectiveStatus.map((e) => verdictEffectiveStatusToJSON(e));
+    }
+    if (message.moduleStatus?.length) {
+      obj.moduleStatus = message.moduleStatus.map((e) => testAggregation_ModuleStatusToJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TestAggregationPredicate_StatusFilter>): TestAggregationPredicate_StatusFilter {
+    return TestAggregationPredicate_StatusFilter.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TestAggregationPredicate_StatusFilter>): TestAggregationPredicate_StatusFilter {
+    const message = createBaseTestAggregationPredicate_StatusFilter() as any;
+    message.verdictEffectiveStatus = object.verdictEffectiveStatus?.map((e) => e) || [];
+    message.moduleStatus = object.moduleStatus?.map((e) => e) || [];
     return message;
   },
 };
@@ -1365,7 +1411,7 @@ export const TestVerdictPredicate: MessageFns<TestVerdictPredicate> = {
         ? globalThis.String(object.containsTestResultFilter)
         : "",
       effectiveVerdictStatus: globalThis.Array.isArray(object?.effectiveVerdictStatus)
-        ? object.effectiveVerdictStatus.map((e: any) => testVerdictPredicate_VerdictEffectiveStatusFromJSON(e))
+        ? object.effectiveVerdictStatus.map((e: any) => verdictEffectiveStatusFromJSON(e))
         : [],
     };
   },
@@ -1379,9 +1425,7 @@ export const TestVerdictPredicate: MessageFns<TestVerdictPredicate> = {
       obj.containsTestResultFilter = message.containsTestResultFilter;
     }
     if (message.effectiveVerdictStatus?.length) {
-      obj.effectiveVerdictStatus = message.effectiveVerdictStatus.map((e) =>
-        testVerdictPredicate_VerdictEffectiveStatusToJSON(e)
-      );
+      obj.effectiveVerdictStatus = message.effectiveVerdictStatus.map((e) => verdictEffectiveStatusToJSON(e));
     }
     return obj;
   },

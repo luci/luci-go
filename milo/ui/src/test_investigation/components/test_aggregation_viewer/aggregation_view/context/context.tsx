@@ -19,7 +19,7 @@ import { TestAggregation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/
 import { TestVerdict } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import { AnyInvocation } from '@/test_investigation/utils/invocation_utils';
 
-export type VerdictCounts = TestAggregation['verdictCounts'];
+export type VerdictCounts = NonNullable<TestAggregation['totalVerdictCounts']>;
 
 export interface BaseAggregationNode {
   id: string; // Unique ID for the node (e.g. prefix)

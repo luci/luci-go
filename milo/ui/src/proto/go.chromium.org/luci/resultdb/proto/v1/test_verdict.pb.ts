@@ -14,6 +14,88 @@ import { TestResult } from "./test_result.pb";
 export const protobufPackage = "luci.resultdb.v1";
 
 /**
+ * Represents a filter on the effective status of a test verdict,
+ * the result of combining the TestVerdict.Status and TestVerdict.StatusOverride.
+ */
+export enum VerdictEffectiveStatus {
+  /** VERDICT_EFFECTIVE_STATUS_UNSPECIFIED - Do not use. */
+  VERDICT_EFFECTIVE_STATUS_UNSPECIFIED = 0,
+  /** VERDICT_EFFECTIVE_STATUS_FAILED - The test failed, and was not exonerated. */
+  VERDICT_EFFECTIVE_STATUS_FAILED = 10,
+  /** VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED - The test execution errored, and was not exonerated. */
+  VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED = 20,
+  /** VERDICT_EFFECTIVE_STATUS_PRECLUDED - The test execution was precluded, and was not exonerated. */
+  VERDICT_EFFECTIVE_STATUS_PRECLUDED = 30,
+  /** VERDICT_EFFECTIVE_STATUS_FLAKY - The test was flaky, and was not exonerated. */
+  VERDICT_EFFECTIVE_STATUS_FLAKY = 40,
+  /** VERDICT_EFFECTIVE_STATUS_SKIPPED - The test was skipped. */
+  VERDICT_EFFECTIVE_STATUS_SKIPPED = 50,
+  /** VERDICT_EFFECTIVE_STATUS_PASSED - The test passed. */
+  VERDICT_EFFECTIVE_STATUS_PASSED = 60,
+  /**
+   * VERDICT_EFFECTIVE_STATUS_EXONERATED - The test was originally failed, execution errored, precluded or flaky,
+   * but the subject of the test (e.g. the CL under test) was absolved from blame.
+   * For example, because the failure also existed in the tree without the
+   * changelist applied.
+   */
+  VERDICT_EFFECTIVE_STATUS_EXONERATED = 70,
+}
+
+export function verdictEffectiveStatusFromJSON(object: any): VerdictEffectiveStatus {
+  switch (object) {
+    case 0:
+    case "VERDICT_EFFECTIVE_STATUS_UNSPECIFIED":
+      return VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_UNSPECIFIED;
+    case 10:
+    case "VERDICT_EFFECTIVE_STATUS_FAILED":
+      return VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_FAILED;
+    case 20:
+    case "VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED":
+      return VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED;
+    case 30:
+    case "VERDICT_EFFECTIVE_STATUS_PRECLUDED":
+      return VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_PRECLUDED;
+    case 40:
+    case "VERDICT_EFFECTIVE_STATUS_FLAKY":
+      return VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_FLAKY;
+    case 50:
+    case "VERDICT_EFFECTIVE_STATUS_SKIPPED":
+      return VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_SKIPPED;
+    case 60:
+    case "VERDICT_EFFECTIVE_STATUS_PASSED":
+      return VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_PASSED;
+    case 70:
+    case "VERDICT_EFFECTIVE_STATUS_EXONERATED":
+      return VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_EXONERATED;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum VerdictEffectiveStatus");
+  }
+}
+
+export function verdictEffectiveStatusToJSON(object: VerdictEffectiveStatus): string {
+  switch (object) {
+    case VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_UNSPECIFIED:
+      return "VERDICT_EFFECTIVE_STATUS_UNSPECIFIED";
+    case VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_FAILED:
+      return "VERDICT_EFFECTIVE_STATUS_FAILED";
+    case VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED:
+      return "VERDICT_EFFECTIVE_STATUS_EXECUTION_ERRORED";
+    case VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_PRECLUDED:
+      return "VERDICT_EFFECTIVE_STATUS_PRECLUDED";
+    case VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_FLAKY:
+      return "VERDICT_EFFECTIVE_STATUS_FLAKY";
+    case VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_SKIPPED:
+      return "VERDICT_EFFECTIVE_STATUS_SKIPPED";
+    case VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_PASSED:
+      return "VERDICT_EFFECTIVE_STATUS_PASSED";
+    case VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_EXONERATED:
+      return "VERDICT_EFFECTIVE_STATUS_EXONERATED";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum VerdictEffectiveStatus");
+  }
+}
+
+/**
  * A test verdict. The outcome of a test variant in an invocation.
  * As each test variant may be attempted multiple times within an invocation,
  * a test verdict can encapsulate multiple test results.

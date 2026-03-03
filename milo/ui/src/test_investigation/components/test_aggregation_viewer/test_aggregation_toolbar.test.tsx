@@ -14,6 +14,9 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 
+import { TestAggregation_ModuleStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_aggregation.pb';
+import { VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
+
 import { TestAggregationContext } from './context';
 import { TestAggregationToolbar } from './test_aggregation_toolbar';
 
@@ -35,13 +38,18 @@ jest.mock('@/common/components/aip_160_autocomplete', () => ({
 }));
 
 describe('TestAggregationToolbar', () => {
-  const mockSetSelectedStatuses = jest.fn();
+  const mockSetSelectedTestStatuses = jest.fn();
+  const mockSetSelectedModuleStatuses = jest.fn();
   const mockSetAipFilter = jest.fn();
   const mockOnLocateCurrentTest = jest.fn();
 
   const defaultContext = {
-    selectedStatuses: new Set<string>(['Failed']),
-    setSelectedStatuses: mockSetSelectedStatuses,
+    selectedTestStatuses: new Set<VerdictEffectiveStatus>([
+      VerdictEffectiveStatus.VERDICT_EFFECTIVE_STATUS_FAILED,
+    ]),
+    setSelectedTestStatuses: mockSetSelectedTestStatuses,
+    selectedModuleStatuses: new Set<TestAggregation_ModuleStatus>(),
+    setSelectedModuleStatuses: mockSetSelectedModuleStatuses,
     aipFilter: '',
     setAipFilter: mockSetAipFilter,
   };

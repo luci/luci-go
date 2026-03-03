@@ -21,9 +21,27 @@ die() {
 cd -- "$(dirname "$0")" || die 'cannot chdir'
 [ -f gen_proto.sh ] || die 'failed to find own directory'
 
+# Set to 1 to enable generating turboci protos, 0 to skip them.
+# Can be turned back on once development on turboci is resumed.
+GENERATE_TURBOCI=${GENERATE_TURBOCI:-0}
+
+for arg in "$@"; do
+  case $arg in
+    --turboci)
+      GENERATE_TURBOCI=1
+      shift
+      ;;
+  esac
+done
+
 # Only delete generated bindings. Leave other files (e.g. OWNERS) in place.
-find ../src/proto -name "*.pb.ts" -type f -delete
-find ../src/proto -mindepth 1 -type d -empty -delete
+if [[ "${GENERATE_TURBOCI}" == "1" ]]; then
+  find ../src/proto -name "*.pb.ts" -type f -delete
+  find ../src/proto -mindepth 1 -type d -empty -delete
+else
+  find ../src/proto -name "*.pb.ts" -type f | grep -v 'src/proto/turboci' | xargs -r rm -f
+  find ../src/proto -mindepth 1 -type d -empty | grep -v 'src/proto/turboci' | xargs -r rmdir --ignore-fail-on-non-empty
+fi
 
 cd ../../../../..
 [ -d ./go.chromium.org ] || die 'no chromium.org directory'
@@ -44,13 +62,18 @@ cd ../../../../..
 #
 # To generate protos for turboci/proto, we clone the repo into a temporary
 # directory which will be cleaned up.
-TURBOCI_PROTO_DIR=$(mktemp -d)
-git clone https://chromium.googlesource.com/infra/turboci/proto "${TURBOCI_PROTO_DIR}"
-TURBOCI_PROTOS=$(find "${TURBOCI_PROTO_DIR}/turboci/graph" "${TURBOCI_PROTO_DIR}/turboci/data" -name "*.proto")
+if [[ "${GENERATE_TURBOCI}" == "1" ]]; then
+  TURBOCI_PROTO_DIR=$(mktemp -d)
+  git clone https://chromium.googlesource.com/infra/turboci/proto "${TURBOCI_PROTO_DIR}"
+  TURBOCI_PROTOS=$(find "${TURBOCI_PROTO_DIR}/turboci/graph" "${TURBOCI_PROTO_DIR}/turboci/data" -name "*.proto")
+  TURBOCI_INCLUDE="-I=${TURBOCI_PROTO_DIR}"
+fi
 
 cleanup() {
   unlink ./go.chromium.org/infra 1>/dev/null 2>/dev/null
-  rm -rf "${TURBOCI_PROTO_DIR}"
+  if [[ -n "${TURBOCI_PROTO_DIR}" ]]; then
+    rm -rf "${TURBOCI_PROTO_DIR}"
+  fi
 }
 unlink ./go.chromium.org/infra 1>/dev/null 2>/dev/null
 ln -s ../infra ./go.chromium.org/infra || die 'failed to make infra symlink'
@@ -68,7 +91,7 @@ protoc \
   -I=./go.chromium.org/luci/common/proto/googleapis \
   -I=./go.chromium.org/chromiumos/config/proto \
   -I=./ \
-  -I="${TURBOCI_PROTO_DIR}" \
+  ${TURBOCI_INCLUDE} \
   \
   --ts_proto_out=./go.chromium.org/luci/milo/ui/src/proto \
   \

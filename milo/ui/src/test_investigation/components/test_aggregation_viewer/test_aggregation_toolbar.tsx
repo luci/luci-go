@@ -14,19 +14,7 @@
 
 import { GpsFixed } from '@mui/icons-material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import type { SelectChangeEvent } from '@mui/material';
-import {
-  Box,
-  IconButton,
-  Typography,
-  Link,
-  Select,
-  MenuItem,
-  Checkbox,
-  ListItemText,
-  FormControl,
-  InputLabel,
-} from '@mui/material';
+import { Box, IconButton, Typography, Link } from '@mui/material';
 
 import { Aip160Autocomplete } from '@/common/components/aip_160_autocomplete';
 import {
@@ -34,11 +22,10 @@ import {
   ValueDef,
 } from '@/common/components/aip_160_autocomplete/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import { CategoryOption } from '@/generic_libs/components/filter/multi_select_category_chip';
 import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
-import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 
 import { useTestAggregationContext } from './context';
+import { StatusFilterDropdown } from './status_filter_dropdown';
 
 const FILTER_SCHEMA: FieldDef = {
   staticFields: {
@@ -79,21 +66,6 @@ const FILTER_SCHEMA: FieldDef = {
   },
 };
 
-const STATUS_OPTIONS: CategoryOption[] = [
-  { value: TestVerdict_Status[TestVerdict_Status.FAILED], label: 'Failed' },
-  {
-    value: TestVerdict_Status[TestVerdict_Status.EXECUTION_ERRORED],
-    label: 'Execution Errored',
-  },
-  { value: TestVerdict_Status[TestVerdict_Status.FLAKY], label: 'Flaky' },
-  { value: TestVerdict_Status[TestVerdict_Status.PASSED], label: 'Passed' },
-  { value: TestVerdict_Status[TestVerdict_Status.SKIPPED], label: 'Skipped' },
-  {
-    value: TestVerdict_Status[TestVerdict_Status.PRECLUDED],
-    label: 'Precluded',
-  },
-];
-
 export interface TestAggregationToolbarProps {
   onLocateCurrentTest?: () => void;
 }
@@ -101,16 +73,7 @@ export interface TestAggregationToolbarProps {
 export function TestAggregationToolbar({
   onLocateCurrentTest,
 }: TestAggregationToolbarProps) {
-  const { selectedStatuses, setSelectedStatuses, aipFilter, setAipFilter } =
-    useTestAggregationContext();
-
-  const handleStatusChange = (event: SelectChangeEvent<string[]>) => {
-    const {
-      target: { value },
-    } = event;
-    const items = typeof value === 'string' ? value.split(',') : value;
-    setSelectedStatuses(new Set(items));
-  };
+  const { aipFilter, setAipFilter } = useTestAggregationContext();
 
   return (
     <Box
@@ -149,61 +112,7 @@ export function TestAggregationToolbar({
             </span>
           </HtmlTooltip>
         )}
-        <FormControl size="small" sx={{ width: '300px', flexShrink: 0 }}>
-          <InputLabel id="status-filter-label" sx={{ fontSize: '0.875rem' }}>
-            Status
-          </InputLabel>
-          <Select
-            labelId="status-filter-label"
-            id="status-select"
-            multiple
-            value={Array.from(selectedStatuses)}
-            onChange={handleStatusChange}
-            label="Status"
-            sx={{ fontSize: '0.875rem' }}
-            renderValue={(selected) => {
-              let labelText = '';
-              if (selected.length === 0) labelText = 'All';
-              else if (selected.length === STATUS_OPTIONS.length)
-                labelText = 'All';
-              else {
-                labelText = selected
-                  .map(
-                    (val) =>
-                      STATUS_OPTIONS.find((opt) => opt.value === val)?.label ||
-                      val,
-                  )
-                  .join(', ');
-              }
-              return (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {labelText}
-                </Typography>
-              );
-            }}
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <MenuItem key={option.value} value={option.value} dense>
-                <Checkbox
-                  checked={selectedStatuses.has(option.value)}
-                  size="small"
-                />
-                <ListItemText
-                  primary={option.label}
-                  primaryTypographyProps={{ variant: 'body2' }}
-                />
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
+        <StatusFilterDropdown />
         <Box
           sx={{
             display: 'flex',
@@ -236,7 +145,10 @@ export function TestAggregationToolbar({
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   Example filters:
                   <br />
-                  <code>status:FAILED AND duration&gt;50</code>
+                  <code>
+                    test_id_structured.module_name=&quot;foo&quot; AND
+                    status=FAILED
+                  </code>
                   <br />
                   <code>
                     test_id:&quot;my_test&quot; OR
@@ -244,8 +156,29 @@ export function TestAggregationToolbar({
                   </code>
                 </Typography>
                 <Typography variant="body2" component="div" sx={{ mb: 1 }}>
-                  Limits results to only those test verdicts that{' '}
-                  <em>contain</em> a test result matching this filter.
+                  Module, coarse and fine aggregations will only be returned if
+                  they contain at least one verdict or module matching this
+                  filter, where:
+                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                    <li>
+                      A test verdict is only matched if it contains a test
+                      result which matches this filter.
+                    </li>
+                    <li>
+                      A module is only matched if it matches this filter, or
+                      contains a test result which matches this filter.
+                    </li>
+                  </ul>
+                </Typography>
+                <Typography variant="body2" component="div" sx={{ mb: 1 }}>
+                  For modules, only the fields available are{' '}
+                  <code>test_id_structured.module_name</code>,{' '}
+                  <code>test_id_structured.module_scheme</code>,{' '}
+                  <code>test_id_structured.module_variant</code>, and{' '}
+                  <code>test_id_structured.module_variant_hash</code>. If other
+                  fields are used, the search query will never match a module
+                  directly, however, a module will still be matched if one of
+                  its test results matches the filter.
                 </Typography>
                 <Typography variant="body2" component="div" sx={{ mb: 1 }}>
                   The filter is an AIP-160 filter string (see{' '}

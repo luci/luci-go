@@ -34,9 +34,8 @@ import {
   StatusStyle,
 } from '@/common/styles/status_styles';
 import { generateTestInvestigateUrl } from '@/common/tools/url_utils';
-import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { AggregationLevel } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
-import { TestVerdictPredicate_VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/predicate.pb';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
 import {
   getSemanticStatusFromModuleStatus,
   getSemanticStatusFromVerdict,
@@ -58,11 +57,7 @@ import {
   useAggregationViewContext,
   VerdictCounts,
 } from './context/context';
-import {
-  buildAggregationFilterString,
-  mapAggregationToNode,
-  mapVerdictToNode,
-} from './context/utils';
+import { mapAggregationToNode, mapVerdictToNode } from './context/utils';
 
 interface AggregationTreeItemProps {
   node: AggregationNode;
@@ -248,24 +243,13 @@ function VariantSuffix({ node }: VariantSuffixProps) {
   return null;
 }
 
-const STATUS_MAP: Record<string, TestVerdictPredicate_VerdictEffectiveStatus> =
-  {
-    FAILED: TestVerdictPredicate_VerdictEffectiveStatus.FAILED,
-    EXECUTION_ERRORED:
-      TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED,
-    PRECLUDED: TestVerdictPredicate_VerdictEffectiveStatus.PRECLUDED,
-    FLAKY: TestVerdictPredicate_VerdictEffectiveStatus.FLAKY,
-    SKIPPED: TestVerdictPredicate_VerdictEffectiveStatus.SKIPPED,
-    PASSED: TestVerdictPredicate_VerdictEffectiveStatus.PASSED,
-    EXONERATED: TestVerdictPredicate_VerdictEffectiveStatus.EXONERATED,
-  };
-
 function IntermediateTreeItemContent({
   node,
   isExpanded,
   handleToggle,
 }: IntermediateTreeItemContentProps) {
-  const { selectedStatuses, aipFilter } = useTestAggregationContext();
+  const { selectedTestStatuses, selectedModuleStatuses, aipFilter } =
+    useTestAggregationContext();
   const { invocation, setNodeChildren } = useAggregationViewContext();
 
   const schemesQuery = useSchemesQuery();
@@ -274,23 +258,8 @@ function IntermediateTreeItemContent({
     [schemesQuery.data?.schemes],
   );
 
-  const aggregationFilterString = useMemo(() => {
-    return buildAggregationFilterString(selectedStatuses);
-  }, [selectedStatuses]);
-
-  const verdictStatuses = useMemo(() => {
-    if (selectedStatuses.size === 0) {
-      return [];
-    }
-    const statuses: TestVerdictPredicate_VerdictEffectiveStatus[] = [];
-    selectedStatuses.forEach((s) => {
-      const mapped = STATUS_MAP[s];
-      if (mapped !== undefined) {
-        statuses.push(mapped);
-      }
-    });
-    return statuses;
-  }, [selectedStatuses]);
+  const testStatuses = Array.from(selectedTestStatuses);
+  const moduleStatuses = Array.from(selectedModuleStatuses);
 
   const level = node.nextFinerLevel;
   const isVerdictLevel = !level || level === AggregationLevel.CASE;
@@ -300,17 +269,19 @@ function IntermediateTreeItemContent({
   const aggQuery = useNodeAggregationsQuery(
     invocation,
     level as AggregationLevel,
-    aggregationFilterString,
+    undefined,
     node.aggregationData?.id,
     shouldFetchAgg,
     undefined,
     aipFilter,
+    testStatuses,
+    moduleStatuses,
   );
 
   const shouldFetchVerdict = isExpanded && type === 'verdict';
   const verdictQuery = useTestVerdictsQuery(
     invocation,
-    verdictStatuses,
+    testStatuses,
     aipFilter,
     undefined,
     {
@@ -389,7 +360,7 @@ function IntermediateTreeItemContent({
 
   const label = node.label || 'Unknown';
   const labelParts = node.labelParts;
-  const counts = node.aggregationData?.verdictCounts;
+  const counts = node.aggregationData?.totalVerdictCounts;
 
   const semanticStatus = getSemanticStatus(node);
   const statusStyle = getStatusStyle(semanticStatus);

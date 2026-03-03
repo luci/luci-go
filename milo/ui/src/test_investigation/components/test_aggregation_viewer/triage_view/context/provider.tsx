@@ -23,7 +23,6 @@ import {
 
 import { OutputTestVerdict } from '@/common/types/verdict';
 import { TestVerdictView } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/common.pb';
-import { TestVerdictPredicate_VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/predicate.pb';
 import { TestResult } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb'; // Added import
 import { TestResult_Status } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_result.pb';
 import {
@@ -63,17 +62,7 @@ const STATUS_ORDER = [
   TestVerdict_Status[TestVerdict_Status.PASSED],
 ];
 
-const STATUS_MAP: Record<string, TestVerdictPredicate_VerdictEffectiveStatus> =
-  {
-    FAILED: TestVerdictPredicate_VerdictEffectiveStatus.FAILED,
-    EXECUTION_ERRORED:
-      TestVerdictPredicate_VerdictEffectiveStatus.EXECUTION_ERRORED,
-    PRECLUDED: TestVerdictPredicate_VerdictEffectiveStatus.PRECLUDED,
-    FLAKY: TestVerdictPredicate_VerdictEffectiveStatus.FLAKY,
-    SKIPPED: TestVerdictPredicate_VerdictEffectiveStatus.SKIPPED,
-    PASSED: TestVerdictPredicate_VerdictEffectiveStatus.PASSED,
-    EXONERATED: TestVerdictPredicate_VerdictEffectiveStatus.EXONERATED,
-  };
+// Removed STATUS_MAP as selectedTestStatuses now contain VerdictEffectiveStatus directly
 
 export function TriageViewProvider({
   children,
@@ -83,22 +72,13 @@ export function TriageViewProvider({
   autoLocate = true,
 }: TriageViewProviderProps) {
   // 1. Consume Shared Filter Context
-  const { selectedStatuses, aipFilter } = useTestAggregationContext();
+  // Triage views only test verdicts, so it doesn't utilize moduleStatuses at all
+  const { selectedTestStatuses, aipFilter } = useTestAggregationContext();
 
   // 2. Data Fetching
   const verdictStatuses = useMemo(() => {
-    if (selectedStatuses.size === 0) {
-      return [];
-    }
-    const statuses: TestVerdictPredicate_VerdictEffectiveStatus[] = [];
-    selectedStatuses.forEach((s) => {
-      const mapped = STATUS_MAP[s];
-      if (mapped !== undefined) {
-        statuses.push(mapped);
-      }
-    });
-    return statuses;
-  }, [selectedStatuses]);
+    return Array.from(selectedTestStatuses);
+  }, [selectedTestStatuses]);
 
   const verdictsQuery = useTestVerdictsQuery(
     invocation,

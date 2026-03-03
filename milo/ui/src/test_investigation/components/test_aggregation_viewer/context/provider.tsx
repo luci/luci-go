@@ -14,29 +14,40 @@
 
 import { PropsWithChildren, useState } from 'react';
 
+import { TestAggregation_ModuleStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_aggregation.pb';
+import { VerdictEffectiveStatus } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_verdict.pb';
+
 import { TestAggregationContext } from './context';
 
 export interface TestAggregationProviderProps extends PropsWithChildren {
   initialAipFilter?: string;
 }
 
-const DEFAULT_STATUSES = new Set<string>();
+const DEFAULT_TEST_STATUSES = new Set<VerdictEffectiveStatus>();
+const DEFAULT_MODULE_STATUSES = new Set<TestAggregation_ModuleStatus>();
 
 export function TestAggregationProvider({
   children,
   initialAipFilter,
 }: TestAggregationProviderProps) {
   // 1. Status Filter State
-  const [selectedStatuses, setSelectedStatuses] =
-    useState<Set<string>>(DEFAULT_STATUSES);
+  const [selectedTestStatuses, setSelectedTestStatuses] = useState<
+    Set<VerdictEffectiveStatus>
+  >(DEFAULT_TEST_STATUSES);
+  const [selectedModuleStatuses, setSelectedModuleStatuses] = useState<
+    Set<TestAggregation_ModuleStatus>
+  >(DEFAULT_MODULE_STATUSES);
+
   // 2. AIP Filter State
   const [aipFilter, setAipFilter] = useState(initialAipFilter || '');
 
   return (
     <TestAggregationContext.Provider
       value={{
-        selectedStatuses,
-        setSelectedStatuses,
+        selectedTestStatuses,
+        setSelectedTestStatuses,
+        selectedModuleStatuses,
+        setSelectedModuleStatuses,
         aipFilter,
         setAipFilter,
       }}
