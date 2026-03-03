@@ -165,6 +165,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(ExitError)
 	}
+
+	// For Gerrit we must use our native OAuth client, and not any helper.
+	opts.DisableCredentialHelper = true
+
 	if lifetime > 30*time.Minute {
 		fmt.Fprintln(os.Stderr, "lifetime cannot exceed 30m")
 		os.Exit(ExitError)
