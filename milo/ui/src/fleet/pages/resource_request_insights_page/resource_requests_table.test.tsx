@@ -30,6 +30,9 @@ jest.mock('@/fleet/hooks/prpc_clients', () => ({
     GetResourceRequestsMultiselectFilterValues: {
       query: jest.fn(() => ({ queryKey: ['filters'], queryFn: jest.fn() })),
     },
+    CountResourceRequests: {
+      query: jest.fn(() => ({ queryKey: ['count'], queryFn: jest.fn() })),
+    },
   })),
 }));
 
@@ -122,6 +125,13 @@ describe('<ResourceRequestTable />', () => {
           isError: false,
         };
       }
+      if (options?.queryKey?.[0] === 'count') {
+        return {
+          data: { total: 42 },
+          isPending: false,
+          isError: false,
+        };
+      }
       if (options?.queryKey?.[0] === 'list') {
         return {
           data: {
@@ -153,6 +163,10 @@ describe('<ResourceRequestTable />', () => {
 
     expect(screen.getByText('Laptop 1')).toBeVisible();
     expect(screen.getByText('Laptop 2')).toBeVisible();
+    expect(screen.queryAllByRole('progressbar')).toHaveLength(0);
+
+    // Verify smarter pagination indicator
+    expect(screen.getByText('1-25 of 42')).toBeVisible();
   });
 
   it('renders loading state', async () => {
@@ -165,11 +179,13 @@ describe('<ResourceRequestTable />', () => {
     render(
       <FakeContextProvider>
         <ShortcutProvider>
-          <ResourceRequestTable />
+          <SettingsProvider>
+            <ResourceRequestTable />
+          </SettingsProvider>
         </ShortcutProvider>
       </FakeContextProvider>,
     );
 
-    expect(screen.getByTestId('loading-spinner')).toBeVisible();
+    expect(screen.getAllByRole('progressbar').length).toBeGreaterThan(0);
   });
 });

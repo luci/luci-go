@@ -15,6 +15,7 @@
 import { render, screen } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
+import { SettingsProvider } from '@/fleet/context/providers';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ResourceRequestListPage } from './resource_request_insights_page';
@@ -24,11 +25,13 @@ describe('<ResourceRequestListPage />', () => {
     render(
       <FakeContextProvider>
         <ShortcutProvider>
-          <ResourceRequestListPage />
+          <SettingsProvider>
+            <ResourceRequestListPage />
+          </SettingsProvider>
         </ShortcutProvider>
       </FakeContextProvider>,
     );
 
-    expect(screen.getByTestId('loading-spinner')).toBeVisible();
+    expect(screen.getAllByRole('progressbar').length).toBeGreaterThan(0);
   });
 });

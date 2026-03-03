@@ -1,176 +1,353 @@
-import { Alert, CircularProgress, Container } from '@mui/material';
-import { GridSortItem, GridSortModel } from '@mui/x-data-grid';
-import { useQuery } from '@tanstack/react-query';
+import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
+import { Box, Button, TablePagination } from '@mui/material';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {
+  MaterialReactTable,
+  MRT_ColumnDef,
+  MRT_PaginationState,
+  MRT_ColumnFiltersState,
+  MRT_Updater,
+} from 'material-react-table';
+import { useMemo, useCallback } from 'react';
 
 import {
   emptyPageTokenUpdater,
   getCurrentPageIndex,
   getPageSize,
   getPageToken,
+  nextPageTokenUpdater,
+  pageSizeUpdater,
+  prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { useColumnManagement } from '@/fleet/components/columns/use_column_management';
-import { ColumnMenu } from '@/fleet/components/device_table/column_menu';
-import { Pagination } from '@/fleet/components/device_table/pagination';
-import { RriTableToolbar } from '@/fleet/components/resource_request_insights/rri_table_toolbar';
-import { StyledGrid } from '@/fleet/components/styled_data_grid';
+import { ColumnsButton } from '@/fleet/components/columns/columns_button';
+import {
+  getColumnId,
+  useMRTColumnManagement,
+} from '@/fleet/components/columns/use_mrt_column_management';
+import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
+import { FilterOption } from '@/fleet/components/fc_data_table/mrt_filter_menu_item';
+import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { PAGE_TOKEN_PARAM_KEY } from '@/fleet/constants/param_keys';
-import { useOrderByParam } from '@/fleet/hooks/order_by';
+import {
+  useOrderByParam,
+  OrderByDirection,
+  ORDER_BY_PARAM_KEY,
+} from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { colors } from '@/fleet/theme/colors';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
+import { parseOrderByParam } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import {
-  DEFAULT_SORT_COLUMN,
-  getColumnByField,
-  RRI_COLUMNS,
-  RriColumnDescriptor,
-  RriGridRow,
+  COLUMNS,
+  DEFAULT_COLUMNS,
+  DEFAULT_SORT_COLUMN_ID,
 } from './rri_columns';
-import { RriFilterKey, useRriFilters } from './use_rri_filters';
+import { getRow, type RriGridRow } from './rri_utils';
+import { useRriFilters } from './use_rri_filters';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
 
-const getOrderByParamFromSortModel = (sortModel: GridSortModel) => {
-  if (sortModel.length !== 1) {
+const getOrderByDto = (sortingArr: { id: string; desc: boolean }[]) => {
+  if (sortingArr.length === 0) {
+    return `${DEFAULT_SORT_COLUMN_ID} desc`;
+  }
+  if (sortingArr.length !== 1) {
     return '';
   }
-
-  const sortColumn = sortModel[0];
-  if (sortColumn.sort === 'asc') {
-    return sortColumn.field;
-  }
-  return `${sortColumn.field} ${sortColumn.sort}`;
-};
-
-const getSortModelFromOrderByParam = (orderByParam: string): GridSortItem[] => {
-  if (orderByParam === '') {
-    return [
-      {
-        field: DEFAULT_SORT_COLUMN.gridColDef.field,
-        sort: 'desc',
-      },
-    ];
-  }
-  const [field, sort] = orderByParam.split(' ');
-  let actualSort: 'asc' | 'desc' = 'asc';
-  if (sort === 'desc') {
-    actualSort = 'desc';
-  }
-  return [
-    {
-      field: field,
-      sort: actualSort,
-    },
-  ];
-};
-
-const getOrderByDto = (sortModel: GridSortModel) => {
-  if (sortModel.length !== 1) {
-    return `${DEFAULT_SORT_COLUMN.id} desc`;
-  }
-  const sortColumn = sortModel[0];
-
-  const sortColumnKey =
-    getColumnByField(sortColumn.field)?.id ?? DEFAULT_SORT_COLUMN.id;
-
-  if (sortColumn.sort === 'asc') {
-    return sortColumnKey;
-  }
-
-  return `${sortColumnKey} desc`;
+  const sort = sortingArr[0];
+  return sort.desc ? `${sort.id} desc` : sort.id;
 };
 
 export const ResourceRequestTable = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const [orderByParam, updateOrderByParam] = useOrderByParam();
+  const [, updateOrderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
     pageTokenKey: PAGE_TOKEN_PARAM_KEY,
   });
 
-  const { filterData, aipString } = useRriFilters();
-
-  const sortModel = getSortModelFromOrderByParam(orderByParam);
+  const { filterData, setFilters, aipString } = useRriFilters();
 
   const client = useFleetConsoleClient();
 
-  const query = useQuery(
-    client.ListResourceRequests.query({
+  const { data: filterOptionsData } = useQuery(
+    client.GetResourceRequestsMultiselectFilterValues.query({}),
+  );
+
+  const columns = useMemo(() => {
+    return Object.values(COLUMNS).map((c) => {
+      let filterSelectOptions: FilterOption[] | undefined = undefined;
+
+      if (filterOptionsData && 'rriFilterKey' in c && c.rriFilterKey) {
+        filterSelectOptions = filterOptionsData[
+          c.rriFilterKey as keyof typeof filterOptionsData
+        ] as FilterOption[];
+      }
+
+      return {
+        ...c,
+        filterVariant:
+          'enableColumnFilter' in c && c.enableColumnFilter === false
+            ? undefined
+            : 'multi-select',
+        filterSelectOptions: (filterSelectOptions ?? []).filter(Boolean),
+      } as MRT_ColumnDef<RriGridRow>;
+    });
+  }, [filterOptionsData]);
+
+  const columnFilters = useMemo<MRT_ColumnFiltersState>(() => {
+    return Object.entries(filterData || {})
+      .filter(([, val]) => {
+        if (Array.isArray(val)) return val.length > 0;
+        if (val && typeof val === 'object') return Object.keys(val).length > 0;
+        return val !== undefined && val !== null && val !== '';
+      })
+      .map(([id, value]) => ({
+        id,
+        value,
+      }));
+  }, [filterData]);
+
+  const onColumnFiltersChange = useCallback(
+    (updater: MRT_Updater<MRT_ColumnFiltersState>) => {
+      const newFiltersState =
+        typeof updater === 'function' ? updater(columnFilters) : updater;
+
+      const newFilters = Object.fromEntries(
+        newFiltersState.map((f: { id: string; value: unknown }) => [
+          f.id,
+          f.value,
+        ]),
+      ) as typeof filterData;
+
+      setFilters(newFilters);
+    },
+    [columnFilters, setFilters],
+  );
+
+  const sorting = (searchParams.get(ORDER_BY_PARAM_KEY) ?? '')
+    .split(', ')
+    .map(parseOrderByParam)
+    .filter((orderBy): orderBy is NonNullable<typeof orderBy> => !!orderBy)
+    .map((orderBy) => ({
+      id: orderBy.field,
+      desc: orderBy.direction === OrderByDirection.DESC,
+    }));
+
+  const pagination = useMemo<MRT_PaginationState>(
+    () => ({
+      pageIndex: getCurrentPageIndex(pagerCtx),
+      pageSize: getPageSize(pagerCtx, searchParams),
+    }),
+    [pagerCtx, searchParams],
+  );
+
+  const query = useQuery({
+    ...client.ListResourceRequests.query({
       filter: aipString,
-      orderBy: getOrderByDto(sortModel),
+      orderBy: getOrderByDto(sorting),
       pageSize: getPageSize(pagerCtx, searchParams),
       pageToken: getPageToken(pagerCtx, searchParams),
     }),
-  );
-
-  const {
-    columns,
-    columnVisibilityModel,
-    onColumnVisibilityModelChange,
-    resetDefaultColumns,
-    temporaryColumnSx,
-  } = useColumnManagement({
-    allColumns: RRI_COLUMNS.map((c) => c.gridColDef),
-    highlightedColumnIds: filterData
-      ? Object.keys(filterData)
-          .filter(
-            (filterKey) => filterData[filterKey as RriFilterKey] !== undefined,
-          )
-          .map((filterKey) => {
-            const column = RRI_COLUMNS.find((c) => c.id === filterKey);
-            if (!column) {
-              throw new Error(`Column with id ${filterKey} not found`);
-            }
-            return column.gridColDef.field;
-          })
-      : [],
-    defaultColumns: RRI_COLUMNS.filter(
-      (column: RriColumnDescriptor) => column.isDefault,
-    ).map((column: RriColumnDescriptor) => column.gridColDef.field),
-    localStorageKey: RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
-    preserveOrder: true,
+    placeholderData: keepPreviousData,
   });
 
-  const handleSortModelChange = (newSortModel: GridSortModel) => {
-    updateOrderByParam(getOrderByParamFromSortModel(newSortModel));
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  };
+  const countQuery = useQuery({
+    ...client.CountResourceRequests.query({
+      filter: aipString,
+    }),
+  });
 
-  if (query.isError) {
-    if (query.error?.message.includes('invalid_page_token')) {
-      return (
-        <InvalidPageTokenAlert
-          pagerCtx={pagerCtx}
-          setSearchParams={setSearchParams}
+  const defaultColumnIds = useMemo(
+    () =>
+      columns
+        .filter((c) => DEFAULT_COLUMNS.includes(getColumnId(c)))
+        .map((c) => getColumnId(c)),
+    [columns],
+  );
+
+  const highlightedColumnIds = useMemo(
+    () =>
+      filterData === undefined
+        ? []
+        : Object.keys(filterData).filter((key) => {
+            const val = filterData[key as keyof typeof filterData];
+            if (Array.isArray(val)) return val.length > 0;
+            if (val && typeof val === 'object')
+              return Object.keys(val).length > 0;
+            return val !== undefined && val !== null;
+          }),
+    [filterData],
+  );
+
+  const mrtColumnManager = useMRTColumnManagement<RriGridRow>({
+    columns,
+    defaultColumnIds,
+    localStorageKey: RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY,
+    highlightedColumnIds,
+  });
+
+  const table = useFCDataTable<RriGridRow>({
+    columns: mrtColumnManager.columns,
+    enableColumnActions: true,
+    manualFiltering: true,
+    positionToolbarAlertBanner: 'none',
+    enableRowSelection: false,
+    renderTopToolbarCustomActions: ({ table }) => (
+      <div
+        css={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '8px',
+        }}
+      >
+        <FCDataTableCopy table={table} />
+        <ColumnsButton
+          allColumns={mrtColumnManager.allColumns}
+          visibleColumns={mrtColumnManager.visibleColumnIds}
+          onToggleColumn={mrtColumnManager.onToggleColumn}
+          resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
+          renderTrigger={({ onClick }, ref) => (
+            <Button
+              ref={ref}
+              startIcon={<ViewColumnOutlined sx={{ fontSize: '20px' }} />}
+              onClick={onClick}
+              color="inherit"
+              sx={{
+                color: colors.grey[600],
+                height: '40px',
+                fontSize: '0.875rem',
+                textTransform: 'none',
+                fontWeight: 500,
+              }}
+            >
+              Columns
+            </Button>
+          )}
         />
-      );
-    }
-    return <Alert severity="error">Something went wrong</Alert>; // TODO: b/397421370 add nice error handling
-  }
+      </div>
+    ),
+    data: query.data?.resourceRequests.map((rr) => getRow(rr)) ?? [],
+    getRowId: (row) => row.id,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility: mrtColumnManager.columnVisibility,
+      showProgressBars: query.isPending || query.isPlaceholderData,
+      showAlertBanner: query.isError,
+      pagination: pagination,
+    },
+    onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
+    onColumnFiltersChange,
+    muiTopToolbarProps: {
+      sx: {
+        '& [aria-label="Show/Hide filters"]': {
+          display: 'none',
+        },
+      },
+    },
 
-  if (query.isPending || !query.data) {
+    muiToolbarAlertBannerProps: query.isError
+      ? {
+          color: 'error',
+          children: getErrorMessage(query.error, 'get resource requests'),
+        }
+      : undefined,
+    manualSorting: true,
+    onSortingChange: (updater) => {
+      const newSorting =
+        typeof updater === 'function' ? updater(sorting) : updater;
+
+      updateOrderByParam(
+        newSorting
+          .map((sort) => {
+            if (sort.desc) return `${sort.id} desc`;
+            return sort.id;
+          })
+          .join(', '),
+      );
+
+      setSearchParams(
+        (prev: URLSearchParams) => emptyPageTokenUpdater(pagerCtx)(prev),
+        {
+          replace: true,
+        },
+      );
+    },
+    enablePagination: false,
+    renderBottomToolbarCustomActions: () => (
+      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+        <TablePagination
+          component="div"
+          count={-1}
+          page={getCurrentPageIndex(pagerCtx)}
+          rowsPerPage={getPageSize(pagerCtx, searchParams)}
+          onPageChange={(_, page) => {
+            const currentPage = getCurrentPageIndex(pagerCtx);
+            const isPrevPage = page < currentPage;
+            const isNextPage = page > currentPage;
+
+            setSearchParams((prev: URLSearchParams) => {
+              let next = new URLSearchParams(prev);
+              if (isPrevPage) {
+                next = prevPageTokenUpdater(pagerCtx)(next);
+              } else if (isNextPage) {
+                next = nextPageTokenUpdater(
+                  pagerCtx,
+                  query.data?.nextPageToken ?? '',
+                )(next);
+              }
+              return next;
+            });
+          }}
+          onRowsPerPageChange={(e) => {
+            setSearchParams(pageSizeUpdater(pagerCtx, Number(e.target.value)));
+          }}
+          rowsPerPageOptions={DEFAULT_PAGE_SIZE_OPTIONS}
+          labelDisplayedRows={({ from, to }) => {
+            if (countQuery.data?.total !== undefined) {
+              return `${from}-${to} of ${countQuery.data.total}`;
+            }
+            return `${from}-${to} of ${
+              query.data?.nextPageToken ? `more than ${to}` : to
+            }`;
+          }}
+          slotProps={{
+            actions: {
+              nextButton: {
+                disabled: !query.data?.nextPageToken,
+              },
+            },
+            select: {
+              MenuProps: {
+                sx: { zIndex: 1401 },
+                anchorOrigin: { vertical: 'top', horizontal: 'left' },
+                transformOrigin: { vertical: 'bottom', horizontal: 'left' },
+              },
+            },
+          }}
+        />
+      </Box>
+    ),
+  });
+
+  if (query.isError && query.error?.message.includes('invalid_page_token')) {
     return (
-      <Container>
-        <div css={{ padding: '0 50%' }}>
-          <CircularProgress data-testid="loading-spinner" />
-        </div>
-      </Container>
+      <InvalidPageTokenAlert
+        pagerCtx={pagerCtx}
+        setSearchParams={setSearchParams}
+      />
     );
   }
-
-  const rows: RriGridRow[] = query.data.resourceRequests.map(
-    (resourceRequest, index) => {
-      const row = { id: index.toString() } as RriGridRow;
-      for (const column of RRI_COLUMNS) {
-        column.assignValue(resourceRequest, row);
-      }
-      return row;
-    },
-  );
 
   return (
     <div
@@ -179,38 +356,7 @@ export const ResourceRequestTable = () => {
         marginTop: 24,
       }}
     >
-      <StyledGrid
-        sx={temporaryColumnSx}
-        columns={columns}
-        rows={rows}
-        slots={{
-          pagination: Pagination,
-          columnMenu: ColumnMenu,
-          toolbar: RriTableToolbar,
-        }}
-        slotProps={{
-          pagination: {
-            pagerCtx: pagerCtx,
-            nextPageToken: query.data.nextPageToken,
-          },
-          toolbar: {
-            resetDefaultColumns: resetDefaultColumns,
-          },
-        }}
-        paginationMode="server"
-        pageSizeOptions={pagerCtx.options.pageSizeOptions}
-        rowCount={-1}
-        paginationModel={{
-          page: getCurrentPageIndex(pagerCtx),
-          pageSize: getPageSize(pagerCtx, searchParams),
-        }}
-        rowSelection={false}
-        sortModel={sortModel}
-        sortingMode="server"
-        onSortModelChange={handleSortModelChange}
-        columnVisibilityModel={columnVisibilityModel}
-        onColumnVisibilityModelChange={onColumnVisibilityModelChange}
-      />
+      <MaterialReactTable table={table} />
     </div>
   );
 };

@@ -128,3 +128,20 @@ const processEscapedQuotes = (str: string): string => {
 const escapeQuotes = (str: string): string => {
   return str.replace(/"/g, '\\"');
 };
+
+export const formatBugUrl = (bugId: string): string => {
+  if (!bugId) return '';
+
+  // If it already looks like a valid http(s) URL, just ensure it uses https if possible
+  if (bugId.startsWith('http')) {
+    return bugId.replace(/^http:\/\//i, 'https://');
+  }
+
+  // If it's pure numbers, assume it's a root issue tracker ID
+  if (/^\d+$/.test(bugId)) {
+    return `https://b.corp.google.com/issues/${bugId}`;
+  }
+
+  // Otherwise, default to prepending https
+  return `https://${bugId}`;
+};

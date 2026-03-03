@@ -27,7 +27,7 @@ import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import { ResourceRequestTable } from './resource_requests_table';
-import { RRI_COLUMNS } from './rri_columns';
+import { COLUMNS, ResourceRequestColumnKey } from './rri_columns';
 import { RriSummaryHeader } from './rri_summary_header';
 import {
   DateFilterData,
@@ -129,7 +129,7 @@ export const ResourceRequestListPage = () => {
   const filterCategoryDatas: FilterCategoryData<unknown>[] =
     filterComponents.map((option) => {
       const label: string =
-        RRI_COLUMNS.find((c) => c.id === option.value)?.gridColDef.headerName ??
+        COLUMNS[option.value as ResourceRequestColumnKey]?.header ??
         option.value;
 
       const commonProps = {

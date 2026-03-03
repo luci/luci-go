@@ -61,7 +61,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     enableHiding: true, // Needed for hide column in menu
     enableColumnResizing: true,
     enableColumnActions: true,
-    layoutMode: 'grid', // Revert to grid for robust column resizing
+    layoutMode: 'semantic', // Avoid grid mode as it causes massive DOM tree lag on column resize
     displayColumnDefOptions: {
       'mrt-row-select': {
         size: 40,
@@ -91,6 +91,12 @@ export const useFCDataTable = <TData extends MRT_RowData>(
       rowsPerPageOptions: [10, 25, 50, 100, 500, 1000],
       showFirstButton: false,
       showLastButton: false,
+      SelectProps: {
+        MenuProps: {
+          anchorOrigin: { vertical: 'top', horizontal: 'left' },
+          transformOrigin: { vertical: 'bottom', horizontal: 'left' },
+        },
+      },
     },
     muiTablePaperProps: {
       elevation: 0,

@@ -65,30 +65,62 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
     pointerEvents: 'auto',
     flexShrink: 0,
   },
-  // Base suppression for all icons until shown by the container above
-  '&& .MuiTableSortLabel-root, && .ColumnActionsMenuButton': {
+  // Base suppression for all icons and native MRT badges until shown by the container above
+  '&& .MuiBadge-root, && .ColumnActionsMenuButton': {
     display: 'none',
   },
-  // Target the SORT arrows specifically for circular hover
-  '&& .fleet-column-actions.is-sorted .MuiTableSortLabel-root, &&:hover .fleet-column-actions .MuiTableSortLabel-root':
-    {
-      display: 'flex',
-      borderRadius: '50%',
-      padding: '4px',
-      width: '24px',
-      height: '24px',
-      boxSizing: 'border-box',
-      alignItems: 'center',
-      justifyContent: 'center',
-      transition: 'background-color 0.2s',
-      '&:hover': {
-        backgroundColor: 'rgba(0, 0, 0, 0.05)',
-      },
-      '& .MuiTableSortLabel-icon': {
-        margin: 0,
-        fontSize: '18px',
-      },
+  // Target the SORT badges specifically for visibility
+  ['&& .fleet-column-actions.is-sorted .MuiBadge-root, ' +
+  '&&:hover .fleet-column-actions .MuiBadge-root, ' +
+  '&& .fleet-column-actions:focus-within .MuiBadge-root']: {
+    display: 'inline-flex',
+    marginRight: '4px', // Keep a small gap between the badge and the next icon
+  },
+  // Target the SORT strings specifically for circular hover
+  ['&& .fleet-column-actions.is-sorted .MuiTableSortLabel-root, ' +
+  '&&:hover .fleet-column-actions .MuiTableSortLabel-root, ' +
+  '&& .fleet-column-actions:focus-within .MuiTableSortLabel-root']: {
+    display: 'flex',
+    borderRadius: '12px',
+    padding: '0 4px',
+    minWidth: '24px',
+    height: '24px',
+    boxSizing: 'border-box',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'background-color 0.2s',
+    '&:hover': {
+      backgroundColor: 'rgba(0, 0, 0, 0.05)',
     },
+    '& .MuiTableSortLabel-icon': {
+      margin: 0,
+      fontSize: '18px',
+      opacity: '1 !important', // Ensure MUI always renders the icon when inside this container
+    },
+    // Give the hover effect a pill-like structure so the badge fits comfortably
+    width: 'auto',
+  },
+  // We want the icon group (sort label) contiguous to other items, so keep a very small gap.
+  '&& .fleet-column-actions .MuiBadge-root': {
+    marginRight: '2px',
+  },
+  // The badge number should overlap the top right of the sort arrow like a small exponent notification badge.
+  '&& .fleet-column-actions .MuiBadge-badge:not(.MuiBadge-invisible)': {
+    transform: 'scale(1) translate(50%, -50%)',
+    right: '4px',
+    top: '6px',
+    pointerEvents: 'none',
+    width: '13px',
+    height: '13px',
+    minWidth: '13px',
+    borderRadius: '50%',
+    lineHeight: '13px',
+    fontSize: '9px',
+    padding: 0,
+    backgroundColor: 'transparent',
+    color: `${colors.grey[900]}`,
+    fontWeight: 700,
+  },
   // Reduce the size of the 3-dot menu icon to match the others
   '&& .ColumnActionsMenuButton': {
     width: '24px !important',

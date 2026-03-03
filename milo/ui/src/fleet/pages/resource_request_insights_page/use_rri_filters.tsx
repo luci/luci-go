@@ -40,7 +40,7 @@ import {
 } from './fulfillment_status';
 import { FulfillmentStatusFilter } from './fulfillment_status_filter';
 import { MultiSelectFilter } from './multiselect_filter';
-import { ResourceRequestColumnKey, RRI_COLUMNS } from './rri_columns';
+import { ResourceRequestColumnKey, COLUMNS } from './rri_columns';
 
 const FILTER_SEPARATOR = '&';
 
@@ -580,8 +580,11 @@ export const useRriFilters = () => {
   );
 
   const setFilters = (newFilters: RriFilters | undefined) => {
-    setSearchParams(filtersUpdater(newFilters));
-    searchParams.delete(PAGE_TOKEN_PARAM_KEY);
+    setSearchParams((prev) => {
+      const next = filtersUpdater(newFilters)(prev);
+      next.delete(PAGE_TOKEN_PARAM_KEY);
+      return next;
+    });
   };
 
   const aipString = filterData ? filtersToAip(filterData) : '';
@@ -638,9 +641,7 @@ export const useRriFilters = () => {
     filterKey: RriFilterKey,
     filterValue: RriFilters[RriFilterKey],
   ): string => {
-    let label: string =
-      RRI_COLUMNS.find((c) => c.id === filterKey)?.gridColDef.headerName ??
-      filterKey;
+    let label: string = COLUMNS[filterKey].header;
 
     if (label && label.length > MAX_SELECTED_CHIP_LABEL_LENGTH) {
       label = label?.slice(0, MAX_SELECTED_CHIP_LABEL_LENGTH);
