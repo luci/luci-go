@@ -11,11 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 
+import Typography from '@mui/material/Typography';
 import { GridRenderCellParams } from '@mui/x-data-grid';
 
 import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
 import { CellWithTooltip } from '@/fleet/components/table';
 import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
@@ -28,6 +30,7 @@ import { getDeviceStateString } from '@/fleet/utils/devices';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import {
   Device,
+  DeviceState,
   DeviceType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -97,6 +100,32 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<
     headerName: 'Lease state',
     valueGetter: (_, device) => getDeviceStateString(device),
     orderByField: 'state',
+    renderCell: (params: GridRenderCellParams<Device>) => {
+      const stateValue = params.value ?? '';
+
+      if (stateValue === '') return <></>;
+
+      const stateToTooltip: Record<string, string> = {
+        [DeviceState.DEVICE_STATE_UNSPECIFIED]:
+          'This device is not available for lease.',
+      };
+
+      if (stateToTooltip[params.row.state] !== undefined) {
+        return (
+          <FCHtmlTooltip
+            title={
+              <Typography color="inherit" variant="body2">
+                {stateToTooltip[params.row.state]}
+              </Typography>
+            }
+          >
+            {stateValue}
+          </FCHtmlTooltip>
+        );
+      } else {
+        return <CellWithTooltip {...params}></CellWithTooltip>;
+      }
+    },
   },
   host: {
     headerName: 'Address',

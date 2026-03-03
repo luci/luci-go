@@ -15,9 +15,9 @@
 import { Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 
-import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { displayApproxDuration } from '@/common/tools/time_utils';
+import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
 
 export interface SmartRelativeTimestampProps {
   /**
@@ -37,16 +37,9 @@ export function SmartRelativeTimestamp({ date }: SmartRelativeTimestampProps) {
   }
 
   return (
-    <HtmlTooltip
+    <FCHtmlTooltip
       title={
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'auto auto',
-            gap: '4px 12px',
-            alignItems: 'baseline',
-          }}
-        >
+        <>
           <Typography color="inherit" variant="body2">
             Local:
           </Typography>
@@ -60,19 +53,10 @@ export function SmartRelativeTimestamp({ date }: SmartRelativeTimestampProps) {
           <Typography color="inherit" variant="body2">
             {date.toUTC().toLocaleString(DateTime.DATETIME_FULL)}
           </Typography>
-        </div>
+        </>
       }
     >
-      <span
-        style={{
-          cursor: 'help',
-          textDecoration: 'underline',
-          textDecorationStyle: 'dotted',
-          textUnderlineOffset: '3px',
-        }}
-      >
-        <RelativeTimestamp timestamp={date} formatFn={displayApproxDuration} />
-      </span>
-    </HtmlTooltip>
+      <RelativeTimestamp timestamp={date} formatFn={displayApproxDuration} />
+    </FCHtmlTooltip>
   );
 }
