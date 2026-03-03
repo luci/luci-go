@@ -17,6 +17,7 @@ import ConstructionIcon from '@mui/icons-material/Construction';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DevicesIcon from '@mui/icons-material/Devices';
 import DevicesOtherIcon from '@mui/icons-material/DevicesOther';
+import HomeIcon from '@mui/icons-material/Home';
 import LanIcon from '@mui/icons-material/Lan';
 import TopicIcon from '@mui/icons-material/Topic';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -45,10 +46,24 @@ export interface SidebarSection {
 
 export function generateSidebarSections(platform?: Platform): SidebarSection[] {
   return [
+    generateHomeSection(),
     generateLabHealthSection(platform),
     generateResourceRequestsSection(),
     generateOtherToolsSection(),
   ];
+}
+
+function generateHomeSection(): SidebarSection {
+  return {
+    title: '',
+    pages: [
+      {
+        label: 'Home',
+        url: '/ui/fleet/',
+        icon: <HomeIcon />,
+      },
+    ],
+  };
 }
 
 function generateLabHealthSection(platform?: Platform): SidebarSection {

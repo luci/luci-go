@@ -102,6 +102,10 @@ export const fleetRoutes: RouteObject[] = [
     lazy: () => import('@/fleet/root'),
     children: [
       {
+        index: true,
+        lazy: () => import('@/fleet/pages/home_page'),
+      },
+      {
         path: 'redirects',
         children: [
           {

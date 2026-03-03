@@ -67,7 +67,7 @@ describe('Header', () => {
     expect(screen.getByLabelText('avatar')).toBeInTheDocument();
   });
 
-  it('Logo should link to ChromeOS device list by default', () => {
+  it('Logo should link to home page', () => {
     (useAuthState as jest.Mock).mockReturnValue({
       identity: ANONYMOUS_IDENTITY,
     });
@@ -80,27 +80,6 @@ describe('Header', () => {
     );
 
     const logoLink = screen.getByRole('link', { name: /logo/i });
-    expect(logoLink).toHaveAttribute('href', '/ui/fleet/p/chromeos/devices');
-  });
-
-  it('Logo should link to current platform device list', () => {
-    (useAuthState as jest.Mock).mockReturnValue({
-      identity: ANONYMOUS_IDENTITY,
-    });
-    render(
-      <ShortcutProvider>
-        <FakeContextProvider
-          mountedPath="/p/:platform"
-          routerOptions={{
-            initialEntries: ['/p/android'],
-          }}
-        >
-          <Header sidebarOpen={false} setSidebarOpen={() => {}} />
-        </FakeContextProvider>
-      </ShortcutProvider>,
-    );
-
-    const logoLink = screen.getByRole('link', { name: /logo/i });
-    expect(logoLink).toHaveAttribute('href', '/ui/fleet/p/android/devices');
+    expect(logoLink).toHaveAttribute('href', '/ui/fleet/');
   });
 });

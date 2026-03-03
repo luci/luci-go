@@ -78,7 +78,9 @@ export const Sidebar = ({ open }: { open: boolean }) => {
       <List sx={{ mb: '40px', pt: 0 }}>
         {sidebarSections.map((sidebarSection) => (
           <Fragment key={sidebarSection.title}>
-            <ListSubheader>{sidebarSection.title}</ListSubheader>
+            {sidebarSection.title && (
+              <ListSubheader>{sidebarSection.title}</ListSubheader>
+            )}
             {sidebarSection.pages.map((sidebarPage) => (
               <ListItem
                 dense

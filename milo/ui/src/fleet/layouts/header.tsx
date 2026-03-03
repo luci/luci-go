@@ -26,15 +26,9 @@ import { genFeedbackUrl } from '@/common/tools/utils';
 import fleetConsoleMascot from '@/fleet/assets/pngs/fleet-console-mascot.png';
 import { PlatformSelector } from '@/fleet/components/platform_selector';
 import { colors } from '@/fleet/theme/colors';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { FEEDBACK_BUGANIZER_BUG_ID } from '../constants/feedback';
-import {
-  generateDeviceListURL,
-  CHROMEOS_PLATFORM,
-  platformToURL,
-} from '../constants/paths';
-import { useIsInPlatformScope, useCurrentPlatform } from '../hooks/usePlatform';
+import { useIsInPlatformScope } from '../hooks/usePlatform';
 
 import { SettingsMenu } from './settings_menu';
 
@@ -47,12 +41,6 @@ export const Header = ({
 }) => {
   const authState = useAuthState();
   const isInPlatformScope = useIsInPlatformScope();
-  const currentPlatform = useCurrentPlatform();
-
-  const logoLink =
-    currentPlatform !== undefined && currentPlatform !== Platform.UNSPECIFIED
-      ? platformToURL(currentPlatform)
-      : CHROMEOS_PLATFORM;
 
   return (
     <header
@@ -89,10 +77,7 @@ export const Header = ({
         >
           <MenuIcon />
         </IconButton>
-        <Link
-          to={generateDeviceListURL(logoLink)}
-          css={{ display: 'flex', alignItems: 'center' }}
-        >
+        <Link to="/ui/fleet/" css={{ display: 'flex', alignItems: 'center' }}>
           <img
             alt="logo"
             id="luci-icon"
@@ -104,7 +89,12 @@ export const Header = ({
           />
         </Link>
         <Typography variant="h5" sx={{ color: colors.grey[700] }}>
-          Fleet Console
+          <Link
+            to="/ui/fleet/"
+            css={{ color: 'inherit', textDecoration: 'none' }}
+          >
+            Fleet Console
+          </Link>
         </Typography>
         {isInPlatformScope && <PlatformSelector />}
       </div>
