@@ -17,33 +17,33 @@ import { useQuery } from '@tanstack/react-query';
 
 import { useResultDbClient } from '@/common/hooks/prpc_clients';
 import { getStatusStyle } from '@/common/styles/status_styles';
-import {
-  QuerySourceVerdictsResponse_SourceVerdict,
-  QuerySourceVerdictsResponse_VerdictStatus,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { SourceVerdict } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { BatchGetTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
 
 import { useTestVariantBranch } from '../context';
 
-const getSemanticStatus = (
-  status: QuerySourceVerdictsResponse_VerdictStatus,
-) => {
+const getSemanticStatus = (status: TestVerdict_Status) => {
   switch (status) {
-    case QuerySourceVerdictsResponse_VerdictStatus.EXPECTED:
+    case TestVerdict_Status.PASSED:
       return 'passed';
-    case QuerySourceVerdictsResponse_VerdictStatus.UNEXPECTED:
+    case TestVerdict_Status.FAILED:
       return 'failed';
-    case QuerySourceVerdictsResponse_VerdictStatus.FLAKY:
+    case TestVerdict_Status.FLAKY:
       return 'flaky';
-    case QuerySourceVerdictsResponse_VerdictStatus.SKIPPED:
+    case TestVerdict_Status.SKIPPED:
       return 'skipped';
+    case TestVerdict_Status.PRECLUDED:
+      return 'precluded';
+    case TestVerdict_Status.EXECUTION_ERRORED:
+      return 'execution_errored';
     default:
       return 'unknown';
   }
 };
 
 interface SourceVerdictTooltipProps {
-  sourceVerdict: QuerySourceVerdictsResponse_SourceVerdict;
+  sourceVerdict: SourceVerdict;
   isFailing?: boolean;
 }
 
@@ -53,8 +53,8 @@ interface SourceVerdictTooltipProps {
 export function SourceVerdictTooltip({
   sourceVerdict,
 }: SourceVerdictTooltipProps) {
-  const testVerdict = sourceVerdict.verdicts[0];
-  const invocationId = testVerdict.invocationId;
+  const testVerdict = sourceVerdict.invocationVerdicts[0];
+  const invocationId = testVerdict.rootInvocation ?? testVerdict.invocation;
   const resultDbClient = useResultDbClient();
   const testVariantBranch = useTestVariantBranch();
 
@@ -113,20 +113,19 @@ export function SourceVerdictTooltip({
             {sourceVerdict.position}
           </Typography>
         </Typography>
-        {sourceVerdict.verdicts[0].partitionTime && (
+        {sourceVerdict.invocationVerdicts[0].partitionTime && (
           <Typography
             variant="caption"
             sx={{ fontStyle: 'italic', color: 'text.secondary' }}
           >
             Built at{' '}
             {new Date(
-              sourceVerdict?.verdicts[0]?.partitionTime,
+              sourceVerdict?.invocationVerdicts[0]?.partitionTime,
             ).toLocaleString()}
           </Typography>
         )}
       </Box>
-      {sourceVerdict.status ===
-        QuerySourceVerdictsResponse_VerdictStatus.UNEXPECTED && (
+      {sourceVerdict.status === TestVerdict_Status.FAILED && (
         <Box>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Failure Reason:

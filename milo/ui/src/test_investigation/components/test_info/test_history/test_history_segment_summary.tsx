@@ -16,14 +16,11 @@ import { Box, Tooltip, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
-import { ParsedTestVariantBranchName } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import { useTestVariantBranchesClient } from '@/common/hooks/prpc_clients';
+import { useTestHistoryClient } from '@/common/hooks/prpc_clients';
 import { getStatusStyle } from '@/common/styles/status_styles';
-import {
-  QuerySourceVerdictsRequest,
-  Segment,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { QuerySourceVerdictsV2Request } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
+import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { useInvocation } from '@/test_investigation/context';
 import {
@@ -63,17 +60,22 @@ function SegmentBox({
   const formattedRate = getFormattedFailureRateFromSegment(segment);
   const IconComponent = style.icon;
   const testVariantBranch = useTestVariantBranch();
-  const tvbClient = useTestVariantBranchesClient();
+  const thClient = useTestHistoryClient();
 
   const { data: response } = useQuery({
-    ...tvbClient.QuerySourceVerdicts.query(
-      QuerySourceVerdictsRequest.fromPartial({
-        parent: ParsedTestVariantBranchName.toString(testVariantBranch!),
-        startSourcePosition: (Number(segment?.startPosition) - 1).toString(),
-        endSourcePosition: Math.max(
-          Number(nextSegment?.endPosition),
-          Number(segment?.startPosition) - 1000,
-        ).toString(),
+    ...thClient.QuerySourceVerdicts.query(
+      QuerySourceVerdictsV2Request.fromPartial({
+        project: testVariantBranch?.project,
+        testIdFlat: {
+          testId: testVariantBranch?.testId,
+          variantHash: testVariantBranch?.variantHash,
+        },
+        sourceRefHash: testVariantBranch?.refHash,
+        filter:
+          'position <= ' +
+          (Number(segment?.startPosition) - 1).toString() +
+          ' AND position > ' +
+          nextSegment?.endPosition,
       }),
     ),
     enabled: !!nextSegment && !!testVariantBranch,

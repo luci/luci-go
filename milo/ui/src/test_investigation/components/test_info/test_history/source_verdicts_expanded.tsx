@@ -27,15 +27,14 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { ParsedTestVariantBranchName } from '@/analysis/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-import { useTestVariantBranchesClient } from '@/common/hooks/prpc_clients';
+import { useTestHistoryClient } from '@/common/hooks/prpc_clients';
 import {
-  QuerySourceVerdictsRequest,
-  QuerySourceVerdictsResponse_SourceVerdict,
-  QuerySourceVerdictsResponse_VerdictStatus,
-  Segment,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+  QuerySourceVerdictsV2Request,
+  SourceVerdict,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
+import { Segment } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
+import { TestVerdict_Status } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { Invocation } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import {
   useInvocation,
@@ -73,7 +72,7 @@ interface SourceVerdictsExpandedProps {
 
 const getEndSourceVerdictFromPosition = (
   pos: string,
-  endSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
+  endSourceVerdicts: SourceVerdict[],
 ) => {
   if (!endSourceVerdicts) return null;
   for (let i = 0; i < endSourceVerdicts.length; i++) {
@@ -86,7 +85,7 @@ const getEndSourceVerdictFromPosition = (
 
 const getStartSourceVerdictFromPosition = (
   pos: string,
-  startSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
+  startSourceVerdicts: SourceVerdict[],
 ) => {
   if (!startSourceVerdicts) return null;
   for (let i = startSourceVerdicts.length - 1; i > 0; i--) {
@@ -99,21 +98,29 @@ const getStartSourceVerdictFromPosition = (
 
 const isFailingSourceVerdict = (
   pos: string,
-  endSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
-  startSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
+  endSourceVerdicts: SourceVerdict[],
+  startSourceVerdicts: SourceVerdict[],
 ) => {
+  if (
+    !endSourceVerdicts ||
+    !startSourceVerdicts ||
+    endSourceVerdicts.length <= 0 ||
+    startSourceVerdicts.length <= 0
+  ) {
+    return false;
+  }
   if (
     Number(pos) >=
     Number(endSourceVerdicts?.[endSourceVerdicts.length - 1].position)
   ) {
     return (
       getEndSourceVerdictFromPosition(pos, endSourceVerdicts)?.status ===
-      QuerySourceVerdictsResponse_VerdictStatus.UNEXPECTED
+      TestVerdict_Status.FAILED
     );
   }
   return (
     getStartSourceVerdictFromPosition(pos, startSourceVerdicts)?.status ===
-    QuerySourceVerdictsResponse_VerdictStatus.UNEXPECTED
+    TestVerdict_Status.FAILED
   );
 };
 
@@ -190,9 +197,9 @@ const FailSourceVerdictBox = (blamelistLink: string) => {
 };
 
 const PassFailSourceVerdictBox = (
-  sourceVerdict: QuerySourceVerdictsResponse_SourceVerdict,
-  endSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
-  startSourceVerdicts: QuerySourceVerdictsResponse_SourceVerdict[],
+  sourceVerdict: SourceVerdict,
+  endSourceVerdicts: SourceVerdict[],
+  startSourceVerdicts: SourceVerdict[],
   currentTestResultPosition: string | undefined,
   blamelistLink: string,
 ) => {
@@ -288,15 +295,13 @@ export function SourceVerdictsExpanded({
   sourceVerdictNumberChanged,
 }: SourceVerdictsExpandedProps) {
   const testVariantBranch = useTestVariantBranch();
-  const tvbClient = useTestVariantBranchesClient();
+  const thClient = useTestHistoryClient();
   const invocation = useInvocation() as Invocation;
   const testVariant = useTestVariant();
   const project = useProject();
   const sources = getSourcesFromInvocation(invocation);
   // How many source verdicts shown (from both start and end position) when component is expanded.
   const [sourceVerdictCount, setSourceVerdictCount] = useState(15);
-  const endPos = Number(segment.endPosition);
-  const endPosEnd = Number(segment.endPosition) - 1000;
   const testId = testVariant.testId;
   const variantHash = testVariant.variantHash;
   const refHash = testVariantBranch?.refHash;
@@ -310,28 +315,53 @@ export function SourceVerdictsExpanded({
     return `${blamelistBaseUrl}?expand=${`CP-${position}`}#CP-${position}`;
   };
 
-  const { data: response, isLoading: isLoadingEndVerdicts } = useQuery({
-    ...tvbClient.QuerySourceVerdicts.query(
-      QuerySourceVerdictsRequest.fromPartial({
-        parent: ParsedTestVariantBranchName.toString(testVariantBranch!),
-        startSourcePosition: endPos.toString(),
-        endSourcePosition: endPosEnd.toString(),
-      }),
-    ),
-  });
+  // Get most recent 1000 source verdicts, starting from end source position.
+  const { data: endVerdictsResponse, isLoading: isLoadingEndVerdicts } =
+    useQuery({
+      ...thClient.QuerySourceVerdicts.query(
+        QuerySourceVerdictsV2Request.fromPartial({
+          project: testVariantBranch?.project,
+          testIdFlat: {
+            testId: testVariantBranch?.testId,
+            variantHash: testVariantBranch?.variantHash,
+          },
+          sourceRefHash: testVariantBranch?.refHash,
+          filter:
+            'position < ' +
+            segment.endPosition +
+            ' AND position > ' +
+            segment.startPosition,
+        }),
+      ),
+    });
 
-  const startPos = Number(segment.startPosition) + 999;
-  const startPosEnd = Number(segment.startPosition) - 1;
+  let endSourceVerdicts = endVerdictsResponse?.sourceVerdicts;
 
-  const { data: response2, isLoading: isLoadingStartVerdicts } = useQuery({
-    ...tvbClient.QuerySourceVerdicts.query(
-      QuerySourceVerdictsRequest.fromPartial({
-        parent: ParsedTestVariantBranchName.toString(testVariantBranch!),
-        startSourcePosition: startPos.toString(),
-        endSourcePosition: startPosEnd.toString(),
-      }),
-    ),
-  });
+  // If there are more than 1000 segments, also load from start source position, as this means there are still more verdicts in the segment.
+  // Don't include those already in end source verdicts.
+  const { data: startVerdictsResponse, isLoading: isLoadingStartVerdicts } =
+    useQuery({
+      ...thClient.QuerySourceVerdicts.query(
+        QuerySourceVerdictsV2Request.fromPartial({
+          project: testVariantBranch?.project,
+          testIdFlat: {
+            testId: testVariantBranch?.testId,
+            variantHash: testVariantBranch?.variantHash,
+          },
+          sourceRefHash: testVariantBranch?.refHash,
+          filter:
+            'position < ' +
+            endSourceVerdicts?.[endSourceVerdicts?.length - 1].position +
+            ' AND position > ' +
+            segment.startPosition,
+        }),
+      ),
+      enabled:
+        !isLoadingEndVerdicts &&
+        !!endVerdictsResponse &&
+        endSourceVerdicts &&
+        endSourceVerdicts?.length >= 1000,
+    });
 
   // Wait until all start and end verdicts have been fetched, otherwise the pass/fail will potentially be wrong.
   if (isLoadingEndVerdicts || isLoadingStartVerdicts) {
@@ -350,8 +380,17 @@ export function SourceVerdictsExpanded({
     );
   }
 
-  const endSourceVerdicts = response?.sourceVerdicts;
-  const startSourceVerdicts = response2?.sourceVerdicts;
+  // Combine end and start source verdicts, so no duplicates will be displayed.
+  let startSourceVerdicts = startVerdictsResponse?.sourceVerdicts || [];
+  const combinedSourceVerdicts =
+    endSourceVerdicts?.concat(startSourceVerdicts) || [];
+  endSourceVerdicts = combinedSourceVerdicts.slice(
+    0,
+    Math.ceil(combinedSourceVerdicts.length / 2),
+  );
+  startSourceVerdicts = combinedSourceVerdicts.slice(
+    Math.ceil(combinedSourceVerdicts.length / 2),
+  );
 
   const expandSegment = () => {
     setSourceVerdictCount(sourceVerdictCount + 15);
@@ -391,8 +430,8 @@ export function SourceVerdictsExpanded({
     >
       {isFailingSourceVerdict(
         segment.endPosition,
-        endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
-        startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
+        endSourceVerdicts as SourceVerdict[],
+        startSourceVerdicts as SourceVerdict[],
       )
         ? FailSourceVerdictBox(createBlamelistLink(segment.endPosition))
         : PassSourceVerdictBox(createBlamelistLink(segment.endPosition))}
@@ -405,32 +444,31 @@ export function SourceVerdictsExpanded({
           clipPath: 'polygon(0% 0%, 100% 5%, 100% 95%, 0% 100%)',
         }}
       ></Box>
-      {startSourceVerdicts &&
-        startSourceVerdicts
-          .slice(0, sourceVerdictCount)
-          .map((sourceVerdict) =>
-            PassFailSourceVerdictBox(
-              sourceVerdict,
-              endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
-              startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
-              currentTestResultPosition,
-              createBlamelistLink(sourceVerdict.position),
-            ),
-          )}
-      {ExpandButton}
       {endSourceVerdicts &&
         endSourceVerdicts
           .slice(0, sourceVerdictCount)
           .map((sourceVerdict) =>
             PassFailSourceVerdictBox(
               sourceVerdict,
-              endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
-              startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
+              endSourceVerdicts as SourceVerdict[],
+              startSourceVerdicts as SourceVerdict[],
               currentTestResultPosition,
               createBlamelistLink(sourceVerdict.position),
             ),
           )}
-
+      {ExpandButton}
+      {startSourceVerdicts &&
+        startSourceVerdicts
+          .slice(-sourceVerdictCount)
+          .map((sourceVerdict) =>
+            PassFailSourceVerdictBox(
+              sourceVerdict,
+              endSourceVerdicts as SourceVerdict[],
+              startSourceVerdicts as SourceVerdict[],
+              currentTestResultPosition,
+              createBlamelistLink(sourceVerdict.position),
+            ),
+          )}
       <Box
         sx={{
           width: '8px',
@@ -443,8 +481,8 @@ export function SourceVerdictsExpanded({
 
       {isFailingSourceVerdict(
         segment.startPosition,
-        endSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
-        startSourceVerdicts as QuerySourceVerdictsResponse_SourceVerdict[],
+        endSourceVerdicts as SourceVerdict[],
+        startSourceVerdicts as SourceVerdict[],
       )
         ? FailSourceVerdictBox(createBlamelistLink(segment.startPosition))
         : PassSourceVerdictBox(createBlamelistLink(segment.startPosition))}
