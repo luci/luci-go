@@ -86,9 +86,16 @@ func (md *InstanceMetadata) Proto() *repopb.InstanceMetadata {
 //	Aborted if some processors have failed.
 //	Internal on fingerprint collision.
 func AttachMetadata(ctx context.Context, inst *Instance, md []*repopb.InstanceMetadata) error {
-	now := clock.Now(ctx).UTC()
-	who := string(auth.CurrentIdentity(ctx))
+	md = attachMetadataImplPreTxn(md)
+	return Txn(ctx, "AttachMetadata", func(ctx context.Context) error {
+		if err := CheckInstanceReady(ctx, inst); err != nil {
+			return err
+		}
+		return attachMetadataImplInTxn(ctx, inst, md)
+	})
+}
 
+func attachMetadataImplPreTxn(md []*repopb.InstanceMetadata) []*repopb.InstanceMetadata {
 	// Calculate fingerprints and guess content type before the transaction, it is
 	// relatively slow. Throw away duplicate entries.
 	seen := stringset.New(len(md))
@@ -106,84 +113,83 @@ func AttachMetadata(ctx context.Context, inst *Instance, md []*repopb.InstanceMe
 			filtered = append(filtered, m)
 		}
 	}
-	md = filtered
+	return filtered
+}
 
-	return Txn(ctx, "AttachMetadata", func(ctx context.Context) error {
-		if err := CheckInstanceReady(ctx, inst); err != nil {
-			return err
+func attachMetadataImplInTxn(ctx context.Context, inst *Instance, md []*repopb.InstanceMetadata) error {
+	now := clock.Now(ctx).UTC()
+	who := string(auth.CurrentIdentity(ctx))
+
+	// Prepare to fetch everything from the datastore.
+	instKey := datastore.KeyForObj(ctx, inst)
+	ents := make([]*InstanceMetadata, len(md))
+	for i, m := range md {
+		ents[i] = &InstanceMetadata{
+			Fingerprint: m.Fingerprint,
+			Instance:    instKey,
 		}
+	}
 
-		// Prepare to fetch everything from the datastore.
-		instKey := datastore.KeyForObj(ctx, inst)
-		ents := make([]*InstanceMetadata, len(md))
-		for i, m := range md {
-			ents[i] = &InstanceMetadata{
-				Fingerprint: m.Fingerprint,
-				Instance:    instKey,
-			}
+	// For all existing entries, double check their key-value pair matches
+	// the one we try to attach. If not, we've got a hash collision in the
+	// fingerprint. This should be super rare, but it doesn't hurt to check
+	// since we fetched the entity already.
+	checkExisting := func(ent *InstanceMetadata, msg *repopb.InstanceMetadata) error {
+		if ent.Key != msg.Key {
+			return grpcutil.InternalTag.Apply(errors.Fmt("fingerprint %q matches two metadata keys %q and %q, aborting", ent.Fingerprint, ent.Key, msg.Key))
 		}
-
-		// For all existing entries, double check their key-value pair matches
-		// the one we try to attach. If not, we've got a hash collision in the
-		// fingerprint. This should be super rare, but it doesn't hurt to check
-		// since we fetched the entity already.
-		checkExisting := func(ent *InstanceMetadata, msg *repopb.InstanceMetadata) error {
-			if ent.Key != msg.Key {
-				return grpcutil.InternalTag.Apply(errors.Fmt("fingerprint %q matches two metadata keys %q and %q, aborting", ent.Fingerprint, ent.Key, msg.Key))
-			}
-			if !bytes.Equal(ent.Value, msg.Value) {
-				return grpcutil.InternalTag.Apply(errors.Fmt("fingerprint %q matches metadata key %q with two different values, aborting", ent.Fingerprint, ent.Key))
-			}
-			return nil
+		if !bytes.Equal(ent.Value, msg.Value) {
+			return grpcutil.InternalTag.Apply(errors.Fmt("fingerprint %q matches metadata key %q with two different values, aborting", ent.Fingerprint, ent.Key))
 		}
+		return nil
+	}
 
-		// Find entries that don't exist yet. We don't want to blindly overwrite
-		// existing entries, since we want to preserve their AttachedBy/AttachedTs
-		// etc. and skip emitting INSTANCE_METADATA_ATTACHED event log entries.
-		missing := make([]*InstanceMetadata, 0, len(ents))
-		if err := datastore.Get(ctx, ents); err != nil {
-			merr, ok := err.(errors.MultiError)
-			if !ok {
-				return transient.Tag.Apply(errors.Fmt("failed to fetch metadata: %w", err))
-			}
-			for i, err := range merr {
-				switch err {
-				case nil:
-					if err := checkExisting(ents[i], md[i]); err != nil {
-						return err
-					}
-				case datastore.ErrNoSuchEntity:
-					// Populate the rest of the entity fields from input proto fields.
-					ent, msg := ents[i], md[i]
-					ent.Key = msg.Key
-					ent.Value = msg.Value
-					ent.ContentType = msg.ContentType
-					ent.AttachedBy = who
-					ent.AttachedTs = now
-					missing = append(missing, ent)
-				default:
-					return transient.Tag.Apply(errors.Fmt("failed to fetch metadata %q: %w", ents[i].Fingerprint, err))
-				}
-			}
-		} else {
-			// No error at all => all entries already exist, just check them.
-			for i := range ents {
+	// Find entries that don't exist yet. We don't want to blindly overwrite
+	// existing entries, since we want to preserve their AttachedBy/AttachedTs
+	// etc. and skip emitting INSTANCE_METADATA_ATTACHED event log entries.
+	missing := make([]*InstanceMetadata, 0, len(ents))
+	if err := datastore.Get(ctx, ents); err != nil {
+		merr, ok := err.(errors.MultiError)
+		if !ok {
+			return transient.Tag.Apply(errors.Fmt("failed to fetch metadata: %w", err))
+		}
+		for i, err := range merr {
+			switch err {
+			case nil:
 				if err := checkExisting(ents[i], md[i]); err != nil {
 					return err
 				}
+			case datastore.ErrNoSuchEntity:
+				// Populate the rest of the entity fields from input proto fields.
+				ent, msg := ents[i], md[i]
+				ent.Key = msg.Key
+				ent.Value = msg.Value
+				ent.ContentType = msg.ContentType
+				ent.AttachedBy = who
+				ent.AttachedTs = now
+				missing = append(missing, ent)
+			default:
+				return transient.Tag.Apply(errors.Fmt("failed to fetch metadata %q: %w", ents[i].Fingerprint, err))
 			}
 		}
-
-		if len(missing) == 0 {
-			return nil
+	} else {
+		// No error at all => all entries already exist, just check them.
+		for i := range ents {
+			if err := checkExisting(ents[i], md[i]); err != nil {
+				return err
+			}
 		}
+	}
 
-		// Store everything.
-		if err := datastore.Put(ctx, missing); err != nil {
-			return transient.Tag.Apply(err)
-		}
-		return flushToEventLog(ctx, missing, repopb.EventKind_INSTANCE_METADATA_ATTACHED, inst, who, now)
-	})
+	if len(missing) == 0 {
+		return nil
+	}
+
+	// Store everything.
+	if err := datastore.Put(ctx, missing); err != nil {
+		return transient.Tag.Apply(err)
+	}
+	return flushToEventLog(ctx, missing, repopb.EventKind_INSTANCE_METADATA_ATTACHED, inst, who, now)
 }
 
 // DetachMetadata detaches a bunch of metadata entries from an instance.

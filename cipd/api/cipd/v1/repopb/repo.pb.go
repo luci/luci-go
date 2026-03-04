@@ -669,6 +669,10 @@ type Instance struct {
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// A reference to the instance file in the storage.
 	Instance *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	// The bundle of attestations for the instance file (input only).
+	// Attestations are DSSE formatted JSON lines, see:
+	// https://github.com/in-toto/attestation/blob/main/spec/v1/bundle.md.
+	Attestations string `protobuf:"bytes,5,opt,name=attestations,proto3" json:"attestations,omitempty"`
 	// User who registered the instance (output only).
 	RegisteredBy string `protobuf:"bytes,3,opt,name=registered_by,json=registeredBy,proto3" json:"registered_by,omitempty"`
 	// When the instance was registered (output only).
@@ -719,6 +723,13 @@ func (x *Instance) GetInstance() *caspb.ObjectRef {
 		return x.Instance
 	}
 	return nil
+}
+
+func (x *Instance) GetAttestations() string {
+	if x != nil {
+		return x.Attestations
+	}
+	return ""
 }
 
 func (x *Instance) GetRegisteredBy() string {
@@ -2735,10 +2746,11 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDesc = "" +
 	"\bpackages\x18\x01 \x03(\tR\bpackages\x12\x1a\n" +
 	"\bprefixes\x18\x02 \x03(\tR\bprefixes\"*\n" +
 	"\x0ePackageRequest\x12\x18\n" +
-	"\apackage\x18\x01 \x01(\tR\apackage\"\xb7\x01\n" +
+	"\apackage\x18\x01 \x01(\tR\apackage\"\xdb\x01\n" +
 	"\bInstance\x12\x18\n" +
 	"\apackage\x18\x01 \x01(\tR\apackage\x12+\n" +
-	"\binstance\x18\x02 \x01(\v2\x0f.cipd.ObjectRefR\binstance\x12#\n" +
+	"\binstance\x18\x02 \x01(\v2\x0f.cipd.ObjectRefR\binstance\x12\"\n" +
+	"\fattestations\x18\x05 \x01(\tR\fattestations\x12#\n" +
 	"\rregistered_by\x18\x03 \x01(\tR\fregisteredBy\x12?\n" +
 	"\rregistered_ts\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\fregisteredTs\"\xac\x01\n" +
 	"\x18RegisterInstanceResponse\x120\n" +

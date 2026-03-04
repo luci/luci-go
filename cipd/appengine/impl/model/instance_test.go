@@ -69,7 +69,7 @@ func TestRegisterInstance(t *testing.T) {
 		})
 
 		t.Run("New package and instance", func(t *ftt.Test) {
-			reg, out, err := RegisterInstance(ctx, inst, func(ctx context.Context, inst *Instance) error {
+			reg, out, err := RegisterInstance(ctx, inst, nil, func(ctx context.Context, inst *Instance) error {
 				inst.ProcessorsPending = []string{"a"}
 				return nil
 			})
@@ -117,7 +117,7 @@ func TestRegisterInstance(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, pkg), should.BeNil)
 
 			inst.RegisteredBy = "user:someoneelse@example.com"
-			reg, out, err := RegisterInstance(ctx, inst, func(ctx context.Context, inst *Instance) error {
+			reg, out, err := RegisterInstance(ctx, inst, nil, func(ctx context.Context, inst *Instance) error {
 				inst.ProcessorsPending = []string{"a"}
 				return nil
 			})
@@ -152,7 +152,7 @@ func TestRegisterInstance(t *testing.T) {
 
 			modified := *inst
 			modified.RegisteredBy = "user:someoneelse@example.com"
-			reg, out, err := RegisterInstance(ctx, &modified, func(ctx context.Context, inst *Instance) error {
+			reg, out, err := RegisterInstance(ctx, &modified, nil, func(ctx context.Context, inst *Instance) error {
 				panic("must not be called")
 			})
 			assert.Loosely(t, err, should.BeNil)

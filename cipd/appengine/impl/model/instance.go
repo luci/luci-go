@@ -110,12 +110,18 @@ func (e *Instance) CheckReady() error {
 //
 // In either case, it returns the entity that is stored now in the datastore.
 // It is either the new instance, or something that existed there before.
-func RegisterInstance(ctx context.Context, inst *Instance, cb func(context.Context, *Instance) error) (reg bool, out *Instance, err error) {
+func RegisterInstance(ctx context.Context, inst *Instance, md []*repopb.InstanceMetadata, cb func(context.Context, *Instance) error) (reg bool, out *Instance, err error) {
+	md = attachMetadataImplPreTxn(md)
+
 	err = Txn(ctx, "RegisterInstance", func(ctx context.Context) error {
 		// Reset the state in case of a txn retry.
 		reg = false
 		out = nil
 		events := Events{}
+
+		if err := attachMetadataImplInTxn(ctx, inst, md); err != nil {
+			return err
+		}
 
 		// Such instance is already registered?
 		existing := Instance{

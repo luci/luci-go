@@ -75,8 +75,9 @@ func TestVSAClient(t *testing.T) {
 
 		t.Run("noop", func(t *testing.T) {
 			assert.NoErr(t, clt.Init(ctx))
-			vsa := clt.VerifySoftwareArtifact(ctx, makeInst("a/b", strings.Repeat("a", 40)), "{}")
-			check.Loosely(t, vsa, should.BeEmpty)
+			resp, err := clt.VerifySoftwareArtifact(ctx, makeInst("a/b", strings.Repeat("a", 40)), "{}")
+			assert.NoErr(t, err)
+			check.Loosely(t, resp.VerificationSummary, should.BeEmpty)
 			check.Loosely(t, logEntry, should.BeNil)
 		})
 
@@ -109,8 +110,9 @@ func TestVSAClient(t *testing.T) {
 				VerificationSummary: "vsa content",
 			}
 			assert.NoErr(t, clt.Init(ctx))
-			vsa := clt.VerifySoftwareArtifact(ctx, makeInst("a/b", strings.Repeat("a", 40)), "{}")
-			check.That(t, vsa, should.Equal("vsa content"))
+			resp, err := clt.VerifySoftwareArtifact(ctx, makeInst("a/b", strings.Repeat("a", 40)), "{}")
+			assert.NoErr(t, err)
+			check.That(t, resp.VerificationSummary, should.Equal("vsa content"))
 			check.That(t, logEntry, should.Match(&api.VerifySoftwareArtifactLogEntry{
 				Package:     "a/b",
 				Instance:    strings.Repeat("a", 40),
@@ -123,8 +125,9 @@ func TestVSAClient(t *testing.T) {
 		t.Run("failed", func(t *testing.T) {
 			resp = nil
 			assert.NoErr(t, clt.Init(ctx))
-			vsa := clt.VerifySoftwareArtifact(ctx, makeInst("a/b", strings.Repeat("a", 40)), "{}")
-			check.Loosely(t, vsa, should.BeEmpty)
+			vsa, err := clt.VerifySoftwareArtifact(ctx, makeInst("a/b", strings.Repeat("a", 40)), "{}")
+			assert.ErrIsLike(t, err, "500 Internal Server Error: msg")
+			check.Loosely(t, vsa, should.BeNil)
 			check.That(t, logEntry, should.Match(&api.VerifySoftwareArtifactLogEntry{
 				Package:      "a/b",
 				Instance:     strings.Repeat("a", 40),

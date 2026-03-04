@@ -72,7 +72,7 @@ type Client interface {
 	// Errors and detailed logs will be recorded in BigQuery Table.
 	// This is equivalent to use NewVerifySoftwareArtifactTask create a task then
 	// invoke CallVerifySoftwareArtifact immediately.
-	VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) string
+	VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (*api.VerifySoftwareArtifactResponse, error)
 
 	// NewVerifySoftwareArtifactTask creates a task for VerifySoftwareArtifact
 	// which could be processed by CallVerifySoftwareArtifact.
@@ -81,7 +81,7 @@ type Client interface {
 	// CallVerifySoftwareArtifact calls vsa VerifySoftwareArtifact API with the
 	// task created by NewVerifySoftwareArtifactTask. Errors and detailed logs
 	// will be recorded in BigQuery Table.
-	CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) string
+	CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) (*api.VerifySoftwareArtifactResponse, error)
 
 	// Get the vsa status (Unknown, Pending, Completed) for the instance.
 	GetStatus(ctx context.Context, inst *model.Instance) (CacheStatus, error)
@@ -179,10 +179,10 @@ func (c *client) Init(ctx context.Context) error {
 // https://slsa.dev/spec/v0.1/verification_summary
 //
 // Errors and detailed logs will be recorded in BigQuery Table.
-func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) string {
+func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (*api.VerifySoftwareArtifactResponse, error) {
 	t := c.NewVerifySoftwareArtifactTask(ctx, inst, bundle)
 	if t == nil {
-		return ""
+		return &api.VerifySoftwareArtifactResponse{Allowed: true}, nil
 	}
 	return c.CallVerifySoftwareArtifact(ctx, t)
 }
@@ -238,17 +238,17 @@ func (c *client) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.
 // https://slsa.dev/spec/v0.1/verification_summary
 //
 // Errors and detailed logs will be recorded in BigQuery Table.
-func (c *client) CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) string {
+func (c *client) CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) (*api.VerifySoftwareArtifactResponse, error) {
 	defer c.bqlog(ctx, t.Log)
 	resp, err := c.callVerifySoftwareArtifact(ctx, t.Request)
 	if err != nil {
 		t.Log.ErrorMessage = err.Error()
-		return ""
+		return nil, err
 	}
 	t.Log.Allowed = resp.Allowed
 	t.Log.RejectionMessage = resp.RejectionMessage
 
-	return resp.VerificationSummary
+	return resp, nil
 }
 
 func (c *client) callVerifySoftwareArtifact(ctx context.Context, r *api.VerifySoftwareArtifactRequest) (*api.VerifySoftwareArtifactResponse, error) {

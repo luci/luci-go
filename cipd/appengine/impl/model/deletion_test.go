@@ -70,7 +70,7 @@ func TestDeletePackage(t *testing.T) {
 			reg, inst, _ := RegisterInstance(ctx, &Instance{
 				InstanceID: strings.Repeat(chr, 40),
 				Package:    PackageKey(ctx, "pkg"),
-			}, nil)
+			}, nil, nil)
 			assert.Loosely(t, reg, should.BeTrue)
 
 			assert.Loosely(t, datastore.Put(ctx, &ProcessingResult{
@@ -93,7 +93,7 @@ func TestDeletePackage(t *testing.T) {
 		reg, _, _ := RegisterInstance(ctx, &Instance{
 			InstanceID: strings.Repeat("a", 40),
 			Package:    PackageKey(ctx, "another-pkg"),
-		}, nil)
+		}, nil, nil)
 		assert.Loosely(t, reg, should.BeTrue)
 
 		// Before the deletion.

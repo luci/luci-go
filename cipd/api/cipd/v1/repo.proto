@@ -609,6 +609,10 @@ message Instance {
   string package = 1;
   // A reference to the instance file in the storage.
   ObjectRef instance = 2;
+  // The bundle of attestations for the instance file (input only).
+  // Attestations are DSSE formatted JSON lines, see:
+  // https://github.com/in-toto/attestation/blob/main/spec/v1/bundle.md.
+  string attestations = 5;
   // User who registered the instance (output only).
   string registered_by = 3;
   // When the instance was registered (output only).

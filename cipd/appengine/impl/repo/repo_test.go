@@ -1016,7 +1016,7 @@ func TestRegisterInstance(t *testing.T) {
 			instance := (&model.Instance{
 				RegisteredBy: "user:someone@google.com",
 			}).FromProto(ctx, inst)
-			_, _, err := model.RegisterInstance(ctx, instance, nil)
+			_, _, err := model.RegisterInstance(ctx, instance, nil, nil)
 			assert.Loosely(t, err, should.BeNil)
 
 			resp, err := impl.RegisterInstance(ctx, inst)
@@ -3761,14 +3761,15 @@ func TestParseDownloadPath(t *testing.T) {
 }
 
 type MockVSA struct {
-	VSA    func() string
+	resp   *vsapb.VerifySoftwareArtifactResponse
+	err    error
 	status vsa.CacheStatus
 }
 
 func (m *MockVSA) Register(f *flag.FlagSet)       {}
 func (m *MockVSA) Init(ctx context.Context) error { return nil }
-func (m *MockVSA) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (vsa string) {
-	return m.VSA()
+func (m *MockVSA) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (*vsapb.VerifySoftwareArtifactResponse, error) {
+	return m.resp, m.err
 }
 func (m *MockVSA) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.Instance, bundle string) *tasks.CallVerifySoftwareArtifact {
 	return &tasks.CallVerifySoftwareArtifact{
@@ -3780,8 +3781,8 @@ func (m *MockVSA) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model
 		},
 	}
 }
-func (m *MockVSA) CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) string {
-	return m.VSA()
+func (m *MockVSA) CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) (*vsapb.VerifySoftwareArtifactResponse, error) {
+	return m.resp, m.err
 }
 func (m *MockVSA) GetStatus(ctx context.Context, inst *model.Instance) (vsa.CacheStatus, error) {
 	if m.status == "" {
@@ -3811,7 +3812,10 @@ func TestVSA(t *testing.T) {
 			},
 		})
 
-		mvsa := &MockVSA{VSA: func() string { return "vsa content" }, status: vsa.CacheStatusUnknown}
+		mvsa := &MockVSA{
+			resp:   &vsapb.VerifySoftwareArtifactResponse{Allowed: true, VerificationSummary: "vsa content"},
+			status: vsa.CacheStatusUnknown,
+		}
 		cas := testutil.MockCAS{}
 
 		impl := newMockImpl(&meta, &cas)
@@ -3843,7 +3847,7 @@ func TestVSA(t *testing.T) {
 
 		t.Run("AttachMetadata", func(t *ftt.Test) {
 			t.Run("Not Ready", func(t *ftt.Test) {
-				mvsa.VSA = func() string { t.Fail(); return "" }
+				mvsa.err = fmt.Errorf("not possible")
 
 				_, err := impl.AttachMetadata(ctx, &repopb.AttachMetadataRequest{
 					Package:  "a/pkg/somethingelse",
@@ -3875,7 +3879,7 @@ func TestVSA(t *testing.T) {
 				assert.Loosely(t, m[1].ContentType, should.Equal("application/vnd.in-toto.bundle"))
 
 				// Should not be called again when package is requested.
-				mvsa.VSA = func() string { t.Fail(); return "" }
+				mvsa.err = fmt.Errorf("not possible")
 				_, err = impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
@@ -3885,7 +3889,7 @@ func TestVSA(t *testing.T) {
 			})
 
 			t.Run("Failed", func(t *ftt.Test) {
-				mvsa.VSA = func() string { return "" }
+				mvsa.err = fmt.Errorf("not possible")
 
 				_, err := impl.AttachMetadata(ctx, &repopb.AttachMetadataRequest{
 					Package:  inst.Package.StringID(),
@@ -3970,7 +3974,7 @@ func TestVSA(t *testing.T) {
 			})
 
 			t.Run("With VSA", func(t *ftt.Test) {
-				mvsa.VSA = func() string { t.Fail(); return "" }
+				mvsa.err = fmt.Errorf("not possible")
 				err := model.AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 					{Key: slsaVSAKey, Value: []uint8("something")},
 				})
@@ -3994,7 +3998,7 @@ func TestVSA(t *testing.T) {
 			})
 
 			t.Run("With Cached Status", func(t *ftt.Test) {
-				mvsa.VSA = func() string { t.Fail(); return "" }
+				mvsa.err = fmt.Errorf("not possible")
 				mvsa.status = vsa.CacheStatusPending
 
 				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
@@ -4019,6 +4023,85 @@ func TestVSA(t *testing.T) {
 				})
 				assert.NoErr(t, err)
 				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+			})
+		})
+
+		t.Run("RegisterInstance", func(t *ftt.Test) {
+			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+
+			t.Run("Success", func(t *ftt.Test) {
+				resp, err := impl.RegisterInstance(ctx, &repopb.Instance{
+					Package: "a/pkg",
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
+						HexDigest: strings.Repeat("2", 40),
+					},
+					Attestations: "attestation bundle",
+				})
+				assert.NoErr(t, err)
+				assert.Loosely(t, resp.Status, should.Equal(repopb.RegistrationStatus_REGISTERED))
+
+				m, err := model.ListMetadata(ctx, (&model.Instance{}).FromProto(ctx, resp.Instance))
+				assert.NoErr(t, err)
+				assert.Loosely(t, m, should.HaveLength(1))
+				assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
+				assert.Loosely(t, m[0].Value, should.Match([]byte("vsa content")))
+			})
+
+			t.Run("Already registered", func(t *ftt.Test) {
+				// Register it first without VSA.
+				instance := (&model.Instance{
+					RegisteredBy: "user:someone@google.com",
+				}).FromProto(ctx, inst.Proto())
+				_, _, err := model.RegisterInstance(ctx, instance, nil, nil)
+				assert.NoErr(t, err)
+
+				resp, err := impl.RegisterInstance(ctx, &repopb.Instance{
+					Package:      "a/pkg",
+					Instance:     inst.Proto().Instance,
+					Attestations: "attestation bundle",
+				})
+				assert.NoErr(t, err)
+				assert.Loosely(t, resp.Status, should.Equal(repopb.RegistrationStatus_ALREADY_REGISTERED))
+
+				m, err := model.ListMetadata(ctx, instance)
+				assert.NoErr(t, err)
+				assert.Loosely(t, m, should.HaveLength(1))
+				assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
+				assert.Loosely(t, m[0].Value, should.Match([]byte("vsa content")))
+			})
+
+			t.Run("Verification failure", func(t *ftt.Test) {
+				mvsa.resp = &vsapb.VerifySoftwareArtifactResponse{
+					Allowed:             false,
+					RejectionMessage:    "rejected",
+					VerificationSummary: "should be ignored",
+				}
+
+				resp, err := impl.RegisterInstance(ctx, &repopb.Instance{
+					Package:      "a/pkg/new",
+					Instance:     inst.Proto().Instance,
+					Attestations: "bad bundle",
+				})
+				assert.NoErr(t, err)
+				assert.Loosely(t, resp.Status, should.Equal(repopb.RegistrationStatus_REGISTERED))
+
+				m, err := model.ListMetadata(ctx, (&model.Instance{}).FromProto(ctx, resp.Instance))
+				assert.NoErr(t, err)
+				assert.Loosely(t, m, should.HaveLength(0))
+			})
+
+			t.Run("API error", func(t *ftt.Test) {
+				mvsa.resp = nil
+				mvsa.err = fmt.Errorf("something wrong")
+				_, err := impl.RegisterInstance(ctx, &repopb.Instance{
+					Package:      "a/pkg/new",
+					Instance:     inst.Proto().Instance,
+					Attestations: "attestation bundle",
+				})
+				assert.ErrIsLike(t, err, "something wrong")
 			})
 		})
 	})

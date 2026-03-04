@@ -55,6 +55,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa"
+	"go.chromium.org/luci/cipd/appengine/impl/vsa/api"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -669,10 +670,28 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 		return nil, err
 	}
 
-	// Is such instance already registered?
 	instance := (&model.Instance{}).FromProto(ctx, r)
+
+	vsaResp, err := impl.vsa.VerifySoftwareArtifact(ctx, instance, r.Attestations)
+	if err != nil {
+		return nil, errors.Fmt("failed to verify the attestations for the instance: %w", err)
+	}
+
+	// TODO(b/289373164): maybe enforce this when we move to M4 if we can get the
+	// attestation from spike.
+	if !vsaResp.Allowed {
+		logging.Warningf(ctx, "Verify attestations failed: %s: %s", r, vsaResp.RejectionMessage)
+		// Ignore rejection for monitor mode
+		// return nil, status.Errorf(codes.PermissionDenied, "attestations verification rejected: %s", vsaResp.RejectionMessage)
+	}
+
+	// Is such instance already registered?
 	switch err := datastore.Get(ctx, instance); {
 	case err == nil:
+		if err := impl.setVerificationSummary(ctx, instance, vsaResp); err != nil {
+			return nil, errors.Fmt("failed to attach verification summary: %w", err)
+		}
+
 		return &repopb.RegisterInstanceResponse{
 			Status:   repopb.RegistrationStatus_ALREADY_REGISTERED,
 			Instance: instance.Proto(),
@@ -714,12 +733,21 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 			r.Package, common.ObjectRefToInstanceID(r.Instance), auth.CurrentIdentity(ctx))
 	}
 
+	var md []*repopb.InstanceMetadata
+	if vsaResp.Allowed && vsaResp.VerificationSummary != "" {
+		md = append(md, &repopb.InstanceMetadata{
+			Key:         slsaVSAKey,
+			Value:       []byte(vsaResp.VerificationSummary),
+			ContentType: vsaAttestationsContentType,
+		})
+	}
+
 	// The instance is already in the CAS storage. Register it in the repository.
 	instance = (&model.Instance{
 		RegisteredBy: string(auth.CurrentIdentity(ctx)),
 		RegisteredTs: clock.Now(ctx).UTC(),
 	}).FromProto(ctx, r)
-	registered, instance, err := model.RegisterInstance(ctx, instance, impl.onInstanceRegistration)
+	registered, instance, err := model.RegisterInstance(ctx, instance, md, impl.onInstanceRegistration)
 	if err != nil {
 		return nil, errors.Fmt("failed to register the instance: %w", err)
 	}
@@ -1270,10 +1298,10 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *repopb.AttachMetada
 	var extraMetadata []*repopb.InstanceMetadata
 	for _, m := range r.Metadata {
 		if m.Key == vsaAttestationsKey {
-			if vsa := impl.vsa.VerifySoftwareArtifact(ctx, inst, string(m.Value)); vsa != "" {
+			if resp, err := impl.vsa.VerifySoftwareArtifact(ctx, inst, string(m.Value)); err == nil && resp.VerificationSummary != "" {
 				extraMetadata = append(extraMetadata, &repopb.InstanceMetadata{
 					Key:         slsaVSAKey,
-					Value:       []byte(vsa),
+					Value:       []byte(resp.VerificationSummary),
 					ContentType: vsaAttestationsContentType,
 				})
 			}
@@ -1440,15 +1468,23 @@ func (impl *repoImpl) ensureVSA(ctx context.Context, inst *model.Instance) error
 }
 
 func (impl *repoImpl) callVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) error {
-	vsaStr := impl.vsa.CallVerifySoftwareArtifact(ctx, t)
-	if vsaStr == "" {
+	resp, err := impl.vsa.CallVerifySoftwareArtifact(ctx, t)
+	if err != nil {
 		return nil
 	}
 
 	inst := (&model.Instance{}).FromProto(ctx, t.Instance)
+	return impl.setVerificationSummary(ctx, inst, resp)
+}
+
+func (impl *repoImpl) setVerificationSummary(ctx context.Context, inst *model.Instance, resp *api.VerifySoftwareArtifactResponse) error {
+	if !resp.Allowed || resp.VerificationSummary == "" {
+		return nil
+	}
+
 	if err := model.AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{{
 		Key:         slsaVSAKey,
-		Value:       []byte(vsaStr),
+		Value:       []byte(resp.VerificationSummary),
 		ContentType: vsaAttestationsContentType,
 	}}); err != nil {
 		logging.WithError(err).Errorf(ctx, "Failed to attach VSA metadata to %s", inst.InstanceID)
