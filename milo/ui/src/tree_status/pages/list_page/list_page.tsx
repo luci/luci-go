@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, CircularProgress } from '@mui/material';
+import { Alert, CircularProgress, Link } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router';
 
@@ -114,7 +114,16 @@ export const TreeStatusListPage = () => {
           your tooling will be.
         </p>
         <strong>
-          Note: The tree status should be updated by the current on-call user.
+          {treeName === 'chromium' ? (
+            <>
+              Note: Gardener AI is handling Tree Closure and oncall will be
+              notified by{' '}
+              <Link href="https://goto.google.com/gardener-ai-irm">IRM</Link> if
+              AI tooling failed to find the culprit within 1 hour.
+            </>
+          ) : (
+            'Note: The tree status should be updated by the current on-call user.'
+          )}
         </strong>
       </Alert>
       <div style={{ marginTop: '40px', height: '0px' }} />
