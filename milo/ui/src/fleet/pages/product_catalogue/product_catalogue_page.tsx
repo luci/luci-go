@@ -80,7 +80,7 @@ export const ProductCatalogListPage = () => {
       },
     ],
     data: [...(query.data?.entries ?? [])],
-    enablePagination: false,
+    enablePagination: true,
   });
 
   return (
