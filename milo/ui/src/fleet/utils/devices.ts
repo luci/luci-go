@@ -63,3 +63,12 @@ export const getDeviceStateString = (device?: Device): string => {
 
   return DeviceState[device.state].replace('DEVICE_STATE_', '');
 };
+
+/**
+ * Checks if the device is in the partner namespace.
+ * @param namespace The namespace of the device.
+ * @returns True if the device is in the partner namespace.
+ */
+export const isPartnerNamespace = (namespace: string): boolean => {
+  return namespace === 'os-partner' || namespace === 'os-partner, os';
+};

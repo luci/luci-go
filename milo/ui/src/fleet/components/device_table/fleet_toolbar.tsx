@@ -75,6 +75,7 @@ export function FleetToolbar({
           pool: extractDutLabel('label-pool', row as Device),
           board: extractDutLabel('label-board', row as Device),
           model: extractDutLabel('label-model', row as Device),
+          namespace: extractDutLabel('ufs_namespace', row as Device),
         }));
 
         return (

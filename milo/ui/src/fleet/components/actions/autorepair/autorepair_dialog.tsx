@@ -32,6 +32,7 @@ import {
 
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
+import { isPartnerNamespace } from '@/fleet/utils/devices';
 import { ScheduleAutorepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import CodeSnippet from '../../code_snippet/code_snippet';
@@ -40,6 +41,7 @@ export interface SessionInfo {
   sessionId?: string;
   results?: ScheduleAutorepairResult[];
   dutNames?: string[];
+  namespaces?: string[];
 }
 
 export interface AutorepairDialogProps {
@@ -76,7 +78,7 @@ function getDeviceDetailListItem(dutName: string) {
 
 export default function AutorepairDialog({
   open,
-  sessionInfo: { dutNames = [], results, sessionId },
+  sessionInfo: { dutNames = [], results, sessionId, namespaces = [] },
   handleClose,
   handleOk,
   deepRepair,
@@ -87,9 +89,12 @@ export default function AutorepairDialog({
   handleVerifyOnlyChange,
   loading,
 }: AutorepairDialogProps) {
+  const isPartner = namespaces.some(isPartnerNamespace);
   const shivasCommand = `shivas repair${deepRepair ? ' -deep' : ''}${
     latestRepair ? ' -latest' : ''
-  }${verifyOnly ? ' -verify' : ''} ${dutNames.join(' ')}`;
+  }${verifyOnly ? ' -verify' : ''}${
+    isPartner ? ' -namespace=os-partner' : ''
+  } ${dutNames.join(' ')}`;
 
   const loadingScreen = (
     <>

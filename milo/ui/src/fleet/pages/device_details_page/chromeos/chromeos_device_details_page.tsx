@@ -205,6 +205,7 @@ export const ChromeOSDeviceDetailsPage = () => {
       pool: extractDutLabel('label-pool', device),
       board: extractDutLabel('label-board', device),
       model: extractDutLabel('label-model', device),
+      namespace: extractDutLabel('ufs_namespace', device),
     },
   ];
 

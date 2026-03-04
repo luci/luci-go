@@ -43,11 +43,13 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const [latestRepair, setLatestRepair] = useState<boolean>(false);
   const [verifyOnly, setVerifyOnly] = useState<boolean>(false);
   const dutNames = selectedDuts.map((d) => d.name);
+  const namespaces = selectedDuts.map((d) => d.namespace || '');
 
   // First, give users a modal to confirm if they want autorepair or not.
   const initializeAutorepair = () => {
     setSessionInfo({
       dutNames: dutNames,
+      namespaces: namespaces,
     });
     setOpen(true);
 
