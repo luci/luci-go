@@ -14,7 +14,7 @@
 
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTime } from 'luxon';
-import { forwardRef, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { DateFilterValue } from '@/fleet/types';
@@ -29,6 +29,9 @@ interface CustomDatePickerProps {
   value: DateTime<true> | null;
   onChange: (date: DateTime<true> | null) => void;
   inputRef?: React.Ref<HTMLInputElement>;
+  open?: boolean;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
 
 const CustomDatePicker = ({
@@ -36,6 +39,9 @@ const CustomDatePicker = ({
   value,
   onChange,
   inputRef,
+  open,
+  onOpen,
+  onClose,
 }: CustomDatePickerProps) => {
   return (
     <div css={{ flex: 1 }}>
@@ -44,6 +50,9 @@ const CustomDatePicker = ({
           label={label}
           value={value}
           onChange={onChange}
+          open={open}
+          onOpen={onOpen}
+          onClose={onClose}
           slotProps={{
             field: {
               clearable: true,
@@ -68,6 +77,7 @@ export const DateFilter = forwardRef(function DateFilter(
   ref,
 ) {
   const firstInputRef = useRef<HTMLInputElement>(null);
+  const [openId, setOpenId] = useState<'min' | 'max' | null>(null);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -114,6 +124,9 @@ export const DateFilter = forwardRef(function DateFilter(
           });
         }}
         inputRef={firstInputRef}
+        open={openId === 'min'}
+        onOpen={() => setOpenId('min')}
+        onClose={() => setOpenId(null)}
       />
       <CustomDatePicker
         label={'To'}
@@ -124,6 +137,9 @@ export const DateFilter = forwardRef(function DateFilter(
             max: date?.toJSDate() || undefined,
           });
         }}
+        open={openId === 'max'}
+        onOpen={() => setOpenId('max')}
+        onClose={() => setOpenId(null)}
       />
     </div>
   );
