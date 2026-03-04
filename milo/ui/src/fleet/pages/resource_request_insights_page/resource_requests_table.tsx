@@ -46,6 +46,7 @@ import {
   COLUMNS,
   DEFAULT_COLUMNS,
   DEFAULT_SORT_COLUMN_ID,
+  type RriColumnDef,
 } from './rri_columns';
 import { getRow, type RriGridRow } from './rri_utils';
 import { useRriFilters } from './use_rri_filters';
@@ -82,7 +83,10 @@ export const ResourceRequestTable = () => {
   );
 
   const columns = useMemo(() => {
-    return Object.values(COLUMNS).map((c) => {
+    const columnList = Object.values(COLUMNS) as RriColumnDef<
+      keyof RriGridRow
+    >[];
+    return columnList.map((c) => {
       let filterSelectOptions: FilterOption[] | undefined = undefined;
 
       if (filterOptionsData && 'rriFilterKey' in c && c.rriFilterKey) {
@@ -96,7 +100,7 @@ export const ResourceRequestTable = () => {
         filterVariant:
           'enableColumnFilter' in c && c.enableColumnFilter === false
             ? undefined
-            : 'multi-select',
+            : c.filterVariant || 'multi-select',
         filterSelectOptions: (filterSelectOptions ?? []).filter(Boolean),
       } as MRT_ColumnDef<RriGridRow>;
     });

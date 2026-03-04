@@ -45,12 +45,30 @@ describe('<MRTFilterMenuItem />', () => {
     };
   };
 
-  it('renders disabled when no filter options exist', () => {
+  it('renders disabled when no filter options exist for multi-select', () => {
     const column = createMockColumn(undefined);
     render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
 
     const menuItem = screen.getByText('Filter').closest('li');
     expect(menuItem).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('renders enabled when filterVariant is range without options', () => {
+    const column = createMockColumn(undefined);
+    column.columnDef.filterVariant = 'range';
+    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+
+    const menuItem = screen.getByText('Filter').closest('li');
+    expect(menuItem).not.toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('renders enabled when filterVariant is date-range without options', () => {
+    const column = createMockColumn(undefined);
+    column.columnDef.filterVariant = 'date-range';
+    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+
+    const menuItem = screen.getByText('Filter').closest('li');
+    expect(menuItem).not.toHaveAttribute('aria-disabled', 'true');
   });
 
   it('renders enabled when filter options exist', () => {

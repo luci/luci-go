@@ -11,17 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import FilterListIcon from '@mui/icons-material/FilterList';
-import { ListItemIcon, ListItemText, MenuItem } from '@mui/material';
+import { Box, ListItemIcon, ListItemText, MenuItem } from '@mui/material';
 import { MenuItemProps } from '@mui/material/MenuItem';
+import { DateTime } from 'luxon';
 import { MRT_Column, MRT_RowData } from 'material-react-table';
 import { forwardRef, useState } from 'react';
 
+import { DateFilter } from '@/fleet/components/filter_dropdown/date_filter';
 import { OptionsMenuOld } from '@/fleet/components/filter_dropdown/options_menu_old';
+import {
+  RangeFilter,
+  RangeFilterValue,
+} from '@/fleet/components/filter_dropdown/range_filter';
 import { OptionsDropdown } from '@/fleet/components/options_dropdown';
+import { DateFilterValue } from '@/fleet/types';
 import { OptionValue } from '@/fleet/types/option';
+import { fromLuxonDateTime, toLuxonDateTime } from '@/fleet/utils/dates';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
+import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
 export type FilterOption =
   | string
@@ -45,18 +53,38 @@ export const MRTFilterMenuItem = forwardRef<
   const filterSelectOptions = column.columnDef.filterSelectOptions as
     | FilterOption[]
     | undefined;
-  const isFilterable = !!filterSelectOptions && filterSelectOptions.length > 0;
 
-  // Local state of selected values while the dropdown is open
-  const defaultSelected = (column.getFilterValue() as string[]) || [];
-  const [selectedValues, setSelectedValues] = useState<Set<string>>(
-    new Set(defaultSelected),
-  );
+  const filterVariant = column.columnDef.filterVariant ?? 'multi-select';
+  const isFilterable =
+    filterVariant !== 'multi-select' ||
+    (!!filterSelectOptions && filterSelectOptions.length > 0);
+
+  // Local state of selected value while the dropdown is open
+  const [localFilterValue, setLocalFilterValue] = useState<unknown>(undefined);
 
   const open = Boolean(anchorEl);
 
   const handleOpen = (event: React.MouseEvent<HTMLLIElement>) => {
-    setSelectedValues(new Set((column.getFilterValue() as string[]) || []));
+    const currentFilterValue = column.getFilterValue();
+
+    if (filterVariant === 'range') {
+      setLocalFilterValue((currentFilterValue as RangeFilterValue) || {});
+    } else if (filterVariant === 'date-range') {
+      const dateOnlyRange =
+        (currentFilterValue as { min?: DateOnly; max?: DateOnly }) || {};
+      setLocalFilterValue({
+        min: dateOnlyRange.min
+          ? toLuxonDateTime(dateOnlyRange.min)?.toJSDate()
+          : undefined,
+        max: dateOnlyRange.max
+          ? toLuxonDateTime(dateOnlyRange.max)?.toJSDate()
+          : undefined,
+      });
+    } else {
+      setLocalFilterValue(
+        new Set(Array.isArray(currentFilterValue) ? currentFilterValue : []),
+      );
+    }
     setAnchorEl(event.currentTarget);
     onClick?.(event);
   };
@@ -67,26 +95,57 @@ export const MRTFilterMenuItem = forwardRef<
   };
 
   const handleApply = () => {
-    if (selectedValues.size === 0) {
-      column.setFilterValue(undefined);
+    if (filterVariant === 'range') {
+      const rangeVal = (localFilterValue as RangeFilterValue) || {};
+      if (rangeVal.min === undefined && rangeVal.max === undefined) {
+        column.setFilterValue(undefined);
+      } else {
+        column.setFilterValue(rangeVal);
+      }
+    } else if (filterVariant === 'date-range') {
+      const dateRangeVal = (localFilterValue as DateFilterValue) || {};
+      if (!dateRangeVal.min && !dateRangeVal.max) {
+        column.setFilterValue(undefined);
+      } else {
+        column.setFilterValue({
+          min: dateRangeVal.min
+            ? fromLuxonDateTime(DateTime.fromJSDate(dateRangeVal.min))
+            : undefined,
+          max: dateRangeVal.max
+            ? fromLuxonDateTime(DateTime.fromJSDate(dateRangeVal.max))
+            : undefined,
+        });
+      }
     } else {
-      column.setFilterValue(Array.from(selectedValues));
+      const selectedSet = (localFilterValue as Set<string>) || new Set();
+      if (selectedSet.size === 0) {
+        column.setFilterValue(undefined);
+      } else {
+        column.setFilterValue(Array.from(selectedSet));
+      }
     }
     handleClose();
   };
 
   const handleReset = () => {
-    setSelectedValues(new Set());
+    if (filterVariant === 'range') {
+      setLocalFilterValue({});
+    } else if (filterVariant === 'date-range') {
+      setLocalFilterValue({});
+    } else {
+      setLocalFilterValue(new Set<string>());
+    }
   };
 
   const flipOption = (value: string) => {
-    const newSelectedValues = new Set(selectedValues);
+    const selectedSet = (localFilterValue as Set<string>) || new Set();
+    const newSelectedValues = new Set(selectedSet);
     if (newSelectedValues.has(value)) {
       newSelectedValues.delete(value);
     } else {
       newSelectedValues.add(value);
     }
-    setSelectedValues(newSelectedValues);
+    setLocalFilterValue(newSelectedValues);
   };
 
   const options: OptionValue[] = (filterSelectOptions || []).map((v) => {
@@ -133,7 +192,7 @@ export const MRTFilterMenuItem = forwardRef<
           onClose={handleClose}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          enableSearchInput={true}
+          enableSearchInput={filterVariant === 'multi-select'}
           maxHeight={500}
           onResetClick={handleReset}
           footerButtons={['reset', 'cancel', 'apply']}
@@ -142,22 +201,46 @@ export const MRTFilterMenuItem = forwardRef<
             if (!isFilterable) {
               return null;
             }
+
+            if (filterVariant === 'range') {
+              return (
+                <Box sx={{ p: 2 }}>
+                  <RangeFilter
+                    value={(localFilterValue as RangeFilterValue) || {}}
+                    onChange={setLocalFilterValue}
+                  />
+                </Box>
+              );
+            }
+
+            if (filterVariant === 'date-range') {
+              return (
+                <Box sx={{ p: 2 }}>
+                  <DateFilter
+                    value={(localFilterValue as DateFilterValue) || {}}
+                    onChange={setLocalFilterValue}
+                  />
+                </Box>
+              );
+            }
+
+            const selectedSet = (localFilterValue as Set<string>) || new Set();
             const sortedOptions = fuzzySort(searchQuery)(
               options,
               (x) => x.label,
             );
             const selectedResults = sortedOptions.filter((x) =>
-              selectedValues.has(x.el.value),
+              selectedSet.has(x.el.value),
             );
             const unselectedResults = sortedOptions.filter(
-              (x) => !selectedValues.has(x.el.value),
+              (x) => !selectedSet.has(x.el.value),
             );
             const finalOptions = [...selectedResults, ...unselectedResults];
 
             return (
               <OptionsMenuOld
                 elements={finalOptions}
-                selectedElements={selectedValues}
+                selectedElements={selectedSet}
                 flipOption={flipOption}
                 onNavigateUp={onNavigateUp}
               />
