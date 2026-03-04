@@ -13,4 +13,5 @@
 // limitations under the License.
 
 export * from './api';
+export * from './colors';
 export * from './url';

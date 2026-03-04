@@ -70,12 +70,10 @@ const { setMockParams } = jest.requireMock(
 );
 
 jest.mock('@/crystal_ball/components', () => ({
-  WidgetContainer: jest.fn(({ children }) => <div>{children}</div>),
-  AddWidgetModal: jest.fn(() => <div>AddWidgetModal Mock</div>),
-}));
-
-jest.mock('@/crystal_ball/components/markdown_widget', () => ({
-  MarkdownWidget: jest.fn(() => <div>MarkdownWidget Mock</div>),
+  WidgetContainer: jest.fn(({ children }) => <>{children}</>),
+  AddWidgetModal: jest.fn(() => <>AddWidgetModal Mock</>),
+  ChartWidget: jest.fn(() => <>ChartWidget Mock</>),
+  MarkdownWidget: jest.fn(() => <>MarkdownWidget Mock</>),
 }));
 
 const mockDashboard: DashboardState = {

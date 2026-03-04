@@ -31,11 +31,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBlocker, useNavigate, useParams } from 'react-router';
 
 import { TimeRangeSelector } from '@/common/components/time_range_selector';
-import { AddWidgetModal, WidgetContainer } from '@/crystal_ball/components';
+import {
+  AddWidgetModal,
+  ChartWidget,
+  MarkdownWidget,
+  WidgetContainer,
+} from '@/crystal_ball/components';
 import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
 import { DeleteDashboardDialog } from '@/crystal_ball/components/dashboard_dialog/delete_dashboard_dialog';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
-import { MarkdownWidget } from '@/crystal_ball/components/markdown_widget';
+import { DATA_SPEC_ID } from '@/crystal_ball/constants';
 import {
   getDashboardStateQueryKey,
   useDeleteDashboardState,
@@ -283,6 +288,14 @@ export function DashboardPage() {
       };
       if (widgetType === WidgetType.MARKDOWN) {
         newWidget.markdown = { content: 'This is a new markdown widget.' };
+      } else if (widgetType === WidgetType.CHART_MULTI_METRIC) {
+        newWidget.chart = {
+          dataSpecId: DATA_SPEC_ID,
+          displayName: 'New Chart Widget',
+          chartType: 'MULTI_METRIC_CHART',
+          series: [],
+          filters: [],
+        };
       }
       return {
         ...prev,
@@ -458,14 +471,7 @@ export function DashboardPage() {
                 }
               />
             )}
-            {widget.chart && (
-              <Box sx={{ p: 2 }}>
-                <Typography color="text.secondary">
-                  Chart functionality (type: {widget.chart.chartType}) is
-                  currently unimplemented.
-                </Typography>
-              </Box>
-            )}
+            {widget.chart && <ChartWidget widget={widget.chart} />}
           </WidgetContainer>
         );
       })}

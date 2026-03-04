@@ -13,7 +13,9 @@
 // limitations under the License.
 
 export * from './add_widget_modal';
+export * from './chart_widget';
 export * from './dashboard_dialog';
+export * from './layout';
 export * from './markdown_widget';
 export * from './search_measurements_form';
 export * from './time_series_chart';

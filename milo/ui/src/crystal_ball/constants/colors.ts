@@ -12,5 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './dashboard_dialog';
-export * from './delete_dashboard_dialog';
+/**
+ * Used to generate distinct colors for chart series.
+ */
+export const GOLDEN_RATIO_CONJUGATE = 0.618033988749895;

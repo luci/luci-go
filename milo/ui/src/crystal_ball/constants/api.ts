@@ -18,6 +18,11 @@
 export const API_BASE_URL = 'https://crystalballperf.clients6.google.com';
 
 /**
+ * Default data spec identifier.
+ */
+export const DATA_SPEC_ID = 'cbdb';
+
+/**
  * Maximum page size allowed by the API.
  */
 export const MAXIMUM_PAGE_SIZE = 1000;
