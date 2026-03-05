@@ -2,11 +2,10 @@
 // versions:
 //   protoc-gen-ts_proto  v2.8.1
 //   protoc               v6.32.0
-// source: turboci/graph/orchestrator/v1/query_nodes_response.proto
+// source: turboci/graph/orchestrator/v1/read_workplan_response.proto
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Identifier } from "../../ids/v1/identifier.pb";
 import { Revision } from "./revision.pb";
 import { StageAttemptCurrentState } from "./stage.pb";
 import { ValueData } from "./value_data.pb";
@@ -14,18 +13,30 @@ import { WorkPlan } from "./workplan.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
-/** Response message for TurboCIGraphService.QueryNodes. */
-export interface QueryNodesResponse {
-  /** The WorkPlan(s) containing nodes matching the request. */
-  readonly workplans: readonly WorkPlan[];
+/** Response message for TurboCIGraphService.ReadWorkPlan. */
+export interface ReadWorkPlanResponse {
   /**
-   * A map containing requested [ValueData] for nodes in `workplans`.
+   * The WorkPlan for which this query is retrieving data.
    *
-   * This is key'd by [ValueRef].digest.
+   * Callers may need to merge WorkPlans across pages for this query, and may
+   * need to merge results from a query with `since_version` specified into
+   * a previously-retrieved WorkPlan.
+   * * Edits and StageAttempts are fully populated in a single page, and require
+   *   no merges.
+   * * Checks are fully populated except for their Edit lists.
+   * * Stages are fully populated except for their Edit and Attempt lists.
+   * * WorkPlans are fully populated except for their Check and Stage lists.
+   */
+  readonly workplan?:
+    | WorkPlan
+    | undefined;
+  /**
+   * A map containing requested [ValueData] for nodes in `workplan` (or in a prior
+   * response page, when a node's [ValueData] don't all fit in the page).
+   *
+   * This is keyed by [ValueRef].digest.
    */
   readonly valueData: { [key: string]: ValueData };
-  /** A list of explicitly-selected nodes which were not found in the graph. */
-  readonly absent: readonly Identifier[];
   /**
    * State of the current stage attempt.
    *
@@ -34,43 +45,65 @@ export interface QueryNodesResponse {
   readonly currentAttemptState?:
     | StageAttemptCurrentState
     | undefined;
-  /** The Spanner snapshot version used when executing all queries. */
-  readonly version?: Revision | undefined;
+  /**
+   * The snapshot version used when executing all queries. Can be passed as
+   * `since_version` to later ReadWorkPlan calls to get changes since this
+   * response.
+   *
+   * NOTE: Pass as `since_version` when performing a new query in the future,
+   * not when retrieving later pages for the current query.
+   */
+  readonly version?:
+    | Revision
+    | undefined;
+  /**
+   * Opaque pagination token, so follow-on queries can resume consuming nodes
+   * with the next node in the stream. Callers looking to retrieve additional
+   * pages of results can do so by providing this token. If omitted, there are
+   * no further pages of results so no further queries are needed.
+   */
+  readonly paginationToken?: string | undefined;
 }
 
-export interface QueryNodesResponse_ValueDataEntry {
+export interface ReadWorkPlanResponse_ValueDataEntry {
   readonly key: string;
   readonly value: ValueData | undefined;
 }
 
-function createBaseQueryNodesResponse(): QueryNodesResponse {
-  return { workplans: [], valueData: {}, absent: [], currentAttemptState: undefined, version: undefined };
+function createBaseReadWorkPlanResponse(): ReadWorkPlanResponse {
+  return {
+    workplan: undefined,
+    valueData: {},
+    currentAttemptState: undefined,
+    version: undefined,
+    paginationToken: undefined,
+  };
 }
 
-export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
-  encode(message: QueryNodesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.workplans) {
-      WorkPlan.encode(v!, writer.uint32(10).fork()).join();
+export const ReadWorkPlanResponse: MessageFns<ReadWorkPlanResponse> = {
+  encode(message: ReadWorkPlanResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.workplan !== undefined) {
+      WorkPlan.encode(message.workplan, writer.uint32(10).fork()).join();
     }
     Object.entries(message.valueData).forEach(([key, value]) => {
-      QueryNodesResponse_ValueDataEntry.encode({ key: key as any, value }, writer.uint32(42).fork()).join();
+      ReadWorkPlanResponse_ValueDataEntry.encode({ key: key as any, value }, writer.uint32(18).fork()).join();
     });
-    for (const v of message.absent) {
-      Identifier.encode(v!, writer.uint32(18).fork()).join();
-    }
     if (message.currentAttemptState !== undefined) {
       StageAttemptCurrentState.encode(message.currentAttemptState, writer.uint32(26).fork()).join();
     }
     if (message.version !== undefined) {
       Revision.encode(message.version, writer.uint32(34).fork()).join();
     }
+    if (message.paginationToken !== undefined) {
+      writer.uint32(42).string(message.paginationToken);
+    }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): QueryNodesResponse {
+  decode(input: BinaryReader | Uint8Array, length?: number): ReadWorkPlanResponse {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryNodesResponse() as any;
+    const message = createBaseReadWorkPlanResponse() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -79,18 +112,7 @@ export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
             break;
           }
 
-          message.workplans.push(WorkPlan.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          const entry5 = QueryNodesResponse_ValueDataEntry.decode(reader, reader.uint32());
-          if (entry5.value !== undefined) {
-            message.valueData[entry5.key] = entry5.value;
-          }
+          message.workplan = WorkPlan.decode(reader, reader.uint32());
           continue;
         }
         case 2: {
@@ -98,7 +120,10 @@ export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
             break;
           }
 
-          message.absent.push(Identifier.decode(reader, reader.uint32()));
+          const entry2 = ReadWorkPlanResponse_ValueDataEntry.decode(reader, reader.uint32());
+          if (entry2.value !== undefined) {
+            message.valueData[entry2.key] = entry2.value;
+          }
           continue;
         }
         case 3: {
@@ -117,6 +142,14 @@ export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
           message.version = Revision.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.paginationToken = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -126,29 +159,27 @@ export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
     return message;
   },
 
-  fromJSON(object: any): QueryNodesResponse {
+  fromJSON(object: any): ReadWorkPlanResponse {
     return {
-      workplans: globalThis.Array.isArray(object?.workplans)
-        ? object.workplans.map((e: any) => WorkPlan.fromJSON(e))
-        : [],
+      workplan: isSet(object.workplan) ? WorkPlan.fromJSON(object.workplan) : undefined,
       valueData: isObject(object.valueData)
         ? Object.entries(object.valueData).reduce<{ [key: string]: ValueData }>((acc, [key, value]) => {
           acc[key] = ValueData.fromJSON(value);
           return acc;
         }, {})
         : {},
-      absent: globalThis.Array.isArray(object?.absent) ? object.absent.map((e: any) => Identifier.fromJSON(e)) : [],
       currentAttemptState: isSet(object.currentAttemptState)
         ? StageAttemptCurrentState.fromJSON(object.currentAttemptState)
         : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
+      paginationToken: isSet(object.paginationToken) ? globalThis.String(object.paginationToken) : undefined,
     };
   },
 
-  toJSON(message: QueryNodesResponse): unknown {
+  toJSON(message: ReadWorkPlanResponse): unknown {
     const obj: any = {};
-    if (message.workplans?.length) {
-      obj.workplans = message.workplans.map((e) => WorkPlan.toJSON(e));
+    if (message.workplan !== undefined) {
+      obj.workplan = WorkPlan.toJSON(message.workplan);
     }
     if (message.valueData) {
       const entries = Object.entries(message.valueData);
@@ -159,24 +190,26 @@ export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
         });
       }
     }
-    if (message.absent?.length) {
-      obj.absent = message.absent.map((e) => Identifier.toJSON(e));
-    }
     if (message.currentAttemptState !== undefined) {
       obj.currentAttemptState = StageAttemptCurrentState.toJSON(message.currentAttemptState);
     }
     if (message.version !== undefined) {
       obj.version = Revision.toJSON(message.version);
     }
+    if (message.paginationToken !== undefined) {
+      obj.paginationToken = message.paginationToken;
+    }
     return obj;
   },
 
-  create(base?: DeepPartial<QueryNodesResponse>): QueryNodesResponse {
-    return QueryNodesResponse.fromPartial(base ?? {});
+  create(base?: DeepPartial<ReadWorkPlanResponse>): ReadWorkPlanResponse {
+    return ReadWorkPlanResponse.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<QueryNodesResponse>): QueryNodesResponse {
-    const message = createBaseQueryNodesResponse() as any;
-    message.workplans = object.workplans?.map((e) => WorkPlan.fromPartial(e)) || [];
+  fromPartial(object: DeepPartial<ReadWorkPlanResponse>): ReadWorkPlanResponse {
+    const message = createBaseReadWorkPlanResponse() as any;
+    message.workplan = (object.workplan !== undefined && object.workplan !== null)
+      ? WorkPlan.fromPartial(object.workplan)
+      : undefined;
     message.valueData = Object.entries(object.valueData ?? {}).reduce<{ [key: string]: ValueData }>(
       (acc, [key, value]) => {
         if (value !== undefined) {
@@ -186,23 +219,23 @@ export const QueryNodesResponse: MessageFns<QueryNodesResponse> = {
       },
       {},
     );
-    message.absent = object.absent?.map((e) => Identifier.fromPartial(e)) || [];
     message.currentAttemptState = (object.currentAttemptState !== undefined && object.currentAttemptState !== null)
       ? StageAttemptCurrentState.fromPartial(object.currentAttemptState)
       : undefined;
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;
+    message.paginationToken = object.paginationToken ?? undefined;
     return message;
   },
 };
 
-function createBaseQueryNodesResponse_ValueDataEntry(): QueryNodesResponse_ValueDataEntry {
+function createBaseReadWorkPlanResponse_ValueDataEntry(): ReadWorkPlanResponse_ValueDataEntry {
   return { key: "", value: undefined };
 }
 
-export const QueryNodesResponse_ValueDataEntry: MessageFns<QueryNodesResponse_ValueDataEntry> = {
-  encode(message: QueryNodesResponse_ValueDataEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const ReadWorkPlanResponse_ValueDataEntry: MessageFns<ReadWorkPlanResponse_ValueDataEntry> = {
+  encode(message: ReadWorkPlanResponse_ValueDataEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.key !== "") {
       writer.uint32(10).string(message.key);
     }
@@ -212,10 +245,10 @@ export const QueryNodesResponse_ValueDataEntry: MessageFns<QueryNodesResponse_Va
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): QueryNodesResponse_ValueDataEntry {
+  decode(input: BinaryReader | Uint8Array, length?: number): ReadWorkPlanResponse_ValueDataEntry {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryNodesResponse_ValueDataEntry() as any;
+    const message = createBaseReadWorkPlanResponse_ValueDataEntry() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -244,14 +277,14 @@ export const QueryNodesResponse_ValueDataEntry: MessageFns<QueryNodesResponse_Va
     return message;
   },
 
-  fromJSON(object: any): QueryNodesResponse_ValueDataEntry {
+  fromJSON(object: any): ReadWorkPlanResponse_ValueDataEntry {
     return {
       key: isSet(object.key) ? globalThis.String(object.key) : "",
       value: isSet(object.value) ? ValueData.fromJSON(object.value) : undefined,
     };
   },
 
-  toJSON(message: QueryNodesResponse_ValueDataEntry): unknown {
+  toJSON(message: ReadWorkPlanResponse_ValueDataEntry): unknown {
     const obj: any = {};
     if (message.key !== "") {
       obj.key = message.key;
@@ -262,11 +295,11 @@ export const QueryNodesResponse_ValueDataEntry: MessageFns<QueryNodesResponse_Va
     return obj;
   },
 
-  create(base?: DeepPartial<QueryNodesResponse_ValueDataEntry>): QueryNodesResponse_ValueDataEntry {
-    return QueryNodesResponse_ValueDataEntry.fromPartial(base ?? {});
+  create(base?: DeepPartial<ReadWorkPlanResponse_ValueDataEntry>): ReadWorkPlanResponse_ValueDataEntry {
+    return ReadWorkPlanResponse_ValueDataEntry.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<QueryNodesResponse_ValueDataEntry>): QueryNodesResponse_ValueDataEntry {
-    const message = createBaseQueryNodesResponse_ValueDataEntry() as any;
+  fromPartial(object: DeepPartial<ReadWorkPlanResponse_ValueDataEntry>): ReadWorkPlanResponse_ValueDataEntry {
+    const message = createBaseReadWorkPlanResponse_ValueDataEntry() as any;
     message.key = object.key ?? "";
     message.value = (object.value !== undefined && object.value !== null)
       ? ValueData.fromPartial(object.value)

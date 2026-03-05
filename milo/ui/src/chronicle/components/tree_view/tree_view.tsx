@@ -332,15 +332,17 @@ const StyledInput = styled('input', {
 function Tree() {
   useDeclareTabId('tree');
 
-  const { graph: turboCiGraph } = useContext(ChronicleContext);
+  const { graph: turboCiGraph, valueDataMap: valueDataMap } =
+    useContext(ChronicleContext);
 
   const graph = useMemo(() => {
     if (!turboCiGraph) return { nodes: {}, roots: [] };
 
     const stages = Object.values(turboCiGraph.stages) as Stage[];
     const checks = Object.values(turboCiGraph.checks) as Check[];
-    return buildVisualGraph(stages, checks);
-  }, [turboCiGraph]);
+
+    return buildVisualGraph(stages, checks, valueDataMap);
+  }, [turboCiGraph, valueDataMap]);
 
   const {
     visibleItems,
@@ -524,6 +526,7 @@ function Tree() {
           <InspectorPanel
             nodeId={selectedNode.id}
             viewData={selectedNode.raw}
+            valueDataMap={valueDataMap}
             onClose={onInspectorClose}
           />
         </Box>

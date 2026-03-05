@@ -45,7 +45,7 @@ const stageView = (stage: Partial<Stage>): Stage => ({
 
 describe('BuildVisualGraph', () => {
   it('should return an empty graph when given no stages or checks', () => {
-    const graph = buildVisualGraph([], []);
+    const graph = buildVisualGraph([], [], new Map());
     expect(graph.nodes).toEqual({});
     expect(graph.roots).toEqual([]);
   });
@@ -57,7 +57,7 @@ describe('BuildVisualGraph', () => {
         state: 40, // COMPLETE
       }),
     ];
-    const graph = buildVisualGraph([], checks);
+    const graph = buildVisualGraph([], checks, new Map());
     expect(Object.keys(graph.nodes)).toHaveLength(1);
     expect(graph.nodes['check1']).toBeDefined();
     expect(graph.nodes['check1'].status).toBe('FINAL');
@@ -78,7 +78,7 @@ describe('BuildVisualGraph', () => {
         state: 30, // WAITING
       }),
     ];
-    const graph = buildVisualGraph(stages, checks);
+    const graph = buildVisualGraph(stages, checks, new Map());
     expect(Object.keys(graph.nodes)).toHaveLength(2);
     expect(graph.nodes['stage1']).toBeDefined();
     expect(graph.nodes['check1']).toBeDefined();
@@ -107,7 +107,7 @@ describe('BuildVisualGraph', () => {
         state: 10,
       }),
     ];
-    const graph = buildVisualGraph(stages, checks);
+    const graph = buildVisualGraph(stages, checks, new Map());
     expect(Object.keys(graph.nodes)).toHaveLength(3);
     expect(graph.nodes['check1'].children).toContain('check2');
     expect(graph.nodes['check2'].parents).toContain('check1');
@@ -148,7 +148,7 @@ describe('BuildVisualGraph', () => {
       checkView({ identifier: { id: 'e2e-b-check' } }),
     ];
 
-    const graph = buildVisualGraph(stages, checks);
+    const graph = buildVisualGraph(stages, checks, new Map());
 
     // The e2e checks should be children of the build check.
     expect(graph.nodes['build-check'].children).toContain('e2e-a-check');

@@ -115,6 +115,7 @@ function getTrustedWorkerURL(url: string): TrustedScriptURL | URL | string {
 function Graph() {
   const {
     graph,
+    valueDataMap,
     workflowType,
     setWorkflowType,
     selectedNodeId,
@@ -182,6 +183,7 @@ function Graph() {
 
     worker.postMessage({
       graph,
+      valueDataMap,
       options: {
         showAssignmentEdges,
         groupModes,
@@ -203,7 +205,7 @@ function Graph() {
     return () => {
       worker.terminate();
     };
-  }, [graph, showAssignmentEdges, groupModes]);
+  }, [graph, valueDataMap, showAssignmentEdges, groupModes]);
 
   useDebounce(
     () => {
@@ -607,6 +609,7 @@ function Graph() {
               <InspectorPanel
                 nodeId={selectedNodeId}
                 viewData={selectedNode?.data?.view}
+                valueDataMap={valueDataMap}
                 onClose={onInspectorClose}
               />
             </Panel>

@@ -8,8 +8,8 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { CheckResult } from "../../ids/v1/identifier.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
-import { Datum } from "./datum.pb";
 import { Dependencies } from "./dependencies.pb";
+import { ValueRef } from "./value_ref.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -37,17 +37,11 @@ export interface CheckDelta {
   /**
    * Options written as part of this edit.
    *
-   * NOTE: The identifier.idx will tell you which 'slots' were written.
+   * Only those options which were modified as part of this edit are included.
    *
-   * NOTE: For now, the Data here will be devoid of their 'value' field, as we
-   * expect it to sometimes be very large (potentially large content times
-   * potentially large number of edits) and there's a (small) risk that for a
-   * poorly-behaved workflow this content could exceed Spanner limits, resulting
-   * in an outage for the full orchestrator. Until we invest in code that
-   * gracefully protects us from that situation, we'll avoid storing the 'value'
-   * field.
+   * This field is kept sorted, and unique, by `type_url`.
    */
-  readonly options: readonly Datum[];
+  readonly options: readonly ValueRef[];
   /**
    * Result data written as part of this edit.
    *
@@ -73,14 +67,11 @@ export interface CheckDelta_Result {
   /**
    * The data written as part of this edit.
    *
-   * NOTE: The identifier.idx will tell you which data 'slots' were written
-   * to.
+   * Only those data which were modified as part of this edit are included.
    *
-   * NOTE: For now, the Data here will be devoid of their 'value' field, as we
-   * expect it to be noisy and not particularly useful to see all the
-   * intermediate data.
+   * This field is kept sorted, and unique, by `type_url`.
    */
-  readonly data: readonly Datum[];
+  readonly data: readonly ValueRef[];
   /**
    * If true, this edit finalized the Check.Result.
    *
@@ -105,7 +96,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
       Dependencies.encode(message.dependencies, writer.uint32(18).fork()).join();
     }
     for (const v of message.options) {
-      Datum.encode(v!, writer.uint32(26).fork()).join();
+      ValueRef.encode(v!, writer.uint32(26).fork()).join();
     }
     for (const v of message.result) {
       CheckDelta_Result.encode(v!, writer.uint32(34).fork()).join();
@@ -141,7 +132,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
             break;
           }
 
-          message.options.push(Datum.decode(reader, reader.uint32()));
+          message.options.push(ValueRef.decode(reader, reader.uint32()));
           continue;
         }
         case 4: {
@@ -165,7 +156,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
     return {
       state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
       dependencies: isSet(object.dependencies) ? Dependencies.fromJSON(object.dependencies) : undefined,
-      options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => Datum.fromJSON(e)) : [],
+      options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => ValueRef.fromJSON(e)) : [],
       result: globalThis.Array.isArray(object?.result)
         ? object.result.map((e: any) => CheckDelta_Result.fromJSON(e))
         : [],
@@ -181,7 +172,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
       obj.dependencies = Dependencies.toJSON(message.dependencies);
     }
     if (message.options?.length) {
-      obj.options = message.options.map((e) => Datum.toJSON(e));
+      obj.options = message.options.map((e) => ValueRef.toJSON(e));
     }
     if (message.result?.length) {
       obj.result = message.result.map((e) => CheckDelta_Result.toJSON(e));
@@ -198,7 +189,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? Dependencies.fromPartial(object.dependencies)
       : undefined;
-    message.options = object.options?.map((e) => Datum.fromPartial(e)) || [];
+    message.options = object.options?.map((e) => ValueRef.fromPartial(e)) || [];
     message.result = object.result?.map((e) => CheckDelta_Result.fromPartial(e)) || [];
     return message;
   },
@@ -217,7 +208,7 @@ export const CheckDelta_Result: MessageFns<CheckDelta_Result> = {
       writer.uint32(16).bool(message.created);
     }
     for (const v of message.data) {
-      Datum.encode(v!, writer.uint32(26).fork()).join();
+      ValueRef.encode(v!, writer.uint32(26).fork()).join();
     }
     if (message.finalized !== undefined) {
       writer.uint32(32).bool(message.finalized);
@@ -253,7 +244,7 @@ export const CheckDelta_Result: MessageFns<CheckDelta_Result> = {
             break;
           }
 
-          message.data.push(Datum.decode(reader, reader.uint32()));
+          message.data.push(ValueRef.decode(reader, reader.uint32()));
           continue;
         }
         case 4: {
@@ -277,7 +268,7 @@ export const CheckDelta_Result: MessageFns<CheckDelta_Result> = {
     return {
       identifier: isSet(object.identifier) ? CheckResult.fromJSON(object.identifier) : undefined,
       created: isSet(object.created) ? globalThis.Boolean(object.created) : undefined,
-      data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => Datum.fromJSON(e)) : [],
+      data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => ValueRef.fromJSON(e)) : [],
       finalized: isSet(object.finalized) ? globalThis.Boolean(object.finalized) : undefined,
     };
   },
@@ -291,7 +282,7 @@ export const CheckDelta_Result: MessageFns<CheckDelta_Result> = {
       obj.created = message.created;
     }
     if (message.data?.length) {
-      obj.data = message.data.map((e) => Datum.toJSON(e));
+      obj.data = message.data.map((e) => ValueRef.toJSON(e));
     }
     if (message.finalized !== undefined) {
       obj.finalized = message.finalized;
@@ -308,7 +299,7 @@ export const CheckDelta_Result: MessageFns<CheckDelta_Result> = {
       ? CheckResult.fromPartial(object.identifier)
       : undefined;
     message.created = object.created ?? undefined;
-    message.data = object.data?.map((e) => Datum.fromPartial(e)) || [];
+    message.data = object.data?.map((e) => ValueRef.fromPartial(e)) || [];
     message.finalized = object.finalized ?? undefined;
     return message;
   },

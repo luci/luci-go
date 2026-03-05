@@ -16,6 +16,8 @@ import dagre from '@dagrejs/dagre';
 import { Edge, MarkerType, Node, Position } from '@xyflow/react';
 import { CSSProperties } from 'react';
 
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
 import { Check } from '../../proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '../../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { Dependencies } from '../../proto/turboci/graph/orchestrator/v1/dependencies.pb';
@@ -315,13 +317,17 @@ function truncateLabel(
   return label.substring(0, maxLength) + '...';
 }
 
-function createCheckNode(check: Check, groupId: number): ChronicleNode {
-  const resultStatus = getCheckResultStatus(check);
+function createCheckNode(
+  check: Check,
+  groupId: number,
+  valueDataMap: Map<string, ValueData>,
+): ChronicleNode {
+  const resultStatus = getCheckResultStatus(check, valueDataMap);
   const colors = getCheckColors(resultStatus);
   return {
     id: check.identifier!.id!,
     data: {
-      label: truncateLabel(getCheckLabel(check)),
+      label: truncateLabel(getCheckLabel(check, valueDataMap)),
       view: check,
       groupId,
       resultStatus,
@@ -463,7 +469,10 @@ export class TurboCIGraphBuilder {
   private checkIdToVisualNodeIdMap: Map<string, string> = new Map();
   private allNodeIds: Set<string> = new Set();
 
-  constructor(private readonly graphView: TurboCIGraphView) {}
+  constructor(
+    private readonly graphView: TurboCIGraphView,
+    private valueDataMap: Map<string, ValueData>,
+  ) {}
 
   public build(options: GraphBuilderOptions = {}): {
     nodes: ChronicleNode[];
@@ -543,7 +552,7 @@ export class TurboCIGraphBuilder {
     let successCount = 0;
 
     checks.forEach((c) => {
-      const s = getCheckResultStatus(c);
+      const s = getCheckResultStatus(c, this.valueDataMap);
       if (s === CheckResultStatus.SUCCESS) {
         hasSuccess = true;
         successCount++;
@@ -583,7 +592,9 @@ export class TurboCIGraphBuilder {
     const failures: Check[] = [];
 
     checks.forEach((c) => {
-      if (getCheckResultStatus(c) === CheckResultStatus.SUCCESS) {
+      if (
+        getCheckResultStatus(c, this.valueDataMap) === CheckResultStatus.SUCCESS
+      ) {
         successes.push(c);
       } else {
         failures.push(c);
@@ -625,7 +636,7 @@ export class TurboCIGraphBuilder {
     checks.forEach((c) => {
       const checkId = c.identifier!.id!;
       this.checkIdToVisualNodeIdMap.set(checkId, checkId);
-      this.nodes.push(createCheckNode(c, groupId));
+      this.nodes.push(createCheckNode(c, groupId, this.valueDataMap));
       this.allNodeIds.add(checkId);
     });
   }

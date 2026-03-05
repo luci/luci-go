@@ -12,7 +12,6 @@ import { Actor } from "./actor.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { Dependencies } from "./dependencies.pb";
 import { Edit } from "./edit.pb";
-import { OmitReason, omitReasonFromJSON, omitReasonToJSON } from "./omit_reason.pb";
 import { Revision } from "./revision.pb";
 import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
@@ -23,7 +22,7 @@ import {
 } from "./stage_concluded_reason.pb";
 import { StageExecutionPolicy } from "./stage_execution_policy.pb";
 import { StageState, stageStateFromJSON, stageStateToJSON } from "./stage_state.pb";
-import { Value } from "./value.pb";
+import { ValueRef } from "./value_ref.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -36,25 +35,12 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * See also:
  *   * Identifier.Stage* (Identifiers for Stages, StageAttempts, etc.)
  *
- * Next ID: 17
+ * Next ID: 16
  */
 export interface Stage {
   /** The Stage's identifier. */
   readonly identifier?:
     | Stage1
-    | undefined;
-  /**
-   * If set, the reason this Stage's content was omitted. Only UNKNOWN (default
-   * value, used when the content was included) and PLACEHOLDER are valid for a
-   * Stage, since Stages that were unwanted or inaccessible will be removed from
-   * the WorkPlan entirely.
-   *
-   * A few fields may be populated even if `omit_reason` is set:
-   *   * `identifier` will always be populated.
-   *   * `edits` may be populated.
-   */
-  readonly omitReason?:
-    | OmitReason
     | undefined;
   /** Actor which created the Stage. */
   readonly createdBy?:
@@ -72,10 +58,9 @@ export interface Stage {
   /**
    * The arguments of the Stage.
    *
-   * `identifier` is always empty.
-   *
-   * The type of this Datum must be pre-registered with the Orchestrator, and
-   * that registration will indicate which Executor should handle this Stage.
+   * The type of this ValueRef must be pre-registered with the Orchestrator,
+   * and that registration will indicate which Executor should handle this
+   * Stage.
    *
    * NOTE: It's assumed that args.type_url will be a sufficient routing key to
    * the various registered Executors, but it's POSSIBLE that we may need to
@@ -89,23 +74,23 @@ export interface Stage {
    *     type_url) instead of just type_url.
    *
    * Looking at WorkNode, there are definitely multiple executor types which
-   * accept the same arguments in WorkParameters, but these could be represented
-   * by adding a new field to WorkParameters. There is also the PARTIAL_RERUN
-   * executor type which is used when duplicating WorkNodes, but this seems like
-   * it will be handled differently with Checks (i.e. Checks of the same options
-   * would be added, and new Results of the cached results would be added. There
-   * wouldn't be a need to add placeholder Stages into such a graph). There
-   * are also some executor types which serve as a way to separate ACLs, but
-   * we expect this to be handled by realms.
+   * accept the same arguments in WorkParameters, but these could be
+   * represented by adding a new field to WorkParameters. There is also the
+   * PARTIAL_RERUN executor type which is used when duplicating WorkNodes, but
+   * this seems like it will be handled differently with Checks (i.e. Checks of
+   * the same options would be added, and new Results of the cached results
+   * would be added. There wouldn't be a need to add placeholder Stages into
+   * such a graph). There are also some executor types which serve as a way to
+   * separate ACLs, but we expect this to be handled by realms.
    */
   readonly args?:
-    | Value
+    | ValueRef
     | undefined;
   /**
    * The version of this Stage.
    *
-   * Updated any time fields in this Stage change, which includes all changes to
-   * the active Stage Attempt (if state is ATTEMPTING).
+   * Updated any time fields in this Stage change, which includes adding a new
+   * Attempt to the Stage but does not include edits to an Attempt.
    */
   readonly version?:
     | Revision
@@ -255,24 +240,12 @@ export interface Stage_ExecutionPolicyState {
  * TBD: Pull this into its own top-level StageAttempt entity because it will
  * need to have its own state and lifecycle/transactions.
  *
- * Next ID: 15
+ * Next ID: 9, then 12
  */
 export interface Stage_Attempt {
   /** The Stage Attempt's identifier. */
   readonly identifier?:
     | StageAttempt
-    | undefined;
-  /**
-   * If set, the reason this Attempt's content was omitted. Only UNKNOWN
-   * (default value, used when the content was included) and PLACEHOLDER are
-   * valid for an Attempt, since Attempts that were unwanted or inaccessible
-   * will be removed from the WorkPlan entirely.
-   *
-   * A few fields may be populated even if `omit_reason` is set:
-   *   * `identifier` will always be populated.
-   */
-  readonly omitReason?:
-    | OmitReason
     | undefined;
   /**
    * The version of this Attempt.
@@ -381,8 +354,8 @@ export interface Stage_Attempt {
    *
    * Kept sorted by, and unique on, type_url.
    */
-  readonly details: readonly Value[];
-  /** Append-only Executor-specefic progress messages. */
+  readonly details: readonly ValueRef[];
+  /** Append-only Executor-specific progress messages. */
   readonly progress: readonly Stage_Attempt_Progress[];
   /**
    * Actual execution policy for this StageAttempt.
@@ -432,7 +405,7 @@ export interface Stage_Attempt_Progress {
    *
    * Kept sorted by, and unique on, type_url.
    */
-  readonly details: readonly Value[];
+  readonly details: readonly ValueRef[];
   /**
    * The entity which created this progress message.
    *
@@ -568,7 +541,6 @@ export interface StageAttemptCurrentState {
 function createBaseStage(): Stage {
   return {
     identifier: undefined,
-    omitReason: undefined,
     createdBy: undefined,
     realm: undefined,
     args: undefined,
@@ -591,9 +563,6 @@ export const Stage: MessageFns<Stage> = {
     if (message.identifier !== undefined) {
       Stage1.encode(message.identifier, writer.uint32(10).fork()).join();
     }
-    if (message.omitReason !== undefined) {
-      writer.uint32(120).int32(message.omitReason);
-    }
     if (message.createdBy !== undefined) {
       Actor.encode(message.createdBy, writer.uint32(18).fork()).join();
     }
@@ -601,7 +570,7 @@ export const Stage: MessageFns<Stage> = {
       writer.uint32(26).string(message.realm);
     }
     if (message.args !== undefined) {
-      Value.encode(message.args, writer.uint32(34).fork()).join();
+      ValueRef.encode(message.args, writer.uint32(34).fork()).join();
     }
     if (message.version !== undefined) {
       Revision.encode(message.version, writer.uint32(42).fork()).join();
@@ -634,7 +603,7 @@ export const Stage: MessageFns<Stage> = {
       writer.uint32(104).int32(message.concludedReason);
     }
     for (const v of message.edits) {
-      Edit.encode(v!, writer.uint32(130).fork()).join();
+      Edit.encode(v!, writer.uint32(122).fork()).join();
     }
     return writer;
   },
@@ -652,14 +621,6 @@ export const Stage: MessageFns<Stage> = {
           }
 
           message.identifier = Stage1.decode(reader, reader.uint32());
-          continue;
-        }
-        case 15: {
-          if (tag !== 120) {
-            break;
-          }
-
-          message.omitReason = reader.int32() as any;
           continue;
         }
         case 2: {
@@ -683,7 +644,7 @@ export const Stage: MessageFns<Stage> = {
             break;
           }
 
-          message.args = Value.decode(reader, reader.uint32());
+          message.args = ValueRef.decode(reader, reader.uint32());
           continue;
         }
         case 5: {
@@ -766,8 +727,8 @@ export const Stage: MessageFns<Stage> = {
           message.concludedReason = reader.int32() as any;
           continue;
         }
-        case 16: {
-          if (tag !== 130) {
+        case 15: {
+          if (tag !== 122) {
             break;
           }
 
@@ -786,10 +747,9 @@ export const Stage: MessageFns<Stage> = {
   fromJSON(object: any): Stage {
     return {
       identifier: isSet(object.identifier) ? Stage1.fromJSON(object.identifier) : undefined,
-      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
-      args: isSet(object.args) ? Value.fromJSON(object.args) : undefined,
+      args: isSet(object.args) ? ValueRef.fromJSON(object.args) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       state: isSet(object.state) ? stageStateFromJSON(object.state) : undefined,
       cancelledBy: isSet(object.cancelledBy) ? Actor.fromJSON(object.cancelledBy) : undefined,
@@ -817,9 +777,6 @@ export const Stage: MessageFns<Stage> = {
     if (message.identifier !== undefined) {
       obj.identifier = Stage1.toJSON(message.identifier);
     }
-    if (message.omitReason !== undefined) {
-      obj.omitReason = omitReasonToJSON(message.omitReason);
-    }
     if (message.createdBy !== undefined) {
       obj.createdBy = Actor.toJSON(message.createdBy);
     }
@@ -827,7 +784,7 @@ export const Stage: MessageFns<Stage> = {
       obj.realm = message.realm;
     }
     if (message.args !== undefined) {
-      obj.args = Value.toJSON(message.args);
+      obj.args = ValueRef.toJSON(message.args);
     }
     if (message.version !== undefined) {
       obj.version = Revision.toJSON(message.version);
@@ -873,12 +830,11 @@ export const Stage: MessageFns<Stage> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? Stage1.fromPartial(object.identifier)
       : undefined;
-    message.omitReason = object.omitReason ?? undefined;
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;
     message.realm = object.realm ?? undefined;
-    message.args = (object.args !== undefined && object.args !== null) ? Value.fromPartial(object.args) : undefined;
+    message.args = (object.args !== undefined && object.args !== null) ? ValueRef.fromPartial(object.args) : undefined;
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;
@@ -1065,7 +1021,6 @@ export const Stage_ExecutionPolicyState: MessageFns<Stage_ExecutionPolicyState> 
 function createBaseStage_Attempt(): Stage_Attempt {
   return {
     identifier: undefined,
-    omitReason: undefined,
     version: undefined,
     lastHeartbeat: undefined,
     state: undefined,
@@ -1082,9 +1037,6 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
   encode(message: Stage_Attempt, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.identifier !== undefined) {
       StageAttempt.encode(message.identifier, writer.uint32(10).fork()).join();
-    }
-    if (message.omitReason !== undefined) {
-      writer.uint32(112).int32(message.omitReason);
     }
     if (message.version !== undefined) {
       Revision.encode(message.version, writer.uint32(18).fork()).join();
@@ -1105,7 +1057,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
       writer.uint32(42).string(message.processUid);
     }
     for (const v of message.details) {
-      Value.encode(v!, writer.uint32(50).fork()).join();
+      ValueRef.encode(v!, writer.uint32(50).fork()).join();
     }
     for (const v of message.progress) {
       Stage_Attempt_Progress.encode(v!, writer.uint32(58).fork()).join();
@@ -1129,14 +1081,6 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
           }
 
           message.identifier = StageAttempt.decode(reader, reader.uint32());
-          continue;
-        }
-        case 14: {
-          if (tag !== 112) {
-            break;
-          }
-
-          message.omitReason = reader.int32() as any;
           continue;
         }
         case 2: {
@@ -1192,7 +1136,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
             break;
           }
 
-          message.details.push(Value.decode(reader, reader.uint32()));
+          message.details.push(ValueRef.decode(reader, reader.uint32()));
           continue;
         }
         case 7: {
@@ -1223,7 +1167,6 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
   fromJSON(object: any): Stage_Attempt {
     return {
       identifier: isSet(object.identifier) ? StageAttempt.fromJSON(object.identifier) : undefined,
-      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       lastHeartbeat: isSet(object.lastHeartbeat) ? Revision.fromJSON(object.lastHeartbeat) : undefined,
       state: isSet(object.state) ? stageAttemptStateFromJSON(object.state) : undefined,
@@ -1232,7 +1175,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
         : [],
       waitingUntil: isSet(object.waitingUntil) ? globalThis.String(object.waitingUntil) : undefined,
       processUid: isSet(object.processUid) ? globalThis.String(object.processUid) : undefined,
-      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => ValueRef.fromJSON(e)) : [],
       progress: globalThis.Array.isArray(object?.progress)
         ? object.progress.map((e: any) => Stage_Attempt_Progress.fromJSON(e))
         : [],
@@ -1246,9 +1189,6 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     const obj: any = {};
     if (message.identifier !== undefined) {
       obj.identifier = StageAttempt.toJSON(message.identifier);
-    }
-    if (message.omitReason !== undefined) {
-      obj.omitReason = omitReasonToJSON(message.omitReason);
     }
     if (message.version !== undefined) {
       obj.version = Revision.toJSON(message.version);
@@ -1269,7 +1209,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
       obj.processUid = message.processUid;
     }
     if (message.details?.length) {
-      obj.details = message.details.map((e) => Value.toJSON(e));
+      obj.details = message.details.map((e) => ValueRef.toJSON(e));
     }
     if (message.progress?.length) {
       obj.progress = message.progress.map((e) => Stage_Attempt_Progress.toJSON(e));
@@ -1288,7 +1228,6 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? StageAttempt.fromPartial(object.identifier)
       : undefined;
-    message.omitReason = object.omitReason ?? undefined;
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;
@@ -1299,7 +1238,7 @@ export const Stage_Attempt: MessageFns<Stage_Attempt> = {
     message.stateHistory = object.stateHistory?.map((e) => Stage_Attempt_StateHistoryEntry.fromPartial(e)) || [];
     message.waitingUntil = object.waitingUntil ?? undefined;
     message.processUid = object.processUid ?? undefined;
-    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    message.details = object.details?.map((e) => ValueRef.fromPartial(e)) || [];
     message.progress = object.progress?.map((e) => Stage_Attempt_Progress.fromPartial(e)) || [];
     message.executionPolicy = (object.executionPolicy !== undefined && object.executionPolicy !== null)
       ? StageAttemptExecutionPolicy.fromPartial(object.executionPolicy)
@@ -1399,7 +1338,7 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
       Revision.encode(message.version, writer.uint32(18).fork()).join();
     }
     for (const v of message.details) {
-      Value.encode(v!, writer.uint32(26).fork()).join();
+      ValueRef.encode(v!, writer.uint32(26).fork()).join();
     }
     if (message.createdBy !== undefined) {
       Actor.encode(message.createdBy, writer.uint32(34).fork()).join();
@@ -1438,7 +1377,7 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
             break;
           }
 
-          message.details.push(Value.decode(reader, reader.uint32()));
+          message.details.push(ValueRef.decode(reader, reader.uint32()));
           continue;
         }
         case 4: {
@@ -1470,7 +1409,7 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
     return {
       message: isSet(object.message) ? globalThis.String(object.message) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
-      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => ValueRef.fromJSON(e)) : [],
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
       idempotencyKey: isSet(object.idempotencyKey) ? globalThis.String(object.idempotencyKey) : undefined,
     };
@@ -1485,7 +1424,7 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
       obj.version = Revision.toJSON(message.version);
     }
     if (message.details?.length) {
-      obj.details = message.details.map((e) => Value.toJSON(e));
+      obj.details = message.details.map((e) => ValueRef.toJSON(e));
     }
     if (message.createdBy !== undefined) {
       obj.createdBy = Actor.toJSON(message.createdBy);
@@ -1505,7 +1444,7 @@ export const Stage_Attempt_Progress: MessageFns<Stage_Attempt_Progress> = {
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;
-    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    message.details = object.details?.map((e) => ValueRef.fromPartial(e)) || [];
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;

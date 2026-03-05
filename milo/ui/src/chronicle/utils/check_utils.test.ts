@@ -20,7 +20,8 @@ import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_ch
 import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_summary_result.pb';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
-import { Datum } from '@/proto/turboci/graph/orchestrator/v1/datum.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 
 import {
   CheckResultStatus,
@@ -37,36 +38,51 @@ import {
 function createCheck(
   kind: CheckKind,
   id: string,
-  optionsData: { typeUrl: string; json: unknown }[] = [],
-  resultsData: { typeUrl: string; json: unknown }[] = [],
+  valueDataMap: Map<string, ValueData>,
+  optionsData: { typeUrl: string; digest: string; json: unknown }[] = [],
+  resultsData: { typeUrl: string; digest: string; json: unknown }[] = [],
 ): Check {
-  const options: Datum[] = optionsData.map((o) => ({
-    value: {
-      value: { typeUrl: o.typeUrl, value: new Uint8Array() },
-      valueJson: o.json !== undefined ? JSON.stringify(o.json) : undefined,
-    },
+  const options: ValueRef[] = optionsData.map((o) => ({
+    realm: 'test-realm',
+    typeUrl: o.typeUrl,
+    digest: o.digest,
   }));
+  optionsData.forEach((o) => {
+    valueDataMap.set(o.digest, {
+      json: { value: o.json !== undefined ? JSON.stringify(o.json) : '' },
+    });
+  });
 
   const results =
     resultsData.length > 0
       ? [
           {
+            identifier: { check: { id, workPlan: { id: 'test-wp' } }, idx: 1 },
+            owner: { orchestrator: {} },
             data: resultsData.map((r) => ({
-              value: {
-                value: { typeUrl: r.typeUrl, value: new Uint8Array() },
-                valueJson:
-                  r.json !== undefined ? JSON.stringify(r.json) : undefined,
-              },
+              realm: 'test-realm',
+              typeUrl: r.typeUrl,
+              digest: r.digest,
             })),
+            createdAt: { ts: '2024-01-01T12:00:00Z' },
+            finalizedAt: { ts: '2024-01-01T12:05:00Z' },
           },
         ]
       : [];
+  resultsData.forEach((r) => {
+    valueDataMap.set(r.digest, {
+      json: { value: r.json !== undefined ? JSON.stringify(r.json) : '' },
+    });
+  });
 
   return {
     identifier: { id, workPlan: { id: 'test-wp' } },
     kind,
+    realm: 'test-realm',
+    version: { ts: '2024-01-01T12:05:00Z' },
     options,
     results,
+    state: 0, // State should be set
     stateHistory: [],
     edits: [],
   } as Check;
@@ -77,21 +93,27 @@ describe('check_utils', () => {
     type TestCase = {
       name: string;
       kind: CheckKind;
-      results: { typeUrl: string; json: unknown }[];
+      results: { typeUrl: string; digest: string; json: unknown }[];
+      valueDataMap: Map<string, ValueData>;
       expected: CheckResultStatus;
     };
+    const DIGEST = 'test-digest';
 
     const testCases: TestCase[] = [
       {
         name: 'returns UNKNOWN if no results present',
         kind: CheckKind.CHECK_KIND_BUILD,
         results: [],
+        valueDataMap: new Map(),
         expected: CheckResultStatus.UNKNOWN,
       },
       {
         name: 'returns UNKNOWN if result type is unknown',
         kind: CheckKind.CHECK_KIND_BUILD,
-        results: [{ typeUrl: 'unknown.Type', json: { success: true } }],
+        results: [
+          { typeUrl: 'unknown.Type', digest: DIGEST, json: { success: true } },
+        ],
+        valueDataMap: new Map(),
         expected: CheckResultStatus.UNKNOWN,
       },
       {
@@ -100,9 +122,11 @@ describe('check_utils', () => {
         results: [
           {
             typeUrl: TYPE_URL_BUILD_RESULT,
+            digest: DIGEST,
             json: { success: true } as BuildCheckResult,
           },
         ],
+        valueDataMap: new Map(),
         expected: CheckResultStatus.SUCCESS,
       },
       {
@@ -111,9 +135,11 @@ describe('check_utils', () => {
         results: [
           {
             typeUrl: TYPE_URL_BUILD_RESULT,
+            digest: DIGEST,
             json: { success: false } as BuildCheckResult,
           },
         ],
+        valueDataMap: new Map(),
         expected: CheckResultStatus.FAILURE,
       },
       {
@@ -122,9 +148,11 @@ describe('check_utils', () => {
         results: [
           {
             typeUrl: TYPE_URL_TEST_RESULT,
+            digest: DIGEST,
             json: { success: true } as TestCheckSummaryResult,
           },
         ],
+        valueDataMap: new Map(),
         expected: CheckResultStatus.SUCCESS,
       },
       {
@@ -133,9 +161,11 @@ describe('check_utils', () => {
         results: [
           {
             typeUrl: TYPE_URL_TEST_RESULT,
+            digest: DIGEST,
             json: { success: false } as TestCheckSummaryResult,
           },
         ],
+        valueDataMap: new Map(),
         expected: CheckResultStatus.FAILURE,
       },
       {
@@ -144,17 +174,25 @@ describe('check_utils', () => {
         results: [
           {
             typeUrl: TYPE_URL_BUILD_RESULT,
+            digest: DIGEST,
             json: undefined,
           },
         ],
+        valueDataMap: new Map(),
         expected: CheckResultStatus.UNKNOWN,
       },
     ];
 
     testCases.forEach((tc) => {
       it(`${tc.name}`, () => {
-        const view = createCheck(tc.kind, 'check-id', [], tc.results);
-        expect(getCheckResultStatus(view)).toBe(tc.expected);
+        const view = createCheck(
+          tc.kind,
+          'check-id',
+          tc.valueDataMap,
+          [],
+          tc.results,
+        );
+        expect(getCheckResultStatus(view, tc.valueDataMap)).toBe(tc.expected);
       });
     });
   });
@@ -164,9 +202,11 @@ describe('check_utils', () => {
       name: string;
       kind: CheckKind;
       id: string;
-      options: { typeUrl: string; json: unknown }[];
+      options: { typeUrl: string; digest: string; json: unknown }[];
+      valueDataMap: Map<string, ValueData>;
       expected: string;
     };
+    const DIGEST = 'test-digest';
 
     const testCases: TestCase[] = [
       {
@@ -176,11 +216,13 @@ describe('check_utils', () => {
         options: [
           {
             typeUrl: TYPE_URL_BUILD_OPTIONS,
+            digest: DIGEST,
             json: {
               target: { namespace: 'ci', name: 'linux-rel' },
             } as BuildCheckOptions,
           },
         ],
+        valueDataMap: new Map(),
         expected: 'Build ci:linux-rel',
       },
       {
@@ -190,9 +232,11 @@ describe('check_utils', () => {
         options: [
           {
             typeUrl: TYPE_URL_BUILD_OPTIONS,
+            digest: DIGEST,
             json: {} as BuildCheckOptions,
           },
         ],
+        valueDataMap: new Map(),
         expected: 'Build Check: C3',
       },
       {
@@ -202,11 +246,13 @@ describe('check_utils', () => {
         options: [
           {
             typeUrl: TYPE_URL_TEST_OPTIONS,
+            digest: DIGEST,
             json: {
               title: 'Unit Tests',
             } as TestCheckDescriptionOption,
           },
         ],
+        valueDataMap: new Map(),
         expected: 'Test Unit Tests',
       },
       {
@@ -216,9 +262,11 @@ describe('check_utils', () => {
         options: [
           {
             typeUrl: TYPE_URL_TEST_OPTIONS,
+            digest: DIGEST,
             json: {} as TestCheckDescriptionOption,
           },
         ],
+        valueDataMap: new Map(),
         expected: 'Test Check: T2',
       },
       {
@@ -228,6 +276,7 @@ describe('check_utils', () => {
         options: [
           {
             typeUrl: TYPE_URL_GOB_SOURCE_OPTIONS,
+            digest: DIGEST,
             json: {
               gerritChanges: [
                 {
@@ -240,6 +289,7 @@ describe('check_utils', () => {
             } as GobSourceCheckOptions,
           },
         ],
+        valueDataMap: new Map(),
         expected: 'Source chromium/123456/1',
       },
       {
@@ -249,9 +299,11 @@ describe('check_utils', () => {
         options: [
           {
             typeUrl: TYPE_URL_GOB_SOURCE_OPTIONS,
+            digest: DIGEST,
             json: { gerritChanges: [] } as GobSourceCheckOptions,
           },
         ],
+        valueDataMap: new Map(),
         expected: 'Source Check: S2',
       },
       {
@@ -261,9 +313,11 @@ describe('check_utils', () => {
         options: [
           {
             typeUrl: TYPE_URL_PIPER_SOURCE_OPTIONS,
+            digest: DIGEST,
             json: { clNumber: '987654321' } as PiperSourceCheckOptions,
           },
         ],
+        valueDataMap: new Map(),
         expected: 'Source google3@987654321',
       },
       {
@@ -273,9 +327,11 @@ describe('check_utils', () => {
         options: [
           {
             typeUrl: TYPE_URL_PIPER_SOURCE_OPTIONS,
+            digest: DIGEST,
             json: {} as PiperSourceCheckOptions,
           },
         ],
+        valueDataMap: new Map(),
         expected: 'Source google3@HEAD',
       },
       {
@@ -283,14 +339,15 @@ describe('check_utils', () => {
         kind: CheckKind.CHECK_KIND_UNKNOWN,
         id: 'U1',
         options: [],
+        valueDataMap: new Map(),
         expected: 'Check: U1',
       },
     ];
 
     testCases.forEach((tc) => {
       it(`${tc.name}`, () => {
-        const view = createCheck(tc.kind, tc.id, tc.options);
-        expect(getCheckLabel(view)).toBe(tc.expected);
+        const view = createCheck(tc.kind, tc.id, tc.valueDataMap, tc.options);
+        expect(getCheckLabel(view, tc.valueDataMap)).toBe(tc.expected);
       });
     });
   });

@@ -8,7 +8,6 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { WorkPlan as WorkPlan1 } from "../../ids/v1/identifier.pb";
 import { Check } from "./check.pb";
-import { OmitReason, omitReasonFromJSON, omitReasonToJSON } from "./omit_reason.pb";
 import { Revision } from "./revision.pb";
 import { Stage } from "./stage.pb";
 
@@ -17,40 +16,30 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
 /**
  * WorkPlan provides a collated, partial, view of a single workplan.
  *
- * Nodes (specifically, anything which can be named with an Identifier) may be
- * omitted from the nested hierarchy under these conditions:
+ * Nodes (specifically, Checks and Stages and their Edits, and StageAttempts)
+ * may be omitted under these conditions:
  * - The caller does not have permission to view the node.
  * - The caller only requested a subset of possible nodes (e.g. via query/filter
  * parameters)
  * - The caller only requested a subset of the possible data types (e.g. Check
  * options)
  * - The content requested by the caller is being returned over several
- * paginated queries.
+ * paginated queries and is not present in the current page.
  *
- * Nodes may be omitted entirely (not present in the hierarchical structure) or
- * included only as a "placeholder" node with only the node's identifier
- * populated. These placeholder nodes are used to represent structure in the
- * hierarchy when the node isn't otherwise populated in the results of an API
- * call returning this WorkPlan, or to represent the ordering of child nodes in
- * a list within a parent node when the parent is present but the children are
- * omitted.
+ * When a node that contains child nodes (e.g. a Stage which may have
+ * StageAttempts and Edits) is included, it will contain all of its child nodes
+ * that match the rest of the request. These parent nodes may be included in a
+ * response in order to return matching child nodes, even if the parent node
+ * doesn't match the request on its own.
+ *
+ * Within a node, all ValueRefs will be present, but they may reference the
+ * digest of a ValueData that is not present in the WorkPlan based on the
+ * parameters the caller provides in the request.
  */
 export interface WorkPlan {
   /** The WorkPlan to which all nodes in this WorkPlan belong. */
   readonly identifier?:
     | WorkPlan1
-    | undefined;
-  /**
-   * If set, the reason this WorkPlan's content was omitted. Only UNKNOWN
-   * (default value, used when the content was included) and PLACEHOLDER are
-   * valid for a WorkPlan.
-   *
-   * A few fields may be populated even if `omit_reason` is set:
-   *   * `identifier` will always be populated.
-   *   * `checks` and `stages` may be partially populated.
-   */
-  readonly omitReason?:
-    | OmitReason
     | undefined;
   /**
    * When a WorkPlan is returned from a read operation (e.g. QueryNodes),
@@ -71,7 +60,7 @@ export interface WorkPlan {
 }
 
 function createBaseWorkPlan(): WorkPlan {
-  return { identifier: undefined, omitReason: undefined, version: undefined, realm: undefined, checks: [], stages: [] };
+  return { identifier: undefined, version: undefined, realm: undefined, checks: [], stages: [] };
 }
 
 export const WorkPlan: MessageFns<WorkPlan> = {
@@ -79,20 +68,17 @@ export const WorkPlan: MessageFns<WorkPlan> = {
     if (message.identifier !== undefined) {
       WorkPlan1.encode(message.identifier, writer.uint32(10).fork()).join();
     }
-    if (message.omitReason !== undefined) {
-      writer.uint32(16).int32(message.omitReason);
-    }
     if (message.version !== undefined) {
-      Revision.encode(message.version, writer.uint32(26).fork()).join();
+      Revision.encode(message.version, writer.uint32(18).fork()).join();
     }
     if (message.realm !== undefined) {
-      writer.uint32(34).string(message.realm);
+      writer.uint32(26).string(message.realm);
     }
     for (const v of message.checks) {
-      Check.encode(v!, writer.uint32(42).fork()).join();
+      Check.encode(v!, writer.uint32(34).fork()).join();
     }
     for (const v of message.stages) {
-      Stage.encode(v!, writer.uint32(50).fork()).join();
+      Stage.encode(v!, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -113,11 +99,11 @@ export const WorkPlan: MessageFns<WorkPlan> = {
           continue;
         }
         case 2: {
-          if (tag !== 16) {
+          if (tag !== 18) {
             break;
           }
 
-          message.omitReason = reader.int32() as any;
+          message.version = Revision.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -125,7 +111,7 @@ export const WorkPlan: MessageFns<WorkPlan> = {
             break;
           }
 
-          message.version = Revision.decode(reader, reader.uint32());
+          message.realm = reader.string();
           continue;
         }
         case 4: {
@@ -133,19 +119,11 @@ export const WorkPlan: MessageFns<WorkPlan> = {
             break;
           }
 
-          message.realm = reader.string();
+          message.checks.push(Check.decode(reader, reader.uint32()));
           continue;
         }
         case 5: {
           if (tag !== 42) {
-            break;
-          }
-
-          message.checks.push(Check.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
             break;
           }
 
@@ -164,7 +142,6 @@ export const WorkPlan: MessageFns<WorkPlan> = {
   fromJSON(object: any): WorkPlan {
     return {
       identifier: isSet(object.identifier) ? WorkPlan1.fromJSON(object.identifier) : undefined,
-      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       checks: globalThis.Array.isArray(object?.checks) ? object.checks.map((e: any) => Check.fromJSON(e)) : [],
@@ -176,9 +153,6 @@ export const WorkPlan: MessageFns<WorkPlan> = {
     const obj: any = {};
     if (message.identifier !== undefined) {
       obj.identifier = WorkPlan1.toJSON(message.identifier);
-    }
-    if (message.omitReason !== undefined) {
-      obj.omitReason = omitReasonToJSON(message.omitReason);
     }
     if (message.version !== undefined) {
       obj.version = Revision.toJSON(message.version);
@@ -203,7 +177,6 @@ export const WorkPlan: MessageFns<WorkPlan> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? WorkPlan1.fromPartial(object.identifier)
       : undefined;
-    message.omitReason = object.omitReason ?? undefined;
     message.version = (object.version !== undefined && object.version !== null)
       ? Revision.fromPartial(object.version)
       : undefined;

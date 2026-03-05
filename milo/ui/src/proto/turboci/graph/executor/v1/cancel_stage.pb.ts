@@ -8,6 +8,7 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { StageAttempt } from "../../ids/v1/identifier.pb";
 import { Stage } from "../../orchestrator/v1/stage.pb";
+import { ValueData } from "../../orchestrator/v1/value_data.pb";
 
 export const protobufPackage = "turboci.graph.executor.v1";
 
@@ -17,6 +18,12 @@ export interface CancelStageRequest {
   readonly stage?:
     | Stage
     | undefined;
+  /**
+   * A map containing [ValueData] for `stage`.
+   *
+   * This is key'd by [ValueRef].digest.
+   */
+  readonly valueData: { [key: string]: ValueData };
   /** ID of the stage attempt to cancel. */
   readonly attempt?:
     | StageAttempt
@@ -28,12 +35,17 @@ export interface CancelStageRequest {
   readonly stageAttemptToken?: string | undefined;
 }
 
+export interface CancelStageRequest_ValueDataEntry {
+  readonly key: string;
+  readonly value: ValueData | undefined;
+}
+
 /** Response to cancel a stage attempt. */
 export interface CancelStageResponse {
 }
 
 function createBaseCancelStageRequest(): CancelStageRequest {
-  return { stage: undefined, attempt: undefined, stageAttemptToken: undefined };
+  return { stage: undefined, valueData: {}, attempt: undefined, stageAttemptToken: undefined };
 }
 
 export const CancelStageRequest: MessageFns<CancelStageRequest> = {
@@ -41,6 +53,9 @@ export const CancelStageRequest: MessageFns<CancelStageRequest> = {
     if (message.stage !== undefined) {
       Stage.encode(message.stage, writer.uint32(10).fork()).join();
     }
+    Object.entries(message.valueData).forEach(([key, value]) => {
+      CancelStageRequest_ValueDataEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).join();
+    });
     if (message.attempt !== undefined) {
       StageAttempt.encode(message.attempt, writer.uint32(18).fork()).join();
     }
@@ -63,6 +78,17 @@ export const CancelStageRequest: MessageFns<CancelStageRequest> = {
           }
 
           message.stage = Stage.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          const entry4 = CancelStageRequest_ValueDataEntry.decode(reader, reader.uint32());
+          if (entry4.value !== undefined) {
+            message.valueData[entry4.key] = entry4.value;
+          }
           continue;
         }
         case 2: {
@@ -93,6 +119,12 @@ export const CancelStageRequest: MessageFns<CancelStageRequest> = {
   fromJSON(object: any): CancelStageRequest {
     return {
       stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined,
+      valueData: isObject(object.valueData)
+        ? Object.entries(object.valueData).reduce<{ [key: string]: ValueData }>((acc, [key, value]) => {
+          acc[key] = ValueData.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
       attempt: isSet(object.attempt) ? StageAttempt.fromJSON(object.attempt) : undefined,
       stageAttemptToken: isSet(object.stageAttemptToken) ? globalThis.String(object.stageAttemptToken) : undefined,
     };
@@ -102,6 +134,15 @@ export const CancelStageRequest: MessageFns<CancelStageRequest> = {
     const obj: any = {};
     if (message.stage !== undefined) {
       obj.stage = Stage.toJSON(message.stage);
+    }
+    if (message.valueData) {
+      const entries = Object.entries(message.valueData);
+      if (entries.length > 0) {
+        obj.valueData = {};
+        entries.forEach(([k, v]) => {
+          obj.valueData[k] = ValueData.toJSON(v);
+        });
+      }
     }
     if (message.attempt !== undefined) {
       obj.attempt = StageAttempt.toJSON(message.attempt);
@@ -118,10 +159,97 @@ export const CancelStageRequest: MessageFns<CancelStageRequest> = {
   fromPartial(object: DeepPartial<CancelStageRequest>): CancelStageRequest {
     const message = createBaseCancelStageRequest() as any;
     message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
+    message.valueData = Object.entries(object.valueData ?? {}).reduce<{ [key: string]: ValueData }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = ValueData.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
     message.attempt = (object.attempt !== undefined && object.attempt !== null)
       ? StageAttempt.fromPartial(object.attempt)
       : undefined;
     message.stageAttemptToken = object.stageAttemptToken ?? undefined;
+    return message;
+  },
+};
+
+function createBaseCancelStageRequest_ValueDataEntry(): CancelStageRequest_ValueDataEntry {
+  return { key: "", value: undefined };
+}
+
+export const CancelStageRequest_ValueDataEntry: MessageFns<CancelStageRequest_ValueDataEntry> = {
+  encode(message: CancelStageRequest_ValueDataEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      ValueData.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CancelStageRequest_ValueDataEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCancelStageRequest_ValueDataEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = ValueData.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CancelStageRequest_ValueDataEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? ValueData.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: CancelStageRequest_ValueDataEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = ValueData.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CancelStageRequest_ValueDataEntry>): CancelStageRequest_ValueDataEntry {
+    return CancelStageRequest_ValueDataEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CancelStageRequest_ValueDataEntry>): CancelStageRequest_ValueDataEntry {
+    const message = createBaseCancelStageRequest_ValueDataEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? ValueData.fromPartial(object.value)
+      : undefined;
     return message;
   },
 };
@@ -176,6 +304,10 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

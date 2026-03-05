@@ -8,13 +8,27 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Stage } from "../../orchestrator/v1/stage.pb";
 import { StageExecutionPolicy } from "../../orchestrator/v1/stage_execution_policy.pb";
+import { ValueData } from "../../orchestrator/v1/value_data.pb";
 
 export const protobufPackage = "turboci.graph.executor.v1";
 
 /** Request to validate a stage before it is inserted into the graph. */
 export interface ValidateStageRequest {
   /** Stage to validate. */
-  readonly stage?: Stage | undefined;
+  readonly stage?:
+    | Stage
+    | undefined;
+  /**
+   * A map containing [ValueData] for `stage`.
+   *
+   * This is key'd by [ValueRef].digest.
+   */
+  readonly valueData: { [key: string]: ValueData };
+}
+
+export interface ValidateStageRequest_ValueDataEntry {
+  readonly key: string;
+  readonly value: ValueData | undefined;
 }
 
 /** Response to a stage validation request. */
@@ -33,7 +47,7 @@ export interface ValidateStageResponse {
 }
 
 function createBaseValidateStageRequest(): ValidateStageRequest {
-  return { stage: undefined };
+  return { stage: undefined, valueData: {} };
 }
 
 export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
@@ -41,6 +55,9 @@ export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
     if (message.stage !== undefined) {
       Stage.encode(message.stage, writer.uint32(10).fork()).join();
     }
+    Object.entries(message.valueData).forEach(([key, value]) => {
+      ValidateStageRequest_ValueDataEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).join();
+    });
     return writer;
   },
 
@@ -59,6 +76,17 @@ export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
           message.stage = Stage.decode(reader, reader.uint32());
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          const entry4 = ValidateStageRequest_ValueDataEntry.decode(reader, reader.uint32());
+          if (entry4.value !== undefined) {
+            message.valueData[entry4.key] = entry4.value;
+          }
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -69,13 +97,30 @@ export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
   },
 
   fromJSON(object: any): ValidateStageRequest {
-    return { stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined };
+    return {
+      stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined,
+      valueData: isObject(object.valueData)
+        ? Object.entries(object.valueData).reduce<{ [key: string]: ValueData }>((acc, [key, value]) => {
+          acc[key] = ValueData.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+    };
   },
 
   toJSON(message: ValidateStageRequest): unknown {
     const obj: any = {};
     if (message.stage !== undefined) {
       obj.stage = Stage.toJSON(message.stage);
+    }
+    if (message.valueData) {
+      const entries = Object.entries(message.valueData);
+      if (entries.length > 0) {
+        obj.valueData = {};
+        entries.forEach(([k, v]) => {
+          obj.valueData[k] = ValueData.toJSON(v);
+        });
+      }
     }
     return obj;
   },
@@ -86,6 +131,93 @@ export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
   fromPartial(object: DeepPartial<ValidateStageRequest>): ValidateStageRequest {
     const message = createBaseValidateStageRequest() as any;
     message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
+    message.valueData = Object.entries(object.valueData ?? {}).reduce<{ [key: string]: ValueData }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = ValueData.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseValidateStageRequest_ValueDataEntry(): ValidateStageRequest_ValueDataEntry {
+  return { key: "", value: undefined };
+}
+
+export const ValidateStageRequest_ValueDataEntry: MessageFns<ValidateStageRequest_ValueDataEntry> = {
+  encode(message: ValidateStageRequest_ValueDataEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      ValueData.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ValidateStageRequest_ValueDataEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseValidateStageRequest_ValueDataEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = ValueData.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ValidateStageRequest_ValueDataEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? ValueData.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: ValidateStageRequest_ValueDataEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = ValueData.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ValidateStageRequest_ValueDataEntry>): ValidateStageRequest_ValueDataEntry {
+    return ValidateStageRequest_ValueDataEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ValidateStageRequest_ValueDataEntry>): ValidateStageRequest_ValueDataEntry {
+    const message = createBaseValidateStageRequest_ValueDataEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? ValueData.fromPartial(object.value)
+      : undefined;
     return message;
   },
 };
@@ -161,6 +293,10 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

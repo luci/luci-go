@@ -8,6 +8,7 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { StageAttempt } from "../../ids/v1/identifier.pb";
 import { Stage } from "../../orchestrator/v1/stage.pb";
+import { ValueData } from "../../orchestrator/v1/value_data.pb";
 
 export const protobufPackage = "turboci.graph.executor.v1";
 
@@ -17,6 +18,12 @@ export interface RunStageRequest {
   readonly stage?:
     | Stage
     | undefined;
+  /**
+   * A map containing [ValueData] for `stage`.
+   *
+   * This is key'd by [ValueRef].digest.
+   */
+  readonly valueData: { [key: string]: ValueData };
   /** ID of the stage attempt to run. */
   readonly attempt?:
     | StageAttempt
@@ -29,12 +36,17 @@ export interface RunStageRequest {
   readonly stageAttemptToken?: string | undefined;
 }
 
+export interface RunStageRequest_ValueDataEntry {
+  readonly key: string;
+  readonly value: ValueData | undefined;
+}
+
 /** Response to run a stage attempt. */
 export interface RunStageResponse {
 }
 
 function createBaseRunStageRequest(): RunStageRequest {
-  return { stage: undefined, attempt: undefined, stageAttemptToken: undefined };
+  return { stage: undefined, valueData: {}, attempt: undefined, stageAttemptToken: undefined };
 }
 
 export const RunStageRequest: MessageFns<RunStageRequest> = {
@@ -42,6 +54,9 @@ export const RunStageRequest: MessageFns<RunStageRequest> = {
     if (message.stage !== undefined) {
       Stage.encode(message.stage, writer.uint32(10).fork()).join();
     }
+    Object.entries(message.valueData).forEach(([key, value]) => {
+      RunStageRequest_ValueDataEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).join();
+    });
     if (message.attempt !== undefined) {
       StageAttempt.encode(message.attempt, writer.uint32(18).fork()).join();
     }
@@ -64,6 +79,17 @@ export const RunStageRequest: MessageFns<RunStageRequest> = {
           }
 
           message.stage = Stage.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          const entry4 = RunStageRequest_ValueDataEntry.decode(reader, reader.uint32());
+          if (entry4.value !== undefined) {
+            message.valueData[entry4.key] = entry4.value;
+          }
           continue;
         }
         case 2: {
@@ -94,6 +120,12 @@ export const RunStageRequest: MessageFns<RunStageRequest> = {
   fromJSON(object: any): RunStageRequest {
     return {
       stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined,
+      valueData: isObject(object.valueData)
+        ? Object.entries(object.valueData).reduce<{ [key: string]: ValueData }>((acc, [key, value]) => {
+          acc[key] = ValueData.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
       attempt: isSet(object.attempt) ? StageAttempt.fromJSON(object.attempt) : undefined,
       stageAttemptToken: isSet(object.stageAttemptToken) ? globalThis.String(object.stageAttemptToken) : undefined,
     };
@@ -103,6 +135,15 @@ export const RunStageRequest: MessageFns<RunStageRequest> = {
     const obj: any = {};
     if (message.stage !== undefined) {
       obj.stage = Stage.toJSON(message.stage);
+    }
+    if (message.valueData) {
+      const entries = Object.entries(message.valueData);
+      if (entries.length > 0) {
+        obj.valueData = {};
+        entries.forEach(([k, v]) => {
+          obj.valueData[k] = ValueData.toJSON(v);
+        });
+      }
     }
     if (message.attempt !== undefined) {
       obj.attempt = StageAttempt.toJSON(message.attempt);
@@ -119,10 +160,97 @@ export const RunStageRequest: MessageFns<RunStageRequest> = {
   fromPartial(object: DeepPartial<RunStageRequest>): RunStageRequest {
     const message = createBaseRunStageRequest() as any;
     message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
+    message.valueData = Object.entries(object.valueData ?? {}).reduce<{ [key: string]: ValueData }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = ValueData.fromPartial(value);
+        }
+        return acc;
+      },
+      {},
+    );
     message.attempt = (object.attempt !== undefined && object.attempt !== null)
       ? StageAttempt.fromPartial(object.attempt)
       : undefined;
     message.stageAttemptToken = object.stageAttemptToken ?? undefined;
+    return message;
+  },
+};
+
+function createBaseRunStageRequest_ValueDataEntry(): RunStageRequest_ValueDataEntry {
+  return { key: "", value: undefined };
+}
+
+export const RunStageRequest_ValueDataEntry: MessageFns<RunStageRequest_ValueDataEntry> = {
+  encode(message: RunStageRequest_ValueDataEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      ValueData.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RunStageRequest_ValueDataEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRunStageRequest_ValueDataEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = ValueData.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RunStageRequest_ValueDataEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? ValueData.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: RunStageRequest_ValueDataEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = ValueData.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RunStageRequest_ValueDataEntry>): RunStageRequest_ValueDataEntry {
+    return RunStageRequest_ValueDataEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RunStageRequest_ValueDataEntry>): RunStageRequest_ValueDataEntry {
+    const message = createBaseRunStageRequest_ValueDataEntry() as any;
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? ValueData.fromPartial(object.value)
+      : undefined;
     return message;
   },
 };
@@ -177,6 +305,10 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

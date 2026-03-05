@@ -10,12 +10,11 @@ import { Check as Check1, CheckResult } from "../../ids/v1/identifier.pb";
 import { Actor } from "./actor.pb";
 import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
-import { Datum } from "./datum.pb";
 import { Dependencies } from "./dependencies.pb";
 import { Edit } from "./edit.pb";
-import { OmitReason, omitReasonFromJSON, omitReasonToJSON } from "./omit_reason.pb";
 import { Revision } from "./revision.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
+import { ValueRef } from "./value_ref.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -37,14 +36,6 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  *
  * Checks are not, themselves, executable, but Stages are the executable nodes
  * which operate to plan and resolve Checks.
- *
- * Options and Result Data are held as protobuf Any messages in Datum objects
- * which are children of this Check. Each Datum can be assigned to a different
- * security realm (allowing for public/private inputs/outputs for the same
- * Check).
- *
- * See also:
- *   * Identifier.Check* (Identifiers for Checks, CheckOptions, etc.)
  */
 export interface Check {
   /**
@@ -54,19 +45,6 @@ export interface Check {
    */
   readonly identifier?:
     | Check1
-    | undefined;
-  /**
-   * If set, the reason this Check's content was omitted. Only UNKNOWN
-   * (default value, used when the content was included) and PLACEHOLDER are
-   * valid for a Check, since Checks that were unwanted or inaccessible will be
-   * removed from the WorkPlan entirely.
-   *
-   * A few fields may be populated even if `omit_reason` is set:
-   *   * `identifier` will always be populated.
-   *   * `options`, `results` and `edits` may be populated.
-   */
-  readonly omitReason?:
-    | OmitReason
     | undefined;
   /** Actor which created the Check. */
   readonly createdBy?:
@@ -96,11 +74,6 @@ export interface Check {
    * The version of this Check.
    *
    * Updated any time fields in this Check change.
-   *
-   * Note that changing the data in an existing Check Option or a Check Result
-   * Datum does not change any field data in this message, and thus will not
-   * change this version number (adding a new entry in `options` or in
-   * a `Result.data` would, however).
    */
   readonly version?:
     | Revision
@@ -149,12 +122,9 @@ export interface Check {
    * Orchestrator will ensure that the option types here are registered to be
    * valid for this Check's kind.
    *
-   * This field is kept unique by `type_url`, and will reflect the insertion
-   * order of when each type_url was first added. Note that Datum have
-   * a revision value which is independent of the Check's revision value - Stage
-   * Attempts writing option data can do so without altering the Check itself.
+   * This field is kept sorted, and unique, by `type_url`.
    */
-  readonly options: readonly Datum[];
+  readonly options: readonly ValueRef[];
   /**
    * The list of Results this Check has.
    *
@@ -165,10 +135,6 @@ export interface Check {
    * data for this Check, you would see 3 Result messages. Similarly, if you
    * had one Stage with 3 Attempts, all 3 of which add result data for this
    * check, you would see 3 Result messages.
-   *
-   * Check.version is advanced when a new Result is added, or new data types are
-   * added to an existing Result. However, CheckEdits will still be produced for
-   * each write to each Result datum.
    */
   readonly results: readonly Check_Result[];
   /**
@@ -208,19 +174,6 @@ export interface Check_Result {
     | CheckResult
     | undefined;
   /**
-   * If set, the reason this Result's content was omitted. Only UNKNOWN
-   * (default value, used when the content was included) and PLACEHOLDER are
-   * valid for a Result, since Results are included with their parent Check so
-   * they cannot be filtered on their own.
-   *
-   * A few fields may be populated even if `omit_reason` is set:
-   *   * `identifier` will always be populated.
-   *   * `data` may be populated.
-   */
-  readonly omitReason?:
-    | OmitReason
-    | undefined;
-  /**
    * The entity which created this Result.
    *
    * This is the only entity which can modify this Result.
@@ -240,19 +193,12 @@ export interface Check_Result {
    *
    * NOTE: Most data should be stored in ResultDB via turboci.ResultStorage.
    *
-   * This field is kept unique by `type_url`, and will reflect the insertion
-   * order of when each type_url was first added. Note that Datum have
-   * a revision value which is independent of the Check's revision value
-   * - Stage Attempts writing result data can do so without altering the
-   * Check itself.
+   * This field is kept sorted, and unique, by `type_url`.
    *
    * Orchestrator will ensure that the option types here are registered to be
    * valid for this Check's kind.
-   *
-   * All data will have an Identifier of kind
-   * IDENTIFIER_KIND_CHECK_RESULT_DATUM.
    */
-  readonly data: readonly Datum[];
+  readonly data: readonly ValueRef[];
   /**
    * The database revision (commit timestamp) at which this Result is
    * finalized.
@@ -279,7 +225,6 @@ export interface Check_Result {
 function createBaseCheck(): Check {
   return {
     identifier: undefined,
-    omitReason: undefined,
     createdBy: undefined,
     kind: undefined,
     realm: undefined,
@@ -297,9 +242,6 @@ export const Check: MessageFns<Check> = {
   encode(message: Check, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.identifier !== undefined) {
       Check1.encode(message.identifier, writer.uint32(10).fork()).join();
-    }
-    if (message.omitReason !== undefined) {
-      writer.uint32(88).int32(message.omitReason);
     }
     if (message.createdBy !== undefined) {
       Actor.encode(message.createdBy, writer.uint32(18).fork()).join();
@@ -323,13 +265,13 @@ export const Check: MessageFns<Check> = {
       Dependencies.encode(message.dependencies, writer.uint32(66).fork()).join();
     }
     for (const v of message.options) {
-      Datum.encode(v!, writer.uint32(74).fork()).join();
+      ValueRef.encode(v!, writer.uint32(74).fork()).join();
     }
     for (const v of message.results) {
       Check_Result.encode(v!, writer.uint32(82).fork()).join();
     }
     for (const v of message.edits) {
-      Edit.encode(v!, writer.uint32(98).fork()).join();
+      Edit.encode(v!, writer.uint32(90).fork()).join();
     }
     return writer;
   },
@@ -347,14 +289,6 @@ export const Check: MessageFns<Check> = {
           }
 
           message.identifier = Check1.decode(reader, reader.uint32());
-          continue;
-        }
-        case 11: {
-          if (tag !== 88) {
-            break;
-          }
-
-          message.omitReason = reader.int32() as any;
           continue;
         }
         case 2: {
@@ -418,7 +352,7 @@ export const Check: MessageFns<Check> = {
             break;
           }
 
-          message.options.push(Datum.decode(reader, reader.uint32()));
+          message.options.push(ValueRef.decode(reader, reader.uint32()));
           continue;
         }
         case 10: {
@@ -429,8 +363,8 @@ export const Check: MessageFns<Check> = {
           message.results.push(Check_Result.decode(reader, reader.uint32()));
           continue;
         }
-        case 12: {
-          if (tag !== 98) {
+        case 11: {
+          if (tag !== 90) {
             break;
           }
 
@@ -449,7 +383,6 @@ export const Check: MessageFns<Check> = {
   fromJSON(object: any): Check {
     return {
       identifier: isSet(object.identifier) ? Check1.fromJSON(object.identifier) : undefined,
-      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
       kind: isSet(object.kind) ? checkKindFromJSON(object.kind) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
@@ -459,7 +392,7 @@ export const Check: MessageFns<Check> = {
         ? object.stateHistory.map((e: any) => Check_StateHistoryEntry.fromJSON(e))
         : [],
       dependencies: isSet(object.dependencies) ? Dependencies.fromJSON(object.dependencies) : undefined,
-      options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => Datum.fromJSON(e)) : [],
+      options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => ValueRef.fromJSON(e)) : [],
       results: globalThis.Array.isArray(object?.results)
         ? object.results.map((e: any) => Check_Result.fromJSON(e))
         : [],
@@ -471,9 +404,6 @@ export const Check: MessageFns<Check> = {
     const obj: any = {};
     if (message.identifier !== undefined) {
       obj.identifier = Check1.toJSON(message.identifier);
-    }
-    if (message.omitReason !== undefined) {
-      obj.omitReason = omitReasonToJSON(message.omitReason);
     }
     if (message.createdBy !== undefined) {
       obj.createdBy = Actor.toJSON(message.createdBy);
@@ -497,7 +427,7 @@ export const Check: MessageFns<Check> = {
       obj.dependencies = Dependencies.toJSON(message.dependencies);
     }
     if (message.options?.length) {
-      obj.options = message.options.map((e) => Datum.toJSON(e));
+      obj.options = message.options.map((e) => ValueRef.toJSON(e));
     }
     if (message.results?.length) {
       obj.results = message.results.map((e) => Check_Result.toJSON(e));
@@ -516,7 +446,6 @@ export const Check: MessageFns<Check> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? Check1.fromPartial(object.identifier)
       : undefined;
-    message.omitReason = object.omitReason ?? undefined;
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;
@@ -530,7 +459,7 @@ export const Check: MessageFns<Check> = {
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? Dependencies.fromPartial(object.dependencies)
       : undefined;
-    message.options = object.options?.map((e) => Datum.fromPartial(e)) || [];
+    message.options = object.options?.map((e) => ValueRef.fromPartial(e)) || [];
     message.results = object.results?.map((e) => Check_Result.fromPartial(e)) || [];
     message.edits = object.edits?.map((e) => Edit.fromPartial(e)) || [];
     return message;
@@ -618,7 +547,6 @@ export const Check_StateHistoryEntry: MessageFns<Check_StateHistoryEntry> = {
 function createBaseCheck_Result(): Check_Result {
   return {
     identifier: undefined,
-    omitReason: undefined,
     owner: undefined,
     createdAt: undefined,
     data: [],
@@ -632,9 +560,6 @@ export const Check_Result: MessageFns<Check_Result> = {
     if (message.identifier !== undefined) {
       CheckResult.encode(message.identifier, writer.uint32(10).fork()).join();
     }
-    if (message.omitReason !== undefined) {
-      writer.uint32(88).int32(message.omitReason);
-    }
     if (message.owner !== undefined) {
       Actor.encode(message.owner, writer.uint32(18).fork()).join();
     }
@@ -642,7 +567,7 @@ export const Check_Result: MessageFns<Check_Result> = {
       Revision.encode(message.createdAt, writer.uint32(26).fork()).join();
     }
     for (const v of message.data) {
-      Datum.encode(v!, writer.uint32(34).fork()).join();
+      ValueRef.encode(v!, writer.uint32(34).fork()).join();
     }
     if (message.finalizedAt !== undefined) {
       Revision.encode(message.finalizedAt, writer.uint32(42).fork()).join();
@@ -668,14 +593,6 @@ export const Check_Result: MessageFns<Check_Result> = {
           message.identifier = CheckResult.decode(reader, reader.uint32());
           continue;
         }
-        case 11: {
-          if (tag !== 88) {
-            break;
-          }
-
-          message.omitReason = reader.int32() as any;
-          continue;
-        }
         case 2: {
           if (tag !== 18) {
             break;
@@ -697,7 +614,7 @@ export const Check_Result: MessageFns<Check_Result> = {
             break;
           }
 
-          message.data.push(Datum.decode(reader, reader.uint32()));
+          message.data.push(ValueRef.decode(reader, reader.uint32()));
           continue;
         }
         case 5: {
@@ -728,10 +645,9 @@ export const Check_Result: MessageFns<Check_Result> = {
   fromJSON(object: any): Check_Result {
     return {
       identifier: isSet(object.identifier) ? CheckResult.fromJSON(object.identifier) : undefined,
-      omitReason: isSet(object.omitReason) ? omitReasonFromJSON(object.omitReason) : undefined,
       owner: isSet(object.owner) ? Actor.fromJSON(object.owner) : undefined,
       createdAt: isSet(object.createdAt) ? Revision.fromJSON(object.createdAt) : undefined,
-      data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => Datum.fromJSON(e)) : [],
+      data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => ValueRef.fromJSON(e)) : [],
       finalizedAt: isSet(object.finalizedAt) ? Revision.fromJSON(object.finalizedAt) : undefined,
       attemptState: isSet(object.attemptState) ? stageAttemptStateFromJSON(object.attemptState) : undefined,
     };
@@ -742,9 +658,6 @@ export const Check_Result: MessageFns<Check_Result> = {
     if (message.identifier !== undefined) {
       obj.identifier = CheckResult.toJSON(message.identifier);
     }
-    if (message.omitReason !== undefined) {
-      obj.omitReason = omitReasonToJSON(message.omitReason);
-    }
     if (message.owner !== undefined) {
       obj.owner = Actor.toJSON(message.owner);
     }
@@ -752,7 +665,7 @@ export const Check_Result: MessageFns<Check_Result> = {
       obj.createdAt = Revision.toJSON(message.createdAt);
     }
     if (message.data?.length) {
-      obj.data = message.data.map((e) => Datum.toJSON(e));
+      obj.data = message.data.map((e) => ValueRef.toJSON(e));
     }
     if (message.finalizedAt !== undefined) {
       obj.finalizedAt = Revision.toJSON(message.finalizedAt);
@@ -771,12 +684,11 @@ export const Check_Result: MessageFns<Check_Result> = {
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? CheckResult.fromPartial(object.identifier)
       : undefined;
-    message.omitReason = object.omitReason ?? undefined;
     message.owner = (object.owner !== undefined && object.owner !== null) ? Actor.fromPartial(object.owner) : undefined;
     message.createdAt = (object.createdAt !== undefined && object.createdAt !== null)
       ? Revision.fromPartial(object.createdAt)
       : undefined;
-    message.data = object.data?.map((e) => Datum.fromPartial(e)) || [];
+    message.data = object.data?.map((e) => ValueRef.fromPartial(e)) || [];
     message.finalizedAt = (object.finalizedAt !== undefined && object.finalizedAt !== null)
       ? Revision.fromPartial(object.finalizedAt)
       : undefined;

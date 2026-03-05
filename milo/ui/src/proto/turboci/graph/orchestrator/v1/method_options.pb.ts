@@ -41,6 +41,15 @@ export interface MethodOptions_Permission {
     | undefined;
   /** The node(s) whose realm will be checked. */
   readonly in: readonly IdentifierKind[];
+  /** The permission is checked in the Value (ValueWrite/ValueRef) realm. */
+  readonly inValueRealm?:
+    | boolean
+    | undefined;
+  /**
+   * Conditional attribute names against which a permission binding may be
+   * granted conditionally.
+   */
+  readonly potentiallyConditionalOn: readonly string[];
   /** Short description of when this permission is checked. */
   readonly for: readonly string[];
 }
@@ -108,7 +117,14 @@ export const MethodOptions: MessageFns<MethodOptions> = {
 };
 
 function createBaseMethodOptions_Permission(): MethodOptions_Permission {
-  return { internal: undefined, external: undefined, in: [], for: [] };
+  return {
+    internal: undefined,
+    external: undefined,
+    in: [],
+    inValueRealm: undefined,
+    potentiallyConditionalOn: [],
+    for: [],
+  };
 }
 
 export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
@@ -124,8 +140,14 @@ export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
       writer.int32(v);
     }
     writer.join();
+    if (message.inValueRealm !== undefined) {
+      writer.uint32(32).bool(message.inValueRealm);
+    }
+    for (const v of message.potentiallyConditionalOn) {
+      writer.uint32(42).string(v!);
+    }
     for (const v of message.for) {
-      writer.uint32(34).string(v!);
+      writer.uint32(50).string(v!);
     }
     return writer;
   },
@@ -172,7 +194,23 @@ export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
           break;
         }
         case 4: {
-          if (tag !== 34) {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.inValueRealm = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.potentiallyConditionalOn.push(reader.string());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
             break;
           }
 
@@ -193,6 +231,10 @@ export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
       internal: isSet(object.internal) ? globalThis.String(object.internal) : undefined,
       external: isSet(object.external) ? globalThis.String(object.external) : undefined,
       in: globalThis.Array.isArray(object?.in) ? object.in.map((e: any) => identifierKindFromJSON(e)) : [],
+      inValueRealm: isSet(object.inValueRealm) ? globalThis.Boolean(object.inValueRealm) : undefined,
+      potentiallyConditionalOn: globalThis.Array.isArray(object?.potentiallyConditionalOn)
+        ? object.potentiallyConditionalOn.map((e: any) => globalThis.String(e))
+        : [],
       for: globalThis.Array.isArray(object?.for) ? object.for.map((e: any) => globalThis.String(e)) : [],
     };
   },
@@ -208,6 +250,12 @@ export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
     if (message.in?.length) {
       obj.in = message.in.map((e) => identifierKindToJSON(e));
     }
+    if (message.inValueRealm !== undefined) {
+      obj.inValueRealm = message.inValueRealm;
+    }
+    if (message.potentiallyConditionalOn?.length) {
+      obj.potentiallyConditionalOn = message.potentiallyConditionalOn;
+    }
     if (message.for?.length) {
       obj.for = message.for;
     }
@@ -222,6 +270,8 @@ export const MethodOptions_Permission: MessageFns<MethodOptions_Permission> = {
     message.internal = object.internal ?? undefined;
     message.external = object.external ?? undefined;
     message.in = object.in?.map((e) => e) || [];
+    message.inValueRealm = object.inValueRealm ?? undefined;
+    message.potentiallyConditionalOn = object.potentiallyConditionalOn?.map((e) => e) || [];
     message.for = object.for?.map((e) => e) || [];
     return message;
   },

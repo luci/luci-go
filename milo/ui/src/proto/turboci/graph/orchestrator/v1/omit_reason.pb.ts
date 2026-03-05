@@ -13,11 +13,6 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * Identifier will be present (maybe plus "disambiguator" fields if the node has
  * those), but no other fields will be populated other than references to other
  * nodes if this node is necessary to represent the graph structure.
- *
- * When a node qualifies for both OMIT_REASON_PLACEHOLDER and another reason,
- * the other reason will be chosen. When merging partial results across a
- * paginated query, callers should choose the other reason over
- * OMIT_REASON_PLACEHOLDER for the merged object.
  */
 export enum OmitReason {
   /**
@@ -35,13 +30,6 @@ export enum OmitReason {
    * it due to the caller's permissions in the realm associated with the node.
    */
   OMIT_REASON_NO_ACCESS = 2,
-  /**
-   * OMIT_REASON_PLACEHOLDER - This node was included because we needed it to represent some aspect of the
-   * graph's structure when we would not otherwise have included the node. This
-   * could be a parent node to hold a child being returned, or a representation
-   * of the order of nodes in a list.
-   */
-  OMIT_REASON_PLACEHOLDER = 3,
 }
 
 export function omitReasonFromJSON(object: any): OmitReason {
@@ -55,9 +43,6 @@ export function omitReasonFromJSON(object: any): OmitReason {
     case 2:
     case "OMIT_REASON_NO_ACCESS":
       return OmitReason.OMIT_REASON_NO_ACCESS;
-    case 3:
-    case "OMIT_REASON_PLACEHOLDER":
-      return OmitReason.OMIT_REASON_PLACEHOLDER;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum OmitReason");
   }
@@ -71,8 +56,6 @@ export function omitReasonToJSON(object: OmitReason): string {
       return "OMIT_REASON_UNWANTED";
     case OmitReason.OMIT_REASON_NO_ACCESS:
       return "OMIT_REASON_NO_ACCESS";
-    case OmitReason.OMIT_REASON_PLACEHOLDER:
-      return "OMIT_REASON_PLACEHOLDER";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum OmitReason");
   }

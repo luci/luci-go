@@ -12,20 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
 import { WorkPlan } from '../../proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import { GraphBuilderOptions, TurboCIGraphBuilder } from './graph_builder';
 
 interface WorkerMessage {
   graph: WorkPlan;
+  valueDataMap: Map<string, ValueData>;
   options: GraphBuilderOptions;
   error: Error;
 }
 
 self.onmessage = (e: MessageEvent<WorkerMessage>) => {
-  const { graph, options } = e.data;
+  const { graph, valueDataMap, options } = e.data;
   try {
-    const builder = new TurboCIGraphBuilder(graph);
+    const builder = new TurboCIGraphBuilder(graph, valueDataMap);
     const result = builder.build(options);
     self.postMessage(result);
   } catch (error) {

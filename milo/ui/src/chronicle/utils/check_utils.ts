@@ -20,7 +20,8 @@ import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_ch
 import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_summary_result.pb';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { CheckKind } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
-import { Datum } from '@/proto/turboci/graph/orchestrator/v1/datum.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 
 export enum CheckResultStatus {
   UNKNOWN = 'UNKNOWN',
@@ -43,29 +44,40 @@ export const TYPE_URL_TEST_RESULT =
   'type.googleapis.com/turboci.data.test.v1.TestCheckSummaryResult';
 
 /**
- * Safely parses the JSON content of a datum if the typeUrl matches.
+ * Safely parses the JSON content of a ValueRef if the typeUrl matches.
  * Returns undefined if typeUrl mismatches, JSON is missing, or JSON is invalid.
  */
-function parseDatum<T>(datum: Datum, expectedTypeUrl: string): T | undefined {
-  const value = datum?.value;
-  if (value?.value?.typeUrl !== expectedTypeUrl || !value?.valueJson) {
+function parseValueRef<T>(
+  value_ref: ValueRef,
+  expectedTypeUrl: string,
+  valueDataMap: Map<string, ValueData>,
+): T | undefined {
+  if (!value_ref.digest || value_ref.typeUrl !== expectedTypeUrl) {
+    return undefined;
+  }
+  const valueData = valueDataMap.get(value_ref.digest);
+  if (!valueData || !valueData.json || !valueData.json.value) {
     return undefined;
   }
   try {
-    return JSON.parse(value.valueJson);
+    return JSON.parse(valueData.json.value);
   } catch {
     return undefined;
   }
 }
 
-export function getCheckResultStatus(check: Check): CheckResultStatus {
+export function getCheckResultStatus(
+  check: Check,
+  valueDataMap: Map<string, ValueData>,
+): CheckResultStatus {
   if (!check) return CheckResultStatus.UNKNOWN;
 
   for (const result of check.results) {
-    for (const datum of result.data) {
-      const buildCheckResult = parseDatum<BuildCheckResult>(
-        datum,
+    for (const value_ref of result.data) {
+      const buildCheckResult = parseValueRef<BuildCheckResult>(
+        value_ref,
         TYPE_URL_BUILD_RESULT,
+        valueDataMap,
       );
       if (buildCheckResult) {
         return buildCheckResult.success
@@ -73,9 +85,10 @@ export function getCheckResultStatus(check: Check): CheckResultStatus {
           : CheckResultStatus.FAILURE;
       }
 
-      const testCheckResult = parseDatum<TestCheckSummaryResult>(
-        datum,
+      const testCheckResult = parseValueRef<TestCheckSummaryResult>(
+        value_ref,
         TYPE_URL_TEST_RESULT,
+        valueDataMap,
       );
       if (testCheckResult) {
         return testCheckResult.success
@@ -88,38 +101,45 @@ export function getCheckResultStatus(check: Check): CheckResultStatus {
   return CheckResultStatus.UNKNOWN;
 }
 
-export function getCheckLabel(check: Check): string {
+export function getCheckLabel(
+  check: Check,
+  valueDataMap: Map<string, ValueData>,
+): string {
   if (!check) return 'Unknown Check';
 
-  for (const datum of check.options) {
-    const buildOpts = parseDatum<BuildCheckOptions>(
-      datum,
+  for (const value_ref of check.options) {
+    const buildOpts = parseValueRef<BuildCheckOptions>(
+      value_ref,
       TYPE_URL_BUILD_OPTIONS,
+      valueDataMap,
     );
     if (buildOpts?.target?.namespace && buildOpts.target.name) {
       return `Build ${buildOpts.target.namespace}:${buildOpts.target.name}`;
     }
 
-    const testOpts = parseDatum<TestCheckDescriptionOption>(
-      datum,
+    const testOpts = parseValueRef<TestCheckDescriptionOption>(
+      value_ref,
       TYPE_URL_TEST_OPTIONS,
+      valueDataMap,
     );
     if (testOpts?.title) {
       return `Test ${testOpts.title}`;
     }
 
-    const gobOpts = parseDatum<GobSourceCheckOptions>(
-      datum,
+    const gobOpts = parseValueRef<GobSourceCheckOptions>(
+      value_ref,
       TYPE_URL_GOB_SOURCE_OPTIONS,
+      valueDataMap,
     );
     if (gobOpts?.gerritChanges?.length) {
       const cl = gobOpts.gerritChanges[0];
       return `Source ${cl.hostname}/${cl.changeNumber}/${cl.patchset}`;
     }
 
-    const piperOpts = parseDatum<PiperSourceCheckOptions>(
-      datum,
+    const piperOpts = parseValueRef<PiperSourceCheckOptions>(
+      value_ref,
       TYPE_URL_PIPER_SOURCE_OPTIONS,
+      valueDataMap,
     );
     if (piperOpts) {
       return `Source google3@${piperOpts.clNumber || 'HEAD'}`;

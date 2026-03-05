@@ -2,11 +2,11 @@
 // versions:
 //   protoc-gen-ts_proto  v2.8.1
 //   protoc               v6.32.0
-// source: go.chromium.org/infra/fleetconsole/omnilab/omnilab-pubsub.proto
+// source: go.chromium.org/infra/fleetconsole/internal/infra/ext/omnilab/omnilab-pubsub.proto
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Timestamp } from "../../../../google/protobuf/timestamp.pb";
+import { Timestamp } from "../../../../../../../google/protobuf/timestamp.pb";
 
 export const protobufPackage = "mobileharness.infra.monitoring";
 

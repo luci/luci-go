@@ -12,7 +12,7 @@ import { Actor } from "./actor.pb";
 import { CheckDelta } from "./check_delta.pb";
 import { Revision } from "./revision.pb";
 import { StageDelta } from "./stage_delta.pb";
-import { Value } from "./value.pb";
+import { ValueRef } from "./value_ref.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -24,8 +24,7 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * type of the edit.
  *
  * Edit Deltas are designed to be quite slim. Heavy bits of the delta (like
- * Option Data) will be stored separately from this Edit record and will have a
- * shorter TTL.
+ * Option Data) will be stored separately from this Edit.
  */
 export interface Edit {
   /** The node which this Edit is associated with. */
@@ -51,25 +50,14 @@ export interface Edit {
     | string
     | undefined;
   /**
-   * The time at which heavyweight data associated with this Edit (e.g.
-   * CheckEditOptions) will be automatically garbage collected.
-   *
-   * Defaults to 30 days from the time of the Edit.
-   *
-   * This currently has no effect for Stage edits, because Stage edits don't
-   * retain any heavy data.
-   *
-   * TBD: Add RPC to extend the TTL of an Edit and its data.
-   */
-  readonly dataExpireAt?:
-    | string
-    | undefined;
-  /**
    * The security realm for this Edit (duplicated from the affected Check/Stage
    * to allow easy ACL resolution).
    *
    * The premise is that if you can read a Check or Stage, you can read the
    * edits for that Check or Stage.
+   *
+   * Read access to the Edit is governed by the same permission used for the
+   * base node (e.g. turboci.checks.read or turboci.stages.read).
    */
   readonly realm?:
     | string
@@ -112,21 +100,10 @@ export interface Edit {
   readonly obliviousWrite?:
     | boolean
     | undefined;
-  /**
-   * The writer-provided reason(s) for this Edit.
-   *
-   * The only reason to have multiple Reason messages is to allow for different
-   * realms.
-   *
-   * NOTE: When viewing Edits, the reader will only see the reasons for which
-   * they have read permissions (that is - two different users may see
-   * different versions of this otherwise entirely-immutable Edit).
-   *
-   * By convention, these should be ordered from most to least specific, so if
-   * a client only wants to display one Reason, it should be the first in this
-   * list.
-   */
-  readonly reasons: readonly Edit_Reason[];
+  /** The writer-provided reason for this Edit. */
+  readonly reason?:
+    | Edit_Reason
+    | undefined;
   /**
    * This is a delta for a Check.
    *
@@ -144,28 +121,10 @@ export interface Edit {
 }
 
 /**
- * Human and machine-readable reasons for this Edit (provided as part of
+ * Human and machine-readable reason for this Edit (provided as part of
  * WriteNodes).
  */
 export interface Edit_Reason {
-  /** The identifier of this specific Reason. */
-  readonly identifier?:
-    | Identifier
-    | undefined;
-  /**
-   * The security realm for this reason.
-   *
-   * This is set by the writer which created this Edit. In WriteNodseRequest,
-   * this defaults to the writer's realm unless explicitly set, and so may
-   * differ from the Edit's realm.
-   *
-   * The premise is that the Edit is a property of the Check/Stage but
-   * details of why an Edit was made are controlled by the writer that made
-   * them.
-   */
-  readonly realm?:
-    | string
-    | undefined;
   /**
    * A 'low effort' reason for this edit.
    *
@@ -181,8 +140,19 @@ export interface Edit_Reason {
    * This is repeated to allow for standardized reason message types in
    * conjunction with workflow-specific details as part of the same write
    * record.
+   *
+   * By convention, these should be ordered from most to least specific, so
+   * if a client has permission for multiple details of the same type, the
+   * first in this list for a given type_url should be a superset of the
+   * others.
+   *
+   * These are be unique by (type_url, realm)
+   *
+   * NOTE: When viewing Edits, the reader will only see the details for which
+   * they have read permissions (that is - two different users may see
+   * different versions of this otherwise entirely-immutable Edit).
    */
-  readonly details: readonly Value[];
+  readonly details: readonly ValueRef[];
 }
 
 function createBaseEdit(): Edit {
@@ -190,12 +160,11 @@ function createBaseEdit(): Edit {
     forNode: undefined,
     version: undefined,
     expireAt: undefined,
-    dataExpireAt: undefined,
     realm: undefined,
     createdBy: undefined,
     transactionalSet: [],
     obliviousWrite: undefined,
-    reasons: [],
+    reason: undefined,
     check: undefined,
     stage: undefined,
   };
@@ -212,9 +181,6 @@ export const Edit: MessageFns<Edit> = {
     if (message.expireAt !== undefined) {
       Timestamp.encode(toTimestamp(message.expireAt), writer.uint32(26).fork()).join();
     }
-    if (message.dataExpireAt !== undefined) {
-      Timestamp.encode(toTimestamp(message.dataExpireAt), writer.uint32(34).fork()).join();
-    }
     if (message.realm !== undefined) {
       writer.uint32(42).string(message.realm);
     }
@@ -227,8 +193,8 @@ export const Edit: MessageFns<Edit> = {
     if (message.obliviousWrite !== undefined) {
       writer.uint32(88).bool(message.obliviousWrite);
     }
-    for (const v of message.reasons) {
-      Edit_Reason.encode(v!, writer.uint32(66).fork()).join();
+    if (message.reason !== undefined) {
+      Edit_Reason.encode(message.reason, writer.uint32(66).fork()).join();
     }
     if (message.check !== undefined) {
       CheckDelta.encode(message.check, writer.uint32(74).fork()).join();
@@ -270,14 +236,6 @@ export const Edit: MessageFns<Edit> = {
           message.expireAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.dataExpireAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-        }
         case 5: {
           if (tag !== 42) {
             break;
@@ -315,7 +273,7 @@ export const Edit: MessageFns<Edit> = {
             break;
           }
 
-          message.reasons.push(Edit_Reason.decode(reader, reader.uint32()));
+          message.reason = Edit_Reason.decode(reader, reader.uint32());
           continue;
         }
         case 9: {
@@ -348,14 +306,13 @@ export const Edit: MessageFns<Edit> = {
       forNode: isSet(object.forNode) ? Identifier.fromJSON(object.forNode) : undefined,
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       expireAt: isSet(object.expireAt) ? globalThis.String(object.expireAt) : undefined,
-      dataExpireAt: isSet(object.dataExpireAt) ? globalThis.String(object.dataExpireAt) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
       transactionalSet: globalThis.Array.isArray(object?.transactionalSet)
         ? object.transactionalSet.map((e: any) => Identifier.fromJSON(e))
         : [],
       obliviousWrite: isSet(object.obliviousWrite) ? globalThis.Boolean(object.obliviousWrite) : undefined,
-      reasons: globalThis.Array.isArray(object?.reasons) ? object.reasons.map((e: any) => Edit_Reason.fromJSON(e)) : [],
+      reason: isSet(object.reason) ? Edit_Reason.fromJSON(object.reason) : undefined,
       check: isSet(object.check) ? CheckDelta.fromJSON(object.check) : undefined,
       stage: isSet(object.stage) ? StageDelta.fromJSON(object.stage) : undefined,
     };
@@ -372,9 +329,6 @@ export const Edit: MessageFns<Edit> = {
     if (message.expireAt !== undefined) {
       obj.expireAt = message.expireAt;
     }
-    if (message.dataExpireAt !== undefined) {
-      obj.dataExpireAt = message.dataExpireAt;
-    }
     if (message.realm !== undefined) {
       obj.realm = message.realm;
     }
@@ -387,8 +341,8 @@ export const Edit: MessageFns<Edit> = {
     if (message.obliviousWrite !== undefined) {
       obj.obliviousWrite = message.obliviousWrite;
     }
-    if (message.reasons?.length) {
-      obj.reasons = message.reasons.map((e) => Edit_Reason.toJSON(e));
+    if (message.reason !== undefined) {
+      obj.reason = Edit_Reason.toJSON(message.reason);
     }
     if (message.check !== undefined) {
       obj.check = CheckDelta.toJSON(message.check);
@@ -411,14 +365,15 @@ export const Edit: MessageFns<Edit> = {
       ? Revision.fromPartial(object.version)
       : undefined;
     message.expireAt = object.expireAt ?? undefined;
-    message.dataExpireAt = object.dataExpireAt ?? undefined;
     message.realm = object.realm ?? undefined;
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;
     message.transactionalSet = object.transactionalSet?.map((e) => Identifier.fromPartial(e)) || [];
     message.obliviousWrite = object.obliviousWrite ?? undefined;
-    message.reasons = object.reasons?.map((e) => Edit_Reason.fromPartial(e)) || [];
+    message.reason = (object.reason !== undefined && object.reason !== null)
+      ? Edit_Reason.fromPartial(object.reason)
+      : undefined;
     message.check = (object.check !== undefined && object.check !== null)
       ? CheckDelta.fromPartial(object.check)
       : undefined;
@@ -430,22 +385,16 @@ export const Edit: MessageFns<Edit> = {
 };
 
 function createBaseEdit_Reason(): Edit_Reason {
-  return { identifier: undefined, realm: undefined, message: undefined, details: [] };
+  return { message: undefined, details: [] };
 }
 
 export const Edit_Reason: MessageFns<Edit_Reason> = {
   encode(message: Edit_Reason, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.identifier !== undefined) {
-      Identifier.encode(message.identifier, writer.uint32(34).fork()).join();
-    }
-    if (message.realm !== undefined) {
-      writer.uint32(10).string(message.realm);
-    }
     if (message.message !== undefined) {
-      writer.uint32(18).string(message.message);
+      writer.uint32(10).string(message.message);
     }
     for (const v of message.details) {
-      Value.encode(v!, writer.uint32(26).fork()).join();
+      ValueRef.encode(v!, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -457,20 +406,12 @@ export const Edit_Reason: MessageFns<Edit_Reason> = {
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.identifier = Identifier.decode(reader, reader.uint32());
-          continue;
-        }
         case 1: {
           if (tag !== 10) {
             break;
           }
 
-          message.realm = reader.string();
+          message.message = reader.string();
           continue;
         }
         case 2: {
@@ -478,15 +419,7 @@ export const Edit_Reason: MessageFns<Edit_Reason> = {
             break;
           }
 
-          message.message = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.details.push(Value.decode(reader, reader.uint32()));
+          message.details.push(ValueRef.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -500,26 +433,18 @@ export const Edit_Reason: MessageFns<Edit_Reason> = {
 
   fromJSON(object: any): Edit_Reason {
     return {
-      identifier: isSet(object.identifier) ? Identifier.fromJSON(object.identifier) : undefined,
-      realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       message: isSet(object.message) ? globalThis.String(object.message) : undefined,
-      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => ValueRef.fromJSON(e)) : [],
     };
   },
 
   toJSON(message: Edit_Reason): unknown {
     const obj: any = {};
-    if (message.identifier !== undefined) {
-      obj.identifier = Identifier.toJSON(message.identifier);
-    }
-    if (message.realm !== undefined) {
-      obj.realm = message.realm;
-    }
     if (message.message !== undefined) {
       obj.message = message.message;
     }
     if (message.details?.length) {
-      obj.details = message.details.map((e) => Value.toJSON(e));
+      obj.details = message.details.map((e) => ValueRef.toJSON(e));
     }
     return obj;
   },
@@ -529,12 +454,8 @@ export const Edit_Reason: MessageFns<Edit_Reason> = {
   },
   fromPartial(object: DeepPartial<Edit_Reason>): Edit_Reason {
     const message = createBaseEdit_Reason() as any;
-    message.identifier = (object.identifier !== undefined && object.identifier !== null)
-      ? Identifier.fromPartial(object.identifier)
-      : undefined;
-    message.realm = object.realm ?? undefined;
     message.message = object.message ?? undefined;
-    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    message.details = object.details?.map((e) => ValueRef.fromPartial(e)) || [];
     return message;
   },
 };

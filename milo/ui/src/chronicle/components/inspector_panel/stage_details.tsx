@@ -20,15 +20,17 @@ import {
   StageState,
   stageStateToJSON,
 } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
 
 export interface StageDetailsProps {
   view: Stage;
+  valueDataMap: Map<string, ValueData>;
 }
 
-export function StageDetails({ view }: StageDetailsProps) {
+export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
   const stage = view;
 
   const assignmentIds = stage.assignments
@@ -80,11 +82,18 @@ export function StageDetails({ view }: StageDetailsProps) {
         />
       )}
 
-      {stage.args?.valueJson && (
+      {stage.args && (
         <>
           <Divider />
           <Typography variant="subtitle2">Args</Typography>
-          <AnyDetails json={stage.args.valueJson} />
+          <AnyDetails
+            json={
+              stage.args.digest
+                ? valueDataMap.get(stage.args.digest)?.json?.value
+                : undefined
+            }
+            typeUrl={stage.args.typeUrl!}
+          />
         </>
       )}
 
@@ -120,8 +129,8 @@ export function StageDetails({ view }: StageDetailsProps) {
                 {attempt.details.map((detail, dIndex) => (
                   <AnyDetails
                     key={dIndex}
-                    typeUrl={detail.value?.typeUrl}
-                    json={detail.valueJson}
+                    typeUrl={detail.typeUrl}
+                    json={valueDataMap.get(detail.digest!)!.json!.value}
                     label="Details"
                   />
                 ))}

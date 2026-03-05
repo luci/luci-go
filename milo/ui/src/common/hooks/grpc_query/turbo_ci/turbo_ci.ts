@@ -17,6 +17,8 @@ import { UseQueryResult } from '@tanstack/react-query';
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
 import { QueryNodesRequest } from '@/proto/turboci/graph/orchestrator/v1/query_nodes_request.pb';
 import { QueryNodesResponse } from '@/proto/turboci/graph/orchestrator/v1/query_nodes_response.pb';
+import { ReadWorkPlanRequest } from '@/proto/turboci/graph/orchestrator/v1/read_workplan_request.pb';
+import { ReadWorkPlanResponse } from '@/proto/turboci/graph/orchestrator/v1/read_workplan_response.pb';
 import { TurboCIOrchestratorServiceName } from '@/proto/turboci/graph/orchestrator/v1/turbo_ci_orchestrator_service.pb';
 
 import { useGrpcWebQuery } from '../grpc_query';
@@ -35,6 +37,23 @@ export const useQueryNodes = (
       request,
       requestMsg: QueryNodesRequest,
       responseMsg: QueryNodesResponse,
+    },
+    queryOptions,
+  );
+};
+
+export const useReadWorkPlan = (
+  request: ReadWorkPlanRequest,
+  queryOptions?: WrapperQueryOptions<ReadWorkPlanResponse>,
+): UseQueryResult<ReadWorkPlanResponse> => {
+  return useGrpcWebQuery<ReadWorkPlanRequest, ReadWorkPlanResponse>(
+    {
+      host: HOST,
+      service: TurboCIOrchestratorServiceName,
+      method: 'ReadWorkPlan',
+      request,
+      requestMsg: ReadWorkPlanRequest,
+      responseMsg: ReadWorkPlanResponse,
     },
     queryOptions,
   );

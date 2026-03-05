@@ -24,6 +24,8 @@
 
 import { faker } from '@faker-js/faker';
 
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
 import { Duration } from '../proto/google/protobuf/duration.pb';
 import {
   BuildCheckOptions,
@@ -56,9 +58,7 @@ import {
   WorkPlan,
   Check as CheckId,
   Stage as StageId,
-  CheckOption as CheckOptionId,
   CheckResult as CheckResultId,
-  CheckResultDatum as CheckResultDatumId,
 } from '../proto/turboci/graph/ids/v1/identifier.pb';
 import { Actor } from '../proto/turboci/graph/orchestrator/v1/actor.pb';
 import {
@@ -68,7 +68,6 @@ import {
 import { CheckDelta } from '../proto/turboci/graph/orchestrator/v1/check_delta.pb';
 import { CheckKind } from '../proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { CheckState } from '../proto/turboci/graph/orchestrator/v1/check_state.pb';
-import { Datum } from '../proto/turboci/graph/orchestrator/v1/datum.pb';
 import {
   Dependencies,
   Dependencies_Group,
@@ -87,7 +86,7 @@ import { StageAttemptState } from '../proto/turboci/graph/orchestrator/v1/stage_
 import { StageDelta } from '../proto/turboci/graph/orchestrator/v1/stage_delta.pb';
 import { StageExecutionPolicy } from '../proto/turboci/graph/orchestrator/v1/stage_execution_policy.pb';
 import { StageState } from '../proto/turboci/graph/orchestrator/v1/stage_state.pb';
-import { Value } from '../proto/turboci/graph/orchestrator/v1/value.pb';
+import { ValueRef } from '../proto/turboci/graph/orchestrator/v1/value_ref.pb';
 import { WorkPlan as WorkPlanView } from '../proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 // Type URLs for the data protos
@@ -187,8 +186,18 @@ export interface GraphGenerationConfig {
 }
 
 interface CheckData {
-  optionsDatum: Datum;
+  optionsValueRef: ValueRef;
   resultRef?: Check_Result;
+}
+
+export interface ValueWrapper {
+  valueRef: ValueRef;
+  valueData: ValueData;
+}
+
+export interface WorkplanValueMap {
+  workplan: WorkPlanView;
+  valueDataMap: Map<string, ValueData>;
 }
 
 export class FakeGraphGenerator {
@@ -207,6 +216,9 @@ export class FakeGraphGenerator {
   private sourceCheckIds: CheckId[] = [];
   private buildCheckIds: CheckId[] = [];
 
+  // Accumulator for ValueData content generated
+  private valueDataMap: Map<string, ValueData> = new Map();
+
   constructor(private config: GraphGenerationConfig) {
     // Initialize faker seed for reproducible graphs based on workplan ID
     let seed = 0;
@@ -224,7 +236,7 @@ export class FakeGraphGenerator {
   /**
    * Generates the complete WorkPlan based on the configuration.
    */
-  public generate(): WorkPlanView {
+  public generate(): WorkplanValueMap {
     this.resetState();
 
     switch (this.config.workflowType) {
@@ -248,10 +260,13 @@ export class FakeGraphGenerator {
     this.finalizeGraph();
 
     return {
-      identifier: this.workPlanId,
-      version: this.nextRevision(),
-      checks: Object.values(this.checkViews),
-      stages: Object.values(this.stageViews),
+      workplan: {
+        identifier: this.workPlanId,
+        version: this.nextRevision(),
+        checks: Object.values(this.checkViews),
+        stages: Object.values(this.stageViews),
+      },
+      valueDataMap: this.valueDataMap,
     };
   }
 
@@ -260,6 +275,7 @@ export class FakeGraphGenerator {
     this.stageViews = {};
     this.sourceCheckIds = [];
     this.buildCheckIds = [];
+    this.valueDataMap.clear();
     this.currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
   }
 
@@ -560,7 +576,7 @@ export class FakeGraphGenerator {
         {
           check: {
             state: CheckState.CHECK_STATE_PLANNING,
-            options: [data.optionsDatum],
+            options: [data.optionsValueRef],
             dependencies: deps,
             result: [],
           },
@@ -579,7 +595,7 @@ export class FakeGraphGenerator {
         {
           check: {
             state: CheckState.CHECK_STATE_PLANNED,
-            options: [data.optionsDatum],
+            options: [data.optionsValueRef],
             dependencies: deps,
             result: [],
           },
@@ -655,7 +671,7 @@ export class FakeGraphGenerator {
       realm: realm,
       version: finalRev,
       dependencies: deps,
-      options: [data.optionsDatum],
+      options: [data.optionsValueRef],
       results: results,
       state: CheckState.CHECK_STATE_FINAL,
       stateHistory: [],
@@ -723,6 +739,20 @@ export class FakeGraphGenerator {
       ),
     );
 
+    const argsValueRefWrapper = this.createValueRef(
+      realm,
+      TYPE_URL_GENERIC_DATA,
+      {
+        args: faker.hacker.phrase(),
+      },
+    );
+    if (argsValueRefWrapper.valueRef.digest) {
+      this.valueDataMap.set(
+        argsValueRefWrapper.valueRef.digest,
+        argsValueRefWrapper.valueData,
+      );
+    }
+
     // Construct Final Stage Object
     const stage: Stage = {
       identifier: stageId,
@@ -736,9 +766,7 @@ export class FakeGraphGenerator {
         target: assignment,
         goalState: assignmentGoalState,
       })),
-      args: this.createValueFromObj(TYPE_URL_GENERIC_DATA, {
-        args: faker.hacker.phrase(),
-      }),
+      args: argsValueRefWrapper.valueRef,
       stateHistory: [
         { state: StageState.STAGE_STATE_PLANNED, version: createRev },
         { state: StageState.STAGE_STATE_ATTEMPTING, version: attemptRev },
@@ -957,7 +985,6 @@ export class FakeGraphGenerator {
     }
 
     // --- Options ---
-    const optId: CheckOptionId = { check: checkId, idx: 1 };
 
     // Randomly decide whether to pin via project commit or manifest commit
     const useManifest = faker.datatype.boolean();
@@ -984,29 +1011,43 @@ export class FakeGraphGenerator {
       basePinnedRepos: basePinnedRepos,
     };
 
-    const optionDatum = this.createDatum(
-      { checkOption: optId },
+    const optionValueRefWrapper = this.createValueRef(
       realm,
       TYPE_URL_GOB_SOURCE_OPTIONS,
       sourceOptions,
     );
+    if (optionValueRefWrapper.valueRef.digest) {
+      this.valueDataMap.set(
+        optionValueRefWrapper.valueRef.digest,
+        optionValueRefWrapper.valueData,
+      );
+    }
 
     // --- Results ---
     const resId: CheckResultId = { check: checkId, idx: 1 };
-    const datumId: CheckResultDatumId = { result: resId, idx: 1 };
 
     const sourceResults: GobSourceCheckResults = {
       changes: gerritChangesOutput,
     };
 
-    const resultDatum = this.createDatum(
-      { checkResultDatum: datumId },
+    const resultValueRefWrapper = this.createValueRef(
       realm,
       TYPE_URL_GOB_SOURCE_RESULTS,
       sourceResults,
     );
+    if (resultValueRefWrapper.valueRef.digest) {
+      this.valueDataMap.set(
+        resultValueRefWrapper.valueRef.digest,
+        resultValueRefWrapper.valueData,
+      );
+    }
 
-    return this.assembleCheckData(optionDatum, resId, resultDatum, stageId);
+    return this.assembleCheckData(
+      optionValueRefWrapper.valueRef,
+      resId,
+      resultValueRefWrapper.valueRef,
+      stageId,
+    );
   }
 
   private generateBuildCheckData(
@@ -1016,7 +1057,6 @@ export class FakeGraphGenerator {
     isSuccess: boolean,
   ): CheckData {
     // --- Options ---
-    const optId: CheckOptionId = { check: checkId, idx: 1 };
     const targetName = faker.helpers.arrayElement(FAKE_TARGET_NAMES);
     const buildOptions: BuildCheckOptions = {
       target: {
@@ -1026,16 +1066,20 @@ export class FakeGraphGenerator {
       },
     };
 
-    const optionDatum = this.createDatum(
-      { checkOption: optId },
+    const optionValueRefWrapper = this.createValueRef(
       realm,
       TYPE_URL_BUILD_OPTIONS,
       buildOptions,
     );
+    if (optionValueRefWrapper.valueRef.digest) {
+      this.valueDataMap.set(
+        optionValueRefWrapper.valueRef.digest,
+        optionValueRefWrapper.valueData,
+      );
+    }
 
     // --- Results ---
     const resId: CheckResultId = { check: checkId, idx: 1 };
-    const datumId: CheckResultDatumId = { result: resId, idx: 1 };
 
     const buildId = 'P' + faker.string.numeric(8);
 
@@ -1076,14 +1120,24 @@ export class FakeGraphGenerator {
       },
     };
 
-    const resultDatum = this.createDatum(
-      { checkResultDatum: datumId },
+    const resultValueRefWrapper = this.createValueRef(
       realm,
       TYPE_URL_BUILD_RESULTS,
       buildResult,
     );
+    if (resultValueRefWrapper.valueRef.digest) {
+      this.valueDataMap.set(
+        resultValueRefWrapper.valueRef.digest,
+        resultValueRefWrapper.valueData,
+      );
+    }
 
-    return this.assembleCheckData(optionDatum, resId, resultDatum, stageId);
+    return this.assembleCheckData(
+      optionValueRefWrapper.valueRef,
+      resId,
+      resultValueRefWrapper.valueRef,
+      stageId,
+    );
   }
 
   private generateTestCheckData(
@@ -1095,7 +1149,6 @@ export class FakeGraphGenerator {
     const testName = faker.helpers.arrayElement(FAKE_TEST_NAMES);
 
     // --- Options ---
-    const optId: CheckOptionId = { check: checkId, idx: 1 };
     const testOptions: TestCheckDescriptionOption = {
       title: testName,
       displayMessage: {
@@ -1104,16 +1157,20 @@ export class FakeGraphGenerator {
       },
     };
 
-    const optionDatum = this.createDatum(
-      { checkOption: optId },
+    const optionValueRefWrapper = this.createValueRef(
       realm,
       TYPE_URL_TEST_OPTIONS,
       testOptions,
     );
+    if (optionValueRefWrapper.valueRef.digest) {
+      this.valueDataMap.set(
+        optionValueRefWrapper.valueRef.digest,
+        optionValueRefWrapper.valueData,
+      );
+    }
 
     // --- Results ---
     const resId: CheckResultId = { check: checkId, idx: 1 };
-    const datumId: CheckResultDatumId = { result: resId, idx: 1 };
 
     const total = faker.number.int({ min: 10, max: 1000 });
     const failures = isSuccess ? 0 : faker.number.int({ min: 1, max: total });
@@ -1133,31 +1190,41 @@ export class FakeGraphGenerator {
       viewUrl: faker.internet.url(),
     };
 
-    const resultDatum = this.createDatum(
-      { checkResultDatum: datumId },
+    const resultValueRefWrapper = this.createValueRef(
       realm,
       TYPE_URL_TEST_RESULTS,
       testResult,
     );
+    if (resultValueRefWrapper.valueRef.digest) {
+      this.valueDataMap.set(
+        resultValueRefWrapper.valueRef.digest,
+        resultValueRefWrapper.valueData,
+      );
+    }
 
-    return this.assembleCheckData(optionDatum, resId, resultDatum, stageId);
+    return this.assembleCheckData(
+      optionValueRefWrapper.valueRef,
+      resId,
+      resultValueRefWrapper.valueRef,
+      stageId,
+    );
   }
 
   // Helper to package options and results into a data interface used for constructing Checks.
   private assembleCheckData(
-    optDatum: Datum,
+    optValueRef: ValueRef,
     resId: CheckResultId,
-    resDatum: Datum,
+    resValueRef: ValueRef,
     stageId: StageId,
   ): CheckData {
     const checkResult: Check_Result = {
       identifier: resId,
       owner: { stageAttempt: { stage: stageId } },
-      data: [resDatum],
+      data: [resValueRef],
     };
 
     return {
-      optionsDatum: optDatum,
+      optionsValueRef: optValueRef,
       resultRef: checkResult,
     };
   }
@@ -1221,6 +1288,18 @@ export class FakeGraphGenerator {
         },
       };
 
+      const valueWrapper: ValueWrapper = this.createValueRef(
+        'stage_attempt_realm',
+        TYPE_URL_COMMON_STAGE_ATTEMPT_DETAILS,
+        attemptDetails,
+      );
+      if (valueWrapper.valueRef.digest) {
+        this.valueDataMap.set(
+          valueWrapper.valueRef.digest,
+          valueWrapper.valueData,
+        );
+      }
+
       const attempt: Stage_Attempt = {
         identifier: {
           stage: { workPlan: this.workPlanId, id: stageIdStr },
@@ -1229,12 +1308,7 @@ export class FakeGraphGenerator {
         state: state,
         version: endRev,
         processUid: `worker-pool-REGION-1:${stageIdStr}:attempt-${i + 1}`,
-        details: [
-          this.createValueFromObj(
-            TYPE_URL_COMMON_STAGE_ATTEMPT_DETAILS,
-            attemptDetails,
-          ),
-        ],
+        details: [valueWrapper.valueRef],
         progress: [
           { message: 'Scheduled', version: currentStartRev, details: [] },
           { message: 'Running', version: currentStartRev, details: [] },
@@ -1292,17 +1366,13 @@ export class FakeGraphGenerator {
       forNode: forNode,
       version: version,
       expireAt: expireStr, // Roughly +180 days
-      dataExpireAt: expireStr, // Roughly +30 days
       realm: realm,
       createdBy: editor || this.getOrchestratorActor(),
       transactionalSet: [forNode],
-      reasons: [
-        {
-          realm: realm,
-          message: reasonMsg,
-          details: [],
-        },
-      ],
+      reason: {
+        message: reasonMsg,
+        details: [],
+      },
       check: delta.check,
       stage: delta.stage,
     };
@@ -1331,36 +1401,35 @@ export class FakeGraphGenerator {
     return { orchestrator: {} };
   }
 
-  private createDatum(
-    id: Identifier,
+  private createValueRef(
     realm: string,
     typeUrl: string,
     payloadObj: object,
-  ): Datum {
-    return {
-      identifier: id,
-      realm: realm,
-      version: this.nextRevision(),
-      value: this.createValueFromObj(typeUrl, payloadObj),
-    };
-  }
-
-  /**
-   * Creates a Value proto from a plain JS object.
-   * Simulates ProtoJSON serialization by adding the @type field.
-   */
-  private createValueFromObj(typeUrl: string, payloadObj: object): Value {
+  ): ValueWrapper {
     const jsonPayload = {
       '@type': typeUrl,
       ...payloadObj,
     };
+    const digest = computeDigest(payloadObj);
 
     return {
-      value: { typeUrl, value: new Uint8Array() },
-      hasUnknownFields: false,
-      valueJson: JSON.stringify(jsonPayload),
+      valueRef: {
+        realm: realm,
+        typeUrl: typeUrl,
+        digest: digest,
+      },
+      valueData: { json: { value: JSON.stringify(jsonPayload) } },
     };
   }
+}
+
+// Do not use outside of tests!
+function computeDigest(payloadObj: object): string {
+  // This function is expected to be used only for unit tests, so we aren't
+  // implementing the actual digest algorithm used in the orchestrator, just
+  // something simple for testing purposes by just using the payload's text as
+  // the digest value.
+  return JSON.stringify(payloadObj);
 }
 
 function buildDependencies(

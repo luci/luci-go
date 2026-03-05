@@ -503,7 +503,7 @@ export function modemTypeToJSON(object: ModemType): string {
   }
 }
 
-/** Next Tag: 22 */
+/** Next Tag: 23 */
 export enum NetworkProvider {
   NETWORK_OTHER = 0,
   NETWORK_UNSUPPORTED = 5,
@@ -527,6 +527,7 @@ export enum NetworkProvider {
   NETWORK_LINEMO = 19,
   NETWORK_POVO = 20,
   NETWORK_HANSHIN = 21,
+  NETWORK_ROAMSIM = 22,
 }
 
 export function networkProviderFromJSON(object: any): NetworkProvider {
@@ -597,6 +598,9 @@ export function networkProviderFromJSON(object: any): NetworkProvider {
     case 21:
     case "NETWORK_HANSHIN":
       return NetworkProvider.NETWORK_HANSHIN;
+    case 22:
+    case "NETWORK_ROAMSIM":
+      return NetworkProvider.NETWORK_ROAMSIM;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }
@@ -648,6 +652,8 @@ export function networkProviderToJSON(object: NetworkProvider): string {
       return "NETWORK_POVO";
     case NetworkProvider.NETWORK_HANSHIN:
       return "NETWORK_HANSHIN";
+    case NetworkProvider.NETWORK_ROAMSIM:
+      return "NETWORK_ROAMSIM";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum NetworkProvider");
   }

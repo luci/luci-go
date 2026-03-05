@@ -15,7 +15,7 @@ import { Revision } from "./revision.pb";
 import { Stage_Assignment } from "./stage.pb";
 import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
 import { StageExecutionPolicy } from "./stage_execution_policy.pb";
-import { Value } from "./value.pb";
+import { ValueWrite } from "./value_write.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -43,21 +43,13 @@ export interface WriteNodesRequest {
     | string
     | undefined;
   /**
-   * The reason for this write operation, as supplied by the entity performing
-   * the write.
+   * Required reason for this write.
    *
-   * This should be used to detail any information about WHY this write is
-   * happening, or details about what changes are being made.
-   *
-   * This will be reflected in the CheckEdit or StageEdit logs for all
-   * Checks and/or Stages affected by this write.
-   *
-   * This is repeated to allow reasons in multiple security domains; By
-   * convention, these should be ordered from most to least specific, so if
-   * a client only wants to display one Reason, it should be the first in this
-   * list which they have access to.
+   * At minimum, reason.message must be supplied.
    */
-  readonly reasons: readonly WriteNodesRequest_Reason[];
+  readonly reason?:
+    | WriteNodesRequest_Reason
+    | undefined;
   /**
    * Set if the caller wants to make this write transactional with a subset of
    * the graph at a particular snapshot.
@@ -114,30 +106,6 @@ export interface WriteNodesRequest {
 }
 
 /**
- * RealmValue describes a Value which resides in a given security realm.
- *
- * This is used to write objects which appear in the graph as Datum messages.
- */
-export interface WriteNodesRequest_RealmValue {
-  /**
-   * The realm to assign to this value (if the value is being created). If
-   * it's unset/empty, it will inherit from the realm of the object containing
-   * it (so, for Check options or result data, this would be the Check's
-   * realm).
-   *
-   * If provided, must be the absolute form "<project>:<name>".
-   *
-   * If the value is being overwritten and `realm` is provided, it must match
-   * the already-written value's realm.
-   */
-  readonly realm?:
-    | string
-    | undefined;
-  /** The value to set. */
-  readonly value?: Value | undefined;
-}
-
-/**
  * An in-line representation of Dependencies.Group.
  *
  * The Orchestrator will deduplicate edges into Dependencies.edges in the
@@ -174,7 +142,7 @@ export interface WriteNodesRequest_StageAttemptProgress {
     | string
     | undefined;
   /** Machine-readable details for this progress item. */
-  readonly details: readonly Value[];
+  readonly details: readonly ValueWrite[];
   /**
    * An optional field for preventing duplicate progress messages.
    *
@@ -226,32 +194,25 @@ export interface WriteNodesRequest_StageAttemptProgress {
 }
 
 /**
- * Reason is the write-request analogue of Edit.Reason.
+ * The reason that the caller is performing this write.
  *
- * NOTE: If this WriteNodes is a no-op because it's a retry of a previous
- * successful WriteNodes, these Reasons will not be recorded in the graph
- * because there will not be any applied writes. This means that if you
- * vary the Reasons from retry to retry, it's possible to see a successful
- * WriteNodes where the provided reasons are not retained.
+ * Includes a low-effort English display message plus zero or more detail
+ * messages.
  */
 export interface WriteNodesRequest_Reason {
   /**
-   * The security realm for this reason.
+   * A 'low-effort' reason for this write.
    *
-   * If provided, must be the absolute form "<project>:<name>".
+   * This is required, and is intended to be shown as a quick English summary
+   * when displaying Check and Stage Edits in debugging tools and UIs. This
+   * should explain in simple terms why this write is happening.
    *
-   * If absent the written Stage will copy its realm from the implied realm
-   * of the `token`. For Stage Attempt tokens, this will be the Stage's
-   * realm, and for Creator tokens, this will be the WorkPlan's realm.
-   */
-  readonly realm?:
-    | string
-    | undefined;
-  /**
-   * A 'low effort' reason for this edit.
+   * This should NOT be made to be parsable/machine-readable (use
+   * reason_details for this).
    *
-   * This is 'low effort' because it's preferable for the writer to provide
-   * detailed machine-readable data in the `details` field below.
+   * This will be reflected in the CheckEdit or StageEdit logs for all
+   * Checks and/or Stages affected by this write, and thus readable under ALL
+   * realms implied by this set of Checks and/or Stages.
    */
   readonly message?:
     | string
@@ -259,11 +220,17 @@ export interface WriteNodesRequest_Reason {
   /**
    * Machine-readable reason(s) for this edit.
    *
-   * This is repeated to allow for standardized reason message types in
-   * conjunction with workflow-specific details as part of the same write
-   * record.
+   * These are optional, but are meant to be a way to communicate
+   * machine-readable context for this write.
+   *
+   * These must be unique by (type_url, realm), and their order will be
+   * preserved in the generated Edit messages.
+   *
+   * By convention, these should be ordered from most to least specific, so
+   * if a client has permission for multiple details of the same type, the
+   * first in this list should be a superset of the others.
    */
-  readonly details: readonly Value[];
+  readonly details: readonly ValueWrite[];
 }
 
 /**
@@ -387,9 +354,9 @@ export interface WriteNodesRequest_CheckWrite {
   /**
    * The list of Options to write/overwrite.
    *
-   * Must be unique on `RealmValue.value.type_url`.
+   * Must be unique on `ValueWrite.data.type_url`.
    */
-  readonly options: readonly WriteNodesRequest_RealmValue[];
+  readonly options: readonly ValueWrite[];
   /**
    * Dependency predicate for this Check.
    *
@@ -416,8 +383,10 @@ export interface WriteNodesRequest_CheckWrite {
    *
    * The data here will overwrite existing data of the same type in the
    * selected Result for this Stage Attempt.
+   *
+   * Must be unique on `ValueWrite.data.type_url`.
    */
-  readonly results: readonly WriteNodesRequest_RealmValue[];
+  readonly results: readonly ValueWrite[];
   /**
    * If set, finalize the Check.Result.
    *
@@ -464,34 +433,27 @@ export interface WriteNodesRequest_StageWrite {
    * The arguments of the Stage.
    *
    * A Stage MUST have `args` - if this write would create the Stage and
-   * `args` is omitted, the write will be rejected.
+   * `args` is omitted, the write will be rejected. If the Stage already
+   * exists and `args` is specified, the supplied args must match the existing
+   * Stages's `args` exactly.
    *
    * TBD: Document executor registration/selection process.
-   *
-   * TBD: What to do on double-creation? Do we compare args (protobuf
-   * serialization is not canonical/deterministic, but in practice if the
-   * same process creates the same stage twice, it will likely have the same
-   * args).
-   *
-   * We could just accept 'same type' == OK and ignore the value, but this
-   * feels a bit wishy-washy.
    */
   readonly args?:
-    | Value
+    | ValueWrite
     | undefined;
   /**
    * Realm to assign to this Stage.
    *
-   * If provided, must be the absolute form "<project>:<name>".
+   * If provided, must be the absolute form "<project>:<name>", or a
+   * special form "$from_token" or "$from_container". "$from_token" works
+   * as documented in [ValueWrite]. "$from_container" means "the same realm
+   * as the WorkPlan".
    *
    * If the Stage already exists, this will only result in an error if it
    * doesn't match the existing realm.
    *
-   * If absent the written Stage will copy its realm from the implied realm of
-   * the `token`. For Stage Attempt tokens, this will be the Stage's realm,
-   * and for Creator tokens, this will be the WorkPlan's realm.
-   *
-   * If `token` is unset and this field is absent, the write will be rejected.
+   * Defaults to "$from_token" if unset while creating a Stage.
    */
   readonly realm?:
     | string
@@ -570,7 +532,7 @@ export interface WriteNodesRequest_CurrentAttemptWrite {
    *
    * Overwrites any existing detail of the same type.
    */
-  readonly details: readonly Value[];
+  readonly details: readonly ValueWrite[];
   /**
    * Progress messages to add to the current Stage Attempt.
    *
@@ -757,7 +719,7 @@ export interface WriteNodesRequest_CurrentStageWrite {
 function createBaseWriteNodesRequest(): WriteNodesRequest {
   return {
     token: undefined,
-    reasons: [],
+    reason: undefined,
     txn: undefined,
     checks: [],
     stages: [],
@@ -771,8 +733,8 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
     if (message.token !== undefined) {
       writer.uint32(10).string(message.token);
     }
-    for (const v of message.reasons) {
-      WriteNodesRequest_Reason.encode(v!, writer.uint32(18).fork()).join();
+    if (message.reason !== undefined) {
+      WriteNodesRequest_Reason.encode(message.reason, writer.uint32(18).fork()).join();
     }
     if (message.txn !== undefined) {
       WriteNodesRequest_TransactionDetails.encode(message.txn, writer.uint32(26).fork()).join();
@@ -812,7 +774,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
             break;
           }
 
-          message.reasons.push(WriteNodesRequest_Reason.decode(reader, reader.uint32()));
+          message.reason = WriteNodesRequest_Reason.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -867,9 +829,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
   fromJSON(object: any): WriteNodesRequest {
     return {
       token: isSet(object.token) ? globalThis.String(object.token) : undefined,
-      reasons: globalThis.Array.isArray(object?.reasons)
-        ? object.reasons.map((e: any) => WriteNodesRequest_Reason.fromJSON(e))
-        : [],
+      reason: isSet(object.reason) ? WriteNodesRequest_Reason.fromJSON(object.reason) : undefined,
       txn: isSet(object.txn) ? WriteNodesRequest_TransactionDetails.fromJSON(object.txn) : undefined,
       checks: globalThis.Array.isArray(object?.checks)
         ? object.checks.map((e: any) => WriteNodesRequest_CheckWrite.fromJSON(e))
@@ -891,8 +851,8 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
     if (message.token !== undefined) {
       obj.token = message.token;
     }
-    if (message.reasons?.length) {
-      obj.reasons = message.reasons.map((e) => WriteNodesRequest_Reason.toJSON(e));
+    if (message.reason !== undefined) {
+      obj.reason = WriteNodesRequest_Reason.toJSON(message.reason);
     }
     if (message.txn !== undefined) {
       obj.txn = WriteNodesRequest_TransactionDetails.toJSON(message.txn);
@@ -918,7 +878,9 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
   fromPartial(object: DeepPartial<WriteNodesRequest>): WriteNodesRequest {
     const message = createBaseWriteNodesRequest() as any;
     message.token = object.token ?? undefined;
-    message.reasons = object.reasons?.map((e) => WriteNodesRequest_Reason.fromPartial(e)) || [];
+    message.reason = (object.reason !== undefined && object.reason !== null)
+      ? WriteNodesRequest_Reason.fromPartial(object.reason)
+      : undefined;
     message.txn = (object.txn !== undefined && object.txn !== null)
       ? WriteNodesRequest_TransactionDetails.fromPartial(object.txn)
       : undefined;
@@ -930,82 +892,6 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
     message.currentStage = (object.currentStage !== undefined && object.currentStage !== null)
       ? WriteNodesRequest_CurrentStageWrite.fromPartial(object.currentStage)
       : undefined;
-    return message;
-  },
-};
-
-function createBaseWriteNodesRequest_RealmValue(): WriteNodesRequest_RealmValue {
-  return { realm: undefined, value: undefined };
-}
-
-export const WriteNodesRequest_RealmValue: MessageFns<WriteNodesRequest_RealmValue> = {
-  encode(message: WriteNodesRequest_RealmValue, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.realm !== undefined) {
-      writer.uint32(10).string(message.realm);
-    }
-    if (message.value !== undefined) {
-      Value.encode(message.value, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): WriteNodesRequest_RealmValue {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseWriteNodesRequest_RealmValue() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.realm = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.value = Value.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): WriteNodesRequest_RealmValue {
-    return {
-      realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
-      value: isSet(object.value) ? Value.fromJSON(object.value) : undefined,
-    };
-  },
-
-  toJSON(message: WriteNodesRequest_RealmValue): unknown {
-    const obj: any = {};
-    if (message.realm !== undefined) {
-      obj.realm = message.realm;
-    }
-    if (message.value !== undefined) {
-      obj.value = Value.toJSON(message.value);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<WriteNodesRequest_RealmValue>): WriteNodesRequest_RealmValue {
-    return WriteNodesRequest_RealmValue.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<WriteNodesRequest_RealmValue>): WriteNodesRequest_RealmValue {
-    const message = createBaseWriteNodesRequest_RealmValue() as any;
-    message.realm = object.realm ?? undefined;
-    message.value = (object.value !== undefined && object.value !== null) ? Value.fromPartial(object.value) : undefined;
     return message;
   },
 };
@@ -1114,7 +1000,7 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
       writer.uint32(10).string(message.message);
     }
     for (const v of message.details) {
-      Value.encode(v!, writer.uint32(18).fork()).join();
+      ValueWrite.encode(v!, writer.uint32(18).fork()).join();
     }
     if (message.idempotencyKey !== undefined) {
       writer.uint32(26).string(message.idempotencyKey);
@@ -1142,7 +1028,7 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
             break;
           }
 
-          message.details.push(Value.decode(reader, reader.uint32()));
+          message.details.push(ValueWrite.decode(reader, reader.uint32()));
           continue;
         }
         case 3: {
@@ -1165,7 +1051,7 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
   fromJSON(object: any): WriteNodesRequest_StageAttemptProgress {
     return {
       message: isSet(object.message) ? globalThis.String(object.message) : undefined,
-      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => ValueWrite.fromJSON(e)) : [],
       idempotencyKey: isSet(object.idempotencyKey) ? globalThis.String(object.idempotencyKey) : undefined,
     };
   },
@@ -1176,7 +1062,7 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
       obj.message = message.message;
     }
     if (message.details?.length) {
-      obj.details = message.details.map((e) => Value.toJSON(e));
+      obj.details = message.details.map((e) => ValueWrite.toJSON(e));
     }
     if (message.idempotencyKey !== undefined) {
       obj.idempotencyKey = message.idempotencyKey;
@@ -1190,26 +1076,23 @@ export const WriteNodesRequest_StageAttemptProgress: MessageFns<WriteNodesReques
   fromPartial(object: DeepPartial<WriteNodesRequest_StageAttemptProgress>): WriteNodesRequest_StageAttemptProgress {
     const message = createBaseWriteNodesRequest_StageAttemptProgress() as any;
     message.message = object.message ?? undefined;
-    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    message.details = object.details?.map((e) => ValueWrite.fromPartial(e)) || [];
     message.idempotencyKey = object.idempotencyKey ?? undefined;
     return message;
   },
 };
 
 function createBaseWriteNodesRequest_Reason(): WriteNodesRequest_Reason {
-  return { realm: undefined, message: undefined, details: [] };
+  return { message: undefined, details: [] };
 }
 
 export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
   encode(message: WriteNodesRequest_Reason, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.realm !== undefined) {
-      writer.uint32(10).string(message.realm);
-    }
     if (message.message !== undefined) {
-      writer.uint32(18).string(message.message);
+      writer.uint32(10).string(message.message);
     }
     for (const v of message.details) {
-      Value.encode(v!, writer.uint32(26).fork()).join();
+      ValueWrite.encode(v!, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -1226,7 +1109,7 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
             break;
           }
 
-          message.realm = reader.string();
+          message.message = reader.string();
           continue;
         }
         case 2: {
@@ -1234,15 +1117,7 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
             break;
           }
 
-          message.message = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.details.push(Value.decode(reader, reader.uint32()));
+          message.details.push(ValueWrite.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -1256,22 +1131,18 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
 
   fromJSON(object: any): WriteNodesRequest_Reason {
     return {
-      realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       message: isSet(object.message) ? globalThis.String(object.message) : undefined,
-      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => ValueWrite.fromJSON(e)) : [],
     };
   },
 
   toJSON(message: WriteNodesRequest_Reason): unknown {
     const obj: any = {};
-    if (message.realm !== undefined) {
-      obj.realm = message.realm;
-    }
     if (message.message !== undefined) {
       obj.message = message.message;
     }
     if (message.details?.length) {
-      obj.details = message.details.map((e) => Value.toJSON(e));
+      obj.details = message.details.map((e) => ValueWrite.toJSON(e));
     }
     return obj;
   },
@@ -1281,9 +1152,8 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
   },
   fromPartial(object: DeepPartial<WriteNodesRequest_Reason>): WriteNodesRequest_Reason {
     const message = createBaseWriteNodesRequest_Reason() as any;
-    message.realm = object.realm ?? undefined;
     message.message = object.message ?? undefined;
-    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    message.details = object.details?.map((e) => ValueWrite.fromPartial(e)) || [];
     return message;
   },
 };
@@ -1393,13 +1263,13 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
       writer.uint32(24).int32(message.kind);
     }
     for (const v of message.options) {
-      WriteNodesRequest_RealmValue.encode(v!, writer.uint32(34).fork()).join();
+      ValueWrite.encode(v!, writer.uint32(34).fork()).join();
     }
     if (message.dependencies !== undefined) {
       WriteNodesRequest_DependencyGroup.encode(message.dependencies, writer.uint32(42).fork()).join();
     }
     for (const v of message.results) {
-      WriteNodesRequest_RealmValue.encode(v!, writer.uint32(50).fork()).join();
+      ValueWrite.encode(v!, writer.uint32(50).fork()).join();
     }
     if (message.finalizeResults !== undefined) {
       writer.uint32(56).bool(message.finalizeResults);
@@ -1446,7 +1316,7 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
             break;
           }
 
-          message.options.push(WriteNodesRequest_RealmValue.decode(reader, reader.uint32()));
+          message.options.push(ValueWrite.decode(reader, reader.uint32()));
           continue;
         }
         case 5: {
@@ -1462,7 +1332,7 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
             break;
           }
 
-          message.results.push(WriteNodesRequest_RealmValue.decode(reader, reader.uint32()));
+          message.results.push(ValueWrite.decode(reader, reader.uint32()));
           continue;
         }
         case 7: {
@@ -1495,15 +1365,11 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
       identifier: isSet(object.identifier) ? Check.fromJSON(object.identifier) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       kind: isSet(object.kind) ? checkKindFromJSON(object.kind) : undefined,
-      options: globalThis.Array.isArray(object?.options)
-        ? object.options.map((e: any) => WriteNodesRequest_RealmValue.fromJSON(e))
-        : [],
+      options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => ValueWrite.fromJSON(e)) : [],
       dependencies: isSet(object.dependencies)
         ? WriteNodesRequest_DependencyGroup.fromJSON(object.dependencies)
         : undefined,
-      results: globalThis.Array.isArray(object?.results)
-        ? object.results.map((e: any) => WriteNodesRequest_RealmValue.fromJSON(e))
-        : [],
+      results: globalThis.Array.isArray(object?.results) ? object.results.map((e: any) => ValueWrite.fromJSON(e)) : [],
       finalizeResults: isSet(object.finalizeResults) ? globalThis.Boolean(object.finalizeResults) : undefined,
       state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
     };
@@ -1521,13 +1387,13 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
       obj.kind = checkKindToJSON(message.kind);
     }
     if (message.options?.length) {
-      obj.options = message.options.map((e) => WriteNodesRequest_RealmValue.toJSON(e));
+      obj.options = message.options.map((e) => ValueWrite.toJSON(e));
     }
     if (message.dependencies !== undefined) {
       obj.dependencies = WriteNodesRequest_DependencyGroup.toJSON(message.dependencies);
     }
     if (message.results?.length) {
-      obj.results = message.results.map((e) => WriteNodesRequest_RealmValue.toJSON(e));
+      obj.results = message.results.map((e) => ValueWrite.toJSON(e));
     }
     if (message.finalizeResults !== undefined) {
       obj.finalizeResults = message.finalizeResults;
@@ -1548,11 +1414,11 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
       : undefined;
     message.realm = object.realm ?? undefined;
     message.kind = object.kind ?? undefined;
-    message.options = object.options?.map((e) => WriteNodesRequest_RealmValue.fromPartial(e)) || [];
+    message.options = object.options?.map((e) => ValueWrite.fromPartial(e)) || [];
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? WriteNodesRequest_DependencyGroup.fromPartial(object.dependencies)
       : undefined;
-    message.results = object.results?.map((e) => WriteNodesRequest_RealmValue.fromPartial(e)) || [];
+    message.results = object.results?.map((e) => ValueWrite.fromPartial(e)) || [];
     message.finalizeResults = object.finalizeResults ?? undefined;
     message.state = object.state ?? undefined;
     return message;
@@ -1577,7 +1443,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
       Stage.encode(message.identifier, writer.uint32(10).fork()).join();
     }
     if (message.args !== undefined) {
-      Value.encode(message.args, writer.uint32(18).fork()).join();
+      ValueWrite.encode(message.args, writer.uint32(18).fork()).join();
     }
     if (message.realm !== undefined) {
       writer.uint32(26).string(message.realm);
@@ -1617,7 +1483,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
             break;
           }
 
-          message.args = Value.decode(reader, reader.uint32());
+          message.args = ValueWrite.decode(reader, reader.uint32());
           continue;
         }
         case 3: {
@@ -1672,7 +1538,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
   fromJSON(object: any): WriteNodesRequest_StageWrite {
     return {
       identifier: isSet(object.identifier) ? Stage.fromJSON(object.identifier) : undefined,
-      args: isSet(object.args) ? Value.fromJSON(object.args) : undefined,
+      args: isSet(object.args) ? ValueWrite.fromJSON(object.args) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       dependencies: isSet(object.dependencies)
         ? WriteNodesRequest_DependencyGroup.fromJSON(object.dependencies)
@@ -1693,7 +1559,7 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
       obj.identifier = Stage.toJSON(message.identifier);
     }
     if (message.args !== undefined) {
-      obj.args = Value.toJSON(message.args);
+      obj.args = ValueWrite.toJSON(message.args);
     }
     if (message.realm !== undefined) {
       obj.realm = message.realm;
@@ -1721,7 +1587,9 @@ export const WriteNodesRequest_StageWrite: MessageFns<WriteNodesRequest_StageWri
     message.identifier = (object.identifier !== undefined && object.identifier !== null)
       ? Stage.fromPartial(object.identifier)
       : undefined;
-    message.args = (object.args !== undefined && object.args !== null) ? Value.fromPartial(object.args) : undefined;
+    message.args = (object.args !== undefined && object.args !== null)
+      ? ValueWrite.fromPartial(object.args)
+      : undefined;
     message.realm = object.realm ?? undefined;
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? WriteNodesRequest_DependencyGroup.fromPartial(object.dependencies)
@@ -1743,7 +1611,7 @@ function createBaseWriteNodesRequest_CurrentAttemptWrite(): WriteNodesRequest_Cu
 export const WriteNodesRequest_CurrentAttemptWrite: MessageFns<WriteNodesRequest_CurrentAttemptWrite> = {
   encode(message: WriteNodesRequest_CurrentAttemptWrite, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.details) {
-      Value.encode(v!, writer.uint32(10).fork()).join();
+      ValueWrite.encode(v!, writer.uint32(10).fork()).join();
     }
     for (const v of message.progress) {
       WriteNodesRequest_StageAttemptProgress.encode(v!, writer.uint32(18).fork()).join();
@@ -1767,7 +1635,7 @@ export const WriteNodesRequest_CurrentAttemptWrite: MessageFns<WriteNodesRequest
             break;
           }
 
-          message.details.push(Value.decode(reader, reader.uint32()));
+          message.details.push(ValueWrite.decode(reader, reader.uint32()));
           continue;
         }
         case 2: {
@@ -1800,7 +1668,7 @@ export const WriteNodesRequest_CurrentAttemptWrite: MessageFns<WriteNodesRequest
 
   fromJSON(object: any): WriteNodesRequest_CurrentAttemptWrite {
     return {
-      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => ValueWrite.fromJSON(e)) : [],
       progress: globalThis.Array.isArray(object?.progress)
         ? object.progress.map((e: any) => WriteNodesRequest_StageAttemptProgress.fromJSON(e))
         : [],
@@ -1813,7 +1681,7 @@ export const WriteNodesRequest_CurrentAttemptWrite: MessageFns<WriteNodesRequest
   toJSON(message: WriteNodesRequest_CurrentAttemptWrite): unknown {
     const obj: any = {};
     if (message.details?.length) {
-      obj.details = message.details.map((e) => Value.toJSON(e));
+      obj.details = message.details.map((e) => ValueWrite.toJSON(e));
     }
     if (message.progress?.length) {
       obj.progress = message.progress.map((e) => WriteNodesRequest_StageAttemptProgress.toJSON(e));
@@ -1829,7 +1697,7 @@ export const WriteNodesRequest_CurrentAttemptWrite: MessageFns<WriteNodesRequest
   },
   fromPartial(object: DeepPartial<WriteNodesRequest_CurrentAttemptWrite>): WriteNodesRequest_CurrentAttemptWrite {
     const message = createBaseWriteNodesRequest_CurrentAttemptWrite() as any;
-    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    message.details = object.details?.map((e) => ValueWrite.fromPartial(e)) || [];
     message.progress = object.progress?.map((e) => WriteNodesRequest_StageAttemptProgress.fromPartial(e)) || [];
     message.stateTransition = (object.stateTransition !== undefined && object.stateTransition !== null)
       ? WriteNodesRequest_CurrentAttemptWrite_StateTransition.fromPartial(object.stateTransition)

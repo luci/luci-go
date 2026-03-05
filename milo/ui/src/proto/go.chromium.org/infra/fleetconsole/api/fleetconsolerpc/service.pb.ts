@@ -7,7 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
-import { MonitoredRecord } from "../../omnilab/omnilab-pubsub.pb";
+import { MonitoredRecord } from "../../internal/infra/ext/omnilab/omnilab-pubsub.pb";
 import { DateOnly } from "./common_types.pb";
 
 export const protobufPackage = "fleetconsole";
@@ -571,6 +571,56 @@ export interface ScheduleAutorepairResponse {
    * request.
    */
   readonly results: readonly ScheduleAutorepairResult[];
+}
+
+export interface ScheduleDeployRequest {
+  /** The list of device names to schedule deploy for. */
+  readonly unitNames: readonly string[];
+  /**
+   * Options to update UFS entries before deploying.
+   * Leave fields empty to keep existing values.
+   */
+  readonly deployOptions: DeployOptions | undefined;
+}
+
+export interface DeployOptions {
+  /** Corresponds to 'asset' in shivas */
+  readonly assetTag: string;
+  /** Servo/Labstation config */
+  readonly servoHostname: string;
+  readonly servoPort: number;
+  readonly servoSerial: string;
+  /** Pools to assign. */
+  readonly pools: readonly string[];
+  /** Tags/Labels to assign. */
+  readonly tags: readonly string[];
+  /** RPM config */
+  readonly rpmHost: string;
+  readonly rpmOutlet: string;
+  readonly rpmType: string;
+  readonly hive: string;
+  readonly osRestriction: string;
+}
+
+export interface ScheduleDeployResult {
+  readonly unitName: string;
+  /** The task URL of the scheduled task if successful. */
+  readonly taskUrl?:
+    | string
+    | undefined;
+  /** The error message if the task failed to schedule. */
+  readonly errorMessage?: string | undefined;
+}
+
+export interface ScheduleDeployResponse {
+  /** The ID of the admin session. */
+  readonly sessionId: string;
+  /**
+   * The results for each device in the request
+   * The order of the results is the same as the order of the unit_names in the
+   * request.
+   */
+  readonly results: readonly ScheduleDeployResult[];
 }
 
 export interface UpdateAndroidMetricsRequest {
@@ -5605,6 +5655,488 @@ export const ScheduleAutorepairResponse: MessageFns<ScheduleAutorepairResponse> 
   },
 };
 
+function createBaseScheduleDeployRequest(): ScheduleDeployRequest {
+  return { unitNames: [], deployOptions: undefined };
+}
+
+export const ScheduleDeployRequest: MessageFns<ScheduleDeployRequest> = {
+  encode(message: ScheduleDeployRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.unitNames) {
+      writer.uint32(10).string(v!);
+    }
+    if (message.deployOptions !== undefined) {
+      DeployOptions.encode(message.deployOptions, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ScheduleDeployRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleDeployRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.unitNames.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.deployOptions = DeployOptions.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleDeployRequest {
+    return {
+      unitNames: globalThis.Array.isArray(object?.unitNames)
+        ? object.unitNames.map((e: any) => globalThis.String(e))
+        : [],
+      deployOptions: isSet(object.deployOptions) ? DeployOptions.fromJSON(object.deployOptions) : undefined,
+    };
+  },
+
+  toJSON(message: ScheduleDeployRequest): unknown {
+    const obj: any = {};
+    if (message.unitNames?.length) {
+      obj.unitNames = message.unitNames;
+    }
+    if (message.deployOptions !== undefined) {
+      obj.deployOptions = DeployOptions.toJSON(message.deployOptions);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ScheduleDeployRequest>): ScheduleDeployRequest {
+    return ScheduleDeployRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ScheduleDeployRequest>): ScheduleDeployRequest {
+    const message = createBaseScheduleDeployRequest() as any;
+    message.unitNames = object.unitNames?.map((e) => e) || [];
+    message.deployOptions = (object.deployOptions !== undefined && object.deployOptions !== null)
+      ? DeployOptions.fromPartial(object.deployOptions)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseDeployOptions(): DeployOptions {
+  return {
+    assetTag: "",
+    servoHostname: "",
+    servoPort: 0,
+    servoSerial: "",
+    pools: [],
+    tags: [],
+    rpmHost: "",
+    rpmOutlet: "",
+    rpmType: "",
+    hive: "",
+    osRestriction: "",
+  };
+}
+
+export const DeployOptions: MessageFns<DeployOptions> = {
+  encode(message: DeployOptions, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.assetTag !== "") {
+      writer.uint32(10).string(message.assetTag);
+    }
+    if (message.servoHostname !== "") {
+      writer.uint32(18).string(message.servoHostname);
+    }
+    if (message.servoPort !== 0) {
+      writer.uint32(24).int32(message.servoPort);
+    }
+    if (message.servoSerial !== "") {
+      writer.uint32(34).string(message.servoSerial);
+    }
+    for (const v of message.pools) {
+      writer.uint32(42).string(v!);
+    }
+    for (const v of message.tags) {
+      writer.uint32(50).string(v!);
+    }
+    if (message.rpmHost !== "") {
+      writer.uint32(58).string(message.rpmHost);
+    }
+    if (message.rpmOutlet !== "") {
+      writer.uint32(66).string(message.rpmOutlet);
+    }
+    if (message.rpmType !== "") {
+      writer.uint32(74).string(message.rpmType);
+    }
+    if (message.hive !== "") {
+      writer.uint32(82).string(message.hive);
+    }
+    if (message.osRestriction !== "") {
+      writer.uint32(90).string(message.osRestriction);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeployOptions {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeployOptions() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.assetTag = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.servoHostname = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.servoPort = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.servoSerial = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.pools.push(reader.string());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.tags.push(reader.string());
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.rpmHost = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.rpmOutlet = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.rpmType = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.hive = reader.string();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.osRestriction = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeployOptions {
+    return {
+      assetTag: isSet(object.assetTag) ? globalThis.String(object.assetTag) : "",
+      servoHostname: isSet(object.servoHostname) ? globalThis.String(object.servoHostname) : "",
+      servoPort: isSet(object.servoPort) ? globalThis.Number(object.servoPort) : 0,
+      servoSerial: isSet(object.servoSerial) ? globalThis.String(object.servoSerial) : "",
+      pools: globalThis.Array.isArray(object?.pools) ? object.pools.map((e: any) => globalThis.String(e)) : [],
+      tags: globalThis.Array.isArray(object?.tags) ? object.tags.map((e: any) => globalThis.String(e)) : [],
+      rpmHost: isSet(object.rpmHost) ? globalThis.String(object.rpmHost) : "",
+      rpmOutlet: isSet(object.rpmOutlet) ? globalThis.String(object.rpmOutlet) : "",
+      rpmType: isSet(object.rpmType) ? globalThis.String(object.rpmType) : "",
+      hive: isSet(object.hive) ? globalThis.String(object.hive) : "",
+      osRestriction: isSet(object.osRestriction) ? globalThis.String(object.osRestriction) : "",
+    };
+  },
+
+  toJSON(message: DeployOptions): unknown {
+    const obj: any = {};
+    if (message.assetTag !== "") {
+      obj.assetTag = message.assetTag;
+    }
+    if (message.servoHostname !== "") {
+      obj.servoHostname = message.servoHostname;
+    }
+    if (message.servoPort !== 0) {
+      obj.servoPort = Math.round(message.servoPort);
+    }
+    if (message.servoSerial !== "") {
+      obj.servoSerial = message.servoSerial;
+    }
+    if (message.pools?.length) {
+      obj.pools = message.pools;
+    }
+    if (message.tags?.length) {
+      obj.tags = message.tags;
+    }
+    if (message.rpmHost !== "") {
+      obj.rpmHost = message.rpmHost;
+    }
+    if (message.rpmOutlet !== "") {
+      obj.rpmOutlet = message.rpmOutlet;
+    }
+    if (message.rpmType !== "") {
+      obj.rpmType = message.rpmType;
+    }
+    if (message.hive !== "") {
+      obj.hive = message.hive;
+    }
+    if (message.osRestriction !== "") {
+      obj.osRestriction = message.osRestriction;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeployOptions>): DeployOptions {
+    return DeployOptions.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeployOptions>): DeployOptions {
+    const message = createBaseDeployOptions() as any;
+    message.assetTag = object.assetTag ?? "";
+    message.servoHostname = object.servoHostname ?? "";
+    message.servoPort = object.servoPort ?? 0;
+    message.servoSerial = object.servoSerial ?? "";
+    message.pools = object.pools?.map((e) => e) || [];
+    message.tags = object.tags?.map((e) => e) || [];
+    message.rpmHost = object.rpmHost ?? "";
+    message.rpmOutlet = object.rpmOutlet ?? "";
+    message.rpmType = object.rpmType ?? "";
+    message.hive = object.hive ?? "";
+    message.osRestriction = object.osRestriction ?? "";
+    return message;
+  },
+};
+
+function createBaseScheduleDeployResult(): ScheduleDeployResult {
+  return { unitName: "", taskUrl: undefined, errorMessage: undefined };
+}
+
+export const ScheduleDeployResult: MessageFns<ScheduleDeployResult> = {
+  encode(message: ScheduleDeployResult, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.unitName !== "") {
+      writer.uint32(10).string(message.unitName);
+    }
+    if (message.taskUrl !== undefined) {
+      writer.uint32(18).string(message.taskUrl);
+    }
+    if (message.errorMessage !== undefined) {
+      writer.uint32(26).string(message.errorMessage);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ScheduleDeployResult {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleDeployResult() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.unitName = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.taskUrl = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.errorMessage = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleDeployResult {
+    return {
+      unitName: isSet(object.unitName) ? globalThis.String(object.unitName) : "",
+      taskUrl: isSet(object.taskUrl) ? globalThis.String(object.taskUrl) : undefined,
+      errorMessage: isSet(object.errorMessage) ? globalThis.String(object.errorMessage) : undefined,
+    };
+  },
+
+  toJSON(message: ScheduleDeployResult): unknown {
+    const obj: any = {};
+    if (message.unitName !== "") {
+      obj.unitName = message.unitName;
+    }
+    if (message.taskUrl !== undefined) {
+      obj.taskUrl = message.taskUrl;
+    }
+    if (message.errorMessage !== undefined) {
+      obj.errorMessage = message.errorMessage;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ScheduleDeployResult>): ScheduleDeployResult {
+    return ScheduleDeployResult.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ScheduleDeployResult>): ScheduleDeployResult {
+    const message = createBaseScheduleDeployResult() as any;
+    message.unitName = object.unitName ?? "";
+    message.taskUrl = object.taskUrl ?? undefined;
+    message.errorMessage = object.errorMessage ?? undefined;
+    return message;
+  },
+};
+
+function createBaseScheduleDeployResponse(): ScheduleDeployResponse {
+  return { sessionId: "", results: [] };
+}
+
+export const ScheduleDeployResponse: MessageFns<ScheduleDeployResponse> = {
+  encode(message: ScheduleDeployResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.sessionId !== "") {
+      writer.uint32(10).string(message.sessionId);
+    }
+    for (const v of message.results) {
+      ScheduleDeployResult.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ScheduleDeployResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseScheduleDeployResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.sessionId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.results.push(ScheduleDeployResult.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ScheduleDeployResponse {
+    return {
+      sessionId: isSet(object.sessionId) ? globalThis.String(object.sessionId) : "",
+      results: globalThis.Array.isArray(object?.results)
+        ? object.results.map((e: any) => ScheduleDeployResult.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ScheduleDeployResponse): unknown {
+    const obj: any = {};
+    if (message.sessionId !== "") {
+      obj.sessionId = message.sessionId;
+    }
+    if (message.results?.length) {
+      obj.results = message.results.map((e) => ScheduleDeployResult.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ScheduleDeployResponse>): ScheduleDeployResponse {
+    return ScheduleDeployResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ScheduleDeployResponse>): ScheduleDeployResponse {
+    const message = createBaseScheduleDeployResponse() as any;
+    message.sessionId = object.sessionId ?? "";
+    message.results = object.results?.map((e) => ScheduleDeployResult.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseUpdateAndroidMetricsRequest(): UpdateAndroidMetricsRequest {
   return {};
 }
@@ -9021,6 +9553,11 @@ export interface FleetConsole {
   ExportDevicesToCSV(request: ExportDevicesToCSVRequest): Promise<ExportDevicesToCSVResponse>;
   /** ScheduleAutorepair schedules an autorepair for the specified devices. */
   ScheduleAutorepair(request: ScheduleAutorepairRequest): Promise<ScheduleAutorepairResponse>;
+  /**
+   * ScheduleDeploy updates the device spec and schedules a deployment task.
+   * Equivalent to `shivas update dut -force-deploy`.
+   */
+  ScheduleDeploy(request: ScheduleDeployRequest): Promise<ScheduleDeployResponse>;
   UpdateAndroidMetrics(request: UpdateAndroidMetricsRequest): Promise<UpdateAndroidMetricsResponse>;
   /** ListResourceRequests returns Resource Requests provided by BigQuery */
   ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse>;
@@ -9072,6 +9609,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.CleanExit = this.CleanExit.bind(this);
     this.ExportDevicesToCSV = this.ExportDevicesToCSV.bind(this);
     this.ScheduleAutorepair = this.ScheduleAutorepair.bind(this);
+    this.ScheduleDeploy = this.ScheduleDeploy.bind(this);
     this.UpdateAndroidMetrics = this.UpdateAndroidMetrics.bind(this);
     this.ListResourceRequests = this.ListResourceRequests.bind(this);
     this.CountResourceRequests = this.CountResourceRequests.bind(this);
@@ -9196,6 +9734,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ScheduleAutorepairRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ScheduleAutorepair", data);
     return promise.then((data) => ScheduleAutorepairResponse.fromJSON(data));
+  }
+
+  ScheduleDeploy(request: ScheduleDeployRequest): Promise<ScheduleDeployResponse> {
+    const data = ScheduleDeployRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ScheduleDeploy", data);
+    return promise.then((data) => ScheduleDeployResponse.fromJSON(data));
   }
 
   UpdateAndroidMetrics(request: UpdateAndroidMetricsRequest): Promise<UpdateAndroidMetricsResponse> {

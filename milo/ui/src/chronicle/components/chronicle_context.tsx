@@ -21,8 +21,11 @@ import {
 } from 'react';
 import { useParams } from 'react-router';
 
-import { useQueryNodes } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
+import { useReadWorkPlan } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { IdentifierKind } from '@/proto/turboci/graph/ids/v1/identifier_kind.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+import { ValueMask } from '@/proto/turboci/graph/orchestrator/v1/value_mask.pb';
 import { WorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
@@ -32,6 +35,7 @@ const DEMO_WORKPLAN_ID = 'demo';
 interface ChronicleContextType {
   workplanId: string;
   graph: WorkPlan | undefined;
+  valueDataMap: Map<string, ValueData>;
 
   // Workflow type for fake data generation only.
   workflowType: WorkflowType;
@@ -45,6 +49,7 @@ interface ChronicleContextType {
 export const ChronicleContext = createContext<ChronicleContextType>({
   workplanId: '',
   graph: undefined,
+  valueDataMap: new Map(),
   workflowType: WorkflowType.ANDROID,
   setWorkflowType: () => {},
   selectedNodeId: undefined,
@@ -94,29 +99,40 @@ export function ChronicleContextProvider({
     throw new Error('Invalid URL: Missing workplanId parameter.');
   }
 
-  const result = useQueryNodes({
-    query: [
-      {
-        nodesInWorkplan: { id: workplanId },
-        collectChecks: {
-          options: true,
-          resultData: true,
-        },
-        collectStages: {
-          attempts: 3, // COLLECT_STAGE_ATTEMPTS_LATEST
-        },
-      },
-    ],
-    typeInfo: {
-      wanted: { typeUrls: ['*'] },
-      known: { typeUrls: ['*'] },
-    },
-  });
-
-  const queryNodesResponse = result.data;
-
   const useFakeData = workplanId === DEMO_WORKPLAN_ID;
-  const graph = useMemo(() => {
+
+  const result = useReadWorkPlan(
+    {
+      workplanId: { id: workplanId },
+      includedNodeTypes: [
+        IdentifierKind.IDENTIFIER_KIND_CHECK,
+        IdentifierKind.IDENTIFIER_KIND_CHECK_EDIT,
+        IdentifierKind.IDENTIFIER_KIND_STAGE,
+        IdentifierKind.IDENTIFIER_KIND_STAGE_ATTEMPT,
+        IdentifierKind.IDENTIFIER_KIND_STAGE_EDIT,
+      ],
+      valueFilter: {
+        typeInfo: {
+          wanted: { typeUrls: ['*'] },
+          known: { typeUrls: [] },
+        },
+        checkOptions: ValueMask.VALUE_MASK_TYPE_VALUE,
+        checkResultData: ValueMask.VALUE_MASK_TYPE_VALUE,
+        checkEditOptions: ValueMask.VALUE_MASK_TYPE_VALUE,
+        checkEditResultData: ValueMask.VALUE_MASK_TYPE_VALUE,
+        stageArgs: ValueMask.VALUE_MASK_TYPE_VALUE,
+        stageAttemptDetails: ValueMask.VALUE_MASK_TYPE_VALUE,
+        stageAttemptProgressDetails: ValueMask.VALUE_MASK_TYPE,
+        stageEditAttemptDetails: ValueMask.VALUE_MASK_TYPE_VALUE,
+        stageEditAttemptProgressDetails: ValueMask.VALUE_MASK_TYPE,
+      },
+    },
+    {
+      enabled: !useFakeData,
+    },
+  );
+
+  const workplanValueMap = useMemo(() => {
     if (useFakeData) {
       const generator = new FakeGraphGenerator({
         workPlanIdStr: workplanId,
@@ -124,15 +140,23 @@ export function ChronicleContextProvider({
       });
       return generator.generate();
     }
-    return queryNodesResponse?.workplans?.find(
-      (wp) => wp.identifier?.id === workplanId,
+
+    const response = result.data;
+    const valueDataMap: Map<string, ValueData> = new Map(
+      Object.entries(response?.valueData ?? []),
     );
-  }, [workplanId, workflowType, useFakeData, queryNodesResponse]);
+
+    return {
+      workplan: response?.workplan,
+      valueDataMap: valueDataMap,
+    };
+  }, [workplanId, workflowType, useFakeData, result]);
 
   const value = useMemo(
     () => ({
       workplanId,
-      graph,
+      graph: workplanValueMap.workplan,
+      valueDataMap: workplanValueMap.valueDataMap,
       workflowType,
       setWorkflowType,
       selectedNodeId,
@@ -140,7 +164,8 @@ export function ChronicleContextProvider({
     }),
     [
       workplanId,
-      graph,
+      workplanValueMap.workplan,
+      workplanValueMap.valueDataMap,
       workflowType,
       setWorkflowType,
       selectedNodeId,

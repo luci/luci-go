@@ -18,6 +18,7 @@ import { ReactElement } from 'react';
 
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 import { CheckDetails } from './check_details';
 import { StageDetails } from './stage_details';
@@ -26,6 +27,7 @@ export interface InspectorPanelProps {
   nodeId: string;
   nodeLabel?: string;
   viewData?: Check | Stage;
+  valueDataMap?: Map<string, ValueData>;
   onClose: () => void;
 }
 
@@ -41,18 +43,23 @@ function isStageView(view: Check | Stage): view is Stage {
 export function InspectorPanel({
   nodeId,
   viewData,
+  valueDataMap,
   onClose,
 }: InspectorPanelProps) {
   let title = '';
   let detailsComponent: ReactElement | undefined = undefined;
 
-  if (viewData) {
+  if (viewData && valueDataMap) {
     if (isCheckView(viewData)) {
       title = 'Check Details';
-      detailsComponent = <CheckDetails check={viewData} />;
+      detailsComponent = (
+        <CheckDetails check={viewData} valueDataMap={valueDataMap} />
+      );
     } else if (isStageView(viewData)) {
       title = 'Stage Details';
-      detailsComponent = <StageDetails view={viewData} />;
+      detailsComponent = (
+        <StageDetails view={viewData} valueDataMap={valueDataMap} />
+      );
     }
   }
 

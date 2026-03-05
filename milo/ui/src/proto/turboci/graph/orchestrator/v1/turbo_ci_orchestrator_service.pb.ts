@@ -9,6 +9,8 @@ import { CreateWorkPlanRequest } from "./create_workplan_request.pb";
 import { CreateWorkPlanResponse } from "./create_workplan_response.pb";
 import { QueryNodesRequest } from "./query_nodes_request.pb";
 import { QueryNodesResponse } from "./query_nodes_response.pb";
+import { ReadWorkPlanRequest } from "./read_workplan_request.pb";
+import { ReadWorkPlanResponse } from "./read_workplan_response.pb";
 import { WriteNodesRequest } from "./write_nodes_request.pb";
 import { WriteNodesResponse } from "./write_nodes_response.pb";
 
@@ -59,7 +61,11 @@ export interface TurboCIOrchestrator {
    */
   WriteNodes(request: WriteNodesRequest): Promise<WriteNodesResponse>;
   /**
-   * QueryNodes allows querying nodes in a fairly simple way.
+   * QueryNodes allows querying nodes in a fairly simple way. It allows
+   * selecting a subset of the nodes within the workplan, as well as expansion
+   * to include related/nearby nodes if desired, allowing callers to get limited
+   * subsets of the workplan. If retrieving all nodes of one or more types, call
+   * ReadWorkPlan instead.
    *
    * In the future we may add a more advanced API to open up more of GQL's
    * underlying expressiveness.
@@ -71,6 +77,42 @@ export interface TurboCIOrchestrator {
    * state.
    */
   QueryNodes(request: QueryNodesRequest): Promise<QueryNodesResponse>;
+  /**
+   * ReadWorkPlan retrieves a single WorkPlan plus its component nodes of the
+   * specified types, whose revision is >= the revision value in the request.
+   *
+   * A caller that wants to receive incremental updates can first retrieve all
+   * content for the workplan by leaving `since_version` unset in their initial
+   * request. Subsequent requests can set `since_version` to the `version` from
+   * the previous response, requesting only nodes that have been updated since
+   * that revision.
+   *
+   * Since most updates to StageAttempts do not update the Stage's revision, it
+   * is possible to have StageAttempts and StageEdits that match the query
+   * criteria when their parent Stage does not. In those cases, the Stage will
+   * be returned to contain the StageAttempts and StageEdits.
+   *
+   * Callers can specify which ValueRefs should have their content returned as
+   * part of the request and which should have their content excluded. This can
+   * be specified based on the ValueRef's `type_url` (to let callers request
+   * only proto content they care about) or based on the type of node that
+   * contains the ValueRef (to let callers include ValueRef data for certain
+   * node types but not others, e.g. including ValueRef data for Checks and
+   * Stages but not for Edits). See ReadWorkPlanRequest.value_filter for
+   * details.
+   *
+   * This request supports pagination, to allow retrieval of WorkPlans with too
+   * many nodes for a single request. This means that callers that receive a
+   * WorkPlan from a paginated query cannot assume that the WorkPlan from a
+   * single page result contains all nodes in the WorkPlan, and must merge
+   * WorkPlans across all pages of the query.
+   *
+   * Aside from filtering on timestamp and node types and applying ACLs, it is
+   * not expected that this RPC will support options for filtering the returned
+   * nodes. For more targeted querying of only certain nodes within a workplan,
+   * use QueryNodes instead.
+   */
+  ReadWorkPlan(request: ReadWorkPlanRequest): Promise<ReadWorkPlanResponse>;
 }
 
 export const TurboCIOrchestratorServiceName = "turboci.graph.orchestrator.v1.TurboCIOrchestrator";
@@ -84,6 +126,7 @@ export class TurboCIOrchestratorClientImpl implements TurboCIOrchestrator {
     this.CreateWorkPlan = this.CreateWorkPlan.bind(this);
     this.WriteNodes = this.WriteNodes.bind(this);
     this.QueryNodes = this.QueryNodes.bind(this);
+    this.ReadWorkPlan = this.ReadWorkPlan.bind(this);
   }
   CreateWorkPlan(request: CreateWorkPlanRequest): Promise<CreateWorkPlanResponse> {
     const data = CreateWorkPlanRequest.toJSON(request);
@@ -101,6 +144,12 @@ export class TurboCIOrchestratorClientImpl implements TurboCIOrchestrator {
     const data = QueryNodesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "QueryNodes", data);
     return promise.then((data) => QueryNodesResponse.fromJSON(data));
+  }
+
+  ReadWorkPlan(request: ReadWorkPlanRequest): Promise<ReadWorkPlanResponse> {
+    const data = ReadWorkPlanRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ReadWorkPlan", data);
+    return promise.then((data) => ReadWorkPlanResponse.fromJSON(data));
   }
 }
 

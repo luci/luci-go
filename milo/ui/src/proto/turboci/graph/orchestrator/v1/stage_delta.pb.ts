@@ -10,7 +10,7 @@ import { StageAttempt } from "../../ids/v1/identifier.pb";
 import { Dependencies } from "./dependencies.pb";
 import { StageAttemptState, stageAttemptStateFromJSON, stageAttemptStateToJSON } from "./stage_attempt_state.pb";
 import { StageState, stageStateFromJSON, stageStateToJSON } from "./stage_state.pb";
-import { Value } from "./value.pb";
+import { ValueRef } from "./value_ref.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
@@ -52,13 +52,8 @@ export interface StageDelta_Attempt {
   readonly state?:
     | StageAttemptState
     | undefined;
-  /**
-   * Details written as part of this edit.
-   *
-   * NOTE: For now, the Value here will be devoid of content other than
-   * `type_url`.
-   */
-  readonly details: readonly Value[];
+  /** Details written as part of this edit. */
+  readonly details: readonly ValueRef[];
   /** The index of the progress message(s) written as part of this edit. */
   readonly progress: readonly string[];
 }
@@ -188,7 +183,7 @@ export const StageDelta_Attempt: MessageFns<StageDelta_Attempt> = {
       writer.uint32(16).int32(message.state);
     }
     for (const v of message.details) {
-      Value.encode(v!, writer.uint32(26).fork()).join();
+      ValueRef.encode(v!, writer.uint32(26).fork()).join();
     }
     writer.uint32(34).fork();
     for (const v of message.progress) {
@@ -226,7 +221,7 @@ export const StageDelta_Attempt: MessageFns<StageDelta_Attempt> = {
             break;
           }
 
-          message.details.push(Value.decode(reader, reader.uint32()));
+          message.details.push(ValueRef.decode(reader, reader.uint32()));
           continue;
         }
         case 4: {
@@ -260,7 +255,7 @@ export const StageDelta_Attempt: MessageFns<StageDelta_Attempt> = {
     return {
       identifier: isSet(object.identifier) ? StageAttempt.fromJSON(object.identifier) : undefined,
       state: isSet(object.state) ? stageAttemptStateFromJSON(object.state) : undefined,
-      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => Value.fromJSON(e)) : [],
+      details: globalThis.Array.isArray(object?.details) ? object.details.map((e: any) => ValueRef.fromJSON(e)) : [],
       progress: globalThis.Array.isArray(object?.progress) ? object.progress.map((e: any) => globalThis.String(e)) : [],
     };
   },
@@ -274,7 +269,7 @@ export const StageDelta_Attempt: MessageFns<StageDelta_Attempt> = {
       obj.state = stageAttemptStateToJSON(message.state);
     }
     if (message.details?.length) {
-      obj.details = message.details.map((e) => Value.toJSON(e));
+      obj.details = message.details.map((e) => ValueRef.toJSON(e));
     }
     if (message.progress?.length) {
       obj.progress = message.progress;
@@ -291,7 +286,7 @@ export const StageDelta_Attempt: MessageFns<StageDelta_Attempt> = {
       ? StageAttempt.fromPartial(object.identifier)
       : undefined;
     message.state = object.state ?? undefined;
-    message.details = object.details?.map((e) => Value.fromPartial(e)) || [];
+    message.details = object.details?.map((e) => ValueRef.fromPartial(e)) || [];
     message.progress = object.progress?.map((e) => e) || [];
     return message;
   },

@@ -16,6 +16,7 @@ import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { checkStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { stageStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 import {
   CheckResultStatus,
@@ -64,7 +65,11 @@ const stageStateToStatus = (state: number | undefined): NodeStatus => {
   return stateStr.replace('STAGE_STATE_', '') as NodeStatus;
 };
 
-export function buildVisualGraph(stages: Stage[], checks: Check[]): Graph {
+export function buildVisualGraph(
+  stages: Stage[],
+  checks: Check[],
+  valueDataMap: Map<string, ValueData>,
+): Graph {
   const nodes: Record<string, GraphNode> = {};
   const allNodeIds = new Set<string>();
   const nonRootNodes = new Set<string>();
@@ -93,9 +98,9 @@ export function buildVisualGraph(stages: Stage[], checks: Check[]): Graph {
     const checkId = cv.identifier?.id;
     if (!checkId) return;
     const checkNode = getNode(checkId, 'CHECK', checkStateToStatus(cv.state));
-    checkNode.label = getCheckLabel(cv);
+    checkNode.label = getCheckLabel(cv, valueDataMap);
     checkNode.raw = cv;
-    checkNode.resultStatus = getCheckResultStatus(cv);
+    checkNode.resultStatus = getCheckResultStatus(cv, valueDataMap);
   });
 
   stages.forEach((sv) => {

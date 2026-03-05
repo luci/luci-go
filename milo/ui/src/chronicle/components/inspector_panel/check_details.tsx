@@ -17,15 +17,17 @@ import { Box, Chip, Divider, Typography } from '@mui/material';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { checkKindToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { checkStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
+import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
 
 export interface CheckDetailsProps {
   check: Check;
+  valueDataMap: Map<string, ValueData>;
 }
 
-export function CheckDetails({ check }: CheckDetailsProps) {
+export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
   const dependencyIds = (check.dependencies?.edges || [])
     .map((edge) => edge.check?.identifier?.id || edge.stage?.identifier?.id)
     .filter((id): id is string => !!id)
@@ -61,11 +63,15 @@ export function CheckDetails({ check }: CheckDetailsProps) {
       {check.options.length > 0 && (
         <>
           <Typography variant="subtitle2">Options</Typography>
-          {check.options.map((datum, index) => (
+          {check.options.map((value_ref, index) => (
             <AnyDetails
               key={`check-option-${index}`}
-              typeUrl={datum.value?.value?.typeUrl}
-              json={datum.value?.valueJson}
+              typeUrl={value_ref.typeUrl}
+              json={
+                value_ref.digest
+                  ? valueDataMap.get(value_ref.digest)?.json?.value
+                  : undefined
+              }
             />
           ))}
         </>
@@ -79,11 +85,11 @@ export function CheckDetails({ check }: CheckDetailsProps) {
           {check.results.map((result, resIdx) => {
             if (result.data.length === 0) return null;
 
-            return result.data.map((datum, dataIdx) => (
+            return result.data.map((value_ref, dataIdx) => (
               <AnyDetails
                 key={`result-${resIdx}-${dataIdx}`}
-                typeUrl={datum.value?.value?.typeUrl}
-                json={datum.value?.valueJson}
+                typeUrl={value_ref.typeUrl}
+                json={valueDataMap.get(value_ref.digest!)!.json!.value}
               />
             ));
           })}
