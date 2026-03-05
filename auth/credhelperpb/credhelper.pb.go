@@ -122,8 +122,25 @@ type Config struct {
 	// This is useful if the helper itself doesn't implement its own persistent
 	// caching.
 	CacheTokensOnDisk bool `protobuf:"varint,5,opt,name=cache_tokens_on_disk,json=cacheTokensOnDisk,proto3" json:"cache_tokens_on_disk,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// If set, then the credential helper will be given the set of requested
+	// OAuth scopes via this flag (as "scope1,scope2,scope3").
+	//
+	// Note this also affects how tokens are cached on disk. If this flag is
+	// present, the set of scopes will be included in the token cache key. If
+	// this flag is absent, the same cached token will be used regardless of
+	// requested scopes.
+	DynamicOauthScopesFlag string `protobuf:"bytes,6,opt,name=dynamic_oauth_scopes_flag,json=dynamicOauthScopesFlag,proto3" json:"dynamic_oauth_scopes_flag,omitempty"`
+	// Allows remapping some requested scopes into different ones (or drop them).
+	//
+	// E.g. if this has an entry "old -> new", then the helper will be called
+	// with scopes "new,s2" instead of "old,s2".
+	//
+	// If the new value is "", the scope will be ignored entirely.
+	//
+	// Has no effect if `dynamic_oauth_scopes_flag` is empty.
+	OauthScopesRemapping map[string]string `protobuf:"bytes,7,rep,name=oauth_scopes_remapping,json=oauthScopesRemapping,proto3" json:"oauth_scopes_remapping,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *Config) Reset() {
@@ -191,17 +208,36 @@ func (x *Config) GetCacheTokensOnDisk() bool {
 	return false
 }
 
+func (x *Config) GetDynamicOauthScopesFlag() string {
+	if x != nil {
+		return x.DynamicOauthScopesFlag
+	}
+	return ""
+}
+
+func (x *Config) GetOauthScopesRemapping() map[string]string {
+	if x != nil {
+		return x.OauthScopesRemapping
+	}
+	return nil
+}
+
 var File_go_chromium_org_luci_auth_credhelperpb_credhelper_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_rawDesc = "" +
 	"\n" +
-	"7go.chromium.org/luci/auth/credhelperpb/credhelper.proto\x12\x14luci.auth.credhelper\x1a\x1egoogle/protobuf/duration.proto\"\xd2\x01\n" +
+	"7go.chromium.org/luci/auth/credhelperpb/credhelper.proto\x12\x14luci.auth.credhelper\x1a\x1egoogle/protobuf/duration.proto\"\xc4\x03\n" +
 	"\x06Config\x12:\n" +
 	"\bprotocol\x18\x01 \x01(\x0e2\x1e.luci.auth.credhelper.ProtocolR\bprotocol\x12\x12\n" +
 	"\x04exec\x18\x02 \x01(\tR\x04exec\x12\x12\n" +
 	"\x04args\x18\x03 \x03(\tR\x04args\x123\n" +
 	"\atimeout\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x12/\n" +
-	"\x14cache_tokens_on_disk\x18\x05 \x01(\bR\x11cacheTokensOnDisk*%\n" +
+	"\x14cache_tokens_on_disk\x18\x05 \x01(\bR\x11cacheTokensOnDisk\x129\n" +
+	"\x19dynamic_oauth_scopes_flag\x18\x06 \x01(\tR\x16dynamicOauthScopesFlag\x12l\n" +
+	"\x16oauth_scopes_remapping\x18\a \x03(\v26.luci.auth.credhelper.Config.OauthScopesRemappingEntryR\x14oauthScopesRemapping\x1aG\n" +
+	"\x19OauthScopesRemappingEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*%\n" +
 	"\bProtocol\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\f\n" +
 	"\bRECLIENT\x10\x01B(Z&go.chromium.org/luci/auth/credhelperpbb\x06proto3"
@@ -219,20 +255,22 @@ func file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_rawDescGZIP() 
 }
 
 var file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_goTypes = []any{
 	(Protocol)(0),               // 0: luci.auth.credhelper.Protocol
 	(*Config)(nil),              // 1: luci.auth.credhelper.Config
-	(*durationpb.Duration)(nil), // 2: google.protobuf.Duration
+	nil,                         // 2: luci.auth.credhelper.Config.OauthScopesRemappingEntry
+	(*durationpb.Duration)(nil), // 3: google.protobuf.Duration
 }
 var file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_depIdxs = []int32{
 	0, // 0: luci.auth.credhelper.Config.protocol:type_name -> luci.auth.credhelper.Protocol
-	2, // 1: luci.auth.credhelper.Config.timeout:type_name -> google.protobuf.Duration
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 1: luci.auth.credhelper.Config.timeout:type_name -> google.protobuf.Duration
+	2, // 2: luci.auth.credhelper.Config.oauth_scopes_remapping:type_name -> luci.auth.credhelper.Config.OauthScopesRemappingEntry
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_init() }
@@ -246,7 +284,7 @@ func file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_rawDesc), len(file_go_chromium_org_luci_auth_credhelperpb_credhelper_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

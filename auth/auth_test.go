@@ -904,8 +904,14 @@ func TestMetadata(t *testing.T) {
 func TestCredentialHelperEnv(t *testing.T) {
 	t.Parallel()
 
+	// We need some existing executable on disk, we won't call it though.
+	phonyHelper, err := os.Executable()
+	if err != nil {
+		t.Fatalf("os.Executable failed: %s", err)
+	}
+	env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=" + phonyHelper})
+
 	ftt.Run("cred helper method is chosen", t, func(t *ftt.Test) {
-		env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
 		ctx := env.SetInCtx(context.Background())
 		ctx = lucictx.SetLocalAuth(ctx, nil)
 
@@ -916,20 +922,23 @@ func TestCredentialHelperEnv(t *testing.T) {
 		a.lock.Lock()
 		err := a.ensureInitialized()
 		a.lock.Unlock()
-
-		assert.Loosely(t, err, should.ErrLike("bad credential helper path \"some-helper\""))
+		assert.NoErr(t, err)
 
 		assert.Loosely(t, a.opts.CredentialHelper, should.Match(&credhelperpb.Config{
-			Exec:              "some-helper",
-			Protocol:          credhelperpb.Protocol_RECLIENT,
-			Args:              []string{"-scopes", "scope1,scope2"},
-			CacheTokensOnDisk: true,
+			Exec:                   phonyHelper,
+			Protocol:               credhelperpb.Protocol_RECLIENT,
+			DynamicOauthScopesFlag: "-scopes",
+			OauthScopesRemapping:   map[string]string{scopes.Firebase: ""},
+			CacheTokensOnDisk:      true,
 		}))
 		assert.Loosely(t, a.opts.Method, should.Equal(CredentialHelperMethod))
+
+		helper := a.authToken.provider.(*credHelperTokenProvider)
+		assert.Loosely(t, helper.scopes, should.Match([]string{"scope1", "scope2"}))
+		assert.Loosely(t, helper.cfg.Args, should.Match([]string{"-scopes", "scope1,scope2"}))
 	})
 
 	ftt.Run("cred helper with ID tokens requested falls back", t, func(t *ftt.Test) {
-		env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
 		ctx := env.SetInCtx(context.Background())
 		ctx = lucictx.SetLocalAuth(ctx, nil)
 
@@ -946,7 +955,6 @@ func TestCredentialHelperEnv(t *testing.T) {
 	})
 
 	ftt.Run("firebase scope is ignored", t, func(t *ftt.Test) {
-		env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
 		ctx := env.SetInCtx(context.Background())
 		ctx = lucictx.SetLocalAuth(ctx, nil)
 
@@ -957,20 +965,23 @@ func TestCredentialHelperEnv(t *testing.T) {
 		a.lock.Lock()
 		err := a.ensureInitialized()
 		a.lock.Unlock()
-
-		assert.Loosely(t, err, should.ErrLike("bad credential helper path \"some-helper\""))
+		assert.NoErr(t, err)
 
 		assert.Loosely(t, a.opts.CredentialHelper, should.Match(&credhelperpb.Config{
-			Exec:              "some-helper",
-			Protocol:          credhelperpb.Protocol_RECLIENT,
-			Args:              []string{"-scopes", "scope1,scope2"},
-			CacheTokensOnDisk: true,
+			Exec:                   phonyHelper,
+			Protocol:               credhelperpb.Protocol_RECLIENT,
+			DynamicOauthScopesFlag: "-scopes",
+			OauthScopesRemapping:   map[string]string{scopes.Firebase: ""},
+			CacheTokensOnDisk:      true,
 		}))
 		assert.Loosely(t, a.opts.Method, should.Equal(CredentialHelperMethod))
+
+		helper := a.authToken.provider.(*credHelperTokenProvider)
+		assert.Loosely(t, helper.scopes, should.Match([]string{"scope1", "scope2"}))
+		assert.Loosely(t, helper.cfg.Args, should.Match([]string{"-scopes", "scope1,scope2"}))
 	})
 
 	ftt.Run("cred helper disabled", t, func(t *ftt.Test) {
-		env := environ.New([]string{"LUCI_AUTH_CREDENTIAL_HELPER=some-helper"})
 		ctx := env.SetInCtx(context.Background())
 		ctx = lucictx.SetLocalAuth(ctx, nil)
 

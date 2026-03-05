@@ -71,4 +71,23 @@ message Config {
   // This is useful if the helper itself doesn't implement its own persistent
   // caching.
   bool cache_tokens_on_disk = 5;
+
+  // If set, then the credential helper will be given the set of requested
+  // OAuth scopes via this flag (as "scope1,scope2,scope3").
+  //
+  // Note this also affects how tokens are cached on disk. If this flag is
+  // present, the set of scopes will be included in the token cache key. If
+  // this flag is absent, the same cached token will be used regardless of
+  // requested scopes.
+  string dynamic_oauth_scopes_flag = 6;
+
+  // Allows remapping some requested scopes into different ones (or drop them).
+  //
+  // E.g. if this has an entry "old -> new", then the helper will be called
+  // with scopes "new,s2" instead of "old,s2".
+  //
+  // If the new value is "", the scope will be ignored entirely.
+  //
+  // Has no effect if `dynamic_oauth_scopes_flag` is empty.
+  map<string, string> oauth_scopes_remapping = 7;
 }

@@ -645,10 +645,10 @@ func (opts *Options) LoginCommandHint() string {
 // Invoked by Authenticator if AutoSelectMethod is passed as Method in Options.
 // It picks the first applicable method in this order:
 //   - ServiceAccountMethod (if the service account private key is configured).
-//   - CredentialHelperMethod (if have credential helper configured).
 //   - LUCIContextMethod (if running inside LUCI_CONTEXT with an auth server).
 //   - GCEMetadataMethod (if running on GCE and GCEAllowAsDefault is true).
 //   - GoogleADCMethod (per GoogleADCPolicy in options).
+//   - CredentialHelperMethod (if have credential helper configured).
 //   - UserCredentialsMethod (if no other method applies).
 //
 // Beware: it may do relatively heavy calls on first usage (to detect GCE
@@ -1275,27 +1275,19 @@ func (a *Authenticator) ensureInitialized() error {
 
 	if a.opts.CredentialHelper == nil {
 		// LUCI_AUTH_CREDENTIAL_HELPER binary must satisfy the RECLIENT
-		// protocol and accept a scopes flag with a comma separated list of
+		// protocol and accept "-scopes" flag with a comma separated list of
 		// requested scopes.
 		if exe := environ.FromCtx(a.ctx).Get("LUCI_AUTH_CREDENTIAL_HELPER"); exe != "" {
-			// Firebase scope cannot be used with a credential helper.
-
-			// TODO(dlf): Either remove the scope entirely or fix the scope
-			// so it can be used with a credential helper. The Firebase scope
-			// is hardcoded into the Firebase CLI tool.
-			// https://github.com/firebase/firebase-tools/blob/main/src/auth.ts#L277
-			if i := slices.Index(a.opts.Scopes, scopes.Firebase); i > -1 {
-				a.opts.Scopes = slices.Delete(a.opts.Scopes, i, i+1)
-				logging.Debugf(a.ctx, "Firebase scope cannot be used with a credential helper, removing scope from requested scopes")
-			}
-
 			a.opts.CredentialHelper = &credhelperpb.Config{
-				Exec:     exe,
-				Protocol: credhelperpb.Protocol_RECLIENT,
-				Args:     []string{"-scopes", strings.Join(a.opts.Scopes, ",")},
-				// The above scopes args will be used in the cache key so
-				// we know when to mint new tokens or use existing ones.
-				CacheTokensOnDisk: true,
+				Exec:                   exe,
+				Protocol:               credhelperpb.Protocol_RECLIENT,
+				DynamicOauthScopesFlag: "-scopes",
+				// TODO(dlf): Either remove the scope entirely or fix the scope
+				// so it can be used with a credential helper. The Firebase scope
+				// is hardcoded into the Firebase CLI tool.
+				// https://github.com/firebase/firebase-tools/blob/main/src/auth.ts#L277
+				OauthScopesRemapping: map[string]string{scopes.Firebase: ""},
+				CacheTokensOnDisk:    true,
 			}
 		}
 	}
@@ -1304,24 +1296,6 @@ func (a *Authenticator) ensureInitialized() error {
 	// call it lazily here rather than in NewAuthenticator.
 	if a.opts.Method == AutoSelectMethod {
 		a.opts.Method = SelectBestMethod(a.ctx, *a.opts)
-	}
-
-	// Validate options now that we picked the method.
-	switch a.opts.Method {
-	case CredentialHelperMethod:
-		switch {
-		case a.opts.CredentialHelper == nil:
-			a.err = errors.New("missing CredentialHelper config")
-		case a.opts.UseIDTokens:
-			a.err = errors.New("ID tokens are currently not supported when using external credential helpers")
-		}
-	case GoogleADCMethod:
-		if a.opts.UseIDTokens {
-			a.err = errors.New("ID tokens are not supported when using Application Default Credentials")
-		}
-	}
-	if a.err != nil {
-		return a.err
 	}
 
 	// In Actor mode, switch the base token to have scopes required to call
@@ -1337,7 +1311,7 @@ func (a *Authenticator) ensureInitialized() error {
 		// To get ID tokens when using end-user credentials we need userinfo scope.
 		if useIDTokens && a.opts.Method == UserCredentialsMethod {
 			if !slices.Contains(tokenScopes, scopes.Email) {
-				tokenScopes = normalizeScopes(append(tokenScopes, scopes.Email))
+				tokenScopes = append(tokenScopes, scopes.Email)
 			}
 		}
 	case actingModeIAM:
@@ -1349,6 +1323,7 @@ func (a *Authenticator) ensureInitialized() error {
 	default:
 		panic("impossible")
 	}
+	tokenScopes = normalizeScopes(tokenScopes)
 	a.baseToken = &tokenWithProvider{}
 	a.baseToken.provider, a.err = makeBaseTokenProvider(a.ctx, a.opts, tokenScopes, useIDTokens)
 	if a.err != nil {
@@ -1974,8 +1949,17 @@ func makeBaseTokenProvider(ctx context.Context, opts *Options, scopes []string, 
 			audience,
 			opts.Transport)
 	case CredentialHelperMethod:
-		return newCredHelperTokenProvider(opts.CredentialHelper)
+		if opts.CredentialHelper == nil {
+			return nil, errors.New("missing CredentialHelper config")
+		}
+		if audience != "" {
+			return nil, errors.New("ID tokens are currently not supported when using external credential helpers")
+		}
+		return newCredHelperTokenProvider(ctx, opts.CredentialHelper, scopes)
 	case GoogleADCMethod:
+		if audience != "" {
+			return nil, errors.New("ID tokens are currently not supported when using Google ADC")
+		}
 		return internal.NewGoogleADCTokenProvider(ctx, scopes)
 	default:
 		return nil, errors.Fmt("unrecognized authentication method: %s", opts.Method)

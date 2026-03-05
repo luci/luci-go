@@ -234,3 +234,48 @@ func TestReclientHandler(t *testing.T) {
 		}
 	}
 }
+
+func TestEffectiveScopes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input []string
+		cfg   *credhelperpb.Config
+		want  []string
+	}{
+		{
+			name:  "no_flag",
+			cfg:   &credhelperpb.Config{},
+			input: []string{"ignored"},
+			want:  nil,
+		},
+		{
+			name:  "no_remapping",
+			cfg:   &credhelperpb.Config{DynamicOauthScopesFlag: "flag"},
+			input: []string{"b", "a", "b"},
+			want:  []string{"a", "b"},
+		},
+		{
+			name: "with_remapping",
+			cfg: &credhelperpb.Config{
+				DynamicOauthScopesFlag: "flag",
+				OauthScopesRemapping: map[string]string{
+					"a": "x",
+					"b": "",
+					"c": "x",
+					"x": "y", // won't take effect, remapping is not chained
+				},
+			},
+			input: []string{"a", "b", "c", "d"},
+			want:  []string{"d", "x"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := effectiveScopes(t.Context(), tc.input, tc.cfg)
+			assert.That(t, got, should.Match(tc.want))
+		})
+	}
+}

@@ -21,6 +21,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -48,12 +50,13 @@ func CheckCredentialHelperConfig(cfg *credhelperpb.Config) error {
 
 type credHelperTokenProvider struct {
 	cfg     *credhelperpb.Config
+	scopes  []string
 	handler func(stdout []byte) (*oauth2.Token, error)
 }
 
 // newCredHelperTokenProvider makes an internal.TokenProvider that calls
 // the credential helper binary.
-func newCredHelperTokenProvider(cfg *credhelperpb.Config) (internal.TokenProvider, error) {
+func newCredHelperTokenProvider(ctx context.Context, cfg *credhelperpb.Config, scopes []string) (internal.TokenProvider, error) {
 	if err := CheckCredentialHelperConfig(cfg); err != nil {
 		return nil, errors.Fmt("bad credential helper config: %w", err)
 	}
@@ -61,12 +64,16 @@ func newCredHelperTokenProvider(cfg *credhelperpb.Config) (internal.TokenProvide
 	if err != nil {
 		return nil, errors.Fmt("bad credential helper path %q: %w", cfg.Exec, err)
 	}
-
+	scopes = effectiveScopes(ctx, scopes, cfg)
 	handler, _ := externalHandler(cfg.Protocol)
 	cfg = proto.CloneOf(cfg)
 	cfg.Exec = exe
+	if cfg.DynamicOauthScopesFlag != "" {
+		cfg.Args = append(cfg.Args, cfg.DynamicOauthScopesFlag, strings.Join(scopes, ","))
+	}
 	return &credHelperTokenProvider{
 		cfg:     cfg,
+		scopes:  scopes,
 		handler: handler,
 	}, nil
 }
@@ -97,7 +104,8 @@ func (p *credHelperTokenProvider) CacheKey(ctx context.Context) (*internal.Cache
 	_, _ = fmt.Fprintf(h, "%q\n", p.cfg.Exec)
 	_, _ = fmt.Fprintf(h, "%v\n", p.cfg.Args)
 	return &internal.CacheKey{
-		Key: fmt.Sprintf("credhelper/%s/%s", strings.ToLower(p.cfg.Protocol.String()), hex.EncodeToString(h.Sum(nil))),
+		Key:    fmt.Sprintf("credhelper/%s/%s", strings.ToLower(p.cfg.Protocol.String()), hex.EncodeToString(h.Sum(nil))),
+		Scopes: p.scopes, // already part of the hash, just FYI when looking at the cache JSON
 	}, nil
 }
 
@@ -208,4 +216,26 @@ func reclientHandler(stdout []byte) (*oauth2.Token, error) {
 		TokenType:   "Bearer",
 		Expiry:      expiry.UTC(),
 	}, nil
+}
+
+// effectiveScopes calculates what scopes to pass to the helper.
+//
+// Logs substitutions it makes into the debug log.
+func effectiveScopes(ctx context.Context, scopes []string, cfg *credhelperpb.Config) []string {
+	if cfg.DynamicOauthScopesFlag == "" {
+		return nil
+	}
+	filtered := map[string]struct{}{}
+	for _, original := range scopes {
+		switch remapped, ok := cfg.OauthScopesRemapping[original]; {
+		case !ok:
+			filtered[original] = struct{}{}
+		case remapped != "":
+			logging.Debugf(ctx, "Replacing the scope per the credential helper config: %s -> %s", original, remapped)
+			filtered[remapped] = struct{}{}
+		default:
+			logging.Debugf(ctx, "Ignoring the scope not supported by the credential helper: %s", original)
+		}
+	}
+	return slices.Sorted(maps.Keys(filtered))
 }

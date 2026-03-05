@@ -27,7 +27,7 @@ import (
 )
 
 // Version is the version of luci-auth tool.
-const Version = "1.6.2"
+const Version = "1.6.3"
 
 // GetApplication returns cli.Application that implements 'luci-auth'.
 //
