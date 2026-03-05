@@ -1,0 +1,123 @@
+// Copyright 2026 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package value
+
+import (
+	"cmp"
+	"fmt"
+	"slices"
+
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+
+	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+)
+
+// Decode decodes and returns a proto of type `T` from the given ValueRef.
+//
+// `source` is used to lookup the data for this ValueRef if it's not inline.
+//
+// If ValueRef has a type_url which does not match `T`, this returns an error.
+func Decode[T proto.Message](source DataSource, ref *orchestratorpb.ValueRef) (T, error) {
+	var zero T
+	typeURL := URL[T]()
+	if typeURL != ref.GetTypeUrl() {
+		return zero, fmt.Errorf("mismatched types %q != %q", typeURL, ref.GetTypeUrl())
+	}
+
+	var binData *anypb.Any
+	var jsonData *orchestratorpb.ValueData_JsonAny
+
+	if data := ref.GetInline(); data != nil {
+		binData = data
+	} else {
+		got := source.Retrieve(ref.GetDigest())
+		binData, jsonData = got.GetBinary(), got.GetJson()
+	}
+
+	if binData == nil && jsonData == nil {
+		return zero, nil
+	}
+
+	if binData != nil {
+		if binData.TypeUrl != typeURL {
+			// This should never happen; it means a ValueRef for type X pointed to a
+			// ValueData of type Y.
+			return zero, fmt.Errorf("BUG: mismatched types %q != %q in ValueData", typeURL, binData.TypeUrl)
+		}
+		ret, err := binData.UnmarshalNew()
+		if err != nil {
+			return zero, err
+		}
+		return ret.(T), nil
+	}
+
+	if jsonData.GetTypeUrl() != typeURL {
+		// This should never happen; it means a ValueRef for type X pointed to a
+		// ValueData of type Y.
+		return zero, fmt.Errorf("BUG: mismatched types %q != %q in ValueData", typeURL, jsonData.GetTypeUrl())
+	}
+
+	ret := zero.ProtoReflect().New().Interface()
+	err := protojson.Unmarshal([]byte(jsonData.GetValue()), ret)
+	if err != nil {
+		return zero, err
+	}
+
+	return ret.(T), nil
+}
+
+// First finds and decodes the first non-omitted value of type `T` in a list of
+// ValueRefs.
+//
+// If `list` is sorted, prefer to use [Lookup].
+//
+// If none is found, this returns nil.
+func First[T proto.Message](source DataSource, list []*orchestratorpb.ValueRef) (T, error) {
+	wantURL := URL[T]()
+
+	for _, candidate := range list {
+		if candidate.GetOmitReason() == 0 && candidate.GetTypeUrl() == wantURL {
+			return Decode[T](source, candidate)
+		}
+	}
+
+	var zero T
+	return zero, nil
+}
+
+// Lookup finds and decodes the non-omitted value of type `T` in a sorted set
+// of ValueRefs.
+//
+// This assumes that `set` is sorted by "type_url" and will do a binary search.
+//
+// If `set` is not sorted, use [First] to do a linear search instead.
+//
+// If none is found, or ref is omitted, this returns nil.
+func Lookup[T proto.Message](source DataSource, set []*orchestratorpb.ValueRef) (T, error) {
+	idx, found := slices.BinarySearchFunc(set, URL[T](), func(ref *orchestratorpb.ValueRef, typeURL string) int {
+		return cmp.Compare(ref.GetTypeUrl(), typeURL)
+	})
+	if found {
+		ref := set[idx]
+		if ref.GetOmitReason() == 0 {
+			return Decode[T](source, ref)
+		}
+	}
+
+	var zero T
+	return zero, nil
+}
