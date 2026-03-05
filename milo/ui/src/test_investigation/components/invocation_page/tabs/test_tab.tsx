@@ -291,7 +291,7 @@ export function TestTab() {
     TEST_AGGREGATION_IN_INVOCATION_FLAG,
   );
 
-  if (isTestAggregationEnabled) {
+  if (isTestAggregationEnabled && !isLegacyInvocation) {
     if (!invocation) {
       return (
         <Box

@@ -426,7 +426,7 @@ export function TestInvestigatePage() {
                   </StickyOffset>
                 </Box>
               </Box>
-              {enableAggregationDrawer ? (
+              {enableAggregationDrawer && !isLegacyInvocation ? (
                 <TestAggregationDrawer
                   isOpen={isDrawerOpen}
                   onClose={() => setIsDrawerOpen(false)}
