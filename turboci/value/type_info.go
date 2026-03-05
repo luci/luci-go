@@ -29,9 +29,27 @@ import (
 //
 // Produced by [ParseTypeInfo].
 type TypeInfo struct {
-	Wanted        TypeMatcher
+	// Wanted is a type matcher indicating the set of types that the caller is
+	// interested in.
+	//
+	// Types which do not match this will be marked as UNWANTED.
+	Wanted TypeMatcher
+
+	// UnknownJSONPB indicates that the caller wants ValueData in JSON form,
+	// except for types matching [Known] (which will be returned in binary form).
 	UnknownJSONPB bool
 	Known         TypeMatcher
+}
+
+// Wants returns if the given typeURL is wanted as binary or JSON (or neither).
+func (ti *TypeInfo) Wants(typeURL string) (asBinary, asJSON bool) {
+	if !ti.Wanted.Match(typeURL) {
+		return false, false
+	}
+	if !ti.UnknownJSONPB || ti.Known.Match(typeURL) {
+		return true, false
+	}
+	return false, true
 }
 
 // ParseTypeInfo parses the TypeInfo proto message into a usable [TypeInfo].
