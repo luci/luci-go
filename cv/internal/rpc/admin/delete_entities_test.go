@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -84,6 +85,32 @@ func TestDeleteEntities(t *testing.T) {
 			res, err := datastore.Exists(ctx, entities)
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.List(0).Any(), should.BeFalse)
+		})
+
+		t.Run("handles datastore error", func(t *ftt.Test) {
+			ctrl := &dsmapper.Controller{}
+			ctrl.Install(ct.TQDispatcher)
+			a := New(ct.TQDispatcher, ctrl, nil, nil, nil)
+
+			// Inject error for DeleteMulti
+			ctx, fb := featureBreaker.FilterRDS(ctx, nil)
+			fb.BreakFeatures(datastore.ErrNoSuchEntity, "DeleteMulti")
+
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity:       "user:admin@example.com",
+				IdentityGroups: []string{allowGroup},
+			})
+
+			failedTasks := len(ct.FailedTQTasks)
+
+			jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "delete-entities"})
+			assert.NoErr(t, err)
+			ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
+
+			assert.That(t, len(ct.FailedTQTasks), should.Equal(failedTasks+1))
+
+			_, err = a.DSMAbortJob(ctx, jobID)
+			assert.NoErr(t, err)
 		})
 	})
 }
