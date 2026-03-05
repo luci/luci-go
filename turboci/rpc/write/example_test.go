@@ -68,10 +68,7 @@ func ExampleNewRequest() {
 	chk.Msg.SetState(check.StateFinal)
 	chk.Msg.SetFinalizeResults(true)
 
-	stg, err := req.AddNewStage(id.Stage("neeple"), numData)
-	if err != nil {
-		panic(err)
-	}
+	stg := req.AddNewStage(id.Stage("neeple"), numData)
 	stg.Msg.SetDependencies(dep.MustGroup(
 		dep.ConditionalCheck(id.Check("fleeporp"), check.StatePlanned),
 	))
@@ -90,9 +87,7 @@ func ExampleNewRequest() {
 	}.Build())
 	stg.AddCheckAssignment(id.Check("fleeporp"), check.StateFinal)
 
-	if _, err = req.AddNewStage(id.Stage("bleeple"), numData); err != nil {
-		panic(err)
-	}
+	req.AddNewStage(id.Stage("bleeple"), numData)
 
 	req.AddStageCancellation(id.StageWorkNode("bad one"))
 
@@ -226,10 +221,11 @@ func ExampleNewRequest() {
 	//         "id": "neeple"
 	//       },
 	//       "args": {
-	//         "value": {
+	//         "data": {
 	//           "@type": "type.googleapis.com/google.protobuf.Value",
 	//           "value": 100
-	//         }
+	//         },
+	//         "realm": "$from_container"
 	//       },
 	//       "dependencies": {
 	//         "edges": [
@@ -273,10 +269,11 @@ func ExampleNewRequest() {
 	//         "id": "bleeple"
 	//       },
 	//       "args": {
-	//         "value": {
+	//         "data": {
 	//           "@type": "type.googleapis.com/google.protobuf.Value",
 	//           "value": 100
-	//         }
+	//         },
+	//         "realm": "$from_container"
 	//       }
 	//     },
 	//     {

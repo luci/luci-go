@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
+	"go.chromium.org/luci/turboci/value"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
@@ -122,10 +123,10 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 				orchestratorpb.WriteNodesRequest_StageWrite_builder{
 					Identifier: stageID,
 					Realm:      proto.String("project:bucket"),
-					Args: data.Value(&pb.ScheduleBuildRequest{
+					Args: value.MustWrite(&pb.ScheduleBuildRequest{
 						Builder:   builder,
 						RequestId: "some-request-id",
-					}),
+					}, value.RealmFromContainer),
 				}.Build(),
 			},
 		}.Build()))

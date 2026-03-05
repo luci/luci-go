@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/turboci/value"
 	executorgrpcpb "go.chromium.org/turboci/proto/go/graph/executor/v1/grpcpb"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
@@ -176,24 +177,25 @@ func TurboCIInterceptor(ctx context.Context, turboCIStagesServiceAccount string)
 // This deserializes a potentially big Any and thus is relatively expensive.
 func extractTurboCICallInfo(req any) (*TurboCICallInfo, error) {
 	var stage *orchestratorpb.Stage
-	if knowsStage, ok := req.(interface{ GetStage() *orchestratorpb.Stage }); ok {
+	var ds value.SimpleDataSource
+	if knowsStage, ok := req.(interface {
+		GetStage() *orchestratorpb.Stage
+		GetValueData() map[string]*orchestratorpb.ValueData
+	}); ok {
 		stage = knowsStage.GetStage()
+		ds = value.SimpleDataSource(knowsStage.GetValueData())
 	} else {
-		return nil, fmt.Errorf("no `stage` field in the request")
+		return nil, fmt.Errorf("no `stage` or `value_data` field in the request")
 	}
 	if stage == nil {
 		return nil, fmt.Errorf("`stage` is not populated")
 	}
-	args := stage.GetArgs().GetValue()
-	if args == nil {
-		return nil, fmt.Errorf("`stage.args.value` is not populated")
-	}
-	var val pb.ScheduleBuildRequest
-	if err := args.UnmarshalTo(&val); err != nil {
-		return nil, fmt.Errorf("unexpected `stage.args.value` kind: %s", err)
+	val, err := value.Decode[*pb.ScheduleBuildRequest](ds, stage.GetArgs())
+	if err != nil {
+		return nil, fmt.Errorf("decoding `stage.args`: %w", err)
 	}
 	return &TurboCICallInfo{
 		Stage:         stage,
-		ScheduleBuild: &val,
+		ScheduleBuild: val,
 	}, nil
 }

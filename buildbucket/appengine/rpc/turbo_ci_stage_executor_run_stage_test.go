@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth/scopes"
@@ -39,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/turboci/id"
+	"go.chromium.org/luci/turboci/value"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
@@ -53,6 +53,14 @@ import (
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+func makeStageArgs(req proto.Message, realm string) *orchestratorpb.ValueRef {
+	ret, err := value.Inline(req, realm)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
 
 func TestRunStage(t *testing.T) {
 	t.Parallel()
@@ -92,8 +100,6 @@ func TestRunStage(t *testing.T) {
 					Builder: "builder",
 				},
 			}
-			args, err := anypb.New(schReq)
-			assert.NoErr(t, err)
 			ctx = context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: schReq})
 
 			aID, err := id.FromString("Lplan-id:Sstage-id:A1")
@@ -102,7 +108,7 @@ func TestRunStage(t *testing.T) {
 
 			stage := orchestratorpb.Stage_builder{
 				Identifier: attemptID.GetStage(),
-				Args:       orchestratorpb.Value_builder{Value: args}.Build(),
+				Args:       makeStageArgs(schReq, "project:bucket"),
 				Attempts: []*orchestratorpb.Stage_Attempt{
 					orchestratorpb.Stage_Attempt_builder{
 						Identifier: attemptID,

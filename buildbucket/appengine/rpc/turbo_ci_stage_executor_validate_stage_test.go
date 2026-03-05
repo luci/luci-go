@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -348,14 +347,9 @@ func TestValidateStage(t *testing.T) {
 }
 
 func makeStage(req *pb.ScheduleBuildRequest, pStageAttempt *idspb.StageAttempt) (*orchestratorpb.Stage, error) {
-	value, err := anypb.New(req)
-	if err != nil {
-		return nil, err
-	}
+	// how is this meaningfully different than [fakeTestStage]?
 	stgBldr := orchestratorpb.Stage_builder{
-		Args: orchestratorpb.Value_builder{
-			Value: value,
-		}.Build(),
+		Args: makeStageArgs(req, "project:bucket"),
 	}
 
 	if pStageAttempt != nil {

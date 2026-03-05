@@ -15,15 +15,13 @@
 package write
 
 import (
-	"fmt"
-
 	"google.golang.org/protobuf/proto"
 
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/turboci/check"
-	"go.chromium.org/luci/turboci/data"
+	"go.chromium.org/luci/turboci/value"
 )
 
 // StageWrite wraps an orchestratorpb.WriteNodesRequest_StageWrite.
@@ -48,19 +46,18 @@ func (sw StageWrite) AddCheckAssignment(id *idspb.Check, goalState check.State) 
 
 // AddNewStage adds a new stage to the WriteNodesRequest.
 //
-// Only returns an error if `args` cannot be marshalled.
-func (req Request) AddNewStage(id *idspb.Stage, args proto.Message) (StageWrite, error) {
-	val, err := data.ValueErr(args)
-	if err != nil {
-		return StageWrite{}, fmt.Errorf("write.StageAddNew: %w", err)
-	}
-
+// Assumes [value.RealmFromContainer] as the args realm (you can override this
+// in the returned StageWrite if needed).
+//
+// Panics if `args` cannot be marshalled.
+func (req Request) AddNewStage(id *idspb.Stage, args proto.Message) StageWrite {
+	valWrite := value.MustWrite(args, value.RealmFromContainer)
 	ret := orchestratorpb.WriteNodesRequest_StageWrite_builder{
 		Identifier: id,
-		Args:       val,
+		Args:       valWrite,
 	}.Build()
 	req.Msg.SetStages(append(req.Msg.GetStages(), ret))
-	return StageWrite{ret}, nil
+	return StageWrite{ret}
 }
 
 // AddStageCancellation adds a new stage cancellation to the WriteNodesRequest.

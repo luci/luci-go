@@ -26,7 +26,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/scopes"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
@@ -104,10 +103,7 @@ func (c *Client) stageID(sid *idspb.Stage) *idspb.Stage {
 func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.ScheduleBuildRequest, realm string, timeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout) error {
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(c.Token)
-	stg, err := writeReq.AddNewStage(c.stageID(stageID), req)
-	if err != nil {
-		return errors.Fmt("writeStage: NewStage: %w", err)
-	}
+	stg := writeReq.AddNewStage(c.stageID(stageID), req)
 	writeReq.AddReason("Submitting stage via Buildbucket")
 	stg.Msg.SetRealm(realm)
 	if timeouts != nil {
@@ -118,7 +114,7 @@ func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.S
 		}.Build())
 	}
 
-	_, err = WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
+	_, err := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
 	return AdjustTurboCIRPCError(err)
 }
 

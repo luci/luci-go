@@ -21,7 +21,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -124,7 +123,7 @@ func TestTurboCIInterceptor(t *testing.T) {
 			Identity: trustedBackend,
 		})
 		assert.That(t, callInterceptor(ctx, t, "enduser@example.com", &emptypb.Empty{}, nil),
-			should.ErrLike("no `stage` field in the request"),
+			should.ErrLike("no `stage` or `value_data` field in the request"),
 		)
 	})
 
@@ -133,19 +132,14 @@ func TestTurboCIInterceptor(t *testing.T) {
 			Identity: trustedBackend,
 		})
 
-		value, err := anypb.New(&pb.CancelBuildRequest{})
-		assert.NoErr(t, err)
-
 		req := executorpb.RunStageRequest_builder{
 			Stage: orchestratorpb.Stage_builder{
-				Args: orchestratorpb.Value_builder{
-					Value: value,
-				}.Build(),
+				Args: makeStageArgs(&pb.CancelBuildRequest{}, "project:bucket"),
 			}.Build(),
 		}.Build()
 
 		assert.That(t, callInterceptor(ctx, t, "enduser@example.com", req, nil),
-			should.ErrLike("unexpected `stage.args.value` kind"),
+			should.ErrLike("mismatched types"),
 		)
 	})
 }
@@ -185,16 +179,7 @@ func callInterceptor(ctx context.Context, t *testing.T, endUserMD string, req pr
 }
 
 func fakeTestStage(project string) *orchestratorpb.Stage {
-	value, err := anypb.New(&pb.ScheduleBuildRequest{
-		Builder: &pb.BuilderID{
-			Project: project,
-			Bucket:  "bucket",
-			Builder: "builder",
-		},
-	})
-	if err != nil {
-		panic(err)
-	}
+	realm := project + ":bucket"
 	return orchestratorpb.Stage_builder{
 		Identifier: idspb.Stage_builder{
 			WorkPlan: idspb.WorkPlan_builder{
@@ -203,8 +188,13 @@ func fakeTestStage(project string) *orchestratorpb.Stage {
 			Id:         proto.String("S4567"),
 			IsWorknode: proto.Bool(false),
 		}.Build(),
-		Args: orchestratorpb.Value_builder{
-			Value: value,
-		}.Build(),
+		Args: makeStageArgs(&pb.ScheduleBuildRequest{
+			Builder: &pb.BuilderID{
+				Project: project,
+				Bucket:  "bucket",
+				Builder: "builder",
+			},
+		}, realm),
+		Realm: proto.String(realm),
 	}.Build()
 }

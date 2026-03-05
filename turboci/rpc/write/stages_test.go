@@ -24,9 +24,9 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/turboci/check"
-	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/value"
 )
 
 func TestStageWrite(t *testing.T) {
@@ -54,8 +54,7 @@ func TestAddNewStage(t *testing.T) {
 	t.Parallel()
 
 	req := write.NewRequest()
-	stg, err := req.AddNewStage(id.Stage("stg"), boolData)
-	assert.NoErr(t, err)
+	stg := req.AddNewStage(id.Stage("stg"), boolData)
 
 	stg.AddCheckAssignment(id.Check("nerp"), check.StateWaiting)
 
@@ -63,7 +62,7 @@ func TestAddNewStage(t *testing.T) {
 		Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
 			orchestratorpb.WriteNodesRequest_StageWrite_builder{
 				Identifier: id.Stage("stg"),
-				Args:       data.Value(boolData),
+				Args:       value.MustWrite(boolData, value.RealmFromContainer),
 				Assignments: []*orchestratorpb.Stage_Assignment{
 					orchestratorpb.Stage_Assignment_builder{
 						Target:    id.Check("nerp"),
