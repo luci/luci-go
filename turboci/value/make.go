@@ -21,11 +21,11 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
-// MakeInline returns a ValueRef (with inline data).
+// Inline returns a ValueRef (with inline data).
 //
 // If `msg` is a google.protobuf.Any, it is used directly, rather than being
 // re-wrapped with an Any.
-func MakeInline(msg proto.Message, realm string) (*orchestratorpb.ValueRef, error) {
+func Inline(msg proto.Message, realm string) (*orchestratorpb.ValueRef, error) {
 	var apb *anypb.Any
 	var ok bool
 	var err error

@@ -141,8 +141,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v, err := MakeInline(structpb.NewStringValue("hi"), "proj:realm")
-		assert.NoErr(t, err)
+		v := mustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		assert.NoErr(t, AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{}))
 
@@ -156,8 +155,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v, err := MakeInline(structpb.NewStringValue("hi"), "proj:realm")
-		assert.NoErr(t, err)
+		v := mustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		AbsorbInline(dSrc, v)
 
@@ -173,8 +171,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v, err := MakeInline(structpb.NewStringValue("hi"), "proj:realm")
-		assert.NoErr(t, err)
+		v := mustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		assert.NoErr(t, AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{}))
 
@@ -203,8 +200,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v, err := MakeInline(&emptypb.Empty{}, "proj:realm")
-		assert.NoErr(t, err)
+		v := mustInline(&emptypb.Empty{}, "proj:realm")
 
 		raw, err := proto.Marshal(structpb.NewStringValue("hi"))
 		assert.NoErr(t, err)
