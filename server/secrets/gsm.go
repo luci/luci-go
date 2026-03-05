@@ -550,17 +550,26 @@ func (sm *SecretManagerStore) reloadNextSecretLocked(ctx context.Context, wg *sy
 // Returns true if the secret has a new value now or false if the value didn't
 // change (either we failed to fetch it or it really didn't change).
 //
-// Logs errors inside. Fields `secret.attempts` and `secret.nextReload` are
+// Logs errors/warnings inside. Fields `secret.attempts` and `secret.nextReload` are
 // mutated even on failures.
 func (sm *SecretManagerStore) tryReloadSecretLocked(ctx context.Context, secret *trackedSecret) bool {
 	fresh, err := sm.readSecret(ctx, secret.name)
 	if err != nil {
 		secret.attempts += 1
 		sleep := reloadBackoffInterval(ctx, secret.attempts)
-		logging.Errorf(ctx, "Failed to reload the secret (attempt %d, next try in %s): %s", secret.attempts, sleep, err)
+
+		report := logging.Warningf
+		// Log a warning for transient errors, escalate to an error after 3 attempts.
+		if secret.attempts >= 3 {
+			report = logging.Errorf
+		}
+
+		report(ctx, "Failed to reload the secret (attempt %d, next try in %s): %s", secret.attempts, sleep, err)
+
 		secret.nextReload = clock.Now(ctx).Add(sleep)
 		return false
 	}
+
 	updated := !fresh.value.Equal(secret.value)
 	*secret = *fresh
 	if updated {

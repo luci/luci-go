@@ -33,7 +33,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -44,7 +44,9 @@ func TestSecretManagerSource(t *testing.T) {
 
 	ftt.Run("With SecretManagerStore", t, func(t *ftt.Test) {
 		ctx := context.Background()
-		ctx = gologger.StdConfig.Use(ctx)
+		// Use memlogger instead of gologger so we can inspect log levels in tests.
+		ctx = memlogger.Use(ctx)
+		ml := logging.Get(ctx).(*memlogger.MemLogger)
 		ctx = logging.SetLevel(ctx, logging.Debug)
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(123)))
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
@@ -380,20 +382,37 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.createVersion("project", "secret", "v2")
 			gsm.setError(status.Errorf(codes.Internal, "boom"))
 
-			// Attempts to do a regular update first.
+			// Helper to check the last level logged for "Failed to reload".
+			checkLastLogLevel := func(expectedLevel logging.Level) {
+				msgs := ml.Messages()
+				for i := len(msgs) - 1; i >= 0; i-- {
+					if strings.Contains(msgs[i].Msg, "Failed to reload the secret") {
+						assert.Loosely(t, msgs[i].Level, should.Equal(expectedLevel))
+						return
+					}
+				}
+				t.Fatalf("no failure log found")
+			}
+
+			// Attempts to do a regular update first (Attempt 1).
 			expectFullSleep("2h16m23s")
 			expectChecked("sm://project/secret")
+			checkLastLogLevel(logging.Warning)
 
-			// Notices the error and starts checking more often.
+			// Notices the error and starts checking more often (Attempt 2).
 			expectFullSleep("2s")
 			expectChecked("sm://project/secret")
+			checkLastLogLevel(logging.Warning)
+
+			// Still broken, escalates to Error (Attempt 3).
 			expectFullSleep("6s")
 			expectChecked("sm://project/secret")
+			checkLastLogLevel(logging.Error)
 
 			// "Fix" the backend.
 			gsm.setError(nil)
 
-			// The updated eventually succeeds and returns to the slow schedule.
+			// The update eventually succeeds and returns to the slow schedule.
 			expectFullSleep("14s")
 			expectReloaded("sm://project/secret")
 			expectFullSleep("2h17m45s")
