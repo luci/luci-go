@@ -112,3 +112,20 @@ The recommended local development environment uses Visual Studio Code (VSC) with
 
 # Avoid any
 Do not ever use `any` in typescript code without permission. You should try very hard to avoid it all together but if you truly think that it is necessary get explicit permission before using it. This includes usage of any inside generics IE: `MyType<any>`.
+
+# AI Agent Workflow Rules
+
+## 1. Mandatory Verification
+Before declaring any task as "done," you MUST run the following verification suite. If any step fails, you must fix the error and re-run the suite until it passes.
+
+- **Linting:** Run `npm run lint` to verify linting across the project, or `npm run lint-inc` to quickly lint only files changed against `origin/main`. Use `npm run lint -- --fix <path>` if you need to auto-fix a specific file.
+- **Testing:** Run tests related to your changes using `npm test -- <path_to_test_file>`. To run all Fleet tests, use `npm test -- ./src/fleet`.
+- **Type Checking:** Run `npm run type-check` to ensure no typing regressions were introduced.
+
+## 2. Definition of Done
+A task is NOT complete if:
+- There are remaining lint/style errors in the changed files.
+- Type checking (`npm run type-check`) fails.
+- Tests related to the changes are failing.
+
+**Failure to run these checks results in unnecessary round trips. Verification is part of the task.**
