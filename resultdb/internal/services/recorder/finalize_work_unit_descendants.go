@@ -150,6 +150,11 @@ func validateFinalizeWorkUnitDescendantsRequest(req *pb.FinalizeWorkUnitDescenda
 	if !pbutil.IsFinalWorkUnitState(req.State) {
 		return errors.New("state: must be a terminal state")
 	}
+	if req.State != pb.WorkUnit_FAILED && req.State != pb.WorkUnit_CANCELLED {
+		// This RPC exists to allow cleaning up work units that were not gracefully
+		// finalized in the ordinary course of events.
+		return errors.New("state: only FAILED or CANCELLED may be used with this RPC; this RPC is designed only for finalizing work units that failed to report a status in the ordinary course of events")
+	}
 
 	// We do not enforce length limits via the FinalizeWorkUnit RPCs.
 	// While clients should truncate on their side to avoid request size errors,

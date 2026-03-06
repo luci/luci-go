@@ -617,6 +617,10 @@ message FinalizeWorkUnitDescendantsRequest {
   string name = 1;
 
   // The final state to transition descendant work units to.
+  //
+  // As this RPC is designed only for bulk cleanup of work units
+  // that did not report a status in the ordinary course of events,
+  // this should be either FAILED or CANCELLED.
   WorkUnit.State state = 2 [ (google.api.field_behavior) = REQUIRED ];
 
   // A summary of the final state of the work unit, to be displayed on the UI.

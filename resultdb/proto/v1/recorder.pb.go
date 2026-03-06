@@ -1021,6 +1021,10 @@ type FinalizeWorkUnitDescendantsRequest struct {
 	// Resource name of the work unit to finalize.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The final state to transition descendant work units to.
+	//
+	// As this RPC is designed only for bulk cleanup of work units
+	// that did not report a status in the ordinary course of events,
+	// this should be either FAILED or CANCELLED.
 	State WorkUnit_State `protobuf:"varint,2,opt,name=state,proto3,enum=luci.resultdb.v1.WorkUnit_State" json:"state,omitempty"`
 	// A summary of the final state of the work unit, to be displayed on the UI.
 	//

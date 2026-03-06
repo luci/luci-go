@@ -94,6 +94,12 @@ func TestFinalizeWorkUnitDescendants(t *testing.T) {
 					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.That(t, err, should.ErrLike("state: must be a terminal state"))
 				})
+				t.Run("not failed or cancelled", func(t *ftt.Test) {
+					req.State = pb.WorkUnit_SUCCEEDED
+					_, err := recorder.FinalizeWorkUnitDescendants(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.That(t, err, should.ErrLike("state: only FAILED or CANCELLED may be used with this RPC; this RPC is designed only for finalizing work units that failed to report a status in the ordinary course of events"))
+				})
 				t.Run("invalid state", func(t *ftt.Test) {
 					req.State = pb.WorkUnit_State(999)
 					_, err := recorder.FinalizeWorkUnitDescendants(ctx, req)
