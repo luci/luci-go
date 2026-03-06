@@ -12,45 +12,66 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import { useMemo } from 'react';
+import {
+  MRT_Cell,
+  MRT_Column,
+  MRT_Row,
+  MRT_TableInstance,
+  MaterialReactTable,
+} from 'material-react-table';
+import { ReactNode, useMemo } from 'react';
 
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-import { StyledGrid } from '@/fleet/components/styled_data_grid';
+import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import {
+  BROWSER_SWARMING_SOURCE,
+  BROWSER_UFS_SOURCE,
+} from '@/fleet/constants/browser';
+import { FC_CellProps } from '@/fleet/types/table';
 import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import {
   BROWSER_COLUMN_OVERRIDES,
   getBrowserColumn,
-  getBrowserColumnIds,
 } from '../../device_list_page/browser/browser_columns';
 
 export interface BrowserDeviceDimensionsProps {
   device?: BrowserDevice;
 }
 
+export interface DeviceDimension {
+  id: string;
+  key: string;
+  value: unknown;
+}
+
 export const BrowserDeviceDimensions = ({
   device,
 }: BrowserDeviceDimensionsProps) => {
-  const rows = useMemo(() => {
+  const rows = useMemo<DeviceDimension[]>(() => {
     if (device?.id === undefined) {
       return [];
     }
-    const columnsRecord = getBrowserColumnIds(undefined, [device]).map((id) =>
-      getBrowserColumn(id),
-    );
+    const ids = [
+      'id',
+      ...Object.keys(device.swarmingLabels || {}).map(
+        (l) => `${BROWSER_SWARMING_SOURCE}.${l}`,
+      ),
+      ...Object.keys(device.ufsLabels || {}).map(
+        (l) => `${BROWSER_UFS_SOURCE}.${l}`,
+      ),
+    ];
+
+    const columnsRecord = ids.map((id) => getBrowserColumn(id));
 
     return columnsRecord
       .map((col) => {
         return {
-          key: col.headerName ?? col.field,
-          value:
-            col.valueGetter?.('' as never, device, col, {
-              current: {} as never,
-            }) ?? '',
+          key: (col.header as string) ?? col.accessorKey,
+          value: col.accessorFn?.(device as BrowserDevice) ?? '',
           // This field is unique and will be used
           // to find custom renderCell functions.
-          id: col.field,
+          id: col.accessorKey as string,
         };
       })
       .sort((a, b) => {
@@ -60,46 +81,81 @@ export const BrowserDeviceDimensions = ({
       });
   }, [device]);
 
+  const columns = useMemo(() => {
+    return [
+      { accessorKey: 'key', header: 'Key', size: 150 },
+      {
+        accessorKey: 'value',
+        header: 'Value',
+        size: 350,
+        Cell: (params: {
+          cell: MRT_Cell<DeviceDimension, unknown>;
+          row: MRT_Row<DeviceDimension>;
+          table: MRT_TableInstance<DeviceDimension>;
+          column: MRT_Column<DeviceDimension, unknown>;
+        }) => {
+          const id = params.row.original.id;
+          const override = BROWSER_COLUMN_OVERRIDES[id as string];
+
+          if (override && override.Cell) {
+            // Need to map our simplified MRT row into proper payload types.
+            const cellProps = {
+              cell: params.cell as unknown as FC_CellProps<BrowserDevice>['cell'],
+              row: {
+                ...params.row,
+                original: device as BrowserDevice,
+              } as unknown as FC_CellProps<BrowserDevice>['row'],
+              column:
+                params.column as unknown as FC_CellProps<BrowserDevice>['column'],
+            };
+            return (
+              override.Cell as (
+                params: FC_CellProps<BrowserDevice>,
+              ) => ReactNode
+            )(cellProps);
+          }
+
+          return (
+            <EllipsisTooltip>
+              {params.cell.getValue() as string}
+            </EllipsisTooltip>
+          );
+        },
+      },
+    ];
+  }, [device]);
+
+  const table = useFCDataTable({
+    columns,
+    data: rows,
+    getRowId: (row) => row.id,
+    enableTopToolbar: true,
+    enableDensityToggle: true,
+    enableFullScreenToggle: false,
+    enableHiding: false,
+    enableColumnActions: false,
+    enableColumnFilters: false,
+    enablePagination: false,
+    enableSorting: false,
+    enableStickyHeader: true,
+    enableBottomToolbar: false,
+    enableRowSelection: false,
+    muiTableContainerProps: {
+      sx: {
+        maxHeight: '600px', // or whatever constraints are appropriate
+      },
+    },
+  });
+
   if (device?.id === undefined) {
     return <></>;
   }
 
-  const columns: GridColDef[] = [
-    { field: 'id' },
-    { field: 'key', headerName: 'Key', flex: 1 },
-    {
-      field: 'value',
-      headerName: 'Value',
-      flex: 3,
-      renderCell: (params: GridRenderCellParams) => {
-        const override = BROWSER_COLUMN_OVERRIDES[params.id];
-
-        if (override?.renderCell && params.id.toString() !== 'id') {
-          // This imitates the behavior of the renderCell of the list page.
-          return override.renderCell({ ...params, row: device });
-        }
-        return <EllipsisTooltip>{params.value}</EllipsisTooltip>;
-      },
-    },
-  ];
-
   return (
     device && (
-      <StyledGrid
-        disableColumnMenu
-        disableColumnFilter
-        disableRowSelectionOnClick
-        rows={rows}
-        columns={columns}
-        initialState={{
-          columns: {
-            columnVisibilityModel: {
-              id: false,
-            },
-          },
-        }}
-        hideFooterPagination
-      />
+      <div style={{ width: '100%', height: '100%' }}>
+        <MaterialReactTable table={table} />
+      </div>
     )
   );
 };

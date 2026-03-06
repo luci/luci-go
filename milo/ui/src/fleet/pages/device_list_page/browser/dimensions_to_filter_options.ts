@@ -25,13 +25,18 @@ import {
 
 const mapDimensionsToCategories = (
   dimensions: { [key: string]: LabelValues },
-  columns: Record<string, { headerName?: string; filterByField?: string }>,
+  columns: Record<
+    string,
+    { headerName?: string; header?: string | unknown; filterByField?: string }
+  >,
   getColumnId: (key: string) => string,
 ): OptionCategory[] => {
   return Object.entries(dimensions).map(([filterKey, filterValues]) => {
     const key = getColumnId(filterKey);
     return {
-      label: columns[key]?.headerName || key,
+      label: (columns[key]?.header ||
+        columns[key]?.headerName ||
+        key) as string,
       value: columns[key]?.filterByField || key,
       options: [
         { label: BLANK_VALUE, value: BLANK_VALUE },
@@ -44,7 +49,10 @@ const mapDimensionsToCategories = (
 
 export const dimensionsToFilterOptions = (
   response: GetBrowserDeviceDimensionsResponse,
-  columns: Record<string, { headerName?: string; filterByField?: string }>,
+  columns: Record<
+    string,
+    { headerName?: string; header?: string | unknown; filterByField?: string }
+  >,
 ): OptionCategory[] => {
   return [
     ...mapDimensionsToCategories(response.baseDimensions, columns, (k) => k),

@@ -13,18 +13,25 @@
 // limitations under the License.
 
 import { Tooltip } from '@mui/material';
-import { GridRenderCellParams } from '@mui/x-data-grid';
-import { useRef } from 'react';
+import React, { useRef } from 'react';
 
 /**
  * mui-data-grid cell with custom styles and functionality to truncate
  * overflowing data and to show a tooltip when the value is truncated.
  */
+const TOOLTIP_ICON_WIDTH_PX = 32;
+
 export const CellWithTooltip = ({
   value,
   colDef,
+  column,
   tooltipTitle,
-}: GridRenderCellParams & { tooltipTitle?: string }) => {
+}: {
+  value?: React.ReactNode;
+  colDef?: { width?: number };
+  column?: { getSize?: () => number };
+  tooltipTitle?: string;
+}) => {
   const ref = useRef<HTMLSpanElement>(null);
 
   return (
@@ -32,7 +39,9 @@ export const CellWithTooltip = ({
       title={tooltipTitle ?? value}
       disableHoverListener={
         // Only show the hover tooltip when the column is smaller than the content.
-        !!ref.current && ref.current?.offsetWidth + 20 <= (colDef.width ?? 0)
+        !!ref.current &&
+        ref.current?.offsetWidth + TOOLTIP_ICON_WIDTH_PX <=
+          (colDef?.width ?? column?.getSize?.() ?? 0)
       }
     >
       <span

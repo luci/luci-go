@@ -49,6 +49,7 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
+import { getDensityPadding } from './fleet_column_header.styles';
 import { useFCDataTable } from './use_fc_data_table';
 
 const COLUMNS: MRT_ColumnDef<Device>[] = [
@@ -462,5 +463,42 @@ describe('<MaterialReactTable />', () => {
     // or if the header itself has the background color
     const firstHeader = headers[0];
     expect(firstHeader).toHaveStyle('background-color: var(--header-bg-color)');
+  });
+
+  it('should safely merge custom muiTableContainerProps with injected density variables', async () => {
+    const CustomContainerPropsTest = () => {
+      const table = useFCDataTable({
+        columns: COLUMNS,
+        data: MOCK_DEVICES.slice(0, 5),
+        muiTableContainerProps: {
+          sx: {
+            maxHeight: '400px',
+          },
+        },
+      });
+      return <MaterialReactTable table={table} />;
+    };
+
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <CustomContainerPropsTest />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    // The MRT container should have our custom maxHeight AND the --cell-padding variables
+    const tableContainer = screen.getByRole('table').parentElement;
+    const { vertical } = getDensityPadding('compact');
+
+    // In React Testing Library, styles are parsed into CSSStyleDeclaration
+    expect(tableContainer).toHaveStyle('max-height: 400px');
+    expect(tableContainer).toHaveStyle(
+      `--cell-padding-vertical: ${vertical}px`,
+    );
   });
 });

@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridRenderCellParams, GridValidRowModel } from '@mui/x-data-grid';
+import { GridRenderCellParams } from '@mui/x-data-grid';
+import { MRT_RowData } from 'material-react-table';
 import React from 'react';
 import { Link } from 'react-router';
+
+import { FC_CellProps } from '@/fleet/types/table';
 
 import { CellWithTooltip } from './cell_with_tooltip';
 
@@ -25,35 +28,46 @@ const getPathnameWithParams = () => {
 /**
  * Helper that generates a `renderCell` function based on a link generator.
  * @param linkGenerator A function that takes a value and turns it into a URL.
- * @returns A function that renders a <DeviceDataCell /> based on GridRenderCellParams
+ * @returns A function that renders a <DeviceDataCell /> based on FC_CellProps or GridRenderCellParams
  */
-// TODO: b/394202288 - Add tests for this function.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function renderCellWithLink<R extends GridValidRowModel = any>(
-  linkGenerator: (value: string, props: GridRenderCellParams<R>) => string,
+export function renderCellWithLink<R extends MRT_RowData>(
+  linkGenerator: (
+    value: string,
+    rowOrProps: R | GridRenderCellParams<R>,
+  ) => string,
   newTab: boolean = true,
-): (props: GridRenderCellParams<R>) => React.ReactElement {
-  const CellWithLink = (props: GridRenderCellParams<R>) => {
-    const { value = '' } = props;
+): (props: FC_CellProps<R> | GridRenderCellParams<R>) => React.ReactElement {
+  const CellWithLink = (props: FC_CellProps<R> | GridRenderCellParams<R>) => {
+    const isMRT = 'cell' in props;
+
+    let valueStr: string;
+    if (isMRT) {
+      valueStr = String(props.cell.getValue() ?? '');
+    } else {
+      valueStr = String(props.value ?? '');
+    }
+    const paramsOrRow = isMRT ? props.row.original : props;
+    const url = linkGenerator(valueStr, paramsOrRow);
 
     return (
       <CellWithTooltip
-        {...props}
+        {...(isMRT ? { column: props.column } : props)}
         value={
           <Link
-            key={value}
-            to={linkGenerator(value, props)}
+            key={valueStr}
+            to={url}
             state={{
               navigatedFromLink: getPathnameWithParams(),
             }}
             target={newTab ? '_blank' : '_self'}
           >
-            {value}
+            {valueStr}
           </Link>
         }
-        tooltipTitle={value}
+        tooltipTitle={valueStr}
       />
     );
   };
+  CellWithLink.displayName = 'CellWithLink';
   return CellWithLink;
 }

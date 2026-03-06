@@ -11,17 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-import { GridRenderCellParams } from '@mui/x-data-grid';
 import _ from 'lodash';
 import { DateTime } from 'luxon';
+import { MRT_ColumnDef } from 'material-react-table';
 
-import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { CellWithTooltip } from '@/fleet/components/table';
-import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
+import {
+  renderChipCell,
+  StateUnion,
+} from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import {
@@ -66,8 +67,8 @@ const getColumnHeader = (labelKey: string, source?: string) => {
 };
 
 export const getBrowserColumnIds = (
-  dimensions: GetBrowserDeviceDimensionsResponse | undefined,
-  devices: readonly BrowserDevice[] | undefined,
+  dimensions?: GetBrowserDeviceDimensionsResponse,
+  extraColumns: string[] = [],
 ): string[] => {
   const ids: string[] = [];
   if (dimensions) {
@@ -86,27 +87,17 @@ export const getBrowserColumnIds = (
     );
   }
 
-  if (devices) {
-    ids.push(
-      ...['id'],
-      ...devices.flatMap((d) => [
-        ...Object.keys(d.swarmingLabels ?? {}).map(
-          (l) => `${BROWSER_SWARMING_SOURCE}.${l}`,
-        ),
-        ...Object.keys(d.ufsLabels ?? {}).map(
-          (l) => `${BROWSER_UFS_SOURCE}.${l}`,
-        ),
-      ]),
-    );
-  }
-
   ids.push(...Object.keys(CUSTOM_COLUMNS));
+  ids.push(...extraColumns);
   return _.uniq(ids);
 };
 
-export const getBrowserColumn = (
-  id: string,
-): DeviceTableGridColDef<BrowserDevice> => {
+export type BrowserColumnDef = MRT_ColumnDef<BrowserDevice> & {
+  orderByField?: string;
+  filterByField?: string;
+};
+
+export const getBrowserColumn = (id: string): BrowserColumnDef => {
   const customColumn = CUSTOM_COLUMNS[id];
   if (customColumn) {
     return customColumn;
@@ -115,15 +106,15 @@ export const getBrowserColumn = (
   const { labelKey, source } = destructureColumnId(id);
 
   return {
-    field: id,
-    headerName: getColumnHeader(labelKey, source),
+    accessorKey: id,
+    header: getColumnHeader(labelKey, source),
     orderByField: id,
     filterByField: source ? `${source}."${labelKey}"` : id,
-    editable: false,
-    minWidth: 70,
-    maxWidth: 700,
-    sortable: true,
-    valueGetter: (_, device) => {
+    enableEditing: false,
+    minSize: 70,
+    maxSize: 700,
+    enableSorting: true,
+    accessorFn: (device) => {
       let values: readonly string[] | undefined = undefined;
 
       if (source === BROWSER_SWARMING_SOURCE) {
@@ -134,22 +125,22 @@ export const getBrowserColumn = (
 
       return values ? labelValuesToString(values) : undefined;
     },
-    flex: 1,
-    renderCell: (param) => (
-      <EllipsisTooltip>{param.value ?? ''}</EllipsisTooltip>
+    Cell: (param) => (
+      <EllipsisTooltip>
+        {(param.renderedCellValue as React.ReactNode) ?? ''}
+      </EllipsisTooltip>
     ),
     ...(BROWSER_COLUMN_OVERRIDES[id] ?? {}),
   };
 };
 
-const CUSTOM_COLUMNS: Record<string, DeviceTableGridColDef<BrowserDevice>> = {
+const CUSTOM_COLUMNS: Record<string, BrowserColumnDef> = {
   unhealthy_devices_ratio: {
-    field: 'unhealthy_devices_ratio',
-    headerName: 'unhealthy/total devices',
-    flex: 1,
-    sortable: false,
+    accessorKey: 'unhealthy_devices_ratio',
+    header: 'unhealthy/total devices',
+    enableSorting: false,
     orderByField: `unhealthy_devices_ratio`,
-    valueGetter: (_, row) => {
+    accessorFn: (row) => {
       const total_devices = row.ufsLabels?.['total_devices']?.values?.[0];
       const unhealthy_devices =
         row.ufsLabels?.['unhealthy_devices']?.values?.[0];
@@ -160,13 +151,18 @@ const CUSTOM_COLUMNS: Record<string, DeviceTableGridColDef<BrowserDevice>> = {
 
       return `${unhealthy_devices} / ${total_devices}`;
     },
-    renderCell: (params) => {
-      const hostname = params.row.ufsLabels?.['hostname']?.values?.[0];
+    Cell: (params) => {
+      const hostname = params.row.original.ufsLabels?.['hostname']?.values?.[0];
       if (!hostname) {
-        return <CellWithTooltip {...params} />;
+        return (
+          <CellWithTooltip
+            value={params.cell.getValue() as string}
+            column={params.column}
+          />
+        );
       }
-      return renderCellWithLink(
-        (_, __) =>
+      return renderCellWithLink<BrowserDevice>(
+        () =>
           getFilterQueryString(
             { [`${BROWSER_UFS_SOURCE}.associated_hostname`]: [hostname] },
             undefined,
@@ -180,53 +176,68 @@ const CUSTOM_COLUMNS: Record<string, DeviceTableGridColDef<BrowserDevice>> = {
 
 export const BROWSER_COLUMN_OVERRIDES: Record<
   string,
-  Partial<DeviceTableGridColDef<BrowserDevice>>
+  Partial<BrowserColumnDef>
 > = {
   id: {
-    headerName: 'machine',
-    flex: 3,
-    valueGetter: (_, row) => row.id,
-    renderCell: renderCellWithLink(
+    header: 'machine',
+    size: 250,
+    minSize: 150,
+    accessorFn: (row) => row.id,
+    Cell: renderCellWithLink<BrowserDevice>(
       (value) => generateBrowserDeviceDetailsURL(value),
       false,
     ),
   },
   [`${BROWSER_SWARMING_SOURCE}.current_task`]: {
-    renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
+    Cell: (params) => {
       const swarmingInstance =
-        params.row?.ufsLabels?.['swarming_instance']?.values?.[0];
+        params.row.original?.ufsLabels?.['swarming_instance']?.values?.[0];
       const swarmingHost =
         swarmingInstance && `${swarmingInstance}.appspot.com`;
 
-      if (params.value && params.value !== 'idle' && swarmingHost) {
+      if (
+        (params.cell.getValue() as string) &&
+        (params.cell.getValue() as string) !== 'idle' &&
+        swarmingHost
+      ) {
         return renderCellWithLink<BrowserDevice>((value) => {
           return getTaskURL(value, swarmingHost);
         })(params);
       } else {
-        return <CellWithTooltip {...params}></CellWithTooltip>;
+        return (
+          <CellWithTooltip
+            value={params.cell.getValue() as string}
+            column={params.column}
+          />
+        );
       }
     },
   },
   [`${BROWSER_SWARMING_SOURCE}.dut_state`]: {
-    valueGetter: (_, device) =>
-      device.swarmingLabels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
-    renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
+    accessorFn: (device) =>
+      device.swarmingLabels?.['dut_state']?.values?.[0]?.toUpperCase() ?? '',
+    Cell: (params) => {
       const stateValue =
-        params.row?.swarmingLabels?.['dut_state']?.values?.[0]?.toUpperCase() ??
-        params.value ??
+        params.row.original?.swarmingLabels?.[
+          'dut_state'
+        ]?.values?.[0]?.toUpperCase() ??
+        (params.cell.getValue() as string) ??
         '';
 
       if (stateValue === '') return <></>;
 
-      return renderChipCell(
+      return renderChipCell<BrowserDevice>(
         getSwarmingStateDocLinkForLabel,
         getStatusColor,
-      )({ ...params, value: stateValue.toUpperCase() });
+        undefined,
+        true,
+        stateValue.toUpperCase() as StateUnion,
+      )(params);
     },
   },
   [`${BROWSER_SWARMING_SOURCE}.last_seen`]: {
-    renderCell: (params) => {
-      const value = params.value as string;
+    Cell: (params) => {
+      const value = params.cell.getValue() as string;
       if (!value) {
         return null;
       }
@@ -238,8 +249,8 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
     },
   },
   [`${BROWSER_SWARMING_SOURCE}.last_sync`]: {
-    renderCell: (params) => {
-      const value = params.value as string;
+    Cell: (params) => {
+      const value = params.cell.getValue() as string;
       if (!value) {
         return null;
       }
@@ -251,25 +262,30 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
     },
   },
   [`${BROWSER_UFS_SOURCE}.hostname`]: {
-    headerName: 'host/bot_id',
-    renderCell: (params: GridRenderCellParams<BrowserDevice>) => {
+    header: 'host/bot_id',
+    Cell: (params) => {
       const swarmingInstance =
-        params.row?.ufsLabels?.['swarming_instance']?.values?.[0];
+        params.row.original?.ufsLabels?.['swarming_instance']?.values?.[0];
       const swarmingHost =
         swarmingInstance && `${swarmingInstance}.appspot.com`;
 
-      if (params.value && swarmingHost) {
+      if ((params.cell.getValue() as string) && swarmingHost) {
         return renderCellWithLink<BrowserDevice>((value) => {
           return `https://${swarmingHost}/bot?id=${value}`;
         })(params);
       } else {
-        return <CellWithTooltip {...params}></CellWithTooltip>;
+        return (
+          <CellWithTooltip
+            value={params.cell.getValue() as string}
+            column={params.column}
+          />
+        );
       }
     },
   },
   [`${BROWSER_UFS_SOURCE}.last_sync`]: {
-    renderCell: (params) => {
-      const value = params.value as string;
+    Cell: (params) => {
+      const value = params.cell.getValue() as string;
       if (!value) {
         return null;
       }

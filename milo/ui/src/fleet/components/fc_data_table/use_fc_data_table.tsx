@@ -49,6 +49,8 @@ import {
 } from '@/fleet/hooks/use_settings';
 import { colors } from '@/fleet/theme/colors';
 
+const SELECT_COL_PADDING = '8px !important';
+
 export const useFCDataTable = <TData extends MRT_RowData>(
   tableOptions: MRT_TableOptions<TData>,
 ): MRT_TableInstance<TData> => {
@@ -61,7 +63,8 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     enableHiding: true, // Needed for hide column in menu
     enableColumnResizing: true,
     enableColumnActions: true,
-    layoutMode: 'semantic', // Avoid grid mode as it causes massive DOM tree lag on column resize
+    memoMode: 'rows',
+    layoutMode: 'grid',
     displayColumnDefOptions: {
       'mrt-row-select': {
         size: 40,
@@ -100,7 +103,13 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     },
     muiTablePaperProps: {
       elevation: 0,
-      sx: { border: 'none' },
+      sx: { border: 'none', boxShadow: 'none' },
+    },
+    muiTableHeadProps: {
+      sx: { boxShadow: 'none' },
+    },
+    muiTableHeadRowProps: {
+      sx: { boxShadow: 'none' },
     },
 
     renderColumnActionsMenuItems: ({ column, closeMenu }) => {
@@ -207,9 +216,8 @@ export const useFCDataTable = <TData extends MRT_RowData>(
       },
     },
 
-    muiTableHeadCellProps: ({ table, column }) => {
-      const density = table.getState().density;
-      const { vertical, horizontal } = getDensityPadding(density);
+    muiTableHeadCellProps: ({ column }) => {
+      const isSelectCol = column.id === 'mrt-row-select';
 
       const meta = column.columnDef.meta;
       const isTemporary = meta?.isTemporary;
@@ -222,10 +230,14 @@ export const useFCDataTable = <TData extends MRT_RowData>(
         className: isHighlighted ? 'column-highlight' : '',
         sx: {
           ...(fleetTableHeaderSx as Record<string, unknown>),
-          paddingTop: `${vertical}px !important`,
-          paddingBottom: `${vertical}px !important`,
-          paddingLeft: `${horizontal}px !important`,
-          paddingRight: `${horizontal}px !important`,
+          paddingTop: `var(--cell-padding-vertical) !important`,
+          paddingBottom: `var(--cell-padding-vertical) !important`,
+          paddingLeft: isSelectCol
+            ? SELECT_COL_PADDING
+            : `var(--cell-padding-horizontal) !important`,
+          paddingRight: isSelectCol
+            ? SELECT_COL_PADDING
+            : `var(--cell-padding-horizontal) !important`,
         } as SxProps<Theme>,
         'aria-description': title,
         title: title,
@@ -237,26 +249,28 @@ export const useFCDataTable = <TData extends MRT_RowData>(
       'aria-label': 'Column Actions',
     },
 
-    muiTableBodyCellProps: ({ table, column }) => {
-      const density = table.getState().density;
+    muiTableBodyCellProps: ({ column }) => {
       const meta = column.columnDef.meta;
       const isHighlighted = meta?.isHighlighted || column.getIsFiltered();
-
-      const { vertical, horizontal } = getDensityPadding(density);
+      const isSelectCol = column.id === 'mrt-row-select';
 
       return {
         className: isHighlighted ? 'column-highlight' : '',
         sx: {
-          paddingTop: `${vertical}px !important`,
-          paddingBottom: `${vertical}px !important`,
-          paddingLeft: `${horizontal}px !important`,
-          paddingRight: `${horizontal}px !important`,
+          fontSize: '13px',
+          paddingTop: `var(--cell-padding-vertical) !important`,
+          paddingBottom: `var(--cell-padding-vertical) !important`,
+          paddingLeft: isSelectCol
+            ? SELECT_COL_PADDING
+            : `var(--cell-padding-horizontal) !important`,
+          paddingRight: isSelectCol
+            ? SELECT_COL_PADDING
+            : `var(--cell-padding-horizontal) !important`,
           backgroundColor: isHighlighted ? `${colors.blue[50]}` : undefined,
           color: isHighlighted ? `${colors.blue[600]}` : undefined,
         } as SxProps<Theme>,
       };
     },
-    muiTableContainerProps: { sx: { maxWidth: '100%', overflowX: 'auto' } },
     muiTableProps: {
       sx: {
         tableLayout: 'fixed',
@@ -269,7 +283,61 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     },
   };
 
-  const mergedTableOptions = _.merge({}, defaultOptions, tableOptions);
+  const { columns, data, muiTableContainerProps, ...restTableOptions } =
+    tableOptions;
+  const mergedTableOptions = _.merge(
+    {},
+    defaultOptions,
+    restTableOptions,
+  ) as MRT_TableOptions<TData>;
+
+  mergedTableOptions.muiTableContainerProps = (props) => {
+    const density = props.table.getState().density;
+    const { vertical, horizontal } = getDensityPadding(density);
+
+    let injectedProps: Record<string, unknown> = {};
+    if (typeof muiTableContainerProps === 'function') {
+      injectedProps =
+        (muiTableContainerProps(props) as Record<string, unknown>) || {};
+    } else if (muiTableContainerProps) {
+      injectedProps = muiTableContainerProps as Record<string, unknown>;
+    }
+
+    const defaultSx = {
+      maxWidth: '100%',
+      overflowX: 'auto',
+      '--cell-padding-vertical': `${vertical}px`,
+      '--cell-padding-horizontal': `${horizontal}px`,
+    };
+
+    let userSxConfig = {};
+    if (typeof injectedProps.sx === 'function') {
+      // Technically sx can be a function, but that's very hard to merge transparently.
+      // We fall back to the user's function if provided, accepting we might lose default padding.
+      // For arrays/objects, we eagerly merge.
+      userSxConfig = injectedProps.sx;
+    } else if (Array.isArray(injectedProps.sx)) {
+      userSxConfig = _.merge({}, ...injectedProps.sx);
+    } else if (injectedProps.sx) {
+      userSxConfig = injectedProps.sx;
+    }
+
+    const mergedSx = _.merge({}, defaultSx, userSxConfig);
+
+    return {
+      ...injectedProps,
+      sx: (typeof injectedProps.sx === 'function'
+        ? [defaultSx, injectedProps.sx]
+        : mergedSx) as unknown as Record<string, unknown>,
+    };
+  };
+
+  if (columns) {
+    mergedTableOptions.columns = columns;
+  }
+  if (data) {
+    mergedTableOptions.data = data;
+  }
 
   return useMaterialReactTable(mergedTableOptions);
 };

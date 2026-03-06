@@ -15,6 +15,7 @@
 import { useMemo } from 'react';
 
 import { OptionValue } from '@/fleet/types/option';
+import { partition } from '@/fleet/utils/array';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
@@ -100,9 +101,19 @@ export function ColumnsManageDropDown({
         const sortedColumns = searchQuery
           ? fuzzySort(searchQuery)(columns, (x: OptionValue) => x.label)
           : defaultSortedColumns;
+
+        const finalSortedColumns = searchQuery
+          ? sortedColumns
+          : (() => {
+              const [pass, fail] = partition(sortedColumns, (x) =>
+                visibleColumns.includes(x.el.value),
+              );
+              return [...pass, ...fail];
+            })();
+
         return (
           <OptionsMenu
-            elements={sortedColumns}
+            elements={finalSortedColumns}
             selectedElements={new Set(selectedColumns)}
             flipOption={toggleColumn}
           />

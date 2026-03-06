@@ -20,6 +20,20 @@ import {
 } from '@/fleet/types';
 import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+export const getLabelFromOverride = (
+  key: string,
+  labelsOverride: Record<
+    string,
+    { header?: string | unknown; headerName?: string }
+  >,
+): string | undefined => {
+  const override = labelsOverride?.[key];
+  if (!override) return undefined;
+  return typeof override.header === 'string'
+    ? override.header
+    : override.headerName;
+};
+
 /**
  * Converts a response from GetDeviceDimensions into a list of options
  * for <MultiSelectFilter />
@@ -28,12 +42,16 @@ import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleet
  */
 export const dimensionsToFilterOptions = (
   response: GetDeviceDimensionsResponse,
-  labelsOverride: Record<string, { headerName?: string }>, // TODO: should this be columns?
+  labelsOverride: Record<
+    string,
+    { header?: string | unknown; headerName?: string }
+  >, // TODO: should this be columns?
 ): OptionCategory[] => {
   const baseDimensions = Object.entries(response.baseDimensions).map(
     ([key, value]) => {
+      const labelStr = getLabelFromOverride(key, labelsOverride);
       return {
-        label: labelsOverride[key]?.headerName || key,
+        label: labelStr || key,
         value: key,
         options: [
           { label: BLANK_VALUE, value: BLANK_VALUE },
@@ -53,9 +71,11 @@ export const dimensionsToFilterOptions = (
       return [];
     }
 
+    const labelStr = getLabelFromOverride(key, labelsOverride);
+
     return [
       {
-        label: labelsOverride[key]?.headerName || key,
+        label: labelStr || key,
         value: `labels."${key}"`,
         options: [
           { label: BLANK_VALUE, value: BLANK_VALUE },
@@ -85,7 +105,10 @@ export const dimensionsToFilterOptions = (
  */
 export const filterOptionsPlaceholder = (
   selectedOptions: SelectedOptions,
-  labelsOverride: Record<string, { headerName?: string }>,
+  labelsOverride: Record<
+    string,
+    { header?: string | unknown; headerName?: string }
+  >,
 ): OptionCategory[] => {
   return Object.entries(selectedOptions)
     .filter(([, values]) => Array.isArray(values))
@@ -97,12 +120,16 @@ export const filterOptionsPlaceholder = (
 const filterOptionPlaceholder = (
   key: string,
   values: string[],
-  labelsOverride: Record<string, { headerName?: string }>,
+  labelsOverride: Record<
+    string,
+    { header?: string | unknown; headerName?: string }
+  >,
 ): OptionCategory => {
   const value = key;
   key = key.replace(/labels\."?(.*?)"?$/, '$1');
+  const labelStr = getLabelFromOverride(key, labelsOverride);
   return {
-    label: labelsOverride?.[key]?.headerName || key,
+    label: labelStr || key,
     value: value,
     options: values.map((value) => {
       return { label: value, value: value };

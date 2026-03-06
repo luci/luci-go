@@ -166,7 +166,7 @@ export const BrowserDeviceDetailsPage = () => {
   const swarmingInstance = device?.ufsLabels['swarming_instance']?.values?.[0];
   const swarmingHost = swarmingInstance && `${swarmingInstance}.appspot.com`;
 
-  const botId = device?.ufsLabels['hostname']?.values?.at(0);
+  const botId = device?.ufsLabels['hostname']?.values?.at(0) || device?.id;
 
   return (
     <div
