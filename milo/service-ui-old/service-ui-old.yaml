@@ -16,7 +16,7 @@
 # path prefix).
 
 service: ui-old
-runtime: go124
+runtime: go125
 
 instance_class: F4_1G
 
