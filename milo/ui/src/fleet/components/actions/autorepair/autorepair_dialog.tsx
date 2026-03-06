@@ -41,7 +41,7 @@ export interface SessionInfo {
   sessionId?: string;
   results?: ScheduleAutorepairResult[];
   dutNames?: string[];
-  namespaces?: string[];
+  namespaces?: (string | readonly string[])[];
 }
 
 export interface AutorepairDialogProps {

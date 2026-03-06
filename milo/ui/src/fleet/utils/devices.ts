@@ -18,6 +18,24 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 /**
+ * Gets all values of a label from a device object if it exists.
+ * @param device Device data type from the Fleet Console backend.
+ * @returns Array of strings with the label values.
+ */
+export const extractDutLabels = (
+  label: string,
+  device?: Device,
+): readonly string[] => {
+  if (
+    !device?.deviceSpec?.labels ||
+    !(label in device.deviceSpec.labels) ||
+    !device.deviceSpec.labels[label]?.values?.length
+  )
+    return [];
+  return device.deviceSpec.labels[label].values;
+};
+
+/**
  * Gets the state of a DUT from a device object if it exists.
  * @param device Device data type from the Fleet Console backend.
  * @returns String with the state of the DUT.
@@ -69,6 +87,8 @@ export const getDeviceStateString = (device?: Device): string => {
  * @param namespace The namespace of the device.
  * @returns True if the device is in the partner namespace.
  */
-export const isPartnerNamespace = (namespace: string): boolean => {
-  return namespace === 'os-partner' || namespace === 'os-partner, os';
+export const isPartnerNamespace = (
+  namespace?: string | readonly string[],
+): boolean => {
+  return namespace?.includes('os-partner') ?? false;
 };

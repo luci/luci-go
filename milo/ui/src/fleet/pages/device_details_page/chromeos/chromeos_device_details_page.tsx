@@ -41,6 +41,7 @@ import {
   extractDutState,
   extractDutId,
   extractDutLabel,
+  extractDutLabels,
 } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { isTyping } from '@/fleet/utils/field_typing';
@@ -205,7 +206,7 @@ export const ChromeOSDeviceDetailsPage = () => {
       pool: extractDutLabel('label-pool', device),
       board: extractDutLabel('label-board', device),
       model: extractDutLabel('label-model', device),
-      namespace: extractDutLabel('ufs_namespace', device),
+      namespace: extractDutLabels('ufs_namespace', device),
     },
   ];
 

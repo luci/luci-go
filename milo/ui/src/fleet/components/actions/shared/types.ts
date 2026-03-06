@@ -32,5 +32,5 @@ export interface DutToRepair {
 
   // Note that this is label-pool, not Swarming pool.
   pool?: string;
-  namespace?: string;
+  namespace?: string | readonly string[];
 }

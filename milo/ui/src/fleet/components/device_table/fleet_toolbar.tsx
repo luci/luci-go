@@ -22,7 +22,11 @@ import {
 } from '@mui/x-data-grid';
 import { useMemo } from 'react';
 
-import { extractDutLabel, extractDutState } from '@/fleet/utils/devices';
+import {
+  extractDutLabel,
+  extractDutLabels,
+  extractDutState,
+} from '@/fleet/utils/devices';
 import {
   Device,
   Platform,
@@ -75,7 +79,7 @@ export function FleetToolbar({
           pool: extractDutLabel('label-pool', row as Device),
           board: extractDutLabel('label-board', row as Device),
           model: extractDutLabel('label-model', row as Device),
-          namespace: extractDutLabel('ufs_namespace', row as Device),
+          namespace: extractDutLabels('ufs_namespace', row as Device),
         }));
 
         return (
