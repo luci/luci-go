@@ -436,7 +436,15 @@ export function DashboardPage() {
   }
 
   return (
-    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box
+      sx={{
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        minWidth: 0,
+      }}
+    >
       {(!localDashboardState?.dashboardContent?.widgets ||
         localDashboardState.dashboardContent.widgets.length === 0) && (
         <EmptyDashboardState onAdd={() => setAddWidgetModalOpen(true)} />
@@ -471,7 +479,17 @@ export function DashboardPage() {
                 }
               />
             )}
-            {widget.chart && <ChartWidget widget={widget.chart} />}
+            {widget.chart && (
+              <ChartWidget
+                widget={widget.chart}
+                onUpdate={(updatedChartWidget) =>
+                  handleUpdateWidget(index, {
+                    ...widget,
+                    chart: updatedChartWidget,
+                  })
+                }
+              />
+            )}
           </WidgetContainer>
         );
       })}

@@ -17,96 +17,27 @@ import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
 import { getAbsoluteStartEndTime } from '@/common/components/time_range_selector/time_range_selector_utils';
-import { TimeSeriesChart, TimeSeriesDataSet } from '@/crystal_ball/components';
-import { GOLDEN_RATIO_CONJUGATE } from '@/crystal_ball/constants';
+import {
+  ChartSeriesEditor,
+  FilterEditor,
+  TimeSeriesChart,
+} from '@/crystal_ball/components';
 import { useSearchMeasurements } from '@/crystal_ball/hooks';
 import {
-  MeasurementRow,
+  PerfChartSeries,
   PerfChartWidget,
+  PerfFilter,
   SearchMeasurementsRequest,
 } from '@/crystal_ball/types';
+import { transformDataForChart } from '@/crystal_ball/utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-/**
- * On a per timestamp and metric key basis, total values based on build ids.
- */
-interface AggregationData {
-  sum: number;
-  count: number;
-}
-
-/**
- * Helper function to transform API response to chart data,
- * aggregating by mean across buildId.
- * @param rows - from the API response.
- * @param metricKeys - from the SearchMeasurementsRequest.
- * @returns a list of time series datasets.
- */
-export const transformDataForChart = (
-  rows: MeasurementRow[],
-  metricKeys: string[],
-): TimeSeriesDataSet[] => {
-  const dataMap: {
-    [time: number]: { [metricKey: string]: AggregationData };
-  } = {};
-
-  rows.forEach((row) => {
-    if (
-      !row.buildCreateTime ||
-      row.metricKey === undefined ||
-      row.value === undefined ||
-      row.buildId === undefined
-    ) {
-      return;
-    }
-
-    // Skip rows that don't match the requested metric keys
-    if (!metricKeys.includes(row.metricKey)) {
-      return;
-    }
-
-    const time = new Date(row.buildCreateTime).getTime();
-
-    if (!dataMap[time]) {
-      dataMap[time] = {};
-    }
-
-    if (!dataMap[time][row.metricKey]) {
-      dataMap[time][row.metricKey] = { sum: 0, count: 0 };
-    }
-
-    dataMap[time][row.metricKey].sum += row.value;
-    dataMap[time][row.metricKey].count += 1;
-  });
-
-  const sortedTimes = Object.keys(dataMap)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  return metricKeys.map((key, index) => {
-    const data: [number, number][] = [];
-    sortedTimes.forEach((time) => {
-      // Calculate the mean for the metricKey at this time
-      const agg = dataMap[time][key];
-      if (agg) {
-        data.push([time, agg.sum / agg.count]);
-      }
-    });
-
-    return {
-      name: key,
-      data,
-      // Use golden ratio to generate distinct colors
-      stroke: `hsl(${((index * GOLDEN_RATIO_CONJUGATE) % 1) * 360}, 70%, 50%)`,
-    };
-  });
-};
-
 interface ChartWidgetProps {
+  onUpdate: (updatedWidget: PerfChartWidget) => void;
   widget: PerfChartWidget;
 }
 
-export function ChartWidget({ widget }: ChartWidgetProps) {
+export function ChartWidget({ onUpdate, widget }: ChartWidgetProps) {
   const [searchParams] = useSyncedSearchParams();
 
   // TODO: b/475638132 - Read time filters from PerfChartWidget
@@ -183,6 +114,20 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
     return request;
   }, [widget, startTime, endTime]);
 
+  const handleFiltersUpdate = (updatedFilters: PerfFilter[]) => {
+    onUpdate({
+      ...widget,
+      filters: updatedFilters,
+    });
+  };
+
+  const handleSeriesUpdate = (updatedSeries: PerfChartSeries[]) => {
+    onUpdate({
+      ...widget,
+      series: updatedSeries,
+    });
+  };
+
   const {
     data: searchResponse,
     isLoading: isSearchLoading,
@@ -204,35 +149,71 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
     [chartSeries],
   );
 
-  if (isSearchLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (isSearchError) {
-    return (
-      <Alert severity="error" sx={{ my: 2 }}>
-        Error fetching chart data: {searchError?.message || 'Unknown error'}
-      </Alert>
-    );
-  }
-
-  if (!searchResponse || !hasData) {
-    return (
-      <Typography variant="body1" sx={{ mt: 2, p: 2 }}>
-        No data found for the given parameters.
-      </Typography>
-    );
-  }
-
   return (
-    <TimeSeriesChart
-      series={chartSeries}
-      chartTitle={widget.displayName || 'Performance Metrics'}
-      yAxisLabel="Value"
-    />
+    <Box>
+      <Box sx={{ position: 'relative', minHeight: '300px' }}>
+        {isSearchLoading && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 10,
+              borderRadius: 1,
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        )}
+        {isSearchError && (
+          <Alert severity="error" sx={{ my: 2 }}>
+            Error fetching chart data: {searchError?.message || 'Unknown error'}
+          </Alert>
+        )}
+        {!isSearchLoading &&
+          !isSearchError &&
+          (!searchResponse || !hasData) && (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+                minHeight: '300px',
+              }}
+            >
+              <Typography
+                variant="body1"
+                sx={{ p: 2, color: 'text.secondary' }}
+              >
+                No data found for the given parameters.
+              </Typography>
+            </Box>
+          )}
+        {!isSearchError && searchResponse && hasData && (
+          <TimeSeriesChart
+            series={chartSeries}
+            chartTitle={widget.displayName || 'Performance Metrics'}
+            yAxisLabel="Value"
+          />
+        )}
+      </Box>
+      <ChartSeriesEditor
+        series={widget.series || []}
+        onUpdateSeries={handleSeriesUpdate}
+        dataSpecId={widget.dataSpecId}
+      />
+      <FilterEditor
+        filters={widget.filters || []}
+        onUpdateFilters={handleFiltersUpdate}
+        dataSpecId={widget.dataSpecId}
+      />
+    </Box>
   );
 }

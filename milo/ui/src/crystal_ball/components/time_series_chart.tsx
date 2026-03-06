@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box } from '@mui/material';
 import { EChartsOption } from 'echarts';
 import ReactECharts from 'echarts-for-react';
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * When not using a responsive container, the line chart height will fall back
@@ -180,6 +181,17 @@ export function TimeSeriesChart({
   chartTitle,
   useResponsiveContainer = true,
 }: TimeSeriesChartProps) {
+  // When more than one EChart renders on the page contained within separate flex
+  // containers, there's a known issue where the ResizeObservers will cause each
+  // other to increase their width over and over again. For now let's set the chart
+  // width once when loading the time series chart.
+  const boxRef = useRef<HTMLElement>(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    if (!boxRef.current) return;
+    setWidth(boxRef.current.getBoundingClientRect().width);
+  }, []);
+
   const option: EChartsOption = useMemo(() => {
     return {
       ...BASE_OPTION,
@@ -212,15 +224,19 @@ export function TimeSeriesChart({
     () => ({
       height: `${DEFAULT_LINE_CHART_HEIGHT_PX}px`,
       width: useResponsiveContainer
-        ? '100%'
+        ? `${width}px`
         : `${DEFAULT_LINE_CHART_WIDTH_PX}px`,
     }),
-    [useResponsiveContainer],
+    [useResponsiveContainer, width],
   );
 
   return (
-    <div data-testid="time-series-chart" style={{ width: '100%' }}>
+    <Box
+      data-testid="time-series-chart"
+      ref={boxRef}
+      sx={{ overflow: 'hidden', width: '100%' }}
+    >
       <ReactECharts option={option} style={style} />
-    </div>
+    </Box>
   );
 }

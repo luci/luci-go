@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import ArticleIcon from '@mui/icons-material/Article';
+import {
+  Article as ArticleIcon,
+  ShowChart as ShowChartIcon,
+} from '@mui/icons-material';
 import {
   Button,
   Dialog,
@@ -57,6 +60,21 @@ export function AddWidgetModal({ open, onClose, onAdd }: AddWidgetModalProps) {
     onClose();
   };
 
+  const widgetOptions = [
+    {
+      type: WidgetType.MARKDOWN,
+      icon: ArticleIcon,
+      primary: 'Markdown Widget',
+      secondary: 'Add text, links, and simple formatting',
+    },
+    {
+      type: WidgetType.CHART_MULTI_METRIC,
+      icon: ShowChartIcon,
+      primary: 'Multi Metric Chart',
+      secondary: 'Display time series data for multiple metrics',
+    },
+  ];
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Add Widget</DialogTitle>
@@ -65,32 +83,34 @@ export function AddWidgetModal({ open, onClose, onAdd }: AddWidgetModalProps) {
           Select a widget type to add to your dashboard.
         </Typography>
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-          <ListItem disablePadding>
-            <ListItemButton
-              selected={selectedType === WidgetType.MARKDOWN}
-              onClick={() => setSelectedType(WidgetType.MARKDOWN)}
-              sx={{
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor:
-                  selectedType === WidgetType.MARKDOWN
-                    ? 'primary.main'
-                    : 'transparent',
-              }}
-            >
-              <ListItemIcon>
-                <ArticleIcon
-                  color={
-                    selectedType === WidgetType.MARKDOWN ? 'primary' : 'inherit'
-                  }
-                />
-              </ListItemIcon>
-              <ListItemText
-                primary="Markdown Widget"
-                secondary="Add text, links, and simple formatting"
-              />
-            </ListItemButton>
-          </ListItem>
+          {widgetOptions.map((option) => {
+            const isSelected = selectedType === option.type;
+            const IconComponent = option.icon;
+            return (
+              <ListItem key={option.type} disablePadding sx={{ mb: 1 }}>
+                <ListItemButton
+                  selected={isSelected}
+                  onClick={() => setSelectedType(option.type)}
+                  sx={{
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: isSelected ? 'primary.main' : 'divider',
+                    '&:hover': {
+                      borderColor: 'primary.light',
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <IconComponent color={isSelected ? 'primary' : 'action'} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={option.primary}
+                    secondary={option.secondary}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
         </List>
       </DialogContent>
       <DialogActions>

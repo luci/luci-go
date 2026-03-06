@@ -67,7 +67,9 @@ describe('TimeSeriesChart', () => {
   ];
 
   test('renders chart canvas successfully with correct config', () => {
-    render(<TimeSeriesChart series={mockSeries} />);
+    render(
+      <TimeSeriesChart series={mockSeries} useResponsiveContainer={false} />,
+    );
 
     const canvasElement = screen.getByTestId('echarts-canvas');
     expect(canvasElement).toBeInTheDocument();
@@ -75,7 +77,7 @@ describe('TimeSeriesChart', () => {
     const lastCallProps: MockEChartsProps = MockECharts.mock.lastCall![0];
     const { option } = lastCallProps;
 
-    expect(canvasElement).toHaveStyle({ height: '400px', width: '100%' });
+    expect(canvasElement).toHaveStyle({ height: '400px', width: '600px' });
 
     // We cannot directly test if the metric name is in the canvas because it renders
     // pixels. So we check if it's correctly set in the options, and rely on the
