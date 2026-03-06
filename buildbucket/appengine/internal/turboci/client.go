@@ -29,9 +29,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/value"
 	"go.chromium.org/luci/turboci/workplan"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
@@ -104,7 +104,7 @@ func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.S
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(c.Token)
 	stg := writeReq.AddNewStage(c.stageID(stageID), req)
-	writeReq.AddReason("Submitting stage via Buildbucket")
+	writeReq.SetReason("Submitting stage via Buildbucket")
 	stg.Msg.SetRealm(realm)
 	if timeouts != nil {
 		stg.Msg.SetRequestedStageExecutionPolicy(orchestratorpb.StageExecutionPolicy_builder{
@@ -119,7 +119,7 @@ func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.S
 }
 
 // buildStageDetailsTypeSet is a TypeSet composed of just BuildStageDetails.
-var buildStageDetailsTypeSet = ((data.TypeSetBuilder{}).
+var buildStageDetailsTypeSet = ((value.TypeSetBuilder{}).
 	WithMessages((*pb.BuildStageDetails)(nil)).
 	MustBuild())
 
@@ -159,7 +159,8 @@ func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.Buil
 	if err != nil {
 		return nil, AdjustTurboCIRPCError(err)
 	}
-	stage := workplan.ToNodeBag(resp.GetWorkplans()...).Stage(stageID)
+	bag := workplan.ToNodeBag(resp.GetValueData(), resp.GetWorkplans()...)
+	stage := bag.Stage(stageID)
 	if stage == nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "the stage is unexpectedly missing")
 	}
@@ -177,7 +178,10 @@ func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.Buil
 	// pending states, or it is executing, or it has already finished with
 	// a fatal error.
 	attempt := stage.GetAttempts()[len(stage.GetAttempts())-1]
-	details := data.FromMultipleValues[*pb.BuildStageDetails](attempt.GetDetails()...)
+	details, err := value.Lookup[*pb.BuildStageDetails](bag.DataSource, attempt.GetDetails())
+	if err != nil {
+		return nil, err
+	}
 	if details != nil {
 		return details, nil
 	}
@@ -217,22 +221,19 @@ func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageA
 	logging.Errorf(ctx, "Fail stage attempt: %s", failure.Err)
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(c.Token)
-	writeReq.AddReason(fmt.Sprintf("Set the stage attempt %s to INCOMPLETE due to an error: %s", id.ToString(attemptID), failure.Err))
+	writeReq.SetReason(fmt.Sprintf("Set the stage attempt %s to INCOMPLETE due to an error: %s", id.ToString(attemptID), failure.Err))
 	curWrite := writeReq.GetCurrentAttempt()
-	prog, err := curWrite.AddProgress(failure.Err.Error(), failure.Details)
-	if err != nil {
-		return err
-	}
+	prog := curWrite.AddProgress(failure.Err.Error(), value.MustWrite(failure.Details))
 	prog.SetIdempotencyKey("server/failure")
 
 	if len(details) > 0 {
-		curWrite.AddDetails(details...)
+		curWrite.AddDetails(value.MustWrites(details)...)
 	}
 
 	st := curWrite.GetStateTransition()
 	st.SetIncomplete()
 
-	_, err = WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
+	_, err := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
 	return AdjustTurboCIRPCError(err)
 }
 
@@ -242,13 +243,13 @@ func (c *Client) AbortCurrentAttempt(ctx context.Context, attemptID string, deta
 	logging.Infof(ctx, "Abort stage attempt: %s", attemptID)
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(c.Token)
-	writeReq.AddReason("Buildbucket build cancelled")
+	writeReq.SetReason("Buildbucket build cancelled")
 
 	curWrite := writeReq.GetCurrentAttempt()
 	curWrite.AddProgress("Cancelled via Buildbucket")
 
 	if len(details) > 0 {
-		curWrite.AddDetails(details...)
+		curWrite.AddDetails(value.MustWrites(details)...)
 	}
 
 	st := curWrite.GetStateTransition()
@@ -264,7 +265,7 @@ func (c *Client) CompleteCurrentAttempt(ctx context.Context, attemptID string) e
 	logging.Infof(ctx, "Complete stage attempt: %s", attemptID)
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(c.Token)
-	writeReq.AddReason("Buildbucket build completed")
+	writeReq.SetReason("Buildbucket build completed")
 	st := writeReq.GetCurrentAttempt().GetStateTransition()
 	st.SetComplete()
 	_, nErr := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))

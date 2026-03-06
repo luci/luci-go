@@ -42,6 +42,16 @@ func Inline(msg proto.Message, realm string) (*orchestratorpb.ValueRef, error) {
 	}.Build(), nil
 }
 
+// MustInline is the same as [Inline], except that it panics on error (i.e. if
+// `msg` cannot be marshaled.
+func MustInline(msg proto.Message, realm string) *orchestratorpb.ValueRef {
+	ret, err := Inline(msg, realm)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 // AbsorbInline consumes the inline data in `ref` into `src`.
 //
 // Mutates `ref` to set `digest` in place of `inline`.

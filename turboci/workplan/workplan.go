@@ -19,6 +19,7 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/turboci/id"
+	"go.chromium.org/luci/turboci/value"
 )
 
 // flatStageID is a version of idspb.Stage which can be used as a map key.
@@ -53,7 +54,13 @@ func makeFlatCheckID(cid *idspb.Check) flatCheckID {
 
 // NodeBag is an alternate form of []*WorkPlan which indexes checks and stages
 // directly by their ID.
+//
+// This also contains a [value.SimpleDataSource] to retain non-inline and JSON
+// ValueData for things in this bag.
 type NodeBag struct {
+	// A simple source for using [value.Lookup]/[value.First], etc.
+	DataSource value.SimpleDataSource
+
 	checks map[flatCheckID]*orchestratorpb.Check
 	stages map[flatStageID]*orchestratorpb.Stage
 }
@@ -62,7 +69,7 @@ type NodeBag struct {
 //
 // Providing no workplans (or empty workplans) produces an empty, but
 // functional, NodeBag.
-func ToNodeBag(workplans ...*orchestratorpb.WorkPlan) *NodeBag {
+func ToNodeBag(data map[string]*orchestratorpb.ValueData, workplans ...*orchestratorpb.WorkPlan) *NodeBag {
 	checkCount := 0
 	stageCount := 0
 	for _, wp := range workplans {
@@ -71,6 +78,8 @@ func ToNodeBag(workplans ...*orchestratorpb.WorkPlan) *NodeBag {
 	}
 	// even if we have no nodes, we return a functional NodeBag.
 	ret := &NodeBag{
+		DataSource: value.SimpleDataSource(data),
+
 		checks: make(map[flatCheckID]*orchestratorpb.Check, checkCount),
 		stages: make(map[flatStageID]*orchestratorpb.Stage, stageCount),
 	}

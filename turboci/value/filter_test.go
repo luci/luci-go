@@ -29,7 +29,8 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
-func TestFilterStage(t *testing.T) {
+// Tests [filterState.filterRef] by virtue of Stage.Args.
+func TestFilterRef(t *testing.T) {
 	t.Parallel()
 
 	makeRef := func(t testing.TB, src DataSource, msg proto.Message) *orchestratorpb.ValueRef {
@@ -341,6 +342,24 @@ func TestFilterStageFields(t *testing.T) {
 	assert.Loosely(t, rslt.WantedJSON, should.BeEmpty)
 
 	checkAllValueRefsNoAccess(t, stg)
+}
+
+// This is a 'change detector test' to ensure that FilterStageAttempt touches
+// every ValueRef in Stage_Attempt to ensure that protobuf changes do not
+// accidentally cause FilterStage to start missing fields.
+//
+// This keeps all proto reflection out of the prod/hot path and exclusively
+// in the tests.
+func TestFilterStageAttemptFields(t *testing.T) {
+	sa := &orchestratorpb.Stage_Attempt{}
+	populateAllValueRefs(sa)
+
+	rslt, err := FilterStageAttempt(sa, nil, func(realm string) (bool, error) { return false, nil })
+	assert.NoErr(t, err)
+	assert.Loosely(t, rslt.WantedDigests, should.BeEmpty)
+	assert.Loosely(t, rslt.WantedJSON, should.BeEmpty)
+
+	checkAllValueRefsNoAccess(t, sa)
 }
 
 // This is a 'change detector test' to ensure that FilterCheck touches every

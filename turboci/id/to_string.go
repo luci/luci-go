@@ -65,29 +65,13 @@ func ToString[Id Identifier](id Id) string {
 			acc = append(acc, x.GetId(), ":C")
 			anyID = x.GetWorkPlan()
 
-		case *idspb.CheckOption:
-			acc = append(acc, fmt.Sprint(x.GetIdx()), ":O")
-			anyID = x.GetCheck()
-
 		case *idspb.CheckResult:
 			acc = append(acc, fmt.Sprint(x.GetIdx()), ":R")
 			anyID = x.GetCheck()
 
-		case *idspb.CheckResultDatum:
-			acc = append(acc, fmt.Sprint(x.GetIdx()), ":D")
-			anyID = x.GetResult()
-
 		case *idspb.CheckEdit:
 			acc = append(acc, fmtVersion(x.GetVersion()), ":V")
 			anyID = x.GetCheck()
-
-		case *idspb.CheckEditReason:
-			acc = append(acc, fmt.Sprint(x.GetIdx()), ":R")
-			anyID = x.GetCheckEdit()
-
-		case *idspb.CheckEditOption:
-			acc = append(acc, fmt.Sprint(x.GetIdx()), ":O")
-			anyID = x.GetCheckEdit()
 
 		case *idspb.Stage:
 			sep := ":?"
@@ -108,10 +92,6 @@ func ToString[Id Identifier](id Id) string {
 		case *idspb.StageEdit:
 			acc = append(acc, fmtVersion(x.GetVersion()), ":V")
 			anyID = x.GetStage()
-
-		case *idspb.StageEditReason:
-			acc = append(acc, fmt.Sprint(x.GetIdx()), ":R")
-			anyID = x.GetStageEdit()
 
 		default:
 			panic(fmt.Sprintf("impossible type: %T", id))

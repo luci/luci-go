@@ -23,8 +23,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
-	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/value"
 )
 
 func TestCurrentAttempt(t *testing.T) {
@@ -32,22 +32,29 @@ func TestCurrentAttempt(t *testing.T) {
 
 	csw := write.CurrentAttemptWrite{Msg: &orchestratorpb.WriteNodesRequest_CurrentAttemptWrite{}}
 
-	_, err := csw.AddProgress("hei", boolData)
-	assert.NoErr(t, err)
+	csw.AddProgress("hei", value.MustWrite(boolData))
 
-	_, err = csw.AddDetails(boolData, numData)
-	assert.NoErr(t, err)
+	csw.AddDetails(value.MustWrite(boolData), value.MustWrite(numData))
 
 	assert.That(t, csw.Msg, should.Match(orchestratorpb.WriteNodesRequest_CurrentAttemptWrite_builder{
-		Details: []*orchestratorpb.Value{
-			data.Value(boolData),
-			data.Value(numData),
+		Details: []*orchestratorpb.ValueWrite{
+			orchestratorpb.ValueWrite_builder{
+				Data:  mustAny(boolData),
+				Realm: proto.String(value.RealmFromContainer),
+			}.Build(),
+			orchestratorpb.ValueWrite_builder{
+				Data:  mustAny(numData),
+				Realm: proto.String(value.RealmFromContainer),
+			}.Build(),
 		},
 		Progress: []*orchestratorpb.WriteNodesRequest_StageAttemptProgress{
 			orchestratorpb.WriteNodesRequest_StageAttemptProgress_builder{
 				Message: proto.String("hei"),
-				Details: []*orchestratorpb.Value{
-					data.Value(boolData),
+				Details: []*orchestratorpb.ValueWrite{
+					orchestratorpb.ValueWrite_builder{
+						Data:  mustAny(boolData),
+						Realm: proto.String(value.RealmFromContainer),
+					}.Build(),
 				},
 			}.Build(),
 		},
@@ -59,8 +66,7 @@ func TestGetCurrentStage(t *testing.T) {
 
 	req := write.NewRequest()
 	cur := req.GetCurrentAttempt()
-	_, err := cur.AddProgress("hei")
-	assert.NoErr(t, err)
+	cur.AddProgress("hei")
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
 		CurrentAttempt: orchestratorpb.WriteNodesRequest_CurrentAttemptWrite_builder{

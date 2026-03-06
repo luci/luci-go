@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/value"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
@@ -114,11 +113,9 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 
 		assert.That(t, orch.LastWriteNodesCall, should.Match(orchestratorpb.WriteNodesRequest_builder{
 			Token: proto.String(orch.Token),
-			Reasons: []*orchestratorpb.WriteNodesRequest_Reason{
-				orchestratorpb.WriteNodesRequest_Reason_builder{
-					Message: proto.String("Submitting stage via Buildbucket"),
-				}.Build(),
-			},
+			Reason: orchestratorpb.WriteNodesRequest_Reason_builder{
+				Message: proto.String("Submitting stage via Buildbucket"),
+			}.Build(),
 			Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
 				orchestratorpb.WriteNodesRequest_StageWrite_builder{
 					Identifier: stageID,
@@ -195,7 +192,7 @@ func mockQueryNodesResponse(planID *idspb.WorkPlan, stageID *idspb.Stage, state 
 	}
 	var attempts []*orchestratorpb.Stage_Attempt
 	if buildID >= 0 {
-		var details []*orchestratorpb.Value
+		var details []*orchestratorpb.ValueRef
 		if buildID != 0 || buildErr != nil {
 			details = append(details, buildStageDetails(buildID, buildErr))
 		}
@@ -203,7 +200,7 @@ func mockQueryNodesResponse(planID *idspb.WorkPlan, stageID *idspb.Stage, state 
 			// Ignored previous attempt.
 			orchestratorpb.Stage_Attempt_builder{
 				State: orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE.Enum(),
-				Details: []*orchestratorpb.Value{
+				Details: []*orchestratorpb.ValueRef{
 					buildStageDetails(0, status.Errorf(codes.Internal, "must be ignored")),
 				},
 			}.Build(),
@@ -230,7 +227,7 @@ func mockQueryNodesResponse(planID *idspb.WorkPlan, stageID *idspb.Stage, state 
 	}.Build()
 }
 
-func buildStageDetails(buildID int64, buildErr error) *orchestratorpb.Value {
+func buildStageDetails(buildID int64, buildErr error) *orchestratorpb.ValueRef {
 	msg := &pb.BuildStageDetails{}
 	if buildID != 0 {
 		msg.Result = &pb.BuildStageDetails_Id{
@@ -241,5 +238,5 @@ func buildStageDetails(buildID int64, buildErr error) *orchestratorpb.Value {
 			Error: status.Convert(buildErr).Proto(),
 		}
 	}
-	return data.Value(msg)
+	return value.MustInline(msg, "project:bucket")
 }

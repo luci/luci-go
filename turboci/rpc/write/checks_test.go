@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -25,49 +26,53 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/turboci/check"
-	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/value"
 )
 
 var numData = structpb.NewNumberValue(100.0)
 var boolData = structpb.NewBoolValue(true)
+
+func mustAny(msg proto.Message) *anypb.Any {
+	ret, err := anypb.New(msg)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
 
 func TestCheckWrite(t *testing.T) {
 	t.Parallel()
 
 	cw := write.CheckWrite{Msg: &orchestratorpb.WriteNodesRequest_CheckWrite{}}
 
-	opts, err := cw.AddOptions(numData)
-	assert.NoErr(t, err)
-	opts.SetRealm("some/realm")
+	cw.AddOptions(value.MustWrite(numData, "some/realm"))
 
-	_, err = cw.AddOptions(boolData)
-	assert.NoErr(t, err)
+	cw.AddOptions(value.MustWrite(boolData))
 
-	_, err = cw.AddResults(numData)
-	assert.NoErr(t, err)
+	cw.AddResults(value.MustWrite(numData))
 
-	rslts, err := cw.AddResults(boolData)
-	assert.NoErr(t, err)
-	rslts.SetRealm("some/realm")
+	cw.AddResults(value.MustWrite(boolData, "some/realm"))
 
 	assert.That(t, cw.Msg, should.Match(orchestratorpb.WriteNodesRequest_CheckWrite_builder{
-		Options: []*orchestratorpb.WriteNodesRequest_RealmValue{
-			orchestratorpb.WriteNodesRequest_RealmValue_builder{
-				Value: data.Value(numData),
+		Options: []*orchestratorpb.ValueWrite{
+			orchestratorpb.ValueWrite_builder{
+				Data:  mustAny(numData),
 				Realm: proto.String("some/realm"),
 			}.Build(),
-			orchestratorpb.WriteNodesRequest_RealmValue_builder{
-				Value: data.Value(boolData),
+			orchestratorpb.ValueWrite_builder{
+				Data:  mustAny(boolData),
+				Realm: proto.String(value.RealmFromContainer),
 			}.Build(),
 		},
-		Results: []*orchestratorpb.WriteNodesRequest_RealmValue{
-			orchestratorpb.WriteNodesRequest_RealmValue_builder{
-				Value: data.Value(numData),
+		Results: []*orchestratorpb.ValueWrite{
+			orchestratorpb.ValueWrite_builder{
+				Data:  mustAny(numData),
+				Realm: proto.String(value.RealmFromContainer),
 			}.Build(),
-			orchestratorpb.WriteNodesRequest_RealmValue_builder{
-				Value: data.Value(boolData),
+			orchestratorpb.ValueWrite_builder{
+				Data:  mustAny(boolData),
 				Realm: proto.String("some/realm"),
 			}.Build(),
 		},
@@ -82,18 +87,16 @@ func TestCheckAddNew(t *testing.T) {
 	req := write.NewRequest()
 
 	chk := req.AddNewCheck(id.Check("something"), check.KindBuild)
-	opts, err := chk.AddOptions(numData)
-	assert.NoErr(t, err)
-	opts.SetRealm("some/realm")
+	chk.AddOptions(value.MustWrite(numData, "some/realm"))
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
 		Checks: []*orchestratorpb.WriteNodesRequest_CheckWrite{
 			orchestratorpb.WriteNodesRequest_CheckWrite_builder{
 				Identifier: id.Check("something"),
 				Kind:       check.KindBuild.Enum(),
-				Options: []*orchestratorpb.WriteNodesRequest_RealmValue{
-					orchestratorpb.WriteNodesRequest_RealmValue_builder{
-						Value: data.Value(numData),
+				Options: []*orchestratorpb.ValueWrite{
+					orchestratorpb.ValueWrite_builder{
+						Data:  mustAny(numData),
 						Realm: proto.String("some/realm"),
 					}.Build(),
 				},

@@ -24,7 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/turboci/data"
+	"go.chromium.org/luci/turboci/value"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
@@ -111,9 +111,9 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 			assert.Loosely(t, mockOrch.LastWriteNodesCall, should.NotBeNil)
 			cw := mockOrch.LastWriteNodesCall.GetCurrentAttempt()
 			assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)
-			process := cw.GetProgress()
-			assert.That(t, len(process), should.Equal(1))
-			assert.That(t, process[0].GetMessage(), should.Equal("Cancelled via Buildbucket"))
+			progress := cw.GetProgress()
+			assert.That(t, len(progress), should.Equal(1))
+			assert.That(t, progress[0].GetMessage(), should.Equal("Cancelled via Buildbucket"))
 		})
 
 		t.Run("infra failure", func(t *ftt.Test) {
@@ -127,10 +127,10 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 			assert.Loosely(t, mockOrch.LastWriteNodesCall, should.NotBeNil)
 			cw := mockOrch.LastWriteNodesCall.GetCurrentAttempt()
 			assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)
-			process := cw.GetProgress()
-			assert.That(t, len(process), should.Equal(1))
-			assert.That(t, process[0].GetMessage(), should.Equal("Resource exhausted\nTimed out"))
-			assert.That(t, data.ExtractValue[*pb.StatusDetails](process[0].GetDetails()[0]), should.Match(bld.Proto.StatusDetails))
+			progress := cw.GetProgress()
+			assert.That(t, len(progress), should.Equal(1))
+			assert.That(t, progress[0].GetMessage(), should.Equal("Resource exhausted\nTimed out"))
+			assert.That(t, progress[0].GetDetails()[0].GetData().TypeUrl, should.Match(value.URLMsg(bld.Proto.StatusDetails)))
 		})
 
 		t.Run("build didn't start", func(t *ftt.Test) {
@@ -149,16 +149,16 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 				assert.Loosely(t, mockOrch.LastWriteNodesCall, should.NotBeNil)
 				cw := mockOrch.LastWriteNodesCall.GetCurrentAttempt()
 				assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)
-				process := cw.GetProgress()
-				assert.That(t, len(process), should.Equal(1))
-				assert.That(t, process[0].GetMessage(), should.Equal("Cancelled via Buildbucket"))
+				progress := cw.GetProgress()
+				assert.That(t, len(progress), should.Equal(1))
+				assert.That(t, progress[0].GetMessage(), should.Equal("Cancelled via Buildbucket"))
 				details := cw.GetDetails()
 				assert.That(t, len(details), should.Equal(2))
 				bldDetails := &pb.BuildStageDetails{}
-				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetValue().UnmarshalTo(bldDetails))
+				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetData().UnmarshalTo(bldDetails))
 				assert.That(t, bldDetails.GetId(), should.Equal(bld.ID))
 				commonDetails := &stagepb.CommonStageAttemptDetails{}
-				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[1].GetValue().UnmarshalTo(commonDetails))
+				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[1].GetData().UnmarshalTo(commonDetails))
 				assert.That(t, commonDetails.GetViewUrls()["Buildbucket"].GetUrl(), should.Equal(fmt.Sprintf("https://app.appspot.com/build/%d", bld.ID)))
 			})
 			t.Run("fail attempt with build details", func(t *ftt.Test) {
@@ -180,17 +180,17 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 				assert.Loosely(t, mockOrch.LastWriteNodesCall, should.NotBeNil)
 				cw := mockOrch.LastWriteNodesCall.GetCurrentAttempt()
 				assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)
-				process := cw.GetProgress()
-				assert.That(t, len(process), should.Equal(1))
-				assert.That(t, process[0].GetMessage(), should.Equal("Resource exhausted\nTimed out"))
-				assert.That(t, data.ExtractValue[*pb.StatusDetails](process[0].GetDetails()[0]), should.Match(bld.Proto.StatusDetails))
+				progress := cw.GetProgress()
+				assert.That(t, len(progress), should.Equal(1))
+				assert.That(t, progress[0].GetMessage(), should.Equal("Resource exhausted\nTimed out"))
+				assert.That(t, progress[0].GetDetails()[0].GetData().TypeUrl, should.Match(value.URLMsg(bld.Proto.StatusDetails)))
 				details := cw.GetDetails()
 				assert.That(t, len(details), should.Equal(2))
 				bldDetails := &pb.BuildStageDetails{}
-				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetValue().UnmarshalTo(bldDetails))
+				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetData().UnmarshalTo(bldDetails))
 				assert.That(t, bldDetails.GetId(), should.Equal(bld.ID))
 				commonDetails := &stagepb.CommonStageAttemptDetails{}
-				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[1].GetValue().UnmarshalTo(commonDetails))
+				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[1].GetData().UnmarshalTo(commonDetails))
 				assert.That(t, commonDetails.GetViewUrls()["Buildbucket"].GetUrl(), should.Equal(fmt.Sprintf("https://app.appspot.com/build/%d", bld.ID)))
 			})
 		})

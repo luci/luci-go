@@ -15,6 +15,8 @@
 package value
 
 import (
+	"fmt"
+
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
@@ -53,21 +55,57 @@ const (
 // This can only return an error on a proto marshaling error (e.g. if `msg` is
 // nil). If you statically know that this cannot be problematic (e.g. your
 // binary is known to have functioning proto support), consider [MustWrite].
-func Write(msg proto.Message, realm string) (*orchestratorpb.ValueWrite, error) {
+//
+// `realm` is a SINGULAR optional field. If omitted, RealmFromContainer
+// is used. If provided, this will be used as the realm. Providing it multiple
+// times is an error.
+func Write(msg proto.Message, realm ...string) (*orchestratorpb.ValueWrite, error) {
 	apb, err := anypb.New(msg)
 	if err != nil {
 		return nil, err
 	}
+	actualRealm := RealmFromContainer
+	if len(realm) == 1 {
+		actualRealm = realm[0]
+	} else if len(realm) > 1 {
+		return nil, fmt.Errorf("value.Write: realm provided more than once")
+	}
 
 	return orchestratorpb.ValueWrite_builder{
 		Data:  apb,
-		Realm: &realm,
+		Realm: &actualRealm,
 	}.Build(), nil
 }
 
 // MustWrite is like [Write], but panics on error.
-func MustWrite(msg proto.Message, realm string) *orchestratorpb.ValueWrite {
-	ret, err := Write(msg, realm)
+//
+// Like [Write], `realm` must be provided 0 or 1 times, and defaults to
+// RealmFromContainer if omitted.
+func MustWrite(msg proto.Message, realm ...string) *orchestratorpb.ValueWrite {
+	ret, err := Write(msg, realm...)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+// Writes is the same as [Write], except it processes multiple messages, giving
+// them all the same realm.
+func Writes(msgs []proto.Message, realm ...string) ([]*orchestratorpb.ValueWrite, error) {
+	ret := make([]*orchestratorpb.ValueWrite, len(msgs))
+	for i, msg := range msgs {
+		var err error
+		ret[i], err = Write(msg, realm...)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
+}
+
+// MustWrites is the same as [Writes], except it panics on error.
+func MustWrites(msgs []proto.Message, realm ...string) []*orchestratorpb.ValueWrite {
+	ret, err := Writes(msgs, realm...)
 	if err != nil {
 		panic(err)
 	}

@@ -94,25 +94,6 @@ func CheckErr(id string) (*idspb.Check, error) {
 	return idspb.Check_builder{Id: &id}.Build(), nil
 }
 
-// CheckOptionErr returns a CheckOption identifier suitable for use with
-// WriteNodes without a WorkPlan.
-//
-// Returns an error if `checkID` is malformed or `optionIdx` is out of range.
-func CheckOptionErr(checkID string, optionIdx int) (*idspb.CheckOption, error) {
-	cid, err := CheckErr(checkID)
-	if err != nil {
-		return nil, fmt.Errorf("id.CheckOption: %w", err)
-	}
-	idx, err := checkIdx("optionIdx", optionIdx)
-	if err != nil {
-		return nil, fmt.Errorf("id.CheckOption: %w", err)
-	}
-	return idspb.CheckOption_builder{
-		Check: cid,
-		Idx:   idx,
-	}.Build(), nil
-}
-
 // CheckResultErr returns a CheckResult identifier suitable for use with
 // WriteNodes without a WorkPlan.
 //
@@ -132,26 +113,6 @@ func CheckResultErr(checkID string, resultIdx int) (*idspb.CheckResult, error) {
 	}.Build(), nil
 }
 
-// CheckResultDatumErr returns a CheckResultDatum identifier suitable for use
-// with WriteNodes without a WorkPlan.
-//
-// Returns an error if `checkID` is malformed or `resultIdx`/`datumIdx` are out
-// of range.
-func CheckResultDatumErr(checkID string, resultIdx, datumIdx int) (*idspb.CheckResultDatum, error) {
-	rid, err := CheckResultErr(checkID, resultIdx)
-	if err != nil {
-		return nil, fmt.Errorf("id.CheckResultDatum: %w", err)
-	}
-	idx, err := checkIdx("datumIdx", datumIdx)
-	if err != nil {
-		return nil, fmt.Errorf("id.CheckResultDatum: %w", err)
-	}
-	return idspb.CheckResultDatum_builder{
-		Result: rid,
-		Idx:    idx,
-	}.Build(), nil
-}
-
 // CheckEditErr returns a CheckEdit identifier suitable for use with WriteNodes
 // without a WorkPlan.
 //
@@ -167,45 +128,6 @@ func CheckEditErr(checkID string, ts time.Time) (*idspb.CheckEdit, error) {
 	return idspb.CheckEdit_builder{
 		Check:   cid,
 		Version: timestamppb.New(ts),
-	}.Build(), nil
-}
-
-// CheckEditOptionErr returns a CheckEditOption identifier suitable for use with
-// WriteNodes without a WorkPlan.
-//
-// Returns an error if `checkID` is malformed, `ts` is zero, or `optionIdx` is
-// out of range.
-func CheckEditOptionErr(checkID string, ts time.Time, optionIdx int) (*idspb.CheckEditOption, error) {
-	ceid, err := CheckEditErr(checkID, ts)
-	if err != nil {
-		return nil, fmt.Errorf("id.CheckEditOption: %w", err)
-	}
-	idx, err := checkIdx("optionIdx", optionIdx)
-	if err != nil {
-		return nil, fmt.Errorf("id.CheckEditOption: %w", err)
-	}
-	return idspb.CheckEditOption_builder{
-		CheckEdit: ceid,
-		Idx:       idx,
-	}.Build(), nil
-}
-
-// CheckEditReasonErr returns a CheckEditReason identifier without a WorkPlan.
-//
-// Returns an error if `checkID` is malformed, `ts` is zero, or `reasonIdx` is
-// out of range.
-func CheckEditReasonErr(checkID string, ts time.Time, reasonIdx int) (*idspb.CheckEditReason, error) {
-	ceid, err := CheckEditErr(checkID, ts)
-	if err != nil {
-		return nil, fmt.Errorf("id.CheckEditReasonErr: %w", err)
-	}
-	idx, err := checkIdx("reasonIdx", reasonIdx)
-	if err != nil {
-		return nil, fmt.Errorf("id.CheckEditReasonErr: %w", err)
-	}
-	return idspb.CheckEditReason_builder{
-		CheckEdit: ceid,
-		Idx:       idx,
 	}.Build(), nil
 }
 
@@ -281,25 +203,6 @@ func StageEditErr(mode WorknodeMode, stageID string, ts time.Time) (*idspb.Stage
 	return idspb.StageEdit_builder{
 		Stage:   sid,
 		Version: timestamppb.New(ts),
-	}.Build(), nil
-}
-
-// StageEditReasonErr returns a StageEditReason identifier without a WorkPlan.
-//
-// Returns an error if `stageID` is malformed, `ts` is zero, or `reasonIdx` is
-// out of range.
-func StageEditReasonErr(mode WorknodeMode, stageID string, ts time.Time, reasonIdx int) (*idspb.StageEditReason, error) {
-	seid, err := StageEditErr(mode, stageID, ts)
-	if err != nil {
-		return nil, fmt.Errorf("id.StageEditReason: %w", err)
-	}
-	idx, err := checkIdx("reasonIdx", reasonIdx)
-	if err != nil {
-		return nil, fmt.Errorf("id.StageEditReason: %w", err)
-	}
-	return idspb.StageEditReason_builder{
-		StageEdit: seid,
-		Idx:       idx,
 	}.Build(), nil
 }
 

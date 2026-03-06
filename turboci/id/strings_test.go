@@ -48,21 +48,10 @@ func TestToFromString(t *testing.T) {
 			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK,
 		},
 		{
-			":Cmeep:O2", func() (*idspb.Identifier, error) {
-				return shouldWrap(CheckOptionErr("meep", 2))
-			},
-			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_OPTION},
-		{
 			":Cmeep:R2", func() (*idspb.Identifier, error) {
 				return shouldWrap(CheckResultErr("meep", 2))
 			},
 			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_RESULT,
-		},
-		{
-			":Cmeep:R2:D3", func() (*idspb.Identifier, error) {
-				return shouldWrap(CheckResultDatumErr("meep", 2, 3))
-			},
-			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_RESULT_DATUM,
 		},
 		{
 			":Cmeep:V12345/6789",
@@ -71,22 +60,6 @@ func TestToFromString(t *testing.T) {
 				return shouldWrap(CheckEditErr("meep", ts))
 			},
 			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT,
-		},
-		{
-			":Cmeep:V12345/6789:R2",
-			func() (*idspb.Identifier, error) {
-				ts := time.Unix(12345, 6789)
-				return shouldWrap(CheckEditReasonErr("meep", ts, 2))
-			},
-			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT_REASON,
-		},
-		{
-			":Cmeep:V12345/6789:O10",
-			func() (*idspb.Identifier, error) {
-				ts := time.Unix(12345, 6789)
-				return shouldWrap(CheckEditOptionErr("meep", ts, 10))
-			},
-			idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT_OPTION,
 		},
 		{
 			":Smeep",
@@ -138,14 +111,6 @@ func TestToFromString(t *testing.T) {
 				return shouldWrap(StageEditErr(StageIsWorknode, "meep", ts))
 			},
 			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_EDIT,
-		},
-		{
-			":Smeep:V12345/6789:R2",
-			func() (*idspb.Identifier, error) {
-				ts := time.Unix(12345, 6789)
-				return shouldWrap(StageEditReasonErr(StageNotWorknode, "meep", ts, 2))
-			},
-			idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_EDIT_REASON,
 		},
 	}
 

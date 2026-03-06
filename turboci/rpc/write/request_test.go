@@ -23,8 +23,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
-	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/value"
 )
 
 func TestAddReason(t *testing.T) {
@@ -32,28 +32,24 @@ func TestAddReason(t *testing.T) {
 
 	req := write.NewRequest()
 
-	rsn, err := req.AddReason("hello", boolData)
-	assert.NoErr(t, err)
-	rsn.SetRealm("some/realm")
-
-	_, err = req.AddReason("yo", numData)
-	assert.NoErr(t, err)
+	req.SetReason(
+		"hello",
+		value.MustWrite(boolData, "some/realm"),
+		value.MustWrite(numData))
 
 	assert.That(t, req.Msg, should.Match(orchestratorpb.WriteNodesRequest_builder{
-		Reasons: []*orchestratorpb.WriteNodesRequest_Reason{
-			orchestratorpb.WriteNodesRequest_Reason_builder{
-				Message: proto.String("hello"),
-				Realm:   proto.String("some/realm"),
-				Details: []*orchestratorpb.Value{
-					data.Value(boolData),
-				},
-			}.Build(),
-			orchestratorpb.WriteNodesRequest_Reason_builder{
-				Message: proto.String("yo"),
-				Details: []*orchestratorpb.Value{
-					data.Value(numData),
-				},
-			}.Build(),
-		},
+		Reason: orchestratorpb.WriteNodesRequest_Reason_builder{
+			Message: proto.String("hello"),
+			Details: []*orchestratorpb.ValueWrite{
+				orchestratorpb.ValueWrite_builder{
+					Data:  mustAny(boolData),
+					Realm: proto.String("some/realm"),
+				}.Build(),
+				orchestratorpb.ValueWrite_builder{
+					Data:  mustAny(numData),
+					Realm: proto.String(value.RealmFromContainer),
+				}.Build(),
+			},
+		}.Build(),
 	}.Build()))
 }

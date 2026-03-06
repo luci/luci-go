@@ -159,16 +159,15 @@ func TestRunStage(t *testing.T) {
 			}))
 
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))
-			reasons := mockOrch.LastWriteNodesCall.GetReasons()
-			assert.That(t, len(reasons), should.Equal(1))
-			assert.That(t, reasons[0].GetMessage(), should.Equal(`Buildbucket build scheduled`))
+			reason := mockOrch.LastWriteNodesCall.GetReason()
+			assert.That(t, reason.GetMessage(), should.Equal(`Buildbucket build scheduled`))
 			assert.That(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().HasScheduled(), should.BeTrue)
 			assert.That(t, len(mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()), should.Equal(2))
 			bldDetails := &pb.BuildStageDetails{}
-			assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetValue().UnmarshalTo(bldDetails))
+			assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetData().UnmarshalTo(bldDetails))
 			assert.That(t, bldDetails.GetId(), should.Equal(bld.ID))
 			commonDetails := &stagepb.CommonStageAttemptDetails{}
-			assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[1].GetValue().UnmarshalTo(commonDetails))
+			assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[1].GetData().UnmarshalTo(commonDetails))
 			assert.That(t, commonDetails.GetViewUrls()["Buildbucket"].GetUrl(), should.Equal(fmt.Sprintf("https://app.appspot.com/build/%d", bld.ID)))
 		})
 
@@ -247,9 +246,8 @@ func TestRunStage(t *testing.T) {
 
 			// Check that failCurrentStage was called.
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))
-			reasons := mockOrch.LastWriteNodesCall.GetReasons()
-			assert.That(t, len(reasons), should.Equal(1))
-			assert.That(t, reasons[0].GetMessage(), should.Equal(`Set the stage attempt Lplan-id:Sstage-id:A1 to INCOMPLETE due to an error: rpc error: code = NotFound desc = requested resource not found or "user:test@example.com" does not have permission to view it`))
+			reason := mockOrch.LastWriteNodesCall.GetReason()
+			assert.That(t, reason.GetMessage(), should.Equal(`Set the stage attempt Lplan-id:Sstage-id:A1 to INCOMPLETE due to an error: rpc error: code = NotFound desc = requested resource not found or "user:test@example.com" does not have permission to view it`))
 			assert.That(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().HasIncomplete(), should.BeTrue)
 			progress := mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetProgress()
 			assert.That(t, len(progress), should.Equal(1))
@@ -352,7 +350,7 @@ func TestRunStage(t *testing.T) {
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))
 			assert.That(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().HasScheduled(), should.BeTrue)
 			bldDetails := &pb.BuildStageDetails{}
-			assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetValue().UnmarshalTo(bldDetails))
+			assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetData().UnmarshalTo(bldDetails))
 			assert.That(t, bldDetails.GetId(), should.Equal(bld.ID))
 		})
 

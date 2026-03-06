@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
+	"go.chromium.org/luci/turboci/value"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
@@ -349,12 +350,12 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld 
 
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(cl.Token)
-	writeReq.AddReason("Buildbucket build scheduled")
+	writeReq.SetReason("Buildbucket build scheduled")
 
 	curWrite := writeReq.GetCurrentAttempt()
 
 	details := tasks.PopulateBuildDetails(bld)
-	curWrite.AddDetails(details...)
+	curWrite.AddDetails(value.MustWrites(details)...)
 
 	updatedPolicy := buildToStagetAttemptExecutionPolicy(bld)
 	st := curWrite.GetStateTransition()
@@ -368,12 +369,12 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld 
 func updateStageAttemptToRunning(ctx context.Context, cl *turboci.Client, bld *pb.Build, reqID string) error {
 	writeReq := write.NewRequest()
 	writeReq.Msg.SetToken(cl.Token)
-	writeReq.AddReason("Buildbucket build started")
+	writeReq.SetReason("Buildbucket build started")
 
 	curWrite := writeReq.GetCurrentAttempt()
 
 	details := tasks.PopulateBuildDetails(bld)
-	curWrite.AddDetails(details...)
+	curWrite.AddDetails(value.MustWrites(details)...)
 
 	st := curWrite.GetStateTransition()
 	st.SetRunning(reqID, nil)

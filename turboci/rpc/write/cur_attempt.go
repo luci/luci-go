@@ -21,8 +21,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-
-	"go.chromium.org/luci/turboci/data"
 )
 
 // GetCurrentStage returns a helper for manipulating the `current_stage` of the
@@ -69,28 +67,19 @@ type CurrentAttemptWrite struct {
 //
 // This only returns an error if there is a problem converting `details` to
 // Value messages.
-func (cswca CurrentAttemptWrite) AddProgress(message string, details ...proto.Message) (*orchestratorpb.WriteNodesRequest_StageAttemptProgress, error) {
-	vals, err := data.ValuesErr(details...)
-	if err != nil {
-		return nil, err
-	}
+func (cswca CurrentAttemptWrite) AddProgress(message string, details ...*orchestratorpb.ValueWrite) *orchestratorpb.WriteNodesRequest_StageAttemptProgress {
 	ret := orchestratorpb.WriteNodesRequest_StageAttemptProgress_builder{
 		Message: &message,
-		Details: vals,
+		Details: details,
 	}.Build()
 	cswca.Msg.SetProgress(append(cswca.Msg.GetProgress(), ret))
-	return ret, nil
+	return ret
 }
 
 // AddDetails adds the given proto messages as details to the current stage
 // attempt.
-func (cswca CurrentAttemptWrite) AddDetails(details ...proto.Message) ([]*orchestratorpb.Value, error) {
-	vals, err := data.ValuesErr(details...)
-	if err != nil {
-		return nil, err
-	}
-	cswca.Msg.SetDetails(append(cswca.Msg.GetDetails(), vals...))
-	return vals, nil
+func (cswca CurrentAttemptWrite) AddDetails(details ...*orchestratorpb.ValueWrite) {
+	cswca.Msg.SetDetails(append(cswca.Msg.GetDetails(), details...))
 }
 
 // StateTransition is a helper to manipulate the state_transition portion of a

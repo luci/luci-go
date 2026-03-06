@@ -26,8 +26,7 @@ type StageIdentifier interface {
 	*idspb.Identifier |
 		*idspb.Stage |
 		*idspb.StageAttempt |
-		*idspb.StageEdit |
-		*idspb.StageEditReason
+		*idspb.StageEdit
 }
 
 // CheckIdentifier is the union of all valid Identifier messages which are
@@ -35,12 +34,8 @@ type StageIdentifier interface {
 type CheckIdentifier interface {
 	*idspb.Identifier |
 		*idspb.Check |
-		*idspb.CheckOption |
 		*idspb.CheckResult |
-		*idspb.CheckResultDatum |
-		*idspb.CheckEdit |
-		*idspb.CheckEditReason |
-		*idspb.CheckEditOption
+		*idspb.CheckEdit
 }
 
 // Identifier is the union of all valid Identifier messages.
@@ -68,26 +63,16 @@ func wrap(id any) *idspb.Identifier {
 		return idspb.Identifier_builder{WorkPlan: x}.Build()
 	case *idspb.Check:
 		return idspb.Identifier_builder{Check: x}.Build()
-	case *idspb.CheckOption:
-		return idspb.Identifier_builder{CheckOption: x}.Build()
 	case *idspb.CheckResult:
 		return idspb.Identifier_builder{CheckResult: x}.Build()
-	case *idspb.CheckResultDatum:
-		return idspb.Identifier_builder{CheckResultDatum: x}.Build()
 	case *idspb.CheckEdit:
 		return idspb.Identifier_builder{CheckEdit: x}.Build()
-	case *idspb.CheckEditReason:
-		return idspb.Identifier_builder{CheckEditReason: x}.Build()
-	case *idspb.CheckEditOption:
-		return idspb.Identifier_builder{CheckEditOption: x}.Build()
 	case *idspb.Stage:
 		return idspb.Identifier_builder{Stage: x}.Build()
 	case *idspb.StageAttempt:
 		return idspb.Identifier_builder{StageAttempt: x}.Build()
 	case *idspb.StageEdit:
 		return idspb.Identifier_builder{StageEdit: x}.Build()
-	case *idspb.StageEditReason:
-		return idspb.Identifier_builder{StageEditReason: x}.Build()
 	}
 
 	panic(fmt.Sprintf("bug: id.wrap got unexpected type %T", id))
@@ -108,26 +93,16 @@ func unwrap(id any) any {
 			return x.GetWorkPlan()
 		case idspb.Identifier_Check_case:
 			return x.GetCheck()
-		case idspb.Identifier_CheckOption_case:
-			return x.GetCheckOption()
 		case idspb.Identifier_CheckResult_case:
 			return x.GetCheckResult()
-		case idspb.Identifier_CheckResultDatum_case:
-			return x.GetCheckResultDatum()
 		case idspb.Identifier_CheckEdit_case:
 			return x.GetCheckEdit()
-		case idspb.Identifier_CheckEditOption_case:
-			return x.GetCheckEditOption()
-		case idspb.Identifier_CheckEditReason_case:
-			return x.GetCheckEditReason()
 		case idspb.Identifier_Stage_case:
 			return x.GetStage()
 		case idspb.Identifier_StageAttempt_case:
 			return x.GetStageAttempt()
 		case idspb.Identifier_StageEdit_case:
 			return x.GetStageEdit()
-		case idspb.Identifier_StageEditReason_case:
-			return x.GetStageEditReason()
 		case idspb.Identifier_Type_not_set_case:
 			return nil
 		}
@@ -136,14 +111,9 @@ func unwrap(id any) any {
 		*idspb.Stage,
 		*idspb.StageAttempt,
 		*idspb.StageEdit,
-		*idspb.StageEditReason,
 		*idspb.Check,
-		*idspb.CheckOption,
 		*idspb.CheckResult,
-		*idspb.CheckResultDatum,
-		*idspb.CheckEdit,
-		*idspb.CheckEditReason,
-		*idspb.CheckEditOption:
+		*idspb.CheckEdit:
 
 		return x
 	}
@@ -186,24 +156,14 @@ func Root[Id Identifier](id Id) (wp *idspb.WorkPlan, check *idspb.Check, stage *
 		stage = x.GetStage()
 	case *idspb.StageEdit:
 		stage = x.GetStage()
-	case *idspb.StageEditReason:
-		stage = x.GetStageEdit().GetStage()
 
 	// Check root
 	case *idspb.Check:
 		check = x
-	case *idspb.CheckOption:
-		check = x.GetCheck()
 	case *idspb.CheckResult:
 		check = x.GetCheck()
-	case *idspb.CheckResultDatum:
-		check = x.GetResult().GetCheck()
 	case *idspb.CheckEdit:
 		check = x.GetCheck()
-	case *idspb.CheckEditReason:
-		check = x.GetCheckEdit().GetCheck()
-	case *idspb.CheckEditOption:
-		check = x.GetCheckEdit().GetCheck()
 	case nil:
 		// nil identifiers have check, stage and workplan all-nil.
 
@@ -228,26 +188,16 @@ func KindOf[Id Identifier](id Id) idspb.IdentifierKind {
 		return idspb.IdentifierKind_IDENTIFIER_KIND_WORK_PLAN
 	case *idspb.Check:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK
-	case *idspb.CheckOption:
-		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_OPTION
 	case *idspb.CheckResult:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_RESULT
-	case *idspb.CheckResultDatum:
-		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_RESULT_DATUM
 	case *idspb.CheckEdit:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT
-	case *idspb.CheckEditReason:
-		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT_REASON
-	case *idspb.CheckEditOption:
-		return idspb.IdentifierKind_IDENTIFIER_KIND_CHECK_EDIT_OPTION
 	case *idspb.Stage:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_STAGE
 	case *idspb.StageAttempt:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_ATTEMPT
 	case *idspb.StageEdit:
 		return idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_EDIT
-	case *idspb.StageEditReason:
-		return idspb.IdentifierKind_IDENTIFIER_KIND_STAGE_EDIT_REASON
 
 	default:
 		panic(fmt.Sprintf("impossible type: %s", typ))

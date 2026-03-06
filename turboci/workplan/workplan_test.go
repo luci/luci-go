@@ -25,8 +25,8 @@ import (
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
-	"go.chromium.org/luci/turboci/data"
 	"go.chromium.org/luci/turboci/id"
+	"go.chromium.org/luci/turboci/value"
 )
 
 func TestNodeBag(t *testing.T) {
@@ -34,7 +34,7 @@ func TestNodeBag(t *testing.T) {
 
 	t.Run(`empty`, func(t *testing.T) {
 		t.Parallel()
-		nb := ToNodeBag()
+		nb := ToNodeBag(nil)
 
 		assert.Loosely(t,
 			nb.Check(id.SetWorkplan(id.Check("somecheck"), "someplan")), should.BeNil)
@@ -54,17 +54,11 @@ func TestNodeBag(t *testing.T) {
 			Identifier: id.SetWorkplan(id.Check("C"), "wp"),
 		}.Build()
 
-		ds, err := data.CheckOptionDataSetFromSlice(cCheck.GetIdentifier(), cCheck.GetOptions())
-		assert.NoErr(t, err)
-		ds.Add(orchestratorpb.WriteNodesRequest_RealmValue_builder{
-			Realm: proto.String("project:realm"),
-			Value: data.Value(&emptypb.Empty{}),
-		}.Build())
-		cCheck.SetOptions(ds.ToSlice())
-
-		opID := cCheck.GetOptions()[0].GetIdentifier()
+		opts, _ := value.AddByTypeIn(cCheck.GetOptions(), value.MustInline(&emptypb.Empty{}, "project:realm"))
+		cCheck.SetOptions(opts)
 
 		nb := ToNodeBag(
+			nil,
 			orchestratorpb.WorkPlan_builder{
 				Checks: []*orchestratorpb.Check{
 					orchestratorpb.Check_builder{
@@ -102,13 +96,8 @@ func TestNodeBag(t *testing.T) {
 		assert.That(t,
 			nb.Check(id.SetWorkplan(id.Check("C"), "wp")), should.Match(orchestratorpb.Check_builder{
 				Identifier: id.SetWorkplan(id.Check("C"), "wp"),
-				Options: []*orchestratorpb.Datum{
-					orchestratorpb.Datum_builder{
-						Identifier: opID,
-						Realm:      proto.String("project:realm"),
-						Value:      data.Value(&emptypb.Empty{}),
-						Version:    &orchestratorpb.Revision{},
-					}.Build(),
+				Options: []*orchestratorpb.ValueRef{
+					value.MustInline(&emptypb.Empty{}, "project:realm"),
 				},
 			}.Build()))
 

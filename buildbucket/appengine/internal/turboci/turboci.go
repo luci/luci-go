@@ -122,6 +122,15 @@ func QueryNodes(ctx context.Context, in *orchestratorpb.QueryNodesRequest, opts 
 	return resp, err
 }
 
+// ReadWorkPlan is a helper function to get the installed orchestrator client
+// and call ReadWorkPlan with it.
+func ReadWorkPlan(ctx context.Context, in *orchestratorpb.ReadWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.ReadWorkPlanResponse, error) {
+	LogRequest(ctx, "ReadWorkPlan", in)
+	resp, err := TurboCIOrchestratorClient(ctx).ReadWorkPlan(ctx, in, opts...)
+	LogResponse(ctx, "ReadWorkPlan", resp, err)
+	return resp, err
+}
+
 type clientPool []grpc.ClientConnInterface
 
 // CreateWorkPlan implements TurboCIOrchestratorClient.
@@ -137,6 +146,11 @@ func (cp clientPool) WriteNodes(ctx context.Context, in *orchestratorpb.WriteNod
 // QueryNodes implements TurboCIOrchestratorClient.
 func (cp clientPool) QueryNodes(ctx context.Context, in *orchestratorpb.QueryNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.QueryNodesResponse, error) {
 	return cp.pickRandom().QueryNodes(ctx, in, opts...)
+}
+
+// ReadWorkPlan implements TurboCIOrchestratorClient.
+func (cp clientPool) ReadWorkPlan(ctx context.Context, in *orchestratorpb.ReadWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.ReadWorkPlanResponse, error) {
+	return cp.pickRandom().ReadWorkPlan(ctx, in, opts...)
 }
 
 // pickRandom returns a random connection from the pool.
@@ -171,6 +185,8 @@ func turboCIMsgToText(msg any) string {
 	case *orchestratorpb.WriteNodesRequest:
 		defer redactToken(v.HasToken, v.GetToken, v.SetToken)()
 	case *orchestratorpb.QueryNodesRequest:
+		defer redactToken(v.HasToken, v.GetToken, v.SetToken)()
+	case *orchestratorpb.ReadWorkPlanRequest:
 		defer redactToken(v.HasToken, v.GetToken, v.SetToken)()
 	case *orchestratorpb.CreateWorkPlanResponse:
 		defer redactToken(v.HasCreatorToken, v.GetCreatorToken, v.SetCreatorToken)()

@@ -61,13 +61,7 @@
 package write
 
 import (
-	"fmt"
-
-	"google.golang.org/protobuf/proto"
-
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
-
-	"go.chromium.org/luci/turboci/data"
 )
 
 // Request wraps an orchestratorpb.WriteNodesRequest.
@@ -85,16 +79,12 @@ func NewRequest() Request {
 	return Request{&orchestratorpb.WriteNodesRequest{}}
 }
 
-// AddReason adds a reason to the WriteNodesRequest.
-func (req Request) AddReason(message string, details ...proto.Message) (*orchestratorpb.WriteNodesRequest_Reason, error) {
-	vals, err := data.ValuesErr(details...)
-	if err != nil {
-		return nil, fmt.Errorf("write.ReasonAddWithDetails: %w", err)
-	}
+// SetReason adds a reason to the WriteNodesRequest.
+func (req Request) SetReason(message string, details ...*orchestratorpb.ValueWrite) *orchestratorpb.WriteNodesRequest_Reason {
 	ret := orchestratorpb.WriteNodesRequest_Reason_builder{
 		Message: &message,
-		Details: vals,
+		Details: details,
 	}.Build()
-	req.Msg.SetReasons(append(req.Msg.GetReasons(), ret))
-	return ret, nil
+	req.Msg.SetReason(ret)
+	return ret
 }

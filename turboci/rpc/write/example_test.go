@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/rpc/write/dep"
+	"go.chromium.org/luci/turboci/value"
 )
 
 func ExampleNewRequest() {
@@ -36,22 +37,11 @@ func ExampleNewRequest() {
 
 	req := write.NewRequest()
 
-	if _, err := req.AddReason("stuff", numData); err != nil {
-		panic(err)
-	}
+	req.SetReason("stuff", value.MustWrite(numData))
 
 	chk := req.AddNewCheck(id.Check("fleeporp"), check.KindAnalysis)
-	if _, err := chk.AddOptions(numData, boolData); err != nil {
-		panic(err)
-	}
-	if _, err := chk.AddResults(numData); err != nil {
-		panic(err)
-	}
-	rslts, err := chk.AddResults(boolData)
-	if err != nil {
-		panic(err)
-	}
-	rslts.SetRealm("very/secret")
+	chk.AddOptions(value.MustWrite(numData), value.MustWrite(boolData))
+	chk.AddResults(value.MustWrite(numData), value.MustWrite(boolData, "very/secret"))
 
 	chk = req.AddCheckUpdate(cid)
 	chk.Msg.SetDependencies(dep.MustGroup(
@@ -94,9 +84,7 @@ func ExampleNewRequest() {
 	curAttempt := req.GetCurrentAttempt()
 	curAttempt.GetStateTransition().SetRunning("my process UID", nil)
 	curAttempt.AddProgress("a message")
-	if _, err := curAttempt.AddDetails(numData); err != nil {
-		panic(err)
-	}
+	curAttempt.AddDetails(value.MustWrite(numData))
 	req.GetCurrentStage().Msg.SetContinuationGroup(
 		dep.MustGroup(
 			id.Stage("neeple"),
@@ -108,19 +96,18 @@ func ExampleNewRequest() {
 	prototest.Print(req.Msg, nil)
 	// Output:
 	// {
-	//   "reasons": [
-	//     {
-	//       "message": "stuff",
-	//       "details": [
-	//         {
-	//           "value": {
-	//             "@type": "type.googleapis.com/google.protobuf.Value",
-	//             "value": 100
-	//           }
-	//         }
-	//       ]
-	//     }
-	//   ],
+	//   "reason": {
+	//     "message": "stuff",
+	//     "details": [
+	//       {
+	//         "data": {
+	//           "@type": "type.googleapis.com/google.protobuf.Value",
+	//           "value": 100
+	//         },
+	//         "realm": "$from_container"
+	//       }
+	//     ]
+	//   },
 	//   "checks": [
 	//     {
 	//       "identifier": {
@@ -129,39 +116,34 @@ func ExampleNewRequest() {
 	//       "kind": "CHECK_KIND_ANALYSIS",
 	//       "options": [
 	//         {
-	//           "value": {
-	//             "value": {
-	//               "@type": "type.googleapis.com/google.protobuf.Value",
-	//               "value": 100
-	//             }
-	//           }
+	//           "data": {
+	//             "@type": "type.googleapis.com/google.protobuf.Value",
+	//             "value": 100
+	//           },
+	//           "realm": "$from_container"
 	//         },
 	//         {
-	//           "value": {
-	//             "value": {
-	//               "@type": "type.googleapis.com/google.protobuf.Value",
-	//               "value": true
-	//             }
-	//           }
+	//           "data": {
+	//             "@type": "type.googleapis.com/google.protobuf.Value",
+	//             "value": true
+	//           },
+	//           "realm": "$from_container"
 	//         }
 	//       ],
 	//       "results": [
 	//         {
-	//           "value": {
-	//             "value": {
-	//               "@type": "type.googleapis.com/google.protobuf.Value",
-	//               "value": 100
-	//             }
-	//           }
+	//           "data": {
+	//             "@type": "type.googleapis.com/google.protobuf.Value",
+	//             "value": 100
+	//           },
+	//           "realm": "$from_container"
 	//         },
 	//         {
-	//           "realm": "very/secret",
-	//           "value": {
-	//             "value": {
-	//               "@type": "type.googleapis.com/google.protobuf.Value",
-	//               "value": true
-	//             }
-	//           }
+	//           "data": {
+	//             "@type": "type.googleapis.com/google.protobuf.Value",
+	//             "value": true
+	//           },
+	//           "realm": "very/secret"
 	//         }
 	//       ]
 	//     },
@@ -287,10 +269,11 @@ func ExampleNewRequest() {
 	//   "currentAttempt": {
 	//     "details": [
 	//       {
-	//         "value": {
+	//         "data": {
 	//           "@type": "type.googleapis.com/google.protobuf.Value",
 	//           "value": 100
-	//         }
+	//         },
+	//         "realm": "$from_container"
 	//       }
 	//     ],
 	//     "progress": [

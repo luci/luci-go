@@ -15,29 +15,11 @@
 package write
 
 import (
-	"fmt"
-
-	"google.golang.org/protobuf/proto"
-
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/turboci/check"
-	"go.chromium.org/luci/turboci/data"
 )
-
-// RealmsValues encapsulates a slice of RealmValue messages.
-//
-// In particular, this can easily set the realm for all messages in the slice
-// with the [RealmsValues.SetRealm] method.
-type RealmsValues []*orchestratorpb.WriteNodesRequest_RealmValue
-
-// SetRealm modifies all contained RealmValue messages to have the given realm.
-func (rv RealmsValues) SetRealm(realm string) {
-	for _, val := range rv {
-		val.SetRealm(realm)
-	}
-}
 
 // CheckWrite wraps an orchestratorpb.WriteNodesRequest_CheckWrite.
 //
@@ -50,39 +32,13 @@ type CheckWrite struct {
 }
 
 // AddOptions appends and returns one or more option values.
-//
-// The realm for these can be set with [RealmsValues.SetRealm].
-func (cw CheckWrite) AddOptions(opt ...proto.Message) (RealmsValues, error) {
-	vals, err := data.ValuesErr(opt...)
-	if err != nil {
-		return nil, fmt.Errorf("write.CheckWrite.AddOptionsInRealm: %w", err)
-	}
-	toAdd := make([]*orchestratorpb.WriteNodesRequest_RealmValue, len(vals))
-	for i, val := range vals {
-		toAdd[i] = orchestratorpb.WriteNodesRequest_RealmValue_builder{
-			Value: val,
-		}.Build()
-	}
-	cw.Msg.SetOptions(append(cw.Msg.GetOptions(), toAdd...))
-	return toAdd, nil
+func (cw CheckWrite) AddOptions(opts ...*orchestratorpb.ValueWrite) {
+	cw.Msg.SetOptions(append(cw.Msg.GetOptions(), opts...))
 }
 
 // AddResults appends and returns one or more result values.
-//
-// The realm for these can be set with [RealmsValues.SetRealm].
-func (cw CheckWrite) AddResults(rslt ...proto.Message) (RealmsValues, error) {
-	vals, err := data.ValuesErr(rslt...)
-	if err != nil {
-		return nil, fmt.Errorf("write.CheckWrite.AddResultsInRealm: %w", err)
-	}
-	toAdd := make([]*orchestratorpb.WriteNodesRequest_RealmValue, len(vals))
-	for i, val := range vals {
-		toAdd[i] = orchestratorpb.WriteNodesRequest_RealmValue_builder{
-			Value: val,
-		}.Build()
-	}
-	cw.Msg.SetResults(append(cw.Msg.GetResults(), toAdd...))
-	return toAdd, nil
+func (cw CheckWrite) AddResults(rslt ...*orchestratorpb.ValueWrite) {
+	cw.Msg.SetResults(append(cw.Msg.GetResults(), rslt...))
 }
 
 // AddNewCheck adds a new CheckWrite to the request for the creation of

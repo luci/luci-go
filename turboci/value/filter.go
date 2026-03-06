@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,9 @@
 
 package value
 
-import orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+import (
+	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+)
 
 // Filter is a parsed form of [orchestratorpb.ValueFilter].
 type Filter struct {
@@ -130,7 +132,61 @@ func FilterStage(stage *orchestratorpb.Stage, vf *Filter, hasAccess AccessCheck)
 
 	fs.filterRef(stage.GetArgs(), vf.vf.GetStageArgs())
 
+	for _, edit := range stage.GetEdits() {
+		for _, detail := range edit.GetReason().GetDetails() {
+			// NOTE: vf does not have direct filtering for edit reasons; it's
+			// presumed that if you want edits, you always want to see their reasons.
+			fs.filterRef(detail, 0)
+		}
+		for _, attempt := range edit.GetStage().GetAttempts() {
+			for _, detail := range attempt.GetDetails() {
+				fs.filterRef(detail, vf.vf.GetStageEditAttemptDetails())
+			}
+		}
+	}
+
+	for _, attempt := range stage.GetAttempts() {
+		filterStageAttempt(&fs, attempt, vf)
+	}
+
 	return fs.result()
+}
+
+// FilterStageAttempt walks the Stage Attempt and processes all ValueRefs
+// according to the following rules:
+//   - If `hasAccess` returns false, the ref is [Omit]'d as NO_ACCESS.
+//   - If `vf` does not want the ref, it is [Omit]'d as UNWANTED.
+//
+// Otherwise the ref is 'wanted', and:
+//   - If the ValueRef has a digest, the digest is added to `wantDigests`.
+//   - If the ValueRef is wanted as JSON, it is added to `wantJSON`.
+//
+// Note: BOTH of these rules may apply to the same ref.
+//
+// If `hasAccess` returns an error, it will be returned by `FilterStage`.
+func FilterStageAttempt(sa *orchestratorpb.Stage_Attempt, vf *Filter, hasAccess AccessCheck) (FilterResult, error) {
+	if vf == nil {
+		vf = &Filter{}
+	}
+	fs := &filterState{
+		hasAccess: hasAccess,
+		ti:        vf.ti,
+	}
+
+	filterStageAttempt(fs, sa, vf)
+
+	return fs.result()
+}
+
+func filterStageAttempt(fs *filterState, sa *orchestratorpb.Stage_Attempt, vf *Filter) {
+	for _, detail := range sa.GetDetails() {
+		fs.filterRef(detail, vf.vf.GetStageAttemptDetails())
+	}
+	for _, progress := range sa.GetProgress() {
+		for _, detail := range progress.GetDetails() {
+			fs.filterRef(detail, vf.vf.GetStageAttemptProgressDetails())
+		}
+	}
 }
 
 // FilterCheck walks the Check and mutates all ValueRefs according to the
@@ -158,7 +214,29 @@ func FilterCheck(check *orchestratorpb.Check, vf *Filter, hasAccess AccessCheck)
 		ti:        vf.ti,
 	}
 
-	// Nothing yet.
+	for _, option := range check.GetOptions() {
+		fs.filterRef(option, vf.vf.GetCheckOptions())
+	}
+	for _, result := range check.GetResults() {
+		for _, dat := range result.GetData() {
+			fs.filterRef(dat, vf.vf.GetCheckResultData())
+		}
+	}
+	for _, edit := range check.GetEdits() {
+		for _, detail := range edit.GetReason().GetDetails() {
+			// NOTE: vf does not have direct filtering for edit reasons; it's
+			// presumed that if you want edits, you always want to see their reasons.
+			fs.filterRef(detail, 0)
+		}
+		for _, option := range edit.GetCheck().GetOptions() {
+			fs.filterRef(option, vf.vf.GetCheckEditOptions())
+		}
+		for _, result := range edit.GetCheck().GetResult() {
+			for _, dat := range result.GetData() {
+				fs.filterRef(dat, vf.vf.GetCheckEditResultData())
+			}
+		}
+	}
 
 	return fs.result()
 }

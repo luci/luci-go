@@ -23,11 +23,11 @@ import (
 func ExampleToString() {
 	fmt.Println(ToString(SetWorkplan(Check("my-check"), "my-workplan")))
 	fmt.Println(ToString(SetWorkplan(
-		must(CheckEditOptionErr("some check", testclock.TestRecentTimeUTC, 10)),
+		must(CheckEditErr("some check", testclock.TestRecentTimeUTC)),
 		"the workplan")))
 	// Output:
 	// Lmy-workplan:Cmy-check
-	// Lthe workplan:Csome check:V1454472306/7:O10
+	// Lthe workplan:Csome check:V1454472306/7
 }
 
 func ExampleToString_stages() {

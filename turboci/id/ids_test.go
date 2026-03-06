@@ -41,29 +41,6 @@ func TestCheckErr(t *testing.T) {
 	})
 }
 
-func TestCheckOptionErr(t *testing.T) {
-	t.Run("ok", func(t *testing.T) {
-		id, err := CheckOptionErr("h", 1)
-		assert.NoErr(t, err)
-		assert.That(t, id, should.Match(
-			idspb.CheckOption_builder{
-				Check: idspb.Check_builder{Id: proto.String("h")}.Build(),
-				Idx:   proto.Int32(1),
-			}.Build(),
-		))
-	})
-
-	t.Run("bad checkid", func(t *testing.T) {
-		_, err := CheckOptionErr("h:", 1)
-		assert.ErrIsLike(t, err, `id.CheckOption: id.Check: id: "h:" contains ":"`)
-	})
-
-	t.Run("bad idx", func(t *testing.T) {
-		_, err := CheckOptionErr("h", 0)
-		assert.ErrIsLike(t, err, `id.CheckOption: optionIdx: 0 must be in [1, max(int32)]`)
-	})
-}
-
 func TestCheckResultErr(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		id, err := CheckResultErr("h", 1)
@@ -84,37 +61,6 @@ func TestCheckResultErr(t *testing.T) {
 	t.Run("bad idx", func(t *testing.T) {
 		_, err := CheckResultErr("h", 0)
 		assert.ErrIsLike(t, err, `id.CheckResult: resultIdx: 0 must be in [1, max(int32)]`)
-	})
-}
-
-func TestCheckResultDatumErr(t *testing.T) {
-	t.Run("ok", func(t *testing.T) {
-		id, err := CheckResultDatumErr("h", 1, 2)
-		assert.NoErr(t, err)
-		assert.That(t, id, should.Match(
-			idspb.CheckResultDatum_builder{
-				Result: idspb.CheckResult_builder{
-					Check: idspb.Check_builder{Id: proto.String("h")}.Build(),
-					Idx:   proto.Int32(1),
-				}.Build(),
-				Idx: proto.Int32(2),
-			}.Build(),
-		))
-	})
-
-	t.Run("bad checkid", func(t *testing.T) {
-		_, err := CheckResultDatumErr("h:", 1, 2)
-		assert.ErrIsLike(t, err, `id.CheckResultDatum: id.CheckResult: id.Check: id: "h:" contains ":"`)
-	})
-
-	t.Run("bad result idx", func(t *testing.T) {
-		_, err := CheckResultDatumErr("h", 0, 2)
-		assert.ErrIsLike(t, err, `id.CheckResultDatum: id.CheckResult: resultIdx: 0 must be in [1, max(int32)]`)
-	})
-
-	t.Run("bad datum idx", func(t *testing.T) {
-		_, err := CheckResultDatumErr("h", 1, 0)
-		assert.ErrIsLike(t, err, `id.CheckResultDatum: datumIdx: 0 must be in [1, max(int32)]`)
 	})
 }
 
@@ -140,39 +86,6 @@ func TestCheckEditErr(t *testing.T) {
 	t.Run("bad ts", func(t *testing.T) {
 		_, err := CheckEditErr("h", time.Time{})
 		assert.ErrIsLike(t, err, `id.CheckEdit: zero timestamp`)
-	})
-}
-
-func TestCheckEditOptionErr(t *testing.T) {
-	ts := time.Unix(12345, 6789)
-
-	t.Run("ok", func(t *testing.T) {
-		id, err := CheckEditOptionErr("h", ts, 1)
-		assert.NoErr(t, err)
-		assert.That(t, id, should.Match(
-			idspb.CheckEditOption_builder{
-				CheckEdit: idspb.CheckEdit_builder{
-					Check:   idspb.Check_builder{Id: proto.String("h")}.Build(),
-					Version: timestamppb.New(ts),
-				}.Build(),
-				Idx: proto.Int32(1),
-			}.Build(),
-		))
-	})
-
-	t.Run("bad checkid", func(t *testing.T) {
-		_, err := CheckEditOptionErr("h:", ts, 1)
-		assert.ErrIsLike(t, err, `id.CheckEditOption: id.CheckEdit: id.Check: id: "h:" contains ":"`)
-	})
-
-	t.Run("bad ts", func(t *testing.T) {
-		_, err := CheckEditOptionErr("h", time.Time{}, 1)
-		assert.ErrIsLike(t, err, `id.CheckEditOption: id.CheckEdit: zero timestamp`)
-	})
-
-	t.Run("bad idx", func(t *testing.T) {
-		_, err := CheckEditOptionErr("h", ts, 0)
-		assert.ErrIsLike(t, err, `id.CheckEditOption: optionIdx: 0 must be in [1, max(int32)]`)
 	})
 }
 

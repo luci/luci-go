@@ -27,25 +27,32 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 )
 
 // FakeOrchestratorClient is a faked TurboCIOrchestratorClient for testing.
 type FakeOrchestratorClient struct {
+
 	// LastCreateCall is the last CreateWorkPlanRequest.
 	LastCreateCall *orchestratorpb.CreateWorkPlanRequest
 	// LastWriteNodesCall is the last WriteNodesRequest.
 	LastWriteNodesCall *orchestratorpb.WriteNodesRequest
 	// LastQueryNodesRequest is the last QueryNodesRequest.
 	LastQueryNodesRequest *orchestratorpb.QueryNodesRequest
+	// LastReadWorkPlanRequest is the last QueryNodesRequest.
+	LastReadWorkPlanRequest *orchestratorpb.ReadWorkPlanRequest
 
 	// Plan is the ID of the workplan to create.
 	Plan *idspb.WorkPlan
 	// Token is the token to use.
 	Token string
 
-	QueryNodesResponse *orchestratorpb.QueryNodesResponse
-	Err                error
+	QueryNodesResponse   *orchestratorpb.QueryNodesResponse
+	ReadWorkPlanResponse *orchestratorpb.ReadWorkPlanResponse
+	Err                  error
 }
+
+var _ orchestratorgrpcpb.TurboCIOrchestratorClient = (*FakeOrchestratorClient)(nil)
 
 // CreateWorkPlan implements TurboCIOrchestratorClient.
 func (o *FakeOrchestratorClient) CreateWorkPlan(ctx context.Context, in *orchestratorpb.CreateWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.CreateWorkPlanResponse, error) {
@@ -66,6 +73,12 @@ func (o *FakeOrchestratorClient) WriteNodes(ctx context.Context, in *orchestrato
 func (o *FakeOrchestratorClient) QueryNodes(ctx context.Context, in *orchestratorpb.QueryNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.QueryNodesResponse, error) {
 	o.LastQueryNodesRequest = proto.CloneOf(in)
 	return o.QueryNodesResponse, o.Err
+}
+
+// ReadWorkplan implements TurboCIOrchestratorClient.
+func (o *FakeOrchestratorClient) ReadWorkPlan(ctx context.Context, in *orchestratorpb.ReadWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.ReadWorkPlanResponse, error) {
+	o.LastReadWorkPlanRequest = proto.CloneOf(in)
+	return o.ReadWorkPlanResponse, o.Err
 }
 
 func ErrorWithStageAttemptCurrentState(state *orchestratorpb.StageAttemptState, t *ftt.Test) error {

@@ -242,10 +242,10 @@ func TestStartBuild(t *testing.T) {
 				assert.That(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().GetRunning().GetProcessUid(), should.Equal("random"))
 				assert.That(t, len(mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()), should.Equal(2))
 				bldDetails := &pb.BuildStageDetails{}
-				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetValue().UnmarshalTo(bldDetails))
+				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetData().UnmarshalTo(bldDetails))
 				assert.That(t, bldDetails.GetId(), should.Equal(build.ID))
 				commonDetails := &stagepb.CommonStageAttemptDetails{}
-				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[1].GetValue().UnmarshalTo(commonDetails))
+				assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[1].GetData().UnmarshalTo(commonDetails))
 				assert.That(t, commonDetails.GetViewUrls()["Buildbucket"].GetUrl(), should.Equal(fmt.Sprintf("https://app.appspot.com/build/%d", build.ID)))
 			})
 
