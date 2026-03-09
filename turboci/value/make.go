@@ -16,30 +16,17 @@ package value
 
 import (
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
 // Inline returns a ValueRef (with inline data).
-//
-// If `msg` is a google.protobuf.Any, it is used directly, rather than being
-// re-wrapped with an Any.
 func Inline(msg proto.Message, realm string) (*orchestratorpb.ValueRef, error) {
-	var apb *anypb.Any
-	var ok bool
-	var err error
-	if apb, ok = msg.(*anypb.Any); !ok {
-		apb, err = anypb.New(msg)
-		if err != nil {
-			return nil, err
-		}
+	vw, err := Write(msg, realm)
+	if err != nil {
+		return nil, err
 	}
-	return orchestratorpb.ValueRef_builder{
-		TypeUrl: &apb.TypeUrl,
-		Realm:   &realm,
-		Inline:  apb,
-	}.Build(), nil
+	return InlineRef(vw), nil
 }
 
 // MustInline is the same as [Inline], except that it panics on error (i.e. if

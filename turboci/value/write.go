@@ -59,7 +59,18 @@ const (
 // `realm` is a SINGULAR optional field. If omitted, RealmFromContainer
 // is used. If provided, this will be used as the realm. Providing it multiple
 // times is an error.
+//
+// It is an error to pass a google.protobuf.Any as `msg`; either pass the
+// underlying message, or, if this is not possible, directly assemble the
+// orchestratorpb.ValueWrite.
+//
+// TODO: Compute tags from `msg`.
 func Write(msg proto.Message, realm ...string) (*orchestratorpb.ValueWrite, error) {
+	apb, ok := msg.(*anypb.Any)
+	if ok {
+		return nil, fmt.Errorf("value.Write: cannot handle google.protobuf.Any as `msg`.")
+	}
+
 	apb, err := anypb.New(msg)
 	if err != nil {
 		return nil, err
@@ -74,6 +85,7 @@ func Write(msg proto.Message, realm ...string) (*orchestratorpb.ValueWrite, erro
 	return orchestratorpb.ValueWrite_builder{
 		Data:  apb,
 		Realm: &actualRealm,
+		// TODO: Compute tags when added to ValueWrite.
 	}.Build(), nil
 }
 
