@@ -91,7 +91,11 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
                 );
             }
           }}
-          enableSearchInput={option.type !== 'date'}
+          enableSearchInput={
+            option.type !== 'date' &&
+            !(option.optionsComponentProps as { disableSearch?: boolean })
+              ?.disableSearch
+          }
           ref={(el) => {
             chipListRef.current[i] = el;
             chipListRef.current = chipListRef.current.filter((x) => x !== null);

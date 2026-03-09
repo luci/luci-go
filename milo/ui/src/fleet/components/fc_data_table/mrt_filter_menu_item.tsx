@@ -18,6 +18,7 @@ import { DateTime } from 'luxon';
 import { MRT_Column, MRT_RowData } from 'material-react-table';
 import { forwardRef, useState } from 'react';
 
+import { FC_ColumnDef } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { DateFilter } from '@/fleet/components/filter_dropdown/date_filter';
 import { OptionsMenuOld } from '@/fleet/components/filter_dropdown/options_menu_old';
 import {
@@ -203,11 +204,14 @@ export const MRTFilterMenuItem = forwardRef<
             }
 
             if (filterVariant === 'range') {
+              const def = column.columnDef as FC_ColumnDef<MRT_RowData>;
               return (
                 <Box sx={{ p: 2 }}>
                   <RangeFilter
                     value={(localFilterValue as RangeFilterValue) || {}}
                     onChange={setLocalFilterValue}
+                    min={def.filterRangeMin}
+                    max={def.filterRangeMax}
                   />
                 </Box>
               );

@@ -171,4 +171,47 @@ describe('useRriFilters', () => {
       result.current.getSelectedFilterLabel('rr_id', ['rr-id-1', 'rr-id-2']),
     ).toEqual('RR ID: rr-id-1, rr-id-2');
   });
+
+  it('should generate an AIP string for range filters like slippage', () => {
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    act(() => {
+      result.current.setFilters({
+        slippage: { min: -5, max: 10 },
+      });
+    });
+    expect(result.current.aipString).toEqual(
+      'slippage >= -5 AND slippage <= 10',
+    );
+  });
+
+  it('should return the correct label for a range filter like slippage', () => {
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    expect(
+      result.current.getSelectedFilterLabel('slippage', { min: -5, max: 10 }),
+    ).toEqual('Slippage: -5 - 10');
+    expect(
+      result.current.getSelectedFilterLabel('slippage', { min: -5 }),
+    ).toEqual('Slippage: ≥ -5');
+    expect(
+      result.current.getSelectedFilterLabel('slippage', { max: 10 }),
+    ).toEqual('Slippage: ≤ 10');
+    expect(
+      result.current.getSelectedFilterLabel('slippage', { min: 0 }),
+    ).toEqual('Slippage: ≥ 0');
+    expect(
+      result.current.getSelectedFilterLabel('slippage', { max: 0 }),
+    ).toEqual('Slippage: ≤ 0');
+  });
+
+  it('should handle undefined boundaries in RangeFilters without generating NaN', () => {
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    act(() => {
+      // Simulate a partial range boundary where one side is omitted from the UI
+      result.current.setFilters({
+        slippage: { max: 245 },
+      });
+    });
+    // This expects to omit min completely (rather than exposing 'slippage >= NaN')
+    expect(result.current.aipString).toEqual('slippage <= 245');
+  });
 });

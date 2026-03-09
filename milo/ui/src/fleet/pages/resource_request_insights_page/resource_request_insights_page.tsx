@@ -56,6 +56,7 @@ const createDateFilterAdapter = (
     getChildrenSearchScore: commonProps.getChildrenSearchScore!,
     type: 'date',
     optionsComponentProps: {
+      ...(option.optionsComponentProps || {}),
       value: {
         min: toLuxonDateTime(val?.min)?.toJSDate(),
         max: toLuxonDateTime(val?.max)?.toJSDate(),
@@ -91,6 +92,7 @@ const createRangeFilterAdapter = (
     getChildrenSearchScore: commonProps.getChildrenSearchScore!,
     type: 'range',
     optionsComponentProps: {
+      ...(option.optionsComponentProps || {}),
       value: {
         min: val?.min,
         max: val?.max,

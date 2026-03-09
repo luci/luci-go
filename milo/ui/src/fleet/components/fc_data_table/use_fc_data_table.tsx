@@ -32,8 +32,17 @@ import {
   MRT_TableOptions,
   MRT_TableInstance,
   type MRT_Column,
+  type MRT_ColumnDef,
   useMaterialReactTable,
 } from 'material-react-table';
+
+export type FC_ColumnDef<
+  TData extends MRT_RowData,
+  TValue = unknown,
+> = MRT_ColumnDef<TData, TValue> & {
+  filterRangeMin?: number;
+  filterRangeMax?: number;
+};
 
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { FleetColumnHeader } from '@/fleet/components/fc_data_table/fleet_column_header';

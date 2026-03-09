@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, IconButton } from '@mui/material';
-import { MRT_ColumnDef } from 'material-react-table';
 
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { FilterOption } from '@/fleet/components/fc_data_table/mrt_filter_menu_item';
+import { FC_ColumnDef } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
   GetResourceRequestsMultiselectFilterValuesResponse,
   ResourceRequest_Status,
@@ -69,7 +69,7 @@ const renderSlippageCell = (slippage: number) => {
   );
 };
 
-export type RriColumnDef<Key extends keyof RriGridRow> = MRT_ColumnDef<
+export type RriColumnDef<Key extends keyof RriGridRow> = FC_ColumnDef<
   RriGridRow,
   RriGridRow[Key]
 > & {
@@ -148,7 +148,8 @@ export const COLUMNS = {
     accessorKey: 'slippage',
     header: 'Slippage',
     size: 75,
-    enableColumnFilter: false,
+    filterVariant: 'range',
+    filterRangeMax: 365,
     muiTableBodyCellProps: {
       align: 'left',
     },

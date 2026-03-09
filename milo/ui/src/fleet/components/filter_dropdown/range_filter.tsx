@@ -46,30 +46,38 @@ export const RangeFilter = forwardRef(function RangeFilter(
   }));
 
   // used by the input fields and may be outside of min/max temporarily
-  const [textFieldValue, setTextFieldValue] = useState<[number, number]>([
-    value.min ?? min,
-    value.max ?? max,
-  ]);
+  const [textFieldValue, setTextFieldValue] = useState<
+    [number | string | undefined, number | string | undefined]
+  >([value.min, value.max]);
 
   // Update local state when value prop changes, but only if not editing?
   // Actually, standard pattern is to sync local state with props when props change.
   useEffect(() => {
-    setTextFieldValue([value.min ?? min, value.max ?? max]);
-  }, [value.min, value.max, min, max]);
+    setTextFieldValue([value.min, value.max]);
+  }, [value.min, value.max]);
 
   const isTextFieldValueValid = () => {
+    const val0 =
+      typeof textFieldValue[0] === 'string'
+        ? parseInt(textFieldValue[0])
+        : textFieldValue[0];
+    const val1 =
+      typeof textFieldValue[1] === 'string'
+        ? parseInt(textFieldValue[1])
+        : textFieldValue[1];
+
     if (
-      textFieldValue[0] === undefined ||
-      textFieldValue[1] === undefined ||
-      isNaN(textFieldValue[0]) ||
-      isNaN(textFieldValue[1])
+      val0 === undefined ||
+      val1 === undefined ||
+      isNaN(val0) ||
+      isNaN(val1)
     ) {
       return true;
     }
-    if (textFieldValue[0] < min || textFieldValue[1] > max) {
+    if (val0 < min || val1 > max) {
       return false;
     }
-    return textFieldValue[0] <= textFieldValue[1];
+    return val0 <= val1;
   };
 
   const handleSliderChange = (_: Event, newValue: number | number[]) => {
@@ -114,7 +122,7 @@ export const RangeFilter = forwardRef(function RangeFilter(
       >
         <TextField
           error={!isTextFieldValueValid()}
-          value={textFieldValue[0]}
+          value={textFieldValue[0] ?? ''}
           label="Min"
           type="number"
           size="small"
@@ -125,9 +133,16 @@ export const RangeFilter = forwardRef(function RangeFilter(
             },
           }}
           onChange={(e) => {
-            const parsed = parseInt(e.target.value);
-            const newVal = isNaN(parsed) ? min : parsed;
-            setTextFieldValue([newVal, textFieldValue[1]]);
+            const rawValue = e.target.value;
+            const parsed = parseInt(rawValue);
+
+            if (rawValue === '') {
+              setTextFieldValue(['', textFieldValue[1]]);
+              onChange({ min: undefined, max: value.max });
+              return;
+            }
+
+            setTextFieldValue([rawValue, textFieldValue[1]]);
 
             // Apply immediately if valid and within bounds relative to other value
             if (
@@ -142,7 +157,7 @@ export const RangeFilter = forwardRef(function RangeFilter(
         <span>-</span>
         <TextField
           error={!isTextFieldValueValid()}
-          value={textFieldValue[1]}
+          value={textFieldValue[1] ?? ''}
           label="Max"
           type="number"
           size="small"
@@ -152,9 +167,16 @@ export const RangeFilter = forwardRef(function RangeFilter(
             },
           }}
           onChange={(e) => {
-            const parsed = parseInt(e.target.value);
-            const newVal = isNaN(parsed) ? max : parsed;
-            setTextFieldValue([textFieldValue[0], newVal]);
+            const rawValue = e.target.value;
+            const parsed = parseInt(rawValue);
+
+            if (rawValue === '') {
+              setTextFieldValue([textFieldValue[0], '']);
+              onChange({ min: value.min, max: undefined });
+              return;
+            }
+
+            setTextFieldValue([textFieldValue[0], rawValue]);
 
             if (
               !isNaN(parsed) &&

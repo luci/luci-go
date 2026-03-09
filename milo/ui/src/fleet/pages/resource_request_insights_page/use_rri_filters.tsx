@@ -23,6 +23,7 @@ import {
   multiselectFilterToUrlString,
   parseMultiselectFilter,
 } from '@/fleet/pages/resource_request_insights_page/rri_url_utils';
+import { RriGridRow } from '@/fleet/pages/resource_request_insights_page/rri_utils';
 import { FilterType } from '@/fleet/types';
 import { OptionValue } from '@/fleet/types/option';
 import { toIsoString } from '@/fleet/utils/dates';
@@ -40,7 +41,7 @@ import {
 } from './fulfillment_status';
 import { FulfillmentStatusFilter } from './fulfillment_status_filter';
 import { MultiSelectFilter } from './multiselect_filter';
-import { ResourceRequestColumnKey, COLUMNS } from './rri_columns';
+import { ResourceRequestColumnKey, COLUMNS, RriColumnDef } from './rri_columns';
 
 const FILTER_SEPARATOR = '&';
 
@@ -69,6 +70,7 @@ export const filterDescriptors = {
   customer: 'multi-select',
   resource_name: 'multi-select',
   accepted_quantity: 'range',
+  slippage: 'range',
   criticality: 'multi-select',
   request_approval: 'multi-select',
   resource_pm: 'multi-select',
@@ -101,6 +103,7 @@ export interface RriFilterOption {
   type?: FilterType;
   getChildrenSearchScore?: (searchQuery: string) => number;
   optionsComponent?: OptionComponent<ResourceRequestInsightsOptionComponentProps>;
+  optionsComponentProps?: Record<string, unknown>;
 }
 
 export interface ResourceRequestInsightsOptionComponentProps {
@@ -151,9 +154,38 @@ const parseRangeFromUrl = (
   if (!min && !max) {
     return undefined;
   }
+
+  const parsedMin = min ? parseInt(min) : undefined;
+  const parsedMax = max ? parseInt(max) : undefined;
+
   return {
-    min: parseInt(min),
-    max: parseInt(max),
+    min: parsedMin !== undefined && !isNaN(parsedMin) ? parsedMin : undefined,
+    max: parsedMax !== undefined && !isNaN(parsedMax) ? parsedMax : undefined,
+  };
+};
+
+const formatRangeLabel = (val: RangeFilterData) => {
+  if (val.min !== undefined && val.max !== undefined) {
+    return `${val.min} - ${val.max}`;
+  }
+  if (val.min !== undefined) {
+    return `≥ ${val.min}`;
+  }
+  if (val.max !== undefined) {
+    return `≤ ${val.max}`;
+  }
+  return '';
+};
+
+const createRangeFilterProps = (key: keyof typeof filterDescriptors) => {
+  return {
+    min: (
+      COLUMNS[key as ResourceRequestColumnKey] as RriColumnDef<keyof RriGridRow>
+    ).filterRangeMin,
+    max: (
+      COLUMNS[key as ResourceRequestColumnKey] as RriColumnDef<keyof RriGridRow>
+    ).filterRangeMax,
+    disableSearch: true,
   };
 };
 
@@ -207,6 +239,7 @@ const getFiltersFromSearchParam = (
     customer: parseMultiselectFilter(rec['customer']),
     resource_name: parseMultiselectFilter(rec['resource_name']),
     accepted_quantity: parseRangeFromUrl(rec, 'accepted_quantity'),
+    slippage: parseRangeFromUrl(rec, 'slippage'),
     criticality: parseMultiselectFilter(rec['criticality']),
     request_approval: parseMultiselectFilter(rec['request_approval']),
     resource_pm: parseMultiselectFilter(rec['resource_pm']),
@@ -248,10 +281,11 @@ const filtersToUrlString = (filters: RriFilters): string => {
     }
     if (type === 'range') {
       const filter = filters[key] as RangeFilterData | undefined;
-      if (filter?.min) {
+      // We use !== undefined instead of truthiness to prevent valid 0 bounds from being dropped
+      if (filter?.min !== undefined) {
         parts.push(`${key}_min=${filter.min}`);
       }
-      if (filter?.max) {
+      if (filter?.max !== undefined) {
         parts.push(`${key}_max=${filter.max}`);
       }
     }
@@ -285,10 +319,10 @@ const filtersToAip = (filters: RriFilters): string => {
       if (!filter) {
         continue;
       }
-      if (filter.min) {
+      if (filter.min !== undefined) {
         parts.push(`${key} >= ${filter.min}`);
       }
-      if (filter.max) {
+      if (filter.max !== undefined) {
         parts.push(`${key} <= ${filter.max}`);
       }
     }
@@ -499,6 +533,13 @@ export const useRriFilters = () => {
       value: 'accepted_quantity',
       getChildrenSearchScore: () => 0,
       type: 'range',
+      optionsComponentProps: createRangeFilterProps('accepted_quantity'),
+    },
+    {
+      value: 'slippage',
+      getChildrenSearchScore: () => 0,
+      type: 'range',
+      optionsComponentProps: createRangeFilterProps('slippage'),
     },
     {
       value: 'criticality',
@@ -612,19 +653,8 @@ export const useRriFilters = () => {
       mapDateFilterToSelectedChipLabel(v as DateFilterData),
     customer: (v) => (v as string[]).join(', '),
     resource_name: (v) => (v as string[]).join(', '),
-    accepted_quantity: (v) => {
-      const val = v as RangeFilterData;
-      if (val.min && val.max) {
-        return val.min + ' - ' + val.max;
-      }
-      if (val.min) {
-        return '> ' + val.min;
-      }
-      if (val.max) {
-        return '< ' + val.max;
-      }
-      return '';
-    },
+    accepted_quantity: (v) => formatRangeLabel(v as RangeFilterData),
+    slippage: (v) => formatRangeLabel(v as RangeFilterData),
     criticality: (v) => (v as string[]).join(', '),
     request_approval: (v) => (v as string[]).join(', '),
     resource_pm: (v) => (v as string[]).join(', '),
