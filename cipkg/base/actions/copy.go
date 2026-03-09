@@ -263,7 +263,7 @@ func copyFS(src fs.FS, followSymlinks bool, dst string) error {
 		err = func() error {
 			switch {
 			case d.Type() == fs.ModeSymlink && !followSymlinks:
-				src, ok := src.(ReadLinkFS)
+				src, ok := src.(fs.ReadLinkFS)
 				if !ok {
 					return fmt.Errorf("readlink not supported on the source filesystem: %s", name)
 				}
