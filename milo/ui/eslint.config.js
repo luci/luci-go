@@ -1,10 +1,10 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//       http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,54 @@ import hooksPlugin from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+
+const localPlugin = {
+  rules: {
+    'copyright-header': {
+      meta: { type: 'layout', fixable: 'code' },
+      /** @param {any} context */
+      create(context) {
+        return {
+          /** @param {any} node */
+          Program(node) {
+            const sourceCode = context.sourceCode || context.getSourceCode();
+            const comments = sourceCode.getAllComments();
+            // Count any top-level comment mentioning Copyright as a valid header
+            const hasCopyright = comments.some(
+              /** @param {any} c */
+              (c) => c.loc.start.line <= 10 && c.value.includes('Copyright'),
+            );
+            if (!hasCopyright) {
+              context.report({
+                node,
+                message: 'Missing copyright header',
+                /** @param {any} fixer */
+                fix(fixer) {
+                  const header = `// Copyright ${new Date().getFullYear()} The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+`;
+                  return fixer.insertTextBeforeRange([0, 0], header);
+                },
+              });
+            }
+          },
+        };
+      },
+    },
+  },
+};
 
 // Export a plain array (the new recommended way)
 export default [
@@ -59,6 +107,7 @@ export default [
       import: importPlugin,
       'react-refresh': reactRefresh,
       'react-hooks': hooksPlugin,
+      'local-rules': localPlugin,
     },
     settings: {
       react: {
@@ -88,6 +137,7 @@ export default [
       // Note: @typescript-eslint rules are already applied
       // from `...tseslint.configs.recommended` above.
       // We just need to add the override:
+      'local-rules/copyright-header': 'error',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
