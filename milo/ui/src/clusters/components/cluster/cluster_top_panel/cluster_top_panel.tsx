@@ -18,7 +18,7 @@ import { useContext } from 'react';
 import ClusterInfo from '@/clusters/components/cluster/cluster_info/cluster_info';
 import ReclusteringProgressIndicator from '@/clusters/components/reclustering_progress_indicator/reclustering_progress_indicator';
 
-import { ClusterContext } from '../cluster_context';
+import { ClusterContext } from '../context';
 
 const ClusterTopPanel = () => {
   const { project } = useContext(ClusterContext);

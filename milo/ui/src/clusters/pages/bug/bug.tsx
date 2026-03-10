@@ -27,7 +27,7 @@ import MultiRulesFound from '@/clusters/components/bugs/multi_rules_found/multi_
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
-import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { SnackbarContextWrapper } from '@/clusters/context/provider';
 import { useRulesService } from '@/clusters/services/services';
 import { prpcRetrier } from '@/clusters/tools/prpc_retrier';
 import { parseRuleName } from '@/clusters/tools/rules';

@@ -12,22 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode } from 'react';
-import { useLoaderData } from 'react-router';
+import { useMemo } from 'react';
 
-import { AuthState } from '@/common/api/auth_state';
+import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
-import { AuthStateProvider } from './provider';
-
-export interface AuthStateInitializerProps {
-  readonly children: ReactNode;
+interface Props {
+  metrics?: readonly ProjectMetric[];
+  children: React.ReactNode;
 }
 
-export function AuthStateInitializer({ children }: AuthStateInitializerProps) {
-  const initialAuthState = useLoaderData() as AuthState;
+export const OverviewTabContextProvider = ({ metrics, children }: Props) => {
+  const stableMetics = useMemo(() => {
+    return metrics || [];
+  }, [metrics]);
   return (
-    <AuthStateProvider initialValue={initialAuthState}>
+    <OverviewTabContextData.Provider
+      value={{
+        metrics: stableMetics,
+      }}
+    >
       {children}
-    </AuthStateProvider>
+    </OverviewTabContextData.Provider>
   );
-}
+};

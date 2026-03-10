@@ -13,27 +13,13 @@
 // limitations under the License.
 
 import { useQuery } from '@tanstack/react-query';
-import { ReactNode, createContext } from 'react';
+import { ReactNode } from 'react';
 
 import { OutputBuild } from '@/build/types';
 import { useAnalysesClient } from '@/common/hooks/prpc_clients';
-import {
-  Analysis,
-  QueryAnalysisRequest,
-} from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { QueryAnalysisRequest } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 
-interface BuildContext {
-  readonly build?: OutputBuild;
-  readonly analysis?: Analysis;
-}
-/**
- * `null` means there's no build.
- * `undefined` means the context provider is missing.
- */
-export const BuildCtx = createContext<BuildContext | null | undefined>(
-  undefined,
-);
-
+import { BuildCtx } from './context';
 export interface BuildProviderProps {
   readonly build?: OutputBuild;
   readonly children: ReactNode;

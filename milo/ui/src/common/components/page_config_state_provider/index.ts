@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export { PageConfigStateProvider } from './page_config_state_provider';
-export type { PageConfigStateProviderProps } from './page_config_state_provider';
 export * from './hooks';
+export * from './provider';
+export * from './context';

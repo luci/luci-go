@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './provider';
-export * from './context';
-export * from './hooks';
+import { Dispatch, SetStateAction, createContext } from 'react';
+
+export interface ContextValue {
+  readonly setCurrentPageId: (id: string | null) => void;
+  readonly hasConfig: boolean;
+  readonly showConfigDialog: boolean;
+  readonly setShowConfigDialog: Dispatch<SetStateAction<boolean>>;
+}
+
+export const PageConfigCtx = createContext<ContextValue | undefined>(undefined);

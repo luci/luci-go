@@ -23,7 +23,8 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
+import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/provider';
+import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import { renderTabWithRouterAndClient } from '@/clusters/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
 import {
@@ -43,8 +44,6 @@ import {
   mockFetchRule,
 } from '@/clusters/testing_tools/mocks/rule_mock';
 import { resetMockFetch } from '@/testing_tools/jest_utils';
-
-import { OverviewTabContextProvider } from '../overview_tab_context';
 
 import { ProblemsSection } from './problems_section';
 

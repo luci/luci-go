@@ -18,12 +18,12 @@ import LinearProgress from '@mui/material/LinearProgress';
 import { useParams } from 'react-router';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
-import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
+import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
 import RuleArchivedMessage from '@/clusters/components/rule/rule_archived_message/rule_archived_message';
 import RuleTopPanel from '@/clusters/components/rule/rule_top_panel/rule_top_panel';
-import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { SnackbarContextWrapper } from '@/clusters/context/provider';
 import useFetchRule from '@/clusters/hooks/use_fetch_rule';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useDeclarePageId } from '@/common/components/page_meta';

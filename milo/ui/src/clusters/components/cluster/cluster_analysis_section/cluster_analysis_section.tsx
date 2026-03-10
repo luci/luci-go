@@ -26,7 +26,7 @@ import FailuresTab from '@/clusters/components/cluster/cluster_analysis_section/
 import OverviewTab from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/overview_tab';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-import { ClusterContext } from '../cluster_context';
+import { ClusterContext } from '../context';
 
 import ExonerationsV2Tab from './exonerations_v2_tab/exonerations_v2_tab';
 

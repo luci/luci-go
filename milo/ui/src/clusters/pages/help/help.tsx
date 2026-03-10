@@ -30,7 +30,7 @@ import { useLocation, useNavigate, Link as RouterLink } from 'react-router';
 
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import PageHeading from '@/clusters/components/headings/page_heading/page_heading';
-import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { SnackbarContextWrapper } from '@/clusters/context/provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 

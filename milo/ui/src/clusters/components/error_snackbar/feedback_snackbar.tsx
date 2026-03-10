@@ -19,7 +19,7 @@ import { useContext } from 'react';
 import {
   SnackbarContext,
   snackContextDefaultState,
-} from '@/clusters/context/snackbar_context';
+} from '@/clusters/context/context';
 
 const FeedbackSnackbar = () => {
   const { snack, setSnack } = useContext(SnackbarContext);

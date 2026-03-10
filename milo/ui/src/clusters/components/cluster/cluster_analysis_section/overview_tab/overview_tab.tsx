@@ -18,12 +18,12 @@ import Stack from '@mui/material/Stack';
 import { useContext } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
-import { ClusterContext } from '@/clusters/components/cluster/cluster_context';
+import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/provider';
+import { ClusterContext } from '@/clusters/components/cluster/context';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
 import useFetchMetrics from '@/clusters/hooks/use_fetch_metrics';
 
 import { HistoryChartsSection } from './history_charts/history_charts_section';
-import { OverviewTabContextProvider } from './overview_tab_context';
 import { ProblemsSection } from './problems_section/problems_section';
 
 interface Props {

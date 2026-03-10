@@ -19,12 +19,11 @@ import Typography from '@mui/material/Typography';
 import { useContext } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
-import { ClusterContext } from '@/clusters/components/cluster/cluster_context';
+import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
+import { ClusterContext } from '@/clusters/components/cluster/context';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
 import useFetchCluster from '@/clusters/hooks/use_fetch_cluster';
 import { BugManagementPolicy } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
-
-import { OverviewTabContextData } from '../../../overview_tab_context';
 
 import { criteriaForPolicy, Criterium } from './criteria';
 

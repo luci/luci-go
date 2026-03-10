@@ -16,6 +16,7 @@ import '@testing-library/jest-dom';
 
 import { fireEvent, screen } from '@testing-library/react';
 
+import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import { renderTabWithRouterAndClient } from '@/clusters/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
 import {
@@ -32,8 +33,6 @@ import {
   QueryTestVariantFailureRateResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import { resetMockFetch } from '@/testing_tools/jest_utils';
-
-import { ClusterContextProvider } from '../../cluster_context';
 
 import ExonerationsTable from './exonerations_tab';
 

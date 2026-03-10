@@ -14,7 +14,7 @@
 
 import { useContext, useEffect, useId } from 'react';
 
-import { PageConfigCtx } from './page_config_state_provider';
+import { PageConfigCtx } from './context';
 
 /**
  * Returns a dispatch function to toggle the page config dialog if there are

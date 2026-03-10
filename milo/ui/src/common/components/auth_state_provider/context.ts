@@ -12,6 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './provider';
-export * from './context';
-export * from './hooks';
+import { createContext } from 'react';
+
+import { AuthState } from '@/common/api/auth_state';
+
+export interface AuthStateContextValue {
+  readonly getAuthState: () => AuthState;
+  readonly getAccessToken: () => Promise<string>;
+  readonly getIdToken: () => Promise<string>;
+}
+
+export const AuthStateContext = createContext<
+  AuthStateContextValue | undefined
+>(undefined);

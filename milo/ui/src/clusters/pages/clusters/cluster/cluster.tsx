@@ -17,10 +17,10 @@ import Grid from '@mui/material/Grid2';
 import { useParams } from 'react-router';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
-import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
 import ClusterTopPanel from '@/clusters/components/cluster/cluster_top_panel/cluster_top_panel';
+import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
-import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { SnackbarContextWrapper } from '@/clusters/context/provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   useDeclarePageId,

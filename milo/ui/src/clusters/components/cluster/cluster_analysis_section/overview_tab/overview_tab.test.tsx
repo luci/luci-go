@@ -16,7 +16,6 @@ import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
 
-import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
 import { renderTabWithRouterAndClient } from '@/clusters/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
 import {
@@ -39,6 +38,7 @@ import {
 import { QueryClusterHistoryResponse } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { resetMockFetch } from '@/testing_tools/jest_utils';
 
+import { ClusterContextProvider } from './../../provider';
 import OverviewTab from './overview_tab';
 
 describe('Test OverviewTab component', () => {

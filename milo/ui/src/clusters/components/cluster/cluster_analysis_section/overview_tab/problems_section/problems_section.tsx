@@ -23,7 +23,7 @@ import Typography from '@mui/material/Typography';
 import { useContext, useState } from 'react';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
-import { ClusterContext } from '@/clusters/components/cluster/cluster_context';
+import { ClusterContext } from '@/clusters/components/cluster/context';
 import PanelHeading from '@/clusters/components/headings/panel_heading/panel_heading';
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';

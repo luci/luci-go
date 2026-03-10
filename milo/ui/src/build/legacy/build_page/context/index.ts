@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export * from './provider';
+export * from './context';
 export * from './hooks';
-export { BuildContextProvider } from './context';
-export type { BuildProviderProps } from './context';

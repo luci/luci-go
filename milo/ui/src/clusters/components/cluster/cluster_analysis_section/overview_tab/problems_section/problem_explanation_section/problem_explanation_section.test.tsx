@@ -16,7 +16,8 @@ import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
 
-import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
+import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/provider';
+import { ClusterContextProvider } from '@/clusters/components/cluster/provider';
 import { renderTabWithRouterAndClient } from '@/clusters/testing_tools/libs/render_tab';
 import { mockFetchAuthState } from '@/clusters/testing_tools/mocks/authstate_mock';
 import {
@@ -27,8 +28,6 @@ import { getMockMetricsList } from '@/clusters/testing_tools/mocks/metrics_mock'
 import { createMockExonerationsPolicy } from '@/clusters/testing_tools/mocks/projects_mock';
 import { Problem } from '@/clusters/tools/problems';
 import { resetMockFetch } from '@/testing_tools/jest_utils';
-
-import { OverviewTabContextProvider } from '../../overview_tab_context';
 
 import { ProblemExplanationSection } from './problem_explanation_section';
 

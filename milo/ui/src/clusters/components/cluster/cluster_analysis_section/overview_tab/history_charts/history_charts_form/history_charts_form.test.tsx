@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 
-import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/overview_tab_context';
+import { OverviewTabContextProvider } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/provider';
 import { renderWithRouter } from '@/clusters/testing_tools/libs/mock_router';
 import { getMockMetricsList } from '@/clusters/testing_tools/mocks/metrics_mock';
 

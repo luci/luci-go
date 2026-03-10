@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2023 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './provider';
-export * from './context';
-export * from './hooks';
+import { createContext } from 'react';
+
+import { OutputBuild } from '@/build/types';
+import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+
+export interface BuildContext {
+  readonly build?: OutputBuild;
+  readonly analysis?: Analysis;
+}
+
+/**
+ * `null` means there's no build.
+ * `undefined` means the context provider is missing.
+ */
+export const BuildCtx = createContext<BuildContext | null | undefined>(
+  undefined,
+);

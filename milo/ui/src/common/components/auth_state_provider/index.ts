@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,17 +13,10 @@
 // limitations under the License.
 
 export * from './auth_state_initializer';
-export { AuthStateProvider } from './auth_state_provider';
-export type { AuthStateProviderProps } from './auth_state_provider';
+export * from './provider';
 export * from './constants';
-export { TokenType, useAuthState, useGetAuthToken } from './hooks';
+export * from './context';
+export * from './hooks';
 
-import { AuthStateContext } from './auth_state_provider';
-
-/**
- * Should only be used to override auth state context in tests.
- */
-// Don't `export { AuthStateContext as TestAuthStateContext } from './context'`.
-// Reassign and export to breaks IDE's find reference feature won't mix
-// `AuthStateContext` and `TestAuthStateContext` together.
+import { AuthStateContext } from './context';
 export const TestAuthStateContext = AuthStateContext;

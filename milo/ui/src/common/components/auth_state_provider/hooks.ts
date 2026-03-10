@@ -16,7 +16,7 @@ import { useContext } from 'react';
 
 import { AuthState } from '@/common/api/auth_state';
 
-import { AuthStateContext } from './auth_state_provider';
+import { AuthStateContext } from './context';
 
 /**
  * Returns the latest auth state. For ephemeral properties (e.g. ID/access

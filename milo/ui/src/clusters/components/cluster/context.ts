@@ -12,6 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './provider';
-export * from './context';
-export * from './hooks';
+import { createContext } from 'react';
+
+// ClusterId represents a fully-qualified cluster identifier.
+export interface ClusterId {
+  project: string;
+  algorithm: string;
+  id: string;
+}
+
+export const ClusterContext = createContext<ClusterId>({
+  project: '',
+  algorithm: '',
+  id: '',
+});

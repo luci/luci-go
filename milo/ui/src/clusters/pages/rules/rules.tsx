@@ -21,7 +21,7 @@ import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snac
 import PageHeading from '@/clusters/components/headings/page_heading/page_heading';
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import RulesTable from '@/clusters/components/rules_table/rules_table';
-import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { SnackbarContextWrapper } from '@/clusters/context/provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   useDeclarePageId,

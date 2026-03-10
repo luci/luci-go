@@ -19,12 +19,11 @@ import { useContext, useEffect } from 'react';
 import { Link as RouterLink } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
-import { ClusterContext } from '@/clusters/components/cluster/cluster_context';
+import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
+import { ClusterContext } from '@/clusters/components/cluster/context';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
 import useQueryClusterHistory from '@/clusters/hooks/use_query_cluster_history';
 import { getMetricColor } from '@/clusters/tools/metric_colors';
-
-import { OverviewTabContextData } from '../overview_tab_context';
 
 import { HISTORY_TIME_RANGE_OPTIONS } from './history_charts_form/constants';
 import { HistoryChartsForm } from './history_charts_form/history_charts_form';

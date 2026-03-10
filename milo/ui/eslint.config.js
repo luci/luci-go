@@ -238,6 +238,10 @@ export default [
     rules: {
       ...jestPlugin.configs.recommended.rules,
       // Test-specific rules
+      'jest/expect-expect': [
+        'error',
+        { assertFunctionNames: ['expect', 'verify*'] },
+      ],
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-empty-function': 'off',
       'no-restricted-imports': 'off',

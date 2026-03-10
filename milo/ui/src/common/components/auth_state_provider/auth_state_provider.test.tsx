@@ -22,8 +22,8 @@ import * as authStateLib from '@/common/api/auth_state';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { timeout } from '@/generic_libs/tools/utils';
 
-import { AuthStateProvider } from './auth_state_provider';
 import { TokenType, useAuthState, useGetAuthToken } from './hooks';
+import { AuthStateProvider } from './provider';
 
 interface TokenConsumerProps {
   readonly renderCallback: (

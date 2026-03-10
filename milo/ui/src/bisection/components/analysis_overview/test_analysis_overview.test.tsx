@@ -105,7 +105,6 @@ describe('<AnalysisOverview />', () => {
     );
   });
 
-  // eslint-disable-next-line jest/expect-expect
   test('if there is a culprit for only the nth section analysis, then it should be the suspect range', async () => {
     let mockAnalysis = createMockTestAnalysis('4');
     mockAnalysis = TestAnalysis.fromPartial({
@@ -141,7 +140,6 @@ describe('<AnalysisOverview />', () => {
     );
   });
 
-  // eslint-disable-next-line jest/expect-expect
   test('if there is no data for the suspect range, then the table cell should be empty', async () => {
     const mockAnalysis = TestAnalysis.fromPartial({
       ...createMockTestAnalysis('5'),

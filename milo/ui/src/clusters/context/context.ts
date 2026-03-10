@@ -12,6 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './provider';
-export * from './context';
-export * from './hooks';
+import { AlertColor } from '@mui/material/Alert';
+import { createContext, Dispatch, SetStateAction } from 'react';
+
+export interface Snack {
+  open?: boolean;
+  message?: string;
+  severity?: AlertColor;
+}
+
+export interface SnackbarContextData {
+  snack: Snack;
+  setSnack: Dispatch<SetStateAction<Snack>>;
+}
+
+export const snackContextDefaultState: Snack = {
+  open: false,
+  message: '',
+  severity: 'success',
+};
+
+export const SnackbarContext = createContext<SnackbarContextData>({
+  snack: snackContextDefaultState,
+  setSnack: () => {},
+});

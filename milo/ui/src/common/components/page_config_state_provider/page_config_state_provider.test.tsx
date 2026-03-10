@@ -20,7 +20,7 @@ import { logging } from '@/common/tools/logging';
 import { resetSilence, silence } from '@/testing_tools/console_filter';
 
 import { usePageSpecificConfig, useSetShowPageConfig } from './hooks';
-import { PageConfigStateProvider } from './page_config_state_provider';
+import { PageConfigStateProvider } from './provider';
 
 function TestConfigButton() {
   const setShowDialog = useSetShowPageConfig();

@@ -12,16 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Dispatch, SetStateAction, createContext, useState } from 'react';
+import { useState } from 'react';
 
-interface ContextValue {
-  readonly setCurrentPageId: (id: string | null) => void;
-  readonly hasConfig: boolean;
-  readonly showConfigDialog: boolean;
-  readonly setShowConfigDialog: Dispatch<SetStateAction<boolean>>;
-}
-
-export const PageConfigCtx = createContext<ContextValue | undefined>(undefined);
+import { PageConfigCtx } from './context';
 
 export interface PageConfigStateProviderProps {
   readonly children: React.ReactNode;

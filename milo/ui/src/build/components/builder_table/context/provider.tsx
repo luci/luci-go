@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, ReactNode } from 'react';
+import { ReactNode } from 'react';
 
-export const MaxBatchSizeCtx = createContext<number | undefined>(undefined);
-export const NumOfBuildsCtx = createContext<number | undefined>(undefined);
+import { MaxBatchSizeCtx, NumOfBuildsCtx } from './context';
 
 export interface BuilderTableContextProviderProps {
   readonly numOfBuilds: number;

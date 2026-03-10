@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,34 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, useMemo } from 'react';
+import { createContext } from 'react';
 
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
-interface OverviewTabData {
+export interface OverviewTabData {
   metrics: readonly ProjectMetric[];
 }
 
 export const OverviewTabContextData = createContext<OverviewTabData>({
   metrics: [],
 });
-
-interface Props {
-  metrics?: readonly ProjectMetric[];
-  children: React.ReactNode;
-}
-
-export const OverviewTabContextProvider = ({ metrics, children }: Props) => {
-  const stableMetics = useMemo(() => {
-    return metrics || [];
-  }, [metrics]);
-  return (
-    <OverviewTabContextData.Provider
-      value={{
-        metrics: stableMetics,
-      }}
-    >
-      {children}
-    </OverviewTabContextData.Provider>
-  );
-};

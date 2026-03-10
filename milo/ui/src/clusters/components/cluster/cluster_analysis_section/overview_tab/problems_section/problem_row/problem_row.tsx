@@ -20,12 +20,12 @@ import Typography from '@mui/material/Typography';
 import { DateTime } from 'luxon';
 import { useContext } from 'react';
 
+import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
 import { Problem } from '@/clusters/tools/problems';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { displayApproxDuration } from '@/common/tools/time_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-import { OverviewTabContextData } from '../../overview_tab_context';
 import { PriorityChip } from '../priority_chip/priority_chip';
 import { StatusChip } from '../status_chip/status_chip';
 

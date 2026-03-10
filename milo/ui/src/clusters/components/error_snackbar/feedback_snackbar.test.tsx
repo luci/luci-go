@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import { Snack, SnackbarContext } from '@/clusters/context/snackbar_context';
+import { Snack, SnackbarContext } from '@/clusters/context/context';
 import { identityFunction } from '@/clusters/testing_tools/functions';
 
 import FeedbackSnackbar from './feedback_snackbar';

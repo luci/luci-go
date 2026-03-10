@@ -41,7 +41,7 @@ import {
   QueryTestVariantFailureRateRequest_TestVariant,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 
-import { ClusterContext } from '../../cluster_context';
+import { ClusterContext } from '../../context';
 
 import ExonerationsTableHead from './exonerations_table_head/exonerations_table_head';
 import ExonerationsTableRow from './exonerations_table_row/exonerations_table_row';

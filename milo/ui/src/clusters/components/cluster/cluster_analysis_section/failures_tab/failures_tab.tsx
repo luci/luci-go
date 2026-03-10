@@ -40,7 +40,7 @@ import {
 } from '@/clusters/tools/failures_tools';
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
-import { ClusterContext } from '../../cluster_context';
+import { ClusterContext } from '../../context';
 
 import FailuresTableFilter from './failures_table_filter/failures_table_filter';
 import FailuresTableGroup from './failures_table_group/failures_table_group';

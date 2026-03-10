@@ -23,11 +23,11 @@ import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import { useContext } from 'react';
 
+import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
 import PanelHeading from '@/clusters/components/headings/panel_heading/panel_heading';
 import MetricsSelector from '@/clusters/components/metrics_selector/metrics_selector';
 import { MetricId } from '@/clusters/types/metric_id';
 
-import { OverviewTabContextData } from '../../overview_tab_context';
 import {
   useAnnotatedParam,
   useHistoryTimeRangeParam,

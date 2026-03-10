@@ -47,7 +47,7 @@ class NotifierProviderElement extends LitElement {
 }
 
 describe('StepEntry', () => {
-  test('can render a step without start time', async () => {
+  it('should render step info correctly', async () => {
     const step = new StepExt({
       step: {
         name: 'stepname',
@@ -59,7 +59,7 @@ describe('StepEntry', () => {
       depth: 0,
       index: 0,
     });
-    await fixture<NotifierProviderElement>(html`
+    const el = await fixture<NotifierProviderElement>(html`
       <milo-bp-step-entry-test-notifier-provider>
         <milo-bp-step-entry
           .store=${Store.create()}
@@ -68,5 +68,6 @@ describe('StepEntry', () => {
       </milo-bp-step-entry-test-notifier-provider>
     `);
     await aTimeout(10);
+    expect(el.querySelector('milo-bp-step-entry')).toBeInTheDocument();
   });
 });

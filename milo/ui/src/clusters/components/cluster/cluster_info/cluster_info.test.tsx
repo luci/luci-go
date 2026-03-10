@@ -24,8 +24,7 @@ import {
 } from '@/clusters/testing_tools/mocks/cluster_mock';
 import { resetMockFetch } from '@/testing_tools/jest_utils';
 
-import { ClusterContextProvider } from '../cluster_context';
-
+import { ClusterContextProvider } from './../provider';
 import ClusterInfo from './cluster_info';
 
 describe('test ClusterInfo component', () => {

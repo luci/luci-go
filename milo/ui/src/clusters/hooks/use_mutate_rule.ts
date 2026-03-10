@@ -15,7 +15,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useContext } from 'react';
 
-import { SnackbarContext } from '@/clusters/context/snackbar_context';
+import { SnackbarContext } from '@/clusters/context/context';
 import { useRulesService } from '@/clusters/services/services';
 import { UpdateRuleRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 

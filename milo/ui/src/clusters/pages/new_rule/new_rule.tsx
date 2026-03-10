@@ -29,10 +29,8 @@ import ErrorAlert from '@/clusters/components/error_alert/error_alert';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import PanelHeading from '@/clusters/components/headings/panel_heading/panel_heading';
 import RuleEditInput from '@/clusters/components/rule_edit_input/rule_edit_input';
-import {
-  SnackbarContext,
-  SnackbarContextWrapper,
-} from '@/clusters/context/snackbar_context';
+import { SnackbarContext } from '@/clusters/context/context';
+import { SnackbarContextWrapper } from '@/clusters/context/provider';
 import { useRulesService } from '@/clusters/services/services';
 import { linkToRule } from '@/clusters/tools/urlHandling/links';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';

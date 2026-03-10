@@ -28,7 +28,7 @@ import { useDeclareTabId } from '@/generic_libs/components/routed_tabs/context';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { StageState } from '@/proto/turboci/graph/orchestrator/v1/stage_state.pb';
 
-import { ChronicleContext } from './chronicle_context';
+import { ChronicleContext } from './context';
 
 const ROW_HEIGHT = 30;
 const BAR_HEIGHT = 24;

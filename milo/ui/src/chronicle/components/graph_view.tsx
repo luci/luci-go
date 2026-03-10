@@ -62,7 +62,7 @@ import { ChronicleNode, GroupMode } from '../utils/graph_builder';
 // eslint-disable-next-line import/default
 import graphWorkerUrl from '../utils/graph_worker?worker&url';
 
-import { ChronicleContext } from './chronicle_context';
+import { ChronicleContext } from './context';
 import { ContextMenu, ContextMenuState } from './context_menu';
 import { useCollapsibleGroups } from './hooks/use_collapsible_groups';
 import { InspectorPanel } from './inspector_panel/inspector_panel';

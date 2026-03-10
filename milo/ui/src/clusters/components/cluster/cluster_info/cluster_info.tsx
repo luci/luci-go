@@ -27,7 +27,7 @@ import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_al
 import useFetchCluster from '@/clusters/hooks/use_fetch_cluster';
 import { Cluster } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 
-import { ClusterContext } from '../cluster_context';
+import { ClusterContext } from '../context';
 
 interface ClusterDetailsProps {
   cluster: Cluster;

@@ -29,7 +29,7 @@ import useFetchExoneratedTestVariantBranches, {
   ExoneratedTestVariantBranch,
 } from '@/clusters/hooks/use_fetch_exonerated_test_variant_branches';
 
-import { ClusterContext } from '../../cluster_context';
+import { ClusterContext } from '../../context';
 
 import ExonerationsTableHead from './exonerations_table_head/exonerations_table_head';
 import ExonerationsTableRow from './exonerations_table_row/exonerations_table_row';

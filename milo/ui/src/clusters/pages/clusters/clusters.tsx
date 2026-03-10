@@ -20,7 +20,7 @@ import ClustersTable from '@/clusters/components/clusters_table/clusters_table';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import PageHeading from '@/clusters/components/headings/page_heading/page_heading';
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
-import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { SnackbarContextWrapper } from '@/clusters/context/provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   useDeclarePageId,

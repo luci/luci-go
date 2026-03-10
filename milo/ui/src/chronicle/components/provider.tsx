@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useMemo,
-  useState,
-} from 'react';
+import { ReactNode, useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 
 import { useReadWorkPlan } from '@/common/hooks/grpc_query/turbo_ci/turbo_ci';
@@ -26,35 +20,12 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { IdentifierKind } from '@/proto/turboci/graph/ids/v1/identifier_kind.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { ValueMask } from '@/proto/turboci/graph/orchestrator/v1/value_mask.pb';
-import { WorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
 import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
 
 const DEMO_WORKPLAN_ID = 'demo';
 
-interface ChronicleContextType {
-  workplanId: string;
-  graph: WorkPlan | undefined;
-  valueDataMap: Map<string, ValueData>;
-
-  // Workflow type for fake data generation only.
-  workflowType: WorkflowType;
-  setWorkflowType: (type: WorkflowType) => void;
-
-  // Selected node ID from URL query param
-  selectedNodeId: string | undefined;
-  setSelectedNodeId: (id: string | undefined) => void;
-}
-
-export const ChronicleContext = createContext<ChronicleContextType>({
-  workplanId: '',
-  graph: undefined,
-  valueDataMap: new Map(),
-  workflowType: WorkflowType.ANDROID,
-  setWorkflowType: () => {},
-  selectedNodeId: undefined,
-  setSelectedNodeId: () => {},
-});
+import { ChronicleContext } from './context';
 
 /**
  * Hook to sync node selection with the URL query parameter `nodeId`.

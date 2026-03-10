@@ -37,7 +37,7 @@ import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 
 import { CheckResultStatus } from '../../utils/check_utils';
-import { ChronicleContext } from '../chronicle_context';
+import { ChronicleContext } from '../context';
 import { InspectorPanel } from '../inspector_panel/inspector_panel';
 
 import {

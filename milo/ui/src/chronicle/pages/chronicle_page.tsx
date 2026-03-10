@@ -14,7 +14,7 @@
 
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 
-import { ChronicleContextProvider } from '../components/chronicle_context';
+import { ChronicleContextProvider } from '../components/provider';
 
 export function ChroniclePage() {
   return (

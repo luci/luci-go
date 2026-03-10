@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { useQuery } from '@tanstack/react-query';
-import { createContext, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import {
   AuthState,
@@ -25,16 +25,7 @@ import { useStore } from '@/common/store';
 import { deferred } from '@/generic_libs/tools/utils';
 
 import { AUTH_STATE_QUERY_KEY } from './constants';
-
-export interface AuthStateContextValue {
-  readonly getAuthState: () => AuthState;
-  readonly getAccessToken: () => Promise<string>;
-  readonly getIdToken: () => Promise<string>;
-}
-
-export const AuthStateContext = createContext<
-  AuthStateContextValue | undefined
->(undefined);
+import { AuthStateContext } from './context';
 
 /**
  * Minimum internal between auth state queries in milliseconds.
