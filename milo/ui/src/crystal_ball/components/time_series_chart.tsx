@@ -15,7 +15,7 @@
 import { Box } from '@mui/material';
 import { EChartsOption } from 'echarts';
 import ReactECharts from 'echarts-for-react';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { CSSProperties, useMemo } from 'react';
 
 /**
  * When not using a responsive container, the line chart height will fall back
@@ -120,6 +120,7 @@ const BASE_OPTION: Partial<EChartsOption> = {
     axisPointer: {
       type: 'cross',
     },
+    appendToBody: true,
   },
   legend: {
     bottom: 0,
@@ -172,6 +173,14 @@ const BASE_OPTION: Partial<EChartsOption> = {
   },
 };
 
+const CHART_STYLE: CSSProperties = {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  height: '100%',
+  width: '100%',
+};
+
 /**
  * Uses echarts to render a time series chart.
  */
@@ -181,17 +190,6 @@ export function TimeSeriesChart({
   chartTitle,
   useResponsiveContainer = true,
 }: TimeSeriesChartProps) {
-  // When more than one EChart renders on the page contained within separate flex
-  // containers, there's a known issue where the ResizeObservers will cause each
-  // other to increase their width over and over again. For now let's set the chart
-  // width once when loading the time series chart.
-  const boxRef = useRef<HTMLElement>(null);
-  const [width, setWidth] = useState(0);
-  useLayoutEffect(() => {
-    if (!boxRef.current) return;
-    setWidth(boxRef.current.getBoundingClientRect().width);
-  }, []);
-
   const option: EChartsOption = useMemo(() => {
     return {
       ...BASE_OPTION,
@@ -206,7 +204,7 @@ export function TimeSeriesChart({
       series: series.map((s) => ({
         name: s.name,
         type: 'line',
-        smooth: true,
+        smooth: false,
         showSymbol: false,
         data: s.data,
         itemStyle: { color: s.stroke },
@@ -220,23 +218,20 @@ export function TimeSeriesChart({
     };
   }, [series, chartTitle, yAxisLabel]);
 
-  const style = useMemo(
-    () => ({
-      height: `${DEFAULT_LINE_CHART_HEIGHT_PX}px`,
-      width: useResponsiveContainer
-        ? `${width}px`
-        : `${DEFAULT_LINE_CHART_WIDTH_PX}px`,
-    }),
-    [useResponsiveContainer, width],
-  );
-
   return (
     <Box
       data-testid="time-series-chart"
-      ref={boxRef}
-      sx={{ overflow: 'hidden', width: '100%' }}
+      sx={{
+        position: 'relative',
+        height: `${DEFAULT_LINE_CHART_HEIGHT_PX}px`,
+        width: useResponsiveContainer
+          ? '100%'
+          : `${DEFAULT_LINE_CHART_WIDTH_PX}px`,
+        minWidth: 0,
+        overflow: 'hidden',
+      }}
     >
-      <ReactECharts option={option} style={style} />
+      <ReactECharts option={option} style={CHART_STYLE} />
     </Box>
   );
 }

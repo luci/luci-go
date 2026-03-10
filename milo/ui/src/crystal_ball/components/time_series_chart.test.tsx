@@ -77,7 +77,7 @@ describe('TimeSeriesChart', () => {
     const lastCallProps: MockEChartsProps = MockECharts.mock.lastCall![0];
     const { option } = lastCallProps;
 
-    expect(canvasElement).toHaveStyle({ height: '400px', width: '600px' });
+    expect(canvasElement).toHaveStyle({ height: '100%', width: '100%' });
 
     // We cannot directly test if the metric name is in the canvas because it renders
     // pixels. So we check if it's correctly set in the options, and rely on the
