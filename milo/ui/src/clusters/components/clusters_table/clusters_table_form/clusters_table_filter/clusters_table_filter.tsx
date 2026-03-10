@@ -92,7 +92,7 @@ const FilterHelpTooltip = () => {
   );
 };
 
-function FilterHelp() {
+export function FilterHelp() {
   const [filterHelpAnchorEl, setFilterHelpAnchorEl] =
     useState<HTMLButtonElement | null>(null);
   const setters = useSetters();
@@ -132,9 +132,7 @@ export interface ClustersTableFilterProps {
   readonly project: string;
 }
 
-const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
-  const [failureFilter, updateFailureFilterParam] = useFilterParam();
-
+export function useClusterFailuresSchema(project: string) {
   const client = useTestHistoryClient();
   const fetchTestIds: FetchValuesFn<QueryTestsResponse> = (partial: string) => {
     const unquoted = tryUnquoteStr(partial);
@@ -165,7 +163,7 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
   const fetchTestIdsRef = useRef(fetchTestIds);
   fetchTestIdsRef.current = fetchTestIds;
 
-  const schema = useMemo(() => {
+  return useMemo(() => {
     const ret: FieldDef = {
       staticFields: {
         test_id: {
@@ -255,6 +253,11 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
     };
     return ret;
   }, []);
+}
+
+const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
+  const [failureFilter, updateFailureFilterParam] = useFilterParam();
+  const schema = useClusterFailuresSchema(project);
 
   return (
     <Aip160Autocomplete

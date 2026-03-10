@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import Search from '@mui/icons-material/Search';
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
+import InputAdornment from '@mui/material/InputAdornment';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { useContext, useEffect } from 'react';
@@ -21,9 +24,16 @@ import { Link as RouterLink } from 'react-router';
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { OverviewTabContextData } from '@/clusters/components/cluster/cluster_analysis_section/overview_tab/context';
 import { ClusterContext } from '@/clusters/components/cluster/context';
+import {
+  FilterHelp,
+  useClusterFailuresSchema,
+} from '@/clusters/components/clusters_table/clusters_table_form/clusters_table_filter/clusters_table_filter';
+import { useFilterParam } from '@/clusters/components/clusters_table/hooks';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
 import useQueryClusterHistory from '@/clusters/hooks/use_query_cluster_history';
 import { getMetricColor } from '@/clusters/tools/metric_colors';
+import { Aip160Autocomplete } from '@/common/components/aip_160_autocomplete';
+import { CommitOrClear } from '@/generic_libs/components/text_autocomplete';
 
 import { HISTORY_TIME_RANGE_OPTIONS } from './history_charts_form/constants';
 import { HistoryChartsForm } from './history_charts_form/history_charts_form';
@@ -38,6 +48,8 @@ export const HistoryChartsSection = () => {
   const clusterId = useContext(ClusterContext);
   const { metrics } = useContext(OverviewTabContextData);
   const [isAnnotated, updateAnnotatedParam] = useAnnotatedParam();
+  const [failureFilter, updateFailureFilterParam] = useFilterParam();
+  const schema = useClusterFailuresSchema(clusterId.project);
   const [selectedHistoryTimeRange, updateHistoryTimeRangeParam] =
     useHistoryTimeRangeParam(HISTORY_TIME_RANGE_OPTIONS);
   const [selectedMetrics, updateSelectedMetricsParam] =
@@ -67,10 +79,15 @@ export const HistoryChartsSection = () => {
 
   const days = selectedHistoryTimeRange?.value || 0;
 
+  let historyFilter = `cluster_algorithm="${clusterId.algorithm}" AND cluster_id="${clusterId.id}"`;
+  if (failureFilter) {
+    historyFilter = `${historyFilter} AND (${failureFilter})`;
+  }
+
   // Note that querying the history of a single cluster is faster and cheaper.
   const { isPending, isSuccess, data, error } = useQueryClusterHistory(
     clusterId.project,
-    `cluster_algorithm="${clusterId.algorithm}" cluster_id="${clusterId.id}"`,
+    historyFilter,
     days,
     selectedMetrics.map((m) => m.name),
   );
@@ -89,6 +106,41 @@ export const HistoryChartsSection = () => {
   return (
     <div>
       <HistoryChartsForm />
+      <Box sx={{ pb: 2 }}>
+        <Aip160Autocomplete
+          schema={schema}
+          value={failureFilter}
+          onValueCommit={(newVal) => updateFailureFilterParam(newVal)}
+          placeholder="Filter test failures used in clusters"
+          slotProps={{
+            textField: {
+              slotProps: {
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <CommitOrClear />
+                      <FilterHelp />
+                    </InputAdornment>
+                  ),
+                  inputProps: {
+                    'data-testid': 'history_failure_filter_input',
+                  },
+                },
+              },
+            },
+          }}
+          sx={{
+            '& .options-table': {
+              fontSize: '16px',
+            },
+          }}
+        />
+      </Box>
       {error && <LoadErrorAlert entityName="cluster history" error={error} />}
       {!error && isPending && <CentralizedProgress />}
       {isSuccess && data && metrics && selectedMetrics.length > 0 ? (
