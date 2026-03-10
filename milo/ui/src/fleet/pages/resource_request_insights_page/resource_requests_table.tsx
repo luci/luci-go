@@ -44,16 +44,12 @@ import { FilterOption } from '@/fleet/components/fc_data_table/mrt_filter_menu_i
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { RRI_DEVICES_COLUMNS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { PAGE_TOKEN_PARAM_KEY } from '@/fleet/constants/param_keys';
-import {
-  useOrderByParam,
-  OrderByDirection,
-  ORDER_BY_PARAM_KEY,
-} from '@/fleet/hooks/order_by';
+import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { useMrtSorting } from '@/fleet/hooks/use_mrt_sorting';
 import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { InvalidPageTokenAlert } from '@/fleet/utils/invalid-page-token-alert';
-import { parseOrderByParam } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import {
@@ -150,15 +146,7 @@ export const ResourceRequestTable = () => {
     [columnFilters, setFilters],
   );
 
-  const sorting = (searchParams.get(ORDER_BY_PARAM_KEY) ?? '')
-    .split(', ')
-    .map(parseOrderByParam)
-    .filter((orderBy): orderBy is NonNullable<typeof orderBy> => !!orderBy)
-    .map((orderBy) => ({
-      id: orderBy.field,
-      desc: orderBy.direction === OrderByDirection.DESC,
-    }));
-
+  const sorting = useMrtSorting();
   const pagination = useMemo<MRT_PaginationState>(
     () => ({
       pageIndex: getCurrentPageIndex(pagerCtx),
