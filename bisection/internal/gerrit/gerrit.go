@@ -196,6 +196,51 @@ func (c *Client) CreateRevert(ctx context.Context, change *gerritpb.ChangeInfo, 
 	return res, nil
 }
 
+// CreateChange creates a new CL in Gerrit.
+func (c *Client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeRequest) (*gerritpb.ChangeInfo, error) {
+	logging.Debugf(ctx, "gerrit Client.CreateChange project: '%s', subject: '%s'", req.Project, req.Subject)
+
+	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*1)
+	defer cancel()
+
+	res, err := c.gerritClient.CreateChange(waitCtx, req)
+	if err != nil {
+		return nil, errors.Fmt("error creating change on Gerrit host %s: %w", c.host, err)
+	}
+
+	return res, nil
+}
+
+// ChangeEditFileContent edits a single file within an existing change edit.
+func (c *Client) ChangeEditFileContent(ctx context.Context, req *gerritpb.ChangeEditFileContentRequest) error {
+	logging.Debugf(ctx, "gerrit Client.ChangeEditFileContent project: '%s', number: %d, file_path: '%s'", req.Project, req.Number, req.FilePath)
+
+	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*1)
+	defer cancel()
+
+	_, err := c.gerritClient.ChangeEditFileContent(waitCtx, req)
+	if err != nil {
+		return errors.Fmt("error editing file content on Gerrit host %s for change %d: %w", c.host, req.Number, err)
+	}
+
+	return nil
+}
+
+// ChangeEditPublish publishes all changes in a change edit.
+func (c *Client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEditPublishRequest) error {
+	logging.Debugf(ctx, "gerrit Client.ChangeEditPublish project: '%s', number: %d", req.Project, req.Number)
+
+	waitCtx, cancel := context.WithTimeout(ctx, time.Minute*1)
+	defer cancel()
+
+	_, err := c.gerritClient.ChangeEditPublish(waitCtx, req)
+	if err != nil {
+		return errors.Fmt("error publishing change edit on Gerrit host %s for change %d: %w", c.host, req.Number, err)
+	}
+
+	return nil
+}
+
 // AddComment adds the given message as a review comment on a change
 func (c *Client) AddComment(ctx context.Context, change *gerritpb.ChangeInfo, message string) (*gerritpb.ReviewResult, error) {
 	req := c.createSetReviewRequest(ctx, change, message)

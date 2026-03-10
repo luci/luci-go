@@ -17,6 +17,7 @@ package gitiles
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -111,6 +112,27 @@ func GetRepoUrl(c context.Context, commit *buildbucketpb.GitilesCommit) string {
 // getChangeLogsUrl generates a URL for change logs in (startRevision, endRevision]
 func getChangeLogsUrl(repoUrl string, startRevision string, endRevision string) string {
 	return fmt.Sprintf("%s/+log/%s..%s", repoUrl, startRevision, endRevision)
+}
+
+// DownloadFile downloads a file from Gitiles and decodes the base64 content.
+func DownloadFile(c context.Context, repoUrl string, revision string, path string) (string, error) {
+	gitilesClient := GetClient(c)
+	url := fmt.Sprintf("%s/+/%s/%s", repoUrl, revision, path)
+	params := map[string]string{
+		"format": "text", // Gitiles returns base64 encoded file content
+	}
+
+	data, err := gitilesClient.sendRequest(c, url, params)
+	if err != nil {
+		return "", err
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode base64 file content %w", err)
+	}
+
+	return string(decoded), nil
 }
 
 // We need the interface for testing purpose

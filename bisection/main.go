@@ -43,6 +43,7 @@ import (
 
 	"go.chromium.org/luci/bisection/bqexporter"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/genai/fixforward"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
 	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	"go.chromium.org/luci/bisection/culpritverification"
@@ -160,6 +161,7 @@ func main() {
 
 		// Task queues
 		compilefailuredetection.RegisterTaskClass(srv)
+		fixforward.RegisterTaskClass(srv)
 		if err := revertculprit.RegisterTaskClass(srv, pg.Project); err != nil {
 			return errors.Fmt("register revert culprit: %w", err)
 		}

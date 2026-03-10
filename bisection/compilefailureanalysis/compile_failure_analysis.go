@@ -33,12 +33,14 @@ import (
 	"go.chromium.org/luci/bisection/compilefailureanalysis/genai"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
+	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/lucinotify"
 	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 )
@@ -130,6 +132,11 @@ func AnalyzeFailure(
 	if err != nil {
 		logging.Errorf(c, "LLM analysis failed: %v", err)
 	} else {
+		if analysis.IsTreeCloser {
+			logging.Infof(c, "Build %d is a tree closer, triggering fixforward task.", firstFailedBuildID)
+			triggerFixforward(c, genaiAnalysisResult, analysis.Id)
+		}
+
 		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, analysis)
 		if err != nil {
 			return nil, errors.Fmt("couldn't fetch config for culprit verification. Build %d: %w", firstFailedBuildID, err)
@@ -182,6 +189,30 @@ func verifyGenAIResult(c context.Context, genaiAnalysis *model.CompileGenAIAnaly
 		logging.Errorf(c, "Error in verifying GenAI suspect %d for analysis %d", suspects[0].Id, analysisID)
 	}
 	return nil
+}
+
+// triggerFixforward enqueues a GenerateFixforwardTask.
+func triggerFixforward(c context.Context, genaiAnalysis *model.CompileGenAIAnalysis, analysisID int64) {
+	suspects := []*model.Suspect{}
+	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
+	if err := datastore.GetAllWithLimit(c, q, &suspects, 1); err != nil {
+		logging.Errorf(c, "failed to get suspect for fixforward: %v", err)
+		return
+	}
+	if len(suspects) == 0 {
+		return
+	}
+	suspectID := suspects[0].Id
+	err := tq.AddTask(c, &tq.Task{
+		Title: fmt.Sprintf("fixforward_%d_%d", analysisID, suspectID),
+		Payload: &taskpb.GenerateFixforwardTask{
+			AnalysisId: analysisID,
+			CulpritId:  suspectID,
+		},
+	})
+	if err != nil {
+		logging.Errorf(c, "failed to enqueue fixforward task: %v", err)
+	}
 }
 
 // findRegressionRange takes in the first failed build and last passed buildID
