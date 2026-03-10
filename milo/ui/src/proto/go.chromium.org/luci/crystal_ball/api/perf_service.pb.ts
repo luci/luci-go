@@ -30,7 +30,11 @@ export interface StreamDashboardDataResponse {
     | MultiMetricChartData
     | undefined;
   /** Data for a Markdown widget */
-  readonly markdownWidget?: MarkdownWidget | undefined;
+  readonly markdownWidget?:
+    | MarkdownWidget
+    | undefined;
+  /** Data specifically prepared for a BreakdownTable widget */
+  readonly breakdownTableData?: BreakdownTableData | undefined;
   readonly status: Status | undefined;
 }
 
@@ -52,6 +56,31 @@ export interface MultiMetricLine {
 /** Widget for displaying formatted text using Markdown. */
 export interface MarkdownWidget {
   readonly content: string;
+}
+
+/** Represents data structured for a Breakdown Table widget. */
+export interface BreakdownTableData {
+  /** Represents one of the breakdown dimensions requested. */
+  readonly sections: readonly BreakdownSection[];
+}
+
+/**
+ * Represents one table in the breakdown (e.g., the "atptestname" or
+ * "gpu_vendor" table).
+ */
+export interface BreakdownSection {
+  /** Represents the dimension this section is grouped by. */
+  readonly dimensionColumn: string;
+  /**
+   * Represents the rows of the table. Each struct in `rows` contains:
+   * -   A key matching `dimension_column` with the value for this breakdown
+   *     group.
+   * -   Keys for each metric in the chart, with their aggregated values
+   *     for this breakdown group.
+   * The number of rows returned is limited to a server-defined maximum
+   * (e.g., 1000).
+   */
+  readonly rows: readonly { readonly [key: string]: any }[];
 }
 
 /**
@@ -165,7 +194,13 @@ export const StreamDashboardDataRequest: MessageFns<StreamDashboardDataRequest> 
 };
 
 function createBaseStreamDashboardDataResponse(): StreamDashboardDataResponse {
-  return { widgetId: "", multiMetricChartData: undefined, markdownWidget: undefined, status: undefined };
+  return {
+    widgetId: "",
+    multiMetricChartData: undefined,
+    markdownWidget: undefined,
+    breakdownTableData: undefined,
+    status: undefined,
+  };
 }
 
 export const StreamDashboardDataResponse: MessageFns<StreamDashboardDataResponse> = {
@@ -178,6 +213,9 @@ export const StreamDashboardDataResponse: MessageFns<StreamDashboardDataResponse
     }
     if (message.markdownWidget !== undefined) {
       MarkdownWidget.encode(message.markdownWidget, writer.uint32(34).fork()).join();
+    }
+    if (message.breakdownTableData !== undefined) {
+      BreakdownTableData.encode(message.breakdownTableData, writer.uint32(42).fork()).join();
     }
     if (message.status !== undefined) {
       Status.encode(message.status, writer.uint32(26).fork()).join();
@@ -216,6 +254,14 @@ export const StreamDashboardDataResponse: MessageFns<StreamDashboardDataResponse
           message.markdownWidget = MarkdownWidget.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.breakdownTableData = BreakdownTableData.decode(reader, reader.uint32());
+          continue;
+        }
         case 3: {
           if (tag !== 26) {
             break;
@@ -240,6 +286,9 @@ export const StreamDashboardDataResponse: MessageFns<StreamDashboardDataResponse
         ? MultiMetricChartData.fromJSON(object.multiMetricChartData)
         : undefined,
       markdownWidget: isSet(object.markdownWidget) ? MarkdownWidget.fromJSON(object.markdownWidget) : undefined,
+      breakdownTableData: isSet(object.breakdownTableData)
+        ? BreakdownTableData.fromJSON(object.breakdownTableData)
+        : undefined,
       status: isSet(object.status) ? Status.fromJSON(object.status) : undefined,
     };
   },
@@ -254,6 +303,9 @@ export const StreamDashboardDataResponse: MessageFns<StreamDashboardDataResponse
     }
     if (message.markdownWidget !== undefined) {
       obj.markdownWidget = MarkdownWidget.toJSON(message.markdownWidget);
+    }
+    if (message.breakdownTableData !== undefined) {
+      obj.breakdownTableData = BreakdownTableData.toJSON(message.breakdownTableData);
     }
     if (message.status !== undefined) {
       obj.status = Status.toJSON(message.status);
@@ -272,6 +324,9 @@ export const StreamDashboardDataResponse: MessageFns<StreamDashboardDataResponse
       : undefined;
     message.markdownWidget = (object.markdownWidget !== undefined && object.markdownWidget !== null)
       ? MarkdownWidget.fromPartial(object.markdownWidget)
+      : undefined;
+    message.breakdownTableData = (object.breakdownTableData !== undefined && object.breakdownTableData !== null)
+      ? BreakdownTableData.fromPartial(object.breakdownTableData)
       : undefined;
     message.status = (object.status !== undefined && object.status !== null)
       ? Status.fromPartial(object.status)
@@ -534,6 +589,144 @@ export const MarkdownWidget: MessageFns<MarkdownWidget> = {
   fromPartial(object: DeepPartial<MarkdownWidget>): MarkdownWidget {
     const message = createBaseMarkdownWidget() as any;
     message.content = object.content ?? "";
+    return message;
+  },
+};
+
+function createBaseBreakdownTableData(): BreakdownTableData {
+  return { sections: [] };
+}
+
+export const BreakdownTableData: MessageFns<BreakdownTableData> = {
+  encode(message: BreakdownTableData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.sections) {
+      BreakdownSection.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BreakdownTableData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBreakdownTableData() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.sections.push(BreakdownSection.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BreakdownTableData {
+    return {
+      sections: globalThis.Array.isArray(object?.sections)
+        ? object.sections.map((e: any) => BreakdownSection.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: BreakdownTableData): unknown {
+    const obj: any = {};
+    if (message.sections?.length) {
+      obj.sections = message.sections.map((e) => BreakdownSection.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BreakdownTableData>): BreakdownTableData {
+    return BreakdownTableData.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BreakdownTableData>): BreakdownTableData {
+    const message = createBaseBreakdownTableData() as any;
+    message.sections = object.sections?.map((e) => BreakdownSection.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseBreakdownSection(): BreakdownSection {
+  return { dimensionColumn: "", rows: [] };
+}
+
+export const BreakdownSection: MessageFns<BreakdownSection> = {
+  encode(message: BreakdownSection, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.dimensionColumn !== "") {
+      writer.uint32(10).string(message.dimensionColumn);
+    }
+    for (const v of message.rows) {
+      Struct.encode(Struct.wrap(v!), writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BreakdownSection {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBreakdownSection() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dimensionColumn = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.rows.push(Struct.unwrap(Struct.decode(reader, reader.uint32())));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BreakdownSection {
+    return {
+      dimensionColumn: isSet(object.dimensionColumn) ? globalThis.String(object.dimensionColumn) : "",
+      rows: globalThis.Array.isArray(object?.rows) ? [...object.rows] : [],
+    };
+  },
+
+  toJSON(message: BreakdownSection): unknown {
+    const obj: any = {};
+    if (message.dimensionColumn !== "") {
+      obj.dimensionColumn = message.dimensionColumn;
+    }
+    if (message.rows?.length) {
+      obj.rows = message.rows;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BreakdownSection>): BreakdownSection {
+    return BreakdownSection.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BreakdownSection>): BreakdownSection {
+    const message = createBaseBreakdownSection() as any;
+    message.dimensionColumn = object.dimensionColumn ?? "";
+    message.rows = object.rows?.map((e) => e) || [];
     return message;
   },
 };

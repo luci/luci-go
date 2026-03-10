@@ -34,6 +34,9 @@ message StreamDashboardDataResponse {
 
     // Data for a Markdown widget
     MarkdownWidget markdown_widget = 4;
+
+    // Data specifically prepared for a BreakdownTable widget
+    BreakdownTableData breakdown_table_data = 5;
   }
   google.rpc.Status status = 3;
 }
@@ -56,6 +59,28 @@ message MultiMetricLine {
 // Widget for displaying formatted text using Markdown.
 message MarkdownWidget {
   string content = 2;
+}
+
+// Represents data structured for a Breakdown Table widget.
+message BreakdownTableData {
+  // Represents one of the breakdown dimensions requested.
+  repeated BreakdownSection sections = 1;
+}
+
+// Represents one table in the breakdown (e.g., the "atptestname" or
+// "gpu_vendor" table).
+message BreakdownSection {
+  // Represents the dimension this section is grouped by.
+  string dimension_column = 1;
+
+  // Represents the rows of the table. Each struct in `rows` contains:
+  // -   A key matching `dimension_column` with the value for this breakdown
+  //     group.
+  // -   Keys for each metric in the chart, with their aggregated values
+  //     for this breakdown group.
+  // The number of rows returned is limited to a server-defined maximum
+  // (e.g., 1000).
+  repeated google.protobuf.Struct rows = 2;
 }
 
 // Represents the content of a dashboard state.
