@@ -67,7 +67,7 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-admin-tasks">
       <RecoverableErrorBoundary key="fleet-admin-tasks-page">
-        <FleetHelmet pageTitle="Autorepair history" />
+        <FleetHelmet pageTitle="Admin tasks history" />
         <LoggedInBoundary>
           <AdminTasksPage />
         </LoggedInBoundary>

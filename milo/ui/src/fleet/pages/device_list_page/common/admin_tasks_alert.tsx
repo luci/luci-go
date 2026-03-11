@@ -21,11 +21,9 @@ import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { useTasksClient } from '@/swarming/hooks/prpc_clients';
 
 const USER_TAG = 'client_user';
-const JOB_TAG = 'task';
-const JOB_NAME = 'recovery';
 const HOUR_SET_BACK = 24;
 
-export const AutorepairJobsAlert = () => {
+export const AdminTasksAlert = () => {
   const client = useTasksClient(DEVICE_TASKS_SWARMING_HOST);
   const authState = useAuthState();
 
@@ -35,17 +33,14 @@ export const AutorepairJobsAlert = () => {
     return d;
   }, []);
 
-  const autorepairTags = useMemo(
-    () =>
-      authState.email
-        ? [`${USER_TAG}:${authState.email}`, `${JOB_TAG}:${JOB_NAME}`]
-        : [],
+  const adminTaskTags = useMemo(
+    () => (authState.email ? [`${USER_TAG}:${authState.email}`] : []),
     [authState.email],
   );
 
   const { tasks, isLoading, isError } = useTasks({
     client,
-    tags: autorepairTags,
+    tags: adminTaskTags,
     startTime: time_check.toISOString(),
     limit: 101,
   });
@@ -76,7 +71,7 @@ export const AutorepairJobsAlert = () => {
         </Button>
       }
     >
-      You have {countText} autorepair jobs scheduled in the last 24 hours.
+      You have {countText} admin tasks scheduled in the last 24 hours.
     </Alert>
   );
 };

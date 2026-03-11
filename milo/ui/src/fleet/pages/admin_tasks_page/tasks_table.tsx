@@ -56,12 +56,12 @@ export const TasksTable = ({
 
   const client = useTasksClient(swarmingHost);
   const authState = useAuthState();
-  const autorepairTags = authState.email
+  const adminTaskTags = authState.email
     ? [`${USER_TAG}:${authState.email}`]
     : [];
   const taskData = useTasks({
     client,
-    tags: autorepairTags,
+    tags: adminTaskTags,
     limit: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
   });
@@ -70,7 +70,7 @@ export const TasksTable = ({
     return (
       <Alert severity="error">
         <AlertTitle>Not logged in.</AlertTitle>
-        <p>Please login to see autorepair jobs.</p>
+        <p>Please login to see admin tasks.</p>
       </Alert>
     );
   }
@@ -99,8 +99,8 @@ export const TasksTable = ({
   if (!taskData.tasks?.length) {
     return (
       <Alert severity="info">
-        <AlertTitle>No recent autorepair jobs found.</AlertTitle>
-        <p>No autorepair jobs triggered by you recently.</p>
+        <AlertTitle>No recent admin tasks found.</AlertTitle>
+        <p>No admin tasks triggered by you recently.</p>
       </Alert>
     );
   }

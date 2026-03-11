@@ -56,7 +56,7 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { AutorepairJobsAlert } from '../common/autorepair_jobs_alert';
+import { AdminTasksAlert } from '../common/admin_tasks_alert';
 import {
   dimensionsToFilterOptions,
   filterOptionsPlaceholder,
@@ -261,7 +261,7 @@ export const ChromeOSDevicesPage = () => {
         selectedOptions={selectedOptions.filters || {}}
         pagerContext={pagerCtx}
       />
-      <AutorepairJobsAlert />
+      <AdminTasksAlert />
       <div
         css={{
           marginTop: 24,
