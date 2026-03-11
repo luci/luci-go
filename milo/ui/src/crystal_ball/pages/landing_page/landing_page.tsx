@@ -17,7 +17,7 @@ import { Button, Box, Tab, Tabs } from '@mui/material';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
-import { DashboardDialog } from '@/crystal_ball/components';
+import { DashboardDialog, RequireLogin } from '@/crystal_ball/components';
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import { useCreateDashboardState } from '@/crystal_ball/hooks';
@@ -135,5 +135,9 @@ export function LandingPage() {
  * Component export for Landing Page.
  */
 export function Component() {
-  return <LandingPage />;
+  return (
+    <RequireLogin>
+      <LandingPage />
+    </RequireLogin>
+  );
 }

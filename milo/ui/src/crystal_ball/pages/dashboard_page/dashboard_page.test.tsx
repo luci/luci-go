@@ -33,6 +33,13 @@ jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
   })),
 }));
 
+jest.mock('@/common/components/auth_state_provider', () => ({
+  ...jest.requireActual('@/common/components/auth_state_provider'),
+  useAuthState: jest
+    .fn()
+    .mockReturnValue({ identity: 'user:test@example.com' }),
+}));
+
 const mockNavigate = jest.fn();
 jest.mock('react-router', () => ({
   ...jest.requireActual('react-router'),

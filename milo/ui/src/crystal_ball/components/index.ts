@@ -19,6 +19,7 @@ export * from './dashboard_dialog';
 export * from './filter_editor';
 export * from './layout';
 export * from './markdown_widget';
+export * from './require_login';
 export * from './search_measurements_form';
 export * from './time_series_chart';
 export * from './widget_container';

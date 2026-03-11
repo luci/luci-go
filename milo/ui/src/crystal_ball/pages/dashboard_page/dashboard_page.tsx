@@ -35,6 +35,7 @@ import {
   AddWidgetModal,
   ChartWidget,
   MarkdownWidget,
+  RequireLogin,
   WidgetContainer,
 } from '@/crystal_ball/components';
 import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
@@ -533,7 +534,11 @@ export function DashboardPage() {
  * Component export for Dashboard Page.
  */
 export function Component() {
-  return <DashboardPage />;
+  return (
+    <RequireLogin>
+      <DashboardPage />
+    </RequireLogin>
+  );
 }
 
 function EmptyDashboardState({ onAdd }: { onAdd: () => void }) {
