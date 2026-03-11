@@ -24,6 +24,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
+import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import { SshTip } from '@/fleet/components/actions/ssh/ssh_tip';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
@@ -285,6 +286,7 @@ export const ChromeOSDeviceDetailsPage = () => {
             }}
           >
             <RunAutorepair selectedDuts={toRepair} />
+            <RunDeploy selectedDuts={toRepair} />
             <RequestRepair selectedDuts={toRepair} />
             <SshTip hostname={id} dutId={dutId} />
           </div>

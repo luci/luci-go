@@ -34,6 +34,7 @@ import {
 
 import { RunAutorepair } from '../actions/autorepair/run_autorepair';
 import { CopyButton } from '../actions/copy/copy_button';
+import { RunDeploy } from '../actions/deploy/run_deploy';
 import { RequestRepair } from '../actions/request_repair/request_repair';
 import { ColumnsButton } from '../columns/columns_button';
 
@@ -85,6 +86,7 @@ export function FleetToolbar({
         return (
           <>
             <RunAutorepair selectedDuts={selectedDuts} />
+            <RunDeploy selectedDuts={selectedDuts} />
             <CopyButton onClick={onCopy} />
             <RequestRepair selectedDuts={selectedDuts} />
             <ExportButton
