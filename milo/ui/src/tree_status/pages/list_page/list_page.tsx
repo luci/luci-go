@@ -115,12 +115,12 @@ export const TreeStatusListPage = () => {
         </p>
         <strong>
           {treeName === 'chromium' ? (
-            <>
+            <span style={{ fontSize: '1.1em' }}>
               Note: Gardener AI is handling Tree Closure and oncall will be
               notified by{' '}
               <Link href="https://goto.google.com/gardener-ai-irm">IRM</Link> if
               AI tooling failed to find the culprit within 1 hour.
-            </>
+            </span>
           ) : (
             'Note: The tree status should be updated by the current on-call user.'
           )}
