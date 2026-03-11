@@ -454,7 +454,7 @@ func (f *fsImpl) EnsureDirectoryGone(ctx context.Context, path string) error {
 		logging.Warningf(ctx, "fs: failed to rename directory %q: %s", path, err)
 		return err
 	}
-	if err = os.RemoveAll(temp); err != nil {
+	if err = removeAll(ctx, temp); err != nil {
 		logging.Warningf(ctx, "fs: failed to remove directory %q: %s", temp, err)
 		return err
 	}
@@ -616,7 +616,7 @@ func (f *fsImpl) cleanupTrashedFile(ctx context.Context, path string) error {
 	if filepath.Dir(path) != f.trash {
 		return errors.Fmt("not in the trash: %q", path)
 	}
-	err := os.RemoveAll(path)
+	err := removeAll(ctx, path)
 	if err != nil {
 		logging.Debugf(ctx, "fs: failed to cleanup trashed file: %s", err)
 	}

@@ -18,9 +18,18 @@
 package fs
 
 import (
+	"context"
+	"errors"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
+
+	"golang.org/x/sys/windows"
+
+	"go.chromium.org/luci/common/logging"
 )
 
 // longFileName converts a non-UNC path to a \?\\ style long path.
@@ -74,6 +83,52 @@ func mostlyAtomicRename(source, target string) error {
 	}
 
 	return os.Rename(source, target)
+}
+
+func removeAll(ctx context.Context, path string) error {
+	err := os.RemoveAll(path)
+	var pathErr *os.PathError
+	if !errors.As(err, &pathErr) || pathErr.Op != "openfdat" {
+		return err
+	}
+	// On older Windows versions, modern os.RemoveAll doesn't work since it uses
+	// unimplemented syscalls (that emulate openat). Fallback to a simplistic
+	// manual removal.
+	if !allowRemoveAllFallback() {
+		return err
+	}
+	logging.Debugf(ctx, "fs: falling back to alternative RemoveAll implementation due to error %s", err)
+	var deleteFile []string
+	err = filepath.WalkDir(path, func(fp string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		deleteFile = append(deleteFile, fp)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for _, file := range slices.Backward(deleteFile) {
+		if err := os.Remove(file); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// allowRemoveAllFallback returns true when running old enough Windows 10.
+func allowRemoveAllFallback() bool {
+	// This is also known as "Windows 10 version 1507".
+	min := [3]uint32{10, 0, 10240}
+	var cur [3]uint32
+	cur[0], cur[1], cur[2] = windows.RtlGetNtVersionNumbers()
+	for i := range 3 {
+		if cur[i] > min[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // For errors codes see

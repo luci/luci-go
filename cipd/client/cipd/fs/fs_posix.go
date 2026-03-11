@@ -18,6 +18,7 @@
 package fs
 
 import (
+	"context"
 	"os"
 	"syscall"
 )
@@ -28,6 +29,10 @@ func openFile(path string) (*os.File, error) {
 
 func mostlyAtomicRename(source, target string) error {
 	return os.Rename(source, target)
+}
+
+func removeAll(ctx context.Context, path string) error {
+	return os.RemoveAll(path)
 }
 
 func errnoNotEmpty(err error) bool {
