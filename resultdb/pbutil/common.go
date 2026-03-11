@@ -413,8 +413,8 @@ func ValidateSubmittedAndroidBuild(buildID *pb.SubmittedAndroidBuild) error {
 }
 
 // ValidateExtraBuildDescriptors validates a list of extra build descriptors.
-// This performs basic structural validation only, call ValidateBuildDescriptorsUniquenessAndOrder
-// to validate uniqueness is maintained and to ensure extra_builds is only set of primary_build is set.
+// This performs basic structural validation only, call ValidateBuildDescriptorsOrder
+// to ensure extra_builds is only set of primary_build is set.
 func ValidateExtraBuildDescriptors(builds []*pb.BuildDescriptor) error {
 	if len(builds) > 10 {
 		return errors.New("exceeds maximum of 10 extra builds")
@@ -428,49 +428,16 @@ func ValidateExtraBuildDescriptors(builds []*pb.BuildDescriptor) error {
 	return nil
 }
 
-// ValidateBuildDescriptorsUniquenessAndOrder performs extended validation on the extra builds, validating:
-// - the build descriptors do not duplicate each other or the primary build
+// ValidateBuildDescriptorsOrder performs extended validation on the extra builds, validating:
 // - the extra builds field is only set of primary build is first set.
-func ValidateBuildDescriptorsUniquenessAndOrder(builds []*pb.BuildDescriptor, primaryBuild *pb.BuildDescriptor) error {
-	if primaryBuild == nil {
-		if len(builds) > 0 {
-			return errors.New("may not be specified unless primary build is set")
-		}
+func ValidateBuildDescriptorsOrder(builds []*pb.BuildDescriptor, primaryBuild *pb.BuildDescriptor) error {
+	if primaryBuild != nil {
 		return nil
 	}
-	// Use -1 to denote the primary build.
-	const primaryBuildIndex = -1
-
-	seenKeys := make(map[string]int)
-	seenKeys[keyOfBuildDescriptor(primaryBuild)] = primaryBuildIndex
-
-	for i, build := range builds {
-		key := keyOfBuildDescriptor(build)
-		if idx, ok := seenKeys[key]; ok {
-			if idx == primaryBuildIndex {
-				return errors.Fmt("[%v]: duplicate of primary_build", i)
-			} else {
-				return errors.Fmt("[%v]: duplicate of extra_builds[%d]", i, idx)
-			}
-		}
-		seenKeys[key] = i
+	if len(builds) > 0 {
+		return errors.New("may not be specified unless primary build is set")
 	}
 	return nil
-}
-
-func keyOfBuildDescriptor(build *pb.BuildDescriptor) string {
-	switch def := build.Definition.(type) {
-	case *pb.BuildDescriptor_AndroidBuild:
-		return keyOfAndroidBuildDescriptor(def.AndroidBuild)
-	default:
-		// Should never be hit as ValidateBuildDescriptor should have
-		// been called before this method is called.
-		panic("definition: unspecified")
-	}
-}
-
-func keyOfAndroidBuildDescriptor(build *pb.AndroidBuildDescriptor) string {
-	return fmt.Sprintf("androidbuild/%q/%q/%q/%q", build.DataRealm, build.Branch, build.BuildTarget, build.BuildId)
 }
 
 // ValidateBuildDescriptor validates a BuildDescriptor.

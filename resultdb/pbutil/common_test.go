@@ -20,8 +20,6 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -228,7 +226,7 @@ func TestValidate(t *testing.T) {
 			assert.Loosely(t, ValidateExtraBuildDescriptors(builds), should.ErrLike(`exceeds maximum of 10 extra builds`))
 		})
 	})
-	ftt.Run(`ValidateBuildDescriptorsUniquenessAndOrder`, t, func(t *ftt.Test) {
+	ftt.Run(`ValidateBuildDescriptorsOrder`, t, func(t *ftt.Test) {
 		builds := []*pb.BuildDescriptor{
 			{
 				Definition: &pb.BuildDescriptor_AndroidBuild{
@@ -262,21 +260,13 @@ func TestValidate(t *testing.T) {
 			},
 		}
 		t.Run(`Valid`, func(t *ftt.Test) {
-			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(builds, primaryBuild), should.BeNil)
+			assert.Loosely(t, ValidateBuildDescriptorsOrder(builds, primaryBuild), should.BeNil)
 		})
 		t.Run(`Nil primary build, no extra builds`, func(t *ftt.Test) {
-			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(nil, nil), should.BeNil)
+			assert.Loosely(t, ValidateBuildDescriptorsOrder(nil, nil), should.BeNil)
 		})
 		t.Run(`Nil primary build, with extra builds`, func(t *ftt.Test) {
-			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(builds, nil), should.ErrLike(`may not be specified unless primary build is set`))
-		})
-		t.Run(`Duplicates of primary build`, func(t *ftt.Test) {
-			primaryBuild = proto.Clone(builds[1]).(*pb.BuildDescriptor)
-			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(builds, primaryBuild), should.ErrLike(`[1]: duplicate of primary_build`))
-		})
-		t.Run(`Duplicate within extra builds`, func(t *ftt.Test) {
-			builds[1] = builds[0]
-			assert.Loosely(t, ValidateBuildDescriptorsUniquenessAndOrder(builds, primaryBuild), should.ErrLike(`[1]: duplicate of extra_builds[0]`))
+			assert.Loosely(t, ValidateBuildDescriptorsOrder(builds, nil), should.ErrLike(`may not be specified unless primary build is set`))
 		})
 	})
 	ftt.Run(`ValidateBuildDescriptor`, t, func(t *ftt.Test) {

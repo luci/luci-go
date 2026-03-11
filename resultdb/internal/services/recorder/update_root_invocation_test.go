@@ -684,15 +684,6 @@ func TestUpdateRootInvocation(t *testing.T) {
 							assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 							assert.Loosely(t, err, should.ErrLike("root invocation would be in inconsistent state after update: extra_builds: may not be specified unless primary build is set"))
 						})
-						t.Run("duplicates between primary_build and extra_builds", func(t *ftt.Test) {
-							req.UpdateMask.Paths = []string{"primary_build", "extra_builds"}
-							req.RootInvocation.PrimaryBuild = testutil.TestBuild("123")
-							req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{testutil.TestBuild("123")}
-
-							_, err := recorder.UpdateRootInvocation(ctx, req)
-							assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
-							assert.Loosely(t, err, should.ErrLike("root invocation would be in inconsistent state after update: extra_builds: [0]: duplicate of primary_build"))
-						})
 					})
 
 					t.Run("to non-finalized metadata", func(t *ftt.Test) {

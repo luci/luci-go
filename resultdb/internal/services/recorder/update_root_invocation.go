@@ -229,7 +229,7 @@ func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRo
 
 	if revalidateBuildUniquenessAndOrder {
 		// Validate the final values of ExtraBuilds and PrimaryBuild will work together.
-		if err := pbutil.ValidateBuildDescriptorsUniquenessAndOrder(updatedRootInvRow.ExtraBuilds, updatedRootInvRow.PrimaryBuild); err != nil {
+		if err := pbutil.ValidateBuildDescriptorsOrder(updatedRootInvRow.ExtraBuilds, updatedRootInvRow.PrimaryBuild); err != nil {
 			return nil, nil, appstatus.Errorf(codes.FailedPrecondition, "root invocation would be in inconsistent state after update: extra_builds: %s", err)
 		}
 	}

@@ -421,7 +421,7 @@ func validateRootInvocationForCreate(inv *pb.RootInvocation, cfg *config.Compile
 			}
 		}
 	}
-	if err := pbutil.ValidateBuildDescriptorsUniquenessAndOrder(inv.ExtraBuilds, inv.PrimaryBuild); err != nil {
+	if err := pbutil.ValidateBuildDescriptorsOrder(inv.ExtraBuilds, inv.PrimaryBuild); err != nil {
 		return errors.Fmt("extra_builds: %w", err)
 	}
 

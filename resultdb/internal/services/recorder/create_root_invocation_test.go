@@ -511,13 +511,6 @@ func TestValidateCreateRootInvocationRequest(t *testing.T) {
 					err := validateCreateRootInvocationRequest(req, cfg)
 					assert.Loosely(t, err, should.ErrLike(`root_invocation: extra_builds[0]: android_build: data_realm: does not match pattern "^(prod|qual-staging)$"`))
 				})
-				t.Run("duplicate primary build", func(t *ftt.Test) {
-					req.RootInvocation.ExtraBuilds = []*pb.BuildDescriptor{
-						proto.Clone(req.RootInvocation.PrimaryBuild).(*pb.BuildDescriptor),
-					}
-					err := validateCreateRootInvocationRequest(req, cfg)
-					assert.Loosely(t, err, should.ErrLike("root_invocation: extra_builds: [0]: duplicate of primary_build"))
-				})
 			})
 			t.Run("properties", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
