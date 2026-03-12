@@ -100,11 +100,9 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 			logging.Warningf(ctx, "failed to download file %s: %v", path, err)
 			continue
 		}
-		// If file is too large, it may exceed token limits or generate an incomplete fix.
-		// Skip fixforward entirely and log a warning.
 		if len(content) > 50000 {
-			logging.Warningf(ctx, "file %s exceeds 50KB size limit, skipping fixforward generation", path)
-			return nil
+			logging.Warningf(ctx, "file %s exceeds 50KB size limit, skipping file content generation for LLM prompt", path)
+			continue
 		}
 		filesInfo += fmt.Sprintf("\nFile: %s\n```\n%s\n```\n", path, content)
 	}

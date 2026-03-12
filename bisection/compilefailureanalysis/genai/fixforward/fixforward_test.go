@@ -17,6 +17,7 @@ package fixforward
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"testing"
 	"time"
 
@@ -146,11 +147,21 @@ func TestGenerateFixforwardCL_LargeFile(t *testing.T) {
 	ctx = gitiles.MockedGitilesClientContext(ctx, mockGitilesData)
 
 	mockedGerrit := gerrit.NewMockedClient(ctx, ctrl)
-	// Gerrit or LLM methods should not be called because it exits early.
 	gerritClient, err := gerrit.NewClient(mockedGerrit.Ctx, "chromium-review.googlesource.com")
 	assert.Loosely(t, err, should.BeNil)
 
 	mockLLM := llm.NewMockClient(ctrl)
+
+	// The large file shouldn't be in the prompt, so the filesInfo section will be empty.
+	expectedPrompt := fmt.Sprintf(promptTemplate, "log", "commit abc123def456\nAuthor: \nMessage:\n", "")
+	mockLLM.EXPECT().GenerateContentWithSchema(gomock.Any(), expectedPrompt, fixforwardSchema).Return(`{"files":[{"path": "src/large.cc", "content": "fixed"}], "message": "fixed"}`, nil)
+
+	mockedGerrit.Client.EXPECT().CreateChange(gomock.Any(), gomock.Any()).Return(&gerritpb.ChangeInfo{
+		Number: 123,
+	}, nil)
+	mockedGerrit.Client.EXPECT().ChangeEditFileContent(gomock.Any(), gomock.Any()).Return(&emptypb.Empty{}, nil)
+	mockedGerrit.Client.EXPECT().ChangeEditPublish(gomock.Any(), gomock.Any()).Return(&emptypb.Empty{}, nil)
+	mockedGerrit.Client.EXPECT().SetReview(gomock.Any(), gomock.Any(), gomock.Any()).Return(&gerritpb.ReviewResult{}, nil)
 
 	cfa := &model.CompileFailureAnalysis{Id: 999}
 	err = GenerateFixforwardCL(
