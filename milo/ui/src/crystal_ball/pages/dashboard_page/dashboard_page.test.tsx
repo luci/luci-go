@@ -106,9 +106,9 @@ const mockDashboard: DashboardState = {
 
 describe('<DashboardPage />', () => {
   beforeAll(() => {
-    if (!self.crypto.randomUUID) {
-      self.crypto.randomUUID = () => '00000000-0000-0000-0000-000000000000';
-    }
+    jest
+      .spyOn(self.crypto, 'randomUUID')
+      .mockReturnValue('00000000-0000-0000-0000-000000000000');
   });
 
   beforeEach(() => {

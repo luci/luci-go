@@ -22,9 +22,7 @@ import { FilterEditor } from './filter_editor';
 
 const mockUUID = 'a-b-c-d-e';
 beforeAll(() => {
-  if (!self.crypto.randomUUID) {
-    self.crypto.randomUUID = () => mockUUID;
-  }
+  jest.spyOn(self.crypto, 'randomUUID').mockReturnValue(mockUUID);
 });
 
 afterAll(() => {

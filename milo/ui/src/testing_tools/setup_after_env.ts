@@ -182,6 +182,7 @@ Object.defineProperty(self, 'crypto', {
     subtle: crypto.webcrypto.subtle,
     // GetRandomValues is required by the nanoid package to run tests.
     getRandomValues: (arr: unknown[]) => crypto.randomBytes(arr.length),
+    randomUUID: () => crypto.randomUUID(),
   },
 });
 

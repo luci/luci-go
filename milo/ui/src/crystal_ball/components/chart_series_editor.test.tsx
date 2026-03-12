@@ -23,9 +23,6 @@ import { ChartSeriesEditor } from './chart_series_editor';
 let mockUUIDCount = 0;
 const expectedMockUUID = 'a-b-c-d-1';
 beforeAll(() => {
-  if (!self.crypto.randomUUID) {
-    self.crypto.randomUUID = jest.fn();
-  }
   jest.spyOn(self.crypto, 'randomUUID').mockImplementation(() => {
     mockUUIDCount++;
     return `a-b-c-d-${mockUUIDCount}`;
