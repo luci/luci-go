@@ -96,6 +96,8 @@ export default function AutorepairDialog({
     isPartner ? ' -namespace=os-partner' : ''
   } ${dutNames.join(' ')}`;
 
+  const satlabCommand = `satlab repair dut ${dutNames.join(' ')}`;
+
   const loadingScreen = (
     <>
       <DialogTitle>Running autorepair</DialogTitle>
@@ -114,7 +116,40 @@ export default function AutorepairDialog({
     </>
   );
 
-  const confirmationScreen = (
+  const confirmationScreen = isPartner ? (
+    <>
+      <DialogTitle>Running autorepair</DialogTitle>
+      <DialogContent>
+        <p>
+          Autorepair via Fleet Console is not currently supported for external
+          devices. Please use the Satlab CLI to repair this device.
+        </p>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <p>Equivalent satlab command:</p>
+          <Tooltip title="View documentation">
+            <IconButton
+              size="small"
+              href="http://go/satlab-manual"
+              target="_blank"
+            >
+              <HelpOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+        <CodeSnippet
+          displayText={satlabCommand}
+          copyText={satlabCommand}
+          copyKind="satlab_repair"
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleOk} variant="contained" disabled>
+          Confirm
+        </Button>
+      </DialogActions>
+    </>
+  ) : (
     <>
       <DialogTitle>Running autorepair</DialogTitle>
       <DialogContent>

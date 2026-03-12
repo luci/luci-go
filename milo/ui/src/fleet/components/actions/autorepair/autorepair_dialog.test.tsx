@@ -99,6 +99,34 @@ describe('<AutorepairDialog />', () => {
     expect(shivas).toBeVisible();
   });
 
+  it('renders satlab command for partner devices', async () => {
+    render(
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{
+            dutNames: ['test-dut', 'dut1', 'dut2', 'dut3'],
+            namespaces: ['os-partner'],
+          }}
+        />
+      </FakeAuthStateProvider>,
+    );
+
+    const satlab = screen.getByText(
+      'satlab repair dut test-dut dut1 dut2 dut3',
+    );
+    expect(satlab).toBeVisible();
+
+    expect(
+      screen.getByText(
+        /Autorepair via Fleet Console is not currently supported/i,
+      ),
+    ).toBeVisible();
+
+    const confirmButton = screen.getByRole('button', { name: 'Confirm' });
+    expect(confirmButton).toBeDisabled();
+  });
+
   it('renders all checkboxes', () => {
     render(
       <FakeAuthStateProvider>
