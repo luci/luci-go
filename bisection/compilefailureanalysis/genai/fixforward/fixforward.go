@@ -100,16 +100,22 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 			logging.Warningf(ctx, "failed to download file %s: %v", path, err)
 			continue
 		}
-		if len(content) > 50000 {
-			logging.Warningf(ctx, "file %s exceeds 50KB size limit, skipping file content generation for LLM prompt", path)
+		if len(content) > 500000 {
+			logging.Warningf(ctx, "file %s exceeds 500KB size limit, skipping file content generation for LLM prompt", path)
 			continue
 		}
 		filesInfo += fmt.Sprintf("\nFile: %s\n```\n%s\n```\n", path, content)
 	}
 
+	if filesInfo == "" {
+		return errors.Reason("no modified files within size limit found for culprit %s", culpritCommit).Err()
+	}
+
 	// 3. Construct prompt
 	clInfo := fmt.Sprintf("commit %s\nAuthor: %s\nMessage:\n%s", changelog.Commit, changelog.Author.Email, changelog.Message)
 	prompt := fmt.Sprintf(promptTemplate, failureLog, clInfo, filesInfo)
+
+	logging.Infof(ctx, "Sending prompt to LLM: %s", prompt)
 
 	// 4. Call LLM using Schema
 	respText, err := genaiClient.GenerateContentWithSchema(ctx, prompt, fixforwardSchema)
@@ -119,9 +125,18 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 
 	// 5. Parse LLM response
 	respText = strings.TrimSpace(respText)
+	respText = strings.TrimPrefix(respText, "```json")
+	respText = strings.TrimPrefix(respText, "```")
+	respText = strings.TrimSuffix(respText, "```")
+	respText = strings.TrimSpace(respText)
+
 	var llmParsed LLMResponse
 	if err := json.Unmarshal([]byte(respText), &llmParsed); err != nil {
 		return errors.Annotate(err, "failed to parse LLM JSON response").Err()
+	}
+
+	if len(llmParsed.Files) == 0 {
+		return errors.Reason("LLM generated no file changes for culprit %s", culpritCommit).Err()
 	}
 
 	// 6. Create Gerrit CL

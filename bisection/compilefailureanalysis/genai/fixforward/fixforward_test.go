@@ -17,7 +17,6 @@ package fixforward
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"testing"
 	"time"
 
@@ -122,7 +121,7 @@ func TestGenerateFixforwardCL_LargeFile(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	largeContent := make([]byte, 50001)
+	largeContent := make([]byte, 500001)
 	for i := range largeContent {
 		largeContent[i] = 'a'
 	}
@@ -152,17 +151,6 @@ func TestGenerateFixforwardCL_LargeFile(t *testing.T) {
 
 	mockLLM := llm.NewMockClient(ctrl)
 
-	// The large file shouldn't be in the prompt, so the filesInfo section will be empty.
-	expectedPrompt := fmt.Sprintf(promptTemplate, "log", "commit abc123def456\nAuthor: \nMessage:\n", "")
-	mockLLM.EXPECT().GenerateContentWithSchema(gomock.Any(), expectedPrompt, fixforwardSchema).Return(`{"files":[{"path": "src/large.cc", "content": "fixed"}], "message": "fixed"}`, nil)
-
-	mockedGerrit.Client.EXPECT().CreateChange(gomock.Any(), gomock.Any()).Return(&gerritpb.ChangeInfo{
-		Number: 123,
-	}, nil)
-	mockedGerrit.Client.EXPECT().ChangeEditFileContent(gomock.Any(), gomock.Any()).Return(&emptypb.Empty{}, nil)
-	mockedGerrit.Client.EXPECT().ChangeEditPublish(gomock.Any(), gomock.Any()).Return(&emptypb.Empty{}, nil)
-	mockedGerrit.Client.EXPECT().SetReview(gomock.Any(), gomock.Any(), gomock.Any()).Return(&gerritpb.ReviewResult{}, nil)
-
 	cfa := &model.CompileFailureAnalysis{Id: 999}
 	err = GenerateFixforwardCL(
 		ctx,
@@ -174,5 +162,6 @@ func TestGenerateFixforwardCL_LargeFile(t *testing.T) {
 		"https://chromium.googlesource.com/chromium/src",
 		"",
 	)
-	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, err, should.NotBeNil)
+	assert.Loosely(t, err.Error(), should.ContainSubstring("no modified files within size limit found"))
 }
