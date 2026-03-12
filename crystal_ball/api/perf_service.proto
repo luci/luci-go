@@ -11,7 +11,6 @@ import "google/longrunning/operations.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
-import "google/rpc/status.proto";
 
 // Service for Android performance-related data.
 service PerfService {
@@ -135,16 +134,6 @@ service PerfService {
       metadata_type: "DashboardStateOperationMetadata"
     };
     option (google.api.method_signature) = "name";
-  }
-
-  // Streams the data to populate the widgets defined within a DashboardState.
-  // This method applies all relevant global, chart, and series level filters
-  // as specified in the DashboardState content.
-  // The client is expected to send an initial request containing the
-  // DashboardState name or content. The server will stream back responses,
-  // each containing the data for a single widget.
-  rpc StreamDashboardData(stream StreamDashboardDataRequest)
-      returns (stream StreamDashboardDataResponse) {
   }
 
   // Fetches the data for a single widget within a DashboardState.
@@ -765,52 +754,6 @@ message UndeleteDashboardStateRequest {
 
   // If set, the request is validated but not actually executed.
   bool validate_only = 4 [(google.api.field_behavior) = OPTIONAL];
-}
-
-// Defines the request message for the `StreamDashboardData` method.
-message StreamDashboardDataRequest {
-  // The resource name of the DashboardState to fetch data for.
-  // Format: dashboardStates/{dashboard_state}
-  // This should be sent in the initial request.
-  string name = 1 [
-    (google.api.field_behavior) = OPTIONAL,
-    (google.api.resource_reference) = {
-      type: "crystalballperf.googleapis.com/DashboardState"
-    }
-  ];
-
-  // The core content of the dashboard to fetch data for.
-  // This can be sent in the initial request, especially for previewing
-  // unsaved changes. If 'name' is provided and this is also provided,
-  // this content overrides the stored state.
-  PerfDashboardContent dashboard_content = 2
-      [(google.api.field_behavior) = OPTIONAL];
-}
-
-// Defines the response message for the `StreamDashboardData` method.
-// Each message in the stream contains the result for a single widget.
-message StreamDashboardDataResponse {
-  // The ID of the widget this data result corresponds to.
-  string widget_id = 1;
-
-  // The type of widget data, pre-processed for the widget type.
-  oneof result_type {
-    // Data specifically prepared for a MultiMetricChart.
-    MultiMetricChartData multi_metric_chart_data = 2;
-
-    // Data for a Markdown widget
-    MarkdownWidget markdown_widget = 4;
-
-    // Data specifically prepared for a BreakdownTable widget
-    BreakdownTableData breakdown_table_data = 5;
-  }
-
-  // The status of the data fetch for this specific widget. If the status is
-  // `OK`, the `result_type` oneof will be populated. Otherwise, `result_type`
-  // will be empty, and this field will contain the error details.
-  // Per AIP-193, when populating this `Status` field for a widget-level error,
-  // the `details` field of the status must include an `ErrorInfo` message.
-  google.rpc.Status status = 3;
 }
 
 // Request message for the FetchDashboardWidgetData method.

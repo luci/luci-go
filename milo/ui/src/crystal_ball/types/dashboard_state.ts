@@ -15,8 +15,6 @@
 import { FieldMask } from '@/proto/google/protobuf/field_mask.pb';
 import { Timestamp } from '@/proto/google/protobuf/timestamp.pb';
 
-import { Operation } from './proto';
-
 /**
  * google.android.perf.v1.PerfDashboardContent
  */
@@ -548,34 +546,6 @@ export interface DashboardState {
    */
   revisionCreateTime?: Timestamp;
 }
-
-/**
- * google.android.perf.v1.DashboardStateOperationMetadata
- */
-export interface DashboardStateOperationMetadata {
-  /**
-   * The time at which this operation was created.
-   */
-  createTime?: Timestamp;
-
-  /**
-   * The dashboard state resource identifier that this operation corresponds to.
-   */
-  target?: string;
-
-  /**
-   * The version of the API used in this operation context.
-   */
-  apiVersion?: string;
-}
-
-/**
- * google.android.perf.v1.DashboardStateOperation
- */
-export type DashboardStateOperation = Operation<
-  DashboardStateOperationMetadata,
-  DashboardState
->;
 
 /**
  * google.android.perf.v1.CreateDashboardStateRequest

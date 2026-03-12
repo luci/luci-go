@@ -13,37 +13,6 @@
 // limitations under the License.
 
 import { Struct } from '@/proto/google/protobuf/struct.pb';
-import { Status } from '@/proto/google/rpc/status.pb';
-
-/**
- * google.longrunning.Operation
- */
-export interface Operation<TMetadata, TResponse> {
-  /**
-   * Operation identifier.
-   */
-  name?: string;
-
-  /**
-   * Custom metadata information.
-   */
-  metadata?: { [key: string]: TMetadata };
-
-  /**
-   * Flag to indicate whether the operation is complete or not.
-   */
-  done?: boolean;
-
-  /**
-   * If the operation had an error, the status details are contained within.
-   */
-  error?: Status;
-
-  /**
-   * Underlying API response for the operation.
-   */
-  response?: { [key: string]: TResponse };
-}
 
 /**
  * google.protobuf.Value

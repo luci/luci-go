@@ -31,7 +31,6 @@ import { API_BASE_URL } from '@/crystal_ball/constants';
 import {
   CreateDashboardStateRequest,
   DashboardState,
-  DashboardStateOperation,
   DeleteDashboardStateRequest,
   GetDashboardStateRequest,
   GetDashboardStateRevisionRequest,
@@ -43,6 +42,8 @@ import {
   UndeleteDashboardStateRequest,
   UpdateDashboardStateRequest,
 } from '@/crystal_ball/types';
+import { DashboardStateOperationMetadata } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+import { Operation } from '@/proto/google/longrunning/operations.pb';
 
 const BASE_PATH = `${API_BASE_URL}/v1`;
 
@@ -67,12 +68,14 @@ export const getDashboardStateQueryKey = (name: string) => [
 ];
 
 /**
- * A strictly typed version of DashboardStateOperation where the loosely
- * typed `response` field is explicitly cast to `DashboardState`.
+ * A strictly typed version of Operation where the loosely
+ * typed `response` field is explicitly cast to `DashboardState`
+ * and metadata is cast to `DashboardStateOperationMetadata`.
  */
 export interface TypedDashboardStateOperation
-  extends Omit<DashboardStateOperation, 'response'> {
+  extends Omit<Operation, 'response' | 'metadata'> {
   response?: DashboardState;
+  metadata?: DashboardStateOperationMetadata;
 }
 
 /**

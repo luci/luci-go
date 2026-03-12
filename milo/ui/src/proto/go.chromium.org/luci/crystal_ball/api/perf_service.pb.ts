@@ -6,13 +6,10 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { Observable } from "rxjs";
-import { map } from "rxjs/operators";
 import { Operation } from "../../../../google/longrunning/operations.pb";
 import { FieldMask } from "../../../../google/protobuf/field_mask.pb";
 import { Struct, Value } from "../../../../google/protobuf/struct.pb";
 import { Timestamp } from "../../../../google/protobuf/timestamp.pb";
-import { Status } from "../../../../google/rpc/status.pb";
 
 export const protobufPackage = "google.android.perf.v1";
 
@@ -693,52 +690,6 @@ export interface UndeleteDashboardStateRequest {
   readonly requestId: string;
   /** If set, the request is validated but not actually executed. */
   readonly validateOnly: boolean;
-}
-
-/** Defines the request message for the `StreamDashboardData` method. */
-export interface StreamDashboardDataRequest {
-  /**
-   * The resource name of the DashboardState to fetch data for.
-   * Format: dashboardStates/{dashboard_state}
-   * This should be sent in the initial request.
-   */
-  readonly name: string;
-  /**
-   * The core content of the dashboard to fetch data for.
-   * This can be sent in the initial request, especially for previewing
-   * unsaved changes. If 'name' is provided and this is also provided,
-   * this content overrides the stored state.
-   */
-  readonly dashboardContent: PerfDashboardContent | undefined;
-}
-
-/**
- * Defines the response message for the `StreamDashboardData` method.
- * Each message in the stream contains the result for a single widget.
- */
-export interface StreamDashboardDataResponse {
-  /** The ID of the widget this data result corresponds to. */
-  readonly widgetId: string;
-  /** Data specifically prepared for a MultiMetricChart. */
-  readonly multiMetricChartData?:
-    | MultiMetricChartData
-    | undefined;
-  /** Data for a Markdown widget */
-  readonly markdownWidget?:
-    | MarkdownWidget
-    | undefined;
-  /** Data specifically prepared for a BreakdownTable widget */
-  readonly breakdownTableData?:
-    | BreakdownTableData
-    | undefined;
-  /**
-   * The status of the data fetch for this specific widget. If the status is
-   * `OK`, the `result_type` oneof will be populated. Otherwise, `result_type`
-   * will be empty, and this field will contain the error details.
-   * Per AIP-193, when populating this `Status` field for a widget-level error,
-   * the `details` field of the status must include an `ErrorInfo` message.
-   */
-  readonly status: Status | undefined;
 }
 
 /** Request message for the FetchDashboardWidgetData method. */
@@ -4547,228 +4498,6 @@ export const UndeleteDashboardStateRequest: MessageFns<UndeleteDashboardStateReq
   },
 };
 
-function createBaseStreamDashboardDataRequest(): StreamDashboardDataRequest {
-  return { name: "", dashboardContent: undefined };
-}
-
-export const StreamDashboardDataRequest: MessageFns<StreamDashboardDataRequest> = {
-  encode(message: StreamDashboardDataRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.name !== "") {
-      writer.uint32(10).string(message.name);
-    }
-    if (message.dashboardContent !== undefined) {
-      PerfDashboardContent.encode(message.dashboardContent, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): StreamDashboardDataRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseStreamDashboardDataRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.name = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.dashboardContent = PerfDashboardContent.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): StreamDashboardDataRequest {
-    return {
-      name: isSet(object.name) ? globalThis.String(object.name) : "",
-      dashboardContent: isSet(object.dashboardContent)
-        ? PerfDashboardContent.fromJSON(object.dashboardContent)
-        : undefined,
-    };
-  },
-
-  toJSON(message: StreamDashboardDataRequest): unknown {
-    const obj: any = {};
-    if (message.name !== "") {
-      obj.name = message.name;
-    }
-    if (message.dashboardContent !== undefined) {
-      obj.dashboardContent = PerfDashboardContent.toJSON(message.dashboardContent);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<StreamDashboardDataRequest>): StreamDashboardDataRequest {
-    return StreamDashboardDataRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<StreamDashboardDataRequest>): StreamDashboardDataRequest {
-    const message = createBaseStreamDashboardDataRequest() as any;
-    message.name = object.name ?? "";
-    message.dashboardContent = (object.dashboardContent !== undefined && object.dashboardContent !== null)
-      ? PerfDashboardContent.fromPartial(object.dashboardContent)
-      : undefined;
-    return message;
-  },
-};
-
-function createBaseStreamDashboardDataResponse(): StreamDashboardDataResponse {
-  return {
-    widgetId: "",
-    multiMetricChartData: undefined,
-    markdownWidget: undefined,
-    breakdownTableData: undefined,
-    status: undefined,
-  };
-}
-
-export const StreamDashboardDataResponse: MessageFns<StreamDashboardDataResponse> = {
-  encode(message: StreamDashboardDataResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.widgetId !== "") {
-      writer.uint32(10).string(message.widgetId);
-    }
-    if (message.multiMetricChartData !== undefined) {
-      MultiMetricChartData.encode(message.multiMetricChartData, writer.uint32(18).fork()).join();
-    }
-    if (message.markdownWidget !== undefined) {
-      MarkdownWidget.encode(message.markdownWidget, writer.uint32(34).fork()).join();
-    }
-    if (message.breakdownTableData !== undefined) {
-      BreakdownTableData.encode(message.breakdownTableData, writer.uint32(42).fork()).join();
-    }
-    if (message.status !== undefined) {
-      Status.encode(message.status, writer.uint32(26).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): StreamDashboardDataResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseStreamDashboardDataResponse() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.widgetId = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.multiMetricChartData = MultiMetricChartData.decode(reader, reader.uint32());
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.markdownWidget = MarkdownWidget.decode(reader, reader.uint32());
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.breakdownTableData = BreakdownTableData.decode(reader, reader.uint32());
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.status = Status.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): StreamDashboardDataResponse {
-    return {
-      widgetId: isSet(object.widgetId) ? globalThis.String(object.widgetId) : "",
-      multiMetricChartData: isSet(object.multiMetricChartData)
-        ? MultiMetricChartData.fromJSON(object.multiMetricChartData)
-        : undefined,
-      markdownWidget: isSet(object.markdownWidget) ? MarkdownWidget.fromJSON(object.markdownWidget) : undefined,
-      breakdownTableData: isSet(object.breakdownTableData)
-        ? BreakdownTableData.fromJSON(object.breakdownTableData)
-        : undefined,
-      status: isSet(object.status) ? Status.fromJSON(object.status) : undefined,
-    };
-  },
-
-  toJSON(message: StreamDashboardDataResponse): unknown {
-    const obj: any = {};
-    if (message.widgetId !== "") {
-      obj.widgetId = message.widgetId;
-    }
-    if (message.multiMetricChartData !== undefined) {
-      obj.multiMetricChartData = MultiMetricChartData.toJSON(message.multiMetricChartData);
-    }
-    if (message.markdownWidget !== undefined) {
-      obj.markdownWidget = MarkdownWidget.toJSON(message.markdownWidget);
-    }
-    if (message.breakdownTableData !== undefined) {
-      obj.breakdownTableData = BreakdownTableData.toJSON(message.breakdownTableData);
-    }
-    if (message.status !== undefined) {
-      obj.status = Status.toJSON(message.status);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<StreamDashboardDataResponse>): StreamDashboardDataResponse {
-    return StreamDashboardDataResponse.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<StreamDashboardDataResponse>): StreamDashboardDataResponse {
-    const message = createBaseStreamDashboardDataResponse() as any;
-    message.widgetId = object.widgetId ?? "";
-    message.multiMetricChartData = (object.multiMetricChartData !== undefined && object.multiMetricChartData !== null)
-      ? MultiMetricChartData.fromPartial(object.multiMetricChartData)
-      : undefined;
-    message.markdownWidget = (object.markdownWidget !== undefined && object.markdownWidget !== null)
-      ? MarkdownWidget.fromPartial(object.markdownWidget)
-      : undefined;
-    message.breakdownTableData = (object.breakdownTableData !== undefined && object.breakdownTableData !== null)
-      ? BreakdownTableData.fromPartial(object.breakdownTableData)
-      : undefined;
-    message.status = (object.status !== undefined && object.status !== null)
-      ? Status.fromPartial(object.status)
-      : undefined;
-    return message;
-  },
-};
-
 function createBaseFetchDashboardWidgetDataRequest(): FetchDashboardWidgetDataRequest {
   return { name: undefined, dashboardContent: undefined, widgetId: "" };
 }
@@ -8153,15 +7882,6 @@ export interface PerfService {
    */
   UndeleteDashboardState(request: UndeleteDashboardStateRequest): Promise<Operation>;
   /**
-   * Streams the data to populate the widgets defined within a DashboardState.
-   * This method applies all relevant global, chart, and series level filters
-   * as specified in the DashboardState content.
-   * The client is expected to send an initial request containing the
-   * DashboardState name or content. The server will stream back responses,
-   * each containing the data for a single widget.
-   */
-  StreamDashboardData(request: Observable<StreamDashboardDataRequest>): Observable<StreamDashboardDataResponse>;
-  /**
    * Fetches the data for a single widget within a DashboardState.
    * This method applies all relevant global, chart, and series level filters
    * as specified in the DashboardState content for the given widget.
@@ -8226,7 +7946,6 @@ export class PerfServiceClientImpl implements PerfService {
     this.ListDashboardStates = this.ListDashboardStates.bind(this);
     this.DeleteDashboardState = this.DeleteDashboardState.bind(this);
     this.UndeleteDashboardState = this.UndeleteDashboardState.bind(this);
-    this.StreamDashboardData = this.StreamDashboardData.bind(this);
     this.FetchDashboardWidgetData = this.FetchDashboardWidgetData.bind(this);
     this.ListDashboardStateRevisions = this.ListDashboardStateRevisions.bind(this);
     this.GetDashboardStateRevision = this.GetDashboardStateRevision.bind(this);
@@ -8306,12 +8025,6 @@ export class PerfServiceClientImpl implements PerfService {
     return promise.then((data) => Operation.fromJSON(data));
   }
 
-  StreamDashboardData(request: Observable<StreamDashboardDataRequest>): Observable<StreamDashboardDataResponse> {
-    const data = request.pipe(map((request) => StreamDashboardDataRequest.toJSON(request)));
-    const result = this.rpc.bidirectionalStreamingRequest(this.service, "StreamDashboardData", data);
-    return result.pipe(map((data) => StreamDashboardDataResponse.fromJSON(data)));
-  }
-
   FetchDashboardWidgetData(request: FetchDashboardWidgetDataRequest): Promise<FetchDashboardWidgetDataResponse> {
     const data = FetchDashboardWidgetDataRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "FetchDashboardWidgetData", data);
@@ -8365,9 +8078,6 @@ export class PerfServiceClientImpl implements PerfService {
 
 interface Rpc {
   request(service: string, method: string, data: unknown): Promise<unknown>;
-  clientStreamingRequest(service: string, method: string, data: Observable<Uint8Array>): Promise<Uint8Array>;
-  serverStreamingRequest(service: string, method: string, data: Uint8Array): Observable<Uint8Array>;
-  bidirectionalStreamingRequest(service: string, method: string, data: Observable<Uint8Array>): Observable<Uint8Array>;
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
