@@ -33,6 +33,21 @@ jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
   })),
 }));
 
+jest.mock('@/crystal_ball/hooks/use_measurement_filter_api', () => ({
+  useListMeasurementFilterColumns: jest.fn(() => ({
+    data: {
+      measurementFilterColumns: [
+        { column: 'atp_test_name' },
+        { column: 'build_branch' },
+        { column: 'build_target' },
+        { column: 'test_name' },
+        { column: 'model' },
+        { column: 'sku' },
+      ],
+    },
+  })),
+}));
+
 jest.mock('@/common/components/auth_state_provider', () => ({
   ...jest.requireActual('@/common/components/auth_state_provider'),
   useAuthState: jest

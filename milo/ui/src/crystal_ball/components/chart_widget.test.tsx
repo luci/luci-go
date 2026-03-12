@@ -103,7 +103,13 @@ describe('ChartWidget', () => {
 
   it('should display loading state', () => {
     mockUseSearchMeasurements.mockReturnValue({ isLoading: true });
-    render(<ChartWidget onUpdate={jest.fn()} widget={baseWidget} />);
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        filterColumns={[]}
+      />,
+    );
     expect(screen.getByTestId('circular-progress')).toBeInTheDocument();
   });
 
@@ -112,7 +118,13 @@ describe('ChartWidget', () => {
       isError: true,
       error: { message: 'Failed to fetch' },
     });
-    render(<ChartWidget onUpdate={jest.fn()} widget={baseWidget} />);
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        filterColumns={[]}
+      />,
+    );
     expect(screen.getByTestId('alert')).toHaveTextContent(
       'Error fetching chart data: Failed to fetch',
     );
@@ -120,7 +132,13 @@ describe('ChartWidget', () => {
 
   it('should display no data message when response is empty', () => {
     mockUseSearchMeasurements.mockReturnValue({ data: { rows: [] } });
-    render(<ChartWidget onUpdate={jest.fn()} widget={baseWidget} />);
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        filterColumns={[]}
+      />,
+    );
     expect(screen.getByTestId('typography')).toHaveTextContent(
       'No data found for the given parameters.',
     );
@@ -140,7 +158,13 @@ describe('ChartWidget', () => {
         ],
       },
     });
-    render(<ChartWidget onUpdate={jest.fn()} widget={baseWidget} />);
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        filterColumns={[]}
+      />,
+    );
     expect(screen.getByTestId('typography')).toHaveTextContent(
       'No data found for the given parameters.',
     );
@@ -175,7 +199,13 @@ describe('ChartWidget', () => {
     ];
     mockUseSearchMeasurements.mockReturnValue({ data: { rows } });
 
-    render(<ChartWidget onUpdate={jest.fn()} widget={baseWidget} />);
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        filterColumns={[]}
+      />,
+    );
 
     expect(screen.getByTestId('time-series-chart')).toBeInTheDocument();
     expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
@@ -190,7 +220,13 @@ describe('ChartWidget', () => {
     const endTime = now;
     mockGetAbsoluteStartEndTime.mockReturnValue({ startTime, endTime });
 
-    render(<ChartWidget onUpdate={jest.fn()} widget={baseWidget} />);
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        filterColumns={[]}
+      />,
+    );
 
     expect(mockGetAbsoluteStartEndTime).toHaveBeenCalledWith(
       expect.any(URLSearchParams),
@@ -255,7 +291,13 @@ describe('ChartWidget', () => {
     const endTime = now;
     mockGetAbsoluteStartEndTime.mockReturnValue({ startTime, endTime });
 
-    render(<ChartWidget onUpdate={jest.fn()} widget={widgetWithFilters} />);
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={widgetWithFilters}
+        filterColumns={[]}
+      />,
+    );
 
     const expectedRequest: SearchMeasurementsRequest = {
       metricKeys: ['metric1', 'metric2'],
@@ -282,7 +324,13 @@ describe('ChartWidget', () => {
       dataSpecId: 'mockspec',
       displayName: 'No Series Chart',
     };
-    render(<ChartWidget onUpdate={jest.fn()} widget={widgetNoSeries} />);
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={widgetNoSeries}
+        filterColumns={[]}
+      />,
+    );
     // useSearchMeasurements should not be enabled
     expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
       expect.objectContaining({ metricKeys: [] }),

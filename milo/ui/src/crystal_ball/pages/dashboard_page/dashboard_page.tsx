@@ -48,6 +48,7 @@ import {
   useGetDashboardState,
   useUpdateDashboardState,
 } from '@/crystal_ball/hooks/use_dashboard_state_api';
+import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { DashboardState, PerfWidget, WidgetType } from '@/crystal_ball/types';
 import { formatApiError } from '@/crystal_ball/utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -167,6 +168,23 @@ export function DashboardPage() {
     {
       enabled: !!dashboardId,
     },
+  );
+
+  const { data: filterColumnsResponse } = useListMeasurementFilterColumns(
+    {
+      parent: `dashboardStates/${dashboardId}/dataSpecs/${DATA_SPEC_ID}`,
+    },
+    {
+      enabled: !!dashboardId,
+    },
+  );
+
+  const filterColumns = useMemo(
+    () =>
+      filterColumnsResponse?.measurementFilterColumns
+        ?.map((c) => c.column)
+        .filter((c): c is string => !!c) || [],
+    [filterColumnsResponse],
   );
 
   const [toastMessage, setToastMessage] = useState('');
@@ -483,6 +501,7 @@ export function DashboardPage() {
             {widget.chart && (
               <ChartWidget
                 widget={widget.chart}
+                filterColumns={filterColumns}
                 onUpdate={(updatedChartWidget) =>
                   handleUpdateWidget(index, {
                     ...widget,

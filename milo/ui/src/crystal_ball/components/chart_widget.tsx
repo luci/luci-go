@@ -35,9 +35,14 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 interface ChartWidgetProps {
   onUpdate: (updatedWidget: PerfChartWidget) => void;
   widget: PerfChartWidget;
+  filterColumns: string[];
 }
 
-export function ChartWidget({ onUpdate, widget }: ChartWidgetProps) {
+export function ChartWidget({
+  onUpdate,
+  widget,
+  filterColumns,
+}: ChartWidgetProps) {
   const [searchParams] = useSyncedSearchParams();
 
   // TODO: b/475638132 - Read time filters from PerfChartWidget
@@ -213,6 +218,7 @@ export function ChartWidget({ onUpdate, widget }: ChartWidgetProps) {
         filters={widget.filters || []}
         onUpdateFilters={handleFiltersUpdate}
         dataSpecId={widget.dataSpecId}
+        availableColumns={filterColumns}
       />
     </Box>
   );

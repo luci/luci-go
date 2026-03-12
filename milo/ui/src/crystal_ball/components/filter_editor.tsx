@@ -35,17 +35,6 @@ import { useEffect, useState } from 'react';
 
 import { PerfFilter } from '@/crystal_ball/types';
 
-// TODO: b/475638132 - Use the ListMeasurementFilterColumns RPC to get these values once streaming
-// is live.
-const AVAILABLE_COLUMNS = [
-  'atp_test_name',
-  'build_branch',
-  'build_target',
-  'test_name',
-  'model',
-  'sku',
-];
-
 // TODO: b/475638132 - Once ListMeasurementFilterColumns RPC is being used, column types are known and can be used to determine appropriate
 // filter operators.
 const OPERATORS = [
@@ -80,12 +69,14 @@ interface FilterEditorProps {
   filters: PerfFilter[];
   onUpdateFilters: (updatedFilters: PerfFilter[]) => void;
   dataSpecId: string;
+  availableColumns: string[];
 }
 
 export function FilterEditor({
   filters,
   onUpdateFilters,
   dataSpecId,
+  availableColumns,
 }: FilterEditorProps) {
   const [expanded, setExpanded] = useState(false);
   // Local state to manage draft text inputs, keyed by filter id
@@ -105,7 +96,7 @@ export function FilterEditor({
     const newFilterId = `filter-${crypto.randomUUID()}`;
     const newFilter: PerfFilter = {
       id: newFilterId,
-      column: AVAILABLE_COLUMNS[0],
+      column: availableColumns[0] || '',
       dataSpecId: dataSpecId,
       displayName: 'New Filter',
       textInput: {
@@ -244,7 +235,13 @@ export function FilterEditor({
                   inputProps={{ 'aria-label': 'Column' }}
                   sx={{ minWidth: 120 }}
                 >
-                  {AVAILABLE_COLUMNS.map((col) => (
+                  {filter.column &&
+                    !availableColumns.includes(filter.column) && (
+                      <MenuItem key={filter.column} value={filter.column}>
+                        {filter.column}
+                      </MenuItem>
+                    )}
+                  {availableColumns.map((col) => (
                     <MenuItem key={col} value={col}>
                       {col}
                     </MenuItem>

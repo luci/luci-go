@@ -35,6 +35,14 @@ const defaultProps = {
   filters: [] as PerfFilter[],
   onUpdateFilters: jest.fn(),
   dataSpecId: 'test-spec-id',
+  availableColumns: [
+    'atp_test_name',
+    'build_branch',
+    'build_target',
+    'test_name',
+    'model',
+    'sku',
+  ],
 };
 
 describe('FilterEditor', () => {
