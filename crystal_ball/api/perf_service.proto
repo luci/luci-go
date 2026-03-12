@@ -2,27 +2,793 @@ syntax = "proto3";
 
 package google.android.perf.v1;
 
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/field_info.proto";
+import "google/api/resource.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 import "google/rpc/status.proto";
 
 // Service for Android performance-related data.
 service PerfService {
+  // RPC for getting CrystalBall measurements.
+  rpc SearchMeasurements(SearchMeasurementsRequest)
+      returns (SearchMeasurementsResponse) {
+    option (google.api.http) = {
+      get: "/v1/measurements:search"
+    };
+  }
+
+  // RPC to discover filterable columns for measurements.
+  rpc ListMeasurementFilterColumns(ListMeasurementFilterColumnsRequest)
+      returns (ListMeasurementFilterColumnsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=dashboardStates/*/dataSpecs/*}/measurementFilterColumns"
+    };
+    option (google.api.method_signature) = "parent";
+  }
+
+  // RPC to get distinct values for a specific filter column,
+  // supporting autocomplete.
+  rpc SuggestMeasurementFilterValues(SuggestMeasurementFilterValuesRequest)
+      returns (SuggestMeasurementFilterValuesResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=dashboardStates/*/dataSpecs/*}/measurementFilterColumns:suggestValues"
+    };
+  }
+
+  // RPC to search for metric definitions.
+  rpc SearchMetricDefinitions(SearchMetricDefinitionsRequest)
+      returns (SearchMetricDefinitionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/metricDefinitions:search"
+    };
+  }
+
+  // Sample RPC for testing the service via a ping.
+  rpc TestConnection(TestConnectionRequest) returns (TestConnectionResponse) {
+    option (google.api.http) = {
+      get: "/v1/perf:testConnection"
+    };
+  }
+
+  // Creates a new DashboardState. A client-provided ID can be used,
+  // otherwise the server will assign a unique ID.
+  // This method returns a Long Running Operation (AIP-151).
+  rpc CreateDashboardState(CreateDashboardStateRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/dashboardStates"
+      body: "dashboard_state"
+    };
+    option (google.longrunning.operation_info) = {
+      response_type: "DashboardState"
+      metadata_type: "DashboardStateOperationMetadata"
+    };
+    option (google.api.method_signature) = "dashboard_state,dashboard_state_id";
+  }
+
+  // Updates an existing DashboardState.
+  // This method returns a Long Running Operation (AIP-151).
+  rpc UpdateDashboardState(UpdateDashboardStateRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      patch: "/v1/{dashboard_state.name=dashboardStates/*}"
+      body: "dashboard_state"
+    };
+    option (google.api.method_signature) = "dashboard_state,update_mask";
+    option (google.longrunning.operation_info) = {
+      response_type: "DashboardState"
+      metadata_type: "DashboardStateOperationMetadata"
+    };
+  }
+
+  // Gets a DashboardState.
+  rpc GetDashboardState(GetDashboardStateRequest) returns (DashboardState) {
+    option (google.api.http) = {
+      get: "/v1/{name=dashboardStates/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Lists DashboardStates accessible to the caller.
+  rpc ListDashboardStates(ListDashboardStatesRequest)
+      returns (ListDashboardStatesResponse) {
+    option (google.api.http) = {
+      get: "/v1/dashboardStates"
+    };
+    option (google.api.method_signature) = "";
+  }
+
+  // Deletes a DashboardState. This is a soft delete, and the resource
+  // can be recovered using UndeleteDashboardState.
+  // This method returns a Long Running Operation (AIP-151).
+  rpc DeleteDashboardState(DeleteDashboardStateRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v1/{name=dashboardStates/*}"
+    };
+    option (google.longrunning.operation_info) = {
+      response_type: "DashboardState"
+      metadata_type: "DashboardStateOperationMetadata"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Undeletes a DashboardState. This reverts a soft-deleted resource.
+  // This method returns a Long Running Operation (AIP-151).
+  // (-- api-linter: core::0136::response-message-name=disabled
+  //     aip.dev/not-precedent: AIP-164 Undelete methods must return the
+  //     resource itself, so the LRO response_type is the resource name. --)
+  rpc UndeleteDashboardState(UndeleteDashboardStateRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{name=dashboardStates/*}:undelete"
+      body: "*"
+    };
+    option (google.longrunning.operation_info) = {
+      response_type: "DashboardState"
+      metadata_type: "DashboardStateOperationMetadata"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
   // Streams the data to populate the widgets defined within a DashboardState.
-  rpc StreamDashboardData(StreamDashboardDataRequest)
+  // This method applies all relevant global, chart, and series level filters
+  // as specified in the DashboardState content.
+  // The client is expected to send an initial request containing the
+  // DashboardState name or content. The server will stream back responses,
+  // each containing the data for a single widget.
+  rpc StreamDashboardData(stream StreamDashboardDataRequest)
       returns (stream StreamDashboardDataResponse) {
   }
+
+  // Fetches the data for a single widget within a DashboardState.
+  // This method applies all relevant global, chart, and series level filters
+  // as specified in the DashboardState content for the given widget.
+  // (-- api-linter: core::0131::synonyms=disabled
+  //     aip.dev/not-precedent: This is a custom method to fetch data for a
+  //     specific widget within a dashboard, not a standard Get on a resource.
+  //     It requires additional parameters like widget_id and dashboard content.
+  // --)
+  // (-- api-linter: core::0136::http-method=disabled
+  //     aip.dev/not-precedent: This method uses POST instead of GET because
+  //     the request message includes the 'dashboard_content' field, which can
+  //     be large and complex. This data must be sent in the request body,
+  //     which is only supported by POST, not GET, as per AIP-136.
+  // --)
+  rpc FetchDashboardWidgetData(FetchDashboardWidgetDataRequest)
+      returns (FetchDashboardWidgetDataResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=dashboardStates/*}:fetchDashboardWidgetData"
+      body: "*"
+      additional_bindings {
+        post: "/v1/dashboardStates:fetchDashboardWidgetData"
+        body: "*"
+      }
+    };
+  }
+
+  // Lists revisions of a DashboardState.
+  rpc ListDashboardStateRevisions(ListDashboardStateRevisionsRequest)
+      returns (ListDashboardStateRevisionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{name=dashboardStates/*}/revisions"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Gets a specific revision of a DashboardState.
+  // Note: Per AIP-162, the revision is a snapshot, so we return DashboardState.
+  // (-- api-linter: core::0131::response-message-name=disabled
+  //     aip.dev/not-precedent: This RPC returns a resource revision,
+  //     which uses the resource type as the response message as per AIP-162.
+  //     --)
+  rpc GetDashboardStateRevision(GetDashboardStateRevisionRequest)
+      returns (DashboardState) {
+    option (google.api.http) = {
+      get: "/v1/{name=dashboardStates/*/revisions/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Rolls back a DashboardState to a specific revision.
+  // This creates a new revision in the history.
+  // (Imperative only.)
+  rpc RollbackDashboardState(RollbackDashboardStateRequest)
+      returns (DashboardState) {
+    option (google.api.http) = {
+      post: "/v1/{name=dashboardStates/*}:rollback"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name,revision_id";
+  }
+
+  // Gets the UserSettings for the authenticated user.
+  rpc GetUserSettings(GetUserSettingsRequest) returns (UserSettings) {
+    option (google.api.http) = {
+      get: "/v1/{name=users/*/settings}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Updates the UserSettings for the authenticated user.
+  rpc UpdateUserSettings(UpdateUserSettingsRequest) returns (UserSettings) {
+    option (google.api.http) = {
+      patch: "/v1/{user_settings.name=users/*/settings}"
+      body: "user_settings"
+    };
+    option (google.api.method_signature) = "user_settings,update_mask";
+  }
+
+  // Adds a dashboard to the user's starred list.
+  rpc AddStarredDashboard(AddStarredDashboardRequest) returns (UserSettings) {
+    option (google.api.http) = {
+      post: "/v1/{name=users/*/settings}:addStarredDashboard"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name,dashboard";
+  }
+
+  // Removes a dashboard from the user's starred list.
+  rpc RemoveStarredDashboard(RemoveStarredDashboardRequest)
+      returns (UserSettings) {
+    option (google.api.http) = {
+      post: "/v1/{name=users/*/settings}:removeStarredDashboard"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name,dashboard";
+  }
+}
+
+// Request message for testing the connection to the service.
+message TestConnectionRequest {}
+
+// Response message for testing the connection to the service.
+message TestConnectionResponse {}
+
+// Request message for getting CrystalBall measurements.
+message SearchMeasurementsRequest {
+  // Filter for test_name using SQL LIKE operator.
+  // Callers should include wildcards (%) as needed in the filter string.
+  // Examples:
+  //   "foo%" - starts with foo
+  //   "%foo" - ends with foo
+  //   "%foo%" - contains foo
+  //   "foo" - exact match
+  optional string test_name_filter = 1 [(google.api.field_behavior) = OPTIONAL];
+  // Build creation timestamp start filter.
+  optional google.protobuf.Timestamp build_create_start_time = 2
+      [(google.api.field_behavior) = OPTIONAL];
+  // Build creation timestamp end filter.
+  optional google.protobuf.Timestamp build_create_end_time = 3
+      [(google.api.field_behavior) = OPTIONAL];
+  // Mutually exclusive with start/end timestamps
+  optional int32 last_n_days = 4 [(google.api.field_behavior) = OPTIONAL];
+  // Branch filter.
+  optional string build_branch = 5 [(google.api.field_behavior) = OPTIONAL];
+  // Build target filter.
+  optional string build_target = 6 [(google.api.field_behavior) = OPTIONAL];
+  // Filter for atp_test_name using SQL LIKE operator.
+  // Callers should include wildcards (%) as needed in the filter string.
+  // Examples:
+  //   "foo%" - starts with foo
+  //   "%foo" - ends with foo
+  //   "%foo%" - contains foo
+  //   "foo" - exact match
+  optional string atp_test_name_filter = 7
+      [(google.api.field_behavior) = OPTIONAL];
+  // If specified, only metrics with these keys will be returned.
+  repeated string metric_keys = 8 [(google.api.field_behavior) = OPTIONAL];
+  // If specified, these columns will be returned in the response.
+  // Valid column names can be found in the schema for the base table
+  // napa.android_crystalball_cbdw.cbdw.Measurements, which is queried
+  // by the cbdw_measurements_full() function.
+  // Schema can be viewed in DataNexus:
+  // http://go/data/details/napa.android_crystalball_cbdw.cbdw.Measurements
+  repeated string extra_columns = 9 [(google.api.field_behavior) = OPTIONAL];
+  // Page size for pagination.
+  optional int32 page_size = 10 [(google.api.field_behavior) = OPTIONAL];
+  // Page token for pagination.
+  optional string page_token = 11 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for getting CrystalBall measurements.
+message SearchMeasurementsResponse {
+  // Define a structure to hold the query results
+  repeated MeasurementRow rows = 1;
+  // Page token for pagination.
+  optional string next_page_token = 2;
+}
+
+// Row message for holding the query results.
+message MeasurementRow {
+  // Test name.
+  optional string test = 1;
+  // Build creation timestamp.
+  optional google.protobuf.Timestamp build_create_time = 2;
+  // Build branch.
+  optional string build_branch = 3;
+  // Build target.
+  optional string build_target = 4;
+  // ATP test name.
+  optional string atp_test = 5;
+  // Metric key.
+  optional string metric_key = 6;
+  // Metric value.
+  optional double value = 7;
+  // Build ID.
+  optional string build_id = 8;
+  // Ants invocation ID.
+  optional string ants_invocation_id = 9;
+  // Additional columns
+  map<string, google.protobuf.Value> extra_columns = 10;
+}
+
+// Request message for getting filter columns.
+message ListMeasurementFilterColumnsRequest {
+  // The parent PerfDataSpec resource name.
+  // Format: dashboardStates/{dashboard_state}/dataSpecs/{data_spec}
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DataSpec"
+    }
+  ];
+
+  // The maximum number of columns to return. The service may return fewer than
+  // this value. If unspecified, at most 100 columns will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // A page token, received from a previous `ListMeasurementFilterColumns` call.
+  // Provide this to retrieve the subsequent page.
+  // When paginating, all other parameters provided to
+  // `ListMeasurementFilterColumns` must match the call that provided the page
+  // token.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for getting filter columns.
+message ListMeasurementFilterColumnsResponse {
+  // The filter columns.
+  repeated MeasurementFilterColumn measurement_filter_columns = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Represents a filterable column for measurements.
+// This is not a standalone resource, but a descriptor used within responses.
+message MeasurementFilterColumn {
+  // The unique identifier for the column within the data spec.
+  string column = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Enum defining the possible data types for a filter column.
+  enum ColumnDataType {
+    // Unspecified data type.
+    COLUMN_DATA_TYPE_UNSPECIFIED = 0;
+    // String data type.
+    STRING = 1;
+    // Integer data type.
+    INT64 = 2;
+    // Double data type.
+    DOUBLE = 3;
+    // Boolean data type.
+    BOOLEAN = 4;
+    // Timestamp data type.
+    TIMESTAMP = 5;
+    // Date data type.
+    DATE = 6;
+  }
+
+  // The data type of the column.
+  ColumnDataType data_type = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // A small list of example values for this column.
+  repeated string sample_values = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Indicates if this is a primary column, suggested to be displayed
+  // prominently.
+  bool primary = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Indicates if this column represents a plottable metric key.
+  // Metric keys are stored alongside other measurements in the same table,
+  // but act as the series in charts rather than as filters.
+  bool is_metric_key = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Defines the possible scopes where a filter column can be applied.
+  // This enum is not frozen, and new values may be added in the future.
+  enum FilterScope {
+    // Unspecified scope.
+    FILTER_SCOPE_UNSPECIFIED = 0;
+    // Suitable for use as a global filter across the dashboard.
+    GLOBAL = 1;
+    // Suitable for use as a widget-level filter.
+    WIDGET = 2;
+    // Suitable for use as a metric-level filter (e.g., within a series).
+    METRIC = 3;
+  }
+
+  // The scopes at which this column can be applied as a filter.
+  // A column can be valid in multiple scopes.
+  repeated FilterScope applicable_scopes = 6 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = UNORDERED_LIST
+  ];
+}
+
+// Request message for getting filter values.
+message SuggestMeasurementFilterValuesRequest {
+  // The parent PerfDataSpec resource name. For example:
+  // Format: dashboardStates/{dashboard_state}/dataSpecs/{data_spec}
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DataSpec"
+    }
+  ];
+
+  // The column name to get values from.
+  string column = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The prefix string the user has typed for autocomplete.
+  // If empty, a general sample of values may be returned.
+  string query = 3 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Maximum number of suggestions to return.
+  int32 max_result_count = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for getting filter values.
+message SuggestMeasurementFilterValuesResponse {
+  // The list of filter values.
+  repeated string values = 1;
+}
+
+// New Request/Response Messages:
+message SearchMetricDefinitionsRequest {
+  // Filter string to search for metric definitions.
+  // Supports filtering on fields of the MetricDefinition message. Examples:
+  // - metric_id: "metric_id=showmap_PSS_bytes_com.android.systemui"
+  // - display_name: "display_name=\"*SystemUI PSS*\""
+  // - Partial search: "metric_id=\"*per*\" OR display_name=\"*per*\""
+  // Standard AIP-160 filtering (go/aip/160) should be supported.
+  string filter = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // The maximum number of metric definitions to return. The service may return
+  // fewer than this value.
+  optional int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // A page token, received from a previous `SearchMetricDefinitions` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for searching for metric definitions.
+message SearchMetricDefinitionsResponse {
+  // The metric definitions matching the search criteria.
+  repeated MetricDefinition metric_definitions = 1;
+
+  // A token to retrieve the next page of results.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Represents a single Metric Definition, mirroring the cbdb-spanner.sdl table.
+message MetricDefinition {
+  // The unique ID for this specific definition (from
+  // MetricDefinitionIdSequence).
+  string metric_definition_id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The base metric identifier, often referred to as metric key.
+  string metric_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The unit of the metric (e.g., BYTES, MILLISECONDS).
+  // Corresponds to tradefed.crystalball.dimensional_metrics.Unit.
+  string unit = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The polarity indicating if higher or lower values are better.
+  // Corresponds to tradefed.crystalball.dimensional_metrics.Polarity.
+  string polarity = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The source of this metric definition.
+  // Corresponds to tradefed.crystalball.dimensional_metrics.Source.
+  string source = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // User-friendly display name for this metric definition.
+  string display_name = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The statistical keys associated with this metric definition.
+  repeated string statistical_keys = 7
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Represents a saved dashboard state. This is the resource.
+// Used to store dashboard configurations, for example, from LUCI UI.
+message DashboardState {
+  option (google.api.resource) = {
+    type: "crystalballperf.googleapis.com/DashboardState"
+    pattern: "dashboardStates/{dashboard_state}"
+    singular: "dashboardState"
+    plural: "dashboardStates"
+    style: DECLARATIVE_FRIENDLY
+  };
+
+  // The resource name of the dashboard state.
+  // Format: dashboardStates/{dashboard_state}
+  // The {dashboard_state} part can be provided by the client in the
+  // `CreateDashboardStateRequest.dashboard_state_id` field, or if not provided,
+  // it will be server-generated.
+  string name = 1 [
+    (google.api.field_behavior) = IDENTIFIER
+  ];
+
+  // The core content of the dashboard, such as filters and data sources.
+  // This structure is inspired by Plx, but is defined and contained within
+  // this API to ensure independence (AIP-215).
+  PerfDashboardContent dashboard_content = 2
+      [(google.api.field_behavior) = REQUIRED];
+
+  // User-friendly name for this saved state.
+  string display_name = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional description for this saved state.
+  string description = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Timestamp when the resource was first created.
+  google.protobuf.Timestamp create_time = 5
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Timestamp when the resource was last updated.
+  google.protobuf.Timestamp update_time = 6
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Timestamp when the resource was soft deleted.
+  google.protobuf.Timestamp delete_time = 7
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Timestamp when the soft-deleted resource will be permanently purged.
+  google.protobuf.Timestamp purge_time = 8
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // A server-assigned checksum for optimistic concurrency control.
+  // See https://google.aip.dev/154.
+  string etag = 9;
+
+  // A system-generated unique identifier for this resource.
+  string uid = 10 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_info).format = UUID4
+  ];
+
+  // Unstructured key/value map for labels. See https://google.aip.dev/128.
+  map<string, string> annotations = 11 [(google.api.field_behavior) = OPTIONAL];
+
+  // Indicates whether the resource is currently being reconciled.
+  // See https://google.aip.dev/128.
+  bool reconciling = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The revision ID of this DashboardState snapshot.
+  // The format is an 8-character hexadecimal string.
+  // This field is OUTPUT_ONLY.
+  string revision_id = 13 [
+    (google.api.field_behavior) = IMMUTABLE,
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // The timestamp when this revision was created.
+  // This field is OUTPUT_ONLY.
+  google.protobuf.Timestamp revision_create_time = 14
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Metadata for DashboardState Long Running Operations.
+message DashboardStateOperationMetadata {
+  // The time the operation was created.
+  google.protobuf.Timestamp create_time = 1
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The target resource name.
+  string target = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // API version used to start the operation.
+  string api_version = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Request message for CreateDashboardState.
+message CreateDashboardStateRequest {
+  // The dashboard state to create.
+  DashboardState dashboard_state = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID to use for the dashboard state, which will become the final
+  // component of the dashboard state's resource name.
+  //
+  // This value should be 4-63 characters and conform to RFC-1034.
+  // It must start with a lowercase letter, and all subsequent characters
+  // must be lowercase letters, numbers, or hyphens, and the value must not
+  // end with a hyphen.
+  string dashboard_state_id = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // If set, the request is validated but not actually executed.
+  bool validate_only = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided.
+  string request_id = 4 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.field_info).format = UUID4
+  ];
+}
+
+// Request message for UpdateDashboardState.
+message UpdateDashboardStateRequest {
+  // The dashboard state to update.
+  // The `dashboard_state.name` field is used to identify the resource
+  // and must be provided by the client.
+  DashboardState dashboard_state = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to update.
+  // If omitted, all fields provided in the request will be updated.
+  google.protobuf.FieldMask update_mask = 2
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // If set to true, and the DashboardState is not found, a new DashboardState
+  // will be created.
+  bool allow_missing = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // If set, the request is validated but not actually executed.
+  bool validate_only = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided.
+  string request_id = 5 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.field_info).format = UUID4
+  ];
+}
+
+// Request message for GetDashboardState.
+message GetDashboardStateRequest {
+  // The name of the dashboard state to retrieve.
+  // Format: dashboardStates/{dashboard_state}
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
+}
+
+// Request message for ListDashboardStates.
+message ListDashboardStatesRequest {
+  // The maximum number of dashboard states to return. The service may return
+  // fewer than this value. If unspecified, at most 50 dashboard states will be
+  // returned. The maximum value is 1000; values above 1000 will be coerced to
+  // 1000.
+  int32 page_size = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // A page token, received from a previous `ListDashboardStates` call.
+  // Provide this to retrieve the subsequent page.
+  // When paginating, all other parameters provided to `ListDashboardStates`
+  // must match the call that provided the page token.
+  string page_token = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Filter string to narrow down the list of DashboardStates.
+  // See https://google.aip.dev/160 for syntax.
+  // Example: "display_name = \"*My Dashboard*\""
+  string filter = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // If set to true, only deleted DashboardStates will be included in the
+  // response.
+  bool show_deleted = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListDashboardStates.
+message ListDashboardStatesResponse {
+  // The dashboard states accessible to the user.
+  repeated DashboardState dashboard_states = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+
+  // The total number of dashboard states in the collection.
+  // This is an estimate and may not be exact.
+  int32 total_size = 3;
+}
+
+// Request message for DeleteDashboardState.
+message DeleteDashboardStateRequest {
+  // The name of the dashboard state to delete.
+  // Format: dashboardStates/{dashboard_state}
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
+
+  // Optional. The etag of the dashboard state.
+  // If this is provided, it must match the server's etag.
+  string etag = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // If set, the request is validated but not actually executed.
+  bool validate_only = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // If set to true and the dashboard state is not found, the request will
+  // succeed without deleting anything.
+  bool allow_missing = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided.
+  string request_id = 5 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.field_info).format = UUID4
+  ];
+}
+
+// Request message for UndeleteDashboardState.
+message UndeleteDashboardStateRequest {
+  // The name of the dashboard state to undelete.
+  // Format: dashboardStates/{dashboard_state}
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
+
+  // Optional. The etag of the dashboard state.
+  // If this is provided, it must match the server's etag.
+  string etag = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // A unique identifier for this request. Restricted to 36 ASCII characters.
+  // A random UUID is recommended.
+  // This request is only idempotent if a `request_id` is provided.
+  string request_id = 3 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.field_info).format = UUID4
+  ];
+
+  // If set, the request is validated but not actually executed.
+  bool validate_only = 4 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Defines the request message for the `StreamDashboardData` method.
 message StreamDashboardDataRequest {
   // The resource name of the DashboardState to fetch data for.
-  string name = 1;
+  // Format: dashboardStates/{dashboard_state}
+  // This should be sent in the initial request.
+  string name = 1 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
 
   // The core content of the dashboard to fetch data for.
-  PerfDashboardContent dashboard_content = 2;
+  // This can be sent in the initial request, especially for previewing
+  // unsaved changes. If 'name' is provided and this is also provided,
+  // this content overrides the stored state.
+  PerfDashboardContent dashboard_content = 2
+      [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Defines the response message for the `StreamDashboardData` method.
+// Each message in the stream contains the result for a single widget.
 message StreamDashboardDataResponse {
   // The ID of the widget this data result corresponds to.
   string widget_id = 1;
@@ -38,27 +804,85 @@ message StreamDashboardDataResponse {
     // Data specifically prepared for a BreakdownTable widget
     BreakdownTableData breakdown_table_data = 5;
   }
+
+  // The status of the data fetch for this specific widget. If the status is
+  // `OK`, the `result_type` oneof will be populated. Otherwise, `result_type`
+  // will be empty, and this field will contain the error details.
+  // Per AIP-193, when populating this `Status` field for a widget-level error,
+  // the `details` field of the status must include an `ErrorInfo` message.
   google.rpc.Status status = 3;
+}
+
+// Request message for the FetchDashboardWidgetData method.
+message FetchDashboardWidgetDataRequest {
+  // The source of the dashboard definition. Exactly one must be provided.
+  oneof source {
+    // The resource name of the DashboardState to fetch data from.
+    // Format: dashboardStates/{dashboard_state}
+    string name = 1 [
+      (google.api.field_behavior) = OPTIONAL,
+      (google.api.resource_reference) = {
+        type: "crystalballperf.googleapis.com/DashboardState"
+      }
+    ];
+
+    // The core content of the dashboard to fetch data from.
+    // Useful for previewing unsaved changes.
+    PerfDashboardContent dashboard_content = 2
+        [(google.api.field_behavior) = OPTIONAL];
+  }
+
+  // The ID of the widget within the dashboard to fetch data for.
+  // This ID must match one of the widget IDs defined in the
+  // PerfDashboardContent.widgets list.
+  string widget_id = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for the FetchDashboardWidgetData method.
+// Contains the data for the single requested widget.
+message FetchDashboardWidgetDataResponse {
+  // The ID of the widget this data result corresponds to.
+  string widget_id = 1;
+
+  // The type of widget data, pre-processed for the widget type.
+  oneof result_type {
+    // Data specifically prepared for a MultiMetricChart.
+    MultiMetricChartData multi_metric_chart_data = 2;
+
+    // Data for a Markdown widget
+    MarkdownWidget markdown_widget = 4;
+
+    // Data specifically prepared for a BreakdownTable widget
+    BreakdownTableData breakdown_table_data = 5;
+  }
 }
 
 // Data structured and transformed for the MultiMetricChart component.
 message MultiMetricChartData {
+  // Key for the X-axis data within each data point Struct (e.g., "time").
   string x_axis_data_key = 1;
+
+  // Key used to access the Y-axis value within each data point (e.g., "value").
   string y_axis_data_key = 2;
+
+  // The individual lines to be plotted on the chart.
   repeated MultiMetricLine lines = 3;
 }
 
 // Represents a single line series in a MultiMetricChart.
 message MultiMetricLine {
+  // A unique identifier for this series.
   string series_id = 1;
-  string legend_label = 2;
-  repeated google.protobuf.Struct data_points = 3;
-  string metric_field = 4;
-}
 
-// Widget for displaying formatted text using Markdown.
-message MarkdownWidget {
-  string content = 2;
+  // Label for the legend.
+  string legend_label = 2;
+
+  // The array of data points for this specific line, sorted by the x-axis
+  // value.
+  repeated google.protobuf.Struct data_points = 3;
+
+  // Metric field of the PerfChartSeries from which this line was derived.
+  string metric_field = 4;
 }
 
 // Represents data structured for a Breakdown Table widget.
@@ -83,27 +907,620 @@ message BreakdownSection {
   repeated google.protobuf.Struct rows = 2;
 }
 
-// Represents the content of a dashboard state.
-// NOTE: This is a minimal version. Add fields as needed by your StreamDashboardDataRequest.
+// Represents the content of a dashboard state. The structure is inspired by
+// concepts in Plx dashboards (like filters and data sources) but is defined
+// independently within this API.
 message PerfDashboardContent {
-  map<string, PerfDataSpec> data_specs = 1;
-  repeated PerfWidget widgets = 3;
+  // A map of data source definitions relevant to this dashboard state.
+  // The key is a unique identifier for the data source within this state.
+  // The key should be 4-63 characters and conform to RFC-1034.
+  // It must start with a lowercase letter, and all subsequent characters
+  // must be lowercase letters, numbers, or hyphens, and the value must not
+  // end with a hyphen.
+  map<string, PerfDataSpec> data_specs = 1
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // Global filters that apply to all applicable charts in this dashboard.
+  repeated PerfFilter global_filters = 2
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // List of widgets within this dashboard.
+  repeated PerfWidget widgets = 3 [(google.api.field_behavior) = OPTIONAL];
 }
 
-message PerfDataSpec {
-  string display_name = 1;
-  // Add other fields if used in the request
-}
-
+// Defines a single widget within the dashboard.
 message PerfWidget {
-  string id = 1;
+  // Unique identifier for this widget within the dashboard.
+  // The ID should be 4-63 characters and conform to RFC-1034.
+  // It must start with a lowercase letter, and all subsequent characters
+  // must be lowercase letters, numbers, or hyphens, and the value must not
+  // end with a hyphen.
+  string id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // User-visible title for the widget.
+  string display_name = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // The type of widget.
   oneof widget_type {
+    // A markdown widget.
     MarkdownWidget markdown = 3;
+
+    // A chart widget.
     PerfChartWidget chart = 4;
   }
 }
 
+// Widget for displaying formatted text using Markdown.
+message MarkdownWidget {
+  // The Markdown content to be rendered.
+  string content = 2 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+// Defines a single chart within the dashboard.
 message PerfChartWidget {
-  string data_spec_id = 1;
-  // Add other fields if used
+  // User-visible title for the chart.
+  string display_name = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Type of the chart.
+  // This enum is not frozen, and new values may be added in the future.
+  enum ChartType {
+    // Unspecified chart type.
+    CHART_TYPE_UNSPECIFIED = 0;
+    // Regression metric chart.
+    REGRESSION_METRIC_CHART = 1;
+    // Multi-metric chart.
+    MULTI_METRIC_CHART = 2;
+    // Breakdown table chart.
+    BREAKDOWN_TABLE = 3;
+    // Distribution of individual invocation values for a metric.
+    INVOCATION_DISTRIBUTION = 4;
+  }
+
+  // The type of this chart.
+  ChartType chart_type = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // The effective chart type used. If `chart_type` is not specified,
+  // the server may use a default type.
+  ChartType effective_chart_type = 3
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Default Data Spec ID for series in this chart.
+  string data_spec_id = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Filters specific to this chart, applied to all series unless overridden.
+  repeated PerfFilter filters = 5 [(google.api.field_behavior) = OPTIONAL];
+
+  // The series to display on this chart.
+  // For INVOCATION_DISTRIBUTION, typically only one series is used.
+  repeated PerfChartSeries series = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // X axis configuration.
+  PerfXAxisConfig x_axis = 7 [(google.api.field_behavior) = OPTIONAL];
+
+  // Configuration for the Left Y Axis.
+  PerfYAxisConfig left_y_axis = 8 [(google.api.field_behavior) = OPTIONAL];
+
+  // Configuration for the Right Y Axis (for Dual Y-Axes Support).
+  PerfYAxisConfig right_y_axis = 9 [(google.api.field_behavior) = OPTIONAL];
+
+  // Configuration for splitting a single metric in `series` by a dimension.
+  // Typically used when only one series is defined, and the split generates
+  // the rest.
+  PerfSeriesSplit series_split = 10 [(google.api.field_behavior) = OPTIONAL];
+
+  // Specific configuration for the INVOCATION_DISTRIBUTION chart type.
+  // Only relevant when chart_type is INVOCATION_DISTRIBUTION.
+  InvocationDistributionConfig invocation_distribution_config = 11
+      [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Represents a single series on a chart.
+message PerfChartSeries {
+  // Optional display name for this series legend.
+  string display_name = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // The ID of the PerfDataSpec to use for this series.
+  // Defaults to the chart's data_spec_id if not specified.
+  string data_spec_id = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // The specific metric field from the data spec to plot.
+  string metric_field = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Filters specific to this series. Applied in addition to chart and global
+  // filters.
+  repeated PerfFilter filters = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Enum for aggregation functions.
+  // This enum is not frozen, and new values may be added in the future.
+  enum PerfAggregationFunction {
+    // Unspecified.
+    PERF_AGGREGATION_FUNCTION_UNSPECIFIED = 0;
+    // Mean.
+    MEAN = 1;
+    // Percentile 50.
+    P50 = 2;
+    // Percentile 75.
+    P75 = 3;
+    // Percentile 90.
+    P90 = 4;
+    // Percentile 99.
+    P99 = 5;
+    // Minimum.
+    MIN = 6;
+    // Maximum.
+    MAX = 7;
+    // Count.
+    COUNT = 8;
+  }
+
+  // The aggregation function to apply to this series (for TIME_SERIES, etc.).
+  PerfAggregationFunction aggregation = 5
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // Enum for Y Axis assignment
+  // This enum is not frozen, and new values may be added in the future.
+  enum YAxisAssignment {
+    // Unspecified, defaults to LEFT.
+    Y_AXIS_ASSIGNMENT_UNSPECIFIED = 0;
+    // Left Y axis.
+    LEFT = 1;
+    // Right Y axis.
+    RIGHT = 2;
+  }
+
+  // Which Y axis to associate this series with.
+  YAxisAssignment y_axis_assignment = 6
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // Whether to show confidence intervals for this series.
+  bool show_confidence_interval = 7 [(google.api.field_behavior) = OPTIONAL];
+
+  // The effective data spec ID used for this series. This will be
+  // `data_spec_id` if provided, otherwise it defaults to the chart's
+  // `data_spec_id`.
+  string effective_data_spec_id = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The effective Y axis assignment for this series. Defaults to LEFT
+  // if `y_axis_assignment` is not specified.
+  YAxisAssignment effective_y_axis_assignment = 9
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // CSS color string for rendering this series line (e.g., "#8884d8", "red").
+  string color = 10 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Configuration for the X axis.
+message PerfXAxisConfig {
+  // The column from the data spec to use for the X axis (e.g., build_id,
+  // ingestion_time).
+  string column = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Defines the granularity for bucketizing the X-axis data.
+  // This enum is not frozen, and new values may be added in the future.
+  enum Granularity {
+    // Unspecified granularity. Server may use a default or no bucketization.
+    GRANULARITY_UNSPECIFIED = 0;
+    // Group by each unique value in the column.
+    PER_VALUE = 1;
+    // Group by hour. Requires a timestamp-compatible column.
+    HOURLY = 2;
+    // Group by day. Requires a timestamp-compatible column.
+    DAILY = 3;
+    // Group by week. Requires a timestamp-compatible column.
+    WEEKLY = 4;
+    // Group by build ID. Requires a build ID column.
+    PER_BUILD = 5;
+  }
+
+  // The granularity to apply to the X-axis column.
+  Granularity granularity = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // The effective granularity used. If `granularity` is not specified,
+  // the server may use a default or no bucketization.
+  Granularity effective_granularity = 3
+      [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Configuration for a Y axis.
+message PerfYAxisConfig {
+  // Optional display name for the axis.
+  string display_name = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional minimum value for the axis range.
+  optional double min_value = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional maximum value for the axis range.
+  optional double max_value = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Whether to use a logarithmic scale.
+  bool logarithmic = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// How to split a metric into multiple series.
+message PerfSeriesSplit {
+  // The dimension to split by.
+  oneof dimension_type {
+    // Split by an invocation-level dimension (e.g., build_target, branch).
+    string invocation_dimension = 1;
+
+    // Split by a metric-specific dimension.
+    string metric_dimension = 2;
+  }
+
+  // Optional: Limit the number of series created by the split.
+  int32 limit_count = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Configuration for an Invocation Distribution chart.
+message InvocationDistributionConfig {
+  // Options for SCATTER type.
+  message ScatterSettings {
+    // The metric field to use for the X-axis.
+    string x_axis_metric_field = 1 [(google.api.field_behavior) = OPTIONAL];
+  }
+
+  // Configuration settings specific to the chosen distribution type.
+  oneof settings {
+    // Settings for SCATTER type.
+    ScatterSettings scatter_settings = 2
+        [(google.api.field_behavior) = OPTIONAL];
+  }
+}
+
+// Defines a data specification, similar to concepts in Plx DataSpec.
+message PerfDataSpec {
+  // Human-readable name for the data source.
+  string display_name = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Details about the source of the data.
+  PerfDataSource source = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Defines the source of the data.
+message PerfDataSource {
+  // Type of the data source.
+  // This enum is not frozen, and new values may be added in the future.
+  enum SourceType {
+    // Unspecified data source type.
+    SOURCE_TYPE_UNSPECIFIED = 0;
+    // SQL query.
+    SQL = 1;
+    // Table name.
+    TABLE = 2;
+  }
+
+  // The type of the data source.
+  SourceType type = 1 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// A filter configuration, similar to concepts in Plx Filter widgets.
+message PerfFilter {
+  // Unique identifier for this filter within its scope (global or chart).
+  // The ID should be 4-63 characters and conform to RFC-1034.
+  // It must start with a lowercase letter, and all subsequent characters
+  // must be lowercase letters, numbers, or hyphens, and the value must not
+  // end with a hyphen.
+  string id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The column in the data source this filter applies to.
+  string column = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID of the PerfDataSpec in PerfDashboardContent.data_specs
+  // that this filter is associated with.
+  string data_spec_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // User-visible title for the filter.
+  string display_name = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // The specific configuration for the type of filter.
+  oneof filter_type {
+    // Dropdown select filter.
+    SelectFilter select = 5;
+    // Free form text input filter.
+    TextInputFilter text_input = 6;
+    // Numerical input filter.
+    NumberInputFilter number_input = 7;
+    // Range selection filter.
+    RangeFilter range = 8;
+    // Date selection filter.
+    DatePickerFilter date_picker = 9;
+  }
+}
+
+// Configuration for a SELECT filter (dropdown).
+message SelectFilter {
+  // Whether multiple selections are allowed.
+  bool multi_select = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Default values and operator.
+  PerfFilterDefault default_value = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Configuration for a TEXT_INPUT filter.
+message TextInputFilter {
+  // Default value and operator.
+  PerfFilterDefault default_value = 1 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Configuration for a NUMBER_INPUT filter.
+message NumberInputFilter {
+  // Default value and operator.
+  PerfFilterDefault default_value = 1 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Configuration for a RANGE filter.
+message RangeFilter {
+  // Default values and operator. Typically uses BETWEEN or similar.
+  PerfFilterDefault default_value = 1 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Configuration for a DATE_PICKER filter.
+message DatePickerFilter {
+  // Whether to allow selecting a range of dates.
+  bool multi_select = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Default value and operator.
+  PerfFilterDefault default_value = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Default value for a filter.
+message PerfFilterDefault {
+  // The default value(s). The number of values required depends on the
+  // operator.
+  repeated string values = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // The set of allowed filter operators.
+  // This enum is not frozen, and new values may be added in the future.
+  enum FilterOperator {
+    // Unspecified filter operator.
+    FILTER_OPERATOR_UNSPECIFIED = 0;
+    // Equal to (=).
+    EQUAL = 1;
+    // Not equal to (!=).
+    NOT_EQUAL = 2;
+    // Greater than (>).
+    GREATER_THAN = 3;
+    // Less than (<).
+    LESS_THAN = 4;
+    // Greater than or equal to (>=).
+    GREATER_THAN_OR_EQUAL = 5;
+    // Less than or equal to (<=).
+    LESS_THAN_OR_EQUAL = 6;
+    // Value is in the provided set (IN).
+    IN = 7;
+    // Value is not in the provided set (NOT_IN).
+    NOT_IN = 8;
+    // Value is between the two provided values (BETWEEN). Requires exactly two
+    // values in `values`.
+    BETWEEN = 9;
+    // Value matches the provided regex pattern. Requires exactly one value in
+    // `values` containing the regex.
+    REGEX_MATCH = 10;
+    // Value does not match the provided regex pattern. Requires exactly one
+    // value in `values` containing the regex.
+    NOT_REGEX_MATCH = 11;
+    // Value is an empty string or NULL. `values` field is not used.
+    IS_EMPTY = 12;
+    // Value is not an empty string and not NULL. `values` field is not used.
+    IS_NOT_EMPTY = 13;
+    // Value starts with the provided prefix. Requires exactly one value in
+    // `values`.
+    STARTS_WITH = 14;
+    // Value does not start with the provided prefix. Requires exactly one value
+    // in `values`.
+    NOT_STARTS_WITH = 15;
+    // Value ends with the provided suffix. Requires exactly one value in
+    // `values`.
+    ENDS_WITH = 16;
+    // Value does not end with the provided suffix. Requires exactly one value
+    // in `values`.
+    NOT_ENDS_WITH = 17;
+    // Value contains the provided substring. Requires exactly one value.
+    CONTAINS = 18;
+    // Value does not contain the provided substring. Requires exactly one
+    // value.
+    NOT_CONTAINS = 19;
+    // Value matches the provided SQL LIKE pattern. Uses '%' and '_'.
+    // Requires exactly one value.
+    LIKE = 20;
+    // Value does not match the provided SQL LIKE pattern.
+    // Requires exactly one value.
+    NOT_LIKE = 21;
+    // Value is boolean TRUE. `values` field is not used.
+    IS_TRUE = 22;
+    // Value is boolean FALSE. `values` field is not used.
+    IS_FALSE = 23;
+    // Value is NULL. `values` field is not used.
+    IS_NULL = 24;
+    // Value is not NULL. `values` field is not used.
+    IS_NOT_NULL = 25;
+  }
+
+  // The filter operator to use with the default values.
+  FilterOperator filter_operator = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Request message for ListDashboardStateRevisions.
+message ListDashboardStateRevisionsRequest {
+  // The name of the DashboardState to list revisions for.
+  // Format: dashboardStates/{dashboard_state}
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
+
+  // The maximum number of revisions to return. The service may return fewer
+  // than this value.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // A page token, received from a previous `ListDashboardStateRevisions` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for ListDashboardStateRevisions.
+message ListDashboardStateRevisionsResponse {
+  // The revisions of the dashboard state. The most recent revision
+  // comes first.
+  repeated DashboardState dashboard_states = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}
+
+// Request message for GetDashboardStateRevision.
+message GetDashboardStateRevisionRequest {
+  // The name of the DashboardState revision to retrieve.
+  // Format: dashboardStates/{dashboard_state}/revisions/{revision_id}
+  // To get the latest revision, use the DashboardState name without the
+  // /revisions/{revision_id} suffix in a GetDashboardState request.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardStateRevision"
+    }
+  ];
+}
+
+// Request message for RollbackDashboardState.
+message RollbackDashboardStateRequest {
+  // The name of the DashboardState to rollback.
+  // Format: dashboardStates/{dashboard_state}
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
+
+  // The revision ID to roll back to.
+  // This must be a valid revision ID from the DashboardState's history.
+  string revision_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The current etag of the DashboardState.
+  // If an etag is provided and does not match the current etag of the
+  // DashboardState, the request will be blocked to prevent stale writes.
+  string etag = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // If set to true, the request is validated but not actually executed.
+  bool validate_only = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Message for the UserSettings resource. This is a singleton per user.
+message UserSettings {
+  option (google.api.resource) = {
+    type: "crystalballperf.googleapis.com/UserSettings"
+    pattern: "users/{user}/settings"
+    singular: "userSettings"
+    plural: "userSettings"
+  };
+
+  // The resource name. For the calling user, this should be
+  // "users/me/settings".
+  string name = 1 [
+    (google.api.field_behavior) = IDENTIFIER
+  ];
+
+  // DashboardState names that the user has starred.
+  // Format: dashboardStates/{dashboard_state}
+  repeated string starred_dashboards = 2 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
+
+  // User's preference for dark mode.
+  optional bool dark_mode_enabled = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // User's preferred time zone. IANA Time Zone Database name (e.g.,
+  // "America/Los_Angeles").
+  string time_zone = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Etag for optimistic concurrency.
+  string etag = 5 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Request message for GetUserSettings.
+message GetUserSettingsRequest {
+  // The name of the UserSettings to retrieve.
+  // Format: users/{user}/settings
+  // Use "users/me/settings" for the authenticated user.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/UserSettings"
+    }
+  ];
+}
+
+// Request message for UpdateUserSettings.
+message UpdateUserSettingsRequest {
+  // The UserSettings resource to update.
+  UserSettings user_settings = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The list of fields to update.
+  google.protobuf.FieldMask update_mask = 2
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // If set to true, and the UserSettings resource doesn't exist, it will be
+  // created.
+  bool allow_missing = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Request message for AddStarredDashboard.
+message AddStarredDashboardRequest {
+  // The name of the UserSettings resource.
+  // Format: users/{user}/settings
+  // Use "users/me/settings" for the authenticated user.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/UserSettings"
+    }
+  ];
+
+  // The resource name of the dashboard to star.
+  // Format: dashboardStates/{dashboard_state}
+  string dashboard = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
+}
+
+// Request message for RemoveStarredDashboard.
+message RemoveStarredDashboardRequest {
+  // The name of the UserSettings resource.
+  // Format: users/{user}/settings
+  // Use "users/me/settings" for the authenticated user.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/UserSettings"
+    }
+  ];
+
+  // The resource name of the dashboard to unstar.
+  // Format: dashboardStates/{dashboard_state}
+  string dashboard = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
+}
+
+// Test enum for testing.
+enum TestEnum {
+  // Unspecified test enum.
+  TEST_ENUM_UNSPECIFIED = 0;
+  // Test enum value 1.
+  TEST_ENUM_MOCK = 1;
 }

@@ -26,6 +26,8 @@ PROTOS_TO_IMPORT=(
 
   google/cloud/security/privateca/v1/resources.proto
 
+  google/longrunning/operations.proto
+
   google/rpc/code.proto
   google/rpc/error_details.proto
   google/rpc/status.proto

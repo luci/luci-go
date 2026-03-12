@@ -8,20 +8,714 @@
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
-import { Struct } from "../../../../google/protobuf/struct.pb";
+import { Operation } from "../../../../google/longrunning/operations.pb";
+import { FieldMask } from "../../../../google/protobuf/field_mask.pb";
+import { Struct, Value } from "../../../../google/protobuf/struct.pb";
+import { Timestamp } from "../../../../google/protobuf/timestamp.pb";
 import { Status } from "../../../../google/rpc/status.pb";
 
 export const protobufPackage = "google.android.perf.v1";
 
+/** Test enum for testing. */
+export enum TestEnum {
+  /** TEST_ENUM_UNSPECIFIED - Unspecified test enum. */
+  TEST_ENUM_UNSPECIFIED = 0,
+  /** TEST_ENUM_MOCK - Test enum value 1. */
+  TEST_ENUM_MOCK = 1,
+}
+
+export function testEnumFromJSON(object: any): TestEnum {
+  switch (object) {
+    case 0:
+    case "TEST_ENUM_UNSPECIFIED":
+      return TestEnum.TEST_ENUM_UNSPECIFIED;
+    case 1:
+    case "TEST_ENUM_MOCK":
+      return TestEnum.TEST_ENUM_MOCK;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestEnum");
+  }
+}
+
+export function testEnumToJSON(object: TestEnum): string {
+  switch (object) {
+    case TestEnum.TEST_ENUM_UNSPECIFIED:
+      return "TEST_ENUM_UNSPECIFIED";
+    case TestEnum.TEST_ENUM_MOCK:
+      return "TEST_ENUM_MOCK";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestEnum");
+  }
+}
+
+/** Request message for testing the connection to the service. */
+export interface TestConnectionRequest {
+}
+
+/** Response message for testing the connection to the service. */
+export interface TestConnectionResponse {
+}
+
+/** Request message for getting CrystalBall measurements. */
+export interface SearchMeasurementsRequest {
+  /**
+   * Filter for test_name using SQL LIKE operator.
+   * Callers should include wildcards (%) as needed in the filter string.
+   * Examples:
+   *   "foo%" - starts with foo
+   *   "%foo" - ends with foo
+   *   "%foo%" - contains foo
+   *   "foo" - exact match
+   */
+  readonly testNameFilter?:
+    | string
+    | undefined;
+  /** Build creation timestamp start filter. */
+  readonly buildCreateStartTime?:
+    | string
+    | undefined;
+  /** Build creation timestamp end filter. */
+  readonly buildCreateEndTime?:
+    | string
+    | undefined;
+  /** Mutually exclusive with start/end timestamps */
+  readonly lastNDays?:
+    | number
+    | undefined;
+  /** Branch filter. */
+  readonly buildBranch?:
+    | string
+    | undefined;
+  /** Build target filter. */
+  readonly buildTarget?:
+    | string
+    | undefined;
+  /**
+   * Filter for atp_test_name using SQL LIKE operator.
+   * Callers should include wildcards (%) as needed in the filter string.
+   * Examples:
+   *   "foo%" - starts with foo
+   *   "%foo" - ends with foo
+   *   "%foo%" - contains foo
+   *   "foo" - exact match
+   */
+  readonly atpTestNameFilter?:
+    | string
+    | undefined;
+  /** If specified, only metrics with these keys will be returned. */
+  readonly metricKeys: readonly string[];
+  /**
+   * If specified, these columns will be returned in the response.
+   * Valid column names can be found in the schema for the base table
+   * napa.android_crystalball_cbdw.cbdw.Measurements, which is queried
+   * by the cbdw_measurements_full() function.
+   * Schema can be viewed in DataNexus:
+   * http://go/data/details/napa.android_crystalball_cbdw.cbdw.Measurements
+   */
+  readonly extraColumns: readonly string[];
+  /** Page size for pagination. */
+  readonly pageSize?:
+    | number
+    | undefined;
+  /** Page token for pagination. */
+  readonly pageToken?: string | undefined;
+}
+
+/** Response message for getting CrystalBall measurements. */
+export interface SearchMeasurementsResponse {
+  /** Define a structure to hold the query results */
+  readonly rows: readonly MeasurementRow[];
+  /** Page token for pagination. */
+  readonly nextPageToken?: string | undefined;
+}
+
+/** Row message for holding the query results. */
+export interface MeasurementRow {
+  /** Test name. */
+  readonly test?:
+    | string
+    | undefined;
+  /** Build creation timestamp. */
+  readonly buildCreateTime?:
+    | string
+    | undefined;
+  /** Build branch. */
+  readonly buildBranch?:
+    | string
+    | undefined;
+  /** Build target. */
+  readonly buildTarget?:
+    | string
+    | undefined;
+  /** ATP test name. */
+  readonly atpTest?:
+    | string
+    | undefined;
+  /** Metric key. */
+  readonly metricKey?:
+    | string
+    | undefined;
+  /** Metric value. */
+  readonly value?:
+    | number
+    | undefined;
+  /** Build ID. */
+  readonly buildId?:
+    | string
+    | undefined;
+  /** Ants invocation ID. */
+  readonly antsInvocationId?:
+    | string
+    | undefined;
+  /** Additional columns */
+  readonly extraColumns: { [key: string]: any | undefined };
+}
+
+export interface MeasurementRow_ExtraColumnsEntry {
+  readonly key: string;
+  readonly value: any | undefined;
+}
+
+/** Request message for getting filter columns. */
+export interface ListMeasurementFilterColumnsRequest {
+  /**
+   * The parent PerfDataSpec resource name.
+   * Format: dashboardStates/{dashboard_state}/dataSpecs/{data_spec}
+   */
+  readonly parent: string;
+  /**
+   * The maximum number of columns to return. The service may return fewer than
+   * this value. If unspecified, at most 100 columns will be returned.
+   * The maximum value is 1000; values above 1000 will be coerced to 1000.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `ListMeasurementFilterColumns` call.
+   * Provide this to retrieve the subsequent page.
+   * When paginating, all other parameters provided to
+   * `ListMeasurementFilterColumns` must match the call that provided the page
+   * token.
+   */
+  readonly pageToken: string;
+}
+
+/** Response message for getting filter columns. */
+export interface ListMeasurementFilterColumnsResponse {
+  /** The filter columns. */
+  readonly measurementFilterColumns: readonly MeasurementFilterColumn[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+}
+
+/**
+ * Represents a filterable column for measurements.
+ * This is not a standalone resource, but a descriptor used within responses.
+ */
+export interface MeasurementFilterColumn {
+  /** The unique identifier for the column within the data spec. */
+  readonly column: string;
+  /** The data type of the column. */
+  readonly dataType: MeasurementFilterColumn_ColumnDataType;
+  /** A small list of example values for this column. */
+  readonly sampleValues: readonly string[];
+  /**
+   * Indicates if this is a primary column, suggested to be displayed
+   * prominently.
+   */
+  readonly primary: boolean;
+  /**
+   * Indicates if this column represents a plottable metric key.
+   * Metric keys are stored alongside other measurements in the same table,
+   * but act as the series in charts rather than as filters.
+   */
+  readonly isMetricKey: boolean;
+  /**
+   * The scopes at which this column can be applied as a filter.
+   * A column can be valid in multiple scopes.
+   */
+  readonly applicableScopes: readonly MeasurementFilterColumn_FilterScope[];
+}
+
+/** Enum defining the possible data types for a filter column. */
+export enum MeasurementFilterColumn_ColumnDataType {
+  /** COLUMN_DATA_TYPE_UNSPECIFIED - Unspecified data type. */
+  COLUMN_DATA_TYPE_UNSPECIFIED = 0,
+  /** STRING - String data type. */
+  STRING = 1,
+  /** INT64 - Integer data type. */
+  INT64 = 2,
+  /** DOUBLE - Double data type. */
+  DOUBLE = 3,
+  /** BOOLEAN - Boolean data type. */
+  BOOLEAN = 4,
+  /** TIMESTAMP - Timestamp data type. */
+  TIMESTAMP = 5,
+  /** DATE - Date data type. */
+  DATE = 6,
+}
+
+export function measurementFilterColumn_ColumnDataTypeFromJSON(object: any): MeasurementFilterColumn_ColumnDataType {
+  switch (object) {
+    case 0:
+    case "COLUMN_DATA_TYPE_UNSPECIFIED":
+      return MeasurementFilterColumn_ColumnDataType.COLUMN_DATA_TYPE_UNSPECIFIED;
+    case 1:
+    case "STRING":
+      return MeasurementFilterColumn_ColumnDataType.STRING;
+    case 2:
+    case "INT64":
+      return MeasurementFilterColumn_ColumnDataType.INT64;
+    case 3:
+    case "DOUBLE":
+      return MeasurementFilterColumn_ColumnDataType.DOUBLE;
+    case 4:
+    case "BOOLEAN":
+      return MeasurementFilterColumn_ColumnDataType.BOOLEAN;
+    case 5:
+    case "TIMESTAMP":
+      return MeasurementFilterColumn_ColumnDataType.TIMESTAMP;
+    case 6:
+    case "DATE":
+      return MeasurementFilterColumn_ColumnDataType.DATE;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum MeasurementFilterColumn_ColumnDataType",
+      );
+  }
+}
+
+export function measurementFilterColumn_ColumnDataTypeToJSON(object: MeasurementFilterColumn_ColumnDataType): string {
+  switch (object) {
+    case MeasurementFilterColumn_ColumnDataType.COLUMN_DATA_TYPE_UNSPECIFIED:
+      return "COLUMN_DATA_TYPE_UNSPECIFIED";
+    case MeasurementFilterColumn_ColumnDataType.STRING:
+      return "STRING";
+    case MeasurementFilterColumn_ColumnDataType.INT64:
+      return "INT64";
+    case MeasurementFilterColumn_ColumnDataType.DOUBLE:
+      return "DOUBLE";
+    case MeasurementFilterColumn_ColumnDataType.BOOLEAN:
+      return "BOOLEAN";
+    case MeasurementFilterColumn_ColumnDataType.TIMESTAMP:
+      return "TIMESTAMP";
+    case MeasurementFilterColumn_ColumnDataType.DATE:
+      return "DATE";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum MeasurementFilterColumn_ColumnDataType",
+      );
+  }
+}
+
+/**
+ * Defines the possible scopes where a filter column can be applied.
+ * This enum is not frozen, and new values may be added in the future.
+ */
+export enum MeasurementFilterColumn_FilterScope {
+  /** FILTER_SCOPE_UNSPECIFIED - Unspecified scope. */
+  FILTER_SCOPE_UNSPECIFIED = 0,
+  /** GLOBAL - Suitable for use as a global filter across the dashboard. */
+  GLOBAL = 1,
+  /** WIDGET - Suitable for use as a widget-level filter. */
+  WIDGET = 2,
+  /** METRIC - Suitable for use as a metric-level filter (e.g., within a series). */
+  METRIC = 3,
+}
+
+export function measurementFilterColumn_FilterScopeFromJSON(object: any): MeasurementFilterColumn_FilterScope {
+  switch (object) {
+    case 0:
+    case "FILTER_SCOPE_UNSPECIFIED":
+      return MeasurementFilterColumn_FilterScope.FILTER_SCOPE_UNSPECIFIED;
+    case 1:
+    case "GLOBAL":
+      return MeasurementFilterColumn_FilterScope.GLOBAL;
+    case 2:
+    case "WIDGET":
+      return MeasurementFilterColumn_FilterScope.WIDGET;
+    case 3:
+    case "METRIC":
+      return MeasurementFilterColumn_FilterScope.METRIC;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum MeasurementFilterColumn_FilterScope");
+  }
+}
+
+export function measurementFilterColumn_FilterScopeToJSON(object: MeasurementFilterColumn_FilterScope): string {
+  switch (object) {
+    case MeasurementFilterColumn_FilterScope.FILTER_SCOPE_UNSPECIFIED:
+      return "FILTER_SCOPE_UNSPECIFIED";
+    case MeasurementFilterColumn_FilterScope.GLOBAL:
+      return "GLOBAL";
+    case MeasurementFilterColumn_FilterScope.WIDGET:
+      return "WIDGET";
+    case MeasurementFilterColumn_FilterScope.METRIC:
+      return "METRIC";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum MeasurementFilterColumn_FilterScope");
+  }
+}
+
+/** Request message for getting filter values. */
+export interface SuggestMeasurementFilterValuesRequest {
+  /**
+   * The parent PerfDataSpec resource name. For example:
+   * Format: dashboardStates/{dashboard_state}/dataSpecs/{data_spec}
+   */
+  readonly parent: string;
+  /** The column name to get values from. */
+  readonly column: string;
+  /**
+   * The prefix string the user has typed for autocomplete.
+   * If empty, a general sample of values may be returned.
+   */
+  readonly query: string;
+  /** Maximum number of suggestions to return. */
+  readonly maxResultCount: number;
+}
+
+/** Response message for getting filter values. */
+export interface SuggestMeasurementFilterValuesResponse {
+  /** The list of filter values. */
+  readonly values: readonly string[];
+}
+
+/** New Request/Response Messages: */
+export interface SearchMetricDefinitionsRequest {
+  /**
+   * Filter string to search for metric definitions.
+   * Supports filtering on fields of the MetricDefinition message. Examples:
+   * - metric_id: "metric_id=showmap_PSS_bytes_com.android.systemui"
+   * - display_name: "display_name=\"*SystemUI PSS*\""
+   * - Partial search: "metric_id=\"*per*\" OR display_name=\"*per*\""
+   * Standard AIP-160 filtering (go/aip/160) should be supported.
+   */
+  readonly filter: string;
+  /**
+   * The maximum number of metric definitions to return. The service may return
+   * fewer than this value.
+   */
+  readonly pageSize?:
+    | number
+    | undefined;
+  /**
+   * A page token, received from a previous `SearchMetricDefinitions` call.
+   * Provide this to retrieve the subsequent page.
+   */
+  readonly pageToken: string;
+}
+
+/** Response message for searching for metric definitions. */
+export interface SearchMetricDefinitionsResponse {
+  /** The metric definitions matching the search criteria. */
+  readonly metricDefinitions: readonly MetricDefinition[];
+  /**
+   * A token to retrieve the next page of results.
+   * If this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+}
+
+/** Represents a single Metric Definition, mirroring the cbdb-spanner.sdl table. */
+export interface MetricDefinition {
+  /**
+   * The unique ID for this specific definition (from
+   * MetricDefinitionIdSequence).
+   */
+  readonly metricDefinitionId: string;
+  /** The base metric identifier, often referred to as metric key. */
+  readonly metricId: string;
+  /**
+   * The unit of the metric (e.g., BYTES, MILLISECONDS).
+   * Corresponds to tradefed.crystalball.dimensional_metrics.Unit.
+   */
+  readonly unit: string;
+  /**
+   * The polarity indicating if higher or lower values are better.
+   * Corresponds to tradefed.crystalball.dimensional_metrics.Polarity.
+   */
+  readonly polarity: string;
+  /**
+   * The source of this metric definition.
+   * Corresponds to tradefed.crystalball.dimensional_metrics.Source.
+   */
+  readonly source: string;
+  /** User-friendly display name for this metric definition. */
+  readonly displayName: string;
+  /** The statistical keys associated with this metric definition. */
+  readonly statisticalKeys: readonly string[];
+}
+
+/**
+ * Represents a saved dashboard state. This is the resource.
+ * Used to store dashboard configurations, for example, from LUCI UI.
+ */
+export interface DashboardState {
+  /**
+   * The resource name of the dashboard state.
+   * Format: dashboardStates/{dashboard_state}
+   * The {dashboard_state} part can be provided by the client in the
+   * `CreateDashboardStateRequest.dashboard_state_id` field, or if not provided,
+   * it will be server-generated.
+   */
+  readonly name: string;
+  /**
+   * The core content of the dashboard, such as filters and data sources.
+   * This structure is inspired by Plx, but is defined and contained within
+   * this API to ensure independence (AIP-215).
+   */
+  readonly dashboardContent:
+    | PerfDashboardContent
+    | undefined;
+  /** User-friendly name for this saved state. */
+  readonly displayName: string;
+  /** Optional description for this saved state. */
+  readonly description: string;
+  /** Timestamp when the resource was first created. */
+  readonly createTime:
+    | string
+    | undefined;
+  /** Timestamp when the resource was last updated. */
+  readonly updateTime:
+    | string
+    | undefined;
+  /** Timestamp when the resource was soft deleted. */
+  readonly deleteTime:
+    | string
+    | undefined;
+  /** Timestamp when the soft-deleted resource will be permanently purged. */
+  readonly purgeTime:
+    | string
+    | undefined;
+  /**
+   * A server-assigned checksum for optimistic concurrency control.
+   * See https://google.aip.dev/154.
+   */
+  readonly etag: string;
+  /** A system-generated unique identifier for this resource. */
+  readonly uid: string;
+  /** Unstructured key/value map for labels. See https://google.aip.dev/128. */
+  readonly annotations: { [key: string]: string };
+  /**
+   * Indicates whether the resource is currently being reconciled.
+   * See https://google.aip.dev/128.
+   */
+  readonly reconciling: boolean;
+  /**
+   * The revision ID of this DashboardState snapshot.
+   * The format is an 8-character hexadecimal string.
+   * This field is OUTPUT_ONLY.
+   */
+  readonly revisionId: string;
+  /**
+   * The timestamp when this revision was created.
+   * This field is OUTPUT_ONLY.
+   */
+  readonly revisionCreateTime: string | undefined;
+}
+
+export interface DashboardState_AnnotationsEntry {
+  readonly key: string;
+  readonly value: string;
+}
+
+/** Metadata for DashboardState Long Running Operations. */
+export interface DashboardStateOperationMetadata {
+  /** The time the operation was created. */
+  readonly createTime:
+    | string
+    | undefined;
+  /** The target resource name. */
+  readonly target: string;
+  /** API version used to start the operation. */
+  readonly apiVersion: string;
+}
+
+/** Request message for CreateDashboardState. */
+export interface CreateDashboardStateRequest {
+  /** The dashboard state to create. */
+  readonly dashboardState:
+    | DashboardState
+    | undefined;
+  /**
+   * The ID to use for the dashboard state, which will become the final
+   * component of the dashboard state's resource name.
+   *
+   * This value should be 4-63 characters and conform to RFC-1034.
+   * It must start with a lowercase letter, and all subsequent characters
+   * must be lowercase letters, numbers, or hyphens, and the value must not
+   * end with a hyphen.
+   */
+  readonly dashboardStateId: string;
+  /** If set, the request is validated but not actually executed. */
+  readonly validateOnly: boolean;
+  /**
+   * A unique identifier for this request. Restricted to 36 ASCII characters.
+   * A random UUID is recommended.
+   * This request is only idempotent if a `request_id` is provided.
+   */
+  readonly requestId: string;
+}
+
+/** Request message for UpdateDashboardState. */
+export interface UpdateDashboardStateRequest {
+  /**
+   * The dashboard state to update.
+   * The `dashboard_state.name` field is used to identify the resource
+   * and must be provided by the client.
+   */
+  readonly dashboardState:
+    | DashboardState
+    | undefined;
+  /**
+   * The list of fields to update.
+   * If omitted, all fields provided in the request will be updated.
+   */
+  readonly updateMask:
+    | readonly string[]
+    | undefined;
+  /**
+   * If set to true, and the DashboardState is not found, a new DashboardState
+   * will be created.
+   */
+  readonly allowMissing: boolean;
+  /** If set, the request is validated but not actually executed. */
+  readonly validateOnly: boolean;
+  /**
+   * A unique identifier for this request. Restricted to 36 ASCII characters.
+   * A random UUID is recommended.
+   * This request is only idempotent if a `request_id` is provided.
+   */
+  readonly requestId: string;
+}
+
+/** Request message for GetDashboardState. */
+export interface GetDashboardStateRequest {
+  /**
+   * The name of the dashboard state to retrieve.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly name: string;
+}
+
+/** Request message for ListDashboardStates. */
+export interface ListDashboardStatesRequest {
+  /**
+   * The maximum number of dashboard states to return. The service may return
+   * fewer than this value. If unspecified, at most 50 dashboard states will be
+   * returned. The maximum value is 1000; values above 1000 will be coerced to
+   * 1000.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `ListDashboardStates` call.
+   * Provide this to retrieve the subsequent page.
+   * When paginating, all other parameters provided to `ListDashboardStates`
+   * must match the call that provided the page token.
+   */
+  readonly pageToken: string;
+  /**
+   * Filter string to narrow down the list of DashboardStates.
+   * See https://google.aip.dev/160 for syntax.
+   * Example: "display_name = \"*My Dashboard*\""
+   */
+  readonly filter: string;
+  /**
+   * If set to true, only deleted DashboardStates will be included in the
+   * response.
+   */
+  readonly showDeleted: boolean;
+}
+
+/** Response message for ListDashboardStates. */
+export interface ListDashboardStatesResponse {
+  /** The dashboard states accessible to the user. */
+  readonly dashboardStates: readonly DashboardState[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+  /**
+   * The total number of dashboard states in the collection.
+   * This is an estimate and may not be exact.
+   */
+  readonly totalSize: number;
+}
+
+/** Request message for DeleteDashboardState. */
+export interface DeleteDashboardStateRequest {
+  /**
+   * The name of the dashboard state to delete.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly name: string;
+  /**
+   * Optional. The etag of the dashboard state.
+   * If this is provided, it must match the server's etag.
+   */
+  readonly etag: string;
+  /** If set, the request is validated but not actually executed. */
+  readonly validateOnly: boolean;
+  /**
+   * If set to true and the dashboard state is not found, the request will
+   * succeed without deleting anything.
+   */
+  readonly allowMissing: boolean;
+  /**
+   * A unique identifier for this request. Restricted to 36 ASCII characters.
+   * A random UUID is recommended.
+   * This request is only idempotent if a `request_id` is provided.
+   */
+  readonly requestId: string;
+}
+
+/** Request message for UndeleteDashboardState. */
+export interface UndeleteDashboardStateRequest {
+  /**
+   * The name of the dashboard state to undelete.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly name: string;
+  /**
+   * Optional. The etag of the dashboard state.
+   * If this is provided, it must match the server's etag.
+   */
+  readonly etag: string;
+  /**
+   * A unique identifier for this request. Restricted to 36 ASCII characters.
+   * A random UUID is recommended.
+   * This request is only idempotent if a `request_id` is provided.
+   */
+  readonly requestId: string;
+  /** If set, the request is validated but not actually executed. */
+  readonly validateOnly: boolean;
+}
+
 /** Defines the request message for the `StreamDashboardData` method. */
 export interface StreamDashboardDataRequest {
-  /** The resource name of the DashboardState to fetch data for. */
+  /**
+   * The resource name of the DashboardState to fetch data for.
+   * Format: dashboardStates/{dashboard_state}
+   * This should be sent in the initial request.
+   */
   readonly name: string;
-  /** The core content of the dashboard to fetch data for. */
+  /**
+   * The core content of the dashboard to fetch data for.
+   * This can be sent in the initial request, especially for previewing
+   * unsaved changes. If 'name' is provided and this is also provided,
+   * this content overrides the stored state.
+   */
   readonly dashboardContent: PerfDashboardContent | undefined;
 }
 
-/** Defines the response message for the `StreamDashboardData` method. */
+/**
+ * Defines the response message for the `StreamDashboardData` method.
+ * Each message in the stream contains the result for a single widget.
+ */
 export interface StreamDashboardDataResponse {
   /** The ID of the widget this data result corresponds to. */
   readonly widgetId: string;
@@ -34,28 +728,85 @@ export interface StreamDashboardDataResponse {
     | MarkdownWidget
     | undefined;
   /** Data specifically prepared for a BreakdownTable widget */
-  readonly breakdownTableData?: BreakdownTableData | undefined;
+  readonly breakdownTableData?:
+    | BreakdownTableData
+    | undefined;
+  /**
+   * The status of the data fetch for this specific widget. If the status is
+   * `OK`, the `result_type` oneof will be populated. Otherwise, `result_type`
+   * will be empty, and this field will contain the error details.
+   * Per AIP-193, when populating this `Status` field for a widget-level error,
+   * the `details` field of the status must include an `ErrorInfo` message.
+   */
   readonly status: Status | undefined;
+}
+
+/** Request message for the FetchDashboardWidgetData method. */
+export interface FetchDashboardWidgetDataRequest {
+  /**
+   * The resource name of the DashboardState to fetch data from.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly name?:
+    | string
+    | undefined;
+  /**
+   * The core content of the dashboard to fetch data from.
+   * Useful for previewing unsaved changes.
+   */
+  readonly dashboardContent?:
+    | PerfDashboardContent
+    | undefined;
+  /**
+   * The ID of the widget within the dashboard to fetch data for.
+   * This ID must match one of the widget IDs defined in the
+   * PerfDashboardContent.widgets list.
+   */
+  readonly widgetId: string;
+}
+
+/**
+ * Response message for the FetchDashboardWidgetData method.
+ * Contains the data for the single requested widget.
+ */
+export interface FetchDashboardWidgetDataResponse {
+  /** The ID of the widget this data result corresponds to. */
+  readonly widgetId: string;
+  /** Data specifically prepared for a MultiMetricChart. */
+  readonly multiMetricChartData?:
+    | MultiMetricChartData
+    | undefined;
+  /** Data for a Markdown widget */
+  readonly markdownWidget?:
+    | MarkdownWidget
+    | undefined;
+  /** Data specifically prepared for a BreakdownTable widget */
+  readonly breakdownTableData?: BreakdownTableData | undefined;
 }
 
 /** Data structured and transformed for the MultiMetricChart component. */
 export interface MultiMetricChartData {
+  /** Key for the X-axis data within each data point Struct (e.g., "time"). */
   readonly xAxisDataKey: string;
+  /** Key used to access the Y-axis value within each data point (e.g., "value"). */
   readonly yAxisDataKey: string;
+  /** The individual lines to be plotted on the chart. */
   readonly lines: readonly MultiMetricLine[];
 }
 
 /** Represents a single line series in a MultiMetricChart. */
 export interface MultiMetricLine {
+  /** A unique identifier for this series. */
   readonly seriesId: string;
+  /** Label for the legend. */
   readonly legendLabel: string;
+  /**
+   * The array of data points for this specific line, sorted by the x-axis
+   * value.
+   */
   readonly dataPoints: readonly { readonly [key: string]: any }[];
+  /** Metric field of the PerfChartSeries from which this line was derived. */
   readonly metricField: string;
-}
-
-/** Widget for displaying formatted text using Markdown. */
-export interface MarkdownWidget {
-  readonly content: string;
 }
 
 /** Represents data structured for a Breakdown Table widget. */
@@ -84,11 +835,23 @@ export interface BreakdownSection {
 }
 
 /**
- * Represents the content of a dashboard state.
- * NOTE: This is a minimal version. Add fields as needed by your StreamDashboardDataRequest.
+ * Represents the content of a dashboard state. The structure is inspired by
+ * concepts in Plx dashboards (like filters and data sources) but is defined
+ * independently within this API.
  */
 export interface PerfDashboardContent {
+  /**
+   * A map of data source definitions relevant to this dashboard state.
+   * The key is a unique identifier for the data source within this state.
+   * The key should be 4-63 characters and conform to RFC-1034.
+   * It must start with a lowercase letter, and all subsequent characters
+   * must be lowercase letters, numbers, or hyphens, and the value must not
+   * end with a hyphen.
+   */
   readonly dataSpecs: { [key: string]: PerfDataSpec };
+  /** Global filters that apply to all applicable charts in this dashboard. */
+  readonly globalFilters: readonly PerfFilter[];
+  /** List of widgets within this dashboard. */
   readonly widgets: readonly PerfWidget[];
 }
 
@@ -97,21 +860,3692 @@ export interface PerfDashboardContent_DataSpecsEntry {
   readonly value: PerfDataSpec | undefined;
 }
 
-export interface PerfDataSpec {
-  /** Add other fields if used in the request */
-  readonly displayName: string;
-}
-
+/** Defines a single widget within the dashboard. */
 export interface PerfWidget {
+  /**
+   * Unique identifier for this widget within the dashboard.
+   * The ID should be 4-63 characters and conform to RFC-1034.
+   * It must start with a lowercase letter, and all subsequent characters
+   * must be lowercase letters, numbers, or hyphens, and the value must not
+   * end with a hyphen.
+   */
   readonly id: string;
-  readonly markdown?: MarkdownWidget | undefined;
+  /** User-visible title for the widget. */
+  readonly displayName: string;
+  /** A markdown widget. */
+  readonly markdown?:
+    | MarkdownWidget
+    | undefined;
+  /** A chart widget. */
   readonly chart?: PerfChartWidget | undefined;
 }
 
-export interface PerfChartWidget {
-  /** Add other fields if used */
-  readonly dataSpecId: string;
+/** Widget for displaying formatted text using Markdown. */
+export interface MarkdownWidget {
+  /** The Markdown content to be rendered. */
+  readonly content: string;
 }
+
+/** Defines a single chart within the dashboard. */
+export interface PerfChartWidget {
+  /** User-visible title for the chart. */
+  readonly displayName: string;
+  /** The type of this chart. */
+  readonly chartType: PerfChartWidget_ChartType;
+  /**
+   * The effective chart type used. If `chart_type` is not specified,
+   * the server may use a default type.
+   */
+  readonly effectiveChartType: PerfChartWidget_ChartType;
+  /** Default Data Spec ID for series in this chart. */
+  readonly dataSpecId: string;
+  /** Filters specific to this chart, applied to all series unless overridden. */
+  readonly filters: readonly PerfFilter[];
+  /**
+   * The series to display on this chart.
+   * For INVOCATION_DISTRIBUTION, typically only one series is used.
+   */
+  readonly series: readonly PerfChartSeries[];
+  /** X axis configuration. */
+  readonly xAxis:
+    | PerfXAxisConfig
+    | undefined;
+  /** Configuration for the Left Y Axis. */
+  readonly leftYAxis:
+    | PerfYAxisConfig
+    | undefined;
+  /** Configuration for the Right Y Axis (for Dual Y-Axes Support). */
+  readonly rightYAxis:
+    | PerfYAxisConfig
+    | undefined;
+  /**
+   * Configuration for splitting a single metric in `series` by a dimension.
+   * Typically used when only one series is defined, and the split generates
+   * the rest.
+   */
+  readonly seriesSplit:
+    | PerfSeriesSplit
+    | undefined;
+  /**
+   * Specific configuration for the INVOCATION_DISTRIBUTION chart type.
+   * Only relevant when chart_type is INVOCATION_DISTRIBUTION.
+   */
+  readonly invocationDistributionConfig: InvocationDistributionConfig | undefined;
+}
+
+/**
+ * Type of the chart.
+ * This enum is not frozen, and new values may be added in the future.
+ */
+export enum PerfChartWidget_ChartType {
+  /** CHART_TYPE_UNSPECIFIED - Unspecified chart type. */
+  CHART_TYPE_UNSPECIFIED = 0,
+  /** REGRESSION_METRIC_CHART - Regression metric chart. */
+  REGRESSION_METRIC_CHART = 1,
+  /** MULTI_METRIC_CHART - Multi-metric chart. */
+  MULTI_METRIC_CHART = 2,
+  /** BREAKDOWN_TABLE - Breakdown table chart. */
+  BREAKDOWN_TABLE = 3,
+  /** INVOCATION_DISTRIBUTION - Distribution of individual invocation values for a metric. */
+  INVOCATION_DISTRIBUTION = 4,
+}
+
+export function perfChartWidget_ChartTypeFromJSON(object: any): PerfChartWidget_ChartType {
+  switch (object) {
+    case 0:
+    case "CHART_TYPE_UNSPECIFIED":
+      return PerfChartWidget_ChartType.CHART_TYPE_UNSPECIFIED;
+    case 1:
+    case "REGRESSION_METRIC_CHART":
+      return PerfChartWidget_ChartType.REGRESSION_METRIC_CHART;
+    case 2:
+    case "MULTI_METRIC_CHART":
+      return PerfChartWidget_ChartType.MULTI_METRIC_CHART;
+    case 3:
+    case "BREAKDOWN_TABLE":
+      return PerfChartWidget_ChartType.BREAKDOWN_TABLE;
+    case 4:
+    case "INVOCATION_DISTRIBUTION":
+      return PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfChartWidget_ChartType");
+  }
+}
+
+export function perfChartWidget_ChartTypeToJSON(object: PerfChartWidget_ChartType): string {
+  switch (object) {
+    case PerfChartWidget_ChartType.CHART_TYPE_UNSPECIFIED:
+      return "CHART_TYPE_UNSPECIFIED";
+    case PerfChartWidget_ChartType.REGRESSION_METRIC_CHART:
+      return "REGRESSION_METRIC_CHART";
+    case PerfChartWidget_ChartType.MULTI_METRIC_CHART:
+      return "MULTI_METRIC_CHART";
+    case PerfChartWidget_ChartType.BREAKDOWN_TABLE:
+      return "BREAKDOWN_TABLE";
+    case PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION:
+      return "INVOCATION_DISTRIBUTION";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfChartWidget_ChartType");
+  }
+}
+
+/** Represents a single series on a chart. */
+export interface PerfChartSeries {
+  /** Optional display name for this series legend. */
+  readonly displayName: string;
+  /**
+   * The ID of the PerfDataSpec to use for this series.
+   * Defaults to the chart's data_spec_id if not specified.
+   */
+  readonly dataSpecId: string;
+  /** The specific metric field from the data spec to plot. */
+  readonly metricField: string;
+  /**
+   * Filters specific to this series. Applied in addition to chart and global
+   * filters.
+   */
+  readonly filters: readonly PerfFilter[];
+  /** The aggregation function to apply to this series (for TIME_SERIES, etc.). */
+  readonly aggregation: PerfChartSeries_PerfAggregationFunction;
+  /** Which Y axis to associate this series with. */
+  readonly yAxisAssignment: PerfChartSeries_YAxisAssignment;
+  /** Whether to show confidence intervals for this series. */
+  readonly showConfidenceInterval: boolean;
+  /**
+   * The effective data spec ID used for this series. This will be
+   * `data_spec_id` if provided, otherwise it defaults to the chart's
+   * `data_spec_id`.
+   */
+  readonly effectiveDataSpecId: string;
+  /**
+   * The effective Y axis assignment for this series. Defaults to LEFT
+   * if `y_axis_assignment` is not specified.
+   */
+  readonly effectiveYAxisAssignment: PerfChartSeries_YAxisAssignment;
+  /** CSS color string for rendering this series line (e.g., "#8884d8", "red"). */
+  readonly color: string;
+}
+
+/**
+ * Enum for aggregation functions.
+ * This enum is not frozen, and new values may be added in the future.
+ */
+export enum PerfChartSeries_PerfAggregationFunction {
+  /** PERF_AGGREGATION_FUNCTION_UNSPECIFIED - Unspecified. */
+  PERF_AGGREGATION_FUNCTION_UNSPECIFIED = 0,
+  /** MEAN - Mean. */
+  MEAN = 1,
+  /** P50 - Percentile 50. */
+  P50 = 2,
+  /** P75 - Percentile 75. */
+  P75 = 3,
+  /** P90 - Percentile 90. */
+  P90 = 4,
+  /** P99 - Percentile 99. */
+  P99 = 5,
+  /** MIN - Minimum. */
+  MIN = 6,
+  /** MAX - Maximum. */
+  MAX = 7,
+  /** COUNT - Count. */
+  COUNT = 8,
+}
+
+export function perfChartSeries_PerfAggregationFunctionFromJSON(object: any): PerfChartSeries_PerfAggregationFunction {
+  switch (object) {
+    case 0:
+    case "PERF_AGGREGATION_FUNCTION_UNSPECIFIED":
+      return PerfChartSeries_PerfAggregationFunction.PERF_AGGREGATION_FUNCTION_UNSPECIFIED;
+    case 1:
+    case "MEAN":
+      return PerfChartSeries_PerfAggregationFunction.MEAN;
+    case 2:
+    case "P50":
+      return PerfChartSeries_PerfAggregationFunction.P50;
+    case 3:
+    case "P75":
+      return PerfChartSeries_PerfAggregationFunction.P75;
+    case 4:
+    case "P90":
+      return PerfChartSeries_PerfAggregationFunction.P90;
+    case 5:
+    case "P99":
+      return PerfChartSeries_PerfAggregationFunction.P99;
+    case 6:
+    case "MIN":
+      return PerfChartSeries_PerfAggregationFunction.MIN;
+    case 7:
+    case "MAX":
+      return PerfChartSeries_PerfAggregationFunction.MAX;
+    case 8:
+    case "COUNT":
+      return PerfChartSeries_PerfAggregationFunction.COUNT;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum PerfChartSeries_PerfAggregationFunction",
+      );
+  }
+}
+
+export function perfChartSeries_PerfAggregationFunctionToJSON(object: PerfChartSeries_PerfAggregationFunction): string {
+  switch (object) {
+    case PerfChartSeries_PerfAggregationFunction.PERF_AGGREGATION_FUNCTION_UNSPECIFIED:
+      return "PERF_AGGREGATION_FUNCTION_UNSPECIFIED";
+    case PerfChartSeries_PerfAggregationFunction.MEAN:
+      return "MEAN";
+    case PerfChartSeries_PerfAggregationFunction.P50:
+      return "P50";
+    case PerfChartSeries_PerfAggregationFunction.P75:
+      return "P75";
+    case PerfChartSeries_PerfAggregationFunction.P90:
+      return "P90";
+    case PerfChartSeries_PerfAggregationFunction.P99:
+      return "P99";
+    case PerfChartSeries_PerfAggregationFunction.MIN:
+      return "MIN";
+    case PerfChartSeries_PerfAggregationFunction.MAX:
+      return "MAX";
+    case PerfChartSeries_PerfAggregationFunction.COUNT:
+      return "COUNT";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum PerfChartSeries_PerfAggregationFunction",
+      );
+  }
+}
+
+/**
+ * Enum for Y Axis assignment
+ * This enum is not frozen, and new values may be added in the future.
+ */
+export enum PerfChartSeries_YAxisAssignment {
+  /** Y_AXIS_ASSIGNMENT_UNSPECIFIED - Unspecified, defaults to LEFT. */
+  Y_AXIS_ASSIGNMENT_UNSPECIFIED = 0,
+  /** LEFT - Left Y axis. */
+  LEFT = 1,
+  /** RIGHT - Right Y axis. */
+  RIGHT = 2,
+}
+
+export function perfChartSeries_YAxisAssignmentFromJSON(object: any): PerfChartSeries_YAxisAssignment {
+  switch (object) {
+    case 0:
+    case "Y_AXIS_ASSIGNMENT_UNSPECIFIED":
+      return PerfChartSeries_YAxisAssignment.Y_AXIS_ASSIGNMENT_UNSPECIFIED;
+    case 1:
+    case "LEFT":
+      return PerfChartSeries_YAxisAssignment.LEFT;
+    case 2:
+    case "RIGHT":
+      return PerfChartSeries_YAxisAssignment.RIGHT;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfChartSeries_YAxisAssignment");
+  }
+}
+
+export function perfChartSeries_YAxisAssignmentToJSON(object: PerfChartSeries_YAxisAssignment): string {
+  switch (object) {
+    case PerfChartSeries_YAxisAssignment.Y_AXIS_ASSIGNMENT_UNSPECIFIED:
+      return "Y_AXIS_ASSIGNMENT_UNSPECIFIED";
+    case PerfChartSeries_YAxisAssignment.LEFT:
+      return "LEFT";
+    case PerfChartSeries_YAxisAssignment.RIGHT:
+      return "RIGHT";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfChartSeries_YAxisAssignment");
+  }
+}
+
+/** Configuration for the X axis. */
+export interface PerfXAxisConfig {
+  /**
+   * The column from the data spec to use for the X axis (e.g., build_id,
+   * ingestion_time).
+   */
+  readonly column: string;
+  /** The granularity to apply to the X-axis column. */
+  readonly granularity: PerfXAxisConfig_Granularity;
+  /**
+   * The effective granularity used. If `granularity` is not specified,
+   * the server may use a default or no bucketization.
+   */
+  readonly effectiveGranularity: PerfXAxisConfig_Granularity;
+}
+
+/**
+ * Defines the granularity for bucketizing the X-axis data.
+ * This enum is not frozen, and new values may be added in the future.
+ */
+export enum PerfXAxisConfig_Granularity {
+  /** GRANULARITY_UNSPECIFIED - Unspecified granularity. Server may use a default or no bucketization. */
+  GRANULARITY_UNSPECIFIED = 0,
+  /** PER_VALUE - Group by each unique value in the column. */
+  PER_VALUE = 1,
+  /** HOURLY - Group by hour. Requires a timestamp-compatible column. */
+  HOURLY = 2,
+  /** DAILY - Group by day. Requires a timestamp-compatible column. */
+  DAILY = 3,
+  /** WEEKLY - Group by week. Requires a timestamp-compatible column. */
+  WEEKLY = 4,
+  /** PER_BUILD - Group by build ID. Requires a build ID column. */
+  PER_BUILD = 5,
+}
+
+export function perfXAxisConfig_GranularityFromJSON(object: any): PerfXAxisConfig_Granularity {
+  switch (object) {
+    case 0:
+    case "GRANULARITY_UNSPECIFIED":
+      return PerfXAxisConfig_Granularity.GRANULARITY_UNSPECIFIED;
+    case 1:
+    case "PER_VALUE":
+      return PerfXAxisConfig_Granularity.PER_VALUE;
+    case 2:
+    case "HOURLY":
+      return PerfXAxisConfig_Granularity.HOURLY;
+    case 3:
+    case "DAILY":
+      return PerfXAxisConfig_Granularity.DAILY;
+    case 4:
+    case "WEEKLY":
+      return PerfXAxisConfig_Granularity.WEEKLY;
+    case 5:
+    case "PER_BUILD":
+      return PerfXAxisConfig_Granularity.PER_BUILD;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfXAxisConfig_Granularity");
+  }
+}
+
+export function perfXAxisConfig_GranularityToJSON(object: PerfXAxisConfig_Granularity): string {
+  switch (object) {
+    case PerfXAxisConfig_Granularity.GRANULARITY_UNSPECIFIED:
+      return "GRANULARITY_UNSPECIFIED";
+    case PerfXAxisConfig_Granularity.PER_VALUE:
+      return "PER_VALUE";
+    case PerfXAxisConfig_Granularity.HOURLY:
+      return "HOURLY";
+    case PerfXAxisConfig_Granularity.DAILY:
+      return "DAILY";
+    case PerfXAxisConfig_Granularity.WEEKLY:
+      return "WEEKLY";
+    case PerfXAxisConfig_Granularity.PER_BUILD:
+      return "PER_BUILD";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfXAxisConfig_Granularity");
+  }
+}
+
+/** Configuration for a Y axis. */
+export interface PerfYAxisConfig {
+  /** Optional display name for the axis. */
+  readonly displayName: string;
+  /** Optional minimum value for the axis range. */
+  readonly minValue?:
+    | number
+    | undefined;
+  /** Optional maximum value for the axis range. */
+  readonly maxValue?:
+    | number
+    | undefined;
+  /** Whether to use a logarithmic scale. */
+  readonly logarithmic: boolean;
+}
+
+/** How to split a metric into multiple series. */
+export interface PerfSeriesSplit {
+  /** Split by an invocation-level dimension (e.g., build_target, branch). */
+  readonly invocationDimension?:
+    | string
+    | undefined;
+  /** Split by a metric-specific dimension. */
+  readonly metricDimension?:
+    | string
+    | undefined;
+  /** Optional: Limit the number of series created by the split. */
+  readonly limitCount: number;
+}
+
+/** Configuration for an Invocation Distribution chart. */
+export interface InvocationDistributionConfig {
+  /** Settings for SCATTER type. */
+  readonly scatterSettings?: InvocationDistributionConfig_ScatterSettings | undefined;
+}
+
+/** Options for SCATTER type. */
+export interface InvocationDistributionConfig_ScatterSettings {
+  /** The metric field to use for the X-axis. */
+  readonly xAxisMetricField: string;
+}
+
+/** Defines a data specification, similar to concepts in Plx DataSpec. */
+export interface PerfDataSpec {
+  /** Human-readable name for the data source. */
+  readonly displayName: string;
+  /** Details about the source of the data. */
+  readonly source: PerfDataSource | undefined;
+}
+
+/** Defines the source of the data. */
+export interface PerfDataSource {
+  /** The type of the data source. */
+  readonly type: PerfDataSource_SourceType;
+}
+
+/**
+ * Type of the data source.
+ * This enum is not frozen, and new values may be added in the future.
+ */
+export enum PerfDataSource_SourceType {
+  /** SOURCE_TYPE_UNSPECIFIED - Unspecified data source type. */
+  SOURCE_TYPE_UNSPECIFIED = 0,
+  /** SQL - SQL query. */
+  SQL = 1,
+  /** TABLE - Table name. */
+  TABLE = 2,
+}
+
+export function perfDataSource_SourceTypeFromJSON(object: any): PerfDataSource_SourceType {
+  switch (object) {
+    case 0:
+    case "SOURCE_TYPE_UNSPECIFIED":
+      return PerfDataSource_SourceType.SOURCE_TYPE_UNSPECIFIED;
+    case 1:
+    case "SQL":
+      return PerfDataSource_SourceType.SQL;
+    case 2:
+    case "TABLE":
+      return PerfDataSource_SourceType.TABLE;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfDataSource_SourceType");
+  }
+}
+
+export function perfDataSource_SourceTypeToJSON(object: PerfDataSource_SourceType): string {
+  switch (object) {
+    case PerfDataSource_SourceType.SOURCE_TYPE_UNSPECIFIED:
+      return "SOURCE_TYPE_UNSPECIFIED";
+    case PerfDataSource_SourceType.SQL:
+      return "SQL";
+    case PerfDataSource_SourceType.TABLE:
+      return "TABLE";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfDataSource_SourceType");
+  }
+}
+
+/** A filter configuration, similar to concepts in Plx Filter widgets. */
+export interface PerfFilter {
+  /**
+   * Unique identifier for this filter within its scope (global or chart).
+   * The ID should be 4-63 characters and conform to RFC-1034.
+   * It must start with a lowercase letter, and all subsequent characters
+   * must be lowercase letters, numbers, or hyphens, and the value must not
+   * end with a hyphen.
+   */
+  readonly id: string;
+  /** The column in the data source this filter applies to. */
+  readonly column: string;
+  /**
+   * The ID of the PerfDataSpec in PerfDashboardContent.data_specs
+   * that this filter is associated with.
+   */
+  readonly dataSpecId: string;
+  /** User-visible title for the filter. */
+  readonly displayName: string;
+  /** Dropdown select filter. */
+  readonly select?:
+    | SelectFilter
+    | undefined;
+  /** Free form text input filter. */
+  readonly textInput?:
+    | TextInputFilter
+    | undefined;
+  /** Numerical input filter. */
+  readonly numberInput?:
+    | NumberInputFilter
+    | undefined;
+  /** Range selection filter. */
+  readonly range?:
+    | RangeFilter
+    | undefined;
+  /** Date selection filter. */
+  readonly datePicker?: DatePickerFilter | undefined;
+}
+
+/** Configuration for a SELECT filter (dropdown). */
+export interface SelectFilter {
+  /** Whether multiple selections are allowed. */
+  readonly multiSelect: boolean;
+  /** Default values and operator. */
+  readonly defaultValue: PerfFilterDefault | undefined;
+}
+
+/** Configuration for a TEXT_INPUT filter. */
+export interface TextInputFilter {
+  /** Default value and operator. */
+  readonly defaultValue: PerfFilterDefault | undefined;
+}
+
+/** Configuration for a NUMBER_INPUT filter. */
+export interface NumberInputFilter {
+  /** Default value and operator. */
+  readonly defaultValue: PerfFilterDefault | undefined;
+}
+
+/** Configuration for a RANGE filter. */
+export interface RangeFilter {
+  /** Default values and operator. Typically uses BETWEEN or similar. */
+  readonly defaultValue: PerfFilterDefault | undefined;
+}
+
+/** Configuration for a DATE_PICKER filter. */
+export interface DatePickerFilter {
+  /** Whether to allow selecting a range of dates. */
+  readonly multiSelect: boolean;
+  /** Default value and operator. */
+  readonly defaultValue: PerfFilterDefault | undefined;
+}
+
+/** Default value for a filter. */
+export interface PerfFilterDefault {
+  /**
+   * The default value(s). The number of values required depends on the
+   * operator.
+   */
+  readonly values: readonly string[];
+  /** The filter operator to use with the default values. */
+  readonly filterOperator: PerfFilterDefault_FilterOperator;
+}
+
+/**
+ * The set of allowed filter operators.
+ * This enum is not frozen, and new values may be added in the future.
+ */
+export enum PerfFilterDefault_FilterOperator {
+  /** FILTER_OPERATOR_UNSPECIFIED - Unspecified filter operator. */
+  FILTER_OPERATOR_UNSPECIFIED = 0,
+  /** EQUAL - Equal to (=). */
+  EQUAL = 1,
+  /** NOT_EQUAL - Not equal to (!=). */
+  NOT_EQUAL = 2,
+  /** GREATER_THAN - Greater than (>). */
+  GREATER_THAN = 3,
+  /** LESS_THAN - Less than (<). */
+  LESS_THAN = 4,
+  /** GREATER_THAN_OR_EQUAL - Greater than or equal to (>=). */
+  GREATER_THAN_OR_EQUAL = 5,
+  /** LESS_THAN_OR_EQUAL - Less than or equal to (<=). */
+  LESS_THAN_OR_EQUAL = 6,
+  /** IN - Value is in the provided set (IN). */
+  IN = 7,
+  /** NOT_IN - Value is not in the provided set (NOT_IN). */
+  NOT_IN = 8,
+  /**
+   * BETWEEN - Value is between the two provided values (BETWEEN). Requires exactly two
+   * values in `values`.
+   */
+  BETWEEN = 9,
+  /**
+   * REGEX_MATCH - Value matches the provided regex pattern. Requires exactly one value in
+   * `values` containing the regex.
+   */
+  REGEX_MATCH = 10,
+  /**
+   * NOT_REGEX_MATCH - Value does not match the provided regex pattern. Requires exactly one
+   * value in `values` containing the regex.
+   */
+  NOT_REGEX_MATCH = 11,
+  /** IS_EMPTY - Value is an empty string or NULL. `values` field is not used. */
+  IS_EMPTY = 12,
+  /** IS_NOT_EMPTY - Value is not an empty string and not NULL. `values` field is not used. */
+  IS_NOT_EMPTY = 13,
+  /**
+   * STARTS_WITH - Value starts with the provided prefix. Requires exactly one value in
+   * `values`.
+   */
+  STARTS_WITH = 14,
+  /**
+   * NOT_STARTS_WITH - Value does not start with the provided prefix. Requires exactly one value
+   * in `values`.
+   */
+  NOT_STARTS_WITH = 15,
+  /**
+   * ENDS_WITH - Value ends with the provided suffix. Requires exactly one value in
+   * `values`.
+   */
+  ENDS_WITH = 16,
+  /**
+   * NOT_ENDS_WITH - Value does not end with the provided suffix. Requires exactly one value
+   * in `values`.
+   */
+  NOT_ENDS_WITH = 17,
+  /** CONTAINS - Value contains the provided substring. Requires exactly one value. */
+  CONTAINS = 18,
+  /**
+   * NOT_CONTAINS - Value does not contain the provided substring. Requires exactly one
+   * value.
+   */
+  NOT_CONTAINS = 19,
+  /**
+   * LIKE - Value matches the provided SQL LIKE pattern. Uses '%' and '_'.
+   * Requires exactly one value.
+   */
+  LIKE = 20,
+  /**
+   * NOT_LIKE - Value does not match the provided SQL LIKE pattern.
+   * Requires exactly one value.
+   */
+  NOT_LIKE = 21,
+  /** IS_TRUE - Value is boolean TRUE. `values` field is not used. */
+  IS_TRUE = 22,
+  /** IS_FALSE - Value is boolean FALSE. `values` field is not used. */
+  IS_FALSE = 23,
+  /** IS_NULL - Value is NULL. `values` field is not used. */
+  IS_NULL = 24,
+  /** IS_NOT_NULL - Value is not NULL. `values` field is not used. */
+  IS_NOT_NULL = 25,
+}
+
+export function perfFilterDefault_FilterOperatorFromJSON(object: any): PerfFilterDefault_FilterOperator {
+  switch (object) {
+    case 0:
+    case "FILTER_OPERATOR_UNSPECIFIED":
+      return PerfFilterDefault_FilterOperator.FILTER_OPERATOR_UNSPECIFIED;
+    case 1:
+    case "EQUAL":
+      return PerfFilterDefault_FilterOperator.EQUAL;
+    case 2:
+    case "NOT_EQUAL":
+      return PerfFilterDefault_FilterOperator.NOT_EQUAL;
+    case 3:
+    case "GREATER_THAN":
+      return PerfFilterDefault_FilterOperator.GREATER_THAN;
+    case 4:
+    case "LESS_THAN":
+      return PerfFilterDefault_FilterOperator.LESS_THAN;
+    case 5:
+    case "GREATER_THAN_OR_EQUAL":
+      return PerfFilterDefault_FilterOperator.GREATER_THAN_OR_EQUAL;
+    case 6:
+    case "LESS_THAN_OR_EQUAL":
+      return PerfFilterDefault_FilterOperator.LESS_THAN_OR_EQUAL;
+    case 7:
+    case "IN":
+      return PerfFilterDefault_FilterOperator.IN;
+    case 8:
+    case "NOT_IN":
+      return PerfFilterDefault_FilterOperator.NOT_IN;
+    case 9:
+    case "BETWEEN":
+      return PerfFilterDefault_FilterOperator.BETWEEN;
+    case 10:
+    case "REGEX_MATCH":
+      return PerfFilterDefault_FilterOperator.REGEX_MATCH;
+    case 11:
+    case "NOT_REGEX_MATCH":
+      return PerfFilterDefault_FilterOperator.NOT_REGEX_MATCH;
+    case 12:
+    case "IS_EMPTY":
+      return PerfFilterDefault_FilterOperator.IS_EMPTY;
+    case 13:
+    case "IS_NOT_EMPTY":
+      return PerfFilterDefault_FilterOperator.IS_NOT_EMPTY;
+    case 14:
+    case "STARTS_WITH":
+      return PerfFilterDefault_FilterOperator.STARTS_WITH;
+    case 15:
+    case "NOT_STARTS_WITH":
+      return PerfFilterDefault_FilterOperator.NOT_STARTS_WITH;
+    case 16:
+    case "ENDS_WITH":
+      return PerfFilterDefault_FilterOperator.ENDS_WITH;
+    case 17:
+    case "NOT_ENDS_WITH":
+      return PerfFilterDefault_FilterOperator.NOT_ENDS_WITH;
+    case 18:
+    case "CONTAINS":
+      return PerfFilterDefault_FilterOperator.CONTAINS;
+    case 19:
+    case "NOT_CONTAINS":
+      return PerfFilterDefault_FilterOperator.NOT_CONTAINS;
+    case 20:
+    case "LIKE":
+      return PerfFilterDefault_FilterOperator.LIKE;
+    case 21:
+    case "NOT_LIKE":
+      return PerfFilterDefault_FilterOperator.NOT_LIKE;
+    case 22:
+    case "IS_TRUE":
+      return PerfFilterDefault_FilterOperator.IS_TRUE;
+    case 23:
+    case "IS_FALSE":
+      return PerfFilterDefault_FilterOperator.IS_FALSE;
+    case 24:
+    case "IS_NULL":
+      return PerfFilterDefault_FilterOperator.IS_NULL;
+    case 25:
+    case "IS_NOT_NULL":
+      return PerfFilterDefault_FilterOperator.IS_NOT_NULL;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfFilterDefault_FilterOperator");
+  }
+}
+
+export function perfFilterDefault_FilterOperatorToJSON(object: PerfFilterDefault_FilterOperator): string {
+  switch (object) {
+    case PerfFilterDefault_FilterOperator.FILTER_OPERATOR_UNSPECIFIED:
+      return "FILTER_OPERATOR_UNSPECIFIED";
+    case PerfFilterDefault_FilterOperator.EQUAL:
+      return "EQUAL";
+    case PerfFilterDefault_FilterOperator.NOT_EQUAL:
+      return "NOT_EQUAL";
+    case PerfFilterDefault_FilterOperator.GREATER_THAN:
+      return "GREATER_THAN";
+    case PerfFilterDefault_FilterOperator.LESS_THAN:
+      return "LESS_THAN";
+    case PerfFilterDefault_FilterOperator.GREATER_THAN_OR_EQUAL:
+      return "GREATER_THAN_OR_EQUAL";
+    case PerfFilterDefault_FilterOperator.LESS_THAN_OR_EQUAL:
+      return "LESS_THAN_OR_EQUAL";
+    case PerfFilterDefault_FilterOperator.IN:
+      return "IN";
+    case PerfFilterDefault_FilterOperator.NOT_IN:
+      return "NOT_IN";
+    case PerfFilterDefault_FilterOperator.BETWEEN:
+      return "BETWEEN";
+    case PerfFilterDefault_FilterOperator.REGEX_MATCH:
+      return "REGEX_MATCH";
+    case PerfFilterDefault_FilterOperator.NOT_REGEX_MATCH:
+      return "NOT_REGEX_MATCH";
+    case PerfFilterDefault_FilterOperator.IS_EMPTY:
+      return "IS_EMPTY";
+    case PerfFilterDefault_FilterOperator.IS_NOT_EMPTY:
+      return "IS_NOT_EMPTY";
+    case PerfFilterDefault_FilterOperator.STARTS_WITH:
+      return "STARTS_WITH";
+    case PerfFilterDefault_FilterOperator.NOT_STARTS_WITH:
+      return "NOT_STARTS_WITH";
+    case PerfFilterDefault_FilterOperator.ENDS_WITH:
+      return "ENDS_WITH";
+    case PerfFilterDefault_FilterOperator.NOT_ENDS_WITH:
+      return "NOT_ENDS_WITH";
+    case PerfFilterDefault_FilterOperator.CONTAINS:
+      return "CONTAINS";
+    case PerfFilterDefault_FilterOperator.NOT_CONTAINS:
+      return "NOT_CONTAINS";
+    case PerfFilterDefault_FilterOperator.LIKE:
+      return "LIKE";
+    case PerfFilterDefault_FilterOperator.NOT_LIKE:
+      return "NOT_LIKE";
+    case PerfFilterDefault_FilterOperator.IS_TRUE:
+      return "IS_TRUE";
+    case PerfFilterDefault_FilterOperator.IS_FALSE:
+      return "IS_FALSE";
+    case PerfFilterDefault_FilterOperator.IS_NULL:
+      return "IS_NULL";
+    case PerfFilterDefault_FilterOperator.IS_NOT_NULL:
+      return "IS_NOT_NULL";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfFilterDefault_FilterOperator");
+  }
+}
+
+/** Request message for ListDashboardStateRevisions. */
+export interface ListDashboardStateRevisionsRequest {
+  /**
+   * The name of the DashboardState to list revisions for.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly name: string;
+  /**
+   * The maximum number of revisions to return. The service may return fewer
+   * than this value.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `ListDashboardStateRevisions` call.
+   * Provide this to retrieve the subsequent page.
+   */
+  readonly pageToken: string;
+}
+
+/** Response message for ListDashboardStateRevisions. */
+export interface ListDashboardStateRevisionsResponse {
+  /**
+   * The revisions of the dashboard state. The most recent revision
+   * comes first.
+   */
+  readonly dashboardStates: readonly DashboardState[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page.
+   * If this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+}
+
+/** Request message for GetDashboardStateRevision. */
+export interface GetDashboardStateRevisionRequest {
+  /**
+   * The name of the DashboardState revision to retrieve.
+   * Format: dashboardStates/{dashboard_state}/revisions/{revision_id}
+   * To get the latest revision, use the DashboardState name without the
+   * /revisions/{revision_id} suffix in a GetDashboardState request.
+   */
+  readonly name: string;
+}
+
+/** Request message for RollbackDashboardState. */
+export interface RollbackDashboardStateRequest {
+  /**
+   * The name of the DashboardState to rollback.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly name: string;
+  /**
+   * The revision ID to roll back to.
+   * This must be a valid revision ID from the DashboardState's history.
+   */
+  readonly revisionId: string;
+  /**
+   * The current etag of the DashboardState.
+   * If an etag is provided and does not match the current etag of the
+   * DashboardState, the request will be blocked to prevent stale writes.
+   */
+  readonly etag: string;
+  /** If set to true, the request is validated but not actually executed. */
+  readonly validateOnly: boolean;
+}
+
+/** Message for the UserSettings resource. This is a singleton per user. */
+export interface UserSettings {
+  /**
+   * The resource name. For the calling user, this should be
+   * "users/me/settings".
+   */
+  readonly name: string;
+  /**
+   * DashboardState names that the user has starred.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly starredDashboards: readonly string[];
+  /** User's preference for dark mode. */
+  readonly darkModeEnabled?:
+    | boolean
+    | undefined;
+  /**
+   * User's preferred time zone. IANA Time Zone Database name (e.g.,
+   * "America/Los_Angeles").
+   */
+  readonly timeZone: string;
+  /** Etag for optimistic concurrency. */
+  readonly etag: string;
+}
+
+/** Request message for GetUserSettings. */
+export interface GetUserSettingsRequest {
+  /**
+   * The name of the UserSettings to retrieve.
+   * Format: users/{user}/settings
+   * Use "users/me/settings" for the authenticated user.
+   */
+  readonly name: string;
+}
+
+/** Request message for UpdateUserSettings. */
+export interface UpdateUserSettingsRequest {
+  /** The UserSettings resource to update. */
+  readonly userSettings:
+    | UserSettings
+    | undefined;
+  /** The list of fields to update. */
+  readonly updateMask:
+    | readonly string[]
+    | undefined;
+  /**
+   * If set to true, and the UserSettings resource doesn't exist, it will be
+   * created.
+   */
+  readonly allowMissing: boolean;
+}
+
+/** Request message for AddStarredDashboard. */
+export interface AddStarredDashboardRequest {
+  /**
+   * The name of the UserSettings resource.
+   * Format: users/{user}/settings
+   * Use "users/me/settings" for the authenticated user.
+   */
+  readonly name: string;
+  /**
+   * The resource name of the dashboard to star.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly dashboard: string;
+}
+
+/** Request message for RemoveStarredDashboard. */
+export interface RemoveStarredDashboardRequest {
+  /**
+   * The name of the UserSettings resource.
+   * Format: users/{user}/settings
+   * Use "users/me/settings" for the authenticated user.
+   */
+  readonly name: string;
+  /**
+   * The resource name of the dashboard to unstar.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly dashboard: string;
+}
+
+function createBaseTestConnectionRequest(): TestConnectionRequest {
+  return {};
+}
+
+export const TestConnectionRequest: MessageFns<TestConnectionRequest> = {
+  encode(_: TestConnectionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TestConnectionRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestConnectionRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): TestConnectionRequest {
+    return {};
+  },
+
+  toJSON(_: TestConnectionRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<TestConnectionRequest>): TestConnectionRequest {
+    return TestConnectionRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<TestConnectionRequest>): TestConnectionRequest {
+    const message = createBaseTestConnectionRequest() as any;
+    return message;
+  },
+};
+
+function createBaseTestConnectionResponse(): TestConnectionResponse {
+  return {};
+}
+
+export const TestConnectionResponse: MessageFns<TestConnectionResponse> = {
+  encode(_: TestConnectionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TestConnectionResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTestConnectionResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): TestConnectionResponse {
+    return {};
+  },
+
+  toJSON(_: TestConnectionResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<TestConnectionResponse>): TestConnectionResponse {
+    return TestConnectionResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<TestConnectionResponse>): TestConnectionResponse {
+    const message = createBaseTestConnectionResponse() as any;
+    return message;
+  },
+};
+
+function createBaseSearchMeasurementsRequest(): SearchMeasurementsRequest {
+  return {
+    testNameFilter: undefined,
+    buildCreateStartTime: undefined,
+    buildCreateEndTime: undefined,
+    lastNDays: undefined,
+    buildBranch: undefined,
+    buildTarget: undefined,
+    atpTestNameFilter: undefined,
+    metricKeys: [],
+    extraColumns: [],
+    pageSize: undefined,
+    pageToken: undefined,
+  };
+}
+
+export const SearchMeasurementsRequest: MessageFns<SearchMeasurementsRequest> = {
+  encode(message: SearchMeasurementsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.testNameFilter !== undefined) {
+      writer.uint32(10).string(message.testNameFilter);
+    }
+    if (message.buildCreateStartTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.buildCreateStartTime), writer.uint32(18).fork()).join();
+    }
+    if (message.buildCreateEndTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.buildCreateEndTime), writer.uint32(26).fork()).join();
+    }
+    if (message.lastNDays !== undefined) {
+      writer.uint32(32).int32(message.lastNDays);
+    }
+    if (message.buildBranch !== undefined) {
+      writer.uint32(42).string(message.buildBranch);
+    }
+    if (message.buildTarget !== undefined) {
+      writer.uint32(50).string(message.buildTarget);
+    }
+    if (message.atpTestNameFilter !== undefined) {
+      writer.uint32(58).string(message.atpTestNameFilter);
+    }
+    for (const v of message.metricKeys) {
+      writer.uint32(66).string(v!);
+    }
+    for (const v of message.extraColumns) {
+      writer.uint32(74).string(v!);
+    }
+    if (message.pageSize !== undefined) {
+      writer.uint32(80).int32(message.pageSize);
+    }
+    if (message.pageToken !== undefined) {
+      writer.uint32(90).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SearchMeasurementsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSearchMeasurementsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testNameFilter = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.buildCreateStartTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.buildCreateEndTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.lastNDays = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.buildBranch = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.buildTarget = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.atpTestNameFilter = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.metricKeys.push(reader.string());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.extraColumns.push(reader.string());
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SearchMeasurementsRequest {
+    return {
+      testNameFilter: isSet(object.testNameFilter) ? globalThis.String(object.testNameFilter) : undefined,
+      buildCreateStartTime: isSet(object.buildCreateStartTime)
+        ? globalThis.String(object.buildCreateStartTime)
+        : undefined,
+      buildCreateEndTime: isSet(object.buildCreateEndTime) ? globalThis.String(object.buildCreateEndTime) : undefined,
+      lastNDays: isSet(object.lastNDays) ? globalThis.Number(object.lastNDays) : undefined,
+      buildBranch: isSet(object.buildBranch) ? globalThis.String(object.buildBranch) : undefined,
+      buildTarget: isSet(object.buildTarget) ? globalThis.String(object.buildTarget) : undefined,
+      atpTestNameFilter: isSet(object.atpTestNameFilter) ? globalThis.String(object.atpTestNameFilter) : undefined,
+      metricKeys: globalThis.Array.isArray(object?.metricKeys)
+        ? object.metricKeys.map((e: any) => globalThis.String(e))
+        : [],
+      extraColumns: globalThis.Array.isArray(object?.extraColumns)
+        ? object.extraColumns.map((e: any) => globalThis.String(e))
+        : [],
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : undefined,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : undefined,
+    };
+  },
+
+  toJSON(message: SearchMeasurementsRequest): unknown {
+    const obj: any = {};
+    if (message.testNameFilter !== undefined) {
+      obj.testNameFilter = message.testNameFilter;
+    }
+    if (message.buildCreateStartTime !== undefined) {
+      obj.buildCreateStartTime = message.buildCreateStartTime;
+    }
+    if (message.buildCreateEndTime !== undefined) {
+      obj.buildCreateEndTime = message.buildCreateEndTime;
+    }
+    if (message.lastNDays !== undefined) {
+      obj.lastNDays = Math.round(message.lastNDays);
+    }
+    if (message.buildBranch !== undefined) {
+      obj.buildBranch = message.buildBranch;
+    }
+    if (message.buildTarget !== undefined) {
+      obj.buildTarget = message.buildTarget;
+    }
+    if (message.atpTestNameFilter !== undefined) {
+      obj.atpTestNameFilter = message.atpTestNameFilter;
+    }
+    if (message.metricKeys?.length) {
+      obj.metricKeys = message.metricKeys;
+    }
+    if (message.extraColumns?.length) {
+      obj.extraColumns = message.extraColumns;
+    }
+    if (message.pageSize !== undefined) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== undefined) {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SearchMeasurementsRequest>): SearchMeasurementsRequest {
+    return SearchMeasurementsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SearchMeasurementsRequest>): SearchMeasurementsRequest {
+    const message = createBaseSearchMeasurementsRequest() as any;
+    message.testNameFilter = object.testNameFilter ?? undefined;
+    message.buildCreateStartTime = object.buildCreateStartTime ?? undefined;
+    message.buildCreateEndTime = object.buildCreateEndTime ?? undefined;
+    message.lastNDays = object.lastNDays ?? undefined;
+    message.buildBranch = object.buildBranch ?? undefined;
+    message.buildTarget = object.buildTarget ?? undefined;
+    message.atpTestNameFilter = object.atpTestNameFilter ?? undefined;
+    message.metricKeys = object.metricKeys?.map((e) => e) || [];
+    message.extraColumns = object.extraColumns?.map((e) => e) || [];
+    message.pageSize = object.pageSize ?? undefined;
+    message.pageToken = object.pageToken ?? undefined;
+    return message;
+  },
+};
+
+function createBaseSearchMeasurementsResponse(): SearchMeasurementsResponse {
+  return { rows: [], nextPageToken: undefined };
+}
+
+export const SearchMeasurementsResponse: MessageFns<SearchMeasurementsResponse> = {
+  encode(message: SearchMeasurementsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.rows) {
+      MeasurementRow.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== undefined) {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SearchMeasurementsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSearchMeasurementsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.rows.push(MeasurementRow.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SearchMeasurementsResponse {
+    return {
+      rows: globalThis.Array.isArray(object?.rows) ? object.rows.map((e: any) => MeasurementRow.fromJSON(e)) : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : undefined,
+    };
+  },
+
+  toJSON(message: SearchMeasurementsResponse): unknown {
+    const obj: any = {};
+    if (message.rows?.length) {
+      obj.rows = message.rows.map((e) => MeasurementRow.toJSON(e));
+    }
+    if (message.nextPageToken !== undefined) {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SearchMeasurementsResponse>): SearchMeasurementsResponse {
+    return SearchMeasurementsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SearchMeasurementsResponse>): SearchMeasurementsResponse {
+    const message = createBaseSearchMeasurementsResponse() as any;
+    message.rows = object.rows?.map((e) => MeasurementRow.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? undefined;
+    return message;
+  },
+};
+
+function createBaseMeasurementRow(): MeasurementRow {
+  return {
+    test: undefined,
+    buildCreateTime: undefined,
+    buildBranch: undefined,
+    buildTarget: undefined,
+    atpTest: undefined,
+    metricKey: undefined,
+    value: undefined,
+    buildId: undefined,
+    antsInvocationId: undefined,
+    extraColumns: {},
+  };
+}
+
+export const MeasurementRow: MessageFns<MeasurementRow> = {
+  encode(message: MeasurementRow, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.test !== undefined) {
+      writer.uint32(10).string(message.test);
+    }
+    if (message.buildCreateTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.buildCreateTime), writer.uint32(18).fork()).join();
+    }
+    if (message.buildBranch !== undefined) {
+      writer.uint32(26).string(message.buildBranch);
+    }
+    if (message.buildTarget !== undefined) {
+      writer.uint32(34).string(message.buildTarget);
+    }
+    if (message.atpTest !== undefined) {
+      writer.uint32(42).string(message.atpTest);
+    }
+    if (message.metricKey !== undefined) {
+      writer.uint32(50).string(message.metricKey);
+    }
+    if (message.value !== undefined) {
+      writer.uint32(57).double(message.value);
+    }
+    if (message.buildId !== undefined) {
+      writer.uint32(66).string(message.buildId);
+    }
+    if (message.antsInvocationId !== undefined) {
+      writer.uint32(74).string(message.antsInvocationId);
+    }
+    Object.entries(message.extraColumns).forEach(([key, value]) => {
+      if (value !== undefined) {
+        MeasurementRow_ExtraColumnsEntry.encode({ key: key as any, value }, writer.uint32(82).fork()).join();
+      }
+    });
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MeasurementRow {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMeasurementRow() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.test = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.buildCreateTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.buildBranch = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.buildTarget = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.atpTest = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.metricKey = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 57) {
+            break;
+          }
+
+          message.value = reader.double();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.buildId = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.antsInvocationId = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          const entry10 = MeasurementRow_ExtraColumnsEntry.decode(reader, reader.uint32());
+          if (entry10.value !== undefined) {
+            message.extraColumns[entry10.key] = entry10.value;
+          }
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MeasurementRow {
+    return {
+      test: isSet(object.test) ? globalThis.String(object.test) : undefined,
+      buildCreateTime: isSet(object.buildCreateTime) ? globalThis.String(object.buildCreateTime) : undefined,
+      buildBranch: isSet(object.buildBranch) ? globalThis.String(object.buildBranch) : undefined,
+      buildTarget: isSet(object.buildTarget) ? globalThis.String(object.buildTarget) : undefined,
+      atpTest: isSet(object.atpTest) ? globalThis.String(object.atpTest) : undefined,
+      metricKey: isSet(object.metricKey) ? globalThis.String(object.metricKey) : undefined,
+      value: isSet(object.value) ? globalThis.Number(object.value) : undefined,
+      buildId: isSet(object.buildId) ? globalThis.String(object.buildId) : undefined,
+      antsInvocationId: isSet(object.antsInvocationId) ? globalThis.String(object.antsInvocationId) : undefined,
+      extraColumns: isObject(object.extraColumns)
+        ? Object.entries(object.extraColumns).reduce<{ [key: string]: any | undefined }>((acc, [key, value]) => {
+          acc[key] = value as any | undefined;
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: MeasurementRow): unknown {
+    const obj: any = {};
+    if (message.test !== undefined) {
+      obj.test = message.test;
+    }
+    if (message.buildCreateTime !== undefined) {
+      obj.buildCreateTime = message.buildCreateTime;
+    }
+    if (message.buildBranch !== undefined) {
+      obj.buildBranch = message.buildBranch;
+    }
+    if (message.buildTarget !== undefined) {
+      obj.buildTarget = message.buildTarget;
+    }
+    if (message.atpTest !== undefined) {
+      obj.atpTest = message.atpTest;
+    }
+    if (message.metricKey !== undefined) {
+      obj.metricKey = message.metricKey;
+    }
+    if (message.value !== undefined) {
+      obj.value = message.value;
+    }
+    if (message.buildId !== undefined) {
+      obj.buildId = message.buildId;
+    }
+    if (message.antsInvocationId !== undefined) {
+      obj.antsInvocationId = message.antsInvocationId;
+    }
+    if (message.extraColumns) {
+      const entries = Object.entries(message.extraColumns);
+      if (entries.length > 0) {
+        obj.extraColumns = {};
+        entries.forEach(([k, v]) => {
+          obj.extraColumns[k] = v;
+        });
+      }
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<MeasurementRow>): MeasurementRow {
+    return MeasurementRow.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<MeasurementRow>): MeasurementRow {
+    const message = createBaseMeasurementRow() as any;
+    message.test = object.test ?? undefined;
+    message.buildCreateTime = object.buildCreateTime ?? undefined;
+    message.buildBranch = object.buildBranch ?? undefined;
+    message.buildTarget = object.buildTarget ?? undefined;
+    message.atpTest = object.atpTest ?? undefined;
+    message.metricKey = object.metricKey ?? undefined;
+    message.value = object.value ?? undefined;
+    message.buildId = object.buildId ?? undefined;
+    message.antsInvocationId = object.antsInvocationId ?? undefined;
+    message.extraColumns = Object.entries(object.extraColumns ?? {}).reduce<{ [key: string]: any | undefined }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseMeasurementRow_ExtraColumnsEntry(): MeasurementRow_ExtraColumnsEntry {
+  return { key: "", value: undefined };
+}
+
+export const MeasurementRow_ExtraColumnsEntry: MessageFns<MeasurementRow_ExtraColumnsEntry> = {
+  encode(message: MeasurementRow_ExtraColumnsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      Value.encode(Value.wrap(message.value), writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MeasurementRow_ExtraColumnsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMeasurementRow_ExtraColumnsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = Value.unwrap(Value.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MeasurementRow_ExtraColumnsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object?.value) ? object.value : undefined,
+    };
+  },
+
+  toJSON(message: MeasurementRow_ExtraColumnsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<MeasurementRow_ExtraColumnsEntry>): MeasurementRow_ExtraColumnsEntry {
+    return MeasurementRow_ExtraColumnsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<MeasurementRow_ExtraColumnsEntry>): MeasurementRow_ExtraColumnsEntry {
+    const message = createBaseMeasurementRow_ExtraColumnsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? undefined;
+    return message;
+  },
+};
+
+function createBaseListMeasurementFilterColumnsRequest(): ListMeasurementFilterColumnsRequest {
+  return { parent: "", pageSize: 0, pageToken: "" };
+}
+
+export const ListMeasurementFilterColumnsRequest: MessageFns<ListMeasurementFilterColumnsRequest> = {
+  encode(message: ListMeasurementFilterColumnsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.parent !== "") {
+      writer.uint32(10).string(message.parent);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(16).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(26).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListMeasurementFilterColumnsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListMeasurementFilterColumnsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.parent = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListMeasurementFilterColumnsRequest {
+    return {
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: ListMeasurementFilterColumnsRequest): unknown {
+    const obj: any = {};
+    if (message.parent !== "") {
+      obj.parent = message.parent;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListMeasurementFilterColumnsRequest>): ListMeasurementFilterColumnsRequest {
+    return ListMeasurementFilterColumnsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListMeasurementFilterColumnsRequest>): ListMeasurementFilterColumnsRequest {
+    const message = createBaseListMeasurementFilterColumnsRequest() as any;
+    message.parent = object.parent ?? "";
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseListMeasurementFilterColumnsResponse(): ListMeasurementFilterColumnsResponse {
+  return { measurementFilterColumns: [], nextPageToken: "" };
+}
+
+export const ListMeasurementFilterColumnsResponse: MessageFns<ListMeasurementFilterColumnsResponse> = {
+  encode(message: ListMeasurementFilterColumnsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.measurementFilterColumns) {
+      MeasurementFilterColumn.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListMeasurementFilterColumnsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListMeasurementFilterColumnsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.measurementFilterColumns.push(MeasurementFilterColumn.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListMeasurementFilterColumnsResponse {
+    return {
+      measurementFilterColumns: globalThis.Array.isArray(object?.measurementFilterColumns)
+        ? object.measurementFilterColumns.map((e: any) => MeasurementFilterColumn.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: ListMeasurementFilterColumnsResponse): unknown {
+    const obj: any = {};
+    if (message.measurementFilterColumns?.length) {
+      obj.measurementFilterColumns = message.measurementFilterColumns.map((e) => MeasurementFilterColumn.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListMeasurementFilterColumnsResponse>): ListMeasurementFilterColumnsResponse {
+    return ListMeasurementFilterColumnsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListMeasurementFilterColumnsResponse>): ListMeasurementFilterColumnsResponse {
+    const message = createBaseListMeasurementFilterColumnsResponse() as any;
+    message.measurementFilterColumns =
+      object.measurementFilterColumns?.map((e) => MeasurementFilterColumn.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseMeasurementFilterColumn(): MeasurementFilterColumn {
+  return { column: "", dataType: 0, sampleValues: [], primary: false, isMetricKey: false, applicableScopes: [] };
+}
+
+export const MeasurementFilterColumn: MessageFns<MeasurementFilterColumn> = {
+  encode(message: MeasurementFilterColumn, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.column !== "") {
+      writer.uint32(10).string(message.column);
+    }
+    if (message.dataType !== 0) {
+      writer.uint32(16).int32(message.dataType);
+    }
+    for (const v of message.sampleValues) {
+      writer.uint32(26).string(v!);
+    }
+    if (message.primary !== false) {
+      writer.uint32(32).bool(message.primary);
+    }
+    if (message.isMetricKey !== false) {
+      writer.uint32(40).bool(message.isMetricKey);
+    }
+    for (const v of message.applicableScopes) {
+      writer.uint32(48).int32(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MeasurementFilterColumn {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMeasurementFilterColumn() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.column = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.dataType = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.sampleValues.push(reader.string());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.primary = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.isMetricKey = reader.bool();
+          continue;
+        }
+        case 6: {
+          if (tag === 48) {
+            message.applicableScopes.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 50) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.applicableScopes.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MeasurementFilterColumn {
+    return {
+      column: isSet(object.column) ? globalThis.String(object.column) : "",
+      dataType: isSet(object.dataType) ? measurementFilterColumn_ColumnDataTypeFromJSON(object.dataType) : 0,
+      sampleValues: globalThis.Array.isArray(object?.sampleValues)
+        ? object.sampleValues.map((e: any) => globalThis.String(e))
+        : [],
+      primary: isSet(object.primary) ? globalThis.Boolean(object.primary) : false,
+      isMetricKey: isSet(object.isMetricKey) ? globalThis.Boolean(object.isMetricKey) : false,
+      applicableScopes: globalThis.Array.isArray(object?.applicableScopes)
+        ? object.applicableScopes.map((e: any) => measurementFilterColumn_FilterScopeFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: MeasurementFilterColumn): unknown {
+    const obj: any = {};
+    if (message.column !== "") {
+      obj.column = message.column;
+    }
+    if (message.dataType !== 0) {
+      obj.dataType = measurementFilterColumn_ColumnDataTypeToJSON(message.dataType);
+    }
+    if (message.sampleValues?.length) {
+      obj.sampleValues = message.sampleValues;
+    }
+    if (message.primary !== false) {
+      obj.primary = message.primary;
+    }
+    if (message.isMetricKey !== false) {
+      obj.isMetricKey = message.isMetricKey;
+    }
+    if (message.applicableScopes?.length) {
+      obj.applicableScopes = message.applicableScopes.map((e) => measurementFilterColumn_FilterScopeToJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<MeasurementFilterColumn>): MeasurementFilterColumn {
+    return MeasurementFilterColumn.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<MeasurementFilterColumn>): MeasurementFilterColumn {
+    const message = createBaseMeasurementFilterColumn() as any;
+    message.column = object.column ?? "";
+    message.dataType = object.dataType ?? 0;
+    message.sampleValues = object.sampleValues?.map((e) => e) || [];
+    message.primary = object.primary ?? false;
+    message.isMetricKey = object.isMetricKey ?? false;
+    message.applicableScopes = object.applicableScopes?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseSuggestMeasurementFilterValuesRequest(): SuggestMeasurementFilterValuesRequest {
+  return { parent: "", column: "", query: "", maxResultCount: 0 };
+}
+
+export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasurementFilterValuesRequest> = {
+  encode(message: SuggestMeasurementFilterValuesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.parent !== "") {
+      writer.uint32(10).string(message.parent);
+    }
+    if (message.column !== "") {
+      writer.uint32(18).string(message.column);
+    }
+    if (message.query !== "") {
+      writer.uint32(26).string(message.query);
+    }
+    if (message.maxResultCount !== 0) {
+      writer.uint32(32).int32(message.maxResultCount);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SuggestMeasurementFilterValuesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSuggestMeasurementFilterValuesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.parent = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.column = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.query = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.maxResultCount = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SuggestMeasurementFilterValuesRequest {
+    return {
+      parent: isSet(object.parent) ? globalThis.String(object.parent) : "",
+      column: isSet(object.column) ? globalThis.String(object.column) : "",
+      query: isSet(object.query) ? globalThis.String(object.query) : "",
+      maxResultCount: isSet(object.maxResultCount) ? globalThis.Number(object.maxResultCount) : 0,
+    };
+  },
+
+  toJSON(message: SuggestMeasurementFilterValuesRequest): unknown {
+    const obj: any = {};
+    if (message.parent !== "") {
+      obj.parent = message.parent;
+    }
+    if (message.column !== "") {
+      obj.column = message.column;
+    }
+    if (message.query !== "") {
+      obj.query = message.query;
+    }
+    if (message.maxResultCount !== 0) {
+      obj.maxResultCount = Math.round(message.maxResultCount);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SuggestMeasurementFilterValuesRequest>): SuggestMeasurementFilterValuesRequest {
+    return SuggestMeasurementFilterValuesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SuggestMeasurementFilterValuesRequest>): SuggestMeasurementFilterValuesRequest {
+    const message = createBaseSuggestMeasurementFilterValuesRequest() as any;
+    message.parent = object.parent ?? "";
+    message.column = object.column ?? "";
+    message.query = object.query ?? "";
+    message.maxResultCount = object.maxResultCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseSuggestMeasurementFilterValuesResponse(): SuggestMeasurementFilterValuesResponse {
+  return { values: [] };
+}
+
+export const SuggestMeasurementFilterValuesResponse: MessageFns<SuggestMeasurementFilterValuesResponse> = {
+  encode(message: SuggestMeasurementFilterValuesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.values) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SuggestMeasurementFilterValuesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSuggestMeasurementFilterValuesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.values.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SuggestMeasurementFilterValuesResponse {
+    return {
+      values: globalThis.Array.isArray(object?.values) ? object.values.map((e: any) => globalThis.String(e)) : [],
+    };
+  },
+
+  toJSON(message: SuggestMeasurementFilterValuesResponse): unknown {
+    const obj: any = {};
+    if (message.values?.length) {
+      obj.values = message.values;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SuggestMeasurementFilterValuesResponse>): SuggestMeasurementFilterValuesResponse {
+    return SuggestMeasurementFilterValuesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SuggestMeasurementFilterValuesResponse>): SuggestMeasurementFilterValuesResponse {
+    const message = createBaseSuggestMeasurementFilterValuesResponse() as any;
+    message.values = object.values?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseSearchMetricDefinitionsRequest(): SearchMetricDefinitionsRequest {
+  return { filter: "", pageSize: undefined, pageToken: "" };
+}
+
+export const SearchMetricDefinitionsRequest: MessageFns<SearchMetricDefinitionsRequest> = {
+  encode(message: SearchMetricDefinitionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.filter !== "") {
+      writer.uint32(10).string(message.filter);
+    }
+    if (message.pageSize !== undefined) {
+      writer.uint32(16).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(26).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SearchMetricDefinitionsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSearchMetricDefinitionsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SearchMetricDefinitionsRequest {
+    return {
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : undefined,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: SearchMetricDefinitionsRequest): unknown {
+    const obj: any = {};
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    if (message.pageSize !== undefined) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SearchMetricDefinitionsRequest>): SearchMetricDefinitionsRequest {
+    return SearchMetricDefinitionsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SearchMetricDefinitionsRequest>): SearchMetricDefinitionsRequest {
+    const message = createBaseSearchMetricDefinitionsRequest() as any;
+    message.filter = object.filter ?? "";
+    message.pageSize = object.pageSize ?? undefined;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseSearchMetricDefinitionsResponse(): SearchMetricDefinitionsResponse {
+  return { metricDefinitions: [], nextPageToken: "" };
+}
+
+export const SearchMetricDefinitionsResponse: MessageFns<SearchMetricDefinitionsResponse> = {
+  encode(message: SearchMetricDefinitionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.metricDefinitions) {
+      MetricDefinition.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SearchMetricDefinitionsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSearchMetricDefinitionsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.metricDefinitions.push(MetricDefinition.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SearchMetricDefinitionsResponse {
+    return {
+      metricDefinitions: globalThis.Array.isArray(object?.metricDefinitions)
+        ? object.metricDefinitions.map((e: any) => MetricDefinition.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: SearchMetricDefinitionsResponse): unknown {
+    const obj: any = {};
+    if (message.metricDefinitions?.length) {
+      obj.metricDefinitions = message.metricDefinitions.map((e) => MetricDefinition.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SearchMetricDefinitionsResponse>): SearchMetricDefinitionsResponse {
+    return SearchMetricDefinitionsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SearchMetricDefinitionsResponse>): SearchMetricDefinitionsResponse {
+    const message = createBaseSearchMetricDefinitionsResponse() as any;
+    message.metricDefinitions = object.metricDefinitions?.map((e) => MetricDefinition.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseMetricDefinition(): MetricDefinition {
+  return {
+    metricDefinitionId: "",
+    metricId: "",
+    unit: "",
+    polarity: "",
+    source: "",
+    displayName: "",
+    statisticalKeys: [],
+  };
+}
+
+export const MetricDefinition: MessageFns<MetricDefinition> = {
+  encode(message: MetricDefinition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.metricDefinitionId !== "") {
+      writer.uint32(10).string(message.metricDefinitionId);
+    }
+    if (message.metricId !== "") {
+      writer.uint32(18).string(message.metricId);
+    }
+    if (message.unit !== "") {
+      writer.uint32(26).string(message.unit);
+    }
+    if (message.polarity !== "") {
+      writer.uint32(34).string(message.polarity);
+    }
+    if (message.source !== "") {
+      writer.uint32(42).string(message.source);
+    }
+    if (message.displayName !== "") {
+      writer.uint32(50).string(message.displayName);
+    }
+    for (const v of message.statisticalKeys) {
+      writer.uint32(58).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MetricDefinition {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMetricDefinition() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.metricDefinitionId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.metricId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.unit = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.polarity = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.source = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.statisticalKeys.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MetricDefinition {
+    return {
+      metricDefinitionId: isSet(object.metricDefinitionId) ? globalThis.String(object.metricDefinitionId) : "",
+      metricId: isSet(object.metricId) ? globalThis.String(object.metricId) : "",
+      unit: isSet(object.unit) ? globalThis.String(object.unit) : "",
+      polarity: isSet(object.polarity) ? globalThis.String(object.polarity) : "",
+      source: isSet(object.source) ? globalThis.String(object.source) : "",
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "",
+      statisticalKeys: globalThis.Array.isArray(object?.statisticalKeys)
+        ? object.statisticalKeys.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: MetricDefinition): unknown {
+    const obj: any = {};
+    if (message.metricDefinitionId !== "") {
+      obj.metricDefinitionId = message.metricDefinitionId;
+    }
+    if (message.metricId !== "") {
+      obj.metricId = message.metricId;
+    }
+    if (message.unit !== "") {
+      obj.unit = message.unit;
+    }
+    if (message.polarity !== "") {
+      obj.polarity = message.polarity;
+    }
+    if (message.source !== "") {
+      obj.source = message.source;
+    }
+    if (message.displayName !== "") {
+      obj.displayName = message.displayName;
+    }
+    if (message.statisticalKeys?.length) {
+      obj.statisticalKeys = message.statisticalKeys;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<MetricDefinition>): MetricDefinition {
+    return MetricDefinition.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<MetricDefinition>): MetricDefinition {
+    const message = createBaseMetricDefinition() as any;
+    message.metricDefinitionId = object.metricDefinitionId ?? "";
+    message.metricId = object.metricId ?? "";
+    message.unit = object.unit ?? "";
+    message.polarity = object.polarity ?? "";
+    message.source = object.source ?? "";
+    message.displayName = object.displayName ?? "";
+    message.statisticalKeys = object.statisticalKeys?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseDashboardState(): DashboardState {
+  return {
+    name: "",
+    dashboardContent: undefined,
+    displayName: "",
+    description: "",
+    createTime: undefined,
+    updateTime: undefined,
+    deleteTime: undefined,
+    purgeTime: undefined,
+    etag: "",
+    uid: "",
+    annotations: {},
+    reconciling: false,
+    revisionId: "",
+    revisionCreateTime: undefined,
+  };
+}
+
+export const DashboardState: MessageFns<DashboardState> = {
+  encode(message: DashboardState, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.dashboardContent !== undefined) {
+      PerfDashboardContent.encode(message.dashboardContent, writer.uint32(18).fork()).join();
+    }
+    if (message.displayName !== "") {
+      writer.uint32(26).string(message.displayName);
+    }
+    if (message.description !== "") {
+      writer.uint32(34).string(message.description);
+    }
+    if (message.createTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.createTime), writer.uint32(42).fork()).join();
+    }
+    if (message.updateTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.updateTime), writer.uint32(50).fork()).join();
+    }
+    if (message.deleteTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.deleteTime), writer.uint32(58).fork()).join();
+    }
+    if (message.purgeTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.purgeTime), writer.uint32(66).fork()).join();
+    }
+    if (message.etag !== "") {
+      writer.uint32(74).string(message.etag);
+    }
+    if (message.uid !== "") {
+      writer.uint32(82).string(message.uid);
+    }
+    Object.entries(message.annotations).forEach(([key, value]) => {
+      DashboardState_AnnotationsEntry.encode({ key: key as any, value }, writer.uint32(90).fork()).join();
+    });
+    if (message.reconciling !== false) {
+      writer.uint32(96).bool(message.reconciling);
+    }
+    if (message.revisionId !== "") {
+      writer.uint32(106).string(message.revisionId);
+    }
+    if (message.revisionCreateTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.revisionCreateTime), writer.uint32(114).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DashboardState {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDashboardState() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dashboardContent = PerfDashboardContent.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.description = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.createTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.updateTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.deleteTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.purgeTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.etag = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.uid = reader.string();
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          const entry11 = DashboardState_AnnotationsEntry.decode(reader, reader.uint32());
+          if (entry11.value !== undefined) {
+            message.annotations[entry11.key] = entry11.value;
+          }
+          continue;
+        }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.reconciling = reader.bool();
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.revisionId = reader.string();
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.revisionCreateTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DashboardState {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      dashboardContent: isSet(object.dashboardContent)
+        ? PerfDashboardContent.fromJSON(object.dashboardContent)
+        : undefined,
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "",
+      description: isSet(object.description) ? globalThis.String(object.description) : "",
+      createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
+      updateTime: isSet(object.updateTime) ? globalThis.String(object.updateTime) : undefined,
+      deleteTime: isSet(object.deleteTime) ? globalThis.String(object.deleteTime) : undefined,
+      purgeTime: isSet(object.purgeTime) ? globalThis.String(object.purgeTime) : undefined,
+      etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
+      uid: isSet(object.uid) ? globalThis.String(object.uid) : "",
+      annotations: isObject(object.annotations)
+        ? Object.entries(object.annotations).reduce<{ [key: string]: string }>((acc, [key, value]) => {
+          acc[key] = String(value);
+          return acc;
+        }, {})
+        : {},
+      reconciling: isSet(object.reconciling) ? globalThis.Boolean(object.reconciling) : false,
+      revisionId: isSet(object.revisionId) ? globalThis.String(object.revisionId) : "",
+      revisionCreateTime: isSet(object.revisionCreateTime) ? globalThis.String(object.revisionCreateTime) : undefined,
+    };
+  },
+
+  toJSON(message: DashboardState): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.dashboardContent !== undefined) {
+      obj.dashboardContent = PerfDashboardContent.toJSON(message.dashboardContent);
+    }
+    if (message.displayName !== "") {
+      obj.displayName = message.displayName;
+    }
+    if (message.description !== "") {
+      obj.description = message.description;
+    }
+    if (message.createTime !== undefined) {
+      obj.createTime = message.createTime;
+    }
+    if (message.updateTime !== undefined) {
+      obj.updateTime = message.updateTime;
+    }
+    if (message.deleteTime !== undefined) {
+      obj.deleteTime = message.deleteTime;
+    }
+    if (message.purgeTime !== undefined) {
+      obj.purgeTime = message.purgeTime;
+    }
+    if (message.etag !== "") {
+      obj.etag = message.etag;
+    }
+    if (message.uid !== "") {
+      obj.uid = message.uid;
+    }
+    if (message.annotations) {
+      const entries = Object.entries(message.annotations);
+      if (entries.length > 0) {
+        obj.annotations = {};
+        entries.forEach(([k, v]) => {
+          obj.annotations[k] = v;
+        });
+      }
+    }
+    if (message.reconciling !== false) {
+      obj.reconciling = message.reconciling;
+    }
+    if (message.revisionId !== "") {
+      obj.revisionId = message.revisionId;
+    }
+    if (message.revisionCreateTime !== undefined) {
+      obj.revisionCreateTime = message.revisionCreateTime;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DashboardState>): DashboardState {
+    return DashboardState.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DashboardState>): DashboardState {
+    const message = createBaseDashboardState() as any;
+    message.name = object.name ?? "";
+    message.dashboardContent = (object.dashboardContent !== undefined && object.dashboardContent !== null)
+      ? PerfDashboardContent.fromPartial(object.dashboardContent)
+      : undefined;
+    message.displayName = object.displayName ?? "";
+    message.description = object.description ?? "";
+    message.createTime = object.createTime ?? undefined;
+    message.updateTime = object.updateTime ?? undefined;
+    message.deleteTime = object.deleteTime ?? undefined;
+    message.purgeTime = object.purgeTime ?? undefined;
+    message.etag = object.etag ?? "";
+    message.uid = object.uid ?? "";
+    message.annotations = Object.entries(object.annotations ?? {}).reduce<{ [key: string]: string }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = globalThis.String(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    message.reconciling = object.reconciling ?? false;
+    message.revisionId = object.revisionId ?? "";
+    message.revisionCreateTime = object.revisionCreateTime ?? undefined;
+    return message;
+  },
+};
+
+function createBaseDashboardState_AnnotationsEntry(): DashboardState_AnnotationsEntry {
+  return { key: "", value: "" };
+}
+
+export const DashboardState_AnnotationsEntry: MessageFns<DashboardState_AnnotationsEntry> = {
+  encode(message: DashboardState_AnnotationsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DashboardState_AnnotationsEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDashboardState_AnnotationsEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DashboardState_AnnotationsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: DashboardState_AnnotationsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DashboardState_AnnotationsEntry>): DashboardState_AnnotationsEntry {
+    return DashboardState_AnnotationsEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DashboardState_AnnotationsEntry>): DashboardState_AnnotationsEntry {
+    const message = createBaseDashboardState_AnnotationsEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
+    return message;
+  },
+};
+
+function createBaseDashboardStateOperationMetadata(): DashboardStateOperationMetadata {
+  return { createTime: undefined, target: "", apiVersion: "" };
+}
+
+export const DashboardStateOperationMetadata: MessageFns<DashboardStateOperationMetadata> = {
+  encode(message: DashboardStateOperationMetadata, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.createTime !== undefined) {
+      Timestamp.encode(toTimestamp(message.createTime), writer.uint32(10).fork()).join();
+    }
+    if (message.target !== "") {
+      writer.uint32(18).string(message.target);
+    }
+    if (message.apiVersion !== "") {
+      writer.uint32(26).string(message.apiVersion);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DashboardStateOperationMetadata {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDashboardStateOperationMetadata() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.createTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.target = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.apiVersion = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DashboardStateOperationMetadata {
+    return {
+      createTime: isSet(object.createTime) ? globalThis.String(object.createTime) : undefined,
+      target: isSet(object.target) ? globalThis.String(object.target) : "",
+      apiVersion: isSet(object.apiVersion) ? globalThis.String(object.apiVersion) : "",
+    };
+  },
+
+  toJSON(message: DashboardStateOperationMetadata): unknown {
+    const obj: any = {};
+    if (message.createTime !== undefined) {
+      obj.createTime = message.createTime;
+    }
+    if (message.target !== "") {
+      obj.target = message.target;
+    }
+    if (message.apiVersion !== "") {
+      obj.apiVersion = message.apiVersion;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DashboardStateOperationMetadata>): DashboardStateOperationMetadata {
+    return DashboardStateOperationMetadata.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DashboardStateOperationMetadata>): DashboardStateOperationMetadata {
+    const message = createBaseDashboardStateOperationMetadata() as any;
+    message.createTime = object.createTime ?? undefined;
+    message.target = object.target ?? "";
+    message.apiVersion = object.apiVersion ?? "";
+    return message;
+  },
+};
+
+function createBaseCreateDashboardStateRequest(): CreateDashboardStateRequest {
+  return { dashboardState: undefined, dashboardStateId: "", validateOnly: false, requestId: "" };
+}
+
+export const CreateDashboardStateRequest: MessageFns<CreateDashboardStateRequest> = {
+  encode(message: CreateDashboardStateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.dashboardState !== undefined) {
+      DashboardState.encode(message.dashboardState, writer.uint32(10).fork()).join();
+    }
+    if (message.dashboardStateId !== "") {
+      writer.uint32(18).string(message.dashboardStateId);
+    }
+    if (message.validateOnly !== false) {
+      writer.uint32(24).bool(message.validateOnly);
+    }
+    if (message.requestId !== "") {
+      writer.uint32(34).string(message.requestId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateDashboardStateRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateDashboardStateRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dashboardState = DashboardState.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dashboardStateId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.validateOnly = reader.bool();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.requestId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CreateDashboardStateRequest {
+    return {
+      dashboardState: isSet(object.dashboardState) ? DashboardState.fromJSON(object.dashboardState) : undefined,
+      dashboardStateId: isSet(object.dashboardStateId) ? globalThis.String(object.dashboardStateId) : "",
+      validateOnly: isSet(object.validateOnly) ? globalThis.Boolean(object.validateOnly) : false,
+      requestId: isSet(object.requestId) ? globalThis.String(object.requestId) : "",
+    };
+  },
+
+  toJSON(message: CreateDashboardStateRequest): unknown {
+    const obj: any = {};
+    if (message.dashboardState !== undefined) {
+      obj.dashboardState = DashboardState.toJSON(message.dashboardState);
+    }
+    if (message.dashboardStateId !== "") {
+      obj.dashboardStateId = message.dashboardStateId;
+    }
+    if (message.validateOnly !== false) {
+      obj.validateOnly = message.validateOnly;
+    }
+    if (message.requestId !== "") {
+      obj.requestId = message.requestId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CreateDashboardStateRequest>): CreateDashboardStateRequest {
+    return CreateDashboardStateRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CreateDashboardStateRequest>): CreateDashboardStateRequest {
+    const message = createBaseCreateDashboardStateRequest() as any;
+    message.dashboardState = (object.dashboardState !== undefined && object.dashboardState !== null)
+      ? DashboardState.fromPartial(object.dashboardState)
+      : undefined;
+    message.dashboardStateId = object.dashboardStateId ?? "";
+    message.validateOnly = object.validateOnly ?? false;
+    message.requestId = object.requestId ?? "";
+    return message;
+  },
+};
+
+function createBaseUpdateDashboardStateRequest(): UpdateDashboardStateRequest {
+  return { dashboardState: undefined, updateMask: undefined, allowMissing: false, validateOnly: false, requestId: "" };
+}
+
+export const UpdateDashboardStateRequest: MessageFns<UpdateDashboardStateRequest> = {
+  encode(message: UpdateDashboardStateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.dashboardState !== undefined) {
+      DashboardState.encode(message.dashboardState, writer.uint32(10).fork()).join();
+    }
+    if (message.updateMask !== undefined) {
+      FieldMask.encode(FieldMask.wrap(message.updateMask), writer.uint32(18).fork()).join();
+    }
+    if (message.allowMissing !== false) {
+      writer.uint32(24).bool(message.allowMissing);
+    }
+    if (message.validateOnly !== false) {
+      writer.uint32(32).bool(message.validateOnly);
+    }
+    if (message.requestId !== "") {
+      writer.uint32(42).string(message.requestId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateDashboardStateRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateDashboardStateRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dashboardState = DashboardState.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.updateMask = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.allowMissing = reader.bool();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.validateOnly = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.requestId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateDashboardStateRequest {
+    return {
+      dashboardState: isSet(object.dashboardState) ? DashboardState.fromJSON(object.dashboardState) : undefined,
+      updateMask: isSet(object.updateMask) ? FieldMask.unwrap(FieldMask.fromJSON(object.updateMask)) : undefined,
+      allowMissing: isSet(object.allowMissing) ? globalThis.Boolean(object.allowMissing) : false,
+      validateOnly: isSet(object.validateOnly) ? globalThis.Boolean(object.validateOnly) : false,
+      requestId: isSet(object.requestId) ? globalThis.String(object.requestId) : "",
+    };
+  },
+
+  toJSON(message: UpdateDashboardStateRequest): unknown {
+    const obj: any = {};
+    if (message.dashboardState !== undefined) {
+      obj.dashboardState = DashboardState.toJSON(message.dashboardState);
+    }
+    if (message.updateMask !== undefined) {
+      obj.updateMask = FieldMask.toJSON(FieldMask.wrap(message.updateMask));
+    }
+    if (message.allowMissing !== false) {
+      obj.allowMissing = message.allowMissing;
+    }
+    if (message.validateOnly !== false) {
+      obj.validateOnly = message.validateOnly;
+    }
+    if (message.requestId !== "") {
+      obj.requestId = message.requestId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateDashboardStateRequest>): UpdateDashboardStateRequest {
+    return UpdateDashboardStateRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateDashboardStateRequest>): UpdateDashboardStateRequest {
+    const message = createBaseUpdateDashboardStateRequest() as any;
+    message.dashboardState = (object.dashboardState !== undefined && object.dashboardState !== null)
+      ? DashboardState.fromPartial(object.dashboardState)
+      : undefined;
+    message.updateMask = object.updateMask ?? undefined;
+    message.allowMissing = object.allowMissing ?? false;
+    message.validateOnly = object.validateOnly ?? false;
+    message.requestId = object.requestId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetDashboardStateRequest(): GetDashboardStateRequest {
+  return { name: "" };
+}
+
+export const GetDashboardStateRequest: MessageFns<GetDashboardStateRequest> = {
+  encode(message: GetDashboardStateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetDashboardStateRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetDashboardStateRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetDashboardStateRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: GetDashboardStateRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetDashboardStateRequest>): GetDashboardStateRequest {
+    return GetDashboardStateRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetDashboardStateRequest>): GetDashboardStateRequest {
+    const message = createBaseGetDashboardStateRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseListDashboardStatesRequest(): ListDashboardStatesRequest {
+  return { pageSize: 0, pageToken: "", filter: "", showDeleted: false };
+}
+
+export const ListDashboardStatesRequest: MessageFns<ListDashboardStatesRequest> = {
+  encode(message: ListDashboardStatesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.pageSize !== 0) {
+      writer.uint32(8).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(18).string(message.pageToken);
+    }
+    if (message.filter !== "") {
+      writer.uint32(26).string(message.filter);
+    }
+    if (message.showDeleted !== false) {
+      writer.uint32(32).bool(message.showDeleted);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListDashboardStatesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListDashboardStatesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.showDeleted = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListDashboardStatesRequest {
+    return {
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      showDeleted: isSet(object.showDeleted) ? globalThis.Boolean(object.showDeleted) : false,
+    };
+  },
+
+  toJSON(message: ListDashboardStatesRequest): unknown {
+    const obj: any = {};
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    if (message.showDeleted !== false) {
+      obj.showDeleted = message.showDeleted;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListDashboardStatesRequest>): ListDashboardStatesRequest {
+    return ListDashboardStatesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListDashboardStatesRequest>): ListDashboardStatesRequest {
+    const message = createBaseListDashboardStatesRequest() as any;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    message.filter = object.filter ?? "";
+    message.showDeleted = object.showDeleted ?? false;
+    return message;
+  },
+};
+
+function createBaseListDashboardStatesResponse(): ListDashboardStatesResponse {
+  return { dashboardStates: [], nextPageToken: "", totalSize: 0 };
+}
+
+export const ListDashboardStatesResponse: MessageFns<ListDashboardStatesResponse> = {
+  encode(message: ListDashboardStatesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.dashboardStates) {
+      DashboardState.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    if (message.totalSize !== 0) {
+      writer.uint32(24).int32(message.totalSize);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListDashboardStatesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListDashboardStatesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dashboardStates.push(DashboardState.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.totalSize = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListDashboardStatesResponse {
+    return {
+      dashboardStates: globalThis.Array.isArray(object?.dashboardStates)
+        ? object.dashboardStates.map((e: any) => DashboardState.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+      totalSize: isSet(object.totalSize) ? globalThis.Number(object.totalSize) : 0,
+    };
+  },
+
+  toJSON(message: ListDashboardStatesResponse): unknown {
+    const obj: any = {};
+    if (message.dashboardStates?.length) {
+      obj.dashboardStates = message.dashboardStates.map((e) => DashboardState.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    if (message.totalSize !== 0) {
+      obj.totalSize = Math.round(message.totalSize);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListDashboardStatesResponse>): ListDashboardStatesResponse {
+    return ListDashboardStatesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListDashboardStatesResponse>): ListDashboardStatesResponse {
+    const message = createBaseListDashboardStatesResponse() as any;
+    message.dashboardStates = object.dashboardStates?.map((e) => DashboardState.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    message.totalSize = object.totalSize ?? 0;
+    return message;
+  },
+};
+
+function createBaseDeleteDashboardStateRequest(): DeleteDashboardStateRequest {
+  return { name: "", etag: "", validateOnly: false, allowMissing: false, requestId: "" };
+}
+
+export const DeleteDashboardStateRequest: MessageFns<DeleteDashboardStateRequest> = {
+  encode(message: DeleteDashboardStateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.etag !== "") {
+      writer.uint32(18).string(message.etag);
+    }
+    if (message.validateOnly !== false) {
+      writer.uint32(24).bool(message.validateOnly);
+    }
+    if (message.allowMissing !== false) {
+      writer.uint32(32).bool(message.allowMissing);
+    }
+    if (message.requestId !== "") {
+      writer.uint32(42).string(message.requestId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteDashboardStateRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteDashboardStateRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.etag = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.validateOnly = reader.bool();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.allowMissing = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.requestId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteDashboardStateRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
+      validateOnly: isSet(object.validateOnly) ? globalThis.Boolean(object.validateOnly) : false,
+      allowMissing: isSet(object.allowMissing) ? globalThis.Boolean(object.allowMissing) : false,
+      requestId: isSet(object.requestId) ? globalThis.String(object.requestId) : "",
+    };
+  },
+
+  toJSON(message: DeleteDashboardStateRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.etag !== "") {
+      obj.etag = message.etag;
+    }
+    if (message.validateOnly !== false) {
+      obj.validateOnly = message.validateOnly;
+    }
+    if (message.allowMissing !== false) {
+      obj.allowMissing = message.allowMissing;
+    }
+    if (message.requestId !== "") {
+      obj.requestId = message.requestId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeleteDashboardStateRequest>): DeleteDashboardStateRequest {
+    return DeleteDashboardStateRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeleteDashboardStateRequest>): DeleteDashboardStateRequest {
+    const message = createBaseDeleteDashboardStateRequest() as any;
+    message.name = object.name ?? "";
+    message.etag = object.etag ?? "";
+    message.validateOnly = object.validateOnly ?? false;
+    message.allowMissing = object.allowMissing ?? false;
+    message.requestId = object.requestId ?? "";
+    return message;
+  },
+};
+
+function createBaseUndeleteDashboardStateRequest(): UndeleteDashboardStateRequest {
+  return { name: "", etag: "", requestId: "", validateOnly: false };
+}
+
+export const UndeleteDashboardStateRequest: MessageFns<UndeleteDashboardStateRequest> = {
+  encode(message: UndeleteDashboardStateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.etag !== "") {
+      writer.uint32(18).string(message.etag);
+    }
+    if (message.requestId !== "") {
+      writer.uint32(26).string(message.requestId);
+    }
+    if (message.validateOnly !== false) {
+      writer.uint32(32).bool(message.validateOnly);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UndeleteDashboardStateRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUndeleteDashboardStateRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.etag = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.requestId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.validateOnly = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UndeleteDashboardStateRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
+      requestId: isSet(object.requestId) ? globalThis.String(object.requestId) : "",
+      validateOnly: isSet(object.validateOnly) ? globalThis.Boolean(object.validateOnly) : false,
+    };
+  },
+
+  toJSON(message: UndeleteDashboardStateRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.etag !== "") {
+      obj.etag = message.etag;
+    }
+    if (message.requestId !== "") {
+      obj.requestId = message.requestId;
+    }
+    if (message.validateOnly !== false) {
+      obj.validateOnly = message.validateOnly;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UndeleteDashboardStateRequest>): UndeleteDashboardStateRequest {
+    return UndeleteDashboardStateRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UndeleteDashboardStateRequest>): UndeleteDashboardStateRequest {
+    const message = createBaseUndeleteDashboardStateRequest() as any;
+    message.name = object.name ?? "";
+    message.etag = object.etag ?? "";
+    message.requestId = object.requestId ?? "";
+    message.validateOnly = object.validateOnly ?? false;
+    return message;
+  },
+};
 
 function createBaseStreamDashboardDataRequest(): StreamDashboardDataRequest {
   return { name: "", dashboardContent: undefined };
@@ -335,6 +4769,220 @@ export const StreamDashboardDataResponse: MessageFns<StreamDashboardDataResponse
   },
 };
 
+function createBaseFetchDashboardWidgetDataRequest(): FetchDashboardWidgetDataRequest {
+  return { name: undefined, dashboardContent: undefined, widgetId: "" };
+}
+
+export const FetchDashboardWidgetDataRequest: MessageFns<FetchDashboardWidgetDataRequest> = {
+  encode(message: FetchDashboardWidgetDataRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== undefined) {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.dashboardContent !== undefined) {
+      PerfDashboardContent.encode(message.dashboardContent, writer.uint32(18).fork()).join();
+    }
+    if (message.widgetId !== "") {
+      writer.uint32(26).string(message.widgetId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FetchDashboardWidgetDataRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFetchDashboardWidgetDataRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dashboardContent = PerfDashboardContent.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.widgetId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FetchDashboardWidgetDataRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : undefined,
+      dashboardContent: isSet(object.dashboardContent)
+        ? PerfDashboardContent.fromJSON(object.dashboardContent)
+        : undefined,
+      widgetId: isSet(object.widgetId) ? globalThis.String(object.widgetId) : "",
+    };
+  },
+
+  toJSON(message: FetchDashboardWidgetDataRequest): unknown {
+    const obj: any = {};
+    if (message.name !== undefined) {
+      obj.name = message.name;
+    }
+    if (message.dashboardContent !== undefined) {
+      obj.dashboardContent = PerfDashboardContent.toJSON(message.dashboardContent);
+    }
+    if (message.widgetId !== "") {
+      obj.widgetId = message.widgetId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<FetchDashboardWidgetDataRequest>): FetchDashboardWidgetDataRequest {
+    return FetchDashboardWidgetDataRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<FetchDashboardWidgetDataRequest>): FetchDashboardWidgetDataRequest {
+    const message = createBaseFetchDashboardWidgetDataRequest() as any;
+    message.name = object.name ?? undefined;
+    message.dashboardContent = (object.dashboardContent !== undefined && object.dashboardContent !== null)
+      ? PerfDashboardContent.fromPartial(object.dashboardContent)
+      : undefined;
+    message.widgetId = object.widgetId ?? "";
+    return message;
+  },
+};
+
+function createBaseFetchDashboardWidgetDataResponse(): FetchDashboardWidgetDataResponse {
+  return { widgetId: "", multiMetricChartData: undefined, markdownWidget: undefined, breakdownTableData: undefined };
+}
+
+export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDataResponse> = {
+  encode(message: FetchDashboardWidgetDataResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.widgetId !== "") {
+      writer.uint32(10).string(message.widgetId);
+    }
+    if (message.multiMetricChartData !== undefined) {
+      MultiMetricChartData.encode(message.multiMetricChartData, writer.uint32(18).fork()).join();
+    }
+    if (message.markdownWidget !== undefined) {
+      MarkdownWidget.encode(message.markdownWidget, writer.uint32(34).fork()).join();
+    }
+    if (message.breakdownTableData !== undefined) {
+      BreakdownTableData.encode(message.breakdownTableData, writer.uint32(42).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FetchDashboardWidgetDataResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFetchDashboardWidgetDataResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.widgetId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.multiMetricChartData = MultiMetricChartData.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.markdownWidget = MarkdownWidget.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.breakdownTableData = BreakdownTableData.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FetchDashboardWidgetDataResponse {
+    return {
+      widgetId: isSet(object.widgetId) ? globalThis.String(object.widgetId) : "",
+      multiMetricChartData: isSet(object.multiMetricChartData)
+        ? MultiMetricChartData.fromJSON(object.multiMetricChartData)
+        : undefined,
+      markdownWidget: isSet(object.markdownWidget) ? MarkdownWidget.fromJSON(object.markdownWidget) : undefined,
+      breakdownTableData: isSet(object.breakdownTableData)
+        ? BreakdownTableData.fromJSON(object.breakdownTableData)
+        : undefined,
+    };
+  },
+
+  toJSON(message: FetchDashboardWidgetDataResponse): unknown {
+    const obj: any = {};
+    if (message.widgetId !== "") {
+      obj.widgetId = message.widgetId;
+    }
+    if (message.multiMetricChartData !== undefined) {
+      obj.multiMetricChartData = MultiMetricChartData.toJSON(message.multiMetricChartData);
+    }
+    if (message.markdownWidget !== undefined) {
+      obj.markdownWidget = MarkdownWidget.toJSON(message.markdownWidget);
+    }
+    if (message.breakdownTableData !== undefined) {
+      obj.breakdownTableData = BreakdownTableData.toJSON(message.breakdownTableData);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<FetchDashboardWidgetDataResponse>): FetchDashboardWidgetDataResponse {
+    return FetchDashboardWidgetDataResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<FetchDashboardWidgetDataResponse>): FetchDashboardWidgetDataResponse {
+    const message = createBaseFetchDashboardWidgetDataResponse() as any;
+    message.widgetId = object.widgetId ?? "";
+    message.multiMetricChartData = (object.multiMetricChartData !== undefined && object.multiMetricChartData !== null)
+      ? MultiMetricChartData.fromPartial(object.multiMetricChartData)
+      : undefined;
+    message.markdownWidget = (object.markdownWidget !== undefined && object.markdownWidget !== null)
+      ? MarkdownWidget.fromPartial(object.markdownWidget)
+      : undefined;
+    message.breakdownTableData = (object.breakdownTableData !== undefined && object.breakdownTableData !== null)
+      ? BreakdownTableData.fromPartial(object.breakdownTableData)
+      : undefined;
+    return message;
+  },
+};
+
 function createBaseMultiMetricChartData(): MultiMetricChartData {
   return { xAxisDataKey: "", yAxisDataKey: "", lines: [] };
 }
@@ -535,64 +5183,6 @@ export const MultiMetricLine: MessageFns<MultiMetricLine> = {
   },
 };
 
-function createBaseMarkdownWidget(): MarkdownWidget {
-  return { content: "" };
-}
-
-export const MarkdownWidget: MessageFns<MarkdownWidget> = {
-  encode(message: MarkdownWidget, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.content !== "") {
-      writer.uint32(18).string(message.content);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): MarkdownWidget {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMarkdownWidget() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.content = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): MarkdownWidget {
-    return { content: isSet(object.content) ? globalThis.String(object.content) : "" };
-  },
-
-  toJSON(message: MarkdownWidget): unknown {
-    const obj: any = {};
-    if (message.content !== "") {
-      obj.content = message.content;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<MarkdownWidget>): MarkdownWidget {
-    return MarkdownWidget.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<MarkdownWidget>): MarkdownWidget {
-    const message = createBaseMarkdownWidget() as any;
-    message.content = object.content ?? "";
-    return message;
-  },
-};
-
 function createBaseBreakdownTableData(): BreakdownTableData {
   return { sections: [] };
 }
@@ -732,7 +5322,7 @@ export const BreakdownSection: MessageFns<BreakdownSection> = {
 };
 
 function createBasePerfDashboardContent(): PerfDashboardContent {
-  return { dataSpecs: {}, widgets: [] };
+  return { dataSpecs: {}, globalFilters: [], widgets: [] };
 }
 
 export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
@@ -740,6 +5330,9 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
     Object.entries(message.dataSpecs).forEach(([key, value]) => {
       PerfDashboardContent_DataSpecsEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
     });
+    for (const v of message.globalFilters) {
+      PerfFilter.encode(v!, writer.uint32(18).fork()).join();
+    }
     for (const v of message.widgets) {
       PerfWidget.encode(v!, writer.uint32(26).fork()).join();
     }
@@ -762,6 +5355,14 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
           if (entry1.value !== undefined) {
             message.dataSpecs[entry1.key] = entry1.value;
           }
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.globalFilters.push(PerfFilter.decode(reader, reader.uint32()));
           continue;
         }
         case 3: {
@@ -789,6 +5390,9 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
           return acc;
         }, {})
         : {},
+      globalFilters: globalThis.Array.isArray(object?.globalFilters)
+        ? object.globalFilters.map((e: any) => PerfFilter.fromJSON(e))
+        : [],
       widgets: globalThis.Array.isArray(object?.widgets) ? object.widgets.map((e: any) => PerfWidget.fromJSON(e)) : [],
     };
   },
@@ -803,6 +5407,9 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
           obj.dataSpecs[k] = PerfDataSpec.toJSON(v);
         });
       }
+    }
+    if (message.globalFilters?.length) {
+      obj.globalFilters = message.globalFilters.map((e) => PerfFilter.toJSON(e));
     }
     if (message.widgets?.length) {
       obj.widgets = message.widgets.map((e) => PerfWidget.toJSON(e));
@@ -824,6 +5431,7 @@ export const PerfDashboardContent: MessageFns<PerfDashboardContent> = {
       },
       {},
     );
+    message.globalFilters = object.globalFilters?.map((e) => PerfFilter.fromPartial(e)) || [];
     message.widgets = object.widgets?.map((e) => PerfWidget.fromPartial(e)) || [];
     return message;
   },
@@ -907,72 +5515,17 @@ export const PerfDashboardContent_DataSpecsEntry: MessageFns<PerfDashboardConten
   },
 };
 
-function createBasePerfDataSpec(): PerfDataSpec {
-  return { displayName: "" };
-}
-
-export const PerfDataSpec: MessageFns<PerfDataSpec> = {
-  encode(message: PerfDataSpec, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.displayName !== "") {
-      writer.uint32(10).string(message.displayName);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): PerfDataSpec {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBasePerfDataSpec() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.displayName = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): PerfDataSpec {
-    return { displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "" };
-  },
-
-  toJSON(message: PerfDataSpec): unknown {
-    const obj: any = {};
-    if (message.displayName !== "") {
-      obj.displayName = message.displayName;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<PerfDataSpec>): PerfDataSpec {
-    return PerfDataSpec.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<PerfDataSpec>): PerfDataSpec {
-    const message = createBasePerfDataSpec() as any;
-    message.displayName = object.displayName ?? "";
-    return message;
-  },
-};
-
 function createBasePerfWidget(): PerfWidget {
-  return { id: "", markdown: undefined, chart: undefined };
+  return { id: "", displayName: "", markdown: undefined, chart: undefined };
 }
 
 export const PerfWidget: MessageFns<PerfWidget> = {
   encode(message: PerfWidget, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
+    }
+    if (message.displayName !== "") {
+      writer.uint32(18).string(message.displayName);
     }
     if (message.markdown !== undefined) {
       MarkdownWidget.encode(message.markdown, writer.uint32(26).fork()).join();
@@ -996,6 +5549,14 @@ export const PerfWidget: MessageFns<PerfWidget> = {
           }
 
           message.id = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.displayName = reader.string();
           continue;
         }
         case 3: {
@@ -1026,6 +5587,7 @@ export const PerfWidget: MessageFns<PerfWidget> = {
   fromJSON(object: any): PerfWidget {
     return {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "",
       markdown: isSet(object.markdown) ? MarkdownWidget.fromJSON(object.markdown) : undefined,
       chart: isSet(object.chart) ? PerfChartWidget.fromJSON(object.chart) : undefined,
     };
@@ -1035,6 +5597,9 @@ export const PerfWidget: MessageFns<PerfWidget> = {
     const obj: any = {};
     if (message.id !== "") {
       obj.id = message.id;
+    }
+    if (message.displayName !== "") {
+      obj.displayName = message.displayName;
     }
     if (message.markdown !== undefined) {
       obj.markdown = MarkdownWidget.toJSON(message.markdown);
@@ -1051,6 +5616,7 @@ export const PerfWidget: MessageFns<PerfWidget> = {
   fromPartial(object: DeepPartial<PerfWidget>): PerfWidget {
     const message = createBasePerfWidget() as any;
     message.id = object.id ?? "";
+    message.displayName = object.displayName ?? "";
     message.markdown = (object.markdown !== undefined && object.markdown !== null)
       ? MarkdownWidget.fromPartial(object.markdown)
       : undefined;
@@ -1061,14 +5627,114 @@ export const PerfWidget: MessageFns<PerfWidget> = {
   },
 };
 
+function createBaseMarkdownWidget(): MarkdownWidget {
+  return { content: "" };
+}
+
+export const MarkdownWidget: MessageFns<MarkdownWidget> = {
+  encode(message: MarkdownWidget, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.content !== "") {
+      writer.uint32(18).string(message.content);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MarkdownWidget {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMarkdownWidget() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.content = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MarkdownWidget {
+    return { content: isSet(object.content) ? globalThis.String(object.content) : "" };
+  },
+
+  toJSON(message: MarkdownWidget): unknown {
+    const obj: any = {};
+    if (message.content !== "") {
+      obj.content = message.content;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<MarkdownWidget>): MarkdownWidget {
+    return MarkdownWidget.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<MarkdownWidget>): MarkdownWidget {
+    const message = createBaseMarkdownWidget() as any;
+    message.content = object.content ?? "";
+    return message;
+  },
+};
+
 function createBasePerfChartWidget(): PerfChartWidget {
-  return { dataSpecId: "" };
+  return {
+    displayName: "",
+    chartType: 0,
+    effectiveChartType: 0,
+    dataSpecId: "",
+    filters: [],
+    series: [],
+    xAxis: undefined,
+    leftYAxis: undefined,
+    rightYAxis: undefined,
+    seriesSplit: undefined,
+    invocationDistributionConfig: undefined,
+  };
 }
 
 export const PerfChartWidget: MessageFns<PerfChartWidget> = {
   encode(message: PerfChartWidget, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.displayName !== "") {
+      writer.uint32(10).string(message.displayName);
+    }
+    if (message.chartType !== 0) {
+      writer.uint32(16).int32(message.chartType);
+    }
+    if (message.effectiveChartType !== 0) {
+      writer.uint32(24).int32(message.effectiveChartType);
+    }
     if (message.dataSpecId !== "") {
-      writer.uint32(10).string(message.dataSpecId);
+      writer.uint32(34).string(message.dataSpecId);
+    }
+    for (const v of message.filters) {
+      PerfFilter.encode(v!, writer.uint32(42).fork()).join();
+    }
+    for (const v of message.series) {
+      PerfChartSeries.encode(v!, writer.uint32(50).fork()).join();
+    }
+    if (message.xAxis !== undefined) {
+      PerfXAxisConfig.encode(message.xAxis, writer.uint32(58).fork()).join();
+    }
+    if (message.leftYAxis !== undefined) {
+      PerfYAxisConfig.encode(message.leftYAxis, writer.uint32(66).fork()).join();
+    }
+    if (message.rightYAxis !== undefined) {
+      PerfYAxisConfig.encode(message.rightYAxis, writer.uint32(74).fork()).join();
+    }
+    if (message.seriesSplit !== undefined) {
+      PerfSeriesSplit.encode(message.seriesSplit, writer.uint32(82).fork()).join();
+    }
+    if (message.invocationDistributionConfig !== undefined) {
+      InvocationDistributionConfig.encode(message.invocationDistributionConfig, writer.uint32(90).fork()).join();
     }
     return writer;
   },
@@ -1085,7 +5751,87 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
             break;
           }
 
+          message.displayName = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.chartType = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.effectiveChartType = reader.int32() as any;
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
           message.dataSpecId = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.filters.push(PerfFilter.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.series.push(PerfChartSeries.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.xAxis = PerfXAxisConfig.decode(reader, reader.uint32());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.leftYAxis = PerfYAxisConfig.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.rightYAxis = PerfYAxisConfig.decode(reader, reader.uint32());
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.seriesSplit = PerfSeriesSplit.decode(reader, reader.uint32());
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.invocationDistributionConfig = InvocationDistributionConfig.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1098,13 +5844,61 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
   },
 
   fromJSON(object: any): PerfChartWidget {
-    return { dataSpecId: isSet(object.dataSpecId) ? globalThis.String(object.dataSpecId) : "" };
+    return {
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "",
+      chartType: isSet(object.chartType) ? perfChartWidget_ChartTypeFromJSON(object.chartType) : 0,
+      effectiveChartType: isSet(object.effectiveChartType)
+        ? perfChartWidget_ChartTypeFromJSON(object.effectiveChartType)
+        : 0,
+      dataSpecId: isSet(object.dataSpecId) ? globalThis.String(object.dataSpecId) : "",
+      filters: globalThis.Array.isArray(object?.filters) ? object.filters.map((e: any) => PerfFilter.fromJSON(e)) : [],
+      series: globalThis.Array.isArray(object?.series)
+        ? object.series.map((e: any) => PerfChartSeries.fromJSON(e))
+        : [],
+      xAxis: isSet(object.xAxis) ? PerfXAxisConfig.fromJSON(object.xAxis) : undefined,
+      leftYAxis: isSet(object.leftYAxis) ? PerfYAxisConfig.fromJSON(object.leftYAxis) : undefined,
+      rightYAxis: isSet(object.rightYAxis) ? PerfYAxisConfig.fromJSON(object.rightYAxis) : undefined,
+      seriesSplit: isSet(object.seriesSplit) ? PerfSeriesSplit.fromJSON(object.seriesSplit) : undefined,
+      invocationDistributionConfig: isSet(object.invocationDistributionConfig)
+        ? InvocationDistributionConfig.fromJSON(object.invocationDistributionConfig)
+        : undefined,
+    };
   },
 
   toJSON(message: PerfChartWidget): unknown {
     const obj: any = {};
+    if (message.displayName !== "") {
+      obj.displayName = message.displayName;
+    }
+    if (message.chartType !== 0) {
+      obj.chartType = perfChartWidget_ChartTypeToJSON(message.chartType);
+    }
+    if (message.effectiveChartType !== 0) {
+      obj.effectiveChartType = perfChartWidget_ChartTypeToJSON(message.effectiveChartType);
+    }
     if (message.dataSpecId !== "") {
       obj.dataSpecId = message.dataSpecId;
+    }
+    if (message.filters?.length) {
+      obj.filters = message.filters.map((e) => PerfFilter.toJSON(e));
+    }
+    if (message.series?.length) {
+      obj.series = message.series.map((e) => PerfChartSeries.toJSON(e));
+    }
+    if (message.xAxis !== undefined) {
+      obj.xAxis = PerfXAxisConfig.toJSON(message.xAxis);
+    }
+    if (message.leftYAxis !== undefined) {
+      obj.leftYAxis = PerfYAxisConfig.toJSON(message.leftYAxis);
+    }
+    if (message.rightYAxis !== undefined) {
+      obj.rightYAxis = PerfYAxisConfig.toJSON(message.rightYAxis);
+    }
+    if (message.seriesSplit !== undefined) {
+      obj.seriesSplit = PerfSeriesSplit.toJSON(message.seriesSplit);
+    }
+    if (message.invocationDistributionConfig !== undefined) {
+      obj.invocationDistributionConfig = InvocationDistributionConfig.toJSON(message.invocationDistributionConfig);
     }
     return obj;
   },
@@ -1114,15 +5908,2303 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
   },
   fromPartial(object: DeepPartial<PerfChartWidget>): PerfChartWidget {
     const message = createBasePerfChartWidget() as any;
+    message.displayName = object.displayName ?? "";
+    message.chartType = object.chartType ?? 0;
+    message.effectiveChartType = object.effectiveChartType ?? 0;
     message.dataSpecId = object.dataSpecId ?? "";
+    message.filters = object.filters?.map((e) => PerfFilter.fromPartial(e)) || [];
+    message.series = object.series?.map((e) => PerfChartSeries.fromPartial(e)) || [];
+    message.xAxis = (object.xAxis !== undefined && object.xAxis !== null)
+      ? PerfXAxisConfig.fromPartial(object.xAxis)
+      : undefined;
+    message.leftYAxis = (object.leftYAxis !== undefined && object.leftYAxis !== null)
+      ? PerfYAxisConfig.fromPartial(object.leftYAxis)
+      : undefined;
+    message.rightYAxis = (object.rightYAxis !== undefined && object.rightYAxis !== null)
+      ? PerfYAxisConfig.fromPartial(object.rightYAxis)
+      : undefined;
+    message.seriesSplit = (object.seriesSplit !== undefined && object.seriesSplit !== null)
+      ? PerfSeriesSplit.fromPartial(object.seriesSplit)
+      : undefined;
+    message.invocationDistributionConfig =
+      (object.invocationDistributionConfig !== undefined && object.invocationDistributionConfig !== null)
+        ? InvocationDistributionConfig.fromPartial(object.invocationDistributionConfig)
+        : undefined;
+    return message;
+  },
+};
+
+function createBasePerfChartSeries(): PerfChartSeries {
+  return {
+    displayName: "",
+    dataSpecId: "",
+    metricField: "",
+    filters: [],
+    aggregation: 0,
+    yAxisAssignment: 0,
+    showConfidenceInterval: false,
+    effectiveDataSpecId: "",
+    effectiveYAxisAssignment: 0,
+    color: "",
+  };
+}
+
+export const PerfChartSeries: MessageFns<PerfChartSeries> = {
+  encode(message: PerfChartSeries, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.displayName !== "") {
+      writer.uint32(10).string(message.displayName);
+    }
+    if (message.dataSpecId !== "") {
+      writer.uint32(18).string(message.dataSpecId);
+    }
+    if (message.metricField !== "") {
+      writer.uint32(26).string(message.metricField);
+    }
+    for (const v of message.filters) {
+      PerfFilter.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.aggregation !== 0) {
+      writer.uint32(40).int32(message.aggregation);
+    }
+    if (message.yAxisAssignment !== 0) {
+      writer.uint32(48).int32(message.yAxisAssignment);
+    }
+    if (message.showConfidenceInterval !== false) {
+      writer.uint32(56).bool(message.showConfidenceInterval);
+    }
+    if (message.effectiveDataSpecId !== "") {
+      writer.uint32(66).string(message.effectiveDataSpecId);
+    }
+    if (message.effectiveYAxisAssignment !== 0) {
+      writer.uint32(72).int32(message.effectiveYAxisAssignment);
+    }
+    if (message.color !== "") {
+      writer.uint32(82).string(message.color);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PerfChartSeries {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePerfChartSeries() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dataSpecId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.metricField = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filters.push(PerfFilter.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.aggregation = reader.int32() as any;
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.yAxisAssignment = reader.int32() as any;
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.showConfidenceInterval = reader.bool();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.effectiveDataSpecId = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.effectiveYAxisAssignment = reader.int32() as any;
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.color = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PerfChartSeries {
+    return {
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "",
+      dataSpecId: isSet(object.dataSpecId) ? globalThis.String(object.dataSpecId) : "",
+      metricField: isSet(object.metricField) ? globalThis.String(object.metricField) : "",
+      filters: globalThis.Array.isArray(object?.filters) ? object.filters.map((e: any) => PerfFilter.fromJSON(e)) : [],
+      aggregation: isSet(object.aggregation) ? perfChartSeries_PerfAggregationFunctionFromJSON(object.aggregation) : 0,
+      yAxisAssignment: isSet(object.yAxisAssignment)
+        ? perfChartSeries_YAxisAssignmentFromJSON(object.yAxisAssignment)
+        : 0,
+      showConfidenceInterval: isSet(object.showConfidenceInterval)
+        ? globalThis.Boolean(object.showConfidenceInterval)
+        : false,
+      effectiveDataSpecId: isSet(object.effectiveDataSpecId) ? globalThis.String(object.effectiveDataSpecId) : "",
+      effectiveYAxisAssignment: isSet(object.effectiveYAxisAssignment)
+        ? perfChartSeries_YAxisAssignmentFromJSON(object.effectiveYAxisAssignment)
+        : 0,
+      color: isSet(object.color) ? globalThis.String(object.color) : "",
+    };
+  },
+
+  toJSON(message: PerfChartSeries): unknown {
+    const obj: any = {};
+    if (message.displayName !== "") {
+      obj.displayName = message.displayName;
+    }
+    if (message.dataSpecId !== "") {
+      obj.dataSpecId = message.dataSpecId;
+    }
+    if (message.metricField !== "") {
+      obj.metricField = message.metricField;
+    }
+    if (message.filters?.length) {
+      obj.filters = message.filters.map((e) => PerfFilter.toJSON(e));
+    }
+    if (message.aggregation !== 0) {
+      obj.aggregation = perfChartSeries_PerfAggregationFunctionToJSON(message.aggregation);
+    }
+    if (message.yAxisAssignment !== 0) {
+      obj.yAxisAssignment = perfChartSeries_YAxisAssignmentToJSON(message.yAxisAssignment);
+    }
+    if (message.showConfidenceInterval !== false) {
+      obj.showConfidenceInterval = message.showConfidenceInterval;
+    }
+    if (message.effectiveDataSpecId !== "") {
+      obj.effectiveDataSpecId = message.effectiveDataSpecId;
+    }
+    if (message.effectiveYAxisAssignment !== 0) {
+      obj.effectiveYAxisAssignment = perfChartSeries_YAxisAssignmentToJSON(message.effectiveYAxisAssignment);
+    }
+    if (message.color !== "") {
+      obj.color = message.color;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PerfChartSeries>): PerfChartSeries {
+    return PerfChartSeries.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PerfChartSeries>): PerfChartSeries {
+    const message = createBasePerfChartSeries() as any;
+    message.displayName = object.displayName ?? "";
+    message.dataSpecId = object.dataSpecId ?? "";
+    message.metricField = object.metricField ?? "";
+    message.filters = object.filters?.map((e) => PerfFilter.fromPartial(e)) || [];
+    message.aggregation = object.aggregation ?? 0;
+    message.yAxisAssignment = object.yAxisAssignment ?? 0;
+    message.showConfidenceInterval = object.showConfidenceInterval ?? false;
+    message.effectiveDataSpecId = object.effectiveDataSpecId ?? "";
+    message.effectiveYAxisAssignment = object.effectiveYAxisAssignment ?? 0;
+    message.color = object.color ?? "";
+    return message;
+  },
+};
+
+function createBasePerfXAxisConfig(): PerfXAxisConfig {
+  return { column: "", granularity: 0, effectiveGranularity: 0 };
+}
+
+export const PerfXAxisConfig: MessageFns<PerfXAxisConfig> = {
+  encode(message: PerfXAxisConfig, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.column !== "") {
+      writer.uint32(10).string(message.column);
+    }
+    if (message.granularity !== 0) {
+      writer.uint32(16).int32(message.granularity);
+    }
+    if (message.effectiveGranularity !== 0) {
+      writer.uint32(24).int32(message.effectiveGranularity);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PerfXAxisConfig {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePerfXAxisConfig() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.column = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.granularity = reader.int32() as any;
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.effectiveGranularity = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PerfXAxisConfig {
+    return {
+      column: isSet(object.column) ? globalThis.String(object.column) : "",
+      granularity: isSet(object.granularity) ? perfXAxisConfig_GranularityFromJSON(object.granularity) : 0,
+      effectiveGranularity: isSet(object.effectiveGranularity)
+        ? perfXAxisConfig_GranularityFromJSON(object.effectiveGranularity)
+        : 0,
+    };
+  },
+
+  toJSON(message: PerfXAxisConfig): unknown {
+    const obj: any = {};
+    if (message.column !== "") {
+      obj.column = message.column;
+    }
+    if (message.granularity !== 0) {
+      obj.granularity = perfXAxisConfig_GranularityToJSON(message.granularity);
+    }
+    if (message.effectiveGranularity !== 0) {
+      obj.effectiveGranularity = perfXAxisConfig_GranularityToJSON(message.effectiveGranularity);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PerfXAxisConfig>): PerfXAxisConfig {
+    return PerfXAxisConfig.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PerfXAxisConfig>): PerfXAxisConfig {
+    const message = createBasePerfXAxisConfig() as any;
+    message.column = object.column ?? "";
+    message.granularity = object.granularity ?? 0;
+    message.effectiveGranularity = object.effectiveGranularity ?? 0;
+    return message;
+  },
+};
+
+function createBasePerfYAxisConfig(): PerfYAxisConfig {
+  return { displayName: "", minValue: undefined, maxValue: undefined, logarithmic: false };
+}
+
+export const PerfYAxisConfig: MessageFns<PerfYAxisConfig> = {
+  encode(message: PerfYAxisConfig, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.displayName !== "") {
+      writer.uint32(10).string(message.displayName);
+    }
+    if (message.minValue !== undefined) {
+      writer.uint32(17).double(message.minValue);
+    }
+    if (message.maxValue !== undefined) {
+      writer.uint32(25).double(message.maxValue);
+    }
+    if (message.logarithmic !== false) {
+      writer.uint32(32).bool(message.logarithmic);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PerfYAxisConfig {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePerfYAxisConfig() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 17) {
+            break;
+          }
+
+          message.minValue = reader.double();
+          continue;
+        }
+        case 3: {
+          if (tag !== 25) {
+            break;
+          }
+
+          message.maxValue = reader.double();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.logarithmic = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PerfYAxisConfig {
+    return {
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "",
+      minValue: isSet(object.minValue) ? globalThis.Number(object.minValue) : undefined,
+      maxValue: isSet(object.maxValue) ? globalThis.Number(object.maxValue) : undefined,
+      logarithmic: isSet(object.logarithmic) ? globalThis.Boolean(object.logarithmic) : false,
+    };
+  },
+
+  toJSON(message: PerfYAxisConfig): unknown {
+    const obj: any = {};
+    if (message.displayName !== "") {
+      obj.displayName = message.displayName;
+    }
+    if (message.minValue !== undefined) {
+      obj.minValue = message.minValue;
+    }
+    if (message.maxValue !== undefined) {
+      obj.maxValue = message.maxValue;
+    }
+    if (message.logarithmic !== false) {
+      obj.logarithmic = message.logarithmic;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PerfYAxisConfig>): PerfYAxisConfig {
+    return PerfYAxisConfig.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PerfYAxisConfig>): PerfYAxisConfig {
+    const message = createBasePerfYAxisConfig() as any;
+    message.displayName = object.displayName ?? "";
+    message.minValue = object.minValue ?? undefined;
+    message.maxValue = object.maxValue ?? undefined;
+    message.logarithmic = object.logarithmic ?? false;
+    return message;
+  },
+};
+
+function createBasePerfSeriesSplit(): PerfSeriesSplit {
+  return { invocationDimension: undefined, metricDimension: undefined, limitCount: 0 };
+}
+
+export const PerfSeriesSplit: MessageFns<PerfSeriesSplit> = {
+  encode(message: PerfSeriesSplit, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.invocationDimension !== undefined) {
+      writer.uint32(10).string(message.invocationDimension);
+    }
+    if (message.metricDimension !== undefined) {
+      writer.uint32(18).string(message.metricDimension);
+    }
+    if (message.limitCount !== 0) {
+      writer.uint32(24).int32(message.limitCount);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PerfSeriesSplit {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePerfSeriesSplit() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.invocationDimension = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.metricDimension = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.limitCount = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PerfSeriesSplit {
+    return {
+      invocationDimension: isSet(object.invocationDimension)
+        ? globalThis.String(object.invocationDimension)
+        : undefined,
+      metricDimension: isSet(object.metricDimension) ? globalThis.String(object.metricDimension) : undefined,
+      limitCount: isSet(object.limitCount) ? globalThis.Number(object.limitCount) : 0,
+    };
+  },
+
+  toJSON(message: PerfSeriesSplit): unknown {
+    const obj: any = {};
+    if (message.invocationDimension !== undefined) {
+      obj.invocationDimension = message.invocationDimension;
+    }
+    if (message.metricDimension !== undefined) {
+      obj.metricDimension = message.metricDimension;
+    }
+    if (message.limitCount !== 0) {
+      obj.limitCount = Math.round(message.limitCount);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PerfSeriesSplit>): PerfSeriesSplit {
+    return PerfSeriesSplit.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PerfSeriesSplit>): PerfSeriesSplit {
+    const message = createBasePerfSeriesSplit() as any;
+    message.invocationDimension = object.invocationDimension ?? undefined;
+    message.metricDimension = object.metricDimension ?? undefined;
+    message.limitCount = object.limitCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseInvocationDistributionConfig(): InvocationDistributionConfig {
+  return { scatterSettings: undefined };
+}
+
+export const InvocationDistributionConfig: MessageFns<InvocationDistributionConfig> = {
+  encode(message: InvocationDistributionConfig, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.scatterSettings !== undefined) {
+      InvocationDistributionConfig_ScatterSettings.encode(message.scatterSettings, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): InvocationDistributionConfig {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseInvocationDistributionConfig() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.scatterSettings = InvocationDistributionConfig_ScatterSettings.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): InvocationDistributionConfig {
+    return {
+      scatterSettings: isSet(object.scatterSettings)
+        ? InvocationDistributionConfig_ScatterSettings.fromJSON(object.scatterSettings)
+        : undefined,
+    };
+  },
+
+  toJSON(message: InvocationDistributionConfig): unknown {
+    const obj: any = {};
+    if (message.scatterSettings !== undefined) {
+      obj.scatterSettings = InvocationDistributionConfig_ScatterSettings.toJSON(message.scatterSettings);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<InvocationDistributionConfig>): InvocationDistributionConfig {
+    return InvocationDistributionConfig.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<InvocationDistributionConfig>): InvocationDistributionConfig {
+    const message = createBaseInvocationDistributionConfig() as any;
+    message.scatterSettings = (object.scatterSettings !== undefined && object.scatterSettings !== null)
+      ? InvocationDistributionConfig_ScatterSettings.fromPartial(object.scatterSettings)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseInvocationDistributionConfig_ScatterSettings(): InvocationDistributionConfig_ScatterSettings {
+  return { xAxisMetricField: "" };
+}
+
+export const InvocationDistributionConfig_ScatterSettings: MessageFns<InvocationDistributionConfig_ScatterSettings> = {
+  encode(
+    message: InvocationDistributionConfig_ScatterSettings,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.xAxisMetricField !== "") {
+      writer.uint32(10).string(message.xAxisMetricField);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): InvocationDistributionConfig_ScatterSettings {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseInvocationDistributionConfig_ScatterSettings() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.xAxisMetricField = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): InvocationDistributionConfig_ScatterSettings {
+    return { xAxisMetricField: isSet(object.xAxisMetricField) ? globalThis.String(object.xAxisMetricField) : "" };
+  },
+
+  toJSON(message: InvocationDistributionConfig_ScatterSettings): unknown {
+    const obj: any = {};
+    if (message.xAxisMetricField !== "") {
+      obj.xAxisMetricField = message.xAxisMetricField;
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<InvocationDistributionConfig_ScatterSettings>,
+  ): InvocationDistributionConfig_ScatterSettings {
+    return InvocationDistributionConfig_ScatterSettings.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<InvocationDistributionConfig_ScatterSettings>,
+  ): InvocationDistributionConfig_ScatterSettings {
+    const message = createBaseInvocationDistributionConfig_ScatterSettings() as any;
+    message.xAxisMetricField = object.xAxisMetricField ?? "";
+    return message;
+  },
+};
+
+function createBasePerfDataSpec(): PerfDataSpec {
+  return { displayName: "", source: undefined };
+}
+
+export const PerfDataSpec: MessageFns<PerfDataSpec> = {
+  encode(message: PerfDataSpec, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.displayName !== "") {
+      writer.uint32(10).string(message.displayName);
+    }
+    if (message.source !== undefined) {
+      PerfDataSource.encode(message.source, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PerfDataSpec {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePerfDataSpec() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.source = PerfDataSource.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PerfDataSpec {
+    return {
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "",
+      source: isSet(object.source) ? PerfDataSource.fromJSON(object.source) : undefined,
+    };
+  },
+
+  toJSON(message: PerfDataSpec): unknown {
+    const obj: any = {};
+    if (message.displayName !== "") {
+      obj.displayName = message.displayName;
+    }
+    if (message.source !== undefined) {
+      obj.source = PerfDataSource.toJSON(message.source);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PerfDataSpec>): PerfDataSpec {
+    return PerfDataSpec.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PerfDataSpec>): PerfDataSpec {
+    const message = createBasePerfDataSpec() as any;
+    message.displayName = object.displayName ?? "";
+    message.source = (object.source !== undefined && object.source !== null)
+      ? PerfDataSource.fromPartial(object.source)
+      : undefined;
+    return message;
+  },
+};
+
+function createBasePerfDataSource(): PerfDataSource {
+  return { type: 0 };
+}
+
+export const PerfDataSource: MessageFns<PerfDataSource> = {
+  encode(message: PerfDataSource, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.type !== 0) {
+      writer.uint32(8).int32(message.type);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PerfDataSource {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePerfDataSource() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.type = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PerfDataSource {
+    return { type: isSet(object.type) ? perfDataSource_SourceTypeFromJSON(object.type) : 0 };
+  },
+
+  toJSON(message: PerfDataSource): unknown {
+    const obj: any = {};
+    if (message.type !== 0) {
+      obj.type = perfDataSource_SourceTypeToJSON(message.type);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PerfDataSource>): PerfDataSource {
+    return PerfDataSource.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PerfDataSource>): PerfDataSource {
+    const message = createBasePerfDataSource() as any;
+    message.type = object.type ?? 0;
+    return message;
+  },
+};
+
+function createBasePerfFilter(): PerfFilter {
+  return {
+    id: "",
+    column: "",
+    dataSpecId: "",
+    displayName: "",
+    select: undefined,
+    textInput: undefined,
+    numberInput: undefined,
+    range: undefined,
+    datePicker: undefined,
+  };
+}
+
+export const PerfFilter: MessageFns<PerfFilter> = {
+  encode(message: PerfFilter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    if (message.column !== "") {
+      writer.uint32(18).string(message.column);
+    }
+    if (message.dataSpecId !== "") {
+      writer.uint32(26).string(message.dataSpecId);
+    }
+    if (message.displayName !== "") {
+      writer.uint32(34).string(message.displayName);
+    }
+    if (message.select !== undefined) {
+      SelectFilter.encode(message.select, writer.uint32(42).fork()).join();
+    }
+    if (message.textInput !== undefined) {
+      TextInputFilter.encode(message.textInput, writer.uint32(50).fork()).join();
+    }
+    if (message.numberInput !== undefined) {
+      NumberInputFilter.encode(message.numberInput, writer.uint32(58).fork()).join();
+    }
+    if (message.range !== undefined) {
+      RangeFilter.encode(message.range, writer.uint32(66).fork()).join();
+    }
+    if (message.datePicker !== undefined) {
+      DatePickerFilter.encode(message.datePicker, writer.uint32(74).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PerfFilter {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePerfFilter() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.column = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.dataSpecId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.displayName = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.select = SelectFilter.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.textInput = TextInputFilter.decode(reader, reader.uint32());
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.numberInput = NumberInputFilter.decode(reader, reader.uint32());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.range = RangeFilter.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.datePicker = DatePickerFilter.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PerfFilter {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      column: isSet(object.column) ? globalThis.String(object.column) : "",
+      dataSpecId: isSet(object.dataSpecId) ? globalThis.String(object.dataSpecId) : "",
+      displayName: isSet(object.displayName) ? globalThis.String(object.displayName) : "",
+      select: isSet(object.select) ? SelectFilter.fromJSON(object.select) : undefined,
+      textInput: isSet(object.textInput) ? TextInputFilter.fromJSON(object.textInput) : undefined,
+      numberInput: isSet(object.numberInput) ? NumberInputFilter.fromJSON(object.numberInput) : undefined,
+      range: isSet(object.range) ? RangeFilter.fromJSON(object.range) : undefined,
+      datePicker: isSet(object.datePicker) ? DatePickerFilter.fromJSON(object.datePicker) : undefined,
+    };
+  },
+
+  toJSON(message: PerfFilter): unknown {
+    const obj: any = {};
+    if (message.id !== "") {
+      obj.id = message.id;
+    }
+    if (message.column !== "") {
+      obj.column = message.column;
+    }
+    if (message.dataSpecId !== "") {
+      obj.dataSpecId = message.dataSpecId;
+    }
+    if (message.displayName !== "") {
+      obj.displayName = message.displayName;
+    }
+    if (message.select !== undefined) {
+      obj.select = SelectFilter.toJSON(message.select);
+    }
+    if (message.textInput !== undefined) {
+      obj.textInput = TextInputFilter.toJSON(message.textInput);
+    }
+    if (message.numberInput !== undefined) {
+      obj.numberInput = NumberInputFilter.toJSON(message.numberInput);
+    }
+    if (message.range !== undefined) {
+      obj.range = RangeFilter.toJSON(message.range);
+    }
+    if (message.datePicker !== undefined) {
+      obj.datePicker = DatePickerFilter.toJSON(message.datePicker);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PerfFilter>): PerfFilter {
+    return PerfFilter.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PerfFilter>): PerfFilter {
+    const message = createBasePerfFilter() as any;
+    message.id = object.id ?? "";
+    message.column = object.column ?? "";
+    message.dataSpecId = object.dataSpecId ?? "";
+    message.displayName = object.displayName ?? "";
+    message.select = (object.select !== undefined && object.select !== null)
+      ? SelectFilter.fromPartial(object.select)
+      : undefined;
+    message.textInput = (object.textInput !== undefined && object.textInput !== null)
+      ? TextInputFilter.fromPartial(object.textInput)
+      : undefined;
+    message.numberInput = (object.numberInput !== undefined && object.numberInput !== null)
+      ? NumberInputFilter.fromPartial(object.numberInput)
+      : undefined;
+    message.range = (object.range !== undefined && object.range !== null)
+      ? RangeFilter.fromPartial(object.range)
+      : undefined;
+    message.datePicker = (object.datePicker !== undefined && object.datePicker !== null)
+      ? DatePickerFilter.fromPartial(object.datePicker)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseSelectFilter(): SelectFilter {
+  return { multiSelect: false, defaultValue: undefined };
+}
+
+export const SelectFilter: MessageFns<SelectFilter> = {
+  encode(message: SelectFilter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.multiSelect !== false) {
+      writer.uint32(8).bool(message.multiSelect);
+    }
+    if (message.defaultValue !== undefined) {
+      PerfFilterDefault.encode(message.defaultValue, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SelectFilter {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSelectFilter() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.multiSelect = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.defaultValue = PerfFilterDefault.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SelectFilter {
+    return {
+      multiSelect: isSet(object.multiSelect) ? globalThis.Boolean(object.multiSelect) : false,
+      defaultValue: isSet(object.defaultValue) ? PerfFilterDefault.fromJSON(object.defaultValue) : undefined,
+    };
+  },
+
+  toJSON(message: SelectFilter): unknown {
+    const obj: any = {};
+    if (message.multiSelect !== false) {
+      obj.multiSelect = message.multiSelect;
+    }
+    if (message.defaultValue !== undefined) {
+      obj.defaultValue = PerfFilterDefault.toJSON(message.defaultValue);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SelectFilter>): SelectFilter {
+    return SelectFilter.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SelectFilter>): SelectFilter {
+    const message = createBaseSelectFilter() as any;
+    message.multiSelect = object.multiSelect ?? false;
+    message.defaultValue = (object.defaultValue !== undefined && object.defaultValue !== null)
+      ? PerfFilterDefault.fromPartial(object.defaultValue)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTextInputFilter(): TextInputFilter {
+  return { defaultValue: undefined };
+}
+
+export const TextInputFilter: MessageFns<TextInputFilter> = {
+  encode(message: TextInputFilter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.defaultValue !== undefined) {
+      PerfFilterDefault.encode(message.defaultValue, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TextInputFilter {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTextInputFilter() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.defaultValue = PerfFilterDefault.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TextInputFilter {
+    return { defaultValue: isSet(object.defaultValue) ? PerfFilterDefault.fromJSON(object.defaultValue) : undefined };
+  },
+
+  toJSON(message: TextInputFilter): unknown {
+    const obj: any = {};
+    if (message.defaultValue !== undefined) {
+      obj.defaultValue = PerfFilterDefault.toJSON(message.defaultValue);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TextInputFilter>): TextInputFilter {
+    return TextInputFilter.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TextInputFilter>): TextInputFilter {
+    const message = createBaseTextInputFilter() as any;
+    message.defaultValue = (object.defaultValue !== undefined && object.defaultValue !== null)
+      ? PerfFilterDefault.fromPartial(object.defaultValue)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseNumberInputFilter(): NumberInputFilter {
+  return { defaultValue: undefined };
+}
+
+export const NumberInputFilter: MessageFns<NumberInputFilter> = {
+  encode(message: NumberInputFilter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.defaultValue !== undefined) {
+      PerfFilterDefault.encode(message.defaultValue, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): NumberInputFilter {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseNumberInputFilter() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.defaultValue = PerfFilterDefault.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): NumberInputFilter {
+    return { defaultValue: isSet(object.defaultValue) ? PerfFilterDefault.fromJSON(object.defaultValue) : undefined };
+  },
+
+  toJSON(message: NumberInputFilter): unknown {
+    const obj: any = {};
+    if (message.defaultValue !== undefined) {
+      obj.defaultValue = PerfFilterDefault.toJSON(message.defaultValue);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<NumberInputFilter>): NumberInputFilter {
+    return NumberInputFilter.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<NumberInputFilter>): NumberInputFilter {
+    const message = createBaseNumberInputFilter() as any;
+    message.defaultValue = (object.defaultValue !== undefined && object.defaultValue !== null)
+      ? PerfFilterDefault.fromPartial(object.defaultValue)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseRangeFilter(): RangeFilter {
+  return { defaultValue: undefined };
+}
+
+export const RangeFilter: MessageFns<RangeFilter> = {
+  encode(message: RangeFilter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.defaultValue !== undefined) {
+      PerfFilterDefault.encode(message.defaultValue, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RangeFilter {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRangeFilter() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.defaultValue = PerfFilterDefault.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RangeFilter {
+    return { defaultValue: isSet(object.defaultValue) ? PerfFilterDefault.fromJSON(object.defaultValue) : undefined };
+  },
+
+  toJSON(message: RangeFilter): unknown {
+    const obj: any = {};
+    if (message.defaultValue !== undefined) {
+      obj.defaultValue = PerfFilterDefault.toJSON(message.defaultValue);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RangeFilter>): RangeFilter {
+    return RangeFilter.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RangeFilter>): RangeFilter {
+    const message = createBaseRangeFilter() as any;
+    message.defaultValue = (object.defaultValue !== undefined && object.defaultValue !== null)
+      ? PerfFilterDefault.fromPartial(object.defaultValue)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseDatePickerFilter(): DatePickerFilter {
+  return { multiSelect: false, defaultValue: undefined };
+}
+
+export const DatePickerFilter: MessageFns<DatePickerFilter> = {
+  encode(message: DatePickerFilter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.multiSelect !== false) {
+      writer.uint32(8).bool(message.multiSelect);
+    }
+    if (message.defaultValue !== undefined) {
+      PerfFilterDefault.encode(message.defaultValue, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DatePickerFilter {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDatePickerFilter() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.multiSelect = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.defaultValue = PerfFilterDefault.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DatePickerFilter {
+    return {
+      multiSelect: isSet(object.multiSelect) ? globalThis.Boolean(object.multiSelect) : false,
+      defaultValue: isSet(object.defaultValue) ? PerfFilterDefault.fromJSON(object.defaultValue) : undefined,
+    };
+  },
+
+  toJSON(message: DatePickerFilter): unknown {
+    const obj: any = {};
+    if (message.multiSelect !== false) {
+      obj.multiSelect = message.multiSelect;
+    }
+    if (message.defaultValue !== undefined) {
+      obj.defaultValue = PerfFilterDefault.toJSON(message.defaultValue);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DatePickerFilter>): DatePickerFilter {
+    return DatePickerFilter.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DatePickerFilter>): DatePickerFilter {
+    const message = createBaseDatePickerFilter() as any;
+    message.multiSelect = object.multiSelect ?? false;
+    message.defaultValue = (object.defaultValue !== undefined && object.defaultValue !== null)
+      ? PerfFilterDefault.fromPartial(object.defaultValue)
+      : undefined;
+    return message;
+  },
+};
+
+function createBasePerfFilterDefault(): PerfFilterDefault {
+  return { values: [], filterOperator: 0 };
+}
+
+export const PerfFilterDefault: MessageFns<PerfFilterDefault> = {
+  encode(message: PerfFilterDefault, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.values) {
+      writer.uint32(10).string(v!);
+    }
+    if (message.filterOperator !== 0) {
+      writer.uint32(16).int32(message.filterOperator);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PerfFilterDefault {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePerfFilterDefault() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.values.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.filterOperator = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PerfFilterDefault {
+    return {
+      values: globalThis.Array.isArray(object?.values) ? object.values.map((e: any) => globalThis.String(e)) : [],
+      filterOperator: isSet(object.filterOperator)
+        ? perfFilterDefault_FilterOperatorFromJSON(object.filterOperator)
+        : 0,
+    };
+  },
+
+  toJSON(message: PerfFilterDefault): unknown {
+    const obj: any = {};
+    if (message.values?.length) {
+      obj.values = message.values;
+    }
+    if (message.filterOperator !== 0) {
+      obj.filterOperator = perfFilterDefault_FilterOperatorToJSON(message.filterOperator);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PerfFilterDefault>): PerfFilterDefault {
+    return PerfFilterDefault.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PerfFilterDefault>): PerfFilterDefault {
+    const message = createBasePerfFilterDefault() as any;
+    message.values = object.values?.map((e) => e) || [];
+    message.filterOperator = object.filterOperator ?? 0;
+    return message;
+  },
+};
+
+function createBaseListDashboardStateRevisionsRequest(): ListDashboardStateRevisionsRequest {
+  return { name: "", pageSize: 0, pageToken: "" };
+}
+
+export const ListDashboardStateRevisionsRequest: MessageFns<ListDashboardStateRevisionsRequest> = {
+  encode(message: ListDashboardStateRevisionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(16).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(26).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListDashboardStateRevisionsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListDashboardStateRevisionsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListDashboardStateRevisionsRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: ListDashboardStateRevisionsRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListDashboardStateRevisionsRequest>): ListDashboardStateRevisionsRequest {
+    return ListDashboardStateRevisionsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListDashboardStateRevisionsRequest>): ListDashboardStateRevisionsRequest {
+    const message = createBaseListDashboardStateRevisionsRequest() as any;
+    message.name = object.name ?? "";
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseListDashboardStateRevisionsResponse(): ListDashboardStateRevisionsResponse {
+  return { dashboardStates: [], nextPageToken: "" };
+}
+
+export const ListDashboardStateRevisionsResponse: MessageFns<ListDashboardStateRevisionsResponse> = {
+  encode(message: ListDashboardStateRevisionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.dashboardStates) {
+      DashboardState.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListDashboardStateRevisionsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListDashboardStateRevisionsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dashboardStates.push(DashboardState.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListDashboardStateRevisionsResponse {
+    return {
+      dashboardStates: globalThis.Array.isArray(object?.dashboardStates)
+        ? object.dashboardStates.map((e: any) => DashboardState.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: ListDashboardStateRevisionsResponse): unknown {
+    const obj: any = {};
+    if (message.dashboardStates?.length) {
+      obj.dashboardStates = message.dashboardStates.map((e) => DashboardState.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListDashboardStateRevisionsResponse>): ListDashboardStateRevisionsResponse {
+    return ListDashboardStateRevisionsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListDashboardStateRevisionsResponse>): ListDashboardStateRevisionsResponse {
+    const message = createBaseListDashboardStateRevisionsResponse() as any;
+    message.dashboardStates = object.dashboardStates?.map((e) => DashboardState.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseGetDashboardStateRevisionRequest(): GetDashboardStateRevisionRequest {
+  return { name: "" };
+}
+
+export const GetDashboardStateRevisionRequest: MessageFns<GetDashboardStateRevisionRequest> = {
+  encode(message: GetDashboardStateRevisionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetDashboardStateRevisionRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetDashboardStateRevisionRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetDashboardStateRevisionRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: GetDashboardStateRevisionRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetDashboardStateRevisionRequest>): GetDashboardStateRevisionRequest {
+    return GetDashboardStateRevisionRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetDashboardStateRevisionRequest>): GetDashboardStateRevisionRequest {
+    const message = createBaseGetDashboardStateRevisionRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseRollbackDashboardStateRequest(): RollbackDashboardStateRequest {
+  return { name: "", revisionId: "", etag: "", validateOnly: false };
+}
+
+export const RollbackDashboardStateRequest: MessageFns<RollbackDashboardStateRequest> = {
+  encode(message: RollbackDashboardStateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.revisionId !== "") {
+      writer.uint32(18).string(message.revisionId);
+    }
+    if (message.etag !== "") {
+      writer.uint32(26).string(message.etag);
+    }
+    if (message.validateOnly !== false) {
+      writer.uint32(32).bool(message.validateOnly);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RollbackDashboardStateRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRollbackDashboardStateRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.revisionId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.etag = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.validateOnly = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RollbackDashboardStateRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      revisionId: isSet(object.revisionId) ? globalThis.String(object.revisionId) : "",
+      etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
+      validateOnly: isSet(object.validateOnly) ? globalThis.Boolean(object.validateOnly) : false,
+    };
+  },
+
+  toJSON(message: RollbackDashboardStateRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.revisionId !== "") {
+      obj.revisionId = message.revisionId;
+    }
+    if (message.etag !== "") {
+      obj.etag = message.etag;
+    }
+    if (message.validateOnly !== false) {
+      obj.validateOnly = message.validateOnly;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RollbackDashboardStateRequest>): RollbackDashboardStateRequest {
+    return RollbackDashboardStateRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RollbackDashboardStateRequest>): RollbackDashboardStateRequest {
+    const message = createBaseRollbackDashboardStateRequest() as any;
+    message.name = object.name ?? "";
+    message.revisionId = object.revisionId ?? "";
+    message.etag = object.etag ?? "";
+    message.validateOnly = object.validateOnly ?? false;
+    return message;
+  },
+};
+
+function createBaseUserSettings(): UserSettings {
+  return { name: "", starredDashboards: [], darkModeEnabled: undefined, timeZone: "", etag: "" };
+}
+
+export const UserSettings: MessageFns<UserSettings> = {
+  encode(message: UserSettings, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    for (const v of message.starredDashboards) {
+      writer.uint32(18).string(v!);
+    }
+    if (message.darkModeEnabled !== undefined) {
+      writer.uint32(24).bool(message.darkModeEnabled);
+    }
+    if (message.timeZone !== "") {
+      writer.uint32(34).string(message.timeZone);
+    }
+    if (message.etag !== "") {
+      writer.uint32(42).string(message.etag);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserSettings {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserSettings() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.starredDashboards.push(reader.string());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.darkModeEnabled = reader.bool();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.timeZone = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.etag = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserSettings {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      starredDashboards: globalThis.Array.isArray(object?.starredDashboards)
+        ? object.starredDashboards.map((e: any) => globalThis.String(e))
+        : [],
+      darkModeEnabled: isSet(object.darkModeEnabled) ? globalThis.Boolean(object.darkModeEnabled) : undefined,
+      timeZone: isSet(object.timeZone) ? globalThis.String(object.timeZone) : "",
+      etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
+    };
+  },
+
+  toJSON(message: UserSettings): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.starredDashboards?.length) {
+      obj.starredDashboards = message.starredDashboards;
+    }
+    if (message.darkModeEnabled !== undefined) {
+      obj.darkModeEnabled = message.darkModeEnabled;
+    }
+    if (message.timeZone !== "") {
+      obj.timeZone = message.timeZone;
+    }
+    if (message.etag !== "") {
+      obj.etag = message.etag;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UserSettings>): UserSettings {
+    return UserSettings.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UserSettings>): UserSettings {
+    const message = createBaseUserSettings() as any;
+    message.name = object.name ?? "";
+    message.starredDashboards = object.starredDashboards?.map((e) => e) || [];
+    message.darkModeEnabled = object.darkModeEnabled ?? undefined;
+    message.timeZone = object.timeZone ?? "";
+    message.etag = object.etag ?? "";
+    return message;
+  },
+};
+
+function createBaseGetUserSettingsRequest(): GetUserSettingsRequest {
+  return { name: "" };
+}
+
+export const GetUserSettingsRequest: MessageFns<GetUserSettingsRequest> = {
+  encode(message: GetUserSettingsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetUserSettingsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUserSettingsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetUserSettingsRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
+  },
+
+  toJSON(message: GetUserSettingsRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetUserSettingsRequest>): GetUserSettingsRequest {
+    return GetUserSettingsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetUserSettingsRequest>): GetUserSettingsRequest {
+    const message = createBaseGetUserSettingsRequest() as any;
+    message.name = object.name ?? "";
+    return message;
+  },
+};
+
+function createBaseUpdateUserSettingsRequest(): UpdateUserSettingsRequest {
+  return { userSettings: undefined, updateMask: undefined, allowMissing: false };
+}
+
+export const UpdateUserSettingsRequest: MessageFns<UpdateUserSettingsRequest> = {
+  encode(message: UpdateUserSettingsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userSettings !== undefined) {
+      UserSettings.encode(message.userSettings, writer.uint32(10).fork()).join();
+    }
+    if (message.updateMask !== undefined) {
+      FieldMask.encode(FieldMask.wrap(message.updateMask), writer.uint32(18).fork()).join();
+    }
+    if (message.allowMissing !== false) {
+      writer.uint32(24).bool(message.allowMissing);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateUserSettingsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateUserSettingsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.userSettings = UserSettings.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.updateMask = FieldMask.unwrap(FieldMask.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.allowMissing = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateUserSettingsRequest {
+    return {
+      userSettings: isSet(object.userSettings) ? UserSettings.fromJSON(object.userSettings) : undefined,
+      updateMask: isSet(object.updateMask) ? FieldMask.unwrap(FieldMask.fromJSON(object.updateMask)) : undefined,
+      allowMissing: isSet(object.allowMissing) ? globalThis.Boolean(object.allowMissing) : false,
+    };
+  },
+
+  toJSON(message: UpdateUserSettingsRequest): unknown {
+    const obj: any = {};
+    if (message.userSettings !== undefined) {
+      obj.userSettings = UserSettings.toJSON(message.userSettings);
+    }
+    if (message.updateMask !== undefined) {
+      obj.updateMask = FieldMask.toJSON(FieldMask.wrap(message.updateMask));
+    }
+    if (message.allowMissing !== false) {
+      obj.allowMissing = message.allowMissing;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<UpdateUserSettingsRequest>): UpdateUserSettingsRequest {
+    return UpdateUserSettingsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<UpdateUserSettingsRequest>): UpdateUserSettingsRequest {
+    const message = createBaseUpdateUserSettingsRequest() as any;
+    message.userSettings = (object.userSettings !== undefined && object.userSettings !== null)
+      ? UserSettings.fromPartial(object.userSettings)
+      : undefined;
+    message.updateMask = object.updateMask ?? undefined;
+    message.allowMissing = object.allowMissing ?? false;
+    return message;
+  },
+};
+
+function createBaseAddStarredDashboardRequest(): AddStarredDashboardRequest {
+  return { name: "", dashboard: "" };
+}
+
+export const AddStarredDashboardRequest: MessageFns<AddStarredDashboardRequest> = {
+  encode(message: AddStarredDashboardRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.dashboard !== "") {
+      writer.uint32(18).string(message.dashboard);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AddStarredDashboardRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAddStarredDashboardRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dashboard = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AddStarredDashboardRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      dashboard: isSet(object.dashboard) ? globalThis.String(object.dashboard) : "",
+    };
+  },
+
+  toJSON(message: AddStarredDashboardRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.dashboard !== "") {
+      obj.dashboard = message.dashboard;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<AddStarredDashboardRequest>): AddStarredDashboardRequest {
+    return AddStarredDashboardRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<AddStarredDashboardRequest>): AddStarredDashboardRequest {
+    const message = createBaseAddStarredDashboardRequest() as any;
+    message.name = object.name ?? "";
+    message.dashboard = object.dashboard ?? "";
+    return message;
+  },
+};
+
+function createBaseRemoveStarredDashboardRequest(): RemoveStarredDashboardRequest {
+  return { name: "", dashboard: "" };
+}
+
+export const RemoveStarredDashboardRequest: MessageFns<RemoveStarredDashboardRequest> = {
+  encode(message: RemoveStarredDashboardRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.dashboard !== "") {
+      writer.uint32(18).string(message.dashboard);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RemoveStarredDashboardRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRemoveStarredDashboardRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dashboard = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RemoveStarredDashboardRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      dashboard: isSet(object.dashboard) ? globalThis.String(object.dashboard) : "",
+    };
+  },
+
+  toJSON(message: RemoveStarredDashboardRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.dashboard !== "") {
+      obj.dashboard = message.dashboard;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RemoveStarredDashboardRequest>): RemoveStarredDashboardRequest {
+    return RemoveStarredDashboardRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RemoveStarredDashboardRequest>): RemoveStarredDashboardRequest {
+    const message = createBaseRemoveStarredDashboardRequest() as any;
+    message.name = object.name ?? "";
+    message.dashboard = object.dashboard ?? "";
     return message;
   },
 };
 
 /** Service for Android performance-related data. */
 export interface PerfService {
-  /** Streams the data to populate the widgets defined within a DashboardState. */
-  StreamDashboardData(request: StreamDashboardDataRequest): Observable<StreamDashboardDataResponse>;
+  /** RPC for getting CrystalBall measurements. */
+  SearchMeasurements(request: SearchMeasurementsRequest): Promise<SearchMeasurementsResponse>;
+  /** RPC to discover filterable columns for measurements. */
+  ListMeasurementFilterColumns(
+    request: ListMeasurementFilterColumnsRequest,
+  ): Promise<ListMeasurementFilterColumnsResponse>;
+  /**
+   * RPC to get distinct values for a specific filter column,
+   * supporting autocomplete.
+   */
+  SuggestMeasurementFilterValues(
+    request: SuggestMeasurementFilterValuesRequest,
+  ): Promise<SuggestMeasurementFilterValuesResponse>;
+  /** RPC to search for metric definitions. */
+  SearchMetricDefinitions(request: SearchMetricDefinitionsRequest): Promise<SearchMetricDefinitionsResponse>;
+  /** Sample RPC for testing the service via a ping. */
+  TestConnection(request: TestConnectionRequest): Promise<TestConnectionResponse>;
+  /**
+   * Creates a new DashboardState. A client-provided ID can be used,
+   * otherwise the server will assign a unique ID.
+   * This method returns a Long Running Operation (AIP-151).
+   */
+  CreateDashboardState(request: CreateDashboardStateRequest): Promise<Operation>;
+  /**
+   * Updates an existing DashboardState.
+   * This method returns a Long Running Operation (AIP-151).
+   */
+  UpdateDashboardState(request: UpdateDashboardStateRequest): Promise<Operation>;
+  /** Gets a DashboardState. */
+  GetDashboardState(request: GetDashboardStateRequest): Promise<DashboardState>;
+  /** Lists DashboardStates accessible to the caller. */
+  ListDashboardStates(request: ListDashboardStatesRequest): Promise<ListDashboardStatesResponse>;
+  /**
+   * Deletes a DashboardState. This is a soft delete, and the resource
+   * can be recovered using UndeleteDashboardState.
+   * This method returns a Long Running Operation (AIP-151).
+   */
+  DeleteDashboardState(request: DeleteDashboardStateRequest): Promise<Operation>;
+  /**
+   * Undeletes a DashboardState. This reverts a soft-deleted resource.
+   * This method returns a Long Running Operation (AIP-151).
+   * (-- api-linter: core::0136::response-message-name=disabled
+   *     aip.dev/not-precedent: AIP-164 Undelete methods must return the
+   *     resource itself, so the LRO response_type is the resource name. --)
+   */
+  UndeleteDashboardState(request: UndeleteDashboardStateRequest): Promise<Operation>;
+  /**
+   * Streams the data to populate the widgets defined within a DashboardState.
+   * This method applies all relevant global, chart, and series level filters
+   * as specified in the DashboardState content.
+   * The client is expected to send an initial request containing the
+   * DashboardState name or content. The server will stream back responses,
+   * each containing the data for a single widget.
+   */
+  StreamDashboardData(request: Observable<StreamDashboardDataRequest>): Observable<StreamDashboardDataResponse>;
+  /**
+   * Fetches the data for a single widget within a DashboardState.
+   * This method applies all relevant global, chart, and series level filters
+   * as specified in the DashboardState content for the given widget.
+   * (-- api-linter: core::0131::synonyms=disabled
+   *     aip.dev/not-precedent: This is a custom method to fetch data for a
+   *     specific widget within a dashboard, not a standard Get on a resource.
+   *     It requires additional parameters like widget_id and dashboard content.
+   * --)
+   * (-- api-linter: core::0136::http-method=disabled
+   *     aip.dev/not-precedent: This method uses POST instead of GET because
+   *     the request message includes the 'dashboard_content' field, which can
+   *     be large and complex. This data must be sent in the request body,
+   *     which is only supported by POST, not GET, as per AIP-136.
+   * --)
+   */
+  FetchDashboardWidgetData(request: FetchDashboardWidgetDataRequest): Promise<FetchDashboardWidgetDataResponse>;
+  /** Lists revisions of a DashboardState. */
+  ListDashboardStateRevisions(
+    request: ListDashboardStateRevisionsRequest,
+  ): Promise<ListDashboardStateRevisionsResponse>;
+  /**
+   * Gets a specific revision of a DashboardState.
+   * Note: Per AIP-162, the revision is a snapshot, so we return DashboardState.
+   * (-- api-linter: core::0131::response-message-name=disabled
+   *     aip.dev/not-precedent: This RPC returns a resource revision,
+   *     which uses the resource type as the response message as per AIP-162.
+   *     --)
+   */
+  GetDashboardStateRevision(request: GetDashboardStateRevisionRequest): Promise<DashboardState>;
+  /**
+   * Rolls back a DashboardState to a specific revision.
+   * This creates a new revision in the history.
+   * (Imperative only.)
+   */
+  RollbackDashboardState(request: RollbackDashboardStateRequest): Promise<DashboardState>;
+  /** Gets the UserSettings for the authenticated user. */
+  GetUserSettings(request: GetUserSettingsRequest): Promise<UserSettings>;
+  /** Updates the UserSettings for the authenticated user. */
+  UpdateUserSettings(request: UpdateUserSettingsRequest): Promise<UserSettings>;
+  /** Adds a dashboard to the user's starred list. */
+  AddStarredDashboard(request: AddStarredDashboardRequest): Promise<UserSettings>;
+  /** Removes a dashboard from the user's starred list. */
+  RemoveStarredDashboard(request: RemoveStarredDashboardRequest): Promise<UserSettings>;
 }
 
 export const PerfServiceServiceName = "google.android.perf.v1.PerfService";
@@ -1133,12 +8215,151 @@ export class PerfServiceClientImpl implements PerfService {
   constructor(rpc: Rpc, opts?: { service?: string }) {
     this.service = opts?.service || PerfServiceServiceName;
     this.rpc = rpc;
+    this.SearchMeasurements = this.SearchMeasurements.bind(this);
+    this.ListMeasurementFilterColumns = this.ListMeasurementFilterColumns.bind(this);
+    this.SuggestMeasurementFilterValues = this.SuggestMeasurementFilterValues.bind(this);
+    this.SearchMetricDefinitions = this.SearchMetricDefinitions.bind(this);
+    this.TestConnection = this.TestConnection.bind(this);
+    this.CreateDashboardState = this.CreateDashboardState.bind(this);
+    this.UpdateDashboardState = this.UpdateDashboardState.bind(this);
+    this.GetDashboardState = this.GetDashboardState.bind(this);
+    this.ListDashboardStates = this.ListDashboardStates.bind(this);
+    this.DeleteDashboardState = this.DeleteDashboardState.bind(this);
+    this.UndeleteDashboardState = this.UndeleteDashboardState.bind(this);
     this.StreamDashboardData = this.StreamDashboardData.bind(this);
+    this.FetchDashboardWidgetData = this.FetchDashboardWidgetData.bind(this);
+    this.ListDashboardStateRevisions = this.ListDashboardStateRevisions.bind(this);
+    this.GetDashboardStateRevision = this.GetDashboardStateRevision.bind(this);
+    this.RollbackDashboardState = this.RollbackDashboardState.bind(this);
+    this.GetUserSettings = this.GetUserSettings.bind(this);
+    this.UpdateUserSettings = this.UpdateUserSettings.bind(this);
+    this.AddStarredDashboard = this.AddStarredDashboard.bind(this);
+    this.RemoveStarredDashboard = this.RemoveStarredDashboard.bind(this);
   }
-  StreamDashboardData(request: StreamDashboardDataRequest): Observable<StreamDashboardDataResponse> {
-    const data = StreamDashboardDataRequest.toJSON(request);
-    const result = this.rpc.serverStreamingRequest(this.service, "StreamDashboardData", data);
+  SearchMeasurements(request: SearchMeasurementsRequest): Promise<SearchMeasurementsResponse> {
+    const data = SearchMeasurementsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "SearchMeasurements", data);
+    return promise.then((data) => SearchMeasurementsResponse.fromJSON(data));
+  }
+
+  ListMeasurementFilterColumns(
+    request: ListMeasurementFilterColumnsRequest,
+  ): Promise<ListMeasurementFilterColumnsResponse> {
+    const data = ListMeasurementFilterColumnsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListMeasurementFilterColumns", data);
+    return promise.then((data) => ListMeasurementFilterColumnsResponse.fromJSON(data));
+  }
+
+  SuggestMeasurementFilterValues(
+    request: SuggestMeasurementFilterValuesRequest,
+  ): Promise<SuggestMeasurementFilterValuesResponse> {
+    const data = SuggestMeasurementFilterValuesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "SuggestMeasurementFilterValues", data);
+    return promise.then((data) => SuggestMeasurementFilterValuesResponse.fromJSON(data));
+  }
+
+  SearchMetricDefinitions(request: SearchMetricDefinitionsRequest): Promise<SearchMetricDefinitionsResponse> {
+    const data = SearchMetricDefinitionsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "SearchMetricDefinitions", data);
+    return promise.then((data) => SearchMetricDefinitionsResponse.fromJSON(data));
+  }
+
+  TestConnection(request: TestConnectionRequest): Promise<TestConnectionResponse> {
+    const data = TestConnectionRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "TestConnection", data);
+    return promise.then((data) => TestConnectionResponse.fromJSON(data));
+  }
+
+  CreateDashboardState(request: CreateDashboardStateRequest): Promise<Operation> {
+    const data = CreateDashboardStateRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CreateDashboardState", data);
+    return promise.then((data) => Operation.fromJSON(data));
+  }
+
+  UpdateDashboardState(request: UpdateDashboardStateRequest): Promise<Operation> {
+    const data = UpdateDashboardStateRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdateDashboardState", data);
+    return promise.then((data) => Operation.fromJSON(data));
+  }
+
+  GetDashboardState(request: GetDashboardStateRequest): Promise<DashboardState> {
+    const data = GetDashboardStateRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetDashboardState", data);
+    return promise.then((data) => DashboardState.fromJSON(data));
+  }
+
+  ListDashboardStates(request: ListDashboardStatesRequest): Promise<ListDashboardStatesResponse> {
+    const data = ListDashboardStatesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListDashboardStates", data);
+    return promise.then((data) => ListDashboardStatesResponse.fromJSON(data));
+  }
+
+  DeleteDashboardState(request: DeleteDashboardStateRequest): Promise<Operation> {
+    const data = DeleteDashboardStateRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "DeleteDashboardState", data);
+    return promise.then((data) => Operation.fromJSON(data));
+  }
+
+  UndeleteDashboardState(request: UndeleteDashboardStateRequest): Promise<Operation> {
+    const data = UndeleteDashboardStateRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UndeleteDashboardState", data);
+    return promise.then((data) => Operation.fromJSON(data));
+  }
+
+  StreamDashboardData(request: Observable<StreamDashboardDataRequest>): Observable<StreamDashboardDataResponse> {
+    const data = request.pipe(map((request) => StreamDashboardDataRequest.toJSON(request)));
+    const result = this.rpc.bidirectionalStreamingRequest(this.service, "StreamDashboardData", data);
     return result.pipe(map((data) => StreamDashboardDataResponse.fromJSON(data)));
+  }
+
+  FetchDashboardWidgetData(request: FetchDashboardWidgetDataRequest): Promise<FetchDashboardWidgetDataResponse> {
+    const data = FetchDashboardWidgetDataRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "FetchDashboardWidgetData", data);
+    return promise.then((data) => FetchDashboardWidgetDataResponse.fromJSON(data));
+  }
+
+  ListDashboardStateRevisions(
+    request: ListDashboardStateRevisionsRequest,
+  ): Promise<ListDashboardStateRevisionsResponse> {
+    const data = ListDashboardStateRevisionsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListDashboardStateRevisions", data);
+    return promise.then((data) => ListDashboardStateRevisionsResponse.fromJSON(data));
+  }
+
+  GetDashboardStateRevision(request: GetDashboardStateRevisionRequest): Promise<DashboardState> {
+    const data = GetDashboardStateRevisionRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetDashboardStateRevision", data);
+    return promise.then((data) => DashboardState.fromJSON(data));
+  }
+
+  RollbackDashboardState(request: RollbackDashboardStateRequest): Promise<DashboardState> {
+    const data = RollbackDashboardStateRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "RollbackDashboardState", data);
+    return promise.then((data) => DashboardState.fromJSON(data));
+  }
+
+  GetUserSettings(request: GetUserSettingsRequest): Promise<UserSettings> {
+    const data = GetUserSettingsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetUserSettings", data);
+    return promise.then((data) => UserSettings.fromJSON(data));
+  }
+
+  UpdateUserSettings(request: UpdateUserSettingsRequest): Promise<UserSettings> {
+    const data = UpdateUserSettingsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UpdateUserSettings", data);
+    return promise.then((data) => UserSettings.fromJSON(data));
+  }
+
+  AddStarredDashboard(request: AddStarredDashboardRequest): Promise<UserSettings> {
+    const data = AddStarredDashboardRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "AddStarredDashboard", data);
+    return promise.then((data) => UserSettings.fromJSON(data));
+  }
+
+  RemoveStarredDashboard(request: RemoveStarredDashboardRequest): Promise<UserSettings> {
+    const data = RemoveStarredDashboardRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "RemoveStarredDashboard", data);
+    return promise.then((data) => UserSettings.fromJSON(data));
   }
 }
 
@@ -1156,6 +8377,19 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function toTimestamp(dateStr: string): Timestamp {
+  const date = new globalThis.Date(dateStr);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): string {
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis).toISOString();
+}
 
 function isObject(value: any): boolean {
   return typeof value === "object" && value !== null;
