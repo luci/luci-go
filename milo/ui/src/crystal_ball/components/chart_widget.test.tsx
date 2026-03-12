@@ -21,6 +21,7 @@ import * as components from '@/crystal_ball/components';
 import * as useSearchMeasurementsHook from '@/crystal_ball/hooks/use_android_perf_api';
 import {
   PerfChartWidget,
+  MeasurementFilterColumn,
   MeasurementRow,
   SearchMeasurementsRequest,
 } from '@/crystal_ball/types';
@@ -339,6 +340,32 @@ describe('ChartWidget', () => {
     expect(screen.getByTestId('typography')).toHaveTextContent(
       'No data found for the given parameters.',
     );
+  });
+
+  it('should pass isLoadingFilterColumns down to FilterEditor', () => {
+    const MockFilterEditor = components.FilterEditor as jest.Mock;
+    MockFilterEditor.mockClear();
+
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        filterColumns={
+          [
+            { column: 'test_name', primary: true, dataType: 'STRING' },
+          ] as MeasurementFilterColumn[]
+        }
+        isLoadingFilterColumns={true}
+      />,
+    );
+
+    expect(MockFilterEditor).toHaveBeenCalledTimes(1);
+    expect(MockFilterEditor.mock.calls[0][0]).toMatchObject({
+      isLoadingColumns: true,
+      availableColumns: [
+        { column: 'test_name', primary: true, dataType: 'STRING' },
+      ],
+    });
   });
 });
 

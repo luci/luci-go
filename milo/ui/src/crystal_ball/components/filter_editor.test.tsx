@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
-import { PerfFilter } from '@/crystal_ball/types';
+import { MeasurementFilterColumn, PerfFilter } from '@/crystal_ball/types';
 
 import { FilterEditor } from './filter_editor';
 
@@ -34,13 +34,13 @@ const defaultProps = {
   onUpdateFilters: jest.fn(),
   dataSpecId: 'test-spec-id',
   availableColumns: [
-    'atp_test_name',
-    'build_branch',
-    'build_target',
-    'test_name',
-    'model',
-    'sku',
-  ],
+    { column: 'atp_test_name', primary: true, dataType: 'STRING' },
+    { column: 'build_branch', primary: false, dataType: 'STRING' },
+    { column: 'build_target', primary: false, dataType: 'STRING' },
+    { column: 'test_name', primary: true, dataType: 'STRING' },
+    { column: 'model', primary: false, dataType: 'STRING' },
+    { column: 'sku', primary: true, dataType: 'STRING' },
+  ] as MeasurementFilterColumn[],
 };
 
 describe('FilterEditor', () => {
@@ -148,15 +148,13 @@ describe('FilterEditor', () => {
     // interact with the combobox
     fireEvent.mouseDown(screen.getByLabelText('Column'));
     await waitFor(() => {
-      expect(
-        screen.getByRole('option', { name: 'build_branch' }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'sku' })).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole('option', { name: 'build_branch' }));
+    fireEvent.click(screen.getByRole('option', { name: 'sku' }));
 
     expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
     const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
-    expect(updatedFilters[0].column).toBe('build_branch');
+    expect(updatedFilters[0].column).toBe('sku');
   });
 
   it('updates filter operator onChange', async () => {
@@ -240,5 +238,72 @@ describe('FilterEditor', () => {
     fireEvent.blur(valueInput);
     // onUpdateFilters should not be called as the value didn't change
     expect(defaultProps.onUpdateFilters).not.toHaveBeenCalled();
+  });
+
+  it('renders a spinner when isLoadingColumns is true', async () => {
+    const initialFilters: PerfFilter[] = [
+      { id: 'filter-1', column: 'test_name', dataSpecId: 'test-spec-id' },
+    ];
+    render(
+      <FilterEditor
+        {...defaultProps}
+        filters={initialFilters}
+        isLoadingColumns={true}
+      />,
+    );
+    fireEvent.click(screen.getByText('Filters')); // Expand
+    await waitFor(() => {
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    });
+  });
+
+  it('groups and sorts columns correctly', async () => {
+    const initialFilters: PerfFilter[] = [
+      {
+        id: 'filter-1',
+        column: 'test_name',
+        dataSpecId: 'test-spec-id',
+        textInput: {
+          defaultValue: { values: ['test'], filterOperator: 'EQUAL' },
+        },
+      },
+    ];
+    render(<FilterEditor {...defaultProps} filters={initialFilters} />);
+
+    // Expand accordion
+    fireEvent.click(screen.getByText('Filters'));
+
+    // Wait for the column combobox to appear
+    const columnSelect = await screen.findByLabelText('Column');
+    fireEvent.mouseDown(columnSelect);
+
+    // Primary components should be visible and sorted alphabetically
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: 'atp_test_name' }),
+      ).toBeInTheDocument();
+      expect(screen.getAllByRole('option').length).toBeGreaterThan(3);
+    });
+
+    const allOptions = screen.getAllByRole('option');
+    // First 3 are primary
+    expect(allOptions[0]).toHaveTextContent('atp_test_name'); // Primary 1
+    expect(allOptions[1]).toHaveTextContent('sku'); // Primary 2
+    expect(allOptions[2]).toHaveTextContent('test_name'); // Primary 3
+    // Then the divider
+    expect(allOptions[3]).toHaveTextContent('');
+
+    const optionsText = allOptions.map((opt) => opt.textContent);
+
+    // First 3 are primary, remaining are secondary (in alphabetical order)
+    expect(optionsText).toEqual([
+      'atp_test_name',
+      'sku',
+      'test_name',
+      '',
+      'build_branch',
+      'build_target',
+      'model',
+    ]);
   });
 });

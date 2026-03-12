@@ -24,6 +24,7 @@ import {
 } from '@/crystal_ball/components';
 import { useSearchMeasurements } from '@/crystal_ball/hooks';
 import {
+  MeasurementFilterColumn,
   PerfChartSeries,
   PerfChartWidget,
   PerfFilter,
@@ -35,13 +36,15 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 interface ChartWidgetProps {
   onUpdate: (updatedWidget: PerfChartWidget) => void;
   widget: PerfChartWidget;
-  filterColumns: string[];
+  filterColumns: MeasurementFilterColumn[];
+  isLoadingFilterColumns?: boolean;
 }
 
 export function ChartWidget({
   onUpdate,
   widget,
   filterColumns,
+  isLoadingFilterColumns,
 }: ChartWidgetProps) {
   const [searchParams] = useSyncedSearchParams();
 
@@ -219,6 +222,7 @@ export function ChartWidget({
         onUpdateFilters={handleFiltersUpdate}
         dataSpecId={widget.dataSpecId}
         availableColumns={filterColumns}
+        isLoadingColumns={isLoadingFilterColumns}
       />
     </Box>
   );

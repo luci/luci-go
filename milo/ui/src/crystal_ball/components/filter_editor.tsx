@@ -24,6 +24,8 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
+  Divider,
   IconButton,
   MenuItem,
   Select,
@@ -31,9 +33,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
-import { PerfFilter } from '@/crystal_ball/types';
+import { MeasurementFilterColumn, PerfFilter } from '@/crystal_ball/types';
 
 // TODO: b/475638132 - Once ListMeasurementFilterColumns RPC is being used, column types are known and can be used to determine appropriate
 // filter operators.
@@ -69,7 +71,8 @@ interface FilterEditorProps {
   filters: PerfFilter[];
   onUpdateFilters: (updatedFilters: PerfFilter[]) => void;
   dataSpecId: string;
-  availableColumns: string[];
+  availableColumns: MeasurementFilterColumn[];
+  isLoadingColumns?: boolean;
 }
 
 export function FilterEditor({
@@ -77,6 +80,7 @@ export function FilterEditor({
   onUpdateFilters,
   dataSpecId,
   availableColumns,
+  isLoadingColumns,
 }: FilterEditorProps) {
   const [expanded, setExpanded] = useState(false);
   // Local state to manage draft text inputs, keyed by filter id
@@ -96,7 +100,7 @@ export function FilterEditor({
     const newFilterId = `filter-${crypto.randomUUID()}`;
     const newFilter: PerfFilter = {
       id: newFilterId,
-      column: availableColumns[0] || '',
+      column: availableColumns[0]?.column || '',
       dataSpecId: dataSpecId,
       displayName: 'New Filter',
       textInput: {
@@ -173,6 +177,26 @@ export function FilterEditor({
     }
   };
 
+  const primaryColumns = useMemo(
+    () =>
+      availableColumns
+        .filter((c) => c.primary)
+        .map((c) => c.column || '')
+        .filter((c) => !!c)
+        .sort((a, b) => a.localeCompare(b)),
+    [availableColumns],
+  );
+
+  const secondaryColumns = useMemo(
+    () =>
+      availableColumns
+        .filter((c) => !c.primary)
+        .map((c) => c.column || '')
+        .filter((c) => !!c)
+        .sort((a, b) => a.localeCompare(b)),
+    [availableColumns],
+  );
+
   const renderFilterLabel = (filter: PerfFilter) => {
     const op = filter.textInput?.defaultValue?.filterOperator || 'EQUAL';
     const val = filter.textInput?.defaultValue?.values?.[0] || '';
@@ -212,93 +236,115 @@ export function FilterEditor({
           )}
         </AccordionSummary>
         <AccordionDetails>
-          {filters.map((filter, index) => {
-            const filterId = filter.id;
-            return (
-              <Box
-                key={filterId}
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr 2fr auto',
-                  gap: 1,
-                  alignItems: 'center',
-                  mb: 1.5,
-                }}
+          {isLoadingColumns ? (
+            <Box sx={{ display: 'flex', justifySelf: 'center', p: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <>
+              {filters.map((filter, index) => {
+                const filterId = filter.id;
+                return (
+                  <Box
+                    key={filterId}
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 2fr auto',
+                      gap: 1,
+                      alignItems: 'center',
+                      mb: 1.5,
+                    }}
+                  >
+                    <Select
+                      value={filter.column}
+                      onChange={(e: SelectChangeEvent<string>) =>
+                        handleFilterChange(index, { column: e.target.value })
+                      }
+                      size="small"
+                      displayEmpty
+                      inputProps={{ 'aria-label': 'Column' }}
+                      sx={{ minWidth: 120 }}
+                      MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
+                    >
+                      {filter.column &&
+                        !primaryColumns.includes(filter.column) &&
+                        !secondaryColumns.includes(filter.column) && (
+                          <MenuItem key={filter.column} value={filter.column}>
+                            {filter.column}
+                          </MenuItem>
+                        )}
+                      {primaryColumns.map((col) => (
+                        <MenuItem key={col} value={col}>
+                          {col}
+                        </MenuItem>
+                      ))}
+
+                      {secondaryColumns.length > 0 && [
+                        <Divider key="divider" />,
+                        ...secondaryColumns.map((col) => (
+                          <MenuItem key={col} value={col}>
+                            {col}
+                          </MenuItem>
+                        )),
+                      ]}
+                    </Select>
+
+                    <Select
+                      value={
+                        filter.textInput?.defaultValue?.filterOperator || ''
+                      }
+                      onChange={(e: SelectChangeEvent<string>) =>
+                        handleDefaultValueChange(
+                          index,
+                          'filterOperator',
+                          e.target.value,
+                        )
+                      }
+                      size="small"
+                      displayEmpty
+                      inputProps={{ 'aria-label': 'Operator' }}
+                      sx={{ minWidth: 120 }}
+                      MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
+                    >
+                      {OPERATORS.map((op) => (
+                        <MenuItem key={op} value={op}>
+                          {op}
+                        </MenuItem>
+                      ))}
+                    </Select>
+
+                    <TextField
+                      placeholder="Value"
+                      size="small"
+                      value={draftValues[filterId] || ''}
+                      onChange={(e) =>
+                        handleDraftValueChange(filterId, e.target.value)
+                      }
+                      onBlur={() => handleDraftValueBlur(index, filterId)}
+                      inputProps={{ 'aria-label': 'Value' }}
+                    />
+                    <IconButton
+                      onClick={() => handleRemoveFilter(index)}
+                      aria-label="Remove filter"
+                      color="error"
+                      size="small"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                );
+              })}
+              <Button
+                startIcon={<AddIcon />}
+                onClick={handleAddFilter}
+                variant="outlined"
+                size="small"
+                sx={{ mt: 1 }}
               >
-                <Select
-                  value={filter.column}
-                  onChange={(e: SelectChangeEvent<string>) =>
-                    handleFilterChange(index, { column: e.target.value })
-                  }
-                  size="small"
-                  displayEmpty
-                  inputProps={{ 'aria-label': 'Column' }}
-                  sx={{ minWidth: 120 }}
-                >
-                  {filter.column &&
-                    !availableColumns.includes(filter.column) && (
-                      <MenuItem key={filter.column} value={filter.column}>
-                        {filter.column}
-                      </MenuItem>
-                    )}
-                  {availableColumns.map((col) => (
-                    <MenuItem key={col} value={col}>
-                      {col}
-                    </MenuItem>
-                  ))}
-                </Select>
-
-                <Select
-                  value={filter.textInput?.defaultValue?.filterOperator || ''}
-                  onChange={(e: SelectChangeEvent<string>) =>
-                    handleDefaultValueChange(
-                      index,
-                      'filterOperator',
-                      e.target.value,
-                    )
-                  }
-                  size="small"
-                  displayEmpty
-                  inputProps={{ 'aria-label': 'Operator' }}
-                  sx={{ minWidth: 120 }}
-                >
-                  {OPERATORS.map((op) => (
-                    <MenuItem key={op} value={op}>
-                      {op}
-                    </MenuItem>
-                  ))}
-                </Select>
-
-                <TextField
-                  placeholder="Value"
-                  size="small"
-                  value={draftValues[filterId] || ''}
-                  onChange={(e) =>
-                    handleDraftValueChange(filterId, e.target.value)
-                  }
-                  onBlur={() => handleDraftValueBlur(index, filterId)}
-                  inputProps={{ 'aria-label': 'Value' }}
-                />
-                <IconButton
-                  onClick={() => handleRemoveFilter(index)}
-                  aria-label="Remove filter"
-                  color="error"
-                  size="small"
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            );
-          })}
-          <Button
-            startIcon={<AddIcon />}
-            onClick={handleAddFilter}
-            variant="outlined"
-            size="small"
-            sx={{ mt: 1 }}
-          >
-            Add Filter
-          </Button>
+                Add Filter
+              </Button>
+            </>
+          )}
         </AccordionDetails>
       </Accordion>
     </Box>
