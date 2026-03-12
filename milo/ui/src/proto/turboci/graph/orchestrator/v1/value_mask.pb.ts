@@ -11,14 +11,19 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
 /**
  * Specifies the subset of the fields to return from Values in nodes matching a
  * query.
+ *
+ * Note: The `_VALUE` token must not be the last token in the enum name, since
+ * the Java proto implementation appends `_VALUE` to enums, causing Java-only
+ * collisions between e.g. VALUE_MASK_TYPE and VALUE_MASK_TYPE_VALUE if we were
+ * to allow the latter.
  */
 export enum ValueMask {
   /** VALUE_MASK_UNKNOWN - UNKNOWN is the default value. Equivalent to VALUE_MASK_TYPE. */
   VALUE_MASK_UNKNOWN = 0,
   /** VALUE_MASK_TYPE - Collect only `value.type_url`. */
   VALUE_MASK_TYPE = 1,
-  /** VALUE_MASK_TYPE_VALUE - Collect `value.type_url` and `value.value`. */
-  VALUE_MASK_TYPE_VALUE = 2,
+  /** VALUE_MASK_VALUE_TYPE - Collect `value.value` and `value.type_url`. */
+  VALUE_MASK_VALUE_TYPE = 2,
 }
 
 export function valueMaskFromJSON(object: any): ValueMask {
@@ -30,8 +35,8 @@ export function valueMaskFromJSON(object: any): ValueMask {
     case "VALUE_MASK_TYPE":
       return ValueMask.VALUE_MASK_TYPE;
     case 2:
-    case "VALUE_MASK_TYPE_VALUE":
-      return ValueMask.VALUE_MASK_TYPE_VALUE;
+    case "VALUE_MASK_VALUE_TYPE":
+      return ValueMask.VALUE_MASK_VALUE_TYPE;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum ValueMask");
   }
@@ -43,8 +48,8 @@ export function valueMaskToJSON(object: ValueMask): string {
       return "VALUE_MASK_UNKNOWN";
     case ValueMask.VALUE_MASK_TYPE:
       return "VALUE_MASK_TYPE";
-    case ValueMask.VALUE_MASK_TYPE_VALUE:
-      return "VALUE_MASK_TYPE_VALUE";
+    case ValueMask.VALUE_MASK_VALUE_TYPE:
+      return "VALUE_MASK_VALUE_TYPE";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum ValueMask");
   }
