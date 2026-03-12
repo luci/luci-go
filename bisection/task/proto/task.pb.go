@@ -506,61 +506,6 @@ func (x *TestFailureCulpritActionTask) GetAnalysisId() int64 {
 	return 0
 }
 
-// Payload for GenerateFixforwardTask
-type GenerateFixforwardTask struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The ID of the CompileFailureAnalysis associated with the culprit
-	AnalysisId int64 `protobuf:"varint,1,opt,name=analysis_id,json=analysisId,proto3" json:"analysis_id,omitempty"`
-	// The ID of the Suspect which is the culprit
-	CulpritId     int64 `protobuf:"varint,2,opt,name=culprit_id,json=culpritId,proto3" json:"culprit_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GenerateFixforwardTask) Reset() {
-	*x = GenerateFixforwardTask{}
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GenerateFixforwardTask) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GenerateFixforwardTask) ProtoMessage() {}
-
-func (x *GenerateFixforwardTask) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GenerateFixforwardTask.ProtoReflect.Descriptor instead.
-func (*GenerateFixforwardTask) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *GenerateFixforwardTask) GetAnalysisId() int64 {
-	if x != nil {
-		return x.AnalysisId
-	}
-	return 0
-}
-
-func (x *GenerateFixforwardTask) GetCulpritId() int64 {
-	if x != nil {
-		return x.CulpritId
-	}
-	return 0
-}
-
 var File_go_chromium_org_luci_bisection_task_proto_task_proto protoreflect.FileDescriptor
 
 const file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc = "" +
@@ -601,12 +546,7 @@ const file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc = "" +
 	"parent_key\x18\x03 \x01(\tR\tparentKey\"?\n" +
 	"\x1cTestFailureCulpritActionTask\x12\x1f\n" +
 	"\vanalysis_id\x18\x01 \x01(\x03R\n" +
-	"analysisId\"X\n" +
-	"\x16GenerateFixforwardTask\x12\x1f\n" +
-	"\vanalysis_id\x18\x01 \x01(\x03R\n" +
-	"analysisId\x12\x1d\n" +
-	"\n" +
-	"culprit_id\x18\x02 \x01(\x03R\tculpritIdB+Z)go.chromium.org/luci/bisection/task/protob\x06proto3"
+	"analysisIdB+Z)go.chromium.org/luci/bisection/task/protob\x06proto3"
 
 var (
 	file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescOnce sync.Once
@@ -620,7 +560,7 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescGZIP() []b
 	return file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDescData
 }
 
-var file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_go_chromium_org_luci_bisection_task_proto_task_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_go_chromium_org_luci_bisection_task_proto_task_proto_goTypes = []any{
 	(*FailedBuildIngestionTask)(nil),           // 0: proto.FailedBuildIngestionTask
 	(*RevertCulpritTask)(nil),                  // 1: proto.RevertCulpritTask
@@ -631,16 +571,15 @@ var file_go_chromium_org_luci_bisection_task_proto_task_proto_goTypes = []any{
 	(*TestFailureBisectionTask)(nil),           // 6: proto.TestFailureBisectionTask
 	(*TestFailureCulpritVerificationTask)(nil), // 7: proto.TestFailureCulpritVerificationTask
 	(*TestFailureCulpritActionTask)(nil),       // 8: proto.TestFailureCulpritActionTask
-	(*GenerateFixforwardTask)(nil),             // 9: proto.GenerateFixforwardTask
-	(*v1.Dimension)(nil),                       // 10: luci.bisection.v1.Dimension
+	(*v1.Dimension)(nil),                       // 9: luci.bisection.v1.Dimension
 }
 var file_go_chromium_org_luci_bisection_task_proto_task_proto_depIdxs = []int32{
-	10, // 0: proto.TestFailureDetectionTask.dimension_excludes:type_name -> luci.bisection.v1.Dimension
-	1,  // [1:1] is the sub-list for method output_type
-	1,  // [1:1] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	9, // 0: proto.TestFailureDetectionTask.dimension_excludes:type_name -> luci.bisection.v1.Dimension
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_bisection_task_proto_task_proto_init() }
@@ -654,7 +593,7 @@ func file_go_chromium_org_luci_bisection_task_proto_task_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc), len(file_go_chromium_org_luci_bisection_task_proto_task_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

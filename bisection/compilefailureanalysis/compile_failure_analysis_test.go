@@ -21,10 +21,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -34,6 +36,7 @@ import (
 
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/logdog"
 	"go.chromium.org/luci/bisection/internal/lucinotify"
@@ -355,4 +358,89 @@ func TestFindRegressionRange(t *testing.T) {
 			Ref:     "ref2",
 		}))
 	})
+}
+
+func TestTriggerFixforward(t *testing.T) {
+	t.Parallel()
+	c := memory.Use(context.Background())
+	testutil.UpdateIndices(c)
+	cl := testclock.New(testclock.TestTimeUTC)
+	c = clock.Set(c, cl)
+
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	// 1. Mock Gitiles
+	mockGitilesData := map[string]string{
+		"https://chromium.googlesource.com/chromium/src/+log/abc123def456^..abc123def456": `{
+  "log": [
+    {
+      "commit": "abc123def456",
+      "tree": "tree123",
+      "parents": ["parent123"],
+      "author": {
+        "name": "Test Author",
+        "email": "test@chromium.org",
+        "time": "Tue Jan 02 15:04:05 2024"
+      },
+      "committer": {
+        "name": "Commit Bot",
+        "email": "commit-bot@chromium.org",
+        "time": "Tue Jan 02 15:04:05 2024"
+      },
+      "message": "Introduce a bug.\n\nChange-Id: I1234567890abcdef",
+      "tree_diff": [
+        {
+          "type": "modify",
+          "new_path": "src/test.cc"
+        }
+      ]
+    }
+  ]
+}`,
+		"https://chromium.googlesource.com/chromium/src/+/abc123def456/src/test.cc": `aW50IG1haW4oKSB7IHJldHVybiAwOyB9`,
+	}
+	c = gitiles.MockedGitilesClientContext(c, mockGitilesData)
+
+	// 2. Mock Gerrit
+	mockedGerrit := gerrit.NewMockedClient(c, ctl)
+	c = mockedGerrit.Ctx
+	fakeChangeInfo := &gerritpb.ChangeInfo{
+		Number:  12345,
+		Project: "chromium/src",
+	}
+	mockedGerrit.Client.EXPECT().CreateChange(gomock.Any(), gomock.Any()).Return(fakeChangeInfo, nil)
+	mockedGerrit.Client.EXPECT().ChangeEditFileContent(gomock.Any(), gomock.Any()).Return(&emptypb.Empty{}, nil)
+	mockedGerrit.Client.EXPECT().ChangeEditPublish(gomock.Any(), gomock.Any()).Return(&emptypb.Empty{}, nil)
+	mockedGerrit.Client.EXPECT().SetReview(gomock.Any(), gomock.Any()).Return(&gerritpb.ReviewResult{}, nil)
+
+	// 3. Mock LLM
+	mockLLM := llm.NewMockClient(ctl)
+	mockResponseJSON := `{"files": [{"path": "src/test.cc", "content": "int main() { return 1; }"}], "message": "Fixed the bug."}`
+	mockLLM.EXPECT().GenerateContentWithSchema(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockResponseJSON, nil)
+
+	// 4. Set up Datastore
+	cfa := &model.CompileFailureAnalysis{Id: 999}
+	assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
+
+	genaiAnalysis := &model.CompileGenAIAnalysis{
+		Id:             888,
+		ParentAnalysis: datastore.KeyForObj(c, cfa),
+	}
+	assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
+
+	suspect := &model.Suspect{
+		Id:             777,
+		ParentAnalysis: datastore.KeyForObj(c, genaiAnalysis),
+		GitilesCommit: bbpb.GitilesCommit{
+			Host:    "chromium.googlesource.com",
+			Project: "chromium/src",
+			Id:      "abc123def456",
+		},
+	}
+	assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+	datastore.GetTestable(c).CatchupIndexes()
+
+	// 5. Call triggerFixforward
+	triggerFixforward(c, genaiAnalysis, 999, mockLLM, &model.CompileLogs{FailureSummaryLog: "compile Error Log Here"})
 }

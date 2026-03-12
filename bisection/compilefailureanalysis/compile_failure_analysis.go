@@ -31,16 +31,17 @@ import (
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/genai"
+	"go.chromium.org/luci/bisection/compilefailureanalysis/genai/fixforward"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
-	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/bisection/culpritverification"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/internal/lucinotify"
 	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	taskpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 )
@@ -134,7 +135,7 @@ func AnalyzeFailure(
 	} else {
 		if analysis.IsTreeCloser {
 			logging.Infof(c, "Build %d is a tree closer, triggering fixforward task.", firstFailedBuildID)
-			triggerFixforward(c, genaiAnalysisResult, analysis.Id)
+			triggerFixforward(c, genaiAnalysisResult, analysis.Id, genaiClient, compileLogs)
 		}
 
 		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, analysis)
@@ -191,8 +192,8 @@ func verifyGenAIResult(c context.Context, genaiAnalysis *model.CompileGenAIAnaly
 	return nil
 }
 
-// triggerFixforward enqueues a GenerateFixforwardTask.
-func triggerFixforward(c context.Context, genaiAnalysis *model.CompileGenAIAnalysis, analysisID int64) {
+// triggerFixforward executes the GenerateFixforwardCL logic inline.
+func triggerFixforward(c context.Context, genaiAnalysis *model.CompileGenAIAnalysis, analysisID int64, genaiClient llm.Client, compileLogs *model.CompileLogs) {
 	suspects := []*model.Suspect{}
 	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, genaiAnalysis))
 	if err := datastore.GetAllWithLimit(c, q, &suspects, 1); err != nil {
@@ -202,16 +203,36 @@ func triggerFixforward(c context.Context, genaiAnalysis *model.CompileGenAIAnaly
 	if len(suspects) == 0 {
 		return
 	}
-	suspectID := suspects[0].Id
-	err := tq.AddTask(c, &tq.Task{
-		Title: fmt.Sprintf("fixforward_%d_%d", analysisID, suspectID),
-		Payload: &taskpb.GenerateFixforwardTask{
-			AnalysisId: analysisID,
-			CulpritId:  suspectID,
-		},
-	})
+	suspect := suspects[0]
+
+	cfa := &model.CompileFailureAnalysis{Id: analysisID}
+	if err := datastore.Get(c, cfa); err != nil {
+		logging.Errorf(c, "failed getting CompileFailureAnalysis for fixforward: %v", err)
+		return
+	}
+
+	gerritClient, err := gerrit.NewClient(c, "chromium-review.googlesource.com")
 	if err != nil {
-		logging.Errorf(c, "failed to enqueue fixforward task: %v", err)
+		logging.Errorf(c, "failed creating Gerrit client for fixforward: %v", err)
+		return
+	}
+
+	var commit *bbpb.GitilesCommit
+	if suspect.GitilesCommit.GetId() != "" {
+		commit = &suspect.GitilesCommit
+	}
+	repoUrl := gitiles.GetRepoUrl(c, commit)
+
+	failureLog := ""
+	if compileLogs != nil && compileLogs.FailureSummaryLog != "" {
+		failureLog = compileLogs.FailureSummaryLog
+	}
+
+	logging.Infof(c, "Executing GenerateFixforwardCL for culprit %s inline", suspect.GitilesCommit.GetId())
+	err = fixforward.GenerateFixforwardCL(c, genaiClient, gerritClient, cfa, suspect.GitilesCommit.GetId(), failureLog, repoUrl, suspect.RevertURL)
+
+	if err != nil {
+		logging.Errorf(c, "GenerateFixforwardCL failed: %v", err)
 	}
 }
 
