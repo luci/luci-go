@@ -28,6 +28,7 @@ export const useParamsAndLocalStorage = (
   searchParamsKey: string,
   localStorageKey: string,
   defaultValue: string[],
+  sanitize?: (value: string[]) => string[],
 ): [
   string[],
   (new_value: string[] | ((prev: string[]) => string[])) => void,
@@ -36,13 +37,19 @@ export const useParamsAndLocalStorage = (
   const [localStorageState, setLocalStorageState, clearLocalStorage] =
     useLocalStorage<string[]>(localStorageKey);
 
+  const getSanitizedValue = (val: string[]) => {
+    return sanitize ? sanitize(val) : val;
+  };
+
   // We keep an internal state for optimistic updates
-  const [syncedState, setSyncedState] = useState(
-    getInitialValue(
-      searchParams,
-      searchParamsKey,
-      localStorageState,
-      defaultValue,
+  const [syncedState, setSyncedState] = useState(() =>
+    getSanitizedValue(
+      getInitialValue(
+        searchParams,
+        searchParamsKey,
+        localStorageState,
+        defaultValue,
+      ),
     ),
   );
 
@@ -54,11 +61,13 @@ export const useParamsAndLocalStorage = (
   const stateRef = useRef(syncedState);
 
   // Sync from URL/LocalStorage to internal state
-  const currentParamsValue = getInitialValue(
-    searchParams,
-    searchParamsKey,
-    localStorageState,
-    defaultValue,
+  const currentParamsValue = getSanitizedValue(
+    getInitialValue(
+      searchParams,
+      searchParamsKey,
+      localStorageState,
+      defaultValue,
+    ),
   );
 
   useEffect(() => {
@@ -69,12 +78,8 @@ export const useParamsAndLocalStorage = (
       : undefined;
 
     // Check 1: Did the external source (URL) actually change?
-    // This is crucial for ignoring "stale" re-renders where the URL hasn't updated yet,
-    // but the component re-rendered (e.g. due to optimistic state change).
     if (currentStr !== lastStr) {
       // Check 2: Does the new external source match our current internal state?
-      // If the user optimistically updated state, and the URL is stale (caught by Check 1), we skip this.
-      // If the URL *did* change (e.g. back button), we want to sync our internal state to it.
       if (!_.isEqual(currentParamsValue, stateRef.current)) {
         setSyncedState(currentParamsValue);
         stateRef.current = currentParamsValue;
@@ -114,24 +119,20 @@ export const useParamsAndLocalStorage = (
     } else {
       newList = update;
     }
+    const sanitizedList = getSanitizedValue(newList);
 
     // Optimistic update
-    stateRef.current = newList;
-    setSyncedState(newList);
-
-    // We anticipate this new state, but we MUST NOT update lastProcessedParams here.
-    // We want the useEffect to see the "stale" params as "unchanged" from the previous render
-    // so it doesn't revert our optimistic update.
+    stateRef.current = sanitizedList;
+    setSyncedState(sanitizedList);
 
     setSearchParams(
       (prevSearchParams) => {
         const newState = getNewStates(
-          newList,
+          sanitizedList,
           prevSearchParams,
           searchParamsKey,
           defaultValue,
         );
-        // Important: Update localStorage synchronously with URL update request
         if (newState.localStorage === undefined) {
           clearLocalStorage();
         } else {

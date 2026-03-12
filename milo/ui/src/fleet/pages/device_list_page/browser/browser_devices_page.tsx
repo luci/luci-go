@@ -13,32 +13,23 @@
 // limitations under the License.
 
 import { ViewColumnOutlined } from '@mui/icons-material';
-import { Button, Chip, colors } from '@mui/material';
-import { TablePagination } from '@mui/material';
+import { Button, Chip, colors, TablePagination } from '@mui/material';
 import _ from 'lodash';
-import type {
-  MRT_ColumnFiltersState,
-  MRT_SortingState,
-} from 'material-react-table';
 import { MaterialReactTable } from 'material-react-table';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
-  emptyPageTokenUpdater,
   getCurrentPageIndex,
   getPageSize,
   getPageToken,
-  nextPageTokenUpdater,
-  pageSizeUpdater,
-  prevPageTokenUpdater,
   usePagerContext,
 } from '@/common/components/params_pager';
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
-import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
 import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   filtersUpdater,
@@ -53,11 +44,7 @@ import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import {
-  OptionCategory,
-  SelectedOptions,
-  StringListCategory,
-} from '@/fleet/types';
+import { SelectedOptions } from '@/fleet/types';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
@@ -74,11 +61,7 @@ import {
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
 import { filterOptionsPlaceholder } from '../common/helpers';
 
-import {
-  BrowserColumnDef,
-  getBrowserColumn,
-  getBrowserColumnIds,
-} from './browser_columns';
+import { getBrowserColumn, getBrowserColumnIds } from './browser_columns';
 import { BrowserSummaryHeader } from './browser_summary_header';
 import { dimensionsToFilterOptions } from './dimensions_to_filter_options';
 import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
@@ -106,11 +89,6 @@ export const BrowserDevicesPage = () => {
     });
 
     setSearchParams(filtersUpdater(newSelectedOptions));
-
-    // Clear out all the page tokens when the filter changes.
-    // An AIP-158 page token is only valid for the filter
-    // option that generated it.
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
   const stringifiedSelectedOptions = selectedOptions.error
@@ -133,18 +111,6 @@ export const BrowserDevicesPage = () => {
     nextPageToken = '',
     totalSize = 0,
   } = devicesQuery.data || {};
-
-  const goToNextPage = () => {
-    setSearchParams((prev: URLSearchParams) =>
-      nextPageTokenUpdater(pagerCtx, nextPageToken ?? '')(prev),
-    );
-  };
-
-  const goToPrevPage = () => {
-    setSearchParams((prev: URLSearchParams) =>
-      prevPageTokenUpdater(pagerCtx)(prev),
-    );
-  };
 
   const columnsParamStr = searchParams.getAll(COLUMNS_PARAM_KEY).join(',');
 
@@ -193,57 +159,6 @@ export const BrowserDevicesPage = () => {
     [columnsRecord],
   );
 
-  const { filterByFieldToId, idToFilterByField } = useMemo(() => {
-    const fromFieldId = new Map<string, string>();
-    const toFieldId = new Map<string, string>();
-    columnsList.forEach((c) => {
-      const cId = (c.id || c.accessorKey) as string;
-      const filterKey = (c as BrowserColumnDef).filterByField || cId;
-      if (filterKey && cId) {
-        fromFieldId.set(filterKey, cId);
-        toFieldId.set(cId, filterKey);
-      }
-    });
-    return { filterByFieldToId: fromFieldId, idToFilterByField: toFieldId };
-  }, [columnsList]);
-
-  const highlightedColumnIds = useMemo(() => {
-    if (!selectedOptions?.filters) return [];
-
-    return Object.keys(selectedOptions.filters).map(
-      (id) => filterByFieldToId.get(id) || id,
-    );
-  }, [selectedOptions?.filters, filterByFieldToId]);
-
-  const mrtColumnManager = useMRTColumnManagement({
-    localStorageKey: BROWSER_DEVICES_LOCAL_STORAGE_KEY,
-    defaultColumnIds: BROWSER_DEFAULT_COLUMNS,
-    columns: columnsList,
-    highlightedColumnIds,
-  });
-
-  const [, setOrderByParam] = useOrderByParam();
-
-  const sorting: MRT_SortingState = useMemo(() => {
-    if (!orderByParam) return [];
-    return orderByParam.split(', ').map((sort) => {
-      // Find the accessorKey that corresponds to this orderByField
-      const match = mrtColumnManager.columns.find(
-        (c) =>
-          sort.startsWith(
-            (c as BrowserColumnDef)?.orderByField ?? (c.id as string),
-          ) || sort.startsWith(c.id as string),
-      );
-      if (match) {
-        return {
-          id: (match.id || match.accessorKey || '') as string,
-          desc: sort.endsWith(' desc'),
-        };
-      }
-      return { id: sort.replace(' desc', ''), desc: sort.endsWith(' desc') };
-    });
-  }, [orderByParam, mrtColumnManager.columns]);
-
   const isDimensionsQueryProperlyLoaded =
     dimensionsQuery.data &&
     dimensionsQuery.data.baseDimensions &&
@@ -267,84 +182,20 @@ export const BrowserDevicesPage = () => {
     ? loadedFilterOptions
     : placeholderFilterOptions;
 
-  const enrichedColumns = useMemo(() => {
-    return mrtColumnManager.columns.map((col) => {
-      const filterKey =
-        (col as BrowserColumnDef).filterByField || col.accessorKey || col.id;
-      const option = filterOptionsConfig.find((o) => o.value === filterKey);
+  const fleetMrtState = useFleetMRTState({
+    setSearchParams,
+    pagerCtx,
+    selectedOptions,
+    filterOptionsConfig,
+    columnsList,
 
-      const isOptionCategory = (
-        opt: OptionCategory,
-      ): opt is StringListCategory => 'options' in opt;
-      if (
-        option &&
-        isOptionCategory(option) &&
-        option.options &&
-        option.options.length > 0
-      ) {
-        return {
-          ...col,
-          filterVariant: 'multi-select' as const,
-          filterSelectOptions: option.options.map((opt) => ({
-            text: opt.label,
-            value: String(opt.value),
-          })),
-        };
-      }
-      return col;
-    });
-  }, [mrtColumnManager.columns, filterOptionsConfig]);
-
-  const columnFilters = useMemo(() => {
-    return Object.entries(selectedOptions?.filters || {}).map(([id, value]) => {
-      const colId = filterByFieldToId.get(id) || id;
-      return {
-        id: colId,
-        value,
-      };
-    });
-  }, [selectedOptions?.filters, filterByFieldToId]);
-
-  const onColumnFiltersChange = useCallback(
-    (
-      updater:
-        | MRT_ColumnFiltersState
-        | ((old: MRT_ColumnFiltersState) => MRT_ColumnFiltersState),
-    ) => {
-      const newFilters =
-        typeof updater === 'function' ? updater(columnFilters) : updater;
-
-      const newFilterOptions = newFilters.reduce(
-        (
-          acc: Record<string, string[]>,
-          filter: { id: string; value: unknown },
-        ) => {
-          const urlKey = idToFilterByField.get(filter.id) || filter.id;
-          acc[urlKey] = filter.value as string[];
-          return acc;
-        },
-        {},
-      );
-
-      const isChanged = !_.isEqual(
-        newFilterOptions,
-        selectedOptions?.filters || {},
-      );
-
-      if (isChanged) {
-        setSearchParams(filtersUpdater(newFilterOptions));
-      }
-    },
-    [
-      columnFilters,
-      setSearchParams,
-      idToFilterByField,
-      selectedOptions?.filters,
-    ],
-  );
+    orderByParam,
+    localStorageKey: BROWSER_DEVICES_LOCAL_STORAGE_KEY,
+    defaultColumnIds: BROWSER_DEFAULT_COLUMNS,
+  });
 
   const table = useFCDataTable({
-    columns: enrichedColumns,
+    columns: fleetMrtState.enrichedColumns,
     data: devices as BrowserDevice[],
     displayColumnDefOptions: {
       'mrt-row-select': {
@@ -357,44 +208,27 @@ export const BrowserDevicesPage = () => {
     enableColumnResizing: true,
     enablePagination: false,
     enableRowSelection: true,
+    positionToolbarAlertBanner: 'none',
     manualFiltering: true,
+
     manualSorting: true,
     manualPagination: true,
     getRowId: (row) => row.id,
     rowCount: totalSize,
     state: {
       isLoading: devicesQuery.isPending || devicesQuery.isPlaceholderData,
-      columnVisibility: mrtColumnManager.columnVisibility,
-      columnOrder: ['mrt-row-select', ...mrtColumnManager.visibleColumnIds],
-      sorting,
-      columnFilters,
+      columnVisibility: fleetMrtState.columnVisibility,
+      columnOrder: ['mrt-row-select', ...fleetMrtState.visibleColumnIds],
+      sorting: fleetMrtState.sorting,
+      columnFilters: fleetMrtState.columnFilters,
+      rowSelection: fleetMrtState.rowSelection,
     },
-    onColumnFiltersChange,
-    onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
-    onSortingChange: (updater) => {
-      if (dimensionsQuery.isPending || devicesQuery.isPending) return;
-      const newSorting =
-        typeof updater === 'function' ? updater(sorting) : updater;
+    onColumnFiltersChange: fleetMrtState.onColumnFiltersChange,
+    onColumnVisibilityChange:
+      fleetMrtState.mrtColumnManager.setColumnVisibility,
+    onSortingChange: fleetMrtState.onSortingChange,
+    onRowSelectionChange: fleetMrtState.onRowSelectionChange,
 
-      const orderByParamValue = newSorting
-        .map((sort) => {
-          const colDef = mrtColumnManager.columns.find(
-            (c) => c.id === sort.id || c.accessorKey === sort.id,
-          );
-          const apiSortKey =
-            (colDef as BrowserColumnDef | undefined)?.orderByField ?? sort.id;
-          return sort.desc ? `${apiSortKey} desc` : apiSortKey;
-        })
-        .join(', ');
-
-      setOrderByParam(orderByParamValue);
-      setSearchParams(
-        (prev: URLSearchParams) => emptyPageTokenUpdater(pagerCtx)(prev),
-        {
-          replace: true,
-        },
-      );
-    },
     muiTopToolbarProps: {
       sx: {
         '& [aria-label="Show/Hide filters"]': {
@@ -414,10 +248,12 @@ export const BrowserDevicesPage = () => {
       >
         <FCDataTableCopy table={table} />
         <ColumnsButton
-          allColumns={mrtColumnManager.allColumns}
-          visibleColumns={mrtColumnManager.visibleColumnIds}
-          onToggleColumn={mrtColumnManager.onToggleColumn}
-          resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
+          allColumns={fleetMrtState.allColumns}
+          visibleColumns={fleetMrtState.visibleColumnIds}
+          onToggleColumn={fleetMrtState.mrtColumnManager.onToggleColumn}
+          resetDefaultColumns={
+            fleetMrtState.mrtColumnManager.resetDefaultColumns
+          }
           renderTrigger={({ onClick }, ref) => (
             <Button
               ref={ref}
@@ -450,21 +286,14 @@ export const BrowserDevicesPage = () => {
             const isPrevPage = page < currentPage;
             const isNextPage = page > currentPage;
 
-            setSearchParams((prev: URLSearchParams) => {
-              let next = new URLSearchParams(prev);
-              if (isPrevPage) {
-                next = prevPageTokenUpdater(pagerCtx)(next);
-              } else if (isNextPage) {
-                next = nextPageTokenUpdater(
-                  pagerCtx,
-                  nextPageToken ?? '',
-                )(next);
-              }
-              return next;
-            });
+            if (isPrevPage) {
+              fleetMrtState.goToPrevPage();
+            } else if (isNextPage) {
+              fleetMrtState.goToNextPage(nextPageToken);
+            }
           }}
           onRowsPerPageChange={(e) => {
-            setSearchParams(pageSizeUpdater(pagerCtx, Number(e.target.value)));
+            fleetMrtState.onRowsPerPageChange(Number(e.target.value));
           }}
           rowsPerPageOptions={DEFAULT_PAGE_SIZE_OPTIONS}
           labelDisplayedRows={({ from, to }) => {
@@ -477,11 +306,11 @@ export const BrowserDevicesPage = () => {
             actions: {
               previousButtonProps: {
                 disabled: getCurrentPageIndex(pagerCtx) === 0,
-                onClick: goToPrevPage,
+                onClick: fleetMrtState.goToPrevPage,
               },
               nextButtonProps: {
                 disabled: devices.length === 0 || nextPageToken === '',
-                onClick: goToNextPage,
+                onClick: () => fleetMrtState.goToNextPage(nextPageToken),
               },
             } as NonNullable<
               React.ComponentProps<typeof TablePagination>['slotProps']
@@ -591,11 +420,7 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <FleetHelmet pageTitle="Device List" />
-      <RecoverableErrorBoundary
-        // See the documentation for `<LoginPage />` for why we handle error
-        // this way.
-        key="fleet-device-list-page"
-      >
+      <RecoverableErrorBoundary key="fleet-device-list-page">
         <LoggedInBoundary>
           {isSupported ? (
             <BrowserDevicesPage />

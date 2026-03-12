@@ -19,6 +19,8 @@ import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 
 import { DutToRepair } from '../shared/types';
 
+import { generateIssueDescription } from './request_repair_utils';
+
 interface RequestRepairProps {
   selectedDuts: DutToRepair[];
 }
@@ -53,31 +55,6 @@ const generateIssueTitle = (duts: DutToRepair[]): string => {
   const extraDuts = duts.length > 1 ? ` and ${duts.length - 1} more` : '';
   const location = getLocationForDut(dutName) || TITLE_LOCATION_PLACEHOLDER;
   return `[${location}][Repair][${board}.${model}] Pool: [${pool}] [${dutName}]${extraDuts}`;
-};
-
-export const generateIssueDescription = (dutInfo: string) => {
-  const description = [
-    'Fleet Operations will repair DUTS that are in "needs_manual_repair" status. ' +
-      'repair_failed & needs_repair are being recovered by auto repair tasks. ' +
-      'You can submit a bug for DUTs in a different state if you suspect that the state is incorrect, ' +
-      'or something is wrong with devices peripherals. ' +
-      'Please do not explicitly assign bugs to individuals without prior ' +
-      'discussion with said individuals.',
-    '------------------------------------------------------------------------------------',
-    '',
-    '**DUT Link(s) / Locations:**:',
-    '',
-    `${dutInfo}`,
-    '',
-    '**Issue:**',
-    '',
-    '<Please provide a summary of the issue.>',
-    '',
-    '**Action Item:**',
-    '',
-    '**Logs (if applicable):**',
-  ].join('\n');
-  return encodeURIComponent(description);
 };
 
 const generateDutInfo = (selectedDuts: DutToRepair[]): string =>

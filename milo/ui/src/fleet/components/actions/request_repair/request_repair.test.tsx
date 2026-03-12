@@ -18,7 +18,8 @@ import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_pro
 
 import { DutToRepair } from '../shared/types';
 
-import { RequestRepair, generateIssueDescription } from './request_repair';
+import { RequestRepair } from './request_repair';
+import { generateIssueDescription } from './request_repair_utils';
 
 describe('<RequestRepair />', () => {
   let windowOpenSpy: jest.SpyInstance;

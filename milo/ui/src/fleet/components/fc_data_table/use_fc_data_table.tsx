@@ -44,6 +44,7 @@ export type FC_ColumnDef<
   filterRangeMax?: number;
 };
 
+import { MRT_INTERNAL_COLUMNS } from '@/fleet/components/columns/use_mrt_column_management';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { FleetColumnHeader } from '@/fleet/components/fc_data_table/fleet_column_header';
 import {
@@ -72,8 +73,8 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     enableHiding: true, // Needed for hide column in menu
     enableColumnResizing: true,
     enableColumnActions: true,
-    memoMode: 'rows',
     layoutMode: 'grid',
+
     displayColumnDefOptions: {
       'mrt-row-select': {
         size: 40,
@@ -118,7 +119,8 @@ export const useFCDataTable = <TData extends MRT_RowData>(
       sx: { boxShadow: 'none' },
     },
     muiTableHeadRowProps: {
-      sx: { boxShadow: 'none' },
+      // Force 2-line header height to prevent flex overlap/expansion issues
+      sx: { boxShadow: 'none', minHeight: '56px' },
     },
 
     renderColumnActionsMenuItems: ({ column, closeMenu }) => {
@@ -180,8 +182,16 @@ export const useFCDataTable = <TData extends MRT_RowData>(
         }
       }
 
-      // Add the filter dropdown item if filter options exist
-      if (column.columnDef.filterSelectOptions) {
+      // Material-React-Table's getCanFilter() respects global table states like `enableColumnFilters: false`.
+      // We use `enableColumnFilters: false` to hide native inline text inputs, but still want dropdown filtering functionality universally.
+      // We evaluate the explicit columnDef configuration, excluding MRT's internal columns.
+      const isInternalColumn = MRT_INTERNAL_COLUMNS.has(column.id);
+
+      const isFilterable =
+        !isInternalColumn && column.columnDef.enableColumnFilter !== false;
+
+      // Add the filter dropdown item if the column supports filtering
+      if (isFilterable) {
         if (items.length > 0) {
           items.push(<Divider key="divider-filter" />);
         }
@@ -267,19 +277,43 @@ export const useFCDataTable = <TData extends MRT_RowData>(
         className: isHighlighted ? 'column-highlight' : '',
         sx: {
           fontSize: '13px',
-          paddingTop: `var(--cell-padding-vertical) !important`,
-          paddingBottom: `var(--cell-padding-vertical) !important`,
+          paddingTop: `var(--cell-padding-vertical)`,
+          paddingBottom: `var(--cell-padding-vertical)`,
           paddingLeft: isSelectCol
             ? SELECT_COL_PADDING
-            : `var(--cell-padding-horizontal) !important`,
+            : `var(--cell-padding-horizontal)`,
           paddingRight: isSelectCol
             ? SELECT_COL_PADDING
-            : `var(--cell-padding-horizontal) !important`,
-          backgroundColor: isHighlighted ? `${colors.blue[50]}` : undefined,
-          color: isHighlighted ? `${colors.blue[600]}` : undefined,
+            : `var(--cell-padding-horizontal)`,
+          ...(isHighlighted && {
+            backgroundColor: `${colors.blue[50]} !important`,
+            color: `${colors.blue[600]} !important`,
+          }),
         } as SxProps<Theme>,
       };
     },
+    muiTableBodyRowProps: {
+      sx: {
+        '&.MuiTableRow-root.Mui-selected': {
+          backgroundColor: `${colors.blue[50]} !important`,
+        },
+        '&.MuiTableRow-root.Mui-selected:hover': {
+          backgroundColor: `${colors.blue[100]} !important`,
+        },
+        '&.MuiTableRow-root.Mui-selected > .MuiTableCell-root::after': {
+          display: 'none', // Hide standard MRT overlay to let our solid MUI color shine
+        },
+        '&.MuiTableRow-root.Mui-selected > .MuiTableCell-root.column-highlight':
+          {
+            backgroundColor: `${colors.blue[100]} !important`,
+            zIndex: 1,
+          },
+        '&.MuiTableRow-root.Mui-selected > .MuiTableCell-root': {
+          borderBottom: '1px solid divider !important',
+        },
+      },
+    },
+
     muiTableProps: {
       sx: {
         tableLayout: 'fixed',

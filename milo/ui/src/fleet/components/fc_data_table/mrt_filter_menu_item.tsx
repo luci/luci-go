@@ -12,12 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import FilterListIcon from '@mui/icons-material/FilterList';
-import { Box, ListItemIcon, ListItemText, MenuItem } from '@mui/material';
+import {
+  Box,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
+  TextField,
+} from '@mui/material';
 import { MenuItemProps } from '@mui/material/MenuItem';
+import { useForkRef } from '@mui/material/utils';
 import { DateTime } from 'luxon';
 import { MRT_Column, MRT_RowData } from 'material-react-table';
-import { forwardRef, useState } from 'react';
+import { forwardRef, useRef, useState } from 'react';
 
+import { MRT_INTERNAL_COLUMNS } from '@/fleet/components/columns/use_mrt_column_management';
 import { FC_ColumnDef } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { DateFilter } from '@/fleet/components/filter_dropdown/date_filter';
 import { OptionsMenuOld } from '@/fleet/components/filter_dropdown/options_menu_old';
@@ -31,6 +39,11 @@ import { OptionValue } from '@/fleet/types/option';
 import { fromLuxonDateTime, toLuxonDateTime } from '@/fleet/utils/dates';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
+
+import {
+  parseCommaSeparatedText,
+  formatCommaSeparatedText,
+} from './mrt_filter_menu_item_utils';
 
 export type FilterOption =
   | string
@@ -55,13 +68,24 @@ export const MRTFilterMenuItem = forwardRef<
     | FilterOption[]
     | undefined;
 
-  const filterVariant = column.columnDef.filterVariant ?? 'multi-select';
+  const filterVariant =
+    column.columnDef.filterVariant ??
+    (filterSelectOptions && filterSelectOptions.length > 0
+      ? 'multi-select'
+      : 'text');
+  const isInternalColumn = MRT_INTERNAL_COLUMNS.has(column.id);
+
   const isFilterable =
-    filterVariant !== 'multi-select' ||
-    (!!filterSelectOptions && filterSelectOptions.length > 0);
+    !isInternalColumn &&
+    column.columnDef.enableColumnFilter !== false &&
+    (filterVariant !== 'multi-select' ||
+      (!!filterSelectOptions && filterSelectOptions.length > 0));
 
   // Local state of selected value while the dropdown is open
   const [localFilterValue, setLocalFilterValue] = useState<unknown>(undefined);
+
+  const innerRef = useRef<HTMLLIElement>(null);
+  const handleForkRef = useForkRef(ref, innerRef);
 
   const open = Boolean(anchorEl);
 
@@ -81,11 +105,21 @@ export const MRTFilterMenuItem = forwardRef<
           ? toLuxonDateTime(dateOnlyRange.max)?.toJSDate()
           : undefined,
       });
+    } else if (filterVariant === 'text') {
+      if (currentFilterValue) {
+        const valSet = Array.isArray(currentFilterValue)
+          ? new Set(currentFilterValue.map(String))
+          : new Set(parseCommaSeparatedText(String(currentFilterValue)));
+        setLocalFilterValue(valSet);
+      } else {
+        setLocalFilterValue(new Set());
+      }
     } else {
       setLocalFilterValue(
         new Set(Array.isArray(currentFilterValue) ? currentFilterValue : []),
       );
     }
+
     setAnchorEl(event.currentTarget);
     onClick?.(event);
   };
@@ -133,6 +167,8 @@ export const MRTFilterMenuItem = forwardRef<
       setLocalFilterValue({});
     } else if (filterVariant === 'date-range') {
       setLocalFilterValue({});
+    } else if (filterVariant === 'text') {
+      setLocalFilterValue(new Set<string>());
     } else {
       setLocalFilterValue(new Set<string>());
     }
@@ -162,7 +198,7 @@ export const MRTFilterMenuItem = forwardRef<
 
   return (
     <MenuItem
-      ref={ref}
+      ref={handleForkRef}
       disabled={!isFilterable}
       {...rest}
       onClick={(e) => {
@@ -189,7 +225,7 @@ export const MRTFilterMenuItem = forwardRef<
         <OptionsDropdown
           open={open}
           onClick={(e) => e.stopPropagation()}
-          anchorEl={anchorEl}
+          anchorEl={innerRef.current}
           onClose={handleClose}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
@@ -224,6 +260,51 @@ export const MRTFilterMenuItem = forwardRef<
                     value={(localFilterValue as DateFilterValue) || {}}
                     onChange={setLocalFilterValue}
                   />
+                </Box>
+              );
+            }
+
+            if (filterVariant === 'text') {
+              const currentVal = formatCommaSeparatedText(
+                (localFilterValue as Set<string>) || new Set(),
+              );
+
+              return (
+                <Box
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                  }}
+                >
+                  <TextField
+                    variant="outlined"
+                    size="small"
+                    value={currentVal || ''}
+                    placeholder="Filter value..."
+                    inputProps={{
+                      'aria-label': 'Filter value',
+                    }}
+                    sx={{ width: '100%' }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setLocalFilterValue(
+                        val ? new Set(parseCommaSeparatedText(val)) : new Set(),
+                      );
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleApply();
+                      }
+                    }}
+                  />
+                  <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                    Type a value to filter. Multiple values can be
+                    comma-separated.
+                  </Box>
                 </Box>
               );
             }

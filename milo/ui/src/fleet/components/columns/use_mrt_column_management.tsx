@@ -18,7 +18,7 @@ import {
   MRT_Updater,
   MRT_RowData,
 } from 'material-react-table';
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 
@@ -27,14 +27,36 @@ import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 export const highlightedColumnClassName = 'column-highlight';
 export const temporaryColumnClassName = `${highlightedColumnClassName} temporary-column-highlight`;
 
-export const getColumnId = <TData extends Record<string, unknown>>(
-  col: MRT_ColumnDef<TData>,
-): string => {
-  return col.id || col.accessorKey?.toString() || '';
+export const MRT_INTERNAL_COLUMNS = new Set([
+  'mrt-row-select',
+  'mrt-row-actions',
+  'mrt-row-expand',
+  'mrt-row-numbers',
+]);
+
+export const sanitizeColumnIds = (ids: string[]) => {
+  return ids.filter((id) => !MRT_INTERNAL_COLUMNS.has(id));
 };
 
-export interface UseMRTColumnManagementProps<TData extends MRT_RowData> {
-  columns: MRT_ColumnDef<TData>[];
+export const getColumnId = <
+  T extends { id?: string; accessorKey?: string | number | symbol },
+>(
+  col: T,
+): string => {
+  return col?.id || col?.accessorKey?.toString() || '';
+};
+
+export interface UseMRTColumnManagementProps<
+  _TData extends MRT_RowData,
+  TColumnDef extends {
+    id?: string;
+    accessorKey?: string | number | symbol;
+    header?: unknown;
+    meta?: unknown;
+    enableHiding?: boolean;
+  } = MRT_ColumnDef<_TData>,
+> {
+  columns: TColumnDef[];
   // IDs of columns that should be visible by default
   defaultColumnIds: string[];
   // Key for local storage persistence
@@ -43,25 +65,40 @@ export interface UseMRTColumnManagementProps<TData extends MRT_RowData> {
   highlightedColumnIds?: readonly string[];
 }
 
-export function useMRTColumnManagement<TData extends MRT_RowData>({
+export function useMRTColumnManagement<
+  _TData extends MRT_RowData,
+  TColumnDef extends {
+    id?: string;
+    accessorKey?: string | number | symbol;
+    header?: unknown;
+    meta?: unknown;
+    enableHiding?: boolean;
+  } = MRT_ColumnDef<_TData>,
+>({
   columns: rawColumns,
   defaultColumnIds,
   localStorageKey,
   highlightedColumnIds = [],
-}: UseMRTColumnManagementProps<TData>) {
-  const [visibleColumnIds, setVisibleColumnIds] = useParamsAndLocalStorage(
+}: UseMRTColumnManagementProps<_TData, TColumnDef>) {
+  const [visibleColumnIdsRaw, setVisibleColumnIds] = useParamsAndLocalStorage(
     COLUMNS_PARAM_KEY,
     localStorageKey,
     defaultColumnIds,
+    sanitizeColumnIds,
   );
+
+  const visibleColumnIds = visibleColumnIdsRaw;
 
   const temporaryColumnIds = useMemo(
     () => highlightedColumnIds.filter((col) => !visibleColumnIds.includes(col)),
     [highlightedColumnIds, visibleColumnIds],
   );
 
+  const [internalVisibility, setInternalVisibility] =
+    useState<MRT_VisibilityState>({});
+
   const columnVisibility = useMemo(() => {
-    const visibility: MRT_VisibilityState = {};
+    const visibility: MRT_VisibilityState = { ...internalVisibility };
     rawColumns.forEach((col) => {
       const id = getColumnId(col);
       if (id) {
@@ -70,7 +107,7 @@ export function useMRTColumnManagement<TData extends MRT_RowData>({
       }
     });
     return visibility;
-  }, [rawColumns, visibleColumnIds, temporaryColumnIds]);
+  }, [rawColumns, visibleColumnIds, temporaryColumnIds, internalVisibility]);
 
   const setColumnVisibility = useCallback(
     (updaterOrValue: MRT_Updater<MRT_VisibilityState>) => {
@@ -81,12 +118,31 @@ export function useMRTColumnManagement<TData extends MRT_RowData>({
         newVisibility = updaterOrValue;
       }
 
-      const newVisibleIds = Object.keys(newVisibility).filter((id) =>
-        temporaryColumnIds.includes(id) ? false : newVisibility[id],
-      );
+      // Preserve internal MRT columns (like mrt-row-select) without pushing them to URL/LocalStorage
+      const newInternalVisibility: MRT_VisibilityState = {};
+      let internalChanged = false;
+      MRT_INTERNAL_COLUMNS.forEach((id) => {
+        if (id in newVisibility) {
+          newInternalVisibility[id] = newVisibility[id];
+          if (newInternalVisibility[id] !== internalVisibility[id]) {
+            internalChanged = true;
+          }
+        }
+      });
+
+      if (internalChanged) {
+        setInternalVisibility((prev) => ({
+          ...prev,
+          ...newInternalVisibility,
+        }));
+      }
+
+      const newVisibleIds = sanitizeColumnIds(
+        Object.keys(newVisibility),
+      ).filter((id) => newVisibility[id]);
       setVisibleColumnIds(newVisibleIds);
     },
-    [columnVisibility, setVisibleColumnIds, temporaryColumnIds],
+    [columnVisibility, setVisibleColumnIds, internalVisibility],
   );
 
   const onToggleColumn = useCallback(
@@ -109,10 +165,12 @@ export function useMRTColumnManagement<TData extends MRT_RowData>({
 
   const allColumns = useMemo(
     () =>
-      rawColumns.map((c) => ({
-        id: getColumnId(c),
-        label: c.header || getColumnId(c),
-      })),
+      rawColumns.map((c) => {
+        return {
+          id: getColumnId(c),
+          label: typeof c.header === 'string' ? c.header : getColumnId(c),
+        };
+      }),
     [rawColumns],
   );
 
@@ -129,7 +187,7 @@ export function useMRTColumnManagement<TData extends MRT_RowData>({
           ...colDef,
           enableHiding: isTemp ? false : colDef.enableHiding,
           meta: {
-            ...colDef.meta,
+            ...(colDef.meta as Record<string, unknown> | undefined),
             isTemporary: isTemp,
             isHighlighted: isHighlighted,
           },
@@ -137,7 +195,7 @@ export function useMRTColumnManagement<TData extends MRT_RowData>({
       }
       return colDef;
     });
-  }, [rawColumns, temporaryColumnIds, highlightedColumnIds]);
+  }, [rawColumns, temporaryColumnIds, highlightedColumnIds]) as TColumnDef[];
 
   return {
     columns,

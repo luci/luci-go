@@ -61,6 +61,7 @@ describe('<MRTFilterMenuItem />', () => {
 
   it('renders disabled when no filter options exist for multi-select', () => {
     const column = createMockColumn(undefined);
+    column.columnDef.filterVariant = 'multi-select';
     render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
 
     const menuItem = screen.getByText('Filter').closest('li');
