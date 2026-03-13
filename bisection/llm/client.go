@@ -81,6 +81,7 @@ func (c *clientImpl) GenerateContentWithSchema(ctx context.Context, prompt strin
 	config := &genai.GenerateContentConfig{
 		ResponseMIMEType: "application/json",
 		ResponseSchema:   schema,
+		MaxOutputTokens:  int32(8192),
 	}
 
 	// Generate content with structured output
