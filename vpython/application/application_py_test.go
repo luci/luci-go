@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/exitcode"
 	"go.chromium.org/luci/common/system/filesystem"
+	"go.chromium.org/luci/common/testing/citest"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -136,7 +137,10 @@ func TestMain(m *testing.M) {
 	os.Exit(rc)
 }
 
+// These tests are extremely slow. They take slightly over a minute (60.XXX)
+// on my machine (which is actually very suspicious)
 func TestPythonBasic(t *testing.T) {
+	citest.IntegrationTest(t, "VPYTHON_INTEGRATION_TESTS")
 	ftt.Run("Test python basic", t, func(t *ftt.Test) {
 		var env *python.Environment
 		for _, ver := range []string{"2.7", "3.8", "3.11"} {
@@ -201,6 +205,7 @@ func TestPythonBasic(t *testing.T) {
 }
 
 func TestPythonFromPath(t *testing.T) {
+	citest.IntegrationTest(t, "VPYTHON_INTEGRATION_TESTS")
 	ftt.Run("Test python from path", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		env := getPythonEnvironment(defaultPythonVersion)
@@ -235,6 +240,7 @@ func TestPythonFromPath(t *testing.T) {
 }
 
 func BenchmarkStartup(b *testing.B) {
+	os.Setenv("VPYTHON_INTEGRATION_TESTS", "1")
 	c := func() *exec.Cmd {
 		return cmd(b, &Application{
 			Arguments: []string{
