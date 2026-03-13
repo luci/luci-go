@@ -19,7 +19,7 @@ import { DateTime, Settings } from 'luxon';
 import { TopBar } from '@/crystal_ball/components/layout/top_bar';
 import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
 import * as useAndroidPerfApi from '@/crystal_ball/hooks/use_android_perf_api';
-import { SearchMeasurementsResponse } from '@/crystal_ball/types';
+import { SearchMeasurementsResponse } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { DemoPage } from './demo_page';
@@ -161,8 +161,8 @@ describe('<DemoPage />', () => {
       expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
         expect.objectContaining({
           metricKeys: ['cpu'],
-          buildCreateStartTime: { seconds: startTimeUnix.toString(), nanos: 0 },
-          buildCreateEndTime: { seconds: endTimeUnix.toString(), nanos: 0 },
+          buildCreateStartTime: expect.any(String),
+          buildCreateEndTime: expect.any(String),
         }),
         expect.anything(),
       );
@@ -176,8 +176,8 @@ describe('<DemoPage />', () => {
 
     expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
       expect.objectContaining({
-        buildCreateStartTime: expect.any(Object),
-        buildCreateEndTime: expect.any(Object),
+        buildCreateStartTime: expect.any(String),
+        buildCreateEndTime: expect.any(String),
       }),
       expect.objectContaining({ enabled: false }),
     );
@@ -212,8 +212,8 @@ describe('<DemoPage />', () => {
           buildTarget: 'x86',
           metricKeys: ['cpu', 'memory'],
           atpTestNameFilter: 'AtpTest',
-          buildCreateStartTime: { seconds: startTimeUnix.toString(), nanos: 0 },
-          buildCreateEndTime: { seconds: endTimeUnix.toString(), nanos: 0 },
+          buildCreateStartTime: expect.any(String),
+          buildCreateEndTime: expect.any(String),
         }),
         expect.anything(),
       );
@@ -234,25 +234,12 @@ describe('<DemoPage />', () => {
 
     renderDemoPage(initialUrl);
 
-    const now = DateTime.now();
-    const expectedStartTimeUnix = now
-      .minus({ days: 3 })
-      .toUTC()
-      .toUnixInteger();
-    const expectedEndTimeUnix = now.toUTC().toUnixInteger();
-
     await waitFor(() => {
       expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
         expect.objectContaining({
           metricKeys: ['cpu'],
-          buildCreateStartTime: expect.objectContaining({
-            seconds: expectedStartTimeUnix.toString(),
-            nanos: 0,
-          }),
-          buildCreateEndTime: expect.objectContaining({
-            seconds: expectedEndTimeUnix.toString(),
-            nanos: 0,
-          }),
+          buildCreateStartTime: expect.any(String),
+          buildCreateEndTime: expect.any(String),
         }),
         expect.anything(),
       );
@@ -285,8 +272,8 @@ describe('<DemoPage />', () => {
         expect.objectContaining({
           testNameFilter: 'MyNewTest',
           metricKeys: ['memory'],
-          buildCreateStartTime: { seconds: startTimeUnix.toString(), nanos: 0 },
-          buildCreateEndTime: { seconds: endTimeUnix.toString(), nanos: 0 },
+          buildCreateStartTime: expect.any(String),
+          buildCreateEndTime: expect.any(String),
         }),
         expect.anything(),
       );

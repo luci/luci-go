@@ -16,10 +16,8 @@ import { renderHook, act } from '@testing-library/react';
 
 import { URL_SEARCH_QUERY_PARAM } from '@/crystal_ball/constants';
 import { useSearchQuerySync } from '@/crystal_ball/hooks';
-import {
-  SearchMeasurementsFilter,
-  SearchMeasurementsRequest,
-} from '@/crystal_ball/types';
+import { SearchMeasurementsFilter } from '@/crystal_ball/types';
+import { SearchMeasurementsRequest } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 // Mock the useSyncedSearchParams hook
 const mockSetSearchParams = jest.fn();

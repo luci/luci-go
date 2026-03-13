@@ -24,7 +24,7 @@ import {
 import {
   SearchMeasurementsRequest,
   SearchMeasurementsResponse,
-} from '@/crystal_ball/types';
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 // Mock the imported hooks
@@ -78,6 +78,8 @@ describe('use_android_perf_api', () => {
     const request: SearchMeasurementsRequest = {
       testNameFilter: 'test%',
       lastNDays: 5,
+      metricKeys: [],
+      extraColumns: [],
     };
 
     it('should call useGapiQuery with correct arguments', () => {
@@ -136,6 +138,7 @@ describe('use_android_perf_api', () => {
             test: 'TestB',
             metricKey: 'metric2',
             value: 202.4,
+            extraColumns: {},
           },
         ],
         nextPageToken: 'nextPageToken123',
@@ -165,6 +168,8 @@ describe('use_android_perf_api', () => {
     const request: Omit<SearchMeasurementsRequest, 'pageToken'> = {
       buildBranch: 'main',
       pageSize: 20,
+      metricKeys: [],
+      extraColumns: [],
     };
 
     it('should call useInfiniteGapiQuery with correct arguments', () => {

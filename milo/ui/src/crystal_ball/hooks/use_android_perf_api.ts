@@ -30,8 +30,7 @@ import { API_BASE_URL } from '@/crystal_ball/constants';
 import {
   SearchMeasurementsRequest,
   SearchMeasurementsResponse,
-} from '@/crystal_ball/types';
-import { timestampToDate } from '@/crystal_ball/utils';
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
  * Hook for TestConnection.
@@ -62,17 +61,6 @@ export const useSearchMeasurements = (
   options?: WrapperQueryOptions<SearchMeasurementsResponse>,
 ): UseQueryResult<SearchMeasurementsResponse> => {
   const params: Record<string, unknown> = { ...request };
-  // Transcode Timestamp objects to RFC3339 ISO strings to satisfy the google.api.http JSON mapping rules for HTTP GET requests.
-  if (request.buildCreateStartTime) {
-    params.buildCreateStartTime = timestampToDate(
-      request.buildCreateStartTime,
-    )?.toISO();
-  }
-  if (request.buildCreateEndTime) {
-    params.buildCreateEndTime = timestampToDate(
-      request.buildCreateEndTime,
-    )?.toISO();
-  }
 
   return useGapiQuery<SearchMeasurementsResponse>(
     {
@@ -95,19 +83,10 @@ export const useSearchMeasurementsInfinite = (
   options?: WrapperInfiniteQueryOptions<SearchMeasurementsResponse>,
 ): UseInfiniteQueryResult<InfiniteData<SearchMeasurementsResponse>, Error> => {
   const params: Record<string, unknown> = { ...request };
-  // Transcode Timestamp objects to RFC3339 ISO strings to satisfy the google.api.http JSON mapping rules for HTTP GET requests.
-  if (request.buildCreateStartTime) {
-    params.buildCreateStartTime = timestampToDate(
-      request.buildCreateStartTime,
-    )?.toISO();
-  }
-  if (request.buildCreateEndTime) {
-    params.buildCreateEndTime = timestampToDate(
-      request.buildCreateEndTime,
-    )?.toISO();
-  }
 
-  return useInfiniteGapiQuery<SearchMeasurementsResponse>(
+  return useInfiniteGapiQuery<
+    SearchMeasurementsResponse & { nextPageToken: string }
+  >(
     {
       path: `${API_BASE_URL}/v1/measurements:search`,
       method: 'GET',

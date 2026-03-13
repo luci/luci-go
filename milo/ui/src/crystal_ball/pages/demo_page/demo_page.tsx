@@ -28,12 +28,12 @@ import {
   useSearchMeasurements,
   useSearchQuerySync,
 } from '@/crystal_ball/hooks';
+import { validateSearchRequest } from '@/crystal_ball/utils';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   MeasurementRow,
   SearchMeasurementsRequest,
-} from '@/crystal_ball/types';
-import { validateSearchRequest } from '@/crystal_ball/utils';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 const GOLDEN_RATIO_CONJUGATE = 0.618033988749895;
 
@@ -53,8 +53,8 @@ interface AggregationData {
  * @returns a list of time series datasets.
  */
 const transformDataForChart = (
-  rows: MeasurementRow[],
-  metricKeys: string[],
+  rows: readonly MeasurementRow[],
+  metricKeys: readonly string[],
 ): TimeSeriesDataSet[] => {
   const dataMap: {
     [time: number]: { [metricKey: string]: AggregationData };
@@ -139,7 +139,10 @@ export function DemoPage() {
   }, [timeOption, startTimeParam, endTimeParam]);
 
   const [searchRequest, setSearchRequest] = useState<SearchMeasurementsRequest>(
-    {} as SearchMeasurementsRequest,
+    {
+      metricKeys: [],
+      extraColumns: [],
+    },
   );
 
   const [isInitialValid, setIsInitialValid] = useState(false);
@@ -147,16 +150,15 @@ export function DemoPage() {
   useEffect(() => {
     const hasInitialRequest = Object.keys(searchRequestFromUrl).length > 0;
 
-    const baseRequest = (searchRequestFromUrl ||
-      {}) as SearchMeasurementsRequest;
-    const newRequest = {
-      ...baseRequest,
-      buildCreateStartTime: startTime
-        ? { seconds: startTime.toUnixInteger().toString(), nanos: 0 }
-        : undefined,
-      buildCreateEndTime: endTime
-        ? { seconds: endTime.toUnixInteger().toString(), nanos: 0 }
-        : undefined,
+    const newRequest: SearchMeasurementsRequest = {
+      metricKeys: searchRequestFromUrl.metricKeys || [],
+      extraColumns: searchRequestFromUrl.extraColumns || [],
+      testNameFilter: searchRequestFromUrl.testNameFilter,
+      atpTestNameFilter: searchRequestFromUrl.atpTestNameFilter,
+      buildBranch: searchRequestFromUrl.buildBranch,
+      buildTarget: searchRequestFromUrl.buildTarget,
+      buildCreateStartTime: startTime?.toISO() || undefined,
+      buildCreateEndTime: endTime?.toISO() || undefined,
     };
 
     setSearchRequest((prev) => {
@@ -185,14 +187,17 @@ export function DemoPage() {
     (request: SearchMeasurementsRequest) => {
       setIsInitialValid(true);
 
-      const fullRequest = {
-        ...request,
-        buildCreateStartTime: startTime
-          ? { seconds: startTime.toUnixInteger().toString(), nanos: 0 }
-          : undefined,
-        buildCreateEndTime: endTime
-          ? { seconds: endTime.toUnixInteger().toString(), nanos: 0 }
-          : undefined,
+      const fullRequest: SearchMeasurementsRequest = {
+        metricKeys: request.metricKeys || [],
+        extraColumns: request.extraColumns || [],
+        testNameFilter: request.testNameFilter,
+        atpTestNameFilter: request.atpTestNameFilter,
+        buildBranch: request.buildBranch,
+        buildTarget: request.buildTarget,
+        pageToken: request.pageToken,
+        pageSize: request.pageSize,
+        buildCreateStartTime: startTime?.toISO() || undefined,
+        buildCreateEndTime: endTime?.toISO() || undefined,
       };
 
       setSearchRequest(fullRequest);

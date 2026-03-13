@@ -24,8 +24,8 @@ import {
 import React, { useEffect, useReducer, useState } from 'react';
 
 import { MAXIMUM_PAGE_SIZE } from '@/crystal_ball/constants';
-import { SearchMeasurementsRequest } from '@/crystal_ball/types';
 import { ValidationErrors, validateSearchRequest } from '@/crystal_ball/utils';
+import { SearchMeasurementsRequest } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
  * State structure for the form.
@@ -101,7 +101,7 @@ const initializeState = (
   buildBranch: initialRequest.buildBranch || '',
   buildTarget: initialRequest.buildTarget || '',
   atpTestNameFilter: initialRequest.atpTestNameFilter || '',
-  metricKeys: initialRequest.metricKeys || [],
+  metricKeys: initialRequest.metricKeys ? [...initialRequest.metricKeys] : [],
   currentMetricKey: '',
 });
 
@@ -164,6 +164,7 @@ export function SearchMeasurementsForm({
       buildTarget: state.buildTarget || undefined,
       atpTestNameFilter: state.atpTestNameFilter || undefined,
       metricKeys: state.metricKeys,
+      extraColumns: [],
       pageSize: MAXIMUM_PAGE_SIZE,
     };
     const currentErrors = validateSearchRequest(request);

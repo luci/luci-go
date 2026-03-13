@@ -15,11 +15,9 @@
 import { useCallback, useMemo } from 'react';
 
 import { URL_SEARCH_QUERY_PARAM } from '@/crystal_ball/constants';
-import {
-  SearchMeasurementsFilter,
-  SearchMeasurementsRequest,
-} from '@/crystal_ball/types';
+import { SearchMeasurementsFilter } from '@/crystal_ball/types';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { SearchMeasurementsRequest } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
  * Special characters used by the serialized query.
@@ -143,7 +141,15 @@ const COMMA_SEPARATED_REGEX = /(?:"(?:[^"\\]|\\.)*")|[^,]+/g;
 const deserializeSearchRequest = (
   query: string,
 ): Partial<SearchMeasurementsRequest> => {
-  const request: Partial<SearchMeasurementsRequest> = {};
+  const request: {
+    testNameFilter?: string;
+    atpTestNameFilter?: string;
+    buildBranch?: string;
+    buildTarget?: string;
+    metricKeys?: string[];
+    extraColumns?: string[];
+  } = {};
+
   const orderedKeys = Object.values(SearchMeasurementsFilter);
   const keyPattern = orderedKeys.join('|');
   const eq = QueryParts.EQUALITY;

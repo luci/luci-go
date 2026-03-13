@@ -14,7 +14,7 @@
 
 import { TimeSeriesDataSet } from '@/crystal_ball/components';
 import { GOLDEN_RATIO_CONJUGATE } from '@/crystal_ball/constants';
-import { MeasurementRow } from '@/crystal_ball/types';
+import { MeasurementRow } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
  * On a per timestamp and metric key basis, total values based on build ids.
@@ -32,8 +32,8 @@ interface AggregationData {
  * @returns a list of time series datasets.
  */
 export const transformDataForChart = (
-  rows: MeasurementRow[],
-  metricKeys: string[],
+  rows: readonly MeasurementRow[],
+  metricKeys: readonly string[],
 ): TimeSeriesDataSet[] => {
   const dataMap: {
     [time: number]: { [metricKey: string]: AggregationData };

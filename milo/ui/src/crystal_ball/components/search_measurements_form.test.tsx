@@ -18,7 +18,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import { SearchMeasurementsForm } from '@/crystal_ball/components';
 import { MAXIMUM_PAGE_SIZE } from '@/crystal_ball/constants';
-import { SearchMeasurementsRequest } from '@/crystal_ball/types';
+import { SearchMeasurementsRequest } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 describe('SearchMeasurementsForm', () => {
   const mockOnSubmit = jest.fn();
@@ -109,6 +109,7 @@ describe('SearchMeasurementsForm', () => {
         buildTarget: undefined,
         atpTestNameFilter: undefined,
         metricKeys: ['cpu_usage'],
+        extraColumns: [],
         pageSize: MAXIMUM_PAGE_SIZE,
       });
     });

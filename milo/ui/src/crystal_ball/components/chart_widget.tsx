@@ -28,10 +28,10 @@ import {
   PerfChartSeries,
   PerfChartWidget,
   PerfFilter,
-  SearchMeasurementsRequest,
 } from '@/crystal_ball/types';
 import { transformDataForChart } from '@/crystal_ball/utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { SearchMeasurementsRequest } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 interface ChartWidgetProps {
   onUpdate: (updatedWidget: PerfChartWidget) => void;
@@ -65,15 +65,11 @@ export function ChartWidget({
   const searchRequest: SearchMeasurementsRequest = useMemo(() => {
     const metricKeys =
       widget.series?.map((s) => s.metricField).filter(Boolean) || [];
-    const request: SearchMeasurementsRequest = {
-      metricKeys,
-      buildCreateStartTime: startTime
-        ? { seconds: startTime.toUnixInteger().toString(), nanos: 0 }
-        : undefined,
-      buildCreateEndTime: endTime
-        ? { seconds: endTime.toUnixInteger().toString(), nanos: 0 }
-        : undefined,
-    };
+
+    let testNameFilter: string | undefined;
+    let atpTestNameFilter: string | undefined;
+    let buildBranch: string | undefined;
+    let buildTarget: string | undefined;
 
     // TODO: b/475638132 - Build StreamMeasurementsRequest instead
     // Apply filters from the widget configuration
@@ -105,19 +101,30 @@ export function ChartWidget({
 
       switch (filter.column) {
         case 'test_name':
-          request.testNameFilter = filterValue;
+          testNameFilter = filterValue;
           break;
         case 'atp_test_name':
-          request.atpTestNameFilter = filterValue;
+          atpTestNameFilter = filterValue;
           break;
         case 'build_branch':
-          request.buildBranch = value;
+          buildBranch = value;
           break;
         case 'build_target':
-          request.buildTarget = value;
+          buildTarget = value;
           break;
       }
     });
+
+    const request: SearchMeasurementsRequest = {
+      testNameFilter,
+      atpTestNameFilter,
+      buildBranch,
+      buildTarget,
+      metricKeys,
+      extraColumns: [],
+      buildCreateStartTime: startTime?.toISO() || undefined,
+      buildCreateEndTime: endTime?.toISO() || undefined,
+    };
 
     return request;
   }, [widget, startTime, endTime]);

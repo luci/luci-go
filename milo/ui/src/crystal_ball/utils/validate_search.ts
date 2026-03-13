@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { SearchMeasurementsRequest } from '@/crystal_ball/types';
+import { SearchMeasurementsRequest } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
  * Possible validation errors for a search measurements request.

@@ -19,14 +19,13 @@ import { DateTime } from 'luxon';
 import * as timeUtils from '@/common/components/time_range_selector/time_range_selector_utils';
 import * as components from '@/crystal_ball/components';
 import * as useSearchMeasurementsHook from '@/crystal_ball/hooks/use_android_perf_api';
-import {
-  PerfChartWidget,
-  MeasurementFilterColumn,
-  MeasurementRow,
-  SearchMeasurementsRequest,
-} from '@/crystal_ball/types';
+import { PerfChartWidget, MeasurementFilterColumn } from '@/crystal_ball/types';
 import { transformDataForChart } from '@/crystal_ball/utils';
 import * as useSyncedSearchParamsHook from '@/generic_libs/hooks/synced_search_params';
+import {
+  MeasurementRow,
+  SearchMeasurementsRequest,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { ChartWidget } from './chart_widget';
 
@@ -178,24 +177,28 @@ describe('ChartWidget', () => {
         metricKey: 'metric1',
         value: 10,
         buildId: '1',
+        extraColumns: [],
       },
       {
         buildCreateTime: now.minus({ hours: 2 }).toISO(),
         metricKey: 'metric1',
         value: 20,
         buildId: '2',
+        extraColumns: [],
       }, // Same time, new build
       {
         buildCreateTime: now.minus({ hours: 1 }).toISO(),
         metricKey: 'metric1',
         value: 16,
         buildId: '3',
+        extraColumns: [],
       },
       {
         buildCreateTime: now.minus({ hours: 2 }).toISO(),
         metricKey: 'metric2',
         value: 100,
         buildId: '1',
+        extraColumns: [],
       },
     ];
     mockUseSearchMeasurements.mockReturnValue({ data: { rows } });
@@ -236,14 +239,9 @@ describe('ChartWidget', () => {
 
     const expectedRequest: SearchMeasurementsRequest = {
       metricKeys: ['metric1', 'metric2'],
-      buildCreateStartTime: {
-        seconds: startTime.toUnixInteger().toString(),
-        nanos: 0,
-      },
-      buildCreateEndTime: {
-        seconds: endTime.toUnixInteger().toString(),
-        nanos: 0,
-      },
+      buildCreateStartTime: startTime.toISO(),
+      buildCreateEndTime: endTime.toISO(),
+      extraColumns: [],
     };
     expect(mockUseSearchMeasurements).toHaveBeenCalledWith(expectedRequest, {
       enabled: true,
@@ -302,14 +300,9 @@ describe('ChartWidget', () => {
 
     const expectedRequest: SearchMeasurementsRequest = {
       metricKeys: ['metric1', 'metric2'],
-      buildCreateStartTime: {
-        seconds: startTime.toUnixInteger().toString(),
-        nanos: 0,
-      },
-      buildCreateEndTime: {
-        seconds: endTime.toUnixInteger().toString(),
-        nanos: 0,
-      },
+      buildCreateStartTime: startTime.toISO(),
+      buildCreateEndTime: endTime.toISO(),
+      extraColumns: [],
       testNameFilter: '%MyTest%',
       buildTarget: 'targetA',
       atpTestNameFilter: 'AtpTest%',
@@ -374,12 +367,48 @@ describe('transformDataForChart', () => {
   const t2 = new Date('2026-03-04T11:00:00.000Z').toISOString();
 
   const rows: MeasurementRow[] = [
-    { buildCreateTime: t1, metricKey: 'm1', value: 10, buildId: 'b1' },
-    { buildCreateTime: t1, metricKey: 'm1', value: 20, buildId: 'b2' }, // Same time, m1, different build
-    { buildCreateTime: t2, metricKey: 'm1', value: 15, buildId: 'b3' },
-    { buildCreateTime: t1, metricKey: 'm2', value: 100, buildId: 'b1' },
-    { buildCreateTime: t2, metricKey: 'm2', value: 110, buildId: 'b3' },
-    { buildCreateTime: t1, metricKey: 'm3', value: 99, buildId: 'b1' }, // Metric not requested
+    {
+      buildCreateTime: t1,
+      metricKey: 'm1',
+      value: 10,
+      buildId: 'b1',
+      extraColumns: [],
+    },
+    {
+      buildCreateTime: t1,
+      metricKey: 'm1',
+      value: 20,
+      buildId: 'b2',
+      extraColumns: [],
+    }, // Same time, m1, different build
+    {
+      buildCreateTime: t2,
+      metricKey: 'm1',
+      value: 15,
+      buildId: 'b3',
+      extraColumns: [],
+    },
+    {
+      buildCreateTime: t1,
+      metricKey: 'm2',
+      value: 100,
+      buildId: 'b1',
+      extraColumns: [],
+    },
+    {
+      buildCreateTime: t2,
+      metricKey: 'm2',
+      value: 110,
+      buildId: 'b3',
+      extraColumns: [],
+    },
+    {
+      buildCreateTime: t1,
+      metricKey: 'm3',
+      value: 99,
+      buildId: 'b1',
+      extraColumns: [],
+    }, // Metric not requested
   ];
 
   it('should aggregate values by mean for each metric key and time', () => {
