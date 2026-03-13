@@ -231,7 +231,7 @@ func FilterCheck(check *orchestratorpb.Check, vf *Filter, hasAccess AccessCheck)
 		for _, option := range edit.GetCheck().GetOptions() {
 			fs.filterRef(option, vf.vf.GetCheckEditOptions())
 		}
-		for _, result := range edit.GetCheck().GetResult() {
+		for _, result := range edit.GetCheck().GetResults() {
 			for _, dat := range result.GetData() {
 				fs.filterRef(dat, vf.vf.GetCheckEditResultData())
 			}

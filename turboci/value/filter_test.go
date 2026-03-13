@@ -54,7 +54,7 @@ func TestFilterRef(t *testing.T) {
 			Known: TypeSetBuilder{}.WithMessages((*structpb.Value)(nil)).MustBuild(),
 		}.Build(),
 
-		StageArgs: orchestratorpb.ValueMask_VALUE_MASK_TYPE_VALUE.Enum(),
+		StageArgs: orchestratorpb.ValueMask_VALUE_MASK_VALUE_TYPE.Enum(),
 	}.Build())
 	assert.NoErr(t, err)
 
