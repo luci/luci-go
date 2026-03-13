@@ -49,7 +49,7 @@ func TestStatusFromError(t *testing.T) {
 		})
 
 		t.Run("Error unwraps to context.Canceled (legacy)", func(t *testing.T) {
-			err := errors.Annotate(context.Canceled, "some reason").Err()
+			err := errors.Annotate(context.Canceled, "some reason")
 			st := statusFromError(ctx, err)
 			assert.Loosely(t, st.Code(), should.Equal(codes.Canceled))
 			assert.Loosely(t, st.Message(), should.Equal(context.Canceled.Error()))

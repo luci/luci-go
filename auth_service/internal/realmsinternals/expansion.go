@@ -340,13 +340,13 @@ func (re *RolesExpander) role(roleName string) (*indexSet, error) {
 	if strings.HasPrefix(roleName, constants.PrefixBuiltinRole) {
 		role, ok := re.builtinRoles[roleName]
 		if !ok {
-			return nil, lucierr.Annotate(ErrRoleNotFound, "builtinRole: %s", roleName).Err()
+			return nil, lucierr.Annotate(ErrRoleNotFound, "builtinRole: %s", roleName)
 		}
 		perms = IndexSetFromSlice(re.permIndexes(role.Permissions.ToSortedSlice()...))
 	} else if strings.HasPrefix(roleName, constants.PrefixCustomRole) {
 		customRole, ok := re.customRoles[roleName]
 		if !ok {
-			return nil, lucierr.Annotate(ErrRoleNotFound, "customRole: %s", roleName).Err()
+			return nil, lucierr.Annotate(ErrRoleNotFound, "customRole: %s", roleName)
 		}
 		perms = IndexSetFromSlice(re.permIndexes(customRole.GetPermissions()...))
 		for _, parent := range customRole.Extends {
@@ -444,7 +444,7 @@ func (rlme *RealmsExpander) perPrincipalBindings(realm string) ([]*principalBind
 		// set of permissions associated with this role
 		perms, err := rlme.rolesExpander.role(b.GetRole())
 		if err != nil {
-			return nil, lucierr.Annotate(err, "there was an issue fetching permissions for this binding role").Err()
+			return nil, lucierr.Annotate(err, "there was an issue fetching permissions for this binding role")
 		}
 
 		// sorted conditions associated with this binding
