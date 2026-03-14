@@ -15,8 +15,6 @@
 package wheels
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
@@ -90,92 +88,6 @@ func TestGeneratingEnsureFile(t *testing.T) {
 			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Match(ensure.PackageSlice{
 				{PackageTemplate: "pkg2", UnresolvedVersion: "version2"},
 			}))
-		})
-	})
-}
-
-func TestPipHelpers(t *testing.T) {
-	ftt.Run("Test pip helpers", t, func(t *ftt.Test) {
-		t.Run("pipNameFromPackageName", func(t *ftt.Test) {
-			cases := []struct {
-				in, out string
-			}{
-				{"infra/python/wheels/six-py2_py3", "six"},
-				{"infra/python/wheels/six/${platform}", "six"},
-				{"infra/python/wheels/cryptography/linux-amd64", "cryptography"},
-				{"infra/python/wheels/numpy-py3", "numpy"},
-				{"infra/python/wheels/requests_py2_py3", "requests"},
-				{"my-package", "my-package"},
-				{"infra/python/wheels/my._-package", "my-package"},
-				{"infra/python/wheels/complex---name", "complex-name"},
-			}
-			for _, c := range cases {
-				assert.Loosely(t, pipNameFromPackageName(c.in), should.Equal(c.out))
-			}
-		})
-
-		t.Run("pipVersionFromPackageVersion", func(t *ftt.Test) {
-			cases := []struct {
-				in, out string
-			}{
-				{"version:1.15.0", "1.15.0"},
-				{"version:2@1.15.0.chromium.1", "1.15.0.chromium.1"},
-				{"my-hash", "my-hash"},
-			}
-			for _, c := range cases {
-				assert.Loosely(t, pipVersionFromPackageVersion(c.in), should.Equal(c.out))
-			}
-		})
-	})
-}
-
-func TestWriteRequirementsFromSpec(t *testing.T) {
-	ftt.Run("Test write requirements from spec", t, func(t *ftt.Test) {
-		dir := t.TempDir()
-		reqPath := filepath.Join(dir, "requirements.txt")
-
-		s := &vpython.Spec{
-			Wheel: []*vpython.Spec_Package{
-				{Name: "infra/python/wheels/six-py2_py3", Version: "version:1.15.0"},
-				{Name: "infra/python/wheels/pkg1", Version: "version:1.0.0", MatchTag: []*vpython.PEP425Tag{{Platform: "manylinux1_x86_64"}}},
-				{Name: "infra/python/wheels/pkg2", Version: "version:2.0.0"},
-			},
-		}
-
-		t.Run("Match all", func(t *ftt.Test) {
-			tags := []*vpython.PEP425Tag{{Platform: "manylinux1_x86_64"}}
-			err := writeRequirementsFromSpec(reqPath, s, tags)
-			assert.Loosely(t, err, should.BeNil)
-
-			content, err := os.ReadFile(reqPath)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, string(content), should.Equal("pkg1==1.0.0\npkg2==2.0.0\nsix==1.15.0\n"))
-		})
-
-		t.Run("Match subset", func(t *ftt.Test) {
-			tags := []*vpython.PEP425Tag{{Platform: "macosx_10_15_intel"}}
-			err := writeRequirementsFromSpec(reqPath, s, tags)
-			assert.Loosely(t, err, should.BeNil)
-
-			content, err := os.ReadFile(reqPath)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, string(content), should.Equal("pkg2==2.0.0\nsix==1.15.0\n"))
-		})
-
-		t.Run("Duplicates", func(t *ftt.Test) {
-			s := &vpython.Spec{
-				Wheel: []*vpython.Spec_Package{
-					{Name: "infra/python/wheels/six-py2_py3", Version: "version:1.15.0"},
-					{Name: "infra/python/wheels/six", Version: "version:1.15.0"},
-				},
-			}
-			tags := []*vpython.PEP425Tag{{Platform: "manylinux1_x86_64"}}
-			err := writeRequirementsFromSpec(reqPath, s, tags)
-			assert.Loosely(t, err, should.BeNil)
-
-			content, err := os.ReadFile(reqPath)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, string(content), should.Equal("six==1.15.0\n"))
 		})
 	})
 }

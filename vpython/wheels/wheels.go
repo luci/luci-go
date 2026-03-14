@@ -19,10 +19,8 @@ package wheels
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -111,11 +109,6 @@ func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string)
 		return err
 	}
 
-	// Generate requirements.txt from the spec.
-	if err := writeRequirementsFromSpec(filepath.Join(out, "requirements.txt"), s, tags); err != nil {
-		return errors.Fmt("failed to write requirements.txt: %w", err)
-	}
-
 	// Translates vpython spec into a CIPD ensure file.
 	ef, err := ensureFileFromVPythonSpec(s, tags)
 	if err != nil {
@@ -132,6 +125,16 @@ func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string)
 		Env:        envs.Sorted(),
 	}, out); err != nil {
 		return err
+	}
+
+	// Generate requirements.txt
+	wheels := filepath.Join(out, "wheels")
+	ws, err := scanDir(wheels)
+	if err != nil {
+		return errors.Fmt("failed to scan wheels: %w", err)
+	}
+	if err := writeRequirementsFile(filepath.Join(out, "requirements.txt"), ws); err != nil {
+		return errors.Fmt("failed to write requirements.txt: %w", err)
 	}
 
 	return nil
@@ -180,96 +183,4 @@ func ensureFileFromVPythonSpec(s *vpython.Spec, tags []*vpython.PEP425Tag) (*ens
 	return &ensure.File{
 		PackagesBySubdir: map[string]ensure.PackageSlice{"wheels": pslice},
 	}, nil
-}
-
-var nameNormalizationRE = regexp.MustCompile(`[-_.]+`)
-
-// CIPD package names for wheels are usually:
-// infra/python/wheels/<name>/${vpython_platform}
-// or similar variants like:
-// infra/python/wheels/<name>-py2_py3
-func pipNameFromPackageName(name string) string {
-	res := name
-	const prefix = "infra/python/wheels/"
-	// Drop common CIPD prefix and get the package name that comes
-	// right after it:
-	// infra/python/wheels/six-py3/${vpython_platform}
-	if after, ok := strings.CutPrefix(name, prefix); ok {
-		res = after
-		parts := strings.Split(res, "/")
-		res = parts[0]
-	} else {
-		// In an off chance that the prefix is not what we expect,
-		// get the package name that is either the last / block or
-		// just before the ${vpython_platform}.
-		// For instance infra/tools/python/six-py3/${vpython_platform}
-		parts := strings.Split(name, "/")
-		for i := len(parts) - 1; i >= 0; i-- {
-			p := parts[i]
-			if !strings.Contains(p, "${") && p != "" {
-				res = p
-				break
-			}
-		}
-	}
-
-	// Strip common suffixes for universal wheels.
-	for _, suffix := range []string{"-py2_py3", "_py2_py3", "-py3", "_py3", "-py2", "_py2"} {
-		if strings.HasSuffix(res, suffix) {
-			res = res[:len(res)-len(suffix)]
-			break
-		}
-	}
-
-	// PEP 503 normalization: lowercase and replace runs of [._-] with a single hyphen.
-	return nameNormalizationRE.ReplaceAllString(strings.ToLower(res), "-")
-}
-
-func pipVersionFromPackageVersion(version string) string {
-	// CIPD versions are usually "version:<version>" or a hash.
-	if strings.HasPrefix(version, "version:2@") {
-		// version:2@1.15.0.chromium.1 -> 1.15.0.chromium.1
-		return version[10:]
-	}
-	if strings.HasPrefix(version, "version:") {
-		// version:1.15.0 -> 1.15.0
-		return version[8:]
-	}
-	return version
-}
-
-func writeRequirementsFromSpec(path string, s *vpython.Spec, tags []*vpython.PEP425Tag) (err error) {
-	// Use ensureFileFromVPythonSpec to filter and expand template names.
-	ef, err := ensureFileFromVPythonSpec(s, tags)
-	if err != nil {
-		return err
-	}
-
-	fd, err := os.Create(path)
-	if err != nil {
-		return errors.Fmt("failed to create requirements file: %w", err)
-	}
-	defer func() {
-		if closeErr := fd.Close(); closeErr != nil && err == nil {
-			err = errors.Fmt("failed to close requirements file: %w", closeErr)
-		}
-	}()
-
-	seen := make(map[string]struct{})
-	for _, pkg := range ef.PackagesBySubdir["wheels"] {
-		if pkg.PackageTemplate == "" {
-			continue // package was skipped
-		}
-		name := pipNameFromPackageName(pkg.PackageTemplate)
-		version := pipVersionFromPackageVersion(pkg.UnresolvedVersion)
-		line := fmt.Sprintf("%s==%s", name, version)
-		if _, ok := seen[line]; ok {
-			continue
-		}
-		seen[line] = struct{}{}
-		if _, err := fmt.Fprintf(fd, "%s\n", line); err != nil {
-			return errors.Fmt("failed to write requirement: %w", err)
-		}
-	}
-	return nil
 }
