@@ -229,7 +229,7 @@ func triggerFixforward(c context.Context, genaiAnalysis *model.CompileGenAIAnaly
 	}
 
 	logging.Infof(c, "Executing GenerateFixforwardCL for culprit %s inline", suspect.GitilesCommit.GetId())
-	err = fixforward.GenerateFixforwardCL(c, genaiClient, gerritClient, cfa, suspect.GitilesCommit.GetId(), failureLog, repoUrl, suspect.RevertURL)
+	err = fixforward.GenerateFixforwardCL(c, genaiClient, gerritClient, suspect.GitilesCommit.GetId(), failureLog, repoUrl, suspect.RevertURL)
 
 	if err != nil {
 		logging.Errorf(c, "GenerateFixforwardCL failed: %v", err)

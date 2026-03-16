@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/base64"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -30,7 +29,6 @@ import (
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/llm"
-	"go.chromium.org/luci/bisection/model"
 )
 
 func TestGenerateFixforwardCL(t *testing.T) {
@@ -103,16 +101,11 @@ func TestGenerateFixforwardCL(t *testing.T) {
 	assert.Loosely(t, err, should.BeNil)
 
 	// 4. Test GenerateFixforwardCL
-	cfa := &model.CompileFailureAnalysis{
-		Id:         999,
-		CreateTime: time.Now(),
-	}
 
 	err = GenerateFixforwardCL(
 		ctx,
 		mockLLM,
 		gerritClient,
-		cfa,
 		"abc123def456",
 		"compile Error Log Here",
 		"https://chromium.googlesource.com/chromium/src",
@@ -157,13 +150,10 @@ func TestGenerateFixforwardCL_LargeFile(t *testing.T) {
 	assert.Loosely(t, err, should.BeNil)
 
 	mockLLM := llm.NewMockClient(ctrl)
-
-	cfa := &model.CompileFailureAnalysis{Id: 999}
 	err = GenerateFixforwardCL(
 		ctx,
 		mockLLM,
 		gerritClient,
-		cfa,
 		"abc123def456",
 		"log",
 		"https://chromium.googlesource.com/chromium/src",

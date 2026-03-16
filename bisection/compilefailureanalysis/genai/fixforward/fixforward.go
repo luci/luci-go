@@ -97,7 +97,7 @@ Culprit CL:
 `
 
 // GenerateFixforwardCL attempts to generate a fixforward CL for a given compile failure.
-func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritClient *gerrit.Client, cfa *model.CompileFailureAnalysis, culpritCommit string, failureLog string, repoUrl string, revertURL string) error {
+func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritClient *gerrit.Client, culpritCommit string, failureLog string, repoUrl string, revertURL string) error {
 	// 1. Fetch culprit changelog
 	changelog, err := gitiles.GetChangeLogsForSingleRevision(ctx, repoUrl, culpritCommit)
 	if err != nil {

@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
@@ -71,10 +72,17 @@ func RegisterTaskClass(srv *server.Server, luciAnalysisProjectFunc func(luciProj
 		client.Close()
 	})
 
+	genaiClient, err := llm.NewClient(srv.Context, srv.Options.CloudProject)
+	if err != nil {
+		logging.Errorf(srv.Context, "Failed to create GenAI client: %s", err)
+		// We log the error but do not fail the task registration,
+		// as GenAI is not strictly required for basic culprit actions
+	}
+
 	CompileFailureTasks.AttachHandler(processRevertCulpritTask)
 	TestFailureTasks.AttachHandler(func(ctx context.Context, payload proto.Message) error {
 		task := payload.(*taskpb.TestFailureCulpritActionTask)
-		if err := processTestFailureCulpritTask(ctx, task.AnalysisId, client); err != nil {
+		if err := processTestFailureCulpritTask(ctx, task.AnalysisId, client, genaiClient); err != nil {
 			err := errors.Fmt("run test failure culprit action: %w", err)
 			logging.Errorf(ctx, err.Error())
 

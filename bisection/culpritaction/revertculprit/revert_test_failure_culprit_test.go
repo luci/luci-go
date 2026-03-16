@@ -155,7 +155,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 		t.Run("test no longer unexpected", func(t *ftt.Test) {
 			err := processTestFailureCulpritTask(ctx, tfa.ID, &fakeLUCIAnalysisClient{
 				FailedConsistently: false,
-			})
+			}, nil)
 			assert.Loosely(t, err, should.BeNil)
 			// Suspect action has been saved.
 			assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
@@ -168,7 +168,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 			cfg := map[string]*configpb.ProjectConfig{tfa.Project: projectCfg}
 			assert.Loosely(t, config.SetTestProjectConfig(ctx, cfg), should.BeNil)
 
-			err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+			err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 			assert.Loosely(t, err, should.BeNil)
 			// Suspect action has been saved.
 			assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
@@ -192,7 +192,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 					Return(revertRes, nil).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
 				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
@@ -228,7 +228,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
 				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
@@ -267,7 +267,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
 				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
@@ -291,7 +291,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 				mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
 					Return(&gerritpb.ListChangesResponse{Changes: []*gerritpb.ChangeInfo{}}, nil).Times(1)
 
-				err = processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err = processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
 				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
@@ -318,7 +318,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
 				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
@@ -364,7 +364,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 				// Suspect action has been saved.
 				assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
@@ -401,7 +401,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -438,7 +438,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -489,7 +489,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -528,7 +528,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -578,7 +578,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 					},
 				)).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
@@ -647,7 +647,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 						},
 					}, nil).Times(1)
 
-				err := processTestFailureCulpritTask(ctx, tfa.ID, client)
+				err := processTestFailureCulpritTask(ctx, tfa.ID, client, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				datastore.GetTestable(ctx).CatchupIndexes()
