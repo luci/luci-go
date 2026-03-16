@@ -381,7 +381,7 @@ func collectMetricsForRunningTestReruns(c context.Context) error {
 func collectMetricsForGenAIVindication(c context.Context) error {
 	client, err := newTreeStatusClient(c)
 	if err != nil {
-		return errors.Annotate(err, "creating tree status client")
+		return errors.Annotate(err, "creating tree status client").Err()
 	}
 	return collectMetricsForGenAIVindicationWithClient(c, client)
 }
@@ -393,7 +393,7 @@ func collectMetricsForGenAIVindicationWithClient(c context.Context, client tspb.
 	q := datastore.NewQuery("CompileGenAIAnalysis").Gt("end_time", cutoffTime)
 	var genaiAnalyses []*model.CompileGenAIAnalysis
 	if err := datastore.GetAll(c, q, &genaiAnalyses); err != nil {
-		return errors.Annotate(err, "getting CompileGenAIAnalysis for genai metrics")
+		return errors.Annotate(err, "getting CompileGenAIAnalysis for genai metrics").Err()
 	}
 
 	status, err := getTreeStatus(c, client, "chromium")

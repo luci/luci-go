@@ -140,14 +140,14 @@ type updatedNotifiers struct {
 func FetchProjects(ctx context.Context) (map[string]*notifypb.ProjectConfig, error) {
 	appID, err := common.GetAppID(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to get app ID")
+		return nil, errors.Annotate(err, "failed to get app ID").Err()
 	}
 	cfgName := appID + ".cfg"
 	logging.Debugf(ctx, "fetching configs for %s", cfgName)
 	lucicfg := cfgclient.Client(ctx)
 	configs, err := lucicfg.GetProjectConfigs(ctx, cfgName, false)
 	if err != nil {
-		return nil, errors.Annotate(err, "while fetching project configs")
+		return nil, errors.Annotate(err, "while fetching project configs").Err()
 	}
 
 	result := make(map[string]*notifypb.ProjectConfig)

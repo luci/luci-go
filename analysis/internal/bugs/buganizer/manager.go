@@ -375,11 +375,11 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 	if !request.BugManagementState.RuleAssociationNotified {
 		commentRequest, err := bm.requestGenerator.PrepareRuleAssociatedComment(request.RuleID, issue.IssueId)
 		if err != nil {
-			response.Error = errors.Annotate(err, "prepare rule associated comment")
+			response.Error = errors.Annotate(err, "prepare rule associated comment").Err()
 			return response
 		}
 		if err := bm.createIssueComment(ctx, commentRequest); err != nil {
-			response.Error = errors.Annotate(err, "create rule associated comment")
+			response.Error = errors.Annotate(err, "create rule associated comment").Err()
 			return response
 		}
 		response.RuleAssociationNotified = true
@@ -390,7 +390,7 @@ func (bm *BugManager) updateIssue(ctx context.Context, request bugs.BugUpdateReq
 	var err error
 	response.PolicyActivationsNotified, err = bm.notifyPolicyActivation(ctx, request.RuleID, issue.IssueId, policyIDsToNotify)
 	if err != nil {
-		response.Error = errors.Annotate(err, "notify policy activations")
+		response.Error = errors.Annotate(err, "notify policy activations").Err()
 		return response
 	}
 

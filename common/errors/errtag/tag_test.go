@@ -90,7 +90,7 @@ func TestErrTag(t *testing.T) {
 		})
 
 		t.Run(`apply with luci errors library Reason`, func(t *testing.T) {
-			err := luci_errors.Reason("bare")
+			err := luci_errors.Reason("bare").Err()
 			err = btag.Apply(err)
 
 			assert.That(t, btag.In(err), should.BeTrue)

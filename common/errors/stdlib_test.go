@@ -29,7 +29,7 @@ func TestErrorIs(t *testing.T) {
 	t.Parallel()
 	ftt.Run("test is", t, func(t *ftt.Test) {
 		newFakeError := &fakeError{}
-		wrappedError := Annotate(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6")
+		wrappedError := Annotate(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6").Err()
 		assert.Loosely(t, newFakeError.Error(), should.Equal("f9bd822e-6568-46ab-ba7d-419ef5f64b3b"))
 		assert.Loosely(t, errors.Is(newFakeError, &fakeError{}), should.BeTrue)
 		assert.Loosely(t, Is(newFakeError, &fakeError{}), should.BeTrue)
@@ -52,7 +52,7 @@ func TestErrorAs(t *testing.T) {
 		t.Run("wrapped error", func(t *ftt.Test) {
 			var dst *fakeError
 			newFakeError := &fakeError{}
-			wrappedError := Annotate(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6")
+			wrappedError := Annotate(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6").Err()
 			assert.Loosely(t, As(wrappedError, &dst), should.BeTrue)
 			assert.Loosely(t, newFakeError == dst, should.BeTrue)
 		})
