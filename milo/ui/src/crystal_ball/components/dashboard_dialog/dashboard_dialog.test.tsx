@@ -15,6 +15,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
+import { DashboardState } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 describe('<DashboardDialog />', () => {
   const mockOnClose = jest.fn();
@@ -45,18 +46,18 @@ describe('<DashboardDialog />', () => {
         open={true}
         onClose={mockOnClose}
         onSubmit={mockOnSubmit}
-        initialData={{
+        initialData={DashboardState.fromPartial({
           name: 'dashboardStates/abcd123',
           displayName: 'Existing Dashboard',
           description: 'Existing Description',
-          dashboardContent: {},
-          updateTime: { seconds: '0', nanos: 0 },
-          createTime: { seconds: '0', nanos: 0 },
+          dashboardContent: { widgets: [], dataSpecs: {}, globalFilters: [] },
+          updateTime: '1970-01-01T00:00:00Z',
+          createTime: '1970-01-01T00:00:00Z',
           revisionId: '',
           etag: '',
           uid: '',
           reconciling: false,
-        }}
+        })}
       />,
     );
 
@@ -106,18 +107,18 @@ describe('<DashboardDialog />', () => {
         open={true}
         onClose={mockOnClose}
         onSubmit={mockOnSubmit}
-        initialData={{
+        initialData={DashboardState.fromPartial({
           name: 'dashboardStates/abcd123',
           displayName: 'Existing Dashboard',
           description: 'Existing Description',
-          dashboardContent: {},
-          updateTime: { seconds: '0', nanos: 0 },
-          createTime: { seconds: '0', nanos: 0 },
+          dashboardContent: { widgets: [], dataSpecs: {}, globalFilters: [] },
+          updateTime: '1970-01-01T00:00:00Z',
+          createTime: '1970-01-01T00:00:00Z',
           revisionId: '',
           etag: '',
           uid: '',
           reconciling: false,
-        }}
+        })}
         isPending={true}
       />,
     );

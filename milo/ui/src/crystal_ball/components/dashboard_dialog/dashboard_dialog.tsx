@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 
-import { DashboardState } from '@/crystal_ball/types';
+import { DashboardState } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
  * Props for {@link DashboardDialog}.

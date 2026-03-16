@@ -39,38 +39,20 @@ import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
-import { PerfFilter } from '@/crystal_ball/types';
-import { MeasurementFilterColumn } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+import {
+  MeasurementFilterColumn,
+  PerfFilter,
+  PerfFilterDefault,
+  PerfFilterDefault_FilterOperator,
+  perfFilterDefault_FilterOperatorFromJSON,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 // TODO: b/475638132 - Once ListMeasurementFilterColumns RPC is being used, column types are known and can be used to determine appropriate
 // filter operators.
-const OPERATORS = [
-  'EQUAL',
-  'NOT_EQUAL',
-  'GREATER_THAN',
-  'LESS_THAN',
-  'GREATER_THAN_OR_EQUAL',
-  'LESS_THAN_OR_EQUAL',
-  'IN',
-  'NOT_IN',
-  'BETWEEN',
-  'REGEX_MATCH',
-  'NOT_REGEX_MATCH',
-  'IS_EMPTY',
-  'IS_NOT_EMPTY',
-  'STARTS_WITH',
-  'NOT_STARTS_WITH',
-  'ENDS_WITH',
-  'NOT_ENDS_WITH',
-  'CONTAINS',
-  'NOT_CONTAINS',
-  'LIKE',
-  'NOT_LIKE',
-  'IS_TRUE',
-  'IS_FALSE',
-  'IS_NULL',
-  'IS_NOT_NULL',
-];
+const OPERATORS = Object.keys(PerfFilterDefault_FilterOperator).filter(
+  (key): key is keyof typeof PerfFilterDefault_FilterOperator =>
+    isNaN(Number(key)) && key !== 'FILTER_OPERATOR_UNSPECIFIED',
+);
 
 interface FilterEditorProps {
   filters: PerfFilter[];
@@ -95,11 +77,11 @@ function FilterEditorRow({
   primaryColumns: string[];
   secondaryColumns: string[];
   onUpdateColumn: (column: string) => void;
-  onUpdateOperator: (operator: string) => void;
+  onUpdateOperator: (operator: PerfFilterDefault_FilterOperator) => void;
   onUpdateValue: (value: string) => void;
   onRemove: () => void;
 }) {
-  const initialValue = filter.textInput?.defaultValue?.values?.[0] || '';
+  const initialValue = filter.textInput?.defaultValue?.values?.[0] ?? '';
   const [inputValue, setInputValue] = useState(initialValue);
   const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
   const [isFocused, setIsFocused] = useState(false);
@@ -131,7 +113,7 @@ function FilterEditorRow({
     },
   );
 
-  const options = suggestionData?.values || [];
+  const options = suggestionData?.values ?? [];
 
   const handleBlur = () => {
     if (inputValue !== initialValue) {
@@ -184,10 +166,16 @@ function FilterEditorRow({
       </Select>
 
       <Select
-        value={filter.textInput?.defaultValue?.filterOperator || ''}
-        onChange={(e: SelectChangeEvent<string>) =>
-          onUpdateOperator(e.target.value)
+        value={
+          filter.textInput?.defaultValue?.filterOperator !== undefined
+            ? perfFilterDefault_FilterOperatorFromJSON(
+                filter.textInput.defaultValue.filterOperator,
+              )
+            : PerfFilterDefault_FilterOperator.EQUAL
         }
+        onChange={(e: SelectChangeEvent<number>) => {
+          onUpdateOperator(Number(e.target.value));
+        }}
         size="small"
         displayEmpty
         inputProps={{ 'aria-label': 'Operator' }}
@@ -195,7 +183,7 @@ function FilterEditorRow({
         MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
       >
         {OPERATORS.map((op) => (
-          <MenuItem key={op} value={op}>
+          <MenuItem key={op} value={PerfFilterDefault_FilterOperator[op]}>
             {op}
           </MenuItem>
         ))}
@@ -261,13 +249,13 @@ export function FilterEditor({
     const newFilterId = `filter-${crypto.randomUUID()}`;
     const newFilter: PerfFilter = {
       id: newFilterId,
-      column: availableColumns[0]?.column || '',
+      column: availableColumns[0]?.column ?? '',
       dataSpecId: dataSpecId,
       displayName: 'New Filter',
       textInput: {
         defaultValue: {
           values: [''],
-          filterOperator: 'EQUAL',
+          filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
         },
       },
     };
@@ -292,10 +280,10 @@ export function FilterEditor({
     onUpdateFilters(updatedFilters);
   };
 
-  const handleDefaultValueChange = (
+  const handleDefaultValueChange = <K extends keyof PerfFilterDefault>(
     index: number,
-    key: string,
-    value: string | string[],
+    key: K,
+    value: PerfFilterDefault[K],
   ) => {
     const updatedFilters = [...filters];
     const currentFilter = updatedFilters[index];
@@ -319,7 +307,7 @@ export function FilterEditor({
     () =>
       availableColumns
         .filter((c) => c.primary)
-        .map((c) => c.column || '')
+        .map((c) => c.column ?? '')
         .filter((c) => !!c)
         .sort((a, b) => a.localeCompare(b)),
     [availableColumns],
@@ -329,16 +317,21 @@ export function FilterEditor({
     () =>
       availableColumns
         .filter((c) => !c.primary)
-        .map((c) => c.column || '')
+        .map((c) => c.column ?? '')
         .filter((c) => !!c)
         .sort((a, b) => a.localeCompare(b)),
     [availableColumns],
   );
 
   const renderFilterLabel = (filter: PerfFilter) => {
-    const op = filter.textInput?.defaultValue?.filterOperator || 'EQUAL';
-    const val = filter.textInput?.defaultValue?.values?.[0] || '';
-    return `${filter.column} ${op} "${val}"`;
+    const op =
+      filter.textInput?.defaultValue?.filterOperator !== undefined
+        ? perfFilterDefault_FilterOperatorFromJSON(
+            filter.textInput.defaultValue.filterOperator,
+          )
+        : PerfFilterDefault_FilterOperator.EQUAL;
+    const val = filter.textInput?.defaultValue?.values?.[0] ?? '';
+    return `${filter.column} ${PerfFilterDefault_FilterOperator[op]} "${val}"`;
   };
 
   return (

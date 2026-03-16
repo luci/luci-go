@@ -23,16 +23,16 @@ import {
   TimeSeriesChart,
 } from '@/crystal_ball/components';
 import { useSearchMeasurements } from '@/crystal_ball/hooks';
-import {
-  PerfChartSeries,
-  PerfChartWidget,
-  PerfFilter,
-} from '@/crystal_ball/types';
 import { transformDataForChart } from '@/crystal_ball/utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   MeasurementFilterColumn,
+  PerfChartSeries,
+  PerfChartWidget,
+  PerfFilter,
+  PerfFilterDefault_FilterOperator,
   SearchMeasurementsRequest,
+  perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 interface ChartWidgetProps {
@@ -83,21 +83,23 @@ export function ChartWidget({
 
       if (!value) return;
 
-      let operator = 'EQUAL';
+      let operator = PerfFilterDefault_FilterOperator.EQUAL;
       let filterValue = value;
 
-      if (filter.textInput?.defaultValue?.filterOperator) {
-        operator = filter.textInput.defaultValue.filterOperator;
+      if (filter.textInput?.defaultValue?.filterOperator !== undefined) {
+        operator = perfFilterDefault_FilterOperatorFromJSON(
+          filter.textInput.defaultValue.filterOperator,
+        );
       }
 
       // Adjust value for LIKE operators
-      if (operator === 'STARTS_WITH') {
+      if (operator === PerfFilterDefault_FilterOperator.STARTS_WITH) {
         filterValue = value + '%';
-      } else if (operator === 'CONTAINS') {
+      } else if (operator === PerfFilterDefault_FilterOperator.CONTAINS) {
         filterValue = '%' + value + '%';
-      } else if (operator === 'ENDS_WITH') {
+      } else if (operator === PerfFilterDefault_FilterOperator.ENDS_WITH) {
         filterValue = '%' + value;
-      } else if (operator === 'LIKE') {
+      } else if (operator === PerfFilterDefault_FilterOperator.LIKE) {
         filterValue = value; // Assume user provided wildcards
       }
 
@@ -132,17 +134,21 @@ export function ChartWidget({
   }, [widget, startTime, endTime]);
 
   const handleFiltersUpdate = (updatedFilters: PerfFilter[]) => {
-    onUpdate({
-      ...widget,
-      filters: updatedFilters,
-    });
+    onUpdate(
+      PerfChartWidget.fromPartial({
+        ...widget,
+        filters: updatedFilters,
+      }),
+    );
   };
 
   const handleSeriesUpdate = (updatedSeries: PerfChartSeries[]) => {
-    onUpdate({
-      ...widget,
-      series: updatedSeries,
-    });
+    onUpdate(
+      PerfChartWidget.fromPartial({
+        ...widget,
+        series: updatedSeries,
+      }),
+    );
   };
 
   const {
@@ -222,12 +228,12 @@ export function ChartWidget({
         )}
       </Box>
       <ChartSeriesEditor
-        series={widget.series || []}
+        series={[...(widget.series || [])]}
         onUpdateSeries={handleSeriesUpdate}
         dataSpecId={widget.dataSpecId}
       />
       <FilterEditor
-        filters={widget.filters || []}
+        filters={[...(widget.filters || [])]}
         onUpdateFilters={handleFiltersUpdate}
         dataSpecId={widget.dataSpecId}
         availableColumns={filterColumns}

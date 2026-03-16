@@ -37,12 +37,16 @@ import {
   useListDashboardStatesInfinite,
   useUndeleteDashboardState,
 } from '@/crystal_ball/hooks';
-import { DashboardState } from '@/crystal_ball/types';
 import {
   escapeRegExp,
   formatApiError,
   formatRelativeTime,
 } from '@/crystal_ball/utils';
+import {
+  DashboardState,
+  DeleteDashboardStateRequest,
+  UndeleteDashboardStateRequest,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { Timestamp } from '@/proto/google/protobuf/timestamp.pb';
 
 interface DashboardListTableProps {
@@ -68,7 +72,7 @@ function useLoadMoreDashboards(showDeleted?: boolean) {
     () => ({
       pageSize: 20,
       filter: globalFilter ? escapeRegExp(globalFilter) : '',
-      showDeleted,
+      showDeleted: !!showDeleted,
     }),
     [globalFilter, showDeleted],
   );
@@ -126,7 +130,9 @@ export function DashboardListTable({
   const handleRecover = async (dashboard: DashboardState) => {
     if (!dashboard.name) return;
     try {
-      await undeleteDashboard({ name: dashboard.name });
+      await undeleteDashboard(
+        UndeleteDashboardStateRequest.fromPartial({ name: dashboard.name }),
+      );
       setToastMessage('Dashboard recovered successfully');
       queryClient.invalidateQueries({
         queryKey: listDashboardStatesQueryKey(),
@@ -139,7 +145,11 @@ export function DashboardListTable({
   const handleDelete = async () => {
     if (!dashboardToDelete?.name) return;
     try {
-      await deleteDashboard({ name: dashboardToDelete.name });
+      await deleteDashboard(
+        DeleteDashboardStateRequest.fromPartial({
+          name: dashboardToDelete.name,
+        }),
+      );
       setToastMessage('Dashboard deleted successfully');
       setDashboardToDelete(null);
       queryClient.invalidateQueries({

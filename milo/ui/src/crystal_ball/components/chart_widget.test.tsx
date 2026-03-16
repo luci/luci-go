@@ -19,12 +19,13 @@ import { DateTime } from 'luxon';
 import * as timeUtils from '@/common/components/time_range_selector/time_range_selector_utils';
 import * as components from '@/crystal_ball/components';
 import * as useSearchMeasurementsHook from '@/crystal_ball/hooks/use_android_perf_api';
-import { PerfChartWidget } from '@/crystal_ball/types';
 import { transformDataForChart } from '@/crystal_ball/utils';
 import * as useSyncedSearchParamsHook from '@/generic_libs/hooks/synced_search_params';
 import {
   MeasurementFilterColumn_ColumnDataType,
   MeasurementRow,
+  PerfChartWidget,
+  PerfFilterDefault_FilterOperator,
   SearchMeasurementsRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -71,12 +72,12 @@ jest.mock('@/crystal_ball/components', () => ({
 }));
 const MockTimeSeriesChart = components.TimeSeriesChart as jest.Mock;
 
-const baseWidget: PerfChartWidget = {
+const baseWidget: PerfChartWidget = PerfChartWidget.fromPartial({
   dataSpecId: 'mockspec',
   displayName: 'Test Chart',
   series: [{ metricField: 'metric1' }, { metricField: 'metric2' }],
   filters: [],
-};
+});
 
 const now = DateTime.local(2026, 3, 4, 18, 58, 53);
 
@@ -250,7 +251,7 @@ describe('ChartWidget', () => {
   });
 
   it('should apply filters to the search request', () => {
-    const widgetWithFilters: PerfChartWidget = {
+    const widgetWithFilters: PerfChartWidget = PerfChartWidget.fromPartial({
       ...baseWidget,
       filters: [
         {
@@ -258,14 +259,22 @@ describe('ChartWidget', () => {
           dataSpecId: 'mockspec',
           column: 'test_name',
           textInput: {
-            defaultValue: { values: ['MyTest'], filterOperator: 'CONTAINS' },
+            defaultValue: {
+              values: ['MyTest'],
+              filterOperator: PerfFilterDefault_FilterOperator.CONTAINS,
+            },
           },
         },
         {
           id: 'id2',
           dataSpecId: 'mockspec',
           column: 'build_target',
-          textInput: { defaultValue: { values: ['targetA'] } },
+          textInput: {
+            defaultValue: {
+              values: ['targetA'],
+              filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+            },
+          },
         }, // EQUAL by default
         {
           id: 'id3',
@@ -274,7 +283,7 @@ describe('ChartWidget', () => {
           textInput: {
             defaultValue: {
               values: ['AtpTest'],
-              filterOperator: 'STARTS_WITH',
+              filterOperator: PerfFilterDefault_FilterOperator.STARTS_WITH,
             },
           },
         },
@@ -282,10 +291,15 @@ describe('ChartWidget', () => {
           id: 'id4',
           dataSpecId: 'mockspec',
           column: 'build_branch',
-          textInput: { defaultValue: { values: ['main'] } },
+          textInput: {
+            defaultValue: {
+              values: ['main'],
+              filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+            },
+          },
         },
       ],
-    };
+    });
 
     const startTime = now.minus({ days: 1 });
     const endTime = now;
@@ -315,10 +329,10 @@ describe('ChartWidget', () => {
   });
 
   it('should handle undefined series in widget', () => {
-    const widgetNoSeries: PerfChartWidget = {
+    const widgetNoSeries: PerfChartWidget = PerfChartWidget.fromPartial({
       dataSpecId: 'mockspec',
       displayName: 'No Series Chart',
-    };
+    });
     render(
       <ChartWidget
         onUpdate={jest.fn()}

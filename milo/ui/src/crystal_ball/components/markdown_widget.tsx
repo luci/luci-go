@@ -18,7 +18,7 @@ import { useMemo, useState } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
-import { PerfWidget } from '@/crystal_ball/types';
+import { PerfWidget } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 export interface MarkdownWidgetProps {
   /**

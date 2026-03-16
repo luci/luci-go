@@ -40,7 +40,7 @@ import {
   ListDashboardStateRevisionsRequest,
   GetDashboardStateRevisionRequest,
   RollbackDashboardStateRequest,
-} from '@/crystal_ball/types';
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 // Mock the imported hooks
@@ -63,11 +63,15 @@ describe('use_dashboard_state_api', () => {
   });
 
   // Example minimal DashboardState for testing
-  const sampleDashboardState: DashboardState = {
+  const sampleDashboardState: DashboardState = DashboardState.fromPartial({
     name: 'dashboardStates/test-id',
     displayName: 'Test Dashboard',
-    dashboardContent: {}, // Add content as needed
-  };
+    dashboardContent: {
+      widgets: [],
+      dataSpecs: {},
+      globalFilters: [],
+    },
+  });
 
   const sampleOperation: TypedDashboardStateOperation = {
     name: 'operations/test-operation-id',
@@ -76,10 +80,17 @@ describe('use_dashboard_state_api', () => {
   };
 
   describe('useCreateDashboardState', () => {
-    const request: CreateDashboardStateRequest = {
-      dashboardState: { dashboardContent: {}, displayName: 'New Dash' },
+    const request = CreateDashboardStateRequest.fromPartial({
+      dashboardState: {
+        dashboardContent: {
+          widgets: [],
+          dataSpecs: {},
+          globalFilters: [],
+        },
+        displayName: 'New Dash',
+      },
       dashboardStateId: 'new-dash-id',
-    };
+    });
 
     it('should call useGapiMutation with correct arguments', () => {
       // Mock mutateAsync to resolve with our strongly typed operation
@@ -103,8 +114,8 @@ describe('use_dashboard_state_api', () => {
         body: request.dashboardState,
         params: {
           dashboardStateId: request.dashboardStateId,
-          validateOnly: undefined,
-          requestId: undefined,
+          validateOnly: false,
+          requestId: '',
         },
       });
     });
@@ -126,9 +137,9 @@ describe('use_dashboard_state_api', () => {
   });
 
   describe('useGetDashboardState', () => {
-    const request: GetDashboardStateRequest = {
+    const request = GetDashboardStateRequest.fromPartial({
       name: 'dashboardStates/test-id',
-    };
+    });
 
     it('should call useGapiQuery with correct arguments', () => {
       mockedUseGapiQuery.mockReturnValue({
@@ -164,7 +175,7 @@ describe('use_dashboard_state_api', () => {
   });
 
   describe('useListDashboardStates', () => {
-    const request: ListDashboardStatesRequest = { pageSize: 10 };
+    const request = ListDashboardStatesRequest.fromPartial({ pageSize: 10 });
 
     it('should call useGapiQuery with correct arguments', () => {
       mockedUseGapiQuery.mockReturnValue({
@@ -188,9 +199,7 @@ describe('use_dashboard_state_api', () => {
   });
 
   describe('useListDashboardStatesInfinite', () => {
-    const request: Omit<ListDashboardStatesRequest, 'pageToken'> = {
-      pageSize: 20,
-    };
+    const request = { pageSize: 20, filter: '', showDeleted: false };
 
     it('should call useInfiniteGapiQuery with correct arguments', () => {
       mockedUseInfiniteGapiQuery.mockReturnValue({
@@ -237,10 +246,10 @@ describe('use_dashboard_state_api', () => {
   });
 
   describe('useUpdateDashboardState', () => {
-    const request: UpdateDashboardStateRequest = {
+    const request = UpdateDashboardStateRequest.fromPartial({
       dashboardState: sampleDashboardState,
-      updateMask: { paths: ['displayName'] },
-    };
+      updateMask: ['displayName'],
+    });
 
     it('should call useGapiMutation with correct arguments', () => {
       mockedUseGapiMutation.mockReturnValue({
@@ -263,8 +272,8 @@ describe('use_dashboard_state_api', () => {
         params: {
           updateMask: 'displayName',
           allowMissing: undefined,
-          validateOnly: undefined,
-          requestId: undefined,
+          validateOnly: false,
+          requestId: '',
         },
       });
     });
@@ -286,9 +295,9 @@ describe('use_dashboard_state_api', () => {
   });
 
   describe('useDeleteDashboardState', () => {
-    const request: DeleteDashboardStateRequest = {
+    const request = DeleteDashboardStateRequest.fromPartial({
       name: 'dashboardStates/test-id',
-    };
+    });
 
     it('should call useGapiMutation with correct arguments', () => {
       mockedUseGapiMutation.mockReturnValue({
@@ -308,10 +317,10 @@ describe('use_dashboard_state_api', () => {
         path: `${BASE_PATH}/${request.name}`,
         method: 'DELETE',
         params: {
-          etag: undefined,
-          validateOnly: undefined,
-          allowMissing: undefined,
-          requestId: undefined,
+          etag: '',
+          validateOnly: false,
+          allowMissing: false,
+          requestId: '',
         },
       });
     });
@@ -333,12 +342,12 @@ describe('use_dashboard_state_api', () => {
   });
 
   describe('useUndeleteDashboardState', () => {
-    const request: UndeleteDashboardStateRequest = {
+    const request = UndeleteDashboardStateRequest.fromPartial({
       name: 'dashboardStates/test-id',
       etag: 'test-etag',
       validateOnly: true,
       requestId: 'req-123',
-    };
+    });
 
     it('should call useGapiMutation with correct arguments', () => {
       mockedUseGapiMutation.mockReturnValue({
@@ -383,9 +392,9 @@ describe('use_dashboard_state_api', () => {
   });
 
   describe('useListDashboardStateRevisions', () => {
-    const request: ListDashboardStateRevisionsRequest = {
+    const request = ListDashboardStateRevisionsRequest.fromPartial({
       name: 'dashboardStates/test-id',
-    };
+    });
 
     it('should call useGapiQuery with correct arguments', () => {
       mockedUseGapiQuery.mockReturnValue({
@@ -402,8 +411,8 @@ describe('use_dashboard_state_api', () => {
           path: `${BASE_PATH}/${request.name}/revisions`,
           method: 'GET',
           params: {
-            pageSize: undefined,
-            pageToken: undefined,
+            pageSize: 0,
+            pageToken: '',
           },
         },
         undefined,
@@ -412,9 +421,9 @@ describe('use_dashboard_state_api', () => {
   });
 
   describe('useGetDashboardStateRevision', () => {
-    const request: GetDashboardStateRevisionRequest = {
+    const request = GetDashboardStateRevisionRequest.fromPartial({
       name: 'dashboardStates/test-id/revisions/rev1',
-    };
+    });
 
     it('should call useGapiQuery with correct arguments', () => {
       mockedUseGapiQuery.mockReturnValue({
@@ -437,10 +446,10 @@ describe('use_dashboard_state_api', () => {
   });
 
   describe('useRollbackDashboardState', () => {
-    const request: RollbackDashboardStateRequest = {
+    const request = RollbackDashboardStateRequest.fromPartial({
       name: 'dashboardStates/test-id',
       revisionId: 'rev1',
-    };
+    });
 
     it('should call useGapiQuery with correct arguments', () => {
       mockedUseGapiQuery.mockReturnValue({

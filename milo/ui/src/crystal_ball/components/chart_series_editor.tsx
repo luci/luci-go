@@ -34,7 +34,7 @@ import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
-import { PerfChartSeries } from '@/crystal_ball/types';
+import { PerfChartSeries } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 interface ChartSeriesEditorProps {
   series: PerfChartSeries[];
@@ -159,11 +159,11 @@ export function ChartSeriesEditor({
   const [expanded, setExpanded] = useState(false);
 
   const handleAddSeries = () => {
-    const newSeries: PerfChartSeries = {
+    const newSeries: PerfChartSeries = PerfChartSeries.fromPartial({
       displayName: `series-${crypto.randomUUID()}`,
       metricField: '',
       dataSpecId: dataSpecId,
-    };
+    });
     onUpdateSeries([...series, newSeries]);
   };
 

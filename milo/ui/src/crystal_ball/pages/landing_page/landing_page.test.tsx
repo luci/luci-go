@@ -19,7 +19,10 @@ import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provide
 import * as hooks from '@/crystal_ball/hooks';
 import * as dashboardStateApi from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { LandingPage } from '@/crystal_ball/pages/landing_page';
-import { DashboardState } from '@/crystal_ball/types';
+import {
+  CreateDashboardStateRequest,
+  DashboardState,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 jest.mock('@/crystal_ball/hooks', () => ({
@@ -39,24 +42,22 @@ jest.mock('react-router', () => ({
 }));
 
 const mockDashboards: DashboardState[] = [
-  {
+  DashboardState.fromPartial({
     name: 'dashboardStates/dashboard1',
-    dashboardContent: { widgets: [] },
+    dashboardContent: {
+      widgets: [],
+      dataSpecs: {},
+      globalFilters: [],
+    },
     displayName: 'Generic Dashboard Alpha',
     description: 'A mock dashboard description',
-    updateTime: {
-      seconds: '1735689600',
-      nanos: 0,
-    },
-    createTime: {
-      seconds: '1735689600',
-      nanos: 0,
-    },
+    updateTime: '2025-01-01T00:00:00Z',
+    createTime: '2025-01-01T00:00:00Z',
     revisionId: 'rev1',
     etag: 'etag1',
     uid: 'uid1',
     reconciling: false,
-  },
+  }),
 ];
 
 describe('<LandingPage />', () => {
@@ -189,13 +190,19 @@ describe('<LandingPage />', () => {
     fireEvent.click(screen.getByRole('button', { name: /Save/i }));
 
     await waitFor(() => {
-      expect(mockMutateAsync).toHaveBeenCalledWith({
-        dashboardState: {
-          displayName: 'New Test Dashboard',
-          description: 'Description here',
-          dashboardContent: {},
-        },
-      });
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        CreateDashboardStateRequest.fromPartial({
+          dashboardState: DashboardState.fromPartial({
+            displayName: 'New Test Dashboard',
+            description: 'Description here',
+            dashboardContent: {
+              widgets: [],
+              dataSpecs: {},
+              globalFilters: [],
+            },
+          }),
+        }),
+      );
     });
 
     // Verify modal closed and navigate called

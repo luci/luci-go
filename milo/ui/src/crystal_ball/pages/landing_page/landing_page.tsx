@@ -21,8 +21,11 @@ import { DashboardDialog, RequireLogin } from '@/crystal_ball/components';
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import { useCreateDashboardState } from '@/crystal_ball/hooks';
-import { DashboardState } from '@/crystal_ball/types';
 import { extractIdFromName, formatApiError } from '@/crystal_ball/utils';
+import {
+  CreateDashboardStateRequest,
+  DashboardState,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
  * A landing page component that displays a list of dashboards.
@@ -56,13 +59,19 @@ export function LandingPage() {
   }) => {
     setErrorMsg('');
     try {
-      const response = await createMutation.mutateAsync({
-        dashboardState: {
-          displayName: data.displayName,
-          description: data.description,
-          dashboardContent: {},
-        },
-      });
+      const response = await createMutation.mutateAsync(
+        CreateDashboardStateRequest.fromPartial({
+          dashboardState: DashboardState.fromPartial({
+            displayName: data.displayName,
+            description: data.description,
+            dashboardContent: {
+              widgets: [],
+              dataSpecs: {},
+              globalFilters: [],
+            },
+          }),
+        }),
+      );
 
       const parsedResp = response.response;
       const newName = parsedResp?.name;

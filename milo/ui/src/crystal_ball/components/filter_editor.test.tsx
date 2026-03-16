@@ -19,8 +19,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
-import { PerfFilter } from '@/crystal_ball/types';
-import { MeasurementFilterColumn_ColumnDataType } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+import {
+  MeasurementFilterColumn_ColumnDataType,
+  PerfFilter,
+  PerfFilterDefault_FilterOperator,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { FilterEditor } from './filter_editor';
 
@@ -134,8 +137,12 @@ describe('FilterEditor', () => {
         id: 'filter-1',
         column: 'test_name',
         dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
         textInput: {
-          defaultValue: { values: ['initialValue'], filterOperator: 'EQUAL' },
+          defaultValue: {
+            values: ['initialValue'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
         },
       },
     ];
@@ -178,14 +185,22 @@ describe('FilterEditor', () => {
       column: 'atp_test_name',
       dataSpecId: 'test-spec-id',
       textInput: {
-        defaultValue: { values: [''], filterOperator: 'EQUAL' },
+        defaultValue: {
+          values: [''],
+          filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+        },
       },
     });
   });
 
   it('removes a filter when delete icon is clicked', async () => {
     const initialFilters: PerfFilter[] = [
-      { id: 'filter-1', column: 'test_name', dataSpecId: 'test-spec-id' },
+      {
+        id: 'filter-1',
+        column: 'test_name',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
+      },
     ];
     wrapWithProviders(
       <FilterEditor {...defaultProps} filters={initialFilters} />,
@@ -209,8 +224,12 @@ describe('FilterEditor', () => {
         id: 'filter-1',
         column: 'test_name',
         dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
         textInput: {
-          defaultValue: { values: ['test'], filterOperator: 'EQUAL' },
+          defaultValue: {
+            values: ['test'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
         },
       },
     ];
@@ -240,8 +259,12 @@ describe('FilterEditor', () => {
         id: 'filter-1',
         column: 'test_name',
         dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
         textInput: {
-          defaultValue: { values: ['test'], filterOperator: 'EQUAL' },
+          defaultValue: {
+            values: ['test'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
         },
       },
     ];
@@ -265,7 +288,7 @@ describe('FilterEditor', () => {
     expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
     const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
     expect(updatedFilters[0].textInput.defaultValue.filterOperator).toBe(
-      'CONTAINS',
+      PerfFilterDefault_FilterOperator.CONTAINS,
     );
   });
 
@@ -275,8 +298,12 @@ describe('FilterEditor', () => {
         id: 'filter-1',
         column: 'test_name',
         dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
         textInput: {
-          defaultValue: { values: ['initial'], filterOperator: 'EQUAL' },
+          defaultValue: {
+            values: ['initial'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
         },
       },
     ];
@@ -306,8 +333,12 @@ describe('FilterEditor', () => {
         id: 'filter-1',
         column: 'test_name',
         dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
         textInput: {
-          defaultValue: { values: ['initial'], filterOperator: 'EQUAL' },
+          defaultValue: {
+            values: ['initial'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
         },
       },
     ];
@@ -325,7 +356,12 @@ describe('FilterEditor', () => {
 
   it('renders a spinner when isLoadingColumns is true', async () => {
     const initialFilters: PerfFilter[] = [
-      { id: 'filter-1', column: 'test_name', dataSpecId: 'test-spec-id' },
+      {
+        id: 'filter-1',
+        column: 'test_name',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
+      },
     ];
     wrapWithProviders(
       <FilterEditor
@@ -346,8 +382,12 @@ describe('FilterEditor', () => {
         id: 'filter-1',
         column: 'test_name',
         dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
         textInput: {
-          defaultValue: { values: ['test'], filterOperator: 'EQUAL' },
+          defaultValue: {
+            values: ['test'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
         },
       },
     ];

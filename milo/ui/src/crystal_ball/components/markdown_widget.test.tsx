@@ -14,7 +14,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { PerfWidget } from '@/crystal_ball/types';
+import { PerfWidget } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { MarkdownWidget } from './markdown_widget';
 

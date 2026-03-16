@@ -49,9 +49,16 @@ import {
   useUpdateDashboardState,
 } from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measurement_filter_api';
-import { DashboardState, PerfWidget, WidgetType } from '@/crystal_ball/types';
+import { WidgetType } from '@/crystal_ball/types';
 import { formatApiError } from '@/crystal_ball/utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import {
+  DashboardState,
+  PerfWidget,
+  PerfChartWidget_ChartType,
+  DeleteDashboardStateRequest,
+  UpdateDashboardStateRequest,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
  * Component to display and edit the dashboard title and description in the TopBar.
@@ -266,7 +273,9 @@ export function DashboardPage() {
   const handleDelete = async () => {
     if (!dashboardState?.name) return;
     try {
-      await deleteDashboard({ name: dashboardState.name });
+      await deleteDashboard(
+        DeleteDashboardStateRequest.fromPartial({ name: dashboardState.name }),
+      );
       setToastMessage('Dashboard deleted successfully');
       setDeleteDialogOpen(false);
       queryClient.removeQueries({
@@ -282,12 +291,16 @@ export function DashboardPage() {
   const handleSaveToApi = useCallback(async () => {
     if (!localDashboardState || !localDashboardState.name) return;
     try {
-      const response = await updateDashboard({
-        dashboardState: localDashboardState,
-        updateMask: {
-          paths: ['displayName', 'description', 'dashboardContent.widgets'],
-        },
-      });
+      const response = await updateDashboard(
+        UpdateDashboardStateRequest.fromPartial({
+          dashboardState: localDashboardState,
+          updateMask: [
+            'displayName',
+            'description',
+            'dashboardContent.widgets',
+          ],
+        }),
+      );
       if (response.response) {
         setLocalDashboardState(response.response);
       }
@@ -301,19 +314,31 @@ export function DashboardPage() {
   const handleAddWidget = useCallback((widgetType: WidgetType) => {
     setLocalDashboardState((prev: DashboardState | null) => {
       if (!prev) return null;
-      const newWidget: PerfWidget = {
+      let newWidget = PerfWidget.fromPartial({
         id: `widget-${crypto.randomUUID()}`,
         displayName: 'New Widget',
-      };
+      });
       if (widgetType === WidgetType.MARKDOWN) {
-        newWidget.markdown = { content: 'This is a new markdown widget.' };
+        newWidget = {
+          ...newWidget,
+          markdown: { content: 'This is a new markdown widget.' },
+        };
       } else if (widgetType === WidgetType.CHART_MULTI_METRIC) {
-        newWidget.chart = {
-          dataSpecId: DATA_SPEC_ID,
-          displayName: 'New Chart Widget',
-          chartType: 'MULTI_METRIC_CHART',
-          series: [],
-          filters: [],
+        newWidget = {
+          ...newWidget,
+          chart: {
+            dataSpecId: DATA_SPEC_ID,
+            displayName: 'New Chart Widget',
+            chartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
+            effectiveChartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
+            series: [],
+            filters: [],
+            xAxis: undefined,
+            leftYAxis: undefined,
+            rightYAxis: undefined,
+            seriesSplit: undefined,
+            invocationDistributionConfig: undefined,
+          },
         };
       }
       return {
@@ -321,6 +346,8 @@ export function DashboardPage() {
         dashboardContent: {
           ...prev.dashboardContent,
           widgets: [...(prev.dashboardContent?.widgets || []), newWidget],
+          dataSpecs: prev.dashboardContent?.dataSpecs || {},
+          globalFilters: prev.dashboardContent?.globalFilters || [],
         },
       };
     });
@@ -338,6 +365,8 @@ export function DashboardPage() {
           dashboardContent: {
             ...prev.dashboardContent,
             widgets: newWidgets,
+            dataSpecs: prev.dashboardContent?.dataSpecs || {},
+            globalFilters: prev.dashboardContent?.globalFilters || [],
           },
         };
       });
@@ -355,6 +384,8 @@ export function DashboardPage() {
         dashboardContent: {
           ...prev.dashboardContent,
           widgets: newWidgets,
+          dataSpecs: prev.dashboardContent?.dataSpecs || {},
+          globalFilters: prev.dashboardContent?.globalFilters || [],
         },
       };
     });
@@ -377,6 +408,8 @@ export function DashboardPage() {
           dashboardContent: {
             ...prev.dashboardContent,
             widgets: newWidgets,
+            dataSpecs: prev.dashboardContent?.dataSpecs || {},
+            globalFilters: prev.dashboardContent?.globalFilters || [],
           },
         };
       });
@@ -464,58 +497,64 @@ export function DashboardPage() {
         minWidth: 0,
       }}
     >
-      {(!localDashboardState?.dashboardContent?.widgets ||
+      {(!localDashboardState?.dashboardContent ||
+        !localDashboardState.dashboardContent.widgets ||
         localDashboardState.dashboardContent.widgets.length === 0) && (
         <EmptyDashboardState onAdd={() => setAddWidgetModalOpen(true)} />
       )}
 
-      {localDashboardState?.dashboardContent?.widgets?.map(
-        (widget: PerfWidget, index: number) => {
-          if (!widget) return null;
+      {localDashboardState?.dashboardContent?.widgets &&
+        localDashboardState.dashboardContent.widgets?.map(
+          (widget: PerfWidget, index: number) => {
+            if (!widget) return null;
 
-          return (
-            <WidgetContainer
-              key={widget.id || `widget-${index}`}
-              title={widget.displayName || 'Widget'}
-              onMoveUp={
-                index > 0 ? () => handleMoveWidget(index, 'UP') : undefined
-              }
-              onMoveDown={
-                index <
-                (localDashboardState.dashboardContent.widgets?.length || 0) - 1
-                  ? () => handleMoveWidget(index, 'DOWN')
-                  : undefined
-              }
-              onDelete={() => handleDeleteWidget(index)}
-              onTitleChange={(newTitle) =>
-                handleUpdateWidget(index, { ...widget, displayName: newTitle })
-              }
-            >
-              {widget.markdown && (
-                <MarkdownWidget
-                  widget={widget}
-                  onUpdate={(updatedWidget) =>
-                    handleUpdateWidget(index, updatedWidget)
-                  }
-                />
-              )}
-              {widget.chart && (
-                <ChartWidget
-                  widget={widget.chart}
-                  filterColumns={filterColumns}
-                  isLoadingFilterColumns={isLoadingFilterColumns}
-                  onUpdate={(updatedChartWidget) =>
-                    handleUpdateWidget(index, {
-                      ...widget,
-                      chart: updatedChartWidget,
-                    })
-                  }
-                />
-              )}
-            </WidgetContainer>
-          );
-        },
-      )}
+            return (
+              <WidgetContainer
+                key={widget.id || `widget-${index}`}
+                title={widget.displayName || 'Widget'}
+                onMoveUp={
+                  index > 0 ? () => handleMoveWidget(index, 'UP') : undefined
+                }
+                onMoveDown={
+                  index <
+                  (localDashboardState.dashboardContent?.widgets?.length || 0) -
+                    1
+                    ? () => handleMoveWidget(index, 'DOWN')
+                    : undefined
+                }
+                onDelete={() => handleDeleteWidget(index)}
+                onTitleChange={(newTitle) =>
+                  handleUpdateWidget(index, {
+                    ...widget,
+                    displayName: newTitle,
+                  })
+                }
+              >
+                {widget.markdown && (
+                  <MarkdownWidget
+                    widget={widget}
+                    onUpdate={(updatedWidget) =>
+                      handleUpdateWidget(index, updatedWidget)
+                    }
+                  />
+                )}
+                {widget.chart && (
+                  <ChartWidget
+                    widget={widget.chart}
+                    filterColumns={filterColumns}
+                    isLoadingFilterColumns={isLoadingFilterColumns}
+                    onUpdate={(updatedChartWidget) =>
+                      handleUpdateWidget(index, {
+                        ...widget,
+                        chart: updatedChartWidget,
+                      })
+                    }
+                  />
+                )}
+              </WidgetContainer>
+            );
+          },
+        )}
 
       {!!localDashboardState?.dashboardContent?.widgets?.length && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

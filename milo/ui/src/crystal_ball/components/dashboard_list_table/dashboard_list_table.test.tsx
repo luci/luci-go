@@ -16,8 +16,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
 import * as hooks from '@/crystal_ball/hooks';
-import { DashboardState } from '@/crystal_ball/types';
-import { Timestamp } from '@/proto/google/protobuf/timestamp.pb';
+import {
+  DashboardState,
+  DeleteDashboardStateRequest,
+  UndeleteDashboardStateRequest,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
@@ -39,30 +42,30 @@ jest.mock('react-router', () => ({
 }));
 
 const mockDashboards: DashboardState[] = [
-  {
+  DashboardState.fromPartial({
     name: 'dashboardStates/dashboard1',
-    dashboardContent: { widgets: [] },
+    dashboardContent: { widgets: [], dataSpecs: {}, globalFilters: [] },
     displayName: 'Generic Dashboard Alpha',
     description: 'A mock dashboard description',
-    updateTime: { seconds: '1735689600', nanos: 0 },
-    createTime: { seconds: '1735689600', nanos: 0 },
+    updateTime: '2026-03-01T12:00:00Z',
+    createTime: '2026-03-01T12:00:00Z',
     revisionId: 'rev1',
     etag: 'etag1',
     uid: 'uid1',
     reconciling: false,
-  },
-  {
+  }),
+  DashboardState.fromPartial({
     name: 'dashboardStates/dashboard2',
-    dashboardContent: { widgets: [] },
+    dashboardContent: { widgets: [], dataSpecs: {}, globalFilters: [] },
     displayName: 'Generic Dashboard Beta',
     description: 'Another mock dashboard description',
-    updateTime: { seconds: '1736689600', nanos: 0 },
-    createTime: { seconds: '1736689600', nanos: 0 },
+    updateTime: '2026-03-04T12:00:00Z',
+    createTime: '2026-03-04T12:00:00Z',
     revisionId: 'rev2',
     etag: 'etag2',
     uid: 'uid2',
     reconciling: false,
-  },
+  }),
 ];
 
 describe('<DashboardListTable />', () => {
@@ -250,17 +253,21 @@ describe('<DashboardListTable />', () => {
         pages: [
           {
             dashboardStates: [
-              {
+              DashboardState.fromPartial({
                 name: 'dashboardStates/fallback-dash',
-                dashboardContent: { widgets: [] },
+                dashboardContent: {
+                  widgets: [],
+                  dataSpecs: {},
+                  globalFilters: [],
+                },
                 description: 'No display name here',
-                updateTime: { seconds: '1735689600', nanos: 0 },
-                createTime: { seconds: '1735689600', nanos: 0 },
+                updateTime: '2026-03-04T12:00:00Z',
+                createTime: '2026-03-04T12:00:00Z',
                 revisionId: 'rev1',
                 etag: 'etag1',
                 uid: 'uid1',
                 reconciling: false,
-              },
+              }),
             ],
           },
         ],
@@ -282,28 +289,36 @@ describe('<DashboardListTable />', () => {
         pages: [
           {
             dashboardStates: [
-              {
+              DashboardState.fromPartial({
                 name: 'dashboardStates/invalid-dates',
-                dashboardContent: { widgets: [] },
+                dashboardContent: {
+                  widgets: [],
+                  dataSpecs: {},
+                  globalFilters: [],
+                },
                 displayName: 'Invalid Dates Dash',
-                updateTime: 'this-is-not-a-date' as unknown as Timestamp,
-                createTime: { seconds: '1735689600', nanos: 0 },
+                updateTime: 'invalid-date-string',
+                createTime: undefined,
                 revisionId: 'rev1',
                 etag: 'etag1',
                 uid: 'uid1',
                 reconciling: false,
-              },
-              {
+              }),
+              DashboardState.fromPartial({
                 name: 'dashboardStates/missing-dates',
-                dashboardContent: { widgets: [] },
+                dashboardContent: {
+                  widgets: [],
+                  dataSpecs: {},
+                  globalFilters: [],
+                },
                 displayName: 'Missing Dates Dash',
-                updateTime: undefined as unknown as Timestamp,
-                createTime: { seconds: '1735689600', nanos: 0 },
+                updateTime: undefined,
+                createTime: undefined,
                 revisionId: 'rev2',
                 etag: 'etag2',
                 uid: 'uid2',
                 reconciling: false,
-              },
+              }),
             ],
           },
         ],
@@ -355,9 +370,11 @@ describe('<DashboardListTable />', () => {
     fireEvent.click(confirmDeleteBtn);
 
     await waitFor(() => {
-      expect(mockMutateAsync).toHaveBeenCalledWith({
-        name: 'dashboardStates/dashboard1',
-      });
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        DeleteDashboardStateRequest.fromPartial({
+          name: 'dashboardStates/dashboard1',
+        }),
+      );
       expect(mockInvalidateQueries).toHaveBeenCalled();
       expect(screen.getByText('Dashboard deleted successfully')).toBeVisible();
     });
@@ -419,9 +436,11 @@ describe('<DashboardListTable />', () => {
     fireEvent.click(recoverMenuItem);
 
     await waitFor(() => {
-      expect(mockUndeleteAsync).toHaveBeenCalledWith({
-        name: 'dashboardStates/dashboard1',
-      });
+      expect(mockUndeleteAsync).toHaveBeenCalledWith(
+        UndeleteDashboardStateRequest.fromPartial({
+          name: 'dashboardStates/dashboard1',
+        }),
+      );
       expect(mockInvalidateQueries).toHaveBeenCalled();
       expect(
         screen.getByText('Dashboard recovered successfully'),

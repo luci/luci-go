@@ -14,18 +14,18 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 
-import { DashboardState } from '@/crystal_ball/types';
+import { DashboardState } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { DeleteDashboardDialog } from './delete_dashboard_dialog';
 
 describe('<DeleteDashboardDialog />', () => {
   const mockOnClose = jest.fn();
   const mockOnConfirm = jest.fn();
-  const sampleDashboardState: DashboardState = {
+  const sampleDashboardState: DashboardState = DashboardState.fromPartial({
     name: 'dashboardStates/123',
     displayName: 'Test Dashboard',
-    dashboardContent: {},
-  };
+    dashboardContent: { widgets: [], dataSpecs: {}, globalFilters: [] },
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -117,10 +117,10 @@ describe('<DeleteDashboardDialog />', () => {
         onClose={mockOnClose}
         onConfirm={mockOnConfirm}
         isDeleting={false}
-        dashboardState={{
+        dashboardState={DashboardState.fromPartial({
           name: 'dashboardStates/abcd',
-          dashboardContent: {},
-        }}
+          dashboardContent: { widgets: [], dataSpecs: {}, globalFilters: [] },
+        })}
       />,
     );
 

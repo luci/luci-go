@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
-import { PerfChartSeries } from '@/crystal_ball/types';
+import { PerfChartSeries } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { ChartSeriesEditor } from './chart_series_editor';
 
@@ -82,11 +82,11 @@ describe('ChartSeriesEditor', () => {
 
   it('renders with initial series', async () => {
     const initialSeries: PerfChartSeries[] = [
-      {
+      PerfChartSeries.fromPartial({
         displayName: 'Series 1',
         metricField: 'metric1',
         dataSpecId: 'test-spec-id',
-      },
+      }),
     ];
     render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
 
@@ -125,11 +125,11 @@ describe('ChartSeriesEditor', () => {
 
   it('removes a series when delete icon is clicked', async () => {
     const initialSeries: PerfChartSeries[] = [
-      {
+      PerfChartSeries.fromPartial({
         displayName: 'Series 1',
         metricField: 'metric1',
         dataSpecId: 'test-spec-id',
-      },
+      }),
     ];
     render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
     fireEvent.click(screen.getByText('Series')); // Expand
@@ -147,11 +147,11 @@ describe('ChartSeriesEditor', () => {
 
   it('updates series metricField only onBlur', async () => {
     const initialSeries: PerfChartSeries[] = [
-      {
+      PerfChartSeries.fromPartial({
         displayName: 'Series 1',
         metricField: 'initialMetric',
         dataSpecId: 'test-spec-id',
-      },
+      }),
     ];
     render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
     fireEvent.click(screen.getByText('Series')); // Expand
@@ -173,11 +173,11 @@ describe('ChartSeriesEditor', () => {
 
   it('does not call onUpdateSeries onBlur if metricField is unchanged', async () => {
     const initialSeries: PerfChartSeries[] = [
-      {
+      PerfChartSeries.fromPartial({
         displayName: 'Series 1',
         metricField: 'initialMetric',
         dataSpecId: 'test-spec-id',
-      },
+      }),
     ];
     render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
     fireEvent.click(screen.getByText('Series')); // Expand
@@ -191,8 +191,16 @@ describe('ChartSeriesEditor', () => {
 
   it('handles multiple series correctly', async () => {
     const initialSeries: PerfChartSeries[] = [
-      { displayName: 's1', metricField: 'm1', dataSpecId: 'test-spec-id' },
-      { displayName: 's2', metricField: 'm2', dataSpecId: 'test-spec-id' },
+      PerfChartSeries.fromPartial({
+        displayName: 's1',
+        metricField: 'm1',
+        dataSpecId: 'test-spec-id',
+      }),
+      PerfChartSeries.fromPartial({
+        displayName: 's2',
+        metricField: 'm2',
+        dataSpecId: 'test-spec-id',
+      }),
     ];
     const { rerender } = render(
       <ChartSeriesEditor {...defaultProps} series={initialSeries} />,

@@ -17,7 +17,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import * as useDashboardStateApi from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { DashboardPage } from '@/crystal_ball/pages/dashboard_page';
-import { DashboardState } from '@/crystal_ball/types';
+import {
+  DashboardState,
+  DeleteDashboardStateRequest,
+  UpdateDashboardStateRequest,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
   ...jest.requireActual('@/crystal_ball/hooks/use_dashboard_state_api'),
@@ -98,11 +102,11 @@ jest.mock('@/crystal_ball/components', () => ({
   MarkdownWidget: jest.fn(() => <>MarkdownWidget Mock</>),
 }));
 
-const mockDashboard: DashboardState = {
+const mockDashboard: DashboardState = DashboardState.fromPartial({
   name: 'dashboardStates/abcd123',
   displayName: 'Test Dashboard',
-  dashboardContent: { widgets: [] },
-};
+  dashboardContent: { widgets: [], dataSpecs: {}, globalFilters: [] },
+});
 
 describe('<DashboardPage />', () => {
   beforeAll(() => {
@@ -248,14 +252,19 @@ describe('<DashboardPage />', () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(mockMutateAsync).toHaveBeenCalledWith({
-        dashboardState: expect.objectContaining({
-          displayName: 'Updated Name',
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        UpdateDashboardStateRequest.fromPartial({
+          dashboardState: DashboardState.fromPartial({
+            ...mockDashboard,
+            displayName: 'Updated Name',
+          }),
+          updateMask: [
+            'displayName',
+            'description',
+            'dashboardContent.widgets',
+          ],
         }),
-        updateMask: {
-          paths: ['displayName', 'description', 'dashboardContent.widgets'],
-        },
-      });
+      );
       expect(screen.getByText('Dashboard saved successfully')).toBeVisible();
     });
   });
@@ -310,14 +319,19 @@ describe('<DashboardPage />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
-      expect(mockMutateAsync).toHaveBeenCalledWith({
-        dashboardState: expect.objectContaining({
-          displayName: 'Updated Name',
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        UpdateDashboardStateRequest.fromPartial({
+          dashboardState: DashboardState.fromPartial({
+            ...mockDashboard,
+            displayName: 'Updated Name',
+          }),
+          updateMask: [
+            'displayName',
+            'description',
+            'dashboardContent.widgets',
+          ],
         }),
-        updateMask: {
-          paths: ['displayName', 'description', 'dashboardContent.widgets'],
-        },
-      });
+      );
       expect(screen.getByText(/API Error/i)).toBeVisible();
     });
   });
@@ -353,9 +367,11 @@ describe('<DashboardPage />', () => {
     fireEvent.click(confirmDeleteBtn);
 
     await waitFor(() => {
-      expect(mockMutateAsync).toHaveBeenCalledWith({
-        name: 'dashboardStates/abcd123',
-      });
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        DeleteDashboardStateRequest.fromPartial({
+          name: 'dashboardStates/abcd123',
+        }),
+      );
       expect(mockRemoveQueries).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith('/ui/labs/crystal-ball', {
         replace: true,

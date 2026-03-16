@@ -31,6 +31,7 @@ import { API_BASE_URL } from '@/crystal_ball/constants';
 import {
   CreateDashboardStateRequest,
   DashboardState,
+  DashboardStateOperationMetadata,
   DeleteDashboardStateRequest,
   GetDashboardStateRequest,
   GetDashboardStateRevisionRequest,
@@ -41,8 +42,7 @@ import {
   RollbackDashboardStateRequest,
   UndeleteDashboardStateRequest,
   UpdateDashboardStateRequest,
-} from '@/crystal_ball/types';
-import { DashboardStateOperationMetadata } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { Operation } from '@/proto/google/longrunning/operations.pb';
 
 const BASE_PATH = `${API_BASE_URL}/v1`;
@@ -197,8 +197,7 @@ export const useUpdateDashboardState = (
       method: 'PATCH',
       body: request.dashboardState,
       params: {
-        updateMask: request.updateMask?.paths?.join(','),
-        allowMissing: request.allowMissing,
+        updateMask: request.updateMask?.join(','),
         validateOnly: request.validateOnly,
         requestId: request.requestId,
       },
