@@ -51,17 +51,18 @@ else:
 # Install wheels to virtual environment
 if 'wheels' in os.environ:
   pip = glob.glob(os.path.join(os.environ['out'], '*', 'pip*'))[0]
-  subprocess.check_call([
-      pip,
-      'install',
-      '--isolated',
-      '--compile',
-      '--no-index',
-      '--find-links',
-      os.path.join(os.environ['wheels'], 'wheels'),
-      '--requirement',
-      os.path.join(os.environ['wheels'], 'requirements.txt'),
-  ])
+  wheels_dir = os.path.join(os.environ['wheels'], 'wheels')
+  wheels = sorted(glob.glob(os.path.join(wheels_dir, '*.whl')))
+  if wheels:
+    subprocess.check_call([
+        pip,
+        'install',
+        '--isolated',
+        '--compile',
+        '--no-index',
+        '--find-links',
+        wheels_dir,
+    ] + wheels)
 
 # Generate all .pyc in the output directory. This prevent generating .pyc on the
 # fly, which modifies derivation output after the build.
