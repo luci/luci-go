@@ -25,6 +25,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import {
+  statusColor,
+  StatusIcon,
+  statusText,
+} from '@/common/tools/tree_status/tree_status_utils';
+import {
   CreateStatusRequest,
   GeneralState,
 } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/tree_status.pb';
@@ -34,10 +39,25 @@ interface TreeStatusUpdaterProps {
   tree: string;
 }
 
+function inferStateFromMessage(message: string): GeneralState {
+  const lowerMsg = message.toLowerCase();
+  const closed = lowerMsg.includes('close');
+  if (closed && lowerMsg.includes('maint')) {
+    return GeneralState.MAINTENANCE;
+  } else if (lowerMsg.includes('throt')) {
+    return GeneralState.THROTTLED;
+  } else if (closed) {
+    return GeneralState.CLOSED;
+  } else {
+    return GeneralState.OPEN;
+  }
+}
+
 // TreeStatusUpdater presents a simple form that allows creating a new status update for a tree.
 export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
   const [state, setState] = useState(GeneralState.OPEN);
   const [message, setMessage] = useState('');
+  const [manuallyUpdated, setManuallyUpdated] = useState(false);
   const queryClient = useQueryClient();
   const client = useTreeStatusClient();
   const updateMutation = useMutation({
@@ -47,6 +67,7 @@ export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
     onSuccess: () => {
       setState(GeneralState.OPEN);
       setMessage('');
+      setManuallyUpdated(false);
       queryClient.invalidateQueries();
     },
   });
@@ -64,19 +85,45 @@ export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
           margin: '8px 16px 16px',
         }}
       >
-        <FormControl style={{ minWidth: '120px' }}>
+        <FormControl style={{ minWidth: '160px' }}>
           <InputLabel>New Status</InputLabel>
           <Select
             label="New Status"
             value={state}
-            onChange={(e) => setState(e.target.value as GeneralState)}
+            onChange={(e) => {
+              setState(e.target.value as GeneralState);
+              setManuallyUpdated(true);
+            }}
             disabled={updateMutation.isPending}
             size="small"
+            sx={{ color: statusColor(state) }}
+            renderValue={(selected) => (
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <StatusIcon state={selected} /> {statusText(selected)}
+              </div>
+            )}
           >
-            <MenuItem value={GeneralState.OPEN}>Open</MenuItem>
-            <MenuItem value={GeneralState.CLOSED}>Closed</MenuItem>
-            <MenuItem value={GeneralState.THROTTLED}>Throttled</MenuItem>
-            <MenuItem value={GeneralState.MAINTENANCE}>Maintenance</MenuItem>
+            {[
+              GeneralState.OPEN,
+              GeneralState.CLOSED,
+              GeneralState.THROTTLED,
+              GeneralState.MAINTENANCE,
+            ].map((status) => (
+              <MenuItem
+                key={status}
+                value={status}
+                sx={{
+                  color: statusColor(status),
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <StatusIcon state={status} /> {statusText(status)}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         <FormControl style={{ flexGrow: 1 }}>
@@ -84,7 +131,15 @@ export const TreeStatusUpdater = ({ tree }: TreeStatusUpdaterProps) => {
             variant="outlined"
             label="Message"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value);
+              // Try to infer the desired state from the message text, but don't
+              // override the user's choice if they manually updated the state
+              // via the dropdown.
+              if (!manuallyUpdated) {
+                setState(inferStateFromMessage(e.target.value));
+              }
+            }}
             disabled={updateMutation.isPending}
             size="small"
           />
