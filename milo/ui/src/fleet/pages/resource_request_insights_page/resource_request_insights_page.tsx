@@ -17,8 +17,8 @@ import { DateTime } from 'luxon';
 import { useCallback, useEffect, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import { FilterCategoryData } from '@/fleet/components/filter_dropdown/filter_dropdown';
+import { FilterBar_OLD as FilterBar } from '@/fleet/components/filter_dropdown/filter_bar_OLD';
+import { FilterCategoryData_OLD as FilterCategoryData } from '@/fleet/components/filter_dropdown/filter_dropdown_OLD';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { DateFilterValue } from '@/fleet/types';

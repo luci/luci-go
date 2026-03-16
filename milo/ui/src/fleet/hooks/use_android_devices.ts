@@ -12,11 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { QueryKey, useQuery, keepPreviousData } from '@tanstack/react-query';
+import {
+  QueryKey,
+  useQuery,
+  keepPreviousData,
+  UndefinedInitialDataOptions,
+} from '@tanstack/react-query';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { ListAndroidDevicesRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  ListAndroidDevicesRequest,
+  ListAndroidDevicesResponse,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 const useListAndroidDevicesQueryKey = (request?: ListAndroidDevicesRequest) => {
   const { identity } = useAuthState();
@@ -28,7 +36,17 @@ const useListAndroidDevicesQueryKey = (request?: ListAndroidDevicesRequest) => {
   return queryKey;
 };
 
-export const useAndroidDevices = (request: ListAndroidDevicesRequest) => {
+export const useAndroidDevices = (
+  request: ListAndroidDevicesRequest,
+  options?: Partial<
+    UndefinedInitialDataOptions<
+      ListAndroidDevicesResponse,
+      Error,
+      ListAndroidDevicesResponse,
+      readonly unknown[]
+    >
+  >,
+) => {
   const client = useFleetConsoleClient();
   const queryKey = useListAndroidDevicesQueryKey(request);
 
@@ -36,6 +54,7 @@ export const useAndroidDevices = (request: ListAndroidDevicesRequest) => {
     queryKey: queryKey,
     queryFn: client.ListAndroidDevices.query(request).queryFn,
     placeholderData: keepPreviousData, // avoid loading while switching page
+    ...options,
   });
 
   return devicesQuery;

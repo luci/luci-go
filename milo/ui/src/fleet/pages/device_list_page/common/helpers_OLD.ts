@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import {
+  OptionCategory,
+  SelectedOptions,
+  StringListCategory,
+} from '@/fleet/types';
 import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 export const getLabelFromOverride = (
@@ -33,42 +36,65 @@ export const getLabelFromOverride = (
 
 /**
  * Converts a response from GetDeviceDimensions into a list of options
- * for <FilterBar />
+ * for <MultiSelectFilter />
+ * @param response GetDeviceDimensionsResponse
+ * @returns List of options based on response data.
  */
-export const dimensionsToFilterOptions = (
+export const dimensionsToFilterOptions_OLD = (
   response: GetDeviceDimensionsResponse,
-  labelsOverride: Record<string, { headerName?: string }>,
-) => {
-  const filters = {} as Record<string, StringListFilterCategoryBuilder>;
+  labelsOverride: Record<
+    string,
+    { header?: string | unknown; headerName?: string }
+  >, // TODO: should this be columns?
+): OptionCategory[] => {
+  const baseDimensions = Object.entries(response.baseDimensions).map(
+    ([key, value]) => {
+      const labelStr = getLabelFromOverride(key, labelsOverride);
+      return {
+        label: labelStr || key,
+        value: key,
+        options: [
+          { label: BLANK_VALUE, value: BLANK_VALUE },
+          ...value.values.map((value) => {
+            return { label: value, value: value };
+          }),
+        ],
+        type: 'string_list',
+      } as OptionCategory;
+    },
+  );
 
-  for (const [key, value] of Object.entries(response.baseDimensions)) {
-    if (value.values.length === 0) continue;
+  const labels = Object.entries(response.labels).flatMap(([key, value]) => {
+    // We need to avoid duplicate options
+    // E.g. `dut_id` is in both base dimensions and labels
+    if (response.baseDimensions[key]) {
+      return [];
+    }
 
-    filters[`"${key}"`] = new StringListFilterCategoryBuilder()
-      .setLabel(labelsOverride[key]?.headerName || key)
-      .setOptions([
-        { label: BLANK_VALUE, key: BLANK_VALUE },
-        ...value.values.map((value) => {
-          return { label: value, key: `"${value}"` };
-        }),
-      ]);
-  }
+    const labelStr = getLabelFromOverride(key, labelsOverride);
 
-  for (const [key, value] of Object.entries(response.labels)) {
-    if (filters[key]) continue;
-    if (value.values.length === 0) continue;
+    return [
+      {
+        label: labelStr || key,
+        value: `labels."${key}"`,
+        options: [
+          { label: BLANK_VALUE, value: BLANK_VALUE },
+          ...value.values.map((value) => {
+            return { label: value, value: value };
+          }),
+        ],
+        type: 'string_list',
+      } as OptionCategory,
+    ];
+  });
 
-    filters[`labels."${key}"`] = new StringListFilterCategoryBuilder()
-      .setLabel(labelsOverride[key]?.headerName || key)
-      .setOptions([
-        { label: BLANK_VALUE, key: BLANK_VALUE },
-        ...value.values.map((value) => {
-          return { label: value, key: `"${value}"` };
-        }),
-      ]);
-  }
-
-  return filters;
+  return baseDimensions
+    .concat(labels)
+    .sort((a, b) => a.label.localeCompare(b.label)) // Sort alphabetically
+    .filter(
+      (o): o is StringListCategory =>
+        o.type === 'string_list' && o.options.length > 0,
+    );
 };
 
 /**
@@ -77,7 +103,7 @@ export const dimensionsToFilterOptions = (
  * @param response SelectedOptions
  * @returns List of options based on the selectedOptions.
  */
-export const filterOptionsPlaceholder = (
+export const filterOptionsPlaceholder_OLD = (
   selectedOptions: SelectedOptions,
   labelsOverride: Record<
     string,

@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Chip } from '@mui/material';
 import _ from 'lodash';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -24,12 +23,9 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
-import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
-import {
-  filtersUpdater,
-  getFilters,
-} from '@/fleet/components/filter_dropdown/search_param_utils';
+import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
+import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
+import { useFilters } from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
@@ -37,7 +33,6 @@ import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { SelectedOptions } from '@/fleet/types';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
@@ -51,10 +46,7 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
-import {
-  dimensionsToFilterOptions,
-  filterOptionsPlaceholder,
-} from '../common/helpers';
+import { dimensionsToFilterOptions } from '../common/helpers';
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
 import { ANDROID_COLUMN_OVERRIDES, getAndroidColumns } from './android_columns';
@@ -83,28 +75,6 @@ export const AndroidDevicesPage = () => {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const selectedOptions = useMemo(
-    () => getFilters(searchParams),
-    [searchParams],
-  );
-
-  const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
-    trackEvent('filter_changed', {
-      componentName: 'device_list_filter',
-    });
-
-    setSearchParams(filtersUpdater(newSelectedOptions));
-
-    // Clear out all the page tokens when the filter changes.
-    // An AIP-158 page token is only valid for the filter
-    // option that generated it.
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  };
-
-  const stringifiedSelectedOptions = selectedOptions.error
-    ? ''
-    : stringifyFilters(selectedOptions.filters);
-
   const dimensionsQuery = useDeviceDimensions({ platform });
 
   // TODO: b/419764393, b/420287987 - In local storage REACT_QUERY_OFFLINE_CACHE can contain empty data object which causes app to crash.
@@ -113,11 +83,39 @@ export const AndroidDevicesPage = () => {
     dimensionsQuery.data.baseDimensions &&
     dimensionsQuery.data.labels;
 
+  const filterOptions = isDimensionsQueryProperlyLoaded
+    ? {
+        ...ANDROID_EXTRA_FILTERS,
+        ...dimensionsToFilterOptions(
+          dimensionsQuery.data!,
+          ANDROID_COLUMN_OVERRIDES,
+        ),
+      }
+    : {
+        ...ANDROID_EXTRA_FILTERS,
+        '"lab_name"': new StringListFilterCategoryBuilder()
+          .setLabel('lab_name')
+          .setOptions([
+            {
+              label: 'atc',
+              key: '"atc"',
+            },
+          ]),
+      };
+  const filterCategoryDatas = useFilters(filterOptions);
+
+  const onApplyFilter = useCallback(() => {
+    trackEvent('filter_changed', {
+      componentName: 'device_list_filter',
+    });
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
+  }, [pagerCtx, setSearchParams, trackEvent]);
+
   const request = ListDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
     orderBy: orderByParam,
-    filter: stringifiedSelectedOptions,
+    filter: filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160,
     platform: platform,
   });
 
@@ -184,41 +182,27 @@ export const AndroidDevicesPage = () => {
   ]);
 
   useEffect(() => {
-    if (selectedOptions.error) return;
-    if (!dimensionsQuery.isSuccess) return;
+    if (!isDimensionsQueryProperlyLoaded) return;
+    if (!filterCategoryDatas.parseError) return;
+    if (
+      warnings.some((w) =>
+        w.startsWith('There was an error parsing your filters:'),
+      )
+    )
+      return;
 
-    const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
-      (filterKey) =>
-        isDimensionsQueryProperlyLoaded &&
-        // TODO: Hotfix for b/449956551, needs further investigation on quote handling
-        !dimensionsQuery.data.labels[
-          filterKey.replace(/labels\."?([^"]+)"?/, '$1')
-        ] &&
-        !dimensionsQuery.data.baseDimensions[filterKey] &&
-        !ANDROID_EXTRA_FILTERS.some((f) => f.value === filterKey),
-    );
-    if (missingParamsFilters.length === 0) return;
     addWarning(
-      'The following filters are not available: ' +
-        missingParamsFilters?.join(', '),
+      `There was an error parsing your filters: ${filterCategoryDatas.parseError}`,
     );
-    for (const key of missingParamsFilters) {
-      delete selectedOptions.filters[key];
+    for (const fc of Object.values(filterCategoryDatas.filterValues || {})) {
+      fc.clear();
     }
-    setSearchParams(filtersUpdater(selectedOptions.filters));
   }, [
-    isDimensionsQueryProperlyLoaded,
     addWarning,
-    dimensionsQuery,
-    selectedOptions,
-    setSearchParams,
+    filterCategoryDatas,
+    isDimensionsQueryProperlyLoaded,
+    warnings,
   ]);
-
-  useEffect(() => {
-    if (!selectedOptions.error) return;
-    addWarning('Invalid filters');
-    setSearchParams(filtersUpdater({}));
-  }, [addWarning, selectedOptions.error, setSearchParams]);
 
   return (
     <div
@@ -228,8 +212,10 @@ export const AndroidDevicesPage = () => {
     >
       <WarningNotifications warnings={warnings} />
       <AndroidSummaryHeader
-        selectedOptions={selectedOptions.filters || {}}
-        pagerContext={pagerCtx}
+        aip160={
+          filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160
+        }
+        filters={filterCategoryDatas.filterValues}
       />
       <AdminTasksAlert />
       <div
@@ -243,32 +229,16 @@ export const AndroidDevicesPage = () => {
           borderRadius: 4,
         }}
       >
-        {selectedOptions.error ? (
-          <Chip
-            variant="outlined"
-            onDelete={() => setSearchParams(filtersUpdater({}))}
-            label="Invalid filters"
-            color="error"
-          />
-        ) : (
-          <DeviceListFilterBar
-            filterOptions={[
-              ...ANDROID_EXTRA_FILTERS,
-              ...(isDimensionsQueryProperlyLoaded
-                ? dimensionsToFilterOptions(
-                    dimensionsQuery.data!,
-                    ANDROID_COLUMN_OVERRIDES,
-                  )
-                : filterOptionsPlaceholder(
-                    selectedOptions.filters,
-                    ANDROID_COLUMN_OVERRIDES,
-                  )),
-            ].sort((a, b) => a.label.localeCompare(b.label))}
-            selectedOptions={selectedOptions.filters}
-            onSelectedOptionsChange={onSelectedOptionsChange}
-            isLoading={dimensionsQuery.isPending}
-          />
-        )}
+        <FilterBar
+          filterCategoryDatas={Object.values(
+            filterCategoryDatas.filterValues || {},
+          )}
+          onApply={onApplyFilter}
+          isLoading={
+            dimensionsQuery.isPending ||
+            filterCategoryDatas.filterValues === undefined
+          }
+        />
       </div>
       <div
         css={{

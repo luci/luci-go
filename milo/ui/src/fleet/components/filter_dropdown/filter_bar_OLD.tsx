@@ -18,29 +18,38 @@ import { useShortcut } from '@/fleet/components/shortcut_provider';
 import { COMMON_DEVICE_FILTERS } from '@/fleet/config/device_config';
 import { isTyping } from '@/fleet/utils/field_typing';
 
-import { FilterCategory } from '../filters/use_filters';
+import {
+  FilterCategoryData_OLD,
+  FilterDropdown_OLD,
+  FilterDropdownHandle_OLD,
+} from './filter_dropdown_OLD';
+import { SearchBar_OLD } from './search_bar_OLD';
 
-import { FilterDropdown, FilterDropdownHandle } from './filter_dropdown';
-import { SearchBar } from './search_bar';
-
-interface FilterBarProps {
-  filterCategoryDatas: FilterCategory[];
+interface FilterBarProps_OLD<T> {
+  filterCategoryDatas: FilterCategoryData_OLD<T>[];
+  selectedOptions: string[];
   onApply: () => void;
+  getChipLabel: (option: FilterCategoryData_OLD<T>) => string;
+  onChipDeleted: (option: FilterCategoryData_OLD<T>) => void;
   isLoading?: boolean;
   searchPlaceholder?: string;
 }
 
-export function FilterBar({
+/** @deprecated use FilterBar instead */
+export function FilterBar_OLD<T>({
   filterCategoryDatas,
+  selectedOptions,
   onApply,
+  getChipLabel,
+  onChipDeleted,
   isLoading,
   searchPlaceholder,
-}: FilterBarProps) {
+}: FilterBarProps_OLD<T>) {
   const [value, setValue] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const searchBarRef = useRef<HTMLInputElement>(null);
-  const filterDropdownRef = useRef<FilterDropdownHandle>(null);
+  const filterDropdownRef = useRef<FilterDropdownHandle_OLD>(null);
 
   const onValueChange = (newValue: string) => {
     if (newValue.length > value.length) {
@@ -55,12 +64,17 @@ export function FilterBar({
       searchBarRef.current?.focus();
     }
   });
+
   return (
     <div css={{ display: 'flex', gap: 8, width: '100%', position: 'relative' }}>
-      <SearchBar
+      <SearchBar_OLD
         value={value}
         onChange={onValueChange}
-        filterCategoryDatas={filterCategoryDatas}
+        selectedOptions={
+          filterCategoryDatas.filter((f) =>
+            selectedOptions.includes(f.value),
+          ) as FilterCategoryData_OLD<unknown>[]
+        }
         onDropdownFocus={() => {
           filterDropdownRef.current?.focus();
           setIsDropdownOpen(true);
@@ -69,10 +83,16 @@ export function FilterBar({
         onChangeDropdownOpen={setIsDropdownOpen}
         isLoading={isLoading}
         ref={searchBarRef}
+        onChipDeleted={(option: FilterCategoryData_OLD<unknown>) => {
+          onChipDeleted(option as FilterCategoryData_OLD<T>);
+        }}
+        getLabel={(o: FilterCategoryData_OLD<unknown>) =>
+          getChipLabel(o as FilterCategoryData_OLD<T>)
+        }
         onChipEditApplied={onApply}
         placeholder={searchPlaceholder}
       />
-      <FilterDropdown
+      <FilterDropdown_OLD
         ref={filterDropdownRef}
         searchQuery={value}
         onSearchQueryChange={(searchQuery) => {
@@ -81,7 +101,8 @@ export function FilterBar({
         onSearchBarFocus={() => {
           searchBarRef.current?.focus();
         }}
-        filterCategoryDatas={filterCategoryDatas}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        filterOptions={filterCategoryDatas as any}
         onApply={() => {
           onApply();
           setValue('');

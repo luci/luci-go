@@ -26,7 +26,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
-import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar';
+import { DeviceListFilterBar_OLD as DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar_OLD';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';

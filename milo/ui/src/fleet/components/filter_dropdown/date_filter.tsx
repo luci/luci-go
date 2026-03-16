@@ -19,6 +19,8 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { DateFilterValue } from '@/fleet/types';
 
+import { OptionComponentHandle } from './filter_dropdown';
+
 export interface DateFilterProps {
   value: DateFilterValue;
   onChange: (value: DateFilterValue) => void;
@@ -74,7 +76,7 @@ const CustomDatePicker = ({
 
 export const DateFilter = forwardRef(function DateFilter(
   { value, onChange }: DateFilterProps,
-  ref,
+  ref: React.Ref<OptionComponentHandle>,
 ) {
   const firstInputRef = useRef<HTMLInputElement>(null);
   const [openId, setOpenId] = useState<'min' | 'max' | null>(null);

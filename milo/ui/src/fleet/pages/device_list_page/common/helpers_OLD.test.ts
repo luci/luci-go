@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
-import { BLANK_VALUE } from '@/fleet/constants/filters';
-
-import { dimensionsToFilterOptions } from './helpers';
+import { dimensionsToFilterOptions_OLD as dimensionsToFilterOptions } from './helpers_OLD';
 
 describe('dimensionsToFilterOptions', () => {
   it('hndles empty', async () => {
@@ -27,7 +24,7 @@ describe('dimensionsToFilterOptions', () => {
       {},
     );
 
-    expect(options).toEqual({});
+    expect(options).toEqual([]);
   });
 
   it('hadles baseDimensions and labels', async () => {
@@ -39,22 +36,28 @@ describe('dimensionsToFilterOptions', () => {
       {},
     );
 
-    expect(options).toEqual({
-      '"testDim"': new StringListFilterCategoryBuilder()
-        .setLabel('testDim')
-        .setOptions([
-          { label: BLANK_VALUE, key: BLANK_VALUE },
-          { label: 'one', key: '"one"' },
-          { label: 'two', key: '"two"' },
-        ]),
-      'labels."testLabel"': new StringListFilterCategoryBuilder()
-        .setLabel('testLabel')
-        .setOptions([
-          { label: BLANK_VALUE, key: BLANK_VALUE },
-          { label: 'a', key: '"a"' },
-          { label: 'b', key: '"b"' },
-          { label: 'c', key: '"c"' },
-        ]),
-    });
+    expect(options).toEqual([
+      {
+        label: 'testDim',
+        value: 'testDim',
+        options: [
+          { label: '(Blank)', value: '(Blank)' },
+          { label: 'one', value: 'one' },
+          { label: 'two', value: 'two' },
+        ],
+        type: 'string_list',
+      },
+      {
+        label: 'testLabel',
+        value: 'labels."testLabel"',
+        options: [
+          { label: '(Blank)', value: '(Blank)' },
+          { label: 'a', value: 'a' },
+          { label: 'b', value: 'b' },
+          { label: 'c', value: 'c' },
+        ],
+        type: 'string_list',
+      },
+    ]);
   });
 });

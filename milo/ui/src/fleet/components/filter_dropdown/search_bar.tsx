@@ -13,142 +13,90 @@
 // limitations under the License.
 
 import { TextField } from '@mui/material';
-import { forwardRef, useRef } from 'react';
+import { forwardRef, useCallback, useMemo, useRef } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 
-import { DateFilter, DateFilterProps } from './date_filter';
-import { FilterCategoryData } from './filter_dropdown';
-import { RangeFilter, RangeFilterProps } from './range_filter';
+import { StringListFilterCategory } from '../filters/string_list_filter';
+import { FilterCategory } from '../filters/use_filters';
+
 import { SelectedChip } from './selected_chip';
 
-interface SearchBarProps<T> {
+interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
-  selectedOptions: FilterCategoryData<T>[];
+  filterCategoryDatas: FilterCategory[];
+
   onDropdownFocus: () => void;
   isDropdownOpen: boolean;
   onChangeDropdownOpen: (isOpen: boolean) => void;
-  onChipDeleted: (option: FilterCategoryData<T>) => void;
-  getLabel: (option: FilterCategoryData<T>) => string; // TODO: could be part of FilterCategoryData itself
   isLoading?: boolean;
   onChipEditApplied: () => void;
   placeholder?: string;
 }
 
-export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
-  function SearchBar<T>(
+export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
+  function SearchBar(
     {
       value,
       onChange,
-      selectedOptions,
+      filterCategoryDatas,
       onDropdownFocus,
       isDropdownOpen,
       onChangeDropdownOpen,
-      getLabel,
-      onChipDeleted,
       onChipEditApplied,
       placeholder = 'Add a filter (e.g. "dut1" or "state:ready")',
-    }: SearchBarProps<T>,
+    }: SearchBarProps,
     ref: React.ForwardedRef<HTMLInputElement>,
   ) {
     const internalRef = useRef<HTMLInputElement>(null);
 
     const chipListRef = useRef<(HTMLDivElement | null)[]>([]);
 
-    const renderChip = (option: FilterCategoryData<unknown>, i: number) => {
-      return (
-        <SelectedChip
-          dropdownContent={(searchQuery, onNavigateUp) => {
-            if (option.optionsComponent) {
-              const OptionComponent = option.optionsComponent!;
-              return (
-                <OptionComponent
-                  childrenSearchQuery={searchQuery}
-                  optionComponentProps={option.optionsComponentProps}
-                  onNavigateUp={onNavigateUp}
-                  maxHeight={400}
-                />
+    const renderChip = useCallback(
+      function renderChip(option: FilterCategory, i: number) {
+        return (
+          <SelectedChip
+            filterCategory={option}
+            key={`renderChip-${option.key}`}
+            enableSearchInput={option instanceof StringListFilterCategory}
+            ref={(el) => {
+              chipListRef.current[i] = el;
+              chipListRef.current = chipListRef.current.filter(
+                (x) => x !== null,
               );
-            }
-            switch (option.type) {
-              case 'date':
-                return (
-                  <DateFilter
-                    {...(option.optionsComponentProps as DateFilterProps)}
-                  />
-                );
-              case 'range':
-                return (
-                  <RangeFilter
-                    {...(option.optionsComponentProps as RangeFilterProps)}
-                  />
-                );
-              default:
-                throw new Error(
-                  `Type ${option.type} not supported by SearchBar`,
-                );
-            }
-          }}
-          enableSearchInput={
-            option.type !== 'date' &&
-            !(option.optionsComponentProps as { disableSearch?: boolean })
-              ?.disableSearch
-          }
-          ref={(el) => {
-            chipListRef.current[i] = el;
-            chipListRef.current = chipListRef.current.filter((x) => x !== null);
-          }}
-          onFocus={() => {
-            // close the dropdown on text field blur
-            // onBlur is not optimal, as it triggers when dropdown is clicked, so we change it manually here
-            onChangeDropdownOpen(false);
-          }}
-          onBlur={(e) => {
-            e.stopPropagation();
-          }}
-          onKeyDown={(e) => {
-            // stops search bar from taking over
-            e.stopPropagation();
+            }}
+            onFocus={() => {
+              // close the dropdown on text field blur
+              // onBlur is not optimal, as it triggers when dropdown is clicked, so we change it manually here
+              onChangeDropdownOpen(false);
+            }}
+            onBlur={(e) => {
+              e.stopPropagation();
+            }}
+            onDelete={(e) => {
+              option.clear();
+              if (e.type === 'keyup') {
+                // if clicked with a mouse we don't want to focus on the input
+                internalRef.current?.focus();
+              }
+            }}
+            label={option.getChipLabel()}
+            onApply={onChipEditApplied}
+          />
+        );
+      },
+      [onChangeDropdownOpen, onChipEditApplied],
+    );
 
-            const currentIndex = chipListRef.current.findIndex(
-              (x) => x === e.target,
-            );
-            if (currentIndex < 0) return; // not found
-
-            keyboardListNavigationHandler(
-              e,
-              () => {
-                if (currentIndex === chipListRef.current.length - 1) {
-                  internalRef.current?.focus();
-                } else {
-                  chipListRef.current[currentIndex + 1]?.focus();
-                }
-                e.preventDefault();
-              },
-              () => {
-                if (currentIndex > 0) {
-                  chipListRef.current[currentIndex - 1]?.focus();
-                }
-                e.preventDefault();
-              },
-              'horizontal',
-            );
-          }}
-          onDelete={(e) => {
-            onChipDeleted(option as FilterCategoryData<T>);
-            if (e.type === 'keyup') {
-              // if clicked with a mouse we don't want to focus on the input
-              internalRef.current?.focus();
-            }
-          }}
-          key={option.value}
-          label={getLabel(option as FilterCategoryData<T>)}
-          onApply={onChipEditApplied}
-        />
-      );
-    };
+    const renderedChips = useMemo(
+      () =>
+        (filterCategoryDatas ?? [])
+          .filter((fcd) => fcd.isActive())
+          ?.map((option, i) => renderChip(option, i)),
+      [filterCategoryDatas, renderChip],
+    );
 
     return (
       <TextField
@@ -191,8 +139,11 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
             internalRef.current?.selectionStart === 0 &&
             internalRef.current?.selectionEnd === 0
           ) {
-            if (selectedOptions.length > 0) {
-              onChipDeleted(selectedOptions[selectedOptions.length - 1]);
+            const lastSelectedFilter = filterCategoryDatas
+              .filter((fcd) => fcd.isActive())
+              .at(-1);
+            if (lastSelectedFilter) {
+              lastSelectedFilter.clear();
               e.preventDefault();
             }
           }
@@ -223,7 +174,6 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
           );
         }}
         placeholder={placeholder}
-        autoComplete="off"
         size="small"
         slotProps={{
           input: {
@@ -258,9 +208,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps<unknown>>(
                 onClick={(e) => e.stopPropagation()}
                 style={{ display: 'contents' }}
               >
-                {selectedOptions?.map((option, i) =>
-                  renderChip(option as FilterCategoryData<unknown>, i),
-                )}
+                {renderedChips}
                 {/*
                      spacer, aligned to the input, allows for correct ref positioning in situations
                      where the input is moved to next line due to wrapping. There might be a cleaner

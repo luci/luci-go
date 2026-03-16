@@ -221,7 +221,7 @@ export function OptionsDropdown({
                 setSearchQuery(e.currentTarget.value);
               }}
               onKeyDown={(e) => {
-                if (e.key === 'ArrowDown') {
+                if (e.key === 'ArrowDown' || (e.key === 'j' && e.ctrlKey)) {
                   const firstItem =
                     listContainerRef.current?.querySelector<HTMLElement>(
                       '[role="menuitem"], [role="option"], button',

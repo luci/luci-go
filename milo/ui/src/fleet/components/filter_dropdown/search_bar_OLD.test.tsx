@@ -14,55 +14,55 @@
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { forwardRef } from 'react';
 
-import { FilterCategory } from '../filters/use_filters';
+import { FilterCategoryData_OLD as FilterCategoryData } from './filter_dropdown_OLD';
+import { SearchBar_OLD as SearchBar } from './search_bar_OLD';
 
-import { SearchBar } from './search_bar';
-
-const createMockFilterCategory = (
-  value: string,
-  label: string,
-  isActive = true,
-): FilterCategory =>
-  ({
-    value,
-    label,
-    isActive: () => isActive,
-    renderChip: () => <div key={value}>{label}</div>,
-    render: () => <div key={`menu-${value}`}>{label} Menu</div>,
-    getChipLabel: () => label,
-    clear: jest.fn(),
-  }) as unknown as FilterCategory;
-
-const TEST_SELECTED_OPTIONS: FilterCategory[] = [
-  createMockFilterCategory('option1', 'Option 1'),
+const TEST_SELECTED_OPTIONS: FilterCategoryData<unknown>[] = [
+  {
+    value: 'option1',
+    label: 'Option 1',
+    type: 'string_list',
+    optionsComponent: forwardRef(function optionsComponent() {
+      return <div>Option Component</div>;
+    }),
+    optionsComponentProps: {},
+    getChildrenSearchScore: () => 0,
+  },
 ];
 
 describe('SearchBar', () => {
   let onChangeDropdownOpen: jest.Mock;
   let onDropdownFocus: jest.Mock;
   let onChange: jest.Mock;
+  let onChipDeleted: jest.Mock;
+  let getLabel: jest.Mock;
   let onChipEditApplied: jest.Mock;
 
   beforeEach(() => {
     onChangeDropdownOpen = jest.fn();
     onDropdownFocus = jest.fn();
     onChange = jest.fn();
+    onChipDeleted = jest.fn();
+    getLabel = jest.fn((o) => o.label);
     onChipEditApplied = jest.fn();
   });
 
   const renderComponent = (
     value = '',
-    filterCategoryDatas = TEST_SELECTED_OPTIONS,
+    selectedOptions = TEST_SELECTED_OPTIONS,
   ) => {
     return render(
       <SearchBar
         value={value}
         onChange={onChange}
-        filterCategoryDatas={filterCategoryDatas}
+        selectedOptions={selectedOptions}
         isDropdownOpen={false}
         onDropdownFocus={onDropdownFocus}
         onChangeDropdownOpen={onChangeDropdownOpen}
+        onChipDeleted={onChipDeleted}
+        getLabel={getLabel}
         onChipEditApplied={onChipEditApplied}
       />,
     );
@@ -77,6 +77,12 @@ describe('SearchBar', () => {
     await user.click(chipLabel);
 
     onChangeDropdownOpen.mockClear();
+
+    // Click inside the dropdown (e.g. the option component) should NOT open the dropdown
+    const optionComponent = screen.getByText('Option Component');
+    await user.click(optionComponent);
+
+    expect(onChangeDropdownOpen).not.toHaveBeenCalled();
 
     // Clicking the input should open the dropdown
     const input = screen.getByPlaceholderText(

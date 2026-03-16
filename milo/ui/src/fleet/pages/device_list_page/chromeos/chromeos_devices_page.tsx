@@ -25,7 +25,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
-import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar';
+import { DeviceListFilterBar_OLD as DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar_OLD';
 import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tasks';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
@@ -58,9 +58,9 @@ import {
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
 import {
-  dimensionsToFilterOptions,
-  filterOptionsPlaceholder,
-} from '../common/helpers';
+  dimensionsToFilterOptions_OLD as dimensionsToFilterOptions,
+  filterOptionsPlaceholder_OLD as filterOptionsPlaceholder,
+} from '../common/helpers_OLD';
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
 import {

@@ -18,19 +18,13 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
-import {
-  emptyPageTokenUpdater,
-  PagerContext,
-} from '@/common/components/params_pager';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
-import { addNewFilterToParams } from '@/fleet/components/filter_dropdown/search_param_utils';
+import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
+import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
-import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
@@ -48,32 +42,22 @@ const METRIC_CONTAINER_STYLES: CSSObject = {
 };
 
 export interface AndroidSummaryHeaderProps {
-  selectedOptions: SelectedOptions;
-  pagerContext: PagerContext;
+  filters: Record<string, FilterCategory> | undefined;
+  aip160: string;
 }
 
 export function AndroidSummaryHeader({
-  selectedOptions,
-  pagerContext,
+  aip160,
+  filters,
 }: AndroidSummaryHeaderProps) {
   const client = useFleetConsoleClient();
 
   const countQuery = useQuery(
     client.CountDevices.query({
-      filter: stringifyFilters(selectedOptions),
+      filter: aip160,
       platform: Platform.ANDROID,
     }),
   );
-  const [searchParams, _] = useSyncedSearchParams();
-
-  const getFilterQueryString = (filters: Record<string, string[]>): string => {
-    let newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams = emptyPageTokenUpdater(pagerContext)(newSearchParams);
-    for (const [name, values] of Object.entries(filters)) {
-      newSearchParams = addNewFilterToParams(newSearchParams, name, values);
-    }
-    return '?' + newSearchParams.toString();
-  };
 
   const getContent = () => {
     if (countQuery.isError) {
@@ -111,41 +95,39 @@ export function AndroidSummaryHeader({
               value={countQuery.data?.androidCount?.idleDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['IDLE'],
-              })}
+              handleClick={() => {
+                const f = filters?.['"state"'];
+                if (f instanceof StringListFilterCategory)
+                  f.setOptions({
+                    ['"IDLE"']: true,
+                  });
+              }}
             />
             <SingleMetric
               name="Busy"
               value={countQuery.data?.androidCount?.busyDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['BUSY'],
-              })}
+              handleClick={() => {
+                const f = filters?.['"state"'];
+                if (f instanceof StringListFilterCategory)
+                  f.setOptions({
+                    ['"BUSY"']: true,
+                  });
+              }}
             />
             <SingleMetric
               name="Prepping"
               value={countQuery.data?.androidCount?.preppingDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['PREPPING'],
-              })}
-              Icon={
-                <WarningIcon
-                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
-                />
-              }
-            />
-            <SingleMetric
-              name="Missing"
-              value={countQuery.data?.androidCount?.missingDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['MISSING'],
-              })}
+              handleClick={() => {
+                const f = filters?.['"state"'];
+                if (f instanceof StringListFilterCategory)
+                  f.setOptions({
+                    ['"MISSING"']: true,
+                  });
+              }}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />
             <SingleMetric
@@ -153,9 +135,13 @@ export function AndroidSummaryHeader({
               value={countQuery.data?.androidCount?.dyingDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['DYING'],
-              })}
+              handleClick={() => {
+                const f = filters?.['"state"'];
+                if (f instanceof StringListFilterCategory)
+                  f.setOptions({
+                    ['"DYING"']: true,
+                  });
+              }}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />
             <SingleMetric
@@ -163,9 +149,14 @@ export function AndroidSummaryHeader({
               value={countQuery.data?.androidCount?.initDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['INIT'],
-              })}
+              handleClick={() => {
+                const f = filters?.['"state"'];
+
+                if (f instanceof StringListFilterCategory)
+                  f.setOptions({
+                    ['"INIT"']: true,
+                  });
+              }}
               Icon={
                 <WarningIcon
                   sx={{ color: colors.yellow[900], marginTop: '-2px' }}
@@ -177,18 +168,26 @@ export function AndroidSummaryHeader({
               value={countQuery.data?.androidCount?.lameduckDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['LAMEDUCK'],
-              })}
+              handleClick={() => {
+                const f = filters?.['"state"'];
+                if (f instanceof StringListFilterCategory)
+                  f.setOptions({
+                    ['"LAMEDUCK"']: true,
+                  });
+              }}
             />
             <SingleMetric
               name="Failed"
               value={countQuery.data?.androidCount?.failedDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['FAILED'],
-              })}
+              handleClick={() => {
+                const f = filters?.['"state"'];
+                if (f instanceof StringListFilterCategory)
+                  f.setOptions({
+                    ['"FAILED"']: true,
+                  });
+              }}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />
             <SingleMetric
@@ -196,9 +195,13 @@ export function AndroidSummaryHeader({
               value={countQuery.data?.androidCount?.dirtyDevices}
               total={countQuery.data?.androidCount?.totalDevices}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['DIRTY'],
-              })}
+              handleClick={() => {
+                const f = filters?.['"state"'];
+                if (f instanceof StringListFilterCategory)
+                  f.setOptions({
+                    ['"DIRTY"']: true,
+                  });
+              }}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
             />
           </div>
@@ -217,10 +220,21 @@ export function AndroidSummaryHeader({
               value={countQuery.data?.androidCount?.labRunningHosts}
               total={countQuery.data?.androidCount?.totalHosts}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString({
-                state: ['LAB_RUNNING'],
-                fc_machine_type: ['host'],
-              })}
+              handleClick={() => {
+                const state = filters?.['"state"'];
+                if (state instanceof StringListFilterCategory) {
+                  state.setOptions({
+                    ['"LAB_RUNNING']: true,
+                  });
+                }
+
+                const machineType = filters?.['"fc_machine_type"'];
+                if (machineType instanceof StringListFilterCategory) {
+                  machineType.setOptions({
+                    ['"host']: true,
+                  });
+                }
+              }}
             />
             <SingleMetric
               name="Hosts Missing"
@@ -228,10 +242,21 @@ export function AndroidSummaryHeader({
               total={countQuery.data?.androidCount?.totalHosts}
               loading={countQuery.isPending}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-              filterUrl={getFilterQueryString({
-                state: ['LAB_MISSING'],
-                fc_machine_type: ['host'],
-              })}
+              handleClick={() => {
+                const state = filters?.['"state"'];
+                if (state instanceof StringListFilterCategory) {
+                  state.setOptions({
+                    ['"LAB_MISSING"']: true,
+                  });
+                }
+
+                const machineType = filters?.['"fc_machine_type"'];
+                if (machineType instanceof StringListFilterCategory) {
+                  machineType.setOptions({
+                    ['"host']: true,
+                  });
+                }
+              }}
             />
           </div>
         </div>

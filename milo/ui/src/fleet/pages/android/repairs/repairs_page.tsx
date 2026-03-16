@@ -44,7 +44,7 @@ import {
   getColumnId,
   useMRTColumnManagement,
 } from '@/fleet/components/columns/use_mrt_column_management';
-import { DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar';
+import { DeviceListFilterBar_OLD as DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar_OLD';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';

@@ -14,27 +14,33 @@
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Chip, ChipProps, ClickAwayListener } from '@mui/material';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 
-import { FilterCategory } from '../filters/use_filters';
 import { OptionsDropdown } from '../options_dropdown/options_dropdown';
 
-export interface SelectedChipProps {
+/** @deprecated use SelectedChip instead */
+export interface SelectedChipProps_OLD {
+  dropdownContent: (
+    searchQuery: string,
+    onNavigateUp: (e: React.KeyboardEvent) => void,
+  ) => ReactNode;
+  label: string;
   enableSearchInput?: boolean;
   onApply: () => void;
-  filterCategory: FilterCategory;
 }
 
-export function SelectedChip({
+/** @deprecated use SelectedChip instead */
+export function SelectedChip_OLD({
+  dropdownContent,
+  label,
   onApply,
   onDelete,
   enableSearchInput = true,
   onKeyDown,
-  filterCategory,
   ...chipProps
-}: ChipProps & SelectedChipProps) {
+}: ChipProps & SelectedChipProps_OLD) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
   return (
@@ -64,7 +70,7 @@ export function SelectedChip({
                 textOverflow: 'ellipsis',
               }}
             >
-              {filterCategory.label}
+              {label}
             </span>
             <ArrowDropDownIcon />
           </p>
@@ -95,7 +101,6 @@ export function SelectedChip({
         }}
       >
         <OptionsDropdown
-          footerButtons={[]}
           anchorEl={anchorEl}
           open={!!anchorEl}
           anchorOrigin={{
@@ -117,19 +122,7 @@ export function SelectedChip({
             },
           }}
           enableSearchInput={enableSearchInput}
-          renderChild={(searchQuery, onNavigateUp) =>
-            filterCategory.render(
-              searchQuery,
-              onNavigateUp,
-              () => {
-                onApply();
-                setAnchorEL(null);
-              },
-              () => {
-                setAnchorEL(null);
-              },
-            )
-          }
+          renderChild={dropdownContent}
           onApply={() => {
             anchorEl?.focus();
             setAnchorEL(null);

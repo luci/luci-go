@@ -33,34 +33,50 @@ import {
 } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
+import { FilterType } from '@/fleet/types';
 import { hasAnyModifier, keyboardListNavigationHandler } from '@/fleet/utils';
 import { fuzzySubstring, SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { EllipsisTooltip } from '../ellipsis_tooltip';
-import { StringListFilterCategory } from '../filters/string_list_filter';
-import { FilterCategory } from '../filters/use_filters';
 import { HighlightCharacter } from '../highlight_character';
+import { Footer } from '../options_dropdown/footer';
 
-export interface OptionComponentHandle {
+import { DateFilter, DateFilterProps } from './date_filter';
+import { RangeFilter, RangeFilterProps } from './range_filter';
+
+/** @deprecated use FilterDropdown instead */
+export interface OptionComponentHandle_OLD {
   focus: () => void;
 }
 
-export type OptionComponentProps<T> = {
+/** @deprecated use FilterDropdown instead */
+export type OptionComponentProps_OLD<T> = {
   childrenSearchQuery: string;
   onNavigateUp?: (e: React.KeyboardEvent) => void;
   maxHeight?: number;
   optionComponentProps: T;
 };
 
-export type OptionComponent<T> = React.ForwardRefExoticComponent<
-  OptionComponentProps<T> & React.RefAttributes<OptionComponentHandle>
+/** @deprecated use FilterDropdown instead */
+export type OptionComponent_OLD<T> = React.ForwardRefExoticComponent<
+  OptionComponentProps_OLD<T> & React.RefAttributes<OptionComponentHandle_OLD>
 >;
 
-interface FilterDropdownProps {
+/** @deprecated use FilterDropdown instead */
+export type FilterCategoryData_OLD<T> = {
+  value: string;
+  label: string;
+  type?: FilterType;
+  getChildrenSearchScore: (childrenSearchQuery: string) => number;
+  optionsComponent?: OptionComponent_OLD<T>;
+  optionsComponentProps: T;
+};
+
+interface FilterDropdownProps_OLD<T> {
   searchQuery: string;
   onSearchQueryChange: (searchQuery: string) => void;
   onSearchBarFocus: () => void;
-  filterCategoryDatas: FilterCategory[];
+  filterOptions: FilterCategoryData_OLD<T>[];
   onApply: () => void;
   anchorEl: HTMLElement | null;
   onClose: () => void;
@@ -69,33 +85,35 @@ interface FilterDropdownProps {
   categoryValueSeparator?: string;
 }
 
-export interface FilterDropdownHandle {
+/** @deprecated use FilterDropdown instead */
+export interface FilterDropdownHandle_OLD {
   focus: () => void;
 }
 
 // randomly selected multiplier, seems to work well
 const PARENT_SEARCH_SCORE_MULTIPLIER = 1.05;
 
-export const FilterDropdown = forwardRef(function FilterDropdownNew(
+/** @deprecated use FilterDropdown instead */
+export const FilterDropdown_OLD = forwardRef(function FilterDropdownNew<T>(
   {
     searchQuery,
     onSearchQueryChange,
     onSearchBarFocus,
-    filterCategoryDatas,
+    filterOptions,
     onApply,
     anchorEl,
     onClose,
     isLoading,
     commonOptions,
     categoryValueSeparator = ':',
-  }: FilterDropdownProps,
-  ref: React.ForwardedRef<FilterDropdownHandle>,
+  }: FilterDropdownProps_OLD<T>,
+  ref: React.ForwardedRef<FilterDropdownHandle_OLD>,
 ) {
   const [openCategory, setOpenCategory] = useState<
-    { value: FilterCategory; anchor: HTMLElement } | undefined
+    { value: string; anchor: HTMLElement } | undefined
   >();
 
-  const openCategoryRef = useRef<OptionComponentHandle>(null);
+  const openCategoryRef = useRef<OptionComponentHandle_OLD>(null);
   const firstElementRef = useRef<HTMLLIElement>(null);
 
   useImperativeHandle(ref, () => ({
@@ -170,7 +188,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
     }
   };
 
-  const filterResults = filterCategoryDatas
+  const filterResults = filterOptions
     .map((option) => {
       const { parentSearchQuery, childrenSearchQuery } =
         splitSearchQuery(searchQuery);
@@ -190,18 +208,25 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
           childrenScore,
         ),
         matches: parentScore[1],
-      };
+      } as SortedElement<FilterCategoryData_OLD<T>>;
     })
     .filter((a) => searchQuery.trim() === '' || a.score > 0)
     .sort((a, b) => b.score - a.score);
 
+  if (
+    openCategory &&
+    !filterResults.find((result) => result.el.value === openCategory.value)
+  ) {
+    setOpenCategory(undefined);
+  }
+
   const otherFilterResults = commonOptions
-    ? filterResults.filter((option) => !commonOptions.includes(option.el.key))
+    ? filterResults.filter((option) => !commonOptions.includes(option.el.value))
     : filterResults;
 
   const commonFilterResults =
     commonOptions &&
-    filterResults?.filter((option) => commonOptions.includes(option.el.key));
+    filterResults?.filter((option) => commonOptions.includes(option.el.value));
 
   const onSearchQueryChangeInternal = (newValue: string) => {
     const { isCategoryScoped } = splitSearchQuery(newValue);
@@ -213,7 +238,9 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
     }
 
     if (openCategory && newValue.length > searchQuery.length) {
-      const openCategoryName = openCategory.value.label;
+      const openCategoryName = filterOptions.find(
+        (option) => option.value === openCategory?.value,
+      )?.label;
 
       onSearchQueryChange(
         openCategoryName +
@@ -244,15 +271,54 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
   const renderOpenCategory = () => {
     if (!openCategory) return <></>;
 
-    const content = openCategory.value.render(
-      splitSearchQuery(searchQuery).childrenSearchQuery,
-      () => {
-        onSearchBarFocus();
-      },
-      applyOptions,
-      closeMenu,
-      openCategoryRef,
-    );
+    const openCategoryData = filterOptions.find(
+      (option) => option.value === openCategory.value,
+    )!;
+
+    let content;
+
+    if (openCategoryData.optionsComponent) {
+      const OptionComponent = openCategoryData.optionsComponent!;
+      content = (
+        <OptionComponent
+          ref={openCategoryRef}
+          key={openCategoryData.value}
+          childrenSearchQuery={
+            splitSearchQuery(searchQuery).childrenSearchQuery
+          }
+          optionComponentProps={openCategoryData.optionsComponentProps}
+          onNavigateUp={() => {
+            onSearchBarFocus();
+          }}
+          maxHeight={400}
+        />
+      );
+    } else {
+      switch (openCategoryData.type) {
+        case 'date': {
+          content = (
+            <DateFilter
+              ref={openCategoryRef}
+              {...(openCategoryData.optionsComponentProps as DateFilterProps)}
+            />
+          );
+          break;
+        }
+        case 'range': {
+          content = (
+            <RangeFilter
+              ref={openCategoryRef}
+              {...(openCategoryData.optionsComponentProps as RangeFilterProps)}
+            />
+          );
+          break;
+        }
+        default:
+          throw new Error(
+            `Type ${openCategoryData.type} not supported by FilterDropdown`,
+          );
+      }
+    }
 
     return (
       <Popper
@@ -289,7 +355,21 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
           elevation={2}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
-            if (openCategory?.value instanceof StringListFilterCategory) {
+            if (e.key === 'Tab') {
+              closeMenu();
+            }
+            if (e.key === 'Escape') {
+              openCategory.anchor.focus();
+              closeInnerMenu();
+            }
+            if (e.key === 'Enter' && e.ctrlKey) {
+              applyOptions();
+            }
+            // Only handle backspace/delete for string list (search query)
+            if (
+              !openCategoryData.type ||
+              openCategoryData.type === 'string_list'
+            ) {
               if (e.key === 'Backspace') {
                 onSearchQueryChangeInternal(
                   searchQuery.slice(0, searchQuery.length - 1),
@@ -302,41 +382,45 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
                 onSearchBarFocus();
               }
             }
-            if (openCategory?.value instanceof StringListFilterCategory) {
-              handleRandomTextInput(e);
-            }
-            return;
-            if (e.key === 'Tab') {
-              closeMenu();
-            }
-            if (e.key === 'Escape') {
-              openCategory?.anchor.focus();
-              closeInnerMenu();
-            }
-            // Only handle backspace/delete for string list (search query)
 
             // Only handle navigation for list
-            if (openCategory?.value instanceof StringListFilterCategory) {
+            if (
+              !openCategoryData.type ||
+              openCategoryData.type === 'string_list'
+            ) {
               keyboardListNavigationHandler(
                 e,
                 undefined,
                 () => {
-                  openCategory?.anchor.focus();
+                  openCategory.anchor.focus();
                   closeInnerMenu();
                 },
                 'horizontal',
               );
             }
+
+            if (
+              !openCategoryData.type ||
+              openCategoryData.type === 'string_list'
+            ) {
+              handleRandomTextInput(e);
+            }
           }}
         >
           {content}
+          <Footer
+            onCancelClick={closeMenu}
+            onApplyClick={() => {
+              applyOptions();
+            }}
+          />
         </Paper>
       </Popper>
     );
   };
 
   const renderOption = (
-    searchResult: SortedElement<FilterCategory>,
+    searchResult: SortedElement<FilterCategoryData_OLD<T>>,
     isFirstOption: boolean,
   ) => {
     const parent = searchResult;
@@ -349,9 +433,9 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
         {...refProps}
         onClick={(event) => {
           // The onClick fires also when closing the menu
-          if (openCategory?.value !== parent.el) {
+          if (openCategory?.value !== parent.el.value) {
             setOpenCategory({
-              value: parent.el,
+              value: parent.el.value,
               anchor: event.currentTarget,
             });
           } else {
@@ -362,11 +446,11 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
           keyboardListNavigationHandler(
             e,
             () => {
-              if (openCategory?.value === parent.el) {
+              if (openCategory?.value === parent.el.value) {
                 openCategoryRef.current?.focus();
               } else {
                 setOpenCategory({
-                  value: parent.el,
+                  value: parent.el.value,
                   anchor: e.currentTarget,
                 });
               }
@@ -377,9 +461,9 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
             'horizontal',
           );
         }}
-        key={`item-${parent.el.key}`}
+        key={`item-${parent.el.value}`}
         disableRipple
-        selected={openCategory?.value === parent.el}
+        selected={openCategory?.value === parent.el.value}
         sx={{
           display: 'flex',
           alignItems: 'center',

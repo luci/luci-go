@@ -10,11 +10,17 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
+// limitations under the License.
 
-import { DateFilterCategoryDataBuilder } from '@/fleet/components/filters/date_filter';
-
-export const ANDROID_EXTRA_FILTERS = {
-  fc_offline_since: new DateFilterCategoryDataBuilder().setLabel(
-    `Offline Since`,
-  ),
+export const filterDropdownKeyDown = (
+  e: React.KeyboardEvent,
+  onApply: () => unknown,
+  onClose: () => unknown,
+) => {
+  if (e.key === 'Enter' && e.ctrlKey) {
+    onApply();
+  }
+  if (e.key === 'Escape' || e.key === 'Tab') {
+    onClose();
+  }
 };

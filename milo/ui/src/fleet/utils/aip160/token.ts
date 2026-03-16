@@ -10,11 +10,23 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
+// limitations under the License.
 
-import { DateFilterCategoryDataBuilder } from '@/fleet/components/filters/date_filter';
+export const enum TokenKind {
+  Comparator = 'COMPARATOR',
+  Negate = 'NEGATE',
+  And = 'AND',
+  Or = 'OR',
+  Dot = 'DOT',
+  LParen = 'LPAREN',
+  RParen = 'RPAREN',
+  Comma = 'COMMA',
+  String = 'STRING',
+  Text = 'TEXT',
+  End = 'END',
+}
 
-export const ANDROID_EXTRA_FILTERS = {
-  fc_offline_since: new DateFilterCategoryDataBuilder().setLabel(
-    `Offline Since`,
-  ),
-};
+export interface Token {
+  readonly kind: TokenKind;
+  readonly value: string;
+}
