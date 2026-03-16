@@ -174,6 +174,8 @@ export function DashboardPage() {
     useListMeasurementFilterColumns(
       {
         parent: `dashboardStates/${dashboardId}/dataSpecs/${DATA_SPEC_ID}`,
+        pageSize: 100,
+        pageToken: '',
       },
       {
         enabled: !!dashboardId,

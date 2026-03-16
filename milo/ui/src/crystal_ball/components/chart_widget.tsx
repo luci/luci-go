@@ -24,19 +24,21 @@ import {
 } from '@/crystal_ball/components';
 import { useSearchMeasurements } from '@/crystal_ball/hooks';
 import {
-  MeasurementFilterColumn,
   PerfChartSeries,
   PerfChartWidget,
   PerfFilter,
 } from '@/crystal_ball/types';
 import { transformDataForChart } from '@/crystal_ball/utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { SearchMeasurementsRequest } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+import {
+  MeasurementFilterColumn,
+  SearchMeasurementsRequest,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 interface ChartWidgetProps {
   onUpdate: (updatedWidget: PerfChartWidget) => void;
   widget: PerfChartWidget;
-  filterColumns: MeasurementFilterColumn[];
+  filterColumns: readonly MeasurementFilterColumn[];
   isLoadingFilterColumns?: boolean;
 }
 

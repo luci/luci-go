@@ -22,7 +22,7 @@ import {
   ListMeasurementFilterColumnsResponse,
   SuggestMeasurementFilterValuesRequest,
   SuggestMeasurementFilterValuesResponse,
-} from '@/crystal_ball/types';
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 const BASE_PATH = `${API_BASE_URL}/v1`;
 

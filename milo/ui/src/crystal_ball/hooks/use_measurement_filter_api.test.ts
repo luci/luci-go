@@ -22,12 +22,12 @@ import {
 } from '@/crystal_ball/hooks';
 import {
   ListMeasurementFilterColumnsRequest,
-  SuggestMeasurementFilterValuesRequest,
   ListMeasurementFilterColumnsResponse,
+  MeasurementFilterColumn_ColumnDataType,
+  MeasurementFilterColumn_FilterScope,
+  SuggestMeasurementFilterValuesRequest,
   SuggestMeasurementFilterValuesResponse,
-  ColumnDataType,
-  FilterScope,
-} from '@/crystal_ball/types';
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 // Mock the imported hooks
@@ -48,6 +48,7 @@ describe('use_measurement_filter_api', () => {
     const request: ListMeasurementFilterColumnsRequest = {
       parent: 'dashboardStates/test-dash/dataSpecs/spec1',
       pageSize: 10,
+      pageToken: '',
     };
 
     it('should call useGapiQuery with correct arguments', () => {
@@ -63,7 +64,7 @@ describe('use_measurement_filter_api', () => {
           method: 'GET',
           params: {
             pageSize: request.pageSize,
-            pageToken: undefined,
+            pageToken: request.pageToken,
           },
         },
         undefined,
@@ -87,11 +88,14 @@ describe('use_measurement_filter_api', () => {
         measurementFilterColumns: [
           {
             column: 'build_target',
-            dataType: ColumnDataType.STRING,
+            dataType: MeasurementFilterColumn_ColumnDataType.STRING,
             sampleValues: ['target1', 'target2'],
             primary: true,
             isMetricKey: false,
-            applicableScopes: [FilterScope.GLOBAL, FilterScope.WIDGET],
+            applicableScopes: [
+              MeasurementFilterColumn_FilterScope.GLOBAL,
+              MeasurementFilterColumn_FilterScope.WIDGET,
+            ],
           },
         ],
         nextPageToken: 'nextpage',

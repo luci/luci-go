@@ -20,6 +20,18 @@ import { PerfChartSeries } from '@/crystal_ball/types';
 
 import { ChartSeriesEditor } from './chart_series_editor';
 
+jest.mock('@/crystal_ball/hooks/use_measurement_filter_api', () => ({
+  useSuggestMeasurementFilterValues: jest.fn(() => ({
+    data: undefined,
+    isLoading: false,
+  })),
+}));
+
+jest.mock('react-router', () => ({
+  ...jest.requireActual('react-router'),
+  useParams: () => ({ dashboardId: 'test-dash' }),
+}));
+
 let mockUUIDCount = 0;
 const expectedMockUUID = 'a-b-c-d-1';
 beforeAll(() => {

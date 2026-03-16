@@ -14,13 +14,35 @@
 
 import '@testing-library/jest-dom';
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 
-import { MeasurementFilterColumn, PerfFilter } from '@/crystal_ball/types';
+import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
+import { PerfFilter } from '@/crystal_ball/types';
+import { MeasurementFilterColumn_ColumnDataType } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { FilterEditor } from './filter_editor';
 
+jest.mock('@/crystal_ball/hooks/use_measurement_filter_api');
+const mockedSuggestValues = jest.mocked(
+  filterApiHooks.useSuggestMeasurementFilterValues,
+);
+
 const mockUUID = 'a-b-c-d-e';
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+  },
+});
+
+function wrapWithProviders(ui: React.ReactElement) {
+  return render(
+    <MemoryRouter initialEntries={['/dashboard/test-dashboard']}>
+      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    </MemoryRouter>,
+  );
+}
 beforeAll(() => {
   jest.spyOn(self.crypto, 'randomUUID').mockReturnValue(mockUUID);
 });
@@ -34,22 +56,71 @@ const defaultProps = {
   onUpdateFilters: jest.fn(),
   dataSpecId: 'test-spec-id',
   availableColumns: [
-    { column: 'atp_test_name', primary: true, dataType: 'STRING' },
-    { column: 'build_branch', primary: false, dataType: 'STRING' },
-    { column: 'build_target', primary: false, dataType: 'STRING' },
-    { column: 'test_name', primary: true, dataType: 'STRING' },
-    { column: 'model', primary: false, dataType: 'STRING' },
-    { column: 'sku', primary: true, dataType: 'STRING' },
-  ] as MeasurementFilterColumn[],
+    {
+      column: 'atp_test_name',
+      primary: true,
+      dataType: MeasurementFilterColumn_ColumnDataType.STRING,
+      sampleValues: [],
+      isMetricKey: false,
+      applicableScopes: [],
+    },
+    {
+      column: 'build_branch',
+      primary: false,
+      dataType: MeasurementFilterColumn_ColumnDataType.STRING,
+      sampleValues: [],
+      isMetricKey: false,
+      applicableScopes: [],
+    },
+    {
+      column: 'build_target',
+      primary: false,
+      dataType: MeasurementFilterColumn_ColumnDataType.STRING,
+      sampleValues: [],
+      isMetricKey: false,
+      applicableScopes: [],
+    },
+    {
+      column: 'test_name',
+      primary: true,
+      dataType: MeasurementFilterColumn_ColumnDataType.STRING,
+      sampleValues: [],
+      isMetricKey: false,
+      applicableScopes: [],
+    },
+    {
+      column: 'model',
+      primary: false,
+      dataType: MeasurementFilterColumn_ColumnDataType.STRING,
+      sampleValues: [],
+      isMetricKey: false,
+      applicableScopes: [],
+    },
+    {
+      column: 'sku',
+      primary: true,
+      dataType: MeasurementFilterColumn_ColumnDataType.STRING,
+      sampleValues: [],
+      isMetricKey: false,
+      applicableScopes: [],
+    },
+  ],
 };
 
 describe('FilterEditor', () => {
   beforeEach(() => {
     defaultProps.onUpdateFilters.mockClear();
+    mockedSuggestValues.mockReturnValue({
+      data: { values: ['suggest1', 'suggest2'] },
+      isLoading: false,
+      isError: false,
+    } as unknown as ReturnType<
+      typeof filterApiHooks.useSuggestMeasurementFilterValues
+    >);
   });
 
   it('renders with no filters initially', () => {
-    render(<FilterEditor {...defaultProps} />);
+    wrapWithProviders(<FilterEditor {...defaultProps} />);
     expect(screen.getByText('Filters')).toBeInTheDocument();
     expect(screen.getByText('No filters applied.')).toBeInTheDocument();
     expect(
@@ -68,7 +139,9 @@ describe('FilterEditor', () => {
         },
       },
     ];
-    render(<FilterEditor {...defaultProps} filters={initialFilters} />);
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
 
     // Check chip label when collapsed
     expect(
@@ -87,7 +160,7 @@ describe('FilterEditor', () => {
   });
 
   it('adds a new filter when "Add Filter" is clicked', async () => {
-    render(<FilterEditor {...defaultProps} />);
+    wrapWithProviders(<FilterEditor {...defaultProps} />);
     fireEvent.click(screen.getByText('Filters')); // Expand
     await waitFor(() => {
       expect(
@@ -114,7 +187,9 @@ describe('FilterEditor', () => {
     const initialFilters: PerfFilter[] = [
       { id: 'filter-1', column: 'test_name', dataSpecId: 'test-spec-id' },
     ];
-    render(<FilterEditor {...defaultProps} filters={initialFilters} />);
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
     fireEvent.click(screen.getByText('Filters')); // Expand
     await waitFor(() => {
       expect(
@@ -139,7 +214,9 @@ describe('FilterEditor', () => {
         },
       },
     ];
-    render(<FilterEditor {...defaultProps} filters={initialFilters} />);
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
     fireEvent.click(screen.getByText('Filters')); // Expand
     await waitFor(() => {
       expect(screen.getByLabelText('Column')).toBeInTheDocument();
@@ -168,7 +245,9 @@ describe('FilterEditor', () => {
         },
       },
     ];
-    render(<FilterEditor {...defaultProps} filters={initialFilters} />);
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
     fireEvent.click(screen.getByText('Filters')); // Expand
     await waitFor(() => {
       expect(screen.getByLabelText('Operator')).toBeInTheDocument();
@@ -201,7 +280,9 @@ describe('FilterEditor', () => {
         },
       },
     ];
-    render(<FilterEditor {...defaultProps} filters={initialFilters} />);
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
     fireEvent.click(screen.getByText('Filters')); // Expand
     const valueInput = await screen.findByLabelText('Value');
 
@@ -230,7 +311,9 @@ describe('FilterEditor', () => {
         },
       },
     ];
-    render(<FilterEditor {...defaultProps} filters={initialFilters} />);
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
     fireEvent.click(screen.getByText('Filters')); // Expand
     const valueInput = await screen.findByLabelText('Value');
 
@@ -244,7 +327,7 @@ describe('FilterEditor', () => {
     const initialFilters: PerfFilter[] = [
       { id: 'filter-1', column: 'test_name', dataSpecId: 'test-spec-id' },
     ];
-    render(
+    wrapWithProviders(
       <FilterEditor
         {...defaultProps}
         filters={initialFilters}
@@ -268,7 +351,9 @@ describe('FilterEditor', () => {
         },
       },
     ];
-    render(<FilterEditor {...defaultProps} filters={initialFilters} />);
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
 
     // Expand accordion
     fireEvent.click(screen.getByText('Filters'));

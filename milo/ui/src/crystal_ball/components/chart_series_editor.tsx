@@ -21,15 +21,19 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Autocomplete,
   Box,
   Button,
   Chip,
+  IconButton,
   TextField,
   Typography,
-  IconButton,
 } from '@mui/material';
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { useParams } from 'react-router';
+import { useDebounce } from 'react-use';
 
+import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { PerfChartSeries } from '@/crystal_ball/types';
 
 interface ChartSeriesEditorProps {
@@ -42,25 +46,117 @@ interface ChartSeriesEditorProps {
 const getSeriesId = (s: PerfChartSeries, index: number) =>
   s.displayName || `series-${index}`;
 
+function ChartSeriesEditorRow({
+  singleSeries,
+  dataSpecId,
+  onUpdate,
+  onRemove,
+}: {
+  singleSeries: PerfChartSeries;
+  dataSpecId: string;
+  onUpdate: (metricField: string) => void;
+  onRemove: () => void;
+}) {
+  const [inputValue, setInputValue] = useState(singleSeries.metricField || '');
+  const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
+  const [isFocused, setIsFocused] = useState(false);
+
+  useDebounce(
+    () => {
+      setDebouncedQuery(inputValue);
+    },
+    1000,
+    [inputValue],
+  );
+
+  const { dashboardId } = useParams<{ dashboardId: string }>();
+  const parent = dashboardId
+    ? `dashboardStates/${dashboardId}/dataSpecs/${dataSpecId}`
+    : '';
+
+  const { data: suggestionData, isLoading } = useSuggestMeasurementFilterValues(
+    {
+      parent,
+      column: 'metric_key',
+      query: debouncedQuery,
+      maxResultCount: 50,
+    },
+    {
+      enabled: !!parent && debouncedQuery.length > 0 && isFocused,
+      retry: false,
+    },
+  );
+
+  // The API returns an object containing `values`
+  const options = suggestionData?.values || [];
+
+  const handleBlur = () => {
+    onUpdate(inputValue);
+  };
+
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '1fr auto',
+        gap: 1,
+        alignItems: 'center',
+        mb: 1.5,
+      }}
+    >
+      <Autocomplete
+        freeSolo
+        size="small"
+        options={options}
+        filterOptions={(x) => x}
+        value={singleSeries.metricField || null}
+        inputValue={inputValue}
+        onInputChange={(_event, newInputValue) => {
+          setInputValue(newInputValue);
+        }}
+        onChange={(_event, newValue, reason) => {
+          if (reason === 'selectOption' || reason === 'createOption') {
+            if (typeof newValue === 'string') {
+              setInputValue(newValue);
+              onUpdate(newValue);
+            }
+          }
+        }}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => {
+          setIsFocused(false);
+          handleBlur();
+        }}
+        loading={isLoading && isFocused}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder="Metric Field (e.g., MemAvailable_CacheProcDirty_bytes)"
+            inputProps={{
+              ...params.inputProps,
+              'aria-label': 'Metric Field',
+            }}
+          />
+        )}
+      />
+      <IconButton
+        onClick={onRemove}
+        aria-label="Remove series"
+        color="error"
+        size="small"
+      >
+        <DeleteIcon fontSize="small" />
+      </IconButton>
+    </Box>
+  );
+}
+
 export function ChartSeriesEditor({
   series,
   onUpdateSeries,
   dataSpecId,
 }: ChartSeriesEditorProps) {
   const [expanded, setExpanded] = useState(false);
-  // Local state to manage draft metric fields
-  const [draftMetricFields, setDraftMetricFields] = useState<
-    Record<string, string>
-  >({});
-
-  useEffect(() => {
-    const initialDrafts: Record<string, string> = {};
-    series.forEach((s, index) => {
-      const id = getSeriesId(s, index);
-      initialDrafts[id] = s.metricField || '';
-    });
-    setDraftMetricFields(initialDrafts);
-  }, [series]);
 
   const handleAddSeries = () => {
     const newSeries: PerfChartSeries = {
@@ -77,21 +173,14 @@ export function ChartSeriesEditor({
     onUpdateSeries(updatedSeries);
   };
 
-  const handleDraftChange = useCallback((seriesId: string, value: string) => {
-    setDraftMetricFields((prev) => ({ ...prev, [seriesId]: value }));
-  }, []);
-
-  const handleDraftBlur = useCallback(
-    (index: number, seriesId: string) => {
-      const newMetricField = draftMetricFields[seriesId];
+  const handleUpdateSingleSeries = useCallback(
+    (index: number, newMetricField: string) => {
       const currentSeries = series[index];
-
       if (currentSeries && currentSeries.metricField !== newMetricField) {
         const updatedSeries = [...series];
         updatedSeries[index] = {
           ...currentSeries,
           metricField: newMetricField,
-          // Optionally update displayName if it wasn't manually set
           displayName:
             currentSeries.displayName &&
             !currentSeries.displayName.startsWith('series-')
@@ -101,7 +190,7 @@ export function ChartSeriesEditor({
         onUpdateSeries(updatedSeries);
       }
     },
-    [draftMetricFields, series, onUpdateSeries],
+    [series, onUpdateSeries],
   );
 
   return (
@@ -140,33 +229,15 @@ export function ChartSeriesEditor({
           {series.map((singleSeries, index) => {
             const seriesId = getSeriesId(singleSeries, index);
             return (
-              <Box
+              <ChartSeriesEditorRow
                 key={seriesId}
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr auto',
-                  gap: 1,
-                  alignItems: 'center',
-                  mb: 1.5,
-                }}
-              >
-                <TextField
-                  placeholder="Metric Field (e.g., MemAvailable_CacheProcDirty_bytes)"
-                  size="small"
-                  value={draftMetricFields[seriesId] || ''}
-                  onChange={(e) => handleDraftChange(seriesId, e.target.value)}
-                  onBlur={() => handleDraftBlur(index, seriesId)}
-                  inputProps={{ 'aria-label': 'Metric Field' }}
-                />
-                <IconButton
-                  onClick={() => handleRemoveSeries(index)}
-                  aria-label="Remove series"
-                  color="error"
-                  size="small"
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Box>
+                singleSeries={singleSeries}
+                dataSpecId={dataSpecId}
+                onUpdate={(newMetricField) =>
+                  handleUpdateSingleSeries(index, newMetricField)
+                }
+                onRemove={() => handleRemoveSeries(index)}
+              />
             );
           })}
           <Button

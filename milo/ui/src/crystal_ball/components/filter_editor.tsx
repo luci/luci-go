@@ -21,6 +21,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Autocomplete,
   Box,
   Button,
   Chip,
@@ -33,9 +34,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useParams } from 'react-router';
+import { useDebounce } from 'react-use';
 
-import { MeasurementFilterColumn, PerfFilter } from '@/crystal_ball/types';
+import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
+import { PerfFilter } from '@/crystal_ball/types';
+import { MeasurementFilterColumn } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 // TODO: b/475638132 - Once ListMeasurementFilterColumns RPC is being used, column types are known and can be used to determine appropriate
 // filter operators.
@@ -71,8 +76,176 @@ interface FilterEditorProps {
   filters: PerfFilter[];
   onUpdateFilters: (updatedFilters: PerfFilter[]) => void;
   dataSpecId: string;
-  availableColumns: MeasurementFilterColumn[];
+  availableColumns: readonly MeasurementFilterColumn[];
   isLoadingColumns?: boolean;
+}
+
+function FilterEditorRow({
+  filter,
+  dataSpecId,
+  primaryColumns,
+  secondaryColumns,
+  onUpdateColumn,
+  onUpdateOperator,
+  onUpdateValue,
+  onRemove,
+}: {
+  filter: PerfFilter;
+  dataSpecId: string;
+  primaryColumns: string[];
+  secondaryColumns: string[];
+  onUpdateColumn: (column: string) => void;
+  onUpdateOperator: (operator: string) => void;
+  onUpdateValue: (value: string) => void;
+  onRemove: () => void;
+}) {
+  const initialValue = filter.textInput?.defaultValue?.values?.[0] || '';
+  const [inputValue, setInputValue] = useState(initialValue);
+  const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
+  const [isFocused, setIsFocused] = useState(false);
+
+  useDebounce(
+    () => {
+      setDebouncedQuery(inputValue);
+    },
+    1000,
+    [inputValue],
+  );
+
+  const { dashboardId } = useParams<{ dashboardId: string }>();
+  const parent = dashboardId
+    ? `dashboardStates/${dashboardId}/dataSpecs/${dataSpecId}`
+    : '';
+
+  const { data: suggestionData, isLoading } = useSuggestMeasurementFilterValues(
+    {
+      parent,
+      column: filter.column,
+      query: debouncedQuery,
+      maxResultCount: 50,
+    },
+    {
+      enabled:
+        !!parent && !!filter.column && debouncedQuery.length > 0 && isFocused,
+      retry: false,
+    },
+  );
+
+  const options = suggestionData?.values || [];
+
+  const handleBlur = () => {
+    if (inputValue !== initialValue) {
+      onUpdateValue(inputValue);
+    }
+  };
+
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 2fr auto',
+        gap: 1,
+        alignItems: 'center',
+        mb: 1.5,
+      }}
+    >
+      <Select
+        value={filter.column}
+        onChange={(e: SelectChangeEvent<string>) =>
+          onUpdateColumn(e.target.value)
+        }
+        size="small"
+        displayEmpty
+        inputProps={{ 'aria-label': 'Column' }}
+        sx={{ minWidth: 120 }}
+        MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
+      >
+        {filter.column &&
+          !primaryColumns.includes(filter.column) &&
+          !secondaryColumns.includes(filter.column) && (
+            <MenuItem key={filter.column} value={filter.column}>
+              {filter.column}
+            </MenuItem>
+          )}
+        {primaryColumns.map((col) => (
+          <MenuItem key={col} value={col}>
+            {col}
+          </MenuItem>
+        ))}
+
+        {secondaryColumns.length > 0 && [
+          <Divider key="divider" />,
+          ...secondaryColumns.map((col) => (
+            <MenuItem key={col} value={col}>
+              {col}
+            </MenuItem>
+          )),
+        ]}
+      </Select>
+
+      <Select
+        value={filter.textInput?.defaultValue?.filterOperator || ''}
+        onChange={(e: SelectChangeEvent<string>) =>
+          onUpdateOperator(e.target.value)
+        }
+        size="small"
+        displayEmpty
+        inputProps={{ 'aria-label': 'Operator' }}
+        sx={{ minWidth: 120 }}
+        MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
+      >
+        {OPERATORS.map((op) => (
+          <MenuItem key={op} value={op}>
+            {op}
+          </MenuItem>
+        ))}
+      </Select>
+
+      <Autocomplete
+        freeSolo
+        size="small"
+        options={options}
+        filterOptions={(x) => x}
+        value={initialValue || null}
+        inputValue={inputValue}
+        onInputChange={(_event, newInputValue) => {
+          setInputValue(newInputValue);
+        }}
+        onChange={(_event, newValue, reason) => {
+          if (reason === 'selectOption' || reason === 'createOption') {
+            if (typeof newValue === 'string') {
+              setInputValue(newValue);
+              onUpdateValue(newValue);
+            }
+          }
+        }}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => {
+          setIsFocused(false);
+          handleBlur();
+        }}
+        loading={isLoading && isFocused}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            placeholder="Value"
+            inputProps={{
+              ...params.inputProps,
+              'aria-label': 'Value',
+            }}
+          />
+        )}
+      />
+      <IconButton
+        onClick={onRemove}
+        aria-label="Remove filter"
+        color="error"
+        size="small"
+      >
+        <DeleteIcon fontSize="small" />
+      </IconButton>
+    </Box>
+  );
 }
 
 export function FilterEditor({
@@ -83,18 +256,6 @@ export function FilterEditor({
   isLoadingColumns,
 }: FilterEditorProps) {
   const [expanded, setExpanded] = useState(false);
-  // Local state to manage draft text inputs, keyed by filter id
-  const [draftValues, setDraftValues] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    // Initialize or synchronize draftValues when the filters prop changes
-    const initialDrafts: Record<string, string> = {};
-    filters.forEach((filter) => {
-      const key = filter.id;
-      initialDrafts[key] = filter.textInput?.defaultValue?.values?.[0] || '';
-    });
-    setDraftValues(initialDrafts);
-  }, [filters]);
 
   const handleAddFilter = () => {
     const newFilterId = `filter-${crypto.randomUUID()}`;
@@ -111,21 +272,12 @@ export function FilterEditor({
       },
     };
     onUpdateFilters([...filters, newFilter]);
-    // Initialize draft value for the new filter
-    setDraftValues((prev) => ({ ...prev, [newFilterId]: '' }));
   };
 
   const handleRemoveFilter = (index: number) => {
-    const filterId = filters[index].id;
     const updatedFilters = [...filters];
     updatedFilters.splice(index, 1);
     onUpdateFilters(updatedFilters);
-    // Remove from draftValues
-    setDraftValues((prev) => {
-      const newDrafts = { ...prev };
-      delete newDrafts[filterId];
-      return newDrafts;
-    });
   };
 
   const handleFilterChange = (
@@ -160,20 +312,6 @@ export function FilterEditor({
         },
       };
       onUpdateFilters(updatedFilters);
-    }
-  };
-
-  // Update only the local draft state on each key press
-  const handleDraftValueChange = (filterId: string, value: string) => {
-    setDraftValues((prev) => ({ ...prev, [filterId]: value }));
-  };
-
-  // Propagate the change to the parent only when the input loses focus
-  const handleDraftValueBlur = (index: number, filterId: string) => {
-    const newValue = draftValues[filterId];
-    const currentFilter = filters[index];
-    if (currentFilter.textInput?.defaultValue?.values?.[0] !== newValue) {
-      handleDefaultValueChange(index, 'values', [newValue]);
     }
   };
 
@@ -242,98 +380,25 @@ export function FilterEditor({
             </Box>
           ) : (
             <>
-              {filters.map((filter, index) => {
-                const filterId = filter.id;
-                return (
-                  <Box
-                    key={filterId}
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr 2fr auto',
-                      gap: 1,
-                      alignItems: 'center',
-                      mb: 1.5,
-                    }}
-                  >
-                    <Select
-                      value={filter.column}
-                      onChange={(e: SelectChangeEvent<string>) =>
-                        handleFilterChange(index, { column: e.target.value })
-                      }
-                      size="small"
-                      displayEmpty
-                      inputProps={{ 'aria-label': 'Column' }}
-                      sx={{ minWidth: 120 }}
-                      MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
-                    >
-                      {filter.column &&
-                        !primaryColumns.includes(filter.column) &&
-                        !secondaryColumns.includes(filter.column) && (
-                          <MenuItem key={filter.column} value={filter.column}>
-                            {filter.column}
-                          </MenuItem>
-                        )}
-                      {primaryColumns.map((col) => (
-                        <MenuItem key={col} value={col}>
-                          {col}
-                        </MenuItem>
-                      ))}
-
-                      {secondaryColumns.length > 0 && [
-                        <Divider key="divider" />,
-                        ...secondaryColumns.map((col) => (
-                          <MenuItem key={col} value={col}>
-                            {col}
-                          </MenuItem>
-                        )),
-                      ]}
-                    </Select>
-
-                    <Select
-                      value={
-                        filter.textInput?.defaultValue?.filterOperator || ''
-                      }
-                      onChange={(e: SelectChangeEvent<string>) =>
-                        handleDefaultValueChange(
-                          index,
-                          'filterOperator',
-                          e.target.value,
-                        )
-                      }
-                      size="small"
-                      displayEmpty
-                      inputProps={{ 'aria-label': 'Operator' }}
-                      sx={{ minWidth: 120 }}
-                      MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
-                    >
-                      {OPERATORS.map((op) => (
-                        <MenuItem key={op} value={op}>
-                          {op}
-                        </MenuItem>
-                      ))}
-                    </Select>
-
-                    <TextField
-                      placeholder="Value"
-                      size="small"
-                      value={draftValues[filterId] || ''}
-                      onChange={(e) =>
-                        handleDraftValueChange(filterId, e.target.value)
-                      }
-                      onBlur={() => handleDraftValueBlur(index, filterId)}
-                      inputProps={{ 'aria-label': 'Value' }}
-                    />
-                    <IconButton
-                      onClick={() => handleRemoveFilter(index)}
-                      aria-label="Remove filter"
-                      color="error"
-                      size="small"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                );
-              })}
+              {filters.map((filter, index) => (
+                <FilterEditorRow
+                  key={filter.id}
+                  filter={filter}
+                  dataSpecId={dataSpecId}
+                  primaryColumns={primaryColumns}
+                  secondaryColumns={secondaryColumns}
+                  onUpdateColumn={(column) =>
+                    handleFilterChange(index, { column })
+                  }
+                  onUpdateOperator={(operator) =>
+                    handleDefaultValueChange(index, 'filterOperator', operator)
+                  }
+                  onUpdateValue={(value) =>
+                    handleDefaultValueChange(index, 'values', [value])
+                  }
+                  onRemove={() => handleRemoveFilter(index)}
+                />
+              ))}
               <Button
                 startIcon={<AddIcon />}
                 onClick={handleAddFilter}

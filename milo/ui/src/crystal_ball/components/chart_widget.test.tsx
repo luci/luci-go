@@ -19,10 +19,11 @@ import { DateTime } from 'luxon';
 import * as timeUtils from '@/common/components/time_range_selector/time_range_selector_utils';
 import * as components from '@/crystal_ball/components';
 import * as useSearchMeasurementsHook from '@/crystal_ball/hooks/use_android_perf_api';
-import { PerfChartWidget, MeasurementFilterColumn } from '@/crystal_ball/types';
+import { PerfChartWidget } from '@/crystal_ball/types';
 import { transformDataForChart } from '@/crystal_ball/utils';
 import * as useSyncedSearchParamsHook from '@/generic_libs/hooks/synced_search_params';
 import {
+  MeasurementFilterColumn_ColumnDataType,
   MeasurementRow,
   SearchMeasurementsRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
@@ -343,11 +344,16 @@ describe('ChartWidget', () => {
       <ChartWidget
         onUpdate={jest.fn()}
         widget={baseWidget}
-        filterColumns={
-          [
-            { column: 'test_name', primary: true, dataType: 'STRING' },
-          ] as MeasurementFilterColumn[]
-        }
+        filterColumns={[
+          {
+            column: 'test_name',
+            primary: true,
+            dataType: MeasurementFilterColumn_ColumnDataType.STRING,
+            sampleValues: [],
+            isMetricKey: false,
+            applicableScopes: [],
+          },
+        ]}
         isLoadingFilterColumns={true}
       />,
     );
@@ -356,7 +362,11 @@ describe('ChartWidget', () => {
     expect(MockFilterEditor.mock.calls[0][0]).toMatchObject({
       isLoadingColumns: true,
       availableColumns: [
-        { column: 'test_name', primary: true, dataType: 'STRING' },
+        {
+          column: 'test_name',
+          primary: true,
+          dataType: MeasurementFilterColumn_ColumnDataType.STRING,
+        },
       ],
     });
   });
