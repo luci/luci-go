@@ -80,20 +80,27 @@ func TestGenerateFixforwardCL(t *testing.T) {
 	}
 	// Expect CreateChange
 	mockedGerrit.Client.EXPECT().CreateChange(gomock.Any(), gomock.Any()).Return(fakeChangeInfo, nil)
-	// Expect ChangeEditFileContent
-	mockedGerrit.Client.EXPECT().ChangeEditFileContent(gomock.Any(), gomock.Any()).Return(&emptypb.Empty{}, nil)
+	// 3. Mock LLM
+	mockLLM := llm.NewMockClient(ctrl)
+	mockResponseJSON := `{"files": [{"path": "src/test.cc", "edits": [{"old_text": "return 0;", "new_text": "return 1;"}]}], "message": "Fixed the bug."}`
+	mockLLM.EXPECT().GenerateContentWithSchema(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockResponseJSON, nil)
+
+	// Since we expect "return 0;" to become "return 1;" in the original content "int main() { return 0; }":
+	expectedFileContent := []byte("int main() { return 1; }")
+	// Update Gerrit Mock Expectation:
+	mockedGerrit.Client.EXPECT().ChangeEditFileContent(gomock.Any(), &gerritpb.ChangeEditFileContentRequest{
+		Number:   12345,
+		Project:  "chromium/src",
+		FilePath: "src/test.cc",
+		Content:  expectedFileContent,
+	}).Return(&emptypb.Empty{}, nil)
 	// Expect ChangeEditPublish
 	mockedGerrit.Client.EXPECT().ChangeEditPublish(gomock.Any(), gomock.Any()).Return(&emptypb.Empty{}, nil)
 	// Expect SetReview (SendForReview)
-	mockedGerrit.Client.EXPECT().SetReview(gomock.Any(), gomock.Any()).Return(&gerritpb.ReviewResult{}, nil)
+	mockedGerrit.Client.EXPECT().SetReview(gomock.Any(), gomock.Any(), gomock.Any()).Return(&gerritpb.ReviewResult{}, nil)
 
 	gerritClient, err := gerrit.NewClient(mockedGerrit.Ctx, "chromium-review.googlesource.com")
 	assert.Loosely(t, err, should.BeNil)
-
-	// 3. Mock LLM
-	mockLLM := llm.NewMockClient(ctrl)
-	mockResponseJSON := `{"files": [{"path": "src/test.cc", "content": "int main() { return 1; }"}], "message": "Fixed the bug."}`
-	mockLLM.EXPECT().GenerateContentWithSchema(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockResponseJSON, nil)
 
 	// 4. Test GenerateFixforwardCL
 	cfa := &model.CompileFailureAnalysis{

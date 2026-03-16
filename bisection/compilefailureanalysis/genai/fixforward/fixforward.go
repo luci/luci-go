@@ -35,8 +35,11 @@ import (
 
 type LLMResponse struct {
 	Files []struct {
-		Path    string `json:"path"`
-		Content string `json:"content"`
+		Path  string `json:"path"`
+		Edits []struct {
+			OldText string `json:"old_text"`
+			NewText string `json:"new_text"`
+		} `json:"edits"`
 	} `json:"files"`
 	Message string `json:"message"`
 }
@@ -54,9 +57,22 @@ var fixforwardSchema = &genai.Schema{
 						Type:        genai.TypeString,
 						Description: "The relative path to the modified file",
 					},
-					"content": {
-						Type:        genai.TypeString,
-						Description: "The COMPLETE valid compilable content of the file. No placeholders.",
+					"edits": {
+						Type: genai.TypeArray,
+						Items: &genai.Schema{
+							Type: genai.TypeObject,
+							Properties: map[string]*genai.Schema{
+								"old_text": {
+									Type:        genai.TypeString,
+									Description: "The exact original text to be replaced. Must match exactly, including indentation.",
+								},
+								"new_text": {
+									Type:        genai.TypeString,
+									Description: "The new text that will replace the old text.",
+								},
+							},
+						},
+						Description: "A list of search/replace edits to apply to the file.",
 					},
 				},
 			},
@@ -69,7 +85,7 @@ var fixforwardSchema = &genai.Schema{
 }
 
 var promptTemplate = `You are an experienced Software engineer. A build failed and we identified the culprit CL. A revert of this CL is not possible or desirable, so we want to generate a fix forward CL.
-Please generate the fix CL to fix the compile failure.
+Please generate the fix CL to fix the compile failure. You must output search/replace blocks for ONLY the exact snippets you wish to modify.
 
 Failure:
 %s
@@ -90,6 +106,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 
 	// 2. Fetch file contents for modified files
 	var filesInfo string
+	originalFiles := make(map[string]string)
 	for _, diff := range changelog.ChangeLogDiffs {
 		if diff.Type == model.ChangeType_DELETE {
 			continue
@@ -104,6 +121,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 			logging.Warningf(ctx, "file %s exceeds 500KB size limit, skipping file content generation for LLM prompt", path)
 			continue
 		}
+		originalFiles[path] = content
 		filesInfo += fmt.Sprintf("\nFile: %s\n```\n%s\n```\n", path, content)
 	}
 
@@ -163,11 +181,24 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 
 	// 7. Apply edits
 	for _, f := range llmParsed.Files {
+		content, ok := originalFiles[f.Path]
+		if !ok {
+			logging.Warningf(ctx, "LLM returned edits for unknown file %s", f.Path)
+			continue
+		}
+		for _, edit := range f.Edits {
+			if strings.Contains(content, edit.OldText) {
+				content = strings.Replace(content, edit.OldText, edit.NewText, 1)
+			} else {
+				logging.Warningf(ctx, "Could not find old_text in file %s to replace", f.Path)
+			}
+		}
+
 		editReq := &gerritpb.ChangeEditFileContentRequest{
 			Number:   change.Number,
 			Project:  project,
 			FilePath: f.Path,
-			Content:  []byte(f.Content),
+			Content:  []byte(content),
 		}
 		if err := gerritClient.ChangeEditFileContent(ctx, editReq); err != nil {
 			logging.Errorf(ctx, "Failed to edit file %s on CL %d: %v", f.Path, change.Number, err)
