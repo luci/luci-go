@@ -31,10 +31,10 @@
         "version": "legacy"
       }
     ],
-    "@babel/plugin-proposal-class-properties"
+    "@babel/plugin-transform-class-properties"
   ],
   "env": {
-    // Code doesn't go through the Vite's building pipeline when testing.
+    // Code does not go through the Vite's building pipeline when testing.
     // We need some additional setup for TS/JS transpilation.
     "test": {
       "presets": [
@@ -42,7 +42,7 @@
         "@babel/preset-typescript"
       ],
       "plugins": [
-        "@babel/plugin-proposal-private-methods"
+        "@babel/plugin-transform-private-methods"
       ]
     }
   }
