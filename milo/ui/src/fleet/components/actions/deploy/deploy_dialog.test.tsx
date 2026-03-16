@@ -167,4 +167,27 @@ describe('<DeployDialog />', () => {
       screen.getByText('Failed to schedule deploy: it broke'),
     ).toBeVisible();
   });
+
+  it('renders external partner message and disables confirm button', async () => {
+    render(
+      <FakeAuthStateProvider>
+        <DeployDialog
+          {...sharedTestProps}
+          sessionInfo={{
+            dutNames: ['partner-dut'],
+            namespaces: ['os-partner'],
+          }}
+        />
+      </FakeAuthStateProvider>,
+    );
+
+    expect(
+      screen.getByText(
+        'At this time, the Fleet Console does not support force deploy for external devices.',
+      ),
+    ).toBeVisible();
+
+    const confirmButton = screen.getByRole('button', { name: 'Confirm' });
+    expect(confirmButton).toBeDisabled();
+  });
 });

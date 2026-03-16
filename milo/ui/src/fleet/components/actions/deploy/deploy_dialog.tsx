@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import {
   Box,
   Button,
@@ -20,10 +21,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  Stack,
+  Tooltip,
 } from '@mui/material';
 
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
+import { isPartnerNamespace } from '@/fleet/utils/devices';
 import { ScheduleDeployResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import CodeSnippet from '../../code_snippet/code_snippet';
@@ -32,6 +37,7 @@ export interface SessionInfo {
   sessionId?: string;
   results?: ScheduleDeployResult[];
   dutNames?: string[];
+  namespaces?: (string | readonly string[])[];
 }
 
 export interface DeployDialogProps {
@@ -62,11 +68,12 @@ function getDeviceDetailListItem(dutName: string) {
 
 export default function DeployDialog({
   open,
-  sessionInfo: { dutNames = [], results, sessionId },
+  sessionInfo: { dutNames = [], results, sessionId, namespaces = [] },
   handleClose,
   handleOk,
   loading,
 }: DeployDialogProps) {
+  const isPartner = namespaces.some(isPartnerNamespace);
   const shivasCommand = `shivas update dut -force-deploy ${dutNames.join(' ')}`;
 
   const loadingScreen = (
@@ -87,7 +94,42 @@ export default function DeployDialog({
     </>
   );
 
-  const confirmationScreen = (
+  const confirmationScreen = isPartner ? (
+    <>
+      <DialogTitle>Deploying devices</DialogTitle>
+      <DialogContent>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Tooltip title="View External Device Manual">
+            <IconButton
+              size="small"
+              href="http://go/satlab-manual"
+              target="_blank"
+            >
+              <HelpOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <p>
+            At this time, the Fleet Console does not support force deploy for
+            external devices.
+          </p>
+        </Stack>
+        <p>
+          If this feature is critical to your use case, please comment on or
+          upvote{' '}
+          <a href="http://b/493273483" target="_blank" rel="noreferrer">
+            this feature request
+          </a>
+          .
+        </p>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleOk} variant="contained" disabled>
+          Confirm
+        </Button>
+      </DialogActions>
+    </>
+  ) : (
     <>
       <DialogTitle>Deploying devices</DialogTitle>
       <DialogContent>

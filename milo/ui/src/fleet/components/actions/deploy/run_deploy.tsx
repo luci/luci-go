@@ -38,10 +38,12 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
   const [loading, setLoading] = useState<boolean>(false);
 
   const dutNames = selectedDuts.map((d) => d.name);
+  const namespaces = selectedDuts.map((d) => d.namespace || '');
 
   const initializeDeploy = () => {
     setSessionInfo({
       dutNames: dutNames,
+      namespaces: namespaces,
     });
     setOpen(true);
     return;
