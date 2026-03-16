@@ -119,8 +119,16 @@ func TestPipHelpers(t *testing.T) {
 				in, out string
 			}{
 				{"version:1.15.0", "1.15.0"},
-				{"version:2@1.15.0.chromium.1", "1.15.0.chromium.1"},
+				{"version:2@1.15.0.chromium.1", "1.15.0+chromium.1"},
 				{"my-hash", "my-hash"},
+				{"version:1.2.0.chromium.1", "1.2.0+chromium.1"},
+				{"version:1.2.0+chromium.1", "1.2.0+chromium.1"},
+				{"version:1.2.0.post1.chromium.1", "1.2.0.post1+chromium.1"},
+				{"version:1.2.0.google.2", "1.2.0+google.2"},
+				{"version:1.2.0-hash", "1.2.0+hash"},
+				{"version:1.2.0.c1", "1.2.0.c1"},
+				{"version:1.2.0.c", "1.2.0.c"},
+				{"version:1.2.0.rc1", "1.2.0.rc1"},
 			}
 			for _, c := range cases {
 				assert.Loosely(t, pipVersionFromPackageVersion(c.in), should.Equal(c.out))

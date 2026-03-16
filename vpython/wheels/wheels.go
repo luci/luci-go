@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -226,16 +227,68 @@ func pipNameFromPackageName(name string) string {
 }
 
 func pipVersionFromPackageVersion(version string) string {
-	// CIPD versions are usually "version:<version>" or a hash.
-	if strings.HasPrefix(version, "version:2@") {
-		// version:2@1.15.0.chromium.1 -> 1.15.0.chromium.1
-		return version[10:]
+	v := version
+	if strings.HasPrefix(v, "version:2@") {
+		v = v[10:]
+	} else if strings.HasPrefix(v, "version:") {
+		v = v[8:]
 	}
-	if strings.HasPrefix(version, "version:") {
-		// version:1.15.0 -> 1.15.0
-		return version[8:]
+
+	// Check if version starts with a digit (or v followed by digit)
+	if len(v) == 0 {
+		return v
 	}
-	return version
+	if !unicode.IsDigit(rune(v[0])) && !(v[0] == 'v' && len(v) > 1 && unicode.IsDigit(rune(v[1]))) {
+		return v // Not a standard version, skip normalization
+	}
+
+	// Split by . and -
+	segments := strings.FieldsFunc(v, func(r rune) bool {
+		return r == '.' || r == '-'
+	})
+
+	for _, seg := range segments {
+		if len(seg) == 0 {
+			continue
+		}
+		// Check if segment starts with a letter
+		if unicode.IsLetter(rune(seg[0])) {
+			// Check if it's a valid pre-release segment
+			isPre := false
+			for _, pre := range []string{"a", "b", "rc", "alpha", "beta", "pre", "preview", "c", "post", "rev", "r", "dev"} {
+				if strings.HasPrefix(strings.ToLower(seg), pre) {
+					// Check if the rest of the segment is numeric
+					rest := seg[len(pre):]
+					isNumeric := true
+					for _, r := range rest {
+						if !unicode.IsDigit(r) {
+							isNumeric = false
+							break
+						}
+					}
+					if isNumeric {
+						isPre = true
+						break
+					}
+				}
+			}
+			if !isPre {
+				// Found a non-pre-release segment starting with a letter.
+				// This is the start of the local version.
+				// We want to replace the separator BEFORE this segment with +.
+				idx := strings.Index(v, seg)
+				if idx > 0 {
+					sep := v[idx-1]
+					if sep == '.' || sep == '-' {
+						// Replace the separator with +
+						return v[:idx-1] + "+" + v[idx:]
+					}
+				}
+			}
+		}
+	}
+
+	return v
 }
 
 func writeRequirementsFromSpec(path string, s *vpython.Spec, tags []*vpython.PEP425Tag) (err error) {
