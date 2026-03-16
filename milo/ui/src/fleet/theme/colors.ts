@@ -153,7 +153,7 @@ export const yellowA = {
   700: 'hsl(50, 100%, 50%)',
 };
 
-export const unknownStateColor = 'hsl(250, 100%, 60%)';
+export const unknownStateColor = 'hsl(165, 70%, 80%)';
 
 export const transparent = 'hsla(0, 100%, 50%, 0)';
 

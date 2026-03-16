@@ -24,6 +24,7 @@ export enum dutState {
   UNKNOWN = 'UNKNOWN',
   NEEDS_REPAIR = 'NEEDS_REPAIR',
   REPAIR_FAILED = 'REPAIR_FAILED',
+  REGISTERED = 'REGISTERED',
 }
 
 export const getStatusColor = (status: StateUnion) => {
@@ -31,6 +32,7 @@ export const getStatusColor = (status: StateUnion) => {
     case dutState.NEEDS_MANUAL_REPAIR:
       return colors.red[100];
     case dutState.NEEDS_DEPLOY:
+    case dutState.REGISTERED:
     case dutState.NEEDS_REPLACEMENT:
       return colors.yellow[100];
     case dutState.RESERVED:
