@@ -20,7 +20,7 @@
     "type-check": "tsc --noEmit --skipLibCheck",
     "lint": "eslint ./",
     "lint-inc": "git diff --diff-filter=d --name-only origin/main | grep -E '\\.(js|jsx|ts|tsx)$' | xargs eslint",
-    "test": "jest",
+    "test": "jest --maxWorkers=50%",
     "itest": "jest --watch",
     "e2e": "./scripts/run_e2e.sh"
   },
