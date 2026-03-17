@@ -45,6 +45,10 @@ export interface WidgetContainerProps {
    */
   disableMoveDown?: boolean;
   onTitleChange?: (newTitle: string) => void;
+  /**
+   * Whether to remove the default padding from the container's content area.
+   */
+  disablePadding?: boolean;
 }
 
 /**
@@ -61,6 +65,7 @@ export function WidgetContainer({
   disableMoveUp = false,
   disableMoveDown = false,
   onTitleChange,
+  disablePadding = false,
 }: WidgetContainerProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
@@ -82,7 +87,7 @@ export function WidgetContainer({
   };
 
   return (
-    <Card variant="outlined" sx={{ width: '100%', mb: 2 }}>
+    <Card variant="outlined" sx={{ width: '100%', mb: 2, minWidth: 0 }}>
       <CardHeader
         sx={{
           p: 1.5,
@@ -162,8 +167,16 @@ export function WidgetContainer({
         }
       />
       <Divider />
-      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        {children}
+      <CardContent
+        sx={
+          disablePadding
+            ? { p: 0, '&:last-child': { pb: 0 } }
+            : { p: 2, '&:last-child': { pb: 2 } }
+        }
+      >
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)' }}>
+          {children}
+        </Box>
       </CardContent>
       <Dialog
         open={deleteDialogOpen}

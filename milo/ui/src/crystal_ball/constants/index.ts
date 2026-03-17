@@ -14,4 +14,5 @@
 
 export * from './api';
 export * from './colors';
+export * from './table';
 export * from './url';
