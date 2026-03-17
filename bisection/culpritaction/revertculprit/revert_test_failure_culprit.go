@@ -90,8 +90,16 @@ func processTestFailureCulpritTask(ctx context.Context, analysisID int64, luciAn
 		return errors.Fmt("revert culprit suspect_id %d: %w", culpritModel.Id, err)
 	}
 
+	// Refetch the culprit model to get the latest state after TakeCulpritAction
+	culpritModel, err = datastoreutil.GetSuspect(ctx, culpritKey.IntID(), culpritKey.Parent())
+	if err != nil {
+		return errors.Fmt("failed to refetch suspect: %w", err)
+	}
+
 	// Also trigger the fixforward generation inline if we have a genai client
-	if genaiClient != nil {
+	// Only run this if Gerrit actions are actually enabled (avoids trying to
+	// create CLs in Dev where the service account holds no Gerrit account).
+	if genaiClient != nil && culpritModel.InactionReason != pb.CulpritInactionReason_ACTIONS_DISABLED {
 		if err := triggerTestFixforward(ctx, genaiClient, tfa, culpritModel); err != nil {
 			logging.Errorf(ctx, "Failed to generate fixforward CL for test failure (Analysis ID: %d): %v", analysisID, err)
 		}
