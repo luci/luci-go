@@ -16,6 +16,8 @@ package fixforward
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -165,9 +167,15 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 
 	subject := fmt.Sprintf("[experiment fixforward] Fix for culprit %s", culpritCommit[:8])
 	if revertURL != "" {
-		subject += fmt.Sprintf(" (Reverted in %s)", revertURL)
+		subject += fmt.Sprintf("\n\nThis change is a fixforward for culprit %s, which was reverted in %s.", culpritCommit[:8], revertURL)
 	}
-	subject += fmt.Sprintf("\n\n%s", llmParsed.Message)
+
+	// Generate a deterministic Change-Id to satisfy Gerrit server hooks
+	b := make([]byte, 20)
+	if _, err := rand.Read(b); err == nil {
+		changeId := "I" + hex.EncodeToString(b)
+		subject += fmt.Sprintf("\n\nChange-Id: %s", changeId)
+	}
 
 	createReq := &gerritpb.CreateChangeRequest{
 		Project: project,
@@ -215,7 +223,8 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 	}
 
 	// 9. Send for review to jiameil@google.com
-	_, err = gerritClient.SendForReview(ctx, change, "Please review this GenAI fixforward CL.", []string{"jiameil@google.com"}, nil)
+	reviewMessage := fmt.Sprintf("Please review this GenAI fixforward CL.\n\n%s", llmParsed.Message)
+	_, err = gerritClient.SendForReview(ctx, change, reviewMessage, []string{"jiameil@google.com"}, nil)
 	if err != nil {
 		return errors.Annotate(err, "failed to send for review").Err()
 	}
