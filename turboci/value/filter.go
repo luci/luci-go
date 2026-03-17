@@ -17,8 +17,6 @@ package value
 import (
 	"errors"
 	"iter"
-	"maps"
-	"slices"
 
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
@@ -42,13 +40,36 @@ type Filter struct {
 	hasAccess AccessCheck
 }
 
-// Filter applies the parsed ValueFilter w/ AccessCheck function to all refs
+// FilterResult is the return result of [Filter.Apply].
+type FilterResult struct {
+	// NeedFetch contains ValueRefs which are desired and accessible (via
+	// `hasAccess`), but have non-inlined data which needs to be fetched.
+	//
+	// These are mapped by digest -> all ValueRefs which refer to that digest.
+	NeedFetch map[string][]*orchestratorpb.ValueRef
+
+	// NeedJSON are ValueRefs which need to be converted to JSON.
+	//
+	// This may overlap with `NeedFetch` in the case where a digest-based
+	// ValueRef needs to be converted to JSON.
+	NeedJSON []*orchestratorpb.ValueRef
+}
+
+// Apply applies the parsed ValueFilter w/ AccessCheck function to all refs
 // yielded by the iterator.
+//
+// This will:
+//   - Omit refs which the user does not have access to as NO_ACCESS.
+//   - Omit refs which the user does not want (either via ValueFilter masks,
+//     or via ValueFilter.TypeInfo) as UNWANTED.
+//   - Return the set of wanted digest-based ValueRefs, collated by digest,
+//     plus the list of wanted ValueRefs which need JSON conversion.
 //
 // See [RefsInStage], [RefsInStageAttempt] and [RefsInCheck] for iterators
 // which easily compose with this.
-func (f *Filter) Apply(i iter.Seq2[RefSlot, *orchestratorpb.ValueRef]) (wantedDigests []string, wantedJSON []*orchestratorpb.ValueRef, err error) {
-	wantedDigestsSet := make(map[string]struct{})
+func (f *Filter) Apply(i iter.Seq2[RefSlot, *orchestratorpb.ValueRef]) (*FilterResult, error) {
+	ret := &FilterResult{NeedFetch: make(map[string][]*orchestratorpb.ValueRef)}
+
 	var errs []error
 	for slot, ref := range i {
 		access, err := f.hasAccess(ref.GetRealm())
@@ -73,17 +94,17 @@ func (f *Filter) Apply(i iter.Seq2[RefSlot, *orchestratorpb.ValueRef]) (wantedDi
 			continue
 		}
 
-		if ref.HasDigest() {
-			wantedDigestsSet[ref.GetDigest()] = struct{}{}
+		if dgst := ref.GetDigest(); dgst != "" {
+			ret.NeedFetch[dgst] = append(ret.NeedFetch[dgst], ref)
 		}
 		if wantJSON {
-			wantedJSON = append(wantedJSON, ref)
+			ret.NeedJSON = append(ret.NeedJSON, ref)
 		}
 	}
 	if len(errs) > 0 {
-		return nil, nil, errors.Join(errs...)
+		return nil, errors.Join(errs...)
 	}
-	return slices.Sorted(maps.Keys(wantedDigestsSet)), wantedJSON, nil
+	return ret, nil
 }
 
 // ParseFilter returns a [Filter] ready to use with [FilterStage],

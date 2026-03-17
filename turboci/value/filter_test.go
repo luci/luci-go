@@ -61,10 +61,10 @@ func TestFilterRef(t *testing.T) {
 			Args: makeRef(t, nil, structpb.NewBoolValue(true)),
 		}.Build()
 
-		digests, jsons, err := filter.Apply(RefsInStage(stg))
+		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
-		assert.Loosely(t, digests, should.BeEmpty)
-		assert.Loosely(t, jsons, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
 
 		assert.Loosely(t, stg.GetArgs().GetOmitReason(), should.BeZero)
 	})
@@ -76,10 +76,12 @@ func TestFilterRef(t *testing.T) {
 		}.Build()
 		dgst := "WoSPrsJSnpq_1pHjFqDjDF6z6la99vAXGBtj_mij-FFaAQ"
 
-		digests, jsons, err := filter.Apply(RefsInStage(stg))
+		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
-		assert.That(t, digests, should.Match([]string{dgst}))
-		assert.Loosely(t, jsons, should.BeEmpty)
+		assert.That(t, rslt.NeedFetch, should.Match(map[string][]*orchestratorpb.ValueRef{
+			dgst: []*orchestratorpb.ValueRef{stg.GetArgs()},
+		}))
+		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
 
 		assert.That(t, stg.GetArgs().GetDigest(), should.Match(dgst))
 	})
@@ -92,10 +94,10 @@ func TestFilterRef(t *testing.T) {
 			Args: makeRef(t, nil, lst),
 		}.Build()
 
-		digests, jsons, err := filter.Apply(RefsInStage(stg))
+		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
-		assert.Loosely(t, digests, should.BeEmpty)
-		assert.That(t, jsons, should.Match([]*orchestratorpb.ValueRef{
+		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
+		assert.That(t, rslt.NeedJSON, should.Match([]*orchestratorpb.ValueRef{
 			stg.GetArgs(),
 		}))
 	})
@@ -110,10 +112,12 @@ func TestFilterRef(t *testing.T) {
 		}.Build()
 		dgst := "PJ5p-94XRaBpvxxK8w4iiX8IWLV7k8O8MICccEIwyhRmAQ"
 
-		digests, jsons, err := filter.Apply(RefsInStage(stg))
+		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
-		assert.That(t, digests, should.Match([]string{dgst}))
-		assert.That(t, jsons, should.Match([]*orchestratorpb.ValueRef{
+		assert.That(t, rslt.NeedFetch, should.Match(map[string][]*orchestratorpb.ValueRef{
+			dgst: []*orchestratorpb.ValueRef{stg.GetArgs()},
+		}))
+		assert.That(t, rslt.NeedJSON, should.Match([]*orchestratorpb.ValueRef{
 			stg.GetArgs(),
 		}))
 
@@ -130,10 +134,10 @@ func TestFilterRef(t *testing.T) {
 		})
 		assert.NoErr(t, err)
 
-		digests, jsons, err := filter.Apply(RefsInStage(stg))
+		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
-		assert.Loosely(t, digests, should.BeEmpty)
-		assert.Loosely(t, jsons, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
 
 		assert.That(t, stg.GetArgs().GetOmitReason(), should.Match(
 			orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS,
@@ -153,10 +157,10 @@ func TestFilterRef(t *testing.T) {
 			Args: makeRef(t, nil, structpb.NewBoolValue(true)),
 		}.Build()
 
-		digests, jsons, err := filter.Apply(RefsInStage(stg))
+		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
-		assert.Loosely(t, digests, should.BeEmpty)
-		assert.Loosely(t, jsons, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
 
 		assert.That(t, stg.GetArgs().GetOmitReason(), should.Match(
 			orchestratorpb.OmitReason_OMIT_REASON_UNWANTED,
@@ -179,10 +183,10 @@ func TestFilterRef(t *testing.T) {
 			Args: makeRef(t, mSrc, structpb.NewBoolValue(true)),
 		}.Build()
 
-		digests, jsons, err := filter.Apply(RefsInStage(stg))
+		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
-		assert.Loosely(t, digests, should.BeEmpty)
-		assert.Loosely(t, jsons, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
 
 		assert.That(t, stg.GetArgs().GetOmitReason(), should.Match(
 			orchestratorpb.OmitReason_OMIT_REASON_UNWANTED,
@@ -199,10 +203,10 @@ func TestFilterRef(t *testing.T) {
 		stg.GetArgs().SetTypeUrl(TypePrefix + "bogus.namespace.Message")
 		stg.GetArgs().GetInline().TypeUrl = TypePrefix + "bogus.namespace.Message"
 
-		digests, jsons, err := filter.Apply(RefsInStage(stg))
+		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
-		assert.Loosely(t, digests, should.BeEmpty)
-		assert.Loosely(t, jsons, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
+		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
 
 		assert.That(t, stg.GetArgs().GetOmitReason(), should.Match(
 			orchestratorpb.OmitReason_OMIT_REASON_UNWANTED,
@@ -222,7 +226,7 @@ func TestFilterRef(t *testing.T) {
 		})
 		assert.NoErr(t, err)
 
-		_, _, err = filter.Apply(RefsInStage(stg))
+		_, err = filter.Apply(RefsInStage(stg))
 		assert.ErrIsLike(t, err, "oh no auth exploded")
 	})
 }
