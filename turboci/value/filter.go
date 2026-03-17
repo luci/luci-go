@@ -15,228 +15,111 @@
 package value
 
 import (
+	"errors"
+	"iter"
+	"maps"
+	"slices"
+
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
-
-// Filter is a parsed form of [orchestratorpb.ValueFilter].
-type Filter struct {
-	vf *orchestratorpb.ValueFilter
-	ti *TypeInfo
-}
-
-// ParseFilter returns a [Filter] ready to use with [FilterStage],
-// [FilterStageAttempt] and [FilterCheck].
-func ParseFilter(vf *orchestratorpb.ValueFilter) (*Filter, error) {
-	ti, err := ParseTypeInfo(vf.GetTypeInfo())
-	if err != nil {
-		return nil, err
-	}
-	return &Filter{vf, ti}, nil
-}
 
 // AccessCheck is a function provided to [FilterStage], [FilterStageAttempt]
 // and [FilterCheck] to allow the caller to indicate when the caller does not
 // have access to a particular ValueRef.
 type AccessCheck func(realm string) (bool, error)
 
-type filterState struct {
-	hasAccess AccessCheck
-	ti        *TypeInfo
-
-	res FilterResult
-	err error
-}
-
-func (s *filterState) filterRef(ref *orchestratorpb.ValueRef, vm orchestratorpb.ValueMask) {
-	if s.err != nil || ref == nil {
-		return
-	}
-
-	access, err := s.hasAccess(ref.GetRealm())
-	if err != nil {
-		s.err = err
-		return
-	}
-	if !access {
-		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS)
-		return
-	}
-
-	switch vm {
-	case orchestratorpb.ValueMask_VALUE_MASK_UNKNOWN, orchestratorpb.ValueMask_VALUE_MASK_TYPE:
-		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
-		return
-	}
-
-	// At this point we *structurally* want, and can access, ref.
-	// See how typeinfo deals with this.
-	wantBinary, wantJSON := s.ti.Wants(ref.GetTypeUrl())
-	if !wantBinary && !wantJSON {
-		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
-		return
-	}
-
-	if ref.HasDigest() {
-		s.res.WantedDigests = append(s.res.WantedDigests, ref.GetDigest())
-	}
-	if wantJSON {
-		s.res.WantedJSON = append(s.res.WantedJSON, ref)
-	}
-}
-
-func (s *filterState) result() (FilterResult, error) {
-	if s.err != nil {
-		return FilterResult{}, s.err
-	}
-	return s.res, nil
-}
-
-// FilterResult is the result type for [FilterStage], [FilterStageAttempt] and
-// [FilterCheck].
-//
-// The caller should:
-//   - Fetch all `WantedDigests` into some [DataSource].
-//   - Call [AbsorbAsJSON] on all `WantedJSON` entries.
-type FilterResult struct {
-	// WantedDigests are the digests which need to be fetched into some [DataSource]
-	// in order for the ValueRef's in the filtered object to be decodable.
-	WantedDigests []string
-
-	// WantedJSON are the set of ValueRef's which need to be [AbsorbAsJSON]'d.
+// Filter is a stateful, parsed, form of [orchestratorpb.ValueFilter].
+type Filter struct {
+	// A reduced version of the ValueMasks in ValueFilter; indicates which slots
+	// need data.
 	//
-	// This should be done after populating the [DataSource] with everything in
-	// `WantedDigests`, since these may refer to data by digest.
-	WantedJSON []*orchestratorpb.ValueRef
+	// This will need to be extended to e.g. a bitmask when there are more
+	// filterable things in Value (such as tags).
+	//
+	// Note that 'TYPE' is always wanted (just the TypeURL of the ValueRef).
+	vf        map[RefSlot]bool
+	ti        *TypeInfo
+	hasAccess AccessCheck
 }
 
-// FilterStage walks the Stage and mutates all ValueRefs according to the
-// following rules:
-//   - If `hasAccess` returns false, the ref is [Omit]'d as NO_ACCESS.
-//   - If `vf` does not want the ref, it is [Omit]'d as UNWANTED.
+// Filter applies the parsed ValueFilter w/ AccessCheck function to all refs
+// yielded by the iterator.
 //
-// Otherwise the ref is 'wanted', and:
-//   - If the ValueRef has a digest, the digest is added to `WantedDigests`.
-//   - If the ValueRef is wanted as JSON, it is added to `WantedJSON`.
-//
-// Note: BOTH of these rules may apply to the same ref.
-//
-// If `hasAccess` returns an error, it will be returned by `FilterStage`.
-func FilterStage(stage *orchestratorpb.Stage, vf *Filter, hasAccess AccessCheck) (FilterResult, error) {
-	if vf == nil {
-		vf = &Filter{}
-	}
-	fs := filterState{
-		hasAccess: hasAccess,
-		ti:        vf.ti,
-	}
-
-	fs.filterRef(stage.GetArgs(), vf.vf.GetStageArgs())
-
-	for _, edit := range stage.GetEdits() {
-		for _, detail := range edit.GetReason().GetDetails() {
-			// NOTE: vf does not have direct filtering for edit reasons; it's
-			// presumed that if you want edits, you always want to see their reasons.
-			fs.filterRef(detail, 0)
+// See [RefsInStage], [RefsInStageAttempt] and [RefsInCheck] for iterators
+// which easily compose with this.
+func (f *Filter) Apply(i iter.Seq2[RefSlot, *orchestratorpb.ValueRef]) (wantedDigests []string, wantedJSON []*orchestratorpb.ValueRef, err error) {
+	wantedDigestsSet := make(map[string]struct{})
+	var errs []error
+	for slot, ref := range i {
+		access, err := f.hasAccess(ref.GetRealm())
+		if err != nil {
+			errs = append(errs, err)
+			continue
 		}
-		for _, attempt := range edit.GetStage().GetAttempts() {
-			for _, detail := range attempt.GetDetails() {
-				fs.filterRef(detail, vf.vf.GetStageEditAttemptDetails())
-			}
+		if !access {
+			Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS)
+			continue
+		}
+		if !f.vf[slot] {
+			Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
+			continue
+		}
+
+		// At this point we *structurally* want, and can access, ref.
+		// See how typeinfo deals with this.
+		wantBinary, wantJSON := f.ti.Wants(ref.GetTypeUrl())
+		if !wantBinary && !wantJSON {
+			Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
+			continue
+		}
+
+		if ref.HasDigest() {
+			wantedDigestsSet[ref.GetDigest()] = struct{}{}
+		}
+		if wantJSON {
+			wantedJSON = append(wantedJSON, ref)
 		}
 	}
-
-	for _, attempt := range stage.GetAttempts() {
-		filterStageAttempt(&fs, attempt, vf)
+	if len(errs) > 0 {
+		return nil, nil, errors.Join(errs...)
 	}
-
-	return fs.result()
+	return slices.Sorted(maps.Keys(wantedDigestsSet)), wantedJSON, nil
 }
 
-// FilterStageAttempt walks the Stage Attempt and processes all ValueRefs
-// according to the following rules:
-//   - If `hasAccess` returns false, the ref is [Omit]'d as NO_ACCESS.
-//   - If `vf` does not want the ref, it is [Omit]'d as UNWANTED.
+// ParseFilter returns a [Filter] ready to use with [FilterStage],
+// [FilterStageAttempt] and [FilterCheck].
 //
-// Otherwise the ref is 'wanted', and:
-//   - If the ValueRef has a digest, the digest is added to `wantDigests`.
-//   - If the ValueRef is wanted as JSON, it is added to `wantJSON`.
-//
-// Note: BOTH of these rules may apply to the same ref.
-//
-// If `hasAccess` returns an error, it will be returned by `FilterStage`.
-func FilterStageAttempt(sa *orchestratorpb.Stage_Attempt, vf *Filter, hasAccess AccessCheck) (FilterResult, error) {
-	if vf == nil {
-		vf = &Filter{}
+// If `hasAccess` is nil, access checks are disabled (meaning that no refs will
+// be omitted with NO_ACCESS).
+func ParseFilter(vf *orchestratorpb.ValueFilter, hasAccess AccessCheck) (*Filter, error) {
+	ti, err := ParseTypeInfo(vf.GetTypeInfo())
+	if err != nil {
+		return nil, err
 	}
-	fs := &filterState{
-		hasAccess: hasAccess,
-		ti:        vf.ti,
+	if hasAccess == nil {
+		hasAccess = func(realm string) (bool, error) { return true, nil }
 	}
 
-	filterStageAttempt(fs, sa, vf)
+	vfMap := map[RefSlot]bool{}
+	// These two don't currently have a manual control in ValueMask.
+	vfMap[StageEditReasonDetailsSlot] = true
+	vfMap[CheckEditReasonDetailsSlot] = true
 
-	return fs.result()
-}
-
-func filterStageAttempt(fs *filterState, sa *orchestratorpb.Stage_Attempt, vf *Filter) {
-	for _, detail := range sa.GetDetails() {
-		fs.filterRef(detail, vf.vf.GetStageAttemptDetails())
-	}
-	for _, progress := range sa.GetProgress() {
-		for _, detail := range progress.GetDetails() {
-			fs.filterRef(detail, vf.vf.GetStageAttemptProgressDetails())
+	setVF := func(slot RefSlot, vm orchestratorpb.ValueMask) {
+		switch vm {
+		case orchestratorpb.ValueMask_VALUE_MASK_VALUE_TYPE:
+			vfMap[slot] = true
 		}
 	}
-}
+	setVF(StageArgsSlot, vf.GetStageArgs())
+	setVF(StageAttemptDetailsSlot, vf.GetStageAttemptDetails())
+	setVF(StageAttemptProgressDetailsSlot, vf.GetStageAttemptProgressDetails())
+	setVF(StageEditAttemptDetailsSlot, vf.GetStageEditAttemptDetails())
 
-// FilterCheck walks the Check and mutates all ValueRefs according to the
-// following rules:
-//   - If `hasAccess` returns false, the ref is [Omit]'d as NO_ACCESS.
-//   - If `vf` does not want the ref, it is [Omit]'d as UNWANTED.
-//
-// Otherwise the ref is 'wanted', and:
-//   - If the ValueRef has a digest, the digest is added to `WantedDigests`.
-//   - If the ValueRef is wanted as JSON, it is added to `WantedJSON`.
-//
-// The caller should then:
-//   - Fetch all `WantedDigests` into some [DataSource].
-//   - Call [AbsorbAsJSON] on all `WantedJSON` entries.
-//
-// Note: BOTH of these rules may apply to the same ref.
-//
-// If `hasAccess` returns an error, it will be returned by `FilterCheck`.
-func FilterCheck(check *orchestratorpb.Check, vf *Filter, hasAccess AccessCheck) (FilterResult, error) {
-	if vf == nil {
-		vf = &Filter{}
-	}
-	fs := filterState{
-		hasAccess: hasAccess,
-		ti:        vf.ti,
-	}
+	setVF(CheckOptionsSlot, vf.GetCheckOptions())
+	setVF(CheckResultsDataSlot, vf.GetCheckResultData())
+	setVF(CheckEditOptionsSlot, vf.GetCheckEditOptions())
+	setVF(CheckEditResultsDataSlot, vf.GetCheckResultData())
 
-	for _, option := range check.GetOptions() {
-		fs.filterRef(option, vf.vf.GetCheckOptions())
-	}
-	for _, result := range check.GetResults() {
-		for _, dat := range result.GetData() {
-			fs.filterRef(dat, vf.vf.GetCheckResultData())
-		}
-	}
-	for _, edit := range check.GetEdits() {
-		for _, detail := range edit.GetReason().GetDetails() {
-			// NOTE: vf does not have direct filtering for edit reasons; it's
-			// presumed that if you want edits, you always want to see their reasons.
-			fs.filterRef(detail, 0)
-		}
-		for _, option := range edit.GetCheck().GetOptions() {
-			fs.filterRef(option, vf.vf.GetCheckEditOptions())
-		}
-		for _, result := range edit.GetCheck().GetResults() {
-			for _, dat := range result.GetData() {
-				fs.filterRef(dat, vf.vf.GetCheckEditResultData())
-			}
-		}
-	}
-
-	return fs.result()
+	return &Filter{vfMap, ti, hasAccess}, nil
 }
