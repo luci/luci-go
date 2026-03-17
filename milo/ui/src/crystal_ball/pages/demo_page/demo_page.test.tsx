@@ -18,6 +18,7 @@ import { DateTime, Settings } from 'luxon';
 
 import { TopBar } from '@/crystal_ball/components/layout/top_bar';
 import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import * as useAndroidPerfApi from '@/crystal_ball/hooks/use_android_perf_api';
 import { SearchMeasurementsResponse } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -105,7 +106,7 @@ describe('<DemoPage />', () => {
     renderDemoPage('/ui/labs/crystal-ball/demo?q=metricKeys%3A%22cpu%22');
 
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Error fetching measurements: Backend timeout',
+      `${COMMON_MESSAGES.ERROR_FETCHING_MEASUREMENTS}Backend timeout`,
     );
   });
 
@@ -118,7 +119,7 @@ describe('<DemoPage />', () => {
     renderDemoPage('/ui/labs/crystal-ball/demo?q=metricKeys%3A%22cpu%22');
 
     expect(
-      await screen.findByText('No data found for the given parameters.'),
+      await screen.findByText(COMMON_MESSAGES.NO_DATA_FOUND),
     ).toBeInTheDocument();
   });
 

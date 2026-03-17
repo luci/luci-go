@@ -18,6 +18,7 @@ import { DateTime } from 'luxon';
 
 import * as timeUtils from '@/common/components/time_range_selector/time_range_selector_utils';
 import * as components from '@/crystal_ball/components';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import * as useSearchMeasurementsHook from '@/crystal_ball/hooks/use_android_perf_api';
 import { transformDataForChart } from '@/crystal_ball/utils';
 import * as useSyncedSearchParamsHook from '@/generic_libs/hooks/synced_search_params';
@@ -128,7 +129,7 @@ describe('ChartWidget', () => {
       />,
     );
     expect(screen.getByTestId('alert')).toHaveTextContent(
-      'Error fetching chart data: Failed to fetch',
+      `${COMMON_MESSAGES.ERROR_FETCHING_MEASUREMENTS}Failed to fetch`,
     );
   });
 
@@ -142,7 +143,7 @@ describe('ChartWidget', () => {
       />,
     );
     expect(screen.getByTestId('typography')).toHaveTextContent(
-      'No data found for the given parameters.',
+      COMMON_MESSAGES.NO_DATA_FOUND,
     );
   });
 
@@ -168,7 +169,7 @@ describe('ChartWidget', () => {
       />,
     );
     expect(screen.getByTestId('typography')).toHaveTextContent(
-      'No data found for the given parameters.',
+      COMMON_MESSAGES.NO_DATA_FOUND,
     );
   });
 
@@ -346,7 +347,7 @@ describe('ChartWidget', () => {
       { enabled: false },
     );
     expect(screen.getByTestId('typography')).toHaveTextContent(
-      'No data found for the given parameters.',
+      COMMON_MESSAGES.NO_DATA_FOUND,
     );
   });
 

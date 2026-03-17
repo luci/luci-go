@@ -16,6 +16,7 @@ import { Alert, Box } from '@mui/material';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 
 interface RequireLoginProps {
   children: React.ReactNode;
@@ -32,7 +33,7 @@ export function RequireLogin({ children }: RequireLoginProps) {
   if (isAnonymous) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="warning">Please log in to view this page.</Alert>
+        <Alert severity="warning">{COMMON_MESSAGES.LOGIN_REQUIRED}</Alert>
       </Box>
     );
   }

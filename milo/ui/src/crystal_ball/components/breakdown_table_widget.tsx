@@ -32,6 +32,7 @@ import {
 import { useMemo, useState, Dispatch, SetStateAction } from 'react';
 
 import { COMMON_MRT_CONFIG } from '@/crystal_ball/constants';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import type {
   BreakdownSection,
   BreakdownTableData,
@@ -181,7 +182,7 @@ export function BreakdownTableWidget({
   const activeSection = sections[activeTab];
 
   if (!sections.length) {
-    return <Box sx={{ p: 2 }}>No data available.</Box>;
+    return <Box sx={{ p: 2 }}>{COMMON_MESSAGES.NO_DATA_AVAILABLE}</Box>;
   }
 
   return (

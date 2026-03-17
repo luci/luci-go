@@ -22,6 +22,7 @@ import {
   FilterEditor,
   TimeSeriesChart,
 } from '@/crystal_ball/components';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import { useSearchMeasurements } from '@/crystal_ball/hooks';
 import { transformDataForChart } from '@/crystal_ball/utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -196,7 +197,8 @@ export function ChartWidget({
         )}
         {isSearchError && (
           <Alert severity="error" sx={{ my: 2 }}>
-            Error fetching chart data: {searchError?.message || 'Unknown error'}
+            {COMMON_MESSAGES.ERROR_FETCHING_MEASUREMENTS}
+            {searchError?.message || COMMON_MESSAGES.UNKNOWN_ERROR}
           </Alert>
         )}
         {!isSearchLoading &&
@@ -215,7 +217,7 @@ export function ChartWidget({
                 variant="body1"
                 sx={{ p: 2, color: 'text.secondary' }}
               >
-                No data found for the given parameters.
+                {COMMON_MESSAGES.NO_DATA_FOUND}
               </Typography>
             </Box>
           )}

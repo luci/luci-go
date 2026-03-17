@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './api';
-export * from './colors';
-export * from './messages';
-export * from './table';
-export * from './url';
+/**
+ * Common user-facing messages used across the Crystal Ball application.
+ */
+export enum COMMON_MESSAGES {
+  LOGIN_REQUIRED = 'Please log in to view this page.',
+  NO_DATA_AVAILABLE = 'No data available.',
+  NO_DATA_FOUND = 'No data found for the given parameters.',
+  ERROR_FETCHING_MEASUREMENTS = 'Error fetching measurements: ',
+  UNKNOWN_ERROR = 'Unknown error',
+}

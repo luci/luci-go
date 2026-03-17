@@ -28,6 +28,7 @@ import {
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import { MOCK_BREAKDOWN_DATA } from '@/crystal_ball/components/mock_breakdown_data';
 import { RequireLogin } from '@/crystal_ball/components/require_login';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import {
   useSearchMeasurements,
   useSearchQuerySync,
@@ -242,7 +243,8 @@ export function DemoPage() {
 
       {isSearchError && (
         <Alert severity="error" sx={{ my: 2 }}>
-          Error fetching measurements: {searchError?.message || 'Unknown error'}
+          {COMMON_MESSAGES.ERROR_FETCHING_MEASUREMENTS}
+          {searchError?.message || COMMON_MESSAGES.UNKNOWN_ERROR}
         </Alert>
       )}
 
@@ -262,7 +264,7 @@ export function DemoPage() {
 
       {searchRequest && !isSearchLoading && !isSearchError && !hasData && (
         <Typography variant="body1" sx={{ mt: 2 }}>
-          No data found for the given parameters.
+          {COMMON_MESSAGES.NO_DATA_FOUND}
         </Typography>
       )}
 

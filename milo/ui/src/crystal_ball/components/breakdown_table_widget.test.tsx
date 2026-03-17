@@ -14,12 +14,18 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 
+import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
+import { BreakdownTableData } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
 import { BreakdownTableWidget } from './breakdown_table_widget';
 
 describe('BreakdownTableWidget', () => {
-  it('renders "No data available." when sections are empty', () => {
-    render(<BreakdownTableWidget data={{ sections: [] }} />);
-    expect(screen.getByText('No data available.')).toBeInTheDocument();
+  it(`renders "${COMMON_MESSAGES.NO_DATA_AVAILABLE}" when sections are empty`, () => {
+    const data = BreakdownTableData.fromPartial({ sections: [] });
+    render(<BreakdownTableWidget data={data} />);
+    expect(
+      screen.getByText(COMMON_MESSAGES.NO_DATA_AVAILABLE),
+    ).toBeInTheDocument();
   });
 
   it('renders the tabs and table when data is provided', () => {
