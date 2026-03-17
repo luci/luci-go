@@ -20,6 +20,13 @@ import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builde
 
 export type TreesJson = TreeJson[];
 
+export interface TreeFilter {
+  /** The path to the field in the Build object to filter on. */
+  readonly path: string[];
+  /** The value that the field must match to be included. */
+  readonly value: unknown;
+}
+
 export interface TreeJson {
   name: string;
   display_name: string;
@@ -28,6 +35,11 @@ export interface TreeJson {
   hotlistId?: string;
   project: string;
   treeStatusName: string;
+  /**
+   * filter is an optional filter that determines which failures should be
+   * included in the monitoring page.
+   */
+  filter?: TreeFilter;
 }
 
 export const treeJsonFromName = (treeName: string): TreeJson | null => {

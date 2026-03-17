@@ -59,6 +59,7 @@ const FIELD_MASK = Object.freeze([
   'builds.*.status',
   'builds.*.startTime',
   'builds.*.summaryMarkdown',
+  'builds.*.input.properties',
   'builds.*.steps.*.name',
   'builds.*.steps.*.status',
   'builds.*.steps.*.summaryMarkdown',
@@ -249,9 +250,27 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
     throw failingTestsQueries.find((q) => q.isError && q.error);
   }
 
-  const builderAlerts = createBuilderAlerts(histories);
-  const stepAlerts = createStepAlerts(histories);
-  const testAlerts = createTestAlerts(histories);
+  const filteredHistories = histories.filter(
+    (history: BuildAndTestVariants[]) => {
+      const filter = tree?.filter;
+      if (!filter) {
+        return true;
+      }
+      const latestBuild = history[0]?.build;
+      if (!latestBuild) {
+        return false;
+      }
+      const actualValue = filter.path.reduce(
+        (prev, curr) => (prev as Record<string, unknown>)?.[curr],
+        latestBuild as unknown,
+      );
+      return actualValue === filter.value;
+    },
+  );
+
+  const builderAlerts = createBuilderAlerts(filteredHistories);
+  const stepAlerts = createStepAlerts(filteredHistories);
+  const testAlerts = createTestAlerts(filteredHistories);
 
   const alerts = alertsQuery.data?.alerts.map((a) => {
     const extended = extendedAlertsData[`alerts/${encodeURIComponent(a.key)}`];

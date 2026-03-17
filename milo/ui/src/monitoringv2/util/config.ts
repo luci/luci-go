@@ -100,6 +100,15 @@ export const configuredTrees: TreeJson[] = [
     default_monorail_project_name: 'fuchsia',
     project: 'fuchsia',
     treeStatusName: 'fuchsia-stem',
+    filter: {
+      path: [
+        'input',
+        'properties',
+        '$fuchsia/builder_tags',
+        'blocks_fuchsia_postsubmit',
+      ],
+      value: true,
+    },
   },
   {
     name: 'ios',
