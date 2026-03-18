@@ -35,7 +35,8 @@ export function RedirectATIBanner({
   // TODO(b/463488897): When on TI page, should link directly to Android test result page instead of just invocation.
   const ATIUrl =
     `https://android-build.corp.google.com/test_investigate/invocation/` +
-    getAntsInvocationId(invocation);
+    getAntsInvocationId(invocation) +
+    '?preventRedirect=true';
   const feedbackBugtemplateComment = `You can use this entry to log an issue or provide a recommendation for the new Test Results Page.
 
 Please include a short description of the issue or suggestion and, if applicable, describe steps to reproduce and attach a screenshot.
