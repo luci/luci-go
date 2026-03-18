@@ -141,6 +141,14 @@ export default function AutorepairDialog({
           copyText={satlabCommand}
           copyKind="satlab_repair"
         />
+        <p>
+          If this feature is critical to your use case, please comment on or
+          upvote{' '}
+          <a href="http://b/493273486" target="_blank" rel="noreferrer">
+            this feature request
+          </a>
+          .
+        </p>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
