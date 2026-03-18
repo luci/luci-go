@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"google.golang.org/genai"
 
@@ -138,9 +139,22 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 	logging.Infof(ctx, "Sending prompt to LLM: %s", prompt)
 
 	// 4. Call LLM using Schema
-	respText, err := genaiClient.GenerateContentWithSchema(ctx, prompt, fixforwardSchema)
+	var respText string
+	for attempt := 1; attempt <= 3; attempt++ {
+		respText, err = genaiClient.GenerateContentWithSchema(ctx, prompt, fixforwardSchema)
+		if err == nil {
+			break
+		}
+		if attempt < 3 && strings.Contains(err.Error(), "429") {
+			waitTime := 60 * time.Second
+			logging.Warningf(ctx, "LLM generation hit 429 quota (attempt %d/3). Retrying in %v...", attempt, waitTime)
+			time.Sleep(waitTime)
+			continue
+		}
+		break
+	}
 	if err != nil {
-		return errors.Annotate(err, "LLM generation failed").Err()
+		return errors.Annotate(err, "LLM generation failed after retries").Err()
 	}
 
 	// 5. Parse LLM response

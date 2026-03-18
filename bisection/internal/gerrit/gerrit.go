@@ -52,13 +52,13 @@ type Client struct {
 	host         string
 }
 
-func newGerritClient(ctx context.Context, host string) (gerritpb.GerritClient, error) {
+func newGerritClientWithAuthority(ctx context.Context, host string, kind auth.RPCAuthorityKind, opts ...auth.RPCOption) (gerritpb.GerritClient, error) {
 	if mockClient, ok := ctx.Value(&mockedGerritClientKey).(*gerritpb.MockGerritClient); ok {
 		// return a mock Gerrit client for tests
 		return mockClient, nil
 	}
 
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(scopes.GerritScopeSet()...))
+	t, err := auth.GetRPCTransport(ctx, kind, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,11 +66,32 @@ func newGerritClient(ctx context.Context, host string) (gerritpb.GerritClient, e
 	return gerrit.NewRESTClient(&http.Client{Transport: t}, host, true)
 }
 
+func newGerritClient(ctx context.Context, host string) (gerritpb.GerritClient, error) {
+	return newGerritClientWithAuthority(ctx, host, auth.AsSelf, auth.WithScopes(scopes.GerritScopeSet()...))
+}
+
+func newGerritClientForProject(ctx context.Context, host, project string) (gerritpb.GerritClient, error) {
+	return newGerritClientWithAuthority(ctx, host, auth.AsProject, auth.WithProject(project), auth.WithScopes(scopes.GerritScopeSet()...))
+}
+
 // NewClient creates a client to communicate with Gerrit
 func NewClient(ctx context.Context, host string) (*Client, error) {
 	client, err := newGerritClient(ctx, host)
 	if err != nil {
 		return nil, errors.Fmt("error making Gerrit client for host %s: %w", host, err)
+	}
+
+	return &Client{
+		gerritClient: client,
+		host:         host,
+	}, nil
+}
+
+// NewClientForProject creates a client to communicate with Gerrit using AsProject
+func NewClientForProject(ctx context.Context, host, project string) (*Client, error) {
+	client, err := newGerritClientForProject(ctx, host, project)
+	if err != nil {
+		return nil, errors.Fmt("error making Gerrit client for host %s, project %s: %w", host, project, err)
 	}
 
 	return &Client{

@@ -211,7 +211,13 @@ func triggerFixforward(c context.Context, genaiAnalysis *model.CompileGenAIAnaly
 		return
 	}
 
-	gerritClient, err := gerrit.NewClient(c, "chromium-review.googlesource.com")
+	fb, err := datastoreutil.GetBuild(c, cfa.CompileFailure.Parent().IntID())
+	if err != nil {
+		logging.Errorf(c, "failed getting Build for fixforward: %v", err)
+		return
+	}
+
+	gerritClient, err := gerrit.NewClientForProject(c, "chromium-review.googlesource.com", fb.Project)
 	if err != nil {
 		logging.Errorf(c, "failed creating Gerrit client for fixforward: %v", err)
 		return

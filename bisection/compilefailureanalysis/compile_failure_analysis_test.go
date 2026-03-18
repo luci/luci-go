@@ -420,7 +420,20 @@ func TestTriggerFixforward(t *testing.T) {
 	mockLLM.EXPECT().GenerateContentWithSchema(gomock.Any(), gomock.Any(), gomock.Any()).Return(mockResponseJSON, nil)
 
 	// 4. Set up Datastore
-	cfa := &model.CompileFailureAnalysis{Id: 999}
+	fb := &model.LuciFailedBuild{
+		Id: 88128398584903,
+		LuciBuild: model.LuciBuild{
+			BuildId: 88128398584903,
+			Project: "chromium",
+		},
+	}
+	assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
+	cf := testutil.CreateCompileFailure(c, t, fb)
+
+	cfa := &model.CompileFailureAnalysis{
+		Id:             999,
+		CompileFailure: datastore.KeyForObj(c, cf),
+	}
 	assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
 
 	genaiAnalysis := &model.CompileGenAIAnalysis{
