@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 
 	"go.chromium.org/luci/vpython/api/vpython"
-	"go.chromium.org/luci/vpython/common"
 	"go.chromium.org/luci/vpython/spec"
 )
 
@@ -86,9 +85,6 @@ func (v *vpythonSpecTransformer) Transform(spec *vpython.Spec, deps []actions.Pa
 	}
 	env := environ.New(drv.Env)
 	env.Set(cipd.EnvCacheDir, v.cipdCacheDir)
-	if ar := os.Getenv(common.EnvVpythonArUrl); ar != "" {
-		env.Set(common.EnvVpythonArUrl, ar)
-	}
 	for _, d := range deps {
 		drv.FixedOutput += "+" + d.DerivationID
 		env.Set(d.Action.Name, d.Handler.OutputDirectory())
@@ -131,8 +127,11 @@ func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string)
 		return err
 	}
 
-	// Always write ensures file.
-	if err := os.WriteFile(filepath.Join(out, "ensure.txt"), []byte(efs.String()), 0644); err != nil {
+	// Execute cipd export
+	if err := actions.ActionCIPDExportExecutor(ctx, &core.ActionCIPDExport{
+		EnsureFile: efs.String(),
+		Env:        envs.Sorted(),
+	}, out); err != nil {
 		return err
 	}
 
