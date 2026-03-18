@@ -35,31 +35,27 @@ import (
 // The resolver for decoding the binary data and encoding the JSON value will
 // be taken from `mopt`, if supplied, or [protoregistry.GlobalTypes], if not.
 //
-// Returns an error if `ref` refers to an unknown type, or there was an error
-// during marshal/unmarshal.
+// If ref.type_url is not a known type, sets the ValueData.conversion_failure
+// field to NO_DESCRIPTOR. If there is some other error in conversion, sets the
+// conversion_failure field to ERROR.
 //
-// Returns an error if `ref` refers to data which is not inlined, and is not
-// already in `source`.
+// Only returns an error if `ref` refers to data which is not inlined, and is
+// not already in `source`.
 func AbsorbAsJSON(source DataSource, ref *orchestratorpb.ValueRef, mopt protojson.MarshalOptions) error {
 	AbsorbInline(source, ref)
 
 	dat := source.Retrieve(ref.GetDigest())
-	if dat.HasJson() {
+	if dat.HasJson() || dat.HasConversionFailure() {
+		// We either already have the JSON, or we already tried and failed.
+		// No need to try again.
 		return nil
 	}
 	if !dat.HasBinary() {
 		return fmt.Errorf("could not convert missing data for digest %q", ref.GetDigest())
 	}
 
-	jsonPB, err := convertToJson(dat.GetBinary(), mopt)
-	if err != nil {
-		return err
-	}
-
 	source.Intern(map[string]*orchestratorpb.ValueData{
-		ref.GetDigest(): orchestratorpb.ValueData_builder{
-			Json: jsonPB,
-		}.Build(),
+		ref.GetDigest(): convertToJson(dat.GetBinary(), mopt),
 	})
 
 	return nil
@@ -84,7 +80,7 @@ func hasUnknownFields(msg protoreflect.Message) bool {
 }
 
 // convertToJson returns a JsonAny given an Any.
-func convertToJson(apb *anypb.Any, mopt protojson.MarshalOptions) (*orchestratorpb.ValueData_JsonAny, error) {
+func convertToJson(apb *anypb.Any, mopt protojson.MarshalOptions) *orchestratorpb.ValueData {
 	resolver := mopt.Resolver
 	if resolver == nil {
 		resolver = protoregistry.GlobalTypes
@@ -98,28 +94,38 @@ func convertToJson(apb *anypb.Any, mopt protojson.MarshalOptions) (*orchestrator
 	// during this transcode.
 	desc, err := resolver.FindMessageByURL(apb.TypeUrl)
 	if err != nil {
-		return nil, err
+		return orchestratorpb.ValueData_builder{
+			Binary:            apb,
+			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
+		}.Build()
 	}
+
 	msg := desc.New().Interface()
 	if err := (proto.UnmarshalOptions{
 		Resolver: resolver,
 	}).Unmarshal(apb.Value, msg); err != nil {
-		return nil, err
+		return orchestratorpb.ValueData_builder{
+			Binary:            apb,
+			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR.Enum(),
+		}.Build()
 	}
 
-	ret := orchestratorpb.ValueData_JsonAny_builder{
+	jpb := orchestratorpb.ValueData_JsonAny_builder{
 		TypeUrl: &apb.TypeUrl,
 	}.Build()
 
 	if hasUnknownFields(msg.ProtoReflect()) {
-		ret.SetHasUnknownFields(true)
+		jpb.SetHasUnknownFields(true)
 	}
 
 	msgJson, err := mopt.Marshal(msg)
 	if err != nil {
-		return nil, err
+		return orchestratorpb.ValueData_builder{
+			Binary:            apb,
+			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR.Enum(),
+		}.Build()
 	}
-	ret.SetValue(string(msgJson))
+	jpb.SetValue(string(msgJson))
 
-	return ret, nil
+	return orchestratorpb.ValueData_builder{Json: jpb}.Build()
 }

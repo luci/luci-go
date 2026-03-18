@@ -30,5 +30,46 @@ type DataSource interface {
 	//
 	// This must prefer JSON over binary (so interning binary data to an entry
 	// with JSON in it will always keep the JSON data).
+	//
+	// A set conversion failure must override an unset conversion failure.
 	Intern(data map[string]*orchestratorpb.ValueData)
+}
+
+// MergeData returns a shallow copy of `a` with `b` merged into it using the
+// rules defined in [DataSource.Intern].
+//
+// If a is nil, returns b.
+// If merging b into a is a no-op, returns `a` unmodified.
+func MergeData(a, b *orchestratorpb.ValueData) *orchestratorpb.ValueData {
+	if a == nil {
+		return b
+	}
+
+	var ret *orchestratorpb.ValueData
+	cow := func() *orchestratorpb.ValueData {
+		if ret == nil {
+			ret = &orchestratorpb.ValueData{}
+			if a.HasBinary() {
+				ret.SetBinary(a.GetBinary())
+			} else {
+				ret.SetJson(a.GetJson())
+			}
+			if a.HasConversionFailure() {
+				ret.SetConversionFailure(a.GetConversionFailure())
+			}
+		}
+		return ret
+	}
+
+	if a.HasBinary() && b.HasJson() {
+		cow().SetJson(b.GetJson())
+	}
+	if !a.HasConversionFailure() && b.HasConversionFailure() {
+		cow().SetConversionFailure(b.GetConversionFailure())
+	}
+
+	if ret == nil {
+		ret = a
+	}
+	return ret
 }

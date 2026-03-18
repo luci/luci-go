@@ -38,12 +38,6 @@ func (s SimpleDataSource) Retrieve(digest string) *orchestratorpb.ValueData {
 // Intern implements [DataSource].
 func (s SimpleDataSource) Intern(data map[string]*orchestratorpb.ValueData) {
 	for digest, dat := range data {
-		if cur, ok := s[digest]; ok {
-			if cur.HasBinary() && dat.HasJson() {
-				s[digest] = dat
-			}
-		} else {
-			s[digest] = dat
-		}
+		s[digest] = MergeData(s[digest], dat)
 	}
 }

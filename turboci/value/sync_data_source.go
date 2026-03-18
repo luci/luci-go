@@ -44,25 +44,28 @@ func (s *SyncDataSource) Retrieve(digest string) *orchestratorpb.ValueData {
 // Intern implements [DataSource].
 func (s *SyncDataSource) Intern(data map[string]*orchestratorpb.ValueData) {
 	for digest, dat := range data {
-		curVal, loaded := s.data.Load(digest)
-		if loaded {
+		if curVal, loaded := s.data.LoadOrStore(digest, dat); loaded {
 			cur := curVal.(*orchestratorpb.ValueData)
-			if cur.HasBinary() && dat.HasJson() {
-				s.data.CompareAndSwap(digest, cur, dat)
+			newDat := MergeData(cur, dat)
+			for cur != newDat && !s.data.CompareAndSwap(digest, cur, newDat) {
+				curVal, loaded = s.data.Load(digest)
+				if !loaded {
+					panic("impossible")
+				}
+				cur = curVal.(*orchestratorpb.ValueData)
+				newDat = MergeData(cur, dat)
 			}
 		} else {
-			if _, loaded := s.data.LoadOrStore(digest, dat); !loaded {
-				s.sizeHint.Add(1)
-			}
+			s.sizeHint.Add(1)
 		}
 	}
 }
 
 // ToMap scans all the data in this SyncDataSource and returns it as a
 // ValueData map.
-func (m *SyncDataSource) ToMap() map[string]*orchestratorpb.ValueData {
-	ret := make(map[string]*orchestratorpb.ValueData, m.sizeHint.Load())
-	for key, val := range m.data.Range {
+func (s *SyncDataSource) ToMap() map[string]*orchestratorpb.ValueData {
+	ret := make(map[string]*orchestratorpb.ValueData, s.sizeHint.Load())
+	for key, val := range s.data.Range {
 		ret[key.(string)] = val.(*orchestratorpb.ValueData)
 	}
 	return ret

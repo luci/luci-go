@@ -214,4 +214,54 @@ func TestEnsureJSONInSource(t *testing.T) {
 			HasUnknownFields: proto.Bool(true),
 		}.Build()))
 	})
+
+	t.Run(`missing descriptor`, func(t *testing.T) {
+		t.Parallel()
+
+		dSrc := SimpleDataSource{}
+		v := mustInline(&emptypb.Empty{}, "proj:realm")
+		v.SetTypeUrl(TypePrefix + "fake.type.NoDescriptor")
+		v.GetInline().TypeUrl = TypePrefix + "fake.type.NoDescriptor"
+		rawData := proto.CloneOf(v.GetInline())
+
+		dgst := ComputeDigest(v.GetInline())
+
+		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
+
+		assert.That(t, dSrc.Retrieve(string(dgst)), should.Match(orchestratorpb.ValueData_builder{
+			Binary:            rawData,
+			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
+		}.Build()))
+	})
+
+	t.Run(`conversion failure sticky`, func(t *testing.T) {
+		t.Parallel()
+
+		dSrc := SimpleDataSource{}
+		v := mustInline(&emptypb.Empty{}, "proj:realm")
+		emptyInline := proto.CloneOf(v.GetInline())
+		dgst := ComputeDigest(v.GetInline())
+
+		AbsorbInline(dSrc, v)
+		dSrc.Intern(map[string]*orchestratorpb.ValueData{
+			string(dgst): orchestratorpb.ValueData_builder{
+				ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
+			}.Build(),
+		})
+
+		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
+
+		assert.That(t, dSrc.Retrieve(string(dgst)), should.Match(orchestratorpb.ValueData_builder{
+			Binary:            emptyInline,
+			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
+		}.Build()))
+
+		// A second, unrelated, inline'd Empty.
+		AbsorbAsJSON(dSrc, mustInline(&emptypb.Empty{}, "other:realm"), protojson.MarshalOptions{})
+
+		assert.That(t, dSrc.Retrieve(string(dgst)), should.Match(orchestratorpb.ValueData_builder{
+			Binary:            emptyInline,
+			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
+		}.Build()))
+	})
 }
