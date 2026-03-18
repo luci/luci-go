@@ -22,6 +22,12 @@ import (
 	"runtime"
 )
 
+// Environment variable definitions
+const (
+	EnvVpythonArUrl    = "VPYTHON_AR_URL"
+	EnvVpythonCipdPath = "VPYTHON_CIPD_PATH"
+)
+
 // Python returns the python path in python installation.
 func Python(path, py string) string {
 	if runtime.GOOS == "windows" {
