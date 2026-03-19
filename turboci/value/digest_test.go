@@ -15,6 +15,7 @@
 package value
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"strings"
 	"testing"
@@ -41,17 +42,17 @@ func TestComputeDigest(t *testing.T) {
 		{
 			"empty",
 			&emptypb.Empty{},
-			"U-kgiMBC0-K8LZdwFEE2qzWKW3mYVCoRS4evp2W5t6pWAQ",
+			"zC1HiB0gq_T1muuCh5VIAoC4FjWvxp00E9waqU1YMhlWAQ",
 		},
 		{
 			"float_val",
 			structpb.NewNumberValue(123.456),
-			"Gw0QxKtzD0R1Bxy_bv07OtZK-ayI0jSRBoCO7354nShoAQ",
+			"aexUjcBYp_UhSBsbm6TwadrRm0ZAYUrR5mRAKiJ2XtRsAQ",
 		},
 		{
 			"long_string",
 			structpb.NewStringValue(strings.Repeat("this is a very long string", 40000)),
-			"dY84ioqzyudaZLqMOG1myyij4FSC5BdKdQ0f4m3oGwLe-n4B",
+			"tvpg39g5kBqzdMKxPOWxvE82_CR13ZmPUmuaq186WyDm-n4B",
 		},
 	}
 
@@ -68,8 +69,23 @@ func TestComputeDigest(t *testing.T) {
 			dgstPb, err := dgst.ToProto()
 			assert.NoErr(t, err, truth.LineContext())
 
-			wantSize := int64(len(apb.TypeUrl) + len(apb.Value) + 2)
-			assert.That(t, dgstPb.GetSizeBytes(), should.Equal(wantSize), truth.LineContext())
+			wantSize := proto.Size(apb)
+			enc, err := proto.Marshal(apb)
+			assert.NoErr(t, err)
+			assert.That(t, len(enc), should.Equal(wantSize), truth.LineContext())
+
+			detEnc := DeterministicallySerializeAny(apb)
+			assert.Loosely(t, detEnc, should.HaveLength(wantSize), truth.LineContext())
+
+			dec := &anypb.Any{}
+			assert.NoErr(t, proto.Unmarshal(detEnc, dec), truth.LineContext())
+
+			assert.That(t, proto.Equal(dec, apb), should.BeTrue, truth.LineContext())
+
+			sha := sha256.Sum256(detEnc)
+			assert.That(t, dgstPb.GetHash(), should.Match(sha[:]))
+
+			assert.That(t, dgstPb.GetSizeBytes(), should.Equal(int64(wantSize)), truth.LineContext())
 		})
 	}
 }

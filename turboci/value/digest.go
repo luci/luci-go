@@ -15,10 +15,12 @@
 package value
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"io"
 
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -69,27 +71,84 @@ func (d Digest) ToProto() (*orchestratorpb.ValueDigest, error) {
 	}.Build(), nil
 }
 
+func writeAnyDeterministically[W io.Writer](apb *anypb.Any, w W) int {
+	// write the `apb` fields to avoid extra allocations and avoid proto
+	// reflection, since Any is so simple:
+	//
+	//   protoTag(1, bytes)
+	//   varint(len(type_url))
+	//   type_url
+	//   protoTag(2, bytes)
+	//   varint(len(value))
+	//   value
+	//
+	// NOTE: We omit empty fields per the behavior of proto2/proto3 encoding.
+	// This is important to accurately calculate hash and size, because otherwise
+	// we would end up encoding an extra [TAG 0] pair of bytes for empty-values.
+
+	size := 0
+	write := func(b []byte) {
+		_, err := w.Write(b)
+		if err != nil {
+			// NOTE: We can ignore errors from w.Write because this is only used with
+			// sha256's hash.Hash and bytes.Buffer, neither of which can actually return
+			// an error.
+			panic(err)
+		}
+		size += len(b)
+	}
+
+	// In theory, the compiler should be smart enough to allocate this on the
+	// stack and prove that it does not escape.
+	varintBuf := make([]byte, 0, binary.MaxVarintLen64)
+
+	if typeURL := apb.GetTypeUrl(); len(typeURL) > 0 {
+		write(anyTypeURLTag)
+		write(protowire.AppendVarint(varintBuf, uint64(len(typeURL))))
+		write([]byte(typeURL))
+	}
+
+	if value := apb.GetValue(); len(value) > 0 {
+		write(anyValueTag)
+		write(protowire.AppendVarint(varintBuf, uint64(len(value))))
+		write(value)
+	}
+
+	return size
+}
+
 // ComputeDigest computes and returns the Digest for a given `Any` proto message.
 //
 // This does not check the integrity of `apb` in any way.
 func ComputeDigest(apb *anypb.Any) Digest {
-	typeURL := apb.GetTypeUrl()
-	value := apb.GetValue()
-
-	// hash the `apb` directly to avoid extra allocations:
-	//   protoTag(1, bytes)
-	//   type_url
-	//   protoTag(2, bytes)
-	//   value
 	hsh := sha256.New()
-	hsh.Write(anyTypeURLTag)
-	hsh.Write([]byte(typeURL))
-	hsh.Write(anyValueTag)
-	hsh.Write(value)
+	size := writeAnyDeterministically(apb, hsh)
 
 	buf := make([]byte, 0, hsh.Size()+binary.MaxVarintLen64+1)
 	buf = hsh.Sum(buf)
-	buf = binary.AppendVarint(buf, int64(len(anyTypeURLTag)+len(anyValueTag)+len(typeURL)+len(value)))
+	buf = binary.AppendVarint(buf, int64(size))
 	buf = append(buf, byte(orchestratorpb.ValueHashAlgo_VALUE_HASH_ALGO_SHA256))
 	return Digest(base64.RawURLEncoding.EncodeToString(buf))
+}
+
+// DeterministicallySerializeAny is like `proto.Marshal` for `Any`, except:
+//   - it cannot fail (except for e.g. out-of-memory).
+//   - it is guaranteed to be deterministic.
+//   - it will only do one allocation of exactly the right size.
+func DeterministicallySerializeAny(apb *anypb.Any) []byte {
+	// Preallocate the exact buffer we need.
+	allocSize := 0
+	if typeURL := apb.GetTypeUrl(); len(typeURL) > 0 {
+		typeURLLen := len(typeURL)
+		allocSize += len(anyTypeURLTag) + protowire.SizeVarint(uint64(typeURLLen)) + typeURLLen
+	}
+	if value := apb.GetValue(); len(value) > 0 {
+		valueLen := len(value)
+		allocSize += len(anyValueTag) + protowire.SizeVarint(uint64(valueLen)) + valueLen
+	}
+	buf := bytes.NewBuffer(make([]byte, 0, allocSize))
+
+	writeAnyDeterministically(apb, buf)
+
+	return buf.Bytes()
 }

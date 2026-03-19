@@ -74,12 +74,12 @@ func TestFilterRef(t *testing.T) {
 		stg := orchestratorpb.Stage_builder{
 			Args: makeRef(t, mSrc, structpb.NewBoolValue(true)),
 		}.Build()
-		dgst := "WoSPrsJSnpq_1pHjFqDjDF6z6la99vAXGBtj_mij-FFaAQ"
+		dgst := "nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ5eAQ"
 
 		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
 		assert.That(t, rslt.NeedFetch, should.Match(map[string][]*orchestratorpb.ValueRef{
-			dgst: []*orchestratorpb.ValueRef{stg.GetArgs()},
+			dgst: {stg.GetArgs()},
 		}))
 		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
 
@@ -110,12 +110,12 @@ func TestFilterRef(t *testing.T) {
 		stg := orchestratorpb.Stage_builder{
 			Args: makeRef(t, mSrc, lst),
 		}.Build()
-		dgst := "PJ5p-94XRaBpvxxK8w4iiX8IWLV7k8O8MICccEIwyhRmAQ"
+		dgst := "TiL2hG12z5bCnO-q4sXjaMqObIM7ZeZNAYcHd56bTRFqAQ"
 
 		rslt, err := filter.Apply(RefsInStage(stg))
 		assert.NoErr(t, err)
 		assert.That(t, rslt.NeedFetch, should.Match(map[string][]*orchestratorpb.ValueRef{
-			dgst: []*orchestratorpb.ValueRef{stg.GetArgs()},
+			dgst: {stg.GetArgs()},
 		}))
 		assert.That(t, rslt.NeedJSON, should.Match([]*orchestratorpb.ValueRef{
 			stg.GetArgs(),
@@ -166,7 +166,7 @@ func TestFilterRef(t *testing.T) {
 			orchestratorpb.OmitReason_OMIT_REASON_UNWANTED,
 		))
 		assert.That(t, stg.GetArgs().GetDigest(), should.Equal(
-			"WoSPrsJSnpq_1pHjFqDjDF6z6la99vAXGBtj_mij-FFaAQ"))
+			"nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ5eAQ"))
 		assert.That(t, stg.GetArgs().HasInline(), should.BeFalse)
 	})
 
@@ -192,7 +192,7 @@ func TestFilterRef(t *testing.T) {
 			orchestratorpb.OmitReason_OMIT_REASON_UNWANTED,
 		))
 		assert.That(t, stg.GetArgs().GetDigest(), should.Equal(
-			"WoSPrsJSnpq_1pHjFqDjDF6z6la99vAXGBtj_mij-FFaAQ"))
+			"nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ5eAQ"))
 		assert.That(t, stg.GetArgs().HasInline(), should.BeFalse)
 	})
 
@@ -212,7 +212,7 @@ func TestFilterRef(t *testing.T) {
 			orchestratorpb.OmitReason_OMIT_REASON_UNWANTED,
 		))
 		assert.That(t, stg.GetArgs().GetDigest(), should.Equal(
-			"KO4hlqgtld1YeumdZxLIVGmUD1OUfvESdhQVPfDvliFeAQ"))
+			"hvSVT6KdvPHO0-h55_J5by3wAe3u5ymMnl0ColX35QliAQ"))
 		assert.That(t, stg.GetArgs().HasInline(), should.BeFalse)
 	})
 
