@@ -50,10 +50,67 @@ else:
 
 # Install wheels to virtual environment
 if 'wheels' in os.environ:
+  def _info(msg):
+    try:
+      with open(os.path.join(os.environ['out'], '.vpython_bootstrap_info.txt'), 'a') as f:
+        f.write(msg + '\n')
+    except Exception:
+      pass
+
   pip = glob.glob(os.path.join(os.environ['out'], '*', 'pip*'))[0]
-  wheels_dir = os.path.join(os.environ['wheels'], 'wheels')
-  wheels = sorted(glob.glob(os.path.join(wheels_dir, '*.whl')))
-  if wheels:
+  try:
+    _info('Attempting to install wheels from Artifact Registry...')
+    ar_url = os.environ.get('VPYTHON_AR_URL', 'https://us-python.pkg.dev/chrome-python-ar/chrome-python-ar/simple/')
+    command = [
+        pip,
+        'install',
+        '--isolated',
+        '--compile',
+        '--index-url',
+        ar_url,
+        '--requirement',
+        os.path.join(os.environ['wheels'], 'requirements.txt'),
+    ]
+    env = os.environ.copy()
+    # Drop possible NETRC to avoid uncomfortable situation where we try to
+    # apply credentials where we don't need them.
+    env['NETRC'] = os.devnull
+    output = subprocess.check_output(command, env=env, stderr=subprocess.STDOUT)
+    if hasattr(output, 'decode'):
+      output = output.decode('utf-8', 'replace')
+    print(output)
+    _info('Installed wheels successfully from Artifact Registry.')
+  except subprocess.CalledProcessError as e:
+    output = e.output
+    if hasattr(output, 'decode'):
+      output = output.decode('utf-8', 'replace')
+    _info('\n' + '=' * 60)
+    _info('Artifact Registry install failed. Falling back to CIPD.')
+    _info('Please report this issue at https://crbug.com/492362903')
+    _info('and copy-paste the following pip output:')
+    _info('-' * 60)
+    _info(output.strip())
+    _info('=' * 60 + '\n')
+
+    wheels_root = os.environ['wheels']
+    wheels_dir = os.path.join(wheels_root, 'wheels')
+    if not os.path.isdir(wheels_dir):
+      _info('CIPD wheels missing from store. Falling back to on-demand fetch...')
+      ensure_file = os.path.join(wheels_root, 'ensure.txt')
+      # Export wheels to a local directory in the output.
+      local_wheels = os.path.join(os.environ['out'], 'on_demand_wheels')
+      # ref: common/common.go
+      cipd_path = os.environ.get('VPYTHON_CIPD_PATH', 'cipd')
+      cipd_cmd = [cipd_path]
+      if sys.platform == 'win32' and cipd_cmd[0].lower().endswith('.bat'):
+        cipd_cmd = ['cmd.exe', '/C'] + cipd_cmd
+      subprocess.check_call(cipd_cmd + [
+          'export', '-ensure-file',
+          ensure_file, '-root', local_wheels
+      ])
+      wheels_dir = os.path.join(local_wheels, 'wheels')
+
+    wheels = sorted(glob.glob(os.path.join(wheels_dir, '*.whl')))
     subprocess.check_call([
         pip,
         'install',
