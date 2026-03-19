@@ -29,8 +29,6 @@ import (
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/base/workflow"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/exec"
-	"go.chromium.org/luci/common/system/environ"
 
 	"go.chromium.org/luci/vpython/common"
 )
@@ -112,15 +110,6 @@ func (e *Environment) Pep425Tags() generators.Generator {
 }
 
 func (e *Environment) WithWheels(wheels generators.Generator) generators.Generator {
-	env := environ.New(nil)
-	if v := os.Getenv(common.EnvVpythonArUrl); v != "" {
-		env.Set(common.EnvVpythonArUrl, v)
-	}
-	cipdPath := "cipd"
-	if path, err := exec.LookPath("cipd"); err == nil {
-		cipdPath = path
-	}
-	env.Set(common.EnvVpythonCipdPath, cipdPath)
 	return &workflow.Generator{
 		Name: "python_venv",
 		Args: []string{
@@ -128,7 +117,6 @@ func (e *Environment) WithWheels(wheels generators.Generator) generators.Generat
 			"-BssE",
 			filepath.Join("{{.bootstrap}}", "bootstrap.py"),
 		},
-		Env: env,
 		Dependencies: []generators.Dependency{
 			{Type: generators.DepsHostTarget, Generator: e.CPython, Runtime: true},
 			{Type: generators.DepsHostTarget, Generator: e.Virtualenv},

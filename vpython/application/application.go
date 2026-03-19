@@ -360,20 +360,7 @@ func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor
 	}
 
 	b := workflow.NewBuilder(plats, pm, ap)
-	postExecFn := func(ctx context.Context, pkg actions.Package, err error) error {
-		if pkg.Derivation.Name == "python_venv" {
-			// Surface bootstrap info (e.g. if we fetched from AR or fell back to CIPD).
-			// During the build, stdout/stderr are captured by the package executor
-			// to avoid race conditions, so we write to a file and read it here.
-			if fb, readErr := os.ReadFile(filepath.Join(pkg.Handler.OutputDirectory(), ".vpython_bootstrap_info.txt")); readErr == nil {
-				if s := strings.TrimSpace(string(fb)); s != "" {
-					logging.Infof(ctx, "%s", s)
-				}
-			}
-		}
-		return err
-	}
-	pe := workflow.NewPackageExecutor("", nil, nil, postExecFn, nil)
+	pe := workflow.NewPackageExecutor("", nil, nil, nil, nil)
 	pkg, err := b.Build(ctx, pe, venv)
 	if err != nil {
 		return errors.Fmt("failed to generate venv derivation: %w", err)
