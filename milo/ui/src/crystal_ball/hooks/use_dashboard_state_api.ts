@@ -27,7 +27,7 @@ import {
   WrapperInfiniteQueryOptions,
   WrapperQueryOptions,
 } from '@/common/types/query_wrapper_options';
-import { API_BASE_URL } from '@/crystal_ball/constants';
+import { API_V1_BASE_PATH as BASE_PATH } from '@/crystal_ball/constants';
 import {
   CreateDashboardStateRequest,
   DashboardState,
@@ -44,8 +44,6 @@ import {
   UpdateDashboardStateRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { Operation } from '@/proto/google/longrunning/operations.pb';
-
-const BASE_PATH = `${API_BASE_URL}/v1`;
 
 /**
  * Returns the query key prefix for ListDashboardStates.

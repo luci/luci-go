@@ -16,6 +16,7 @@
  * API Configuration.
  */
 export const API_BASE_URL = 'https://crystalballperf.clients6.google.com';
+export const API_V1_BASE_PATH = `${API_BASE_URL}/v1`;
 
 /**
  * Default data spec identifier.
