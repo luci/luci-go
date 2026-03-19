@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useReducer, useState } from 'react';
 
-import { MAXIMUM_PAGE_SIZE } from '@/crystal_ball/constants';
+import { MAX_PAGE_SIZE } from '@/crystal_ball/constants';
 import { ValidationErrors, validateSearchRequest } from '@/crystal_ball/utils';
 import { SearchMeasurementsRequest } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -165,7 +165,7 @@ export function SearchMeasurementsForm({
       atpTestNameFilter: state.atpTestNameFilter || undefined,
       metricKeys: state.metricKeys,
       extraColumns: [],
-      pageSize: MAXIMUM_PAGE_SIZE,
+      pageSize: MAX_PAGE_SIZE,
     };
     const currentErrors = validateSearchRequest(request);
     setErrors(currentErrors);

@@ -1455,6 +1455,12 @@ export enum PerfFilterDefault_FilterOperator {
   IS_NULL = 24,
   /** IS_NOT_NULL - Value is not NULL. `values` field is not used. */
   IS_NOT_NULL = 25,
+  /**
+   * IN_PAST - Time column is within the specified duration in the past relative to the
+   * current time. Requires exactly one value in `values` containing a
+   * duration string (e.g., "12h", "3d").
+   */
+  IN_PAST = 26,
 }
 
 export function perfFilterDefault_FilterOperatorFromJSON(object: any): PerfFilterDefault_FilterOperator {
@@ -1537,6 +1543,9 @@ export function perfFilterDefault_FilterOperatorFromJSON(object: any): PerfFilte
     case 25:
     case "IS_NOT_NULL":
       return PerfFilterDefault_FilterOperator.IS_NOT_NULL;
+    case 26:
+    case "IN_PAST":
+      return PerfFilterDefault_FilterOperator.IN_PAST;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfFilterDefault_FilterOperator");
   }
@@ -1596,6 +1605,8 @@ export function perfFilterDefault_FilterOperatorToJSON(object: PerfFilterDefault
       return "IS_NULL";
     case PerfFilterDefault_FilterOperator.IS_NOT_NULL:
       return "IS_NOT_NULL";
+    case PerfFilterDefault_FilterOperator.IN_PAST:
+      return "IN_PAST";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfFilterDefault_FilterOperator");
   }
@@ -1747,6 +1758,30 @@ export interface RemoveStarredDashboardRequest {
    * Format: dashboardStates/{dashboard_state}
    */
   readonly dashboard: string;
+}
+
+/**
+ * Represents the request for generating a new dashboard state via an LLM.
+ * (-- api-linter: core::0154::declarative-friendly-required=disabled
+ *     aip.dev/not-precedent: This is a generation method, not an update to an
+ *     existing resource, so etag is not applicable. --)
+ */
+export interface GenerateDashboardStateRequest {
+  /** A natural language prompt describing the desired dashboard. */
+  readonly prompt: string;
+  /**
+   * One or more metric keys that the user is interested in.
+   * These will be used to guide the generation of the dashboard.
+   */
+  readonly metricKeys: readonly string[];
+  /** If set to true, the request is validated but not actually executed. */
+  readonly validateOnly: boolean;
+}
+
+/** Represents the response for generating a dashboard state. */
+export interface GenerateDashboardStateResponse {
+  /** The generated dashboard state. */
+  readonly dashboardState: DashboardState | undefined;
 }
 
 function createBaseTestConnectionRequest(): TestConnectionRequest {
@@ -7833,6 +7868,162 @@ export const RemoveStarredDashboardRequest: MessageFns<RemoveStarredDashboardReq
   },
 };
 
+function createBaseGenerateDashboardStateRequest(): GenerateDashboardStateRequest {
+  return { prompt: "", metricKeys: [], validateOnly: false };
+}
+
+export const GenerateDashboardStateRequest: MessageFns<GenerateDashboardStateRequest> = {
+  encode(message: GenerateDashboardStateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.prompt !== "") {
+      writer.uint32(10).string(message.prompt);
+    }
+    for (const v of message.metricKeys) {
+      writer.uint32(18).string(v!);
+    }
+    if (message.validateOnly !== false) {
+      writer.uint32(24).bool(message.validateOnly);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GenerateDashboardStateRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGenerateDashboardStateRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.prompt = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.metricKeys.push(reader.string());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.validateOnly = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GenerateDashboardStateRequest {
+    return {
+      prompt: isSet(object.prompt) ? globalThis.String(object.prompt) : "",
+      metricKeys: globalThis.Array.isArray(object?.metricKeys)
+        ? object.metricKeys.map((e: any) => globalThis.String(e))
+        : [],
+      validateOnly: isSet(object.validateOnly) ? globalThis.Boolean(object.validateOnly) : false,
+    };
+  },
+
+  toJSON(message: GenerateDashboardStateRequest): unknown {
+    const obj: any = {};
+    if (message.prompt !== "") {
+      obj.prompt = message.prompt;
+    }
+    if (message.metricKeys?.length) {
+      obj.metricKeys = message.metricKeys;
+    }
+    if (message.validateOnly !== false) {
+      obj.validateOnly = message.validateOnly;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GenerateDashboardStateRequest>): GenerateDashboardStateRequest {
+    return GenerateDashboardStateRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GenerateDashboardStateRequest>): GenerateDashboardStateRequest {
+    const message = createBaseGenerateDashboardStateRequest() as any;
+    message.prompt = object.prompt ?? "";
+    message.metricKeys = object.metricKeys?.map((e) => e) || [];
+    message.validateOnly = object.validateOnly ?? false;
+    return message;
+  },
+};
+
+function createBaseGenerateDashboardStateResponse(): GenerateDashboardStateResponse {
+  return { dashboardState: undefined };
+}
+
+export const GenerateDashboardStateResponse: MessageFns<GenerateDashboardStateResponse> = {
+  encode(message: GenerateDashboardStateResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.dashboardState !== undefined) {
+      DashboardState.encode(message.dashboardState, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GenerateDashboardStateResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGenerateDashboardStateResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.dashboardState = DashboardState.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GenerateDashboardStateResponse {
+    return {
+      dashboardState: isSet(object.dashboardState) ? DashboardState.fromJSON(object.dashboardState) : undefined,
+    };
+  },
+
+  toJSON(message: GenerateDashboardStateResponse): unknown {
+    const obj: any = {};
+    if (message.dashboardState !== undefined) {
+      obj.dashboardState = DashboardState.toJSON(message.dashboardState);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GenerateDashboardStateResponse>): GenerateDashboardStateResponse {
+    return GenerateDashboardStateResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GenerateDashboardStateResponse>): GenerateDashboardStateResponse {
+    const message = createBaseGenerateDashboardStateResponse() as any;
+    message.dashboardState = (object.dashboardState !== undefined && object.dashboardState !== null)
+      ? DashboardState.fromPartial(object.dashboardState)
+      : undefined;
+    return message;
+  },
+};
+
 /** Service for Android performance-related data. */
 export interface PerfService {
   /** RPC for getting CrystalBall measurements. */
@@ -7925,6 +8116,13 @@ export interface PerfService {
   AddStarredDashboard(request: AddStarredDashboardRequest): Promise<UserSettings>;
   /** Removes a dashboard from the user's starred list. */
   RemoveStarredDashboard(request: RemoveStarredDashboardRequest): Promise<UserSettings>;
+  /**
+   * Generates a dashboard state based on a natural language prompt.
+   * This method uses an LLM to generate the dashboard structure
+   * including the provided metric keys.
+   * (Imperative only.)
+   */
+  GenerateDashboardState(request: GenerateDashboardStateRequest): Promise<GenerateDashboardStateResponse>;
 }
 
 export const PerfServiceServiceName = "google.android.perf.v1.PerfService";
@@ -7954,6 +8152,7 @@ export class PerfServiceClientImpl implements PerfService {
     this.UpdateUserSettings = this.UpdateUserSettings.bind(this);
     this.AddStarredDashboard = this.AddStarredDashboard.bind(this);
     this.RemoveStarredDashboard = this.RemoveStarredDashboard.bind(this);
+    this.GenerateDashboardState = this.GenerateDashboardState.bind(this);
   }
   SearchMeasurements(request: SearchMeasurementsRequest): Promise<SearchMeasurementsResponse> {
     const data = SearchMeasurementsRequest.toJSON(request);
@@ -8073,6 +8272,12 @@ export class PerfServiceClientImpl implements PerfService {
     const data = RemoveStarredDashboardRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "RemoveStarredDashboard", data);
     return promise.then((data) => UserSettings.fromJSON(data));
+  }
+
+  GenerateDashboardState(request: GenerateDashboardStateRequest): Promise<GenerateDashboardStateResponse> {
+    const data = GenerateDashboardStateRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GenerateDashboardState", data);
+    return promise.then((data) => GenerateDashboardStateResponse.fromJSON(data));
   }
 }
 

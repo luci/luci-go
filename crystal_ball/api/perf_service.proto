@@ -12,6 +12,22 @@ import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
+option java_multiple_files = true;
+option java_outer_classname = "PerfServiceProto";
+option java_package = "com.google.android.perf.v1";
+
+// Resource definition for the DashboardStateRevision resource.
+option (google.api.resource_definition) = {
+  type: "crystalballperf.googleapis.com/DashboardStateRevision"
+  pattern: "dashboardStates/{dashboard_state}/revisions/{revision}"
+};
+
+// Resource definition for the PerfDataSpec resource.
+option (google.api.resource_definition) = {
+  type: "crystalballperf.googleapis.com/DataSpec"
+  pattern: "dashboardStates/{dashboard_state}/dataSpecs/{data_spec}"
+};
+
 // Service for Android performance-related data.
 service PerfService {
   // RPC for getting CrystalBall measurements.
@@ -232,6 +248,18 @@ service PerfService {
     };
     option (google.api.method_signature) = "name,dashboard";
   }
+
+  // Generates a dashboard state based on a natural language prompt.
+  // This method uses an LLM to generate the dashboard structure
+  // including the provided metric keys.
+  // (Imperative only.)
+  rpc GenerateDashboardState(GenerateDashboardStateRequest)
+      returns (GenerateDashboardStateResponse) {
+    option (google.api.http) = {
+      post: "/v1:generateDashboardState"
+      body: "*"
+    };
+  }
 }
 
 // Request message for testing the connection to the service.
@@ -428,9 +456,7 @@ message SuggestMeasurementFilterValuesRequest {
 
   // The prefix string the user has typed for autocomplete.
   // If empty, a general sample of values may be returned.
-  string query = 3 [
-    (google.api.field_behavior) = OPTIONAL
-  ];
+  string query = 3 [(google.api.field_behavior) = OPTIONAL];
 
   // Maximum number of suggestions to return.
   int32 max_result_count = 4 [(google.api.field_behavior) = OPTIONAL];
@@ -516,9 +542,7 @@ message DashboardState {
   // The {dashboard_state} part can be provided by the client in the
   // `CreateDashboardStateRequest.dashboard_state_id` field, or if not provided,
   // it will be server-generated.
-  string name = 1 [
-    (google.api.field_behavior) = IDENTIFIER
-  ];
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
 
   // The core content of the dashboard, such as filters and data sources.
   // This structure is inspired by Plx, but is defined and contained within
@@ -586,9 +610,7 @@ message DashboardStateOperationMetadata {
       [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The target resource name.
-  string target = 2 [
-    (google.api.field_behavior) = OUTPUT_ONLY
-  ];
+  string target = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // API version used to start the operation.
   string api_version = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
@@ -896,9 +918,7 @@ message PerfWidget {
 // Widget for displaying formatted text using Markdown.
 message MarkdownWidget {
   // The Markdown content to be rendered.
-  string content = 2 [
-    (google.api.field_behavior) = OPTIONAL
-  ];
+  string content = 2 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Defines a single chart within the dashboard.
@@ -1279,6 +1299,10 @@ message PerfFilterDefault {
     IS_NULL = 24;
     // Value is not NULL. `values` field is not used.
     IS_NOT_NULL = 25;
+    // Time column is within the specified duration in the past relative to the
+    // current time. Requires exactly one value in `values` containing a
+    // duration string (e.g., "12h", "3d").
+    IN_PAST = 26;
   }
 
   // The filter operator to use with the default values.
@@ -1365,9 +1389,7 @@ message UserSettings {
 
   // The resource name. For the calling user, this should be
   // "users/me/settings".
-  string name = 1 [
-    (google.api.field_behavior) = IDENTIFIER
-  ];
+  string name = 1 [(google.api.field_behavior) = IDENTIFIER];
 
   // DashboardState names that the user has starred.
   // Format: dashboardStates/{dashboard_state}
@@ -1458,6 +1480,28 @@ message RemoveStarredDashboardRequest {
       type: "crystalballperf.googleapis.com/DashboardState"
     }
   ];
+}
+
+// Represents the request for generating a new dashboard state via an LLM.
+// (-- api-linter: core::0154::declarative-friendly-required=disabled
+//     aip.dev/not-precedent: This is a generation method, not an update to an
+//     existing resource, so etag is not applicable. --)
+message GenerateDashboardStateRequest {
+  // A natural language prompt describing the desired dashboard.
+  string prompt = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // One or more metric keys that the user is interested in.
+  // These will be used to guide the generation of the dashboard.
+  repeated string metric_keys = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // If set to true, the request is validated but not actually executed.
+  bool validate_only = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Represents the response for generating a dashboard state.
+message GenerateDashboardStateResponse {
+  // The generated dashboard state.
+  DashboardState dashboard_state = 1;
 }
 
 // Test enum for testing.

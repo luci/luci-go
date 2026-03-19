@@ -16,16 +16,15 @@ import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
-import { getAbsoluteStartEndTime } from '@/common/components/time_range_selector/time_range_selector_utils';
 import {
   ChartSeriesEditor,
   FilterEditor,
   TimeSeriesChart,
 } from '@/crystal_ball/components';
+import { GLOBAL_TIME_RANGE_FILTER_ID } from '@/crystal_ball/constants/api';
 import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import { useSearchMeasurements } from '@/crystal_ball/hooks';
 import { transformDataForChart } from '@/crystal_ball/utils';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   MeasurementFilterColumn,
   PerfChartSeries,
@@ -39,6 +38,7 @@ import {
 interface ChartWidgetProps {
   onUpdate: (updatedWidget: PerfChartWidget) => void;
   widget: PerfChartWidget;
+  globalFilters?: readonly PerfFilter[];
   filterColumns: readonly MeasurementFilterColumn[];
   isLoadingFilterColumns?: boolean;
 }
@@ -46,24 +46,68 @@ interface ChartWidgetProps {
 export function ChartWidget({
   onUpdate,
   widget,
+  globalFilters,
   filterColumns,
   isLoadingFilterColumns,
 }: ChartWidgetProps) {
-  const [searchParams] = useSyncedSearchParams();
+  const { startTime, endTime, lastNDays } = useMemo(() => {
+    const timeFilter = globalFilters?.find(
+      (f) => f.id === GLOBAL_TIME_RANGE_FILTER_ID,
+    );
 
-  // TODO: b/475638132 - Read time filters from PerfChartWidget
-  const timeOption = searchParams.get('time_option');
-  const startTimeParam = searchParams.get('start_time');
-  const endTimeParam = searchParams.get('end_time');
+    if (!timeFilter?.range?.defaultValue) {
+      return { startTime: null, endTime: null, lastNDays: 3 };
+    }
 
-  const { startTime, endTime } = useMemo(() => {
-    const paramsForTime = new URLSearchParams();
-    if (timeOption) paramsForTime.set('time_option', timeOption);
-    if (startTimeParam) paramsForTime.set('start_time', startTimeParam);
-    if (endTimeParam) paramsForTime.set('end_time', endTimeParam);
+    const operator = perfFilterDefault_FilterOperatorFromJSON(
+      timeFilter.range.defaultValue.filterOperator,
+    );
+    const values = timeFilter.range.defaultValue.values;
 
-    return getAbsoluteStartEndTime(paramsForTime, DateTime.now());
-  }, [timeOption, startTimeParam, endTimeParam]);
+    if (operator === PerfFilterDefault_FilterOperator.IN_PAST) {
+      const option = values[0];
+      if (option) {
+        const match = option.match(/^(\d+)([mhdw])$/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          const unit = match[2].toLowerCase();
+
+          if (unit === 'd') {
+            return { startTime: null, endTime: null, lastNDays: num };
+          } else if (unit === 'w') {
+            return { startTime: null, endTime: null, lastNDays: num * 7 };
+          } else {
+            const durationObj: Record<string, number> = {};
+            if (unit === 'h') durationObj.hours = num;
+            else if (unit === 'm') durationObj.minutes = num;
+
+            return {
+              startTime: DateTime.utc().minus(durationObj),
+              endTime: null,
+              lastNDays: undefined,
+            };
+          }
+        }
+      }
+      return { startTime: null, endTime: null, lastNDays: undefined };
+    }
+
+    if (!values) {
+      return { startTime: null, endTime: null, lastNDays: undefined };
+    }
+
+    return {
+      startTime:
+        values[0] && values[0] !== ''
+          ? DateTime.fromISO(values[0]).toUTC()
+          : null,
+      endTime:
+        values[1] && values[1] !== ''
+          ? DateTime.fromISO(values[1]).toUTC()
+          : null,
+      lastNDays: undefined,
+    };
+  }, [globalFilters]);
 
   const searchRequest: SearchMeasurementsRequest = useMemo(() => {
     const metricKeys =
@@ -129,10 +173,11 @@ export function ChartWidget({
       extraColumns: [],
       buildCreateStartTime: startTime?.toISO() || undefined,
       buildCreateEndTime: endTime?.toISO() || undefined,
+      lastNDays,
     };
 
     return request;
-  }, [widget, startTime, endTime]);
+  }, [widget, startTime, endTime, lastNDays]);
 
   const handleFiltersUpdate = (updatedFilters: PerfFilter[]) => {
     onUpdate(

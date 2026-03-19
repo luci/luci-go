@@ -100,6 +100,7 @@ jest.mock('@/crystal_ball/components', () => ({
   AddWidgetModal: jest.fn(() => <>AddWidgetModal Mock</>),
   ChartWidget: jest.fn(() => <>ChartWidget Mock</>),
   MarkdownWidget: jest.fn(() => <>MarkdownWidget Mock</>),
+  DashboardTimeRangeSelector: () => <>DashboardTimeRangeSelector Mock</>,
 }));
 
 const mockDashboard: DashboardState = DashboardState.fromPartial({
@@ -176,30 +177,6 @@ describe('<DashboardPage />', () => {
     );
   });
 
-  it('shows toast when time range changes', async () => {
-    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
-      isLoading: false,
-      error: null,
-      refetch: jest.fn(),
-      data: mockDashboard,
-    });
-
-    setMockParams('time_option=12h');
-    const { rerender } = renderDashboard();
-
-    expect(
-      screen.queryByText(/Feature under construction/i),
-    ).not.toBeInTheDocument();
-
-    setMockParams('time_option=6h');
-    rerender(<DashboardPage />);
-
-    // Toast is visible on subsequent render with new params
-    await waitFor(() => {
-      expect(screen.getByText(/Feature under construction/i)).toBeVisible();
-    });
-  });
-
   it('saves edits and shows success toast', async () => {
     const mockMutateAsync = jest.fn().mockResolvedValue({});
     (useDashboardStateApi.useUpdateDashboardState as jest.Mock).mockReturnValue(
@@ -262,6 +239,7 @@ describe('<DashboardPage />', () => {
             'displayName',
             'description',
             'dashboardContent.widgets',
+            'dashboardContent.globalFilters',
           ],
         }),
       );
@@ -306,6 +284,7 @@ describe('<DashboardPage />', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
+    // Unmount before rendering the new call to avoid conflicts
     unmount();
 
     const newCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
@@ -329,6 +308,7 @@ describe('<DashboardPage />', () => {
             'displayName',
             'description',
             'dashboardContent.widgets',
+            'dashboardContent.globalFilters',
           ],
         }),
       );

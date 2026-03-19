@@ -16,16 +16,19 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DateTime } from 'luxon';
 
-import * as timeUtils from '@/common/components/time_range_selector/time_range_selector_utils';
 import * as components from '@/crystal_ball/components';
+import {
+  GLOBAL_TIME_RANGE_COLUMN,
+  GLOBAL_TIME_RANGE_FILTER_ID,
+} from '@/crystal_ball/constants/api';
 import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import * as useSearchMeasurementsHook from '@/crystal_ball/hooks/use_android_perf_api';
 import { transformDataForChart } from '@/crystal_ball/utils';
-import * as useSyncedSearchParamsHook from '@/generic_libs/hooks/synced_search_params';
 import {
   MeasurementFilterColumn_ColumnDataType,
   MeasurementRow,
   PerfChartWidget,
+  PerfFilter,
   PerfFilterDefault_FilterOperator,
   SearchMeasurementsRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
@@ -50,17 +53,10 @@ jest.mock('@mui/material', () => ({
 }));
 
 // Mock custom hooks and utils
-jest.mock('@/generic_libs/hooks/synced_search_params');
-const mockUseSyncedSearchParams =
-  useSyncedSearchParamsHook.useSyncedSearchParams as jest.Mock;
 
 jest.mock('@/crystal_ball/hooks/use_android_perf_api');
 const mockUseSearchMeasurements =
   useSearchMeasurementsHook.useSearchMeasurements as jest.Mock;
-
-jest.mock('@/common/components/time_range_selector/time_range_selector_utils');
-const mockGetAbsoluteStartEndTime =
-  timeUtils.getAbsoluteStartEndTime as jest.Mock;
 
 jest.mock('@/crystal_ball/components', () => ({
   ChartSeriesEditor: jest.fn(() => (
@@ -87,14 +83,7 @@ describe('ChartWidget', () => {
     jest.clearAllMocks();
 
     // Default mock implementations
-    mockUseSyncedSearchParams.mockReturnValue([
-      new URLSearchParams(),
-      jest.fn(),
-    ]);
-    mockGetAbsoluteStartEndTime.mockReturnValue({
-      startTime: now.minus({ days: 1 }),
-      endTime: now,
-    });
+
     mockUseSearchMeasurements.mockReturnValue({
       data: null,
       isLoading: false,
@@ -219,31 +208,104 @@ describe('ChartWidget', () => {
   });
 
   it('should build search request based on widget series and time params', () => {
-    mockUseSyncedSearchParams.mockReturnValue([
-      new URLSearchParams('time_option=last_7_days'),
-      jest.fn(),
-    ]);
     const startTime = now.minus({ days: 7 });
     const endTime = now;
-    mockGetAbsoluteStartEndTime.mockReturnValue({ startTime, endTime });
 
     render(
       <ChartWidget
         onUpdate={jest.fn()}
         widget={baseWidget}
         filterColumns={[]}
+        globalFilters={[
+          PerfFilter.fromPartial({
+            id: GLOBAL_TIME_RANGE_FILTER_ID,
+            column: GLOBAL_TIME_RANGE_COLUMN,
+            displayName: 'Time Range',
+            dataSpecId: 'mockspec',
+            range: {
+              defaultValue: {
+                values: [startTime.toISO() ?? '', endTime.toISO() ?? ''],
+              },
+            },
+          }),
+        ]}
       />,
-    );
-
-    expect(mockGetAbsoluteStartEndTime).toHaveBeenCalledWith(
-      expect.any(URLSearchParams),
-      expect.any(DateTime),
     );
 
     const expectedRequest: SearchMeasurementsRequest = {
       metricKeys: ['metric1', 'metric2'],
-      buildCreateStartTime: startTime.toISO(),
-      buildCreateEndTime: endTime.toISO(),
+      buildCreateStartTime: startTime.toUTC().toISO() ?? undefined,
+      buildCreateEndTime: endTime.toUTC().toISO() ?? undefined,
+      extraColumns: [],
+    };
+    expect(mockUseSearchMeasurements).toHaveBeenCalledWith(expectedRequest, {
+      enabled: true,
+    });
+  });
+
+  it('should build search request with lastNDays for IN_PAST operator', () => {
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        filterColumns={[]}
+        globalFilters={[
+          PerfFilter.fromPartial({
+            id: GLOBAL_TIME_RANGE_FILTER_ID,
+            column: GLOBAL_TIME_RANGE_COLUMN,
+            displayName: 'Time Range',
+            dataSpecId: 'mockspec',
+            range: {
+              defaultValue: {
+                values: ['7d'],
+                filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
+              },
+            },
+          }),
+        ]}
+      />,
+    );
+
+    const expectedRequest: SearchMeasurementsRequest = {
+      metricKeys: ['metric1', 'metric2'],
+      buildCreateStartTime: undefined,
+      buildCreateEndTime: undefined,
+      lastNDays: 7,
+      extraColumns: [],
+    };
+    expect(mockUseSearchMeasurements).toHaveBeenCalledWith(expectedRequest, {
+      enabled: true,
+    });
+  });
+
+  it('should handle string represented enums for IN_PAST operator', () => {
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        filterColumns={[]}
+        globalFilters={[
+          PerfFilter.fromPartial({
+            id: GLOBAL_TIME_RANGE_FILTER_ID,
+            column: GLOBAL_TIME_RANGE_COLUMN,
+            displayName: 'Time Range',
+            dataSpecId: 'mockspec',
+            range: {
+              defaultValue: {
+                values: ['7d'],
+                filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
+              },
+            },
+          }),
+        ]}
+      />,
+    );
+
+    const expectedRequest: SearchMeasurementsRequest = {
+      metricKeys: ['metric1', 'metric2'],
+      buildCreateStartTime: undefined,
+      buildCreateEndTime: undefined,
+      lastNDays: 7,
       extraColumns: [],
     };
     expect(mockUseSearchMeasurements).toHaveBeenCalledWith(expectedRequest, {
@@ -304,20 +366,32 @@ describe('ChartWidget', () => {
 
     const startTime = now.minus({ days: 1 });
     const endTime = now;
-    mockGetAbsoluteStartEndTime.mockReturnValue({ startTime, endTime });
 
     render(
       <ChartWidget
         onUpdate={jest.fn()}
         widget={widgetWithFilters}
         filterColumns={[]}
+        globalFilters={[
+          PerfFilter.fromPartial({
+            id: GLOBAL_TIME_RANGE_FILTER_ID,
+            column: GLOBAL_TIME_RANGE_COLUMN,
+            displayName: 'Time Range',
+            dataSpecId: 'mockspec',
+            range: {
+              defaultValue: {
+                values: [startTime.toISO() ?? '', endTime.toISO() ?? ''],
+              },
+            },
+          }),
+        ]}
       />,
     );
 
     const expectedRequest: SearchMeasurementsRequest = {
       metricKeys: ['metric1', 'metric2'],
-      buildCreateStartTime: startTime.toISO(),
-      buildCreateEndTime: endTime.toISO(),
+      buildCreateStartTime: startTime.toUTC().toISO() ?? undefined,
+      buildCreateEndTime: endTime.toUTC().toISO() ?? undefined,
       extraColumns: [],
       testNameFilter: '%MyTest%',
       buildTarget: 'targetA',

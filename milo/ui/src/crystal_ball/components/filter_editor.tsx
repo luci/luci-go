@@ -38,6 +38,10 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
+import {
+  AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
+  MAX_SUGGEST_RESULTS,
+} from '@/crystal_ball/constants/api';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import {
   MeasurementFilterColumn,
@@ -90,7 +94,7 @@ function FilterEditorRow({
     () => {
       setDebouncedQuery(inputValue);
     },
-    1000,
+    AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
     [inputValue],
   );
 
@@ -104,7 +108,7 @@ function FilterEditorRow({
       parent,
       column: filter.column,
       query: debouncedQuery,
-      maxResultCount: 50,
+      maxResultCount: MAX_SUGGEST_RESULTS,
     },
     {
       enabled:

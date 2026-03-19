@@ -33,6 +33,10 @@ import { useCallback, useState } from 'react';
 import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
+import {
+  AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
+  MAX_SUGGEST_RESULTS,
+} from '@/crystal_ball/constants';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { PerfChartSeries } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -65,7 +69,7 @@ function ChartSeriesEditorRow({
     () => {
       setDebouncedQuery(inputValue);
     },
-    1000,
+    AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
     [inputValue],
   );
 
@@ -79,7 +83,7 @@ function ChartSeriesEditorRow({
       parent,
       column: 'metric_key',
       query: debouncedQuery,
-      maxResultCount: 50,
+      maxResultCount: MAX_SUGGEST_RESULTS,
     },
     {
       enabled: !!parent && debouncedQuery.length > 0 && isFocused,

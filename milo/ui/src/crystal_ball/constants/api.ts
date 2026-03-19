@@ -19,11 +19,31 @@ export const API_BASE_URL = 'https://crystalballperf.clients6.google.com';
 export const API_V1_BASE_PATH = `${API_BASE_URL}/v1`;
 
 /**
+ * Delay in milliseconds for debouncing autocomplete queries.
+ */
+export const AUTOCOMPLETE_DEBOUNCE_DELAY_MS = 500;
+
+/**
  * Default data spec identifier.
  */
 export const DATA_SPEC_ID = 'cbdb';
 
 /**
+ * The column name that corresponds to the global time range filter.
+ */
+export const GLOBAL_TIME_RANGE_COLUMN = 'build_create_time';
+
+/**
+ * The filter ID for specifying the global time range.
+ */
+export const GLOBAL_TIME_RANGE_FILTER_ID = 'global_time_range';
+
+/**
  * Maximum page size allowed by the API.
  */
-export const MAXIMUM_PAGE_SIZE = 1000;
+export const MAX_PAGE_SIZE = 1000;
+
+/**
+ * Maximum number of suggestions to return for autocomplete.
+ */
+export const MAX_SUGGEST_RESULTS = 10;

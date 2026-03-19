@@ -27,13 +27,13 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { deepEqual } from 'fast-equals';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBlocker, useNavigate, useParams } from 'react-router';
 
-import { TimeRangeSelector } from '@/common/components/time_range_selector';
 import {
   AddWidgetModal,
   ChartWidget,
+  DashboardTimeRangeSelector,
   MarkdownWidget,
   RequireLogin,
   WidgetContainer,
@@ -51,7 +51,6 @@ import {
 import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { WidgetType } from '@/crystal_ball/types';
 import { formatApiError } from '@/crystal_ball/utils';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   DashboardState,
   PerfWidget,
@@ -190,25 +189,11 @@ export function DashboardPage() {
     );
 
   const filterColumns = useMemo(
-    () => filterColumnsResponse?.measurementFilterColumns || [],
+    () => filterColumnsResponse?.measurementFilterColumns ?? [],
     [filterColumnsResponse],
   );
 
   const [toastMessage, setToastMessage] = useState('');
-  const [searchParams] = useSyncedSearchParams();
-  const isFirstRender = useRef(true);
-
-  const timeOption = searchParams.get('time_option');
-  const startTimeParam = searchParams.get('start_time');
-  const endTimeParam = searchParams.get('end_time');
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    setToastMessage('Feature under construction');
-  }, [timeOption, startTimeParam, endTimeParam]);
 
   const handleCloseToast = () => {
     setToastMessage('');
@@ -224,6 +209,10 @@ export function DashboardPage() {
       !deepEqual(
         localDashboardState?.dashboardContent?.widgets,
         dashboardState?.dashboardContent?.widgets,
+      ) ||
+      !deepEqual(
+        localDashboardState?.dashboardContent?.globalFilters,
+        dashboardState?.dashboardContent?.globalFilters,
       )
     );
   }, [localDashboardState, dashboardState]);
@@ -298,6 +287,7 @@ export function DashboardPage() {
             'displayName',
             'description',
             'dashboardContent.widgets',
+            'dashboardContent.globalFilters',
           ],
         }),
       );
@@ -345,9 +335,9 @@ export function DashboardPage() {
         ...prev,
         dashboardContent: {
           ...prev.dashboardContent,
-          widgets: [...(prev.dashboardContent?.widgets || []), newWidget],
-          dataSpecs: prev.dashboardContent?.dataSpecs || {},
-          globalFilters: prev.dashboardContent?.globalFilters || [],
+          widgets: [...(prev.dashboardContent?.widgets ?? []), newWidget],
+          dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
+          globalFilters: prev.dashboardContent?.globalFilters ?? [],
         },
       };
     });
@@ -365,8 +355,8 @@ export function DashboardPage() {
           dashboardContent: {
             ...prev.dashboardContent,
             widgets: newWidgets,
-            dataSpecs: prev.dashboardContent?.dataSpecs || {},
-            globalFilters: prev.dashboardContent?.globalFilters || [],
+            dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
+            globalFilters: prev.dashboardContent?.globalFilters ?? [],
           },
         };
       });
@@ -384,8 +374,8 @@ export function DashboardPage() {
         dashboardContent: {
           ...prev.dashboardContent,
           widgets: newWidgets,
-          dataSpecs: prev.dashboardContent?.dataSpecs || {},
-          globalFilters: prev.dashboardContent?.globalFilters || [],
+          dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
+          globalFilters: prev.dashboardContent?.globalFilters ?? [],
         },
       };
     });
@@ -408,8 +398,8 @@ export function DashboardPage() {
           dashboardContent: {
             ...prev.dashboardContent,
             widgets: newWidgets,
-            dataSpecs: prev.dashboardContent?.dataSpecs || {},
-            globalFilters: prev.dashboardContent?.globalFilters || [],
+            dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
+            globalFilters: prev.dashboardContent?.globalFilters ?? [],
           },
         };
       });
@@ -420,7 +410,21 @@ export function DashboardPage() {
   const topBarAction = useMemo(
     () => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <TimeRangeSelector />
+        {localDashboardState && (
+          <DashboardTimeRangeSelector
+            dashboardState={localDashboardState}
+            onApply={setLocalDashboardState}
+          />
+        )}
+        {hasUnsavedChanges && (
+          <Button
+            variant="outlined"
+            onClick={() => setLocalDashboardState(dashboardState ?? null)}
+            disabled={isUpdating || isLoading}
+          >
+            Undo changes
+          </Button>
+        )}
         <Button
           variant="contained"
           onClick={handleSaveToApi}
@@ -430,7 +434,14 @@ export function DashboardPage() {
         </Button>
       </Box>
     ),
-    [hasUnsavedChanges, isUpdating, isLoading, handleSaveToApi],
+    [
+      hasUnsavedChanges,
+      isUpdating,
+      isLoading,
+      handleSaveToApi,
+      localDashboardState,
+      dashboardState,
+    ],
   );
 
   const topBarTitle = useMemo(() => {
@@ -497,11 +508,12 @@ export function DashboardPage() {
         minWidth: 0,
       }}
     >
-      {(!localDashboardState?.dashboardContent ||
-        !localDashboardState.dashboardContent.widgets ||
-        localDashboardState.dashboardContent.widgets.length === 0) && (
-        <EmptyDashboardState onAdd={() => setAddWidgetModalOpen(true)} />
-      )}
+      {localDashboardState &&
+        (!localDashboardState.dashboardContent ||
+          !localDashboardState.dashboardContent.widgets ||
+          localDashboardState.dashboardContent.widgets.length === 0) && (
+          <EmptyDashboardState onAdd={() => setAddWidgetModalOpen(true)} />
+        )}
 
       {localDashboardState?.dashboardContent?.widgets &&
         localDashboardState.dashboardContent.widgets?.map(
@@ -541,6 +553,9 @@ export function DashboardPage() {
                 {widget.chart && (
                   <ChartWidget
                     widget={widget.chart}
+                    globalFilters={
+                      localDashboardState.dashboardContent?.globalFilters ?? []
+                    }
                     filterColumns={filterColumns}
                     isLoadingFilterColumns={isLoadingFilterColumns}
                     onUpdate={(updatedChartWidget) =>

@@ -17,7 +17,7 @@ import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import { SearchMeasurementsForm } from '@/crystal_ball/components';
-import { MAXIMUM_PAGE_SIZE } from '@/crystal_ball/constants';
+import { MAX_PAGE_SIZE } from '@/crystal_ball/constants';
 import { SearchMeasurementsRequest } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 describe('SearchMeasurementsForm', () => {
@@ -110,7 +110,7 @@ describe('SearchMeasurementsForm', () => {
         atpTestNameFilter: undefined,
         metricKeys: ['cpu_usage'],
         extraColumns: [],
-        pageSize: MAXIMUM_PAGE_SIZE,
+        pageSize: MAX_PAGE_SIZE,
       });
     });
   });

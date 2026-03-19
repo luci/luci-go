@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './add_widget_modal';
-export * from './breakdown_table_widget';
-export * from './chart_series_editor';
-export * from './chart_widget';
-export * from './dashboard_dialog';
-export * from './dashboard_time_range_selector';
-export * from './filter_editor';
-export * from './layout';
-export * from './markdown_widget';
-export * from './require_login';
-export * from './mock_breakdown_data';
-export * from './search_measurements_form';
-export * from './time_series_chart';
-export * from './widget_container';
+/**
+ * Standard date format for dashboard display.
+ */
+export const DASHBOARD_DATE_FORMAT = 'yyyy-MM-dd HH:mm';
