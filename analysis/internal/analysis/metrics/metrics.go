@@ -189,7 +189,7 @@ var (
 		//   because they likely all have the same underlying cause and should not be considered
 		//   separate flakes. This can be done by checking for the flake_analysis_ignore tag.
 		// - Bugs should also only be filed for top level tests: check for the is_top_level_test tag.
-		FilterSQL: `f.is_test_run_blocked AND ARRAY_LENGTH(f.build_gardener_rotations) > 0 AND NOT EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'flake_analysis_ignore') AND EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'is_top_level_test')`,
+		FilterSQL: `f.is_test_run_blocked AND f.presubmit_run_id.id IS NULL AND ARRAY_LENGTH(f.build_gardener_rotations) > 0 AND NOT EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'flake_analysis_ignore') AND EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'is_top_level_test')`,
 		// Count distinct builds.
 		CountSQL: `f.ingested_invocation_id`,
 	}.Build()
