@@ -59,6 +59,7 @@ func NotifyOwners(c context.Context) error {
 	// Update each project concurrently.
 	err = parallel.WorkPool(10, func(work chan<- func() error) {
 		for projectID, project := range configs {
+			logging.Infof(c, "Processing project %q, %d for Builder Health Notifier", projectID, project)
 			work <- func() error {
 				err := notifyOwner(c, project.BuilderHealthNotifier, projectID)
 				if err != nil {
