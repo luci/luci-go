@@ -934,6 +934,7 @@ export interface ScheduleBuildResponse {
 }
 
 export interface ListProductCatalogEntriesRequest {
+  readonly filter: string;
 }
 
 export interface ListProductCatalogEntriesResponse {
@@ -950,6 +951,24 @@ export interface ProductCatalogEntry {
   readonly r11n: string;
   readonly numberOfDevicesPerRack: number;
   readonly unitCost: string;
+}
+
+export interface Int32Range {
+  readonly min: number;
+  readonly max: number;
+}
+
+export interface GetProductCatalogFilterValuesRequest {
+}
+
+export interface GetProductCatalogFilterValuesResponse {
+  readonly productCatalogId: readonly string[];
+  readonly productName: readonly string[];
+  readonly gpn: readonly string[];
+  readonly resourceType: readonly string[];
+  readonly fleetPlmStatus: readonly string[];
+  readonly r11n: readonly string[];
+  readonly numberOfDevicesPerRack: Int32Range | undefined;
 }
 
 function createBasePingRequest(): PingRequest {
@@ -9288,11 +9307,14 @@ export const ScheduleBuildResponse: MessageFns<ScheduleBuildResponse> = {
 };
 
 function createBaseListProductCatalogEntriesRequest(): ListProductCatalogEntriesRequest {
-  return {};
+  return { filter: "" };
 }
 
 export const ListProductCatalogEntriesRequest: MessageFns<ListProductCatalogEntriesRequest> = {
-  encode(_: ListProductCatalogEntriesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(message: ListProductCatalogEntriesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.filter !== "") {
+      writer.uint32(10).string(message.filter);
+    }
     return writer;
   },
 
@@ -9303,6 +9325,14 @@ export const ListProductCatalogEntriesRequest: MessageFns<ListProductCatalogEntr
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -9312,20 +9342,24 @@ export const ListProductCatalogEntriesRequest: MessageFns<ListProductCatalogEntr
     return message;
   },
 
-  fromJSON(_: any): ListProductCatalogEntriesRequest {
-    return {};
+  fromJSON(object: any): ListProductCatalogEntriesRequest {
+    return { filter: isSet(object.filter) ? globalThis.String(object.filter) : "" };
   },
 
-  toJSON(_: ListProductCatalogEntriesRequest): unknown {
+  toJSON(message: ListProductCatalogEntriesRequest): unknown {
     const obj: any = {};
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
     return obj;
   },
 
   create(base?: DeepPartial<ListProductCatalogEntriesRequest>): ListProductCatalogEntriesRequest {
     return ListProductCatalogEntriesRequest.fromPartial(base ?? {});
   },
-  fromPartial(_: DeepPartial<ListProductCatalogEntriesRequest>): ListProductCatalogEntriesRequest {
+  fromPartial(object: DeepPartial<ListProductCatalogEntriesRequest>): ListProductCatalogEntriesRequest {
     const message = createBaseListProductCatalogEntriesRequest() as any;
+    message.filter = object.filter ?? "";
     return message;
   },
 };
@@ -9592,6 +9626,304 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
   },
 };
 
+function createBaseInt32Range(): Int32Range {
+  return { min: 0, max: 0 };
+}
+
+export const Int32Range: MessageFns<Int32Range> = {
+  encode(message: Int32Range, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.min !== 0) {
+      writer.uint32(8).int32(message.min);
+    }
+    if (message.max !== 0) {
+      writer.uint32(16).int32(message.max);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Int32Range {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseInt32Range() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.min = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.max = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Int32Range {
+    return {
+      min: isSet(object.min) ? globalThis.Number(object.min) : 0,
+      max: isSet(object.max) ? globalThis.Number(object.max) : 0,
+    };
+  },
+
+  toJSON(message: Int32Range): unknown {
+    const obj: any = {};
+    if (message.min !== 0) {
+      obj.min = Math.round(message.min);
+    }
+    if (message.max !== 0) {
+      obj.max = Math.round(message.max);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Int32Range>): Int32Range {
+    return Int32Range.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Int32Range>): Int32Range {
+    const message = createBaseInt32Range() as any;
+    message.min = object.min ?? 0;
+    message.max = object.max ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetProductCatalogFilterValuesRequest(): GetProductCatalogFilterValuesRequest {
+  return {};
+}
+
+export const GetProductCatalogFilterValuesRequest: MessageFns<GetProductCatalogFilterValuesRequest> = {
+  encode(_: GetProductCatalogFilterValuesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetProductCatalogFilterValuesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetProductCatalogFilterValuesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetProductCatalogFilterValuesRequest {
+    return {};
+  },
+
+  toJSON(_: GetProductCatalogFilterValuesRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetProductCatalogFilterValuesRequest>): GetProductCatalogFilterValuesRequest {
+    return GetProductCatalogFilterValuesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<GetProductCatalogFilterValuesRequest>): GetProductCatalogFilterValuesRequest {
+    const message = createBaseGetProductCatalogFilterValuesRequest() as any;
+    return message;
+  },
+};
+
+function createBaseGetProductCatalogFilterValuesResponse(): GetProductCatalogFilterValuesResponse {
+  return {
+    productCatalogId: [],
+    productName: [],
+    gpn: [],
+    resourceType: [],
+    fleetPlmStatus: [],
+    r11n: [],
+    numberOfDevicesPerRack: undefined,
+  };
+}
+
+export const GetProductCatalogFilterValuesResponse: MessageFns<GetProductCatalogFilterValuesResponse> = {
+  encode(message: GetProductCatalogFilterValuesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.productCatalogId) {
+      writer.uint32(10).string(v!);
+    }
+    for (const v of message.productName) {
+      writer.uint32(18).string(v!);
+    }
+    for (const v of message.gpn) {
+      writer.uint32(26).string(v!);
+    }
+    for (const v of message.resourceType) {
+      writer.uint32(34).string(v!);
+    }
+    for (const v of message.fleetPlmStatus) {
+      writer.uint32(42).string(v!);
+    }
+    for (const v of message.r11n) {
+      writer.uint32(50).string(v!);
+    }
+    if (message.numberOfDevicesPerRack !== undefined) {
+      Int32Range.encode(message.numberOfDevicesPerRack, writer.uint32(58).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetProductCatalogFilterValuesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetProductCatalogFilterValuesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.productCatalogId.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.productName.push(reader.string());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.gpn.push(reader.string());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.resourceType.push(reader.string());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.fleetPlmStatus.push(reader.string());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.r11n.push(reader.string());
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.numberOfDevicesPerRack = Int32Range.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetProductCatalogFilterValuesResponse {
+    return {
+      productCatalogId: globalThis.Array.isArray(object?.productCatalogId)
+        ? object.productCatalogId.map((e: any) => globalThis.String(e))
+        : [],
+      productName: globalThis.Array.isArray(object?.productName)
+        ? object.productName.map((e: any) => globalThis.String(e))
+        : [],
+      gpn: globalThis.Array.isArray(object?.gpn) ? object.gpn.map((e: any) => globalThis.String(e)) : [],
+      resourceType: globalThis.Array.isArray(object?.resourceType)
+        ? object.resourceType.map((e: any) => globalThis.String(e))
+        : [],
+      fleetPlmStatus: globalThis.Array.isArray(object?.fleetPlmStatus)
+        ? object.fleetPlmStatus.map((e: any) => globalThis.String(e))
+        : [],
+      r11n: globalThis.Array.isArray(object?.r11n)
+        ? object.r11n.map((e: any) => globalThis.String(e))
+        : [],
+      numberOfDevicesPerRack: isSet(object.numberOfDevicesPerRack)
+        ? Int32Range.fromJSON(object.numberOfDevicesPerRack)
+        : undefined,
+    };
+  },
+
+  toJSON(message: GetProductCatalogFilterValuesResponse): unknown {
+    const obj: any = {};
+    if (message.productCatalogId?.length) {
+      obj.productCatalogId = message.productCatalogId;
+    }
+    if (message.productName?.length) {
+      obj.productName = message.productName;
+    }
+    if (message.gpn?.length) {
+      obj.gpn = message.gpn;
+    }
+    if (message.resourceType?.length) {
+      obj.resourceType = message.resourceType;
+    }
+    if (message.fleetPlmStatus?.length) {
+      obj.fleetPlmStatus = message.fleetPlmStatus;
+    }
+    if (message.r11n?.length) {
+      obj.r11n = message.r11n;
+    }
+    if (message.numberOfDevicesPerRack !== undefined) {
+      obj.numberOfDevicesPerRack = Int32Range.toJSON(message.numberOfDevicesPerRack);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetProductCatalogFilterValuesResponse>): GetProductCatalogFilterValuesResponse {
+    return GetProductCatalogFilterValuesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetProductCatalogFilterValuesResponse>): GetProductCatalogFilterValuesResponse {
+    const message = createBaseGetProductCatalogFilterValuesResponse() as any;
+    message.productCatalogId = object.productCatalogId?.map((e) => e) || [];
+    message.productName = object.productName?.map((e) => e) || [];
+    message.gpn = object.gpn?.map((e) => e) || [];
+    message.resourceType = object.resourceType?.map((e) => e) || [];
+    message.fleetPlmStatus = object.fleetPlmStatus?.map((e) => e) || [];
+    message.r11n = object.r11n?.map((e) => e) || [];
+    message.numberOfDevicesPerRack =
+      (object.numberOfDevicesPerRack !== undefined && object.numberOfDevicesPerRack !== null)
+        ? Int32Range.fromPartial(object.numberOfDevicesPerRack)
+        : undefined;
+    return message;
+  },
+};
+
 export interface FleetConsole {
   /**
    * Ping does not send or receive any information. It just checks that the
@@ -9693,6 +10025,9 @@ export interface FleetConsole {
   /** ************* MISC ****** */
   ScheduleBuild(request: ScheduleBuildRequest): Promise<ScheduleBuildResponse>;
   ListProductCatalogEntries(request: ListProductCatalogEntriesRequest): Promise<ListProductCatalogEntriesResponse>;
+  GetProductCatalogFilterValues(
+    request: GetProductCatalogFilterValuesRequest,
+  ): Promise<GetProductCatalogFilterValuesResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -9735,6 +10070,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.CleanupAndroidDevices = this.CleanupAndroidDevices.bind(this);
     this.ScheduleBuild = this.ScheduleBuild.bind(this);
     this.ListProductCatalogEntries = this.ListProductCatalogEntries.bind(this);
+    this.GetProductCatalogFilterValues = this.GetProductCatalogFilterValues.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -9928,6 +10264,14 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = ListProductCatalogEntriesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListProductCatalogEntries", data);
     return promise.then((data) => ListProductCatalogEntriesResponse.fromJSON(data));
+  }
+
+  GetProductCatalogFilterValues(
+    request: GetProductCatalogFilterValuesRequest,
+  ): Promise<GetProductCatalogFilterValuesResponse> {
+    const data = GetProductCatalogFilterValuesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetProductCatalogFilterValues", data);
+    return promise.then((data) => GetProductCatalogFilterValuesResponse.fromJSON(data));
   }
 }
 

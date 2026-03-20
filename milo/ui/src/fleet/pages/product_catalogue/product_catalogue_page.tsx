@@ -23,6 +23,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
+import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
+import { useFilters } from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
@@ -41,13 +44,31 @@ const DEFAULT_PAGE_SIZE = 25;
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 export const ProductCataloguePage = () => {
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+
   const client = useFleetConsoleClient();
-  const query = useQuery({
-    ...client.ListProductCatalogEntries.query({}),
+  const filterOptionsQuery = useQuery({
+    ...client.GetProductCatalogFilterValues.query({}),
     placeholderData: keepPreviousData,
   });
 
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const filterOptions = {
+    '"gpn"': new StringListFilterCategoryBuilder().setLabel('GPN').setOptions(
+      filterOptionsQuery.data?.gpn.map((gpn) => ({
+        label: gpn,
+        key: `"${gpn}"`,
+      })) ?? [],
+    ),
+  };
+  const { filterValues, aip160 } = useFilters(filterOptions);
+
+  const onApplyFilter = useCallback(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, []);
+  const query = useQuery({
+    ...client.ListProductCatalogEntries.query({ filter: aip160 }),
+    placeholderData: keepPreviousData,
+  });
 
   const pageSize =
     parseInt(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10) ||
@@ -95,6 +116,7 @@ export const ProductCataloguePage = () => {
     data,
     enablePagination: true,
     manualPagination: false,
+    manualFiltering: false,
     onSortingChange: onSortingChange,
     onPaginationChange: onPaginationChange,
     autoResetPageIndex: false,
@@ -118,6 +140,23 @@ export const ProductCataloguePage = () => {
 
   return (
     <Container>
+      <div
+        css={{
+          marginBottom: 24,
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 28,
+          borderRadius: 4,
+        }}
+      >
+        <FilterBar
+          filterCategoryDatas={Object.values(filterValues || {})}
+          onApply={onApplyFilter}
+          isLoading={filterValues === undefined}
+        />
+      </div>
       <MaterialReactTable table={table} />
     </Container>
   );
