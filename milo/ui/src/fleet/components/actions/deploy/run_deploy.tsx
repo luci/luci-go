@@ -51,6 +51,9 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
       setAdminAccessRequiredDialogOpen(true);
       return;
     }
+    if (hasPermission === null) {
+      return;
+    }
     setSessionInfo({
       dutNames: dutNames,
       namespaces: namespaces,
@@ -97,7 +100,7 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
         size="small"
         startIcon={<SystemUpdateAltIcon />}
         onClick={initializeDeploy}
-        disabled={dutNames.length === 0}
+        disabled={dutNames.length === 0 || hasPermission === null}
       >
         Deploy
       </Button>

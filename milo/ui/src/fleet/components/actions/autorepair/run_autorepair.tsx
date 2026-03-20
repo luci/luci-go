@@ -58,6 +58,9 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
       setAdminAccessRequiredDialogOpen(true);
       return;
     }
+    if (hasPermission === null) {
+      return;
+    }
     setSessionInfo({
       dutNames: dutNames,
       namespaces: namespaces,
@@ -119,7 +122,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
         size="small"
         startIcon={<BuildIcon />}
         onClick={initializeAutorepair}
-        disabled={dutNames.length === 0}
+        disabled={dutNames.length === 0 || hasPermission === null}
       >
         Run autorepair
       </Button>
