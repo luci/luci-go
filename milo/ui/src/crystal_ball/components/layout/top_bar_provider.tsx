@@ -24,6 +24,7 @@ export function TopBarProvider({ children }: { children: ReactNode }) {
   const [title, setTitle] = useState<ReactNode | null>(null);
   const [actions, setActions] = useState<ReactNode | null>(null);
   const [menuItems, setMenuItems] = useState<ReactNode | null>(null);
+  const [subHeader, setSubHeader] = useState<ReactNode | null>(null);
 
   return (
     <TopBarContext.Provider
@@ -34,6 +35,8 @@ export function TopBarProvider({ children }: { children: ReactNode }) {
         setActions,
         menuItems,
         setMenuItems,
+        subHeader,
+        setSubHeader,
       }}
     >
       {children}

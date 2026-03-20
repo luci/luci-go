@@ -34,6 +34,7 @@ import {
   AddWidgetModal,
   ChartWidget,
   DashboardTimeRangeSelector,
+  FilterEditor,
   MarkdownWidget,
   RequireLogin,
   WidgetContainer,
@@ -41,7 +42,11 @@ import {
 import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
 import { DeleteDashboardDialog } from '@/crystal_ball/components/dashboard_dialog/delete_dashboard_dialog';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
-import { DATA_SPEC_ID } from '@/crystal_ball/constants';
+import {
+  DATA_SPEC_ID,
+  GLOBAL_TIME_RANGE_COLUMN,
+  MAX_PAGE_SIZE,
+} from '@/crystal_ball/constants';
 import {
   getDashboardStateQueryKey,
   useDeleteDashboardState,
@@ -50,12 +55,14 @@ import {
 } from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { WidgetType } from '@/crystal_ball/types';
-import { formatApiError } from '@/crystal_ball/utils';
+import { formatApiError, isStringArray } from '@/crystal_ball/utils';
 import {
   DashboardState,
-  PerfWidget,
-  PerfChartWidget_ChartType,
   DeleteDashboardStateRequest,
+  MeasurementFilterColumn_FilterScope,
+  PerfChartWidget_ChartType,
+  PerfFilter,
+  PerfWidget,
   UpdateDashboardStateRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -180,7 +187,7 @@ export function DashboardPage() {
     useListMeasurementFilterColumns(
       {
         parent: `dashboardStates/${dashboardId}/dataSpecs/${DATA_SPEC_ID}`,
-        pageSize: 100,
+        pageSize: MAX_PAGE_SIZE,
         pageToken: '',
       },
       {
@@ -193,6 +200,20 @@ export function DashboardPage() {
     [filterColumnsResponse],
   );
 
+  const globalFilterColumns = useMemo(
+    () =>
+      filterColumns.filter(
+        (c) =>
+          c.column !== GLOBAL_TIME_RANGE_COLUMN &&
+          (c.applicableScopes?.includes(
+            MeasurementFilterColumn_FilterScope.GLOBAL,
+          ) ||
+            (isStringArray(c.applicableScopes) &&
+              c.applicableScopes.includes('GLOBAL'))),
+      ),
+    [filterColumns],
+  );
+
   const [toastMessage, setToastMessage] = useState('');
 
   const handleCloseToast = () => {
@@ -201,6 +222,7 @@ export function DashboardPage() {
 
   const [localDashboardState, setLocalDashboardState] =
     useState<DashboardState | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const hasUnsavedChanges = useMemo(() => {
     return (
@@ -279,6 +301,7 @@ export function DashboardPage() {
 
   const handleSaveToApi = useCallback(async () => {
     if (!localDashboardState || !localDashboardState.name) return;
+    setIsSaving(true);
     try {
       const response = await updateDashboard(
         UpdateDashboardStateRequest.fromPartial({
@@ -293,13 +316,19 @@ export function DashboardPage() {
       );
       if (response.response) {
         setLocalDashboardState(response.response);
+        queryClient.setQueryData(
+          getDashboardStateQueryKey(response.response.name),
+          response.response,
+        );
       }
       setToastMessage('Dashboard saved successfully');
-      refetch();
+      await refetch();
     } catch (e) {
       setToastMessage(formatApiError(e, 'Failed to save dashboard'));
+    } finally {
+      setIsSaving(false);
     }
-  }, [localDashboardState, updateDashboard, refetch]);
+  }, [localDashboardState, updateDashboard, refetch, queryClient]);
 
   const handleAddWidget = useCallback((widgetType: WidgetType) => {
     setLocalDashboardState((prev: DashboardState | null) => {
@@ -407,6 +436,29 @@ export function DashboardPage() {
     [],
   );
 
+  const handleUpdateGlobalFilters = useCallback(
+    (updatedFilters: PerfFilter[]) => {
+      setLocalDashboardState((prev: DashboardState | null) => {
+        if (!prev) return null;
+
+        const conservedTimeRangeFilters = (
+          prev.dashboardContent?.globalFilters ?? []
+        ).filter((f) => f.column === GLOBAL_TIME_RANGE_COLUMN);
+
+        return {
+          ...prev,
+          dashboardContent: {
+            ...prev.dashboardContent,
+            widgets: prev.dashboardContent?.widgets ?? [],
+            dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
+            globalFilters: [...conservedTimeRangeFilters, ...updatedFilters],
+          },
+        };
+      });
+    },
+    [],
+  );
+
   const topBarAction = useMemo(
     () => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -416,11 +468,11 @@ export function DashboardPage() {
             onApply={setLocalDashboardState}
           />
         )}
-        {hasUnsavedChanges && (
+        {hasUnsavedChanges && !isUpdating && !isSaving && (
           <Button
             variant="outlined"
             onClick={() => setLocalDashboardState(dashboardState ?? null)}
-            disabled={isUpdating || isLoading}
+            disabled={isUpdating || isLoading || isSaving}
           >
             Undo changes
           </Button>
@@ -428,9 +480,9 @@ export function DashboardPage() {
         <Button
           variant="contained"
           onClick={handleSaveToApi}
-          disabled={!hasUnsavedChanges || isUpdating || isLoading}
+          disabled={!hasUnsavedChanges || isUpdating || isLoading || isSaving}
         >
-          {isUpdating ? 'Saving...' : 'Save'}
+          {isUpdating || isSaving ? 'Saving...' : 'Save'}
         </Button>
       </Box>
     ),
@@ -441,6 +493,7 @@ export function DashboardPage() {
       handleSaveToApi,
       localDashboardState,
       dashboardState,
+      isSaving,
     ],
   );
 
@@ -470,7 +523,31 @@ export function DashboardPage() {
     [],
   );
 
-  useTopBarConfig(topBarTitle, topBarAction, topBarMenuItems);
+  const subHeader = useMemo(() => {
+    if (isLoadingFilterColumns || globalFilterColumns.length === 0) return null;
+
+    const activeGlobalFilters = (
+      localDashboardState?.dashboardContent?.globalFilters ?? []
+    ).filter((f) => f.column !== GLOBAL_TIME_RANGE_COLUMN);
+
+    return (
+      <FilterEditor
+        title="Global Filters"
+        filters={activeGlobalFilters}
+        onUpdateFilters={handleUpdateGlobalFilters}
+        dataSpecId={DATA_SPEC_ID}
+        availableColumns={globalFilterColumns}
+        isLoadingColumns={isLoadingFilterColumns}
+      />
+    );
+  }, [
+    isLoadingFilterColumns,
+    globalFilterColumns,
+    localDashboardState,
+    handleUpdateGlobalFilters,
+  ]);
+
+  useTopBarConfig(topBarTitle, topBarAction, topBarMenuItems, subHeader);
 
   if (isLoading) {
     return (

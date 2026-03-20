@@ -32,7 +32,7 @@ import { useTopBar } from './top_bar_context';
  * It displays the logo, page title, and actions based on the current context.
  */
 export function TopBar() {
-  const { title, actions, menuItems } = useTopBar();
+  const { title, actions, menuItems, subHeader } = useTopBar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -118,6 +118,7 @@ export function TopBar() {
           </Menu>
         </Box>
       </Toolbar>
+      {subHeader}
     </AppBar>
   );
 }

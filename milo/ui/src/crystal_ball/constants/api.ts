@@ -31,7 +31,7 @@ export const DATA_SPEC_ID = 'cbdb';
 /**
  * The column name that corresponds to the global time range filter.
  */
-export const GLOBAL_TIME_RANGE_COLUMN = 'build_create_time';
+export const GLOBAL_TIME_RANGE_COLUMN = 'build_creation_timestamp';
 
 /**
  * The filter ID for specifying the global time range.

@@ -59,6 +59,7 @@ const OPERATORS = Object.keys(PerfFilterDefault_FilterOperator).filter(
 );
 
 interface FilterEditorProps {
+  title?: string;
   filters: PerfFilter[];
   onUpdateFilters: (updatedFilters: PerfFilter[]) => void;
   dataSpecId: string;
@@ -241,6 +242,7 @@ function FilterEditorRow({
 }
 
 export function FilterEditor({
+  title,
   filters,
   onUpdateFilters,
   dataSpecId,
@@ -340,19 +342,23 @@ export function FilterEditor({
 
   return (
     <Box sx={{ mt: 1 }}>
-      <Accordion expanded={expanded} onChange={() => setExpanded(!expanded)}>
+      <Accordion
+        expanded={expanded}
+        onChange={() => setExpanded(!expanded)}
+        disableGutters
+      >
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
           aria-controls="filters-content"
           id="filters-header"
           sx={{
             '& .MuiAccordionSummary-content': {
-              alignItems: 'center',
+              alignItems: filters.length === 0 ? 'baseline' : 'center',
               gap: 1,
             },
           }}
         >
-          <Typography variant="subtitle1">Filters</Typography>
+          <Typography variant="subtitle1">{title ?? 'Filters'}</Typography>
           {!expanded && filters.length > 0 && (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {filters.map((filter) => (

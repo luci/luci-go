@@ -431,4 +431,9 @@ describe('FilterEditor', () => {
       'model',
     ]);
   });
+
+  it('renders with custom title', () => {
+    wrapWithProviders(<FilterEditor {...defaultProps} title="Custom Title" />);
+    expect(screen.getByText('Custom Title')).toBeInTheDocument();
+  });
 });

@@ -20,6 +20,8 @@ import { DashboardPage } from '@/crystal_ball/pages/dashboard_page';
 import {
   DashboardState,
   DeleteDashboardStateRequest,
+  ListMeasurementFilterColumnsResponse,
+  MeasurementFilterColumn,
   UpdateDashboardStateRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -37,19 +39,22 @@ jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
   })),
 }));
 
+const mockUseListMeasurementFilterColumns = jest.fn(() => ({
+  data: ListMeasurementFilterColumnsResponse.fromPartial({
+    measurementFilterColumns: [
+      { column: 'atp_test_name' },
+      { column: 'build_branch' },
+      { column: 'build_target' },
+      { column: 'test_name' },
+      { column: 'model' },
+      { column: 'sku' },
+    ].map((c) => MeasurementFilterColumn.fromPartial(c)),
+  }),
+  isLoading: false,
+}));
+
 jest.mock('@/crystal_ball/hooks/use_measurement_filter_api', () => ({
-  useListMeasurementFilterColumns: jest.fn(() => ({
-    data: {
-      measurementFilterColumns: [
-        { column: 'atp_test_name' },
-        { column: 'build_branch' },
-        { column: 'build_target' },
-        { column: 'test_name' },
-        { column: 'model' },
-        { column: 'sku' },
-      ],
-    },
-  })),
+  useListMeasurementFilterColumns: () => mockUseListMeasurementFilterColumns(),
 }));
 
 jest.mock('@/common/components/auth_state_provider', () => ({
@@ -101,6 +106,7 @@ jest.mock('@/crystal_ball/components', () => ({
   ChartWidget: jest.fn(() => <>ChartWidget Mock</>),
   MarkdownWidget: jest.fn(() => <>MarkdownWidget Mock</>),
   DashboardTimeRangeSelector: () => <>DashboardTimeRangeSelector Mock</>,
+  FilterEditor: () => <>FilterEditor Mock</>,
 }));
 
 const mockDashboard: DashboardState = DashboardState.fromPartial({
@@ -174,6 +180,7 @@ describe('<DashboardPage />', () => {
       expect.anything(),
       expect.anything(),
       expect.anything(),
+      null,
     );
   });
 

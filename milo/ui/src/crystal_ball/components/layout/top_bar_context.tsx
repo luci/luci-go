@@ -42,6 +42,14 @@ interface TopBarContextType {
    * Function to update the TopBar menu items.
    */
   setMenuItems: (items: ReactNode | null) => void;
+  /**
+   * Optional sub-header displayed full width below the toolbar.
+   */
+  subHeader: ReactNode | null;
+  /**
+   * Function to update the sub-header.
+   */
+  setSubHeader: (subHeader: ReactNode | null) => void;
 }
 
 /**
@@ -74,17 +82,29 @@ export function useTopBarConfig(
   title: ReactNode,
   actions?: ReactNode,
   menuItems?: ReactNode,
+  subHeader?: ReactNode,
 ) {
-  const { setTitle, setActions, setMenuItems } = useTopBar();
+  const { setTitle, setActions, setMenuItems, setSubHeader } = useTopBar();
 
   useEffect(() => {
     setTitle(title);
     setActions(actions || null);
     setMenuItems(menuItems || null);
+    setSubHeader(subHeader || null);
     return () => {
       setTitle(null);
       setActions(null);
       setMenuItems(null);
+      setSubHeader(null);
     };
-  }, [title, actions, menuItems, setTitle, setActions, setMenuItems]);
+  }, [
+    title,
+    actions,
+    menuItems,
+    subHeader,
+    setTitle,
+    setActions,
+    setMenuItems,
+    setSubHeader,
+  ]);
 }

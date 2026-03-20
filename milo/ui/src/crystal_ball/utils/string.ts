@@ -31,3 +31,11 @@ export function extractIdFromName(name: string): string {
   const parts = name.split('/');
   return parts[parts.length - 1];
 }
+
+/**
+ * Type guard to check if an unknown array contains strings.
+ * @param arr The array to check.
+ * @returns True if the array contains strictly strings.
+ */
+export const isStringArray = (arr: unknown): arr is string[] =>
+  Array.isArray(arr) && arr.every((i) => typeof i === 'string');
