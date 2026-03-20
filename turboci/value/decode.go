@@ -108,16 +108,24 @@ func First[T proto.Message](source DataSource, list []*orchestratorpb.ValueRef) 
 //
 // If none is found, or ref is omitted, this returns nil.
 func Lookup[T proto.Message](source DataSource, set []*orchestratorpb.ValueRef) (T, error) {
-	idx, found := slices.BinarySearchFunc(set, URL[T](), func(ref *orchestratorpb.ValueRef, typeURL string) int {
+	val := Find(set, URL[T]())
+	if val == nil || val.GetOmitReason() != 0 {
+		var zero T
+		return zero, nil
+	}
+	return Decode[T](source, val)
+}
+
+// Find finds the ValueRef with the given type URL in a sorted list of
+// ValueRefs.
+//
+// If none is found, this returns nil.
+func Find(list []*orchestratorpb.ValueRef, typeURL string) *orchestratorpb.ValueRef {
+	idx, found := slices.BinarySearchFunc(list, typeURL, func(ref *orchestratorpb.ValueRef, typeURL string) int {
 		return cmp.Compare(ref.GetTypeUrl(), typeURL)
 	})
 	if found {
-		ref := set[idx]
-		if ref.GetOmitReason() == 0 {
-			return Decode[T](source, ref)
-		}
+		return list[idx]
 	}
-
-	var zero T
-	return zero, nil
+	return nil
 }
