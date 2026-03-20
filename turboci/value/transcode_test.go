@@ -143,9 +143,9 @@ func TestEnsureJSONInSource(t *testing.T) {
 		dSrc := SimpleDataSource{}
 		v := mustInline(structpb.NewStringValue("hi"), "proj:realm")
 
-		assert.NoErr(t, AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{}))
+		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
 
-		assert.That(t, dSrc.Retrieve(v.GetDigest()).GetJson(), should.Match(orchestratorpb.ValueData_JsonAny_builder{
+		assert.That(t, dSrc.Retrieve(Digest(v.GetDigest())).GetJson(), should.Match(orchestratorpb.ValueData_JsonAny_builder{
 			TypeUrl: proto.String(URL[*structpb.Value]()),
 			Value:   proto.String(`"hi"`),
 		}.Build()))
@@ -159,9 +159,9 @@ func TestEnsureJSONInSource(t *testing.T) {
 
 		AbsorbInline(dSrc, v)
 
-		assert.NoErr(t, AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{}))
+		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
 
-		assert.That(t, dSrc.Retrieve(v.GetDigest()).GetJson(), should.Match(orchestratorpb.ValueData_JsonAny_builder{
+		assert.That(t, dSrc.Retrieve(Digest(v.GetDigest())).GetJson(), should.Match(orchestratorpb.ValueData_JsonAny_builder{
 			TypeUrl: proto.String(URL[*structpb.Value]()),
 			Value:   proto.String(`"hi"`),
 		}.Build()))
@@ -173,12 +173,12 @@ func TestEnsureJSONInSource(t *testing.T) {
 		dSrc := SimpleDataSource{}
 		v := mustInline(structpb.NewStringValue("hi"), "proj:realm")
 
-		assert.NoErr(t, AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{}))
+		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
 
 		// should be a no-op
-		assert.NoErr(t, AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{}))
+		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
 
-		assert.That(t, dSrc.Retrieve(v.GetDigest()).GetJson(), should.Match(orchestratorpb.ValueData_JsonAny_builder{
+		assert.That(t, dSrc.Retrieve(Digest(v.GetDigest())).GetJson(), should.Match(orchestratorpb.ValueData_JsonAny_builder{
 			TypeUrl: proto.String(URL[*structpb.Value]()),
 			Value:   proto.String(`"hi"`),
 		}.Build()))
@@ -193,7 +193,8 @@ func TestEnsureJSONInSource(t *testing.T) {
 			Digest:  proto.String("superfake"),
 		}.Build()
 
-		assert.ErrIsLike(t, AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{}), "missing data")
+		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
+		assert.Loosely(t, dSrc, should.HaveLength(0))
 	})
 
 	t.Run(`unknown_fields`, func(t *testing.T) {
@@ -206,9 +207,9 @@ func TestEnsureJSONInSource(t *testing.T) {
 		assert.NoErr(t, err)
 		v.GetInline().Value = raw
 
-		assert.NoErr(t, AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{}))
+		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
 
-		assert.That(t, dSrc.Retrieve(v.GetDigest()).GetJson(), should.Match(orchestratorpb.ValueData_JsonAny_builder{
+		assert.That(t, dSrc.Retrieve(Digest(v.GetDigest())).GetJson(), should.Match(orchestratorpb.ValueData_JsonAny_builder{
 			TypeUrl:          proto.String(URL[*emptypb.Empty]()),
 			Value:            proto.String("{}"),
 			HasUnknownFields: proto.Bool(true),
@@ -228,7 +229,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 
 		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
 
-		assert.That(t, dSrc.Retrieve(string(dgst)), should.Match(orchestratorpb.ValueData_builder{
+		assert.That(t, dSrc.Retrieve(dgst), should.Match(orchestratorpb.ValueData_builder{
 			Binary:            rawData,
 			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
 		}.Build()))
@@ -243,15 +244,13 @@ func TestEnsureJSONInSource(t *testing.T) {
 		dgst := ComputeDigest(v.GetInline())
 
 		AbsorbInline(dSrc, v)
-		dSrc.Intern(map[string]*orchestratorpb.ValueData{
-			string(dgst): orchestratorpb.ValueData_builder{
-				ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
-			}.Build(),
-		})
+		dSrc.Intern(dgst, orchestratorpb.ValueData_builder{
+			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
+		}.Build())
 
 		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
 
-		assert.That(t, dSrc.Retrieve(string(dgst)), should.Match(orchestratorpb.ValueData_builder{
+		assert.That(t, dSrc.Retrieve(dgst), should.Match(orchestratorpb.ValueData_builder{
 			Binary:            emptyInline,
 			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
 		}.Build()))
@@ -259,7 +258,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		// A second, unrelated, inline'd Empty.
 		AbsorbAsJSON(dSrc, mustInline(&emptypb.Empty{}, "other:realm"), protojson.MarshalOptions{})
 
-		assert.That(t, dSrc.Retrieve(string(dgst)), should.Match(orchestratorpb.ValueData_builder{
+		assert.That(t, dSrc.Retrieve(dgst), should.Match(orchestratorpb.ValueData_builder{
 			Binary:            emptyInline,
 			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
 		}.Build()))

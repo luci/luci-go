@@ -59,8 +59,7 @@ func TestDataSource(t *testing.T) {
 		"5": mkBin(),
 	}
 
-	ds := &SyncDataSource{}
-	ds.Intern(dat)
+	ds := SyncDataSourceFromMap(dat)
 
 	assert.That(t, ds.Retrieve("1").HasBinary(), should.BeTrue)
 
@@ -68,11 +67,9 @@ func TestDataSource(t *testing.T) {
 
 	assert.Loosely(t, ds.Retrieve("NX"), should.BeNil)
 
-	ds.Intern(map[string]*orchestratorpb.ValueData{
-		"2": mkJson(),
-		"4": mkBin(),
-		"6": mkJson(),
-	})
+	ds.Intern("2", mkJson())
+	ds.Intern("4", mkBin())
+	ds.Intern("6", mkJson())
 
 	assert.That(t, ds.Retrieve("2").HasJson(), should.BeTrue)
 
@@ -82,7 +79,7 @@ func TestDataSource(t *testing.T) {
 }
 
 type mockDatum struct {
-	digest string
+	digest Digest
 	dat    *orchestratorpb.ValueData
 }
 
@@ -96,7 +93,7 @@ func genMockData(numChunks, dataPerChunk, digestTrunc int) [][]mockDatum {
 				Value:   fmt.Appendf(nil, "chunk-%d-dgst-%d", c, i),
 			}
 			sum := sha256.Sum224(binary.Value)
-			data[i].digest = string(base64.RawURLEncoding.EncodeToString(sum[:digestTrunc]))
+			data[i].digest = Digest(base64.RawURLEncoding.EncodeToString(sum[:digestTrunc]))
 			if i%2 == 0 {
 				data[i].dat = orchestratorpb.ValueData_builder{
 					Binary: binary,
@@ -149,10 +146,8 @@ func TestDataSourceStress(t *testing.T) {
 
 	for w := range numWriters {
 		eg.Go(func() error {
-			m := map[string]*orchestratorpb.ValueData{}
 			for _, datum := range chunks[w] {
-				m[datum.digest] = datum.dat
-				ds.Intern(m)
+				ds.Intern(datum.digest, datum.dat)
 			}
 			return nil
 		})
@@ -176,7 +171,7 @@ func BenchmarkSyncDataSource(b *testing.B) {
 		for chunk := range slices.Chunk(dataForWriter, writeSize) {
 			m := make(map[string]*orchestratorpb.ValueData, writeSize)
 			for _, dat := range chunk {
-				m[dat.digest] = dat.dat
+				m[string(dat.digest)] = dat.dat
 			}
 			w = append(w, m)
 		}
@@ -206,7 +201,7 @@ func BenchmarkSyncDataSource(b *testing.B) {
 		for w := range numWriters {
 			eg.Go(func() error {
 				for _, write := range maps[w] {
-					ds.Intern(write)
+					ds.UpdateFrom(write)
 				}
 				return nil
 			})
@@ -222,7 +217,16 @@ type mutexMap struct {
 	data map[string]*orchestratorpb.ValueData
 }
 
-var _ DataSource = (*mutexMap)(nil)
+// Note: a previous version of DataSource made Intern accept an entire map,
+// just to allow this type of simplistic implementation.
+//
+// It turns out that most uses (except for merging in another map) really
+// want a singular Intern method.
+//
+// We keep this mutexMap just for benchmarking/historical/comparison purposes
+// though.
+//
+// var _ DataSource = (*mutexMap)(nil)
 
 func (m *mutexMap) Retrieve(digest string) *orchestratorpb.ValueData {
 	m.mu.RLock()
@@ -235,7 +239,9 @@ func (m *mutexMap) Intern(data map[string]*orchestratorpb.ValueData) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	maps.Copy(m.data, data)
+	for digest, dat := range data {
+		m.data[digest] = MergeData(m.data[digest], dat)
+	}
 }
 
 func (m *mutexMap) ToMap() map[string]*orchestratorpb.ValueData {
@@ -258,7 +264,7 @@ func BenchmarkMutexMap(b *testing.B) {
 		for chunk := range slices.Chunk(dataForWriter, writeSize) {
 			m := make(map[string]*orchestratorpb.ValueData, writeSize)
 			for _, dat := range chunk {
-				m[dat.digest] = dat.dat
+				m[string(dat.digest)] = dat.dat
 			}
 			w = append(w, m)
 		}

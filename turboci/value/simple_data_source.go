@@ -24,6 +24,9 @@ import (
 // Useful to transform a ValueData map from an RPC response into a [DataSource]
 // without any extra allocation or overhead.
 //
+// Directly construct either via allocation, or by casting a compatible
+// map type.
+//
 // If you need a DataSource to persist through multiple calls, or where you
 // need multiple readers or writers, consider [SyncDataSource].
 type SimpleDataSource map[string]*orchestratorpb.ValueData
@@ -31,12 +34,18 @@ type SimpleDataSource map[string]*orchestratorpb.ValueData
 var _ DataSource = SimpleDataSource(nil)
 
 // Retrieve implements [DataSource].
-func (s SimpleDataSource) Retrieve(digest string) *orchestratorpb.ValueData {
-	return s[digest]
+func (s SimpleDataSource) Retrieve(digest Digest) *orchestratorpb.ValueData {
+	return s[string(digest)]
 }
 
-// Intern implements [DataSource].
-func (s SimpleDataSource) Intern(data map[string]*orchestratorpb.ValueData) {
+// InternOne implements [DataSource].
+func (s SimpleDataSource) Intern(digest Digest, data *orchestratorpb.ValueData) {
+	digestS := string(digest)
+	s[digestS] = MergeData(s[digestS], data)
+}
+
+// UpdateFrom implements [DataSource].
+func (s SimpleDataSource) UpdateFrom(data map[string]*orchestratorpb.ValueData) {
 	for digest, dat := range data {
 		s[digest] = MergeData(s[digest], dat)
 	}

@@ -24,15 +24,20 @@ import (
 type DataSource interface {
 	// Retrieve returns the data associated with this digest, or nil if it is
 	// absent.
-	Retrieve(digest string) *orchestratorpb.ValueData
+	Retrieve(digest Digest) *orchestratorpb.ValueData
 
-	// Intern ingests all data from the given map into this DataSource.
+	// Intern ingests one digest/data pair.
 	//
-	// This must prefer JSON over binary (so interning binary data to an entry
-	// with JSON in it will always keep the JSON data).
+	// For existing values, use [MergeData] to merge `data` with the existing
+	// value.
 	//
 	// A set conversion failure must override an unset conversion failure.
-	Intern(data map[string]*orchestratorpb.ValueData)
+	Intern(digest Digest, data *orchestratorpb.ValueData)
+
+	// UpdateFrom merges all data from `data` into this DataSource.
+	//
+	// Useful when getting `value_data` back from read APIs.
+	UpdateFrom(data map[string]*orchestratorpb.ValueData)
 }
 
 // MergeData returns a shallow copy of `a` with `b` merged into it using the
@@ -62,9 +67,10 @@ func MergeData(a, b *orchestratorpb.ValueData) *orchestratorpb.ValueData {
 	}
 
 	if a.HasBinary() && b.HasJson() {
-		cow().SetJson(b.GetJson())
-	}
-	if !a.HasConversionFailure() && b.HasConversionFailure() {
+		mod := cow()
+		mod.SetJson(b.GetJson())
+		mod.ClearConversionFailure()
+	} else if !a.HasConversionFailure() && b.HasConversionFailure() {
 		cow().SetConversionFailure(b.GetConversionFailure())
 	}
 

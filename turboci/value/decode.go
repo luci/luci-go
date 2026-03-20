@@ -44,7 +44,7 @@ func Decode[T proto.Message](source DataSource, ref *orchestratorpb.ValueRef) (T
 	if data := ref.GetInline(); data != nil {
 		binData = data
 	} else {
-		got := source.Retrieve(ref.GetDigest())
+		got := source.Retrieve(Digest(ref.GetDigest()))
 		binData, jsonData = got.GetBinary(), got.GetJson()
 	}
 

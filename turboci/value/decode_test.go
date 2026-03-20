@@ -67,7 +67,7 @@ func TestDecode(t *testing.T) {
 		AbsorbAsJSON(dSrc, vref, protojson.MarshalOptions{})
 
 		assert.That(t, vref.HasDigest(), should.BeTrue)
-		assert.That(t, dSrc.Retrieve(vref.GetDigest()).HasJson(), should.BeTrue)
+		assert.That(t, dSrc.Retrieve(Digest(vref.GetDigest())).HasJson(), should.BeTrue)
 
 		sval, err := Decode[*structpb.Value](dSrc, vref)
 		assert.NoErr(t, err)

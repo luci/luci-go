@@ -50,10 +50,8 @@ func AbsorbInline(src DataSource, ref *orchestratorpb.ValueRef) {
 	}
 	bin := ref.GetInline()
 	dgst := ComputeDigest(bin)
-	src.Intern(map[string]*orchestratorpb.ValueData{
-		string(dgst): orchestratorpb.ValueData_builder{
-			Binary: bin,
-		}.Build(),
-	})
+	src.Intern(dgst, orchestratorpb.ValueData_builder{
+		Binary: bin,
+	}.Build())
 	ref.SetDigest(string(dgst))
 }

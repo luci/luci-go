@@ -39,26 +39,10 @@ import (
 // field to NO_DESCRIPTOR. If there is some other error in conversion, sets the
 // conversion_failure field to ERROR.
 //
-// Only returns an error if `ref` refers to data which is not inlined, and is
-// not already in `source`.
-func AbsorbAsJSON(source DataSource, ref *orchestratorpb.ValueRef, mopt protojson.MarshalOptions) error {
+// No-op if `ref` is digest based and `source` contains no data for this digest.
+func AbsorbAsJSON(source DataSource, ref *orchestratorpb.ValueRef, mopt protojson.MarshalOptions) {
 	AbsorbInline(source, ref)
-
-	dat := source.Retrieve(ref.GetDigest())
-	if dat.HasJson() || dat.HasConversionFailure() {
-		// We either already have the JSON, or we already tried and failed.
-		// No need to try again.
-		return nil
-	}
-	if !dat.HasBinary() {
-		return fmt.Errorf("could not convert missing data for digest %q", ref.GetDigest())
-	}
-
-	source.Intern(map[string]*orchestratorpb.ValueData{
-		ref.GetDigest(): convertToJson(dat.GetBinary(), mopt),
-	})
-
-	return nil
+	EnsureJSON(source, Digest(ref.GetDigest()), mopt)
 }
 
 // hasUnknownFields recursively walks `msg` and returns true if `msg` or any of
@@ -77,6 +61,46 @@ func hasUnknownFields(msg protoreflect.Message) bool {
 		panic(fmt.Errorf("impossible: %s", err))
 	}
 	return hasUnknown
+}
+
+func ensureJSONImpl(source DataSource, digest Digest, mopt protojson.MarshalOptions, force bool) {
+	dat := source.Retrieve(digest)
+	if dat.HasJson() || (!force && dat.HasConversionFailure()) {
+		// We either already have the JSON, or we already tried and failed.
+		// No need to try again.
+		return
+	}
+	apb := dat.GetBinary()
+	if apb == nil {
+		// No binary data for this digest.
+		return
+	}
+
+	source.Intern(digest, convertToJson(apb, mopt))
+}
+
+// EnsureJSON ensures that the data in `source` for `digest` is encoded as
+// JSON.
+//
+// No-op if:
+//   - The data does not exist in source.
+//   - The data is already JSON in source.
+//   - The data has a conversion failure in source.
+func EnsureJSON(source DataSource, digest Digest, mopt protojson.MarshalOptions) {
+	ensureJSONImpl(source, digest, mopt, false)
+}
+
+// EnsureJSONForced ensures that the data in `source` for `digest` is encoded as
+// JSON.
+//
+// This ignores existing conversion errors in the source and will always try
+// again to serialize the data.
+//
+// No-op if:
+//   - The data does not exist in source.
+//   - The data is already JSON in source.
+func EnsureJSONForced(source DataSource, digest Digest, mopt protojson.MarshalOptions) {
+	ensureJSONImpl(source, digest, mopt, true)
 }
 
 // convertToJson returns a JsonAny given an Any.
