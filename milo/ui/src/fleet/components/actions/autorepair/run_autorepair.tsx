@@ -24,7 +24,9 @@ import {
   ScheduleAutorepairRequest,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { DutToRepair } from '../../actions/shared/types';
+import { AdminAccessRequiredDialog } from '../shared/admin_access_required_dialog';
+import { DutToRepair } from '../shared/types';
+import { useAdminTaskPermission } from '../shared/use_admin_task_permission';
 
 import AutorepairDialog, { SessionInfo } from './autorepair_dialog';
 
@@ -42,11 +44,20 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const [deepRepair, setDeepRepair] = useState<boolean>(false);
   const [latestRepair, setLatestRepair] = useState<boolean>(false);
   const [verifyOnly, setVerifyOnly] = useState<boolean>(false);
+  const [adminAccessRequiredDialogOpen, setAdminAccessRequiredDialogOpen] =
+    useState<boolean>(false);
+
+  const hasPermission = useAdminTaskPermission();
+
   const dutNames = selectedDuts.map((d) => d.name);
   const namespaces = selectedDuts.map((d) => d.namespace || '');
 
   // First, give users a modal to confirm if they want autorepair or not.
   const initializeAutorepair = () => {
+    if (hasPermission === false) {
+      setAdminAccessRequiredDialogOpen(true);
+      return;
+    }
     setSessionInfo({
       dutNames: dutNames,
       namespaces: namespaces,
@@ -126,6 +137,10 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
         verifyOnly={verifyOnly}
         handleVerifyOnlyChange={(checked: boolean) => setVerifyOnly(checked)}
         loading={loading}
+      />
+      <AdminAccessRequiredDialog
+        open={adminAccessRequiredDialogOpen}
+        onClose={() => setAdminAccessRequiredDialogOpen(false)}
       />
     </>
   );

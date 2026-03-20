@@ -623,6 +623,13 @@ export interface ScheduleDeployResponse {
   readonly results: readonly ScheduleDeployResult[];
 }
 
+export interface CheckAdminTaskPermissionRequest {
+}
+
+export interface CheckAdminTaskPermissionResponse {
+  readonly hasPermission: boolean;
+}
+
 export interface UpdateAndroidMetricsRequest {
 }
 
@@ -6137,6 +6144,107 @@ export const ScheduleDeployResponse: MessageFns<ScheduleDeployResponse> = {
   },
 };
 
+function createBaseCheckAdminTaskPermissionRequest(): CheckAdminTaskPermissionRequest {
+  return {};
+}
+
+export const CheckAdminTaskPermissionRequest: MessageFns<CheckAdminTaskPermissionRequest> = {
+  encode(_: CheckAdminTaskPermissionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckAdminTaskPermissionRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckAdminTaskPermissionRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): CheckAdminTaskPermissionRequest {
+    return {};
+  },
+
+  toJSON(_: CheckAdminTaskPermissionRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckAdminTaskPermissionRequest>): CheckAdminTaskPermissionRequest {
+    return CheckAdminTaskPermissionRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<CheckAdminTaskPermissionRequest>): CheckAdminTaskPermissionRequest {
+    const message = createBaseCheckAdminTaskPermissionRequest() as any;
+    return message;
+  },
+};
+
+function createBaseCheckAdminTaskPermissionResponse(): CheckAdminTaskPermissionResponse {
+  return { hasPermission: false };
+}
+
+export const CheckAdminTaskPermissionResponse: MessageFns<CheckAdminTaskPermissionResponse> = {
+  encode(message: CheckAdminTaskPermissionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.hasPermission !== false) {
+      writer.uint32(8).bool(message.hasPermission);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckAdminTaskPermissionResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckAdminTaskPermissionResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.hasPermission = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckAdminTaskPermissionResponse {
+    return { hasPermission: isSet(object.hasPermission) ? globalThis.Boolean(object.hasPermission) : false };
+  },
+
+  toJSON(message: CheckAdminTaskPermissionResponse): unknown {
+    const obj: any = {};
+    if (message.hasPermission !== false) {
+      obj.hasPermission = message.hasPermission;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckAdminTaskPermissionResponse>): CheckAdminTaskPermissionResponse {
+    return CheckAdminTaskPermissionResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CheckAdminTaskPermissionResponse>): CheckAdminTaskPermissionResponse {
+    const message = createBaseCheckAdminTaskPermissionResponse() as any;
+    message.hasPermission = object.hasPermission ?? false;
+    return message;
+  },
+};
+
 function createBaseUpdateAndroidMetricsRequest(): UpdateAndroidMetricsRequest {
   return {};
 }
@@ -9559,6 +9667,11 @@ export interface FleetConsole {
    */
   ScheduleDeploy(request: ScheduleDeployRequest): Promise<ScheduleDeployResponse>;
   UpdateAndroidMetrics(request: UpdateAndroidMetricsRequest): Promise<UpdateAndroidMetricsResponse>;
+  /**
+   * CheckAdminTaskPermission checks if the caller has permission to perform
+   * admin tasks.
+   */
+  CheckAdminTaskPermission(request: CheckAdminTaskPermissionRequest): Promise<CheckAdminTaskPermissionResponse>;
   /** ListResourceRequests returns Resource Requests provided by BigQuery */
   ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse>;
   /** CountResourceRequests provides counts for RRI summary header */
@@ -9611,6 +9724,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ScheduleAutorepair = this.ScheduleAutorepair.bind(this);
     this.ScheduleDeploy = this.ScheduleDeploy.bind(this);
     this.UpdateAndroidMetrics = this.UpdateAndroidMetrics.bind(this);
+    this.CheckAdminTaskPermission = this.CheckAdminTaskPermission.bind(this);
     this.ListResourceRequests = this.ListResourceRequests.bind(this);
     this.CountResourceRequests = this.CountResourceRequests.bind(this);
     this.GetResourceRequestsMultiselectFilterValues = this.GetResourceRequestsMultiselectFilterValues.bind(this);
@@ -9746,6 +9860,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = UpdateAndroidMetricsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "UpdateAndroidMetrics", data);
     return promise.then((data) => UpdateAndroidMetricsResponse.fromJSON(data));
+  }
+
+  CheckAdminTaskPermission(request: CheckAdminTaskPermissionRequest): Promise<CheckAdminTaskPermissionResponse> {
+    const data = CheckAdminTaskPermissionRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CheckAdminTaskPermission", data);
+    return promise.then((data) => CheckAdminTaskPermissionResponse.fromJSON(data));
   }
 
   ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse> {

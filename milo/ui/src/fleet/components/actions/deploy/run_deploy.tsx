@@ -21,7 +21,9 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { ScheduleDeployRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { AdminAccessRequiredDialog } from '../shared/admin_access_required_dialog';
 import { DutToRepair } from '../shared/types';
+import { useAdminTaskPermission } from '../shared/use_admin_task_permission';
 
 import DeployDialog, { SessionInfo } from './deploy_dialog';
 
@@ -36,11 +38,19 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
   const [open, setOpen] = useState<boolean>(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const [adminAccessRequiredDialogOpen, setAdminAccessRequiredDialogOpen] =
+    useState<boolean>(false);
+
+  const hasPermission = useAdminTaskPermission();
 
   const dutNames = selectedDuts.map((d) => d.name);
   const namespaces = selectedDuts.map((d) => d.namespace || '');
 
   const initializeDeploy = () => {
+    if (hasPermission === false) {
+      setAdminAccessRequiredDialogOpen(true);
+      return;
+    }
     setSessionInfo({
       dutNames: dutNames,
       namespaces: namespaces,
@@ -97,6 +107,10 @@ export function RunDeploy({ selectedDuts }: RunDeployProps) {
         handleClose={handleClose}
         handleOk={runDeploy}
         loading={loading}
+      />
+      <AdminAccessRequiredDialog
+        open={adminAccessRequiredDialogOpen}
+        onClose={() => setAdminAccessRequiredDialogOpen(false)}
       />
     </>
   );
