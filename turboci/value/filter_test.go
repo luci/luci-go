@@ -33,7 +33,7 @@ func TestFilterRef(t *testing.T) {
 	makeRef := func(t testing.TB, src DataSource, msg proto.Message) *orchestratorpb.ValueRef {
 		t.Helper()
 
-		ret := mustInline(msg, "proj:realm")
+		ret := MustInline(msg, "proj:realm")
 
 		if src != nil {
 			AbsorbInline(src, ret)

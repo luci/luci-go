@@ -31,7 +31,7 @@ func TestOmit(t *testing.T) {
 	t.Run(`inline_unwanted`, func(t *testing.T) {
 		t.Parallel()
 
-		ref := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		ref := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
 
 		assert.That(t, ref, should.Match(orchestratorpb.ValueRef_builder{
@@ -45,7 +45,7 @@ func TestOmit(t *testing.T) {
 	t.Run(`inline_noaccess`, func(t *testing.T) {
 		t.Parallel()
 
-		ref := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		ref := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS)
 
 		assert.That(t, ref, should.Match(orchestratorpb.ValueRef_builder{
@@ -59,7 +59,7 @@ func TestOmit(t *testing.T) {
 		t.Parallel()
 		dSrc := SimpleDataSource{}
 
-		ref := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		ref := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 		AbsorbInline(dSrc, ref)
 
 		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
@@ -76,7 +76,7 @@ func TestOmit(t *testing.T) {
 		t.Parallel()
 		dSrc := SimpleDataSource{}
 
-		ref := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		ref := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 		AbsorbInline(dSrc, ref)
 
 		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS)

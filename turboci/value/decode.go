@@ -80,27 +80,11 @@ func Decode[T proto.Message](source DataSource, ref *orchestratorpb.ValueRef) (T
 	return ret.(T), nil
 }
 
-// First finds and decodes the first non-omitted value of type `T` in a list of
-// ValueRefs.
+// Lookup finds and decodes the first non-omitted value of type `T` in a set of
+// ValueRefs sorted by type_url.
 //
-// If `list` is sorted, prefer to use [Lookup].
-//
-// If none is found, this returns nil.
-func First[T proto.Message](source DataSource, list []*orchestratorpb.ValueRef) (T, error) {
-	wantURL := URL[T]()
-
-	for _, candidate := range list {
-		if candidate.GetOmitReason() == 0 && candidate.GetTypeUrl() == wantURL {
-			return Decode[T](source, candidate)
-		}
-	}
-
-	var zero T
-	return zero, nil
-}
-
-// Lookup finds and decodes the non-omitted value of type `T` in a sorted set
-// of ValueRefs.
+// Note that ValueRefs do not need to be unique by type_url (such as for
+// edit reason details).
 //
 // This assumes that `set` is sorted by "type_url" and will do a binary search.
 //
@@ -109,15 +93,18 @@ func First[T proto.Message](source DataSource, list []*orchestratorpb.ValueRef) 
 // If none is found, or ref is omitted, this returns nil.
 func Lookup[T proto.Message](source DataSource, set []*orchestratorpb.ValueRef) (T, error) {
 	val := Find(set, URL[T]())
-	if val == nil || val.GetOmitReason() != 0 {
+	if val == nil {
 		var zero T
 		return zero, nil
 	}
 	return Decode[T](source, val)
 }
 
-// Find finds the ValueRef with the given type URL in a sorted list of
-// ValueRefs.
+// Find finds the first non-omitted ValueRef with the given type URL in a
+// set of ValueRefs sorted by type_url.
+//
+// Note that ValueRefs do not need to be unique by type_url (such as for
+// edit reason details).
 //
 // If none is found, this returns nil.
 func Find(list []*orchestratorpb.ValueRef, typeURL string) *orchestratorpb.ValueRef {
@@ -125,7 +112,15 @@ func Find(list []*orchestratorpb.ValueRef, typeURL string) *orchestratorpb.Value
 		return cmp.Compare(ref.GetTypeUrl(), typeURL)
 	})
 	if found {
-		return list[idx]
+		for _, ref := range list[idx:] {
+			if ref.GetTypeUrl() != typeURL {
+				return nil
+			}
+			if ref.HasOmitReason() {
+				continue
+			}
+			return ref
+		}
 	}
 	return nil
 }

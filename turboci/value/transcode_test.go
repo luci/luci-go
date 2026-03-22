@@ -141,7 +141,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		v := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
 
@@ -155,7 +155,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		v := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		AbsorbInline(dSrc, v)
 
@@ -171,7 +171,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		v := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		AbsorbAsJSON(dSrc, v, protojson.MarshalOptions{})
 
@@ -201,7 +201,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v := mustInline(&emptypb.Empty{}, "proj:realm")
+		v := MustInline(&emptypb.Empty{}, "proj:realm")
 
 		raw, err := proto.Marshal(structpb.NewStringValue("hi"))
 		assert.NoErr(t, err)
@@ -220,7 +220,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v := mustInline(&emptypb.Empty{}, "proj:realm")
+		v := MustInline(&emptypb.Empty{}, "proj:realm")
 		v.SetTypeUrl(TypePrefix + "fake.type.NoDescriptor")
 		v.GetInline().TypeUrl = TypePrefix + "fake.type.NoDescriptor"
 		rawData := proto.CloneOf(v.GetInline())
@@ -239,7 +239,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		t.Parallel()
 
 		dSrc := SimpleDataSource{}
-		v := mustInline(&emptypb.Empty{}, "proj:realm")
+		v := MustInline(&emptypb.Empty{}, "proj:realm")
 		emptyInline := proto.CloneOf(v.GetInline())
 		dgst := ComputeDigest(v.GetInline())
 
@@ -256,7 +256,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 		}.Build()))
 
 		// A second, unrelated, inline'd Empty.
-		AbsorbAsJSON(dSrc, mustInline(&emptypb.Empty{}, "other:realm"), protojson.MarshalOptions{})
+		AbsorbAsJSON(dSrc, MustInline(&emptypb.Empty{}, "other:realm"), protojson.MarshalOptions{})
 
 		assert.That(t, dSrc.Retrieve(dgst), should.Match(orchestratorpb.ValueData_builder{
 			Binary:            emptyInline,

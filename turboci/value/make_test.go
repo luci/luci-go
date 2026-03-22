@@ -26,14 +26,6 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
-func mustInline(msg proto.Message, realm string) *orchestratorpb.ValueRef {
-	ret, err := Inline(msg, realm)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
 func TestInline(t *testing.T) {
 	t.Parallel()
 
@@ -51,7 +43,7 @@ func TestInline(t *testing.T) {
 		svalBytes, err := proto.Marshal(sval)
 		assert.NoErr(t, err)
 
-		assert.That(t, mustInline(sval, "proj:realm"), should.Match(orchestratorpb.ValueRef_builder{
+		assert.That(t, MustInline(sval, "proj:realm"), should.Match(orchestratorpb.ValueRef_builder{
 			TypeUrl: proto.String(URL[*structpb.Value]()),
 			Realm:   proto.String("proj:realm"),
 			Inline: &anypb.Any{
@@ -68,7 +60,7 @@ func TestInline(t *testing.T) {
 		svalAny, err := anypb.New(sval)
 		assert.NoErr(t, err)
 
-		assert.That(t, mustInline(sval, "proj:realm"), should.Match(orchestratorpb.ValueRef_builder{
+		assert.That(t, MustInline(sval, "proj:realm"), should.Match(orchestratorpb.ValueRef_builder{
 			TypeUrl: proto.String(URL[*structpb.Value]()),
 			Realm:   proto.String("proj:realm"),
 			Inline:  svalAny,
@@ -81,7 +73,7 @@ func TestAbsorbInline(t *testing.T) {
 
 	dSrc := SimpleDataSource{}
 
-	ref := mustInline(structpb.NewStringValue("hello"), "proj:realm")
+	ref := MustInline(structpb.NewStringValue("hello"), "proj:realm")
 
 	assert.That(t, ref.HasInline(), should.BeTrue)
 

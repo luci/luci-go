@@ -15,6 +15,8 @@
 package value
 
 import (
+	"cmp"
+	"slices"
 	"testing"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -34,7 +36,7 @@ func TestDecode(t *testing.T) {
 	t.Run(`ok_inline_binary`, func(t *testing.T) {
 		t.Parallel()
 
-		vref := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		vref := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		sval, err := Decode[*structpb.Value](nil, vref)
 		assert.NoErr(t, err)
@@ -45,7 +47,7 @@ func TestDecode(t *testing.T) {
 	t.Run(`ok_source`, func(t *testing.T) {
 		t.Parallel()
 
-		vref := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		vref := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		dSrc := SimpleDataSource{}
 		AbsorbInline(dSrc, vref)
@@ -61,7 +63,7 @@ func TestDecode(t *testing.T) {
 	t.Run(`ok_source_json`, func(t *testing.T) {
 		t.Parallel()
 
-		vref := mustInline(structpb.NewStringValue("hi"), "proj:realm")
+		vref := MustInline(structpb.NewStringValue("hi"), "proj:realm")
 
 		dSrc := SimpleDataSource{}
 		AbsorbAsJSON(dSrc, vref, protojson.MarshalOptions{})
@@ -110,10 +112,10 @@ func TestLookup(t *testing.T) {
 
 	var options []*orchestratorpb.ValueRef
 
-	options, _ = SetByTypeIn(options, mustInline(&emptypb.Empty{}, "proj:realm"))
-	options, _ = SetByTypeIn(options, mustInline(structpb.NewStringValue("hey"), "proj:realm"))
-	options, _ = SetByTypeIn(options, mustInline(wrapperspb.UInt32(100), "proj:realm"))
-	options, _ = SetByTypeIn(options, mustInline(wrapperspb.Bool(true), "proj:realm"))
+	options, _ = SetByTypeIn(options, MustInline(&emptypb.Empty{}, "proj:realm"))
+	options, _ = SetByTypeIn(options, MustInline(structpb.NewStringValue("hey"), "proj:realm"))
+	options, _ = SetByTypeIn(options, MustInline(wrapperspb.UInt32(100), "proj:realm"))
+	options, _ = SetByTypeIn(options, MustInline(wrapperspb.Bool(true), "proj:realm"))
 
 	dSrc := SimpleDataSource{}
 	AbsorbInline(dSrc, options[0]) // bool
@@ -131,28 +133,42 @@ func TestLookup(t *testing.T) {
 	assert.Loosely(t, missing, should.BeNil)
 }
 
-func TestFirst(t *testing.T) {
+func TestFind(t *testing.T) {
 	t.Parallel()
 
-	var options []*orchestratorpb.ValueRef
+	options := []*orchestratorpb.ValueRef{
+		MustInline(&emptypb.Empty{}, "proj:realm"),
+		MustInline(structpb.NewStringValue("hey"), "proj:realm"),
+		MustInline(wrapperspb.UInt32(100), "proj:realm"),
+		MustInline(wrapperspb.Bool(true), "proj:realm"),
 
-	options, _ = SetByTypeIn(options, mustInline(&emptypb.Empty{}, "proj:realm"))
-	options, _ = SetByTypeIn(options, mustInline(structpb.NewStringValue("hey"), "proj:realm"))
-	options, _ = SetByTypeIn(options, mustInline(wrapperspb.UInt32(100), "proj:realm"))
-	options, _ = SetByTypeIn(options, mustInline(wrapperspb.Bool(true), "proj:realm"))
+		MustInline(&emptypb.Empty{}, "proj:other_realm"),
+		MustInline(wrapperspb.UInt32(100), "proj:other_realm"),
+	}
+	Omit(options[0], orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS)
+	Omit(options[len(options)-1], orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS)
+
+	slices.SortStableFunc(options, func(a, b *orchestratorpb.ValueRef) int {
+		return cmp.Compare(a.GetTypeUrl(), b.GetTypeUrl())
+	})
+
+	for _, opt := range options {
+		t.Log(opt)
+	}
 
 	dSrc := SimpleDataSource{}
 	AbsorbInline(dSrc, options[0]) // bool
 
-	valGot, err := First[*structpb.Value](dSrc, options)
-	assert.NoErr(t, err)
-	assert.That(t, valGot, should.Match(structpb.NewStringValue("hey")))
+	valGot := Find(options, URL[*structpb.Value]())
+	assert.That(t, valGot, should.Match(MustInline(structpb.NewStringValue("hey"), "proj:realm")))
 
-	boolGot, err := First[*wrapperspb.BoolValue](dSrc, options)
-	assert.NoErr(t, err)
-	assert.That(t, boolGot, should.Match(wrapperspb.Bool(true)))
+	boolGot := Find(options, URL[*wrapperspb.BoolValue]())
+	assert.That(t, boolGot, should.Match(options[0]))
 
-	missing, err := First[*wrapperspb.StringValue](dSrc, options)
-	assert.NoErr(t, err)
+	missing := Find(options, URL[*wrapperspb.StringValue]())
 	assert.Loosely(t, missing, should.BeNil)
+
+	emptyGot := Find(options, URL[*emptypb.Empty]())
+	assert.That(t, emptyGot, should.Match(MustInline(&emptypb.Empty{}, "proj:other_realm")))
+
 }

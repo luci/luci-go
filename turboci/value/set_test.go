@@ -34,12 +34,12 @@ func TestSetAddIn(t *testing.T) {
 
 	toSet := []*orchestratorpb.ValueRef{
 		// NOTE: BoolValue and StringValue are the same proto message type.
-		mustInline(structpb.NewBoolValue(true), "proj:realm"),
-		mustInline(structpb.NewBoolValue(false), "proj:realm"),
-		mustInline(structpb.NewStringValue("hello"), "proj:realm"),
-		mustInline(s, "proj:realm"),
-		mustInline(&emptypb.Empty{}, "proj:realm"),
-		mustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
+		MustInline(structpb.NewBoolValue(true), "proj:realm"),
+		MustInline(structpb.NewBoolValue(false), "proj:realm"),
+		MustInline(structpb.NewStringValue("hello"), "proj:realm"),
+		MustInline(s, "proj:realm"),
+		MustInline(&emptypb.Empty{}, "proj:realm"),
+		MustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
 	}
 
 	var set []*orchestratorpb.ValueRef
@@ -51,30 +51,30 @@ func TestSetAddIn(t *testing.T) {
 	}
 
 	assert.That(t, set, should.Match([]*orchestratorpb.ValueRef{
-		mustInline(&emptypb.Empty{}, "proj:realm"),
-		mustInline(s, "proj:realm"),
-		mustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
+		MustInline(&emptypb.Empty{}, "proj:realm"),
+		MustInline(s, "proj:realm"),
+		MustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
 	}))
 
-	set, realmConflict := SetByTypeIn(set, mustInline(structpb.NewBoolValue(false), "other:realm"))
+	set, realmConflict := SetByTypeIn(set, MustInline(structpb.NewBoolValue(false), "other:realm"))
 	assert.That(t, realmConflict, should.BeTrue)
 
 	assert.That(t, set, should.Match([]*orchestratorpb.ValueRef{
-		mustInline(&emptypb.Empty{}, "proj:realm"),
-		mustInline(s, "proj:realm"),
-		mustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
+		MustInline(&emptypb.Empty{}, "proj:realm"),
+		MustInline(s, "proj:realm"),
+		MustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
 	}))
 
-	set, added := AddByTypeIn(set, mustInline(structpb.NewBoolValue(true), "proj:realm"))
+	set, added := AddByTypeIn(set, MustInline(structpb.NewBoolValue(true), "proj:realm"))
 	assert.That(t, added, should.BeFalse)
 
-	set, added = AddByTypeIn(set, mustInline(&wrapperspb.BoolValue{Value: true}, "proj:realm"))
+	set, added = AddByTypeIn(set, MustInline(&wrapperspb.BoolValue{Value: true}, "proj:realm"))
 	assert.That(t, added, should.BeTrue)
 
 	assert.That(t, set, should.Match([]*orchestratorpb.ValueRef{
-		mustInline(&wrapperspb.BoolValue{Value: true}, "proj:realm"),
-		mustInline(&emptypb.Empty{}, "proj:realm"),
-		mustInline(s, "proj:realm"),
-		mustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
+		MustInline(&wrapperspb.BoolValue{Value: true}, "proj:realm"),
+		MustInline(&emptypb.Empty{}, "proj:realm"),
+		MustInline(s, "proj:realm"),
+		MustInline(structpb.NewStringValue("goodbye"), "proj:realm"),
 	}))
 }
