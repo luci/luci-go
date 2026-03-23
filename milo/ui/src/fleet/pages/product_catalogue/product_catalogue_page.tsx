@@ -15,17 +15,15 @@
 import styled from '@emotion/styled';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
-  MaterialReactTable,
   MRT_PaginationState,
   MRT_Updater,
+  MaterialReactTable,
 } from 'material-react-table';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
-import { useFilters } from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
@@ -35,6 +33,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { COLUMNS } from './product_catalogue_columns';
+import { useProductCatalogFilters } from './use_product_catalog_filters';
 
 const Container = styled.div`
   margin: 24px;
@@ -47,24 +46,12 @@ export const ProductCataloguePage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
   const client = useFleetConsoleClient();
-  const filterOptionsQuery = useQuery({
-    ...client.GetProductCatalogFilterValues.query({}),
-    placeholderData: keepPreviousData,
-  });
 
-  const filterOptions = {
-    '"gpn"': new StringListFilterCategoryBuilder().setLabel('GPN').setOptions(
-      filterOptionsQuery.data?.gpn.map((gpn) => ({
-        label: gpn,
-        key: `"${gpn}"`,
-      })) ?? [],
-    ),
-  };
-  const { filterValues, aip160 } = useFilters(filterOptions);
+  const { filterValues, aip160, onApplyFilter, isLoading } =
+    useProductCatalogFilters(() => {
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    });
 
-  const onApplyFilter = useCallback(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, []);
   const query = useQuery({
     ...client.ListProductCatalogEntries.query({ filter: aip160 }),
     placeholderData: keepPreviousData,
@@ -109,11 +96,9 @@ export const ProductCataloguePage = () => {
     [query.data, setSearchParams],
   );
 
-  const data = useMemo(() => [...(query.data?.entries ?? [])], [query.data]);
-
   const table = useFCDataTable({
     columns: COLUMNS,
-    data,
+    data: [...(query.data?.entries ?? [])],
     enablePagination: true,
     manualPagination: false,
     manualFiltering: false,
@@ -154,7 +139,7 @@ export const ProductCataloguePage = () => {
         <FilterBar
           filterCategoryDatas={Object.values(filterValues || {})}
           onApply={onApplyFilter}
-          isLoading={filterValues === undefined}
+          isLoading={isLoading}
         />
       </div>
       <MaterialReactTable table={table} />
