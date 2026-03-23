@@ -135,6 +135,52 @@ func DownloadFile(c context.Context, repoUrl string, revision string, path strin
 	return string(decoded), nil
 }
 
+// TreeEntry represents an item in a Gitiles directory tree.
+type TreeEntry struct {
+	Mode int    `json:"mode"`
+	Type string `json:"type"` // "blob", "tree", "commit"
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// TreeResponse is the Gitiles tree JSON response.
+type TreeResponse struct {
+	Id      string      `json:"id"`
+	Entries []TreeEntry `json:"entries"`
+}
+
+// GetDirectoryTree downloads a directory's tree from Gitiles and returns the filenames of files (blobs) within it.
+func GetDirectoryTree(c context.Context, repoUrl string, revision string, dirPath string) ([]string, error) {
+	gitilesClient := GetClient(c)
+	url := fmt.Sprintf("%s/+/%s/%s", repoUrl, revision, dirPath)
+	params := map[string]string{
+		"format": "JSON",
+	}
+
+	data, err := gitilesClient.sendRequest(c, url, params)
+	if err != nil {
+		return nil, err
+	}
+
+	prefix := ")]}'\n"
+	data = strings.TrimPrefix(data, prefix)
+
+	resp := &TreeResponse{}
+	if err = json.Unmarshal([]byte(data), resp); err != nil {
+		return nil, fmt.Errorf("Failed to unmarshal data %w. Data: %s", err, data)
+	}
+
+	var files []string
+	for _, entry := range resp.Entries {
+		if entry.Type == "blob" {
+			// Note: Gitiles only returns the base filename, so we just return the base filename.
+			// The caller will need to prepend dirPath if they want the full path.
+			files = append(files, entry.Name)
+		}
+	}
+	return files, nil
+}
+
 // We need the interface for testing purpose
 type Client interface {
 	sendRequest(c context.Context, url string, params map[string]string) (string, error)

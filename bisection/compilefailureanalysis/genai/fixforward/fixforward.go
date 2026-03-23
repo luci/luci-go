@@ -107,36 +107,95 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 		return errors.Annotate(err, "failed to get changelog").Err()
 	}
 
-	// 2. Fetch file contents for modified files
+	// 2. Fetch file contents for modified files and neighbor files
 	var filesInfo string
 	originalFiles := make(map[string]string)
+	directories := make(map[string]bool)
+	totalInfoSize := 0
+	const maxTotalSize = 500000 // 500KB total text size limit for the prompt payload
+
 	for _, diff := range changelog.ChangeLogDiffs {
 		if diff.Type == model.ChangeType_DELETE {
 			continue
 		}
 		path := diff.NewPath
+
+		// Record directory for later neighborhood fetch
+		dirIdx := strings.LastIndex(path, "/")
+		if dirIdx > 0 {
+			directories[path[:dirIdx]] = true
+		}
+
 		content, err := gitiles.DownloadFile(ctx, repoUrl, culpritCommit, path)
 		if err != nil {
 			logging.Warningf(ctx, "failed to download file %s: %v", path, err)
 			continue
 		}
-		if len(content) > 500000 {
+		if len(content) > maxTotalSize {
 			logging.Warningf(ctx, "file %s exceeds 500KB size limit, skipping file content generation for LLM prompt", path)
 			continue
 		}
 		originalFiles[path] = content
-		filesInfo += fmt.Sprintf("\nFile: %s\n```\n%s\n```\n", path, content)
+		fileStr := fmt.Sprintf("\nFile: %s\n```\n%s\n```\n", path, content)
+		filesInfo += fileStr
+		totalInfoSize += len(fileStr)
 	}
 
 	if filesInfo == "" {
 		return errors.Reason("no modified files within size limit found for culprit %s", culpritCommit).Err()
 	}
 
+	// Fetch neighbor files to expand context
+	if totalInfoSize < maxTotalSize {
+		// Only check up to 3 directories to avoid massive bursts
+		dirCount := 0
+		for dir := range directories {
+			if dirCount >= 3 {
+				break
+			}
+			dirCount++
+
+			files, err := gitiles.GetDirectoryTree(ctx, repoUrl, culpritCommit, dir)
+			if err != nil {
+				logging.Warningf(ctx, "failed to get directory tree %s: %v", dir, err)
+				continue
+			}
+
+			// Append neighbor files in this directory
+			for _, file := range files {
+				fullPath := dir + "/" + file
+				// Skip if we already fetched it
+				if _, ok := originalFiles[fullPath]; ok {
+					continue
+				}
+
+				// Stop if we hit our overall size cap
+				if totalInfoSize >= maxTotalSize {
+					break
+				}
+
+				content, err := gitiles.DownloadFile(ctx, repoUrl, culpritCommit, fullPath)
+				if err != nil {
+					continue
+				}
+
+				fileStr := fmt.Sprintf("\nFile: %s\n```\n%s\n```\n", fullPath, content)
+				if totalInfoSize+len(fileStr) > maxTotalSize {
+					continue // file too big for remaining cap
+				}
+
+				originalFiles[fullPath] = content
+				filesInfo += fileStr
+				totalInfoSize += len(fileStr)
+			}
+		}
+	}
+
 	// 3. Construct prompt
 	clInfo := fmt.Sprintf("commit %s\nAuthor: %s\nMessage:\n%s", changelog.Commit, changelog.Author.Email, changelog.Message)
 	prompt := fmt.Sprintf(promptTemplate, failureLog, clInfo, filesInfo)
 
-	logging.Infof(ctx, "Sending prompt to LLM: %s", prompt)
+	logging.Infof(ctx, "Sending raw prompt to LLM:\n%s", prompt)
 
 	// 4. Call LLM using Schema
 	var respText string
@@ -156,6 +215,8 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 	if err != nil {
 		return errors.Annotate(err, "LLM generation failed after retries").Err()
 	}
+
+	logging.Infof(ctx, "Received raw response from LLM:\n%s", respText)
 
 	// 5. Parse LLM response
 	respText = strings.TrimSpace(respText)
