@@ -29,6 +29,7 @@ import (
 	"github.com/bazelbuild/remote-apis-sdks/go/pkg/retry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/scopes"
@@ -68,6 +69,18 @@ func New(ctx context.Context, addr string, instance string, opts auth.Options, r
 			Service:              addr,
 			UseExternalAuthToken: true,
 			ExternalPerRPCCreds:  &client.PerRPCCreds{Creds: creds},
+			DialOpts: []grpc.DialOption{
+				// Keepalives are necessary to quickly detect dead TCP connections
+				// (e.g. from silent NAT drops) preventing streams from hanging until
+				// the OS connection timeout.
+				// PermitWithoutStream allows pings even when there are no active streams,
+				// which helps keep the connection alive through aggressive load balancers.
+				grpc.WithKeepaliveParams(keepalive.ClientParameters{
+					Time:                time.Minute,
+					Timeout:             15 * time.Second,
+					PermitWithoutStream: true,
+				}),
+			},
 		}
 	}
 
@@ -169,6 +182,18 @@ func NewLegacy(ctx context.Context, addr string, instance string, opts auth.Opti
 		Service:              "remotebuildexecution.googleapis.com:443",
 		UseExternalAuthToken: true,
 		ExternalPerRPCCreds:  &client.PerRPCCreds{Creds: creds},
+		DialOpts: []grpc.DialOption{
+			// Keepalives are necessary to quickly detect dead TCP connections
+			// (e.g. from silent NAT drops) preventing streams from hanging until
+			// the OS connection timeout.
+			// PermitWithoutStream allows pings even when there are no active streams,
+			// which helps keep the connection alive through aggressive load balancers.
+			grpc.WithKeepaliveParams(keepalive.ClientParameters{
+				Time:                time.Minute,
+				Timeout:             15 * time.Second,
+				PermitWithoutStream: true,
+			}),
+		},
 	}
 
 	cl, err := client.NewClient(ctx, instance, dialParams, Options()...)
@@ -207,6 +232,10 @@ func Options() []client.Opt {
 	// connection and refresh auth tokens). Give it more time.
 	rpcTimeouts["GetCapabilities"] = 30 * time.Second
 
+	retrier := client.RetryTransient()
+	// On some builders with low network bandwidth, increase the number of retries and delay time.
+	retrier.Backoff = retry.ExponentialBackoff(225*time.Millisecond, 30*time.Second, retry.Attempts(50))
+
 	return []client.Opt{
 		client.CASConcurrency(casConcurrency),
 		client.UtilizeLocality(true),
@@ -226,6 +255,7 @@ func Options() []client.Opt {
 		client.ExecutableMode(0700),
 		client.RegularMode(0600),
 		client.CompressedBytestreamThreshold(0),
+		retrier,
 	}
 }
 
