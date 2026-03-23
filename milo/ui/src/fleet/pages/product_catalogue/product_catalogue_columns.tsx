@@ -53,4 +53,8 @@ export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] = [
     accessorKey: 'unitCost',
     header: 'Unit Cost',
   },
+  {
+    accessorKey: 'productType',
+    header: 'Product Type',
+  },
 ];
