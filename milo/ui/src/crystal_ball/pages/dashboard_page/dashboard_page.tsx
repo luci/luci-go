@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import EditIcon from '@mui/icons-material/Edit';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import {
+  Close as CloseIcon,
+  Edit as EditIcon,
+  InfoOutlined as InfoOutlinedIcon,
+  Share as ShareIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -33,15 +37,16 @@ import { useBlocker, useNavigate, useParams } from 'react-router';
 import {
   AddWidgetModal,
   ChartWidget,
+  DashboardDialog,
   DashboardTimeRangeSelector,
+  DeleteDashboardDialog,
   FilterEditor,
   MarkdownWidget,
   RequireLogin,
+  ShareDashboardDialog,
   WidgetContainer,
+  useTopBarConfig,
 } from '@/crystal_ball/components';
-import { DashboardDialog } from '@/crystal_ball/components/dashboard_dialog';
-import { DeleteDashboardDialog } from '@/crystal_ball/components/dashboard_dialog/delete_dashboard_dialog';
-import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import {
   DATA_SPEC_ID,
   GLOBAL_TIME_RANGE_COLUMN,
@@ -168,6 +173,7 @@ export function DashboardPage() {
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addWidgetModalOpen, setAddWidgetModalOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   const {
     data: dashboardState,
@@ -214,11 +220,22 @@ export function DashboardPage() {
     [filterColumns],
   );
 
-  const [toastMessage, setToastMessage] = useState('');
+  const [toastState, setToastState] = useState({ message: '', isError: false });
 
   const handleCloseToast = () => {
-    setToastMessage('');
+    setToastState((prev) => ({ ...prev, message: '' }));
   };
+
+  const showSuccessToast = useCallback((message: string) => {
+    setToastState({ message, isError: false });
+  }, []);
+
+  const showErrorToast = useCallback((e: unknown, defaultMessage: string) => {
+    setToastState({
+      message: formatApiError(e, defaultMessage),
+      isError: true,
+    });
+  }, []);
 
   const [localDashboardState, setLocalDashboardState] =
     useState<DashboardState | null>(null);
@@ -287,15 +304,46 @@ export function DashboardPage() {
       await deleteDashboard(
         DeleteDashboardStateRequest.fromPartial({ name: dashboardState.name }),
       );
-      setToastMessage('Dashboard deleted successfully');
+      showSuccessToast('Dashboard deleted successfully');
       setDeleteDialogOpen(false);
       queryClient.removeQueries({
         queryKey: getDashboardStateQueryKey(dashboardState.name),
       });
       navigate('/ui/labs/crystal-ball', { replace: true });
     } catch (e) {
-      setToastMessage(formatApiError(e, 'Failed to delete dashboard'));
+      showErrorToast(e, 'Failed to delete dashboard');
       setDeleteDialogOpen(false);
+    }
+  };
+
+  const handleUpdatePublicAccess = async (isPublic: boolean) => {
+    if (!dashboardState?.name) return;
+    try {
+      const response = await updateDashboard(
+        UpdateDashboardStateRequest.fromPartial({
+          dashboardState: DashboardState.fromPartial({
+            name: dashboardState.name,
+            isPublic: isPublic,
+          }),
+          updateMask: ['isPublic'],
+        }),
+      );
+      if (response.response) {
+        setLocalDashboardState((prev) => {
+          if (!prev) return response.response!;
+          return {
+            ...response.response!,
+            displayName: prev.displayName,
+            description: prev.description,
+            dashboardContent: prev.dashboardContent,
+          };
+        });
+        showSuccessToast(`Dashboard made ${isPublic ? 'public' : 'private'}`);
+        setShareDialogOpen(false);
+        refetch();
+      }
+    } catch (e) {
+      showErrorToast(e, 'Failed to update public access');
     }
   };
 
@@ -321,14 +369,21 @@ export function DashboardPage() {
           response.response,
         );
       }
-      setToastMessage('Dashboard saved successfully');
+      showSuccessToast('Dashboard saved successfully');
       await refetch();
     } catch (e) {
-      setToastMessage(formatApiError(e, 'Failed to save dashboard'));
+      showErrorToast(e, 'Failed to save dashboard');
     } finally {
       setIsSaving(false);
     }
-  }, [localDashboardState, updateDashboard, refetch, queryClient]);
+  }, [
+    localDashboardState,
+    updateDashboard,
+    refetch,
+    queryClient,
+    showSuccessToast,
+    showErrorToast,
+  ]);
 
   const handleAddWidget = useCallback((widgetType: WidgetType) => {
     setLocalDashboardState((prev: DashboardState | null) => {
@@ -484,6 +539,13 @@ export function DashboardPage() {
         >
           {isUpdating || isSaving ? 'Saving...' : 'Save'}
         </Button>
+        <IconButton
+          onClick={() => setShareDialogOpen(true)}
+          aria-label="Share dashboard"
+          size="small"
+        >
+          <ShareIcon fontSize="small" />
+        </IconButton>
       </Box>
     ),
     [
@@ -631,7 +693,7 @@ export function DashboardPage() {
                   <ChartWidget
                     widget={widget.chart}
                     globalFilters={
-                      localDashboardState.dashboardContent?.globalFilters ?? []
+                      localDashboardState?.dashboardContent?.globalFilters ?? []
                     }
                     filterColumns={filterColumns}
                     isLoadingFilterColumns={isLoadingFilterColumns}
@@ -667,10 +729,40 @@ export function DashboardPage() {
       />
 
       <Snackbar
-        open={Boolean(toastMessage)}
-        autoHideDuration={4000}
+        open={Boolean(toastState.message)}
+        autoHideDuration={toastState.isError ? undefined : 4000}
         onClose={handleCloseToast}
-        message={toastMessage}
+        message={toastState.message}
+        slotProps={{
+          content: {
+            sx: toastState.isError
+              ? { bgcolor: 'error.main', color: 'error.contrastText' }
+              : {},
+          },
+        }}
+        action={
+          toastState.isError ? (
+            <>
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() =>
+                  navigator.clipboard.writeText(toastState.message)
+                }
+              >
+                COPY
+              </Button>
+              <IconButton
+                size="small"
+                aria-label="close"
+                color="inherit"
+                onClick={handleCloseToast}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </>
+          ) : undefined
+        }
       />
       <DeleteDashboardDialog
         open={deleteDialogOpen}
@@ -678,6 +770,13 @@ export function DashboardPage() {
         onConfirm={handleDelete}
         isDeleting={isDeleting}
         dashboardState={dashboardState}
+      />
+      <ShareDashboardDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        dashboardState={localDashboardState}
+        onApplyPermissions={handleUpdatePublicAccess}
+        isPending={isUpdating}
       />
     </Box>
   );

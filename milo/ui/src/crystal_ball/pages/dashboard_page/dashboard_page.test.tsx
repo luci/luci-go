@@ -100,14 +100,19 @@ const { setMockParams } = jest.requireMock(
   '@/generic_libs/hooks/synced_search_params',
 );
 
-jest.mock('@/crystal_ball/components', () => ({
-  WidgetContainer: jest.fn(({ children }) => <>{children}</>),
-  AddWidgetModal: jest.fn(() => <>AddWidgetModal Mock</>),
-  ChartWidget: jest.fn(() => <>ChartWidget Mock</>),
-  MarkdownWidget: jest.fn(() => <>MarkdownWidget Mock</>),
-  DashboardTimeRangeSelector: () => <>DashboardTimeRangeSelector Mock</>,
-  FilterEditor: () => <>FilterEditor Mock</>,
-}));
+jest.mock('@/crystal_ball/components', () => {
+  const actual = jest.requireActual('@/crystal_ball/components');
+  return {
+    ...actual,
+    WidgetContainer: jest.fn(({ children }) => <>{children}</>),
+    AddWidgetModal: jest.fn(() => <>AddWidgetModal Mock</>),
+    ChartWidget: jest.fn(() => <>ChartWidget Mock</>),
+    MarkdownWidget: jest.fn(() => <>MarkdownWidget Mock</>),
+    DashboardTimeRangeSelector: () => <>DashboardTimeRangeSelector Mock</>,
+    FilterEditor: () => <>FilterEditor Mock</>,
+    ShareDashboardDialog: jest.fn(() => <>ShareDashboardDialog Mock</>),
+  };
+});
 
 const mockDashboard: DashboardState = DashboardState.fromPartial({
   name: 'dashboardStates/abcd123',

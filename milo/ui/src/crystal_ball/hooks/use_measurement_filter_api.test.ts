@@ -122,6 +122,7 @@ describe('use_measurement_filter_api', () => {
       column: 'build_target',
       query: 'test',
       maxResultCount: 25,
+      filter: '',
     };
 
     it('should call useGapiQuery with correct arguments', () => {
@@ -139,6 +140,7 @@ describe('use_measurement_filter_api', () => {
             column: request.column,
             query: request.query,
             maxResultCount: request.maxResultCount,
+            filter: request.filter,
           },
         },
         undefined,

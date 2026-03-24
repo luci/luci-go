@@ -110,6 +110,7 @@ function FilterEditorRow({
       column: filter.column,
       query: debouncedQuery,
       maxResultCount: MAX_SUGGEST_RESULTS,
+      filter: '',
     },
     {
       enabled:

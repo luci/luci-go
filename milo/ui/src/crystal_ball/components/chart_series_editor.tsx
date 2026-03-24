@@ -84,6 +84,7 @@ function ChartSeriesEditorRow({
       column: 'metric_key',
       query: debouncedQuery,
       maxResultCount: MAX_SUGGEST_RESULTS,
+      filter: '',
     },
     {
       enabled: !!parent && debouncedQuery.length > 0 && isFocused,

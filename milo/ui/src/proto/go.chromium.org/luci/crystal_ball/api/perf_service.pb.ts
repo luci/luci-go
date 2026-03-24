@@ -372,6 +372,12 @@ export interface SuggestMeasurementFilterValuesRequest {
   readonly query: string;
   /** Maximum number of suggestions to return. */
   readonly maxResultCount: number;
+  /**
+   * Filter string to narrow down the list of values.
+   * See [AIP-160](https://google.aip.dev/160) for syntax.
+   * Example: "atp_test_name = \"my_test\" AND metric_key = \"my_metric\""
+   */
+  readonly filter: string;
 }
 
 /** Response message for getting filter values. */
@@ -511,7 +517,11 @@ export interface DashboardState {
    * The timestamp when this revision was created.
    * This field is OUTPUT_ONLY.
    */
-  readonly revisionCreateTime: string | undefined;
+  readonly revisionCreateTime:
+    | string
+    | undefined;
+  /** Indicates if the dashboard is publicly viewable by any authenticated user. */
+  readonly isPublic: boolean;
 }
 
 export interface DashboardState_AnnotationsEntry {
@@ -2825,7 +2835,7 @@ export const MeasurementFilterColumn: MessageFns<MeasurementFilterColumn> = {
 };
 
 function createBaseSuggestMeasurementFilterValuesRequest(): SuggestMeasurementFilterValuesRequest {
-  return { parent: "", column: "", query: "", maxResultCount: 0 };
+  return { parent: "", column: "", query: "", maxResultCount: 0, filter: "" };
 }
 
 export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasurementFilterValuesRequest> = {
@@ -2841,6 +2851,9 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
     }
     if (message.maxResultCount !== 0) {
       writer.uint32(32).int32(message.maxResultCount);
+    }
+    if (message.filter !== "") {
+      writer.uint32(42).string(message.filter);
     }
     return writer;
   },
@@ -2884,6 +2897,14 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
           message.maxResultCount = reader.int32();
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2899,6 +2920,7 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
       column: isSet(object.column) ? globalThis.String(object.column) : "",
       query: isSet(object.query) ? globalThis.String(object.query) : "",
       maxResultCount: isSet(object.maxResultCount) ? globalThis.Number(object.maxResultCount) : 0,
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
     };
   },
 
@@ -2916,6 +2938,9 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
     if (message.maxResultCount !== 0) {
       obj.maxResultCount = Math.round(message.maxResultCount);
     }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
     return obj;
   },
 
@@ -2928,6 +2953,7 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
     message.column = object.column ?? "";
     message.query = object.query ?? "";
     message.maxResultCount = object.maxResultCount ?? 0;
+    message.filter = object.filter ?? "";
     return message;
   },
 };
@@ -3344,6 +3370,7 @@ function createBaseDashboardState(): DashboardState {
     reconciling: false,
     revisionId: "",
     revisionCreateTime: undefined,
+    isPublic: false,
   };
 }
 
@@ -3390,6 +3417,9 @@ export const DashboardState: MessageFns<DashboardState> = {
     }
     if (message.revisionCreateTime !== undefined) {
       Timestamp.encode(toTimestamp(message.revisionCreateTime), writer.uint32(114).fork()).join();
+    }
+    if (message.isPublic !== false) {
+      writer.uint32(120).bool(message.isPublic);
     }
     return writer;
   },
@@ -3516,6 +3546,14 @@ export const DashboardState: MessageFns<DashboardState> = {
           message.revisionCreateTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
+        case 15: {
+          if (tag !== 120) {
+            break;
+          }
+
+          message.isPublic = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3548,6 +3586,7 @@ export const DashboardState: MessageFns<DashboardState> = {
       reconciling: isSet(object.reconciling) ? globalThis.Boolean(object.reconciling) : false,
       revisionId: isSet(object.revisionId) ? globalThis.String(object.revisionId) : "",
       revisionCreateTime: isSet(object.revisionCreateTime) ? globalThis.String(object.revisionCreateTime) : undefined,
+      isPublic: isSet(object.isPublic) ? globalThis.Boolean(object.isPublic) : false,
     };
   },
 
@@ -3601,6 +3640,9 @@ export const DashboardState: MessageFns<DashboardState> = {
     if (message.revisionCreateTime !== undefined) {
       obj.revisionCreateTime = message.revisionCreateTime;
     }
+    if (message.isPublic !== false) {
+      obj.isPublic = message.isPublic;
+    }
     return obj;
   },
 
@@ -3633,6 +3675,7 @@ export const DashboardState: MessageFns<DashboardState> = {
     message.reconciling = object.reconciling ?? false;
     message.revisionId = object.revisionId ?? "";
     message.revisionCreateTime = object.revisionCreateTime ?? undefined;
+    message.isPublic = object.isPublic ?? false;
     return message;
   },
 };

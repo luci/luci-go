@@ -14,3 +14,4 @@
 
 export * from './dashboard_dialog';
 export * from './delete_dashboard_dialog';
+export * from './share_dashboard_dialog';

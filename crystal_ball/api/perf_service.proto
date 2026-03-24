@@ -460,6 +460,11 @@ message SuggestMeasurementFilterValuesRequest {
 
   // Maximum number of suggestions to return.
   int32 max_result_count = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Filter string to narrow down the list of values.
+  // See [AIP-160](https://google.aip.dev/160) for syntax.
+  // Example: "atp_test_name = \"my_test\" AND metric_key = \"my_metric\""
+  string filter = 5 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Response message for getting filter values.
@@ -601,6 +606,9 @@ message DashboardState {
   // This field is OUTPUT_ONLY.
   google.protobuf.Timestamp revision_create_time = 14
       [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Indicates if the dashboard is publicly viewable by any authenticated user.
+  bool is_public = 15 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Metadata for DashboardState Long Running Operations.
