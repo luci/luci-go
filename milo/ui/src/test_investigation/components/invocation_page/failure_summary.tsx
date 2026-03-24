@@ -94,124 +94,51 @@ export function FailureSummary({
   const IconComponent = styles.icon;
 
   const isLongFailureSummary = failureSummaryText.length > 250;
+  const hasDetails = Boolean(
+    resultToDisplay.summaryHtml || isLongFailureSummary,
+  );
 
   return (
-    <>
-      {resultToDisplay.summaryHtml || isLongFailureSummary ? (
-        <Accordion
+    <Accordion
+      sx={{
+        p: 0,
+        border: 'none',
+        backgroundColor: 'transparent',
+        boxShadow: 'none',
+        '&:before': {
+          display: 'none',
+        },
+      }}
+    >
+      <AccordionSummary
+        expandIcon={
+          <ExpandMoreIcon
+            sx={{ visibility: hasDetails ? 'visible' : 'hidden' }}
+          />
+        }
+        sx={{
+          p: 0,
+          flexDirection: 'row-reverse',
+          pointerEvents: hasDetails ? 'auto' : 'none',
+        }}
+      >
+        <Box
           sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
             p: 0,
-            border: 'none',
-            backgroundColor: 'rgba(0, 0, 255, 0)',
+            pointerEvents: 'auto', // Re-enable pointer events for links/buttons inside
           }}
         >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            sx={{
-              p: 0,
-              flexDirection: 'row-reverse',
-            }}
-          >
-            <Box
+          {IconComponent && (
+            <IconComponent
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                p: 0,
+                fontSize: '18px',
+                color: styles.iconColor,
               }}
-            >
-              {IconComponent && (
-                <IconComponent
-                  sx={{
-                    fontSize: '18px',
-                    color: styles.iconColor,
-                  }}
-                />
-              )}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  maxWidth: '82vw',
-                }}
-              >
-                <Link
-                  component={RouterLink}
-                  to={getTestVariantURL(invocationId, testVariant)}
-                  variant="body2"
-                  sx={{
-                    textAlign: 'left',
-                    textTransform: 'none',
-                    textDecoration: 'none',
-                    color: styles.textColor,
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  {node && <NodeLabelPrefix node={node} />}
-                  {node?.level === StructuredTreeLevel.Variant &&
-                  node.moduleVariant ? (
-                    <VariantDisplay variantDef={node.moduleVariant} />
-                  ) : (
-                    rowLabel
-                  )}
-                </Link>
-                <CopyToClipboard
-                  textToCopy={testTextToCopy}
-                  aria-label="Copy text."
-                  sx={{ ml: 0.5, minWidth: '18px' }}
-                />
-                {failureSummaryText && (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      p: 1,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: '1',
-                      whiteSpace: 'nowrap',
-                      WebkitBoxOrient: 'vertical',
-                      color: 'text.secondary',
-                    }}
-                  >
-                    {failureSummaryText}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 0 }}>
-            {resultToDisplay.summaryHtml ? (
-              <TestResultSummary testResult={resultToDisplay} />
-            ) : (
-              <Box sx={{ maxWidth: '82vw' }}>
-                {(resultToDisplay.failureReason?.primaryErrorMessage ||
-                  resultToDisplay.failureReason?.errors?.[0]?.message ||
-                  resultToDisplay?.skippedReason?.reasonMessage) && (
-                  <Typography
-                    sx={{
-                      p: 1,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: '6',
-                      WebkitBoxOrient: 'vertical',
-                    }}
-                    variant="caption"
-                  >
-                    {resultToDisplay.failureReason?.primaryErrorMessage ||
-                      resultToDisplay.failureReason?.errors?.[0]?.message ||
-                      resultToDisplay?.skippedReason?.reasonMessage}
-                  </Typography>
-                )}
-              </Box>
-            )}
-          </AccordionDetails>
-        </Accordion>
-      ) : (
-        <>
+            />
+          )}
           <Box
             sx={{
               display: 'flex',
@@ -266,8 +193,37 @@ export function FailureSummary({
               </Typography>
             )}
           </Box>
-        </>
+        </Box>
+      </AccordionSummary>
+      {hasDetails && (
+        <AccordionDetails sx={{ p: 0 }}>
+          {resultToDisplay.summaryHtml ? (
+            <TestResultSummary testResult={resultToDisplay} />
+          ) : (
+            <Box sx={{ maxWidth: '82vw' }}>
+              {(resultToDisplay.failureReason?.primaryErrorMessage ||
+                resultToDisplay.failureReason?.errors?.[0]?.message ||
+                resultToDisplay?.skippedReason?.reasonMessage) && (
+                <Typography
+                  sx={{
+                    p: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: '6',
+                    WebkitBoxOrient: 'vertical',
+                  }}
+                  variant="caption"
+                >
+                  {resultToDisplay.failureReason?.primaryErrorMessage ||
+                    resultToDisplay.failureReason?.errors?.[0]?.message ||
+                    resultToDisplay?.skippedReason?.reasonMessage}
+                </Typography>
+              )}
+            </Box>
+          )}
+        </AccordionDetails>
       )}
-    </>
+    </Accordion>
   );
 }
