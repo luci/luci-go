@@ -79,9 +79,7 @@ describe('SearchBar', () => {
     onChangeDropdownOpen.mockClear();
 
     // Clicking the input should open the dropdown
-    const input = screen.getByPlaceholderText(
-      'Add a filter (e.g. "dut1" or "state:ready")',
-    );
+    const input = screen.getByPlaceholderText('Add a filter');
     await user.click(input);
     expect(onChangeDropdownOpen).toHaveBeenCalledWith(true);
   });

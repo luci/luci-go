@@ -46,7 +46,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       isDropdownOpen,
       onChangeDropdownOpen,
       onChipEditApplied,
-      placeholder = 'Add a filter (e.g. "dut1" or "state:ready")',
+      placeholder = 'Add a filter',
     }: SearchBarProps,
     ref: React.ForwardedRef<HTMLInputElement>,
   ) {

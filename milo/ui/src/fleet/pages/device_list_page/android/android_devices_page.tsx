@@ -226,6 +226,7 @@ export const AndroidDevicesPage = () => {
             dimensionsQuery.isPending ||
             filterCategoryDatas.filterValues === undefined
           }
+          searchPlaceholder='Add a filter (e.g. "dut1" or "state:ready")'
         />
       </div>
       <div

@@ -140,6 +140,7 @@ export const ProductCataloguePage = () => {
           filterCategoryDatas={Object.values(filterValues || {})}
           onApply={onApplyFilter}
           isLoading={isLoading}
+          searchPlaceholder='Add a filter (e.g. "gpn:1234567")'
         />
       </div>
       <MaterialReactTable table={table} />

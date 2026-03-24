@@ -23,10 +23,12 @@ import { useFilters } from '../filters/use_filters';
 export function DeviceListFilterBar({
   filterOptions,
   isLoading,
+  searchPlaceholder,
 }: {
   filterOptions: OptionCategory[];
   onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   isLoading?: boolean;
+  searchPlaceholder?: string;
 }) {
   const filterCategoryBuilders = Object.fromEntries(
     filterOptions.map((option) => {
@@ -64,6 +66,7 @@ export function DeviceListFilterBar({
       )}
       onApply={() => {}}
       isLoading={isLoading}
+      searchPlaceholder={searchPlaceholder}
     />
   );
 }
