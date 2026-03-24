@@ -18,5 +18,5 @@ export const features = {
   UnifiedFilterBar: true,
   ColumnFilter: false,
   BrowserListDevices: true,
-  ProductCatalogListPage: false,
+  ProductCatalogListPage: true,
 } satisfies FeaturesSchema;

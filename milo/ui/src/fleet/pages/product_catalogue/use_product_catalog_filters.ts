@@ -43,6 +43,7 @@ const FILTERS: Partial<
     type: 'range',
     filterKey: 'number_of_devices_per_rack',
   },
+  productType: { type: 'string_list', filterKey: 'product_type' },
 };
 
 export const useProductCatalogFilters = (onApply?: () => void) => {
