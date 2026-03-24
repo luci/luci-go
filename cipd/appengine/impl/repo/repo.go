@@ -671,10 +671,17 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 	}
 
 	instance := (&model.Instance{}).FromProto(ctx, r)
+	prefix := impl.lookupPrefixCfg(r.Package).PrefixConfig
 
-	vsaResp, err := impl.vsa.VerifySoftwareArtifact(ctx, instance, r.Attestations)
-	if err != nil {
-		return nil, errors.Fmt("failed to verify the attestations for the instance: %w", err)
+	var vsaResp *api.VerifySoftwareArtifactResponse
+	if prefix.ExemptFromVerifySoftwareArtifacts {
+		logging.Infof(ctx, "RegisterInstance exempted from VerifySoftwareArtifact: %s", r.Package)
+		vsaResp = &api.VerifySoftwareArtifactResponse{Allowed: true}
+	} else {
+		vsaResp, err = impl.vsa.VerifySoftwareArtifact(ctx, instance, r.Attestations)
+		if err != nil {
+			return nil, errors.Fmt("failed to verify the attestations for the instance: %w", err)
+		}
 	}
 
 	// TODO(b/289373164): maybe enforce this when we move to M4 if we can get the
@@ -688,8 +695,10 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 	// Is such instance already registered?
 	switch err := datastore.Get(ctx, instance); {
 	case err == nil:
-		if err := impl.setVerificationSummary(ctx, instance, vsaResp); err != nil {
-			return nil, errors.Fmt("failed to attach verification summary: %w", err)
+		if vsaResp.VerificationSummary != "" {
+			if err := impl.setVerificationSummary(ctx, instance, vsaResp); err != nil {
+				return nil, errors.Fmt("failed to attach verification summary: %w", err)
+			}
 		}
 
 		return &repopb.RegisterInstanceResponse{
@@ -1552,9 +1561,12 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *repopb.GetInstanceU
 	if err := model.CheckInstanceExists(ctx, inst); err != nil {
 		return nil, err
 	}
+	prefix := impl.lookupPrefixCfg(r.Package).PrefixConfig
 
-	if err := impl.ensureVSA(ctx, inst); err != nil {
-		logging.WithError(err).Warningf(ctx, "ensuring VSA: %s", inst.Package)
+	if !prefix.ExemptFromVerifySoftwareArtifacts {
+		if err := impl.ensureVSA(ctx, inst); err != nil {
+			logging.WithError(err).Warningf(ctx, "ensuring VSA: %s", inst.Package)
+		}
 	}
 
 	// Ask CAS generate an URL for us. Note that CAS does caching internally.

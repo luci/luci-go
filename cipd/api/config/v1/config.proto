@@ -85,4 +85,8 @@ message Prefix {
   // independent from ACLs and can't be overridden.
   // If empty, all writers are allowed.
   repeated string allow_writers_from_regexp = 4;
+
+  // If true, the prefix and all its sub-prefixes are exempt from Verify Software
+  // Artifacts checks.
+  bool exempt_from_verify_software_artifacts = 5;
 }

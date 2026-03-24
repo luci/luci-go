@@ -253,6 +253,7 @@ func inheritFromAncestor(entry, ancestor *Entry) {
 		prefix.Billing = ancestor.PrefixConfig.Billing
 	}
 
+	prefix.ExemptFromVerifySoftwareArtifacts = ancestor.PrefixConfig.ExemptFromVerifySoftwareArtifacts
 	prefix.AllowWritersFromRegexp = append(prefix.AllowWritersFromRegexp, ancestor.PrefixConfig.AllowWritersFromRegexp...)
 	entry.AllowWritersFromRegexp = append(entry.AllowWritersFromRegexp, ancestor.AllowWritersFromRegexp...)
 }

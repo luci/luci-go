@@ -206,8 +206,11 @@ type Prefix struct {
 	// independent from ACLs and can't be overridden.
 	// If empty, all writers are allowed.
 	AllowWritersFromRegexp []string `protobuf:"bytes,4,rep,name=allow_writers_from_regexp,json=allowWritersFromRegexp,proto3" json:"allow_writers_from_regexp,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	// If true, the prefix and all its sub-prefixes are exempt from Verify Software
+	// Artifacts (VSA) checks.
+	ExemptFromVerifySoftwareArtifacts bool `protobuf:"varint,5,opt,name=exempt_from_verify_software_artifacts,json=exemptFromVerifySoftwareArtifacts,proto3" json:"exempt_from_verify_software_artifacts,omitempty"`
+	unknownFields                     protoimpl.UnknownFields
+	sizeCache                         protoimpl.SizeCache
 }
 
 func (x *Prefix) Reset() {
@@ -266,6 +269,13 @@ func (x *Prefix) GetAllowWritersFromRegexp() []string {
 		return x.AllowWritersFromRegexp
 	}
 	return nil
+}
+
+func (x *Prefix) GetExemptFromVerifySoftwareArtifacts() bool {
+	if x != nil {
+		return x.ExemptFromVerifySoftwareArtifacts
+	}
+	return false
 }
 
 // Controls billing of GCS calls to a customer project.
@@ -339,12 +349,13 @@ const file_go_chromium_org_luci_cipd_api_config_v1_config_proto_rawDesc = "" +
 	"\x0fBootstrapConfig\x12\x16\n" +
 	"\x06prefix\x18\x01 \x01(\tR\x06prefix\"A\n" +
 	"\x12PrefixesConfigFile\x12+\n" +
-	"\x06prefix\x18\x01 \x03(\v2\x13.cipd.config.PrefixR\x06prefix\"\xc3\x02\n" +
+	"\x06prefix\x18\x01 \x03(\v2\x13.cipd.config.PrefixR\x06prefix\"\x95\x03\n" +
 	"\x06Prefix\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\x13owning_luci_project\x18\x02 \x01(\tR\x11owningLuciProject\x125\n" +
 	"\abilling\x18\x03 \x01(\v2\x1b.cipd.config.Prefix.BillingR\abilling\x129\n" +
-	"\x19allow_writers_from_regexp\x18\x04 \x03(\tR\x16allowWritersFromRegexp\x1a\x82\x01\n" +
+	"\x19allow_writers_from_regexp\x18\x04 \x03(\tR\x16allowWritersFromRegexp\x12P\n" +
+	"%exempt_from_verify_software_artifacts\x18\x05 \x01(\bR!exemptFromVerifySoftwareArtifacts\x1a\x82\x01\n" +
 	"\aBilling\x12?\n" +
 	"\x1cdisable_user_project_billing\x18\x01 \x01(\bR\x19disableUserProjectBilling\x126\n" +
 	"\x18percent_of_calls_to_bill\x18\x02 \x01(\x05R\x14percentOfCallsToBillB-Z+go.chromium.org/luci/cipd/api/config/v1;apib\x06proto3"

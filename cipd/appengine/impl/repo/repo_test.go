@@ -4104,6 +4104,43 @@ func TestVSA(t *testing.T) {
 				assert.ErrIsLike(t, err, "something wrong")
 			})
 		})
+
+		t.Run("Exemption", func(t *ftt.Test) {
+			impl.lookupPrefixCfg = func(pkg string) *prefixcfg.Entry {
+				return &prefixcfg.Entry{
+					PrefixConfig: &api.Prefix{
+						ExemptFromVerifySoftwareArtifacts: true,
+					},
+				}
+			}
+
+			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
+				return nil, status.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+
+			t.Run("RegisterInstance", func(t *ftt.Test) {
+				mvsa.err = status.Errorf(codes.Internal, "should not be called")
+				resp, err := impl.RegisterInstance(ctx, &repopb.Instance{
+					Package: "a/pkg",
+					Instance: &caspb.ObjectRef{
+						HashAlgo:  caspb.HashAlgo_SHA1,
+						HexDigest: strings.Repeat("e", 40),
+					},
+					Attestations: "some attestations",
+				})
+				assert.NoErr(t, err)
+				assert.Loosely(t, resp.Status, should.Equal(repopb.RegistrationStatus_REGISTERED))
+			})
+
+			t.Run("GetInstanceURL", func(t *ftt.Test) {
+				mvsa.err = status.Errorf(codes.Internal, "should not be called")
+				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+				})
+				assert.NoErr(t, err)
+			})
+		})
 	})
 }
 
