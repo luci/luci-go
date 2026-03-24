@@ -151,9 +151,7 @@ describe('FilterEditor', () => {
     );
 
     // Check chip label when collapsed
-    expect(
-      screen.getByText('test_name EQUAL "initialValue"'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('test_name = "initialValue"')).toBeInTheDocument();
 
     // Expand the accordion
     fireEvent.click(screen.getByText('Filters'));
@@ -163,7 +161,7 @@ describe('FilterEditor', () => {
 
     expect(screen.getByLabelText('Value')).toHaveValue('initialValue');
     expect(screen.getByLabelText('Column')).toHaveTextContent('test_name');
-    expect(screen.getByLabelText('Operator')).toHaveTextContent('EQUAL');
+    expect(screen.getByLabelText('Operator')).toHaveTextContent('=');
   });
 
   it('adds a new filter when "Add Filter" is clicked', async () => {
@@ -280,10 +278,10 @@ describe('FilterEditor', () => {
     fireEvent.mouseDown(screen.getByLabelText('Operator'));
     await waitFor(() => {
       expect(
-        screen.getByRole('option', { name: 'CONTAINS' }),
+        screen.getByRole('option', { name: 'contains' }),
       ).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole('option', { name: 'CONTAINS' }));
+    fireEvent.click(screen.getByRole('option', { name: 'contains' }));
 
     expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
     const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];

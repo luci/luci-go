@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
-import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
 import {
@@ -21,164 +20,85 @@ import {
   FilterEditor,
   TimeSeriesChart,
 } from '@/crystal_ball/components';
-import { GLOBAL_TIME_RANGE_FILTER_ID } from '@/crystal_ball/constants/api';
-import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
-import { useSearchMeasurements } from '@/crystal_ball/hooks';
-import { transformDataForChart } from '@/crystal_ball/utils';
+import {
+  COMMON_MESSAGES,
+  GLOBAL_TIME_RANGE_COLUMN,
+  GOLDEN_RATIO_CONJUGATE,
+} from '@/crystal_ball/constants';
+import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
+import { isStringArray } from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
+  MeasurementFilterColumn_FilterScope,
   PerfChartSeries,
   PerfChartWidget,
+  PerfDashboardContent,
+  PerfDataSpec,
   PerfFilter,
-  PerfFilterDefault_FilterOperator,
-  SearchMeasurementsRequest,
-  perfFilterDefault_FilterOperatorFromJSON,
+  PerfWidget,
+  PerfXAxisConfig,
+  PerfXAxisConfig_Granularity,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+const isDataPointsValid = (
+  dataPoints: readonly { readonly [key: string]: unknown }[],
+  xAxisDataKey: string,
+  yAxisDataKey: string,
+): dataPoints is { [axisDataKey: string]: number | string }[] => {
+  if (dataPoints === null || dataPoints === undefined) return false;
+
+  return (
+    Array.isArray(dataPoints) &&
+    dataPoints.every(
+      (dataPoint) =>
+        dataPoint !== null &&
+        dataPoint !== undefined &&
+        (typeof dataPoint[xAxisDataKey] === 'number' ||
+          typeof dataPoint[xAxisDataKey] === 'string') &&
+        (typeof dataPoint[yAxisDataKey] === 'number' ||
+          typeof dataPoint[yAxisDataKey] === 'string'),
+    )
+  );
+};
+
+function dataPointsToData(
+  dataPoints: { [axisDataKey: string]: number | string }[],
+  xAxisDataKey: string,
+  yAxisDataKey: string,
+): Array<[number, number]> {
+  return dataPoints.map((pt) => {
+    const x =
+      typeof pt[xAxisDataKey] === 'string'
+        ? Date.parse(pt[xAxisDataKey])
+        : pt[xAxisDataKey];
+    const y =
+      typeof pt[yAxisDataKey] === 'string'
+        ? parseFloat(pt[yAxisDataKey])
+        : pt[yAxisDataKey];
+    return [x, y];
+  });
+}
 
 interface ChartWidgetProps {
   onUpdate: (updatedWidget: PerfChartWidget) => void;
   widget: PerfChartWidget;
+  dashboardName: string;
+  widgetId: string;
   globalFilters?: readonly PerfFilter[];
   filterColumns: readonly MeasurementFilterColumn[];
   isLoadingFilterColumns?: boolean;
+  dataSpecs?: { [key: string]: PerfDataSpec };
 }
 
 export function ChartWidget({
   onUpdate,
   widget,
-  globalFilters,
+  widgetId,
   filterColumns,
   isLoadingFilterColumns,
+  globalFilters,
+  dataSpecs,
 }: ChartWidgetProps) {
-  const { startTime, endTime, lastNDays } = useMemo(() => {
-    const timeFilter = globalFilters?.find(
-      (f) => f.id === GLOBAL_TIME_RANGE_FILTER_ID,
-    );
-
-    if (!timeFilter?.range?.defaultValue) {
-      return { startTime: null, endTime: null, lastNDays: 3 };
-    }
-
-    const operator = perfFilterDefault_FilterOperatorFromJSON(
-      timeFilter.range.defaultValue.filterOperator,
-    );
-    const values = timeFilter.range.defaultValue.values;
-
-    if (operator === PerfFilterDefault_FilterOperator.IN_PAST) {
-      const option = values[0];
-      if (option) {
-        const match = option.match(/^(\d+)([mhdw])$/i);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          const unit = match[2].toLowerCase();
-
-          if (unit === 'd') {
-            return { startTime: null, endTime: null, lastNDays: num };
-          } else if (unit === 'w') {
-            return { startTime: null, endTime: null, lastNDays: num * 7 };
-          } else {
-            const durationObj: Record<string, number> = {};
-            if (unit === 'h') durationObj.hours = num;
-            else if (unit === 'm') durationObj.minutes = num;
-
-            return {
-              startTime: DateTime.utc().minus(durationObj),
-              endTime: null,
-              lastNDays: undefined,
-            };
-          }
-        }
-      }
-      return { startTime: null, endTime: null, lastNDays: undefined };
-    }
-
-    if (!values) {
-      return { startTime: null, endTime: null, lastNDays: undefined };
-    }
-
-    return {
-      startTime:
-        values[0] && values[0] !== ''
-          ? DateTime.fromISO(values[0]).toUTC()
-          : null,
-      endTime:
-        values[1] && values[1] !== ''
-          ? DateTime.fromISO(values[1]).toUTC()
-          : null,
-      lastNDays: undefined,
-    };
-  }, [globalFilters]);
-
-  const searchRequest: SearchMeasurementsRequest = useMemo(() => {
-    const metricKeys =
-      widget.series?.map((s) => s.metricField).filter(Boolean) || [];
-
-    let testNameFilter: string | undefined;
-    let atpTestNameFilter: string | undefined;
-    let buildBranch: string | undefined;
-    let buildTarget: string | undefined;
-
-    // TODO: b/475638132 - Build StreamMeasurementsRequest instead
-    // Apply filters from the widget configuration
-    widget.filters?.forEach((filter) => {
-      if (!filter.column || !filter.textInput?.defaultValue?.values?.length)
-        return;
-
-      const value = filter.textInput?.defaultValue?.values[0];
-
-      if (!value) return;
-
-      let operator = PerfFilterDefault_FilterOperator.EQUAL;
-      let filterValue = value;
-
-      if (filter.textInput?.defaultValue?.filterOperator !== undefined) {
-        operator = perfFilterDefault_FilterOperatorFromJSON(
-          filter.textInput.defaultValue.filterOperator,
-        );
-      }
-
-      // Adjust value for LIKE operators
-      if (operator === PerfFilterDefault_FilterOperator.STARTS_WITH) {
-        filterValue = value + '%';
-      } else if (operator === PerfFilterDefault_FilterOperator.CONTAINS) {
-        filterValue = '%' + value + '%';
-      } else if (operator === PerfFilterDefault_FilterOperator.ENDS_WITH) {
-        filterValue = '%' + value;
-      } else if (operator === PerfFilterDefault_FilterOperator.LIKE) {
-        filterValue = value; // Assume user provided wildcards
-      }
-
-      switch (filter.column) {
-        case 'test_name':
-          testNameFilter = filterValue;
-          break;
-        case 'atp_test_name':
-          atpTestNameFilter = filterValue;
-          break;
-        case 'build_branch':
-          buildBranch = value;
-          break;
-        case 'build_target':
-          buildTarget = value;
-          break;
-      }
-    });
-
-    const request: SearchMeasurementsRequest = {
-      testNameFilter,
-      atpTestNameFilter,
-      buildBranch,
-      buildTarget,
-      metricKeys,
-      extraColumns: [],
-      buildCreateStartTime: startTime?.toISO() || undefined,
-      buildCreateEndTime: endTime?.toISO() || undefined,
-      lastNDays,
-    };
-
-    return request;
-  }, [widget, startTime, endTime, lastNDays]);
-
   const handleFiltersUpdate = (updatedFilters: PerfFilter[]) => {
     onUpdate(
       PerfChartWidget.fromPartial({
@@ -197,31 +117,92 @@ export function ChartWidget({
     );
   };
 
+  const fetchRequest = useMemo(
+    () => ({
+      dashboardContent: PerfDashboardContent.fromPartial({
+        globalFilters: globalFilters ?? [],
+        dataSpecs: dataSpecs ?? {},
+        widgets: [
+          PerfWidget.fromPartial({
+            id: widgetId,
+            chart: PerfChartWidget.fromPartial({
+              ...widget,
+              xAxis:
+                widget.xAxis ??
+                PerfXAxisConfig.fromPartial({
+                  column: GLOBAL_TIME_RANGE_COLUMN,
+                  granularity: PerfXAxisConfig_Granularity.HOURLY,
+                }),
+            }),
+          }),
+        ],
+      }),
+      widgetId,
+    }),
+    [globalFilters, dataSpecs, widgetId, widget],
+  );
+
   const {
-    data: searchResponse,
-    isLoading: isSearchLoading,
-    isError: isSearchError,
-    error: searchError,
-  } = useSearchMeasurements(searchRequest, {
-    enabled: !!searchRequest.metricKeys?.length,
+    data: widgetResponse,
+    isLoading: isWidgetLoading,
+    isError: isWidgetError,
+    error: widgetError,
+  } = useFetchDashboardWidgetData(fetchRequest, {
+    enabled: !!widgetId,
   });
 
   const chartSeries = useMemo(() => {
-    const requestedMetricKeys = searchRequest?.metricKeys || [];
-    return searchResponse?.rows
-      ? transformDataForChart(searchResponse.rows, requestedMetricKeys)
-      : [];
-  }, [searchResponse, searchRequest]);
+    if (!widgetResponse?.multiMetricChartData?.lines) return [];
+
+    const xAxisKey = widgetResponse.multiMetricChartData.xAxisDataKey;
+    const yAxisKey = widgetResponse.multiMetricChartData.yAxisDataKey;
+
+    return widgetResponse.multiMetricChartData.lines.map((line, index) => {
+      const seriesConfig = widget.series?.find(
+        (s) => s.displayName === line.legendLabel,
+      );
+      return {
+        name: line.legendLabel,
+        data: isDataPointsValid(line.dataPoints, xAxisKey, yAxisKey)
+          ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey)
+          : [],
+        stroke:
+          seriesConfig?.color ??
+          `hsl(${((index * GOLDEN_RATIO_CONJUGATE) % 1) * 360}, 70%, 50%)`,
+      };
+    });
+  }, [widgetResponse, widget.series]);
 
   const hasData = useMemo(
     () => chartSeries.some((series) => series.data.length > 0),
     [chartSeries],
   );
 
+  const widgetFilterColumns = useMemo(
+    () =>
+      filterColumns.filter(
+        (c) =>
+          c.applicableScopes?.includes(
+            MeasurementFilterColumn_FilterScope.WIDGET,
+          ) ||
+          (isStringArray(c.applicableScopes) &&
+            c.applicableScopes.includes('WIDGET')),
+      ),
+    [filterColumns],
+  );
+
   return (
     <Box>
-      <Box sx={{ position: 'relative', minHeight: '300px' }}>
-        {isSearchLoading && (
+      <FilterEditor
+        title="Widget Filters"
+        filters={[...(widget.filters || [])]}
+        onUpdateFilters={handleFiltersUpdate}
+        dataSpecId={widget.dataSpecId}
+        availableColumns={widgetFilterColumns}
+        isLoadingColumns={isLoadingFilterColumns}
+      />
+      <Box sx={{ position: 'relative', minHeight: '300px', mt: 2 }}>
+        {isWidgetLoading && (
           <Box
             sx={{
               position: 'absolute',
@@ -240,15 +221,15 @@ export function ChartWidget({
             <CircularProgress />
           </Box>
         )}
-        {isSearchError && (
+        {isWidgetError && (
           <Alert severity="error" sx={{ my: 2 }}>
             {COMMON_MESSAGES.ERROR_FETCHING_MEASUREMENTS}
-            {searchError?.message || COMMON_MESSAGES.UNKNOWN_ERROR}
+            {widgetError?.message || COMMON_MESSAGES.UNKNOWN_ERROR}
           </Alert>
         )}
-        {!isSearchLoading &&
-          !isSearchError &&
-          (!searchResponse || !hasData) && (
+        {!isWidgetLoading &&
+          !isWidgetError &&
+          (!widgetResponse || !hasData) && (
             <Box
               sx={{
                 display: 'flex',
@@ -266,7 +247,7 @@ export function ChartWidget({
               </Typography>
             </Box>
           )}
-        {!isSearchError && searchResponse && hasData && (
+        {!isWidgetError && widgetResponse && hasData && (
           <TimeSeriesChart
             series={chartSeries}
             chartTitle={widget.displayName || 'Performance Metrics'}
@@ -278,13 +259,6 @@ export function ChartWidget({
         series={[...(widget.series || [])]}
         onUpdateSeries={handleSeriesUpdate}
         dataSpecId={widget.dataSpecId}
-      />
-      <FilterEditor
-        filters={[...(widget.filters || [])]}
-        onUpdateFilters={handleFiltersUpdate}
-        dataSpecId={widget.dataSpecId}
-        availableColumns={filterColumns}
-        isLoadingColumns={isLoadingFilterColumns}
       />
     </Box>
   );

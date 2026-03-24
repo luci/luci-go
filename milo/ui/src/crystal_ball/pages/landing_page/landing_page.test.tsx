@@ -16,12 +16,21 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { TopBar } from '@/crystal_ball/components/layout/top_bar';
 import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provider';
+import {
+  DATA_SPEC_ID,
+  GLOBAL_TIME_RANGE_COLUMN,
+  GLOBAL_TIME_RANGE_FILTER_ID,
+  GLOBAL_TIME_RANGE_OPTION_DEFAULT,
+} from '@/crystal_ball/constants';
 import * as hooks from '@/crystal_ball/hooks';
 import * as dashboardStateApi from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { LandingPage } from '@/crystal_ball/pages/landing_page';
 import {
   CreateDashboardStateRequest,
   DashboardState,
+  PerfDataSource_SourceType,
+  PerfFilter,
+  PerfFilterDefault_FilterOperator,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -197,8 +206,25 @@ describe('<LandingPage />', () => {
             description: 'Description here',
             dashboardContent: {
               widgets: [],
-              dataSpecs: {},
-              globalFilters: [],
+              dataSpecs: {
+                [DATA_SPEC_ID]: {
+                  displayName: 'Default Data Source',
+                  source: { type: PerfDataSource_SourceType.TABLE },
+                },
+              },
+              globalFilters: [
+                PerfFilter.fromPartial({
+                  id: GLOBAL_TIME_RANGE_FILTER_ID,
+                  column: GLOBAL_TIME_RANGE_COLUMN,
+                  displayName: 'Time Range (UTC)',
+                  range: {
+                    defaultValue: {
+                      values: [GLOBAL_TIME_RANGE_OPTION_DEFAULT],
+                      filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
+                    },
+                  },
+                }),
+              ],
             },
           }),
         }),

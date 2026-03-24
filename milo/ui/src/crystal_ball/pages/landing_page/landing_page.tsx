@@ -20,11 +20,20 @@ import { useNavigate } from 'react-router';
 import { DashboardDialog, RequireLogin } from '@/crystal_ball/components';
 import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
+import {
+  DATA_SPEC_ID,
+  GLOBAL_TIME_RANGE_COLUMN,
+  GLOBAL_TIME_RANGE_FILTER_ID,
+  GLOBAL_TIME_RANGE_OPTION_DEFAULT,
+} from '@/crystal_ball/constants';
 import { useCreateDashboardState } from '@/crystal_ball/hooks';
 import { extractIdFromName, formatApiError } from '@/crystal_ball/utils';
 import {
   CreateDashboardStateRequest,
   DashboardState,
+  PerfDataSource_SourceType,
+  PerfFilter,
+  PerfFilterDefault_FilterOperator,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
@@ -66,8 +75,25 @@ export function LandingPage() {
             description: data.description,
             dashboardContent: {
               widgets: [],
-              dataSpecs: {},
-              globalFilters: [],
+              dataSpecs: {
+                [DATA_SPEC_ID]: {
+                  displayName: 'Default Data Source',
+                  source: { type: PerfDataSource_SourceType.TABLE },
+                },
+              },
+              globalFilters: [
+                PerfFilter.fromPartial({
+                  id: GLOBAL_TIME_RANGE_FILTER_ID,
+                  column: GLOBAL_TIME_RANGE_COLUMN,
+                  displayName: 'Time Range (UTC)',
+                  range: {
+                    defaultValue: {
+                      values: [GLOBAL_TIME_RANGE_OPTION_DEFAULT],
+                      filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
+                    },
+                  },
+                }),
+              ],
             },
           }),
         }),

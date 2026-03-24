@@ -29,9 +29,10 @@ import React, { useMemo, useState } from 'react';
 
 import { CUSTOMIZE_OPTION } from '@/common/components/time_range_selector/time_range_selector_utils';
 import {
+  DASHBOARD_DATE_FORMAT,
   GLOBAL_TIME_RANGE_COLUMN,
   GLOBAL_TIME_RANGE_FILTER_ID,
-  DASHBOARD_DATE_FORMAT,
+  GLOBAL_TIME_RANGE_OPTION_DEFAULT,
 } from '@/crystal_ball/constants';
 import {
   DashboardState,
@@ -87,7 +88,11 @@ export function DashboardTimeRangeSelector({
     timeOption: string;
   }>(() => {
     if (!timeFilter?.range?.defaultValue?.values) {
-      return { startTime: null, endTime: null, timeOption: '3d' };
+      return {
+        startTime: null,
+        endTime: null,
+        timeOption: GLOBAL_TIME_RANGE_OPTION_DEFAULT,
+      };
     }
     const operator = perfFilterDefault_FilterOperatorFromJSON(
       timeFilter.range.defaultValue.filterOperator,
@@ -98,7 +103,7 @@ export function DashboardTimeRangeSelector({
       return {
         startTime: null,
         endTime: null,
-        timeOption: values[0] || '3d',
+        timeOption: values[0] ?? GLOBAL_TIME_RANGE_OPTION_DEFAULT,
       };
     }
 

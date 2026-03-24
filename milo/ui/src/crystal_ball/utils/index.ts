@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './chart';
 export * from './date_time';
 export * from './errors';
 export * from './string';

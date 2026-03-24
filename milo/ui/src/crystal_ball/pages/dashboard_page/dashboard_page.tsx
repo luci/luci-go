@@ -692,11 +692,14 @@ export function DashboardPage() {
                 {widget.chart && (
                   <ChartWidget
                     widget={widget.chart}
+                    dashboardName={`dashboardStates/${dashboardId}`}
+                    widgetId={widget.id}
                     globalFilters={
                       localDashboardState?.dashboardContent?.globalFilters ?? []
                     }
                     filterColumns={filterColumns}
                     isLoadingFilterColumns={isLoadingFilterColumns}
+                    dataSpecs={localDashboardState?.dashboardContent?.dataSpecs}
                     onUpdate={(updatedChartWidget) =>
                       handleUpdateWidget(index, {
                         ...widget,

@@ -39,6 +39,11 @@ export const GLOBAL_TIME_RANGE_COLUMN = 'build_creation_timestamp';
 export const GLOBAL_TIME_RANGE_FILTER_ID = 'global_time_range';
 
 /**
+ * Default global time range option.
+ */
+export const GLOBAL_TIME_RANGE_OPTION_DEFAULT = '7d';
+
+/**
  * Maximum page size allowed by the API.
  */
 export const MAX_PAGE_SIZE = 1000;

@@ -14,23 +14,20 @@
 
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { DateTime } from 'luxon';
 
-import * as components from '@/crystal_ball/components';
-import {
-  GLOBAL_TIME_RANGE_COLUMN,
-  GLOBAL_TIME_RANGE_FILTER_ID,
-} from '@/crystal_ball/constants/api';
+import { FilterEditor } from '@/crystal_ball/components';
+import { TimeSeriesChart } from '@/crystal_ball/components';
 import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
-import * as useSearchMeasurementsHook from '@/crystal_ball/hooks/use_android_perf_api';
-import { transformDataForChart } from '@/crystal_ball/utils';
+import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
+import {
+  createMockErrorResult,
+  createMockPendingResult,
+  createMockQueryResult,
+} from '@/crystal_ball/tests';
 import {
   MeasurementFilterColumn_ColumnDataType,
-  MeasurementRow,
+  MeasurementFilterColumn_FilterScope,
   PerfChartWidget,
-  PerfFilter,
-  PerfFilterDefault_FilterOperator,
-  SearchMeasurementsRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { ChartWidget } from './chart_widget';
@@ -52,11 +49,10 @@ jest.mock('@mui/material', () => ({
   ),
 }));
 
-// Mock custom hooks and utils
-
-jest.mock('@/crystal_ball/hooks/use_android_perf_api');
-const mockUseSearchMeasurements =
-  useSearchMeasurementsHook.useSearchMeasurements as jest.Mock;
+jest.mock('@/crystal_ball/hooks');
+const mockUseFetchDashboardWidgetData = jest.mocked(
+  useFetchDashboardWidgetData,
+);
 
 jest.mock('@/crystal_ball/components', () => ({
   ChartSeriesEditor: jest.fn(() => (
@@ -67,7 +63,7 @@ jest.mock('@/crystal_ball/components', () => ({
     <div data-testid="time-series-chart">TimeSeriesChart: {chartTitle}</div>
   )),
 }));
-const MockTimeSeriesChart = components.TimeSeriesChart as jest.Mock;
+const MockTimeSeriesChart = jest.mocked(TimeSeriesChart);
 
 const baseWidget: PerfChartWidget = PerfChartWidget.fromPartial({
   dataSpecId: 'mockspec',
@@ -76,29 +72,33 @@ const baseWidget: PerfChartWidget = PerfChartWidget.fromPartial({
   filters: [],
 });
 
-const now = DateTime.local(2026, 3, 4, 18, 58, 53);
-
 describe('ChartWidget', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
     // Default mock implementations
 
-    mockUseSearchMeasurements.mockReturnValue({
-      data: null,
-      isLoading: false,
-      isError: false,
-      error: null,
-    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        multiMetricChartData: {
+          xAxisDataKey: 'x',
+          yAxisDataKey: 'y',
+          lines: [],
+        },
+      }),
+    );
     MockTimeSeriesChart.mockClear();
   });
 
   it('should display loading state', () => {
-    mockUseSearchMeasurements.mockReturnValue({ isLoading: true });
+    mockUseFetchDashboardWidgetData.mockReturnValue(createMockPendingResult());
     render(
       <ChartWidget
         onUpdate={jest.fn()}
         widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
         filterColumns={[]}
       />,
     );
@@ -106,14 +106,15 @@ describe('ChartWidget', () => {
   });
 
   it('should display error state', () => {
-    mockUseSearchMeasurements.mockReturnValue({
-      isError: true,
-      error: { message: 'Failed to fetch' },
-    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockErrorResult(new Error('Failed to fetch')),
+    );
     render(
       <ChartWidget
         onUpdate={jest.fn()}
         widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
         filterColumns={[]}
       />,
     );
@@ -123,11 +124,22 @@ describe('ChartWidget', () => {
   });
 
   it('should display no data message when response is empty', () => {
-    mockUseSearchMeasurements.mockReturnValue({ data: { rows: [] } });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        multiMetricChartData: {
+          xAxisDataKey: 'x',
+          yAxisDataKey: 'y',
+          lines: [],
+        },
+      }),
+    );
     render(
       <ChartWidget
         onUpdate={jest.fn()}
         widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
         filterColumns={[]}
       />,
     );
@@ -137,23 +149,29 @@ describe('ChartWidget', () => {
   });
 
   it('should display no data message when series have no data points', () => {
-    mockUseSearchMeasurements.mockReturnValue({
-      data: {
-        rows: [
-          // Data for a different metric
-          {
-            buildCreateTime: now.minus({ hours: 1 }).toISO(),
-            metricKey: 'other_metric',
-            value: 10,
-            buildId: '1',
-          },
-        ],
-      },
-    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        multiMetricChartData: {
+          xAxisDataKey: 'x',
+          yAxisDataKey: 'y',
+          lines: [
+            {
+              seriesId: 's1',
+              legendLabel: 'l1',
+              dataPoints: [], // Empty points
+              metricField: 'metric1',
+            },
+          ],
+        },
+      }),
+    );
     render(
       <ChartWidget
         onUpdate={jest.fn()}
         widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
         filterColumns={[]}
       />,
     );
@@ -163,276 +181,55 @@ describe('ChartWidget', () => {
   });
 
   it('should render TimeSeriesChart with transformed data', () => {
-    const rows: MeasurementRow[] = [
-      {
-        buildCreateTime: now.minus({ hours: 2 }).toISO(),
-        metricKey: 'metric1',
-        value: 10,
-        buildId: '1',
-        extraColumns: [],
-      },
-      {
-        buildCreateTime: now.minus({ hours: 2 }).toISO(),
-        metricKey: 'metric1',
-        value: 20,
-        buildId: '2',
-        extraColumns: [],
-      }, // Same time, new build
-      {
-        buildCreateTime: now.minus({ hours: 1 }).toISO(),
-        metricKey: 'metric1',
-        value: 16,
-        buildId: '3',
-        extraColumns: [],
-      },
-      {
-        buildCreateTime: now.minus({ hours: 2 }).toISO(),
-        metricKey: 'metric2',
-        value: 100,
-        buildId: '1',
-        extraColumns: [],
-      },
-    ];
-    mockUseSearchMeasurements.mockReturnValue({ data: { rows } });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        multiMetricChartData: {
+          xAxisDataKey: 'timestamp',
+          yAxisDataKey: 'value',
+          lines: [
+            {
+              seriesId: 's1',
+              legendLabel: 'metric1',
+              dataPoints: [
+                { timestamp: 1000, value: 10 },
+                { timestamp: 2000, value: 20 },
+              ],
+              metricField: 'metric1',
+            },
+          ],
+        },
+      }),
+    );
 
     render(
       <ChartWidget
         onUpdate={jest.fn()}
         widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
         filterColumns={[]}
       />,
     );
 
     expect(screen.getByTestId('time-series-chart')).toBeInTheDocument();
     expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
-  });
-
-  it('should build search request based on widget series and time params', () => {
-    const startTime = now.minus({ days: 7 });
-    const endTime = now;
-
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={baseWidget}
-        filterColumns={[]}
-        globalFilters={[
-          PerfFilter.fromPartial({
-            id: GLOBAL_TIME_RANGE_FILTER_ID,
-            column: GLOBAL_TIME_RANGE_COLUMN,
-            displayName: 'Time Range',
-            dataSpecId: 'mockspec',
-            range: {
-              defaultValue: {
-                values: [startTime.toISO() ?? '', endTime.toISO() ?? ''],
-              },
-            },
-          }),
-        ]}
-      />,
-    );
-
-    const expectedRequest: SearchMeasurementsRequest = {
-      metricKeys: ['metric1', 'metric2'],
-      buildCreateStartTime: startTime.toUTC().toISO() ?? undefined,
-      buildCreateEndTime: endTime.toUTC().toISO() ?? undefined,
-      extraColumns: [],
-    };
-    expect(mockUseSearchMeasurements).toHaveBeenCalledWith(expectedRequest, {
-      enabled: true,
-    });
-  });
-
-  it('should build search request with lastNDays for IN_PAST operator', () => {
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={baseWidget}
-        filterColumns={[]}
-        globalFilters={[
-          PerfFilter.fromPartial({
-            id: GLOBAL_TIME_RANGE_FILTER_ID,
-            column: GLOBAL_TIME_RANGE_COLUMN,
-            displayName: 'Time Range',
-            dataSpecId: 'mockspec',
-            range: {
-              defaultValue: {
-                values: ['7d'],
-                filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
-              },
-            },
-          }),
-        ]}
-      />,
-    );
-
-    const expectedRequest: SearchMeasurementsRequest = {
-      metricKeys: ['metric1', 'metric2'],
-      buildCreateStartTime: undefined,
-      buildCreateEndTime: undefined,
-      lastNDays: 7,
-      extraColumns: [],
-    };
-    expect(mockUseSearchMeasurements).toHaveBeenCalledWith(expectedRequest, {
-      enabled: true,
-    });
-  });
-
-  it('should handle string represented enums for IN_PAST operator', () => {
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={baseWidget}
-        filterColumns={[]}
-        globalFilters={[
-          PerfFilter.fromPartial({
-            id: GLOBAL_TIME_RANGE_FILTER_ID,
-            column: GLOBAL_TIME_RANGE_COLUMN,
-            displayName: 'Time Range',
-            dataSpecId: 'mockspec',
-            range: {
-              defaultValue: {
-                values: ['7d'],
-                filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
-              },
-            },
-          }),
-        ]}
-      />,
-    );
-
-    const expectedRequest: SearchMeasurementsRequest = {
-      metricKeys: ['metric1', 'metric2'],
-      buildCreateStartTime: undefined,
-      buildCreateEndTime: undefined,
-      lastNDays: 7,
-      extraColumns: [],
-    };
-    expect(mockUseSearchMeasurements).toHaveBeenCalledWith(expectedRequest, {
-      enabled: true,
-    });
-  });
-
-  it('should apply filters to the search request', () => {
-    const widgetWithFilters: PerfChartWidget = PerfChartWidget.fromPartial({
-      ...baseWidget,
-      filters: [
-        {
-          id: 'id1',
-          dataSpecId: 'mockspec',
-          column: 'test_name',
-          textInput: {
-            defaultValue: {
-              values: ['MyTest'],
-              filterOperator: PerfFilterDefault_FilterOperator.CONTAINS,
-            },
-          },
-        },
-        {
-          id: 'id2',
-          dataSpecId: 'mockspec',
-          column: 'build_target',
-          textInput: {
-            defaultValue: {
-              values: ['targetA'],
-              filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
-            },
-          },
-        }, // EQUAL by default
-        {
-          id: 'id3',
-          dataSpecId: 'mockspec',
-          column: 'atp_test_name',
-          textInput: {
-            defaultValue: {
-              values: ['AtpTest'],
-              filterOperator: PerfFilterDefault_FilterOperator.STARTS_WITH,
-            },
-          },
-        },
-        {
-          id: 'id4',
-          dataSpecId: 'mockspec',
-          column: 'build_branch',
-          textInput: {
-            defaultValue: {
-              values: ['main'],
-              filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
-            },
-          },
-        },
-      ],
-    });
-
-    const startTime = now.minus({ days: 1 });
-    const endTime = now;
-
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={widgetWithFilters}
-        filterColumns={[]}
-        globalFilters={[
-          PerfFilter.fromPartial({
-            id: GLOBAL_TIME_RANGE_FILTER_ID,
-            column: GLOBAL_TIME_RANGE_COLUMN,
-            displayName: 'Time Range',
-            dataSpecId: 'mockspec',
-            range: {
-              defaultValue: {
-                values: [startTime.toISO() ?? '', endTime.toISO() ?? ''],
-              },
-            },
-          }),
-        ]}
-      />,
-    );
-
-    const expectedRequest: SearchMeasurementsRequest = {
-      metricKeys: ['metric1', 'metric2'],
-      buildCreateStartTime: startTime.toUTC().toISO() ?? undefined,
-      buildCreateEndTime: endTime.toUTC().toISO() ?? undefined,
-      extraColumns: [],
-      testNameFilter: '%MyTest%',
-      buildTarget: 'targetA',
-      atpTestNameFilter: 'AtpTest%',
-      buildBranch: 'main',
-    };
-    expect(mockUseSearchMeasurements).toHaveBeenCalledWith(expectedRequest, {
-      enabled: true,
-    });
-  });
-
-  it('should handle undefined series in widget', () => {
-    const widgetNoSeries: PerfChartWidget = PerfChartWidget.fromPartial({
-      dataSpecId: 'mockspec',
-      displayName: 'No Series Chart',
-    });
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={widgetNoSeries}
-        filterColumns={[]}
-      />,
-    );
-    // useSearchMeasurements should not be enabled
-    expect(mockUseSearchMeasurements).toHaveBeenCalledWith(
-      expect.objectContaining({ metricKeys: [] }),
-      { enabled: false },
-    );
-    expect(screen.getByTestId('typography')).toHaveTextContent(
-      COMMON_MESSAGES.NO_DATA_FOUND,
-    );
+    expect(MockTimeSeriesChart.mock.calls[0][0].series[0].data).toEqual([
+      [1000, 10],
+      [2000, 20],
+    ]);
   });
 
   it('should pass isLoadingFilterColumns down to FilterEditor', () => {
-    const MockFilterEditor = components.FilterEditor as jest.Mock;
+    const MockFilterEditor = jest.mocked(FilterEditor);
     MockFilterEditor.mockClear();
 
     render(
       <ChartWidget
         onUpdate={jest.fn()}
         widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
         filterColumns={[
           {
             column: 'test_name',
@@ -440,7 +237,7 @@ describe('ChartWidget', () => {
             dataType: MeasurementFilterColumn_ColumnDataType.STRING,
             sampleValues: [],
             isMetricKey: false,
-            applicableScopes: [],
+            applicableScopes: [MeasurementFilterColumn_FilterScope.WIDGET],
           },
         ]}
         isLoadingFilterColumns={true}
@@ -458,102 +255,5 @@ describe('ChartWidget', () => {
         },
       ],
     });
-  });
-});
-
-describe('transformDataForChart', () => {
-  const t1 = new Date('2026-03-04T10:00:00.000Z').toISOString();
-  const t2 = new Date('2026-03-04T11:00:00.000Z').toISOString();
-
-  const rows: MeasurementRow[] = [
-    {
-      buildCreateTime: t1,
-      metricKey: 'm1',
-      value: 10,
-      buildId: 'b1',
-      extraColumns: [],
-    },
-    {
-      buildCreateTime: t1,
-      metricKey: 'm1',
-      value: 20,
-      buildId: 'b2',
-      extraColumns: [],
-    }, // Same time, m1, different build
-    {
-      buildCreateTime: t2,
-      metricKey: 'm1',
-      value: 15,
-      buildId: 'b3',
-      extraColumns: [],
-    },
-    {
-      buildCreateTime: t1,
-      metricKey: 'm2',
-      value: 100,
-      buildId: 'b1',
-      extraColumns: [],
-    },
-    {
-      buildCreateTime: t2,
-      metricKey: 'm2',
-      value: 110,
-      buildId: 'b3',
-      extraColumns: [],
-    },
-    {
-      buildCreateTime: t1,
-      metricKey: 'm3',
-      value: 99,
-      buildId: 'b1',
-      extraColumns: [],
-    }, // Metric not requested
-  ];
-
-  it('should aggregate values by mean for each metric key and time', () => {
-    const metricKeys = ['m1', 'm2'];
-    const result = transformDataForChart(rows, metricKeys);
-
-    expect(result).toHaveLength(2);
-
-    // Check m1
-    expect(result[0].name).toBe('m1');
-    expect(result[0].data).toEqual([
-      [new Date(t1).getTime(), 15], // (10 + 20) / 2
-      [new Date(t2).getTime(), 15],
-    ]);
-
-    // Check m2
-    expect(result[1].name).toBe('m2');
-    expect(result[1].data).toEqual([
-      [new Date(t1).getTime(), 100],
-      [new Date(t2).getTime(), 110],
-    ]);
-  });
-
-  it('should return empty data arrays for metrics with no data', () => {
-    const metricKeys = ['m1', 'nonexistent'];
-    const result = transformDataForChart(rows, metricKeys);
-
-    expect(result).toHaveLength(2);
-    expect(result[0].name).toBe('m1');
-    expect(result[0].data.length).toBeGreaterThan(0);
-    expect(result[1].name).toBe('nonexistent');
-    expect(result[1].data).toEqual([]);
-  });
-
-  it('should generate distinct stroke colors', () => {
-    const metricKeys = ['m1', 'm2', 'm3', 'm4'];
-    const result = transformDataForChart(rows, metricKeys);
-    expect(result[0].stroke).toMatch(/hsl\(\d+(\.\d+)?,\s*70%,\s*50%\)/);
-    expect(result[1].stroke).toMatch(/hsl\(\d+(\.\d+)?,\s*70%,\s*50%\)/);
-    expect(result[0].stroke).not.toBe(result[1].stroke);
-  });
-
-  it('should handle empty rows input', () => {
-    const result = transformDataForChart([], ['m1']);
-    expect(result).toEqual([
-      { name: 'm1', data: [], stroke: expect.any(String) },
-    ]);
   });
 });

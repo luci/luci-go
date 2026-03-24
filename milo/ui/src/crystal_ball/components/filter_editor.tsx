@@ -42,21 +42,20 @@ import {
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   MAX_SUGGEST_RESULTS,
 } from '@/crystal_ball/constants/api';
+import {
+  OPERATOR_DISPLAY_NAMES,
+  TYPE_TO_OPERATORS,
+} from '@/crystal_ball/constants/operators';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import {
   MeasurementFilterColumn,
+  MeasurementFilterColumn_ColumnDataType,
+  measurementFilterColumn_ColumnDataTypeFromJSON,
   PerfFilter,
   PerfFilterDefault,
   PerfFilterDefault_FilterOperator,
   perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
-
-// TODO: b/475638132 - Once ListMeasurementFilterColumns RPC is being used, column types are known and can be used to determine appropriate
-// filter operators.
-const OPERATORS = Object.keys(PerfFilterDefault_FilterOperator).filter(
-  (key): key is keyof typeof PerfFilterDefault_FilterOperator =>
-    isNaN(Number(key)) && key !== 'FILTER_OPERATOR_UNSPECIFIED',
-);
 
 interface FilterEditorProps {
   title?: string;
@@ -72,6 +71,7 @@ function FilterEditorRow({
   dataSpecId,
   primaryColumns,
   secondaryColumns,
+  dataType,
   onUpdateColumn,
   onUpdateOperator,
   onUpdateValue,
@@ -81,12 +81,14 @@ function FilterEditorRow({
   dataSpecId: string;
   primaryColumns: string[];
   secondaryColumns: string[];
+  dataType: MeasurementFilterColumn_ColumnDataType;
   onUpdateColumn: (column: string) => void;
   onUpdateOperator: (operator: PerfFilterDefault_FilterOperator) => void;
   onUpdateValue: (value: string) => void;
   onRemove: () => void;
 }) {
-  const initialValue = filter.textInput?.defaultValue?.values?.[0] ?? '';
+  const activeInput = filter.numberInput ?? filter.textInput;
+  const initialValue = activeInput?.defaultValue?.values?.[0] ?? '';
   const [inputValue, setInputValue] = useState(initialValue);
   const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
   const [isFocused, setIsFocused] = useState(false);
@@ -173,9 +175,9 @@ function FilterEditorRow({
 
       <Select
         value={
-          filter.textInput?.defaultValue?.filterOperator !== undefined
+          activeInput?.defaultValue?.filterOperator !== undefined
             ? perfFilterDefault_FilterOperatorFromJSON(
-                filter.textInput.defaultValue.filterOperator,
+                activeInput.defaultValue.filterOperator,
               )
             : PerfFilterDefault_FilterOperator.EQUAL
         }
@@ -188,9 +190,13 @@ function FilterEditorRow({
         sx={{ minWidth: 120 }}
         MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
       >
-        {OPERATORS.map((op) => (
-          <MenuItem key={op} value={PerfFilterDefault_FilterOperator[op]}>
-            {op}
+        {(TYPE_TO_OPERATORS[dataType] ?? []).map((opEnum) => (
+          <MenuItem
+            key={PerfFilterDefault_FilterOperator[opEnum]}
+            value={opEnum}
+          >
+            {OPERATOR_DISPLAY_NAMES[opEnum] ??
+              PerfFilterDefault_FilterOperator[opEnum]}
           </MenuItem>
         ))}
       </Select>
@@ -254,17 +260,35 @@ export function FilterEditor({
 
   const handleAddFilter = () => {
     const newFilterId = `filter-${crypto.randomUUID()}`;
+    const selectedColumn = availableColumns[0];
+    const isNumber =
+      selectedColumn?.dataType ===
+        MeasurementFilterColumn_ColumnDataType.INT64 ||
+      selectedColumn?.dataType ===
+        MeasurementFilterColumn_ColumnDataType.DOUBLE;
+
     const newFilter: PerfFilter = {
       id: newFilterId,
-      column: availableColumns[0]?.column ?? '',
+      column: selectedColumn?.column ?? '',
       dataSpecId: dataSpecId,
       displayName: 'New Filter',
-      textInput: {
-        defaultValue: {
-          values: [''],
-          filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
-        },
-      },
+      ...(isNumber
+        ? {
+            numberInput: {
+              defaultValue: {
+                values: [''],
+                filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+              },
+            },
+          }
+        : {
+            textInput: {
+              defaultValue: {
+                values: [''],
+                filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+              },
+            },
+          }),
     };
     onUpdateFilters([...filters, newFilter]);
   };
@@ -295,7 +319,19 @@ export function FilterEditor({
     const updatedFilters = [...filters];
     const currentFilter = updatedFilters[index];
 
-    if (currentFilter.textInput?.defaultValue) {
+    if (currentFilter.numberInput?.defaultValue) {
+      updatedFilters[index] = {
+        ...currentFilter,
+        numberInput: {
+          ...currentFilter.numberInput,
+          defaultValue: {
+            ...currentFilter.numberInput.defaultValue,
+            [key]: value,
+          },
+        },
+      };
+      onUpdateFilters(updatedFilters);
+    } else if (currentFilter.textInput?.defaultValue) {
       updatedFilters[index] = {
         ...currentFilter,
         textInput: {
@@ -338,7 +374,7 @@ export function FilterEditor({
           )
         : PerfFilterDefault_FilterOperator.EQUAL;
     const val = filter.textInput?.defaultValue?.values?.[0] ?? '';
-    return `${filter.column} ${PerfFilterDefault_FilterOperator[op]} "${val}"`;
+    return `${filter.column} ${OPERATOR_DISPLAY_NAMES[op] ?? PerfFilterDefault_FilterOperator[op]} \"${val}\"`;
   };
 
   return (
@@ -354,12 +390,18 @@ export function FilterEditor({
           id="filters-header"
           sx={{
             '& .MuiAccordionSummary-content': {
-              alignItems: filters.length === 0 ? 'baseline' : 'center',
+              alignItems: 'baseline',
               gap: 1,
+              margin: '12px 0',
+              '&.Mui-expanded': {
+                margin: '12px 0',
+              },
             },
           }}
         >
-          <Typography variant="subtitle1">{title ?? 'Filters'}</Typography>
+          <Typography variant="subtitle1" sx={{ flexShrink: 0 }}>
+            {title ?? 'Filters'}
+          </Typography>
           {!expanded && filters.length > 0 && (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {filters.map((filter) => (
@@ -384,25 +426,41 @@ export function FilterEditor({
             </Box>
           ) : (
             <>
-              {filters.map((filter, index) => (
-                <FilterEditorRow
-                  key={filter.id}
-                  filter={filter}
-                  dataSpecId={dataSpecId}
-                  primaryColumns={primaryColumns}
-                  secondaryColumns={secondaryColumns}
-                  onUpdateColumn={(column) =>
-                    handleFilterChange(index, { column })
-                  }
-                  onUpdateOperator={(operator) =>
-                    handleDefaultValueChange(index, 'filterOperator', operator)
-                  }
-                  onUpdateValue={(value) =>
-                    handleDefaultValueChange(index, 'values', [value])
-                  }
-                  onRemove={() => handleRemoveFilter(index)}
-                />
-              ))}
+              {filters.map((filter, index) => {
+                const colDef = availableColumns.find(
+                  (c) => c.column === filter.column,
+                );
+                const rawType = colDef
+                  ? colDef.dataType
+                  : MeasurementFilterColumn_ColumnDataType.COLUMN_DATA_TYPE_UNSPECIFIED;
+                const dataType =
+                  measurementFilterColumn_ColumnDataTypeFromJSON(rawType);
+
+                return (
+                  <FilterEditorRow
+                    key={filter.id}
+                    filter={filter}
+                    dataSpecId={dataSpecId}
+                    primaryColumns={primaryColumns}
+                    secondaryColumns={secondaryColumns}
+                    dataType={dataType}
+                    onUpdateColumn={(column) =>
+                      handleFilterChange(index, { column })
+                    }
+                    onUpdateOperator={(operator) =>
+                      handleDefaultValueChange(
+                        index,
+                        'filterOperator',
+                        operator,
+                      )
+                    }
+                    onUpdateValue={(value) =>
+                      handleDefaultValueChange(index, 'values', [value])
+                    }
+                    onRemove={() => handleRemoveFilter(index)}
+                  />
+                );
+              })}
               <Button
                 startIcon={<AddIcon />}
                 onClick={handleAddFilter}
