@@ -15,9 +15,6 @@
 package value
 
 import (
-	"errors"
-	"iter"
-
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -26,8 +23,19 @@ import (
 // have access to a particular ValueRef.
 type AccessCheck func(realm string) (bool, error)
 
-// Filter is a stateful, parsed, form of [orchestratorpb.ValueFilter].
-type Filter struct {
+// Filter is the signature of the function from [ParseFilter].
+//
+// It expects a RefSlot and a ValueRef, and:
+//   - [Omit]s the ref if the user does not have access or if the ref is
+//     unwanted.
+//   - Returns needsJSON = true if the user wants the data as JSON.
+//
+// The caller of the filter should consider the ref wanted if it was not
+// omitted (i.e. ref.HasOmitReason() == false).
+type Filter func(RefSlot, *orchestratorpb.ValueRef) (needsJSON bool, err error)
+
+// filter is a parsed form of [orchestratorpb.ValueFilter].
+type filterImpl struct {
 	// A reduced version of the ValueMasks in ValueFilter; indicates which slots
 	// need data.
 	//
@@ -35,90 +43,49 @@ type Filter struct {
 	// filterable things in Value (such as tags).
 	//
 	// Note that 'TYPE' is always wanted (just the TypeURL of the ValueRef).
-	vf        map[RefSlot]bool
-	ti        *TypeInfo
+	vf map[RefSlot]bool
+	ti *TypeInfo
+
+	// AccessCheck function; `nil` means "allow all".
 	hasAccess AccessCheck
 }
 
-// FilterResult is the return result of [Filter.Apply].
-type FilterResult struct {
-	// NeedFetch contains ValueRefs which are desired and accessible (via
-	// `hasAccess`), but have non-inlined data which needs to be fetched.
-	//
-	// These are mapped by digest -> all ValueRefs which refer to that digest.
-	NeedFetch map[string][]*orchestratorpb.ValueRef
-
-	// NeedJSON are ValueRefs which need to be converted to JSON.
-	//
-	// This may overlap with `NeedFetch` in the case where a digest-based
-	// ValueRef needs to be converted to JSON.
-	NeedJSON []*orchestratorpb.ValueRef
-}
-
-// Apply applies the parsed ValueFilter w/ AccessCheck function to all refs
-// yielded by the iterator.
-//
-// This will:
-//   - Omit refs which the user does not have access to as NO_ACCESS.
-//   - Omit refs which the user does not want (either via ValueFilter masks,
-//     or via ValueFilter.TypeInfo) as UNWANTED.
-//   - Return the set of wanted digest-based ValueRefs, collated by digest,
-//     plus the list of wanted ValueRefs which need JSON conversion.
-//
-// See [RefsInStage], [RefsInStageAttempt] and [RefsInCheck] for iterators
-// which easily compose with this.
-func (f *Filter) Apply(i iter.Seq2[RefSlot, *orchestratorpb.ValueRef]) (*FilterResult, error) {
-	ret := &FilterResult{NeedFetch: make(map[string][]*orchestratorpb.ValueRef)}
-
-	var errs []error
-	for slot, ref := range i {
-		access, err := f.hasAccess(ref.GetRealm())
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		if !access {
-			Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS)
-			continue
-		}
-		if !f.vf[slot] {
-			Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
-			continue
-		}
-
-		// At this point we *structurally* want, and can access, ref.
-		// See how typeinfo deals with this.
-		wantBinary, wantJSON := f.ti.Wants(ref.GetTypeUrl())
-		if !wantBinary && !wantJSON {
-			Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
-			continue
-		}
-
-		if dgst := ref.GetDigest(); dgst != "" {
-			ret.NeedFetch[dgst] = append(ret.NeedFetch[dgst], ref)
-		}
-		if wantJSON {
-			ret.NeedJSON = append(ret.NeedJSON, ref)
+func (f *filterImpl) call(slot RefSlot, ref *orchestratorpb.ValueRef) (needsJSON bool, err error) {
+	access := true
+	if f.hasAccess != nil {
+		if access, err = f.hasAccess(ref.GetRealm()); err != nil {
+			return
 		}
 	}
-	if len(errs) > 0 {
-		return nil, errors.Join(errs...)
+	if !access {
+		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS)
+		return
 	}
-	return ret, nil
+	if !f.vf[slot] {
+		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
+		return
+	}
+
+	// At this point we *structurally* want, and can access, ref.
+	// See how typeinfo deals with this.
+	wanted, needsJSON := f.ti.Wants(ref.GetTypeUrl())
+	if !wanted && !needsJSON {
+		Omit(ref, orchestratorpb.OmitReason_OMIT_REASON_UNWANTED)
+	}
+	return
 }
 
-// ParseFilter returns a [Filter] ready to use with [FilterStage],
-// [FilterStageAttempt] and [FilterCheck].
+// ParseFilter returns a usable form of the ValueFilter as a [Filter] function.
 //
 // If `hasAccess` is nil, access checks are disabled (meaning that no refs will
 // be omitted with NO_ACCESS).
-func ParseFilter(vf *orchestratorpb.ValueFilter, hasAccess AccessCheck) (*Filter, error) {
+//
+// See [RefsInStage], [RefsInStageAttempt] and [RefsInCheck] for iterators
+// which easily compose with this.
+func ParseFilter(vf *orchestratorpb.ValueFilter, hasAccess AccessCheck) (Filter, error) {
 	ti, err := ParseTypeInfo(vf.GetTypeInfo())
 	if err != nil {
 		return nil, err
-	}
-	if hasAccess == nil {
-		hasAccess = func(realm string) (bool, error) { return true, nil }
 	}
 
 	vfMap := map[RefSlot]bool{}
@@ -142,5 +109,7 @@ func ParseFilter(vf *orchestratorpb.ValueFilter, hasAccess AccessCheck) (*Filter
 	setVF(CheckEditOptionsSlot, vf.GetCheckEditOptions())
 	setVF(CheckEditResultsDataSlot, vf.GetCheckResultData())
 
-	return &Filter{vfMap, ti, hasAccess}, nil
+	fi := filterImpl{vfMap, ti, hasAccess}
+
+	return fi.call, nil
 }

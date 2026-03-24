@@ -16,6 +16,7 @@ package value
 
 import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 // DataSource is an abstraction over a map which retains digest->ValueData.
@@ -45,14 +46,17 @@ type DataSource interface {
 //
 // If a is nil, returns b.
 // If merging b into a is a no-op, returns `a` unmodified.
-func MergeData(a, b *orchestratorpb.ValueData) *orchestratorpb.ValueData {
+//
+// Returns the size delta of replacing `a` with `b`.
+func MergeData(a, b *orchestratorpb.ValueData) (int64, *orchestratorpb.ValueData) {
 	if a == nil {
-		return b
+		return int64(proto.Size(b)), b
 	}
 
 	var ret *orchestratorpb.ValueData
 	cow := func() *orchestratorpb.ValueData {
 		if ret == nil {
+			// Shallow copy avoids duplicating binary.value which is `[]byte`.
 			ret = &orchestratorpb.ValueData{}
 			if a.HasBinary() {
 				ret.SetBinary(a.GetBinary())
@@ -74,8 +78,11 @@ func MergeData(a, b *orchestratorpb.ValueData) *orchestratorpb.ValueData {
 		cow().SetConversionFailure(b.GetConversionFailure())
 	}
 
+	var delta int64
 	if ret == nil {
 		ret = a
+	} else {
+		delta = int64(proto.Size(ret) - proto.Size(a))
 	}
-	return ret
+	return delta, ret
 }

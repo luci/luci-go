@@ -19,6 +19,7 @@ import (
 	"sync/atomic"
 
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 // SyncDataSource implements [DataSource] using per-digest synchronization.
@@ -30,6 +31,7 @@ import (
 // [SyncDataSourceFromMap].
 type SyncDataSource struct {
 	sizeHint atomic.Int64
+	dataSize atomic.Int64
 	data     sync.Map
 }
 
@@ -39,10 +41,13 @@ var _ DataSource = (*SyncDataSource)(nil)
 // data in `valueData`.
 func SyncDataSourceFromMap(valueData map[string]*orchestratorpb.ValueData) *SyncDataSource {
 	ret := &SyncDataSource{}
+	dataSize := int64(0)
 	for digest, data := range valueData {
 		ret.data.Store(Digest(digest), data)
+		dataSize += int64(len(digest) + proto.Size(data))
 	}
-	ret.sizeHint.Add(int64(len(valueData)))
+	ret.sizeHint.Store(int64(len(valueData)))
+	ret.dataSize.Store(dataSize)
 	return ret
 }
 
@@ -56,21 +61,37 @@ func (s *SyncDataSource) Retrieve(digest Digest) *orchestratorpb.ValueData {
 }
 
 // Intern implements [DataSource].
+//
+// This will not atomically update DataSize; If there are multiple goroutines
+// calling Intern and also DataSize in parallel, you will see an inconsistent
+// value. If you have this pattern, you need some external synchronization
+// for your calls to Intern and DataSize.
 func (s *SyncDataSource) Intern(digest Digest, data *orchestratorpb.ValueData) {
 	if curVal, loaded := s.data.LoadOrStore(digest, data); loaded {
 		cur := curVal.(*orchestratorpb.ValueData)
-		newDat := MergeData(cur, data)
+		delta, newDat := MergeData(cur, data)
 		for cur != newDat && !s.data.CompareAndSwap(digest, cur, newDat) {
 			curVal, loaded = s.data.Load(digest)
 			if !loaded {
 				panic("impossible")
 			}
 			cur = curVal.(*orchestratorpb.ValueData)
-			newDat = MergeData(cur, data)
+			delta, newDat = MergeData(cur, data)
 		}
+		s.dataSize.Add(delta)
 	} else {
+		s.dataSize.Add(int64(proto.Size(data) + len(digest)))
 		s.sizeHint.Add(1)
 	}
+}
+
+// DataSize returns the amount of data in bytes currently in this
+// SyncDataSource.
+//
+// This accounts for the size of the digests as well as the size of the
+// ValueData.
+func (s *SyncDataSource) DataSize() int64 {
+	return s.dataSize.Load()
 }
 
 func (s *SyncDataSource) UpdateFrom(data map[string]*orchestratorpb.ValueData) {

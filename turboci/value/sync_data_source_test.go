@@ -71,11 +71,16 @@ func TestDataSource(t *testing.T) {
 	ds.Intern("4", mkBin())
 	ds.Intern("6", mkJson())
 
+	// At this point, 1, 3, 5 are binary and 2, 4, 6 are JSON.
+
 	assert.That(t, ds.Retrieve("2").HasJson(), should.BeTrue)
 
 	assert.That(t, ds.Retrieve("4").HasJson(), should.BeTrue)
 
 	assert.Loosely(t, ds.Retrieve("NX"), should.BeNil)
+	assert.That(t, ds.DataSize(), should.Equal(
+		int64(6+proto.Size(mkBin())*3+proto.Size(mkJson())*3)),
+	)
 }
 
 type mockDatum struct {
@@ -240,7 +245,7 @@ func (m *mutexMap) Intern(data map[string]*orchestratorpb.ValueData) {
 	defer m.mu.Unlock()
 
 	for digest, dat := range data {
-		m.data[digest] = MergeData(m.data[digest], dat)
+		_, m.data[digest] = MergeData(m.data[digest], dat)
 	}
 }
 

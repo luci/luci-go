@@ -57,49 +57,34 @@ func TestFilterRef(t *testing.T) {
 	assert.NoErr(t, err)
 
 	t.Run(`want_binary_inline`, func(t *testing.T) {
-		stg := orchestratorpb.Stage_builder{
-			Args: makeRef(t, nil, structpb.NewBoolValue(true)),
-		}.Build()
-
-		rslt, err := filter.Apply(RefsInStage(stg))
+		ref := makeRef(t, nil, structpb.NewBoolValue(true))
+		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
-		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
-		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
-
-		assert.Loosely(t, stg.GetArgs().GetOmitReason(), should.BeZero)
+		assert.Loosely(t, ref.GetOmitReason(), should.BeZero)
+		assert.That(t, wantJSON, should.BeFalse)
 	})
 
 	t.Run(`want_binary_remote`, func(t *testing.T) {
 		mSrc := SimpleDataSource{}
-		stg := orchestratorpb.Stage_builder{
-			Args: makeRef(t, mSrc, structpb.NewBoolValue(true)),
-		}.Build()
+		ref := makeRef(t, mSrc, structpb.NewBoolValue(true))
 		dgst := "nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ5eAQ"
 
-		rslt, err := filter.Apply(RefsInStage(stg))
+		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
-		assert.That(t, rslt.NeedFetch, should.Match(map[string][]*orchestratorpb.ValueRef{
-			dgst: {stg.GetArgs()},
-		}))
-		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
+		assert.That(t, ref.GetDigest(), should.Match(dgst))
+		assert.That(t, wantJSON, should.BeFalse)
 
-		assert.That(t, stg.GetArgs().GetDigest(), should.Match(dgst))
 	})
 
 	t.Run(`want_json_inline`, func(t *testing.T) {
 		lst, err := structpb.NewList([]any{true})
 		assert.NoErr(t, err)
+		ref := makeRef(t, nil, lst)
 
-		stg := orchestratorpb.Stage_builder{
-			Args: makeRef(t, nil, lst),
-		}.Build()
-
-		rslt, err := filter.Apply(RefsInStage(stg))
+		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
-		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
-		assert.That(t, rslt.NeedJSON, should.Match([]*orchestratorpb.ValueRef{
-			stg.GetArgs(),
-		}))
+		assert.Loosely(t, ref.GetOmitReason(), should.BeZero)
+		assert.That(t, wantJSON, should.BeTrue)
 	})
 
 	t.Run(`want_json_remote`, func(t *testing.T) {
@@ -107,43 +92,34 @@ func TestFilterRef(t *testing.T) {
 		lst, err := structpb.NewList([]any{true})
 		assert.NoErr(t, err)
 
-		stg := orchestratorpb.Stage_builder{
-			Args: makeRef(t, mSrc, lst),
-		}.Build()
+		ref := makeRef(t, mSrc, lst)
 		dgst := "TiL2hG12z5bCnO-q4sXjaMqObIM7ZeZNAYcHd56bTRFqAQ"
 
-		rslt, err := filter.Apply(RefsInStage(stg))
+		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
-		assert.That(t, rslt.NeedFetch, should.Match(map[string][]*orchestratorpb.ValueRef{
-			dgst: {stg.GetArgs()},
-		}))
-		assert.That(t, rslt.NeedJSON, should.Match([]*orchestratorpb.ValueRef{
-			stg.GetArgs(),
-		}))
+		assert.Loosely(t, ref.GetOmitReason(), should.BeZero)
+		assert.That(t, wantJSON, should.BeTrue)
 
-		assert.That(t, stg.GetArgs().GetDigest(), should.Match(dgst))
+		assert.That(t, ref.GetDigest(), should.Match(dgst))
 	})
 
 	t.Run(`want_no_access`, func(t *testing.T) {
-		stg := orchestratorpb.Stage_builder{
-			Args: makeRef(t, nil, structpb.NewBoolValue(true)),
-		}.Build()
+		ref := makeRef(t, nil, structpb.NewBoolValue(true))
 
 		filter, err := ParseFilter(vf, func(realm string) (bool, error) {
 			return false, nil
 		})
 		assert.NoErr(t, err)
 
-		rslt, err := filter.Apply(RefsInStage(stg))
+		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
-		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
-		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
-
-		assert.That(t, stg.GetArgs().GetOmitReason(), should.Match(
+		assert.That(t, ref.GetOmitReason(), should.Match(
 			orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS,
 		))
-		assert.That(t, stg.GetArgs().HasDigest(), should.BeFalse)
-		assert.That(t, stg.GetArgs().HasInline(), should.BeFalse)
+		assert.That(t, wantJSON, should.BeFalse)
+
+		assert.That(t, ref.HasDigest(), should.BeFalse)
+		assert.That(t, ref.HasInline(), should.BeFalse)
 	})
 
 	t.Run(`unwant_structural_inline`, func(t *testing.T) {
@@ -153,21 +129,18 @@ func TestFilterRef(t *testing.T) {
 		filter, err := ParseFilter(vf, nil)
 		assert.NoErr(t, err)
 
-		stg := orchestratorpb.Stage_builder{
-			Args: makeRef(t, nil, structpb.NewBoolValue(true)),
-		}.Build()
+		ref := makeRef(t, nil, structpb.NewBoolValue(true))
 
-		rslt, err := filter.Apply(RefsInStage(stg))
+		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
-		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
-		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
-
-		assert.That(t, stg.GetArgs().GetOmitReason(), should.Match(
+		assert.That(t, ref.GetOmitReason(), should.Match(
 			orchestratorpb.OmitReason_OMIT_REASON_UNWANTED,
 		))
-		assert.That(t, stg.GetArgs().GetDigest(), should.Equal(
+		assert.That(t, wantJSON, should.BeFalse)
+
+		assert.That(t, ref.GetDigest(), should.Equal(
 			"nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ5eAQ"))
-		assert.That(t, stg.GetArgs().HasInline(), should.BeFalse)
+		assert.That(t, ref.HasInline(), should.BeFalse)
 	})
 
 	t.Run(`unwant_structural_remote`, func(t *testing.T) {
@@ -179,54 +152,46 @@ func TestFilterRef(t *testing.T) {
 
 		mSrc := SimpleDataSource{}
 
-		stg := orchestratorpb.Stage_builder{
-			Args: makeRef(t, mSrc, structpb.NewBoolValue(true)),
-		}.Build()
+		ref := makeRef(t, mSrc, structpb.NewBoolValue(true))
 
-		rslt, err := filter.Apply(RefsInStage(stg))
+		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
-		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
-		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
-
-		assert.That(t, stg.GetArgs().GetOmitReason(), should.Match(
+		assert.That(t, ref.GetOmitReason(), should.Match(
 			orchestratorpb.OmitReason_OMIT_REASON_UNWANTED,
 		))
-		assert.That(t, stg.GetArgs().GetDigest(), should.Equal(
+		assert.That(t, wantJSON, should.BeFalse)
+
+		assert.That(t, ref.GetDigest(), should.Equal(
 			"nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ5eAQ"))
-		assert.That(t, stg.GetArgs().HasInline(), should.BeFalse)
+		assert.That(t, ref.HasInline(), should.BeFalse)
 	})
 
 	t.Run(`unwant_type_inline`, func(t *testing.T) {
-		stg := orchestratorpb.Stage_builder{
-			Args: makeRef(t, nil, structpb.NewBoolValue(true)),
-		}.Build()
-		stg.GetArgs().SetTypeUrl(TypePrefix + "bogus.namespace.Message")
-		stg.GetArgs().GetInline().TypeUrl = TypePrefix + "bogus.namespace.Message"
+		ref := makeRef(t, nil, structpb.NewBoolValue(true))
+		ref.SetTypeUrl(TypePrefix + "bogus.namespace.Message")
+		ref.GetInline().TypeUrl = TypePrefix + "bogus.namespace.Message"
 
-		rslt, err := filter.Apply(RefsInStage(stg))
+		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
-		assert.Loosely(t, rslt.NeedFetch, should.BeEmpty)
-		assert.Loosely(t, rslt.NeedJSON, should.BeEmpty)
-
-		assert.That(t, stg.GetArgs().GetOmitReason(), should.Match(
+		assert.That(t, ref.GetOmitReason(), should.Match(
 			orchestratorpb.OmitReason_OMIT_REASON_UNWANTED,
 		))
-		assert.That(t, stg.GetArgs().GetDigest(), should.Equal(
+		assert.That(t, wantJSON, should.BeFalse)
+
+		assert.That(t, ref.GetDigest(), should.Equal(
 			"hvSVT6KdvPHO0-h55_J5by3wAe3u5ymMnl0ColX35QliAQ"))
-		assert.That(t, stg.GetArgs().HasInline(), should.BeFalse)
+		assert.That(t, ref.HasInline(), should.BeFalse)
 	})
 
 	t.Run(`auth_error`, func(t *testing.T) {
-		stg := orchestratorpb.Stage_builder{
-			Args: makeRef(t, nil, structpb.NewBoolValue(true)),
-		}.Build()
+		ref := makeRef(t, nil, structpb.NewBoolValue(true))
 
 		filter, err := ParseFilter(vf, func(realm string) (bool, error) {
 			return false, errors.New("oh no auth exploded")
 		})
 		assert.NoErr(t, err)
 
-		_, err = filter.Apply(RefsInStage(stg))
+		_, err = filter(StageArgsSlot, ref)
 		assert.ErrIsLike(t, err, "oh no auth exploded")
 	})
 }
