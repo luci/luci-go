@@ -24,7 +24,6 @@ import {
 } from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { useFilters } from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
@@ -91,18 +90,10 @@ export const AndroidDevicesPage = () => {
           ANDROID_COLUMN_OVERRIDES,
         ),
       }
-    : {
-        ...ANDROID_EXTRA_FILTERS,
-        '"lab_name"': new StringListFilterCategoryBuilder()
-          .setLabel('lab_name')
-          .setOptions([
-            {
-              label: 'atc',
-              key: '"atc"',
-            },
-          ]),
-      };
-  const filterCategoryDatas = useFilters(filterOptions);
+    : ANDROID_EXTRA_FILTERS;
+  const filterCategoryDatas = useFilters(filterOptions, {
+    allowExtraKeys: !isDimensionsQueryProperlyLoaded,
+  });
 
   const onApplyFilter = useCallback(() => {
     trackEvent('filter_changed', {
@@ -194,9 +185,6 @@ export const AndroidDevicesPage = () => {
     addWarning(
       `There was an error parsing your filters: ${filterCategoryDatas.parseError}`,
     );
-    for (const fc of Object.values(filterCategoryDatas.filterValues || {})) {
-      fc.clear();
-    }
   }, [
     addWarning,
     filterCategoryDatas,

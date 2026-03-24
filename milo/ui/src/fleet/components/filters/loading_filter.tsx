@@ -20,19 +20,15 @@ export class LoadingFilterCategory implements FilterCategory {
   public label: string;
   public key: string;
   private chipLabel: string;
+  private isActiveInternal = true;
 
-  constructor(key: string) {
+  constructor(
+    key: string,
+    terms: (ast.Term & { simple: ast.Restriction })[] = [],
+  ) {
     this.label = key;
     this.key = key;
-    this.chipLabel = key;
-  }
 
-  public clone() {
-    const newInst = new LoadingFilterCategory(this.label);
-    return newInst as FilterCategory;
-  }
-
-  public fromAIP160(terms: (ast.Term & { simple: ast.Restriction })[]) {
     const opt = terms.map((t) => {
       if (t.negated) return '(Blank)';
 
@@ -45,6 +41,13 @@ export class LoadingFilterCategory implements FilterCategory {
     });
 
     this.chipLabel = `${terms.length} | [ ${this.key} ]: ${opt.join(', ')} `;
+  }
+
+  public clone() {
+    const newInst = new LoadingFilterCategory(this.label);
+    newInst.chipLabel = this.chipLabel;
+    newInst.isActiveInternal = this.isActiveInternal;
+    return newInst as FilterCategory;
   }
 
   public toAIP160(): string {
@@ -66,9 +69,11 @@ export class LoadingFilterCategory implements FilterCategory {
   }
 
   public isActive() {
-    return true;
+    return this.isActiveInternal;
   }
-  public clear() {}
+  public clear() {
+    this.isActiveInternal = false;
+  }
 
   public getChildrenSearchScore(_searchQuery: string) {
     return 0;

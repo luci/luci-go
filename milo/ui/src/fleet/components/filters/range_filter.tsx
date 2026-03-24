@@ -31,6 +31,7 @@ export class RangeFilterCategory implements FilterCategory {
   public min: number;
   public max: number;
   private reRender: () => void;
+  private actualReRender: (newFilter: RangeFilterCategory) => void;
 
   constructor(
     label: string,
@@ -38,31 +39,18 @@ export class RangeFilterCategory implements FilterCategory {
     min: number,
     max: number,
     reRender: (newFilter: RangeFilterCategory) => void,
+    terms: (ast.Term & { simple: ast.Restriction })[] = [],
   ) {
     this.label = label;
     this.key = key;
     this.min = min;
     this.max = max;
     this.value = {};
+    this.actualReRender = reRender;
     this.reRender = () => {
       reRender(this);
     };
-  }
 
-  public clone() {
-    const newInst = new RangeFilterCategory(
-      this.label,
-      this.key,
-      this.min,
-      this.max,
-      this.reRender,
-    );
-    newInst.value = { ...this.value };
-    return newInst as FilterCategory;
-  }
-
-  public fromAIP160(terms: (ast.Term & { simple: ast.Restriction })[]) {
-    this.value = {};
     for (const term of terms) {
       if (term.negated) {
         continue;
@@ -88,8 +76,18 @@ export class RangeFilterCategory implements FilterCategory {
         this.value.max = num;
       }
     }
+  }
 
-    this.reRender();
+  public clone() {
+    const newInst = new RangeFilterCategory(
+      this.label,
+      this.key,
+      this.min,
+      this.max,
+      this.actualReRender,
+    );
+    newInst.value = { ...this.value };
+    return newInst as FilterCategory;
   }
 
   public toAIP160(): string {
@@ -235,6 +233,7 @@ export class RangeFilterCategoryBuilder
   public build(
     key: string,
     reRender: (newFilter: RangeFilterCategory) => void,
+    terms: (ast.Term & { simple: ast.Restriction })[] | undefined,
   ) {
     if (!this.isFilledIn()) {
       throw new Error(
@@ -248,6 +247,7 @@ export class RangeFilterCategoryBuilder
       this.min!,
       this.max!,
       reRender,
+      terms,
     );
   }
 }

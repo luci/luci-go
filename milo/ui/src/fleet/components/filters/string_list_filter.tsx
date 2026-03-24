@@ -38,35 +38,25 @@ export class StringListFilterCategory implements FilterCategory {
   public label: string;
   public key: string;
   private reRender: () => void;
+  private actualReRender: (newFilter: StringListFilterCategory) => void;
 
   constructor(
     label: string,
     key: string,
     options: { label: string; key: string }[],
     reRender: (newFilter: StringListFilterCategory) => void,
+    terms: (ast.Term & { simple: ast.Restriction })[] = [],
   ) {
     this.label = label;
     this.key = key;
     this.options = Object.fromEntries(
       options.map((o) => [o.key, { ...o, isSelected: false }]),
     );
+    this.actualReRender = reRender;
     this.reRender = () => {
       reRender(this);
     };
-  }
 
-  public clone() {
-    const newInst = new StringListFilterCategory(
-      this.label,
-      this.key,
-      [],
-      this.reRender,
-    );
-    newInst.options = this.options;
-    return newInst as FilterCategory;
-  }
-
-  public fromAIP160(terms: (ast.Term & { simple: ast.Restriction })[]) {
     for (const term of terms) {
       if (!term.simple.arg) {
         if (!term.negated) {
@@ -130,8 +120,17 @@ export class StringListFilterCategory implements FilterCategory {
           break;
       }
     }
+  }
 
-    this.reRender();
+  public clone() {
+    const newInst = new StringListFilterCategory(
+      this.label,
+      this.key,
+      [],
+      this.actualReRender,
+    );
+    newInst.options = this.options;
+    return newInst as FilterCategory;
   }
 
   public toAIP160(): string {
@@ -355,6 +354,7 @@ export class StringListFilterCategoryBuilder
   public build(
     key: string,
     reRender: (newFilter: StringListFilterCategory) => void,
+    terms: (ast.Term & { simple: ast.Restriction })[] | undefined,
   ) {
     if (!this.isFilledIn())
       throw new Error(
@@ -366,6 +366,7 @@ export class StringListFilterCategoryBuilder
       key!,
       this.options!,
       reRender,
+      terms,
     );
   }
 }

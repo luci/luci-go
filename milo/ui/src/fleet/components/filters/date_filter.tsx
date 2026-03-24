@@ -31,32 +31,22 @@ export class DateFilterCategoryData implements FilterCategory {
   public label: string;
   public key: string;
   private reRender: () => void;
+  private actualReRender: (newFilter: DateFilterCategoryData) => void;
 
   constructor(
     label: string,
     key: string,
     reRender: (newFilter: DateFilterCategoryData) => void,
+    terms: (ast.Term & { simple: ast.Restriction })[] = [],
   ) {
     this.label = label;
     this.key = key;
     this.value = {};
+    this.actualReRender = reRender;
     this.reRender = () => {
       reRender(this);
     };
-  }
 
-  public clone() {
-    const newInst = new DateFilterCategoryData(
-      this.label,
-      this.key,
-      this.reRender,
-    );
-    newInst.value = { ...this.value };
-    return newInst as FilterCategory;
-  }
-
-  public fromAIP160(terms: (ast.Term & { simple: ast.Restriction })[]) {
-    this.value = {};
     for (const term of terms) {
       if (term.negated) {
         continue;
@@ -83,8 +73,16 @@ export class DateFilterCategoryData implements FilterCategory {
         this.value.max = date;
       }
     }
+  }
 
-    this.reRender();
+  public clone() {
+    const newInst = new DateFilterCategoryData(
+      this.label,
+      this.key,
+      this.actualReRender,
+    );
+    newInst.value = { ...this.value };
+    return newInst as FilterCategory;
   }
 
   public toAIP160(): string {
@@ -204,11 +202,12 @@ export class DateFilterCategoryDataBuilder
   public build(
     key: string,
     reRender: (newFilter: DateFilterCategoryData) => void,
+    terms: (ast.Term & { simple: ast.Restriction })[] | undefined,
   ) {
     if (!this.isFilledIn()) {
       throw new Error('DateFilterCategoryDataBuilder is not filled in');
     }
 
-    return new DateFilterCategoryData(this.label!, key, reRender);
+    return new DateFilterCategoryData(this.label!, key, reRender, terms);
   }
 }
