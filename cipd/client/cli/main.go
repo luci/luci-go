@@ -875,12 +875,14 @@ func guessMetadataContentType(path string, val []byte) string {
 // uploadOptions defines command line options for commands that upload packages.
 type uploadOptions struct {
 	verificationTimeout time.Duration
+	attestation         string
 }
 
 func (opts *uploadOptions) registerFlags(f *flag.FlagSet) {
 	f.DurationVar(
 		&opts.verificationTimeout, "verification-timeout",
 		cipd.CASFinalizationTimeout, "Maximum time to wait for backend-side package hash verification.")
+	f.StringVar(&opts.attestation, "attestation", "", "Path to the attestation bundle file for the instance.")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3111,7 +3113,16 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 	}
 	defer client.Close(ctx)
 
-	err = client.RegisterInstance(ctx, pin, src, opts.uploadOptions.verificationTimeout)
+	var attestation string
+	if opts.uploadOptions.attestation != "" {
+		blob, err := os.ReadFile(opts.uploadOptions.attestation)
+		if err != nil {
+			return common.Pin{}, cipderr.IO.Apply(errors.Fmt("reading attestation file: %w", err))
+		}
+		attestation = string(blob)
+	}
+
+	err = client.RegisterInstance(ctx, pin, src, attestation, opts.uploadOptions.verificationTimeout)
 	if err != nil {
 		return common.Pin{}, err
 	}

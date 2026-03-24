@@ -134,7 +134,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.7.11"
+	UserAgent = "cipd 2.7.12"
 )
 
 func init() {
@@ -231,7 +231,7 @@ type Client interface {
 	// 'timeout' specifies for how long to wait until the instance hash is
 	// verified by the storage backend. If 0, default CASFinalizationTimeout will
 	// be used.
-	RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) error
+	RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, attestation string, timeout time.Duration) error
 
 	// DescribeInstance returns information about a package instance.
 	//
@@ -1407,7 +1407,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	return pin, nil
 }
 
-func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, timeout time.Duration) (err error) {
+func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src pkg.Source, attestation string, timeout time.Duration) (err error) {
 	if timeout == 0 {
 		timeout = CASFinalizationTimeout
 	}
@@ -1428,8 +1428,9 @@ func (c *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, src p
 	attemptToRegister := func() (*caspb.UploadOperation, error) {
 		logging.Infof(ctx, "Registering %s", pin)
 		resp, err := c.repo.RegisterInstance(ctx, &repopb.Instance{
-			Package:  pin.PackageName,
-			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+			Package:      pin.PackageName,
+			Instance:     common.InstanceIDToObjectRef(pin.InstanceID),
+			Attestations: attestation,
 		}, expectedCodes)
 		if err != nil {
 			return nil, c.rpcErr(err, nil)

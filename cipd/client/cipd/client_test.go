@@ -356,26 +356,26 @@ func TestRegisterInstance(t *testing.T) {
 			}))
 			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_REGISTERED, nil))
 
-			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.BeNil)
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), "", 0), should.BeNil)
 			assert.Loosely(c, storage.getStored(op.UploadUrl), should.NotEqual(""))
 		})
 
 		c.Run("Already registered", func(c *ftt.Test) {
 			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_ALREADY_REGISTERED, nil))
-			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.BeNil)
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), "", 0), should.BeNil)
 		})
 
 		c.Run("Registration error", func(c *ftt.Test) {
 			rpc := registerInstanceRPC(repopb.RegistrationStatus_ALREADY_REGISTERED, nil)
 			rpc.err = status.Errorf(codes.PermissionDenied, "denied blah")
 			repo.expect(rpc)
-			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("denied blah"))
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), "", 0), should.ErrLike("denied blah"))
 		})
 
 		c.Run("Upload error", func(c *ftt.Test) {
 			storage.returnErr(fmt.Errorf("upload err blah"))
 			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_NOT_UPLOADED, &op))
-			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("upload err blah"))
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), "", 0), should.ErrLike("upload err blah"))
 		})
 
 		c.Run("Verification error", func(c *ftt.Test) {
@@ -384,7 +384,7 @@ func TestRegisterInstance(t *testing.T) {
 				Status:       caspb.UploadStatus_ERRORED,
 				ErrorMessage: "baaaaad",
 			}))
-			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("baaaaad"))
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), "", 0), should.ErrLike("baaaaad"))
 		})
 
 		c.Run("Confused backend", func(c *ftt.Test) {
@@ -393,7 +393,7 @@ func TestRegisterInstance(t *testing.T) {
 				Status: caspb.UploadStatus_PUBLISHED,
 			}))
 			repo.expect(registerInstanceRPC(repopb.RegistrationStatus_NOT_UPLOADED, &op))
-			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("servers asks us to upload it again"))
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), "", 0), should.ErrLike("servers asks us to upload it again"))
 		})
 
 		c.Run("Verification timeout", func(c *ftt.Test) {
@@ -401,7 +401,7 @@ func TestRegisterInstance(t *testing.T) {
 			cas.expectMany(finishUploadRPC(op.OperationId, &caspb.UploadOperation{
 				Status: caspb.UploadStatus_VERIFYING,
 			}))
-			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), should.ErrLike("timeout while waiting"))
+			assert.Loosely(c, client.RegisterInstance(ctx, inst.Pin(), inst.Source(), "", 0), should.ErrLike("timeout while waiting"))
 		})
 	})
 }
