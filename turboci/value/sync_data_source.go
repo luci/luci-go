@@ -18,8 +18,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	"google.golang.org/protobuf/proto"
+
+	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
 // SyncDataSource implements [DataSource] using per-digest synchronization.

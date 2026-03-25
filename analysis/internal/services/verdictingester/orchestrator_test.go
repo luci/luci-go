@@ -58,10 +58,10 @@ func TestSchedule(t *testing.T) {
 		ctx, skdr := tq.TestingContext(ctx, nil)
 
 		task := &taskspb.IngestTestVerdicts{
-			IngestionId:          "ingestion-id",
-			Project:              "test-project",
-			Build:                &ctrlpb.BuildResult{},
-			PartitionTime:        timestamppb.New(time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC)),
+			IngestionId:   "ingestion-id",
+			Project:       "test-project",
+			Build:         &ctrlpb.BuildResult{},
+			PartitionTime: timestamppb.New(time.Date(2025, time.January, 1, 12, 0, 0, 0, time.UTC)),
 		}
 		expected := proto.Clone(task).(*taskspb.IngestTestVerdicts)
 
@@ -251,8 +251,8 @@ func TestIngestTestVerdicts(t *testing.T) {
 					Owner:        "automation",
 					CreationTime: timestamppb.New(time.Date(2021, time.April, 1, 2, 3, 4, 5, time.UTC)),
 				},
-				PageToken:            "expected_token",
-				TaskIndex:            1,
+				PageToken: "expected_token",
+				TaskIndex: 1,
 			}
 
 			sourcesByID := map[string]*pb.Sources{

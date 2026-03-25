@@ -20,17 +20,19 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
+
 	"go.chromium.org/luci/teams/internal/span"
 	pb "go.chromium.org/luci/teams/proto/v1"
 	"go.chromium.org/luci/teams/rpc"
+
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 func main() {

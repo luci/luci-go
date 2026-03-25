@@ -21,10 +21,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"google.golang.org/genproto/googleapis/bytestream"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"

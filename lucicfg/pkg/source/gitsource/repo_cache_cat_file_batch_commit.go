@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/exec"
+
 	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 

@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 

@@ -20,16 +20,18 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
-	"go.chromium.org/luci/server/span"
 )
 
 func TestTestIDColumn(t *testing.T) {
@@ -445,11 +447,11 @@ func TestTestIDFilterIntegration(t *testing.T) {
 		}
 
 		testID := pbutil.BaseTestIdentifier{
-				ModuleName:   "a",
-				ModuleScheme: "s",
-				CoarseName:   ":x",
-				FineName:     "!v",
-				CaseName:     `\:y\\:\:`,
+			ModuleName:   "a",
+			ModuleScheme: "s",
+			CoarseName:   ":x",
+			FineName:     "!v",
+			CaseName:     `\:y\\:\:`,
 		}
 		flatTestID := pbutil.EncodeTestID(testID)
 
@@ -479,7 +481,7 @@ func TestTestIDFilterIntegration(t *testing.T) {
 			).Filterable().Build(),
 		).Build()
 
-		test := func (substring string, expectMatch bool) {
+		test := func(substring string, expectMatch bool) {
 			filterStr := fmt.Sprintf("test_id:%q", substring)
 			filter, err := aip160.ParseFilter(filterStr)
 			assert.Loosely(t, err, should.BeNil, truth.Explain("substring %q", substring))
@@ -526,7 +528,7 @@ func TestTestIDFilterIntegration(t *testing.T) {
 
 				// "f" does not appear in the test ID, so extending the substring by this character
 				// should lead to a failure to match.
-				test(substring + "f", false)
+				test(substring+"f", false)
 			}
 		}
 	})

@@ -19,10 +19,11 @@ package experiments
 import (
 	sppb "cloud.google.com/go/spanner/apiv1/spannerpb"
 
+	"go.chromium.org/luci/server"
+
 	"go.chromium.org/luci/resultdb/internal"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server"
 )
 
 // experimentsServer implements pb.ExperimentsServer.

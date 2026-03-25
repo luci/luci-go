@@ -219,7 +219,6 @@ func TestChangePointPositionConfidenceInterval(t *testing.T) {
 				assert.Loosely(t, d, should.Match(expectedDistribution))
 			})
 		})
-
 	})
 }
 

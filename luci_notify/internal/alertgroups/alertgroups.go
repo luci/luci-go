@@ -29,8 +29,9 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/luci_notify/internal/alerts"
 	"go.chromium.org/luci/server/span"
+
+	"go.chromium.org/luci/luci_notify/internal/alerts"
 )
 
 const (

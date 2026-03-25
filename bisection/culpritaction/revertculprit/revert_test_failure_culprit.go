@@ -17,7 +17,6 @@ package revertculprit
 
 import (
 	"context"
-
 	"fmt"
 
 	"go.chromium.org/luci/common/errors"

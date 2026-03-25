@@ -51,7 +51,6 @@ func TestPopPendingBuildTask(t *testing.T) {
 					Builder: "builder",
 				})
 				assert.NoErr(t, err)
-
 			})
 
 			t.Run("BuilderQueue is removed", func(t *ftt.Test) {

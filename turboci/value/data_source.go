@@ -15,8 +15,9 @@
 package value
 
 import (
-	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 	"google.golang.org/protobuf/proto"
+
+	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
 // DataSource is an abstraction over a map which retains digest->ValueData.

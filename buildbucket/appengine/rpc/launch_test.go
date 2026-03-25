@@ -22,12 +22,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )

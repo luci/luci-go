@@ -313,11 +313,11 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 		return
 	}
 
-        // Don't fetch the stream for logcat mode (going to do a redirect).
-        if data.options.format == formatLogcat {
-                param.storage.Close()
-                return
-        }
+	// Don't fetch the stream for logcat mode (going to do a redirect).
+	if data.options.format == formatLogcat {
+		param.storage.Close()
+		return
+	}
 
 	// Create a channel to transfer log data.  This channel will be closed by
 	// fetch() to signal that all logs have been returned (or an error was encountered).
@@ -784,7 +784,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 func GetHandler(ctx *router.Context) {
 	start := clock.Now(ctx.Request.Context())
 	// Start the fetcher and wait for fetched logs to arrive into ch.
-	path :=  ctx.Params.ByName("path")
+	path := ctx.Params.ByName("path")
 	data, err := startFetch(ctx.Request.Context(), ctx.Request, path)
 	if err != nil {
 		err = errors.Fmt("start fetch: %w", err)

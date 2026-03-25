@@ -33,12 +33,12 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/accesslog"
 	"go.chromium.org/luci/cipd/appengine/ui"
 
+	// Initialize descriptors for the RPC Explorer.
+	_ "go.chromium.org/luci/cipd/api/cipd/v1/discovery"
 	// Using datastore for user sessions.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	// Using transactional datastore TQ tasks.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
-	// Initialize descriptors for the RPC Explorer.
-	_ "go.chromium.org/luci/cipd/api/cipd/v1/discovery"
 )
 
 func main() {

@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/tq"
 
@@ -30,10 +31,9 @@ import (
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/internal/resultdb"
 	"go.chromium.org/luci/bisection/llm"
-	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
-	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/chromium"

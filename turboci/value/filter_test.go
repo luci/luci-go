@@ -73,7 +73,6 @@ func TestFilterRef(t *testing.T) {
 		assert.NoErr(t, err)
 		assert.That(t, ref.GetDigest(), should.Match(dgst))
 		assert.That(t, wantJSON, should.BeFalse)
-
 	})
 
 	t.Run(`want_json_inline`, func(t *testing.T) {

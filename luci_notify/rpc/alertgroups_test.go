@@ -138,7 +138,6 @@ func TestAlertGroups(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, fetched.DisplayName, should.Equal("my-group"))
 				assert.Loosely(t, fetched.UpdatedBy, should.Equal("someone@example.com"))
-
 			})
 
 			t.Run("Already exists", func(t *ftt.Test) {
@@ -189,7 +188,6 @@ func TestAlertGroups(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("etag"))
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
-
 		})
 
 		t.Run("DeleteAlertGroup", func(t *ftt.Test) {
@@ -216,7 +214,6 @@ func TestAlertGroups(t *testing.T) {
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 		})
-
 	})
 }
 

@@ -24,6 +24,7 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 

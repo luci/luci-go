@@ -401,7 +401,7 @@ type Options struct {
 	EnableExperiments []string // names of go.chromium.org/luci/server/experiments to enable
 
 	CloudErrorReporting bool // set to true to enable Cloud Error Reporting
-	FatalErrorReporter func(srv *Server, err error)
+	FatalErrorReporter  func(srv *Server, err error)
 
 	startTime time.Time // when the server (including options) started initialization
 

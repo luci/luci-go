@@ -17,12 +17,13 @@ package resultdb
 import (
 	"context"
 
+	"google.golang.org/genproto/protobuf/field_mask"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
-	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"

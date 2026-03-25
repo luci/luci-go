@@ -17,10 +17,11 @@ package exporter
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/errors"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/analysis/internal/ants/utils"
 	bqpb "go.chromium.org/luci/analysis/proto/bq/legacy"
@@ -85,7 +86,6 @@ func prepareExportRow(artifacts []*rdbpb.Artifact, opts ExportOptions) ([]*bqpb.
 
 	results := make([]*bqpb.AntsArtifactRow, 0, len(artifacts))
 	for _, artifact := range artifacts {
-
 		artifactRow := &bqpb.AntsArtifactRow{
 			InvocationId:   invocationIDInDestTable,
 			TestResultId:   artifact.ResultId,

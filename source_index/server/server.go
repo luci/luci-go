@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 	spanmodule "go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/source_index/internal/commitingester"
 	"go.chromium.org/luci/source_index/internal/config"
 	sourceindexpb "go.chromium.org/luci/source_index/proto/v1"

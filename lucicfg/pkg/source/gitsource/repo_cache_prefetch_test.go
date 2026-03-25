@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
+
 	"go.chromium.org/luci/lucicfg/pkg/source"
 )
 

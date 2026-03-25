@@ -170,5 +170,4 @@ func TestFind(t *testing.T) {
 
 	emptyGot := Find(options, URL[*emptypb.Empty]())
 	assert.That(t, emptyGot, should.Match(MustInline(&emptypb.Empty{}, "proj:other_realm")))
-
 }

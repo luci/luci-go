@@ -23,10 +23,10 @@ import (
 	"regexp"
 	"unicode/utf8"
 
+	farm "github.com/leemcloughlin/gofarmhash"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 
-	farm "github.com/leemcloughlin/gofarmhash"
 	"go.chromium.org/luci/grpc/appstatus"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
