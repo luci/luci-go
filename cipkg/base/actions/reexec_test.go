@@ -40,20 +40,20 @@ func TestSetExecutor(t *testing.T) {
 		reg := NewReexecRegistry()
 
 		t.Run("ok", func(t *ftt.Test) {
-			err := SetExecutor[*anypb.Any](reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
+			err := SetExecutor(reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
 			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run("duplicated", func(t *ftt.Test) {
-			err := SetExecutor[*anypb.Any](reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
+			err := SetExecutor(reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
 			assert.Loosely(t, err, should.BeNil)
-			err = SetExecutor[*anypb.Any](reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
+			err = SetExecutor(reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
 			assert.Loosely(t, errors.Is(err, ErrExecutorExisted), should.BeTrue)
 		})
 
 		t.Run("sealed", func(t *ftt.Test) {
 			reg.interceptWithArgs(context.Background(), environ.New(nil), []string{}, func(i int) {})
-			err := SetExecutor[*anypb.Any](reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
+			err := SetExecutor(reg, func(ctx context.Context, msg *anypb.Any, out string) error { return nil })
 			assert.Loosely(t, errors.Is(err, ErrReexecRegistrySealed), should.BeTrue)
 		})
 	})

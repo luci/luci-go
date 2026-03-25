@@ -47,6 +47,7 @@ const envCipkgExec = "_CIPKG_EXEC_CMD"
 //
 // By default, NewReexecRegistry registers the following Reexec Executors:
 //   - core.ActionURLFetch
+//   - core.ActionGitFetch
 //   - core.ActionFilesCopy
 //   - core.ActionCIPDExport
 //
@@ -68,9 +69,10 @@ func NewReexecRegistry() *ReexecRegistry {
 	m := &ReexecRegistry{
 		execs: make(map[protoreflect.FullName]Executor[proto.Message]),
 	}
-	MustSetExecutor[*core.ActionURLFetch](m, ActionURLFetchExecutor)
-	MustSetExecutor[*core.ActionFilesCopy](m, defaultFilesCopyExecutor.Execute)
-	MustSetExecutor[*core.ActionCIPDExport](m, ActionCIPDExportExecutor)
+	MustSetExecutor(m, ActionURLFetchExecutor)
+	MustSetExecutor(m, ActionGitFetchExecutor)
+	MustSetExecutor(m, defaultFilesCopyExecutor.Execute)
+	MustSetExecutor(m, ActionCIPDExportExecutor)
 	return m
 }
 
@@ -103,7 +105,7 @@ func SetExecutor[M proto.Message](r *ReexecRegistry, execFunc Executor[M]) error
 // MustSetExecutor set the executor for the action specification M similar to
 // SetExecutor, but will panic if any error happened.
 func MustSetExecutor[M proto.Message](r *ReexecRegistry, execFunc Executor[M]) {
-	if err := SetExecutor[M](r, execFunc); err != nil {
+	if err := SetExecutor(r, execFunc); err != nil {
 		panic(err)
 	}
 }

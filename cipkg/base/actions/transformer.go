@@ -68,10 +68,11 @@ func NewActionProcessor() *ActionProcessor {
 	ap := &ActionProcessor{
 		transformers: make(map[protoreflect.FullName]Transformer[proto.Message]),
 	}
-	MustSetTransformer[*core.ActionCommand](ap, ActionCommandTransformer)
-	MustSetTransformer[*core.ActionURLFetch](ap, ActionURLFetchTransformer)
-	MustSetTransformer[*core.ActionFilesCopy](ap, ActionFilesCopyTransformer)
-	MustSetTransformer[*core.ActionCIPDExport](ap, ActionCIPDExportTransformer)
+	MustSetTransformer(ap, ActionCommandTransformer)
+	MustSetTransformer(ap, ActionURLFetchTransformer)
+	MustSetTransformer(ap, ActionGitFetchTransformer)
+	MustSetTransformer(ap, ActionFilesCopyTransformer)
+	MustSetTransformer(ap, ActionCIPDExportTransformer)
 	return ap
 }
 
@@ -104,7 +105,7 @@ func SetTransformer[M proto.Message](ap *ActionProcessor, tf Transformer[M]) err
 // MustSetTransformer set the transformer for the action specification M and
 // panic if any error happened.
 func MustSetTransformer[M proto.Message](ap *ActionProcessor, tf Transformer[M]) {
-	if err := SetTransformer[M](ap, tf); err != nil {
+	if err := SetTransformer(ap, tf); err != nil {
 		panic(err)
 	}
 }

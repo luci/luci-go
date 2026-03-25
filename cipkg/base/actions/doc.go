@@ -15,9 +15,10 @@
 // Package actions includes:
 // 1. a set of transformers for default cipkg actions
 //   - core.ActionCommand
+//   - core.ActionURLFetch
+//   - core.ActionGitFetch
 //   - core.ActionFilesCopy
 //   - core.ActionCIPDExport
-//   - core.ActionURLFetch
 //
 // 2. ActionProcessor and Transformer for converting Action to Derivation and
 // registering user defined action.

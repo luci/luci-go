@@ -111,6 +111,7 @@ message Action {
   oneof spec {
     ActionCommand command = 4;
     ActionURLFetch url = 5;
+    ActionGitFetch git = 8;
     ActionFilesCopy copy = 6;
 
     ActionCIPDExport cipd = 7;

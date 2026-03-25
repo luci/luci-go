@@ -52,6 +52,14 @@ message ActionURLFetch {
   uint32 mode = 5;
 }
 
+// ActionGitFetch fetches git repo into output directory.
+message ActionGitFetch {
+  // Git repository URL.
+  string url = 1;
+  // Commit hash for the repository.
+  string commit = 2;
+}
+
 // ActionFilesCopy copies listed files into the output directory.
 // TODO(fancl): Local, Embed, Output can be separated into different specs?
 message ActionFilesCopy {
