@@ -367,7 +367,7 @@ func (h *Handler) ExecDeferred(ctx context.Context, s *State) (_ *State, __ Side
 		if err := s.loadActiveIntoPCLs(ctx, cat); err != nil {
 			return nil, nil, err
 		}
-		s.repartition(cat)
+		s.repartition(ctx, cat)
 	}
 
 	var sideEffect SideEffect

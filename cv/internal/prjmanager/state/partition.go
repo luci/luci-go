@@ -15,9 +15,11 @@
 package state
 
 import (
+	"context"
 	"fmt"
 
 	"go.chromium.org/luci/common/data/disjointset"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
@@ -32,10 +34,10 @@ import (
 //   - .CreatedRuns is nil,
 //   - .RepartitionRequired is false.
 //   - pclIndex is up-to-date.
-func (s *State) repartition(cat *categorizedCLs) {
+func (s *State) repartition(ctx context.Context, cat *categorizedCLs) {
 	s.ensurePCLIndex()
 	plan := s.planPartition(cat)
-	s.PB.Components = s.execPartition(cat, plan)
+	s.PB.Components = s.execPartition(ctx, cat, plan)
 
 	// Remove unused PCLs while updating pclIndex. This can be done only after
 	// components are updated to ensure components don't reference any unused CLs.
@@ -85,7 +87,7 @@ func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
 // execPartition returns components according to partition plan.
 //
 // Expects pclIndex to be same used by planPartition.
-func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []*prjpb.Component {
+func (s *State) execPartition(ctx context.Context, cat *categorizedCLs, d disjointset.DisjointSet) []*prjpb.Component {
 	rootsWithNewRuns := make(map[int]struct{})
 	for _, r := range s.PB.GetCreatedPruns() {
 		rootsWithNewRuns[d.RootOf(s.pclIndex[common.CLID(r.GetClids()[0])])] = struct{}{}
@@ -178,7 +180,11 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 	addPRuns := func(pruns []*prjpb.PRun) {
 		for _, r := range pruns {
 			index := s.pclIndex[common.CLID(r.GetClids()[0])]
-			c := created[d.RootOf(index)]
+			c, ok := created[d.RootOf(index)]
+			if !ok {
+				logging.Errorf(ctx, "can not find a component for run %s that contains cls: %v", r.GetId(), r.GetClids())
+				continue
+			}
 			c.Pruns = append(c.GetPruns(), r) // not yet sorted order.
 		}
 	}

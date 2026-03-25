@@ -66,7 +66,7 @@ func TestRepartition(t *testing.T) {
 
 		t.Run("nothing to do, except resetting RepartitionRequired", func(t *ftt.Test) {
 			t.Run("totally empty", func(t *ftt.Test) {
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{}))
 				check(t)
 			})
@@ -76,7 +76,7 @@ func TestRepartition(t *testing.T) {
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 				pb := backupPB(state)
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				pb.RepartitionRequired = false
 				assert.That(t, state.PB, should.Match(pb))
 				check(t)
@@ -91,7 +91,7 @@ func TestRepartition(t *testing.T) {
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 				pb := backupPB(state)
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				pb.RepartitionRequired = false
 				assert.That(t, state.PB, should.Match(pb))
 				check(t)
@@ -108,7 +108,7 @@ func TestRepartition(t *testing.T) {
 					{Clid: 3, Deps: []*changelist.Dep{{Clid: 1}}},
 				}
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: []*prjpb.PCL{
 						{Clid: 1},
@@ -132,7 +132,7 @@ func TestRepartition(t *testing.T) {
 					{Clids: []int64{1}},
 					{Clids: []int64{2, 3}},
 				}
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					Pcls:       nil,
 					Components: nil,
@@ -149,7 +149,7 @@ func TestRepartition(t *testing.T) {
 				state.PB.Components = []*prjpb.Component{{
 					Clids: []int64{1, 2},
 				}}
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: []*prjpb.PCL{
 						{Clid: 1},
@@ -168,7 +168,7 @@ func TestRepartition(t *testing.T) {
 				cat.active.ResetI64(1)
 				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: []*prjpb.PCL{{Clid: 1}},
 					Components: []*prjpb.Component{{
@@ -187,7 +187,7 @@ func TestRepartition(t *testing.T) {
 				}
 				orig := backupPB(state)
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				sortByFirstCL(state.PB.Components)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: orig.Pcls,
@@ -221,7 +221,7 @@ func TestRepartition(t *testing.T) {
 				}
 				orig := backupPB(state)
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				sortByFirstCL(state.PB.Components)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: orig.Pcls,
@@ -244,7 +244,7 @@ func TestRepartition(t *testing.T) {
 				}
 				orig := backupPB(state)
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				sortByFirstCL(state.PB.Components)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					Pcls: orig.Pcls,
@@ -267,7 +267,7 @@ func TestRepartition(t *testing.T) {
 				state.PB.CreatedPruns = []*prjpb.PRun{{Clids: []int64{1, 2}, Id: "id"}}
 				orig := backupPB(state)
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					CreatedPruns: nil,
 					Pcls:         orig.Pcls,
@@ -288,7 +288,7 @@ func TestRepartition(t *testing.T) {
 				state.PB.CreatedPruns = []*prjpb.PRun{{Clids: []int64{1}, Id: "new"}}
 				orig := backupPB(state)
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					CreatedPruns: nil,
 					Pcls:         orig.Pcls,
@@ -315,7 +315,7 @@ func TestRepartition(t *testing.T) {
 				state.PB.CreatedPruns = []*prjpb.PRun{{Clids: []int64{1, 2}, Id: "12"}}
 				orig := backupPB(state)
 
-				state.repartition(cat)
+				state.repartition(t.Context(), cat)
 				sortByFirstCL(state.PB.Components)
 				assert.That(t, state.PB, should.Match(&prjpb.PState{
 					CreatedPruns: nil,
@@ -362,7 +362,7 @@ func TestRepartition(t *testing.T) {
 				{Clids: []int64{6}, Id: "6"},
 			}
 
-			state.repartition(cat)
+			state.repartition(t.Context(), cat)
 			sortByFirstCL(state.PB.Components)
 			assert.That(t, state.PB, should.Match(&prjpb.PState{
 				Pcls: []*prjpb.PCL{
@@ -455,7 +455,7 @@ func TestPartitionSpecialCases(t *testing.T) {
 			assert.Loosely(t, cat.unloaded, should.BeEmpty)
 
 			s1 := s0.cloneShallow()
-			s1.repartition(cat)
+			s1.repartition(t.Context(), cat)
 
 			// All PCLs are still used.
 			assert.That(t, s1.PB.GetPcls(), should.Match(s0.PB.GetPcls()))
