@@ -279,7 +279,7 @@ func generateTestFailuresQuery(task *tpb.TestFailureDetectionTask, dimensionExcl
 	switch task.Project {
 	case "chromium":
 		swarmingProject = "chromium-swarm"
-	case "chrome":
+	case "chrome", "turquoise":
 		swarmingProject = "chrome-swarming"
 	default:
 		return "", errors.Fmt("couldn't get swarming project for project %s", task.Project)

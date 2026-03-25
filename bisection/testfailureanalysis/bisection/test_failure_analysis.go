@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/genai"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/nthsection"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/fuchsia"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 
@@ -143,14 +144,16 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 		return nil
 	}
 
-	if tfa.Project != "chromium" {
-		// We don't support other projects for now, so mark the analysis as unsupported.
-		logging.Infof(ctx, "Unsupported project: %s", tfa.Project)
+	// Get project bisector - this validates project support.
+	projectBisector, err := GetProjectBisector(ctx, tfa)
+	if err != nil {
+		// Project not supported - mark as unsupported instead of error.
+		logging.Infof(ctx, "No bisector for project %s: %v", tfa.Project, err)
 		err = testfailureanalysis.UpdateAnalysisStatus(ctx, tfa, pb.AnalysisStatus_UNSUPPORTED, pb.AnalysisRunStatus_ENDED)
 		if err != nil {
 			return errors.Fmt("update status unsupported: %w", err)
 		}
-		return
+		return nil
 	}
 
 	// Update the analysis status.
@@ -161,10 +164,6 @@ func Run(ctx context.Context, analysisID int64, luciAnalysis analysis.AnalysisCl
 
 	// Prepare data for bisection (populates test names and suite names).
 	// This must be done before any analysis that may trigger verification reruns.
-	projectBisector, err := GetProjectBisector(ctx, tfa)
-	if err != nil {
-		return errors.Fmt("get project bisector: %w", err)
-	}
 	err = projectBisector.Prepare(ctx, tfa, luciAnalysis)
 	if err != nil {
 		return errors.Fmt("prepare bisection: %w", err)
@@ -206,6 +205,8 @@ func GetProjectBisector(ctx context.Context, tfa *model.TestFailureAnalysis) (pr
 	switch tfa.Project {
 	case "chromium":
 		return &chromium.Bisector{}, nil
+	case "turquoise":
+		return &fuchsia.Bisector{}, nil
 	default:
 		return nil, errors.Fmt("no bisector for project %s", tfa.Project)
 	}

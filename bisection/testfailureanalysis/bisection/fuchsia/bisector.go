@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package chromium performs bisection for test failures for Chromium project.
-package chromium
+// Package fuchsia performs bisection for test failures for Fuchsia project.
+package fuchsia
 
 import (
 	"context"
@@ -38,16 +38,15 @@ import (
 type Bisector struct{}
 
 func (b *Bisector) Prepare(ctx context.Context, tfa *model.TestFailureAnalysis, luciAnalysis analysis.AnalysisClient) error {
-	logging.Infof(ctx, "Run chromium bisection")
+	logging.Infof(ctx, "Run fuchsia bisection preparation")
 	bundle, err := datastoreutil.GetTestFailureBundle(ctx, tfa)
 	if err != nil {
 		return errors.Fmt("get test failures: %w", err)
 	}
 
-	err = b.populateTestSuiteName(ctx, bundle)
-	if err != nil {
-		return errors.Fmt("populate test suite name: %w", err)
-	}
+	// Fuchsia doesn't have a test_suite variant key like Chromium.
+	// The test_id itself is the unique identifier (fuchsia-pkg URL).
+	// Skip populateTestSuiteName for fuchsia.
 
 	err = b.populateTestNames(ctx, bundle, luciAnalysis)
 	if err != nil {
@@ -87,14 +86,13 @@ func (b *Bisector) TriggerRerun(ctx context.Context, tfa *model.TestFailureAnaly
 }
 
 func getExtraProperties(ctx context.Context, tfa *model.TestFailureAnalysis, tfs []*model.TestFailure, option projectbisector.RerunOption) (map[string]any, error) {
-	// This may change depending on what the recipe needs.
+	// Properties for fuchsia test rerun recipe.
 	var testsToRun []map[string]string
 	for _, tf := range tfs {
 		testsToRun = append(testsToRun, map[string]string{
-			"test_suite_name": tf.TestSuiteName,
-			"test_name":       tf.TestName,
-			"test_id":         tf.TestID,
-			"variant_hash":    tf.VariantHash,
+			"test_id":      tf.TestID,
+			"variant_hash": tf.VariantHash,
+			"test_name":    tf.TestName,
 		})
 	}
 	host, err := hosts.APIHost(ctx)
@@ -122,33 +120,8 @@ func getExtraDimensions(option projectbisector.RerunOption) map[string]string {
 	return dims
 }
 
-// populateTestSuiteName set the correct TestSuiteName for TestFailures.
-// For chromium, it gets test suite name from test variant.
-func (b *Bisector) populateTestSuiteName(ctx context.Context, bundle *model.TestFailureBundle) error {
-	tfs := bundle.All()
-	for _, tf := range tfs {
-		testSuite, ok := tf.Variant.Def["test_suite"]
-		if !ok {
-			return fmt.Errorf("no test suite found for test failure %d", tf.ID)
-		}
-		tf.TestSuiteName = testSuite
-	}
-	// Store in datastore.
-	return datastore.RunInTransaction(ctx, func(c context.Context) error {
-		for _, tf := range tfs {
-			err := datastore.Put(c, tf)
-			if err != nil {
-				return errors.Fmt("save test failure %d: %w", tf.ID, err)
-			}
-		}
-		return nil
-	}, nil)
-}
-
-// populateTestNames queries the test_verdicts table in LUCI Analysis and populate
+// populateTestNames queries the test_verdicts table in LUCI Analysis and populates
 // the TestName for all TestFailure models in bundle.
-// This only triggered whenever we run a bisection (~20 times a day), so the
-// cost is manageable.
 func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFailureBundle, luciAnalysis analysis.AnalysisClient) error {
 	tfs := bundle.All()
 	keys := make([]lucianalysis.TestVerdictKey, len(tfs))
@@ -174,12 +147,15 @@ func (b *Bisector) populateTestNames(ctx context.Context, bundle *model.TestFail
 			}
 			verdictResult, ok := keyMap[key]
 			if !ok {
-				return fmt.Errorf("couldn't find verdict result for test (%s, %s, %s)", tf.TestID, tf.VariantHash, tf.RefHash)
+				// For fuchsia, it's less critical if we can't find the test name.
+				// Log a warning and continue.
+				logging.Warningf(ctx, "couldn't find verdict result for test (%s, %s, %s)", tf.TestID, tf.VariantHash, tf.RefHash)
+				continue
 			}
 			tf.TestName = verdictResult.TestName
 			err := datastore.Put(c, tf)
 			if err != nil {
-				return errors.Fmt("save test failure %d: %w", tf.ID, err)
+				return fmt.Errorf("save test failure %d: %w", tf.ID, err)
 			}
 		}
 		return nil
