@@ -281,6 +281,27 @@ func TestRepartition(t *testing.T) {
 				}))
 				check(t)
 			})
+			t.Run("New run in a reused component", func(t *ftt.Test) {
+				cat.active.ResetI64(1)
+				state.PB.Pcls = []*prjpb.PCL{{Clid: 1}}
+				state.PB.Components = []*prjpb.Component{{Clids: []int64{1}}}
+				state.PB.CreatedPruns = []*prjpb.PRun{{Clids: []int64{1}, Id: "new"}}
+				orig := backupPB(state)
+
+				state.repartition(cat)
+				assert.That(t, state.PB, should.Match(&prjpb.PState{
+					CreatedPruns: nil,
+					Pcls:         orig.Pcls,
+					Components: []*prjpb.Component{
+						{
+							Clids:          []int64{1},
+							Pruns:          []*prjpb.PRun{{Clids: []int64{1}, Id: "new"}},
+							TriageRequired: true,
+						},
+					},
+				}))
+				check(t)
+			})
 			t.Run("Force-merge 2 existing components", func(t *ftt.Test) {
 				cat.active.ResetI64(1, 2)
 				state.PB.Pcls = []*prjpb.PCL{

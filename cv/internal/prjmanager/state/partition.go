@@ -86,11 +86,16 @@ func (s *State) planPartition(cat *categorizedCLs) disjointset.DisjointSet {
 //
 // Expects pclIndex to be same used by planPartition.
 func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []*prjpb.Component {
+	rootsWithNewRuns := make(map[int]struct{})
+	for _, r := range s.PB.GetCreatedPruns() {
+		rootsWithNewRuns[d.RootOf(s.pclIndex[common.CLID(r.GetClids()[0])])] = struct{}{}
+	}
 	canReuse := func(c *prjpb.Component) (root int, can bool) {
 		// Old component can be re-used iff all of:
 		//  (1) it has exactly the same set in the new partition.
-		//  (2) it does not contain unused CLs.
-		//  (3) it contains at least 1 active CL.
+		//  (2) it doesn't have any new Runs to be added.
+		//  (3) it does not contain unused CLs.
+		//  (4) it contains at least 1 active CL.
 		clids := c.GetClids()
 
 		// Check (1).
@@ -104,7 +109,12 @@ func (s *State) execPartition(cat *categorizedCLs, d disjointset.DisjointSet) []
 			}
 		}
 
-		// Check (2) and (3).
+		// Check (2).
+		if _, has := rootsWithNewRuns[root]; has {
+			return -1, false
+		}
+
+		// Check (3) and (4).
 		hasActive := false
 		for _, clid := range clids {
 			if cat.unused.HasI64(clid) {
