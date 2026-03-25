@@ -76,7 +76,7 @@ func ensureJSONImpl(source DataSource, digest Digest, mopt protojson.MarshalOpti
 		return
 	}
 
-	source.Intern(digest, convertToJson(apb, mopt))
+	source.Intern(digest, ConvertToJSON(apb, mopt))
 }
 
 // EnsureJSON ensures that the data in `source` for `digest` is encoded as
@@ -103,8 +103,12 @@ func EnsureJSONForced(source DataSource, digest Digest, mopt protojson.MarshalOp
 	ensureJSONImpl(source, digest, mopt, true)
 }
 
-// convertToJson returns a JsonAny given an Any.
-func convertToJson(apb *anypb.Any, mopt protojson.MarshalOptions) *orchestratorpb.ValueData {
+// ConvertToJSON returns a ValueData given an Any.
+//
+// If marshaling is possible, the ValueData will contain a JsonAny. If there is
+// an error, the ValueData will contain `apb` as Binary plus a
+// conversion_failure.
+func ConvertToJSON(apb *anypb.Any, mopt protojson.MarshalOptions) *orchestratorpb.ValueData {
 	resolver := mopt.Resolver
 	if resolver == nil {
 		resolver = protoregistry.GlobalTypes
