@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !aix || !ppc64
+//go:build aix && ppc64
+
+// Disable git on unsupported platforms:
+// - github.com/go-git/go-billy/v5/osfs doesn't support aix-ppc64.
 
 package actions
 
@@ -20,41 +23,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-
 	"go.chromium.org/luci/cipkg/core"
 )
 
-// ActionGitFetchTransformer is the default transformer for
-// core.ActionGitFetch.
+// ActionGitFetchTransformer is the stub for core.ActionGitFetch on unsupported platforms.
 func ActionGitFetchTransformer(a *core.ActionGitFetch, deps []Package) (*core.Derivation, error) {
-	return ReexecDerivation(a, false)
+	return nil, fmt.Errorf("ActionGitFetch is not supported on the platform")
 }
 
-// ActionGitFetchExecutor is the default executor for core.ActionGitFetch.
+// ActionGitFetchExecutor is the stub for core.ActionGitFetch on unsupported platforms.
 func ActionGitFetchExecutor(ctx context.Context, a *core.ActionGitFetch, out string) error {
-	commit := plumbing.NewHash(a.Commit)
-	if commit.IsZero() {
-		return fmt.Errorf("invalid git commit: %s", a.Commit)
-	}
-
-	repo, err := git.PlainCloneContext(ctx, out, false, &git.CloneOptions{
-		URL:        a.Url,
-		NoCheckout: true,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to clone git repo: %w", err)
-	}
-
-	wt, err := repo.Worktree()
-	if err != nil {
-		return fmt.Errorf("failed to get worktree: %w", err)
-	}
-
-	if err = wt.Checkout(&git.CheckoutOptions{Hash: commit}); err != nil {
-		return fmt.Errorf("failed to checkout commit: %w", err)
-	}
-
-	return nil
+	return fmt.Errorf("ActionGitFetch is not supported on the platform")
 }
