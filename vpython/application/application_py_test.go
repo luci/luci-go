@@ -148,14 +148,7 @@ func TestPythonBasic(t *testing.T) {
 				env = getPythonEnvironment(ver)
 
 				t.Run("test bad cwd", func(t *ftt.Test) {
-					cwd, err := os.Getwd()
-					assert.Loosely(t, err, should.BeNil)
-					defer func() {
-						err := os.Chdir(cwd)
-						assert.Loosely(t, err, should.BeNil)
-					}()
-					err = os.Chdir(testData("test_bad_cwd"))
-					assert.Loosely(t, err, should.BeNil)
+					t.Chdir(testData("test_bad_cwd"))
 
 					c := cmd(t, &Application{
 						Arguments: []string{
@@ -241,7 +234,7 @@ func TestPythonFromPath(t *testing.T) {
 }
 
 func BenchmarkStartup(b *testing.B) {
-	os.Setenv("VPYTHON_INTEGRATION_TESTS", "1")
+	b.Setenv("VPYTHON_INTEGRATION_TESTS", "1")
 	c := func() *exec.Cmd {
 		return cmd(b, &Application{
 			Arguments: []string{
@@ -253,8 +246,8 @@ func BenchmarkStartup(b *testing.B) {
 		}, nil)
 	}
 	assert.Loosely(b, output(c()), should.Equal("1"))
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+
+	for b.Loop() {
 		_ = c()
 	}
 }
