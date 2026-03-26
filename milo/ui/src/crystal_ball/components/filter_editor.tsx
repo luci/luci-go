@@ -39,6 +39,7 @@ import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
 import {
+  ATP_TEST_NAME_COLUMN,
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   MAX_SUGGEST_RESULTS,
 } from '@/crystal_ball/constants/api';
@@ -47,6 +48,7 @@ import {
   TYPE_TO_OPERATORS,
 } from '@/crystal_ball/constants/operators';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
+import { buildFilterString } from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
   MeasurementFilterColumn_ColumnDataType,
@@ -60,6 +62,7 @@ import {
 interface FilterEditorProps {
   title?: string;
   filters: PerfFilter[];
+  globalFilters?: readonly PerfFilter[];
   onUpdateFilters: (updatedFilters: PerfFilter[]) => void;
   dataSpecId: string;
   availableColumns: readonly MeasurementFilterColumn[];
@@ -76,6 +79,8 @@ function FilterEditorRow({
   onUpdateOperator,
   onUpdateValue,
   onRemove,
+  globalFilters,
+  widgetFilters,
 }: {
   filter: PerfFilter;
   dataSpecId: string;
@@ -86,6 +91,8 @@ function FilterEditorRow({
   onUpdateOperator: (operator: PerfFilterDefault_FilterOperator) => void;
   onUpdateValue: (value: string) => void;
   onRemove: () => void;
+  globalFilters?: readonly PerfFilter[];
+  widgetFilters?: readonly PerfFilter[];
 }) {
   const activeInput = filter.numberInput ?? filter.textInput;
   const initialValue = activeInput?.defaultValue?.values?.[0] ?? '';
@@ -106,17 +113,36 @@ function FilterEditorRow({
     ? `dashboardStates/${dashboardId}/dataSpecs/${dataSpecId}`
     : '';
 
+  const filterString = useMemo(() => {
+    return buildFilterString(
+      [ATP_TEST_NAME_COLUMN],
+      globalFilters,
+      widgetFilters,
+      filter.id,
+    );
+  }, [globalFilters, widgetFilters, filter.id]);
+
+  const isAtpTestCol = filter.column === ATP_TEST_NAME_COLUMN;
+  const hasAtpTestFilter = useMemo(() => {
+    return new RegExp(`\\b${ATP_TEST_NAME_COLUMN}\\b`).test(filterString);
+  }, [filterString]);
+  const isEnabled = isAtpTestCol || hasAtpTestFilter;
+
   const { data: suggestionData, isLoading } = useSuggestMeasurementFilterValues(
     {
       parent,
       column: filter.column,
       query: debouncedQuery,
       maxResultCount: MAX_SUGGEST_RESULTS,
-      filter: '',
+      filter: filterString,
     },
     {
       enabled:
-        !!parent && !!filter.column && debouncedQuery.length > 0 && isFocused,
+        !!parent &&
+        !!filter.column &&
+        debouncedQuery.length > 0 &&
+        isFocused &&
+        isEnabled,
       retry: false,
     },
   );
@@ -251,6 +277,7 @@ function FilterEditorRow({
 export function FilterEditor({
   title,
   filters,
+  globalFilters,
   onUpdateFilters,
   dataSpecId,
   availableColumns,
@@ -458,6 +485,8 @@ export function FilterEditor({
                       handleDefaultValueChange(index, 'values', [value])
                     }
                     onRemove={() => handleRemoveFilter(index)}
+                    globalFilters={globalFilters}
+                    widgetFilters={filters}
                   />
                 );
               })}

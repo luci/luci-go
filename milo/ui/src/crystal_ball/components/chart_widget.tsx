@@ -21,6 +21,7 @@ import {
   TimeSeriesChart,
 } from '@/crystal_ball/components';
 import {
+  ATP_TEST_NAME_COLUMN,
   COMMON_MESSAGES,
   GLOBAL_TIME_RANGE_COLUMN,
   GOLDEN_RATIO_CONJUGATE,
@@ -142,13 +143,22 @@ export function ChartWidget({
     [globalFilters, dataSpecs, widgetId, widget],
   );
 
+  const hasAtpTestFilter = useMemo(() => {
+    const allFilters = [...(globalFilters ?? []), ...(widget.filters ?? [])];
+    return allFilters.some(
+      (f) =>
+        f.column === ATP_TEST_NAME_COLUMN &&
+        f.textInput?.defaultValue?.values?.[0],
+    );
+  }, [globalFilters, widget.filters]);
+
   const {
     data: widgetResponse,
     isLoading: isWidgetLoading,
     isError: isWidgetError,
     error: widgetError,
   } = useFetchDashboardWidgetData(fetchRequest, {
-    enabled: !!widgetId,
+    enabled: !!widgetId && hasAtpTestFilter,
   });
 
   const chartSeries = useMemo(() => {
@@ -243,7 +253,9 @@ export function ChartWidget({
                 variant="body1"
                 sx={{ p: 2, color: 'text.secondary' }}
               >
-                {COMMON_MESSAGES.NO_DATA_FOUND}
+                {!hasAtpTestFilter
+                  ? COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED
+                  : COMMON_MESSAGES.NO_DATA_FOUND}
               </Typography>
             </Box>
           )}
@@ -259,6 +271,8 @@ export function ChartWidget({
         series={[...(widget.series || [])]}
         onUpdateSeries={handleSeriesUpdate}
         dataSpecId={widget.dataSpecId}
+        globalFilters={globalFilters}
+        widgetFilters={widget.filters}
       />
     </Box>
   );

@@ -147,6 +147,30 @@ describe('use_measurement_filter_api', () => {
       );
     });
 
+    it('should pass through enabled option', () => {
+      mockedUseGapiQuery.mockReturnValue({ data: {}, isLoading: false });
+      const options = { enabled: false };
+      renderHook(() => useSuggestMeasurementFilterValues(request, options), {
+        wrapper: FakeContextProvider,
+      });
+      expect(mockedUseGapiQuery).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ enabled: false }),
+      );
+    });
+
+    it('should pass through enabled option when true', () => {
+      mockedUseGapiQuery.mockReturnValue({ data: {}, isLoading: false });
+      const options = { enabled: true };
+      renderHook(() => useSuggestMeasurementFilterValues(request, options), {
+        wrapper: FakeContextProvider,
+      });
+      expect(mockedUseGapiQuery).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ enabled: true }),
+      );
+    });
+
     it('should pass through options', () => {
       mockedUseGapiQuery.mockReturnValue({ data: {}, isLoading: false });
       const options = { staleTime: 10000 };
@@ -155,7 +179,7 @@ describe('use_measurement_filter_api', () => {
       });
       expect(mockedUseGapiQuery).toHaveBeenCalledWith(
         expect.any(Object),
-        options,
+        expect.objectContaining({ staleTime: 10000 }),
       );
     });
 
@@ -168,8 +192,12 @@ describe('use_measurement_filter_api', () => {
         isLoading: false,
         isSuccess: true,
       });
+      const req: SuggestMeasurementFilterValuesRequest = {
+        ...request,
+        column: 'atp_test_name', // Needs to be enabled to return response!
+      };
       const { result } = renderHook(
-        () => useSuggestMeasurementFilterValues(request),
+        () => useSuggestMeasurementFilterValues(req),
         {
           wrapper: FakeContextProvider,
         },

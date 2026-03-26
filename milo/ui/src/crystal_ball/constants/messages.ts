@@ -16,9 +16,10 @@
  * Common user-facing messages used across the Crystal Ball application.
  */
 export enum COMMON_MESSAGES {
+  ATP_TEST_NAME_REQUIRED = 'A filter on atp_test_name is required to view data.',
+  ERROR_FETCHING_MEASUREMENTS = 'Error fetching measurements: ',
   LOGIN_REQUIRED = 'Please log in to view this page.',
   NO_DATA_AVAILABLE = 'No data available.',
   NO_DATA_FOUND = 'No data found for the given parameters.',
-  ERROR_FETCHING_MEASUREMENTS = 'Error fetching measurements: ',
   UNKNOWN_ERROR = 'Unknown error',
 }

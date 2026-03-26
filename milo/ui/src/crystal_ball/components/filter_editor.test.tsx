@@ -18,6 +18,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
+jest.mock('react-router', () => ({
+  ...jest.requireActual('react-router'),
+  useParams: jest.fn(),
+}));
+
+const mockedUseParams = jest.mocked(jest.requireMock('react-router').useParams);
+
+import { ATP_TEST_NAME_COLUMN } from '@/crystal_ball/constants';
 import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
 import {
   MeasurementFilterColumn_ColumnDataType,
@@ -60,7 +68,7 @@ const defaultProps = {
   dataSpecId: 'test-spec-id',
   availableColumns: [
     {
-      column: 'atp_test_name',
+      column: ATP_TEST_NAME_COLUMN,
       primary: true,
       dataType: MeasurementFilterColumn_ColumnDataType.STRING,
       sampleValues: [],
@@ -112,7 +120,10 @@ const defaultProps = {
 
 describe('FilterEditor', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
+    mockedUseParams.mockReturnValue({ dashboardId: 'test-dashboard' });
     defaultProps.onUpdateFilters.mockClear();
+    mockedSuggestValues.mockClear();
     mockedSuggestValues.mockReturnValue({
       data: { values: ['suggest1', 'suggest2'] },
       isLoading: false,
@@ -180,7 +191,7 @@ describe('FilterEditor', () => {
     expect(updatedFilters.length).toBe(1);
     expect(updatedFilters[0]).toMatchObject({
       id: `filter-${mockUUID}`,
-      column: 'atp_test_name',
+      column: ATP_TEST_NAME_COLUMN,
       dataSpecId: 'test-spec-id',
       textInput: {
         defaultValue: {
@@ -428,6 +439,124 @@ describe('FilterEditor', () => {
       'build_target',
       'model',
     ]);
+  });
+
+  it('includes global filters for atp_test_name in suggestions', async () => {
+    const globalFilters: PerfFilter[] = [
+      {
+        id: 'global-filter-1',
+        column: ATP_TEST_NAME_COLUMN,
+        dataSpecId: 'test-spec-id',
+        displayName: 'Global Atp Test Name',
+        textInput: {
+          defaultValue: {
+            values: ['globalValue'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    const initialFilters: PerfFilter[] = [
+      {
+        id: 'filter-1',
+        column: 'test_name',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
+        textInput: {
+          defaultValue: {
+            values: ['initial'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    wrapWithProviders(
+      <FilterEditor
+        {...defaultProps}
+        filters={initialFilters}
+        globalFilters={globalFilters}
+      />,
+    );
+    fireEvent.click(screen.getByText('Filters')); // Expand
+    const valueInput = await screen.findByLabelText('Value');
+
+    fireEvent.focus(valueInput);
+    fireEvent.change(valueInput, { target: { value: 'newValue' } });
+
+    await waitFor(() => {
+      expect(mockedSuggestValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filter: 'atp_test_name = "globalValue"',
+        }),
+        expect.objectContaining({ enabled: true }),
+      );
+    });
+  });
+
+  it('excludes current filter for atp_test_name from suggestions', async () => {
+    const initialFilters: PerfFilter[] = [
+      {
+        id: 'filter-1',
+        column: ATP_TEST_NAME_COLUMN,
+        dataSpecId: 'test-spec-id',
+        displayName: 'Atp Test Name',
+        textInput: {
+          defaultValue: {
+            values: ['test-value'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
+    fireEvent.click(screen.getByText('Filters')); // Expand
+    const valueInput = await screen.findByLabelText('Value');
+
+    fireEvent.focus(valueInput);
+    fireEvent.change(valueInput, { target: { value: 'newValue' } });
+
+    await waitFor(() => {
+      expect(mockedSuggestValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filter: '', // Current filter should be excluded, so no filter string
+        }),
+        expect.objectContaining({ enabled: true }),
+      );
+    });
+  });
+
+  it('disables suggestions when column is not atp_test_name and filter is missing', async () => {
+    const initialFilters: PerfFilter[] = [
+      {
+        id: 'filter-1',
+        column: 'test_name', // Not atp_test_name
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
+        textInput: {
+          defaultValue: {
+            values: ['initial'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
+    fireEvent.click(screen.getByText('Filters')); // Expand
+    const valueInput = await screen.findByLabelText('Value');
+
+    fireEvent.focus(valueInput);
+    fireEvent.change(valueInput, { target: { value: 'newValue' } });
+
+    await waitFor(() => {
+      expect(mockedSuggestValues).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ enabled: false }),
+      );
+    });
   });
 
   it('renders with custom title', () => {

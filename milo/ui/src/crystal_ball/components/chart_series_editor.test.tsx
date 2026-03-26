@@ -16,15 +16,34 @@ import '@testing-library/jest-dom';
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
-import { PerfChartSeries } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
+import { ATP_TEST_NAME_COLUMN } from '@/crystal_ball/constants';
+import {
+  PerfChartSeries,
+  PerfFilter,
+  PerfFilterDefault_FilterOperator,
+  SuggestMeasurementFilterValuesRequest,
+  SuggestMeasurementFilterValuesResponse,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { ChartSeriesEditor } from './chart_series_editor';
 
-jest.mock('@/crystal_ball/hooks/use_measurement_filter_api', () => ({
-  useSuggestMeasurementFilterValues: jest.fn(() => ({
-    data: undefined,
+const mockedSuggestValues = jest.fn(
+  (
+    _request?: SuggestMeasurementFilterValuesRequest,
+    _options?: WrapperQueryOptions<SuggestMeasurementFilterValuesResponse>,
+  ) => ({
+    data: { values: ['suggest1', 'suggest2'] },
     isLoading: false,
-  })),
+    isError: false,
+  }),
+);
+
+jest.mock('@/crystal_ball/hooks/use_measurement_filter_api', () => ({
+  useSuggestMeasurementFilterValues: (
+    request?: SuggestMeasurementFilterValuesRequest,
+    options?: WrapperQueryOptions<SuggestMeasurementFilterValuesResponse>,
+  ) => mockedSuggestValues(request, options),
 }));
 
 jest.mock('react-router', () => ({
@@ -187,6 +206,92 @@ describe('ChartSeriesEditor', () => {
     fireEvent.blur(metricInput);
     // onUpdateSeries should not be called as the value didn't change
     expect(defaultProps.onUpdateSeries).not.toHaveBeenCalled();
+  });
+
+  it('includes global filters and widget filters for atp_test_name in suggestions', async () => {
+    const globalFilters: PerfFilter[] = [
+      {
+        id: 'global-filter-1',
+        column: ATP_TEST_NAME_COLUMN,
+        dataSpecId: 'test-spec-id',
+        displayName: 'Global Atp Test Name',
+        textInput: {
+          defaultValue: {
+            values: ['globalValue'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    const widgetFilters: PerfFilter[] = [
+      {
+        id: 'widget-filter-1',
+        column: ATP_TEST_NAME_COLUMN,
+        dataSpecId: 'test-spec-id',
+        displayName: 'Widget Atp Test Name',
+        textInput: {
+          defaultValue: {
+            values: ['widgetValue'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        displayName: 'Series 1',
+        metricField: 'metric1',
+        dataSpecId: 'test-spec-id',
+      }),
+    ];
+    render(
+      <ChartSeriesEditor
+        {...defaultProps}
+        series={initialSeries}
+        globalFilters={globalFilters}
+        widgetFilters={widgetFilters}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Series')); // Expand
+    const metricInput = await screen.findByLabelText('Metric Field');
+
+    fireEvent.focus(metricInput);
+    fireEvent.change(metricInput, { target: { value: 'newMetric' } });
+
+    await waitFor(() => {
+      expect(mockedSuggestValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filter:
+            'atp_test_name = "globalValue" AND atp_test_name = "widgetValue"',
+        }),
+        expect.objectContaining({ enabled: true }),
+      );
+    });
+  });
+
+  it('disables suggestions when atp_test_name filter is missing', async () => {
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        displayName: 'Series 1',
+        metricField: 'metric1',
+        dataSpecId: 'test-spec-id',
+      }),
+    ];
+    render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
+
+    fireEvent.click(screen.getByText('Series')); // Expand
+    const metricInput = await screen.findByLabelText('Metric Field');
+
+    fireEvent.focus(metricInput);
+    fireEvent.change(metricInput, { target: { value: 'newMetric' } });
+
+    await waitFor(() => {
+      expect(mockedSuggestValues).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({ enabled: false }),
+      );
+    });
   });
 
   it('handles multiple series correctly', async () => {

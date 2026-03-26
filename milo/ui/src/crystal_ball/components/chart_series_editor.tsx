@@ -29,21 +29,28 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
 import {
+  ATP_TEST_NAME_COLUMN,
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   MAX_SUGGEST_RESULTS,
 } from '@/crystal_ball/constants';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
-import { PerfChartSeries } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+import { buildFilterString } from '@/crystal_ball/utils';
+import {
+  PerfChartSeries,
+  PerfFilter,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 interface ChartSeriesEditorProps {
   series: PerfChartSeries[];
   onUpdateSeries: (updatedSeries: PerfChartSeries[]) => void;
   dataSpecId: string;
+  globalFilters?: readonly PerfFilter[];
+  widgetFilters?: readonly PerfFilter[];
 }
 
 // Helper function to get a stable ID for a series item
@@ -55,11 +62,15 @@ function ChartSeriesEditorRow({
   dataSpecId,
   onUpdate,
   onRemove,
+  globalFilters,
+  widgetFilters,
 }: {
   singleSeries: PerfChartSeries;
   dataSpecId: string;
   onUpdate: (metricField: string) => void;
   onRemove: () => void;
+  globalFilters?: readonly PerfFilter[];
+  widgetFilters?: readonly PerfFilter[];
 }) {
   const [inputValue, setInputValue] = useState(singleSeries.metricField || '');
   const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
@@ -78,16 +89,29 @@ function ChartSeriesEditorRow({
     ? `dashboardStates/${dashboardId}/dataSpecs/${dataSpecId}`
     : '';
 
+  const filterString = useMemo(() => {
+    return buildFilterString(
+      [ATP_TEST_NAME_COLUMN],
+      globalFilters,
+      widgetFilters,
+    );
+  }, [globalFilters, widgetFilters]);
+
+  const hasAtpTestFilter = useMemo(() => {
+    return new RegExp(`\\b${ATP_TEST_NAME_COLUMN}\\b`).test(filterString);
+  }, [filterString]);
+
   const { data: suggestionData, isLoading } = useSuggestMeasurementFilterValues(
     {
       parent,
       column: 'metric_key',
       query: debouncedQuery,
       maxResultCount: MAX_SUGGEST_RESULTS,
-      filter: '',
+      filter: filterString,
     },
     {
-      enabled: !!parent && debouncedQuery.length > 0 && isFocused,
+      enabled:
+        !!parent && debouncedQuery.length > 0 && isFocused && hasAtpTestFilter,
       retry: false,
     },
   );
@@ -160,6 +184,8 @@ export function ChartSeriesEditor({
   series,
   onUpdateSeries,
   dataSpecId,
+  globalFilters,
+  widgetFilters,
 }: ChartSeriesEditorProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -242,6 +268,8 @@ export function ChartSeriesEditor({
                   handleUpdateSingleSeries(index, newMetricField)
                 }
                 onRemove={() => handleRemoveSeries(index)}
+                globalFilters={globalFilters}
+                widgetFilters={widgetFilters}
               />
             );
           })}

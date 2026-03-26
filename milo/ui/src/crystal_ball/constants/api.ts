@@ -13,6 +13,11 @@
 // limitations under the License.
 
 /**
+ * The column name for ATP test name.
+ */
+export const ATP_TEST_NAME_COLUMN = 'atp_test_name';
+
+/**
  * API Configuration.
  */
 export const API_BASE_URL = 'https://crystalballperf.clients6.google.com';

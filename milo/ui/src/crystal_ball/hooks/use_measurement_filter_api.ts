@@ -16,15 +16,13 @@ import { UseQueryResult } from '@tanstack/react-query';
 
 import { useGapiQuery } from '@/common/hooks/gapi_query/gapi_query';
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
-import { API_BASE_URL } from '@/crystal_ball/constants';
+import { API_V1_BASE_PATH as BASE_PATH } from '@/crystal_ball/constants';
 import {
   ListMeasurementFilterColumnsRequest,
   ListMeasurementFilterColumnsResponse,
   SuggestMeasurementFilterValuesRequest,
   SuggestMeasurementFilterValuesResponse,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
-
-const BASE_PATH = `${API_BASE_URL}/v1`;
 
 /**
  * Hook for ListMeasurementFilterColumns.

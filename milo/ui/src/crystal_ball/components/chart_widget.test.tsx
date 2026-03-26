@@ -15,8 +15,8 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { FilterEditor } from '@/crystal_ball/components';
-import { TimeSeriesChart } from '@/crystal_ball/components';
+import { FilterEditor, TimeSeriesChart } from '@/crystal_ball/components';
+import { ATP_TEST_NAME_COLUMN } from '@/crystal_ball/constants';
 import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
 import {
@@ -69,7 +69,12 @@ const baseWidget: PerfChartWidget = PerfChartWidget.fromPartial({
   dataSpecId: 'mockspec',
   displayName: 'Test Chart',
   series: [{ metricField: 'metric1' }, { metricField: 'metric2' }],
-  filters: [],
+  filters: [
+    {
+      column: ATP_TEST_NAME_COLUMN,
+      textInput: { defaultValue: { values: ['test-value'] } },
+    },
+  ],
 });
 
 describe('ChartWidget', () => {
@@ -145,6 +150,35 @@ describe('ChartWidget', () => {
     );
     expect(screen.getByTestId('typography')).toHaveTextContent(
       COMMON_MESSAGES.NO_DATA_FOUND,
+    );
+  });
+
+  it('should display required message when atp_test_name filter is missing', () => {
+    const widgetWithoutFilters = PerfChartWidget.fromPartial({
+      ...baseWidget,
+      filters: [],
+    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        multiMetricChartData: {
+          xAxisDataKey: 'x',
+          yAxisDataKey: 'y',
+          lines: [],
+        },
+      }),
+    );
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={widgetWithoutFilters} // No filters
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+    expect(screen.getByTestId('typography')).toHaveTextContent(
+      COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED,
     );
   });
 
