@@ -146,7 +146,27 @@ func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string)
 		return err
 	}
 
+	if err := writeMappingFile(filepath.Join(out, "mapping.json"), ef); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func writeMappingFile(path string, ef *ensure.File) error {
+	mapping := make(map[string]string)
+	for _, pkg := range ef.PackagesBySubdir["wheels"] {
+		if pkg.PackageTemplate == "" {
+			continue
+		}
+		pipName := pipNameFromPackageName(pkg.PackageTemplate)
+		mapping[pipName] = pkg.PackageTemplate
+	}
+	mappingBytes, err := json.Marshal(mapping)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, mappingBytes, 0644)
 }
 
 func ensureFileFromVPythonSpec(s *vpython.Spec, tags []*vpython.PEP425Tag) (*ensure.File, error) {

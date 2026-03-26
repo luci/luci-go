@@ -15,6 +15,7 @@
 package wheels
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -185,5 +186,36 @@ func TestWriteRequirementsFromSpec(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, string(content), should.Equal("six==1.15.0\n"))
 		})
+	})
+}
+
+func TestWriteMappingFile(t *testing.T) {
+	ftt.Run("Test write mapping file", t, func(t *ftt.Test) {
+		dir := t.TempDir()
+		mappingPath := filepath.Join(dir, "mapping.json")
+
+		ef := &ensure.File{
+			PackagesBySubdir: map[string]ensure.PackageSlice{
+				"wheels": {
+					{PackageTemplate: "infra/python/wheels/six-py2_py3", UnresolvedVersion: "version:1.15.0"},
+					{PackageTemplate: "infra/python/wheels/pkg1", UnresolvedVersion: "version:1.0.0"},
+					{PackageTemplate: "infra/python/wheels/pkg2", UnresolvedVersion: "version:2.0.0"},
+				},
+			},
+		}
+
+		err := writeMappingFile(mappingPath, ef)
+		assert.Loosely(t, err, should.BeNil)
+
+		content, err := os.ReadFile(mappingPath)
+		assert.Loosely(t, err, should.BeNil)
+
+		var mapping map[string]string
+		err = json.Unmarshal(content, &mapping)
+		assert.Loosely(t, err, should.BeNil)
+
+		assert.Loosely(t, mapping["six"], should.Equal("infra/python/wheels/six-py2_py3"))
+		assert.Loosely(t, mapping["pkg1"], should.Equal("infra/python/wheels/pkg1"))
+		assert.Loosely(t, mapping["pkg2"], should.Equal("infra/python/wheels/pkg2"))
 	})
 }
