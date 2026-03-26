@@ -45,7 +45,7 @@ service SelfReport {
     rpc ReportPID(ReportPIDRequest) returns (google.protobuf.Empty);
 
     // Reports digest of produced artifact from a task.
-    rpc ReportArtifactDigest(ReportArtifactDigestRequest) returns (google.protobuf.Empty);
+    rpc ReportArtifactDigest(ReportArtifactDigestRequest) returns (ReportArtifactDigestResponse);
 }
 
 // Indicator to task status. This is used to annotate logs when a task starts
@@ -253,6 +253,11 @@ message ReportArtifactDigestRequest {
     // If set, identifies that the artifact is an SBOM for other artifacts,
     // identified by SHA256 digest.
     repeated string sbom_subjects = 3;
+}
+
+message ReportArtifactDigestResponse {
+    // The attestation for the artifact returned from the spike.
+    bytes attestation = 1;
 }
 
 message ReportCipdRequest {

@@ -233,13 +233,13 @@ func (r *Report) ReportPID(ctx context.Context, pid int64) (bool, error) {
 
 // ReportCipdDigest reports digest of built cipd package to provenance.
 //
-// It returns a success status and annotated error. Status is to indicate user
-// whether to block further execution.
+// It returns the attestation, a success status and annotated error. Status is
+// to indicate user whether to block further execution.
 // If local provenance service is unavailable, it will return an ok status and
 // annotated error. This is to indicate, the user should continue normal
 // execution.
 // All other errors are annotated to indicate permanent failures.
-func (r *Report) ReportCipdDigest(ctx context.Context, digest, pkgName, iid string) (bool, error) {
+func (r *Report) ReportCipdDigest(ctx context.Context, digest, pkgName, iid string) ([]byte, bool, error) {
 	req := &snooperpb.ReportArtifactDigestRequest{
 		Digest: digest,
 		Artifact: &snooperpb.Artifact{
@@ -252,29 +252,29 @@ func (r *Report) ReportCipdDigest(ctx context.Context, digest, pkgName, iid stri
 		},
 	}
 
-	_, err := r.RClient.ReportArtifactDigest(ctx, req)
+	resp, err := r.RClient.ReportArtifactDigest(ctx, req)
 	switch errS, _ := status.FromError(err); errS.Code() {
 	case codes.OK:
 		logging.Infof(ctx, "success to report cipd digest")
-		return true, nil
+		return resp.GetAttestation(), true, nil
 	case codes.Unavailable:
 		logging.Errorf(ctx, "failed to report cipd digest: %v", ErrServiceUnavailable)
-		return true, ErrServiceUnavailable
+		return nil, true, ErrServiceUnavailable
 	default:
 		logging.Errorf(ctx, "failed to report cipd digest: %v", err)
-		return false, err
+		return nil, false, err
 	}
 }
 
 // ReportGcsDigest reports digest of a built gcs app to provenance.
 //
-// It returns a success status and annotated error. Status is to indicate user
-// whether to block further execution.
+// It returns an optional attestation, a success status and annotated error. Status is
+// to indicate user whether to block further execution.
 // If local provenance service is unavailable, it will return an ok status and
 // annotated error. This is to indicate, the user should continue normal
 // execution.
 // All other errors are annotated to indicate permanent failures.
-func (r *Report) ReportGcsDigest(ctx context.Context, digest, gcsURI string) (bool, error) {
+func (r *Report) ReportGcsDigest(ctx context.Context, digest, gcsURI string) ([]byte, bool, error) {
 	req := &snooperpb.ReportArtifactDigestRequest{
 		Digest: digest,
 		Artifact: &snooperpb.Artifact{
@@ -284,29 +284,29 @@ func (r *Report) ReportGcsDigest(ctx context.Context, digest, gcsURI string) (bo
 		},
 	}
 
-	_, err := r.RClient.ReportArtifactDigest(ctx, req)
+	resp, err := r.RClient.ReportArtifactDigest(ctx, req)
 	switch errS, _ := status.FromError(err); errS.Code() {
 	case codes.OK:
 		logging.Infof(ctx, "success to report gcs digest")
-		return true, nil
+		return resp.GetAttestation(), true, nil
 	case codes.Unavailable:
 		logging.Errorf(ctx, "failed to report gcs digest: %v", ErrServiceUnavailable)
-		return true, ErrServiceUnavailable
+		return nil, true, ErrServiceUnavailable
 	default:
 		logging.Errorf(ctx, "failed to report gcs digest: %v", err)
-		return false, err
+		return nil, false, err
 	}
 }
 
 // ReportSbomDigest reports digest of a built gcs SBOM to provenance.
 //
-// It returns a success status and annotated error. Status is to indicate user
-// whether to block further execution.
+// It returns the attestation, a success status and annotated error. Status is
+// to indicate user whether to block further execution.
 // If local provenance service is unavailable, it will return an ok status and
 // annotated error. This is to indicate, the user should continue normal
 // execution.
 // All other errors are annotated to indicate permanent failures.
-func (r *Report) ReportSbomDigest(ctx context.Context, digest, gcsURI string, subjectDigests []string) (bool, error) {
+func (r *Report) ReportSbomDigest(ctx context.Context, digest, gcsURI string, subjectDigests []string) ([]byte, bool, error) {
 	req := &snooperpb.ReportArtifactDigestRequest{
 		Digest: digest,
 		Artifact: &snooperpb.Artifact{
@@ -317,16 +317,16 @@ func (r *Report) ReportSbomDigest(ctx context.Context, digest, gcsURI string, su
 		SbomSubjects: subjectDigests,
 	}
 
-	_, err := r.RClient.ReportArtifactDigest(ctx, req)
+	resp, err := r.RClient.ReportArtifactDigest(ctx, req)
 	switch errS, _ := status.FromError(err); errS.Code() {
 	case codes.OK:
 		logging.Infof(ctx, "success to report sbom digest")
-		return true, nil
+		return resp.GetAttestation(), true, nil
 	case codes.Unavailable:
 		logging.Errorf(ctx, "failed to report sbom digest: %v", ErrServiceUnavailable)
-		return true, ErrServiceUnavailable
+		return nil, true, ErrServiceUnavailable
 	default:
 		logging.Errorf(ctx, "failed to report sbom digest: %v", err)
-		return false, err
+		return nil, false, err
 	}
 }

@@ -63,7 +63,7 @@ type SelfReportClient interface {
 	// validation.
 	ReportPID(ctx context.Context, in *ReportPIDRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Reports digest of produced artifact from a task.
-	ReportArtifactDigest(ctx context.Context, in *ReportArtifactDigestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReportArtifactDigest(ctx context.Context, in *ReportArtifactDigestRequest, opts ...grpc.CallOption) (*ReportArtifactDigestResponse, error)
 }
 
 type selfReportClient struct {
@@ -124,9 +124,9 @@ func (c *selfReportClient) ReportPID(ctx context.Context, in *ReportPIDRequest, 
 	return out, nil
 }
 
-func (c *selfReportClient) ReportArtifactDigest(ctx context.Context, in *ReportArtifactDigestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *selfReportClient) ReportArtifactDigest(ctx context.Context, in *ReportArtifactDigestRequest, opts ...grpc.CallOption) (*ReportArtifactDigestResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(ReportArtifactDigestResponse)
 	err := c.cc.Invoke(ctx, SelfReport_ReportArtifactDigest_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -155,7 +155,7 @@ type SelfReportServer interface {
 	// validation.
 	ReportPID(context.Context, *ReportPIDRequest) (*emptypb.Empty, error)
 	// Reports digest of produced artifact from a task.
-	ReportArtifactDigest(context.Context, *ReportArtifactDigestRequest) (*emptypb.Empty, error)
+	ReportArtifactDigest(context.Context, *ReportArtifactDigestRequest) (*ReportArtifactDigestResponse, error)
 	mustEmbedUnimplementedSelfReportServer()
 }
 
@@ -181,7 +181,7 @@ func (UnimplementedSelfReportServer) ReportTaskStage(context.Context, *ReportTas
 func (UnimplementedSelfReportServer) ReportPID(context.Context, *ReportPIDRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportPID not implemented")
 }
-func (UnimplementedSelfReportServer) ReportArtifactDigest(context.Context, *ReportArtifactDigestRequest) (*emptypb.Empty, error) {
+func (UnimplementedSelfReportServer) ReportArtifactDigest(context.Context, *ReportArtifactDigestRequest) (*ReportArtifactDigestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportArtifactDigest not implemented")
 }
 func (UnimplementedSelfReportServer) mustEmbedUnimplementedSelfReportServer() {}

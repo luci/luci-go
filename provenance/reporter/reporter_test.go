@@ -91,12 +91,14 @@ func TestSelfReportClient(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("a clientInfo message must contain a kind"))
 		})
 		t.Run("report cipd digest works", func(t *ftt.Test) {
-			ok, err := reporter.ReportCipdDigest(ctx, "deadbeef", "package", "iid")
+			att, ok, err := reporter.ReportCipdDigest(ctx, "deadbeef", "package", "iid")
+			assert.Loosely(t, att, should.BeEmpty)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, err, should.BeNil)
 		})
 		t.Run("report gcs digest works", func(t *ftt.Test) {
-			ok, err := reporter.ReportGcsDigest(ctx, "deadbeef", "gs://bucket/example/1.2.3/app")
+			att, ok, err := reporter.ReportGcsDigest(ctx, "deadbeef", "gs://bucket/example/1.2.3/app")
+			assert.Loosely(t, att, should.BeEmpty)
 			assert.Loosely(t, ok, should.Equal(true))
 			assert.Loosely(t, err, should.BeNil)
 		})
@@ -138,6 +140,6 @@ func (c *fakeClient) ReportPID(ctx context.Context, in *snooperpb.ReportPIDReque
 	return &emptypb.Empty{}, nil
 }
 
-func (c *fakeClient) ReportArtifactDigest(ctx context.Context, in *snooperpb.ReportArtifactDigestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, nil
+func (c *fakeClient) ReportArtifactDigest(ctx context.Context, in *snooperpb.ReportArtifactDigestRequest, opts ...grpc.CallOption) (*snooperpb.ReportArtifactDigestResponse, error) {
+	return &snooperpb.ReportArtifactDigestResponse{}, nil
 }

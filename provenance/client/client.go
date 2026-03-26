@@ -93,7 +93,7 @@ func (c *client) ReportPID(ctx context.Context, in *snooperpb.ReportPIDRequest, 
 }
 
 // ReportArtifactDigest reports artifact digest via provenance local server.
-func (c *client) ReportArtifactDigest(ctx context.Context, in *snooperpb.ReportArtifactDigestRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *client) ReportArtifactDigest(ctx context.Context, in *snooperpb.ReportArtifactDigestRequest, opts ...grpc.CallOption) (*snooperpb.ReportArtifactDigestResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	return c.client.ReportArtifactDigest(ctx, in, opts...)
