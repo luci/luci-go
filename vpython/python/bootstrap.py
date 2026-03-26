@@ -71,6 +71,13 @@ if 'wheels' in os.environ:
         '--requirement',
         os.path.join(os.environ['wheels'], 'requirements.txt'),
     ]
+    target_arch_file = os.path.join(os.environ['wheels'], 'target_arch.txt')
+    if os.path.exists(target_arch_file):
+      with open(target_arch_file) as f:
+        target_arch = f.read().strip()
+      if target_arch == 'x86_64' and sys.platform == 'darwin':
+        # Force x86_64 via arch -x86_64 for pip!
+        command = ['arch', '-x86_64'] + command
     env = os.environ.copy()
     # Drop possible NETRC to avoid uncomfortable situation where we try to
     # apply credentials where we don't need them.

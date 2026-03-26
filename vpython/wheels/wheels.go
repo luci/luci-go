@@ -121,6 +121,16 @@ func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string)
 		return errors.Fmt("failed to write requirements.txt: %w", err)
 	}
 
+	// Write target_arch.txt if the resolved tag is x86_64 (amd64 in template terms).
+	// Done as there is no direct communication between python and go.
+	if t := pep425TagSelector(tags); t != nil {
+		if p := PlatformForPEP425Tag(t); p.Arch == "amd64" {
+			if err := os.WriteFile(filepath.Join(out, "target_arch.txt"), []byte("x86_64"), 0644); err != nil {
+				return err
+			}
+		}
+	}
+
 	// Translates vpython spec into a CIPD ensure file.
 	ef, err := ensureFileFromVPythonSpec(s, tags)
 	if err != nil {
