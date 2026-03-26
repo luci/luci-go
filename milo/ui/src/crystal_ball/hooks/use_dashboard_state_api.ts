@@ -33,6 +33,8 @@ import {
   DashboardState,
   DashboardStateOperationMetadata,
   DeleteDashboardStateRequest,
+  GenerateDashboardStateRequest,
+  GenerateDashboardStateResponse,
   GetDashboardStateRequest,
   GetDashboardStateRevisionRequest,
   ListDashboardStateRevisionsRequest,
@@ -330,6 +332,35 @@ export const useRollbackDashboardState = (
       method: 'POST',
       body: request,
     },
+    options,
+  );
+};
+
+/**
+ * Hook for GenerateDashboardState.
+ * @param options - Optional mutation options.
+ * @returns A mutation result to generate a dashboard state.
+ */
+export const useGenerateDashboardState = (
+  options?: UseMutationOptions<
+    GenerateDashboardStateResponse,
+    Error,
+    GenerateDashboardStateRequest
+  >,
+): UseMutationResult<
+  GenerateDashboardStateResponse,
+  Error,
+  GenerateDashboardStateRequest
+> => {
+  return useGapiMutation<
+    GenerateDashboardStateRequest,
+    GenerateDashboardStateResponse
+  >(
+    (request) => ({
+      path: `${BASE_PATH}:generateDashboardState`,
+      method: 'POST',
+      body: request,
+    }),
     options,
   );
 };

@@ -17,6 +17,7 @@ export * from './breakdown_table_widget';
 export * from './chart_series_editor';
 export * from './chart_widget';
 export * from './dashboard_dialog';
+export * from './dashboard_list_table';
 export * from './dashboard_time_range_selector';
 export * from './filter_editor';
 export * from './layout';

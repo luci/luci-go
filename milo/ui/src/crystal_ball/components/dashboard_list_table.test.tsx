@@ -14,7 +14,7 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
+import { DashboardListTable } from '@/crystal_ball/components';
 import * as hooks from '@/crystal_ball/hooks';
 import {
   DashboardState,

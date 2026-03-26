@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {
+  InfiniteData,
+  UseInfiniteQueryResult,
+  UseMutationResult,
+} from '@tanstack/react-query';
 import { UseQueryResult } from '@tanstack/react-query';
 
 /**
@@ -49,6 +54,87 @@ export function createMockErrorResult<T>(error: Error): UseQueryResult<T> {
     })(),
     refetch: jest.fn(),
     status: 'error',
+  };
+}
+
+/**
+ * Creates a mock UseInfiniteQueryResult with default values to satisfy TypeScript.
+ */
+export function createMockInfiniteQueryResult<TData, TError = Error>(
+  data: InfiniteData<TData>,
+): UseInfiniteQueryResult<InfiniteData<TData>, TError> {
+  return {
+    data,
+    dataUpdatedAt: 0,
+    error: null,
+    errorUpdateCount: 0,
+    errorUpdatedAt: 0,
+    failureCount: 0,
+    failureReason: null,
+    fetchNextPage: jest.fn(),
+    fetchPreviousPage: jest.fn(),
+    fetchStatus: 'idle',
+    hasNextPage: false,
+    hasPreviousPage: false,
+    isEnabled: true,
+    isError: false,
+    isFetched: true,
+    isFetchedAfterMount: true,
+    isFetching: false,
+    isFetchingNextPage: false,
+    isFetchingPreviousPage: false,
+    isFetchNextPageError: false,
+    isFetchPreviousPageError: false,
+    isInitialLoading: false,
+    isLoading: false,
+    isLoadingError: false,
+    isPaused: false,
+    isPending: false,
+    isPlaceholderData: false,
+    isRefetchError: false,
+    isRefetching: false,
+    isStale: false,
+    isSuccess: true,
+    promise: (() => {
+      const p = Promise.resolve(data);
+      p.catch(() => {}); // Prevents unhandled promise rejection crash in Jest workers
+      return p;
+    })(),
+    refetch: jest.fn(),
+    status: 'success',
+  };
+}
+
+/**
+ * Creates a mock UseMutationResult with default values to satisfy TypeScript.
+ */
+export function createMockMutationResult<
+  TData,
+  TVariables = void,
+  TError = Error,
+>(options?: {
+  mutateAsync?: jest.Mock;
+  mutate?: jest.Mock;
+  reset?: jest.Mock;
+}): UseMutationResult<TData, TError, TVariables> {
+  return {
+    context: undefined,
+    data: undefined,
+    error: null,
+    failureCount: 0,
+    failureReason: null,
+    isError: false,
+    isIdle: true,
+    isPaused: false,
+    isPending: false,
+    isSuccess: false,
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+    reset: jest.fn(),
+    status: 'idle',
+    submittedAt: 0,
+    variables: undefined,
+    ...options,
   };
 }
 

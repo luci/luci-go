@@ -12,29 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import AddIcon from '@mui/icons-material/Add';
+import { Add as AddIcon } from '@mui/icons-material';
 import { Button, Box, Tab, Tabs } from '@mui/material';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 
-import { DashboardDialog, RequireLogin } from '@/crystal_ball/components';
-import { DashboardListTable } from '@/crystal_ball/components/dashboard_list_table/dashboard_list_table';
-import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import {
-  DATA_SPEC_ID,
-  GLOBAL_TIME_RANGE_COLUMN,
-  GLOBAL_TIME_RANGE_FILTER_ID,
-  GLOBAL_TIME_RANGE_OPTION_DEFAULT,
-} from '@/crystal_ball/constants';
-import { useCreateDashboardState } from '@/crystal_ball/hooks';
-import { extractIdFromName, formatApiError } from '@/crystal_ball/utils';
-import {
-  CreateDashboardStateRequest,
-  DashboardState,
-  PerfDataSource_SourceType,
-  PerfFilter,
-  PerfFilterDefault_FilterOperator,
-} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+  DashboardDialog,
+  DashboardListTable,
+  RequireLogin,
+  useTopBarConfig,
+} from '@/crystal_ball/components';
+import { useCreateDashboardWorkflow } from '@/crystal_ball/hooks';
+import { extractIdFromName } from '@/crystal_ball/utils';
+import { DashboardState } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
  * A landing page component that displays a list of dashboards.
@@ -44,8 +35,13 @@ export function LandingPage() {
 
   const [currentTab, setCurrentTab] = useState(0);
   const [isDialogsOpen, setIsDialogsOpen] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const createMutation = useCreateDashboardState();
+
+  const {
+    createDashboard,
+    isPending: isCreating,
+    errorMsg: createErrorMsg,
+    setErrorMsg: setCreateErrorMsg,
+  } = useCreateDashboardWorkflow();
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
@@ -56,59 +52,21 @@ export function LandingPage() {
     'aria-controls': `dashboard-tabpanel-${index}`,
   });
 
-  const handleOpenDialog = () => {
-    setErrorMsg('');
+  const handleOpenDialog = useCallback(() => {
+    setCreateErrorMsg('');
     setIsDialogsOpen(true);
-  };
-  const handleCloseDialog = () => setIsDialogsOpen(false);
+  }, [setCreateErrorMsg]);
+
+  const handleCloseDialog = useCallback(
+    () => setIsDialogsOpen(false),
+    [setIsDialogsOpen],
+  );
 
   const handleCreate = async (data: {
     displayName: string;
     description: string;
   }) => {
-    setErrorMsg('');
-    try {
-      const response = await createMutation.mutateAsync(
-        CreateDashboardStateRequest.fromPartial({
-          dashboardState: DashboardState.fromPartial({
-            displayName: data.displayName,
-            description: data.description,
-            dashboardContent: {
-              widgets: [],
-              dataSpecs: {
-                [DATA_SPEC_ID]: {
-                  displayName: 'Default Data Source',
-                  source: { type: PerfDataSource_SourceType.TABLE },
-                },
-              },
-              globalFilters: [
-                PerfFilter.fromPartial({
-                  id: GLOBAL_TIME_RANGE_FILTER_ID,
-                  column: GLOBAL_TIME_RANGE_COLUMN,
-                  displayName: 'Time Range (UTC)',
-                  range: {
-                    defaultValue: {
-                      values: [GLOBAL_TIME_RANGE_OPTION_DEFAULT],
-                      filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
-                    },
-                  },
-                }),
-              ],
-            },
-          }),
-        }),
-      );
-
-      const parsedResp = response.response;
-      const newName = parsedResp?.name;
-      handleCloseDialog();
-      if (newName) {
-        const newId = extractIdFromName(newName);
-        navigate(`/ui/labs/crystal-ball/dashboards/${newId}`);
-      }
-    } catch (e) {
-      setErrorMsg(formatApiError(e, 'Failed to create dashboard'));
-    }
+    await createDashboard(data, handleCloseDialog);
   };
 
   const handleDashboardClick = (dashboard: DashboardState) => {
@@ -120,15 +78,17 @@ export function LandingPage() {
 
   const actions = useMemo(
     () => (
-      <Button
-        variant="contained"
-        startIcon={<AddIcon />}
-        onClick={handleOpenDialog}
-      >
-        New Dashboard
-      </Button>
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenDialog}
+        >
+          New Dashboard
+        </Button>
+      </Box>
     ),
-    [],
+    [handleOpenDialog],
   );
 
   useTopBarConfig(null, actions);
@@ -159,8 +119,8 @@ export function LandingPage() {
         open={isDialogsOpen}
         onClose={handleCloseDialog}
         onSubmit={handleCreate}
-        isPending={createMutation.isPending}
-        errorMsg={errorMsg}
+        isPending={isCreating}
+        errorMsg={createErrorMsg}
       />
     </Box>
   );

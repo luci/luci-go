@@ -15,8 +15,9 @@
 import { renderHook, waitFor } from '@testing-library/react';
 
 import * as gapiQueryHooks from '@/common/hooks/gapi_query/gapi_query';
-import { API_BASE_URL } from '@/crystal_ball/constants';
+import { API_V1_BASE_PATH as BASE_PATH } from '@/crystal_ball/constants';
 import {
+  TypedDashboardStateOperation,
   useCreateDashboardState,
   useGetDashboardState,
   useListDashboardStates,
@@ -27,8 +28,13 @@ import {
   useListDashboardStateRevisions,
   useGetDashboardStateRevision,
   useRollbackDashboardState,
+  useGenerateDashboardState,
 } from '@/crystal_ball/hooks';
-import { TypedDashboardStateOperation } from '@/crystal_ball/hooks/use_dashboard_state_api';
+import {
+  createMockInfiniteQueryResult,
+  createMockMutationResult,
+  createMockQueryResult,
+} from '@/crystal_ball/tests';
 import {
   DashboardState,
   CreateDashboardStateRequest,
@@ -40,6 +46,7 @@ import {
   ListDashboardStateRevisionsRequest,
   GetDashboardStateRevisionRequest,
   RollbackDashboardStateRequest,
+  GenerateDashboardStateRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -50,12 +57,11 @@ jest.mock('@/common/hooks/gapi_query/gapi_query', () => ({
   useGapiMutation: jest.fn(),
 }));
 
-const mockedUseGapiQuery = gapiQueryHooks.useGapiQuery as jest.Mock;
-const mockedUseInfiniteGapiQuery =
-  gapiQueryHooks.useInfiniteGapiQuery as jest.Mock;
-const mockedUseGapiMutation = gapiQueryHooks.useGapiMutation as jest.Mock;
-
-const BASE_PATH = `${API_BASE_URL}/v1`;
+const mockedUseGapiQuery = jest.mocked(gapiQueryHooks.useGapiQuery);
+const mockedUseInfiniteGapiQuery = jest.mocked(
+  gapiQueryHooks.useInfiniteGapiQuery,
+);
+const mockedUseGapiMutation = jest.mocked(gapiQueryHooks.useGapiMutation);
 
 describe('use_dashboard_state_api', () => {
   beforeEach(() => {
@@ -94,10 +100,11 @@ describe('use_dashboard_state_api', () => {
 
     it('should call useGapiMutation with correct arguments', () => {
       // Mock mutateAsync to resolve with our strongly typed operation
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
-        isPending: false,
-      });
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        }),
+      );
       renderHook(() => useCreateDashboardState(), {
         wrapper: FakeContextProvider,
       });
@@ -121,10 +128,11 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should pass through options', () => {
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
-        isPending: false,
-      });
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        }),
+      );
       const options = { mutationKey: ['test'] };
       renderHook(() => useCreateDashboardState(options), {
         wrapper: FakeContextProvider,
@@ -142,10 +150,9 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should call useGapiQuery with correct arguments', () => {
-      mockedUseGapiQuery.mockReturnValue({
-        data: sampleDashboardState,
-        isLoading: false,
-      });
+      mockedUseGapiQuery.mockReturnValue(
+        createMockQueryResult(sampleDashboardState),
+      );
       renderHook(() => useGetDashboardState(request), {
         wrapper: FakeContextProvider,
       });
@@ -161,11 +168,9 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should return mocked DashboardState', async () => {
-      mockedUseGapiQuery.mockReturnValue({
-        data: sampleDashboardState,
-        isLoading: false,
-        isSuccess: true,
-      });
+      mockedUseGapiQuery.mockReturnValue(
+        createMockQueryResult(sampleDashboardState),
+      );
       const { result } = renderHook(() => useGetDashboardState(request), {
         wrapper: FakeContextProvider,
       });
@@ -178,10 +183,9 @@ describe('use_dashboard_state_api', () => {
     const request = ListDashboardStatesRequest.fromPartial({ pageSize: 10 });
 
     it('should call useGapiQuery with correct arguments', () => {
-      mockedUseGapiQuery.mockReturnValue({
-        data: { dashboardStates: [sampleDashboardState] },
-        isLoading: false,
-      });
+      mockedUseGapiQuery.mockReturnValue(
+        createMockQueryResult({ dashboardStates: [sampleDashboardState] }),
+      );
       renderHook(() => useListDashboardStates(request), {
         wrapper: FakeContextProvider,
       });
@@ -202,14 +206,17 @@ describe('use_dashboard_state_api', () => {
     const request = { pageSize: 20, filter: '', showDeleted: false };
 
     it('should call useInfiniteGapiQuery with correct arguments', () => {
-      mockedUseInfiniteGapiQuery.mockReturnValue({
-        data: {
-          pages: [{ dashboardStates: [sampleDashboardState] }],
+      mockedUseInfiniteGapiQuery.mockReturnValue(
+        createMockInfiniteQueryResult({
+          pages: [
+            {
+              dashboardStates: [sampleDashboardState],
+              nextPageToken: '',
+            },
+          ],
           pageParams: [],
-        },
-        isLoading: false,
-        fetchNextPage: jest.fn(),
-      });
+        }),
+      );
 
       renderHook(() => useListDashboardStatesInfinite(request), {
         wrapper: FakeContextProvider,
@@ -227,11 +234,9 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should pass through options', () => {
-      mockedUseInfiniteGapiQuery.mockReturnValue({
-        data: { pages: [], pageParams: [] },
-        isLoading: false,
-        fetchNextPage: jest.fn(),
-      });
+      mockedUseInfiniteGapiQuery.mockReturnValue(
+        createMockInfiniteQueryResult({ pages: [], pageParams: [] }),
+      );
       const options = { gcTime: 50000 };
 
       renderHook(() => useListDashboardStatesInfinite(request, options), {
@@ -252,10 +257,11 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should call useGapiMutation with correct arguments', () => {
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
-        isPending: false,
-      });
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        }),
+      );
       renderHook(() => useUpdateDashboardState(), {
         wrapper: FakeContextProvider,
       });
@@ -279,10 +285,11 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should pass through options', () => {
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
-        isPending: false,
-      });
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        }),
+      );
       const options = { mutationKey: ['test-update'] };
       renderHook(() => useUpdateDashboardState(options), {
         wrapper: FakeContextProvider,
@@ -300,10 +307,11 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should call useGapiMutation with correct arguments', () => {
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
-        isPending: false,
-      });
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        }),
+      );
       renderHook(() => useDeleteDashboardState(), {
         wrapper: FakeContextProvider,
       });
@@ -326,10 +334,11 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should pass through options', () => {
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
-        isPending: false,
-      });
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        }),
+      );
       const options = { mutationKey: ['test-delete'] };
       renderHook(() => useDeleteDashboardState(options), {
         wrapper: FakeContextProvider,
@@ -350,10 +359,11 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should call useGapiMutation with correct arguments', () => {
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
-        isPending: false,
-      });
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        }),
+      );
       renderHook(() => useUndeleteDashboardState(), {
         wrapper: FakeContextProvider,
       });
@@ -376,10 +386,11 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should pass through options', () => {
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
-        isPending: false,
-      });
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleOperation),
+        }),
+      );
       const options = { mutationKey: ['test-undelete'] };
       renderHook(() => useUndeleteDashboardState(options), {
         wrapper: FakeContextProvider,
@@ -397,10 +408,9 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should call useGapiQuery with correct arguments', () => {
-      mockedUseGapiQuery.mockReturnValue({
-        data: { dashboardStates: [sampleDashboardState] },
-        isLoading: false,
-      });
+      mockedUseGapiQuery.mockReturnValue(
+        createMockQueryResult({ dashboardStates: [sampleDashboardState] }),
+      );
       renderHook(() => useListDashboardStateRevisions(request), {
         wrapper: FakeContextProvider,
       });
@@ -426,10 +436,9 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should call useGapiQuery with correct arguments', () => {
-      mockedUseGapiQuery.mockReturnValue({
-        data: sampleDashboardState,
-        isLoading: false,
-      });
+      mockedUseGapiQuery.mockReturnValue(
+        createMockQueryResult(sampleDashboardState),
+      );
       renderHook(() => useGetDashboardStateRevision(request), {
         wrapper: FakeContextProvider,
       });
@@ -452,10 +461,9 @@ describe('use_dashboard_state_api', () => {
     });
 
     it('should call useGapiQuery with correct arguments', () => {
-      mockedUseGapiQuery.mockReturnValue({
-        data: sampleDashboardState,
-        isLoading: false,
-      });
+      mockedUseGapiQuery.mockReturnValue(
+        createMockQueryResult(sampleDashboardState),
+      );
       renderHook(() => useRollbackDashboardState(request), {
         wrapper: FakeContextProvider,
       });
@@ -468,6 +476,55 @@ describe('use_dashboard_state_api', () => {
           body: request,
         },
         undefined,
+      );
+    });
+  });
+
+  describe('useGenerateDashboardState', () => {
+    const request = GenerateDashboardStateRequest.fromPartial({
+      prompt: 'A test prompt',
+      metricKeys: ['metric1', 'metric2'],
+    });
+
+    it('should call useGapiMutation with correct arguments', () => {
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue({
+            dashboardState: sampleDashboardState,
+          }),
+        }),
+      );
+      renderHook(() => useGenerateDashboardState(), {
+        wrapper: FakeContextProvider,
+      });
+
+      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
+
+      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
+      const builtRequest = requestBuilder(request);
+
+      expect(builtRequest).toEqual({
+        path: `${BASE_PATH}:generateDashboardState`,
+        method: 'POST',
+        body: request,
+      });
+    });
+
+    it('should pass through options', () => {
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue({
+            dashboardState: sampleDashboardState,
+          }),
+        }),
+      );
+      const options = { mutationKey: ['test'] };
+      renderHook(() => useGenerateDashboardState(options), {
+        wrapper: FakeContextProvider,
+      });
+      expect(mockedUseGapiMutation).toHaveBeenCalledWith(
+        expect.any(Function),
+        options,
       );
     });
   });
