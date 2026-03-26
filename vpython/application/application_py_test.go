@@ -150,6 +150,10 @@ func TestPythonBasic(t *testing.T) {
 				t.Run("test bad cwd", func(t *ftt.Test) {
 					cwd, err := os.Getwd()
 					assert.Loosely(t, err, should.BeNil)
+					defer func() {
+						err := os.Chdir(cwd)
+						assert.Loosely(t, err, should.BeNil)
+					}()
 					err = os.Chdir(testData("test_bad_cwd"))
 					assert.Loosely(t, err, should.BeNil)
 
@@ -159,9 +163,6 @@ func TestPythonBasic(t *testing.T) {
 						},
 					}, env)
 					assert.Loosely(t, output(c), should.Equal("SUCCESS"))
-
-					err = os.Chdir(cwd)
-					assert.Loosely(t, err, should.BeNil)
 				})
 
 				t.Run("Test exit code", func(t *ftt.Test) {
