@@ -28,11 +28,11 @@ import (
 	"go.chromium.org/luci/common/runtime/debugstack"
 )
 
-// Annotator is a legacy API.
+// annotator is a legacy API.
 //
 // Deprecated: If you use `errors.Fmt` or `errors.New` you will not need this
 // type.
-type Annotator struct {
+type annotator struct {
 	inner    error
 	wrappers []ErrorWrapper
 }
@@ -46,7 +46,7 @@ type ErrorWrapper interface {
 }
 
 // Err returns the finalized annotated error.
-func (a *Annotator) Err() error {
+func (a *annotator) Err() error {
 	if a == nil {
 		return nil
 	}
@@ -141,22 +141,22 @@ func RenderGoStack(err error, onlyInner bool, excludePkgs ...string) string {
 // Deprecated: Use `errors.Fmt` or `errors.New` instead. If `err` could be nil,
 // you can use `errors.WrapIf`. Attach tags directly to the error (e.g.
 // `tag.Apply(err)`)
-func Annotate(err error, reason string, args ...any) *Annotator {
+func Annotate(err error, reason string, args ...any) error {
 	if err == nil {
 		return nil
 	}
 
 	args = slices.Clone(args)
 	args = append(args, err)
-	return &Annotator{fmt.Errorf(reason+": %w", args...), nil}
+	return (&annotator{fmt.Errorf(reason+": %w", args...), nil}).Err()
 }
 
 // Reason is a legacy API.
 //
 // Deprecated: Use `errors.Fmt` or `errors.New` instead. Attach tags directly
 // to the error (e.g. `tag.Apply(err)`)
-func Reason(reason string, args ...any) *Annotator {
-	return &Annotator{fmt.Errorf(reason, args...), nil}
+func Reason(reason string, args ...any) error {
+	return (&annotator{fmt.Errorf(reason, args...), nil}).Err()
 }
 
 // New is an API-compatible version of the standard errors.New function, except

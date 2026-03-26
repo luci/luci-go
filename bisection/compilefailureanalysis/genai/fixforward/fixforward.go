@@ -104,7 +104,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 	// 1. Fetch culprit changelog
 	changelog, err := gitiles.GetChangeLogsForSingleRevision(ctx, repoUrl, culpritCommit)
 	if err != nil {
-		return errors.Annotate(err, "failed to get changelog").Err()
+		return errors.Annotate(err, "failed to get changelog")
 	}
 
 	// 2. Fetch file contents for modified files and neighbor files
@@ -142,7 +142,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 	}
 
 	if filesInfo == "" {
-		return errors.Reason("no modified files within size limit found for culprit %s", culpritCommit).Err()
+		return errors.Reason("no modified files within size limit found for culprit %s", culpritCommit)
 	}
 
 	// Fetch neighbor files to expand context
@@ -213,7 +213,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 		break
 	}
 	if err != nil {
-		return errors.Annotate(err, "LLM generation failed after retries").Err()
+		return errors.Annotate(err, "LLM generation failed after retries")
 	}
 
 	logging.Infof(ctx, "Received raw response from LLM:\n%s", respText)
@@ -227,11 +227,11 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 
 	var llmParsed LLMResponse
 	if err := json.Unmarshal([]byte(respText), &llmParsed); err != nil {
-		return errors.Annotate(err, "failed to parse LLM JSON response").Err()
+		return errors.Annotate(err, "failed to parse LLM JSON response")
 	}
 
 	if len(llmParsed.Files) == 0 {
-		return errors.Reason("LLM generated no file changes for culprit %s", culpritCommit).Err()
+		return errors.Reason("LLM generated no file changes for culprit %s", culpritCommit)
 	}
 
 	// 6. Create Gerrit CL
@@ -259,7 +259,7 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 	}
 	change, err := gerritClient.CreateChange(ctx, createReq)
 	if err != nil {
-		return errors.Annotate(err, "failed to create change").Err()
+		return errors.Annotate(err, "failed to create change")
 	}
 
 	// 7. Apply edits
@@ -294,14 +294,14 @@ func GenerateFixforwardCL(ctx context.Context, genaiClient llm.Client, gerritCli
 		Project: project,
 	}
 	if err := gerritClient.ChangeEditPublish(ctx, publishReq); err != nil {
-		return errors.Annotate(err, "failed to publish edit").Err()
+		return errors.Annotate(err, "failed to publish edit")
 	}
 
 	// 9. Send for review to jiameil@google.com
 	reviewMessage := fmt.Sprintf("Please review this GenAI fixforward CL.\n\n%s", llmParsed.Message)
 	_, err = gerritClient.SendForReview(ctx, change, reviewMessage, []string{"jiameil@google.com"}, nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to send for review").Err()
+		return errors.Annotate(err, "failed to send for review")
 	}
 
 	return nil
