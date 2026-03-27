@@ -982,9 +982,20 @@ message PerfChartWidget {
   PerfSeriesSplit series_split = 10 [(google.api.field_behavior) = OPTIONAL];
 
   // Specific configuration for the INVOCATION_DISTRIBUTION chart type.
-  // Only relevant when chart_type is INVOCATION_DISTRIBUTION.
+  // Deprecated: Use `chart_config.invocation_distribution_chart_config`
+  // instead.
   InvocationDistributionConfig invocation_distribution_config = 11
-      [(google.api.field_behavior) = OPTIONAL];
+      [(google.api.field_behavior) = OPTIONAL, deprecated = true];
+
+  oneof chart_config {
+    // Specific configuration for the INVOCATION_DISTRIBUTION chart type.
+    InvocationDistributionConfig invocation_distribution_chart_config = 12
+        [(google.api.field_behavior) = OPTIONAL];
+
+    // Configuration for the BREAKDOWN_TABLE chart type.
+    BreakdownTableConfig breakdown_table_widget_chart_config = 13
+        [(google.api.field_behavior) = OPTIONAL];
+  }
 }
 
 // Represents a single series on a chart.
@@ -1138,6 +1149,33 @@ message InvocationDistributionConfig {
     ScatterSettings scatter_settings = 2
         [(google.api.field_behavior) = OPTIONAL];
   }
+}
+
+// Configuration for a Breakdown Table chart.
+message BreakdownTableConfig {
+  // Aggregation functions.
+  enum BreakdownAggregation {
+    // Unspecified aggregation.
+    BREAKDOWN_AGGREGATION_UNSPECIFIED = 0;
+    // Count of values.
+    COUNT = 1;
+    // Minimum value.
+    MIN = 2;
+    // Maximum value.
+    MAX = 3;
+    // Mean of values.
+    MEAN = 4;
+    // 50th percentile.
+    P50 = 5;
+    // 75th percentile.
+    P75 = 6;
+    // 90th percentile.
+    P90 = 7;
+    // 99th percentile.
+    P99 = 8;
+  }
+  // The aggregation functions to apply to the metrics in the table.
+  repeated BreakdownAggregation aggregations = 1;
 }
 
 // Defines a data specification, similar to concepts in Plx DataSpec.

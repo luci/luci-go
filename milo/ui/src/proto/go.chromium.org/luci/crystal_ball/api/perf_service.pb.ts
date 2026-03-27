@@ -889,9 +889,20 @@ export interface PerfChartWidget {
     | undefined;
   /**
    * Specific configuration for the INVOCATION_DISTRIBUTION chart type.
-   * Only relevant when chart_type is INVOCATION_DISTRIBUTION.
+   * Deprecated: Use `chart_config.invocation_distribution_chart_config`
+   * instead.
+   *
+   * @deprecated
    */
-  readonly invocationDistributionConfig: InvocationDistributionConfig | undefined;
+  readonly invocationDistributionConfig:
+    | InvocationDistributionConfig
+    | undefined;
+  /** Specific configuration for the INVOCATION_DISTRIBUTION chart type. */
+  readonly invocationDistributionChartConfig?:
+    | InvocationDistributionConfig
+    | undefined;
+  /** Configuration for the BREAKDOWN_TABLE chart type. */
+  readonly breakdownTableWidgetChartConfig?: BreakdownTableConfig | undefined;
 }
 
 /**
@@ -1236,6 +1247,101 @@ export interface InvocationDistributionConfig {
 export interface InvocationDistributionConfig_ScatterSettings {
   /** The metric field to use for the X-axis. */
   readonly xAxisMetricField: string;
+}
+
+/** Configuration for a Breakdown Table chart. */
+export interface BreakdownTableConfig {
+  /** The aggregation functions to apply to the metrics in the table. */
+  readonly aggregations: readonly BreakdownTableConfig_BreakdownAggregation[];
+}
+
+/** Aggregation functions. */
+export enum BreakdownTableConfig_BreakdownAggregation {
+  /** BREAKDOWN_AGGREGATION_UNSPECIFIED - Unspecified aggregation. */
+  BREAKDOWN_AGGREGATION_UNSPECIFIED = 0,
+  /** COUNT - Count of values. */
+  COUNT = 1,
+  /** MIN - Minimum value. */
+  MIN = 2,
+  /** MAX - Maximum value. */
+  MAX = 3,
+  /** MEAN - Mean of values. */
+  MEAN = 4,
+  /** P50 - 50th percentile. */
+  P50 = 5,
+  /** P75 - 75th percentile. */
+  P75 = 6,
+  /** P90 - 90th percentile. */
+  P90 = 7,
+  /** P99 - 99th percentile. */
+  P99 = 8,
+}
+
+export function breakdownTableConfig_BreakdownAggregationFromJSON(
+  object: any,
+): BreakdownTableConfig_BreakdownAggregation {
+  switch (object) {
+    case 0:
+    case "BREAKDOWN_AGGREGATION_UNSPECIFIED":
+      return BreakdownTableConfig_BreakdownAggregation.BREAKDOWN_AGGREGATION_UNSPECIFIED;
+    case 1:
+    case "COUNT":
+      return BreakdownTableConfig_BreakdownAggregation.COUNT;
+    case 2:
+    case "MIN":
+      return BreakdownTableConfig_BreakdownAggregation.MIN;
+    case 3:
+    case "MAX":
+      return BreakdownTableConfig_BreakdownAggregation.MAX;
+    case 4:
+    case "MEAN":
+      return BreakdownTableConfig_BreakdownAggregation.MEAN;
+    case 5:
+    case "P50":
+      return BreakdownTableConfig_BreakdownAggregation.P50;
+    case 6:
+    case "P75":
+      return BreakdownTableConfig_BreakdownAggregation.P75;
+    case 7:
+    case "P90":
+      return BreakdownTableConfig_BreakdownAggregation.P90;
+    case 8:
+    case "P99":
+      return BreakdownTableConfig_BreakdownAggregation.P99;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum BreakdownTableConfig_BreakdownAggregation",
+      );
+  }
+}
+
+export function breakdownTableConfig_BreakdownAggregationToJSON(
+  object: BreakdownTableConfig_BreakdownAggregation,
+): string {
+  switch (object) {
+    case BreakdownTableConfig_BreakdownAggregation.BREAKDOWN_AGGREGATION_UNSPECIFIED:
+      return "BREAKDOWN_AGGREGATION_UNSPECIFIED";
+    case BreakdownTableConfig_BreakdownAggregation.COUNT:
+      return "COUNT";
+    case BreakdownTableConfig_BreakdownAggregation.MIN:
+      return "MIN";
+    case BreakdownTableConfig_BreakdownAggregation.MAX:
+      return "MAX";
+    case BreakdownTableConfig_BreakdownAggregation.MEAN:
+      return "MEAN";
+    case BreakdownTableConfig_BreakdownAggregation.P50:
+      return "P50";
+    case BreakdownTableConfig_BreakdownAggregation.P75:
+      return "P75";
+    case BreakdownTableConfig_BreakdownAggregation.P90:
+      return "P90";
+    case BreakdownTableConfig_BreakdownAggregation.P99:
+      return "P99";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum BreakdownTableConfig_BreakdownAggregation",
+      );
+  }
 }
 
 /** Defines a data specification, similar to concepts in Plx DataSpec. */
@@ -5505,6 +5611,8 @@ function createBasePerfChartWidget(): PerfChartWidget {
     rightYAxis: undefined,
     seriesSplit: undefined,
     invocationDistributionConfig: undefined,
+    invocationDistributionChartConfig: undefined,
+    breakdownTableWidgetChartConfig: undefined,
   };
 }
 
@@ -5542,6 +5650,12 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
     }
     if (message.invocationDistributionConfig !== undefined) {
       InvocationDistributionConfig.encode(message.invocationDistributionConfig, writer.uint32(90).fork()).join();
+    }
+    if (message.invocationDistributionChartConfig !== undefined) {
+      InvocationDistributionConfig.encode(message.invocationDistributionChartConfig, writer.uint32(98).fork()).join();
+    }
+    if (message.breakdownTableWidgetChartConfig !== undefined) {
+      BreakdownTableConfig.encode(message.breakdownTableWidgetChartConfig, writer.uint32(106).fork()).join();
     }
     return writer;
   },
@@ -5641,6 +5755,22 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
           message.invocationDistributionConfig = InvocationDistributionConfig.decode(reader, reader.uint32());
           continue;
         }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.invocationDistributionChartConfig = InvocationDistributionConfig.decode(reader, reader.uint32());
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.breakdownTableWidgetChartConfig = BreakdownTableConfig.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5668,6 +5798,12 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
       seriesSplit: isSet(object.seriesSplit) ? PerfSeriesSplit.fromJSON(object.seriesSplit) : undefined,
       invocationDistributionConfig: isSet(object.invocationDistributionConfig)
         ? InvocationDistributionConfig.fromJSON(object.invocationDistributionConfig)
+        : undefined,
+      invocationDistributionChartConfig: isSet(object.invocationDistributionChartConfig)
+        ? InvocationDistributionConfig.fromJSON(object.invocationDistributionChartConfig)
+        : undefined,
+      breakdownTableWidgetChartConfig: isSet(object.breakdownTableWidgetChartConfig)
+        ? BreakdownTableConfig.fromJSON(object.breakdownTableWidgetChartConfig)
         : undefined,
     };
   },
@@ -5707,6 +5843,14 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
     if (message.invocationDistributionConfig !== undefined) {
       obj.invocationDistributionConfig = InvocationDistributionConfig.toJSON(message.invocationDistributionConfig);
     }
+    if (message.invocationDistributionChartConfig !== undefined) {
+      obj.invocationDistributionChartConfig = InvocationDistributionConfig.toJSON(
+        message.invocationDistributionChartConfig,
+      );
+    }
+    if (message.breakdownTableWidgetChartConfig !== undefined) {
+      obj.breakdownTableWidgetChartConfig = BreakdownTableConfig.toJSON(message.breakdownTableWidgetChartConfig);
+    }
     return obj;
   },
 
@@ -5736,6 +5880,14 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
     message.invocationDistributionConfig =
       (object.invocationDistributionConfig !== undefined && object.invocationDistributionConfig !== null)
         ? InvocationDistributionConfig.fromPartial(object.invocationDistributionConfig)
+        : undefined;
+    message.invocationDistributionChartConfig =
+      (object.invocationDistributionChartConfig !== undefined && object.invocationDistributionChartConfig !== null)
+        ? InvocationDistributionConfig.fromPartial(object.invocationDistributionChartConfig)
+        : undefined;
+    message.breakdownTableWidgetChartConfig =
+      (object.breakdownTableWidgetChartConfig !== undefined && object.breakdownTableWidgetChartConfig !== null)
+        ? BreakdownTableConfig.fromPartial(object.breakdownTableWidgetChartConfig)
         : undefined;
     return message;
   },
@@ -6383,6 +6535,80 @@ export const InvocationDistributionConfig_ScatterSettings: MessageFns<Invocation
   ): InvocationDistributionConfig_ScatterSettings {
     const message = createBaseInvocationDistributionConfig_ScatterSettings() as any;
     message.xAxisMetricField = object.xAxisMetricField ?? "";
+    return message;
+  },
+};
+
+function createBaseBreakdownTableConfig(): BreakdownTableConfig {
+  return { aggregations: [] };
+}
+
+export const BreakdownTableConfig: MessageFns<BreakdownTableConfig> = {
+  encode(message: BreakdownTableConfig, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    writer.uint32(10).fork();
+    for (const v of message.aggregations) {
+      writer.int32(v);
+    }
+    writer.join();
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BreakdownTableConfig {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBreakdownTableConfig() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag === 8) {
+            message.aggregations.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 10) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.aggregations.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BreakdownTableConfig {
+    return {
+      aggregations: globalThis.Array.isArray(object?.aggregations)
+        ? object.aggregations.map((e: any) => breakdownTableConfig_BreakdownAggregationFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: BreakdownTableConfig): unknown {
+    const obj: any = {};
+    if (message.aggregations?.length) {
+      obj.aggregations = message.aggregations.map((e) => breakdownTableConfig_BreakdownAggregationToJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BreakdownTableConfig>): BreakdownTableConfig {
+    return BreakdownTableConfig.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BreakdownTableConfig>): BreakdownTableConfig {
+    const message = createBaseBreakdownTableConfig() as any;
+    message.aggregations = object.aggregations?.map((e) => e) || [];
     return message;
   },
 };
