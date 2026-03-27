@@ -18,17 +18,9 @@ package actions
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/storer"
-	"github.com/go-git/go-git/v5/plumbing/transport"
-	"github.com/go-git/go-git/v5/plumbing/transport/client"
-	"github.com/go-git/go-git/v5/plumbing/transport/server"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -61,7 +53,7 @@ func TestProcessGit(t *testing.T) {
 func TestExecuteGit(t *testing.T) {
 	ftt.Run("Test execute action git", t, func(t *ftt.Test) {
 		ctx := context.Background()
-		repo, commit := initGitRepo(t)
+		repo, commit := testutils.InitGitRepo(t)
 		out := t.TempDir()
 
 		t.Run("Test clone and checkout commit", func(t *ftt.Test) {
@@ -88,7 +80,7 @@ func TestReexecGit(t *testing.T) {
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 		ctx := context.Background()
-		repo, commit := initGitRepo(t)
+		repo, commit := testutils.InitGitRepo(t)
 		out := t.TempDir()
 
 		pkg, err := ap.Process("", pm, &core.Action{
@@ -109,52 +101,4 @@ func TestReexecGit(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, head.Hash().String(), should.Equal(commit))
 	})
-}
-
-// go-git uses git binary for file repo. Override the behavior to ensure tests
-// are hermetic.
-type testRepoLoader struct{}
-
-func (l *testRepoLoader) Load(ep *transport.Endpoint) (storer.Storer, error) {
-	path := ep.Path
-	if ep.Host != "" {
-		path = ep.Host + ":" + path
-	}
-	r, err := git.PlainOpen(filepath.FromSlash(path))
-	if err != nil {
-		return nil, err
-	}
-	return r.Storer, nil
-}
-
-func init() {
-	client.InstallProtocol("test", server.NewClient(&testRepoLoader{}))
-}
-
-func initGitRepo(t *ftt.Test) (string, string) {
-	t.Helper()
-
-	dir := t.TempDir()
-	repo, err := git.PlainInit(dir, false)
-	assert.Loosely(t, err, should.BeNil)
-
-	wt, err := repo.Worktree()
-	assert.Loosely(t, err, should.BeNil)
-
-	f, err := os.Create(filepath.Join(dir, "file"))
-	assert.Loosely(t, err, should.BeNil)
-	f.Close()
-	_, err = wt.Add("file")
-	assert.Loosely(t, err, should.BeNil)
-
-	commit, err := wt.Commit("initial commit", &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "Test",
-			Email: "test@example.com",
-			When:  time.Now(),
-		},
-	})
-	assert.Loosely(t, err, should.BeNil)
-
-	return "test://" + filepath.ToSlash(dir), commit.String()
 }
