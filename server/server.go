@@ -1096,7 +1096,7 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	// Logging is needed to report any errors during the early initialization.
 	srv.initLogging()
 
-	logging.Infof(srv.Context, "Server starting...")
+	logging.Infof(srv.Context, "Server starting for cloud project %q...", srv.Options.CloudProject)
 	if srv.Options.ContainerImageID != "" {
 		logging.Infof(srv.Context, "Container image is %s", srv.Options.ContainerImageID)
 	}
