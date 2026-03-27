@@ -928,7 +928,6 @@ func TestCredentialHelperEnv(t *testing.T) {
 			Exec:                   phonyHelper,
 			Protocol:               credhelperpb.Protocol_RECLIENT,
 			DynamicOauthScopesFlag: "-scopes",
-			OauthScopesRemapping:   map[string]string{scopes.Firebase: ""},
 			CacheTokensOnDisk:      true,
 		}))
 		assert.Loosely(t, a.opts.Method, should.Equal(CredentialHelperMethod))
@@ -954,7 +953,7 @@ func TestCredentialHelperEnv(t *testing.T) {
 		assert.Loosely(t, err, should.ErrLike("OAuth client is not configured"))
 	})
 
-	ftt.Run("firebase scope is ignored", t, func(t *ftt.Test) {
+	ftt.Run("oauth scopes remapping works", t, func(t *ftt.Test) {
 		ctx := env.SetInCtx(context.Background())
 		ctx = lucictx.SetLocalAuth(ctx, nil)
 
@@ -962,18 +961,19 @@ func TestCredentialHelperEnv(t *testing.T) {
 			Scopes: []string{"scope2", "scope1", scopes.Firebase},
 		})
 
-		a.lock.Lock()
-		err := a.ensureInitialized()
-		a.lock.Unlock()
-		assert.NoErr(t, err)
-
-		assert.Loosely(t, a.opts.CredentialHelper, should.Match(&credhelperpb.Config{
+		a.opts.CredentialHelper = &credhelperpb.Config{
 			Exec:                   phonyHelper,
 			Protocol:               credhelperpb.Protocol_RECLIENT,
 			DynamicOauthScopesFlag: "-scopes",
 			OauthScopesRemapping:   map[string]string{scopes.Firebase: ""},
 			CacheTokensOnDisk:      true,
-		}))
+		}
+
+		a.lock.Lock()
+		err := a.ensureInitialized()
+		a.lock.Unlock()
+		assert.NoErr(t, err)
+
 		assert.Loosely(t, a.opts.Method, should.Equal(CredentialHelperMethod))
 
 		helper := a.authToken.provider.(*credHelperTokenProvider)

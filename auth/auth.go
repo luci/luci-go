@@ -1282,12 +1282,7 @@ func (a *Authenticator) ensureInitialized() error {
 				Exec:                   exe,
 				Protocol:               credhelperpb.Protocol_RECLIENT,
 				DynamicOauthScopesFlag: "-scopes",
-				// TODO(dlf): Either remove the scope entirely or fix the scope
-				// so it can be used with a credential helper. The Firebase scope
-				// is hardcoded into the Firebase CLI tool.
-				// https://github.com/firebase/firebase-tools/blob/main/src/auth.ts#L277
-				OauthScopesRemapping: map[string]string{scopes.Firebase: ""},
-				CacheTokensOnDisk:    true,
+				CacheTokensOnDisk:      true,
 			}
 		}
 	}
