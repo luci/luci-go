@@ -67,6 +67,7 @@ interface FilterEditorProps {
   dataSpecId: string;
   availableColumns: readonly MeasurementFilterColumn[];
   isLoadingColumns?: boolean;
+  disableAccordion?: boolean;
 }
 
 function FilterEditorRow({
@@ -282,6 +283,7 @@ export function FilterEditor({
   dataSpecId,
   availableColumns,
   isLoadingColumns,
+  disableAccordion = false,
 }: FilterEditorProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -404,6 +406,74 @@ export function FilterEditor({
     return `${filter.column} ${OPERATOR_DISPLAY_NAMES[op] ?? PerfFilterDefault_FilterOperator[op]} \"${val}\"`;
   };
 
+  const content = (
+    <>
+      {isLoadingColumns ? (
+        <Box sx={{ display: 'flex', justifySelf: 'center', p: 2 }}>
+          <CircularProgress size={24} />
+        </Box>
+      ) : (
+        <>
+          {filters.map((filter, index) => {
+            const colDef = availableColumns.find(
+              (c) => c.column === filter.column,
+            );
+            const rawType = colDef
+              ? colDef.dataType
+              : MeasurementFilterColumn_ColumnDataType.COLUMN_DATA_TYPE_UNSPECIFIED;
+            const dataType =
+              measurementFilterColumn_ColumnDataTypeFromJSON(rawType);
+
+            return (
+              <FilterEditorRow
+                key={filter.id}
+                filter={filter}
+                dataSpecId={dataSpecId}
+                primaryColumns={primaryColumns}
+                secondaryColumns={secondaryColumns}
+                dataType={dataType}
+                onUpdateColumn={(column) =>
+                  handleFilterChange(index, { column })
+                }
+                onUpdateOperator={(operator) =>
+                  handleDefaultValueChange(index, 'filterOperator', operator)
+                }
+                onUpdateValue={(value) =>
+                  handleDefaultValueChange(index, 'values', [value])
+                }
+                onRemove={() => handleRemoveFilter(index)}
+                globalFilters={globalFilters}
+                widgetFilters={filters}
+              />
+            );
+          })}
+          <Button
+            startIcon={<AddIcon />}
+            onClick={handleAddFilter}
+            variant="outlined"
+            size="small"
+            sx={{ mt: 1 }}
+          >
+            Add Filter
+          </Button>
+        </>
+      )}
+    </>
+  );
+
+  if (disableAccordion) {
+    return (
+      <Box sx={{ mt: 1 }}>
+        {title && (
+          <Typography variant="subtitle1" sx={{ mb: 1 }}>
+            {title}
+          </Typography>
+        )}
+        {content}
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ mt: 1 }}>
       <Accordion
@@ -446,62 +516,7 @@ export function FilterEditor({
             </Typography>
           )}
         </AccordionSummary>
-        <AccordionDetails>
-          {isLoadingColumns ? (
-            <Box sx={{ display: 'flex', justifySelf: 'center', p: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : (
-            <>
-              {filters.map((filter, index) => {
-                const colDef = availableColumns.find(
-                  (c) => c.column === filter.column,
-                );
-                const rawType = colDef
-                  ? colDef.dataType
-                  : MeasurementFilterColumn_ColumnDataType.COLUMN_DATA_TYPE_UNSPECIFIED;
-                const dataType =
-                  measurementFilterColumn_ColumnDataTypeFromJSON(rawType);
-
-                return (
-                  <FilterEditorRow
-                    key={filter.id}
-                    filter={filter}
-                    dataSpecId={dataSpecId}
-                    primaryColumns={primaryColumns}
-                    secondaryColumns={secondaryColumns}
-                    dataType={dataType}
-                    onUpdateColumn={(column) =>
-                      handleFilterChange(index, { column })
-                    }
-                    onUpdateOperator={(operator) =>
-                      handleDefaultValueChange(
-                        index,
-                        'filterOperator',
-                        operator,
-                      )
-                    }
-                    onUpdateValue={(value) =>
-                      handleDefaultValueChange(index, 'values', [value])
-                    }
-                    onRemove={() => handleRemoveFilter(index)}
-                    globalFilters={globalFilters}
-                    widgetFilters={filters}
-                  />
-                );
-              })}
-              <Button
-                startIcon={<AddIcon />}
-                onClick={handleAddFilter}
-                variant="outlined"
-                size="small"
-                sx={{ mt: 1 }}
-              >
-                Add Filter
-              </Button>
-            </>
-          )}
-        </AccordionDetails>
+        <AccordionDetails>{content}</AccordionDetails>
       </Accordion>
     </Box>
   );

@@ -273,6 +273,8 @@ export function ChartWidget({
         dataSpecId={widget.dataSpecId}
         globalFilters={globalFilters}
         widgetFilters={widget.filters}
+        filterColumns={filterColumns}
+        isLoadingFilterColumns={isLoadingFilterColumns}
       />
     </Box>
   );

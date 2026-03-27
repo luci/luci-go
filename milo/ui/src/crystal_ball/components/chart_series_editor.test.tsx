@@ -68,6 +68,7 @@ const defaultProps = {
   series: [] as PerfChartSeries[],
   onUpdateSeries: jest.fn(),
   dataSpecId: 'test-spec-id',
+  filterColumns: [],
 };
 
 describe('ChartSeriesEditor', () => {
@@ -75,28 +76,18 @@ describe('ChartSeriesEditor', () => {
     defaultProps.onUpdateSeries.mockClear();
     mockUUIDCount = 0;
     (self.crypto.randomUUID as jest.Mock).mockClear();
+    mockedSuggestValues.mockClear();
   });
 
   it('renders with no series initially', async () => {
     render(<ChartSeriesEditor {...defaultProps} />);
     expect(screen.getByText('Series')).toBeInTheDocument();
-
-    // Expand the accordion to check inner content
-    fireEvent.click(screen.getByText('Series'));
-    await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: /Add Series/i }),
-      ).toBeInTheDocument();
-    });
+    expect(
+      screen.getByRole('button', { name: /Add Series/i }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /Remove series/i }),
     ).not.toBeInTheDocument();
-
-    // Collapse and check text
-    fireEvent.click(screen.getByText('Series'));
-    await waitFor(() => {
-      expect(screen.getByText('No series added.')).toBeInTheDocument();
-    });
   });
 
   it('renders with initial series', async () => {
@@ -109,11 +100,11 @@ describe('ChartSeriesEditor', () => {
     ];
     render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
 
-    // Check chip label when collapsed
-    expect(screen.getByText('metric1')).toBeInTheDocument();
+    // Check display name when collapsed
+    expect(screen.getByText('Series 1')).toBeInTheDocument();
 
     // Expand the accordion
-    fireEvent.click(screen.getByText('Series'));
+    fireEvent.click(screen.getByText('Series 1'));
     await waitFor(() => {
       expect(screen.getByLabelText('Metric Field')).toBeInTheDocument();
     });
@@ -123,13 +114,6 @@ describe('ChartSeriesEditor', () => {
 
   it('adds a new series when "Add Series" is clicked', async () => {
     render(<ChartSeriesEditor {...defaultProps} />);
-    fireEvent.click(screen.getByText('Series')); // Expand
-    await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: /Add Series/i }),
-      ).toBeInTheDocument();
-    });
-
     fireEvent.click(screen.getByRole('button', { name: /Add Series/i }));
 
     expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
@@ -151,7 +135,9 @@ describe('ChartSeriesEditor', () => {
       }),
     ];
     render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
-    fireEvent.click(screen.getByText('Series')); // Expand
+
+    // Expand the accordion to see details (with delete button)
+    fireEvent.click(screen.getByText('Series 1'));
     await waitFor(() => {
       expect(
         screen.getByRole('button', { name: /Remove series/i }),
@@ -173,7 +159,9 @@ describe('ChartSeriesEditor', () => {
       }),
     ];
     render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
-    fireEvent.click(screen.getByText('Series')); // Expand
+
+    // Expand the accordion
+    fireEvent.click(screen.getByText('Series 1'));
     const metricInput = await screen.findByLabelText('Metric Field');
 
     fireEvent.change(metricInput, { target: { value: 'newMetric' } });
@@ -199,7 +187,9 @@ describe('ChartSeriesEditor', () => {
       }),
     ];
     render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
-    fireEvent.click(screen.getByText('Series')); // Expand
+
+    // Expand the accordion
+    fireEvent.click(screen.getByText('Series 1'));
     const metricInput = await screen.findByLabelText('Metric Field');
 
     fireEvent.focus(metricInput);
@@ -253,7 +243,8 @@ describe('ChartSeriesEditor', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('Series')); // Expand
+    // Expand the accordion
+    fireEvent.click(screen.getByText('Series 1'));
     const metricInput = await screen.findByLabelText('Metric Field');
 
     fireEvent.focus(metricInput);
@@ -266,30 +257,6 @@ describe('ChartSeriesEditor', () => {
             'atp_test_name = "globalValue" AND atp_test_name = "widgetValue"',
         }),
         expect.objectContaining({ enabled: true }),
-      );
-    });
-  });
-
-  it('disables suggestions when atp_test_name filter is missing', async () => {
-    const initialSeries: PerfChartSeries[] = [
-      PerfChartSeries.fromPartial({
-        displayName: 'Series 1',
-        metricField: 'metric1',
-        dataSpecId: 'test-spec-id',
-      }),
-    ];
-    render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
-
-    fireEvent.click(screen.getByText('Series')); // Expand
-    const metricInput = await screen.findByLabelText('Metric Field');
-
-    fireEvent.focus(metricInput);
-    fireEvent.change(metricInput, { target: { value: 'newMetric' } });
-
-    await waitFor(() => {
-      expect(mockedSuggestValues).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({ enabled: false }),
       );
     });
   });
@@ -310,13 +277,12 @@ describe('ChartSeriesEditor', () => {
     const { rerender } = render(
       <ChartSeriesEditor {...defaultProps} series={initialSeries} />,
     );
-    fireEvent.click(screen.getByText('Series')); // Expand
-    await waitFor(() => {
-      expect(screen.getAllByLabelText('Metric Field').length).toBe(2);
-    });
 
-    // Remove the first one
-    const removeButtons = screen.getAllByRole('button', {
+    // Expand first series to make its remove button accessible
+    fireEvent.click(screen.getByText('s1'));
+
+    // Remove the first one (now that it's expanded and accessible)
+    const removeButtons = await screen.findAllByRole('button', {
       name: /Remove series/i,
     });
     fireEvent.click(removeButtons[0]);
