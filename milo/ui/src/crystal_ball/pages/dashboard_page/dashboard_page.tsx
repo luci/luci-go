@@ -586,7 +586,8 @@ export function DashboardPage() {
   );
 
   const subHeader = useMemo(() => {
-    if (isLoadingFilterColumns || globalFilterColumns.length === 0) return null;
+    if (!isLoadingFilterColumns && globalFilterColumns.length === 0)
+      return null;
 
     const activeGlobalFilters = (
       localDashboardState?.dashboardContent?.globalFilters ?? []

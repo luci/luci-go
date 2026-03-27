@@ -36,6 +36,7 @@ import { FilterEditor } from '@/crystal_ball/components';
 import {
   ATP_TEST_NAME_COLUMN,
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
+  GLOBAL_TIME_RANGE_COLUMN,
   MAX_SUGGEST_RESULTS,
 } from '@/crystal_ball/constants';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
@@ -189,7 +190,7 @@ function ChartSeriesItem({
 
   const filterString = useMemo(() => {
     return buildFilterString(
-      [ATP_TEST_NAME_COLUMN],
+      [ATP_TEST_NAME_COLUMN, GLOBAL_TIME_RANGE_COLUMN],
       globalFilters,
       widgetFilters,
     );

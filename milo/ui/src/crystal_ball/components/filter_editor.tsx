@@ -41,6 +41,7 @@ import { useDebounce } from 'react-use';
 import {
   ATP_TEST_NAME_COLUMN,
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
+  GLOBAL_TIME_RANGE_COLUMN,
   MAX_SUGGEST_RESULTS,
 } from '@/crystal_ball/constants/api';
 import {
@@ -116,7 +117,7 @@ function FilterEditorRow({
 
   const filterString = useMemo(() => {
     return buildFilterString(
-      [ATP_TEST_NAME_COLUMN],
+      [ATP_TEST_NAME_COLUMN, GLOBAL_TIME_RANGE_COLUMN],
       globalFilters,
       widgetFilters,
       filter.id,
