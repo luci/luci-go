@@ -55,6 +55,7 @@ export const BROWSER_DEFAULT_COLUMNS = [
   'ufs_labels.model',
   'swarming_labels.device_os',
   'swarming_labels.device_type',
+  'swarming_labels.device_state',
   'swarming_labels.dut_state',
   'swarming_labels.os',
   'swarming_labels.pool',

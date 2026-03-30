@@ -192,6 +192,7 @@ export const BrowserDevicesPage = () => {
     orderByParam,
     localStorageKey: BROWSER_DEVICES_LOCAL_STORAGE_KEY,
     defaultColumnIds: BROWSER_DEFAULT_COLUMNS,
+    platform: Platform.CHROMIUM,
   });
 
   const table = useFCDataTable({
@@ -218,7 +219,6 @@ export const BrowserDevicesPage = () => {
     state: {
       isLoading: devicesQuery.isPending || devicesQuery.isPlaceholderData,
       columnVisibility: fleetMrtState.columnVisibility,
-      columnOrder: ['mrt-row-select', ...fleetMrtState.visibleColumnIds],
       sorting: fleetMrtState.sorting,
       columnFilters: fleetMrtState.columnFilters,
       rowSelection: fleetMrtState.rowSelection,

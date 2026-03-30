@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { GridColDef } from '@mui/x-data-grid';
+import { MRT_ColumnDef, MRT_RowData } from 'material-react-table';
 
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -26,8 +27,10 @@ const COMMON_COLUMNS: Record<Platform, string[]> = {
   [Platform.CHROMIUM]: [
     'id',
     'ufs_labels.hostname',
-    'swarming_labels.state',
     'ufs_labels.serial_number',
+    'swarming_labels.state',
+    'swarming_labels.dut_state',
+    'swarming_labels.device_state',
   ],
 };
 
@@ -88,4 +91,24 @@ export const orderColumns = (
       temporaryColumnIds,
     ),
   );
+};
+
+export const orderMRTColumns = <TData extends MRT_RowData>(
+  platform: Platform,
+  columnDefs: MRT_ColumnDef<TData>[],
+  visibleColumnIds: string[] = [],
+  temporaryColumnIds: string[] = [],
+): MRT_ColumnDef<TData>[] => {
+  return [...columnDefs].sort((a, b) => {
+    const aId = (a.id || a.accessorKey) as string;
+    const bId = (b.id || b.accessorKey) as string;
+    if (!aId || !bId) return 0;
+    return sortingComparator(
+      platform,
+      aId,
+      bId,
+      visibleColumnIds,
+      temporaryColumnIds,
+    );
+  });
 };

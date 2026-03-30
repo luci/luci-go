@@ -21,6 +21,7 @@ import {
 } from 'material-react-table';
 import { ReactNode, useMemo } from 'react';
 
+import { orderMRTColumns } from '@/fleet/components/device_table/columns';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
@@ -28,7 +29,10 @@ import {
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
 import { FC_CellProps } from '@/fleet/types/table';
-import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import {
+  BrowserDevice,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import {
   BROWSER_COLUMN_OVERRIDES,
@@ -63,23 +67,18 @@ export const BrowserDeviceDimensions = ({
       ),
     ];
 
-    const columnsRecord = ids.map((id) => getBrowserColumn(id));
+    let columnsRecord = ids.map((id) => getBrowserColumn(id));
+    columnsRecord = orderMRTColumns(Platform.CHROMIUM, columnsRecord);
 
-    return columnsRecord
-      .map((col) => {
-        return {
-          key: (col.header as string) ?? col.accessorKey,
-          value: col.accessorFn?.(device as BrowserDevice) ?? '',
-          // This field is unique and will be used
-          // to find custom renderCell functions.
-          id: col.accessorKey as string,
-        };
-      })
-      .sort((a, b) => {
-        if (a.id === 'id') return -1;
-        if (b.id === 'id') return 1;
-        return a.id.localeCompare(b.id);
-      });
+    return columnsRecord.map((col) => {
+      return {
+        key: (col.header as string) ?? col.accessorKey,
+        value: col.accessorFn?.(device as BrowserDevice) ?? '',
+        // This field is unique and will be used
+        // to find custom renderCell functions.
+        id: col.accessorKey as string,
+      };
+    });
   }, [device]);
 
   const columns = useMemo(() => {

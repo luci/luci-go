@@ -21,6 +21,9 @@ import {
 import { useMemo, useCallback, useState } from 'react';
 
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
+import { orderMRTColumns } from '../device_table/columns';
 
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 
@@ -63,6 +66,7 @@ export interface UseMRTColumnManagementProps<
   localStorageKey: string;
   // IDs of columns that are currently filtered and should be highlighted
   highlightedColumnIds?: readonly string[];
+  platform?: Platform;
 }
 
 export function useMRTColumnManagement<
@@ -79,15 +83,14 @@ export function useMRTColumnManagement<
   defaultColumnIds,
   localStorageKey,
   highlightedColumnIds = [],
+  platform,
 }: UseMRTColumnManagementProps<_TData, TColumnDef>) {
-  const [visibleColumnIdsRaw, setVisibleColumnIds] = useParamsAndLocalStorage(
+  const [visibleColumnIds, setVisibleColumnIds] = useParamsAndLocalStorage(
     COLUMNS_PARAM_KEY,
     localStorageKey,
     defaultColumnIds,
     sanitizeColumnIds,
   );
-
-  const visibleColumnIds = visibleColumnIdsRaw;
 
   const temporaryColumnIds = useMemo(
     () => highlightedColumnIds.filter((col) => !visibleColumnIds.includes(col)),
@@ -175,7 +178,7 @@ export function useMRTColumnManagement<
   );
 
   const columns = useMemo(() => {
-    return rawColumns.map((colDef) => {
+    const mappedColumns = rawColumns.map((colDef) => {
       const colId = getColumnId(colDef);
       if (!colId) return colDef;
 
@@ -195,7 +198,22 @@ export function useMRTColumnManagement<
       }
       return colDef;
     });
-  }, [rawColumns, temporaryColumnIds, highlightedColumnIds]) as TColumnDef[];
+
+    if (!platform) return mappedColumns;
+
+    return orderMRTColumns(
+      platform,
+      mappedColumns as MRT_ColumnDef<MRT_RowData>[],
+      visibleColumnIds,
+      temporaryColumnIds,
+    );
+  }, [
+    rawColumns,
+    temporaryColumnIds,
+    highlightedColumnIds,
+    visibleColumnIds,
+    platform,
+  ]) as TColumnDef[];
 
   return {
     columns,

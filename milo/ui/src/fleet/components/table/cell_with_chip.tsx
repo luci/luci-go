@@ -22,9 +22,10 @@ import { androidState } from '@/fleet/pages/device_list_page/android/android_sta
 import { colors } from '@/fleet/theme/colors';
 import { FC_CellProps } from '@/fleet/types/table';
 
+import { swarmingState } from '../../pages/device_list_page/browser/swarming_state';
 import { dutState } from '../../pages/device_list_page/chromeos/dut_state';
 
-export type StateUnion = dutState | androidState;
+export type StateUnion = dutState | androidState | swarmingState;
 
 // eslint-disable-next-line react-refresh/only-export-components
 function ChipComponent(props: {

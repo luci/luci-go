@@ -24,7 +24,10 @@ import {
   StateUnion,
 } from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
-import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
+import {
+  getBrowserSwarmingStateDocLinkForLabel,
+  getSwarmingStateDocLinkForLabel,
+} from '@/fleet/config/flops_doc_mapping';
 import {
   BROWSER_SWARMING_SOURCE,
   BROWSER_UFS_SOURCE,
@@ -38,6 +41,11 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { getStatusColor } from '../chromeos/dut_state';
+
+import {
+  getBrowserSwarmingStateColor,
+  sortSwarmingStates,
+} from './swarming_state';
 
 const destructureColumnId = (id: string) => {
   let source: string | undefined = undefined;
@@ -260,6 +268,36 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
         return <>{value}</>;
       }
       return <SmartRelativeTimestamp date={dt} />;
+    },
+  },
+  [`${BROWSER_SWARMING_SOURCE}.state`]: {
+    Cell: (params) => {
+      let stateValues = [
+        ...(params.row.original?.swarmingLabels?.['state']?.values ?? []),
+      ];
+
+      if (stateValues.length === 0) return <></>;
+
+      stateValues = sortSwarmingStates(stateValues.map((v) => v.toUpperCase()));
+
+      return (
+        <EllipsisTooltip tooltip={stateValues.join(', ')}>
+          {stateValues.map((val, index) => {
+            const ChipComponent = renderChipCell<BrowserDevice>(
+              getBrowserSwarmingStateDocLinkForLabel,
+              getBrowserSwarmingStateColor,
+              undefined,
+              true,
+              val as StateUnion,
+            );
+            return (
+              <span key={val + String(index)} style={{ marginRight: '4px' }}>
+                {ChipComponent(params)}
+              </span>
+            );
+          })}
+        </EllipsisTooltip>
+      );
     },
   },
   [`${BROWSER_UFS_SOURCE}.hostname`]: {

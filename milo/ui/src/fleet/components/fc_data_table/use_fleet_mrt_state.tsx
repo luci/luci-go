@@ -30,6 +30,7 @@ import { PagerContext } from '@/common/components/params_pager/context';
 import { GetFiltersResult } from '@/fleet/components/filter_dropdown/parser/parser';
 import { filtersUpdater } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { OptionCategory, StringListCategory } from '@/fleet/types/option';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { useMRTColumnManagement } from '../columns/use_mrt_column_management';
 
@@ -59,6 +60,7 @@ export interface FleetMRTStateProps<
   localStorageKey: string;
 
   defaultColumnIds: string[];
+  platform?: Platform;
 }
 
 export const useFleetMRTState = <
@@ -74,6 +76,7 @@ export const useFleetMRTState = <
   stripLabelsPrefix = false,
   localStorageKey,
   defaultColumnIds,
+  platform,
 }: FleetMRTStateProps<TColumnDef>) => {
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
@@ -108,6 +111,7 @@ export const useFleetMRTState = <
     defaultColumnIds,
     columns: columnsList,
     highlightedColumnIds,
+    platform,
   });
 
   const sorting: MRT_SortingState = useMemo(() => {

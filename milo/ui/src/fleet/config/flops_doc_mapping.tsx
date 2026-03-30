@@ -22,3 +22,25 @@ export const getSwarmingStateDocLinkForLabel = (
   }
   return `${swarmingStateBaseUrl}#${value.replace(/_/g, '-').toLowerCase()}`;
 };
+
+const browserSwarmingStateBaseUrl = 'http://go/flops-browser';
+
+export const getBrowserSwarmingStateDocLinkForLabel = (
+  value: string | undefined,
+): string => {
+  if (!value) {
+    return '';
+  }
+  switch (value.toUpperCase()) {
+    case 'ALIVE':
+      return `${browserSwarmingStateBaseUrl}#status-alive-good`;
+    case 'DEAD':
+      return `${browserSwarmingStateBaseUrl}#status-dead-bad`;
+    case 'QUARANTINED':
+      return `${browserSwarmingStateBaseUrl}#status-quarantined-bad`;
+    case 'MAINTENANCE':
+      return `${browserSwarmingStateBaseUrl}#status-in-maintenance-bad`;
+    default:
+      return `${browserSwarmingStateBaseUrl}#status-${value.replace(/_/g, '-').toLowerCase()}`;
+  }
+};
