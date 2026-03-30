@@ -13,9 +13,11 @@
 // limitations under the License.
 
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import ConstructionIcon from '@mui/icons-material/Construction';
+import DevicesIcon from '@mui/icons-material/Devices';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import FeedbackIcon from '@mui/icons-material/Feedback';
-import { Alert, Box, Button, Grid, Link, Typography } from '@mui/material';
+import { Alert, Box, Button, Grid2, Link, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import { useUserProfile } from '@/common/hooks/use_user_profile';
@@ -58,6 +60,14 @@ export const HomePage = () => {
     enabled: !isAnonymous,
   });
 
+  const androidRepairsQuery = useQuery({
+    ...client.CountRepairMetrics.query({
+      filter: '',
+      platform: Platform.ANDROID,
+    }),
+    enabled: !isAnonymous,
+  });
+
   const chromeosTotal = chromeosQuery.data?.total ?? 0;
 
   const browserTotal = browserQuery.data?.total ?? 0;
@@ -74,7 +84,7 @@ export const HomePage = () => {
           minHeight: 'calc(100vh - 64px)',
         }}
       >
-        <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%', mt: 8 }}>
+        <Box sx={{ maxWidth: 1300, mx: 'auto', width: '100%', mt: 8 }}>
           {/* Hero Section */}
           <Box sx={{ mb: 8, textAlign: 'center' }}>
             <Typography variant="h3" component="h1" gutterBottom>
@@ -107,9 +117,9 @@ export const HomePage = () => {
               to load fleet data.
             </Alert>
           ) : (
-            <Grid container spacing={4}>
+            <Grid2 container spacing={4}>
               {/* ChromeOS Card */}
-              <Grid item xs={12} md={4}>
+              <Grid2 size={{ xs: 12, md: 6, lg: 4 }}>
                 <PlatformSummaryCard
                   title="ChromeOS"
                   logoSrc={chromeosLogo}
@@ -117,12 +127,13 @@ export const HomePage = () => {
                   isLoading={chromeosQuery.isPending}
                   isError={chromeosQuery.isError}
                   linkTo="/ui/fleet/p/chromeos/devices"
-                  linkText="View ChromeOS Devices"
+                  linkText="View all devices"
+                  linkIcon={<DevicesIcon />}
                 />
-              </Grid>
+              </Grid2>
 
               {/* Browser Card */}
-              <Grid item xs={12} md={4}>
+              <Grid2 size={{ xs: 12, md: 6, lg: 4 }}>
                 <PlatformSummaryCard
                   title="Browser"
                   logoSrc={browserLogo}
@@ -130,23 +141,32 @@ export const HomePage = () => {
                   isLoading={browserQuery.isPending}
                   isError={browserQuery.isError}
                   linkTo="/ui/fleet/p/chromium/devices"
-                  linkText="View Browser Devices"
+                  linkText="View all devices"
+                  linkIcon={<DevicesIcon />}
                 />
-              </Grid>
+              </Grid2>
 
               {/* Android Card */}
-              <Grid item xs={12} md={4}>
+              <Grid2 size={{ xs: 12, md: 6, lg: 4 }}>
                 <PlatformSummaryCard
                   title="Android"
                   logoSrc={androidLogo}
                   total={androidTotal}
-                  isLoading={androidQuery.isPending}
+                  isLoading={
+                    androidQuery.isPending || androidRepairsQuery.isPending
+                  }
                   isError={androidQuery.isError}
                   linkTo="/ui/fleet/p/android/devices"
-                  linkText="View Android Devices"
+                  linkText="View all devices"
+                  linkIcon={<DevicesIcon />}
+                  secondaryLinkTo="/ui/fleet/p/android/repairs"
+                  secondaryLinkText="View all repairs"
+                  secondaryLinkIcon={<ConstructionIcon />}
+                  secondTotalText="Devices offline"
+                  secondTotal={androidRepairsQuery.data?.offlineDevices}
                 />
-              </Grid>
-            </Grid>
+              </Grid2>
+            </Grid2>
           )}
 
           {/* Useful Resources */}

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 
 import { useUserProfile } from '@/common/hooks/use_user_profile';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
@@ -56,6 +56,19 @@ describe('<HomePage />', () => {
                   idleDevices: 250,
                   busyDevices: 100,
                 },
+              });
+            }
+            return Promise.resolve({});
+          },
+        })),
+      },
+      CountRepairMetrics: {
+        query: jest.fn().mockImplementation((req) => ({
+          queryKey: ['CountRepairMetrics', req.platform],
+          queryFn: () => {
+            if (req.platform === Platform.ANDROID) {
+              return Promise.resolve({
+                offlineDevices: 300,
               });
             }
             return Promise.resolve({});
@@ -106,19 +119,46 @@ describe('<HomePage />', () => {
       screen.getByText('Subscribe to updates').closest('a'),
     ).toHaveAttribute('href', 'http://g/fleet-console-users');
 
-    // Check CTA links
-    expect(screen.getByText('View ChromeOS Devices')).toHaveAttribute(
-      'href',
-      '/ui/fleet/p/chromeos/devices',
-    );
-    expect(screen.getByText('View Browser Devices')).toHaveAttribute(
-      'href',
-      '/ui/fleet/p/chromium/devices',
-    );
-    expect(screen.getByText('View Android Devices')).toHaveAttribute(
-      'href',
-      '/ui/fleet/p/android/devices',
-    );
+    await waitFor(() => {
+      const chromeosCard = screen
+        .getByText('ChromeOS')
+        .closest('.MuiCard-root') as HTMLElement;
+      expect(
+        within(chromeosCard).getByText('View all devices'),
+      ).toHaveAttribute('href', '/ui/fleet/p/chromeos/devices');
+      expect(
+        within(chromeosCard).getByText('Total Devices').closest('a'),
+      ).toHaveAttribute('href', '/ui/fleet/p/chromeos/devices');
+
+      const browserCard = screen
+        .getByText('Browser')
+        .closest('.MuiCard-root') as HTMLElement;
+      expect(within(browserCard).getByText('View all devices')).toHaveAttribute(
+        'href',
+        '/ui/fleet/p/chromium/devices',
+      );
+      expect(
+        within(browserCard).getByText('Total Devices').closest('a'),
+      ).toHaveAttribute('href', '/ui/fleet/p/chromium/devices');
+
+      const androidCard = screen
+        .getByText('Android')
+        .closest('.MuiCard-root') as HTMLElement;
+      expect(within(androidCard).getByText('View all devices')).toHaveAttribute(
+        'href',
+        '/ui/fleet/p/android/devices',
+      );
+      expect(
+        within(androidCard).getByText('Total Devices').closest('a'),
+      ).toHaveAttribute('href', '/ui/fleet/p/android/devices');
+      expect(within(androidCard).getByText('View all repairs')).toHaveAttribute(
+        'href',
+        '/ui/fleet/p/android/repairs',
+      );
+      expect(
+        within(androidCard).getByText('Devices offline').closest('a'),
+      ).toHaveAttribute('href', '/ui/fleet/p/android/repairs');
+    });
   });
 
   it('prompts user to log in when anonymous', async () => {
@@ -149,6 +189,7 @@ describe('<HomePage />', () => {
     expect(await screen.findByText('1,000')).toBeInTheDocument();
     expect(screen.getByText('200')).toBeInTheDocument();
     expect(screen.getByText('500')).toBeInTheDocument();
+    expect(screen.getByText('300')).toBeInTheDocument();
   });
 
   it('displays the error state if counts fail to load', async () => {
@@ -162,6 +203,12 @@ describe('<HomePage />', () => {
       CountBrowserDevices: {
         query: jest.fn().mockImplementation(() => ({
           queryKey: ['CountBrowserDevices'],
+          isError: true,
+        })),
+      },
+      CountRepairMetrics: {
+        query: jest.fn().mockImplementation(() => ({
+          queryKey: ['CountRepairMetrics'],
           isError: true,
         })),
       },
