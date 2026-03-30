@@ -34,8 +34,10 @@ import { deepEqual } from 'fast-equals';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBlocker, useNavigate, useParams } from 'react-router';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   AddWidgetModal,
+  BreakdownTableWidget,
   ChartWidget,
   DashboardDialog,
   DashboardTimeRangeSelector,
@@ -62,10 +64,15 @@ import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measur
 import { WidgetType } from '@/crystal_ball/types';
 import { formatApiError, isStringArray } from '@/crystal_ball/utils';
 import {
+  BreakdownTableConfig_BreakdownAggregation,
   DashboardState,
   DeleteDashboardStateRequest,
+  MeasurementFilterColumn,
   MeasurementFilterColumn_FilterScope,
+  PerfChartWidget,
   PerfChartWidget_ChartType,
+  perfChartWidget_ChartTypeFromJSON,
+  PerfDataSpec,
   PerfFilter,
   PerfWidget,
   UpdateDashboardStateRequest,
@@ -163,6 +170,132 @@ function DashboardTitleBar({
     </>
   );
 }
+
+function getSafeChartType(chartType: unknown): PerfChartWidget_ChartType {
+  if (
+    (typeof chartType === 'string' || typeof chartType === 'number') &&
+    chartType in PerfChartWidget_ChartType
+  ) {
+    return perfChartWidget_ChartTypeFromJSON(chartType);
+  }
+  return PerfChartWidget_ChartType.CHART_TYPE_UNSPECIFIED;
+}
+
+function getWidgetType(widget: PerfWidget): WidgetType {
+  if (widget.markdown) return WidgetType.MARKDOWN;
+  if (widget.chart) {
+    const chartType = getSafeChartType(widget.chart.chartType);
+    if (chartType === PerfChartWidget_ChartType.BREAKDOWN_TABLE) {
+      return WidgetType.CHART_BREAKDOWN_TABLE;
+    }
+    return WidgetType.CHART_MULTI_METRIC;
+  }
+  throw new Error(`Unknown widget type: ${JSON.stringify(widget)}`);
+}
+
+interface WidgetContextProps {
+  globalFilters: readonly PerfFilter[];
+  filterColumns: readonly MeasurementFilterColumn[];
+  isLoadingFilterColumns: boolean;
+  dataSpecs: { [key: string]: PerfDataSpec } | undefined;
+  dashboardId: string | undefined;
+}
+
+const renderChartWidget = (
+  Component: React.ComponentType<{
+    widget: PerfChartWidget;
+    dashboardName: string;
+    widgetId: string;
+    globalFilters?: readonly PerfFilter[];
+    filterColumns: readonly MeasurementFilterColumn[];
+    isLoadingFilterColumns?: boolean;
+    dataSpecs?: { [key: string]: PerfDataSpec };
+    onUpdate: (updatedWidget: PerfChartWidget) => void;
+  }>,
+  widget: PerfWidget,
+  context: WidgetContextProps,
+  onUpdate: (updatedWidget: PerfWidget) => void,
+) => (
+  <Component
+    widget={widget.chart!}
+    dashboardName={`dashboardStates/${context.dashboardId}`}
+    widgetId={widget.id}
+    globalFilters={context.globalFilters}
+    filterColumns={context.filterColumns}
+    isLoadingFilterColumns={context.isLoadingFilterColumns}
+    dataSpecs={context.dataSpecs}
+    onUpdate={(updatedChart: PerfChartWidget) =>
+      onUpdate({ ...widget, chart: updatedChart })
+    }
+  />
+);
+
+const WIDGET_RENDERERS: Record<
+  WidgetType,
+  (
+    widget: PerfWidget,
+    context: WidgetContextProps,
+    onUpdate: (updatedWidget: PerfWidget) => void,
+  ) => React.ReactNode
+> = {
+  [WidgetType.MARKDOWN]: (widget, _context, onUpdate) => (
+    <MarkdownWidget widget={widget} onUpdate={onUpdate} />
+  ),
+  [WidgetType.CHART_BREAKDOWN_TABLE]: (widget, context, onUpdate) =>
+    renderChartWidget(BreakdownTableWidget, widget, context, onUpdate),
+  [WidgetType.CHART_MULTI_METRIC]: (widget, context, onUpdate) =>
+    renderChartWidget(ChartWidget, widget, context, onUpdate),
+  [WidgetType.CHART_REGRESSION_METRIC]: () => null,
+  [WidgetType.CHART_INVOCATION_DISTRIBUTION]: () => null,
+};
+
+const WIDGET_CREATORS: Record<WidgetType, () => Partial<PerfWidget>> = {
+  [WidgetType.MARKDOWN]: () => ({
+    displayName: 'New Markdown Widget',
+    markdown: { content: 'This is a new markdown widget.' },
+  }),
+  [WidgetType.CHART_MULTI_METRIC]: () => ({
+    displayName: 'New Chart Widget',
+    chart: {
+      dataSpecId: DATA_SPEC_ID,
+      displayName: 'New Chart Widget',
+      chartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
+      effectiveChartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
+      series: [],
+      filters: [],
+      xAxis: undefined,
+      leftYAxis: undefined,
+      rightYAxis: undefined,
+      seriesSplit: undefined,
+      invocationDistributionConfig: undefined,
+    },
+  }),
+  [WidgetType.CHART_BREAKDOWN_TABLE]: () => ({
+    displayName: 'New Breakdown Table',
+    chart: {
+      dataSpecId: DATA_SPEC_ID,
+      displayName: 'New Breakdown Table',
+      chartType: PerfChartWidget_ChartType.BREAKDOWN_TABLE,
+      effectiveChartType: PerfChartWidget_ChartType.BREAKDOWN_TABLE,
+      series: [],
+      filters: [],
+      xAxis: undefined,
+      leftYAxis: undefined,
+      rightYAxis: undefined,
+      seriesSplit: undefined,
+      invocationDistributionConfig: undefined,
+      breakdownTableWidgetChartConfig: {
+        aggregations: [
+          BreakdownTableConfig_BreakdownAggregation.COUNT,
+          BreakdownTableConfig_BreakdownAggregation.MIN,
+          BreakdownTableConfig_BreakdownAggregation.MAX,
+        ],
+      },
+    },
+  }),
+  [WidgetType.CHART_REGRESSION_METRIC]: () => ({}),
+  [WidgetType.CHART_INVOCATION_DISTRIBUTION]: () => ({}),
+};
 
 /**
  * A customizable dashboard page that renders a dynamic collection of widgets.
@@ -351,9 +484,32 @@ export function DashboardPage() {
     if (!localDashboardState || !localDashboardState.name) return;
     setIsSaving(true);
     try {
+      const sanitizedWidgets =
+        localDashboardState.dashboardContent?.widgets?.map((w) => {
+          if (w.chart) {
+            return {
+              ...w,
+              chart: {
+                ...w.chart,
+                chartType: getSafeChartType(w.chart.chartType),
+              },
+            };
+          }
+          return w;
+        }) ?? [];
+
       const response = await updateDashboard(
         UpdateDashboardStateRequest.fromPartial({
-          dashboardState: localDashboardState,
+          dashboardState: {
+            ...localDashboardState,
+            dashboardContent: {
+              ...localDashboardState.dashboardContent,
+              widgets: sanitizedWidgets,
+              dataSpecs: localDashboardState.dashboardContent?.dataSpecs ?? {},
+              globalFilters:
+                localDashboardState.dashboardContent?.globalFilters ?? [],
+            },
+          },
           updateMask: [
             'displayName',
             'description',
@@ -388,33 +544,15 @@ export function DashboardPage() {
   const handleAddWidget = useCallback((widgetType: WidgetType) => {
     setLocalDashboardState((prev: DashboardState | null) => {
       if (!prev) return null;
-      let newWidget = PerfWidget.fromPartial({
+
+      const creator = WIDGET_CREATORS[widgetType];
+      const widgetPartial = creator ? creator() : {};
+
+      const newWidget = PerfWidget.fromPartial({
         id: `widget-${crypto.randomUUID()}`,
-        displayName: 'New Widget',
+        ...widgetPartial,
       });
-      if (widgetType === WidgetType.MARKDOWN) {
-        newWidget = {
-          ...newWidget,
-          markdown: { content: 'This is a new markdown widget.' },
-        };
-      } else if (widgetType === WidgetType.CHART_MULTI_METRIC) {
-        newWidget = {
-          ...newWidget,
-          chart: {
-            dataSpecId: DATA_SPEC_ID,
-            displayName: 'New Chart Widget',
-            chartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
-            effectiveChartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
-            series: [],
-            filters: [],
-            xAxis: undefined,
-            leftYAxis: undefined,
-            rightYAxis: undefined,
-            seriesSplit: undefined,
-            invocationDistributionConfig: undefined,
-          },
-        };
-      }
+
       return {
         ...prev,
         dashboardContent: {
@@ -682,33 +820,29 @@ export function DashboardPage() {
                   })
                 }
               >
-                {widget.markdown && (
-                  <MarkdownWidget
-                    widget={widget}
-                    onUpdate={(updatedWidget) =>
-                      handleUpdateWidget(index, updatedWidget)
-                    }
-                  />
-                )}
-                {widget.chart && (
-                  <ChartWidget
-                    widget={widget.chart}
-                    dashboardName={`dashboardStates/${dashboardId}`}
-                    widgetId={widget.id}
-                    globalFilters={
-                      localDashboardState?.dashboardContent?.globalFilters ?? []
-                    }
-                    filterColumns={filterColumns}
-                    isLoadingFilterColumns={isLoadingFilterColumns}
-                    dataSpecs={localDashboardState?.dashboardContent?.dataSpecs}
-                    onUpdate={(updatedChartWidget) =>
-                      handleUpdateWidget(index, {
-                        ...widget,
-                        chart: updatedChartWidget,
-                      })
-                    }
-                  />
-                )}
+                {(() => {
+                  const widgetType = getWidgetType(widget);
+                  if (!WIDGET_RENDERERS[widgetType]) return null;
+                  return (
+                    <RecoverableErrorBoundary key={index}>
+                      {WIDGET_RENDERERS[widgetType](
+                        widget,
+                        {
+                          globalFilters:
+                            localDashboardState?.dashboardContent
+                              ?.globalFilters ?? [],
+                          filterColumns,
+                          isLoadingFilterColumns,
+                          dataSpecs:
+                            localDashboardState?.dashboardContent?.dataSpecs,
+                          dashboardId,
+                        },
+                        (updatedWidget) =>
+                          handleUpdateWidget(index, updatedWidget),
+                      )}
+                    </RecoverableErrorBoundary>
+                  );
+                })()}
               </WidgetContainer>
             );
           },

@@ -26,7 +26,7 @@ import {
   SuggestMeasurementFilterValuesResponse,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
-import { ChartSeriesEditor } from './chart_series_editor';
+import { ChartSeriesEditor, ChartSeriesItem } from './chart_series_editor';
 
 const mockedSuggestValues = jest.fn(
   (
@@ -304,5 +304,46 @@ describe('ChartSeriesEditor', () => {
     expect(seriesAfterAdd[0].metricField).toBe('m2'); // Existing
     expect(seriesAfterAdd[1].metricField).toBe(''); // New
     expect(seriesAfterAdd[1].displayName).toBe(`series-${expectedMockUUID}`);
+  });
+});
+
+describe('ChartSeriesItem', () => {
+  const itemProps = {
+    series: PerfChartSeries.fromPartial({
+      displayName: 'Item 1',
+      metricField: 'metric1',
+      dataSpecId: 'test-spec-id',
+    }),
+    onUpdate: jest.fn(),
+    onRemove: jest.fn(),
+    dataSpecId: 'test-spec-id',
+    metricFilterColumns: [],
+  };
+
+  beforeEach(() => {
+    itemProps.onUpdate.mockClear();
+    itemProps.onRemove.mockClear();
+  });
+
+  it('hides color options when hideColorPicker is true', async () => {
+    render(<ChartSeriesItem {...itemProps} hideColorPicker={true} />);
+    expect(screen.queryByTestId('series-color-circle')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Item 1'));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Metric Field')).toBeInTheDocument();
+    });
+    expect(screen.queryByLabelText('Color')).not.toBeInTheDocument();
+  });
+
+  it('shows color options when hideColorPicker is false (default)', async () => {
+    render(<ChartSeriesItem {...itemProps} />);
+    expect(screen.getByTestId('series-color-circle')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Item 1'));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Metric Field')).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText('Color')).toBeInTheDocument();
   });
 });

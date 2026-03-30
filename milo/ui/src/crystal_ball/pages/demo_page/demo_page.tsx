@@ -22,11 +22,8 @@ import {
   SearchMeasurementsForm,
   TimeSeriesChart,
   TimeSeriesDataSet,
-  WidgetContainer,
-  BreakdownTableWidget,
 } from '@/crystal_ball/components';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
-import { MOCK_BREAKDOWN_DATA } from '@/crystal_ball/components/mock_breakdown_data';
 import { RequireLogin } from '@/crystal_ball/components/require_login';
 import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import {
@@ -267,16 +264,6 @@ export function DemoPage() {
           {COMMON_MESSAGES.NO_DATA_FOUND}
         </Typography>
       )}
-
-      {/* Temporary Mock Data Display */}
-      <Box sx={{ mt: 4, minWidth: 0 }}>
-        <WidgetContainer
-          title="Breakdown Example (Mock Data)"
-          disablePadding={true}
-        >
-          <BreakdownTableWidget data={MOCK_BREAKDOWN_DATA} />
-        </WidgetContainer>
-      </Box>
     </Box>
   );
 }

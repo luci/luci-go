@@ -13,6 +13,7 @@
 // limitations under the License.
 
 export * from './add_widget_modal';
+export * from './breakdown_table_chart';
 export * from './breakdown_table_widget';
 export * from './chart_series_editor';
 export * from './chart_widget';
@@ -23,7 +24,6 @@ export * from './filter_editor';
 export * from './layout';
 export * from './markdown_widget';
 export * from './require_login';
-export * from './mock_breakdown_data';
 export * from './search_measurements_form';
 export * from './time_series_chart';
 export * from './widget_container';

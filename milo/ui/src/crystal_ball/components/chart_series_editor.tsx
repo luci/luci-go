@@ -39,7 +39,7 @@ import {
   GLOBAL_TIME_RANGE_COLUMN,
   MAX_SUGGEST_RESULTS,
 } from '@/crystal_ball/constants';
-import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
+import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks';
 import {
   buildFilterString,
   isStringArray,
@@ -53,7 +53,7 @@ import {
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 interface ChartSeriesEditorProps {
-  series: PerfChartSeries[];
+  series: readonly PerfChartSeries[];
   onUpdateSeries: (updatedSeries: PerfChartSeries[]) => void;
   dataSpecId: string;
   globalFilters?: readonly PerfFilter[];
@@ -147,7 +147,7 @@ export function ChartSeriesEditor({
   );
 }
 
-interface ChartSeriesItemProps {
+export interface ChartSeriesItemProps {
   series: PerfChartSeries;
   onUpdate: (updatedSeries: PerfChartSeries) => void;
   onRemove: () => void;
@@ -156,9 +156,10 @@ interface ChartSeriesItemProps {
   widgetFilters?: readonly PerfFilter[];
   metricFilterColumns: readonly MeasurementFilterColumn[];
   isLoadingColumns?: boolean;
+  hideColorPicker?: boolean;
 }
 
-function ChartSeriesItem({
+export function ChartSeriesItem({
   series,
   onUpdate,
   onRemove,
@@ -167,6 +168,7 @@ function ChartSeriesItem({
   widgetFilters,
   metricFilterColumns,
   isLoadingColumns,
+  hideColorPicker,
 }: ChartSeriesItemProps) {
   const [expanded, setExpanded] = useState(false);
   const [displayName, setDisplayName] = useState(series.displayName ?? '');
@@ -267,17 +269,20 @@ function ChartSeriesItem({
           },
         }}
       >
-        <Box
-          sx={{
-            width: 16,
-            height: 16,
-            bgcolor: series.color || color,
-            borderRadius: '50%',
-            border: '1px solid',
-            borderColor: 'divider',
-          }}
-        />
-        <Typography>{series.displayName || 'Untitled Series'}</Typography>
+        {!hideColorPicker && (
+          <Box
+            data-testid="series-color-circle"
+            sx={{
+              width: 16,
+              height: 16,
+              bgcolor: series.color ?? color,
+              borderRadius: '50%',
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
+          />
+        )}
+        <Typography>{series.displayName ?? 'Untitled Series'}</Typography>
         {!expanded && series.metricField && (
           <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
             ({series.metricField})
@@ -289,7 +294,9 @@ function ChartSeriesItem({
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: '1fr 60px auto',
+              gridTemplateColumns: hideColorPicker
+                ? '1fr auto'
+                : '1fr 60px auto',
               gap: 1,
               alignItems: 'center',
             }}
@@ -302,18 +309,20 @@ function ChartSeriesItem({
               size="small"
               fullWidth
             />
-            <TextField
-              label="Color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              onBlur={handleBlurColor}
-              size="small"
-              fullWidth
-              inputProps={{
-                type: 'color',
-                sx: { padding: '2px', height: '40px', cursor: 'pointer' },
-              }}
-            />
+            {!hideColorPicker && (
+              <TextField
+                label="Color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                onBlur={handleBlurColor}
+                size="small"
+                fullWidth
+                inputProps={{
+                  type: 'color',
+                  sx: { padding: '2px', height: '40px', cursor: 'pointer' },
+                }}
+              />
+            )}
             <IconButton
               onClick={onRemove}
               aria-label="Remove series"

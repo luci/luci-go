@@ -15,6 +15,7 @@
 import {
   Article as ArticleIcon,
   ShowChart as ShowChartIcon,
+  TableChart as TableChartIcon,
 } from '@mui/icons-material';
 import {
   Button,
@@ -72,6 +73,12 @@ export function AddWidgetModal({ open, onClose, onAdd }: AddWidgetModalProps) {
       icon: ShowChartIcon,
       primary: 'Multi Metric Chart',
       secondary: 'Display time series data for multiple metrics',
+    },
+    {
+      type: WidgetType.CHART_BREAKDOWN_TABLE,
+      icon: TableChartIcon,
+      primary: 'Breakdown Table',
+      secondary: 'Display breakdown data in a table view',
     },
   ];
 
