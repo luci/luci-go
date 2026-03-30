@@ -91,7 +91,9 @@ if 'wheels' in os.environ:
       try:
         _info('Downloading %s from AR...' % req)
         command = [
-            pip, 'download', '--isolated', '--no-deps', '--dest', wheels_dir, '--index-url', ar_url, req
+            pip, 'download',
+            '--disable-pip-version-check', '--isolated',
+            '--no-deps', '--dest', wheels_dir, '--index-url', ar_url, req
         ]
         target_arch_file = os.path.join(os.environ['wheels'], 'target_arch.txt')
         if os.path.exists(target_arch_file):
