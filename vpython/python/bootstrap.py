@@ -87,7 +87,8 @@ if 'wheels' in os.environ:
       os.makedirs(wheels_dir)
 
     _info('Attempting to download wheels itemized from Artifact Registry...')
-    for req in requirements:
+
+    def _download_req(req):
       try:
         _info('Downloading %s from AR...' % req)
         command = [
@@ -105,9 +106,23 @@ if 'wheels' in os.environ:
         env = os.environ.copy()
         env['NETRC'] = os.devnull
         subprocess.check_output(command, env=env, stderr=subprocess.STDOUT)
+        return None
       except subprocess.CalledProcessError as e:
         _info('Failed to download %s from AR.' % req)
-        failed_requirements.append(req)
+        return req
+
+    try:
+      import concurrent.futures
+      with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        for failed_req in executor.map(_download_req, requirements):
+          if failed_req:
+            failed_requirements.append(failed_req)
+    # concurrent.futures is not available in Python 2.7, run sequentially.
+    except ImportError:
+      for req in requirements:
+        failed_req = _download_req(req)
+        if failed_req:
+          failed_requirements.append(failed_req)
 
     if failed_requirements:
       _info('Falling back to CIPD for %d requirements.' % len(failed_requirements))
