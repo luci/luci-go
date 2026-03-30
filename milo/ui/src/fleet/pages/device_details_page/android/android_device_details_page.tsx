@@ -226,6 +226,13 @@ export const AndroidDeviceDetailsPage = () => {
         };
       },
     );
+    if (device.realm) {
+      l.push({
+        key: 'realm',
+        value: device.realm,
+      });
+    }
+
     l.sort((a, b) => a.key.localeCompare(b.key));
     return l;
   }, [device]);

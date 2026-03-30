@@ -54,6 +54,7 @@ export const BrowserDeviceDimensions = ({
     }
     const ids = [
       'id',
+      'realm',
       ...Object.keys(device.swarmingLabels || {}).map(
         (l) => `${BROWSER_SWARMING_SOURCE}.${l}`,
       ),

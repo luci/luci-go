@@ -34,6 +34,7 @@ const MOCK_DEVICE: Device = {
   deviceSpec: {
     labels: {},
   },
+  realm: '',
 };
 
 describe('devices utils', () => {
@@ -65,6 +66,7 @@ describe('devices utils', () => {
       const deviceWithoutSpec: Device = {
         ...MOCK_DEVICE,
         deviceSpec: undefined,
+        realm: '',
       };
       expect(extractDutLabel('test_label', deviceWithoutSpec)).toBe('');
     });
@@ -110,6 +112,7 @@ describe('devices utils', () => {
       const deviceWithoutSpec: Device = {
         ...MOCK_DEVICE,
         deviceSpec: undefined,
+        realm: '',
       };
       expect(extractDutState(deviceWithoutSpec)).toBe('');
     });

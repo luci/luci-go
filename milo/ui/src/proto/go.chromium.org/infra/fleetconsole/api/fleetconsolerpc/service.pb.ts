@@ -184,6 +184,7 @@ export interface Device {
    * labels.
    */
   readonly deviceSpec: DeviceSpec | undefined;
+  readonly realm: string;
 }
 
 export interface AndroidDevice {
@@ -198,6 +199,7 @@ export interface BrowserDevice {
   readonly id: string;
   readonly swarmingLabels: { [key: string]: LabelValues };
   readonly ufsLabels: { [key: string]: LabelValues };
+  readonly realm: string;
 }
 
 export interface BrowserDevice_SwarmingLabelsEntry {
@@ -1419,7 +1421,7 @@ export const PingSwarmingResponse: MessageFns<PingSwarmingResponse> = {
 };
 
 function createBaseDevice(): Device {
-  return { id: "", dutId: "", address: undefined, type: 0, state: 0, deviceSpec: undefined };
+  return { id: "", dutId: "", address: undefined, type: 0, state: 0, deviceSpec: undefined, realm: "" };
 }
 
 export const Device: MessageFns<Device> = {
@@ -1441,6 +1443,9 @@ export const Device: MessageFns<Device> = {
     }
     if (message.deviceSpec !== undefined) {
       DeviceSpec.encode(message.deviceSpec, writer.uint32(42).fork()).join();
+    }
+    if (message.realm !== "") {
+      writer.uint32(58).string(message.realm);
     }
     return writer;
   },
@@ -1500,6 +1505,14 @@ export const Device: MessageFns<Device> = {
           message.deviceSpec = DeviceSpec.decode(reader, reader.uint32());
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.realm = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1517,6 +1530,7 @@ export const Device: MessageFns<Device> = {
       type: isSet(object.type) ? deviceTypeFromJSON(object.type) : 0,
       state: isSet(object.state) ? deviceStateFromJSON(object.state) : 0,
       deviceSpec: isSet(object.deviceSpec) ? DeviceSpec.fromJSON(object.deviceSpec) : undefined,
+      realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
     };
   },
 
@@ -1540,6 +1554,9 @@ export const Device: MessageFns<Device> = {
     if (message.deviceSpec !== undefined) {
       obj.deviceSpec = DeviceSpec.toJSON(message.deviceSpec);
     }
+    if (message.realm !== "") {
+      obj.realm = message.realm;
+    }
     return obj;
   },
 
@@ -1558,6 +1575,7 @@ export const Device: MessageFns<Device> = {
     message.deviceSpec = (object.deviceSpec !== undefined && object.deviceSpec !== null)
       ? DeviceSpec.fromPartial(object.deviceSpec)
       : undefined;
+    message.realm = object.realm ?? "";
     return message;
   },
 };
@@ -1689,7 +1707,7 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
 };
 
 function createBaseBrowserDevice(): BrowserDevice {
-  return { id: "", swarmingLabels: {}, ufsLabels: {} };
+  return { id: "", swarmingLabels: {}, ufsLabels: {}, realm: "" };
 }
 
 export const BrowserDevice: MessageFns<BrowserDevice> = {
@@ -1703,6 +1721,9 @@ export const BrowserDevice: MessageFns<BrowserDevice> = {
     Object.entries(message.ufsLabels).forEach(([key, value]) => {
       BrowserDevice_UfsLabelsEntry.encode({ key: key as any, value }, writer.uint32(26).fork()).join();
     });
+    if (message.realm !== "") {
+      writer.uint32(34).string(message.realm);
+    }
     return writer;
   },
 
@@ -1743,6 +1764,14 @@ export const BrowserDevice: MessageFns<BrowserDevice> = {
           }
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.realm = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1767,6 +1796,7 @@ export const BrowserDevice: MessageFns<BrowserDevice> = {
           return acc;
         }, {})
         : {},
+      realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
     };
   },
 
@@ -1792,6 +1822,9 @@ export const BrowserDevice: MessageFns<BrowserDevice> = {
           obj.ufsLabels[k] = LabelValues.toJSON(v);
         });
       }
+    }
+    if (message.realm !== "") {
+      obj.realm = message.realm;
     }
     return obj;
   },
@@ -1820,6 +1853,7 @@ export const BrowserDevice: MessageFns<BrowserDevice> = {
       },
       {},
     );
+    message.realm = object.realm ?? "";
     return message;
   },
 };

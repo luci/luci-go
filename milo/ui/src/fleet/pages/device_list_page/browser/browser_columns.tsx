@@ -88,6 +88,7 @@ export const getBrowserColumnIds = (
   }
 
   ids.push(...Object.keys(CUSTOM_COLUMNS));
+  ids.push('realm');
   ids.push(...extraColumns);
   return _.uniq(ids);
 };
@@ -295,5 +296,12 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
       }
       return <SmartRelativeTimestamp date={dt} />;
     },
+  },
+  realm: {
+    header: 'Realm',
+    accessorFn: (row) =>
+      (row as BrowserDevice & { realm?: string }).realm || '',
+    orderByField: 'realm',
+    filterByField: 'realm',
   },
 };

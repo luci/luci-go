@@ -35,6 +35,7 @@ export const ChromeOSDeviceDimensions = ({
 
   const customRows = [
     { id: 'dut_id', value: device.dutId },
+    { id: 'realm', value: device.realm },
     { id: 'lease_state', value: getDeviceStateString(device) },
     {
       id: 'dut_state',

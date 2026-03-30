@@ -27,6 +27,7 @@ export const CHROMEOS_DEFAULT_COLUMNS = [
   'label-servo_component',
   'label-servo_state',
   'label-servo_usb_state',
+  'realm',
 ];
 
 export const ANDROID_DEFAULT_COLUMNS = [
@@ -58,6 +59,7 @@ export const BROWSER_DEFAULT_COLUMNS = [
   'swarming_labels.os',
   'swarming_labels.pool',
   'swarming_labels.state',
+  'realm',
 ];
 
 // Define a list of device filters commonly used by FLOPS to show in the

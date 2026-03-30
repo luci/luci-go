@@ -79,6 +79,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_AVAILABLE,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '2',
@@ -87,6 +88,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_LEASED,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '3',
@@ -95,6 +97,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_AVAILABLE,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '4',
@@ -103,6 +106,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_LEASED,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '5',
@@ -111,6 +115,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_AVAILABLE,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '6',
@@ -119,6 +124,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_LEASED,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '7',
@@ -127,6 +133,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_AVAILABLE,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '8',
@@ -135,6 +142,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_LEASED,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '9',
@@ -143,6 +151,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_AVAILABLE,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '10',
@@ -151,6 +160,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_LEASED,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '11',
@@ -159,6 +169,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_AVAILABLE,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '12',
@@ -167,6 +178,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_LEASED,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
   {
     id: '13',
@@ -175,6 +187,7 @@ const MOCK_DEVICES: Device[] = [
     state: DeviceState.DEVICE_STATE_AVAILABLE,
     address: undefined,
     deviceSpec: undefined,
+    realm: '',
   },
 ];
 

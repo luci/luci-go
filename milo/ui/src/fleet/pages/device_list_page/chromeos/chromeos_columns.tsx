@@ -199,6 +199,12 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<
       (value) => `https://${DEVICE_TASKS_SWARMING_HOST}/bot?id=${value}`,
     ),
   },
+  realm: {
+    headerName: 'Realm',
+    valueGetter: (_, device) =>
+      (device as Device & { realm?: string }).realm || '',
+    orderByField: 'realm',
+  },
 };
 
 const renderCurrentTaskCell = renderCellWithLink((task_id) =>
