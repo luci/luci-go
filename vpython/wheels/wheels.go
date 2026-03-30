@@ -273,17 +273,23 @@ func pipVersionFromPackageVersion(version string) string {
 		return v // Not a standard version, skip normalization
 	}
 
-	// Split by . and -
+	// Split by ., - and +
 	segments := strings.FieldsFunc(v, func(r rune) bool {
-		return r == '.' || r == '-'
+		return r == '.' || r == '-' || r == '+'
 	})
 
 	for _, seg := range segments {
 		if len(seg) == 0 {
 			continue
 		}
-		// Check if segment starts with a letter
-		if unicode.IsLetter(rune(seg[0])) {
+		allDigits := true
+		for _, r := range seg {
+			if !unicode.IsDigit(r) {
+				allDigits = false
+				break
+			}
+		}
+		if !allDigits {
 			// Check if it's a valid pre-release segment
 			isPre := false
 			for _, pre := range []string{"a", "b", "rc", "alpha", "beta", "pre", "preview", "c", "post", "rev", "r", "dev"} {

@@ -130,6 +130,8 @@ func TestPipHelpers(t *testing.T) {
 				{"version:1.2.0.c1", "1.2.0.c1"},
 				{"version:1.2.0.c", "1.2.0.c"},
 				{"version:1.2.0.rc1", "1.2.0.rc1"},
+				{"version:2.5.6-5c85ed3d46137b17da04c59bcd805ee5", "2.5.6+5c85ed3d46137b17da04c59bcd805ee5"},
+				{"version:2.5.6-0a1b2c3d", "2.5.6+0a1b2c3d"},
 			}
 			for _, c := range cases {
 				assert.Loosely(t, pipVersionFromPackageVersion(c.in), should.Equal(c.out))
