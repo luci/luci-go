@@ -12,18 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import HomeIcon from '@mui/icons-material/Home';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
-import { Link as RouterLink } from 'react-router';
+import { Link as RouterLink, useLocation } from 'react-router';
+
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
+import { CRYSTAL_BALL_ROUTES, isLandingPage } from '@/crystal_ball/routes';
 
 import { useTopBar } from './top_bar_context';
 
@@ -34,6 +37,9 @@ import { useTopBar } from './top_bar_context';
 export function TopBar() {
   const { title, actions, menuItems, subHeader } = useTopBar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const location = useLocation();
+
+  const isLanding = isLandingPage(location.pathname);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -55,7 +61,7 @@ export function TopBar() {
           <Tooltip title="CrystalBall Dashboards">
             <Box
               component={RouterLink}
-              to="/ui/labs/crystal-ball"
+              to={CRYSTAL_BALL_ROUTES.LANDING}
               sx={{
                 textDecoration: 'none',
                 cursor: 'pointer',
@@ -66,13 +72,21 @@ export function TopBar() {
             >
               <Typography
                 variant="h6"
+                component="div"
                 sx={{
-                  fontWeight: 'bold',
                   display: 'flex',
                   alignItems: 'center',
+                  fontWeight: (theme) => theme.typography.fontWeightBold,
+                  color: (theme) => theme.palette.primary.main,
+                  cursor: 'pointer',
+                  '&:hover': { color: (theme) => theme.palette.primary.dark },
                 }}
               >
-                CBD
+                {isLanding ? (
+                  COMMON_MESSAGES.CRYSTAL_BALL_DASHBOARDS
+                ) : (
+                  <HomeIcon titleAccess="Home" />
+                )}
               </Typography>
             </Box>
           </Tooltip>
@@ -91,31 +105,28 @@ export function TopBar() {
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {actions}
-          <IconButton
-            size="large"
-            aria-label="show more"
-            aria-controls="menu-appbar"
-            aria-haspopup="true"
-            onClick={handleMenuClick}
-            color="inherit"
-          >
-            <MoreVertIcon />
-          </IconButton>
-          <Menu
-            id="menu-appbar"
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-          >
-            {menuItems}
-            <MenuItem
-              component={RouterLink}
-              to="/ui/labs/crystal-ball/demo"
-              onClick={handleMenuClose}
-            >
-              Demo Page
-            </MenuItem>
-          </Menu>
+          {menuItems && (
+            <>
+              <IconButton
+                size="large"
+                aria-label="show more"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={handleMenuClick}
+                color="inherit"
+              >
+                <MoreVertIcon />
+              </IconButton>
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+              >
+                {menuItems}
+              </Menu>
+            </>
+          )}
         </Box>
       </Toolbar>
       {subHeader}

@@ -17,6 +17,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import * as useDashboardStateApi from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { DashboardPage } from '@/crystal_ball/pages/dashboard_page';
+import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import {
   DashboardState,
   DeleteDashboardStateRequest,
@@ -365,7 +366,7 @@ describe('<DashboardPage />', () => {
         }),
       );
       expect(mockRemoveQueries).toHaveBeenCalled();
-      expect(mockNavigate).toHaveBeenCalledWith('/ui/labs/crystal-ball', {
+      expect(mockNavigate).toHaveBeenCalledWith(CRYSTAL_BALL_ROUTES.LANDING, {
         replace: true,
       });
       expect(screen.getByText('Dashboard deleted successfully')).toBeVisible();

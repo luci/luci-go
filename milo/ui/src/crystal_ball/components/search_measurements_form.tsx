@@ -180,7 +180,13 @@ export function SearchMeasurementsForm({
       component="form"
       onSubmit={handleSubmit}
       noValidate
-      sx={{ mt: 1, p: 2, border: '1px solid #e0e0e0', borderRadius: '4px' }}
+      sx={{
+        mt: 1,
+        p: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: '4px',
+      }}
     >
       <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
         Search Measurements

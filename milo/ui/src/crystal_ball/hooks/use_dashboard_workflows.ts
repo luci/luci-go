@@ -25,6 +25,7 @@ import {
   useCreateDashboardState,
   useGenerateDashboardState,
 } from '@/crystal_ball/hooks';
+import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import { extractIdFromName, formatApiError } from '@/crystal_ball/utils';
 import {
   CreateDashboardStateRequest,
@@ -116,7 +117,7 @@ export function useGenerateDashboardWorkflow() {
       if (newName) {
         const newId = extractIdFromName(newName);
         onSuccess?.();
-        navigate(`/ui/labs/crystal-ball/dashboards/${newId}`);
+        navigate(CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL(newId));
       }
     } catch (e) {
       const msg = formatApiError(e, 'Failed to generate dashboard');
@@ -183,7 +184,7 @@ export function useCreateDashboardWorkflow() {
       if (newName) {
         const newId = extractIdFromName(newName);
         onSuccess?.();
-        navigate(`/ui/labs/crystal-ball/dashboards/${newId}`);
+        navigate(CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL(newId));
       }
     } catch (e) {
       const msg = formatApiError(e, 'Failed to create dashboard');

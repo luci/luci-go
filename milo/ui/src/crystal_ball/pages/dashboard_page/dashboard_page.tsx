@@ -61,6 +61,7 @@ import {
   useUpdateDashboardState,
 } from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measurement_filter_api';
+import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import { WidgetType } from '@/crystal_ball/types';
 import { formatApiError, isStringArray } from '@/crystal_ball/utils';
 import {
@@ -442,7 +443,7 @@ export function DashboardPage() {
       queryClient.removeQueries({
         queryKey: getDashboardStateQueryKey(dashboardState.name),
       });
-      navigate('/ui/labs/crystal-ball', { replace: true });
+      navigate(CRYSTAL_BALL_ROUTES.LANDING, { replace: true });
     } catch (e) {
       showErrorToast(e, 'Failed to delete dashboard');
       setDeleteDialogOpen(false);

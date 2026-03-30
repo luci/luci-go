@@ -17,6 +17,7 @@
  */
 export enum COMMON_MESSAGES {
   ATP_TEST_NAME_REQUIRED = 'A filter on atp_test_name is required to view data.',
+  CRYSTAL_BALL_DASHBOARDS = 'CrystalBall Dashboards',
   ERROR_FETCHING_MEASUREMENTS = 'Error fetching measurements: ',
   LOGIN_REQUIRED = 'Please log in to view this page.',
   METRIC_REQUIRED = 'Please select a metric for the series.',

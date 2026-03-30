@@ -24,6 +24,7 @@ import {
   useTopBarConfig,
 } from '@/crystal_ball/components';
 import { useCreateDashboardWorkflow } from '@/crystal_ball/hooks';
+import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import { extractIdFromName } from '@/crystal_ball/utils';
 import { DashboardState } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -72,7 +73,7 @@ export function LandingPage() {
   const handleDashboardClick = (dashboard: DashboardState) => {
     if (dashboard.name) {
       const dashboardId = extractIdFromName(dashboard.name);
-      navigate(`/ui/labs/crystal-ball/dashboards/${dashboardId}`);
+      navigate(CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL(dashboardId));
     }
   };
 

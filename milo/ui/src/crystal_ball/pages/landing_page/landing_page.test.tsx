@@ -23,6 +23,7 @@ import {
   useUndeleteDashboardState,
 } from '@/crystal_ball/hooks';
 import { LandingPage } from '@/crystal_ball/pages/landing_page';
+import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import {
   createMockInfiniteQueryResult,
   createMockMutationResult,
@@ -100,9 +101,9 @@ describe('<LandingPage />', () => {
     render(
       <FakeContextProvider
         routerOptions={{
-          initialEntries: ['/ui/labs/crystal-ball'],
+          initialEntries: [CRYSTAL_BALL_ROUTES.LANDING],
         }}
-        mountedPath="/ui/labs/crystal-ball"
+        mountedPath={CRYSTAL_BALL_ROUTES.LANDING}
       >
         <TopBarProvider>
           <TopBar />
@@ -124,9 +125,9 @@ describe('<LandingPage />', () => {
     render(
       <FakeContextProvider
         routerOptions={{
-          initialEntries: ['/ui/labs/crystal-ball'],
+          initialEntries: [CRYSTAL_BALL_ROUTES.LANDING],
         }}
-        mountedPath="/ui/labs/crystal-ball"
+        mountedPath={CRYSTAL_BALL_ROUTES.LANDING}
       >
         <TopBarProvider>
           <TopBar />
@@ -149,9 +150,9 @@ describe('<LandingPage />', () => {
     render(
       <FakeContextProvider
         routerOptions={{
-          initialEntries: ['/ui/labs/crystal-ball'],
+          initialEntries: [CRYSTAL_BALL_ROUTES.LANDING],
         }}
-        mountedPath="/ui/labs/crystal-ball"
+        mountedPath={CRYSTAL_BALL_ROUTES.LANDING}
       >
         <TopBarProvider>
           <TopBar />
@@ -164,14 +165,14 @@ describe('<LandingPage />', () => {
     fireEvent.click(dashboardName);
 
     expect(mockNavigate).toHaveBeenCalledWith(
-      '/ui/labs/crystal-ball/dashboards/dashboard1',
+      CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL('dashboard1'),
     );
   });
 
   test('submits create dashboard form', async () => {
     const mockCreateDashboard = jest.fn(async (_data, onSuccess) => {
       onSuccess?.();
-      mockNavigate('/ui/labs/crystal-ball/dashboards/newly-created-id');
+      mockNavigate(CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL('newly-created-id'));
     });
     jest.mocked(useCreateDashboardWorkflow).mockReturnValue({
       createDashboard: mockCreateDashboard,
@@ -183,9 +184,9 @@ describe('<LandingPage />', () => {
     render(
       <FakeContextProvider
         routerOptions={{
-          initialEntries: ['/ui/labs/crystal-ball'],
+          initialEntries: [CRYSTAL_BALL_ROUTES.LANDING],
         }}
-        mountedPath="/ui/labs/crystal-ball"
+        mountedPath={CRYSTAL_BALL_ROUTES.LANDING}
       >
         <TopBarProvider>
           <TopBar />
@@ -222,7 +223,7 @@ describe('<LandingPage />', () => {
     // Verify modal closed and navigate called
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
-        '/ui/labs/crystal-ball/dashboards/newly-created-id',
+        CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL('newly-created-id'),
       );
     });
   });
@@ -231,9 +232,9 @@ describe('<LandingPage />', () => {
     render(
       <FakeContextProvider
         routerOptions={{
-          initialEntries: ['/ui/labs/crystal-ball'],
+          initialEntries: [CRYSTAL_BALL_ROUTES.LANDING],
         }}
-        mountedPath="/ui/labs/crystal-ball"
+        mountedPath={CRYSTAL_BALL_ROUTES.LANDING}
       >
         <TopBarProvider>
           <TopBar />

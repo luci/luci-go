@@ -17,6 +17,19 @@ import type { RouteObject } from 'react-router';
 
 import { Layout } from '@/crystal_ball/components/layout/layout';
 
+export const CRYSTAL_BALL_BASE_PATH = '/ui/labs/crystal-ball';
+
+export const CRYSTAL_BALL_ROUTES = {
+  LANDING: CRYSTAL_BALL_BASE_PATH,
+  DASHBOARD_PATTERN: `${CRYSTAL_BALL_BASE_PATH}/dashboards/:dashboardId`,
+  DASHBOARD_DETAIL: (dashboardId: string) =>
+    `${CRYSTAL_BALL_BASE_PATH}/dashboards/${dashboardId}`,
+} as const;
+
+export const isLandingPage = (pathname: string) =>
+  pathname === CRYSTAL_BALL_BASE_PATH ||
+  pathname === `${CRYSTAL_BALL_BASE_PATH}/`;
+
 export const crystalBallRoutes: RouteObject[] = [
   {
     element: createElement(Layout),
@@ -24,10 +37,6 @@ export const crystalBallRoutes: RouteObject[] = [
       {
         path: '',
         lazy: () => import('@/crystal_ball/pages/landing_page'),
-      },
-      {
-        path: 'demo',
-        lazy: () => import('@/crystal_ball/pages/demo_page/demo_page'),
       },
       {
         path: 'dashboards/:dashboardId',

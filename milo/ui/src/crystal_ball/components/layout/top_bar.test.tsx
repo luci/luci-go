@@ -16,6 +16,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
 
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
+import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
+
 import { TopBar } from './top_bar';
 import { useTopBarConfig } from './top_bar_context';
 import { TopBarProvider } from './top_bar_provider';
@@ -36,7 +39,7 @@ function ConfigSetter({
 
 describe('TopBar', () => {
   const renderTopBar = (
-    initialEntries = ['/ui/labs/crystal-ball'],
+    initialEntries: string[] = [CRYSTAL_BALL_ROUTES.LANDING],
     title?: ReactNode,
     actions?: ReactNode,
     menuItems?: ReactNode,
@@ -51,20 +54,22 @@ describe('TopBar', () => {
     );
   };
 
-  it('renders "CBD" on landing page', () => {
-    renderTopBar(['/ui/labs/crystal-ball']);
-    expect(screen.getByText('CBD')).toBeInTheDocument();
+  it('renders "CrystalBall Dashboards" on landing page', () => {
+    renderTopBar([CRYSTAL_BALL_ROUTES.LANDING]);
+    expect(
+      screen.getByText(COMMON_MESSAGES.CRYSTAL_BALL_DASHBOARDS),
+    ).toBeInTheDocument();
   });
 
-  it('renders "CBD" on other pages', () => {
-    renderTopBar(['/ui/labs/crystal-ball/demo']);
-    expect(screen.getByText('CBD')).toBeInTheDocument();
+  it('renders home icon on other pages', () => {
+    renderTopBar([CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL('123')]);
+    expect(screen.getByTitle('Home')).toBeInTheDocument();
   });
 
   it('shows tooltip "CrystalBall Dashboards" on hover', async () => {
-    renderTopBar(['/ui/labs/crystal-ball/demo']);
+    renderTopBar([CRYSTAL_BALL_ROUTES.LANDING]);
 
-    const logo = screen.getByText('CBD');
+    const logo = screen.getByText(COMMON_MESSAGES.CRYSTAL_BALL_DASHBOARDS);
     fireEvent.mouseOver(logo);
 
     expect(
@@ -73,29 +78,18 @@ describe('TopBar', () => {
   });
 
   it('renders page title when provided', () => {
-    renderTopBar(['/ui/labs/crystal-ball'], 'My Page Title');
+    renderTopBar([CRYSTAL_BALL_ROUTES.LANDING], 'My Page Title');
     expect(screen.getByText('My Page Title')).toBeInTheDocument();
   });
 
   it('renders actions when provided', () => {
     const actionButton = <button>My Action</button>;
-    renderTopBar(['/ui/labs/crystal-ball'], undefined, actionButton);
+    renderTopBar([CRYSTAL_BALL_ROUTES.LANDING], undefined, actionButton);
     expect(screen.getByText('My Action')).toBeInTheDocument();
   });
 
-  it('opens overflow menu and navigates to Demo Page', () => {
-    renderTopBar();
-
-    const menuButton = screen.getByLabelText('show more');
-    fireEvent.click(menuButton);
-
-    const demoLink = screen.getByRole('menuitem', { name: 'Demo Page' });
-    expect(demoLink).toBeInTheDocument();
-    expect(demoLink).toHaveAttribute('href', '/ui/labs/crystal-ball/demo');
-  });
-
   it('renders divider when title is present', () => {
-    renderTopBar(['/ui/labs/crystal-ball'], 'Title');
+    renderTopBar([CRYSTAL_BALL_ROUTES.LANDING], 'Title');
     const divider = screen.getByRole('separator');
     expect(divider).toBeInTheDocument();
   });
@@ -103,7 +97,7 @@ describe('TopBar', () => {
   it('renders menu items when provided', () => {
     const customMenuItem = <li>Custom Menu Item</li>;
     renderTopBar(
-      ['/ui/labs/crystal-ball'],
+      [CRYSTAL_BALL_ROUTES.LANDING],
       undefined,
       undefined,
       customMenuItem,

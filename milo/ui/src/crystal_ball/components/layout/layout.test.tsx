@@ -15,6 +15,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
+import {
+  CRYSTAL_BALL_BASE_PATH,
+  CRYSTAL_BALL_ROUTES,
+} from '@/crystal_ball/routes';
 import { QueuedStickyScrollingBase } from '@/generic_libs/components/queued_sticky';
 
 import { Layout } from './layout';
@@ -35,62 +40,40 @@ describe('Layout', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/CBD/i)).toBeInTheDocument();
+    expect(screen.getByTitle('Home')).toBeInTheDocument();
   });
 
-  it('displays "CBD" on landing page', () => {
+  it('displays "CrystalBall Dashboards" on landing page', () => {
     renderWithStickyContext(
-      <MemoryRouter initialEntries={['/ui/labs/crystal-ball']}>
+      <MemoryRouter initialEntries={[CRYSTAL_BALL_ROUTES.LANDING]}>
         <Routes>
-          <Route path="/ui/labs/crystal-ball" element={<Layout />}>
+          <Route path={CRYSTAL_BALL_BASE_PATH} element={<Layout />}>
             <Route index element={<div>Landing Page</div>} />
           </Route>
         </Routes>
       </MemoryRouter>,
     );
 
-    const title = screen.getByText('CBD');
+    const title = screen.getByText(COMMON_MESSAGES.CRYSTAL_BALL_DASHBOARDS);
     expect(title).toBeInTheDocument();
   });
 
-  it('displays "CBD" on other pages and shows tooltip on hover', async () => {
+  it('displays home icon on other pages and shows tooltip on hover', async () => {
     renderWithStickyContext(
-      <MemoryRouter initialEntries={['/ui/labs/crystal-ball/demo']}>
+      <MemoryRouter initialEntries={[`${CRYSTAL_BALL_BASE_PATH}/other`]}>
         <Routes>
-          <Route path="/ui/labs/crystal-ball" element={<Layout />}>
-            <Route path="demo" element={<div>Demo Page</div>} />
+          <Route path={CRYSTAL_BALL_BASE_PATH} element={<Layout />}>
+            <Route path="other" element={<div>Other Page</div>} />
           </Route>
         </Routes>
       </MemoryRouter>,
     );
 
-    const logo = screen.getByText('CBD');
+    const logo = screen.getByTitle('Home');
     fireEvent.mouseOver(logo);
 
     expect(
       await screen.findByRole('tooltip', { name: 'CrystalBall Dashboards' }),
     ).toBeInTheDocument();
-  });
-
-  it('opens overflow menu and shows link to Demo Page', () => {
-    renderWithStickyContext(
-      <MemoryRouter initialEntries={['/crystal-ball']}>
-        <Routes>
-          <Route path="/crystal-ball" element={<Layout />}>
-            <Route index element={<div>Landing Page</div>} />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    const menuButton = screen.getByLabelText('show more');
-    fireEvent.click(menuButton);
-
-    const demoLink = screen.getByText('Demo Page');
-    expect(demoLink).toBeInTheDocument();
-    expect(demoLink.closest('a')).toHaveAttribute(
-      'href',
-      '/ui/labs/crystal-ball/demo',
-    );
   });
 });
