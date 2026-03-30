@@ -89,6 +89,9 @@ func (v *vpythonSpecTransformer) Transform(spec *vpython.Spec, deps []actions.Pa
 	if ar := os.Getenv(common.EnvVpythonArUrl); ar != "" {
 		env.Set(common.EnvVpythonArUrl, ar)
 	}
+	if common.VpythonCacheSalt != "" {
+		env.Set(common.EnvVpythonCacheSalt, common.VpythonCacheSalt)
+	}
 	for _, d := range deps {
 		drv.FixedOutput += "+" + d.DerivationID
 		env.Set(d.Action.Name, d.Handler.OutputDirectory())
