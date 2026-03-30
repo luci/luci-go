@@ -308,9 +308,9 @@ export const COLUMNS = {
     },
     Cell: (x) => {
       const filters = {
-        lab_name: [x.row.original.lab_name],
-        host_group: [x.row.original.host_group],
-        run_target: [x.row.original.run_target],
+        '"lab_name"': [x.row.original.lab_name],
+        '"host_group"': [x.row.original.host_group],
+        '"run_target"': [x.row.original.run_target],
       };
 
       const params = new URLSearchParams();
