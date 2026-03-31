@@ -35,6 +35,9 @@ interface MockEChartsProps
     series: {
       name: string;
     }[];
+    xAxis?: {
+      type: string;
+    };
   };
   style?: CSSProperties;
 }
@@ -91,5 +94,23 @@ describe('TimeSeriesChart', () => {
     render(<TimeSeriesChart series={[]} />);
 
     expect(screen.getByTestId('echarts-canvas')).toBeInTheDocument();
+  });
+
+  test('renders with value xAxisType when specified', () => {
+    render(
+      <TimeSeriesChart
+        series={mockSeries}
+        useResponsiveContainer={false}
+        xAxisType="value"
+      />,
+    );
+
+    expect(screen.getByTestId('echarts-canvas')).toBeInTheDocument();
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const option = lastCallProps.option;
+
+    expect(option.xAxis).toBeDefined();
+    expect(option.xAxis?.type).toBe('value');
   });
 });

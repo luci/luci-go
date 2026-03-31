@@ -19,10 +19,19 @@ import * as useDashboardStateApi from '@/crystal_ball/hooks/use_dashboard_state_
 import { DashboardPage } from '@/crystal_ball/pages/dashboard_page';
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import {
+  createMockErrorResult,
+  createMockMutationResult,
+  createMockPendingResult,
+  createMockQueryResult,
+} from '@/crystal_ball/tests';
+import {
   DashboardState,
   DeleteDashboardStateRequest,
   ListMeasurementFilterColumnsResponse,
   MeasurementFilterColumn,
+  PerfChartWidget,
+  PerfXAxisConfig,
+  PerfChartSeries,
   UpdateDashboardStateRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -107,7 +116,32 @@ jest.mock('@/crystal_ball/components', () => {
     ...actual,
     WidgetContainer: jest.fn(({ children }) => <>{children}</>),
     AddWidgetModal: jest.fn(() => <>AddWidgetModal Mock</>),
-    ChartWidget: jest.fn(() => <>ChartWidget Mock</>),
+    ChartWidget: jest.fn(
+      ({ onUpdate }: { onUpdate: (updatedChart: PerfChartWidget) => void }) => (
+        <div>
+          <span>ChartWidget Mock</span>
+          <button
+            onClick={() =>
+              onUpdate(
+                PerfChartWidget.fromPartial({
+                  xAxis: PerfXAxisConfig.fromPartial({
+                    column: 'build_id',
+                    granularity: 1,
+                  }),
+                  series: [
+                    PerfChartSeries.fromPartial({
+                      aggregation: 2,
+                    }),
+                  ],
+                }),
+              )
+            }
+          >
+            Update Widget
+          </button>
+        </div>
+      ),
+    ),
     MarkdownWidget: jest.fn(() => <>MarkdownWidget Mock</>),
     DashboardTimeRangeSelector: () => <>DashboardTimeRangeSelector Mock</>,
     FilterEditor: () => <>FilterEditor Mock</>,
@@ -141,45 +175,33 @@ describe('<DashboardPage />', () => {
   };
 
   it('renders loading state initially', () => {
-    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
-      isLoading: true,
-      error: null,
-      refetch: jest.fn(),
-      data: null,
-    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockPendingResult());
     renderDashboard();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
   it('renders error state', () => {
-    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
-      isLoading: false,
-      error: new Error('Network error'),
-      refetch: jest.fn(),
-      data: null,
-    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockErrorResult(new Error('Network error')));
     renderDashboard();
     expect(screen.getByText(/Failed to load dashboard/)).toBeInTheDocument();
   });
 
   it('renders not found state', () => {
-    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
-      isLoading: false,
-      error: null,
-      refetch: jest.fn(),
-      data: null,
-    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(undefined));
     renderDashboard();
     expect(screen.getByText(/Dashboard not found/)).toBeInTheDocument();
   });
 
   it('renders dashboard data and sets top bar config', async () => {
-    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
-      isLoading: false,
-      error: null,
-      refetch: jest.fn(),
-      data: mockDashboard,
-    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(mockDashboard));
     renderDashboard();
     expect(await screen.findByText(/Add Widget/i)).toBeInTheDocument();
     expect(useTopBarConfig).toHaveBeenLastCalledWith(
@@ -192,22 +214,18 @@ describe('<DashboardPage />', () => {
 
   it('saves edits and shows success toast', async () => {
     const mockMutateAsync = jest.fn().mockResolvedValue({});
-    (useDashboardStateApi.useUpdateDashboardState as jest.Mock).mockReturnValue(
-      {
+    jest.mocked(useDashboardStateApi.useUpdateDashboardState).mockReturnValue(
+      createMockMutationResult({
         mutateAsync: mockMutateAsync,
-        isPending: false,
-      },
+      }),
     );
-    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
-      isLoading: false,
-      error: null,
-      refetch: jest.fn(),
-      data: mockDashboard,
-    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(mockDashboard));
 
     renderDashboard();
 
-    const lastCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
     const { unmount } = render(
       <>
         {lastCall[0]}
@@ -229,7 +247,7 @@ describe('<DashboardPage />', () => {
 
     unmount();
 
-    const newCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    const newCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
     render(
       <>
         {newCall[0]}
@@ -260,24 +278,87 @@ describe('<DashboardPage />', () => {
     });
   });
 
-  it('displays error toast on save failure', async () => {
-    const mockMutateAsync = jest.fn().mockRejectedValue(new Error('API Error'));
-    (useDashboardStateApi.useUpdateDashboardState as jest.Mock).mockReturnValue(
-      {
-        mutateAsync: mockMutateAsync,
-        isPending: false,
+  it('saves updated widget settings (xAxis and series aggregation) to the API', async () => {
+    const mockMutateAsync = jest.fn().mockResolvedValue({});
+    jest
+      .mocked(useDashboardStateApi.useUpdateDashboardState)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockMutateAsync }),
+      );
+
+    const testWidget = {
+      id: 'widget-1',
+      displayName: 'Test Widget',
+      chart: {
+        chartType: 1,
+        dataSpecId: 'dataspec-1',
       },
-    );
-    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
-      isLoading: false,
-      error: null,
-      refetch: jest.fn(),
-      data: mockDashboard,
+    };
+
+    const dashboardWithWidget = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        ...mockDashboard.dashboardContent,
+        widgets: [testWidget],
+        dataSpecs: mockDashboard.dashboardContent?.dataSpecs ?? {},
+      },
     });
+
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(dashboardWithWidget));
 
     renderDashboard();
 
-    const lastCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    fireEvent.click(screen.getByRole('button', { name: 'Update Widget' }));
+
+    const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
+    render(<>{lastCall[1]}</>); // Render the Save button
+
+    const saveButton = screen.getByRole('button', { name: 'Save' });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dashboardState: expect.objectContaining({
+            dashboardContent: expect.objectContaining({
+              widgets: [
+                expect.objectContaining({
+                  chart: expect.objectContaining({
+                    xAxis: expect.objectContaining({
+                      column: 'build_id',
+                      granularity: 1,
+                    }),
+                    series: [
+                      expect.objectContaining({
+                        aggregation: 2,
+                      }),
+                    ],
+                  }),
+                }),
+              ],
+            }),
+          }),
+        }),
+      );
+    });
+  });
+
+  it('displays error toast on save failure', async () => {
+    const mockMutateAsync = jest.fn().mockRejectedValue(new Error('API Error'));
+    jest
+      .mocked(useDashboardStateApi.useUpdateDashboardState)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockMutateAsync }),
+      );
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(mockDashboard));
+
+    renderDashboard();
+
+    const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
     const { unmount } = render(
       <>
         {lastCall[0]}
@@ -300,7 +381,7 @@ describe('<DashboardPage />', () => {
     // Unmount before rendering the new call to avoid conflicts
     unmount();
 
-    const newCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    const newCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
     render(
       <>
         {newCall[0]}
@@ -331,22 +412,18 @@ describe('<DashboardPage />', () => {
 
   it('deletes the dashboard and navigates away on success', async () => {
     const mockMutateAsync = jest.fn().mockResolvedValue({});
-    (useDashboardStateApi.useDeleteDashboardState as jest.Mock).mockReturnValue(
-      {
+    jest.mocked(useDashboardStateApi.useDeleteDashboardState).mockReturnValue(
+      createMockMutationResult({
         mutateAsync: mockMutateAsync,
-        isPending: false,
-      },
+      }),
     );
-    (useDashboardStateApi.useGetDashboardState as jest.Mock).mockReturnValue({
-      isLoading: false,
-      error: null,
-      refetch: jest.fn(),
-      data: mockDashboard,
-    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(mockDashboard));
 
     renderDashboard();
 
-    const lastCall = (useTopBarConfig as jest.Mock).mock.calls.slice(-1)[0];
+    const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
     const { unmount } = render(<>{lastCall[2]}</>);
 
     fireEvent.click(screen.getByText('Delete Dashboard'));

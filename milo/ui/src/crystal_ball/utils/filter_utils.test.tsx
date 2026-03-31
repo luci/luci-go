@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ATP_TEST_NAME_COLUMN } from '@/crystal_ball/constants';
+import { Column } from '@/crystal_ball/constants';
 import {
   PerfFilter,
   PerfFilterDefault_FilterOperator,
@@ -24,7 +24,7 @@ describe('buildFilterString', () => {
   const mockGlobalFilters: PerfFilter[] = [
     {
       id: 'global-1',
-      column: ATP_TEST_NAME_COLUMN,
+      column: Column.ATP_TEST_NAME,
       displayName: 'Global 1',
       dataSpecId: 'data-spec-id',
       textInput: {
@@ -51,7 +51,7 @@ describe('buildFilterString', () => {
   const mockWidgetFilters: PerfFilter[] = [
     {
       id: 'widget-1',
-      column: ATP_TEST_NAME_COLUMN,
+      column: Column.ATP_TEST_NAME,
       displayName: 'Widget 1',
       dataSpecId: 'data-spec-id',
       textInput: {
@@ -77,7 +77,7 @@ describe('buildFilterString', () => {
 
   it('filters by a single column', () => {
     const result = buildFilterString(
-      [ATP_TEST_NAME_COLUMN],
+      [Column.ATP_TEST_NAME],
       mockGlobalFilters,
       mockWidgetFilters,
     );
@@ -88,7 +88,7 @@ describe('buildFilterString', () => {
 
   it('filters by multiple columns', () => {
     const result = buildFilterString(
-      [ATP_TEST_NAME_COLUMN, 'other_column'],
+      [Column.ATP_TEST_NAME, 'other_column'],
       mockGlobalFilters,
       mockWidgetFilters,
     );
@@ -108,7 +108,7 @@ describe('buildFilterString', () => {
 
   it('excludes current filter', () => {
     const result = buildFilterString(
-      [ATP_TEST_NAME_COLUMN],
+      [Column.ATP_TEST_NAME],
       mockGlobalFilters,
       mockWidgetFilters,
       'global-1',
@@ -126,7 +126,7 @@ describe('buildFilterString', () => {
   });
 
   it('handles undefined filters gracefully', () => {
-    const result = buildFilterString([ATP_TEST_NAME_COLUMN]);
+    const result = buildFilterString([Column.ATP_TEST_NAME]);
     expect(result).toBe('');
   });
 
@@ -134,7 +134,7 @@ describe('buildFilterString', () => {
     const duplicateFilters: PerfFilter[] = [
       {
         id: 'dup-1',
-        column: ATP_TEST_NAME_COLUMN,
+        column: Column.ATP_TEST_NAME,
         displayName: 'Dup 1',
         dataSpecId: 'data-spec-id',
         textInput: {
@@ -146,7 +146,7 @@ describe('buildFilterString', () => {
       },
       {
         id: 'dup-2',
-        column: ATP_TEST_NAME_COLUMN,
+        column: Column.ATP_TEST_NAME,
         displayName: 'Dup 2',
         dataSpecId: 'data-spec-id',
         textInput: {
@@ -157,7 +157,7 @@ describe('buildFilterString', () => {
         },
       },
     ];
-    const result = buildFilterString([ATP_TEST_NAME_COLUMN], duplicateFilters);
+    const result = buildFilterString([Column.ATP_TEST_NAME], duplicateFilters);
     expect(result).toBe('atp_test_name = "value1"');
   });
 
@@ -165,7 +165,7 @@ describe('buildFilterString', () => {
     const filters: PerfFilter[] = [
       {
         id: '1',
-        column: ATP_TEST_NAME_COLUMN,
+        column: Column.ATP_TEST_NAME,
         displayName: 'Test',
         dataSpecId: 'data-spec-id',
         textInput: {
@@ -176,7 +176,7 @@ describe('buildFilterString', () => {
         },
       },
     ];
-    const result = buildFilterString([ATP_TEST_NAME_COLUMN], filters);
+    const result = buildFilterString([Column.ATP_TEST_NAME], filters);
     expect(result).toBe('atp_test_name = "v2/android*"');
   });
 
@@ -184,7 +184,7 @@ describe('buildFilterString', () => {
     const filters: PerfFilter[] = [
       {
         id: '1',
-        column: ATP_TEST_NAME_COLUMN,
+        column: Column.ATP_TEST_NAME,
         displayName: 'Test',
         dataSpecId: 'data-spec-id',
         textInput: {
@@ -195,7 +195,7 @@ describe('buildFilterString', () => {
         },
       },
     ];
-    const result = buildFilterString([ATP_TEST_NAME_COLUMN], filters);
+    const result = buildFilterString([Column.ATP_TEST_NAME], filters);
     expect(result).toBe('atp_test_name != "v2/android"');
   });
 });

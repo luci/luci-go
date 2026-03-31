@@ -11,8 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  FormControl,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Typography,
+} from '@mui/material';
 import { useMemo } from 'react';
 
 import {
@@ -21,64 +29,34 @@ import {
   TimeSeriesChart,
 } from '@/crystal_ball/components';
 import {
-  ATP_TEST_NAME_COLUMN,
+  Column,
   COMMON_MESSAGES,
-  GLOBAL_TIME_RANGE_COLUMN,
   GOLDEN_RATIO_CONJUGATE,
+  AGGREGATION_FUNCTION_LABELS,
+  DEFAULT_X_AXIS_CONFIG,
+  getGroupByFromGranularity,
+  GROUP_BY_CONFIG,
+  GROUP_BY_OPTIONS,
 } from '@/crystal_ball/constants';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
 import { isStringArray } from '@/crystal_ball/utils';
 import {
+  dataPointsToData,
+  isDataPointsValid,
+} from '@/crystal_ball/utils/widget_utils';
+import {
   MeasurementFilterColumn,
   MeasurementFilterColumn_FilterScope,
   PerfChartSeries,
+  PerfChartSeries_PerfAggregationFunction,
+  perfChartSeries_PerfAggregationFunctionFromJSON,
   PerfChartWidget,
   PerfDashboardContent,
   PerfDataSpec,
   PerfFilter,
   PerfWidget,
-  PerfXAxisConfig,
-  PerfXAxisConfig_Granularity,
+  perfXAxisConfig_GranularityFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
-
-const isDataPointsValid = (
-  dataPoints: readonly { readonly [key: string]: unknown }[],
-  xAxisDataKey: string,
-  yAxisDataKey: string,
-): dataPoints is { [axisDataKey: string]: number | string }[] => {
-  if (dataPoints === null || dataPoints === undefined) return false;
-
-  return (
-    Array.isArray(dataPoints) &&
-    dataPoints.every(
-      (dataPoint) =>
-        dataPoint !== null &&
-        dataPoint !== undefined &&
-        (typeof dataPoint[xAxisDataKey] === 'number' ||
-          typeof dataPoint[xAxisDataKey] === 'string') &&
-        (typeof dataPoint[yAxisDataKey] === 'number' ||
-          typeof dataPoint[yAxisDataKey] === 'string'),
-    )
-  );
-};
-
-function dataPointsToData(
-  dataPoints: { [axisDataKey: string]: number | string }[],
-  xAxisDataKey: string,
-  yAxisDataKey: string,
-): Array<[number, number]> {
-  return dataPoints.map((pt) => {
-    const x =
-      typeof pt[xAxisDataKey] === 'string'
-        ? Date.parse(pt[xAxisDataKey])
-        : pt[xAxisDataKey];
-    const y =
-      typeof pt[yAxisDataKey] === 'string'
-        ? parseFloat(pt[yAxisDataKey])
-        : pt[yAxisDataKey];
-    return [x, y];
-  });
-}
 
 interface ChartWidgetProps {
   onUpdate: (updatedWidget: PerfChartWidget) => void;
@@ -91,6 +69,10 @@ interface ChartWidgetProps {
   dataSpecs?: { [key: string]: PerfDataSpec };
 }
 
+/**
+ * A widget that renders multi-metric charts for performance data.
+ * It handles the layout of series editors, filters, and rendering the time-series chart itself.
+ */
 export function ChartWidget({
   onUpdate,
   widget,
@@ -118,6 +100,62 @@ export function ChartWidget({
     );
   };
 
+  const handleWidgetAggregationUpdate = (
+    newAgg: PerfChartSeries_PerfAggregationFunction,
+  ) => {
+    const updatedSeries =
+      widget.series?.map((s) => ({
+        ...s,
+        aggregation: newAgg,
+      })) ?? [];
+    onUpdate(
+      PerfChartWidget.fromPartial({
+        ...widget,
+        series: updatedSeries,
+      }),
+    );
+  };
+
+  const handleWidgetGroupByUpdate = (newGroupBy: string) => {
+    const newXAxis = GROUP_BY_CONFIG[newGroupBy]?.xAxis;
+
+    onUpdate(
+      PerfChartWidget.fromPartial({
+        ...widget,
+        xAxis: newXAxis,
+      }),
+    );
+  };
+
+  const currentGroupBy = useMemo(() => {
+    if (!widget.xAxis) {
+      return 'TIMESTAMP';
+    }
+    const granularity = widget.xAxis.granularity ?? 0;
+
+    const numericGranularity =
+      typeof granularity === 'string'
+        ? perfXAxisConfig_GranularityFromJSON(granularity)
+        : granularity;
+
+    return getGroupByFromGranularity(numericGranularity);
+  }, [widget.xAxis]);
+
+  const currentAggregation = useMemo(() => {
+    const seriesAgg = widget.series?.[0]?.aggregation;
+    if (seriesAgg) {
+      const numericAgg =
+        typeof seriesAgg === 'string'
+          ? perfChartSeries_PerfAggregationFunctionFromJSON(seriesAgg)
+          : seriesAgg;
+      return numericAgg ===
+        PerfChartSeries_PerfAggregationFunction.PERF_AGGREGATION_FUNCTION_UNSPECIFIED
+        ? PerfChartSeries_PerfAggregationFunction.MEAN
+        : numericAgg;
+    }
+    return PerfChartSeries_PerfAggregationFunction.MEAN;
+  }, [widget.series]);
+
   const fetchRequest = useMemo(
     () => ({
       dashboardContent: PerfDashboardContent.fromPartial({
@@ -128,12 +166,7 @@ export function ChartWidget({
             id: widgetId,
             chart: PerfChartWidget.fromPartial({
               ...widget,
-              xAxis:
-                widget.xAxis ??
-                PerfXAxisConfig.fromPartial({
-                  column: GLOBAL_TIME_RANGE_COLUMN,
-                  granularity: PerfXAxisConfig_Granularity.HOURLY,
-                }),
+              xAxis: widget.xAxis ?? DEFAULT_X_AXIS_CONFIG,
             }),
           }),
         ],
@@ -147,7 +180,7 @@ export function ChartWidget({
     const allFilters = [...(globalFilters ?? []), ...(widget.filters ?? [])];
     return allFilters.some(
       (f) =>
-        f.column === ATP_TEST_NAME_COLUMN &&
+        f.column === Column.ATP_TEST_NAME &&
         f.textInput?.defaultValue?.values?.[0],
     );
   }, [globalFilters, widget.filters]);
@@ -211,6 +244,59 @@ export function ChartWidget({
         availableColumns={widgetFilterColumns}
         isLoadingColumns={isLoadingFilterColumns}
       />
+      <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, mb: 2, gap: 1 }}>
+        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+          Group By:
+        </Typography>
+        <FormControl size="small" variant="outlined" sx={{ minWidth: 120 }}>
+          <Select
+            id="widget-groupby-select"
+            value={currentGroupBy}
+            onChange={(e: SelectChangeEvent<string>) => {
+              handleWidgetGroupByUpdate(e.target.value);
+            }}
+            inputProps={{ 'aria-label': 'Widget Group By' }}
+            sx={{
+              bgcolor: 'background.paper',
+              fontSize: (theme) => theme.typography.body2.fontSize,
+            }}
+          >
+            {GROUP_BY_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+          Aggregation:
+        </Typography>
+        <FormControl size="small" variant="outlined" sx={{ minWidth: 120 }}>
+          <Select
+            id="widget-aggregation-select"
+            value={currentAggregation}
+            onChange={(e) => {
+              if (typeof e.target.value === 'number') {
+                handleWidgetAggregationUpdate(e.target.value);
+              }
+            }}
+            inputProps={{ 'aria-label': 'Widget Aggregation' }}
+            sx={{
+              bgcolor: 'background.paper',
+              fontSize: (theme) => theme.typography.body2.fontSize,
+            }}
+          >
+            {Object.entries(AGGREGATION_FUNCTION_LABELS)
+              .filter(([value]) => Number(value) !== 0)
+              .map(([value, label]) => (
+                <MenuItem key={value} value={Number(value)}>
+                  {label}
+                </MenuItem>
+              ))}
+          </Select>
+        </FormControl>
+      </Box>
       <Box sx={{ position: 'relative', minHeight: '300px', mt: 2 }}>
         {isWidgetLoading && (
           <Box
@@ -262,8 +348,13 @@ export function ChartWidget({
         {!isWidgetError && widgetResponse && hasData && (
           <TimeSeriesChart
             series={chartSeries}
-            chartTitle={widget.displayName || 'Performance Metrics'}
             yAxisLabel="Value"
+            xAxisType={
+              widgetResponse?.multiMetricChartData?.xAxisDataKey ===
+              Column.BUILD_ID
+                ? 'value'
+                : 'time'
+            }
           />
         )}
       </Box>

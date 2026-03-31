@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { EChartsOption } from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import { CSSProperties, useMemo } from 'react';
@@ -73,6 +73,11 @@ interface TimeSeriesChartProps {
    * Optional flag for using a ResponsiveContainer, defaults to true.
    */
   useResponsiveContainer?: boolean;
+
+  /**
+   * Optional X-axis type for the chart, defaults to 'time'.
+   */
+  xAxisType?: 'time' | 'value';
 }
 
 /**
@@ -189,14 +194,37 @@ export function TimeSeriesChart({
   yAxisLabel,
   chartTitle,
   useResponsiveContainer = true,
+  xAxisType = 'time',
 }: TimeSeriesChartProps) {
+  const theme = useTheme();
+
   const option: EChartsOption = useMemo(() => {
     return {
       ...BASE_OPTION,
       title: {
         ...BASE_OPTION.title,
         text: chartTitle,
+        textStyle: {
+          fontSize: theme.typography.subtitle1.fontSize,
+          fontWeight: 'bold',
+          color: theme.palette.text.primary,
+        },
       },
+      xAxis:
+        xAxisType === 'time'
+          ? {
+              type: 'time',
+              splitLine: { show: true, lineStyle: { type: 'dashed' } },
+              axisLabel: {
+                formatter: xAxisFormatter,
+              },
+            }
+          : {
+              type: 'value',
+              splitLine: { show: true, lineStyle: { type: 'dashed' } },
+              min: 'dataMin',
+              max: 'dataMax',
+            },
       yAxis: {
         ...BASE_OPTION.yAxis,
         name: yAxisLabel,
@@ -216,7 +244,7 @@ export function TimeSeriesChart({
         },
       })),
     };
-  }, [series, chartTitle, yAxisLabel]);
+  }, [series, chartTitle, yAxisLabel, xAxisType, theme]);
 
   return (
     <Box

@@ -120,9 +120,9 @@ export const useCreateDashboardState = (
  */
 export const useGetDashboardState = (
   request: GetDashboardStateRequest,
-  options?: WrapperQueryOptions<DashboardState>,
-): UseQueryResult<DashboardState> => {
-  return useGapiQuery<DashboardState>(
+  options?: WrapperQueryOptions<DashboardState | undefined>,
+): UseQueryResult<DashboardState | undefined> => {
+  return useGapiQuery<DashboardState | undefined>(
     {
       path: `${BASE_PATH}/${request.name}`,
       method: 'GET',

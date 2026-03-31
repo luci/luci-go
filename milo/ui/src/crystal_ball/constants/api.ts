@@ -13,9 +13,12 @@
 // limitations under the License.
 
 /**
- * The column name for ATP test name.
+ * Supported columns for querying and filtering.
  */
-export const ATP_TEST_NAME_COLUMN = 'atp_test_name';
+export enum Column {
+  ATP_TEST_NAME = 'atp_test_name',
+  BUILD_ID = 'build_id',
+}
 
 /**
  * API Configuration.

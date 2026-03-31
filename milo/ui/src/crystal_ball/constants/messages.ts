@@ -16,8 +16,12 @@
  * Common user-facing messages used across the Crystal Ball application.
  */
 export enum COMMON_MESSAGES {
+  ADD_WIDGET = 'Add Widget',
   ATP_TEST_NAME_REQUIRED = 'A filter on atp_test_name is required to view data.',
+  COPY = 'COPY',
   CRYSTAL_BALL_DASHBOARDS = 'CrystalBall Dashboards',
+  EMPTY_DASHBOARD_MESSAGE = 'This dashboard is empty',
+  EMPTY_DASHBOARD_HINT = 'Add a widget to start building your custom view.',
   ERROR_FETCHING_MEASUREMENTS = 'Error fetching measurements: ',
   LOGIN_REQUIRED = 'Please log in to view this page.',
   METRIC_REQUIRED = 'Please select a metric for the series.',
@@ -25,4 +29,5 @@ export enum COMMON_MESSAGES {
   NO_DATA_FOUND = 'No data found for the given parameters.',
   SERIES_REQUIRED = 'Please add a series to the view.',
   UNKNOWN_ERROR = 'Unknown error',
+  WIDGET_FALLBACK = 'Widget',
 }

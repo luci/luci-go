@@ -16,7 +16,7 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { FilterEditor, TimeSeriesChart } from '@/crystal_ball/components';
-import { ATP_TEST_NAME_COLUMN } from '@/crystal_ball/constants';
+import { Column } from '@/crystal_ball/constants';
 import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
 import {
@@ -71,7 +71,7 @@ const baseWidget: PerfChartWidget = PerfChartWidget.fromPartial({
   series: [{ metricField: 'metric1' }, { metricField: 'metric2' }],
   filters: [
     {
-      column: ATP_TEST_NAME_COLUMN,
+      column: Column.ATP_TEST_NAME,
       textInput: { defaultValue: { values: ['test-value'] } },
     },
   ],
@@ -148,9 +148,7 @@ describe('ChartWidget', () => {
         filterColumns={[]}
       />,
     );
-    expect(screen.getByTestId('typography')).toHaveTextContent(
-      COMMON_MESSAGES.NO_DATA_FOUND,
-    );
+    expect(screen.getByText(COMMON_MESSAGES.NO_DATA_FOUND)).toBeInTheDocument();
   });
 
   it('should display required message when atp_test_name filter is missing', () => {
@@ -177,9 +175,9 @@ describe('ChartWidget', () => {
         filterColumns={[]}
       />,
     );
-    expect(screen.getByTestId('typography')).toHaveTextContent(
-      COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED,
-    );
+    expect(
+      screen.getByText(COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED),
+    ).toBeInTheDocument();
   });
 
   it('should display no data message when series have no data points', () => {
@@ -209,9 +207,7 @@ describe('ChartWidget', () => {
         filterColumns={[]}
       />,
     );
-    expect(screen.getByTestId('typography')).toHaveTextContent(
-      COMMON_MESSAGES.NO_DATA_FOUND,
-    );
+    expect(screen.getByText(COMMON_MESSAGES.NO_DATA_FOUND)).toBeInTheDocument();
   });
 
   it('should render TimeSeriesChart with transformed data', () => {
@@ -289,5 +285,89 @@ describe('ChartWidget', () => {
         },
       ],
     });
+  });
+
+  it('should pass value xAxisType to TimeSeriesChart when xAxisDataKey is Column.BUILD_ID', () => {
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        multiMetricChartData: {
+          xAxisDataKey: Column.BUILD_ID,
+          yAxisDataKey: 'value',
+          lines: [
+            {
+              seriesId: 's1',
+              legendLabel: 'metric1',
+              dataPoints: [
+                {
+                  timestamp: 1000,
+                  value: 10,
+                  [Column.BUILD_ID]: 12345,
+                },
+              ],
+              metricField: 'metric1',
+            },
+          ],
+        },
+      }),
+    );
+
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+
+    expect(MockTimeSeriesChart.mock.calls[0][0]).toMatchObject({
+      xAxisType: 'value',
+    });
+  });
+
+  it('should render TimeSeriesChart with multiple series', () => {
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        multiMetricChartData: {
+          xAxisDataKey: 'timestamp',
+          yAxisDataKey: 'value',
+          lines: [
+            {
+              seriesId: 's1',
+              legendLabel: 'metric1',
+              dataPoints: [{ timestamp: 1000, value: 10 }],
+              metricField: 'metric1',
+            },
+            {
+              seriesId: 's2',
+              legendLabel: 'metric2',
+              dataPoints: [{ timestamp: 2000, value: 20 }],
+              metricField: 'metric2',
+            },
+          ],
+        },
+      }),
+    );
+
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+
+    expect(MockTimeSeriesChart.mock.calls[0][0].series).toHaveLength(2);
+    expect(MockTimeSeriesChart.mock.calls[0][0].series).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'metric1' }),
+        expect.objectContaining({ name: 'metric2' }),
+      ]),
+    );
   });
 });

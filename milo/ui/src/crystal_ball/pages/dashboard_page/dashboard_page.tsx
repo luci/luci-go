@@ -52,6 +52,7 @@ import {
 import {
   DATA_SPEC_ID,
   GLOBAL_TIME_RANGE_COLUMN,
+  GLOBAL_TIME_RANGE_FILTER_ID,
   MAX_PAGE_SIZE,
 } from '@/crystal_ball/constants';
 import {
@@ -63,7 +64,11 @@ import {
 import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import { WidgetType } from '@/crystal_ball/types';
-import { formatApiError, isStringArray } from '@/crystal_ball/utils';
+import {
+  formatApiError,
+  isStringArray,
+  sanitizeChartWidget,
+} from '@/crystal_ball/utils';
 import {
   BreakdownTableConfig_BreakdownAggregation,
   DashboardState,
@@ -488,37 +493,35 @@ export function DashboardPage() {
       const sanitizedWidgets =
         localDashboardState.dashboardContent?.widgets?.map((w) => {
           if (w.chart) {
-            return {
+            return PerfWidget.fromPartial({
               ...w,
-              chart: {
-                ...w.chart,
-                chartType: getSafeChartType(w.chart.chartType),
-              },
-            };
+              chart: sanitizeChartWidget(w.chart),
+            });
           }
-          return w;
+          return PerfWidget.fromPartial(w);
         }) ?? [];
 
-      const response = await updateDashboard(
-        UpdateDashboardStateRequest.fromPartial({
-          dashboardState: {
-            ...localDashboardState,
-            dashboardContent: {
-              ...localDashboardState.dashboardContent,
-              widgets: sanitizedWidgets,
-              dataSpecs: localDashboardState.dashboardContent?.dataSpecs ?? {},
-              globalFilters:
-                localDashboardState.dashboardContent?.globalFilters ?? [],
-            },
+      const payload = UpdateDashboardStateRequest.fromPartial({
+        dashboardState: {
+          ...localDashboardState,
+          dashboardContent: {
+            ...localDashboardState.dashboardContent,
+            widgets: sanitizedWidgets,
+            dataSpecs: localDashboardState.dashboardContent?.dataSpecs ?? {},
+            globalFilters:
+              localDashboardState.dashboardContent?.globalFilters ?? [],
           },
-          updateMask: [
-            'displayName',
-            'description',
-            'dashboardContent.widgets',
-            'dashboardContent.globalFilters',
-          ],
-        }),
-      );
+        },
+        updateMask: [
+          'displayName',
+          'description',
+          'dashboardContent.widgets',
+          'dashboardContent.globalFilters',
+        ],
+      });
+
+      const response = await updateDashboard(payload);
+
       if (response.response) {
         setLocalDashboardState(response.response);
         queryClient.setQueryData(
@@ -635,9 +638,9 @@ export function DashboardPage() {
       setLocalDashboardState((prev: DashboardState | null) => {
         if (!prev) return null;
 
-        const conservedTimeRangeFilters = (
+        const conservedPrimaryFilters = (
           prev.dashboardContent?.globalFilters ?? []
-        ).filter((f) => f.column === GLOBAL_TIME_RANGE_COLUMN);
+        ).filter((f) => f.id === GLOBAL_TIME_RANGE_FILTER_ID);
 
         return {
           ...prev,
@@ -645,7 +648,7 @@ export function DashboardPage() {
             ...prev.dashboardContent,
             widgets: prev.dashboardContent?.widgets ?? [],
             dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
-            globalFilters: [...conservedTimeRangeFilters, ...updatedFilters],
+            globalFilters: [...conservedPrimaryFilters, ...updatedFilters],
           },
         };
       });
@@ -730,7 +733,7 @@ export function DashboardPage() {
 
     const activeGlobalFilters = (
       localDashboardState?.dashboardContent?.globalFilters ?? []
-    ).filter((f) => f.column !== GLOBAL_TIME_RANGE_COLUMN);
+    ).filter((f) => f.id !== GLOBAL_TIME_RANGE_FILTER_ID);
 
     return (
       <FilterEditor
@@ -908,7 +911,7 @@ export function DashboardPage() {
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDelete}
         isDeleting={isDeleting}
-        dashboardState={dashboardState}
+        dashboardState={dashboardState ?? null}
       />
       <ShareDashboardDialog
         open={shareDialogOpen}

@@ -34,7 +34,7 @@ import { useDebounce } from 'react-use';
 
 import { FilterEditor } from '@/crystal_ball/components';
 import {
-  ATP_TEST_NAME_COLUMN,
+  Column,
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   GLOBAL_TIME_RANGE_COLUMN,
   MAX_SUGGEST_RESULTS,
@@ -192,14 +192,14 @@ export function ChartSeriesItem({
 
   const filterString = useMemo(() => {
     return buildFilterString(
-      [ATP_TEST_NAME_COLUMN, GLOBAL_TIME_RANGE_COLUMN],
+      [Column.ATP_TEST_NAME, GLOBAL_TIME_RANGE_COLUMN],
       globalFilters,
       widgetFilters,
     );
   }, [globalFilters, widgetFilters]);
 
   const hasAtpTestFilter = useMemo(() => {
-    return new RegExp(`\\b${ATP_TEST_NAME_COLUMN}\\b`).test(filterString);
+    return new RegExp(`\\b${Column.ATP_TEST_NAME}\\b`).test(filterString);
   }, [filterString]);
 
   const { data: suggestionData, isLoading: isLoadingSuggestions } =

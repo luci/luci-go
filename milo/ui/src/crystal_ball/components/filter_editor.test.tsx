@@ -25,7 +25,7 @@ jest.mock('react-router', () => ({
 
 const mockedUseParams = jest.mocked(jest.requireMock('react-router').useParams);
 
-import { ATP_TEST_NAME_COLUMN } from '@/crystal_ball/constants';
+import { Column } from '@/crystal_ball/constants';
 import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
 import {
   MeasurementFilterColumn_ColumnDataType,
@@ -68,7 +68,7 @@ const defaultProps = {
   dataSpecId: 'test-spec-id',
   availableColumns: [
     {
-      column: ATP_TEST_NAME_COLUMN,
+      column: Column.ATP_TEST_NAME,
       primary: true,
       dataType: MeasurementFilterColumn_ColumnDataType.STRING,
       sampleValues: [],
@@ -191,7 +191,7 @@ describe('FilterEditor', () => {
     expect(updatedFilters.length).toBe(1);
     expect(updatedFilters[0]).toMatchObject({
       id: `filter-${mockUUID}`,
-      column: ATP_TEST_NAME_COLUMN,
+      column: Column.ATP_TEST_NAME,
       dataSpecId: 'test-spec-id',
       textInput: {
         defaultValue: {
@@ -445,7 +445,7 @@ describe('FilterEditor', () => {
     const globalFilters: PerfFilter[] = [
       {
         id: 'global-filter-1',
-        column: ATP_TEST_NAME_COLUMN,
+        column: Column.ATP_TEST_NAME,
         dataSpecId: 'test-spec-id',
         displayName: 'Global Atp Test Name',
         textInput: {
@@ -497,7 +497,7 @@ describe('FilterEditor', () => {
     const initialFilters: PerfFilter[] = [
       {
         id: 'filter-1',
-        column: ATP_TEST_NAME_COLUMN,
+        column: Column.ATP_TEST_NAME,
         dataSpecId: 'test-spec-id',
         displayName: 'Atp Test Name',
         textInput: {

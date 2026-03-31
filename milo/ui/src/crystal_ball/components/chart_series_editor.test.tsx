@@ -17,7 +17,7 @@ import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
-import { ATP_TEST_NAME_COLUMN } from '@/crystal_ball/constants';
+import { Column } from '@/crystal_ball/constants';
 import {
   PerfChartSeries,
   PerfFilter,
@@ -202,7 +202,7 @@ describe('ChartSeriesEditor', () => {
     const globalFilters: PerfFilter[] = [
       {
         id: 'global-filter-1',
-        column: ATP_TEST_NAME_COLUMN,
+        column: Column.ATP_TEST_NAME,
         dataSpecId: 'test-spec-id',
         displayName: 'Global Atp Test Name',
         textInput: {
@@ -216,7 +216,7 @@ describe('ChartSeriesEditor', () => {
     const widgetFilters: PerfFilter[] = [
       {
         id: 'widget-filter-1',
-        column: ATP_TEST_NAME_COLUMN,
+        column: Column.ATP_TEST_NAME,
         dataSpecId: 'test-spec-id',
         displayName: 'Widget Atp Test Name',
         textInput: {

@@ -39,8 +39,8 @@ import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
 import {
-  ATP_TEST_NAME_COLUMN,
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
+  Column,
   GLOBAL_TIME_RANGE_COLUMN,
   MAX_SUGGEST_RESULTS,
 } from '@/crystal_ball/constants/api';
@@ -117,16 +117,16 @@ function FilterEditorRow({
 
   const filterString = useMemo(() => {
     return buildFilterString(
-      [ATP_TEST_NAME_COLUMN, GLOBAL_TIME_RANGE_COLUMN],
+      [Column.ATP_TEST_NAME, GLOBAL_TIME_RANGE_COLUMN],
       globalFilters,
       widgetFilters,
       filter.id,
     );
   }, [globalFilters, widgetFilters, filter.id]);
 
-  const isAtpTestCol = filter.column === ATP_TEST_NAME_COLUMN;
+  const isAtpTestCol = filter.column === Column.ATP_TEST_NAME;
   const hasAtpTestFilter = useMemo(() => {
-    return new RegExp(`\\b${ATP_TEST_NAME_COLUMN}\\b`).test(filterString);
+    return new RegExp(`\\b${Column.ATP_TEST_NAME}\\b`).test(filterString);
   }, [filterString]);
   const isEnabled = isAtpTestCol || hasAtpTestFilter;
 
