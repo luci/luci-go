@@ -107,7 +107,7 @@ def _generate_builder(
         any properties. Only property keys which are populated via the `properties`
         parameter here (or via the module-scoped defaults) are allowed.
       service_account: an email of a service account to run the executable
-        under: the executable (and various tools it calls, e.g. gsutil) will be
+        under: the executable (and various tools it calls, e.g. gcloud storage) will be
         able to make outbound HTTP calls that have an OAuth access token
         belonging to this service account (provided it is registered with LUCI).
         Supports the module-scoped default.
@@ -508,7 +508,7 @@ def _builder(
         any properties. Only property keys which are populated via the `properties`
         parameter here (or via the module-scoped defaults) are allowed.
       service_account: an email of a service account to run the executable
-        under: the executable (and various tools it calls, e.g. gsutil) will be
+        under: the executable (and various tools it calls, e.g. gcloud storage) will be
         able to make outbound HTTP calls that have an OAuth access token
         belonging to this service account (provided it is registered with LUCI).
         Supports the module-scoped default.
