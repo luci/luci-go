@@ -199,7 +199,7 @@ if 'wheels' in os.environ:
             pass
 
     _info('Installing mixed requirements as a single batch...')
-    find_links_args = ['--find-links', wheels_dir]
+    find_links_args = ['--find-links', wheels_dir, '--find-links', wheels_cache]
     if os.path.isdir(os.path.join(os.environ['wheels'], 'wheels')):
       find_links_args += ['--find-links', os.path.join(os.environ['wheels'], 'wheels')]
 
