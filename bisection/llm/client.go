@@ -30,12 +30,16 @@ type Client interface {
 	GenerateContentWithSchema(ctx context.Context, prompt string, schema *genai.Schema) (string, error)
 }
 
+const (
+	geminiModel = "gemini-3.1-pro-preview"
+	location    = "global"
+)
+
 type clientImpl struct {
 	client *genai.Client
 }
 
 func NewClient(ctx context.Context, cloudProject string) (Client, error) {
-	location := "global" // Use global for Gemini 3 access
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		Project:  cloudProject,
 		Location: location,
@@ -60,7 +64,7 @@ func (c *clientImpl) GenerateContent(ctx context.Context, prompt string) (string
 	}
 
 	// Generate content
-	response, err := c.client.Models.GenerateContent(ctx, "gemini-3-pro-preview", contents, nil)
+	response, err := c.client.Models.GenerateContent(ctx, geminiModel, contents, nil)
 	if err != nil {
 		return "", errors.Fmt("failed to generate content: %w", err)
 	}
@@ -85,7 +89,7 @@ func (c *clientImpl) GenerateContentWithSchema(ctx context.Context, prompt strin
 	}
 
 	// Generate content with structured output
-	response, err := c.client.Models.GenerateContent(ctx, "gemini-3-pro-preview", contents, config)
+	response, err := c.client.Models.GenerateContent(ctx, geminiModel, contents, config)
 	if err != nil {
 		return "", errors.Fmt("failed to generate content with schema: %w", err)
 	}
