@@ -42,8 +42,9 @@ export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] = [
     header: 'Fleet PLM Status',
   },
   {
-    accessorKey: 'r11n',
+    accessorKey: 'r11nList',
     header: 'R11N',
+    Cell: ({ cell }) => (cell.getValue<string[]>() ?? []).join(', '),
   },
   {
     accessorKey: 'numberOfDevicesPerRack',
