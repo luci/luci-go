@@ -56,6 +56,7 @@ export const dimensionsToFilterOptions = (
 
   for (const [key, value] of Object.entries(response.labels)) {
     if (filters[key]) continue;
+    if (filters[`"${key}"`]) continue;
     if (value.values.length === 0) continue;
 
     filters[`labels."${key}"`] = new StringListFilterCategoryBuilder()
