@@ -15,6 +15,7 @@
 import glob
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -144,37 +145,61 @@ if 'wheels' in os.environ:
             mapping = json.load(f)
 
         ensure_file_to_use = ensure_file
-        if mapping:
-          _info('Filtering ensure.txt using mapping.json to only download failed wheels...')
-          with open(ensure_file, 'r') as f:
-            lines = f.readlines()
+        _info('Filtering ensure.txt to only download failed wheels...')
+        with open(ensure_file, 'r') as f:
+          lines = f.readlines()
 
-          filtered_lines = []
-          for line in lines:
-            stripped = line.strip()
-            if not stripped or stripped.startswith('#') or stripped.startswith('$') or stripped.startswith('@'):
-              filtered_lines.append(line)
-              continue
+        # Temporary duplication of pipNameFromPackageName function.
+        def _pip_name_from_package_name(name):
+          res = name
+          prefix = 'infra/python/wheels/'
+          if res.startswith(prefix):
+            res = res[len(prefix):]
+            res = res.split('/')[0]
+          else:
+            parts = res.split('/')
+            for p in reversed(parts):
+              if '${' not in p and p:
+                res = p
+                break
+          for suffix in ['-py2_py3', '_py2_py3', '-py3', '_py3', '-py2', '_py2']:
+            if res.endswith(suffix):
+              res = res[:-len(suffix)]
+              break
+          return re.sub(r'[-_.]+', '-', res.lower())
 
-            parts = stripped.split()
-            if not parts:
-              continue
-            pkg_template = parts[0]
+        filtered_lines = []
+        for line in lines:
+          stripped = line.strip()
+          if not stripped or stripped.startswith('#') or stripped.startswith('$') or stripped.startswith('@'):
+            filtered_lines.append(line)
+            continue
 
-            matched = False
-            for failed in failed_requirements:
-              pip_name = failed.split('==')[0].lower()
-              if pip_name in mapping and mapping[pip_name] == pkg_template:
+          parts = stripped.split()
+          if not parts:
+            continue
+          pkg_template = parts[0]
+
+          matched = False
+          for failed in failed_requirements:
+            failed_pip_name = re.sub(r'[-_.]+', '-', failed.split('==')[0].lower())
+            if mapping:
+              if failed_pip_name in mapping and mapping[failed_pip_name] == pkg_template:
+                matched = True
+                break
+            else:
+              # Heuristic match if mapping.json is missing (legacy cache).
+              if failed_pip_name == _pip_name_from_package_name(pkg_template):
                 matched = True
                 break
 
-            if matched:
-              filtered_lines.append(line)
+          if matched:
+            filtered_lines.append(line)
 
-          with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as t:
-            t.writelines(filtered_lines)
-            ensure_file_to_use = t.name
-          _info('Using filtered ensure file: %s' % ensure_file_to_use)
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as t:
+          t.writelines(filtered_lines)
+          ensure_file_to_use = t.name
+        _info('Using filtered ensure file: %s' % ensure_file_to_use)
 
         cipd_path = os.environ.get('VPYTHON_CIPD_PATH', 'cipd')
         cipd_cmd = [cipd_path]

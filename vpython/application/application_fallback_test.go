@@ -134,7 +134,48 @@ func TestFallback(t *testing.T) {
 				if strings.Contains(m.Msg, "Failed to download") && strings.Contains(m.Msg, "six") {
 					foundFailedRequests = true
 				}
-				if strings.Contains(m.Msg, "Filtering ensure.txt using mapping.json to only download failed wheels") {
+				if strings.Contains(m.Msg, "Filtering ensure.txt to only download failed wheels") {
+					foundFilteredLog = true
+				}
+			}
+			assert.Loosely(t, foundFailedRequests, should.BeTrue)
+			assert.Loosely(t, foundFilteredLog, should.BeTrue)
+		})
+
+		t.Parallel("itemized fallback with missing mapping.json (heuristic)", func(t *ftt.Test) {
+			ctx = setupApp(ctx, t, app)
+
+			// Create a fake wheels directory missing mapping.json and the 'wheels' subdir
+			// to force the on-demand fetch logic.
+			wheelsSourceDir := t.TempDir()
+			os.WriteFile(filepath.Join(wheelsSourceDir, "requirements.txt"), []byte("six==1.17.0\n"), 0644)
+			// Create ensure.txt
+			os.WriteFile(filepath.Join(wheelsSourceDir, "ensure.txt"), []byte("infra/python/wheels/six-py2_py3 version:1.17.0\n"), 0644)
+
+			wheelsTarget := &generators.ImportTargets{
+				Name: "wheels",
+				Targets: map[string]generators.ImportTarget{
+					".": {Source: wheelsSourceDir, Mode: os.ModeDir},
+				},
+			}
+
+			venv := env.WithWheels(wheelsTarget)
+			ap := actions.NewActionProcessor()
+			wheels.MustSetTransformer(app.CIPDCacheDir, ap)
+
+			// Act
+			err := app.BuildVENV(ctx, ap, venv)
+			assert.Loosely(t, err, should.BeNil)
+			defer app.close()
+
+			// Assert
+			foundFailedRequests := false
+			foundFilteredLog := false
+			for _, m := range logging.Get(ctx).(*memlogger.MemLogger).Messages() {
+				if strings.Contains(m.Msg, "Failed to download") && strings.Contains(m.Msg, "six") {
+					foundFailedRequests = true
+				}
+				if strings.Contains(m.Msg, "Filtering ensure.txt to only download failed wheels...") {
 					foundFilteredLog = true
 				}
 			}
