@@ -950,7 +950,6 @@ export interface ProductCatalogEntry {
   readonly descriptiveName: string;
   readonly resourceType: string;
   readonly fleetPlmStatus: string;
-  readonly r11n: string;
   readonly numberOfDevicesPerRack: number;
   readonly unitCost: string;
   readonly productType: string;
@@ -9471,7 +9470,6 @@ function createBaseProductCatalogEntry(): ProductCatalogEntry {
     descriptiveName: "",
     resourceType: "",
     fleetPlmStatus: "",
-    r11n: "",
     numberOfDevicesPerRack: 0,
     unitCost: "",
     productType: "",
@@ -9498,9 +9496,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     }
     if (message.fleetPlmStatus !== "") {
       writer.uint32(50).string(message.fleetPlmStatus);
-    }
-    if (message.r11n !== "") {
-      writer.uint32(58).string(message.r11n);
     }
     if (message.numberOfDevicesPerRack !== 0) {
       writer.uint32(64).int32(message.numberOfDevicesPerRack);
@@ -9572,14 +9567,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
           message.fleetPlmStatus = reader.string();
           continue;
         }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.r11n = reader.string();
-          continue;
-        }
         case 8: {
           if (tag !== 64) {
             break;
@@ -9629,7 +9616,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
       descriptiveName: isSet(object.descriptiveName) ? globalThis.String(object.descriptiveName) : "",
       resourceType: isSet(object.resourceType) ? globalThis.String(object.resourceType) : "",
       fleetPlmStatus: isSet(object.fleetPlmStatus) ? globalThis.String(object.fleetPlmStatus) : "",
-      r11n: isSet(object.r11n) ? globalThis.String(object.r11n) : "",
       numberOfDevicesPerRack: isSet(object.numberOfDevicesPerRack)
         ? globalThis.Number(object.numberOfDevicesPerRack)
         : 0,
@@ -9659,9 +9645,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     if (message.fleetPlmStatus !== "") {
       obj.fleetPlmStatus = message.fleetPlmStatus;
     }
-    if (message.r11n !== "") {
-      obj.r11n = message.r11n;
-    }
     if (message.numberOfDevicesPerRack !== 0) {
       obj.numberOfDevicesPerRack = Math.round(message.numberOfDevicesPerRack);
     }
@@ -9688,7 +9671,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     message.descriptiveName = object.descriptiveName ?? "";
     message.resourceType = object.resourceType ?? "";
     message.fleetPlmStatus = object.fleetPlmStatus ?? "";
-    message.r11n = object.r11n ?? "";
     message.numberOfDevicesPerRack = object.numberOfDevicesPerRack ?? 0;
     message.unitCost = object.unitCost ?? "";
     message.productType = object.productType ?? "";
