@@ -65,11 +65,8 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
         continue;
       }
 
-      // TODO: remove this line once we rename r11nList to r11n in the proto
       const responseKey =
-        accessorKey === 'r11nList'
-          ? 'r11n'
-          : (accessorKey as keyof GetProductCatalogFilterValuesResponse);
+        accessorKey as keyof GetProductCatalogFilterValuesResponse;
       const data = filterOptionsQuery.data?.[responseKey];
       const filterKey = `"${config.filterKey}"`;
 
