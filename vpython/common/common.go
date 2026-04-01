@@ -24,14 +24,14 @@ import (
 
 // Environment variable definitions
 const (
-	EnvVpythonArUrl    = "VPYTHON_AR_URL"
-	EnvVpythonCipdPath = "VPYTHON_CIPD_PATH"
+	EnvVpythonArUrl     = "VPYTHON_AR_URL"
+	EnvVpythonCipdPath  = "VPYTHON_CIPD_PATH"
 	EnvVpythonCacheSalt = "_VPYTHON_CACHE_SALT"
 )
 
 const (
 	// Must be changed +1 to invalidate cache.
-	VpythonCacheSalt = ""
+	VpythonCacheSalt = "1"
 )
 
 // Python returns the python path in python installation.
