@@ -155,8 +155,9 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 
 					// Enqueued tasks.
 					payloads := sched.Tasks().Payloads()
-					assert.Loosely(t, payloads, should.HaveLength(7)) // 1 NotifyRootInvocationFinalized + 3 PublishTestResultsTask + 3 PublishWorkUnitsTask
+					assert.Loosely(t, payloads, should.HaveLength(8)) // 1 NotifyRootInvocation + 3 PublishTestResults + 3 PublishWorkUnits + 1 PublishTestAggregations
 					notifyRootInvCount := 0
+					publishTACount := 0
 					publishTRCount := 0
 					publishWUCount := 0
 					var trTasks []*taskspb.PublishTestResultsTask
@@ -172,9 +173,13 @@ func TestSweepWorkUnitsForFinalization(t *testing.T) {
 						case *taskspb.PublishWorkUnitsTask:
 							publishWUCount++
 							wuTasks = append(wuTasks, task)
+						case *taskspb.PublishTestAggregationsTask:
+							publishTACount++
+							assert.Loosely(t, task.RootInvocationId, should.Equal(string(rootInvID)))
 						}
 					}
 					assert.Loosely(t, notifyRootInvCount, should.Equal(1))
+					assert.Loosely(t, publishTACount, should.Equal(1))
 					assert.Loosely(t, publishTRCount, should.Equal(3))
 					assert.Loosely(t, publishWUCount, should.Equal(3))
 

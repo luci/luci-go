@@ -345,6 +345,13 @@ func applyFinalizationUpdates(ctx context.Context, rootInvID rootinvocations.ID,
 					},
 					Title: fmt.Sprintf("root-inv-pubsub-%s-%d", rootInvID.Name(), time.Now().UnixNano()),
 				})
+				// Enqueue a task to publish test aggregations for the finalized root invocation.
+				tq.MustAddTask(ctx, &tq.Task{
+					Payload: &taskspb.PublishTestAggregationsTask{
+						RootInvocationId: string(rootInvID),
+					},
+					Title: fmt.Sprintf("ta-pubsub-%s-%d", rootInvID.Name(), time.Now().UnixNano()),
+				})
 			}
 
 			span.BufferWrite(ctx, mutations...)
