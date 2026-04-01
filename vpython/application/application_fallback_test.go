@@ -53,7 +53,6 @@ func TestFallback(t *testing.T) {
 				"-c", "pass",
 			},
 			PythonExecutable: env.Executable,
-			WorkDir:          t.TempDir(),
 		}
 
 		t.Parallel("to CIPD (on-demand fetch)", func(t *ftt.Test) {
@@ -71,13 +70,23 @@ func TestFallback(t *testing.T) {
 			buildVENV(ctx, t, app, venv)
 
 			// Assert
-			foundMissingLog := false
+			foundARFail := false
+			foundCIPDFetch := false
 			for _, m := range logging.Get(ctx).(*memlogger.MemLogger).Messages() {
-				if strings.Contains(m.Msg, "vpython AR MISSING") && strings.Contains(m.Msg, "six==1.17.0") {
-					foundMissingLog = true
+				if strings.Contains(m.Msg, "Falling back to CIPD") {
+					foundARFail = true
+				}
+				if strings.Contains(m.Msg, "Falling back to on-demand fetch") {
+					foundCIPDFetch = true
 				}
 			}
-			assert.Loosely(t, foundMissingLog, should.BeTrue)
+			if !foundARFail || !foundCIPDFetch {
+				for _, m := range logging.Get(ctx).(*memlogger.MemLogger).Messages() {
+					t.Log(m.Msg)
+				}
+			}
+			assert.Loosely(t, foundARFail, should.BeTrue)
+			assert.Loosely(t, foundCIPDFetch, should.BeTrue)
 		})
 
 		t.Run("itemized fallback with local fake AR server", func(t *ftt.Test) {
@@ -119,12 +128,22 @@ func TestFallback(t *testing.T) {
 			buildVENV(ctx, t, app, venv)
 
 			// Assert
+			foundFailedRequests := false
+			foundFilteredLog := false
 			foundMissingLog := false
 			for _, m := range logging.Get(ctx).(*memlogger.MemLogger).Messages() {
+				if strings.Contains(m.Msg, "Failed to download") && strings.Contains(m.Msg, "six") {
+					foundFailedRequests = true
+				}
+				if strings.Contains(m.Msg, "Filtering ensure.txt using mapping.json to only download failed wheels") {
+					foundFilteredLog = true
+				}
 				if strings.Contains(m.Msg, "vpython AR MISSING") && strings.Contains(m.Msg, "six==1.15.0") {
 					foundMissingLog = true
 				}
 			}
+			assert.Loosely(t, foundFailedRequests, should.BeTrue)
+			assert.Loosely(t, foundFilteredLog, should.BeTrue)
 			assert.Loosely(t, foundMissingLog, should.BeTrue)
 		})
 
@@ -151,13 +170,16 @@ func TestFallback(t *testing.T) {
 			_ = app.BuildVENV(ctx, ap, venv)
 
 			// Assert
-			foundMissingLog := false
+			foundARFail := false
 			for _, m := range logging.Get(ctx).(*memlogger.MemLogger).Messages() {
-				if strings.Contains(m.Msg, "vpython AR MISSING") && strings.Contains(m.Msg, "six==1.17.0") {
-					foundMissingLog = true
+				if strings.Contains(m.Msg, "Falling back to CIPD") {
+					foundARFail = true
+				}
+				if strings.Contains(m.Msg, "Falling back to on-demand fetch") {
+					t.Fatal("On-demand fetch reached when it should have stopped at found wheels folder.")
 				}
 			}
-			assert.Loosely(t, foundMissingLog, should.BeTrue)
+			assert.Loosely(t, foundARFail, should.BeTrue)
 		})
 
 		t.Parallel("missing from both AR and CIPD", func(t *ftt.Test) {

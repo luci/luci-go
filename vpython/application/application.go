@@ -362,16 +362,12 @@ func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor
 	b := workflow.NewBuilder(plats, pm, ap)
 	postExecFn := func(ctx context.Context, pkg actions.Package, err error) error {
 		if pkg.Derivation.Name == "python_venv" {
-			// Surface missing Artifact Registry packages.
+			// Surface bootstrap info (e.g. if we fetched from AR or fell back to CIPD).
 			// During the build, stdout/stderr are captured by the package executor
 			// to avoid race conditions, so we write to a file and read it here.
-			if fb, readErr := os.ReadFile(filepath.Join(pkg.Handler.OutputDirectory(), ".vpython_ar_missing.txt")); readErr == nil {
+			if fb, readErr := os.ReadFile(filepath.Join(pkg.Handler.OutputDirectory(), ".vpython_bootstrap_info.txt")); readErr == nil {
 				if s := strings.TrimSpace(string(fb)); s != "" {
-					// Surface missing Artifact Registry packages to LUCI LogDog.
-					// We write to logging error to bypass the default vpython Error log
-					// level, ensuring this telemetry is always indexed and searchable
-					// in the LUCI Log Search UI even on successful builds.
-					logging.Errorf(ctx, "Non error: vpython AR MISSING: %s", s)
+					logging.Infof(ctx, "%s", s)
 				}
 			}
 		}

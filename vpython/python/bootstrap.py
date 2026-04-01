@@ -62,6 +62,13 @@ else:
 
 # Install wheels to virtual environment
 if 'wheels' in os.environ:
+  def _info(msg):
+    try:
+      with open(os.path.join(os.environ['out'], '.vpython_bootstrap_info.txt'), 'a') as f:
+        f.write(msg + '\n')
+    except Exception:
+      pass
+
   pip = glob.glob(os.path.join(os.environ['out'], '*', 'pip*'))[0]
   requirements_file = os.path.join(os.environ['wheels'], 'requirements.txt')
   requirements = []
@@ -79,8 +86,11 @@ if 'wheels' in os.environ:
     if not os.path.exists(wheels_dir):
       os.makedirs(wheels_dir)
 
+    _info('Attempting to download wheels itemized from Artifact Registry...')
+
     def _download_req(req):
       try:
+        _info('Downloading %s from AR...' % req)
         command = [
             pip, 'download',
             '--disable-pip-version-check', '--isolated',
@@ -98,6 +108,7 @@ if 'wheels' in os.environ:
         subprocess.check_output(command, env=env, stderr=subprocess.STDOUT)
         return None
       except subprocess.CalledProcessError as e:
+        _info('Failed to download %s from AR.' % req)
         return req
 
     try:
@@ -114,15 +125,20 @@ if 'wheels' in os.environ:
           failed_requirements.append(failed_req)
 
     if failed_requirements:
-      # Surface missing packages to Go wrapper via a file.
-      with open(os.path.join(os.environ['out'], '.vpython_ar_missing.txt'), 'w') as f:
-        f.write(", ".join(failed_requirements))
+      _info('Falling back to CIPD for %d requirements.' % len(failed_requirements))
+
+      # Surface the exact missing packages to LUCI build logs
+      sys.stderr.write("vpython AR MISSING: %s\n" % ", ".join(failed_requirements))
 
       wheels_root = os.environ['wheels']
       existing_wheels_dir = os.path.join(wheels_root, 'wheels')
 
-      if not os.path.isdir(existing_wheels_dir):
+      if os.path.isdir(existing_wheels_dir):
+        # If CIPD wheels exist, we can use them.
+        _info('CIPD wheels are already cached. Will use them as fallback.')
+      else:
         # If CIPD wheels are not cached, download only the failed ones on-demand
+        _info('CIPD wheels missing from store. Falling back to on-demand fetch...')
         ensure_file = os.path.join(wheels_root, 'ensure.txt')
 
         mapping_file = os.path.join(wheels_root, 'mapping.json')
@@ -133,6 +149,7 @@ if 'wheels' in os.environ:
 
         ensure_file_to_use = ensure_file
         if mapping:
+          _info('Filtering ensure.txt using mapping.json to only download failed wheels...')
           with open(ensure_file, 'r') as f:
             lines = f.readlines()
 
@@ -161,6 +178,7 @@ if 'wheels' in os.environ:
           with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as t:
             t.writelines(filtered_lines)
             ensure_file_to_use = t.name
+          _info('Using filtered ensure file: %s' % ensure_file_to_use)
 
         cipd_path = os.environ.get('VPYTHON_CIPD_PATH', 'cipd')
         cipd_cmd = [cipd_path]
@@ -174,6 +192,7 @@ if 'wheels' in os.environ:
           ])
         except subprocess.CalledProcessError:
           msg = 'FATAL: One or more requirements are missing from BOTH AR and CIPD: %s' % failed_requirements
+          _info(msg)
           sys.stderr.write(msg + '\n')
           raise
 
@@ -183,6 +202,7 @@ if 'wheels' in os.environ:
           except OSError:
             pass
 
+    _info('Installing mixed requirements as a single batch...')
     find_links_args = ['--find-links', wheels_dir, '--find-links', wheels_cache]
     if os.path.isdir(os.path.join(os.environ['wheels'], 'wheels')):
       find_links_args += ['--find-links', os.path.join(os.environ['wheels'], 'wheels')]
