@@ -15,6 +15,7 @@
 import glob
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -27,7 +28,6 @@ def temporary_directory():
   try:
     yield name
   finally:
-    import shutil
     shutil.rmtree(name, ignore_errors=True)
 
 DISABLE_PERIODIC_UPDATE = False  # This option only exists for newer virtualenv
@@ -181,15 +181,32 @@ if 'wheels' in os.environ:
           _info('Using filtered ensure file: %s' % ensure_file_to_use)
 
         cipd_path = os.environ.get('VPYTHON_CIPD_PATH', 'cipd')
+        if cipd_path == 'cipd':
+          resolved = shutil.which('cipd')
+          if resolved:
+            # cipd script strips down agent, which we want to preserve.
+            # On Windows, the binary is named .cipd_client.exe
+            bin_name = '.cipd_client.exe' if sys.platform == 'win32' else '.cipd_client'
+            real_bin = os.path.join(os.path.dirname(resolved), bin_name)
+            if os.path.exists(real_bin):
+              cipd_path = real_bin
+
         cipd_cmd = [cipd_path]
         if sys.platform == 'win32' and cipd_cmd[0].lower().endswith('.bat'):
           cipd_cmd = ['cmd.exe', '/C'] + cipd_cmd
 
         try:
+          env = os.environ.copy()
+          existing_prefix = env.get('CIPD_HTTP_USER_AGENT_PREFIX')
+          if existing_prefix:
+            env['CIPD_HTTP_USER_AGENT_PREFIX'] = 'vpython-fallback/' + existing_prefix
+          else:
+            env['CIPD_HTTP_USER_AGENT_PREFIX'] = 'vpython-fallback'
+
           subprocess.check_call(cipd_cmd + [
               'export', '-ensure-file',
               ensure_file_to_use, '-root', wheels_cache
-          ])
+          ], env=env)
         except subprocess.CalledProcessError:
           msg = 'FATAL: One or more requirements are missing from BOTH AR and CIPD: %s' % failed_requirements
           _info(msg)

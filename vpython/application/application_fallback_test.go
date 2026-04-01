@@ -38,6 +38,11 @@ import (
 	"go.chromium.org/luci/vpython/wheels"
 )
 
+func init() {
+	// Tag all traffic from these tests as test traffic to avoid polluting production metrics.
+	os.Setenv("CIPD_HTTP_USER_AGENT_PREFIX", "vpython-test")
+}
+
 func TestFallback(t *testing.T) {
 	// Set bogus AR URL to trigger fallback
 	t.Setenv(common.EnvVpythonArUrl, "https://invalid.example.com")
