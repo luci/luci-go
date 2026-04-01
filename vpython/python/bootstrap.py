@@ -126,6 +126,10 @@ if 'wheels' in os.environ:
 
     if failed_requirements:
       _info('Falling back to CIPD for %d requirements.' % len(failed_requirements))
+
+      # Surface the exact missing packages to LUCI build logs
+      sys.stderr.write("vpython AR MISSING: %s\n" % ", ".join(failed_requirements))
+
       wheels_root = os.environ['wheels']
       existing_wheels_dir = os.path.join(wheels_root, 'wheels')
 

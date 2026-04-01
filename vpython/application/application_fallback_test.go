@@ -130,6 +130,7 @@ func TestFallback(t *testing.T) {
 			// Assert
 			foundFailedRequests := false
 			foundFilteredLog := false
+			foundMissingLog := false
 			for _, m := range logging.Get(ctx).(*memlogger.MemLogger).Messages() {
 				if strings.Contains(m.Msg, "Failed to download") && strings.Contains(m.Msg, "six") {
 					foundFailedRequests = true
@@ -137,9 +138,13 @@ func TestFallback(t *testing.T) {
 				if strings.Contains(m.Msg, "Filtering ensure.txt using mapping.json to only download failed wheels") {
 					foundFilteredLog = true
 				}
+				if strings.Contains(m.Msg, "vpython AR MISSING") && strings.Contains(m.Msg, "six==1.15.0") {
+					foundMissingLog = true
+				}
 			}
 			assert.Loosely(t, foundFailedRequests, should.BeTrue)
 			assert.Loosely(t, foundFilteredLog, should.BeTrue)
+			assert.Loosely(t, foundMissingLog, should.BeTrue)
 		})
 
 		t.Parallel("from AR to populated CIPD (skip fetch)", func(t *ftt.Test) {
