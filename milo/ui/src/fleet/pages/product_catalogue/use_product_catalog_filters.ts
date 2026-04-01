@@ -38,7 +38,7 @@ const FILTERS: Partial<
   gpn: { type: 'string_list', filterKey: 'gpn' },
   resourceType: { type: 'string_list', filterKey: 'resource_type' },
   fleetPlmStatus: { type: 'string_list', filterKey: 'fleet_plm_status' },
-  r11nList: { type: 'string_list', filterKey: 'r11n' },
+  r11n: { type: 'string_list', filterKey: 'r11n' },
   numberOfDevicesPerRack: {
     type: 'range',
     filterKey: 'number_of_devices_per_rack',

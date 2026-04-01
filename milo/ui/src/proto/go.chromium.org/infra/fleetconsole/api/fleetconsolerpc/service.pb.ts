@@ -954,7 +954,6 @@ export interface ProductCatalogEntry {
   readonly numberOfDevicesPerRack: number;
   readonly unitCost: string;
   readonly productType: string;
-  readonly r11nList: readonly string[];
 }
 
 export interface Int32Range {
@@ -9475,7 +9474,6 @@ function createBaseProductCatalogEntry(): ProductCatalogEntry {
     numberOfDevicesPerRack: 0,
     unitCost: "",
     productType: "",
-    r11nList: [],
   };
 }
 
@@ -9510,9 +9508,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     }
     if (message.productType !== "") {
       writer.uint32(82).string(message.productType);
-    }
-    for (const v of message.r11nList) {
-      writer.uint32(90).string(v!);
     }
     return writer;
   },
@@ -9604,14 +9599,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
           message.productType = reader.string();
           continue;
         }
-        case 11: {
-          if (tag !== 90) {
-            break;
-          }
-
-          message.r11nList.push(reader.string());
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -9635,7 +9622,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
         : 0,
       unitCost: isSet(object.unitCost) ? globalThis.String(object.unitCost) : "",
       productType: isSet(object.productType) ? globalThis.String(object.productType) : "",
-      r11nList: globalThis.Array.isArray(object?.r11nList) ? object.r11nList.map((e: any) => globalThis.String(e)) : [],
     };
   },
 
@@ -9671,9 +9657,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     if (message.productType !== "") {
       obj.productType = message.productType;
     }
-    if (message.r11nList?.length) {
-      obj.r11nList = message.r11nList;
-    }
     return obj;
   },
 
@@ -9692,7 +9675,6 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     message.numberOfDevicesPerRack = object.numberOfDevicesPerRack ?? 0;
     message.unitCost = object.unitCost ?? "";
     message.productType = object.productType ?? "";
-    message.r11nList = object.r11nList?.map((e) => e) || [];
     return message;
   },
 };
