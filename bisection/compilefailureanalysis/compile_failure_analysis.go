@@ -134,8 +134,9 @@ func AnalyzeFailure(
 		logging.Errorf(c, "LLM analysis failed: %v", err)
 	} else {
 		if analysis.IsTreeCloser {
-			logging.Infof(c, "Build %d is a tree closer, triggering fixforward task.", firstFailedBuildID)
-			triggerFixforward(c, genaiAnalysisResult, analysis.Id, genaiClient, compileLogs)
+			logging.Infof(c, "Build %d is a tree closer, skipping fixforward task to prevent timeouts.", firstFailedBuildID)
+			// TODO: Offload this to a separate Task Queue task to prevent blocking the main analysis.
+			// triggerFixforward(c, genaiAnalysisResult, analysis.Id, genaiClient, compileLogs)
 		}
 
 		shouldRunCulpritVerification, err := culpritverification.ShouldRunCulpritVerification(c, analysis)
