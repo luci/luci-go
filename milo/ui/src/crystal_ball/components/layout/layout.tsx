@@ -32,7 +32,8 @@ export function Layout() {
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
-          backgroundColor: 'grey.50',
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
         }}
       >
         <Sticky top sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>

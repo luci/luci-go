@@ -20,6 +20,7 @@ import {
   MenuItem,
   Popover,
   Select,
+  SelectChangeEvent,
   TextField,
   Typography,
 } from '@mui/material';
@@ -29,11 +30,13 @@ import React, { useMemo, useState } from 'react';
 
 import { CUSTOMIZE_OPTION } from '@/common/components/time_range_selector/time_range_selector_utils';
 import {
+  COMMON_MESSAGES,
   DASHBOARD_DATE_FORMAT,
   GLOBAL_TIME_RANGE_COLUMN,
   GLOBAL_TIME_RANGE_FILTER_ID,
   GLOBAL_TIME_RANGE_OPTION_DEFAULT,
 } from '@/crystal_ball/constants';
+import { COMPACT_SELECT_SX, COMPACT_TEXTFIELD_SX } from '@/crystal_ball/styles';
 import {
   DashboardState,
   PerfFilter,
@@ -107,7 +110,7 @@ export function DashboardTimeRangeSelector({
       };
     }
 
-    const opt = values[2] || CUSTOMIZE_OPTION;
+    const opt = values[2] ?? CUSTOMIZE_OPTION;
     return {
       startTime:
         values[0] && values[0] !== ''
@@ -136,7 +139,7 @@ export function DashboardTimeRangeSelector({
       PerfFilter.fromPartial({
         id: GLOBAL_TIME_RANGE_FILTER_ID,
         column: GLOBAL_TIME_RANGE_COLUMN,
-        displayName: 'Time Range (UTC)',
+        displayName: COMMON_MESSAGES.TIME_RANGE_UTC,
         range: {
           defaultValue: {
             values:
@@ -194,33 +197,35 @@ export function DashboardTimeRangeSelector({
       <Button
         variant="outlined"
         onClick={handleClick}
-        sx={{ display: 'flex', gap: '7px' }}
         data-testid="time-button"
+        startIcon={<AccessTime />}
       >
-        <AccessTime />
         {timeOption === CUSTOMIZE_OPTION ? (
           <>
             {startTime
               ? startTime.toFormat(DASHBOARD_DATE_FORMAT)
-              : 'unspecified'}{' '}
+              : COMMON_MESSAGES.UNSPECIFIED}{' '}
             -{' '}
-            {endTime ? endTime.toFormat(DASHBOARD_DATE_FORMAT) : 'unspecified'}
+            {endTime
+              ? endTime.toFormat(DASHBOARD_DATE_FORMAT)
+              : COMMON_MESSAGES.UNSPECIFIED}
           </>
         ) : (
           (() => {
             const match = timeOption.match(/^(\d+)([a-zA-Z])$/);
-            if (!match) return `Last ${localNumber} days`; // Fallback to local state if match fails
+            if (!match)
+              return `${COMMON_MESSAGES.LAST} ${localNumber} ${COMMON_MESSAGES.DAYS}`; // Fallback to local state if match fails
             const num = match[1];
             const unit = match[2];
-            const map: Record<string, string> = {
-              m: 'minute',
-              h: 'hour',
-              d: 'day',
-              w: 'week',
+            const map: Record<string, COMMON_MESSAGES> = {
+              m: COMMON_MESSAGES.MINUTE_ONE,
+              h: COMMON_MESSAGES.HOUR_ONE,
+              d: COMMON_MESSAGES.DAY_ONE,
+              w: COMMON_MESSAGES.WEEK_ONE,
             };
-            const baseWord = map[unit] ?? 'day';
+            const baseWord = map[unit] ?? COMMON_MESSAGES.DAY_ONE;
             const unitWord = num === '1' ? baseWord : `${baseWord}s`;
-            return `Last ${num} ${unitWord}`;
+            return `${COMMON_MESSAGES.LAST} ${num} ${unitWord}`;
           })()
         )}
       </Button>
@@ -242,52 +247,59 @@ export function DashboardTimeRangeSelector({
             maxWidth: '350px',
           }}
         >
-          <Typography variant="subtitle2">Relative Range</Typography>
+          <Typography variant="subtitle2">
+            {COMMON_MESSAGES.RELATIVE_RANGE}
+          </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography>Last</Typography>
+            <Typography>{COMMON_MESSAGES.LAST}</Typography>
             <TextField
               type="number"
               size="small"
               value={localNumber}
               onChange={(e) => setLocalNumber(e.target.value)}
-              sx={{ width: 80 }}
+              sx={COMPACT_TEXTFIELD_SX}
               inputProps={{ min: 1, step: 1 }}
             />
             <Select
               size="small"
               value={localUnit}
-              onChange={(e) => setLocalUnit(e.target.value as string)}
+              onChange={(e: SelectChangeEvent<string>) =>
+                setLocalUnit(e.target.value)
+              }
+              sx={COMPACT_SELECT_SX}
             >
-              <MenuItem value="m">minutes</MenuItem>
-              <MenuItem value="h">hours</MenuItem>
-              <MenuItem value="d">days</MenuItem>
-              <MenuItem value="w">weeks</MenuItem>
+              <MenuItem value="m">{COMMON_MESSAGES.MINUTES}</MenuItem>
+              <MenuItem value="h">{COMMON_MESSAGES.HOURS}</MenuItem>
+              <MenuItem value="d">{COMMON_MESSAGES.DAYS}</MenuItem>
+              <MenuItem value="w">{COMMON_MESSAGES.WEEKS}</MenuItem>
             </Select>
             <Button variant="contained" onClick={handleApplyRelative}>
-              Apply
+              {COMMON_MESSAGES.APPLY}
             </Button>
           </Box>
 
           <Divider />
 
-          <Typography variant="subtitle2">Custom Range (UTC)</Typography>
+          <Typography variant="subtitle2">
+            {COMMON_MESSAGES.CUSTOM_RANGE_UTC}
+          </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <DateTimePicker
-              label="From (UTC)"
+              label={COMMON_MESSAGES.FROM_UTC}
               timezone="UTC"
               value={localStartTime}
               onChange={(newValue) => setLocalStartTime(newValue)}
               slotProps={{ field: { clearable: true } }}
             />
             <DateTimePicker
-              label="To (UTC)"
+              label={COMMON_MESSAGES.TO_UTC}
               timezone="UTC"
               value={localEndTime}
               onChange={(newValue) => setLocalEndTime(newValue)}
               slotProps={{ field: { clearable: true } }}
             />
             <Button variant="contained" onClick={handleApplyAbsolute}>
-              Apply
+              {COMMON_MESSAGES.APPLY}
             </Button>
           </Box>
         </Box>

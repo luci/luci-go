@@ -81,9 +81,8 @@ describe('ChartSeriesEditor', () => {
 
   it('renders with no series initially', async () => {
     render(<ChartSeriesEditor {...defaultProps} />);
-    expect(screen.getByText('Series')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /Add Series/i }),
+      screen.getByRole('button', { name: /Add Another Series/i }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /Remove series/i }),
@@ -112,12 +111,14 @@ describe('ChartSeriesEditor', () => {
     expect(screen.getByLabelText('Metric Field')).toHaveValue('metric1');
   });
 
-  it('adds a new series when "Add Series" is clicked', async () => {
+  it('adds a new series when "Add Another Series" is clicked', async () => {
     render(<ChartSeriesEditor {...defaultProps} />);
-    fireEvent.click(screen.getByRole('button', { name: /Add Series/i }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /Add Another Series/i }),
+    );
 
     expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
-    const updatedSeries = defaultProps.onUpdateSeries.mock.calls[0][0];
+    const updatedSeries = defaultProps.onUpdateSeries.mock.lastCall[0];
     expect(updatedSeries.length).toBe(1);
     expect(updatedSeries[0]).toMatchObject({
       displayName: `series-${expectedMockUUID}`,
@@ -172,7 +173,7 @@ describe('ChartSeriesEditor', () => {
     fireEvent.blur(metricInput);
     // Now onUpdateSeries should be called
     expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
-    const updatedSeries = defaultProps.onUpdateSeries.mock.calls[0][0];
+    const updatedSeries = defaultProps.onUpdateSeries.mock.lastCall[0];
     expect(updatedSeries[0].metricField).toBe('newMetric');
     // Check if displayName is also updated
     expect(updatedSeries[0].displayName).toBe('Series 1');
@@ -287,7 +288,7 @@ describe('ChartSeriesEditor', () => {
     });
     fireEvent.click(removeButtons[0]);
     expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
-    const seriesAfterRemove = defaultProps.onUpdateSeries.mock.calls[0][0];
+    const seriesAfterRemove = defaultProps.onUpdateSeries.mock.lastCall[0];
     expect(seriesAfterRemove.length).toBe(1);
     expect(seriesAfterRemove[0].metricField).toBe('m2');
 
@@ -297,9 +298,11 @@ describe('ChartSeriesEditor', () => {
     );
 
     // Add a new one
-    fireEvent.click(screen.getByRole('button', { name: /Add Series/i }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /Add Another Series/i }),
+    );
     expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(2);
-    const seriesAfterAdd = defaultProps.onUpdateSeries.mock.calls[1][0];
+    const seriesAfterAdd = defaultProps.onUpdateSeries.mock.lastCall[0];
     expect(seriesAfterAdd.length).toBe(2);
     expect(seriesAfterAdd[0].metricField).toBe('m2'); // Existing
     expect(seriesAfterAdd[1].metricField).toBe(''); // New

@@ -16,6 +16,7 @@ import { Box } from '@mui/material';
 import { useMemo } from 'react';
 
 import { ChartSeriesItem } from '@/crystal_ball/components';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
 import {
   BreakdownTableConfig_BreakdownAggregation,
@@ -118,14 +119,7 @@ export function BreakdownTableWidget({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box
-        sx={{
-          p: 1.5,
-          bgcolor: 'background.default',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
+      <Box>
         <ChartSeriesItem
           series={
             widget.series?.[0] ?? {
@@ -153,9 +147,11 @@ export function BreakdownTableWidget({
           metricFilterColumns={metricFilterColumns}
           isLoadingColumns={isLoadingFilterColumns}
           hideColorPicker={true}
+          hideVisibility={true}
+          hideDelete={true}
+          titlePlaceholder={COMMON_MESSAGES.METRIC_REQUIRED}
         />
       </Box>
-
       <BreakdownTableChart
         sections={sections}
         isLoading={isLoading}
@@ -172,7 +168,7 @@ export function BreakdownTableWidget({
             }),
           );
         }}
-        hasSeries={(widget.series?.length ?? 0) > 0}
+        hasSeries={!!widget.series?.[0]?.metricField}
       />
     </Box>
   );

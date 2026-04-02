@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './api';
-export * from './colors';
-export * from './date_time';
-export * from './messages';
-export * from './operators';
-export * from './table';
-export * from './url';
-export * from './widget';
+/**
+ * Opacity value for subtle background highlights (e.g. headers).
+ */
+export enum BackgroundAlpha {
+  LOW = 0.02,
+  HIGH = 0.04,
+}

@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {
+  Functions as FunctionsIcon,
+  GroupWork as GroupWorkIcon,
+} from '@mui/icons-material';
+import {
   Alert,
   Box,
   CircularProgress,
+  Divider,
   FormControl,
   MenuItem,
   Select,
   SelectChangeEvent,
   Typography,
 } from '@mui/material';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   ChartSeriesEditor,
@@ -39,6 +44,7 @@ import {
   GROUP_BY_OPTIONS,
 } from '@/crystal_ball/constants';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
+import { COMPACT_ICON_SX, COMPACT_SELECT_SX } from '@/crystal_ball/styles';
 import { isStringArray } from '@/crystal_ball/utils';
 import {
   dataPointsToData,
@@ -82,6 +88,22 @@ export function ChartWidget({
   globalFilters,
   dataSpecs,
 }: ChartWidgetProps) {
+  const [hiddenSeriesNames, setHiddenSeriesNames] = useState<Set<string>>(
+    new Set(),
+  );
+
+  const handleToggleVisibility = useCallback((seriesName: string) => {
+    setHiddenSeriesNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(seriesName)) {
+        next.delete(seriesName);
+      } else {
+        next.add(seriesName);
+      }
+      return next;
+    });
+  }, []);
+
   const handleFiltersUpdate = (updatedFilters: PerfFilter[]) => {
     onUpdate(
       PerfChartWidget.fromPartial({
@@ -200,21 +222,23 @@ export function ChartWidget({
     const xAxisKey = widgetResponse.multiMetricChartData.xAxisDataKey;
     const yAxisKey = widgetResponse.multiMetricChartData.yAxisDataKey;
 
-    return widgetResponse.multiMetricChartData.lines.map((line, index) => {
-      const seriesConfig = widget.series?.find(
-        (s) => s.displayName === line.legendLabel,
-      );
-      return {
-        name: line.legendLabel,
-        data: isDataPointsValid(line.dataPoints, xAxisKey, yAxisKey)
-          ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey)
-          : [],
-        stroke:
-          seriesConfig?.color ??
-          `hsl(${((index * GOLDEN_RATIO_CONJUGATE) % 1) * 360}, 70%, 50%)`,
-      };
-    });
-  }, [widgetResponse, widget.series]);
+    return widgetResponse.multiMetricChartData.lines
+      .map((line, index) => {
+        const seriesConfig = widget.series?.find(
+          (s) => s.displayName === line.legendLabel,
+        );
+        return {
+          name: line.legendLabel,
+          data: isDataPointsValid(line.dataPoints, xAxisKey, yAxisKey)
+            ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey)
+            : [],
+          stroke:
+            seriesConfig?.color ??
+            `hsl(${((index * GOLDEN_RATIO_CONJUGATE) % 1) * 360}, 70%, 50%)`,
+        };
+      })
+      .filter((series) => !hiddenSeriesNames.has(series.name));
+  }, [widgetResponse, widget.series, hiddenSeriesNames]);
 
   const hasData = useMemo(
     () => chartSeries.some((series) => series.data.length > 0),
@@ -236,68 +260,112 @@ export function ChartWidget({
 
   return (
     <Box>
-      <FilterEditor
-        title="Widget Filters"
-        filters={[...(widget.filters || [])]}
-        onUpdateFilters={handleFiltersUpdate}
-        dataSpecId={widget.dataSpecId}
-        availableColumns={widgetFilterColumns}
-        isLoadingColumns={isLoadingFilterColumns}
-      />
-      <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, mb: 2, gap: 1 }}>
-        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-          Group By:
-        </Typography>
-        <FormControl size="small" variant="outlined" sx={{ minWidth: 120 }}>
-          <Select
-            id="widget-groupby-select"
-            value={currentGroupBy}
-            onChange={(e: SelectChangeEvent<string>) => {
-              handleWidgetGroupByUpdate(e.target.value);
-            }}
-            inputProps={{ 'aria-label': 'Widget Group By' }}
-            sx={{
-              bgcolor: 'background.paper',
-              fontSize: (theme) => theme.typography.body2.fontSize,
-            }}
-          >
-            {GROUP_BY_OPTIONS.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-          Aggregation:
-        </Typography>
-        <FormControl size="small" variant="outlined" sx={{ minWidth: 120 }}>
-          <Select
-            id="widget-aggregation-select"
-            value={currentAggregation}
-            onChange={(e) => {
-              if (typeof e.target.value === 'number') {
-                handleWidgetAggregationUpdate(e.target.value);
-              }
-            }}
-            inputProps={{ 'aria-label': 'Widget Aggregation' }}
-            sx={{
-              bgcolor: 'background.paper',
-              fontSize: (theme) => theme.typography.body2.fontSize,
-            }}
-          >
-            {Object.entries(AGGREGATION_FUNCTION_LABELS)
-              .filter(([value]) => Number(value) !== 0)
-              .map(([value, label]) => (
-                <MenuItem key={value} value={Number(value)}>
-                  {label}
+      <Box
+        sx={{
+          bgcolor: (theme) => theme.palette.action.hover,
+          mx: -2,
+          mt: -2,
+          mb: 2,
+        }}
+      >
+        <FilterEditor
+          title="Widget Filters"
+          filters={[...(widget.filters ?? [])]}
+          onUpdateFilters={handleFiltersUpdate}
+          dataSpecId={widget.dataSpecId}
+          availableColumns={widgetFilterColumns}
+          isLoadingColumns={isLoadingFilterColumns}
+        />
+        <Divider light />
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            pl: 2,
+            pr: 0.5,
+            py: 0.5,
+            gap: 1,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <GroupWorkIcon sx={COMPACT_ICON_SX} />
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: (theme) => theme.typography.fontWeightBold,
+                textTransform: 'uppercase',
+                lineHeight: 1,
+              }}
+            >
+              {COMMON_MESSAGES.GROUP_BY}
+            </Typography>
+          </Box>
+          <FormControl size="small" variant="outlined">
+            <Select
+              id="widget-groupby-select"
+              value={currentGroupBy}
+              onChange={(e: SelectChangeEvent<string>) => {
+                handleWidgetGroupByUpdate(e.target.value);
+              }}
+              inputProps={{ 'aria-label': 'Widget Group By' }}
+              sx={COMPACT_SELECT_SX}
+            >
+              {GROUP_BY_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
                 </MenuItem>
               ))}
-          </Select>
-        </FormControl>
+            </Select>
+          </FormControl>
+
+          <Divider orientation="vertical" flexItem light />
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <FunctionsIcon sx={COMPACT_ICON_SX} />
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: (theme) => theme.typography.fontWeightBold,
+                textTransform: 'uppercase',
+                lineHeight: 1,
+              }}
+            >
+              {COMMON_MESSAGES.AGGREGATE_BY}
+            </Typography>
+          </Box>
+          <FormControl size="small" variant="outlined">
+            <Select
+              id="widget-aggregation-select"
+              value={currentAggregation}
+              onChange={(e) => {
+                if (typeof e.target.value === 'number') {
+                  handleWidgetAggregationUpdate(e.target.value);
+                }
+              }}
+              inputProps={{ 'aria-label': 'Widget Aggregation' }}
+              sx={COMPACT_SELECT_SX}
+            >
+              {Object.entries(AGGREGATION_FUNCTION_LABELS)
+                .filter(([value]) => Number(value) !== 0)
+                .map(([value, label]) => (
+                  <MenuItem key={value} value={Number(value)}>
+                    {label}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+        </Box>
+        <Divider light />
       </Box>
-      <Box sx={{ position: 'relative', minHeight: '300px', mt: 2 }}>
+      <Box
+        sx={{
+          position: 'relative',
+          minHeight: (theme) => theme.spacing(50),
+          mt: 2,
+        }}
+      >
         {isWidgetLoading && (
           <Box
             sx={{
@@ -359,8 +427,10 @@ export function ChartWidget({
         )}
       </Box>
       <ChartSeriesEditor
-        series={[...(widget.series || [])]}
+        series={[...(widget.series ?? [])]}
         onUpdateSeries={handleSeriesUpdate}
+        hiddenSeriesNames={hiddenSeriesNames}
+        onToggleVisibility={handleToggleVisibility}
         dataSpecId={widget.dataSpecId}
         globalFilters={globalFilters}
         widgetFilters={widget.filters}

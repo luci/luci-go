@@ -18,18 +18,6 @@ import ReactECharts from 'echarts-for-react';
 import { CSSProperties, useMemo } from 'react';
 
 /**
- * When not using a responsive container, the line chart height will fall back
- * to this setting.
- */
-const DEFAULT_LINE_CHART_HEIGHT_PX = 400;
-
-/**
- * When not using a responsive container, the line chart width will fall back
- * to this setting.
- */
-const DEFAULT_LINE_CHART_WIDTH_PX = 600;
-
-/**
  * Represents a single series to be plotted on the time series chart.
  */
 export interface TimeSeriesDataSet {
@@ -128,8 +116,7 @@ const BASE_OPTION: Partial<EChartsOption> = {
     appendToBody: true,
   },
   legend: {
-    bottom: 0,
-    type: 'scroll',
+    show: false,
   },
   grid: {
     top: 40,
@@ -251,15 +238,13 @@ export function TimeSeriesChart({
       data-testid="time-series-chart"
       sx={{
         position: 'relative',
-        height: `${DEFAULT_LINE_CHART_HEIGHT_PX}px`,
-        width: useResponsiveContainer
-          ? '100%'
-          : `${DEFAULT_LINE_CHART_WIDTH_PX}px`,
+        height: (theme) => theme.spacing(50),
+        width: useResponsiveContainer ? '100%' : (theme) => theme.spacing(75),
         minWidth: 0,
         overflow: 'hidden',
       }}
     >
-      <ReactECharts option={option} style={CHART_STYLE} />
+      <ReactECharts option={option} style={CHART_STYLE} notMerge={true} />
     </Box>
   );
 }

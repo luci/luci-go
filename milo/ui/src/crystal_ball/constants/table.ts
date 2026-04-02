@@ -31,7 +31,7 @@ export const COMMON_MRT_CONFIG: Partial<
   layoutMode: 'semantic',
   muiTableHeadRowProps: {
     sx: {
-      backgroundColor: (theme: Theme) => theme.palette.divider,
+      backgroundColor: (theme: Theme) => theme.palette.background.paper,
       borderBottom: '1px solid',
       borderColor: 'divider',
       boxShadow: 'none',
@@ -41,6 +41,8 @@ export const COMMON_MRT_CONFIG: Partial<
     sx: {
       fontWeight: (theme: Theme) => theme.typography.fontWeightBold,
       fontSize: (theme: Theme) => theme.typography.caption.fontSize,
+      borderRight: '1px solid',
+      borderColor: 'divider',
     },
   },
   muiTableBodyProps: {
@@ -50,6 +52,7 @@ export const COMMON_MRT_CONFIG: Partial<
       },
       '& td': {
         borderBottom: '1px solid',
+        borderRight: '1px solid',
         borderColor: 'divider',
         py: 1,
       },

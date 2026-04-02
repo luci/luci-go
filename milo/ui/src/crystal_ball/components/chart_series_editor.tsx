@@ -14,16 +14,25 @@
 
 import {
   Add as AddIcon,
+  BarChart as BarChartIcon,
+  ChevronRight as ChevronRightIcon,
   Delete as DeleteIcon,
-  ExpandMore as ExpandMoreIcon,
+  Edit as EditIcon,
+  FilterAlt as FunnelIcon,
+  Palette as PaletteIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import {
+  alpha,
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Autocomplete,
   Box,
   Button,
+  Chip,
+  Divider,
   IconButton,
   TextField,
   Typography,
@@ -34,12 +43,19 @@ import { useDebounce } from 'react-use';
 
 import { FilterEditor } from '@/crystal_ball/components';
 import {
-  Column,
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
+  Column,
+  COMMON_MESSAGES,
   GLOBAL_TIME_RANGE_COLUMN,
   MAX_SUGGEST_RESULTS,
+  OPERATOR_DISPLAY_NAMES,
 } from '@/crystal_ball/constants';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks';
+import {
+  BackgroundAlpha,
+  COMPACT_ICON_SX,
+  COMPACT_TEXTFIELD_SX,
+} from '@/crystal_ball/styles';
 import {
   buildFilterString,
   isStringArray,
@@ -50,11 +66,15 @@ import {
   MeasurementFilterColumn_FilterScope,
   PerfChartSeries,
   PerfFilter,
+  PerfFilterDefault_FilterOperator,
+  perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 interface ChartSeriesEditorProps {
   series: readonly PerfChartSeries[];
   onUpdateSeries: (updatedSeries: PerfChartSeries[]) => void;
+  hiddenSeriesNames?: Set<string>;
+  onToggleVisibility?: (name: string) => void;
   dataSpecId: string;
   globalFilters?: readonly PerfFilter[];
   widgetFilters?: readonly PerfFilter[];
@@ -68,6 +88,8 @@ const getSeriesId = (s: PerfChartSeries, index: number) =>
 export function ChartSeriesEditor({
   series,
   onUpdateSeries,
+  hiddenSeriesNames,
+  onToggleVisibility,
   dataSpecId,
   globalFilters,
   widgetFilters,
@@ -117,10 +139,15 @@ export function ChartSeriesEditor({
   );
 
   return (
-    <Box sx={{ mt: 1 }}>
-      <Typography variant="subtitle1" sx={{ mb: 1 }}>
-        Series
-      </Typography>
+    <Box
+      sx={{
+        mt: 1,
+        borderTop: '1px solid',
+        borderColor: 'divider',
+        mx: -2,
+        mb: -2,
+      }}
+    >
       {series.map((s, index) => (
         <ChartSeriesItem
           key={getSeriesId(s, index)}
@@ -132,21 +159,32 @@ export function ChartSeriesEditor({
           widgetFilters={widgetFilters}
           metricFilterColumns={metricFilterColumns}
           isLoadingColumns={isLoadingFilterColumns}
+          isVisible={!hiddenSeriesNames?.has(s.displayName)}
+          onToggleVisibility={() => onToggleVisibility?.(s.displayName)}
         />
       ))}
       <Button
         startIcon={<AddIcon />}
         onClick={handleAddSeries}
-        variant="outlined"
-        size="small"
-        sx={{ mt: 1 }}
+        variant="text"
+        fullWidth
+        sx={{
+          justifyContent: 'flex-start',
+          px: 2,
+          py: 0.5,
+          color: 'primary.main',
+          textTransform: 'none',
+        }}
       >
-        Add Series
+        Add Another Series
       </Button>
     </Box>
   );
 }
 
+/**
+ * Props for the ChartSeriesItem component.
+ */
 export interface ChartSeriesItemProps {
   series: PerfChartSeries;
   onUpdate: (updatedSeries: PerfChartSeries) => void;
@@ -157,6 +195,11 @@ export interface ChartSeriesItemProps {
   metricFilterColumns: readonly MeasurementFilterColumn[];
   isLoadingColumns?: boolean;
   hideColorPicker?: boolean;
+  isVisible?: boolean;
+  onToggleVisibility?: () => void;
+  hideVisibility?: boolean;
+  hideDelete?: boolean;
+  titlePlaceholder?: string;
 }
 
 export function ChartSeriesItem({
@@ -169,11 +212,16 @@ export function ChartSeriesItem({
   metricFilterColumns,
   isLoadingColumns,
   hideColorPicker,
+  isVisible = true,
+  onToggleVisibility,
+  hideVisibility = false,
+  hideDelete = false,
+  titlePlaceholder,
 }: ChartSeriesItemProps) {
   const [expanded, setExpanded] = useState(false);
-  const [displayName, setDisplayName] = useState(series.displayName ?? '');
-  const [color, setColor] = useState(series.color ?? '');
-  const [inputValue, setInputValue] = useState(series.metricField ?? '');
+  const [displayName, setDisplayName] = useState(series.displayName);
+  const [color, setColor] = useState(series.color);
+  const [inputValue, setInputValue] = useState(series.metricField);
   const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -256,19 +304,52 @@ export function ChartSeriesItem({
       expanded={expanded}
       onChange={() => setExpanded(!expanded)}
       disableGutters
-      sx={{ mb: 1, border: '1px solid', borderColor: 'divider' }}
+      sx={{
+        boxShadow: 'none',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        '&:before': { display: 'none' },
+        '&.Mui-expanded': { m: 0 },
+        '& .MuiAccordionSummary-root': { px: 2 },
+        '& .MuiAccordionSummary-root:hover': { bgcolor: 'action.hover' },
+        '& .MuiAccordionDetails-root': {
+          px: 2,
+          pb: 1,
+          bgcolor: (theme) =>
+            alpha(theme.palette.action.hover, BackgroundAlpha.HIGH),
+        },
+      }}
     >
       <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
+        component="div"
+        expandIcon={null}
         aria-controls={`series-${series.displayName}-content`}
         id={`series-${series.displayName}-header`}
         sx={{
+          py: 0,
+          minHeight: (theme) => theme.spacing(5),
+          '&.Mui-expanded': {
+            minHeight: (theme) => theme.spacing(5),
+          },
           '& .MuiAccordionSummary-content': {
             alignItems: 'center',
-            gap: 1,
+            gap: 0.5,
+            width: '100%',
+            margin: '4px 0',
+          },
+          '&.Mui-expanded .MuiAccordionSummary-content': {
+            margin: '4px 0',
           },
         }}
       >
+        <ChevronRightIcon
+          fontSize="small"
+          sx={{
+            transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s',
+            cursor: 'pointer',
+          }}
+        />
         {!hideColorPicker && (
           <Box
             data-testid="series-color-circle"
@@ -282,98 +363,238 @@ export function ChartSeriesItem({
             }}
           />
         )}
-        <Typography>{series.displayName ?? 'Untitled Series'}</Typography>
-        {!expanded && series.metricField && (
-          <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-            ({series.metricField})
-          </Typography>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: (theme) => theme.typography.fontWeightBold }}
+        >
+          {series.displayName ||
+            series.metricField ||
+            titlePlaceholder ||
+            'Untitled Series'}
+        </Typography>
+        {!expanded && series.filters?.length > 0 && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
+            {series.filters.map((filter) => {
+              const op =
+                filter.textInput?.defaultValue?.filterOperator !== undefined
+                  ? perfFilterDefault_FilterOperatorFromJSON(
+                      filter.textInput.defaultValue.filterOperator,
+                    )
+                  : PerfFilterDefault_FilterOperator.EQUAL;
+              const val = filter.textInput?.defaultValue?.values?.[0] ?? '';
+              const label = `${filter.column} ${OPERATOR_DISPLAY_NAMES[op] ?? PerfFilterDefault_FilterOperator[op]} "${val}"`;
+              return (
+                <Chip
+                  key={filter.id}
+                  label={label}
+                  size="small"
+                  variant="outlined"
+                />
+              );
+            })}
+          </Box>
+        )}
+        {!hideVisibility && (
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleVisibility?.();
+            }}
+            aria-label="Toggle series visibility"
+            size="small"
+            sx={{ ml: 'auto', p: 0.25 }}
+          >
+            {isVisible ? (
+              <VisibilityIcon fontSize="small" />
+            ) : (
+              <VisibilityOffIcon fontSize="small" />
+            )}
+          </IconButton>
+        )}
+        {!hideVisibility && !hideDelete && (
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{ mx: 0.25, height: 16 }}
+          />
+        )}
+        {!hideDelete && (
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            aria-label="Remove series"
+            color="error"
+            size="small"
+            sx={{ p: 0.25 }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
         )}
       </AccordionSummary>
       <AccordionDetails>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           <Box
             sx={{
               display: 'grid',
               gridTemplateColumns: hideColorPicker
-                ? '1fr auto'
-                : '1fr 60px auto',
-              gap: 1,
-              alignItems: 'center',
+                ? '1fr'
+                : (theme) => `${theme.spacing(8)} 1fr`,
+              gap: 1.5,
+              alignItems: 'flex-start',
             }}
           >
-            <TextField
-              label="Display Name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              onBlur={handleBlurDisplayName}
-              size="small"
-              fullWidth
-            />
             {!hideColorPicker && (
+              <Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    mb: 0.5,
+                  }}
+                >
+                  <PaletteIcon sx={COMPACT_ICON_SX} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      fontWeight: (theme) => theme.typography.fontWeightBold,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {COMMON_MESSAGES.COLOR}
+                  </Typography>
+                </Box>
+                <TextField
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  onBlur={handleBlurColor}
+                  size="small"
+                  sx={{
+                    width: (theme) => theme.spacing(6),
+                    height: (theme) => theme.spacing(4),
+                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                    '& .MuiInputBase-root': {
+                      height: (theme) => theme.spacing(4),
+                      width: (theme) => theme.spacing(6),
+                      p: 0,
+                    },
+                    '& .MuiInputBase-input': {
+                      p: 0,
+                      width: '100%',
+                      height: '100%',
+                      cursor: 'pointer',
+                      border: 'none',
+                    },
+                  }}
+                  inputProps={{
+                    'aria-label': 'Color',
+                    type: 'color',
+                  }}
+                />
+              </Box>
+            )}
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  mb: 0.5,
+                }}
+              >
+                <EditIcon sx={COMPACT_ICON_SX} />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'text.secondary',
+                    fontWeight: (theme) => theme.typography.fontWeightBold,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {COMMON_MESSAGES.DISPLAY_NAME}
+                </Typography>
+              </Box>
               <TextField
-                label="Color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                onBlur={handleBlurColor}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                onBlur={handleBlurDisplayName}
                 size="small"
                 fullWidth
                 inputProps={{
-                  type: 'color',
-                  sx: { padding: '2px', height: '40px', cursor: 'pointer' },
+                  'aria-label': 'Display Name',
                 }}
+                sx={COMPACT_TEXTFIELD_SX}
               />
-            )}
-            <IconButton
-              onClick={onRemove}
-              aria-label="Remove series"
-              color="error"
-              size="small"
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+            </Box>
           </Box>
 
-          <Autocomplete
-            freeSolo
-            size="small"
-            options={options}
-            filterOptions={(x) => x}
-            value={series.metricField || null}
-            inputValue={inputValue}
-            onInputChange={(_event, newInputValue) => {
-              setInputValue(newInputValue);
-            }}
-            onChange={(_event, newValue, reason) => {
-              if (reason === 'selectOption' || reason === 'createOption') {
-                if (typeof newValue === 'string') {
-                  handleMetricFieldChange(newValue);
-                }
-              }
-            }}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => {
-              setIsFocused(false);
-              if (inputValue !== series.metricField) {
-                handleMetricFieldChange(inputValue);
-              }
-            }}
-            loading={isLoadingSuggestions && isFocused}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Metric Field"
-                placeholder="e.g., MemAvailable_CacheProcDirty_bytes"
-                inputProps={{
-                  ...params.inputProps,
-                  'aria-label': 'Metric Field',
+          <Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                mb: 0.5,
+              }}
+            >
+              <BarChartIcon sx={COMPACT_ICON_SX} />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  fontWeight: (theme) => theme.typography.fontWeightBold,
+                  textTransform: 'uppercase',
                 }}
-              />
-            )}
-          />
+              >
+                {COMMON_MESSAGES.METRIC_FIELD}
+              </Typography>
+            </Box>
+            <Autocomplete
+              freeSolo
+              size="small"
+              options={options}
+              filterOptions={(x) => x}
+              value={series.metricField ?? null}
+              inputValue={inputValue}
+              onInputChange={(_event, newInputValue) => {
+                setInputValue(newInputValue);
+              }}
+              onChange={(_event, newValue, reason) => {
+                if (reason === 'selectOption' || reason === 'createOption') {
+                  if (typeof newValue === 'string') {
+                    handleMetricFieldChange(newValue);
+                  }
+                }
+              }}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => {
+                setIsFocused(false);
+                if (inputValue !== series.metricField) {
+                  handleMetricFieldChange(inputValue);
+                }
+              }}
+              loading={isLoadingSuggestions && isFocused}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="e.g., MemAvailable_CacheProcDirty_bytes"
+                  inputProps={{
+                    ...params.inputProps,
+                    'aria-label': 'Metric Field',
+                  }}
+                  sx={COMPACT_TEXTFIELD_SX}
+                />
+              )}
+            />
+          </Box>
 
           <FilterEditor
-            title="Series Filters"
-            filters={[...(series.filters || [])]}
+            title="SERIES FILTERS"
+            titleIcon={<FunnelIcon sx={COMPACT_ICON_SX} />}
+            filters={[...(series.filters ?? [])]}
             onUpdateFilters={handleUpdateFilters}
             dataSpecId={dataSpecId}
             availableColumns={metricFilterColumns}

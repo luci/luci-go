@@ -88,7 +88,7 @@ describe('BreakdownTableWidget', () => {
     );
 
     // ChartSeriesItem should be visible
-    expect(screen.getByText(/\(test_metric\)/)).toBeInTheDocument();
+    expect(screen.getByText(/test_metric/)).toBeInTheDocument();
 
     // BreakdownTableChart should be visible (it will render the "No Data" message if sections are empty)
     // We can check for the "No data available" message which is rendered by the chart.

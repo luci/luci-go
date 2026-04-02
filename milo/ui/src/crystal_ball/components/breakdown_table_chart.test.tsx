@@ -221,7 +221,8 @@ describe('BreakdownTableChart', () => {
     const cells = screen.getAllByRole('cell');
     expect(cells[0]).toHaveTextContent('-');
     expect(cells[1]).toHaveTextContent('-');
-    expect(cells[2]).toHaveTextContent('invalid_number');
+    expect(cells[2]).toHaveTextContent('-');
+    expect(cells[3]).toHaveTextContent('invalid_number');
   });
 
   it('allows opening the aggregates select dropdown', () => {

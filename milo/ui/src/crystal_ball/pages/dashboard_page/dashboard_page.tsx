@@ -667,7 +667,8 @@ export function DashboardPage() {
         )}
         {hasUnsavedChanges && !isUpdating && !isSaving && (
           <Button
-            variant="outlined"
+            variant="contained"
+            color="error"
             onClick={() => setLocalDashboardState(dashboardState ?? null)}
             disabled={isUpdating || isLoading || isSaving}
           >
@@ -736,14 +737,22 @@ export function DashboardPage() {
     ).filter((f) => f.id !== GLOBAL_TIME_RANGE_FILTER_ID);
 
     return (
-      <FilterEditor
-        title="Global Filters"
-        filters={activeGlobalFilters}
-        onUpdateFilters={handleUpdateGlobalFilters}
-        dataSpecId={DATA_SPEC_ID}
-        availableColumns={globalFilterColumns}
-        isLoadingColumns={isLoadingFilterColumns}
-      />
+      <Box
+        sx={{
+          bgcolor: (theme) => theme.palette.action.hover,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <FilterEditor
+          title="Global Filters"
+          filters={activeGlobalFilters}
+          onUpdateFilters={handleUpdateGlobalFilters}
+          dataSpecId={DATA_SPEC_ID}
+          availableColumns={globalFilterColumns}
+          isLoadingColumns={isLoadingFilterColumns}
+        />
+      </Box>
     );
   }, [
     isLoadingFilterColumns,
@@ -801,11 +810,13 @@ export function DashboardPage() {
         localDashboardState.dashboardContent.widgets?.map(
           (widget: PerfWidget, index: number) => {
             if (!widget) return null;
+            const widgetType = getWidgetType(widget);
 
             return (
               <WidgetContainer
-                key={widget.id || `widget-${index}`}
-                title={widget.displayName || 'Widget'}
+                key={widget.id ?? `widget-${index}`}
+                title={widget.displayName ?? 'Widget'}
+                disablePadding={widgetType === WidgetType.CHART_BREAKDOWN_TABLE}
                 onMoveUp={
                   index > 0 ? () => handleMoveWidget(index, 'UP') : undefined
                 }

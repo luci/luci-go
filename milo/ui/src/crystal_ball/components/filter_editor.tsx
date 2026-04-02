@@ -16,6 +16,7 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   ExpandMore as ExpandMoreIcon,
+  FilterAlt as FunnelIcon,
 } from '@mui/icons-material';
 import {
   Accordion,
@@ -41,14 +42,20 @@ import { useDebounce } from 'react-use';
 import {
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   Column,
+  COMMON_MESSAGES,
   GLOBAL_TIME_RANGE_COLUMN,
   MAX_SUGGEST_RESULTS,
-} from '@/crystal_ball/constants/api';
-import {
   OPERATOR_DISPLAY_NAMES,
   TYPE_TO_OPERATORS,
-} from '@/crystal_ball/constants/operators';
+} from '@/crystal_ball/constants';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
+import {
+  COMPACT_FILTER_ROW_SX,
+  COMPACT_ICON_SX,
+  COMPACT_SELECT_SX,
+  COMPACT_TEXTFIELD_SX,
+} from '@/crystal_ball/styles';
+import { DataTestId } from '@/crystal_ball/tests/constants';
 import { buildFilterString } from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
@@ -60,6 +67,9 @@ import {
   perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
+/**
+ * Props for the FilterEditor component.
+ */
 interface FilterEditorProps {
   title?: string;
   filters: PerfFilter[];
@@ -69,6 +79,7 @@ interface FilterEditorProps {
   availableColumns: readonly MeasurementFilterColumn[];
   isLoadingColumns?: boolean;
   disableAccordion?: boolean;
+  titleIcon?: React.ReactNode;
 }
 
 function FilterEditorRow({
@@ -158,15 +169,7 @@ function FilterEditorRow({
   };
 
   return (
-    <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr 2fr auto',
-        gap: 1,
-        alignItems: 'center',
-        mb: 1.5,
-      }}
-    >
+    <Box sx={COMPACT_FILTER_ROW_SX}>
       <Select
         value={filter.column}
         onChange={(e: SelectChangeEvent<string>) =>
@@ -175,7 +178,7 @@ function FilterEditorRow({
         size="small"
         displayEmpty
         inputProps={{ 'aria-label': 'Column' }}
-        sx={{ minWidth: 120 }}
+        sx={COMPACT_SELECT_SX}
         MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
       >
         {filter.column &&
@@ -215,7 +218,7 @@ function FilterEditorRow({
         size="small"
         displayEmpty
         inputProps={{ 'aria-label': 'Operator' }}
-        sx={{ minWidth: 120 }}
+        sx={COMPACT_SELECT_SX}
         MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
       >
         {(TYPE_TO_OPERATORS[dataType] ?? []).map((opEnum) => (
@@ -261,6 +264,7 @@ function FilterEditorRow({
               ...params.inputProps,
               'aria-label': 'Value',
             }}
+            sx={COMPACT_TEXTFIELD_SX}
           />
         )}
       />
@@ -276,6 +280,9 @@ function FilterEditorRow({
   );
 }
 
+/**
+ * Renders an editor for managing multiple performance filters.
+ */
 export function FilterEditor({
   title,
   filters,
@@ -285,6 +292,7 @@ export function FilterEditor({
   availableColumns,
   isLoadingColumns,
   disableAccordion = false,
+  titleIcon,
 }: FilterEditorProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -415,6 +423,37 @@ export function FilterEditor({
         </Box>
       ) : (
         <>
+          {filters.length === 0 && (
+            <Box
+              data-testid={DataTestId.ADD_FILTER_EMPTY_STATE}
+              onClick={handleAddFilter}
+              sx={{
+                border: '1px dashed',
+                borderColor: 'primary.main',
+                borderRadius: 2,
+                p: 1.5,
+                textAlign: 'center',
+                mb: 1.5,
+                cursor: 'pointer',
+                bgcolor: 'background.paper',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  bgcolor: (theme) => theme.palette.action.selected,
+                  borderColor: 'primary.dark',
+                },
+              }}
+            >
+              <Typography
+                variant="body2"
+                color="primary.main"
+                sx={{
+                  fontWeight: (theme) => theme.typography.fontWeightBold,
+                }}
+              >
+                Add Filter
+              </Typography>
+            </Box>
+          )}
           {filters.map((filter, index) => {
             const colDef = availableColumns.find(
               (c) => c.column === filter.column,
@@ -448,15 +487,25 @@ export function FilterEditor({
               />
             );
           })}
-          <Button
-            startIcon={<AddIcon />}
-            onClick={handleAddFilter}
-            variant="outlined"
-            size="small"
-            sx={{ mt: 1 }}
-          >
-            Add Filter
-          </Button>
+          {filters.length > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1 }}>
+              <Button
+                data-testid={DataTestId.ADD_FILTER_BUTTON_BOTTOM}
+                startIcon={<AddIcon />}
+                onClick={handleAddFilter}
+                variant="outlined"
+                size="small"
+                color="primary"
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: (theme) => theme.typography.fontWeightBold,
+                  bgcolor: 'background.paper',
+                }}
+              >
+                Add Filter
+              </Button>
+            </Box>
+          )}
         </>
       )}
     </>
@@ -464,11 +513,36 @@ export function FilterEditor({
 
   if (disableAccordion) {
     return (
-      <Box sx={{ mt: 1 }}>
+      <Box
+        sx={{
+          mt: 1,
+          display: 'block',
+          alignItems: 'stretch',
+          gap: 0,
+        }}
+      >
         {title && (
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>
-            {title}
-          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              mb: 1,
+            }}
+          >
+            {titleIcon}
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: (theme) => theme.typography.fontWeightBold,
+                display: 'block',
+                textTransform: 'uppercase',
+              }}
+            >
+              {title}
+            </Typography>
+          </Box>
         )}
         {content}
       </Box>
@@ -476,30 +550,55 @@ export function FilterEditor({
   }
 
   return (
-    <Box sx={{ mt: 1 }}>
+    <Box sx={{ mt: 0 }}>
       <Accordion
         expanded={expanded}
         onChange={() => setExpanded(!expanded)}
         disableGutters
+        elevation={0}
+        square
+        sx={{
+          bgcolor: 'transparent',
+          '&:before': { display: 'none' },
+          border: 'none',
+          boxShadow: 'none',
+        }}
       >
         <AccordionSummary
+          component="div"
           expandIcon={<ExpandMoreIcon />}
           aria-controls="filters-content"
           id="filters-header"
           sx={{
+            minHeight: (theme) => theme.spacing(4.5),
+            '&.Mui-expanded': {
+              minHeight: (theme) => theme.spacing(4.5),
+            },
             '& .MuiAccordionSummary-content': {
-              alignItems: 'baseline',
+              alignItems: 'center',
               gap: 1,
-              margin: '12px 0',
+              margin: '4px 0',
               '&.Mui-expanded': {
-                margin: '12px 0',
+                margin: '4px 0',
               },
             },
           }}
         >
-          <Typography variant="subtitle1" sx={{ flexShrink: 0 }}>
-            {title ?? 'Filters'}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <FunnelIcon sx={COMPACT_ICON_SX} />
+            <Typography
+              variant="caption"
+              sx={{
+                flexShrink: 0,
+                color: 'text.secondary',
+                fontWeight: (theme) => theme.typography.fontWeightBold,
+                textTransform: 'uppercase',
+                lineHeight: 1,
+              }}
+            >
+              {title ?? COMMON_MESSAGES.FILTERS}
+            </Typography>
+          </Box>
           {!expanded && filters.length > 0 && (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {filters.map((filter) => (
@@ -512,12 +611,18 @@ export function FilterEditor({
             </Box>
           )}
           {!expanded && filters.length === 0 && (
-            <Typography variant="body2" color="text.secondary">
-              No filters applied.
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', fontStyle: 'italic' }}
+            >
+              {COMMON_MESSAGES.NO_FILTERS_CLICK_TO_EXPAND}
             </Typography>
           )}
+          <Box sx={{ flexGrow: 1 }} />
         </AccordionSummary>
-        <AccordionDetails>{content}</AccordionDetails>
+        <AccordionDetails sx={{ pt: 0, pb: 1, px: 2 }}>
+          {content}
+        </AccordionDetails>
       </Accordion>
     </Box>
   );

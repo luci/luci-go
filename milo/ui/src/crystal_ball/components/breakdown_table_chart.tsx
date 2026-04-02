@@ -12,10 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Lock as LockIcon } from '@mui/icons-material';
 import {
+  Functions as FunctionsIcon,
+  GroupWork as GroupWorkIcon,
+  Lock as LockIcon,
+} from '@mui/icons-material';
+import {
+  alpha,
   Box,
   Checkbox,
+  Divider,
   FormControl,
   ListSubheader,
   MenuItem,
@@ -33,6 +39,11 @@ import {
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
 
 import { COMMON_MESSAGES, COMMON_MRT_CONFIG } from '@/crystal_ball/constants';
+import {
+  BackgroundAlpha,
+  COMPACT_ICON_SX,
+  COMPACT_SELECT_SX,
+} from '@/crystal_ball/styles';
 import {
   BreakdownSection,
   BreakdownTableConfig_BreakdownAggregation,
@@ -125,6 +136,81 @@ const MetricCell = ({ cell }: TableCellProps) => {
   );
 };
 
+/**
+ * Props for the RangeCell component.
+ */
+interface RangeCellProps {
+  /** The data row containing min/max values. */
+  row: BreakdownRow;
+  /** The global minimum value for scaling the bar. */
+  globalMin: number;
+  /** The global maximum value for scaling the bar. */
+  globalMax: number;
+  /** The key for the minimum value in the row. */
+  minKey?: string;
+  /** The key for the maximum value in the row. */
+  maxKey?: string;
+}
+
+/**
+ * Renders a visual range bar indicating the min/max values relative to global bounds.
+ */
+const RangeCell = ({
+  row,
+  globalMin,
+  globalMax,
+  minKey: passedMinKey,
+  maxKey: passedMaxKey,
+}: RangeCellProps) => {
+  const minKey =
+    passedMinKey ?? Object.keys(row).find((k) => k.toUpperCase() === 'MIN');
+  const maxKey =
+    passedMaxKey ?? Object.keys(row).find((k) => k.toUpperCase() === 'MAX');
+  const minVal = minKey ? Number(row[minKey]) : NaN;
+  const maxVal = maxKey ? Number(row[maxKey]) : NaN;
+
+  if (isNaN(minVal) || isNaN(maxVal)) return '-';
+
+  const span = globalMax - globalMin;
+  if (span === 0) return '-';
+
+  const left = Math.min(Math.max(((minVal - globalMin) / span) * 100, 0), 100);
+  const width = Math.min(Math.max(((maxVal - minVal) / span) * 100, 1), 100);
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+        height: '100%',
+        minWidth: 120,
+      }}
+    >
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: 6,
+          bgcolor: 'divider',
+          borderRadius: 4,
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            left: `${left}%`,
+            width: `${width}%`,
+            height: '100%',
+            bgcolor: 'primary.main',
+            borderRadius: 4,
+          }}
+        />
+      </Box>
+    </Box>
+  );
+};
+
 function InnerTable({
   section,
   pagination,
@@ -139,7 +225,12 @@ function InnerTable({
   const dimensionKey = useMemo(() => {
     if (!data.length) return DIMENSION_COLUMN_KEY;
     const keys = Object.keys(data[0]);
-    const nonMetricKeys = keys.filter((key) => !BREAKDOWN_METRIC_KEYS.has(key));
+    const nonMetricKeys = keys.filter((key) => {
+      const isMetric = Array.from(BREAKDOWN_METRIC_KEYS).some(
+        (k) => k.toUpperCase() === key.toUpperCase(),
+      );
+      return !isMetric;
+    });
     return nonMetricKeys[0] ?? DIMENSION_COLUMN_KEY;
   }, [data]);
 
@@ -147,6 +238,32 @@ function InnerTable({
     if (!data.length) return [];
     return Object.keys(data[0]).filter((key) => key !== dimensionKey);
   }, [data, dimensionKey]);
+
+  const { minKey, maxKey } = useMemo(() => {
+    if (!data.length) return { minKey: undefined, maxKey: undefined };
+    const keys = Object.keys(data[0]);
+    return {
+      minKey: keys.find((k) => k.toUpperCase() === 'MIN'),
+      maxKey: keys.find((k) => k.toUpperCase() === 'MAX'),
+    };
+  }, [data]);
+
+  const globalMinMax = useMemo(() => {
+    let min = Infinity;
+    let max = -Infinity;
+
+    data.forEach((row) => {
+      const rowMin = minKey ? Number(row[minKey]) : NaN;
+      const rowMax = maxKey ? Number(row[maxKey]) : NaN;
+
+      if (!isNaN(rowMin) && rowMin < min) min = rowMin;
+      if (!isNaN(rowMax) && rowMax > max) max = rowMax;
+    });
+    return {
+      min: min === Infinity ? 0 : min,
+      max: max === -Infinity ? 0 : max,
+    };
+  }, [data, minKey, maxKey]);
 
   const columns = useMemo<
     MRT_ColumnDef<BreakdownRow, number | string | null | undefined>[]
@@ -156,6 +273,23 @@ function InnerTable({
         accessorKey: dimensionKey,
         header: dimensionColumn.replace(/_/g, ' ').toUpperCase(),
         Cell: DimensionCell,
+      },
+      {
+        id: 'range_bar',
+        header: 'RANGE',
+        Cell: ({
+          cell,
+        }: {
+          cell: MRT_Cell<BreakdownRow, string | number | null | undefined>;
+        }) => (
+          <RangeCell
+            row={cell.row.original}
+            globalMin={globalMinMax.min}
+            globalMax={globalMinMax.max}
+            minKey={minKey}
+            maxKey={maxKey}
+          />
+        ),
       },
       ...metricColumns.map(
         (
@@ -170,7 +304,14 @@ function InnerTable({
         }),
       ),
     ];
-  }, [dimensionColumn, dimensionKey, metricColumns]);
+  }, [
+    dimensionColumn,
+    dimensionKey,
+    metricColumns,
+    globalMinMax,
+    minKey,
+    maxKey,
+  ]);
 
   const countLabel =
     AGGREGATION_LABELS[BreakdownTableConfig_BreakdownAggregation.COUNT];
@@ -178,6 +319,7 @@ function InnerTable({
     ...COMMON_MRT_CONFIG,
     columns,
     data,
+    enableColumnResizing: true,
     state: { pagination },
     onPaginationChange: setPagination,
     initialState: {
@@ -224,12 +366,22 @@ export function BreakdownTableChart({
     pageSize: 10,
   });
 
-  const [tempAggregations, setTempAggregations] = useState<number[]>([
-    ...currentAggregations,
-  ]);
+  const [tempAggregations, setTempAggregations] = useState<number[]>(() =>
+    currentAggregations.map((a) =>
+      typeof a === 'string'
+        ? breakdownTableConfig_BreakdownAggregationFromJSON(a)
+        : a,
+    ),
+  );
 
   useEffect(() => {
-    setTempAggregations([...currentAggregations]);
+    setTempAggregations(
+      currentAggregations.map((a) =>
+        typeof a === 'string'
+          ? breakdownTableConfig_BreakdownAggregationFromJSON(a)
+          : a,
+      ),
+    );
   }, [currentAggregations]);
 
   const handleAggregationsChange = (event: SelectChangeEvent<number[]>) => {
@@ -237,7 +389,13 @@ export function BreakdownTableChart({
       target: { value },
     } = event;
     if (Array.isArray(value)) {
-      setTempAggregations(value);
+      setTempAggregations(
+        value.map((v) =>
+          typeof v === 'string'
+            ? breakdownTableConfig_BreakdownAggregationFromJSON(v)
+            : v,
+        ),
+      );
     }
   };
 
@@ -264,22 +422,33 @@ export function BreakdownTableChart({
     >
       <Box
         sx={{
-          p: 1.5,
-          bgcolor: 'background.default',
+          bgcolor: (theme) =>
+            alpha(theme.palette.action.hover, BackgroundAlpha.LOW),
           borderBottom: '1px solid',
           borderColor: 'divider',
           display: 'flex',
           alignItems: 'center',
-          gap: 2,
+          gap: 1.5,
+          pl: 2,
+          pr: 0.5,
+          py: 0.5,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography
-            variant="body2"
-            sx={{ fontWeight: (theme) => theme.typography.fontWeightMedium }}
-          >
-            Breakdown by:
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <GroupWorkIcon sx={COMPACT_ICON_SX} />
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: (theme) => theme.typography.fontWeightBold,
+                textTransform: 'uppercase',
+                lineHeight: 1,
+              }}
+            >
+              {COMMON_MESSAGES.BREAKDOWN_BY}
+            </Typography>
+          </Box>
           <FormControl size="small" variant="outlined" sx={{ minWidth: 160 }}>
             <Select
               id="dimension-select"
@@ -289,14 +458,7 @@ export function BreakdownTableChart({
                 setPagination((prev) => ({ ...prev, pageIndex: 0 }));
               }}
               inputProps={{ 'aria-label': 'Breakdown by category' }}
-              sx={{
-                bgcolor: 'background.paper',
-                fontSize: (theme) => theme.typography.body2.fontSize,
-                fontWeight: (theme) => theme.typography.body2.fontWeight,
-                '& .MuiSelect-select': {
-                  py: 0.75,
-                },
-              }}
+              sx={COMPACT_SELECT_SX}
               renderValue={(val: string) => {
                 const sec = sections[Number(val)];
                 if (!sec) {
@@ -324,13 +486,22 @@ export function BreakdownTableChart({
           </FormControl>
         </Box>
 
+        <Divider orientation="vertical" flexItem light />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography
-            variant="body2"
-            sx={{ fontWeight: (theme) => theme.typography.fontWeightMedium }}
-          >
-            Aggregates:
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <FunctionsIcon sx={COMPACT_ICON_SX} />
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: (theme) => theme.typography.fontWeightBold,
+                textTransform: 'uppercase',
+                lineHeight: 1,
+              }}
+            >
+              {COMMON_MESSAGES.AGGREGATES}
+            </Typography>
+          </Box>
           <FormControl size="small" variant="outlined" sx={{ minWidth: 240 }}>
             <Select
               id="aggregations-select"
@@ -339,14 +510,7 @@ export function BreakdownTableChart({
               onChange={handleAggregationsChange}
               onClose={handleAggregationsClose}
               inputProps={{ 'aria-label': 'Aggregates' }}
-              sx={{
-                bgcolor: 'background.paper',
-                fontSize: (theme) => theme.typography.body2.fontSize,
-                fontWeight: (theme) => theme.typography.body2.fontWeight,
-                '& .MuiSelect-select': {
-                  py: 0.75,
-                },
-              }}
+              sx={COMPACT_SELECT_SX}
               renderValue={(selected) => {
                 if (!Array.isArray(selected)) {
                   return '';
@@ -449,7 +613,7 @@ export function BreakdownTableChart({
           <Box sx={{ p: 2 }}>
             <Typography variant="body2">
               {!hasSeries
-                ? COMMON_MESSAGES.SERIES_REQUIRED
+                ? COMMON_MESSAGES.METRIC_REQUIRED
                 : COMMON_MESSAGES.NO_DATA_AVAILABLE}
             </Typography>
           </Box>

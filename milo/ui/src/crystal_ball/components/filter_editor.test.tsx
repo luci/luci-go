@@ -136,10 +136,18 @@ describe('FilterEditor', () => {
   it('renders with no filters initially', () => {
     wrapWithProviders(<FilterEditor {...defaultProps} />);
     expect(screen.getByText('Filters')).toBeInTheDocument();
-    expect(screen.getByText('No filters applied.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No filters. Click to expand and add.'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('add-filter-empty-state')).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /Remove filter/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('does not render "Add Filter" button when collapsed', () => {
+    wrapWithProviders(<FilterEditor {...defaultProps} />);
+    expect(screen.queryByTestId('add-filter-button')).not.toBeInTheDocument();
   });
 
   it('renders with initial filters', async () => {
@@ -175,16 +183,14 @@ describe('FilterEditor', () => {
     expect(screen.getByLabelText('Operator')).toHaveTextContent('=');
   });
 
-  it('adds a new filter when "Add Filter" is clicked', async () => {
+  it('adds a new filter when empty state is clicked', async () => {
     wrapWithProviders(<FilterEditor {...defaultProps} />);
     fireEvent.click(screen.getByText('Filters')); // Expand
     await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: /Add Filter/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('add-filter-empty-state')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Add Filter/i }));
+    fireEvent.click(screen.getByTestId('add-filter-empty-state'));
 
     expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
     const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
@@ -200,6 +206,32 @@ describe('FilterEditor', () => {
         },
       },
     });
+  });
+
+  it('adds a new filter when "Add Filter" button at the bottom is clicked', async () => {
+    const initialFilters: PerfFilter[] = [
+      {
+        id: 'filter-1',
+        column: 'test_name',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
+      },
+    ];
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
+    fireEvent.click(screen.getByText('Filters')); // Expand
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('add-filter-button-bottom'),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('add-filter-button-bottom'));
+
+    expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
+    const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
+    expect(updatedFilters.length).toBe(2);
   });
 
   it('removes a filter when delete icon is clicked', async () => {
