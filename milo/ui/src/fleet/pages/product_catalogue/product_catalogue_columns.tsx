@@ -16,7 +16,8 @@ import { MRT_ColumnDef } from 'material-react-table';
 
 import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] = [
+export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] &
+  { accessorKey: keyof ProductCatalogEntry }[] = [
   {
     accessorKey: 'productCatalogId',
     header: 'Product Catalog ID',
@@ -42,7 +43,7 @@ export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] = [
     header: 'Fleet PLM Status',
   },
   {
-    accessorKey: 'r11nList',
+    accessorKey: 'r11n',
     header: 'R11N',
     Cell: ({ cell }) => (cell.getValue<string[]>() ?? []).join(', '),
   },
