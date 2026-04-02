@@ -37,8 +37,8 @@ func (cw CheckWrite) AddOptions(opts ...*orchestratorpb.ValueWrite) {
 }
 
 // AddResults appends and returns one or more result values.
-func (cw CheckWrite) AddResults(rslt ...*orchestratorpb.ValueWrite) {
-	cw.Msg.SetResults(append(cw.Msg.GetResults(), rslt...))
+func (cw CheckWrite) AddResultData(rslt ...*orchestratorpb.ValueWrite) {
+	cw.Msg.SetResultData(append(cw.Msg.GetResultData(), rslt...))
 }
 
 // AddNewCheck adds a new CheckWrite to the request for the creation of

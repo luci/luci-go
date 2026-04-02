@@ -32,7 +32,6 @@ import (
 
 // FakeOrchestratorClient is a faked TurboCIOrchestratorClient for testing.
 type FakeOrchestratorClient struct {
-
 	// LastCreateCall is the last CreateWorkPlanRequest.
 	LastCreateCall *orchestratorpb.CreateWorkPlanRequest
 	// LastWriteNodesCall is the last WriteNodesRequest.
@@ -79,6 +78,11 @@ func (o *FakeOrchestratorClient) QueryNodes(ctx context.Context, in *orchestrato
 func (o *FakeOrchestratorClient) ReadWorkPlan(ctx context.Context, in *orchestratorpb.ReadWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.ReadWorkPlanResponse, error) {
 	o.LastReadWorkPlanRequest = proto.CloneOf(in)
 	return o.ReadWorkPlanResponse, o.Err
+}
+
+// AllocateWorkNodeIDs implements TurboCIOrchestratorClient.
+func (o *FakeOrchestratorClient) AllocateWorkNodeIDs(ctx context.Context, in *orchestratorpb.AllocateWorkNodeIDsRequest, opts ...grpc.CallOption) (*orchestratorpb.AllocateWorkNodeIDsResponse, error) {
+	panic("unimplemented")
 }
 
 func ErrorWithStageAttemptCurrentState(state *orchestratorpb.StageAttemptState, t *ftt.Test) error {

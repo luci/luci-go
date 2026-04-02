@@ -51,9 +51,9 @@ func TestCheckWrite(t *testing.T) {
 
 	cw.AddOptions(value.MustWrite(boolData))
 
-	cw.AddResults(value.MustWrite(numData))
+	cw.AddResultData(value.MustWrite(numData))
 
-	cw.AddResults(value.MustWrite(boolData, "some/realm"))
+	cw.AddResultData(value.MustWrite(boolData, "some/realm"))
 
 	assert.That(t, cw.Msg, should.Match(orchestratorpb.WriteNodesRequest_CheckWrite_builder{
 		Options: []*orchestratorpb.ValueWrite{
@@ -66,7 +66,7 @@ func TestCheckWrite(t *testing.T) {
 				Realm: proto.String(value.RealmFromContainer),
 			}.Build(),
 		},
-		Results: []*orchestratorpb.ValueWrite{
+		ResultData: []*orchestratorpb.ValueWrite{
 			orchestratorpb.ValueWrite_builder{
 				Data:  mustAny(numData),
 				Realm: proto.String(value.RealmFromContainer),

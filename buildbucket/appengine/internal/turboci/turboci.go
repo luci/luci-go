@@ -153,6 +153,11 @@ func (cp clientPool) ReadWorkPlan(ctx context.Context, in *orchestratorpb.ReadWo
 	return cp.pickRandom().ReadWorkPlan(ctx, in, opts...)
 }
 
+// AllocateWorkNodeIDs implements TurboCIOrchestratorClient.
+func (cp clientPool) AllocateWorkNodeIDs(ctx context.Context, in *orchestratorpb.AllocateWorkNodeIDsRequest, opts ...grpc.CallOption) (*orchestratorpb.AllocateWorkNodeIDsResponse, error) {
+	return cp.pickRandom().AllocateWorkNodeIDs(ctx, in, opts...)
+}
+
 // pickRandom returns a random connection from the pool.
 func (cp clientPool) pickRandom() orchestratorgrpcpb.TurboCIOrchestratorClient {
 	return orchestratorgrpcpb.NewTurboCIOrchestratorClient(cp[rand.IntN(len(cp))])

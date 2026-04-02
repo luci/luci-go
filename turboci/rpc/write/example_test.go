@@ -41,7 +41,7 @@ func ExampleNewRequest() {
 
 	chk := req.AddNewCheck(id.Check("fleeporp"), check.KindAnalysis)
 	chk.AddOptions(value.MustWrite(numData), value.MustWrite(boolData))
-	chk.AddResults(value.MustWrite(numData), value.MustWrite(boolData, "very/secret"))
+	chk.AddResultData(value.MustWrite(numData), value.MustWrite(boolData, "very/secret"))
 
 	chk = req.AddCheckUpdate(cid)
 	chk.Msg.SetDependencies(dep.MustGroup(
@@ -130,7 +130,7 @@ func ExampleNewRequest() {
 	//           "realm": "$from_container"
 	//         }
 	//       ],
-	//       "results": [
+	//       "resultData": [
 	//         {
 	//           "data": {
 	//             "@type": "type.googleapis.com/google.protobuf.Value",
