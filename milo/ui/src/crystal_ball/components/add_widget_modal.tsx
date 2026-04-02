@@ -30,7 +30,6 @@ import {
   ListItemText,
   ListItemIcon,
 } from '@mui/material';
-import { useState } from 'react';
 
 import { WidgetType } from '@/crystal_ball/types';
 
@@ -47,20 +46,6 @@ export interface AddWidgetModalProps {
  * A modal to select a widget type to add to the dashboard.
  */
 export function AddWidgetModal({ open, onClose, onAdd }: AddWidgetModalProps) {
-  const [selectedType, setSelectedType] = useState<WidgetType | null>(null);
-
-  const handleAdd = () => {
-    if (selectedType) {
-      onAdd(selectedType);
-      setSelectedType(null);
-    }
-  };
-
-  const handleClose = () => {
-    setSelectedType(null);
-    onClose();
-  };
-
   const widgetOptions = [
     {
       type: WidgetType.MARKDOWN,
@@ -83,7 +68,7 @@ export function AddWidgetModal({ open, onClose, onAdd }: AddWidgetModalProps) {
   ];
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Add Widget</DialogTitle>
       <DialogContent dividers>
         <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -91,24 +76,22 @@ export function AddWidgetModal({ open, onClose, onAdd }: AddWidgetModalProps) {
         </Typography>
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
           {widgetOptions.map((option) => {
-            const isSelected = selectedType === option.type;
             const IconComponent = option.icon;
             return (
               <ListItem key={option.type} disablePadding sx={{ mb: 1 }}>
                 <ListItemButton
-                  selected={isSelected}
-                  onClick={() => setSelectedType(option.type)}
+                  onClick={() => onAdd(option.type)}
                   sx={{
                     borderRadius: 1,
                     border: '1px solid',
-                    borderColor: isSelected ? 'primary.main' : 'divider',
+                    borderColor: 'divider',
                     '&:hover': {
                       borderColor: 'primary.light',
                     },
                   }}
                 >
                   <ListItemIcon>
-                    <IconComponent color={isSelected ? 'primary' : 'action'} />
+                    <IconComponent color="action" />
                   </ListItemIcon>
                   <ListItemText
                     primary={option.primary}
@@ -121,14 +104,7 @@ export function AddWidgetModal({ open, onClose, onAdd }: AddWidgetModalProps) {
         </List>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button
-          onClick={handleAdd}
-          variant="contained"
-          disabled={!selectedType}
-        >
-          Add
-        </Button>
+        <Button onClick={onClose}>Cancel</Button>
       </DialogActions>
     </Dialog>
   );

@@ -34,28 +34,13 @@ describe('AddWidgetModal', () => {
     expect(screen.queryByText('Add Widget')).not.toBeInTheDocument();
   });
 
-  it('initially disables the Add button', () => {
-    render(
-      <AddWidgetModal open={true} onClose={jest.fn()} onAdd={jest.fn()} />,
-    );
-    const addButton = screen.getByRole('button', { name: 'Add' });
-    expect(addButton).toBeDisabled();
-  });
-
-  it('enables the Add button when a type is selected and calls onAdd', () => {
+  it('calls onAdd when a type is clicked', () => {
     const handleAdd = jest.fn();
     render(
       <AddWidgetModal open={true} onClose={jest.fn()} onAdd={handleAdd} />,
     );
 
-    // Select the Markdown widget
     fireEvent.click(screen.getByText('Markdown Widget'));
-
-    const addButton = screen.getByRole('button', { name: 'Add' });
-    expect(addButton).toBeEnabled();
-
-    // Click Add
-    fireEvent.click(addButton);
     expect(handleAdd).toHaveBeenCalledWith(WidgetType.MARKDOWN);
   });
 
