@@ -50,6 +50,7 @@ import {
   useTopBarConfig,
 } from '@/crystal_ball/components';
 import {
+  COMMON_MESSAGES,
   DATA_SPEC_ID,
   GLOBAL_TIME_RANGE_COLUMN,
   GLOBAL_TIME_RANGE_FILTER_ID,
@@ -592,9 +593,37 @@ export function DashboardPage() {
 
   const handleDeleteWidget = useCallback((index: number) => {
     setLocalDashboardState((prev: DashboardState | null) => {
-      if (!prev || !prev.dashboardContent?.widgets) return prev || null;
+      if (!prev || !prev.dashboardContent?.widgets) return prev ?? null;
       const newWidgets = [...prev.dashboardContent.widgets];
       newWidgets.splice(index, 1);
+      return {
+        ...prev,
+        dashboardContent: {
+          ...prev.dashboardContent,
+          widgets: newWidgets,
+          dataSpecs: prev.dashboardContent?.dataSpecs ?? {},
+          globalFilters: prev.dashboardContent?.globalFilters ?? [],
+        },
+      };
+    });
+  }, []);
+
+  const handleDuplicateWidget = useCallback((index: number) => {
+    setLocalDashboardState((prev: DashboardState | null) => {
+      if (!prev || !prev.dashboardContent?.widgets) return prev ?? null;
+      const originalWidget = prev.dashboardContent.widgets[index];
+      if (!originalWidget) return prev;
+
+      const newWidgets = [...prev.dashboardContent.widgets];
+      const clonedWidget = JSON.parse(JSON.stringify(originalWidget));
+      const duplicatedWidget = PerfWidget.fromPartial({
+        ...clonedWidget,
+        id: `widget-${crypto.randomUUID()}`,
+        displayName: `${clonedWidget.displayName}${COMMON_MESSAGES.COPY_SUFFIX}`,
+      });
+
+      newWidgets.splice(index + 1, 0, duplicatedWidget);
+
       return {
         ...prev,
         dashboardContent: {
@@ -827,6 +856,7 @@ export function DashboardPage() {
                     ? () => handleMoveWidget(index, 'DOWN')
                     : undefined
                 }
+                onDuplicate={() => handleDuplicateWidget(index)}
                 onDelete={() => handleDeleteWidget(index)}
                 onTitleChange={(newTitle) =>
                   handleUpdateWidget(index, {

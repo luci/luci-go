@@ -24,6 +24,7 @@ export enum COMMON_MESSAGES {
   BREAKDOWN_BY = 'Breakdown By',
   COLOR = 'Color',
   COPY = 'COPY',
+  COPY_SUFFIX = ' (Copy)',
   CRYSTAL_BALL_DASHBOARDS = 'CrystalBall Dashboards',
   CUSTOM_RANGE_UTC = 'Custom Range (UTC)',
   DAY_ONE = 'day',

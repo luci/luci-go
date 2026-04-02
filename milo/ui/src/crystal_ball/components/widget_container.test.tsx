@@ -86,6 +86,21 @@ describe('WidgetContainer', () => {
     expect(screen.getByLabelText(/Move Test Widget down/i)).toBeDisabled();
   });
 
+  it('calls onDuplicate when duplicate button is clicked', () => {
+    const handleDuplicate = jest.fn();
+
+    render(
+      <WidgetContainer title="Test Widget" onDuplicate={handleDuplicate}>
+        Content
+      </WidgetContainer>,
+    );
+
+    const duplicateBtn = screen.getByLabelText(/Duplicate Test Widget/i);
+    fireEvent.click(duplicateBtn);
+
+    expect(handleDuplicate).toHaveBeenCalledTimes(1);
+  });
+
   it('handles delete flow with confirmation dialog', () => {
     const handleDelete = jest.fn();
 

@@ -15,6 +15,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import * as useDashboardStateApi from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { DashboardPage } from '@/crystal_ball/pages/dashboard_page';
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
@@ -114,7 +115,12 @@ jest.mock('@/crystal_ball/components', () => {
   const actual = jest.requireActual('@/crystal_ball/components');
   return {
     ...actual,
-    WidgetContainer: jest.fn(({ children }) => <>{children}</>),
+    WidgetContainer: jest.fn(({ children, onDuplicate }) => (
+      <div>
+        {children}
+        {onDuplicate && <button onClick={onDuplicate}>Duplicate Widget</button>}
+      </div>
+    )),
     AddWidgetModal: jest.fn(() => <>AddWidgetModal Mock</>),
     ChartWidget: jest.fn(
       ({ onUpdate }: { onUpdate: (updatedChart: PerfChartWidget) => void }) => (
@@ -447,6 +453,68 @@ describe('<DashboardPage />', () => {
         replace: true,
       });
       expect(screen.getByText('Dashboard deleted successfully')).toBeVisible();
+    });
+  });
+
+  it('duplicates a widget and saves the updated list', async () => {
+    const mockMutateAsync = jest.fn().mockResolvedValue({});
+    jest
+      .mocked(useDashboardStateApi.useUpdateDashboardState)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockMutateAsync }),
+      );
+
+    const testWidget = {
+      id: 'widget-1',
+      displayName: 'Test Widget',
+      chart: { chartType: 1 },
+    };
+
+    const dashboardWithWidget = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        ...mockDashboard.dashboardContent,
+        widgets: [testWidget],
+      },
+    });
+
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(dashboardWithWidget));
+
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate Widget' }));
+
+    const lastCall = jest.mocked(useTopBarConfig).mock.lastCall;
+    if (!lastCall) {
+      throw new Error('useTopBarConfig was not called');
+    }
+    render(
+      <>
+        {lastCall[0]}
+        {lastCall[1]}
+      </>,
+    );
+
+    const saveButton = screen.getByRole('button', { name: 'Save' });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dashboardState: expect.objectContaining({
+            dashboardContent: expect.objectContaining({
+              widgets: [
+                expect.objectContaining({ id: 'widget-1' }),
+                expect.objectContaining({
+                  displayName: `Test Widget${COMMON_MESSAGES.COPY_SUFFIX}`,
+                }),
+              ],
+            }),
+          }),
+        }),
+      );
     });
   });
 });

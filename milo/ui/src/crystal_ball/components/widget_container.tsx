@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ArrowUpward, ArrowDownward, Delete, Edit } from '@mui/icons-material';
+import {
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  LibraryAdd as LibraryAddIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+} from '@mui/icons-material';
 import {
   Button,
   Card,
@@ -36,6 +42,7 @@ export interface WidgetContainerProps {
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onDelete?: () => void;
+  onDuplicate?: () => void;
   /**
    * Whether the move up action should be disabled.
    */
@@ -62,6 +69,7 @@ export function WidgetContainer({
   onMoveUp,
   onMoveDown,
   onDelete,
+  onDuplicate,
   disableMoveUp = false,
   disableMoveDown = false,
   onTitleChange,
@@ -126,7 +134,7 @@ export function WidgetContainer({
                     transition: 'opacity 0.2s',
                   }}
                 >
-                  <Edit fontSize="small" sx={{ color: 'text.secondary' }} />
+                  <EditIcon fontSize="small" sx={{ color: 'text.secondary' }} />
                 </IconButton>
               )}
             </Box>
@@ -141,7 +149,7 @@ export function WidgetContainer({
                 disabled={disableMoveUp}
                 aria-label={`Move ${title} up`}
               >
-                <ArrowUpward fontSize="small" />
+                <ArrowUpwardIcon fontSize="small" />
               </IconButton>
             )}
             {onMoveDown && (
@@ -151,7 +159,16 @@ export function WidgetContainer({
                 disabled={disableMoveDown}
                 aria-label={`Move ${title} down`}
               >
-                <ArrowDownward fontSize="small" />
+                <ArrowDownwardIcon fontSize="small" />
+              </IconButton>
+            )}
+            {onDuplicate && (
+              <IconButton
+                size="small"
+                onClick={onDuplicate}
+                aria-label={`Duplicate ${title}`}
+              >
+                <LibraryAddIcon fontSize="small" />
               </IconButton>
             )}
             {onDelete && (
@@ -160,7 +177,7 @@ export function WidgetContainer({
                 onClick={() => setDeleteDialogOpen(true)}
                 aria-label={`Delete ${title}`}
               >
-                <Delete fontSize="small" />
+                <DeleteIcon fontSize="small" />
               </IconButton>
             )}
           </Box>
