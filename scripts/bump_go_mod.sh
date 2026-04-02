@@ -23,8 +23,20 @@
 # Ideally running this script should always be a stress-free experience.
 
 set -e
+set -o pipefail
 
 cd $(dirname "${BASH_SOURCE[0]}")
+
+# pinned_modules are pinned to the version in the go.mod file
+pinned_modules=(
+  go.chromium.org/turboci/proto/go
+)
+
+# pinned_deps have the form url@version.
+pinned_deps=()
+for pinned_module in ${pinned_modules[@]}; do
+  pinned_deps+=("$(go list -m -- "$pinned_module" | awk '{printf("%s@%s\n", $1, $2)}')")
+done
 
 deps=(
   cloud.google.com/go/bigquery@latest
@@ -102,6 +114,7 @@ deps=(
   # Pinned versions must be updated last, since if something is updated after
   # them, they can be bumped as dependencies. By updating them last, we'll
   # downgrade stuff that depend on them instead.
+  "${pinned_deps[@]}"
 )
 
 for mod in ${deps[@]}; do
