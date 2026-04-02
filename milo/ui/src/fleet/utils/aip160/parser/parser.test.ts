@@ -311,15 +311,20 @@ describe('AIP-160 Filter Parser', () => {
   it.each(testCases.filter((tc) => !tc.expectErr))(
     'should parse "$input"',
     ({ input, ast }) => {
-      const filter = parseFilter(input);
-      expect(astToString(filter)).toBe(ast);
+      const result = parseFilter(input);
+      expect(result.isError).toBe(false);
+      if (result.isError) {
+        throw new Error(`Unexpected parse error: ${result.error}`);
+      }
+      expect(astToString(result.ast)).toBe(ast);
     },
   );
 
   it.each(testCases.filter((tc) => tc.expectErr))(
     'should fail to parse "$input"',
     ({ input }) => {
-      expect(() => parseFilter(input)).toThrow();
+      const result = parseFilter(input);
+      expect(result.isError).toBe(true);
     },
   );
 });

@@ -33,7 +33,14 @@ import * as ast from '../ast/ast';
 import { Lexer } from '../lexer/lexer';
 import { TokenKind, Token } from '../token';
 
-export function parseFilter(input: string): ast.Filter {
+type Result =
+  | {
+      isError: false;
+      ast: ast.Filter;
+    }
+  | { isError: true; error: string };
+
+export function parseFilter(input: string): Result {
   const lexer = new Lexer(input);
 
   const peek = () => lexer.peek();
@@ -169,8 +176,17 @@ export function parseFilter(input: string): ast.Filter {
   };
 
   // Entry Point
-  if (accept(TokenKind.End)) return { kind: 'Filter', expression: null };
-  const expression = parseExpression();
-  expect(TokenKind.End);
-  return { kind: 'Filter', expression };
+  try {
+    if (accept(TokenKind.End)) {
+      return { isError: false, ast: { kind: 'Filter', expression: null } };
+    }
+    const expression = parseExpression();
+    expect(TokenKind.End);
+    return { isError: false, ast: { kind: 'Filter', expression } };
+  } catch (e) {
+    return {
+      isError: true,
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
 }

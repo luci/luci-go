@@ -160,7 +160,7 @@ type ParseResult =
     }
   | { isError: true; error: string };
 
-const constructFiltersFromAIP160 = (filtersAIP160: string) => {
+const constructFiltersFromAIP160 = (filtersAIP160: string): ParseResult => {
   const wrapper = (node: ast.Node | null): ParseResult => {
     if (!node) return { isError: false, terms: {} };
 
@@ -257,7 +257,12 @@ const constructFiltersFromAIP160 = (filtersAIP160: string) => {
     }
   };
 
-  return wrapper(parseFilter(filtersAIP160));
+  const parseResult = parseFilter(filtersAIP160);
+  if (parseResult.isError) {
+    return { isError: true, error: parseResult.error };
+  }
+
+  return wrapper(parseResult.ast);
 };
 
 export const memberToKey = (node: ast.Member): string => {
