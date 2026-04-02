@@ -600,6 +600,7 @@ export function ChartSeriesItem({
             availableColumns={metricFilterColumns}
             isLoadingColumns={isLoadingColumns}
             disableAccordion={true}
+            globalFilters={globalFilters}
           />
         </Box>
       </AccordionDetails>

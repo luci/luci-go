@@ -275,6 +275,7 @@ export function ChartWidget({
           dataSpecId={widget.dataSpecId}
           availableColumns={widgetFilterColumns}
           isLoadingColumns={isLoadingFilterColumns}
+          globalFilters={globalFilters}
         />
         <Divider light />
         <Box

@@ -198,4 +198,46 @@ describe('buildFilterString', () => {
     const result = buildFilterString([Column.ATP_TEST_NAME], filters);
     expect(result).toBe('atp_test_name != "v2/android"');
   });
+
+  it('handles IN_PAST range filters', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'build_creation_timestamp',
+        displayName: 'Time Range',
+        dataSpecId: 'data-spec-id',
+        range: {
+          defaultValue: {
+            values: ['3d'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(['build_creation_timestamp'], filters);
+    expect(result).toMatch(
+      /^build_creation_timestamp >= "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+    );
+  });
+
+  it('handles BETWEEN range filters', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'build_creation_timestamp',
+        displayName: 'Time Range',
+        dataSpecId: 'data-spec-id',
+        range: {
+          defaultValue: {
+            values: ['2026-03-01T00:00:00Z', '2026-03-04T00:00:00Z'],
+            filterOperator: PerfFilterDefault_FilterOperator.BETWEEN,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(['build_creation_timestamp'], filters);
+    expect(result).toBe(
+      'build_creation_timestamp >= "2026-03-01T00:00:00Z" AND build_creation_timestamp <= "2026-03-04T00:00:00Z"',
+    );
+  });
 });
