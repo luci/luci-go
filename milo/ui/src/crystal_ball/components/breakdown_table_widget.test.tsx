@@ -14,6 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
 import { createMockQueryResult } from '@/crystal_ball/tests';
 import {
@@ -91,7 +92,7 @@ describe('BreakdownTableWidget', () => {
     expect(screen.getByText(/test_metric/)).toBeInTheDocument();
 
     // BreakdownTableChart should be visible (it will render the "No Data" message if sections are empty)
-    // We can check for the "No data available" message which is rendered by the chart.
-    expect(screen.getByText(/No data available/i)).toBeInTheDocument();
+    // We can check for the "No data found" message which is rendered by the chart.
+    expect(screen.getByText(COMMON_MESSAGES.NO_DATA_FOUND)).toBeInTheDocument();
   });
 });

@@ -22,7 +22,7 @@ import { BreakdownTableChart } from './breakdown_table_chart';
 describe('BreakdownTableChart', () => {
   const mockOnUpdateAggregations = jest.fn();
 
-  it(`renders "${COMMON_MESSAGES.NO_DATA_AVAILABLE}" when sections are empty`, () => {
+  it(`renders "${COMMON_MESSAGES.NO_DATA_FOUND}" when sections are empty`, () => {
     render(
       <BreakdownTableChart
         sections={[]}
@@ -31,9 +31,7 @@ describe('BreakdownTableChart', () => {
         hasSeries={true}
       />,
     );
-    expect(
-      screen.getByText(COMMON_MESSAGES.NO_DATA_AVAILABLE),
-    ).toBeInTheDocument();
+    expect(screen.getByText(COMMON_MESSAGES.NO_DATA_FOUND)).toBeInTheDocument();
   });
 
   it('renders the tabs and table when data is provided', () => {
@@ -192,7 +190,7 @@ describe('BreakdownTableChart', () => {
     expect(
       screen.getByRole('combobox', { name: 'Breakdown by category' }),
     ).toHaveTextContent(/UNKNOWN/i);
-    expect(screen.getByText('No records to display')).toBeInTheDocument();
+    expect(screen.getByText(COMMON_MESSAGES.NO_DATA_FOUND)).toBeInTheDocument();
   });
 
   it('handles null/undefined values in cells', () => {

@@ -18,9 +18,11 @@ import {
   Lock as LockIcon,
 } from '@mui/icons-material';
 import {
+  Alert,
   alpha,
   Box,
   Checkbox,
+  CircularProgress,
   Divider,
   FormControl,
   ListSubheader,
@@ -322,6 +324,17 @@ function InnerTable({
     enableColumnResizing: true,
     state: { pagination },
     onPaginationChange: setPagination,
+    renderEmptyRowsFallback: () => (
+      <Box
+        sx={{
+          p: 2,
+          textAlign: 'center',
+          color: 'text.secondary',
+        }}
+      >
+        <Typography variant="body1">{COMMON_MESSAGES.NO_DATA_FOUND}</Typography>
+      </Box>
+    ),
     initialState: {
       density: 'compact',
       sorting: metricColumns.includes(countLabel)
@@ -453,6 +466,7 @@ export function BreakdownTableChart({
             <Select
               id="dimension-select"
               value={String(activeTab)}
+              disabled={sections.length === 0}
               onChange={(e: SelectChangeEvent<string>) => {
                 setActiveTab(Number(e.target.value));
                 setPagination((prev) => ({ ...prev, pageIndex: 0 }));
@@ -462,7 +476,7 @@ export function BreakdownTableChart({
               renderValue={(val: string) => {
                 const sec = sections[Number(val)];
                 if (!sec) {
-                  return 'UNKNOWN';
+                  return sections.length === 0 ? 'N/A' : 'UNKNOWN';
                 }
                 return (
                   sec.dimensionColumn?.replace(/_/g, ' ').toUpperCase() ||
@@ -602,19 +616,42 @@ export function BreakdownTableChart({
 
       <Box sx={{ position: 'relative', minHeight: '100px', flexGrow: 1 }}>
         {isLoading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-            Loading breakdown data...
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 10,
+              borderRadius: 1,
+            }}
+          >
+            <CircularProgress />
           </Box>
         )}
         {error && (
-          <Box sx={{ p: 2, color: 'error.main' }}>Error: {error.message}</Box>
+          <Alert severity="error" sx={{ m: 2 }}>
+            {error.message ?? COMMON_MESSAGES.UNKNOWN_ERROR}
+          </Alert>
         )}
         {!isLoading && !error && !sections.length && (
-          <Box sx={{ p: 2 }}>
-            <Typography variant="body2">
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '100%',
+              minHeight: '300px',
+            }}
+          >
+            <Typography variant="body1" sx={{ p: 2, color: 'text.secondary' }}>
               {!hasSeries
                 ? COMMON_MESSAGES.METRIC_REQUIRED
-                : COMMON_MESSAGES.NO_DATA_AVAILABLE}
+                : COMMON_MESSAGES.NO_DATA_FOUND}
             </Typography>
           </Box>
         )}

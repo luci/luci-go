@@ -298,7 +298,10 @@ export function FilterEditor({
 
   const handleAddFilter = () => {
     const newFilterId = `filter-${crypto.randomUUID()}`;
-    const selectedColumn = availableColumns[0];
+    const atpTestColumn = availableColumns.find(
+      (c) => c.column === Column.ATP_TEST_NAME,
+    );
+    const selectedColumn = atpTestColumn ?? availableColumns[0];
     const isNumber =
       selectedColumn?.dataType ===
         MeasurementFilterColumn_ColumnDataType.INT64 ||
