@@ -55,7 +55,26 @@ describe('getRedirectAddress', () => {
         search:
           '?' +
           new URLSearchParams([
-            ['filters', `labels.label-bluetooth = "True"`],
+            [
+              'filters',
+              `labels.dut_state = ("ready" OR "needs_replacement" OR "needs_repair") labels.label-bluetooth = "True"`,
+            ],
+          ]).toString(),
+        pathname: prefix + 'devices',
+      });
+    });
+    test('botlist filters with OR', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([['f', 'label-model:lapis|sapphire']]),
+        swarmingClient,
+        [],
+      );
+      expect(to).toEqual({
+        search:
+          '?' +
+          new URLSearchParams([
+            ['filters', `labels.label-model = ("lapis" OR "sapphire")`],
           ]).toString(),
         pathname: prefix + 'devices',
       });

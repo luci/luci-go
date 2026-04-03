@@ -15,6 +15,7 @@
 import { To } from 'react-router';
 
 import { DecoratedClient } from '@/common/hooks/prpc_query';
+import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
 import { getDutName } from '@/fleet/utils/swarming';
 import { BotsClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
@@ -76,8 +77,13 @@ const convertFilters = (
 
   const filterObj: Record<string, string[]> = {};
   for (const f of filters) {
-    let [key, val] = f.split(':', 2);
-    val = `"${val}"`;
+    const parts = f.split(':', 2);
+    let key = parts[0];
+    const val = parts[1];
+    if (val === undefined) {
+      continue;
+    }
+    const vals = val.split('|');
 
     if (isBrowser) {
       key = `${BROWSER_SWARMING_SOURCE}."${key}"`;
@@ -85,20 +91,13 @@ const convertFilters = (
       key = 'labels.' + key;
     }
 
-    if (filterObj[key]) filterObj[key].push(val);
-    else filterObj[key] = [val];
+    if (!filterObj[key]) {
+      filterObj[key] = [];
+    }
+    filterObj[key].push(...vals);
   }
 
-  return [
-    [
-      'filters',
-      Object.entries(filterObj)
-        // Swarming uses ANDs and we only support ORs between fields
-        .filter(([_, vals]) => vals.length === 1)
-        .map(([key, vals]) => `${key} = ${vals[0]}`)
-        .join(' '),
-    ],
-  ];
+  return [['filters', stringifyFilters(filterObj)]];
 };
 
 const convertColumns = (searchParams: URLSearchParams) => {
