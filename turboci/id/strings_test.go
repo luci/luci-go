@@ -144,3 +144,7 @@ func TestToFromString(t *testing.T) {
 		})
 	}
 }
+
+func TestToString_nil(t *testing.T) {
+	assert.That(t, ToString[*idspb.Check](nil), should.Equal(Invalid))
+}

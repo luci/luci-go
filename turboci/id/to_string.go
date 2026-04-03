@@ -28,6 +28,8 @@ import (
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 )
 
+const Invalid = "<turboci invalid identifier>"
+
 // ToString converts any TurboCI identifier proto into a string.
 //
 // The string format is defined in [identifier.proto].
@@ -39,8 +41,14 @@ import (
 // These IDs are not valid for reading or writing to the graph, but are a useful
 // intermediate/local representation for stages whose worknode-ness is unknown.
 //
+// Returns [Invalid] for nil identifiers.
+//
 // [identifier.proto]: https://chromium.googlesource.com/infra/turboci/proto/+/refs/heads/main/turboci/graph/ids/v1/identifier.proto
 func ToString[Id Identifier](id Id) string {
+	if id == nil {
+		return Invalid
+	}
+
 	anyID := unwrap(id)
 
 	fmtVersion := func(ts *timestamppb.Timestamp) string {

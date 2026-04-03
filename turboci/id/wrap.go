@@ -17,6 +17,8 @@ package id
 import (
 	"fmt"
 
+	"google.golang.org/protobuf/proto"
+
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 )
 
@@ -49,6 +51,12 @@ type Identifier interface {
 // Wrap takes any Identifier sub-type and wraps it into a generic
 // idspb.Identifier.
 func Wrap[Id Identifier](id Id) *idspb.Identifier {
+	// NOTE: We have to check for nil here because `id` has a concrete type.
+	// If we pass it to `wrap`, then wrap will see `any(typeof(id), nil)`, which
+	// is NOT the same as `nil`. Worst Go design bug :(.
+	if id == nil {
+		return nil
+	}
 	return wrap(id)
 }
 
@@ -202,4 +210,31 @@ func KindOf[Id Identifier](id Id) idspb.IdentifierKind {
 	default:
 		panic(fmt.Sprintf("impossible type: %s", typ))
 	}
+}
+
+// SameRoot returns `true` if the two identifiers have the same root.
+//
+// If either `a` or `b` is nil, this returns false.
+func SameRoot[A Identifier, B Identifier](a A, b B) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	_, aStage, aCheck := Root(a)
+	_, bStage, bCheck := Root(b)
+	if aStage != nil && bStage != nil {
+		return proto.Equal(aStage, bStage)
+	}
+	return proto.Equal(aCheck, bCheck)
+}
+
+// SameWorkPlan returns `true` if the two identifiers have the same workplan.
+//
+// If either `a` or `b` is nil, this returns false.
+func SameWorkPlan[A Identifier, B Identifier](a A, b B) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	aWP, _, _ := Root(a)
+	bWP, _, _ := Root(b)
+	return proto.Equal(aWP, bWP)
 }
