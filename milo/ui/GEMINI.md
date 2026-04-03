@@ -101,6 +101,32 @@ The project is a monorepo containing:
   3. Once the change is deployed, the UI will show a notification to users who
      haven't seen that release number yet.
 
+## Instructions for Gemini Agent
+
+This section provides specific instructions for the Gemini Agent (or other automated tools) to run tests and presubmits in this environment, especially when standard commands like `npm` are not available in the default PATH.
+
+### Environment Setup
+
+The workspace relies on a hermetic environment managed by `depot_tools` and `infra/go/env.py`.
+
+If you encounter issues finding `npm` or `vpython3`, use the following pattern:
+
+1.  Make sure `depot_tools` is in your `PATH` (usually `~/depot_tools` or `/Users/{user}/depot_tools`).
+2.  Use the `env.py` wrapper located at `../../../../../env.py` (relative to `infra/go/src/go.chromium.org/luci/milo/ui`).
+
+### Running Commands
+
+Combine them as follows:
+
+```bash
+PATH=$PATH:~/depot_tools ../../../../../env.py npm run test
+```
+
+Useful commands:
+- **Run all tests:** `PATH=$PATH:~/depot_tools ../../../../../env.py npm run test`
+- **Run lint:** `PATH=$PATH:~/depot_tools ../../../../../env.py npm run lint`
+- **Run type check:** `PATH=$PATH:~/depot_tools ../../../../../env.py npm run type-check`
+
 ## Coding Conventions & Best Practices
 
 ### Making pRPC Queries
