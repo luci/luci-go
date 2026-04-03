@@ -413,7 +413,17 @@ func GetTestNthSectionForAnalysis(ctx context.Context, tfa *model.TestFailureAna
 		return nil, nil
 	}
 	if len(analyses) > 1 {
-		return nil, errors.Fmt("found more than 1 nthsection analysis: %d", len(analyses))
+		// Cloud Tasks guarantees at-least-once delivery, so the same task may be
+		// dispatched more than once, creating duplicate entities. Log a warning and
+		// return the most recently created one (highest auto-generated ID).
+		logging.Warningf(ctx, "found more than 1 nthsection analysis (%d) for analysis, returning the most recently created", len(analyses))
+		latest := analyses[0]
+		for _, a := range analyses[1:] {
+			if a.ID > latest.ID {
+				latest = a
+			}
+		}
+		return latest, nil
 	}
 	return analyses[0], nil
 }

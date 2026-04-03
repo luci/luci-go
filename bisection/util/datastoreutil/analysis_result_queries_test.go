@@ -701,6 +701,21 @@ func TestGetTestNthSectionForAnalysis(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, nsa.ID, should.Equal(123))
 	})
+
+	ftt.Run("Get test nthsection analysis - multiple found", t, func(t *ftt.Test) {
+		tfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{})
+		testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
+			ID:                123,
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+		})
+		testutil.CreateTestNthSectionAnalysis(ctx, t, &testutil.TestNthSectionAnalysisCreationOption{
+			ID:                456,
+			ParentAnalysisKey: datastore.KeyForObj(ctx, tfa),
+		})
+		nsa, err := GetTestNthSectionForAnalysis(ctx, tfa)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, nsa.ID, should.Equal(456))
+	})
 }
 
 func TestGetInProgressReruns(t *testing.T) {
