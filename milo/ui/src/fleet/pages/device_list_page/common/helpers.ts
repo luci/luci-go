@@ -37,7 +37,10 @@ export const getLabelFromOverride = (
  */
 export const dimensionsToFilterOptions = (
   response: GetDeviceDimensionsResponse,
-  labelsOverride: Record<string, { headerName?: string }>,
+  labelsOverride: Record<
+    string,
+    { header?: string | unknown; headerName?: string }
+  >,
 ) => {
   const filters = {} as Record<string, StringListFilterCategoryBuilder>;
 
@@ -45,7 +48,7 @@ export const dimensionsToFilterOptions = (
     if (value.values.length === 0) continue;
 
     filters[`"${key}"`] = new StringListFilterCategoryBuilder()
-      .setLabel(labelsOverride[key]?.headerName || key)
+      .setLabel(getLabelFromOverride(key, labelsOverride) || key)
       .setOptions([
         { label: BLANK_VALUE, key: BLANK_VALUE },
         ...value.values.map((value) => {
@@ -60,7 +63,7 @@ export const dimensionsToFilterOptions = (
     if (value.values.length === 0) continue;
 
     filters[`labels."${key}"`] = new StringListFilterCategoryBuilder()
-      .setLabel(labelsOverride[key]?.headerName || key)
+      .setLabel(getLabelFromOverride(key, labelsOverride) || key)
       .setOptions([
         { label: BLANK_VALUE, key: BLANK_VALUE },
         ...value.values.map((value) => {

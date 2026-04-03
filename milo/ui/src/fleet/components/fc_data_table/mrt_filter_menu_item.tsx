@@ -28,6 +28,7 @@ import { forwardRef, useRef, useState } from 'react';
 import { MRT_INTERNAL_COLUMNS } from '@/fleet/components/columns/use_mrt_column_management';
 import { FC_ColumnDef } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { DateFilter } from '@/fleet/components/filter_dropdown/date_filter';
+import { MenuSkeleton } from '@/fleet/components/filter_dropdown/menu_skeleton';
 import { OptionsMenuOld } from '@/fleet/components/filter_dropdown/options_menu_old';
 import {
   RangeFilter,
@@ -68,11 +69,7 @@ export const MRTFilterMenuItem = forwardRef<
     | FilterOption[]
     | undefined;
 
-  const filterVariant =
-    column.columnDef.filterVariant ??
-    (filterSelectOptions && filterSelectOptions.length > 0
-      ? 'multi-select'
-      : 'text');
+  const filterVariant = column.columnDef.filterVariant ?? 'multi-select';
   const isInternalColumn = MRT_INTERNAL_COLUMNS.has(column.id);
 
   const isFilterable =
@@ -237,6 +234,15 @@ export const MRTFilterMenuItem = forwardRef<
           renderChild={(searchQuery, onNavigateUp) => {
             if (!isFilterable) {
               return null;
+            }
+
+            const isLoadingOptions = (
+              column.columnDef.meta as
+                | { isLoadingOptions?: boolean }
+                | undefined
+            )?.isLoadingOptions;
+            if (isLoadingOptions) {
+              return <MenuSkeleton itemCount={5} maxHeight={400} />;
             }
 
             if (filterVariant === 'range') {

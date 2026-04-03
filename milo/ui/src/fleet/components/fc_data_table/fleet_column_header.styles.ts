@@ -18,6 +18,8 @@ import { colors } from '@/fleet/theme/colors';
 
 export type Density = 'spacious' | 'comfortable' | 'compact';
 
+export const TABLE_HEADER_MIN_HEIGHT = '56px';
+
 export const getDensityPadding = (density: Density) => {
   const vertical = density === 'spacious' ? 16 : density === 'compact' ? 8 : 12;
   const horizontal =
@@ -44,6 +46,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
   '& .Mui-TableHeadCell-Content': {
     width: '100%',
     height: '100%',
+    minHeight: TABLE_HEADER_MIN_HEIGHT,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
