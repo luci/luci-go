@@ -26,6 +26,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
+import { useBrowserDeviceDimensions } from '../../device_list_page/browser/use_browser_device_dimensions';
 import { useDeviceDimensions } from '../../device_list_page/common/use_device_dimensions';
 
 import { getRedirectAddress } from './get_redirect_address';
@@ -34,17 +35,26 @@ export function SwarmingRedirect() {
   const params = useParams();
   const [searchParams] = useSyncedSearchParams();
 
-  const dimensionQuery = useDeviceDimensions({ platform: Platform.CHROMEOS });
+  const platform = searchParams.get('platform') || 'chromeos';
+  const isBrowser = platform === 'chromium';
+
+  const chromeosDimensions = useDeviceDimensions({
+    platform: Platform.CHROMEOS,
+  });
+  const browserDimensions = useBrowserDeviceDimensions();
+
+  const dimensionQuery = isBrowser ? browserDimensions : chromeosDimensions;
 
   const client = useBotsClient(DEVICE_TASKS_SWARMING_HOST);
   const q = useQuery({
-    queryKey: [params['*'], searchParams, client],
+    queryKey: [params['*'], searchParams, client, platform],
     queryFn: () =>
       getRedirectAddress(
         params['*'],
         searchParams,
         client,
         Object.keys(dimensionQuery.data?.baseDimensions || {}),
+        platform,
       ),
     enabled: dimensionQuery.isSuccess,
   });

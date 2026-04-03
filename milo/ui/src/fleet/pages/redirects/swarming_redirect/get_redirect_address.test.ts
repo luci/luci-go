@@ -132,6 +132,66 @@ describe('getRedirectAddress', () => {
     });
   });
 
+  describe('/botlist page (browser)', () => {
+    const browserPrefix = '/ui/fleet/p/chromium/';
+    test('basic botlist', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams(),
+        swarmingClient,
+        [],
+        'chromium',
+      );
+      expect(to).toEqual({
+        pathname: browserPrefix + 'devices',
+        search: '?',
+      });
+    });
+    test('botlist filters', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['f', 'device_type:a23xq'],
+          ['f', 'label-model:sapphire'],
+        ]),
+        swarmingClient,
+        [],
+        'chromium',
+      );
+      expect(to).toEqual({
+        search:
+          '?' +
+          new URLSearchParams([
+            [
+              'filters',
+              `swarming_labels."device_type" = "a23xq" swarming_labels."label-model" = "sapphire"`,
+            ],
+          ]).toString(),
+        pathname: browserPrefix + 'devices',
+      });
+    });
+    test('botlist orderBy', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['s', 'col1'],
+          ['d', 'asc'],
+        ]),
+        swarmingClient,
+        [],
+        'chromium',
+      );
+      expect(to).toEqual({
+        search:
+          '?' +
+          new URLSearchParams([
+            ['order_by', 'swarming_labels.col1'],
+          ]).toString(),
+        pathname: browserPrefix + 'devices',
+      });
+    });
+  });
+
   describe('/bot page', () => {
     test('bot', async () => {
       const to = await getRedirectAddress(

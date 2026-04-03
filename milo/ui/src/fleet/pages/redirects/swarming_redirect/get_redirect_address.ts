@@ -15,27 +15,27 @@
 import { To } from 'react-router';
 
 import { DecoratedClient } from '@/common/hooks/prpc_query';
+import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
 import { getDutName } from '@/fleet/utils/swarming';
 import { BotsClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
-const prefix = '/ui/fleet/labs/p/chromeos/';
+const defaultPrefix = '/ui/fleet/labs/p/chromeos/';
 
-/* Maps swarming path to fleet console paths.
- * Supports:
- *    https://chromeos-swarming.appspot.com/botlist
- *    https://chromeos-swarming.appspot.com/bot?id={BOT_ID}
- * */
 export const getRedirectAddress = async (
   url: string | undefined,
   searchParams: URLSearchParams,
   swarmingClient: DecoratedClient<BotsClientImpl>,
   baseDimensions: string[],
+  platform: string = 'chromeos',
 ): Promise<To> => {
+  const isBrowser = platform === 'chromium';
+  const targetPrefix = isBrowser ? '/ui/fleet/p/chromium/' : defaultPrefix;
+
   switch (url) {
     case 'botlist':
       return {
-        pathname: prefix + 'devices',
-        search: botListParseParams(searchParams, baseDimensions),
+        pathname: targetPrefix + 'devices',
+        search: botListParseParams(searchParams, baseDimensions, isBrowser),
       };
     case 'bot': {
       const bot_id = searchParams.get('id');
@@ -45,7 +45,7 @@ export const getRedirectAddress = async (
       if (!dutName) throw Error(`Cannot find dut_name of device ${bot_id}`);
 
       return {
-        pathname: prefix + `devices/${dutName}`,
+        pathname: targetPrefix + `devices/${dutName}`,
       };
     }
   }
@@ -56,11 +56,12 @@ export const getRedirectAddress = async (
 const botListParseParams = (
   searchParams: URLSearchParams,
   baseDimensions: string[],
+  isBrowser: boolean,
 ): string => {
   const out = new URLSearchParams([
-    ...convertFilters(searchParams, baseDimensions),
+    ...convertFilters(searchParams, baseDimensions, isBrowser),
     ...convertColumns(searchParams),
-    ...convertOrderBy(searchParams, baseDimensions),
+    ...convertOrderBy(searchParams, baseDimensions, isBrowser),
   ]);
   return '?' + out.toString();
 };
@@ -68,6 +69,7 @@ const botListParseParams = (
 const convertFilters = (
   searchParams: URLSearchParams,
   baseDimensions: string[],
+  isBrowser: boolean,
 ) => {
   const filters = searchParams.getAll('f');
   if (filters.length === 0) return [];
@@ -77,7 +79,11 @@ const convertFilters = (
     let [key, val] = f.split(':', 2);
     val = `"${val}"`;
 
-    if (!baseDimensions.includes(key)) key = 'labels.' + key;
+    if (isBrowser) {
+      key = `${BROWSER_SWARMING_SOURCE}."${key}"`;
+    } else if (!baseDimensions.includes(key)) {
+      key = 'labels.' + key;
+    }
 
     if (filterObj[key]) filterObj[key].push(val);
     else filterObj[key] = [val];
@@ -103,13 +109,19 @@ const convertColumns = (searchParams: URLSearchParams) => {
 const convertOrderBy = (
   searchParams: URLSearchParams,
   baseDimensions: string[],
+  isBrowser: boolean,
 ) => {
   const sParam = searchParams.get('s');
   const ascDesc = searchParams.get('d');
 
   if (!sParam) return [];
 
-  const by = !baseDimensions.includes(sParam) ? `labels.${sParam}` : sParam;
+  let by = sParam;
+  if (isBrowser) {
+    by = `${BROWSER_SWARMING_SOURCE}.${sParam}`;
+  } else if (!baseDimensions.includes(sParam)) {
+    by = `labels.${sParam}`;
+  }
 
   if (ascDesc === 'desc') return [['order_by', `${by} desc`]];
   return [['order_by', by]];
