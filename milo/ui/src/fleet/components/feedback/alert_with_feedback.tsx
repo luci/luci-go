@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, AlertColor, AlertTitle, Link } from '@mui/material';
+import {
+  Alert,
+  AlertColor,
+  AlertTitle,
+  Link,
+  SxProps,
+  Theme,
+} from '@mui/material';
 
 import { genFeedbackUrl } from '@/common/tools/utils';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
@@ -23,6 +30,7 @@ interface AlertWithFeedbackProps {
   children?: React.ReactNode;
   bugErrorMessage?: string;
   testId?: string;
+  sx?: SxProps<Theme>;
 }
 
 export default function AlertWithFeedback({
@@ -31,9 +39,10 @@ export default function AlertWithFeedback({
   children,
   bugErrorMessage,
   testId,
+  sx,
 }: AlertWithFeedbackProps) {
   return (
-    <Alert severity={severity || 'error'} data-testid={testId}>
+    <Alert severity={severity || 'error'} data-testid={testId} sx={sx}>
       <AlertTitle>{title || 'Oops! An error occured.'}</AlertTitle>
       {children || <p>Oh no! Something didn&apos;t go as planned.</p>}
       <p>

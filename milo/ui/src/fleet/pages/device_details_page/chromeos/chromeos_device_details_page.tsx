@@ -320,7 +320,7 @@ export const ChromeOSDeviceDetailsPage = () => {
                   No <code>dutID</code> set on this device
                 </Alert>
               ) : (
-                <BotData dutId={dutId} />
+                <BotData />
               )}
             </TabPanel>
           </TabContext>

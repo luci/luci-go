@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, AlertTitle, Box } from '@mui/material';
+import { Accordion, AccordionProps } from '@mui/material';
 
-export const BotData = () => {
-  return (
-    <Box>
-      <Alert severity="warning" sx={{ mb: 2 }}>
-        <AlertTitle>Bot information has been moved!</AlertTitle>
-        <div>Go to Dimensions tab to find information about the bot.</div>
-        <div>Bot dimensions has been merged with device dimensions.</div>
-      </Alert>
-    </Box>
-  );
-};
+export const StandaloneAccordion = ({
+  disableGutters = true,
+  elevation = 2,
+  variant = 'outlined',
+  sx,
+  ...props
+}: AccordionProps) => (
+  <Accordion
+    disableGutters={disableGutters}
+    elevation={elevation}
+    variant={variant}
+    sx={{
+      mb: 2,
+      borderRadius: '4px',
+      '&::before': {
+        display: 'none',
+      },
+      ...sx,
+    }}
+    {...props}
+  />
+);

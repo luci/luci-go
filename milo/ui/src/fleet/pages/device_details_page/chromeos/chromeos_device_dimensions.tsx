@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { AccordionDetails, AccordionSummary, Typography } from '@mui/material';
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
+import { StandaloneAccordion } from '@/fleet/components/accordion/standalone_accordion';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { CellWithTooltip } from '@/fleet/components/table/cell_with_tooltip';
+import { BotInformation } from '@/fleet/pages/device_details_page/common/bot_information';
+import { BotState } from '@/fleet/pages/device_details_page/common/bot_state';
+import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -55,9 +61,9 @@ export const ChromeOSDeviceDimensions = ({
         value: labelValuesToString(device!.deviceSpec!.labels[label].values),
       };
     });
-  const rows = [...customRows, ...labelRows];
+  const dimensionRows = [...customRows, ...labelRows];
 
-  const columns: GridColDef[] = [
+  const dimensionColumns: GridColDef[] = [
     { field: 'id', headerName: 'Key', flex: 1 },
     {
       field: 'value',
@@ -72,14 +78,33 @@ export const ChromeOSDeviceDimensions = ({
 
   return (
     device && (
-      <StyledGrid
-        disableColumnMenu
-        disableColumnFilter
-        disableRowSelectionOnClick
-        rows={rows}
-        columns={columns}
-        hideFooterPagination
-      />
+      <>
+        <BotInformation
+          swarmingHost={DEVICE_TASKS_SWARMING_HOST}
+          dutId={device?.dutId || ''}
+        />
+
+        <StandaloneAccordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="h6">Device Dimensions</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <StyledGrid
+              disableColumnMenu
+              disableColumnFilter
+              disableRowSelectionOnClick
+              rows={dimensionRows}
+              columns={dimensionColumns}
+              hideFooterPagination
+            />
+          </AccordionDetails>
+        </StandaloneAccordion>
+
+        <BotState
+          swarmingHost={DEVICE_TASKS_SWARMING_HOST}
+          dutId={device?.dutId || ''}
+        />
+      </>
     )
   );
 };

@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, AlertTitle, Box } from '@mui/material';
+import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 
-export const BotData = () => {
+interface BotNotFoundAlertProps {
+  dutId?: string;
+}
+
+export const BotNotFoundAlert = ({ dutId }: BotNotFoundAlertProps) => {
   return (
-    <Box>
-      <Alert severity="warning" sx={{ mb: 2 }}>
-        <AlertTitle>Bot information has been moved!</AlertTitle>
-        <div>Go to Dimensions tab to find information about the bot.</div>
-        <div>Bot dimensions has been merged with device dimensions.</div>
-      </Alert>
-    </Box>
+    <AlertWithFeedback
+      severity="warning"
+      title="Bot not found!"
+      bugErrorMessage={`Bot not found for device: ${dutId}`}
+    >
+      <p>
+        Oh no! No bots were found for this device <code>dut_id={dutId}</code>.
+      </p>
+    </AlertWithFeedback>
   );
 };

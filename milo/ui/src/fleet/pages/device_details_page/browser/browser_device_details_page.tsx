@@ -259,14 +259,18 @@ export const BrowserDeviceDetailsPage = () => {
               )}
             </TabPanel>
             <TabPanel value={TabValue.DIMENSIONS}>
-              <BrowserDeviceDimensions device={device} />
+              <BrowserDeviceDimensions
+                device={device}
+                botId={botId}
+                swarmingHost={swarmingHost}
+              />
             </TabPanel>
             <TabPanel value={TabValue.INVENTORY_DATA}>
               <BrowserInventoryData device={device} />
             </TabPanel>
             <TabPanel value={TabValue.BOT_INFO}>
               {swarmingInstance && botId ? (
-                <BotData botId={botId} swarmingHost={swarmingHost} />
+                <BotData />
               ) : (
                 <UnavailableSwarmingInfo />
               )}
