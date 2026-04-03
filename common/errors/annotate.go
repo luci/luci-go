@@ -28,14 +28,6 @@ import (
 	"go.chromium.org/luci/common/runtime/debugstack"
 )
 
-// annotator is a legacy API.
-//
-// Deprecated: If you use `errors.Fmt` or `errors.New` you will not need this
-// type.
-type annotator struct {
-	inner    error
-	wrappers []ErrorWrapper
-}
 
 // ErrorWrapper describes a method which can accept an error and return an
 // optionally wrapped version of that error.
@@ -43,21 +35,6 @@ type annotator struct {
 // Implementations should return `nil` if provided `nil`.
 type ErrorWrapper interface {
 	Apply(err error) (wrapped error)
-}
-
-// Err returns the finalized annotated error.
-func (a *annotator) Err() error {
-	if a == nil {
-		return nil
-	}
-	ret := a.inner
-	for _, wrapper := range a.wrappers {
-		ret = wrapper.Apply(ret)
-	}
-	// The 1 is because this is a helper function we don't want to see in the
-	// captured trace.
-	ret = stacktag.Capture(ret, 1)
-	return ret
 }
 
 // Log logs the full error. If this is an Annotated error, it will log the full
@@ -138,25 +115,23 @@ func RenderGoStack(err error, onlyInner bool, excludePkgs ...string) string {
 
 // Annotate is a legacy API.
 //
-// Deprecated: Use `errors.Fmt` or `errors.New` instead. If `err` could be nil,
-// you can use `errors.WrapIf`. Attach tags directly to the error (e.g.
-// `tag.Apply(err)`)
-func Annotate(err error, reason string, args ...any) error {
-	if err == nil {
-		return nil
-	}
-
-	args = slices.Clone(args)
-	args = append(args, err)
-	return (&annotator{fmt.Errorf(reason+": %w", args...), nil}).Err()
-}
+// It is exactly equivalent to WrapIf
+var Annotate = WrapIf
 
 // Reason is a legacy API.
 //
-// Deprecated: Use `errors.Fmt` or `errors.New` instead. Attach tags directly
-// to the error (e.g. `tag.Apply(err)`)
+// Exactly equivalent to `errors.New` with just a reason
+// or `errors.Fmt` with one or more args.
 func Reason(reason string, args ...any) error {
-	return (&annotator{fmt.Errorf(reason, args...), nil}).Err()
+	var ret error
+	if len(args) == 0 {
+		ret = errors.New(reason)
+	} else {
+		ret = fmt.Errorf(reason, args...)
+	}
+	// The 1 is because this is a helper function we don't want to see in the
+	// captured trace.
+	return stacktag.Capture(ret, 1)
 }
 
 // New is an API-compatible version of the standard errors.New function, except
