@@ -142,5 +142,21 @@ func TestPredefinedTypes(t *testing.T) {
 			}))
 			assert.Loosely(t, GetBuildbucket(c), should.Match(b))
 		})
+
+		t.Run("turboci", func(t *ftt.Test) {
+			assert.Loosely(t, GetTurboCI(c), should.BeNil)
+
+			tc := &TurboCI{
+				Token: "a token",
+			}
+			c = SetTurboCI(c, tc)
+			data := getCurrent(c).sections["turboci"]
+			var v any
+			assert.Loosely(t, json.Unmarshal(*data, &v), should.BeNil)
+			assert.Loosely(t, v, should.Match(map[string]any{
+				"token": "a token",
+			}))
+			assert.Loosely(t, GetTurboCI(c), should.Match(tc))
+		})
 	})
 }

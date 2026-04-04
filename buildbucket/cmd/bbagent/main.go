@@ -87,8 +87,9 @@ func (c *closeOnceCh) close() {
 }
 
 type clientInput struct {
-	bbclient BuildsClient
-	input    *bbpb.BBAgentArgs
+	bbclient     BuildsClient
+	input        *bbpb.BBAgentArgs
+	attemptToken string
 }
 
 // stopInfo contains different channels involved in causing the build to stop and shutdown
@@ -196,7 +197,7 @@ func parseBbAgentArgs(ctx context.Context, arg string, bbagentCtx *bbpb.Buildbuc
 	check(ctx, err, "could not unmarshal BBAgentArgs")
 	bbclient, err := newBuildsClient(ctx, bbagentCtx, input.Build.Infra.Buildbucket.GetHostname(), retry.Default)
 	check(ctx, err, "could not connect to Buildbucket")
-	return clientInput{bbclient, input}
+	return clientInput{bbclient: bbclient, input: input}
 }
 
 func startBuild(ctx context.Context, bbclient BuildsClient, buildID int64, taskID string) (*bbpb.StartBuildResponse, error) {
@@ -208,14 +209,6 @@ func startBuild(ctx context.Context, bbclient BuildsClient, buildID int64, taskI
 			TaskId:    taskID,
 		},
 	)
-}
-
-func retrieveTaskIDFromContext(ctx context.Context) string {
-	swarmingCtx := lucictx.GetSwarming(ctx)
-	if swarmingCtx == nil || swarmingCtx.GetTask() == nil || swarmingCtx.Task.GetTaskId() == "" {
-		die(ctx, "incomplete swarming context: %+v", swarmingCtx)
-	}
-	return swarmingCtx.Task.TaskId
 }
 
 // Get the build info by the provided buildID.
@@ -231,6 +224,7 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, bba
 	check(ctx, err, "could not connect to Buildbucket")
 
 	var build *bbpb.Build
+	var attemptToken string
 	if bbagentCtx.TaskId == "" {
 		// Get everything from the build.
 		// Here we use UpdateBuild instead of GetBuild, so that
@@ -264,6 +258,7 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, bba
 		check(ctx, err, "failed to start build")
 		build = res.Build
 		bbagentCtx.Secrets.BuildToken = res.UpdateBuildToken
+		attemptToken = res.StageAttemptToken
 	}
 
 	input := &bbpb.BBAgentArgs{
@@ -272,7 +267,8 @@ func parseHostBuildID(ctx context.Context, hostname *string, buildID *int64, bba
 		KnownPublicGerritHosts: build.Infra.Buildbucket.KnownPublicGerritHosts,
 		PayloadPath:            protoutil.ExePayloadPath(build),
 	}
-	return clientInput{bbclient, input}
+
+	return clientInput{bbclient: bbclient, input: input, attemptToken: attemptToken}
 }
 
 // backFillTaskInfoNeeded checks if need to backfill the backend task info.
@@ -639,6 +635,7 @@ func mainImpl() int {
 	// Manipulate the context and obtain a context with cancel
 	ctx = setBuildbucketContext(ctx, hostname, bbagentCtx.Secrets)
 	ctx = setRealmContext(ctx, bbclientInput.input)
+	ctx = setTurboCIContext(ctx, bbclientInput.attemptToken)
 
 	logdogOutput, err := mkLogdogOutput(ctx, bbclientInput.input.Build.Infra.Logdog)
 	check(ctx, err, "could not create logdog output")

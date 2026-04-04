@@ -88,6 +88,15 @@ func setRealmContext(ctx context.Context, input *bbpb.BBAgentArgs) context.Conte
 	return ctx
 }
 
+func setTurboCIContext(ctx context.Context, attemptToken string) context.Context {
+	if attemptToken == "" {
+		return ctx
+	}
+	return lucictx.SetTurboCI(ctx, &lucictx.TurboCI{
+		Token: attemptToken,
+	})
+}
+
 func setLocalAuth(ctx context.Context) context.Context {
 	// If asked to use the GCE account, create a new local auth context so it
 	// can be properly picked through out the rest of bbagent process tree. Use
@@ -125,6 +134,14 @@ func getContextFromFile(ctx context.Context, contextFile string) (*bbpb.Buildbuc
 		return nil, err
 	}
 	return bbagentCtx, nil
+}
+
+func retrieveTaskIDFromContext(ctx context.Context) string {
+	swarmingCtx := lucictx.GetSwarming(ctx)
+	if swarmingCtx == nil || swarmingCtx.GetTask() == nil || swarmingCtx.Task.GetTaskId() == "" {
+		die(ctx, "incomplete swarming context: %+v", swarmingCtx)
+	}
+	return swarmingCtx.Task.TaskId
 }
 
 // getContextFromLuciContext generates BuildbucketAgentContext from Lucictx.

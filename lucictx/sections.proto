@@ -195,3 +195,10 @@ message Buildbucket {
   // Token to use to schedule child builds for this build.
   string schedule_build_token = 2 [json_name = "schedule_build_token"];
 }
+
+// TurboCI is a struct that may be used with the "turboci" section of
+// LUCI_CONTEXT.
+message TurboCI {
+  // Token to use to update the current stage attempt or the workplan.
+  string token = 1 [json_name = "token"];
+}

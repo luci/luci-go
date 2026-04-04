@@ -195,7 +195,7 @@ func TestDownloadInputs(t *testing.T) {
 
 			bbclient := &testBBClient{}
 			input := &bbpb.BBAgentArgs{Build: build}
-			rc := downloadInputs(ctx, tempDir, "cache", clientInput{bbclient, input})
+			rc := downloadInputs(ctx, tempDir, "cache", clientInput{bbclient: bbclient, input: input})
 
 			assert.Loosely(c, rc, should.BeZero)
 			assert.Loosely(c, len(bbclient.requests), should.Equal(2))
