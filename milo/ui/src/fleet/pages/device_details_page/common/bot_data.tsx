@@ -14,6 +14,7 @@
 
 import { Alert, AlertTitle, Box } from '@mui/material';
 
+// TODO: Remove, add redirection after 2-3 weeks.
 export const BotData = () => {
   return (
     <Box>

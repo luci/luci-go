@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { AccordionDetails, AccordionSummary, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 
-import { StandaloneAccordion } from '@/fleet/components/accordion/standalone_accordion';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { StyledGrid } from '@/fleet/components/styled_data_grid';
 import { CellWithTooltip } from '@/fleet/components/table/cell_with_tooltip';
@@ -84,25 +82,21 @@ export const ChromeOSDeviceDimensions = ({
           dutId={device?.dutId || ''}
         />
 
-        <StandaloneAccordion defaultExpanded>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="h6">Device Dimensions</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <StyledGrid
-              disableColumnMenu
-              disableColumnFilter
-              disableRowSelectionOnClick
-              rows={dimensionRows}
-              columns={dimensionColumns}
-              hideFooterPagination
-            />
-          </AccordionDetails>
-        </StandaloneAccordion>
-
         <BotState
           swarmingHost={DEVICE_TASKS_SWARMING_HOST}
           dutId={device?.dutId || ''}
+        />
+
+        <Typography variant="h5" sx={{ mt: 4 }}>
+          Device Dimensions
+        </Typography>
+        <StyledGrid
+          disableColumnMenu
+          disableColumnFilter
+          disableRowSelectionOnClick
+          rows={dimensionRows}
+          columns={dimensionColumns}
+          hideFooterPagination
         />
       </>
     )

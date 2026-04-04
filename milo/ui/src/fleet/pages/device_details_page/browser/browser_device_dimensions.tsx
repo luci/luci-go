@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { AccordionDetails, AccordionSummary, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import {
   MRT_Cell,
   MRT_Column,
@@ -23,7 +22,6 @@ import {
 } from 'material-react-table';
 import { ReactNode, useMemo } from 'react';
 
-import { StandaloneAccordion } from '@/fleet/components/accordion/standalone_accordion';
 import { orderMRTColumns } from '@/fleet/components/device_table/columns';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
@@ -165,18 +163,14 @@ export const BrowserDeviceDimensions = ({
       <>
         <BotInformation swarmingHost={swarmingHost || ''} botId={botId || ''} />
 
-        <StandaloneAccordion defaultExpanded>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="h6">Device Dimensions</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <div style={{ width: '100%', height: '100%' }}>
-              <MaterialReactTable table={table} />
-            </div>
-          </AccordionDetails>
-        </StandaloneAccordion>
-
         <BotState swarmingHost={swarmingHost || ''} botId={botId || ''} />
+
+        <Typography variant="h5" sx={{ mt: 4 }}>
+          Device Dimensions
+        </Typography>
+        <div style={{ width: '100%', height: '100%' }}>
+          <MaterialReactTable table={table} />
+        </div>
       </>
     )
   );
