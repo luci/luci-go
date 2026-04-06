@@ -31,7 +31,7 @@ const (
 
 const (
 	// Must be changed +1 to invalidate cache.
-	VpythonCacheSalt = "1"
+	VpythonCacheSalt = "2"
 )
 
 // Python returns the python path in python installation.
