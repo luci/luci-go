@@ -579,6 +579,7 @@ export function FilterEditor({
             },
             '& .MuiAccordionSummary-content': {
               alignItems: 'center',
+              flexWrap: 'wrap',
               gap: 1,
               margin: '4px 0',
               '&.Mui-expanded': {

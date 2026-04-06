@@ -825,7 +825,7 @@ export function DashboardPage() {
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
-        minWidth: 0,
+        minWidth: 900,
       }}
     >
       {localDashboardState &&
