@@ -234,7 +234,10 @@ func (b *Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb
 		return nil, errors.Fmt("failed to generate build proto from model: %w", err)
 	}
 
-	return &pb.StartBuildResponse{Build: bp, UpdateBuildToken: bld.UpdateToken}, nil
+	return &pb.StartBuildResponse{
+		Build:             bp,
+		UpdateBuildToken:  bld.UpdateToken,
+		StageAttemptToken: bld.StageAttemptToken}, nil
 }
 
 // notifyTurboCI marks the attempt as either RUNNING on INCOMPLETE depending
