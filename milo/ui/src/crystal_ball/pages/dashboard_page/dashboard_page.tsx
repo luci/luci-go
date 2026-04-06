@@ -192,10 +192,14 @@ function getWidgetType(widget: PerfWidget): WidgetType {
   if (widget.markdown) return WidgetType.MARKDOWN;
   if (widget.chart) {
     const chartType = getSafeChartType(widget.chart.chartType);
-    if (chartType === PerfChartWidget_ChartType.BREAKDOWN_TABLE) {
-      return WidgetType.CHART_BREAKDOWN_TABLE;
+    switch (chartType) {
+      case PerfChartWidget_ChartType.BREAKDOWN_TABLE:
+        return WidgetType.CHART_BREAKDOWN_TABLE;
+      case PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION:
+        return WidgetType.CHART_INVOCATION_DISTRIBUTION;
+      default:
+        return WidgetType.CHART_MULTI_METRIC;
     }
-    return WidgetType.CHART_MULTI_METRIC;
   }
   throw new Error(`Unknown widget type: ${JSON.stringify(widget)}`);
 }
@@ -253,7 +257,8 @@ const WIDGET_RENDERERS: Record<
   [WidgetType.CHART_MULTI_METRIC]: (widget, context, onUpdate) =>
     renderChartWidget(ChartWidget, widget, context, onUpdate),
   [WidgetType.CHART_REGRESSION_METRIC]: () => null,
-  [WidgetType.CHART_INVOCATION_DISTRIBUTION]: () => null,
+  [WidgetType.CHART_INVOCATION_DISTRIBUTION]: (widget, context, onUpdate) =>
+    renderChartWidget(ChartWidget, widget, context, onUpdate),
 };
 
 const WIDGET_CREATORS: Record<WidgetType, () => Partial<PerfWidget>> = {
@@ -301,7 +306,22 @@ const WIDGET_CREATORS: Record<WidgetType, () => Partial<PerfWidget>> = {
     },
   }),
   [WidgetType.CHART_REGRESSION_METRIC]: () => ({}),
-  [WidgetType.CHART_INVOCATION_DISTRIBUTION]: () => ({}),
+  [WidgetType.CHART_INVOCATION_DISTRIBUTION]: () => ({
+    displayName: 'New Distribution Widget',
+    chart: {
+      dataSpecId: DATA_SPEC_ID,
+      displayName: 'New Distribution Widget',
+      chartType: PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
+      effectiveChartType: PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
+      series: [],
+      filters: [],
+      xAxis: undefined,
+      leftYAxis: undefined,
+      rightYAxis: undefined,
+      seriesSplit: undefined,
+      invocationDistributionConfig: undefined,
+    },
+  }),
 };
 
 /**

@@ -60,3 +60,8 @@ export const MAX_PAGE_SIZE = 1000;
  * Maximum number of suggestions to return for autocomplete.
  */
 export const MAX_SUGGEST_RESULTS = 10;
+
+/**
+ * Key for the number of aggregated rows in chart data points.
+ */
+export const NUM_AGGREGATED_ROWS = 'num_aggregated_rows';

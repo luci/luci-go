@@ -12,57 +12,135 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {
-  Functions as FunctionsIcon,
-  GroupWork as GroupWorkIcon,
-} from '@mui/icons-material';
-import {
   Alert,
   Box,
   CircularProgress,
   Divider,
-  FormControl,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   Typography,
 } from '@mui/material';
 import { useCallback, useMemo, useState } from 'react';
 
 import {
   ChartSeriesEditor,
+  ChartTooltipParam,
+  ChartWidgetToolbar,
   FilterEditor,
   TimeSeriesChart,
 } from '@/crystal_ball/components';
 import {
   Column,
   COMMON_MESSAGES,
-  GOLDEN_RATIO_CONJUGATE,
-  AGGREGATION_FUNCTION_LABELS,
   DEFAULT_X_AXIS_CONFIG,
   getGroupByFromGranularity,
   GROUP_BY_CONFIG,
-  GROUP_BY_OPTIONS,
+  NUM_AGGREGATED_ROWS,
 } from '@/crystal_ball/constants';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
-import { COMPACT_ICON_SX, COMPACT_SELECT_SX } from '@/crystal_ball/styles';
-import { isStringArray } from '@/crystal_ball/utils';
 import {
   dataPointsToData,
+  generateColor,
+  getSafeChartType,
   isDataPointsValid,
-} from '@/crystal_ball/utils/widget_utils';
+  isStringArray,
+  parseSingleFilter,
+} from '@/crystal_ball/utils';
 import {
+  FetchDashboardWidgetDataResponse,
   MeasurementFilterColumn,
   MeasurementFilterColumn_FilterScope,
   PerfChartSeries,
   PerfChartSeries_PerfAggregationFunction,
   perfChartSeries_PerfAggregationFunctionFromJSON,
   PerfChartWidget,
+  PerfChartWidget_ChartType,
   PerfDashboardContent,
   PerfDataSpec,
   PerfFilter,
+  PerfFilterDefault_FilterOperator,
+  perfFilterDefault_FilterOperatorFromJSON,
   PerfWidget,
   perfXAxisConfig_GranularityFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+/**
+ * Helper to get chart series based on chart type.
+ */
+function getChartSeries(
+  chartType: PerfChartWidget_ChartType,
+  widgetResponse: FetchDashboardWidgetDataResponse | undefined,
+  widgetSeries: readonly PerfChartSeries[] | undefined,
+  hiddenSeriesNames: Set<string>,
+) {
+  switch (chartType) {
+    case PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION: {
+      if (!widgetResponse?.invocationDistributionData?.points) return [];
+      const xAxisKey = widgetResponse.invocationDistributionData.xAxisDataKey;
+      const yAxisKey = widgetResponse.invocationDistributionData.yAxisDataKey;
+
+      return widgetResponse.invocationDistributionData.points
+        .map((group, index) => {
+          const seriesConfig = widgetSeries?.find(
+            (s) => s.displayName === group.legendLabel,
+          );
+          return {
+            name: group.legendLabel,
+            data: group.points.map(
+              (point): { x: number; y: number; count: number } => {
+                const xValue = point[xAxisKey];
+                let x: number;
+                if (typeof xValue === 'number') {
+                  x = xValue;
+                } else if (typeof xValue === 'string') {
+                  if (!isNaN(Number(xValue)) && isFinite(Number(xValue))) {
+                    x = Number(xValue);
+                  } else {
+                    const parsedDate = Date.parse(xValue);
+                    x = isNaN(parsedDate) ? 0 : parsedDate;
+                  }
+                } else {
+                  x = 0;
+                }
+
+                const yValue = point[yAxisKey];
+                const y =
+                  typeof yValue === 'string'
+                    ? parseFloat(yValue)
+                    : typeof yValue === 'number'
+                      ? yValue
+                      : 0;
+                const countVal = point[NUM_AGGREGATED_ROWS];
+                const count = typeof countVal === 'number' ? countVal : 1;
+                return { x, y, count };
+              },
+            ),
+            stroke: seriesConfig?.color ?? generateColor(index),
+          };
+        })
+        .filter((series) => !hiddenSeriesNames.has(series.name));
+    }
+    default: {
+      if (!widgetResponse?.multiMetricChartData?.lines) return [];
+
+      const xAxisKey = widgetResponse.multiMetricChartData.xAxisDataKey;
+      const yAxisKey = widgetResponse.multiMetricChartData.yAxisDataKey;
+
+      return widgetResponse.multiMetricChartData.lines
+        .map((line, index) => {
+          const seriesConfig = widgetSeries?.find(
+            (s) => s.displayName === line.legendLabel,
+          );
+          return {
+            name: line.legendLabel,
+            data: isDataPointsValid(line.dataPoints, xAxisKey, yAxisKey)
+              ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey)
+              : [],
+            stroke: seriesConfig?.color ?? generateColor(index),
+          };
+        })
+        .filter((series) => !hiddenSeriesNames.has(series.name));
+    }
+  }
+}
 
 interface ChartWidgetProps {
   onUpdate: (updatedWidget: PerfChartWidget) => void;
@@ -88,6 +166,13 @@ export function ChartWidget({
   globalFilters,
   dataSpecs,
 }: ChartWidgetProps) {
+  const isDistribution = useMemo(
+    () =>
+      getSafeChartType(widget.chartType) ===
+      PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
+    [widget.chartType],
+  );
+
   const [hiddenSeriesNames, setHiddenSeriesNames] = useState<Set<string>>(
     new Set(),
   );
@@ -216,29 +301,113 @@ export function ChartWidget({
     enabled: !!widgetId && hasAtpTestFilter,
   });
 
-  const chartSeries = useMemo(() => {
-    if (!widgetResponse?.multiMetricChartData?.lines) return [];
+  const chartSeries = useMemo(
+    () =>
+      getChartSeries(
+        getSafeChartType(widget.chartType),
+        widgetResponse,
+        widget.series,
+        hiddenSeriesNames,
+      ),
+    [widget.chartType, widgetResponse, widget.series, hiddenSeriesNames],
+  );
 
-    const xAxisKey = widgetResponse.multiMetricChartData.xAxisDataKey;
-    const yAxisKey = widgetResponse.multiMetricChartData.yAxisDataKey;
+  const xAxisBounds = useMemo(() => {
+    let timeRangeStart: number | undefined;
+    let timeRangeEnd: number | undefined;
 
-    return widgetResponse.multiMetricChartData.lines
-      .map((line, index) => {
-        const seriesConfig = widget.series?.find(
-          (s) => s.displayName === line.legendLabel,
-        );
-        return {
-          name: line.legendLabel,
-          data: isDataPointsValid(line.dataPoints, xAxisKey, yAxisKey)
-            ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey)
-            : [],
-          stroke:
-            seriesConfig?.color ??
-            `hsl(${((index * GOLDEN_RATIO_CONJUGATE) % 1) * 360}, 70%, 50%)`,
-        };
-      })
-      .filter((series) => !hiddenSeriesNames.has(series.name));
-  }, [widgetResponse, widget.series, hiddenSeriesNames]);
+    const timeFilters =
+      globalFilters?.flatMap((f) => {
+        if (f.column !== 'TIMESTAMP') return [];
+        return parseSingleFilter(f, ['TIMESTAMP']);
+      }) ?? [];
+
+    timeFilters.forEach((f) => {
+      if (
+        f.operator === PerfFilterDefault_FilterOperator.GREATER_THAN_OR_EQUAL
+      ) {
+        timeRangeStart = Date.parse(f.value);
+      }
+      if (f.operator === PerfFilterDefault_FilterOperator.LESS_THAN_OR_EQUAL) {
+        timeRangeEnd = Date.parse(f.value);
+      }
+    });
+
+    const inPastFilter = globalFilters?.find((f) => {
+      const rangeOp =
+        f.range?.defaultValue?.filterOperator !== undefined
+          ? perfFilterDefault_FilterOperatorFromJSON(
+              f.range.defaultValue.filterOperator,
+            )
+          : undefined;
+      return (
+        f.column === 'TIMESTAMP' &&
+        rangeOp === PerfFilterDefault_FilterOperator.IN_PAST
+      );
+    });
+
+    if (inPastFilter && timeRangeStart !== undefined) {
+      timeRangeEnd = Date.now();
+    }
+
+    let dataMin: number | undefined;
+    let dataMax: number | undefined;
+
+    chartSeries.forEach((s) => {
+      s.data.forEach((p) => {
+        const x = p.x;
+        if (dataMin === undefined || x < dataMin) dataMin = x;
+        if (dataMax === undefined || x > dataMax) dataMax = x;
+      });
+    });
+
+    const minVal =
+      timeRangeStart !== undefined && dataMin !== undefined
+        ? Math.min(timeRangeStart, dataMin)
+        : (timeRangeStart ?? dataMin);
+
+    const maxVal =
+      timeRangeEnd !== undefined && dataMax !== undefined
+        ? Math.max(timeRangeEnd, dataMax)
+        : (timeRangeEnd ?? dataMax);
+
+    return { min: minVal, max: maxVal };
+  }, [globalFilters, chartSeries]);
+
+  const tooltipFormatter = useMemo(() => {
+    return (params: ChartTooltipParam | ChartTooltipParam[]) => {
+      const items = Array.isArray(params) ? params : [params];
+      if (items.length === 0) return '';
+
+      const firstItem = items[0];
+      const xVal = firstItem.axisValue;
+      let xDisplay = xVal;
+
+      const xAxisDataKey = isDistribution
+        ? widgetResponse?.invocationDistributionData?.xAxisDataKey
+        : widgetResponse?.multiMetricChartData?.xAxisDataKey;
+
+      const xAxisType = xAxisDataKey === Column.BUILD_ID ? 'value' : 'time';
+      if (xAxisType === 'time' && typeof xVal === 'number') {
+        const date = new Date(xVal);
+        xDisplay = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+      }
+
+      let result = `<strong>${xDisplay}</strong><br/>`;
+
+      items.forEach((item) => {
+        const val = item.data[1];
+        const count = item.data[2];
+
+        result += `${item.marker}${item.seriesName}: ${val.toLocaleString()}`;
+        if (count !== undefined && count !== 0) {
+          result += ` (n=${count})`;
+        }
+        result += '<br/>';
+      });
+      return result;
+    };
+  }, [isDistribution, widgetResponse]);
 
   const hasData = useMemo(
     () => chartSeries.some((series) => series.data.length > 0),
@@ -278,86 +447,20 @@ export function ChartWidget({
           globalFilters={globalFilters}
         />
         <Divider light />
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            pl: 2,
-            pr: 0.5,
-            py: 0.5,
-            gap: 1,
+        <ChartWidgetToolbar
+          chartType={getSafeChartType(widget.chartType)}
+          onChartTypeChange={(newChartType) => {
+            onUpdate({
+              ...widget,
+              chartType: newChartType,
+              effectiveChartType: newChartType,
+            });
           }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <GroupWorkIcon sx={COMPACT_ICON_SX} />
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'text.secondary',
-                fontWeight: (theme) => theme.typography.fontWeightBold,
-                textTransform: 'uppercase',
-                lineHeight: 1,
-              }}
-            >
-              {COMMON_MESSAGES.GROUP_BY}
-            </Typography>
-          </Box>
-          <FormControl size="small" variant="outlined">
-            <Select
-              id="widget-groupby-select"
-              value={currentGroupBy}
-              onChange={(e: SelectChangeEvent<string>) => {
-                handleWidgetGroupByUpdate(e.target.value);
-              }}
-              inputProps={{ 'aria-label': 'Widget Group By' }}
-              sx={COMPACT_SELECT_SX}
-            >
-              {GROUP_BY_OPTIONS.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <Divider orientation="vertical" flexItem light />
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <FunctionsIcon sx={COMPACT_ICON_SX} />
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'text.secondary',
-                fontWeight: (theme) => theme.typography.fontWeightBold,
-                textTransform: 'uppercase',
-                lineHeight: 1,
-              }}
-            >
-              {COMMON_MESSAGES.AGGREGATE_BY}
-            </Typography>
-          </Box>
-          <FormControl size="small" variant="outlined">
-            <Select
-              id="widget-aggregation-select"
-              value={currentAggregation}
-              onChange={(e) => {
-                if (typeof e.target.value === 'number') {
-                  handleWidgetAggregationUpdate(e.target.value);
-                }
-              }}
-              inputProps={{ 'aria-label': 'Widget Aggregation' }}
-              sx={COMPACT_SELECT_SX}
-            >
-              {Object.entries(AGGREGATION_FUNCTION_LABELS)
-                .filter(([value]) => Number(value) !== 0)
-                .map(([value, label]) => (
-                  <MenuItem key={value} value={Number(value)}>
-                    {label}
-                  </MenuItem>
-                ))}
-            </Select>
-          </FormControl>
-        </Box>
+          currentGroupBy={currentGroupBy}
+          onGroupByChange={handleWidgetGroupByUpdate}
+          currentAggregation={currentAggregation}
+          onAggregationChange={handleWidgetAggregationUpdate}
+        />
         <Divider light />
       </Box>
       <Box
@@ -389,7 +492,7 @@ export function ChartWidget({
         {isWidgetError && (
           <Alert severity="error" sx={{ my: 2 }}>
             {COMMON_MESSAGES.ERROR_FETCHING_MEASUREMENTS}
-            {widgetError?.message || COMMON_MESSAGES.UNKNOWN_ERROR}
+            {widgetError?.message ?? COMMON_MESSAGES.UNKNOWN_ERROR}
           </Alert>
         )}
         {!isWidgetLoading &&
@@ -419,11 +522,17 @@ export function ChartWidget({
             series={chartSeries}
             yAxisLabel="Value"
             xAxisType={
-              widgetResponse?.multiMetricChartData?.xAxisDataKey ===
+              (isDistribution
+                ? widgetResponse?.invocationDistributionData?.xAxisDataKey
+                : widgetResponse?.multiMetricChartData?.xAxisDataKey) ===
               Column.BUILD_ID
                 ? 'value'
                 : 'time'
             }
+            chartType={isDistribution ? 'scatter' : 'line'}
+            tooltipFormatter={tooltipFormatter}
+            xAxisMin={xAxisBounds.min}
+            xAxisMax={xAxisBounds.max}
           />
         )}
       </Box>

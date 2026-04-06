@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { FilterEditor, TimeSeriesChart } from '@/crystal_ball/components';
@@ -25,9 +25,13 @@ import {
   createMockQueryResult,
 } from '@/crystal_ball/tests';
 import {
+  FetchDashboardWidgetDataResponse,
   MeasurementFilterColumn_ColumnDataType,
   MeasurementFilterColumn_FilterScope,
   PerfChartWidget,
+  PerfChartWidget_ChartType,
+  PerfFilter,
+  PerfFilterDefault_FilterOperator,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { ChartWidget } from './chart_widget';
@@ -61,6 +65,22 @@ jest.mock('@/crystal_ball/components', () => ({
   FilterEditor: jest.fn(() => <div data-testid="filter-editor"></div>),
   TimeSeriesChart: jest.fn(({ chartTitle }) => (
     <div data-testid="time-series-chart">TimeSeriesChart: {chartTitle}</div>
+  )),
+  ChartWidgetToolbar: jest.fn(({ onChartTypeChange }) => (
+    <div data-testid="chart-widget-toolbar">
+      <button
+        title="Scatter Plot"
+        onClick={() =>
+          onChartTypeChange(PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION)
+        }
+      />
+      <button
+        title="Line Chart"
+        onClick={() =>
+          onChartTypeChange(PerfChartWidget_ChartType.MULTI_METRIC_CHART)
+        }
+      />
+    </div>
   )),
 }));
 const MockTimeSeriesChart = jest.mocked(TimeSeriesChart);
@@ -245,8 +265,8 @@ describe('ChartWidget', () => {
     expect(screen.getByTestId('time-series-chart')).toBeInTheDocument();
     expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
     expect(MockTimeSeriesChart.mock.calls[0][0].series[0].data).toEqual([
-      [1000, 10],
-      [2000, 20],
+      { x: 1000, y: 10, count: 1 },
+      { x: 2000, y: 20, count: 1 },
     ]);
   });
 
@@ -369,5 +389,211 @@ describe('ChartWidget', () => {
         expect.objectContaining({ name: 'metric2' }),
       ]),
     );
+  });
+
+  it('should render TimeSeriesChart with scatter plot for invocation distribution', () => {
+    const distributionWidget = PerfChartWidget.fromPartial({
+      ...baseWidget,
+      chartType: PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
+    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult(
+        FetchDashboardWidgetDataResponse.fromPartial({
+          widgetId: 'w1',
+          invocationDistributionData: {
+            xAxisDataKey: 'timestamp',
+            yAxisDataKey: 'value',
+            points: [
+              {
+                legendLabel: 'dist1',
+                seriesId: 's1',
+                metricField: 'metric1',
+                points: [
+                  { timestamp: 1000, value: 10 },
+                  { timestamp: 2000, value: 20 },
+                ],
+              },
+            ],
+          },
+        }),
+      ),
+    );
+
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={distributionWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+
+    expect(screen.getByTestId('time-series-chart')).toBeInTheDocument();
+    expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
+    const lastCallProps = MockTimeSeriesChart.mock.lastCall![0];
+    expect(lastCallProps.series[0].data).toEqual([
+      { x: 1000, y: 10, count: 1 },
+      { x: 2000, y: 20, count: 1 },
+    ]);
+    expect(lastCallProps.chartType).toBe('scatter');
+  });
+
+  it('should render TimeSeriesChart with scatter plot and parse string timestamps', () => {
+    const distributionWidget = PerfChartWidget.fromPartial({
+      ...baseWidget,
+      chartType: PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
+    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult(
+        FetchDashboardWidgetDataResponse.fromPartial({
+          widgetId: 'w1',
+          invocationDistributionData: {
+            xAxisDataKey: 'timestamp',
+            yAxisDataKey: 'value',
+            points: [
+              {
+                legendLabel: 'dist1',
+                seriesId: 's1',
+                metricField: 'metric1',
+                points: [
+                  { timestamp: '2026-04-04T10:00:00Z', value: 10 },
+                  { timestamp: '2026-04-04T11:00:00Z', value: 20 },
+                ],
+              },
+            ],
+          },
+        }),
+      ),
+    );
+
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={distributionWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+
+    expect(screen.getByTestId('time-series-chart')).toBeInTheDocument();
+    expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
+    const expectedTime1 = Date.parse('2026-04-04T10:00:00Z');
+    const expectedTime2 = Date.parse('2026-04-04T11:00:00Z');
+    const lastCallProps = MockTimeSeriesChart.mock.lastCall![0];
+    expect(lastCallProps.series[0].data).toEqual([
+      { x: expectedTime1, y: 10, count: 1 },
+      { x: expectedTime2, y: 20, count: 1 },
+    ]);
+  });
+
+  it('should call onUpdate with toggled chart type when toggle button is clicked', () => {
+    const onUpdateMock = jest.fn();
+    render(
+      <ChartWidget
+        onUpdate={onUpdateMock}
+        widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+
+    const toggleButton = screen.getByTitle('Scatter Plot');
+    expect(toggleButton).toBeInTheDocument();
+
+    fireEvent.click(toggleButton);
+
+    expect(onUpdateMock).toHaveBeenCalledTimes(1);
+    expect(onUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chartType: PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
+      }),
+    );
+  });
+
+  it('should call onUpdate with toggled chart type when toggle button is clicked (from distribution)', () => {
+    const onUpdateMock = jest.fn();
+    const distributionWidget = PerfChartWidget.fromPartial({
+      ...baseWidget,
+      chartType: PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
+    });
+    render(
+      <ChartWidget
+        onUpdate={onUpdateMock}
+        widget={distributionWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+
+    const toggleButton = screen.getByTitle('Line Chart');
+    expect(toggleButton).toBeInTheDocument();
+
+    fireEvent.click(toggleButton);
+
+    expect(onUpdateMock).toHaveBeenCalledTimes(1);
+    expect(onUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
+      }),
+    );
+  });
+
+  it('should calculate xAxisBounds correctly from global filters and data', () => {
+    const mockFilters = [
+      PerfFilter.fromPartial({
+        column: 'TIMESTAMP',
+        range: {
+          defaultValue: {
+            filterOperator: PerfFilterDefault_FilterOperator.BETWEEN,
+            values: ['2026-04-04T09:00:00Z', '2026-04-04T12:00:00Z'],
+          },
+        },
+      }),
+    ];
+
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult(
+        FetchDashboardWidgetDataResponse.fromPartial({
+          widgetId: 'w1',
+          multiMetricChartData: {
+            xAxisDataKey: 'timestamp',
+            yAxisDataKey: 'value',
+            lines: [
+              {
+                legendLabel: 'series1',
+                dataPoints: [
+                  { timestamp: '2026-04-04T10:00:00Z', value: 10 },
+                  { timestamp: '2026-04-04T11:00:00Z', value: 20 },
+                ],
+              },
+            ],
+          },
+        }),
+      ),
+    );
+
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+        globalFilters={mockFilters}
+      />,
+    );
+
+    expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
+    const lastCallProps = MockTimeSeriesChart.mock.lastCall![0];
+
+    const expectedTimeStart = Date.parse('2026-04-04T09:00:00Z');
+    const expectedTimeEnd = Date.parse('2026-04-04T12:00:00Z');
+
+    expect(lastCallProps.xAxisMin).toBe(expectedTimeStart);
+    expect(lastCallProps.xAxisMax).toBe(expectedTimeEnd);
   });
 });

@@ -14,6 +14,7 @@
 
 import {
   Article as ArticleIcon,
+  ScatterPlot as ScatterPlotIcon,
   ShowChart as ShowChartIcon,
   TableChart as TableChartIcon,
 } from '@mui/icons-material';
@@ -51,19 +52,29 @@ export function AddWidgetModal({ open, onClose, onAdd }: AddWidgetModalProps) {
       type: WidgetType.MARKDOWN,
       icon: ArticleIcon,
       primary: 'Markdown Widget',
-      secondary: 'Add text, links, and simple formatting',
+      secondary:
+        'Add documentation, guides, and links using markdown formatting',
     },
     {
       type: WidgetType.CHART_MULTI_METRIC,
       icon: ShowChartIcon,
       primary: 'Multi Metric Chart',
-      secondary: 'Display time series data for multiple metrics',
+      secondary:
+        'Compare multiple time-series metrics over time to identify trends',
+    },
+    {
+      type: WidgetType.CHART_INVOCATION_DISTRIBUTION,
+      icon: ScatterPlotIcon,
+      primary: 'Distribution Chart',
+      secondary:
+        'Analyze data density, dispersion, and outliers across invocations',
     },
     {
       type: WidgetType.CHART_BREAKDOWN_TABLE,
       icon: TableChartIcon,
       primary: 'Breakdown Table',
-      secondary: 'Display breakdown data in a table view',
+      secondary:
+        'Deep dive into specific dimensions with a sortable, paginated table',
     },
   ];
 

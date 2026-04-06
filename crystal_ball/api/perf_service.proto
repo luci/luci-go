@@ -827,6 +827,9 @@ message FetchDashboardWidgetDataResponse {
 
     // Data specifically prepared for a BreakdownTable widget
     BreakdownTableData breakdown_table_data = 5;
+
+    // Data specifically prepared for an InvocationDistribution widget
+    InvocationDistributionData invocation_distribution_data = 6;
   }
 }
 
@@ -855,6 +858,33 @@ message MultiMetricLine {
   repeated google.protobuf.Struct data_points = 3;
 
   // Metric field of the PerfChartSeries from which this line was derived.
+  string metric_field = 4;
+}
+
+// Data structured and transformed for the InvocationDistribution component.
+message InvocationDistributionData {
+  // Key for the X-axis data within each data point Struct (e.g., "time").
+  string x_axis_data_key = 1;
+
+  // Key used to access the Y-axis value within each data point (e.g., "value").
+  string y_axis_data_key = 2;
+
+  // The individual groups of points to be plotted on the chart.
+  repeated InvocationDistributionPoints points = 3;
+}
+
+// Represents a group of points in an InvocationDistribution chart.
+message InvocationDistributionPoints {
+  // A unique identifier for this series.
+  string series_id = 1;
+
+  // Label for the legend.
+  string legend_label = 2;
+
+  // The array of data points for this specific group.
+  repeated google.protobuf.Struct points = 3;
+
+  // Metric field of the PerfChartSeries from which this group was derived.
   string metric_field = 4;
 }
 

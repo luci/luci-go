@@ -42,6 +42,11 @@ describe('AddWidgetModal', () => {
 
     fireEvent.click(screen.getByText('Markdown Widget'));
     expect(handleAdd).toHaveBeenCalledWith(WidgetType.MARKDOWN);
+
+    fireEvent.click(screen.getByText('Distribution Chart'));
+    expect(handleAdd).toHaveBeenCalledWith(
+      WidgetType.CHART_INVOCATION_DISTRIBUTION,
+    );
   });
 
   it('calls onClose when Cancel is clicked', () => {

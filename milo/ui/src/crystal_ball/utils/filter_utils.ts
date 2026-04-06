@@ -20,7 +20,10 @@ import {
   perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
-interface ParsedFilter {
+/**
+ * Internal representation of a parsed filter.
+ */
+export interface ParsedFilter {
   column: string;
   value: string;
   operator: PerfFilterDefault_FilterOperator;
@@ -32,7 +35,7 @@ interface ParsedFilter {
  * Handles range filters (IN_PAST, BETWEEN) and simple text/number filters.
  * Returns empty array if the filter should be excluded (wrong column or current filter ID).
  */
-const parseSingleFilter = (
+export const parseSingleFilter = (
   f: PerfFilter,
   columnsToFilterBy: string[],
   currentFilterId?: string,

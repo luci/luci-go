@@ -34,10 +34,21 @@ interface MockEChartsProps
     };
     series: {
       name: string;
+      clip?: boolean;
     }[];
     xAxis?: {
       type: string;
+      min?: number;
+      max?: number;
     };
+    dataZoom?: {
+      show?: boolean;
+      disabled?: boolean;
+      yAxisIndex?: number;
+      orient?: string;
+      left?: number | string;
+      filterMode?: string;
+    }[];
   };
   style?: CSSProperties;
 }
@@ -52,18 +63,18 @@ describe('TimeSeriesChart', () => {
     {
       name: mockMetricNameA,
       data: [
-        [new Date('2025-10-30T00:00:00Z').getTime(), 100],
-        [new Date('2025-10-31T00:00:00Z').getTime(), 150],
-        [new Date('2025-11-01T00:00:00Z').getTime(), 120],
+        { x: new Date('2025-10-30T00:00:00Z').getTime(), y: 100, count: 1 },
+        { x: new Date('2025-10-31T00:00:00Z').getTime(), y: 150, count: 1 },
+        { x: new Date('2025-11-01T00:00:00Z').getTime(), y: 120, count: 1 },
       ],
       stroke: '#8884d8',
     },
     {
       name: mockMetricNameB,
       data: [
-        [new Date('2025-10-30T00:00:00Z').getTime(), 100],
-        [new Date('2025-10-31T00:00:00Z').getTime(), 150],
-        [new Date('2025-11-01T00:00:00Z').getTime(), 120],
+        { x: new Date('2025-10-30T00:00:00Z').getTime(), y: 100, count: 1 },
+        { x: new Date('2025-10-31T00:00:00Z').getTime(), y: 150, count: 1 },
+        { x: new Date('2025-11-01T00:00:00Z').getTime(), y: 120, count: 1 },
       ],
       stroke: '#82ca9d',
     },
@@ -112,5 +123,101 @@ describe('TimeSeriesChart', () => {
 
     expect(option.xAxis).toBeDefined();
     expect(option.xAxis?.type).toBe('value');
+  });
+
+  test('hides dataZoom when there is only 1 unique X value', () => {
+    const singlePointSeries: TimeSeriesDataSet[] = [
+      {
+        name: mockMetricNameA,
+        data: [{ x: 1000, y: 10, count: 1 }],
+        stroke: '#8884d8',
+      },
+      {
+        name: mockMetricNameB,
+        data: [{ x: 1000, y: 20, count: 1 }],
+        stroke: '#82ca9d',
+      },
+    ];
+
+    render(<TimeSeriesChart series={singlePointSeries} />);
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const option = lastCallProps.option;
+
+    expect(option.dataZoom).toBeDefined();
+    expect(option.dataZoom?.[0]?.show).toBe(false);
+    expect(option.dataZoom?.[1]?.disabled).toBe(true);
+  });
+
+  test('respects xAxisMin and xAxisMax props', () => {
+    const mockSeries: TimeSeriesDataSet[] = [
+      {
+        name: 'Metric A',
+        data: [{ x: 1000, y: 10, count: 1 }],
+        stroke: '#8884d8',
+      },
+    ];
+
+    render(
+      <TimeSeriesChart series={mockSeries} xAxisMin={500} xAxisMax={1500} />,
+    );
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const option = lastCallProps.option;
+
+    expect(option.xAxis).toBeDefined();
+    expect(option.xAxis?.min).toBe(500);
+    expect(option.xAxis?.max).toBe(1500);
+  });
+
+  test('shows Y-axis dataZoom when Y values vary', () => {
+    render(<TimeSeriesChart series={mockSeries} />);
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const option = lastCallProps.option;
+
+    expect(option.dataZoom).toBeDefined();
+    expect(option.dataZoom?.[2]?.show).toBe(true);
+    expect(option.dataZoom?.[2]?.orient).toBe('vertical');
+    expect(option.dataZoom?.[2]?.left).toBe(10);
+    expect(option.dataZoom?.[3]?.disabled).toBe(false);
+  });
+
+  test('hides Y-axis dataZoom when Y values are identical', () => {
+    const flatSeries: TimeSeriesDataSet[] = [
+      {
+        name: mockMetricNameA,
+        data: [
+          { x: 1000, y: 100, count: 1 },
+          { x: 2000, y: 100, count: 1 },
+        ],
+        stroke: '#8884d8',
+      },
+    ];
+
+    render(<TimeSeriesChart series={flatSeries} />);
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const option = lastCallProps.option;
+
+    expect(option.dataZoom).toBeDefined();
+    expect(option.dataZoom?.[2]?.show).toBe(false);
+    expect(option.dataZoom?.[3]?.disabled).toBe(true);
+  });
+
+  test('sets filterMode to filter and clip to true for scatter chart', () => {
+    render(<TimeSeriesChart series={mockSeries} chartType="scatter" />);
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const option = lastCallProps.option;
+
+    expect(option.dataZoom).toBeDefined();
+    expect(option.dataZoom?.[0]?.filterMode).toBe('filter');
+    expect(option.dataZoom?.[1]?.filterMode).toBe('filter');
+    expect(option.dataZoom?.[2]?.filterMode).toBe('filter');
+    expect(option.dataZoom?.[3]?.filterMode).toBe('filter');
+
+    expect(option.series).toBeDefined();
+    expect(option.series[0]?.clip).toBe(true);
   });
 });

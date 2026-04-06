@@ -65,28 +65,28 @@ export interface SearchMeasurementsRequest {
    *   "foo" - exact match
    */
   readonly testNameFilter?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Build creation timestamp start filter. */
   readonly buildCreateStartTime?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Build creation timestamp end filter. */
   readonly buildCreateEndTime?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Mutually exclusive with start/end timestamps */
   readonly lastNDays?:
-    | number
-    | undefined;
+  | number
+  | undefined;
   /** Branch filter. */
   readonly buildBranch?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Build target filter. */
   readonly buildTarget?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /**
    * Filter for atp_test_name using SQL LIKE operator.
    * Callers should include wildcards (%) as needed in the filter string.
@@ -97,8 +97,8 @@ export interface SearchMeasurementsRequest {
    *   "foo" - exact match
    */
   readonly atpTestNameFilter?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** If specified, only metrics with these keys will be returned. */
   readonly metricKeys: readonly string[];
   /**
@@ -112,8 +112,8 @@ export interface SearchMeasurementsRequest {
   readonly extraColumns: readonly string[];
   /** Page size for pagination. */
   readonly pageSize?:
-    | number
-    | undefined;
+  | number
+  | undefined;
   /** Page token for pagination. */
   readonly pageToken?: string | undefined;
 }
@@ -130,40 +130,40 @@ export interface SearchMeasurementsResponse {
 export interface MeasurementRow {
   /** Test name. */
   readonly test?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Build creation timestamp. */
   readonly buildCreateTime?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Build branch. */
   readonly buildBranch?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Build target. */
   readonly buildTarget?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** ATP test name. */
   readonly atpTest?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Metric key. */
   readonly metricKey?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Metric value. */
   readonly value?:
-    | number
-    | undefined;
+  | number
+  | undefined;
   /** Build ID. */
   readonly buildId?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Ants invocation ID. */
   readonly antsInvocationId?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Additional columns */
   readonly extraColumns: { [key: string]: any | undefined };
 }
@@ -402,8 +402,8 @@ export interface SearchMetricDefinitionsRequest {
    * fewer than this value.
    */
   readonly pageSize?:
-    | number
-    | undefined;
+  | number
+  | undefined;
   /**
    * A page token, received from a previous `SearchMetricDefinitions` call.
    * Provide this to retrieve the subsequent page.
@@ -471,28 +471,28 @@ export interface DashboardState {
    * this API to ensure independence (AIP-215).
    */
   readonly dashboardContent:
-    | PerfDashboardContent
-    | undefined;
+  | PerfDashboardContent
+  | undefined;
   /** User-friendly name for this saved state. */
   readonly displayName: string;
   /** Optional description for this saved state. */
   readonly description: string;
   /** Timestamp when the resource was first created. */
   readonly createTime:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Timestamp when the resource was last updated. */
   readonly updateTime:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Timestamp when the resource was soft deleted. */
   readonly deleteTime:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Timestamp when the soft-deleted resource will be permanently purged. */
   readonly purgeTime:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /**
    * A server-assigned checksum for optimistic concurrency control.
    * See https://google.aip.dev/154.
@@ -518,8 +518,8 @@ export interface DashboardState {
    * This field is OUTPUT_ONLY.
    */
   readonly revisionCreateTime:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Indicates if the dashboard is publicly viewable by any authenticated user. */
   readonly isPublic: boolean;
 }
@@ -533,8 +533,8 @@ export interface DashboardState_AnnotationsEntry {
 export interface DashboardStateOperationMetadata {
   /** The time the operation was created. */
   readonly createTime:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** The target resource name. */
   readonly target: string;
   /** API version used to start the operation. */
@@ -545,8 +545,8 @@ export interface DashboardStateOperationMetadata {
 export interface CreateDashboardStateRequest {
   /** The dashboard state to create. */
   readonly dashboardState:
-    | DashboardState
-    | undefined;
+  | DashboardState
+  | undefined;
   /**
    * The ID to use for the dashboard state, which will become the final
    * component of the dashboard state's resource name.
@@ -575,15 +575,15 @@ export interface UpdateDashboardStateRequest {
    * and must be provided by the client.
    */
   readonly dashboardState:
-    | DashboardState
-    | undefined;
+  | DashboardState
+  | undefined;
   /**
    * The list of fields to update.
    * If omitted, all fields provided in the request will be updated.
    */
   readonly updateMask:
-    | readonly string[]
-    | undefined;
+  | readonly string[]
+  | undefined;
   /**
    * If set to true, and the DashboardState is not found, a new DashboardState
    * will be created.
@@ -709,15 +709,15 @@ export interface FetchDashboardWidgetDataRequest {
    * Format: dashboardStates/{dashboard_state}
    */
   readonly name?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /**
    * The core content of the dashboard to fetch data from.
    * Useful for previewing unsaved changes.
    */
   readonly dashboardContent?:
-    | PerfDashboardContent
-    | undefined;
+  | PerfDashboardContent
+  | undefined;
   /**
    * The ID of the widget within the dashboard to fetch data for.
    * This ID must match one of the widget IDs defined in the
@@ -735,14 +735,18 @@ export interface FetchDashboardWidgetDataResponse {
   readonly widgetId: string;
   /** Data specifically prepared for a MultiMetricChart. */
   readonly multiMetricChartData?:
-    | MultiMetricChartData
-    | undefined;
+  | MultiMetricChartData
+  | undefined;
   /** Data for a Markdown widget */
   readonly markdownWidget?:
-    | MarkdownWidget
-    | undefined;
+  | MarkdownWidget
+  | undefined;
   /** Data specifically prepared for a BreakdownTable widget */
-  readonly breakdownTableData?: BreakdownTableData | undefined;
+  readonly breakdownTableData?:
+  | BreakdownTableData
+  | undefined;
+  /** Data specifically prepared for an InvocationDistribution widget */
+  readonly invocationDistributionData?: InvocationDistributionData | undefined;
 }
 
 /** Data structured and transformed for the MultiMetricChart component. */
@@ -767,6 +771,28 @@ export interface MultiMetricLine {
    */
   readonly dataPoints: readonly { readonly [key: string]: any }[];
   /** Metric field of the PerfChartSeries from which this line was derived. */
+  readonly metricField: string;
+}
+
+/** Data structured and transformed for the InvocationDistribution component. */
+export interface InvocationDistributionData {
+  /** Key for the X-axis data within each data point Struct (e.g., "time"). */
+  readonly xAxisDataKey: string;
+  /** Key used to access the Y-axis value within each data point (e.g., "value"). */
+  readonly yAxisDataKey: string;
+  /** The individual groups of points to be plotted on the chart. */
+  readonly points: readonly InvocationDistributionPoints[];
+}
+
+/** Represents a group of points in an InvocationDistribution chart. */
+export interface InvocationDistributionPoints {
+  /** A unique identifier for this series. */
+  readonly seriesId: string;
+  /** Label for the legend. */
+  readonly legendLabel: string;
+  /** The array of data points for this specific group. */
+  readonly points: readonly { readonly [key: string]: any }[];
+  /** Metric field of the PerfChartSeries from which this group was derived. */
   readonly metricField: string;
 }
 
@@ -835,8 +861,8 @@ export interface PerfWidget {
   readonly displayName: string;
   /** A markdown widget. */
   readonly markdown?:
-    | MarkdownWidget
-    | undefined;
+  | MarkdownWidget
+  | undefined;
   /** A chart widget. */
   readonly chart?: PerfChartWidget | undefined;
 }
@@ -869,24 +895,24 @@ export interface PerfChartWidget {
   readonly series: readonly PerfChartSeries[];
   /** X axis configuration. */
   readonly xAxis:
-    | PerfXAxisConfig
-    | undefined;
+  | PerfXAxisConfig
+  | undefined;
   /** Configuration for the Left Y Axis. */
   readonly leftYAxis:
-    | PerfYAxisConfig
-    | undefined;
+  | PerfYAxisConfig
+  | undefined;
   /** Configuration for the Right Y Axis (for Dual Y-Axes Support). */
   readonly rightYAxis:
-    | PerfYAxisConfig
-    | undefined;
+  | PerfYAxisConfig
+  | undefined;
   /**
    * Configuration for splitting a single metric in `series` by a dimension.
    * Typically used when only one series is defined, and the split generates
    * the rest.
    */
   readonly seriesSplit:
-    | PerfSeriesSplit
-    | undefined;
+  | PerfSeriesSplit
+  | undefined;
   /**
    * Specific configuration for the INVOCATION_DISTRIBUTION chart type.
    * Deprecated: Use `chart_config.invocation_distribution_chart_config`
@@ -895,12 +921,12 @@ export interface PerfChartWidget {
    * @deprecated
    */
   readonly invocationDistributionConfig:
-    | InvocationDistributionConfig
-    | undefined;
+  | InvocationDistributionConfig
+  | undefined;
   /** Specific configuration for the INVOCATION_DISTRIBUTION chart type. */
   readonly invocationDistributionChartConfig?:
-    | InvocationDistributionConfig
-    | undefined;
+  | InvocationDistributionConfig
+  | undefined;
   /** Configuration for the BREAKDOWN_TABLE chart type. */
   readonly breakdownTableWidgetChartConfig?: BreakdownTableConfig | undefined;
 }
@@ -1213,12 +1239,12 @@ export interface PerfYAxisConfig {
   readonly displayName: string;
   /** Optional minimum value for the axis range. */
   readonly minValue?:
-    | number
-    | undefined;
+  | number
+  | undefined;
   /** Optional maximum value for the axis range. */
   readonly maxValue?:
-    | number
-    | undefined;
+  | number
+  | undefined;
   /** Whether to use a logarithmic scale. */
   readonly logarithmic: boolean;
 }
@@ -1227,12 +1253,12 @@ export interface PerfYAxisConfig {
 export interface PerfSeriesSplit {
   /** Split by an invocation-level dimension (e.g., build_target, branch). */
   readonly invocationDimension?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Split by a metric-specific dimension. */
   readonly metricDimension?:
-    | string
-    | undefined;
+  | string
+  | undefined;
   /** Optional: Limit the number of series created by the split. */
   readonly limitCount: number;
 }
@@ -1421,20 +1447,20 @@ export interface PerfFilter {
   readonly displayName: string;
   /** Dropdown select filter. */
   readonly select?:
-    | SelectFilter
-    | undefined;
+  | SelectFilter
+  | undefined;
   /** Free form text input filter. */
   readonly textInput?:
-    | TextInputFilter
-    | undefined;
+  | TextInputFilter
+  | undefined;
   /** Numerical input filter. */
   readonly numberInput?:
-    | NumberInputFilter
-    | undefined;
+  | NumberInputFilter
+  | undefined;
   /** Range selection filter. */
   readonly range?:
-    | RangeFilter
-    | undefined;
+  | RangeFilter
+  | undefined;
   /** Date selection filter. */
   readonly datePicker?: DatePickerFilter | undefined;
 }
@@ -1808,8 +1834,8 @@ export interface UserSettings {
   readonly starredDashboards: readonly string[];
   /** User's preference for dark mode. */
   readonly darkModeEnabled?:
-    | boolean
-    | undefined;
+  | boolean
+  | undefined;
   /**
    * User's preferred time zone. IANA Time Zone Database name (e.g.,
    * "America/Los_Angeles").
@@ -1833,12 +1859,12 @@ export interface GetUserSettingsRequest {
 export interface UpdateUserSettingsRequest {
   /** The UserSettings resource to update. */
   readonly userSettings:
-    | UserSettings
-    | undefined;
+  | UserSettings
+  | undefined;
   /** The list of fields to update. */
   readonly updateMask:
-    | readonly string[]
-    | undefined;
+  | readonly string[]
+  | undefined;
   /**
    * If set to true, and the UserSettings resource doesn't exist, it will be
    * created.
@@ -4779,7 +4805,13 @@ export const FetchDashboardWidgetDataRequest: MessageFns<FetchDashboardWidgetDat
 };
 
 function createBaseFetchDashboardWidgetDataResponse(): FetchDashboardWidgetDataResponse {
-  return { widgetId: "", multiMetricChartData: undefined, markdownWidget: undefined, breakdownTableData: undefined };
+  return {
+    widgetId: "",
+    multiMetricChartData: undefined,
+    markdownWidget: undefined,
+    breakdownTableData: undefined,
+    invocationDistributionData: undefined,
+  };
 }
 
 export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDataResponse> = {
@@ -4795,6 +4827,9 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
     }
     if (message.breakdownTableData !== undefined) {
       BreakdownTableData.encode(message.breakdownTableData, writer.uint32(42).fork()).join();
+    }
+    if (message.invocationDistributionData !== undefined) {
+      InvocationDistributionData.encode(message.invocationDistributionData, writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -4838,6 +4873,14 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
           message.breakdownTableData = BreakdownTableData.decode(reader, reader.uint32());
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.invocationDistributionData = InvocationDistributionData.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -4857,6 +4900,9 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
       breakdownTableData: isSet(object.breakdownTableData)
         ? BreakdownTableData.fromJSON(object.breakdownTableData)
         : undefined,
+      invocationDistributionData: isSet(object.invocationDistributionData)
+        ? InvocationDistributionData.fromJSON(object.invocationDistributionData)
+        : undefined,
     };
   },
 
@@ -4873,6 +4919,9 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
     }
     if (message.breakdownTableData !== undefined) {
       obj.breakdownTableData = BreakdownTableData.toJSON(message.breakdownTableData);
+    }
+    if (message.invocationDistributionData !== undefined) {
+      obj.invocationDistributionData = InvocationDistributionData.toJSON(message.invocationDistributionData);
     }
     return obj;
   },
@@ -4892,6 +4941,10 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
     message.breakdownTableData = (object.breakdownTableData !== undefined && object.breakdownTableData !== null)
       ? BreakdownTableData.fromPartial(object.breakdownTableData)
       : undefined;
+    message.invocationDistributionData =
+      (object.invocationDistributionData !== undefined && object.invocationDistributionData !== null)
+        ? InvocationDistributionData.fromPartial(object.invocationDistributionData)
+        : undefined;
     return message;
   },
 };
@@ -5091,6 +5144,208 @@ export const MultiMetricLine: MessageFns<MultiMetricLine> = {
     message.seriesId = object.seriesId ?? "";
     message.legendLabel = object.legendLabel ?? "";
     message.dataPoints = object.dataPoints?.map((e) => e) || [];
+    message.metricField = object.metricField ?? "";
+    return message;
+  },
+};
+
+function createBaseInvocationDistributionData(): InvocationDistributionData {
+  return { xAxisDataKey: "", yAxisDataKey: "", points: [] };
+}
+
+export const InvocationDistributionData: MessageFns<InvocationDistributionData> = {
+  encode(message: InvocationDistributionData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.xAxisDataKey !== "") {
+      writer.uint32(10).string(message.xAxisDataKey);
+    }
+    if (message.yAxisDataKey !== "") {
+      writer.uint32(18).string(message.yAxisDataKey);
+    }
+    for (const v of message.points) {
+      InvocationDistributionPoints.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): InvocationDistributionData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseInvocationDistributionData() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.xAxisDataKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.yAxisDataKey = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.points.push(InvocationDistributionPoints.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): InvocationDistributionData {
+    return {
+      xAxisDataKey: isSet(object.xAxisDataKey) ? globalThis.String(object.xAxisDataKey) : "",
+      yAxisDataKey: isSet(object.yAxisDataKey) ? globalThis.String(object.yAxisDataKey) : "",
+      points: globalThis.Array.isArray(object?.points)
+        ? object.points.map((e: any) => InvocationDistributionPoints.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: InvocationDistributionData): unknown {
+    const obj: any = {};
+    if (message.xAxisDataKey !== "") {
+      obj.xAxisDataKey = message.xAxisDataKey;
+    }
+    if (message.yAxisDataKey !== "") {
+      obj.yAxisDataKey = message.yAxisDataKey;
+    }
+    if (message.points?.length) {
+      obj.points = message.points.map((e) => InvocationDistributionPoints.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<InvocationDistributionData>): InvocationDistributionData {
+    return InvocationDistributionData.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<InvocationDistributionData>): InvocationDistributionData {
+    const message = createBaseInvocationDistributionData() as any;
+    message.xAxisDataKey = object.xAxisDataKey ?? "";
+    message.yAxisDataKey = object.yAxisDataKey ?? "";
+    message.points = object.points?.map((e) => InvocationDistributionPoints.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseInvocationDistributionPoints(): InvocationDistributionPoints {
+  return { seriesId: "", legendLabel: "", points: [], metricField: "" };
+}
+
+export const InvocationDistributionPoints: MessageFns<InvocationDistributionPoints> = {
+  encode(message: InvocationDistributionPoints, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.seriesId !== "") {
+      writer.uint32(10).string(message.seriesId);
+    }
+    if (message.legendLabel !== "") {
+      writer.uint32(18).string(message.legendLabel);
+    }
+    for (const v of message.points) {
+      Struct.encode(Struct.wrap(v!), writer.uint32(26).fork()).join();
+    }
+    if (message.metricField !== "") {
+      writer.uint32(34).string(message.metricField);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): InvocationDistributionPoints {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseInvocationDistributionPoints() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.seriesId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.legendLabel = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.points.push(Struct.unwrap(Struct.decode(reader, reader.uint32())));
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.metricField = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): InvocationDistributionPoints {
+    return {
+      seriesId: isSet(object.seriesId) ? globalThis.String(object.seriesId) : "",
+      legendLabel: isSet(object.legendLabel) ? globalThis.String(object.legendLabel) : "",
+      points: globalThis.Array.isArray(object?.points) ? [...object.points] : [],
+      metricField: isSet(object.metricField) ? globalThis.String(object.metricField) : "",
+    };
+  },
+
+  toJSON(message: InvocationDistributionPoints): unknown {
+    const obj: any = {};
+    if (message.seriesId !== "") {
+      obj.seriesId = message.seriesId;
+    }
+    if (message.legendLabel !== "") {
+      obj.legendLabel = message.legendLabel;
+    }
+    if (message.points?.length) {
+      obj.points = message.points;
+    }
+    if (message.metricField !== "") {
+      obj.metricField = message.metricField;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<InvocationDistributionPoints>): InvocationDistributionPoints {
+    return InvocationDistributionPoints.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<InvocationDistributionPoints>): InvocationDistributionPoints {
+    const message = createBaseInvocationDistributionPoints() as any;
+    message.seriesId = object.seriesId ?? "";
+    message.legendLabel = object.legendLabel ?? "";
+    message.points = object.points?.map((e) => e) || [];
     message.metricField = object.metricField ?? "";
     return message;
   },

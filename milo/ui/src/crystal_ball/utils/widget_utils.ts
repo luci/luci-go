@@ -12,13 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { NUM_AGGREGATED_ROWS } from '@/crystal_ball/constants';
 import {
   PerfChartWidget,
   PerfChartWidget_ChartType,
   perfChartWidget_ChartTypeFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
-function getSafeChartType(chartType: unknown): PerfChartWidget_ChartType {
+/**
+ * Returns a safe chart type from the given chart type.
+ */
+export function getSafeChartType(
+  chartType: unknown,
+): PerfChartWidget_ChartType {
   if (
     (typeof chartType === 'string' || typeof chartType === 'number') &&
     chartType in PerfChartWidget_ChartType
@@ -75,7 +81,7 @@ export function dataPointsToData(
   dataPoints: { [axisDataKey: string]: number | string }[],
   xAxisDataKey: string,
   yAxisDataKey: string,
-): Array<[number, number]> {
+): Array<{ x: number; y: number; count: number }> {
   return dataPoints.map((pt) => {
     const xValue = pt[xAxisDataKey];
     let x: number;
@@ -86,15 +92,23 @@ export function dataPointsToData(
       if (!isNaN(Number(xValue)) && isFinite(Number(xValue))) {
         x = Number(xValue);
       } else {
-        x = Date.parse(xValue);
+        const parsedDate = Date.parse(xValue);
+        x = isNaN(parsedDate) ? 0 : parsedDate;
       }
     } else {
       x = 0; // Fallback for safety
     }
 
     const yValue = pt[yAxisDataKey];
-    const y = typeof yValue === 'string' ? parseFloat(yValue) : yValue;
+    const y =
+      typeof yValue === 'string'
+        ? parseFloat(yValue)
+        : typeof yValue === 'number'
+          ? yValue
+          : 0;
+    const countVal = pt[NUM_AGGREGATED_ROWS];
+    const count = typeof countVal === 'number' ? countVal : 1;
 
-    return [x, y];
+    return { x, y, count };
   });
 }

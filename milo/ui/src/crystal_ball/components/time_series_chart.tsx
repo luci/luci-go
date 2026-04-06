@@ -26,15 +26,35 @@ export interface TimeSeriesDataSet {
    */
   name: string;
   /**
-   * The data points for this series, where each tuple is [time, value].
-   * 'time' should be a Unix timestamp (number).
-   * 'value' should be a number.
+   * The data points for this series, where each point is an object.
+   * 'x' should be a number (time or build ID).
+   * 'y' should be a number.
+   * 'count' is the number of aggregated rows.
    */
-  data: Array<[number, number]>;
+  data: Array<{ x: number; y: number; count: number }>;
   /**
    * CSS color for the line.
    */
   stroke: string;
+}
+
+export interface ChartTooltipParam {
+  axisValue: string | number;
+  marker: string;
+  seriesName: string;
+  data: [number, number, number?];
+}
+
+function isChartTooltipParam(obj: unknown): obj is ChartTooltipParam {
+  if (typeof obj !== 'object' || obj === null) return false;
+  return (
+    'axisValue' in obj &&
+    'marker' in obj &&
+    'seriesName' in obj &&
+    'data' in obj &&
+    Array.isArray(obj.data) &&
+    obj.data.length >= 2
+  );
 }
 
 /**
@@ -66,6 +86,25 @@ interface TimeSeriesChartProps {
    * Optional X-axis type for the chart, defaults to 'time'.
    */
   xAxisType?: 'time' | 'value';
+
+  /**
+   * Optional chart type for the series, defaults to 'line'.
+   */
+  chartType?: 'line' | 'scatter';
+  /**
+   * Optional custom tooltip formatter.
+   */
+  tooltipFormatter?: (
+    params: ChartTooltipParam | ChartTooltipParam[],
+  ) => string;
+  /**
+   * Optional explicit min value for X-axis.
+   */
+  xAxisMin?: number;
+  /**
+   * Optional explicit max value for X-axis.
+   */
+  xAxisMax?: number;
 }
 
 /**
@@ -120,8 +159,8 @@ const BASE_OPTION: Partial<EChartsOption> = {
   },
   grid: {
     top: 40,
-    left: 20,
-    right: 60,
+    left: 60,
+    right: 30,
     bottom: 80,
     containLabel: true,
   },
@@ -131,6 +170,7 @@ const BASE_OPTION: Partial<EChartsOption> = {
     feature: {
       restore: {},
       saveAsImage: {},
+      dataZoom: {},
     },
   },
   dataZoom: [
@@ -145,7 +185,22 @@ const BASE_OPTION: Partial<EChartsOption> = {
       type: 'inside',
       xAxisIndex: 0,
       filterMode: 'none',
-      zoomOnMouseWheel: true,
+      zoomOnMouseWheel: false,
+      moveOnMouseMove: true,
+    },
+    {
+      type: 'slider',
+      yAxisIndex: 0,
+      filterMode: 'none',
+      left: 10,
+      width: 20,
+      orient: 'vertical',
+    },
+    {
+      type: 'inside',
+      yAxisIndex: 0,
+      filterMode: 'none',
+      zoomOnMouseWheel: false,
       moveOnMouseMove: true,
     },
   ],
@@ -182,12 +237,56 @@ export function TimeSeriesChart({
   chartTitle,
   useResponsiveContainer = true,
   xAxisType = 'time',
+  chartType = 'line',
+  tooltipFormatter,
+  xAxisMin,
+  xAxisMax,
 }: TimeSeriesChartProps) {
   const theme = useTheme();
 
   const option: EChartsOption = useMemo(() => {
+    const showDataZoom =
+      xAxisMin !== undefined && xAxisMax !== undefined
+        ? xAxisMin !== xAxisMax
+        : (() => {
+            let minX = Infinity;
+            let maxX = -Infinity;
+            series.forEach((s) => {
+              s.data.forEach((pt) => {
+                const x = pt.x;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+              });
+            });
+            return minX !== maxX;
+          })();
+
+    const showYDataZoom = (() => {
+      let minY = Infinity;
+      let maxY = -Infinity;
+      series.forEach((s) => {
+        s.data.forEach((pt) => {
+          const y = pt.y;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        });
+      });
+      return minY !== maxY;
+    })();
+
+    const filterMode = chartType === 'scatter' ? 'filter' : 'none';
+    const dataZoomArray = Array.isArray(BASE_OPTION.dataZoom)
+      ? BASE_OPTION.dataZoom
+      : [];
+
     return {
       ...BASE_OPTION,
+      dataZoom: [
+        { ...(dataZoomArray[0] ?? {}), show: showDataZoom, filterMode },
+        { ...(dataZoomArray[1] ?? {}), disabled: !showDataZoom, filterMode },
+        { ...(dataZoomArray[2] ?? {}), show: showYDataZoom, filterMode },
+        { ...(dataZoomArray[3] ?? {}), disabled: !showYDataZoom, filterMode },
+      ],
       title: {
         ...BASE_OPTION.title,
         text: chartTitle,
@@ -197,6 +296,24 @@ export function TimeSeriesChart({
           color: theme.palette.text.primary,
         },
       },
+      tooltip: {
+        ...BASE_OPTION.tooltip,
+        enterable: true,
+        confine: true,
+        extraCssText: 'max-height: 400px; overflow-y: auto;',
+        formatter: tooltipFormatter
+          ? (params: unknown) => {
+              // ECharts passes dynamic data at runtime (e.g. data can be string, number, Date).
+              // We use unknown and a type guard to safely narrow it to ChartTooltipParam.
+              const rawItems = Array.isArray(params) ? params : [params];
+              const validItems = rawItems.filter(isChartTooltipParam);
+              if (validItems.length === 0) return '';
+              return tooltipFormatter(
+                Array.isArray(params) ? validItems : validItems[0],
+              );
+            }
+          : undefined,
+      },
       xAxis:
         xAxisType === 'time'
           ? {
@@ -205,6 +322,8 @@ export function TimeSeriesChart({
               axisLabel: {
                 formatter: xAxisFormatter,
               },
+              min: xAxisMin,
+              max: xAxisMax,
             }
           : {
               type: 'value',
@@ -218,11 +337,12 @@ export function TimeSeriesChart({
       },
       series: series.map((s) => ({
         name: s.name,
-        type: 'line',
+        type: chartType,
         smooth: false,
-        showSymbol: false,
-        data: s.data,
+        showSymbol: chartType === 'scatter' || s.data.length === 1,
+        data: s.data.map((pt) => [pt.x, pt.y, pt.count]),
         itemStyle: { color: s.stroke },
+        clip: true,
         valueFormatter: (val: number | string) => {
           if (typeof val === 'number') {
             return val.toLocaleString();
@@ -231,14 +351,24 @@ export function TimeSeriesChart({
         },
       })),
     };
-  }, [series, chartTitle, yAxisLabel, xAxisType, theme]);
+  }, [
+    series,
+    chartTitle,
+    yAxisLabel,
+    xAxisType,
+    theme,
+    chartType,
+    tooltipFormatter,
+    xAxisMin,
+    xAxisMax,
+  ]);
 
   return (
     <Box
       data-testid="time-series-chart"
       sx={{
         position: 'relative',
-        height: (theme) => theme.spacing(50),
+        height: (theme) => theme.spacing(65),
         width: useResponsiveContainer ? '100%' : (theme) => theme.spacing(75),
         minWidth: 0,
         overflow: 'hidden',
