@@ -2316,9 +2316,11 @@ func (x *BuildInfra_Backend) GetHostname() string {
 type BuildInfra_TurboCI struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Hostname is the hostname for TurboCI.
-	Hostname      string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Hostname string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	// TurboCI stage attempt identifier for the build.
+	StageAttemptId string `protobuf:"bytes,2,opt,name=stage_attempt_id,json=stageAttemptId,proto3" json:"stage_attempt_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *BuildInfra_TurboCI) Reset() {
@@ -2354,6 +2356,13 @@ func (*BuildInfra_TurboCI) Descriptor() ([]byte, []int) {
 func (x *BuildInfra_TurboCI) GetHostname() string {
 	if x != nil {
 		return x.Hostname
+	}
+	return ""
+}
+
+func (x *BuildInfra_TurboCI) GetStageAttemptId() string {
+	if x != nil {
+		return x.StageAttemptId
 	}
 	return ""
 }
@@ -3127,7 +3136,7 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\n" +
 	"was_cached\x18\x04 \x01(\x0e2\x17.buildbucket.v2.TrinaryR\twasCached\x12>\n" +
 	"\x06timing\x18\x05 \x01(\v2&.buildbucket.v2.ResolvedDataRef.TimingR\x06timingB\v\n" +
-	"\tdata_type\"\xbf*\n" +
+	"\tdata_type\"\xe9*\n" +
 	"\n" +
 	"BuildInfra\x12P\n" +
 	"\vbuildbucket\x18\x01 \x01(\v2&.buildbucket.v2.BuildInfra.BuildbucketB\x06\x8a\xc3\x1a\x02\b\x02R\vbuildbucket\x12?\n" +
@@ -3259,9 +3268,10 @@ const file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDesc = "" +
 	"\x04task\x18\x02 \x01(\v2\x14.buildbucket.v2.TaskR\x04task\x122\n" +
 	"\x06caches\x18\x03 \x03(\v2\x1a.buildbucket.v2.CacheEntryR\x06caches\x12K\n" +
 	"\x0ftask_dimensions\x18\x05 \x03(\v2\".buildbucket.v2.RequestedDimensionR\x0etaskDimensions\x12\x1a\n" +
-	"\bhostname\x18\x06 \x01(\tR\bhostname\x1a%\n" +
+	"\bhostname\x18\x06 \x01(\tR\bhostname\x1aO\n" +
 	"\aTurboCI\x12\x1a\n" +
-	"\bhostname\x18\x01 \x01(\tR\bhostnameB6Z4go.chromium.org/luci/buildbucket/proto;buildbucketpbb\x06proto3"
+	"\bhostname\x18\x01 \x01(\tR\bhostname\x12(\n" +
+	"\x10stage_attempt_id\x18\x02 \x01(\tR\x0estageAttemptIdB6Z4go.chromium.org/luci/buildbucket/proto;buildbucketpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_buildbucket_proto_build_proto_rawDescOnce sync.Once

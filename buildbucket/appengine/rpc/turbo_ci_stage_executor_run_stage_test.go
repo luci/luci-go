@@ -155,7 +155,8 @@ func TestRunStage(t *testing.T) {
 			assert.That(t, bld.StageAttemptID, should.Equal(attemptIDStr))
 			assert.That(t, bld.StageAttemptToken, should.Equal("secret-token"))
 			assert.That(t, infra.Proto.Turboci, should.Match(&pb.BuildInfra_TurboCI{
-				Hostname: "turbocihost",
+				Hostname:       "turbocihost",
+				StageAttemptId: attemptIDStr,
 			}))
 
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))

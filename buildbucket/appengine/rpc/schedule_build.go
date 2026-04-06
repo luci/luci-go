@@ -1623,7 +1623,8 @@ func prepareNewBuild(ctx context.Context, op *scheduleBuildOp, params *scheduleB
 
 	if params.TurboCIHost != "" {
 		buildPb.Infra.Turboci = &pb.BuildInfra_TurboCI{
-			Hostname: params.TurboCIHost,
+			Hostname:       params.TurboCIHost,
+			StageAttemptId: params.StageAttemptID,
 		}
 	}
 

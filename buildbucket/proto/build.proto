@@ -890,6 +890,9 @@ message BuildInfra {
   message TurboCI {
     // Hostname is the hostname for TurboCI.
     string hostname = 1;
+
+    // TurboCI stage attempt identifier for the build.
+    string stage_attempt_id = 2;
   }
 
   Buildbucket buildbucket = 1 [ (buildbucket.v2.create_build_field_option).field_behavior = REQUIRED ];
