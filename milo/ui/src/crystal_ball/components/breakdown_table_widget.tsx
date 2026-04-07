@@ -163,12 +163,27 @@ export function BreakdownTableWidget({
               ...widget,
               chartType: PerfChartWidget_ChartType.BREAKDOWN_TABLE,
               breakdownTableWidgetChartConfig: {
+                ...widget.breakdownTableWidgetChartConfig,
                 aggregations: finalValues,
               },
             }),
           );
         }}
         hasSeries={!!widget.series?.[0]?.metricField}
+        defaultDimension={
+          widget.breakdownTableWidgetChartConfig?.defaultDimension
+        }
+        onUpdateDefaultDimension={(dimension) => {
+          onUpdate(
+            PerfChartWidget.fromPartial({
+              ...widget,
+              breakdownTableWidgetChartConfig: {
+                ...widget.breakdownTableWidgetChartConfig,
+                defaultDimension: dimension,
+              },
+            }),
+          );
+        }}
       />
     </Box>
   );

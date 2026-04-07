@@ -87,6 +87,11 @@ const AGGREGATION_LABELS: Record<
 export const DIMENSION_COLUMN_KEY = 'dimension_value';
 
 /**
+ * The fallback label used for unknown dimensions.
+ */
+const UNKNOWN_DIMENSION = 'UNKNOWN';
+
+/**
  * Represents a single row of breakdown data, where keys are dimension names
  * or metric names, and values are either strings or numbers or null when missing.
  */
@@ -359,6 +364,8 @@ export interface BreakdownTableChartProps {
   currentAggregations: readonly number[];
   onUpdateAggregations: (aggregations: number[]) => void;
   hasSeries: boolean;
+  defaultDimension?: string;
+  onUpdateDefaultDimension: (dimension: string) => void;
 }
 
 /**
@@ -372,12 +379,16 @@ export function BreakdownTableChart({
   currentAggregations,
   onUpdateAggregations,
   hasSeries,
+  defaultDimension,
+  onUpdateDefaultDimension,
 }: BreakdownTableChartProps): React.ReactElement {
-  const [activeTab, setActiveTab] = useState(0);
   const [pagination, setPagination] = useState<MRT_PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
+
+  const currentDimension =
+    defaultDimension || sections[0]?.dimensionColumn || UNKNOWN_DIMENSION;
 
   const [tempAggregations, setTempAggregations] = useState<number[]>(() =>
     currentAggregations.map((a) =>
@@ -422,7 +433,12 @@ export function BreakdownTableChart({
     onUpdateAggregations(finalValues);
   };
 
-  const activeSection = sections[activeTab];
+  const activeSection = useMemo(() => {
+    return (
+      sections.find((s) => s.dimensionColumn === currentDimension) ??
+      sections[0]
+    );
+  }, [sections, currentDimension]);
 
   return (
     <Box
@@ -465,35 +481,38 @@ export function BreakdownTableChart({
           <FormControl size="small" variant="outlined" sx={{ minWidth: 160 }}>
             <Select
               id="dimension-select"
-              value={String(activeTab)}
+              value={currentDimension}
               disabled={sections.length === 0}
               onChange={(e: SelectChangeEvent<string>) => {
-                setActiveTab(Number(e.target.value));
                 setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                onUpdateDefaultDimension(e.target.value);
               }}
               inputProps={{ 'aria-label': 'Breakdown by category' }}
               sx={COMPACT_SELECT_SX}
               renderValue={(val: string) => {
-                const sec = sections[Number(val)];
+                const sec =
+                  sections.find(
+                    (s) => (s.dimensionColumn || UNKNOWN_DIMENSION) === val,
+                  ) ?? sections[0];
                 if (!sec) {
-                  return sections.length === 0 ? 'N/A' : 'UNKNOWN';
+                  return sections.length === 0 ? 'N/A' : UNKNOWN_DIMENSION;
                 }
                 return (
                   sec.dimensionColumn?.replace(/_/g, ' ').toUpperCase() ||
-                  'UNKNOWN'
+                  UNKNOWN_DIMENSION
                 );
               }}
             >
               {sections.map((section, idx) => (
                 <MenuItem
-                  key={section.dimensionColumn ?? `UNKNOWN-${idx}`}
-                  value={String(idx)}
+                  key={section.dimensionColumn ?? `${UNKNOWN_DIMENSION}-${idx}`}
+                  value={section.dimensionColumn || UNKNOWN_DIMENSION}
                   sx={{
                     fontSize: (theme) => theme.typography.body2.fontSize,
                   }}
                 >
                   {section.dimensionColumn?.replace(/_/g, ' ').toUpperCase() ||
-                    'UNKNOWN'}
+                    UNKNOWN_DIMENSION}
                 </MenuItem>
               ))}
             </Select>

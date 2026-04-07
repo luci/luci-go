@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { BreakdownSection } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
@@ -21,6 +22,26 @@ import { BreakdownTableChart } from './breakdown_table_chart';
 
 describe('BreakdownTableChart', () => {
   const mockOnUpdateAggregations = jest.fn();
+  const mockOnUpdateDefaultDimension = jest.fn();
+
+  interface TestWrapperProps {
+    sections: BreakdownSection[];
+    initialDimension: string;
+  }
+
+  function TestWrapper({ sections, initialDimension }: TestWrapperProps) {
+    const [defaultDimension, setDefaultDimension] = useState(initialDimension);
+    return (
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        hasSeries={true}
+        defaultDimension={defaultDimension}
+        onUpdateDefaultDimension={setDefaultDimension}
+      />
+    );
+  }
 
   it(`renders "${COMMON_MESSAGES.NO_DATA_FOUND}" when sections are empty`, () => {
     render(
@@ -28,6 +49,7 @@ describe('BreakdownTableChart', () => {
         sections={[]}
         currentAggregations={[]}
         onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
       />,
     );
@@ -47,6 +69,7 @@ describe('BreakdownTableChart', () => {
         sections={sections}
         currentAggregations={[]}
         onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
       />,
     );
@@ -55,6 +78,36 @@ describe('BreakdownTableChart', () => {
       screen.getByRole('combobox', { name: 'Breakdown by category' }),
     ).toHaveTextContent(/TESTNAME/i);
     expect(screen.getByText('test1')).toBeInTheDocument();
+  });
+
+  it('renders the default dimension when specified', () => {
+    const sections: BreakdownSection[] = [
+      {
+        dimensionColumn: 'testname',
+        rows: [{ dimension_value: 'test1', COUNT: 10 }],
+      },
+      {
+        dimensionColumn: 'buildbranch',
+        rows: [{ dimension_value: 'branch1', COUNT: 20 }],
+      },
+    ];
+
+    render(
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+        defaultDimension="buildbranch"
+      />,
+    );
+
+    expect(
+      screen.getByRole('combobox', { name: 'Breakdown by category' }),
+    ).toHaveTextContent(/BUILDBRANCH/i);
+    expect(screen.getByText('branch1')).toBeInTheDocument();
+    expect(screen.queryByText('test1')).not.toBeInTheDocument();
   });
 
   it('switches categories and displays corresponding data', () => {
@@ -69,14 +122,7 @@ describe('BreakdownTableChart', () => {
       },
     ];
 
-    render(
-      <BreakdownTableChart
-        sections={sections}
-        currentAggregations={[]}
-        onUpdateAggregations={mockOnUpdateAggregations}
-        hasSeries={true}
-      />,
-    );
+    render(<TestWrapper sections={sections} initialDimension="testname" />);
 
     expect(
       screen.getByRole('combobox', { name: 'Breakdown by category' }),
@@ -88,8 +134,8 @@ describe('BreakdownTableChart', () => {
     });
     fireEvent.mouseDown(select);
 
-    const listbox = screen.getByRole('listbox');
-    fireEvent.click(listbox.childNodes[1]);
+    const option = screen.getByRole('option', { name: /BUILDBRANCH/i });
+    fireEvent.click(option);
 
     expect(
       screen.getByRole('combobox', { name: 'Breakdown by category' }),
@@ -118,6 +164,7 @@ describe('BreakdownTableChart', () => {
         sections={sections}
         currentAggregations={[]}
         onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
       />,
     );
@@ -142,14 +189,7 @@ describe('BreakdownTableChart', () => {
       { dimensionColumn: 'buildbranch', rows: rows2 },
     ];
 
-    render(
-      <BreakdownTableChart
-        sections={sections}
-        currentAggregations={[]}
-        onUpdateAggregations={mockOnUpdateAggregations}
-        hasSeries={true}
-      />,
-    );
+    render(<TestWrapper sections={sections} initialDimension="testname" />);
 
     expect(screen.getByText('test0')).toBeInTheDocument();
 
@@ -163,8 +203,8 @@ describe('BreakdownTableChart', () => {
       name: 'Breakdown by category',
     });
     fireEvent.mouseDown(categorySelect);
-    const listbox = screen.getByRole('listbox');
-    fireEvent.click(listbox.childNodes[1]);
+    const option = screen.getByRole('option', { name: /BUILDBRANCH/i });
+    fireEvent.click(option);
 
     expect(screen.getByText('branch0')).toBeInTheDocument();
     expect(screen.queryByText('branch14')).not.toBeInTheDocument();
@@ -183,6 +223,7 @@ describe('BreakdownTableChart', () => {
         sections={sections}
         currentAggregations={[]}
         onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
       />,
     );
@@ -212,6 +253,7 @@ describe('BreakdownTableChart', () => {
         sections={sections}
         currentAggregations={[]}
         onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
       />,
     );
@@ -236,6 +278,7 @@ describe('BreakdownTableChart', () => {
         sections={sections}
         currentAggregations={[]}
         onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
       />,
     );

@@ -1206,6 +1206,9 @@ message BreakdownTableConfig {
   }
   // The aggregation functions to apply to the metrics in the table.
   repeated BreakdownAggregation aggregations = 1;
+
+  // The default dimension to display first in the UI.
+  string default_dimension = 2 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Defines a data specification, similar to concepts in Plx DataSpec.

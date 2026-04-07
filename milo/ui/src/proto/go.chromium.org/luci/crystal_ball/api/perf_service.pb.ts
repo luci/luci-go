@@ -65,28 +65,28 @@ export interface SearchMeasurementsRequest {
    *   "foo" - exact match
    */
   readonly testNameFilter?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Build creation timestamp start filter. */
   readonly buildCreateStartTime?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Build creation timestamp end filter. */
   readonly buildCreateEndTime?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Mutually exclusive with start/end timestamps */
   readonly lastNDays?:
-  | number
-  | undefined;
+    | number
+    | undefined;
   /** Branch filter. */
   readonly buildBranch?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Build target filter. */
   readonly buildTarget?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /**
    * Filter for atp_test_name using SQL LIKE operator.
    * Callers should include wildcards (%) as needed in the filter string.
@@ -97,8 +97,8 @@ export interface SearchMeasurementsRequest {
    *   "foo" - exact match
    */
   readonly atpTestNameFilter?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** If specified, only metrics with these keys will be returned. */
   readonly metricKeys: readonly string[];
   /**
@@ -112,8 +112,8 @@ export interface SearchMeasurementsRequest {
   readonly extraColumns: readonly string[];
   /** Page size for pagination. */
   readonly pageSize?:
-  | number
-  | undefined;
+    | number
+    | undefined;
   /** Page token for pagination. */
   readonly pageToken?: string | undefined;
 }
@@ -130,40 +130,40 @@ export interface SearchMeasurementsResponse {
 export interface MeasurementRow {
   /** Test name. */
   readonly test?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Build creation timestamp. */
   readonly buildCreateTime?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Build branch. */
   readonly buildBranch?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Build target. */
   readonly buildTarget?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** ATP test name. */
   readonly atpTest?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Metric key. */
   readonly metricKey?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Metric value. */
   readonly value?:
-  | number
-  | undefined;
+    | number
+    | undefined;
   /** Build ID. */
   readonly buildId?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Ants invocation ID. */
   readonly antsInvocationId?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Additional columns */
   readonly extraColumns: { [key: string]: any | undefined };
 }
@@ -402,8 +402,8 @@ export interface SearchMetricDefinitionsRequest {
    * fewer than this value.
    */
   readonly pageSize?:
-  | number
-  | undefined;
+    | number
+    | undefined;
   /**
    * A page token, received from a previous `SearchMetricDefinitions` call.
    * Provide this to retrieve the subsequent page.
@@ -471,28 +471,28 @@ export interface DashboardState {
    * this API to ensure independence (AIP-215).
    */
   readonly dashboardContent:
-  | PerfDashboardContent
-  | undefined;
+    | PerfDashboardContent
+    | undefined;
   /** User-friendly name for this saved state. */
   readonly displayName: string;
   /** Optional description for this saved state. */
   readonly description: string;
   /** Timestamp when the resource was first created. */
   readonly createTime:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Timestamp when the resource was last updated. */
   readonly updateTime:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Timestamp when the resource was soft deleted. */
   readonly deleteTime:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Timestamp when the soft-deleted resource will be permanently purged. */
   readonly purgeTime:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /**
    * A server-assigned checksum for optimistic concurrency control.
    * See https://google.aip.dev/154.
@@ -518,8 +518,8 @@ export interface DashboardState {
    * This field is OUTPUT_ONLY.
    */
   readonly revisionCreateTime:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Indicates if the dashboard is publicly viewable by any authenticated user. */
   readonly isPublic: boolean;
 }
@@ -533,8 +533,8 @@ export interface DashboardState_AnnotationsEntry {
 export interface DashboardStateOperationMetadata {
   /** The time the operation was created. */
   readonly createTime:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** The target resource name. */
   readonly target: string;
   /** API version used to start the operation. */
@@ -545,8 +545,8 @@ export interface DashboardStateOperationMetadata {
 export interface CreateDashboardStateRequest {
   /** The dashboard state to create. */
   readonly dashboardState:
-  | DashboardState
-  | undefined;
+    | DashboardState
+    | undefined;
   /**
    * The ID to use for the dashboard state, which will become the final
    * component of the dashboard state's resource name.
@@ -575,15 +575,15 @@ export interface UpdateDashboardStateRequest {
    * and must be provided by the client.
    */
   readonly dashboardState:
-  | DashboardState
-  | undefined;
+    | DashboardState
+    | undefined;
   /**
    * The list of fields to update.
    * If omitted, all fields provided in the request will be updated.
    */
   readonly updateMask:
-  | readonly string[]
-  | undefined;
+    | readonly string[]
+    | undefined;
   /**
    * If set to true, and the DashboardState is not found, a new DashboardState
    * will be created.
@@ -709,15 +709,15 @@ export interface FetchDashboardWidgetDataRequest {
    * Format: dashboardStates/{dashboard_state}
    */
   readonly name?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /**
    * The core content of the dashboard to fetch data from.
    * Useful for previewing unsaved changes.
    */
   readonly dashboardContent?:
-  | PerfDashboardContent
-  | undefined;
+    | PerfDashboardContent
+    | undefined;
   /**
    * The ID of the widget within the dashboard to fetch data for.
    * This ID must match one of the widget IDs defined in the
@@ -735,16 +735,16 @@ export interface FetchDashboardWidgetDataResponse {
   readonly widgetId: string;
   /** Data specifically prepared for a MultiMetricChart. */
   readonly multiMetricChartData?:
-  | MultiMetricChartData
-  | undefined;
+    | MultiMetricChartData
+    | undefined;
   /** Data for a Markdown widget */
   readonly markdownWidget?:
-  | MarkdownWidget
-  | undefined;
+    | MarkdownWidget
+    | undefined;
   /** Data specifically prepared for a BreakdownTable widget */
   readonly breakdownTableData?:
-  | BreakdownTableData
-  | undefined;
+    | BreakdownTableData
+    | undefined;
   /** Data specifically prepared for an InvocationDistribution widget */
   readonly invocationDistributionData?: InvocationDistributionData | undefined;
 }
@@ -861,8 +861,8 @@ export interface PerfWidget {
   readonly displayName: string;
   /** A markdown widget. */
   readonly markdown?:
-  | MarkdownWidget
-  | undefined;
+    | MarkdownWidget
+    | undefined;
   /** A chart widget. */
   readonly chart?: PerfChartWidget | undefined;
 }
@@ -895,24 +895,24 @@ export interface PerfChartWidget {
   readonly series: readonly PerfChartSeries[];
   /** X axis configuration. */
   readonly xAxis:
-  | PerfXAxisConfig
-  | undefined;
+    | PerfXAxisConfig
+    | undefined;
   /** Configuration for the Left Y Axis. */
   readonly leftYAxis:
-  | PerfYAxisConfig
-  | undefined;
+    | PerfYAxisConfig
+    | undefined;
   /** Configuration for the Right Y Axis (for Dual Y-Axes Support). */
   readonly rightYAxis:
-  | PerfYAxisConfig
-  | undefined;
+    | PerfYAxisConfig
+    | undefined;
   /**
    * Configuration for splitting a single metric in `series` by a dimension.
    * Typically used when only one series is defined, and the split generates
    * the rest.
    */
   readonly seriesSplit:
-  | PerfSeriesSplit
-  | undefined;
+    | PerfSeriesSplit
+    | undefined;
   /**
    * Specific configuration for the INVOCATION_DISTRIBUTION chart type.
    * Deprecated: Use `chart_config.invocation_distribution_chart_config`
@@ -921,12 +921,12 @@ export interface PerfChartWidget {
    * @deprecated
    */
   readonly invocationDistributionConfig:
-  | InvocationDistributionConfig
-  | undefined;
+    | InvocationDistributionConfig
+    | undefined;
   /** Specific configuration for the INVOCATION_DISTRIBUTION chart type. */
   readonly invocationDistributionChartConfig?:
-  | InvocationDistributionConfig
-  | undefined;
+    | InvocationDistributionConfig
+    | undefined;
   /** Configuration for the BREAKDOWN_TABLE chart type. */
   readonly breakdownTableWidgetChartConfig?: BreakdownTableConfig | undefined;
 }
@@ -1239,12 +1239,12 @@ export interface PerfYAxisConfig {
   readonly displayName: string;
   /** Optional minimum value for the axis range. */
   readonly minValue?:
-  | number
-  | undefined;
+    | number
+    | undefined;
   /** Optional maximum value for the axis range. */
   readonly maxValue?:
-  | number
-  | undefined;
+    | number
+    | undefined;
   /** Whether to use a logarithmic scale. */
   readonly logarithmic: boolean;
 }
@@ -1253,12 +1253,12 @@ export interface PerfYAxisConfig {
 export interface PerfSeriesSplit {
   /** Split by an invocation-level dimension (e.g., build_target, branch). */
   readonly invocationDimension?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Split by a metric-specific dimension. */
   readonly metricDimension?:
-  | string
-  | undefined;
+    | string
+    | undefined;
   /** Optional: Limit the number of series created by the split. */
   readonly limitCount: number;
 }
@@ -1279,6 +1279,8 @@ export interface InvocationDistributionConfig_ScatterSettings {
 export interface BreakdownTableConfig {
   /** The aggregation functions to apply to the metrics in the table. */
   readonly aggregations: readonly BreakdownTableConfig_BreakdownAggregation[];
+  /** The default dimension to display first in the UI. */
+  readonly defaultDimension: string;
 }
 
 /** Aggregation functions. */
@@ -1447,20 +1449,20 @@ export interface PerfFilter {
   readonly displayName: string;
   /** Dropdown select filter. */
   readonly select?:
-  | SelectFilter
-  | undefined;
+    | SelectFilter
+    | undefined;
   /** Free form text input filter. */
   readonly textInput?:
-  | TextInputFilter
-  | undefined;
+    | TextInputFilter
+    | undefined;
   /** Numerical input filter. */
   readonly numberInput?:
-  | NumberInputFilter
-  | undefined;
+    | NumberInputFilter
+    | undefined;
   /** Range selection filter. */
   readonly range?:
-  | RangeFilter
-  | undefined;
+    | RangeFilter
+    | undefined;
   /** Date selection filter. */
   readonly datePicker?: DatePickerFilter | undefined;
 }
@@ -1834,8 +1836,8 @@ export interface UserSettings {
   readonly starredDashboards: readonly string[];
   /** User's preference for dark mode. */
   readonly darkModeEnabled?:
-  | boolean
-  | undefined;
+    | boolean
+    | undefined;
   /**
    * User's preferred time zone. IANA Time Zone Database name (e.g.,
    * "America/Los_Angeles").
@@ -1859,12 +1861,12 @@ export interface GetUserSettingsRequest {
 export interface UpdateUserSettingsRequest {
   /** The UserSettings resource to update. */
   readonly userSettings:
-  | UserSettings
-  | undefined;
+    | UserSettings
+    | undefined;
   /** The list of fields to update. */
   readonly updateMask:
-  | readonly string[]
-  | undefined;
+    | readonly string[]
+    | undefined;
   /**
    * If set to true, and the UserSettings resource doesn't exist, it will be
    * created.
@@ -6795,7 +6797,7 @@ export const InvocationDistributionConfig_ScatterSettings: MessageFns<Invocation
 };
 
 function createBaseBreakdownTableConfig(): BreakdownTableConfig {
-  return { aggregations: [] };
+  return { aggregations: [], defaultDimension: "" };
 }
 
 export const BreakdownTableConfig: MessageFns<BreakdownTableConfig> = {
@@ -6805,6 +6807,9 @@ export const BreakdownTableConfig: MessageFns<BreakdownTableConfig> = {
       writer.int32(v);
     }
     writer.join();
+    if (message.defaultDimension !== "") {
+      writer.uint32(18).string(message.defaultDimension);
+    }
     return writer;
   },
 
@@ -6833,6 +6838,14 @@ export const BreakdownTableConfig: MessageFns<BreakdownTableConfig> = {
 
           break;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.defaultDimension = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6847,6 +6860,7 @@ export const BreakdownTableConfig: MessageFns<BreakdownTableConfig> = {
       aggregations: globalThis.Array.isArray(object?.aggregations)
         ? object.aggregations.map((e: any) => breakdownTableConfig_BreakdownAggregationFromJSON(e))
         : [],
+      defaultDimension: isSet(object.defaultDimension) ? globalThis.String(object.defaultDimension) : "",
     };
   },
 
@@ -6854,6 +6868,9 @@ export const BreakdownTableConfig: MessageFns<BreakdownTableConfig> = {
     const obj: any = {};
     if (message.aggregations?.length) {
       obj.aggregations = message.aggregations.map((e) => breakdownTableConfig_BreakdownAggregationToJSON(e));
+    }
+    if (message.defaultDimension !== "") {
+      obj.defaultDimension = message.defaultDimension;
     }
     return obj;
   },
@@ -6864,6 +6881,7 @@ export const BreakdownTableConfig: MessageFns<BreakdownTableConfig> = {
   fromPartial(object: DeepPartial<BreakdownTableConfig>): BreakdownTableConfig {
     const message = createBaseBreakdownTableConfig() as any;
     message.aggregations = object.aggregations?.map((e) => e) || [];
+    message.defaultDimension = object.defaultDimension ?? "";
     return message;
   },
 };

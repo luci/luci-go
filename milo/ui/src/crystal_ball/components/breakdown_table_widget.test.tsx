@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
@@ -94,5 +94,48 @@ describe('BreakdownTableWidget', () => {
     // BreakdownTableChart should be visible (it will render the "No Data" message if sections are empty)
     // We can check for the "No data found" message which is rendered by the chart.
     expect(screen.getByText(COMMON_MESSAGES.NO_DATA_FOUND)).toBeInTheDocument();
+  });
+
+  it('calls onUpdate when dimension selection changes', () => {
+    const mockOnUpdate = jest.fn();
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult(
+        FetchDashboardWidgetDataResponse.fromPartial({
+          widgetId: 'w1',
+          breakdownTableData: {
+            sections: [
+              { dimensionColumn: 'testname', rows: [] },
+              { dimensionColumn: 'buildbranch', rows: [] },
+            ],
+          },
+        }),
+      ),
+    );
+
+    render(
+      <BreakdownTableWidget
+        widget={baseWidget}
+        dashboardName="dashboardStates/test-dashboard"
+        widgetId="w1"
+        onUpdate={mockOnUpdate}
+        filterColumns={[]}
+      />,
+    );
+
+    const select = screen.getByRole('combobox', {
+      name: 'Breakdown by category',
+    });
+    fireEvent.mouseDown(select);
+
+    const option = screen.getByRole('option', { name: /BUILDBRANCH/i });
+    fireEvent.click(option);
+
+    expect(mockOnUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        breakdownTableWidgetChartConfig: expect.objectContaining({
+          defaultDimension: 'buildbranch',
+        }),
+      }),
+    );
   });
 });

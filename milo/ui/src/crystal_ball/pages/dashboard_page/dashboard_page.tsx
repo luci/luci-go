@@ -302,6 +302,7 @@ const WIDGET_CREATORS: Record<WidgetType, () => Partial<PerfWidget>> = {
           BreakdownTableConfig_BreakdownAggregation.MIN,
           BreakdownTableConfig_BreakdownAggregation.MAX,
         ],
+        defaultDimension: '',
       },
     },
   }),
