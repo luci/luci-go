@@ -43,6 +43,16 @@ message Config {
 
   // Configuration related to Android Build.
   AndroidBuild android_build = 5;
+
+  // Tests that are allowed to use higher length limits for their test IDs.
+  // Default limits are 300 bytes for coarse name, and 512 bytes for case name
+  // and full encoded test ID.
+  // Allowed tests can use up to 350 bytes for coarse name, and 15000 bytes for
+  // case name and full encoded test ID.
+  //
+  // Use exact matching for all specified fields. An empty field means it matches
+  // all values for that component.
+  repeated TestIdEntry test_ids_with_higher_limit = 6;
 }
 
 // BqArtifactExportConfig contains the configuration to export
@@ -131,4 +141,20 @@ message AndroidBuild {
 
   // Defines data-realm-specific configuration.
   map<string, ByDataRealmConfig> data_realms = 2;
+}
+
+// TestIdEntry identifies a set of tests by their structured ID components.
+// Used to allowlist tests for specific behaviors, such as relaxed length limits.
+message TestIdEntry {
+  // The name of the module. Exact match.
+  // E.g. "CtsSdkExtensionsTestCases".
+  string module_name = 1;
+
+  // The coarse name (e.g. package). Exact match.
+  // E.g. "com.android.os.ext".
+  string coarse_name = 2;
+
+  // The fine name (e.g. class). Exact match.
+  // E.g. "SdkExtensionsTest".
+  string fine_name = 3;
 }
