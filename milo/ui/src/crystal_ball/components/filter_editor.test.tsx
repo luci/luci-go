@@ -16,6 +16,7 @@ import '@testing-library/jest-dom';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { MemoryRouter } from 'react-router';
 
 jest.mock('react-router', () => ({
@@ -23,9 +24,18 @@ jest.mock('react-router', () => ({
   useParams: jest.fn(),
 }));
 
+jest.mock('@/crystal_ball/hooks', () => ({
+  ...jest.requireActual('@/crystal_ball/hooks'),
+  useEditorUiState: ({ initialValue = false }: UseEditorUiStateOptions) => {
+    const [val, setVal] = useState(initialValue);
+    return [val, setVal];
+  },
+}));
+
 const mockedUseParams = jest.mocked(jest.requireMock('react-router').useParams);
 
 import { Column } from '@/crystal_ball/constants';
+import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
 import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
 import {
   MeasurementFilterColumn_ColumnDataType,

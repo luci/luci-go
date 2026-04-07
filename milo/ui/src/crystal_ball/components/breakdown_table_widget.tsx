@@ -17,7 +17,10 @@ import { useMemo } from 'react';
 
 import { ChartSeriesItem } from '@/crystal_ball/components';
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
-import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
+import {
+  EditorUiKeyPrefix,
+  useFetchDashboardWidgetData,
+} from '@/crystal_ball/hooks';
 import {
   BreakdownTableConfig_BreakdownAggregation,
   MeasurementFilterColumn,
@@ -121,6 +124,10 @@ export function BreakdownTableWidget({
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box>
         <ChartSeriesItem
+          uiStateOptions={{
+            prefix: EditorUiKeyPrefix.BREAKDOWN_SERIES,
+            key: widgetId,
+          }}
           series={
             widget.series?.[0] ?? {
               displayName: '',

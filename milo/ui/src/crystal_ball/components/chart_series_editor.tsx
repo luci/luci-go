@@ -50,7 +50,12 @@ import {
   MAX_SUGGEST_RESULTS,
   OPERATOR_DISPLAY_NAMES,
 } from '@/crystal_ball/constants';
-import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks';
+import {
+  EditorUiKeyPrefix,
+  useEditorUiState,
+  UseEditorUiStateOptions,
+  useSuggestMeasurementFilterValues,
+} from '@/crystal_ball/hooks';
 import {
   BackgroundAlpha,
   COMPACT_ICON_SX,
@@ -81,9 +86,6 @@ interface ChartSeriesEditorProps {
   filterColumns: readonly MeasurementFilterColumn[];
   isLoadingFilterColumns?: boolean;
 }
-
-const getSeriesId = (s: PerfChartSeries, index: number) =>
-  s.displayName || `series-${index}`;
 
 export function ChartSeriesEditor({
   series,
@@ -148,21 +150,27 @@ export function ChartSeriesEditor({
         mb: -2,
       }}
     >
-      {series.map((s, index) => (
-        <ChartSeriesItem
-          key={getSeriesId(s, index)}
-          series={s}
-          onUpdate={(updatedItem) => handleUpdateSeriesItem(index, updatedItem)}
-          onRemove={() => handleRemoveSeries(index)}
-          dataSpecId={dataSpecId}
-          globalFilters={globalFilters}
-          widgetFilters={widgetFilters}
-          metricFilterColumns={metricFilterColumns}
-          isLoadingColumns={isLoadingFilterColumns}
-          isVisible={!hiddenSeriesNames?.has(s.displayName)}
-          onToggleVisibility={() => onToggleVisibility?.(s.displayName)}
-        />
-      ))}
+      {series.map((s, index) => {
+        const key = `series-${index}`;
+        return (
+          <ChartSeriesItem
+            key={key}
+            uiStateOptions={{ key }}
+            series={s}
+            onUpdate={(updatedItem) =>
+              handleUpdateSeriesItem(index, updatedItem)
+            }
+            onRemove={() => handleRemoveSeries(index)}
+            dataSpecId={dataSpecId}
+            globalFilters={globalFilters}
+            widgetFilters={widgetFilters}
+            metricFilterColumns={metricFilterColumns}
+            isLoadingColumns={isLoadingFilterColumns}
+            isVisible={!hiddenSeriesNames?.has(s.displayName)}
+            onToggleVisibility={() => onToggleVisibility?.(s.displayName)}
+          />
+        );
+      })}
       <Button
         startIcon={<AddIcon />}
         onClick={handleAddSeries}
@@ -200,6 +208,7 @@ export interface ChartSeriesItemProps {
   hideVisibility?: boolean;
   hideDelete?: boolean;
   titlePlaceholder?: string;
+  uiStateOptions?: UseEditorUiStateOptions;
 }
 
 export function ChartSeriesItem({
@@ -217,8 +226,13 @@ export function ChartSeriesItem({
   hideVisibility = false,
   hideDelete = false,
   titlePlaceholder,
+  uiStateOptions,
 }: ChartSeriesItemProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useEditorUiState({
+    initialValue: false,
+    prefix: EditorUiKeyPrefix.CHART_SERIES,
+    ...uiStateOptions,
+  });
   const [displayName, setDisplayName] = useState(series.displayName);
   const [color, setColor] = useState(series.color);
   const [inputValue, setInputValue] = useState(series.metricField);

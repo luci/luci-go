@@ -35,7 +35,10 @@ import {
   GROUP_BY_CONFIG,
   NUM_AGGREGATED_ROWS,
 } from '@/crystal_ball/constants';
-import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
+import {
+  useFetchDashboardWidgetData,
+  EditorUiKeyPrefix,
+} from '@/crystal_ball/hooks';
 import {
   dataPointsToData,
   generateColor,
@@ -445,6 +448,10 @@ export function ChartWidget({
           availableColumns={widgetFilterColumns}
           isLoadingColumns={isLoadingFilterColumns}
           globalFilters={globalFilters}
+          uiStateOptions={{
+            prefix: EditorUiKeyPrefix.WIDGET_FILTERS,
+            key: widgetId,
+          }}
         />
         <Divider light />
         <ChartWidgetToolbar

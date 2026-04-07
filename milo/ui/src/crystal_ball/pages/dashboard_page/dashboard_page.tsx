@@ -56,6 +56,7 @@ import {
   GLOBAL_TIME_RANGE_FILTER_ID,
   MAX_PAGE_SIZE,
 } from '@/crystal_ball/constants';
+import { EditorUiKeyPrefix } from '@/crystal_ball/hooks';
 import {
   getDashboardStateQueryKey,
   useDeleteDashboardState,
@@ -801,6 +802,7 @@ export function DashboardPage() {
           dataSpecId={DATA_SPEC_ID}
           availableColumns={globalFilterColumns}
           isLoadingColumns={isLoadingFilterColumns}
+          uiStateOptions={{ prefix: EditorUiKeyPrefix.GLOBAL_FILTERS }}
         />
       </Box>
     );

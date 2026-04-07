@@ -15,6 +15,7 @@
 import Box from '@mui/material/Box';
 import { Outlet } from 'react-router';
 
+import { EditorUiProvider } from '@/crystal_ball/context';
 import { Sticky } from '@/generic_libs/components/queued_sticky';
 
 import { TopBar } from './top_bar';
@@ -26,24 +27,26 @@ import { TopBarProvider } from './top_bar_provider';
  */
 export function Layout() {
   return (
-    <TopBarProvider>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '100vh',
-          backgroundColor: (theme) =>
-            theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
-        }}
-      >
-        <Sticky top sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-          <TopBar />
-        </Sticky>
-        <Box component="main" sx={{ flexGrow: 1 }}>
-          <Outlet />
+    <EditorUiProvider>
+      <TopBarProvider>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '100vh',
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+          }}
+        >
+          <Sticky top sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+            <TopBar />
+          </Sticky>
+          <Box component="main" sx={{ flexGrow: 1 }}>
+            <Outlet />
+          </Box>
         </Box>
-      </Box>
-    </TopBarProvider>
+      </TopBarProvider>
+    </EditorUiProvider>
   );
 }
 

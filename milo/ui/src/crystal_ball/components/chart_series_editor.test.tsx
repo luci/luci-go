@@ -15,9 +15,11 @@
 import '@testing-library/jest-dom';
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
 import { Column } from '@/crystal_ball/constants';
+import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
 import {
   PerfChartSeries,
   PerfFilter,
@@ -49,6 +51,14 @@ jest.mock('@/crystal_ball/hooks/use_measurement_filter_api', () => ({
 jest.mock('react-router', () => ({
   ...jest.requireActual('react-router'),
   useParams: () => ({ dashboardId: 'test-dash' }),
+}));
+
+jest.mock('@/crystal_ball/hooks', () => ({
+  ...jest.requireActual('@/crystal_ball/hooks'),
+  useEditorUiState: ({ initialValue = false }: UseEditorUiStateOptions) => {
+    const [val, setVal] = useState(initialValue);
+    return [val, setVal];
+  },
 }));
 
 let mockUUIDCount = 0;
@@ -321,6 +331,7 @@ describe('ChartSeriesItem', () => {
     onRemove: jest.fn(),
     dataSpecId: 'test-spec-id',
     metricFilterColumns: [],
+    uiStateOptions: { key: 'test-persist-key' },
   };
 
   beforeEach(() => {

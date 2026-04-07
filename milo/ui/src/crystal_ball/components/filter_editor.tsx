@@ -48,6 +48,10 @@ import {
   OPERATOR_DISPLAY_NAMES,
   TYPE_TO_OPERATORS,
 } from '@/crystal_ball/constants';
+import {
+  useEditorUiState,
+  UseEditorUiStateOptions,
+} from '@/crystal_ball/hooks';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import {
   COMPACT_FILTER_ROW_SX,
@@ -80,6 +84,7 @@ interface FilterEditorProps {
   isLoadingColumns?: boolean;
   disableAccordion?: boolean;
   titleIcon?: React.ReactNode;
+  uiStateOptions?: UseEditorUiStateOptions;
 }
 
 function FilterEditorRow({
@@ -293,8 +298,12 @@ export function FilterEditor({
   isLoadingColumns,
   disableAccordion = false,
   titleIcon,
+  uiStateOptions,
 }: FilterEditorProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useEditorUiState({
+    initialValue: false,
+    ...uiStateOptions,
+  });
 
   const handleAddFilter = () => {
     const newFilterId = `filter-${crypto.randomUUID()}`;

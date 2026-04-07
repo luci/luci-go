@@ -13,9 +13,13 @@
 // limitations under the License.
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
-import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
+import {
+  UseEditorUiStateOptions,
+  useFetchDashboardWidgetData,
+} from '@/crystal_ball/hooks';
 import { createMockQueryResult } from '@/crystal_ball/tests';
 import {
   FetchDashboardWidgetDataResponse,
@@ -26,6 +30,10 @@ import { BreakdownTableWidget } from './breakdown_table_widget';
 
 jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
+  useEditorUiState: ({ initialValue = false }: UseEditorUiStateOptions) => {
+    const [val, setVal] = useState(initialValue);
+    return [val, setVal];
+  },
   useFetchDashboardWidgetData: jest.fn(),
   useSuggestMeasurementFilterValues: jest.fn(() => ({ data: [] })),
 }));
