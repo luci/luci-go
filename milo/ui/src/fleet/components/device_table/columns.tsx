@@ -15,7 +15,6 @@
 import { GridColDef } from '@mui/x-data-grid';
 import { MRT_ColumnDef, MRT_RowData } from 'material-react-table';
 
-import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 // This may be used later to add a 'common columns' section.
@@ -23,7 +22,7 @@ import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 // first and in the same order in the device table.
 const COMMON_COLUMNS: Record<Platform, string[]> = {
   [Platform.UNSPECIFIED]: [],
-  [Platform.ANDROID]: ANDROID_DEFAULT_COLUMNS,
+  [Platform.ANDROID]: ['id', 'state', 'device_type'],
   [Platform.CHROMEOS]: ['id', 'dut_id', 'state'],
   [Platform.CHROMIUM]: [
     'id',

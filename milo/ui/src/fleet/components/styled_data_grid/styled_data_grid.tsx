@@ -22,7 +22,6 @@ import {
 
 import { useSettings } from '@/fleet/hooks/use_settings';
 
-import { TABLE_HEADER_MIN_HEIGHT } from '../fc_data_table/fleet_column_header.styles';
 import { TableToolbar } from '../toolbar/table_toolbar';
 
 export const StyledGrid = ({ sx, ...props }: DataGridProps) => {
@@ -47,7 +46,6 @@ export const StyledGrid = ({ sx, ...props }: DataGridProps) => {
         border: 'none',
         [`& .${gridClasses.columnHeader}`]: {
           backgroundColor: colors.grey[100],
-          minHeight: TABLE_HEADER_MIN_HEIGHT,
         },
         [`& .${gridClasses.columnSeparator}`]: {
           color: colors.grey[400],

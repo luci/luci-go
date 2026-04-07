@@ -14,8 +14,6 @@
 
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 
-import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
-
 import { FilterCategory } from './use_filters';
 
 export class LoadingFilterCategory implements FilterCategory {
@@ -63,7 +61,8 @@ export class LoadingFilterCategory implements FilterCategory {
     _onClose: () => void,
     _ref?: React.Ref<unknown>,
   ) {
-    return <MenuSkeleton itemCount={10} maxHeight={400} />;
+    //TODO:
+    return 'loading...';
   }
   public getChipLabel() {
     return this.chipLabel;

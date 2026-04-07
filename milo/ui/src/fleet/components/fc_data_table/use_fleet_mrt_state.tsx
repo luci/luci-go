@@ -33,16 +33,12 @@ import { OptionCategory, StringListCategory } from '@/fleet/types/option';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { useMRTColumnManagement } from '../columns/use_mrt_column_management';
-import { normalizeFilterKey } from '../filters/normalize_filter_key';
 
 export type FleetColumnDefExt = {
   id?: string;
   accessorKey?: string | number | symbol;
   filterByField?: string;
   orderByField?: string;
-  meta?: {
-    isLoadingOptions?: boolean;
-  };
 };
 
 export interface FleetMRTStateProps<
@@ -58,15 +54,13 @@ export interface FleetMRTStateProps<
   /** Configuration for available filter options, typically mapped from backend Dimensions queries */
   filterOptionsConfig: OptionCategory[];
   columnsList: TColumnDef[];
+  orderByParam: string;
+  /** Whether to strip prefixes from labels titles (retained for backward Android support) */
+  stripLabelsPrefix?: boolean;
   localStorageKey: string;
 
   defaultColumnIds: string[];
   platform?: Platform;
-  isLoadingOptions?: boolean;
-  onColumnFiltersChangeOverride?: (
-    updatedFilters: Record<string, string[]>,
-  ) => void;
-  orderByParam?: string;
 }
 
 export const useFleetMRTState = <
@@ -79,11 +73,10 @@ export const useFleetMRTState = <
   columnsList,
 
   orderByParam,
+  stripLabelsPrefix = false,
   localStorageKey,
   defaultColumnIds,
   platform,
-  onColumnFiltersChangeOverride,
-  isLoadingOptions,
 }: FleetMRTStateProps<TColumnDef>) => {
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
 
@@ -106,10 +99,12 @@ export const useFleetMRTState = <
     if (!selectedOptions?.filters) return [];
 
     return Object.keys(selectedOptions.filters).map((key) => {
-      const filterKey = normalizeFilterKey(key);
+      const filterKey = stripLabelsPrefix
+        ? key.replace(/^labels\./, '').replace(/^"(.*)"$/, '$1')
+        : key;
       return filterByFieldToId.get(filterKey) || filterKey;
     });
-  }, [selectedOptions?.filters, filterByFieldToId]);
+  }, [selectedOptions?.filters, filterByFieldToId, stripLabelsPrefix]);
 
   const mrtColumnManager = useMRTColumnManagement({
     localStorageKey,
@@ -121,7 +116,7 @@ export const useFleetMRTState = <
 
   const sorting: MRT_SortingState = useMemo(() => {
     if (!orderByParam) return [];
-    return orderByParam.split(', ').map((sort: string) => {
+    return orderByParam.split(', ').map((sort) => {
       const match = mrtColumnManager.columns.find(
         (c) =>
           sort.startsWith(
@@ -138,13 +133,12 @@ export const useFleetMRTState = <
     });
   }, [orderByParam, mrtColumnManager.columns]);
 
-  // Optimization: Create a lookup map for filter options Using Normalized Keys
+  // Optimization: Create a lookup map for filter options
   const filterOptionsMap = useMemo(() => {
     const map = new Map<string, OptionCategory>();
     filterOptionsConfig.forEach((opt) => {
       if (opt.value) {
-        const normalizedKey = normalizeFilterKey(String(opt.value));
-        map.set(normalizedKey, opt);
+        map.set(String(opt.value), opt);
       }
     });
     return map;
@@ -156,16 +150,10 @@ export const useFleetMRTState = <
         (col as FleetColumnDefExt).filterByField || col.accessorKey || col.id;
       if (!filterKey) return col;
 
-      const colWithMeta = {
-        ...col,
-        meta: {
-          ...(col as FleetColumnDefExt).meta,
-          isLoadingOptions,
-        },
-      };
-
-      const normalizedFilterKey = normalizeFilterKey(String(filterKey));
-      const option = filterOptionsMap.get(normalizedFilterKey);
+      const filterKeyStr = String(filterKey);
+      const option =
+        filterOptionsMap.get(filterKeyStr) ||
+        filterOptionsMap.get(`labels."${filterKeyStr}"`);
 
       const isOptionCategory = (
         opt: OptionCategory,
@@ -178,7 +166,7 @@ export const useFleetMRTState = <
         option.options.length > 0
       ) {
         return {
-          ...colWithMeta,
+          ...col,
           filterVariant: 'multi-select' as const,
           filterSelectOptions: option.options.map((opt) => ({
             text: opt.label,
@@ -186,9 +174,9 @@ export const useFleetMRTState = <
           })),
         };
       }
-      return colWithMeta;
+      return col;
     });
-  }, [mrtColumnManager.columns, filterOptionsMap, isLoadingOptions]);
+  }, [mrtColumnManager.columns, filterOptionsMap]);
 
   const columnFilters = useMemo(() => {
     return Object.entries(selectedOptions?.filters || {}).map(([id, value]) => {
@@ -232,14 +220,10 @@ export const useFleetMRTState = <
       );
 
       if (isChanged) {
-        if (onColumnFiltersChangeOverride) {
-          onColumnFiltersChangeOverride(newFilterOptions);
-        } else {
-          setSearchParams(filtersUpdater(newFilterOptions));
-          setSearchParams((prev: URLSearchParams) =>
-            emptyPageTokenUpdater(pagerCtx)(prev),
-          );
-        }
+        setSearchParams(filtersUpdater(newFilterOptions));
+        setSearchParams((prev: URLSearchParams) =>
+          emptyPageTokenUpdater(pagerCtx)(prev),
+        );
       }
     },
     [
@@ -248,7 +232,6 @@ export const useFleetMRTState = <
       idToFilterByField,
       selectedOptions?.filters,
       pagerCtx,
-      onColumnFiltersChangeOverride,
     ],
   );
 

@@ -12,18 +12,9 @@
 // See the License for the specific language governing permissions and
 
 import { DateFilterCategoryDataBuilder } from '@/fleet/components/filters/date_filter';
-import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
-
-import { androidState } from './android_state';
 
 export const ANDROID_EXTRA_FILTERS = {
   fc_offline_since: new DateFilterCategoryDataBuilder().setLabel(
     `Offline Since`,
-  ),
-  state: new StringListFilterCategoryBuilder().setLabel('State').setOptions(
-    Object.values(androidState).map((val) => ({
-      label: val,
-      key: val,
-    })),
   ),
 };
