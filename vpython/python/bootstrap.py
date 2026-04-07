@@ -13,22 +13,10 @@
 # limitations under the License.
 
 import glob
-import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
-import contextlib
-
-@contextlib.contextmanager
-def temporary_directory():
-  # Python 2.7 compatibility: tempfile.TemporaryDirectory was introduced in 3.2.
-  name = tempfile.mkdtemp()
-  try:
-    yield name
-  finally:
-    shutil.rmtree(name, ignore_errors=True)
 
 DISABLE_PERIODIC_UPDATE = False  # This option only exists for newer virtualenv
 if sys.version_info[0] > 2:
@@ -62,176 +50,39 @@ else:
 
 # Install wheels to virtual environment
 if 'wheels' in os.environ:
-  def _info(msg):
-    try:
-      with open(os.path.join(os.environ['out'], '.vpython_bootstrap_info.txt'), 'a') as f:
-        f.write(msg + '\n')
-    except Exception:
-      pass
-
   pip = glob.glob(os.path.join(os.environ['out'], '*', 'pip*'))[0]
   requirements_file = os.path.join(os.environ['wheels'], 'requirements.txt')
-  requirements = []
-  with open(requirements_file, 'r') as f:
-    for line in f:
-      line = line.strip()
-      if line and not line.startswith('#'):
-        requirements.append(line)
 
-  failed_requirements = []
   ar_url = os.environ.get('VPYTHON_AR_URL', 'https://us-python.pkg.dev/chrome-python-ar/chrome-python-ar/simple/')
 
-  with temporary_directory() as wheels_cache:
-    wheels_dir = os.path.join(wheels_cache, 'wheels')
-    if not os.path.exists(wheels_dir):
-      os.makedirs(wheels_dir)
+  command = [
+      pip, 'install',
+      '--disable-pip-version-check', '--isolated',
+      '--compile',
+      '--no-deps',
+      '--index-url', ar_url,
+      '--requirement', requirements_file
+  ]
+  target_arch_file = os.path.join(os.environ['wheels'], 'target_arch.txt')
+  if os.path.exists(target_arch_file):
+    with open(target_arch_file) as f:
+      target_arch = f.read().strip()
+    if target_arch == 'x86_64' and sys.platform == 'darwin':
+      # Force x86_64 via arch -x86_64 for pip!
+      command = ['arch', '-x86_64'] + command
+  env = os.environ.copy()
+  env['NETRC'] = os.devnull
 
-    _info('Attempting to download wheels itemized from Artifact Registry...')
-
-    def _download_req(req):
-      try:
-        _info('Downloading %s from AR...' % req)
-        command = [
-            pip, 'download',
-            '--disable-pip-version-check', '--isolated',
-            '--no-deps', '--dest', wheels_dir, '--index-url', ar_url, req
-        ]
-        target_arch_file = os.path.join(os.environ['wheels'], 'target_arch.txt')
-        if os.path.exists(target_arch_file):
-          with open(target_arch_file) as f:
-            target_arch = f.read().strip()
-          if target_arch == 'x86_64' and sys.platform == 'darwin':
-            # Force x86_64 via arch -x86_64 for pip!
-            command = ['arch', '-x86_64'] + command
-        env = os.environ.copy()
-        env['NETRC'] = os.devnull
-        subprocess.check_output(command, env=env, stderr=subprocess.STDOUT)
-        return None
-      except subprocess.CalledProcessError as e:
-        _info('Failed to download %s from AR.' % req)
-        return req
-
-    try:
-      import concurrent.futures
-      with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        for failed_req in executor.map(_download_req, requirements):
-          if failed_req:
-            failed_requirements.append(failed_req)
-    # concurrent.futures is not available in Python 2.7, run sequentially.
-    except ImportError:
-      for req in requirements:
-        failed_req = _download_req(req)
-        if failed_req:
-          failed_requirements.append(failed_req)
-
-    if failed_requirements:
-      _info('Falling back to CIPD for %d requirements.' % len(failed_requirements))
-
-      # Surface the exact missing packages to LUCI build logs
-      sys.stderr.write("vpython AR MISSING: %s\n" % ", ".join(failed_requirements))
-
-      wheels_root = os.environ['wheels']
-      existing_wheels_dir = os.path.join(wheels_root, 'wheels')
-
-      if os.path.isdir(existing_wheels_dir):
-        # If CIPD wheels exist, we can use them.
-        _info('CIPD wheels are already cached. Will use them as fallback.')
-      else:
-        # If CIPD wheels are not cached, download only the failed ones on-demand
-        _info('CIPD wheels missing from store. Falling back to on-demand fetch...')
-        ensure_file = os.path.join(wheels_root, 'ensure.txt')
-
-        mapping_file = os.path.join(wheels_root, 'mapping.json')
-        mapping = {}
-        if os.path.exists(mapping_file):
-          with open(mapping_file, 'r') as f:
-            mapping = json.load(f)
-
-        ensure_file_to_use = ensure_file
-        if mapping:
-          _info('Filtering ensure.txt using mapping.json to only download failed wheels...')
-          with open(ensure_file, 'r') as f:
-            lines = f.readlines()
-
-          filtered_lines = []
-          for line in lines:
-            stripped = line.strip()
-            if not stripped or stripped.startswith('#') or stripped.startswith('$') or stripped.startswith('@'):
-              filtered_lines.append(line)
-              continue
-
-            parts = stripped.split()
-            if not parts:
-              continue
-            pkg_template = parts[0]
-
-            matched = False
-            for failed in failed_requirements:
-              pip_name = failed.split('==')[0].lower()
-              if pip_name in mapping and mapping[pip_name] == pkg_template:
-                matched = True
-                break
-
-            if matched:
-              filtered_lines.append(line)
-
-          with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as t:
-            t.writelines(filtered_lines)
-            ensure_file_to_use = t.name
-          _info('Using filtered ensure file: %s' % ensure_file_to_use)
-
-        cipd_path = os.environ.get('VPYTHON_CIPD_PATH', 'cipd')
-        if cipd_path == 'cipd':
-          resolved = shutil.which('cipd')
-          if resolved:
-            # cipd script strips down agent, which we want to preserve.
-            # On Windows, the binary is named .cipd_client.exe
-            bin_name = '.cipd_client.exe' if sys.platform == 'win32' else '.cipd_client'
-            real_bin = os.path.join(os.path.dirname(resolved), bin_name)
-            if os.path.exists(real_bin):
-              cipd_path = real_bin
-
-        cipd_cmd = [cipd_path]
-        if sys.platform == 'win32' and cipd_cmd[0].lower().endswith('.bat'):
-          cipd_cmd = ['cmd.exe', '/C'] + cipd_cmd
-
-        try:
-          env = os.environ.copy()
-          existing_prefix = env.get('CIPD_HTTP_USER_AGENT_PREFIX')
-          if existing_prefix:
-            env['CIPD_HTTP_USER_AGENT_PREFIX'] = 'vpython-fallback/' + existing_prefix
-          else:
-            env['CIPD_HTTP_USER_AGENT_PREFIX'] = 'vpython-fallback'
-
-          subprocess.check_call(cipd_cmd + [
-              'export', '-ensure-file',
-              ensure_file_to_use, '-root', wheels_cache
-          ], env=env)
-        except subprocess.CalledProcessError:
-          msg = 'FATAL: One or more requirements are missing from BOTH AR and CIPD: %s' % failed_requirements
-          _info(msg)
-          sys.stderr.write(msg + '\n')
-          raise
-
-        if ensure_file_to_use != ensure_file:
-          try:
-            os.unlink(ensure_file_to_use)
-          except OSError:
-            pass
-
-    _info('Installing mixed requirements as a single batch...')
-    find_links_args = ['--find-links', wheels_dir, '--find-links', wheels_cache]
-    if os.path.isdir(os.path.join(os.environ['wheels'], 'wheels')):
-      find_links_args += ['--find-links', os.path.join(os.environ['wheels'], 'wheels')]
-
-    subprocess.check_call([
-        pip,
-        'install',
-        '--isolated',
-        '--compile',
-        '--no-index',
-        '--no-deps',
-    ] + find_links_args + ['--requirement', requirements_file])
+  try:
+    subprocess.check_output(command, env=env, stderr=subprocess.STDOUT)
+  except subprocess.CalledProcessError as e:
+    sys.stderr.write('\n' + '=' * 60 + '\n')
+    sys.stderr.write("vpython AR INSTALL FAILED\n")
+    sys.stderr.write(e.output.decode('utf-8', errors='ignore') + "\n")
+    sys.stderr.write("If you see this, it means some python packages are missing from Artifact Registry or installation failed.\n")
+    sys.stderr.write("Please report this issue at https://crbug.com/492362903\n")
+    sys.stderr.write('=' * 60 + '\n')
+    raise
 
 # Generate all .pyc in the output directory. This prevent generating .pyc on the
 # fly, which modifies derivation output after the build.
