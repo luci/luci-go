@@ -954,6 +954,7 @@ export interface ProductCatalogEntry {
   readonly numberOfDevicesPerRack: number;
   readonly unitCost: string;
   readonly productType: string;
+  readonly r11nList: readonly string[];
 }
 
 export interface Int32Range {
@@ -961,7 +962,13 @@ export interface Int32Range {
   readonly max: number;
 }
 
+export interface ProductCatalogFilterValue {
+  readonly value: string;
+  readonly inScope: boolean;
+}
+
 export interface GetProductCatalogFilterValuesRequest {
+  readonly filter: string;
 }
 
 export interface GetProductCatalogFilterValuesResponse {
@@ -973,6 +980,13 @@ export interface GetProductCatalogFilterValuesResponse {
   readonly r11n: readonly string[];
   readonly numberOfDevicesPerRack: Int32Range | undefined;
   readonly productType: readonly string[];
+  readonly scopedProductCatalogId: readonly ProductCatalogFilterValue[];
+  readonly scopedProductName: readonly ProductCatalogFilterValue[];
+  readonly scopedGpn: readonly ProductCatalogFilterValue[];
+  readonly scopedResourceType: readonly ProductCatalogFilterValue[];
+  readonly scopedFleetPlmStatus: readonly ProductCatalogFilterValue[];
+  readonly scopedR11n: readonly ProductCatalogFilterValue[];
+  readonly scopedProductType: readonly ProductCatalogFilterValue[];
 }
 
 function createBasePingRequest(): PingRequest {
@@ -9474,6 +9488,7 @@ function createBaseProductCatalogEntry(): ProductCatalogEntry {
     numberOfDevicesPerRack: 0,
     unitCost: "",
     productType: "",
+    r11nList: [],
   };
 }
 
@@ -9508,6 +9523,9 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     }
     if (message.productType !== "") {
       writer.uint32(82).string(message.productType);
+    }
+    for (const v of message.r11nList) {
+      writer.uint32(90).string(v!);
     }
     return writer;
   },
@@ -9599,6 +9617,14 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
           message.productType = reader.string();
           continue;
         }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.r11nList.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -9622,6 +9648,7 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
         : 0,
       unitCost: isSet(object.unitCost) ? globalThis.String(object.unitCost) : "",
       productType: isSet(object.productType) ? globalThis.String(object.productType) : "",
+      r11nList: globalThis.Array.isArray(object?.r11nList) ? object.r11nList.map((e: any) => globalThis.String(e)) : [],
     };
   },
 
@@ -9657,6 +9684,9 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     if (message.productType !== "") {
       obj.productType = message.productType;
     }
+    if (message.r11nList?.length) {
+      obj.r11nList = message.r11nList;
+    }
     return obj;
   },
 
@@ -9675,6 +9705,7 @@ export const ProductCatalogEntry: MessageFns<ProductCatalogEntry> = {
     message.numberOfDevicesPerRack = object.numberOfDevicesPerRack ?? 0;
     message.unitCost = object.unitCost ?? "";
     message.productType = object.productType ?? "";
+    message.r11nList = object.r11nList?.map((e) => e) || [];
     return message;
   },
 };
@@ -9755,12 +9786,91 @@ export const Int32Range: MessageFns<Int32Range> = {
   },
 };
 
+function createBaseProductCatalogFilterValue(): ProductCatalogFilterValue {
+  return { value: "", inScope: false };
+}
+
+export const ProductCatalogFilterValue: MessageFns<ProductCatalogFilterValue> = {
+  encode(message: ProductCatalogFilterValue, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.value !== "") {
+      writer.uint32(10).string(message.value);
+    }
+    if (message.inScope !== false) {
+      writer.uint32(16).bool(message.inScope);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ProductCatalogFilterValue {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseProductCatalogFilterValue() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.inScope = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ProductCatalogFilterValue {
+    return {
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+      inScope: isSet(object.inScope) ? globalThis.Boolean(object.inScope) : false,
+    };
+  },
+
+  toJSON(message: ProductCatalogFilterValue): unknown {
+    const obj: any = {};
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    if (message.inScope !== false) {
+      obj.inScope = message.inScope;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ProductCatalogFilterValue>): ProductCatalogFilterValue {
+    return ProductCatalogFilterValue.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ProductCatalogFilterValue>): ProductCatalogFilterValue {
+    const message = createBaseProductCatalogFilterValue() as any;
+    message.value = object.value ?? "";
+    message.inScope = object.inScope ?? false;
+    return message;
+  },
+};
+
 function createBaseGetProductCatalogFilterValuesRequest(): GetProductCatalogFilterValuesRequest {
-  return {};
+  return { filter: "" };
 }
 
 export const GetProductCatalogFilterValuesRequest: MessageFns<GetProductCatalogFilterValuesRequest> = {
-  encode(_: GetProductCatalogFilterValuesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+  encode(message: GetProductCatalogFilterValuesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.filter !== "") {
+      writer.uint32(10).string(message.filter);
+    }
     return writer;
   },
 
@@ -9771,6 +9881,14 @@ export const GetProductCatalogFilterValuesRequest: MessageFns<GetProductCatalogF
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -9780,20 +9898,24 @@ export const GetProductCatalogFilterValuesRequest: MessageFns<GetProductCatalogF
     return message;
   },
 
-  fromJSON(_: any): GetProductCatalogFilterValuesRequest {
-    return {};
+  fromJSON(object: any): GetProductCatalogFilterValuesRequest {
+    return { filter: isSet(object.filter) ? globalThis.String(object.filter) : "" };
   },
 
-  toJSON(_: GetProductCatalogFilterValuesRequest): unknown {
+  toJSON(message: GetProductCatalogFilterValuesRequest): unknown {
     const obj: any = {};
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
     return obj;
   },
 
   create(base?: DeepPartial<GetProductCatalogFilterValuesRequest>): GetProductCatalogFilterValuesRequest {
     return GetProductCatalogFilterValuesRequest.fromPartial(base ?? {});
   },
-  fromPartial(_: DeepPartial<GetProductCatalogFilterValuesRequest>): GetProductCatalogFilterValuesRequest {
+  fromPartial(object: DeepPartial<GetProductCatalogFilterValuesRequest>): GetProductCatalogFilterValuesRequest {
     const message = createBaseGetProductCatalogFilterValuesRequest() as any;
+    message.filter = object.filter ?? "";
     return message;
   },
 };
@@ -9808,6 +9930,13 @@ function createBaseGetProductCatalogFilterValuesResponse(): GetProductCatalogFil
     r11n: [],
     numberOfDevicesPerRack: undefined,
     productType: [],
+    scopedProductCatalogId: [],
+    scopedProductName: [],
+    scopedGpn: [],
+    scopedResourceType: [],
+    scopedFleetPlmStatus: [],
+    scopedR11n: [],
+    scopedProductType: [],
   };
 }
 
@@ -9836,6 +9965,27 @@ export const GetProductCatalogFilterValuesResponse: MessageFns<GetProductCatalog
     }
     for (const v of message.productType) {
       writer.uint32(66).string(v!);
+    }
+    for (const v of message.scopedProductCatalogId) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(74).fork()).join();
+    }
+    for (const v of message.scopedProductName) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(82).fork()).join();
+    }
+    for (const v of message.scopedGpn) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(90).fork()).join();
+    }
+    for (const v of message.scopedResourceType) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(98).fork()).join();
+    }
+    for (const v of message.scopedFleetPlmStatus) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(106).fork()).join();
+    }
+    for (const v of message.scopedR11n) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(114).fork()).join();
+    }
+    for (const v of message.scopedProductType) {
+      ProductCatalogFilterValue.encode(v!, writer.uint32(122).fork()).join();
     }
     return writer;
   },
@@ -9911,6 +10061,62 @@ export const GetProductCatalogFilterValuesResponse: MessageFns<GetProductCatalog
           message.productType.push(reader.string());
           continue;
         }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.scopedProductCatalogId.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.scopedProductName.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.scopedGpn.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.scopedResourceType.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 13: {
+          if (tag !== 106) {
+            break;
+          }
+
+          message.scopedFleetPlmStatus.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.scopedR11n.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.scopedProductType.push(ProductCatalogFilterValue.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -9944,6 +10150,27 @@ export const GetProductCatalogFilterValuesResponse: MessageFns<GetProductCatalog
       productType: globalThis.Array.isArray(object?.productType)
         ? object.productType.map((e: any) => globalThis.String(e))
         : [],
+      scopedProductCatalogId: globalThis.Array.isArray(object?.scopedProductCatalogId)
+        ? object.scopedProductCatalogId.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedProductName: globalThis.Array.isArray(object?.scopedProductName)
+        ? object.scopedProductName.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedGpn: globalThis.Array.isArray(object?.scopedGpn)
+        ? object.scopedGpn.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedResourceType: globalThis.Array.isArray(object?.scopedResourceType)
+        ? object.scopedResourceType.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedFleetPlmStatus: globalThis.Array.isArray(object?.scopedFleetPlmStatus)
+        ? object.scopedFleetPlmStatus.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedR11n: globalThis.Array.isArray(object?.scopedR11n)
+        ? object.scopedR11n.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
+      scopedProductType: globalThis.Array.isArray(object?.scopedProductType)
+        ? object.scopedProductType.map((e: any) => ProductCatalogFilterValue.fromJSON(e))
+        : [],
     };
   },
 
@@ -9973,6 +10200,27 @@ export const GetProductCatalogFilterValuesResponse: MessageFns<GetProductCatalog
     if (message.productType?.length) {
       obj.productType = message.productType;
     }
+    if (message.scopedProductCatalogId?.length) {
+      obj.scopedProductCatalogId = message.scopedProductCatalogId.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedProductName?.length) {
+      obj.scopedProductName = message.scopedProductName.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedGpn?.length) {
+      obj.scopedGpn = message.scopedGpn.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedResourceType?.length) {
+      obj.scopedResourceType = message.scopedResourceType.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedFleetPlmStatus?.length) {
+      obj.scopedFleetPlmStatus = message.scopedFleetPlmStatus.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedR11n?.length) {
+      obj.scopedR11n = message.scopedR11n.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
+    if (message.scopedProductType?.length) {
+      obj.scopedProductType = message.scopedProductType.map((e) => ProductCatalogFilterValue.toJSON(e));
+    }
     return obj;
   },
 
@@ -9992,6 +10240,15 @@ export const GetProductCatalogFilterValuesResponse: MessageFns<GetProductCatalog
         ? Int32Range.fromPartial(object.numberOfDevicesPerRack)
         : undefined;
     message.productType = object.productType?.map((e) => e) || [];
+    message.scopedProductCatalogId =
+      object.scopedProductCatalogId?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    message.scopedProductName = object.scopedProductName?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    message.scopedGpn = object.scopedGpn?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    message.scopedResourceType = object.scopedResourceType?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    message.scopedFleetPlmStatus = object.scopedFleetPlmStatus?.map((e) => ProductCatalogFilterValue.fromPartial(e)) ||
+      [];
+    message.scopedR11n = object.scopedR11n?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
+    message.scopedProductType = object.scopedProductType?.map((e) => ProductCatalogFilterValue.fromPartial(e)) || [];
     return message;
   },
 };

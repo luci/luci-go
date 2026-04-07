@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import { MenuList } from '@mui/material';
-import { useRef, useMemo, useState, useImperativeHandle } from 'react';
+import { useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
+import { OptionValue } from '@/fleet/types/option';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
@@ -29,11 +30,13 @@ import {
   memberToKey,
 } from './use_filters';
 
+interface OptionWithSelection {
+  optionValue: OptionValue;
+  isSelected: boolean;
+}
+
 export class StringListFilterCategory implements FilterCategory {
-  private options: Record<
-    string,
-    { label: string; isSelected: boolean; key: string }
-  >;
+  private options: Record<string, OptionWithSelection>;
 
   public label: string;
   public key: string;
@@ -43,14 +46,14 @@ export class StringListFilterCategory implements FilterCategory {
   constructor(
     label: string,
     key: string,
-    options: { label: string; key: string }[],
+    options: OptionValue[],
     reRender: (newFilter: StringListFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] = [],
   ) {
     this.label = label;
     this.key = key;
     this.options = Object.fromEntries(
-      options.map((o) => [o.key, { ...o, isSelected: false }]),
+      options.map((o) => [o.value, { optionValue: o, isSelected: false }]),
     );
     this.actualReRender = reRender;
     this.reRender = () => {
@@ -136,8 +139,8 @@ export class StringListFilterCategory implements FilterCategory {
   public toAIP160(): string {
     const selectedValues = Object.values(this.options)
       .filter((o) => o.isSelected)
-      .filter((o) => o.key !== BLANK_VALUE)
-      .map((o) => o.key);
+      .filter((o) => o.optionValue.value !== BLANK_VALUE)
+      .map((o) => o.optionValue.value);
 
     const regularFilters =
       selectedValues.length === 0
@@ -174,7 +177,7 @@ export class StringListFilterCategory implements FilterCategory {
     }
 
     for (const opt of Object.values(this.options)) {
-      opt.isSelected = !!newOptions[opt.key];
+      opt.isSelected = !!newOptions[opt.optionValue.value];
     }
 
     this.reRender();
@@ -207,7 +210,7 @@ export class StringListFilterCategory implements FilterCategory {
   public getChipLabel() {
     const selectedLabels = Object.values(this.options)
       .filter((o) => o.isSelected)
-      .map((o) => o.label);
+      .map((o) => o.optionValue.label);
 
     return `${selectedLabels.length} | [ ${this.label} ]: ${selectedLabels.join(
       ', ',
@@ -227,7 +230,7 @@ export class StringListFilterCategory implements FilterCategory {
   public getChildrenSearchScore(searchQuery: string) {
     const sortedChildren = fuzzySort(searchQuery)(
       Object.values(this.options),
-      (o) => o.label,
+      (o) => o.optionValue.label,
     );
     return sortedChildren[0]?.score;
   }
@@ -245,10 +248,9 @@ const OptionComponent = function OptionComponent({
   filterKey: string;
   childrenSearchQuery: string;
   onNavigateUp: (e: React.KeyboardEvent) => void;
-  options: Record<string, { label: string; isSelected: boolean; key: string }>;
-  onApply: (
-    opt: Record<string, { label: string; isSelected: boolean; key: string }>,
-  ) => void;
+  options: Record<string, OptionWithSelection>;
+  onApply: (opt: Record<string, OptionWithSelection>) => void;
+
   onClose: () => void;
   ref?: React.Ref<unknown>;
 }) {
@@ -266,16 +268,30 @@ const OptionComponent = function OptionComponent({
     () =>
       fuzzySort(childrenSearchQuery)(
         Object.values(options),
-        (o) => o.label,
+        (o) => o.optionValue.label,
       ).sort((a, b) => {
-        const isASelected = options[a.el.key].isSelected;
-        const isBSelected = options[b.el.key].isSelected;
+        const isASelected = options[a.el.optionValue.value].isSelected;
+        const isBSelected = options[b.el.optionValue.value].isSelected;
 
         if (isASelected && !isBSelected && a.score >= 0) return -1;
         if (isBSelected && !isASelected && b.score >= 0) return 1;
 
-        return b.score - a.score;
+        if (a.score !== b.score) {
+          return b.score - a.score;
+        }
+
+        const inScopeA =
+          options[a.el.optionValue.value].optionValue.inScope ?? true;
+        const inScopeB =
+          options[b.el.optionValue.value].optionValue.inScope ?? true;
+
+        if (inScopeA !== inScopeB) {
+          return inScopeA ? -1 : 1;
+        }
+
+        return 0;
       }),
+
     [childrenSearchQuery, options],
   );
 
@@ -298,13 +314,13 @@ const OptionComponent = function OptionComponent({
         <OptionsMenu
           elements={fuzzySorted.map((e) => ({
             ...e,
-            el: { label: e.el.label, value: e.el.key },
+            el: e.el.optionValue,
           }))}
           selectedElements={
             new Set(
               Object.values(tempOptions)
                 .filter((o) => o.isSelected)
-                .map((o) => o.key),
+                .map((o) => o.optionValue.value),
             )
           }
           flipOption={(key) => {
@@ -334,7 +350,7 @@ export class StringListFilterCategoryBuilder
   implements FilterCategoryBuilder<StringListFilterCategory>
 {
   public label: string | undefined;
-  public options: { label: string; key: string }[] | undefined;
+  public options: OptionValue[] | undefined;
 
   constructor() {}
 
@@ -342,7 +358,7 @@ export class StringListFilterCategoryBuilder
     this.label = label;
     return this;
   }
-  public setOptions(options: { label: string; key: string }[]) {
+  public setOptions(options: OptionValue[]) {
     this.options = options;
     return this;
   }

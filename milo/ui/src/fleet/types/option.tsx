@@ -22,8 +22,8 @@
 export interface OptionValue {
   label: string;
   value: string;
+  inScope?: boolean;
 }
-
 export type FilterType = 'string_list' | 'date' | 'range';
 
 interface BaseCategory {

@@ -129,6 +129,9 @@ export const OptionsMenu = ({
                   ...(item.el.label === BLANK_VALUE && {
                     color: colors.grey[500],
                   }),
+                  ...(item.el.inScope === false && {
+                    color: colors.grey[500],
+                  }),
                 }}
               >
                 <Checkbox

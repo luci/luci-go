@@ -47,9 +47,9 @@ export const dimensionsToFilterOptions = (
     filters[`"${key}"`] = new StringListFilterCategoryBuilder()
       .setLabel(labelsOverride[key]?.headerName || key)
       .setOptions([
-        { label: BLANK_VALUE, key: BLANK_VALUE },
+        { label: BLANK_VALUE, value: BLANK_VALUE },
         ...value.values.map((value) => {
-          return { label: value, key: `"${value}"` };
+          return { label: value, value: `"${value}"` };
         }),
       ]);
   }
@@ -62,9 +62,9 @@ export const dimensionsToFilterOptions = (
     filters[`labels."${key}"`] = new StringListFilterCategoryBuilder()
       .setLabel(labelsOverride[key]?.headerName || key)
       .setOptions([
-        { label: BLANK_VALUE, key: BLANK_VALUE },
+        { label: BLANK_VALUE, value: BLANK_VALUE },
         ...value.values.map((value) => {
-          return { label: value, key: `"${value}"` };
+          return { label: value, value: `"${value}"` };
         }),
       ]);
   }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
@@ -23,6 +23,7 @@ import {
   GetProductCatalogFilterValuesResponse,
   Int32Range,
   ProductCatalogEntry,
+  ProductCatalogFilterValue,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { COLUMNS } from './product_catalogue_columns';
@@ -47,13 +48,20 @@ const FILTERS: Partial<
 };
 
 export const useProductCatalogFilters = (onApply?: () => void) => {
+  const [filterOptions, setFilterOptions] = useState<
+    Record<string, StringListFilterCategoryBuilder | RangeFilterCategoryBuilder>
+  >({});
+  const { filterValues, aip160 } = useFilters(filterOptions, {
+    allowExtraKeys: true,
+  });
+
   const client = useFleetConsoleClient();
   const filterOptionsQuery = useQuery({
-    ...client.GetProductCatalogFilterValues.query({}),
+    ...client.GetProductCatalogFilterValues.query({ filter: aip160 }),
     placeholderData: keepPreviousData,
   });
 
-  const filterOptions = useMemo(() => {
+  const nextFilterOptions = useMemo(() => {
     const options: Record<
       string,
       StringListFilterCategoryBuilder | RangeFilterCategoryBuilder
@@ -69,15 +77,20 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
         accessorKey as keyof GetProductCatalogFilterValuesResponse;
       const data = filterOptionsQuery.data?.[responseKey];
       const filterKey = `"${config.filterKey}"`;
+      const scopedKey =
+        `scoped${accessorKey.charAt(0).toUpperCase()}${accessorKey.slice(1)}` as keyof GetProductCatalogFilterValuesResponse;
+      const scopedData = filterOptionsQuery.data?.[
+        scopedKey
+      ] as ProductCatalogFilterValue[];
 
       if (config.type === 'string_list') {
-        const stringList = data as string[];
         options[filterKey] = new StringListFilterCategoryBuilder()
           .setLabel(column.header as string)
           .setOptions(
-            stringList?.map((val) => ({
-              label: val,
-              key: `"${val}"`,
+            scopedData?.map((v) => ({
+              label: v.value,
+              value: `"${v.value}"`,
+              inScope: v.inScope,
             })) ?? [],
           );
       } else if (config.type === 'range') {
@@ -89,9 +102,11 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
       }
     }
     return options;
-  }, [filterOptionsQuery]);
+  }, [filterOptionsQuery.data]);
 
-  const { filterValues, aip160 } = useFilters(filterOptions);
+  useEffect(() => {
+    setFilterOptions(nextFilterOptions);
+  }, [nextFilterOptions]);
 
   const onApplyFilter = useCallback(() => {
     onApply?.();

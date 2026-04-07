@@ -45,12 +45,7 @@ export function DeviceListFilterBar({
           option.value,
           new StringListFilterCategoryBuilder()
             .setLabel(option.label)
-            .setOptions(
-              ((option as StringListCategory).options || []).map((o) => ({
-                label: o.label,
-                key: o.value,
-              })),
-            ),
+            .setOptions((option as StringListCategory).options || []),
         ] as const;
 
       throw new Error();
