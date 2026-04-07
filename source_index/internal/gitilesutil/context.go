@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/api/gitiles"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/server/auth"
@@ -43,7 +44,26 @@ func realClientFactory(ctx context.Context, host string, as auth.RPCAuthorityKin
 	if err != nil {
 		return nil, err
 	}
-	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
+
+	// Prefer to use the authenticated Gitiles endpoints (/a/), if we are making
+	// authenticated calls. It makes it less likely we will get caught up in
+	// load shedding when the unauthenticated pool is overloaded.
+	var useAuth bool
+	switch as {
+	case auth.NoAuth:
+		useAuth = false
+	case auth.AsCredentialsForwarder:
+		if auth.CurrentIdentity(ctx) == identity.AnonymousIdentity {
+			// Equivalent to auth.NoAuth.
+			useAuth = false
+		} else {
+			useAuth = true
+		}
+	default:
+		useAuth = true
+	}
+
+	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, useAuth)
 }
 
 // NewClient creates a new Gitiles client.
