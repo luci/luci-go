@@ -200,6 +200,46 @@ describe('ChartWidget', () => {
     ).toBeInTheDocument();
   });
 
+  it('should NOT display required message when atp_test_name filter is present in series', () => {
+    const widgetWithSeriesFilter = PerfChartWidget.fromPartial({
+      ...baseWidget,
+      filters: [],
+      series: [
+        {
+          metricField: 'metric1',
+          filters: [
+            {
+              column: Column.ATP_TEST_NAME,
+              textInput: { defaultValue: { values: ['test-value'] } },
+            },
+          ],
+        },
+      ],
+    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        multiMetricChartData: {
+          xAxisDataKey: 'x',
+          yAxisDataKey: 'y',
+          lines: [],
+        },
+      }),
+    );
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={widgetWithSeriesFilter}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+    expect(
+      screen.queryByText(COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED),
+    ).not.toBeInTheDocument();
+  });
+
   it('should display no data message when series have no data points', () => {
     mockUseFetchDashboardWidgetData.mockReturnValue(
       createMockQueryResult({

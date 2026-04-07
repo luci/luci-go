@@ -287,13 +287,17 @@ export function ChartWidget({
   );
 
   const hasAtpTestFilter = useMemo(() => {
-    const allFilters = [...(globalFilters ?? []), ...(widget.filters ?? [])];
+    const allFilters = [
+      ...(globalFilters ?? []),
+      ...(widget.filters ?? []),
+      ...(widget.series?.flatMap((s) => s.filters ?? []) ?? []),
+    ];
     return allFilters.some(
       (f) =>
         f.column === Column.ATP_TEST_NAME &&
         f.textInput?.defaultValue?.values?.[0],
     );
-  }, [globalFilters, widget.filters]);
+  }, [globalFilters, widget.filters, widget.series]);
 
   const {
     data: widgetResponse,
