@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { useFilters } from '@/fleet/components/filters/use_filters';
+import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
   GetProductCatalogFilterValuesResponse,
@@ -87,11 +88,13 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
         options[filterKey] = new StringListFilterCategoryBuilder()
           .setLabel(column.header as string)
           .setOptions(
-            scopedData?.map((v) => ({
-              label: v.value,
-              value: `"${v.value}"`,
-              inScope: v.inScope,
-            })) ?? [],
+            scopedData?.map((v) => {
+              return {
+                label: v.value === '' ? BLANK_VALUE : v.value,
+                value: `"${v.value}"`,
+                inScope: v.inScope,
+              };
+            }) ?? [],
           );
       } else if (config.type === 'range') {
         const range = data as Int32Range;
