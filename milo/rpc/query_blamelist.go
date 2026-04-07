@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/identity"
@@ -81,7 +82,12 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	}
 	logRes, err := gitilesClient.Log(ctx, logReq)
 	if err != nil {
-		return nil, fmt.Errorf("get gitiles log: %w", err)
+		// Bubble up authentication-related errors.
+		status, ok := status.FromError(err)
+		if ok && (status.Code() == codes.Unauthenticated || status.Code() == codes.PermissionDenied) {
+			return nil, appstatus.Errorf(status.Code(), "retrieving log from gitiles: %s", status.Message())
+		}
+		return nil, fmt.Errorf("retrieve gitiles log: %w", err)
 	}
 	commits := logRes.Log
 

@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -282,6 +285,40 @@ func TestQueryBlamelist(t *testing.T) {
 			}
 			_, err := srv.QueryBlamelist(c, req)
 			assert.Loosely(t, err, should.NotBeNil)
+		})
+
+		t.Run(`bubble up gitiles auth errors`, func(t *ftt.Test) {
+			req := &milopb.QueryBlamelistRequest{
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:    "fake_host.googlesource.com",
+					Project: "fake_gitiles_project",
+					Id:      "commit1",
+				},
+				Builder: builder1,
+			}
+			t.Run(`unauthenticated`, func(t *ftt.Test) {
+				gitMock.
+					EXPECT().
+					Log(gomock.Any(), gomock.Any()).
+					Return(nil, status.Error(codes.Unauthenticated, "some unauthenticated error"))
+
+				_, err := srv.QueryBlamelist(c, req)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.Unauthenticated))
+				assert.Loosely(t, err, should.ErrLike("retrieving log from gitiles: some unauthenticated error"))
+			})
+
+			t.Run(`permission denied`, func(t *ftt.Test) {
+				gitMock.
+					EXPECT().
+					Log(gomock.Any(), gomock.Any()).
+					Return(nil, status.Error(codes.PermissionDenied, "some permission denied error"))
+
+				_, err := srv.QueryBlamelist(c, req)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("retrieving log from gitiles: some permission denied error"))
+			})
 		})
 
 		t.Run(`coerce page_size`, func(t *ftt.Test) {
