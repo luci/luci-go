@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/auth/identity"
 	bbgrpcbb "go.chromium.org/luci/buildbucket/proto/grpcpb"
 	"go.chromium.org/luci/common/api/gitiles"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
@@ -83,7 +84,26 @@ func CreateInternalService() *rpc.MiloInternalService {
 			if err != nil {
 				return nil, err
 			}
-			client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, host, false)
+
+			// Prefer to use the authenticated Gitiles endpoints (/a/), if we are making
+			// authenticated calls. It makes it less likely we will get caught up in
+			// load shedding when the unauthenticated pool is overloaded.
+			var useAuth bool
+			switch as {
+			case auth.NoAuth:
+				useAuth = false
+			case auth.AsCredentialsForwarder:
+				if auth.CurrentIdentity(c) == identity.AnonymousIdentity {
+					// Equivalent to auth.NoAuth.
+					useAuth = false
+				} else {
+					useAuth = true
+				}
+			default:
+				useAuth = true
+			}
+
+			client, err := gitiles.NewRESTClient(&http.Client{Transport: t}, host, useAuth)
 			if err != nil {
 				return nil, err
 			}
