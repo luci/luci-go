@@ -26,6 +26,13 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
+type NodeType string
+
+const (
+	Check NodeType = "Check"
+	Stage NodeType = "Stage"
+)
+
 var (
 	valueRefDesc = ((*orchestratorpb.ValueRef)(nil)).ProtoReflect().Descriptor()
 	editDesc     = (*orchestratorpb.Edit)(nil).ProtoReflect().Descriptor()
@@ -33,7 +40,11 @@ var (
 
 // populateAllValueRefs populates one example of every ValueRef reachable from
 // `msg`, returning the number of ValueRefs it wrote.
-func populateAllValueRefs(msg proto.Message) int {
+//
+// `nodeType` allows the caller to specify whether `msg` is related to a stage
+// or a check, so when working with its Edits we populate only the oneof field
+// applicable to that type.
+func populateAllValueRefs(msg proto.Message, nodeType NodeType) (numRefs int) {
 	// cached helper to tell if we need to walk down a given branch.
 	hasRefCache := make(map[protoreflect.Descriptor]bool, 50)
 	var hasValueRef func(desc protoreflect.MessageDescriptor) bool
@@ -67,14 +78,15 @@ func populateAllValueRefs(msg proto.Message) int {
 		return false
 	}
 
-	// When processing Edit messages, we want to skip the irrelevant edit delta
-	// field.
-	editDeltaSkip := "stage"
-	if msg.ProtoReflect().Descriptor() == (*orchestratorpb.Stage)(nil).ProtoReflect().Descriptor() {
-		editDeltaSkip = "check"
+	// When processing Edit messages, we want to skip the delta field that
+	// applies to the other type (skip `check` for stage edits, and `stage`
+	// for check edits).
+	var editDeltaToSkip string
+	if nodeType == Check {
+		editDeltaToSkip = "stage"
+	} else if nodeType == Stage {
+		editDeltaToSkip = "check"
 	}
-
-	var numRefs int
 
 	// Use reflection to generate a skeleton Message with all ValueRef fields set
 	// to an instance of a ValueRef without omit reason.
@@ -93,7 +105,7 @@ func populateAllValueRefs(msg proto.Message) int {
 		fields := msg.Descriptor().Fields()
 		for i := range fields.Len() {
 			fd := fields.Get(i)
-			if isEdit && fd.Name() == protoreflect.Name(editDeltaSkip) {
+			if isEdit && fd.Name() == protoreflect.Name(editDeltaToSkip) {
 				continue
 			}
 			if fd.IsList() {
@@ -120,7 +132,7 @@ func populateAllValueRefs(msg proto.Message) int {
 // have changed and RefsInStage needs to be updated.
 func TestRefsInStage(t *testing.T) {
 	stg := &orchestratorpb.Stage{}
-	expect := populateAllValueRefs(stg)
+	expect := populateAllValueRefs(stg, Stage)
 
 	var found int
 	for range RefsInStage(stg) {
@@ -138,7 +150,7 @@ func TestRefsInStage(t *testing.T) {
 // updated.
 func TestRefsInStageAttempt(t *testing.T) {
 	atmpt := &orchestratorpb.Stage_Attempt{}
-	expect := populateAllValueRefs(atmpt)
+	expect := populateAllValueRefs(atmpt, Stage)
 
 	var found int
 	for range RefsInStageAttempt(atmpt) {
@@ -148,17 +160,57 @@ func TestRefsInStageAttempt(t *testing.T) {
 	assert.That(t, found, should.Equal(expect))
 }
 
-// TestRefsInCheck ensures that `RefsInCheck` actually covers all ValueRefs in
-// the Stage Attempt proto.
+// TestRefsInStageEdit ensures that `RefsInStageEdit` actually covers all
+// ValueRefs in the Stage Edit proto.
 //
 // If this test fails, it likely means that protobufs for
-// orchestrator.Stage_Attempt have changed and RefsInCheck needs to be updated.
+// orchestrator.Edit have changed and RefsInStageEdit needs to be updated.
+func TestRefsInStageEdit(t *testing.T) {
+	edit := orchestratorpb.Edit_builder{
+		Stage: &orchestratorpb.StageDelta{},
+	}.Build()
+	expect := populateAllValueRefs(edit, Stage)
+
+	var found int
+	for range RefsInStageEdit(edit) {
+		found++
+	}
+
+	assert.That(t, found, should.Equal(expect))
+}
+
+// TestRefsInCheck ensures that `RefsInCheck` actually covers all ValueRefs in
+// the Check proto.
+//
+// If this test fails, it likely means that protobufs for
+// orchestrator.Check have changed and RefsInCheck needs to be updated.
 func TestRefsInCheck(t *testing.T) {
 	check := &orchestratorpb.Check{}
-	expect := populateAllValueRefs(check)
+	expect := populateAllValueRefs(check, Check)
 
 	var found int
 	for range RefsInCheck(check) {
+		found++
+	}
+
+	assert.That(t, found, should.Equal(expect))
+}
+
+// TestRefsInCheckEdit ensures that `RefsInCheckEdit` actually covers all
+// ValueRefs in the Check Edit proto.
+//
+// If this test fails, it likely means that protobufs for
+// orchestrator.Edit have changed and RefsInCheckEdit needs to be updated.
+func TestRefsInCheckEdit(t *testing.T) {
+	edit := orchestratorpb.Edit_builder{
+		Check: orchestratorpb.CheckDelta_builder{
+			State: orchestratorpb.CheckState_CHECK_STATE_FINAL.Enum(),
+		}.Build(),
+	}.Build()
+	expect := populateAllValueRefs(edit, Check)
+
+	var found int
+	for range RefsInCheckEdit(edit) {
 		found++
 	}
 

@@ -73,16 +73,9 @@ func RefsInStage(stage *orchestratorpb.Stage) iter.Seq2[RefSlot, *orchestratorpb
 		}
 
 		for _, edit := range stage.GetEdits() {
-			for _, detail := range edit.GetReason().GetDetails() {
-				if detail != nil && !yield(StageEditReasonDetailsSlot, detail) {
+			for slot, ref := range RefsInStageEdit(edit) {
+				if ref != nil && !yield(slot, ref) {
 					return
-				}
-			}
-			for _, attempt := range edit.GetStage().GetAttempts() {
-				for _, detail := range attempt.GetDetails() {
-					if detail != nil && !yield(StageEditAttemptDetailsSlot, detail) {
-						return
-					}
 				}
 			}
 		}
@@ -116,6 +109,25 @@ func RefsInStageAttempt(attempt *orchestratorpb.Stage_Attempt) iter.Seq2[RefSlot
 	}
 }
 
+// RefsInStageEdit is an iterator which iterates through every non-nil
+// *ValueRef in the stage edit.
+func RefsInStageEdit(edit *orchestratorpb.Edit) iter.Seq2[RefSlot, *orchestratorpb.ValueRef] {
+	return func(yield func(RefSlot, *orchestratorpb.ValueRef) bool) {
+		for _, detail := range edit.GetReason().GetDetails() {
+			if detail != nil && !yield(StageEditReasonDetailsSlot, detail) {
+				return
+			}
+		}
+		for _, attempt := range edit.GetStage().GetAttempts() {
+			for _, detail := range attempt.GetDetails() {
+				if detail != nil && !yield(StageEditAttemptDetailsSlot, detail) {
+					return
+				}
+			}
+		}
+	}
+}
+
 // RefsInCheck is an iterator which iterates through every non-nil
 // *ValueRef in the check.
 func RefsInCheck(check *orchestratorpb.Check) iter.Seq2[RefSlot, *orchestratorpb.ValueRef] {
@@ -133,21 +145,33 @@ func RefsInCheck(check *orchestratorpb.Check) iter.Seq2[RefSlot, *orchestratorpb
 			}
 		}
 		for _, edit := range check.GetEdits() {
-			for _, detail := range edit.GetReason().GetDetails() {
-				if detail != nil && !yield(CheckEditReasonDetailsSlot, detail) {
+			for slot, ref := range RefsInCheckEdit(edit) {
+				if ref != nil && !yield(slot, ref) {
 					return
 				}
 			}
-			for _, option := range edit.GetCheck().GetOptions() {
-				if option != nil && !yield(CheckEditOptionsSlot, option) {
-					return
-				}
+		}
+	}
+}
+
+// RefsInCheckEdit is an iterator which iterates through every non-nil
+// *ValueRef in the check edit.
+func RefsInCheckEdit(edit *orchestratorpb.Edit) iter.Seq2[RefSlot, *orchestratorpb.ValueRef] {
+	return func(yield func(RefSlot, *orchestratorpb.ValueRef) bool) {
+		for _, detail := range edit.GetReason().GetDetails() {
+			if detail != nil && !yield(CheckEditReasonDetailsSlot, detail) {
+				return
 			}
-			for _, result := range edit.GetCheck().GetResults() {
-				for _, dat := range result.GetData() {
-					if dat != nil && !yield(CheckEditResultsDataSlot, dat) {
-						return
-					}
+		}
+		for _, option := range edit.GetCheck().GetOptions() {
+			if option != nil && !yield(CheckEditOptionsSlot, option) {
+				return
+			}
+		}
+		for _, result := range edit.GetCheck().GetResults() {
+			for _, dat := range result.GetData() {
+				if dat != nil && !yield(CheckEditResultsDataSlot, dat) {
+					return
 				}
 			}
 		}
