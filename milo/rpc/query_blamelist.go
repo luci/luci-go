@@ -17,6 +17,7 @@ package rpc
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -70,7 +71,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	// blamelist.
 	gitilesClient, err := s.GetGitilesClient(ctx, req.GitilesCommit.Host, auth.AsCredentialsForwarder)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get gitiles client: %w", err)
 	}
 	logReq := &gitiles.LogRequest{
 		Project:    req.GitilesCommit.Project,
@@ -80,7 +81,7 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	}
 	logRes, err := gitilesClient.Log(ctx, logReq)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get gitiles log: %w", err)
 	}
 	commits := logRes.Log
 

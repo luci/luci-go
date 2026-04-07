@@ -369,6 +369,7 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 		return r.Header, body, status.Errorf(codes.Unauthenticated, "unauthenticated")
 
 	case http.StatusForbidden:
+		logging.Infof(ctx, "Gitiles: permission denied error.\nResponse headers: %v\nResponse body: %s", r.Header, body)
 		return r.Header, body, status.Errorf(codes.PermissionDenied, "permission denied")
 
 	case http.StatusNotFound:
