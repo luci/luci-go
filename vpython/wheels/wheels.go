@@ -134,43 +134,9 @@ func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string)
 		}
 	}
 
-	// Translates vpython spec into a CIPD ensure file.
-	ef, err := ensureFileFromVPythonSpec(s, tags)
-	if err != nil {
-		return err
-	}
-	var efs strings.Builder
-	if err := ef.Serialize(&efs); err != nil {
-		return err
-	}
-
-	// Always write ensures file.
-	if err := os.WriteFile(filepath.Join(out, "ensure.txt"), []byte(efs.String()), 0644); err != nil {
-		return err
-	}
-
-	if err := writeMappingFile(filepath.Join(out, "mapping.json"), ef); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func writeMappingFile(path string, ef *ensure.File) error {
-	mapping := make(map[string]string)
-	for _, pkg := range ef.PackagesBySubdir["wheels"] {
-		if pkg.PackageTemplate == "" {
-			continue
-		}
-		pipName := pipNameFromPackageName(pkg.PackageTemplate)
-		mapping[pipName] = pkg.PackageTemplate
-	}
-	mappingBytes, err := json.Marshal(mapping)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, mappingBytes, 0644)
-}
 
 func ensureFileFromVPythonSpec(s *vpython.Spec, tags []*vpython.PEP425Tag) (*ensure.File, error) {
 	s = proto.Clone(s).(*vpython.Spec)
