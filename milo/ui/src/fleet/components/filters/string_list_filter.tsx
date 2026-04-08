@@ -43,6 +43,10 @@ export class StringListFilterCategory implements FilterCategory {
   private reRender: () => void;
   private actualReRender: (newFilter: StringListFilterCategory) => void;
 
+  public getOptions() {
+    return this.options;
+  }
+
   constructor(
     label: string,
     key: string,
@@ -140,7 +144,22 @@ export class StringListFilterCategory implements FilterCategory {
     const selectedValues = Object.values(this.options)
       .filter((o) => o.isSelected)
       .filter((o) => o.optionValue.value !== BLANK_VALUE)
-      .map((o) => o.optionValue.value);
+      .map((o) => {
+        const val = o.optionValue.value;
+        const isQuoted = val.startsWith('"') && val.endsWith('"');
+        if (
+          !isQuoted &&
+          (val.includes(' ') ||
+            val.includes('"') ||
+            val.includes('(') ||
+            val.includes(')'))
+        ) {
+          // If the value contains special characters, we quote it.
+          // Inside a quoted string in AIP-160, only quotes need to be escaped.
+          return `"${val.replace(/"/g, '\\"')}"`;
+        }
+        return val;
+      });
 
     const regularFilters =
       selectedValues.length === 0
@@ -161,6 +180,7 @@ export class StringListFilterCategory implements FilterCategory {
     newOptions:
       | Record<string, boolean>
       | ((old: Record<string, boolean>) => Record<string, boolean>),
+    silent = false,
   ): void {
     if (typeof newOptions === 'function') {
       return this.setOptions(
@@ -173,6 +193,7 @@ export class StringListFilterCategory implements FilterCategory {
             {} as Record<string, boolean>,
           ),
         ),
+        silent,
       );
     }
 
@@ -180,7 +201,9 @@ export class StringListFilterCategory implements FilterCategory {
       opt.isSelected = !!newOptions[opt.optionValue.value];
     }
 
-    this.reRender();
+    if (!silent) {
+      this.reRender();
+    }
   }
 
   public render(
@@ -225,6 +248,25 @@ export class StringListFilterCategory implements FilterCategory {
       this.options[key].isSelected = false;
     }
     this.reRender();
+  }
+
+  public getSelectedOptions() {
+    return Object.values(this.options)
+      .filter((o) => o.isSelected)
+      .map((o) => o.optionValue.value);
+  }
+
+  public setSelectedOptions(selectedKeys: string[], silent = false) {
+    const unquotedSelectedKeys = selectedKeys.map((k) =>
+      k.replace(/^"(.*)"$/, '$1'),
+    );
+    const map: Record<string, boolean> = {};
+    for (const opt of Object.values(this.options)) {
+      const unquotedOptKey = opt.optionValue.value.replace(/^"(.*)"$/, '$1');
+      map[opt.optionValue.value] =
+        unquotedSelectedKeys.includes(unquotedOptKey);
+    }
+    this.setOptions(map, silent);
   }
 
   public getChildrenSearchScore(searchQuery: string) {

@@ -32,14 +32,14 @@ export const CHROMEOS_DEFAULT_COLUMNS = [
 
 export const ANDROID_DEFAULT_COLUMNS = [
   'id',
-  'host_group',
   'state',
   'device_type',
-  'hostname',
-  'run_target',
   'build',
+  'host_group',
+  'hostname',
   'model',
   'pool',
+  'run_target',
   'type',
   'version',
 ];

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import _ from 'lodash';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useLocalStorage } from 'react-use';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -37,9 +37,12 @@ export const useParamsAndLocalStorage = (
   const [localStorageState, setLocalStorageState, clearLocalStorage] =
     useLocalStorage<string[]>(localStorageKey);
 
-  const getSanitizedValue = (val: string[]) => {
-    return sanitize ? sanitize(val) : val;
-  };
+  const getSanitizedValue = useCallback(
+    (val: string[]) => {
+      return sanitize ? sanitize(val) : val;
+    },
+    [sanitize],
+  );
 
   // We keep an internal state for optimistic updates
   const [syncedState, setSyncedState] = useState(() =>
@@ -61,14 +64,22 @@ export const useParamsAndLocalStorage = (
   const stateRef = useRef(syncedState);
 
   // Sync from URL/LocalStorage to internal state
-  const currentParamsValue = getSanitizedValue(
-    getInitialValue(
-      searchParams,
-      searchParamsKey,
-      localStorageState,
-      defaultValue,
-    ),
-  );
+  const currentParamsValue = useMemo(() => {
+    return getSanitizedValue(
+      getInitialValue(
+        searchParams,
+        searchParamsKey,
+        localStorageState,
+        defaultValue,
+      ),
+    );
+  }, [
+    searchParams,
+    searchParamsKey,
+    localStorageState,
+    defaultValue,
+    getSanitizedValue,
+  ]);
 
   useEffect(() => {
     // Stringify for stable comparison

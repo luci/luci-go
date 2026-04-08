@@ -15,7 +15,7 @@
 import { ViewColumnOutlined } from '@mui/icons-material';
 import { Button, Chip, colors, TablePagination } from '@mui/material';
 import _ from 'lodash';
-import { MaterialReactTable } from 'material-react-table';
+import { MaterialReactTable, MRT_ColumnDef } from 'material-react-table';
 import { useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -29,7 +29,10 @@ import { ColumnsButton } from '@/fleet/components/columns/columns_button';
 import { DeviceListFilterBar_OLD as DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar_OLD';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
-import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
+import {
+  FleetColumnDefExt,
+  useFleetMRTState,
+} from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   filtersUpdater,
@@ -187,7 +190,7 @@ export const BrowserDevicesPage = () => {
     pagerCtx,
     selectedOptions,
     filterOptionsConfig,
-    columnsList,
+    columnsList: columnsList as unknown as FleetColumnDefExt[],
 
     orderByParam,
     localStorageKey: BROWSER_DEVICES_LOCAL_STORAGE_KEY,
@@ -196,7 +199,7 @@ export const BrowserDevicesPage = () => {
   });
 
   const table = useFCDataTable({
-    columns: fleetMrtState.enrichedColumns,
+    columns: fleetMrtState.enrichedColumns as MRT_ColumnDef<BrowserDevice>[],
     data: devices as BrowserDevice[],
     displayColumnDefOptions: {
       'mrt-row-select': {

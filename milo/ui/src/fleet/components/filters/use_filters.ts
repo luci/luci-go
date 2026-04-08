@@ -36,6 +36,7 @@ export const useFilters = <
   filterValues: FilterValuesFromBuilders<T> | undefined;
   aip160: string;
   parseError: string | undefined;
+  getAip160String: () => string;
 } => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const filtersAIP160 = useRef(searchParams.get(FILTERS_PARAM_KEY) ?? '');
@@ -96,11 +97,30 @@ export const useFilters = <
     return filters;
   });
 
-  // When the builders change, create new filterCategories taking the values from the url
+  const currentFiltersParam = searchParams.get(FILTERS_PARAM_KEY) ?? '';
+
+  // Listen to external URL changes and reload filters
   useEffect(() => {
+    if (currentFiltersParam === filtersAIP160.current) return;
+    filtersAIP160.current = currentFiltersParam;
+
     if (builders === undefined) return;
 
-    // pauseFilterReRender.current = true;
+    setParseError(undefined);
+    const { filters, parseError } = buildFilters(
+      builders,
+      onFilterUpdate,
+      currentFiltersParam,
+      options.allowExtraKeys,
+    );
+
+    setParseError(parseError);
+    setFilterValues(filters);
+  }, [currentFiltersParam, builders, onFilterUpdate, options.allowExtraKeys]);
+
+  // When the builders change, create new filterCategories taking the values from the current url
+  useEffect(() => {
+    if (builders === undefined) return;
 
     setParseError(undefined);
     const { filters, parseError } = buildFilters(
@@ -114,13 +134,23 @@ export const useFilters = <
     setFilterValues(filters);
   }, [builders, onFilterUpdate, options.allowExtraKeys]);
 
+  const getAip160String = useCallback(() => {
+    if (!filterValues) return '';
+    return Object.values(filterValues)
+      .filter((f) => f.isActive())
+      .map((f) => f.toAIP160())
+      .filter((f) => f !== '')
+      .join(' AND ');
+  }, [filterValues]);
+
   return useMemo(
     () => ({
       filterValues: filterValues,
       aip160: filtersAIP160.current,
       parseError,
+      getAip160String,
     }),
-    [filterValues, filtersAIP160, parseError],
+    [filterValues, filtersAIP160, parseError, getAip160String],
   );
 };
 
@@ -149,7 +179,6 @@ export interface FilterCategory {
   isActive: () => boolean;
   clear: () => void;
   getChildrenSearchScore: (searchQuery: string) => number;
-
   clone(): FilterCategory;
 }
 

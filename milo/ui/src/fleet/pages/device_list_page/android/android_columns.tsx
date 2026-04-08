@@ -10,67 +10,105 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
+// limitations under the License.
 
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PowerIcon from '@mui/icons-material/Power';
 import PowerOffOutlinedIcon from '@mui/icons-material/PowerOffOutlined';
-import { Tooltip, Typography } from '@mui/material';
+import { Tooltip } from '@mui/material';
 import { DateTime } from 'luxon';
+import { MRT_ColumnDef } from 'material-react-table';
 import { Link } from 'react-router';
 
-import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
-import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
-import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
+import {
+  renderChipCell,
+  StateUnion,
+} from '@/fleet/components/table/cell_with_chip';
 import {
   generateDeviceDetailsURL,
   ANDROID_PLATFORM,
 } from '@/fleet/constants/paths';
+import { FC_CellProps } from '@/fleet/types/table';
 import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { getAndroidStatusColor } from './android_state';
-import { RunTargetColumnHeader } from './run_target_column_header';
 
-export const getAndroidColumns = (
-  columnIds: string[],
-): DeviceTableGridColDef<AndroidDevice>[] => {
+export type AndroidColumnDef = MRT_ColumnDef<AndroidDevice> & {
+  orderByField?: string;
+  filterByField?: string;
+};
+
+export interface DeviceDisplayProps {
+  value: unknown;
+  device?: AndroidDevice;
+}
+
+export type AndroidColumnOverride = Omit<Partial<AndroidColumnDef>, 'Cell'> & {
+  renderCell?: (props: DeviceDisplayProps) => React.ReactNode;
+};
+
+export const getAndroidColumns = (columnIds: string[]): AndroidColumnDef[] => {
+  const topLevelProtoFields = [
+    'id',
+    'run_target',
+    'realm',
+    'fc_offline_since',
+    'state',
+    'hostname',
+    'host_group',
+  ];
+
   return columnIds.map((id) => {
+    const isTopLevelProtoField = topLevelProtoFields.includes(id);
+
+    const override = ANDROID_COLUMN_OVERRIDES[id] ?? {};
+    const { renderCell, ...restOverride } = override;
+
     return {
-      field: id,
-      headerName: id,
+      accessorKey: id,
+      header: id,
       orderByField: 'labels.' + id,
-      editable: false,
-      minWidth: 70,
-      maxWidth: 700,
-      sortable: true,
-      valueGetter: (_, device) => {
+      filterByField: isTopLevelProtoField ? id : `labels."${id}"`,
+      enableEditing: false,
+      minSize: 70,
+      maxSize: 700,
+      enableSorting: true,
+      accessorFn: (device) => {
         const labels = device.omnilabSpec?.labels?.[id]?.values;
         if (!labels) return undefined;
 
         return labelValuesToString(labels);
       },
-      flex: 1,
-      renderCell: (param) => (
-        <EllipsisTooltip>{param.value ?? ''}</EllipsisTooltip>
+      Cell: (param) => (
+        <EllipsisTooltip>{param.renderedCellValue ?? ''}</EllipsisTooltip>
       ),
-      ...(ANDROID_COLUMN_OVERRIDES[id] ?? {}),
+      ...restOverride,
+      ...(renderCell
+        ? {
+            Cell: (params) =>
+              renderCell({
+                value: params.cell.getValue(),
+                device: params.row.original,
+              }),
+          }
+        : {}),
     };
   });
 };
 
-export const ANDROID_COLUMN_OVERRIDES: Record<
-  string,
-  Partial<DeviceTableGridColDef<AndroidDevice>>
-> = {
+export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
   id: {
-    flex: 3,
+    size: 180,
+    minSize: 120,
     orderByField: 'id',
-    valueGetter: (_, device) => device.id,
+    accessorFn: (device) => device.id,
 
-    renderCell: (props) => {
-      const d = props.row;
+    renderCell: ({ value, device }) => {
+      const d = device;
+      if (!d) return (value as React.ReactNode) ?? null;
       const internalLink = generateDeviceDetailsURL(ANDROID_PLATFORM, d.id);
 
       const type = d.omnilabSpec?.labels['fc_machine_type']?.values?.[0];
@@ -82,17 +120,17 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
         if (hostname && hostIp) {
           mhLink = `https://mobileharness-fe.corp.google.com/labdetailview/${hostname}/${hostIp}`;
         } else {
-          const params = new URLSearchParams();
-          params.append('filter', `"host_name":("${d.id}")`);
-          mhLink = `https://mobileharness-fe.corp.google.com/lablistview?${params.toString()}`;
+          const urlParams = new URLSearchParams();
+          urlParams.append('filter', `"host_name":("${d.id}")`);
+          mhLink = `https://mobileharness-fe.corp.google.com/lablistview?${urlParams.toString()}`;
         }
       } else {
         if (hostname && hostIp) {
           mhLink = `https://mobileharness-fe.corp.google.com/devicedetailview/${hostname}/${hostIp}/${d.id}`;
         } else {
-          const params = new URLSearchParams();
-          params.append('filter', `"id":("${d.id}")`);
-          mhLink = `https://mobileharness-fe.corp.google.com/devicelistview?${params.toString()}`;
+          const urlParams = new URLSearchParams();
+          urlParams.append('filter', `"id":("${d.id}")`);
+          mhLink = `https://mobileharness-fe.corp.google.com/devicelistview?${urlParams.toString()}`;
         }
       }
 
@@ -113,83 +151,80 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
       );
     },
   },
-  host_group: {
-    orderByField: 'host_group',
-  },
   state: {
     orderByField: 'state',
-    renderCell: (props) => {
+    renderCell: ({ value, device }) => {
       const stateValue =
-        props.row?.omnilabSpec?.labels?.[
+        device?.omnilabSpec?.labels?.[
           'dut_state'
         ]?.values?.[0]?.toUpperCase() ??
-        props.value ??
+        (value as string) ??
         '';
 
       if (stateValue === '') return <></>;
 
-      return renderChipCell((_1, _2) => {
-        return 'https://g3doc.corp.google.com/company/teams/chrome/ops/fleet/flops/android/labtechs.md?cl=head#device-terminology';
-      }, getAndroidStatusColor)({ ...props, value: stateValue.toUpperCase() });
+      return renderChipCell<AndroidDevice>(
+        (_1, _2) =>
+          'https://g3doc.corp.google.com/company/teams/chrome/ops/fleet/flops/android/labtechs.md?cl=head#device-terminology',
+        getAndroidStatusColor,
+        undefined,
+        true,
+        stateValue.toUpperCase() as StateUnion,
+      )({
+        cell: { getValue: () => value },
+        row: { original: device },
+      } as FC_CellProps<AndroidDevice>);
     },
   },
-  hostname: {
-    orderByField: 'hostname',
-  },
   run_target: {
-    valueGetter: (_, device) => device.runTarget,
+    accessorFn: (device) => device.runTarget,
     orderByField: 'run_target',
-    minWidth: 100,
-    renderHeader: () => <RunTargetColumnHeader />,
+    size: 150,
+    meta: {
+      infoTooltip: (
+        <>
+          This inclues some fallbacks we use in case we dont get a{' '}
+          <code>run_target</code> from omnilab. <br />
+          In order:
+          <ul css={{ marginTop: 0 }}>
+            <li>
+              <code>run_target</code>
+            </li>
+            <li>
+              <code>product_board</code>
+            </li>
+            <li>
+              <code>hardware</code>
+            </li>
+          </ul>
+        </>
+      ),
+    },
   },
   realm: {
-    valueGetter: (_, device) => device.realm,
+    accessorFn: (device) => device.realm,
     orderByField: 'realm',
-  },
-  lab_name: {
-    orderByField: 'lab_name',
-  },
-  fc_machine_type: {
-    orderByField: 'fc_machine_type',
   },
   fc_is_offline: {
     orderByField: 'fc_is_offline',
-    renderHeader: () => {
-      return (
-        <div
-          css={{
-            display: 'flex',
-            alignItems: 'center',
-            maxWidth: '100%',
-          }}
-        >
-          <Typography
-            variant="subhead2"
-            sx={{
-              overflowX: 'hidden',
-              textOverflow: 'ellipsis',
-              fontWeight: 500,
-            }}
-          >
-            fc_is_offline
-          </Typography>
-          <InfoTooltip infoCss={{ marginLeft: '10px' }}>
-            Whether the device is actually offline as defined by the{' '}
-            <span css={{ whiteSpace: 'nowrap' }}>
-              <Link
-                to="https://g3doc.corp.google.com/company/teams/omnilab/products/lmp/monitoring/alert_config_manual.md?cl=head#Q3"
-                target="_blank"
-              >
-                omnilab docs
-                <OpenInNewIcon css={{ width: '15px', height: 'auto' }} />
-              </Link>
-            </span>
-          </InfoTooltip>
-        </div>
-      );
+    meta: {
+      infoTooltip: (
+        <>
+          Whether the device is actually offline as defined by the{' '}
+          <span css={{ whiteSpace: 'nowrap' }}>
+            <Link
+              to="https://g3doc.corp.google.com/company/teams/omnilab/products/lmp/monitoring/alert_config_manual.md?cl=head#Q3"
+              target="_blank"
+            >
+              omnilab docs
+              <OpenInNewIcon css={{ width: '15px', height: 'auto' }} />
+            </Link>
+          </span>
+        </>
+      ),
     },
-    renderCell: (params) => {
-      const isOffline = params.value === 'true';
+    renderCell: ({ value }) => {
+      const isOffline = value === 'true';
       const title = isOffline
         ? 'Device is offline (true)'
         : 'Device is online (false)';
@@ -210,101 +245,60 @@ export const ANDROID_COLUMN_OVERRIDES: Record<
       );
     },
   },
-  ['label-run_target']: {
-    orderByField: 'labels.run_target',
-    valueGetter: (_, device) => {
-      const labels = device.omnilabSpec?.labels?.run_target?.values;
-      if (!labels) return undefined;
-
-      return labelValuesToString(labels);
-    },
-  },
-  ['label-id']: {
-    orderByField: 'labels.id',
-    valueGetter: (_, device) => {
-      const labels = device.omnilabSpec?.labels?.id?.values;
-      if (!labels) return undefined;
-
-      return labelValuesToString(labels);
-    },
-  },
-  ['label-hostname']: {
-    orderByField: 'labels.hostname',
-    valueGetter: (_, device) => {
-      const labels = device.omnilabSpec?.labels?.hostname?.values;
-      if (!labels) return undefined;
-
-      return labelValuesToString(labels);
-    },
-  },
   'ufs.last_sync': {
     orderByField: 'labels.ufs.last_sync',
-    renderCell: (params) => {
-      const value = params.value as string;
+    renderCell: ({ value }) => {
       if (!value) {
         return null;
       }
-      const dt = DateTime.fromISO(value);
-      if (!dt.isValid) {
-        return <>{value}</>;
+      try {
+        const dt = DateTime.fromISO(value as string);
+        if (!dt.isValid) {
+          return <>{value as string}</>;
+        }
+        return <SmartRelativeTimestamp date={dt} />;
+      } catch (_) {
+        return <>{value as string}</>;
       }
-      return <SmartRelativeTimestamp date={dt} />;
     },
   },
   'mh.last_sync': {
     orderByField: 'labels.mh.last_sync',
-    renderCell: (params) => {
-      const value = params.value as string;
+    renderCell: ({ value }) => {
       if (!value) {
         return null;
       }
-      const dt = DateTime.fromISO(value);
-      if (!dt.isValid) {
-        return <>{value}</>;
+      try {
+        const dt = DateTime.fromISO(value as string);
+        if (!dt.isValid) {
+          return <>{value as string}</>;
+        }
+        return <SmartRelativeTimestamp date={dt} />;
+      } catch (_) {
+        return <>{value as string}</>;
       }
-      return <SmartRelativeTimestamp date={dt} />;
     },
   },
   fc_offline_since: {
-    headerName: 'Offline since',
-    renderHeader: () => {
-      return (
-        <div
-          css={{
-            display: 'flex',
-            alignItems: 'center',
-            maxWidth: '100%',
-          }}
-        >
-          <Typography
-            variant="subhead2"
-            sx={{
-              overflowX: 'hidden',
-              textOverflow: 'ellipsis',
-              fontWeight: 500,
-            }}
-          >
-            Offline since
-          </Typography>
-          <InfoTooltip infoCss={{ marginLeft: '10px' }}>
-            Last seen online (±10 min), per the fc_is_offline
-            <br />
-          </InfoTooltip>
-        </div>
-      );
+    header: 'Offline since',
+    meta: {
+      infoTooltip: 'Last seen online (±10 min), per the fc_is_offline',
     },
     orderByField: 'fc_offline_since',
-    renderCell: (params) => {
-      const value = params.value as string | undefined;
+    accessorFn: (device) => device.fcOfflineSince,
+    renderCell: ({ value }) => {
       if (!value) {
         return null;
       }
-      const dt = DateTime.fromISO(value);
-      if (!dt.isValid) {
-        return <>{value}</>;
+      try {
+        const dt = DateTime.fromISO(value as string);
+        if (!dt.isValid) {
+          return <>{value as string}</>;
+        }
+        return <SmartRelativeTimestamp date={dt} />;
+      } catch (_) {
+        return <>{value as string}</>;
       }
-      return <SmartRelativeTimestamp date={dt} />;
     },
-    valueGetter: (_, device) => device.fcOfflineSince,
   },
 };
