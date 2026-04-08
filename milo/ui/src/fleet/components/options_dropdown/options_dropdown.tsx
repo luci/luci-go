@@ -121,6 +121,26 @@ export function OptionsDropdown({
     }
   }, [open, enableSearchInput]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const handleScroll = (event: Event) => {
+      if (onClose) {
+        // We map the scroll event to 'backdropClick' to reuse the existing logic
+        // that handles closing the menu and clearing search state.
+        onClose(event, 'backdropClick');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, {
+      capture: true,
+      passive: true,
+    });
+    return () => {
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+    };
+  }, [open, onClose]);
+
   return (
     <Popper
       disablePortal={disablePortal}
