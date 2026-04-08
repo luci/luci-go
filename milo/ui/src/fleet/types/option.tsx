@@ -23,6 +23,7 @@ export interface OptionValue {
   label: string;
   value: string;
   inScope?: boolean;
+  isSignificant?: boolean;
 }
 export type FilterType = 'string_list' | 'date' | 'range';
 

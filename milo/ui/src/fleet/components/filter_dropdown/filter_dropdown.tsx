@@ -26,8 +26,11 @@ import {
 } from '@mui/material';
 import {
   forwardRef,
+  useCallback,
+  useDeferredValue,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -95,6 +98,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
     { value: FilterCategory; anchor: HTMLElement } | undefined
   >();
 
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const openCategoryRef = useRef<OptionComponentHandle>(null);
   const firstElementRef = useRef<HTMLLIElement>(null);
 
@@ -146,54 +150,61 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
     onApply();
   };
 
-  const splitSearchQuery = (
-    searchQuery: string,
-  ): {
-    isCategoryScoped: boolean;
-    parentSearchQuery: string;
-    childrenSearchQuery: string;
-  } => {
-    const parts = searchQuery.split(categoryValueSeparator);
-    if (parts.length > 1) {
-      return {
-        isCategoryScoped: true,
-        parentSearchQuery: parts[0],
-        childrenSearchQuery: parts.slice(1).join(categoryValueSeparator),
-      };
-    } else {
-      return {
-        // if search query has no separator, we want to run the filter on both parent and children
-        isCategoryScoped: false,
-        parentSearchQuery: searchQuery,
-        childrenSearchQuery: searchQuery,
-      };
-    }
-  };
+  const splitSearchQuery = useCallback(
+    (
+      searchQuery: string,
+    ): {
+      isCategoryScoped: boolean;
+      parentSearchQuery: string;
+      childrenSearchQuery: string;
+    } => {
+      const parts = searchQuery.split(categoryValueSeparator);
+      if (parts.length > 1) {
+        return {
+          isCategoryScoped: true,
+          parentSearchQuery: parts[0],
+          childrenSearchQuery: parts.slice(1).join(categoryValueSeparator),
+        };
+      } else {
+        return {
+          // if search query has no separator, we want to run the filter on both parent and children
+          isCategoryScoped: false,
+          parentSearchQuery: searchQuery,
+          childrenSearchQuery: searchQuery,
+        };
+      }
+    },
+    [categoryValueSeparator],
+  );
 
-  const filterResults = filterCategoryDatas
-    .map((option) => {
-      const { parentSearchQuery, childrenSearchQuery } =
-        splitSearchQuery(searchQuery);
+  const filterResults = useMemo(
+    () =>
+      filterCategoryDatas
+        .map((option) => {
+          const { parentSearchQuery, childrenSearchQuery } =
+            splitSearchQuery(deferredSearchQuery);
 
-      const childrenScore = option.getChildrenSearchScore(
-        childrenSearchQuery.trim(),
-      );
+          const childrenScore = option.getChildrenSearchScore(
+            childrenSearchQuery.trim(),
+          );
 
-      const parentScore = fuzzySubstring(parentSearchQuery, option.label);
+          const parentScore = fuzzySubstring(parentSearchQuery, option.label);
 
-      return {
-        el: option,
-        score: Math.max(
-          // will prioritize parent matches when children have similar scores
-          // (e.g. "id" search will prioritize "dut id" category over "label-xyz" category with value "someid")
-          parentScore[0] * PARENT_SEARCH_SCORE_MULTIPLIER,
-          childrenScore,
-        ),
-        matches: parentScore[1],
-      };
-    })
-    .filter((a) => searchQuery.trim() === '' || a.score > 0)
-    .sort((a, b) => b.score - a.score);
+          return {
+            el: option,
+            score: Math.max(
+              // will prioritize parent matches when children have similar scores
+              // (e.g. "id" search will prioritize "dut id" category over "label-xyz" category with value "someid")
+              parentScore[0] * PARENT_SEARCH_SCORE_MULTIPLIER,
+              childrenScore,
+            ),
+            matches: parentScore[1],
+          };
+        })
+        .filter((a) => deferredSearchQuery.trim() === '' || a.score > 0)
+        .sort((a, b) => b.score - a.score),
+    [deferredSearchQuery, filterCategoryDatas, splitSearchQuery],
+  );
 
   const otherFilterResults = commonOptions
     ? filterResults.filter((option) => !commonOptions.includes(option.el.key))
@@ -245,7 +256,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
     if (!openCategory) return <></>;
 
     const content = openCategory.value.render(
-      splitSearchQuery(searchQuery).childrenSearchQuery,
+      splitSearchQuery(deferredSearchQuery).childrenSearchQuery,
       () => {
         onSearchBarFocus();
       },
@@ -296,27 +307,27 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
                 );
                 onSearchBarFocus();
                 e.preventDefault();
+                return;
               }
               if (e.key === 'Delete' || e.key === 'Cancel') {
                 onSearchQueryChangeInternal('');
                 onSearchBarFocus();
+                e.preventDefault();
+                return;
               }
             }
-            if (openCategory?.value instanceof StringListFilterCategory) {
-              handleRandomTextInput(e);
-            }
-            return;
             if (e.key === 'Tab') {
               closeMenu();
+              return;
             }
             if (e.key === 'Escape') {
               openCategory?.anchor.focus();
               closeInnerMenu();
+              return;
             }
-            // Only handle backspace/delete for string list (search query)
 
-            // Only handle navigation for list
             if (openCategory?.value instanceof StringListFilterCategory) {
+              handleRandomTextInput(e);
               keyboardListNavigationHandler(
                 e,
                 undefined,

@@ -130,7 +130,10 @@ export const OptionsMenu = ({
                     color: colors.grey[500],
                   }),
                   ...(item.el.inScope === false && {
-                    color: colors.grey[500],
+                    color: colors.grey[300],
+                  }),
+                  ...(item.el.isSignificant === false && {
+                    color: colors.grey[300],
                   }),
                 }}
               >
@@ -148,7 +151,9 @@ export const OptionsMenu = ({
                 />
                 <HighlightCharacter
                   variant="body2"
-                  highlightIndexes={item.matches}
+                  highlightIndexes={
+                    item.el.isSignificant === false ? [] : item.matches
+                  }
                   sx={{
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',

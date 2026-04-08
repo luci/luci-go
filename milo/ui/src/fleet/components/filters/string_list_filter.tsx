@@ -13,12 +13,19 @@
 // limitations under the License.
 
 import { MenuList } from '@mui/material';
-import { useImperativeHandle, useMemo, useRef, useState } from 'react';
+import _ from 'lodash';
+import {
+  useRef,
+  useState,
+  useImperativeHandle,
+  useDeferredValue,
+  useMemo,
+} from 'react';
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { OptionValue } from '@/fleet/types/option';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
-import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
+import { fuzzySort, fuzzyMaxScore } from '@/fleet/utils/fuzzy_sort';
 
 import { OptionsMenu } from '../filter_dropdown/options_menu';
 import { Footer } from '../options_dropdown/footer';
@@ -270,11 +277,10 @@ export class StringListFilterCategory implements FilterCategory {
   }
 
   public getChildrenSearchScore(searchQuery: string) {
-    const sortedChildren = fuzzySort(searchQuery)(
-      Object.values(this.options),
-      (o) => o.optionValue.label,
-    );
-    return sortedChildren[0]?.score;
+    return fuzzyMaxScore(
+      searchQuery,
+      (o: OptionWithSelection) => o.optionValue.label,
+    )(Object.values(this.options));
   }
 }
 
@@ -306,12 +312,27 @@ const OptionComponent = function OptionComponent({
   }));
 
   const [tempOptions, setTempOptions] = useState(options);
-  const fuzzySorted = useMemo(
-    () =>
-      fuzzySort(childrenSearchQuery)(
-        Object.values(options),
-        (o) => o.optionValue.label,
-      ).sort((a, b) => {
+  const deferredSearchQuery = useDeferredValue(childrenSearchQuery);
+
+  const fuzzySorted = useMemo(() => {
+    const scored = fuzzySort(deferredSearchQuery)(
+      Object.values(options),
+      (o) => o.optionValue.label,
+    );
+
+    const scores = scored.map((s) => s.score).filter((s) => s >= 0);
+    const avg = _.sum(scores) / scores.length;
+    const sd = Math.sqrt(
+      _.sum(scores.map((a) => Math.pow(a - avg, 2))) / scores.length,
+    );
+
+    const threshold =
+      avg + sd > Math.max(...scores)
+        ? Math.max(0, avg - 2 * sd) // some queries are too "left skewed"
+        : avg + sd;
+
+    return scored
+      .sort((a, b) => {
         const isASelected = options[a.el.optionValue.value].isSelected;
         const isBSelected = options[b.el.optionValue.value].isSelected;
 
@@ -332,10 +353,21 @@ const OptionComponent = function OptionComponent({
         }
 
         return 0;
-      }),
-
-    [childrenSearchQuery, options],
-  );
+      })
+      .map((a) => {
+        return {
+          ...a,
+          matches: a.matches,
+          el: {
+            value: a.el.optionValue.value,
+            label: a.el.optionValue.label,
+            isSignificant:
+              isNaN(threshold) || // happens if no scores are >=0
+              a.score >= threshold,
+          },
+        };
+      });
+  }, [deferredSearchQuery, options]);
 
   return (
     <div
@@ -354,10 +386,7 @@ const OptionComponent = function OptionComponent({
         }}
       >
         <OptionsMenu
-          elements={fuzzySorted.map((e) => ({
-            ...e,
-            el: e.el.optionValue,
-          }))}
+          elements={fuzzySorted}
           selectedElements={
             new Set(
               Object.values(tempOptions)

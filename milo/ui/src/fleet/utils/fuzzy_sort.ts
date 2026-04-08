@@ -91,7 +91,31 @@ export const fuzzySubstring: ScoringFunction = (
     const targetChar = target[targetIndex];
     const queryChar = query[queryIndex];
 
-    if (targetChar === queryChar) {
+    const isMatch = (() => {
+      if (targetChar !== queryChar) return false;
+      if (seqMatchCount > 0) return true;
+      if (targetIndex === target.length - 1) return true;
+
+      // If this is an isolated match, look ahead. If there is a match ahead with at least 2 in in a row pick that one and skip this
+      if (target[targetIndex + 1] !== query[queryIndex + 1]) {
+        for (
+          let lookAheadTargetIdx = targetIndex + 1;
+          lookAheadTargetIdx < target.length - 1;
+          lookAheadTargetIdx++
+        ) {
+          if (
+            target[lookAheadTargetIdx] === query[queryIndex] &&
+            target[lookAheadTargetIdx + 1] === query[queryIndex + 1]
+          ) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    })();
+
+    if (isMatch) {
       // Characters match, increase score and sequential match count
       score += 1.0 + seqMatchCount * 5.0; // Sequential match bonus
 
@@ -128,6 +152,24 @@ export const fuzzySubstring: ScoringFunction = (
 
   return [score, matchesIdx];
 };
+
+/**
+ * Returns the maximum fuzzy match score for a list of items.
+ * Optimized to avoid sorting and extra allocations.
+ */
+export const fuzzyMaxScore =
+  <T>(query: string, getLabel: (el: T) => string = String) =>
+  (list: T[]): number => {
+    if (query.trim() === '') return 0;
+    let max = -1.0;
+    for (const item of list) {
+      const [score] = fuzzySubstring(query, getLabel(item));
+      if (score > max) {
+        max = score;
+      }
+    }
+    return max;
+  };
 
 /**
  * @param searchString the string to search in the list
