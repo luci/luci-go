@@ -78,7 +78,16 @@ func checkTurboCIOAuthScope(ctx context.Context) {
 func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build *model.Build) error {
 	logging.Infof(ctx, "turbo-ci: launching new workplan with %s", protoutil.FormatBuilderID(req.Builder))
 
-	creds, err := turboCICreds(ctx)
+	// We'll create the work plan and will poll the state of the added node as
+	// Buildbucket itself (using a project-scoped account), but will do WriteNodes
+	// as the caller. That way we can grant permission to create workplans only
+	// to the Buildbucket, while still allowing normal callers add nodes to it
+	// using Turbo CI API directly (making Buildbucket piggy back on it as well).
+	projectCreds, err := turboci.ProjectRPCCredentials(ctx, req.Builder.Project)
+	if err != nil {
+		return err
+	}
+	callerCreds, err := turboCICallerCreds(ctx)
 	if err != nil {
 		return err
 	}
@@ -100,19 +109,12 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	plan, err := turboci.CreateWorkPlan(ctx, orchestratorpb.CreateWorkPlanRequest_builder{
 		Realm:          proto.String(build.Realm()),
 		IdempotencyKey: proto.String(idempotencyKey),
-	}.Build(), grpc.PerRPCCredentials(creds))
+	}.Build(), grpc.PerRPCCredentials(projectCreds))
 	if err != nil {
 		logging.Errorf(ctx, "turbo-ci: CreateWorkPlan call failed: %s", err)
 		return appstatus.ToError(status.Convert(turboci.AdjustTurboCIRPCError(err)))
 	}
 	logging.Infof(ctx, "turbo-ci: workplan %s", id.ToString(plan.GetIdentifier()))
-
-	// The client configured to work with the created plan.
-	client := &turboci.Client{
-		Creds: creds,
-		Plan:  plan.GetIdentifier(),
-		Token: plan.GetCreatorToken(),
-	}
 
 	// The mask field makes no sense inside Turbo CI stage args.
 	req.Mask = nil
@@ -132,15 +134,25 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 		IsWorknode: proto.Bool(false),
 	}.Build()
 
-	// Submit the build as a stage under a well-known ID. If this is a retry,
-	// then this will silently succeed without creating a duplicate.
-	if err := client.WriteStage(ctx, rootStageID, req, build.Realm(), timeouts); err != nil {
+	// Submit the build stage as an end user (to attribute it to whoever triggers
+	// the build). Use a well-known ID. If this is a retry, then this will
+	// silently succeed without creating a duplicate.
+	err = (&turboci.Client{
+		Creds: callerCreds,
+		Plan:  plan.GetIdentifier(),
+		Token: plan.GetCreatorToken(),
+	}).WriteStage(ctx, rootStageID, req, build.Realm(), timeouts)
+	if err != nil {
 		logging.Errorf(ctx, "turbo-ci: failed to submit the stage: %s", err)
 		return appstatus.ToError(status.Convert(err))
 	}
 
 	// Wait until the stage starts running and gets a build ID assigned to it.
-	buildID, err := pollStage(ctx, client, rootStageID)
+	buildID, err := pollStage(ctx, &turboci.Client{
+		Creds: projectCreds,
+		Plan:  plan.GetIdentifier(),
+		Token: plan.GetCreatorToken(),
+	}, rootStageID)
 	if err != nil {
 		logging.Errorf(ctx, "turbo-ci: giving up: %s", err)
 		return appstatus.ToError(status.Convert(err))
@@ -166,8 +178,8 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 	}, len(reqs))
 }
 
-// turboCICreds returns credentials to use to make Turbo CI calls in context of
-// a calling user.
+// turboCICallerCreds returns credentials to use to make Turbo CI calls in
+// context of a calling user.
 //
 // If the call comes from a regular user, just forward their credentials
 // (verifying they are sufficient first).
@@ -178,7 +190,7 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 // in the RunStage implementation.
 //
 // Returns appstatus errors.
-func turboCICreds(ctx context.Context) (credentials.PerRPCCredentials, error) {
+func turboCICallerCreds(ctx context.Context) (credentials.PerRPCCredentials, error) {
 	caller := auth.CurrentIdentity(ctx)
 	if caller.Kind() == identity.Project {
 		return turboci.ProjectRPCCredentials(ctx, caller.Value())
