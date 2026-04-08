@@ -30,8 +30,8 @@ export function useAdminTaskPermission() {
           setHasPermission(resp.hasPermission);
         }
       } catch (e) {
-        logging.error('Failed to check admin task permission:', e);
         if (isMounted) {
+          logging.error('Failed to check admin task permission:', e);
           setHasPermission(false);
         }
       }
