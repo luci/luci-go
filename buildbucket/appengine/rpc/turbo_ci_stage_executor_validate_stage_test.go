@@ -57,8 +57,7 @@ func TestValidateStage(t *testing.T) {
 			req := &pb.ScheduleBuildRequest{
 				TemplateBuildId: 1,
 			}
-			ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-			_, err := validateStage(ctx, nil)
+			_, _, err := validateStage(ctx, nil, req)
 			assert.That(t, err, should.ErrLike("Buildbucket stage with template_build_id is not supported"))
 		})
 
@@ -66,8 +65,7 @@ func TestValidateStage(t *testing.T) {
 			req := &pb.ScheduleBuildRequest{
 				ParentBuildId: 1,
 			}
-			ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-			_, err := validateStage(ctx, nil)
+			_, _, err := validateStage(ctx, nil, req)
 			assert.That(t, err, should.ErrLike("Buildbucket stage with parent_build_id is not supported"))
 		})
 
@@ -80,11 +78,10 @@ func TestValidateStage(t *testing.T) {
 				},
 				RequestId: "invalid/request",
 			}
-			ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:test@example.com",
 			})
-			_, err := validateStage(ctx, nil)
+			_, _, err := validateStage(ctx, nil, req)
 			assert.That(t, err, should.ErrLike("request_id cannot contain '/'"))
 		})
 
@@ -114,8 +111,7 @@ func TestValidateStage(t *testing.T) {
 					case "grace_period":
 						req.GracePeriod = &durationpb.Duration{Seconds: 1}
 					}
-					ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-					_, err := validateStage(ctx, nil)
+					_, _, err := validateStage(ctx, nil, req)
 					assert.That(t, err, should.ErrLike(fmt.Sprintf("Buildbucket stage args must unset %s", tc.timeoutType)))
 				})
 			}
@@ -137,8 +133,7 @@ func TestValidateStage(t *testing.T) {
 					Builder: "builder",
 				},
 			}
-			ctx = context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-			_, err := validateStage(ctx, nil)
+			_, _, err := validateStage(ctx, nil, req)
 			assert.That(t, err, should.ErrLike(`requested resource not found or "user:another-caller@example.com" does not have permission to view it`))
 		})
 
@@ -146,7 +141,7 @@ func TestValidateStage(t *testing.T) {
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
 				Swarming: &pb.Swarming{},
 			})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", testutil.WithServiceAccount("account@example.com"))
 			userID := identity.Identity("user:caller@example.com")
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: userID,
@@ -162,10 +157,9 @@ func TestValidateStage(t *testing.T) {
 					Builder: "builder",
 				},
 			}
-			ctx = context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
 			stg, err := makeStage(req, nil)
 			assert.NoErr(t, err)
-			policy, err := validateStage(ctx, stg)
+			policy, taskAccount, err := validateStage(ctx, stg, req)
 			assert.NoErr(t, err)
 			// Use default values
 			expectedPolicy := orchestratorpb.StageExecutionPolicy_builder{
@@ -186,6 +180,7 @@ func TestValidateStage(t *testing.T) {
 				ExecuteAtLeastOneAttempt: proto.Bool(false),
 			}.Build()
 			assert.That(t, policy, should.Match(expectedPolicy))
+			assert.That(t, taskAccount, should.Equal("account@example.com"))
 		})
 
 		t.Run("with_parent", func(t *ftt.Test) {
@@ -223,11 +218,10 @@ func TestValidateStage(t *testing.T) {
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
 				Swarming: &pb.Swarming{},
 			})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", testutil.WithServiceAccount("account@example.com"))
 
 			t.Run("parent not found", func(t *ftt.Test) {
-				ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-				_, err := validateStage(ctx, stg)
+				_, _, err := validateStage(ctx, stg, req)
 				assert.That(t, err, should.ErrLike(`expect 1 build by stage_attempt_id "L123456789:Sstage-id:A1", but got 0`))
 			})
 
@@ -246,16 +240,14 @@ func TestValidateStage(t *testing.T) {
 					},
 				}
 				assert.NoErr(t, datastore.Put(ctx, pBld, another))
-				ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-				_, err := validateStage(ctx, stg)
+				_, _, err := validateStage(ctx, stg, req)
 				assert.That(t, err, should.ErrLike(`expect 1 build by stage_attempt_id "L123456789:Sstage-id:A1", but got 2`))
 			})
 
 			t.Run("parent ended", func(t *ftt.Test) {
 				pBld.Proto.Status = pb.Status_SUCCESS
 				assert.NoErr(t, datastore.Put(ctx, pBld, pInfra))
-				ctx := context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-				_, err := validateStage(ctx, stg)
+				_, _, err := validateStage(ctx, stg, req)
 				assert.That(t, err, should.ErrLike("has ended, cannot add child to it"))
 			})
 
@@ -269,8 +261,7 @@ func TestValidateStage(t *testing.T) {
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
 					),
 				})
-				ctx = context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
-				_, err := validateStage(ctx, stg)
+				_, _, err := validateStage(ctx, stg, req)
 				assert.NoErr(t, err)
 			})
 		})
@@ -279,19 +270,14 @@ func TestValidateStage(t *testing.T) {
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
 				Swarming: &pb.Swarming{},
 			})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
-			bldr := &model.Builder{
-				Parent: model.BucketKey(ctx, "project", "bucket"),
-				ID:     "builder",
-				Config: &pb.BuilderConfig{
-					Name:                 "builder",
-					SwarmingHost:         "host",
-					ExpirationSecs:       1800,
-					ExecutionTimeoutSecs: 3600,
-					GracePeriod:          durationpb.New(120 * time.Second),
+			testutil.PutBuilder(ctx, "project", "bucket", "builder",
+				testutil.WithServiceAccount("account@example.com"),
+				func(cfg *pb.BuilderConfig) {
+					cfg.ExpirationSecs = 1800
+					cfg.ExecutionTimeoutSecs = 3600
+					cfg.GracePeriod = durationpb.New(120 * time.Second)
 				},
-			}
-			assert.NoErr(t, datastore.Put(ctx, bldr))
+			)
 
 			userID := identity.Identity("user:caller@example.com")
 			ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -308,7 +294,6 @@ func TestValidateStage(t *testing.T) {
 					Builder: "builder",
 				},
 			}
-			ctx = context.WithValue(ctx, &turboCICallKey, &TurboCICallInfo{ScheduleBuild: req})
 
 			stg, err := makeStage(req, nil)
 			assert.NoErr(t, err)
@@ -326,7 +311,7 @@ func TestValidateStage(t *testing.T) {
 			}.Build()
 			stg.SetExecutionPolicy(policy)
 
-			updatedPolicy, err := validateStage(ctx, stg)
+			updatedPolicy, _, err := validateStage(ctx, stg, req)
 			assert.NoErr(t, err)
 
 			// The returned policy should have the requested running timeout, and other

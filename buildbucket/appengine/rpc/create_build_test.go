@@ -979,7 +979,7 @@ func TestCreateBuild(t *testing.T) {
 						Pools:           []string{"example.pool"},
 						ServiceAccounts: []string{"example@account.com"},
 					}})
-				testutil.PutBuilder(ctx, "project", "bucket", "parent", "")
+				testutil.PutBuilder(ctx, "project", "bucket", "parent")
 				pBld := &model.Build{
 					ID: 97654321,
 					Proto: &pb.Build{
@@ -1015,7 +1015,7 @@ func TestCreateBuild(t *testing.T) {
 						Pools:           []string{"example.pool"},
 						ServiceAccounts: []string{"example@account.com"},
 					}})
-				testutil.PutBuilder(ctx, "project", "bucket", "parent", "")
+				testutil.PutBuilder(ctx, "project", "bucket", "parent")
 				pBld := &model.Build{
 					ID: 97654321,
 					Proto: &pb.Build{
@@ -1073,7 +1073,7 @@ func TestCreateBuild(t *testing.T) {
 					Pools:           []string{"example.pool"},
 					ServiceAccounts: []string{"example@account.com"},
 				}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 			b, err := srv.CreateBuild(ctx, req)
 			assert.Loosely(t, b, should.NotBeNil)
@@ -1100,7 +1100,7 @@ func TestCreateBuild(t *testing.T) {
 					Pools:           []string{"example.pool"},
 					ServiceAccounts: []string{"example@account.com"},
 				}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "swarming://chromium-swarm")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder", testutil.WithBackend("swarming://chromium-swarm"))
 			req.Build.Infra.Swarming = nil
 			req.Build.Infra.Backend = &pb.BuildInfra_Backend{
 				Task: &pb.Task{
@@ -1146,7 +1146,7 @@ func TestCreateBuild(t *testing.T) {
 						Pools:           []string{"example.pool"},
 						ServiceAccounts: []string{"example@account.com"},
 					}})
-				testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+				testutil.PutBuilder(ctx, "project", "bucket", "builder")
 				bld, err := srv.CreateBuild(ctx, req)
 				assert.Loosely(t, bld, should.BeNil)
 				assert.Loosely(t, err, should.ErrLike(`does not have permission "buildbucket.builds.create" in bucket "project/bucket"`))

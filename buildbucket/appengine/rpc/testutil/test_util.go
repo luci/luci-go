@@ -24,8 +24,29 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+// BuilderMutator mutates some portion of the builder config.
+type BuilderMutator func(*pb.BuilderConfig)
+
+// WithBackend attaches a Backend configuration.
+func WithBackend(backend string) BuilderMutator {
+	return func(cfg *pb.BuilderConfig) {
+		if backend != "" {
+			cfg.Backend = &pb.BuilderConfig_Backend{
+				Target: backend,
+			}
+		}
+	}
+}
+
+// WithServiceAccount sets the builder service account email.
+func WithServiceAccount(sa string) BuilderMutator {
+	return func(cfg *pb.BuilderConfig) {
+		cfg.ServiceAccount = sa
+	}
+}
+
 // PutBuilder saves a *model.Builder to datastore for test usage.
-func PutBuilder(ctx context.Context, project, bucket, builder string, backend string) {
+func PutBuilder(ctx context.Context, project, bucket, builder string, mut ...BuilderMutator) {
 	bldr := &model.Builder{
 		Parent: model.BucketKey(ctx, project, bucket),
 		ID:     builder,
@@ -35,10 +56,8 @@ func PutBuilder(ctx context.Context, project, bucket, builder string, backend st
 		},
 	}
 
-	if backend != "" {
-		bldr.Config.Backend = &pb.BuilderConfig_Backend{
-			Target: backend,
-		}
+	for _, m := range mut {
+		m(bldr.Config)
 	}
 
 	// TODO: pass in testing.TB and Assert this instead.

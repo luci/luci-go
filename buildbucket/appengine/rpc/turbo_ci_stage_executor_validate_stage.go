@@ -18,7 +18,11 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 	executorpb "go.chromium.org/turboci/proto/go/graph/executor/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
@@ -27,41 +31,52 @@ import (
 
 // ValidateStage implements executorgrpcpb.TurboCIStageExecutorServer.
 func (*TurboCIStageExecutor) ValidateStage(ctx context.Context, req *executorpb.ValidateStageRequest) (*executorpb.ValidateStageResponse, error) {
-	TurboCICall(ctx).LogDetails(ctx)
+	call := TurboCICall(ctx)
+	call.LogDetails(ctx)
 
-	updatedPolicy, err := validateStage(ctx, req.GetStage())
+	updatedPolicy, taskAccount, err := validateStage(ctx, req.GetStage(), call.ScheduleBuild)
+	if err != nil {
+		return nil, err
+	}
+
+	projectAccount, err := lookupProjectAccount(ctx, call.ScheduleBuild.Builder.Project)
 	if err != nil {
 		return nil, err
 	}
 
 	return executorpb.ValidateStageResponse_builder{
 		StageExecutionPolicy: updatedPolicy,
+		StageServiceAccounts: []string{
+			// To allow Buildbucket server to cleanup after e.g. crashed build.
+			projectAccount,
+			// For Turbo CI calls from the build itself.
+			taskAccount,
+		},
 	}.Build(), nil
 }
 
-func validateStage(ctx context.Context, stage *orchestratorpb.Stage) (*orchestratorpb.StageExecutionPolicy, error) {
-	req := TurboCICall(ctx).ScheduleBuild
+func validateStage(ctx context.Context, stage *orchestratorpb.Stage, req *pb.ScheduleBuildRequest) (policy *orchestratorpb.StageExecutionPolicy, taskAccount string, err error) {
 	if req.GetTemplateBuildId() != 0 {
-		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage with template_build_id is not supported"))
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with template_build_id is not supported"))
 	}
 	if req.GetParentBuildId() != 0 {
-		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage with parent_build_id is not supported"))
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with parent_build_id is not supported"))
 	}
 
 	// Stage execution policy
 	// The timeout fields in req must be unset.
 	if req.GetExecutionTimeout() != nil {
-		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset execution_timeout"))
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset execution_timeout"))
 	}
 	if req.GetSchedulingTimeout() != nil {
-		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset scheduling_timeout"))
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset scheduling_timeout"))
 	}
 	if req.GetGracePeriod() != nil {
-		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset grace_period"))
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset grace_period"))
 	}
 
 	if req.GetDryRun() {
-		return nil, appstatus.BadRequest(fmt.Errorf("Buildbucket stage with dry_run is not supported"))
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with dry_run is not supported"))
 	}
 
 	// Fill the timeout fields with requested stage execution policy, so it
@@ -74,7 +89,7 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage) (*orchestra
 
 	pBld, err := getParentViaStage(ctx, stage)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	blds, merr := scheduleBuilds(
@@ -84,9 +99,26 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage) (*orchestra
 			OverrideParent: pBld,
 		})
 	if merr[0] != nil {
-		return nil, merr[0]
+		return nil, "", merr[0]
 	}
 
 	updatedPolicy := buildToStageExecutionPolicy(blds[0], reqPolicy)
-	return updatedPolicy, nil
+	taskAccount = taskServiceAccount(blds[0].Infra)
+	if taskAccount == "" {
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage builder doesn't have a service account configured: it is requires to call Turbo CI APIs"))
+	}
+
+	return updatedPolicy, taskAccount, nil
+}
+
+func lookupProjectAccount(ctx context.Context, project string) (string, error) {
+	data, err := auth.GetRealmData(ctx, realms.Join(project, realms.RootRealm))
+	if err != nil {
+		return "", appstatus.Errorf(codes.Internal, "error looking up realm data")
+	}
+	account := data.GetProjectScopedAccount()
+	if account == "" {
+		return "", appstatus.BadRequest(fmt.Errorf("unrecognized or misconfigured LUCI project %q, it doesn't have a project-scoped account", project))
+	}
+	return account, nil
 }

@@ -1680,14 +1680,9 @@ func extractCipdVersion(p *pb.SwarmingSettings_Package, b *pb.Build) string {
 // setCipdPackagesCache sets the named cache for bbagent downloaded cipd packages.
 // One of build.Infra.Swarming and build.Infra.Backend must be set.
 func setCipdPackagesCache(build *pb.Build) {
-	var taskServiceAccount string
-	if build.Infra.Swarming != nil {
-		taskServiceAccount = build.Infra.Swarming.TaskServiceAccount
-	} else if build.Infra.Backend.GetConfig() != nil {
-		taskServiceAccount = build.Infra.Backend.Config.Fields["service_account"].GetStringValue()
-	}
+	sa := taskServiceAccount(build.Infra)
 	build.Infra.Buildbucket.Agent.CipdPackagesCache = &pb.CacheEntry{
-		Name: fmt.Sprintf("cipd_cache_%x", sha256.Sum256([]byte(taskServiceAccount))),
+		Name: fmt.Sprintf("cipd_cache_%x", sha256.Sum256([]byte(sa))),
 		Path: "cipd_cache",
 	}
 }

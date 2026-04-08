@@ -4169,7 +4169,7 @@ func TestScheduleBuild(t *testing.T) {
 				})
 
 				t.Run("exists", func(t *ftt.Test) {
-					testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+					testutil.PutBuilder(ctx, "project", "bucket", "builder")
 					assert.Loosely(t, datastore.Put(ctx, &model.Build{
 						ID: 9021868963221667745,
 						Proto: &pb.Build{
@@ -4340,7 +4340,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 						RequestId: "id",
 					}
-					testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+					testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 					t.Run("deduplication", func(t *ftt.Test) {
 						assert.Loosely(t, datastore.Put(ctx, &model.RequestID{
@@ -5143,7 +5143,7 @@ func TestScheduleBuild(t *testing.T) {
 					Name:     "bucket1",
 					Swarming: &pb.Swarming{},
 				})
-				testutil.PutBuilder(ctx, "project", "bucket1", "builder", "")
+				testutil.PutBuilder(ctx, "project", "bucket1", "builder")
 				testutil.PutBucket(ctx, "project", "parent_bucket", &pb.Bucket{
 					Name:     "parent_bucket",
 					Swarming: &pb.Swarming{},

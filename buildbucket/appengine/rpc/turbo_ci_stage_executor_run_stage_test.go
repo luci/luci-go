@@ -134,7 +134,7 @@ func TestRunStage(t *testing.T) {
 			ctx, req, attemptID, mockOrch, se := setup()
 			attemptIDStr := id.ToString(attemptID)
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 			resp, err := se.RunStage(ctx, req)
 			assert.NoErr(t, err)
@@ -258,7 +258,7 @@ func TestRunStage(t *testing.T) {
 		t.Run("updateStageAttemptToScheduled failure", func(t *ftt.Test) {
 			ctx, req, _, mockOrch, se := setup()
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 			mockOrch.Err = status.Error(codes.Internal, "update failed")
 
@@ -269,7 +269,7 @@ func TestRunStage(t *testing.T) {
 		t.Run("attempt is alread running", func(t *ftt.Test) {
 			ctx, req, _, mockOrch, se := setup()
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 			mockOrch.Err = turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_RUNNING.Enum(), t)
 
@@ -280,7 +280,7 @@ func TestRunStage(t *testing.T) {
 		t.Run("attempt is cancelling", func(t *ftt.Test) {
 			ctx, req, _, mockOrch, se := setup()
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 			mockOrch.Err = turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_CANCELLING.Enum(), t)
 
@@ -298,7 +298,7 @@ func TestRunStage(t *testing.T) {
 		t.Run("attempt is incomplete", func(t *ftt.Test) {
 			ctx, req, _, mockOrch, se := setup()
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 			mockOrch.Err = turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE.Enum(), t)
 
@@ -325,7 +325,7 @@ func TestRunStage(t *testing.T) {
 			ctx, req, attemptID, mockOrch, se := setup()
 			attemptIDStr := id.ToString(attemptID)
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 			// First RunStage.
 			mockOrch.Err = status.Error(codes.Internal, "update failed")
@@ -359,7 +359,7 @@ func TestRunStage(t *testing.T) {
 			ctx, req, attemptID, mockOrch, se := setup()
 			attemptIDStr := id.ToString(attemptID)
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder", "")
+			testutil.PutBuilder(ctx, "project", "bucket", "builder")
 
 			// First RunStage.
 			se.RunStage(ctx, req)
