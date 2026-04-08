@@ -18,6 +18,7 @@ package genai
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -115,14 +116,14 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 		return genaiAnalysis, errors.Fmt("failed to call GenAI: %w", err)
 	}
 
-	// Parse the raw response to get commit ID and justification
-	suspectCommitID, justification, err := parseGenAIResponse(rawResponse)
+	// Parse the raw response to get commit ID, justification and score
+	suspectCommitID, justification, score, err := parseGenAIResponse(rawResponse)
 	if err != nil {
 		setStatusError(c, genaiAnalysis)
 		return genaiAnalysis, errors.Fmt("failed to parse GenAI response: %w", err)
 	}
 
-	logging.Infof(c, "GenAI analysis identified culprit CL: %s with justification: %s", suspectCommitID, justification)
+	logging.Infof(c, "GenAI analysis identified culprit CL: %s with justification: %s and score: %d", suspectCommitID, justification, score)
 
 	// Find the changelog for the suspect commit to extract review info
 	var reviewUrl, reviewTitle string
@@ -148,7 +149,7 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 		ReviewUrl:      reviewUrl,
 		ReviewTitle:    reviewTitle,
 		Justification:  justification,
-		Score:          10, // HighConfidence for PriorityCulpritVerification (0-10 scale)
+		Score:          score,
 		GitilesCommit: buildbucketpb.GitilesCommit{
 			Host:    regressionRange.LastPassed.Host,
 			Project: regressionRange.LastPassed.Project,
@@ -177,23 +178,35 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 // parseGenAIResponse parses the raw response from the GenAI model.
 // It expects the response in the format:
 // Commit ID: <commit_id>
+// Confidence Score: <score>
 // Justification: <justification>
-// It returns the commit ID and justification, or an error if parsing fails.
-func parseGenAIResponse(response string) (string, string, error) {
-	var commitID, justification string
+// It returns the commit ID, justification, and score, or an error if parsing fails.
+func parseGenAIResponse(response string) (commitID string, justification string, score int, err error) {
+	score = 10 // Default to 10 if not provided or fails to parse
+	var scoreStr string
+
 	lines := strings.Split(response, "\n")
 	for _, line := range lines {
 		trimmedLine := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmedLine, "Commit ID:") {
 			commitID = strings.TrimSpace(strings.TrimPrefix(trimmedLine, "Commit ID:"))
+		} else if strings.HasPrefix(trimmedLine, "Confidence Score:") {
+			scoreStr = strings.TrimSpace(strings.TrimPrefix(trimmedLine, "Confidence Score:"))
 		} else if strings.HasPrefix(trimmedLine, "Justification:") {
 			justification = strings.TrimSpace(strings.TrimPrefix(trimmedLine, "Justification:"))
 		}
 	}
-	if commitID == "" || justification == "" {
-		return "", "", fmt.Errorf("failed to parse commitID or justification from response: %q", response)
+
+	if scoreStr != "" {
+		if s, err := strconv.Atoi(scoreStr); err == nil {
+			score = s
+		}
 	}
-	return commitID, justification, nil
+
+	if commitID == "" || justification == "" {
+		return "", "", 0, fmt.Errorf("failed to parse commitID or justification from response: %q", response)
+	}
+	return commitID, justification, score, nil
 }
 
 // prepareStackTrace extracts and formats compile failure information
