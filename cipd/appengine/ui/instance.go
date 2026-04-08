@@ -85,15 +85,7 @@ func instancePage(c *router.Context, pkg, ver string) error {
 			} else {
 				name = chunks[0]
 			}
-			var userProject string
-			if userProject, err = svc.PublicRepo.StorageUserProject(ctx, inst.Package); err != nil {
-				return
-			}
-			url, err = svc.InternalCAS.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
-				Object:           inst.Instance,
-				DownloadFilename: name + ".zip",
-				UserProject:      userProject,
-			})
+			url, err = svc.PublicRepo.GetSignedURL(ctx, inst, name+".zip")
 			return
 		}
 	})

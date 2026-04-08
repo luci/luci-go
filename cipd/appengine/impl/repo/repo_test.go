@@ -3830,9 +3830,8 @@ func TestVSA(t *testing.T) {
 		}
 
 		inst := &model.Instance{
-			InstanceID:   strings.Repeat("1", 40),
-			Package:      model.PackageKey(ctx, "a/pkg"),
-			RegisteredBy: "user:1@google.com",
+			InstanceID: strings.Repeat("1", 40),
+			Package:    model.PackageKey(ctx, "a/pkg"),
 		}
 
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)

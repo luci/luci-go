@@ -103,11 +103,8 @@ type Server interface {
 	// Assumes 'base' middleware chain does OAuth2 authentication already.
 	InstallHandlers(r *router.Router, base router.MiddlewareChain)
 
-	// StorageUserProject returns a Cloud Project to bill GCS operations related
-	// to the given package to or "" to use default.
-	//
-	// Returns grpc-tagged errors returned to the caller as is.
-	StorageUserProject(ctx context.Context, pkg string) (string, error)
+	// GetSignedURL returns a signed URL for a CAS object, enforcing VSA on the package instance.
+	GetSignedURL(ctx context.Context, inst *repopb.Instance, filename string) (*caspb.ObjectURL, error)
 }
 
 // repoImpl implements repopb.RepositoryServer.
@@ -1437,7 +1434,8 @@ func (impl *repoImpl) ListMetadata(ctx context.Context, r *repopb.ListMetadataRe
 
 // ensureVSA check whether the instance has a vsa. If not, it will create a
 // asynchronously task using VerifySoftwareArtifact to attach the vsa.
-func (impl *repoImpl) ensureVSA(ctx context.Context, inst *model.Instance) error {
+func (impl *repoImpl) ensureVSA(ctx context.Context, instpb *repopb.Instance) error {
+	inst := (&model.Instance{}).FromProto(ctx, instpb)
 	switch s, err := impl.vsa.GetStatus(ctx, inst); {
 	case err != nil:
 		return err
@@ -1561,7 +1559,12 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *repopb.GetInstanceU
 	if err := model.CheckInstanceExists(ctx, inst); err != nil {
 		return nil, err
 	}
-	prefix := impl.lookupPrefixCfg(r.Package).PrefixConfig
+	return impl.GetSignedURL(ctx, inst.Proto(), "")
+}
+
+// GetSignedURL returns a signed URL for a CAS object, enforcing VSA on the package instance.
+func (impl *repoImpl) GetSignedURL(ctx context.Context, inst *repopb.Instance, filename string) (*caspb.ObjectURL, error) {
+	prefix := impl.lookupPrefixCfg(inst.Package).PrefixConfig
 
 	if !prefix.ExemptFromVerifySoftwareArtifacts {
 		if err := impl.ensureVSA(ctx, inst); err != nil {
@@ -1569,14 +1572,14 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *repopb.GetInstanceU
 		}
 	}
 
-	// Ask CAS generate an URL for us. Note that CAS does caching internally.
-	userProject, err := impl.StorageUserProject(ctx, r.Package)
+	userProject, err := impl.StorageUserProject(ctx, inst.Package)
 	if err != nil {
 		return nil, err
 	}
 	return impl.cas.GetObjectURL(ctx, &caspb.GetObjectURLRequest{
-		Object:      r.Instance,
-		UserProject: userProject,
+		Object:           inst.Instance,
+		DownloadFilename: filename,
+		UserProject:      userProject,
 	})
 }
 
@@ -2150,15 +2153,7 @@ func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
 	}
 
 	// Ask CAS for a signed URL to the package and redirect there.
-	userProject, err := impl.StorageUserProject(c, pkg)
-	if err != nil {
-		return err
-	}
-	url, err := impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
-		Object:           inst.Instance,
-		DownloadFilename: name + ".zip",
-		UserProject:      userProject,
-	})
+	url, err := impl.GetSignedURL(c, inst, name+".zip")
 	if err == nil {
 		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
 	}
@@ -2351,14 +2346,7 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 		// Here we know the instance exists and the caller has access to it, so just
 		// ask the CAS for an URL directly instead of using impl.GetInstanceURL,
 		// which will needlessly recheck ACLs and instance presence.
-		var userProject string
-		if userProject, err = impl.StorageUserProject(c, pkg); err != nil {
-			return err
-		}
-		signedURL, err = impl.cas.GetObjectURL(c, &caspb.GetObjectURLRequest{
-			Object:      inst.Instance.Instance,
-			UserProject: userProject,
-		})
+		signedURL, err = impl.GetSignedURL(c, inst.Instance, "")
 	}
 
 	switch status.Code(err) {
