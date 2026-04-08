@@ -195,6 +195,7 @@ export function OptionsDropdown({
               }
               // if the key is a single alphanumeric character without modifier
               if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
+                if (document.activeElement === searchInput.current) return;
                 searchInput?.current?.focus();
                 setSearchQuery((old) => old + e.key);
                 e.preventDefault(); // Avoid race condition to type twice in the input
