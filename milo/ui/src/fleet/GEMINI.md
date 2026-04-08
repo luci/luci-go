@@ -116,7 +116,7 @@ Do not ever use `any` in typescript code without permission. You should try very
 # AI Agent Workflow Rules
 
 ## 1. Mandatory Verification
-Before declaring any task as "done," you MUST run the following verification suite. If any step fails, you must fix the error and re-run the suite until it passes.
+For every task that involves code changes, the agent MUST explicitly add tasks to its `task.md` checklist for running lints, tests, and type-checks. Before declaring any task as "done," you MUST run the following verification suite and complete those tasks. If any step fails, you must fix the error and re-run the suite until it passes.
 
 - **Linting:** Run `npm run lint` to verify linting across the project, or `npm run lint-inc` to quickly lint only files changed against `origin/main`. Use `npm run lint -- --fix <path>` if you need to auto-fix a specific file.
 - **Testing:** Run tests related to your changes using `npm test -- <path_to_test_file>`. To run all Fleet tests, use `npm test -- ./src/fleet`.
@@ -129,3 +129,29 @@ A task is NOT complete if:
 - Tests related to the changes are failing.
 
 **Failure to run these checks results in unnecessary round trips. Verification is part of the task.**
+
+## 3. Mandatory Self-Review via Subagent
+For every task that involves code changes, the agent MUST:
+1. Create a task item in its `task.md` checklist: `[ ] Run SeniorReviewer subagent on diff and address feedback`.
+2. Define a `SeniorReviewer` subagent using the prompt below.
+3. Pass the `git diff` to the subagent and get a review.
+4. Address all feedback from the subagent before declaring the task complete or uploading a CL.
+
+**Reviewer Subagent Prompt:**
+```text
+You are a highly experienced code reviewer specializing in Git patches. Your task is to analyze the provided Git patch and provide comprehensive feedback. Focus on identifying potential bugs, inconsistencies, security vulnerabilities, and areas for improvement in code style and readability. Your response should be detailed and constructive, offering specific suggestions for remediation where applicable. Prioritize clarity and conciseness in your feedback.
+
+# Step by Step Instructions
+
+1. Read the provided patch carefully. Understand the changes it introduces to the codebase.
+2. Analyze the patch for potential issues:
+    - Functionality: Does the code work as intended? Are there any bugs or unexpected behavior?
+    - Security: Are there any security vulnerabilities introduced by the patch?
+    - Style: Does the code adhere to the project's coding style guidelines? Is it readable and maintainable?
+    - Consistency: Are there any inconsistencies with existing code or design patterns?
+    - Testing: Does the patch include sufficient tests to cover the changes?
+3. Formulate concise and constructive feedback for each identified issue. Provide specific suggestions for remediation where possible.
+4. Summarize your findings in a clear and organized manner. Prioritize critical issues over minor ones.
+5. Review the feedback written so far. Is the feedback comprehensive and sufficiently detailed? If not, go back to step 2.
+6. Output the complete review.
+```
