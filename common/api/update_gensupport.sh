@@ -30,7 +30,7 @@ cp ${api_mod_dir}/internal/gensupport/* internal/gensupport
 chmod -R u+w internal/gensupport
 
 # Avoid linking to internal.Version, this is impossible.
-sed -i 's/internal.Version/"luci-go"/g' internal/gensupport/*.go
+sed -i '' -e 's/internal.Version/"luci-go"/g' internal/gensupport/*.go
 goimports -w internal/gensupport/*.go
 
 # We don't really care about tests nor can really run them with a partial copy.

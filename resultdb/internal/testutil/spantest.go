@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/spantest"
 	"go.chromium.org/luci/common/spantest/emulator"
+	"go.chromium.org/luci/common/testing/racedetector"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -57,8 +58,14 @@ const (
 )
 
 // runIntegrationTests returns true if integration tests should run.
+//
+// Disable Spanner integration tests when running under a race detector since
+// the Spanner client library triggers it when running in "go test -json" mode
+// and there's no workaround (it unconditionally reads os.Stderr from a
+// background goroutine, but "go test -json" overwrites it in the main
+// goroutine, triggering the race detector).
 func runIntegrationTests() bool {
-	return os.Getenv(IntegrationTestEnvVar) == "1"
+	return os.Getenv(IntegrationTestEnvVar) == "1" && !racedetector.IsOn()
 }
 
 // ConnectToRedis returns true if tests should connect to Redis.

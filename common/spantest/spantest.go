@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/spantest/emulator"
+	"go.chromium.org/luci/common/testing/racedetector"
 	"go.chromium.org/luci/server/span"
 )
 
@@ -80,8 +81,14 @@ func findInitScript(rel string) (string, error) {
 }
 
 // runIntegrationTests returns true if integration tests should run.
+//
+// Disable Spanner integration tests when running under a race detector since
+// the Spanner client library triggers it when running in "go test -json" mode
+// and there's no workaround (it unconditionally reads os.Stderr from a
+// background goroutine, but "go test -json" overwrites it in the main
+// goroutine, triggering the race detector).
 func runIntegrationTests() bool {
-	return os.Getenv(IntegrationTestEnvVar) == "1"
+	return os.Getenv(IntegrationTestEnvVar) == "1" && !racedetector.IsOn()
 }
 
 // SpannerTestContext returns a context for testing code that talks to Spanner.
@@ -95,7 +102,7 @@ func runIntegrationTests() bool {
 func SpannerTestContext(tb testing.TB, cleanupDatabase CleanupDatabase) context.Context {
 	switch {
 	case !runIntegrationTests():
-		tb.Skipf("env var %s=1 is missing", IntegrationTestEnvVar)
+		tb.Skipf("env var %s=1 is missing or the race detector is on", IntegrationTestEnvVar)
 	case spannerClient == nil:
 		tb.Fatalf("spanner client is not initialized; forgot to call SpannerTestMain?")
 	}
