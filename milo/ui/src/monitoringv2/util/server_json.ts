@@ -40,6 +40,11 @@ export interface TreeJson {
    * included in the monitoring page.
    */
   filter?: TreeFilter;
+  /**
+   * excludeFilter is an optional filter that determines which failures should be
+   * excluded from the monitoring page.
+   */
+  excludeFilter?: TreeFilter;
 }
 
 export const treeJsonFromName = (treeName: string): TreeJson | null => {

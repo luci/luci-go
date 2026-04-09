@@ -109,6 +109,10 @@ export const configuredTrees: TreeJson[] = [
       ],
       value: true,
     },
+    excludeFilter: {
+      path: ['input', 'properties', '$fuchsia/bisector', 'enabled'],
+      value: true,
+    },
   },
   {
     name: 'ios',

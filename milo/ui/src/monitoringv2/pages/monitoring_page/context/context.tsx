@@ -253,18 +253,32 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
   const filteredHistories = histories.filter(
     (history: BuildAndTestVariants[]) => {
       const filter = tree?.filter;
-      if (!filter) {
-        return true;
-      }
+      const excludeFilter = tree?.excludeFilter;
+
       const latestBuild = history[0]?.build;
       if (!latestBuild) {
         return false;
       }
-      const actualValue = filter.path.reduce(
-        (prev, curr) => (prev as Record<string, unknown>)?.[curr],
-        latestBuild as unknown,
-      );
-      return actualValue === filter.value;
+
+      let included = true;
+      if (filter) {
+        const actualValue = filter.path.reduce(
+          (prev, curr) => (prev as Record<string, unknown>)?.[curr],
+          latestBuild as unknown,
+        );
+        included = actualValue === filter.value;
+      }
+
+      let excluded = false;
+      if (excludeFilter) {
+        const actualValue = excludeFilter.path.reduce(
+          (prev, curr) => (prev as Record<string, unknown>)?.[curr],
+          latestBuild as unknown,
+        );
+        excluded = actualValue === excludeFilter.value;
+      }
+
+      return included && !excluded;
     },
   );
 
