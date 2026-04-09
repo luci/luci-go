@@ -183,7 +183,7 @@ describe('getRedirectAddress', () => {
           new URLSearchParams([
             [
               'filters',
-              `swarming_labels."device_type" = "a23xq" swarming_labels."label-model" = "sapphire"`,
+              `sw."device_type" = "a23xq" sw."label-model" = "sapphire"`,
             ],
           ]).toString(),
         pathname: browserPrefix + 'devices',
@@ -201,11 +201,7 @@ describe('getRedirectAddress', () => {
         'chromium',
       );
       expect(to).toEqual({
-        search:
-          '?' +
-          new URLSearchParams([
-            ['order_by', 'swarming_labels.col1'],
-          ]).toString(),
+        search: '?' + new URLSearchParams([['order_by', 'sw.col1']]).toString(),
         pathname: browserPrefix + 'devices',
       });
     });

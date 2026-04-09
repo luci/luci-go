@@ -27,14 +27,31 @@ export function getFilterValue(params: URLSearchParams) {
   return params.get(FILTERS_PARAM_KEY) ?? '';
 }
 
+function rewriteLegacyKeys(filters: SelectedOptions): SelectedOptions {
+  const rewritten: SelectedOptions = {};
+  for (const [key, val] of Object.entries(filters)) {
+    let newKey = key;
+    if (key.startsWith('swarming_labels.')) {
+      newKey = 'sw.' + key.substring('swarming_labels.'.length);
+    } else if (key.startsWith('ufs_labels.')) {
+      newKey = 'ufs.' + key.substring('ufs_labels.'.length);
+    }
+    rewritten[newKey] = val;
+  }
+  return rewritten;
+}
+
 /**
  * Get the filter from the URLSearchParams.
  */
 export function getFilters(params: URLSearchParams) {
   const result = getFilterValue(params);
-  return parseFilters(result);
+  const parsed = parseFilters(result);
+  if (parsed.filters) {
+    parsed.filters = rewriteLegacyKeys(parsed.filters);
+  }
+  return parsed;
 }
-
 /**
  * Update the URLSearchParams with the new filter.
  */

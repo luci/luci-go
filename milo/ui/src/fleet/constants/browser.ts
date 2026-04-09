@@ -12,5 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const BROWSER_SWARMING_SOURCE = 'swarming_labels';
-export const BROWSER_UFS_SOURCE = 'ufs_labels';
+/**
+ * Prefix used to identify dimensions originating from Swarming bots.
+ * This is used in URLs, UI columns, and maps to `swarming_labels` in the backend DB.
+ */
+export const BROWSER_SWARMING_SOURCE = 'sw';
+
+/**
+ * Prefix used to identify metadata originating from UFS/Machine database.
+ * This is used in URLs, UI columns, and maps to `ufs_labels` in the backend DB.
+ */
+export const BROWSER_UFS_SOURCE = 'ufs';

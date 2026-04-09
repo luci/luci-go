@@ -66,8 +66,9 @@ describe('dimensionsToFilterOptions', () => {
     ]);
 
     // Check UFS Label
-    const modelKey = 'ufs_labels.model';
+    const modelKey = 'ufs.model';
     const modelOption = options.find((o) => o.value === modelKey);
+
     expect(modelOption).toBeDefined();
     expect(modelOption?.label).toBe(modelKey);
     expect((modelOption as StringListCategory)?.options).toEqual([

@@ -123,7 +123,46 @@ export const BrowserDevicesPage = () => {
     return getBrowserColumnIds(dimensionsQuery.data, requiredCols);
   }, [dimensionsQuery.data, columnsParamStr]);
 
+  useEffect(() => {
+    const filters = searchParams.get('filters') || '';
+    const needsRewrite =
+      filters.includes('swarming_labels.') || filters.includes('ufs_labels.');
+
+    const columns = searchParams.getAll(COLUMNS_PARAM_KEY);
+    const columnsNeedRewrite = columns.some(
+      (col) =>
+        col.startsWith('swarming_labels.') || col.startsWith('ufs_labels.'),
+    );
+
+    if (needsRewrite || columnsNeedRewrite) {
+      const newSearchParams = new URLSearchParams(searchParams);
+
+      if (needsRewrite) {
+        const selectedOptions = getFilters(searchParams);
+        if (!selectedOptions.error) {
+          newSearchParams.set(
+            'filters',
+            stringifyFilters(selectedOptions.filters),
+          );
+        }
+      }
+
+      if (columnsNeedRewrite) {
+        const newColumns = columns.map((col) =>
+          col.replace('swarming_labels.', 'sw.').replace('ufs_labels.', 'ufs.'),
+        );
+        newSearchParams.delete(COLUMNS_PARAM_KEY);
+        for (const col of newColumns) {
+          newSearchParams.append(COLUMNS_PARAM_KEY, col);
+        }
+      }
+
+      setSearchParams(newSearchParams);
+    }
+  }, [searchParams, setSearchParams]);
+
   const [warnings, addWarning] = useWarnings();
+
   useEffect(() => {
     if (dimensionsQuery.isPending) return;
 
