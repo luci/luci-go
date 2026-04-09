@@ -47,15 +47,21 @@ const ScrollingBase = styled(QueuedStickyScrollingBase)`
 export const SIDE_BAR_OPEN_CACHE_KEY = 'side-bar-open';
 
 export const BaseLayout = () => {
-  const [sidebarOpen = false, setSidebarOpen] = useLocalStorage<boolean>(
+  const [sidebarOpen, setSidebarOpen] = useLocalStorage<boolean>(
     SIDE_BAR_OPEN_CACHE_KEY,
   );
   const project = useProjectCtx();
   const shouldShowSidebar = project !== 'android';
   const matches = useMatches() as UIMatch<
     unknown,
-    { layout?: () => ReactNode }
+    { layout?: () => ReactNode; defaultSidebarOpen?: boolean }
   >[];
+
+  const defaultSidebarOpen = matches
+    .filter((m) => m.handle?.defaultSidebarOpen !== undefined)
+    .at(-1)?.handle?.defaultSidebarOpen;
+
+  const effectiveSidebarOpen = sidebarOpen ?? defaultSidebarOpen ?? false;
 
   // [.at(-1)] If a custom layout is defined by multiple sub routes we want to
   // use the deepest node
@@ -76,7 +82,7 @@ export const BaseLayout = () => {
         sx={{ gridArea: 'app-bar', zIndex: (theme) => theme.zIndex.appBar }}
       >
         <AppBar
-          open={sidebarOpen}
+          open={effectiveSidebarOpen}
           handleSidebarChanged={setSidebarOpen}
           showSidebarToggle={shouldShowSidebar}
         />
@@ -89,7 +95,7 @@ export const BaseLayout = () => {
           zIndex: (theme) => theme.zIndex.drawer,
         }}
       >
-        <Sidebar open={shouldShowSidebar && sidebarOpen} />
+        <Sidebar open={shouldShowSidebar && effectiveSidebarOpen} />
       </Sticky>
       <Sticky top sx={{ gridArea: 'footer' }}>
         <PrivacyFooter />

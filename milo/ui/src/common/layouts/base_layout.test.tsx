@@ -212,4 +212,64 @@ describe('<BaseLayout />', () => {
     expect(screen.queryByTitle('Send feedback')).toBeInTheDocument();
     expect(screen.queryByText('Privacy')).toBeInTheDocument();
   });
+
+  it('should respect defaultSidebarOpen from handle when no value is stored', async () => {
+    useMatchesMock.mockImplementation(() => [
+      {
+        id: '',
+        pathname: '',
+        params: {},
+        data: '',
+        handle: {
+          defaultSidebarOpen: true,
+        },
+        loaderData: [],
+      },
+    ]);
+    (PageMeta.useProjectCtx as jest.Mock).mockReturnValue('chromium');
+
+    render(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    await screen.findByText('LUCI');
+
+    expect(
+      screen.getByText(PAGE_LABEL_MAP[UiPage.BuilderSearch]),
+    ).toBeVisible();
+  });
+
+  it('should respect local storage even if defaultSidebarOpen is specified', async () => {
+    storageList.set(SIDE_BAR_OPEN_CACHE_KEY, 'false');
+    useMatchesMock.mockImplementation(() => [
+      {
+        id: '',
+        pathname: '',
+        params: {},
+        data: '',
+        handle: {
+          defaultSidebarOpen: true,
+        },
+        loaderData: [],
+      },
+    ]);
+
+    render(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    await screen.findByText('LUCI');
+
+    expect(
+      screen.getByText(PAGE_LABEL_MAP[UiPage.BuilderSearch]),
+    ).not.toBeVisible();
+  });
 });
