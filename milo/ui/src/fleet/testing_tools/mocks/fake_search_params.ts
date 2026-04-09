@@ -23,13 +23,19 @@ export const fakeUseSyncedSearchParams = () => {
   const mockUseSyncedSearchParams = useSyncedSearchParams as jest.Mock;
   mockUseSyncedSearchParams.mockImplementation(() => {
     const [sp, ssp] = React.useState(searchParams);
-    const set = (
-      updater: URLSearchParams | ((p: URLSearchParams) => URLSearchParams),
-    ) => {
-      const newSp = updater instanceof Function ? updater(sp) : updater;
-      ssp(newSp);
-      searchParams = newSp;
-    };
+    const set = React.useCallback(
+      (
+        updater: URLSearchParams | ((p: URLSearchParams) => URLSearchParams),
+      ) => {
+        ssp((prev) => {
+          const newSp = updater instanceof Function ? updater(prev) : updater;
+          searchParams = newSp;
+          return newSp;
+        });
+      },
+      [],
+    );
+
     return [sp, set];
   });
 };
