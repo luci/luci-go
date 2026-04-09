@@ -87,7 +87,7 @@ function getChartSeries(
           );
           return {
             name: group.legendLabel,
-            data: group.points.map(
+            data: (group.points ?? []).map(
               (point): { x: number; y: number; count: number } => {
                 const xValue = point[xAxisKey];
                 let x: number;

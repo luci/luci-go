@@ -528,6 +528,44 @@ describe('ChartWidget', () => {
     ]);
   });
 
+  it('should render TimeSeriesChart with scatter plot when points are missing in distribution data', () => {
+    const distributionWidget = PerfChartWidget.fromPartial({
+      ...baseWidget,
+      chartType: PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
+    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult(
+        FetchDashboardWidgetDataResponse.fromPartial({
+          widgetId: 'w1',
+          invocationDistributionData: {
+            xAxisDataKey: 'timestamp',
+            yAxisDataKey: 'value',
+            points: [
+              {
+                legendLabel: 'dist1',
+                seriesId: 's1',
+                metricField: 'metric1',
+              },
+            ],
+          },
+        }),
+      ),
+    );
+
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={distributionWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+
+    expect(screen.getByText(COMMON_MESSAGES.NO_DATA_FOUND)).toBeInTheDocument();
+    expect(MockTimeSeriesChart).not.toHaveBeenCalled();
+  });
+
   it('should call onUpdate with toggled chart type when toggle button is clicked', () => {
     const onUpdateMock = jest.fn();
     render(
