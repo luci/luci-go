@@ -63,7 +63,6 @@ export function keyboardListNavigationHandler(
     } else {
       const neighbors = findNeighborsInList(e.target as HTMLElement);
       neighbors?.next.focus();
-      e.preventDefault();
       e.stopPropagation();
     }
   };
@@ -74,7 +73,6 @@ export function keyboardListNavigationHandler(
     } else {
       const neighbors = findNeighborsInList(e.target as HTMLElement);
       neighbors?.previous.focus();
-      e.preventDefault();
       e.stopPropagation();
     }
   };

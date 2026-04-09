@@ -84,6 +84,27 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             }}
             label={option.getChipLabel()}
             onApply={onChipEditApplied}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') {
+                const activeChips = chipListRef.current.filter(Boolean);
+                const prevChip = activeChips[i - 1];
+                if (prevChip) {
+                  prevChip.focus();
+                  e.preventDefault();
+                }
+              }
+              if (e.key === 'ArrowRight') {
+                const activeChips = chipListRef.current.filter(Boolean);
+                const nextChip = activeChips[i + 1];
+                if (nextChip) {
+                  nextChip.focus();
+                  e.preventDefault();
+                } else {
+                  internalRef.current?.focus();
+                  e.preventDefault();
+                }
+              }
+            }}
           />
         );
       },
@@ -135,6 +156,18 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             onChangeDropdownOpen(false);
           }
           if (
+            e.key === 'ArrowLeft' &&
+            internalRef.current?.selectionStart === 0 &&
+            internalRef.current?.selectionEnd === 0
+          ) {
+            const activeChips = chipListRef.current.filter(Boolean);
+            const lastChip = activeChips.at(-1);
+            if (lastChip) {
+              lastChip.focus();
+              e.preventDefault();
+            }
+          }
+          if (
             e.key === 'Backspace' &&
             internalRef.current?.selectionStart === 0 &&
             internalRef.current?.selectionEnd === 0
@@ -155,22 +188,6 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             },
             undefined,
             'vertical',
-          );
-          keyboardListNavigationHandler(
-            e,
-            undefined,
-            internalRef.current?.selectionStart === 0
-              ? () => {
-                  // get last chip
-                  const lastChip =
-                    chipListRef.current[chipListRef.current.length - 1];
-                  if (lastChip) {
-                    lastChip?.focus();
-                    e.preventDefault();
-                  }
-                }
-              : undefined,
-            'horizontal',
           );
         }}
         placeholder={placeholder}

@@ -148,6 +148,7 @@ export const OptionsMenu = ({
                     false
                   }
                   tabIndex={-1}
+                  inputProps={{ 'aria-label': item.el.label }}
                 />
                 <HighlightCharacter
                   variant="body2"

@@ -14,7 +14,7 @@
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Chip, ChipProps, ClickAwayListener } from '@mui/material';
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 
@@ -27,19 +27,26 @@ export interface SelectedChipProps {
   filterCategory: FilterCategory;
 }
 
-export function SelectedChip({
-  onApply,
-  onDelete,
-  enableSearchInput = true,
-  onKeyDown,
-  filterCategory,
-  ...chipProps
-}: ChipProps & SelectedChipProps) {
+export const SelectedChip = forwardRef<
+  HTMLDivElement,
+  ChipProps & SelectedChipProps
+>(function SelectedChip(
+  {
+    onApply,
+    onDelete,
+    enableSearchInput = true,
+    onKeyDown,
+    filterCategory,
+    ...chipProps
+  },
+  ref,
+) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
   return (
     <>
       <Chip
+        ref={ref}
         onClick={(event) => {
           event.stopPropagation();
           if (anchorEl) {
@@ -145,4 +152,4 @@ export function SelectedChip({
       </ClickAwayListener>
     </>
   );
-}
+});
