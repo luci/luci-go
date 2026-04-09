@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
@@ -26,9 +27,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
+import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { useShortcut } from '@/fleet/components/shortcut_provider';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import {
@@ -36,8 +40,12 @@ import {
   ANDROID_PLATFORM,
   generateAndroidDeviceDetailsURL,
 } from '@/fleet/constants/paths';
+import { usePlatform } from '@/fleet/hooks/usePlatform';
+import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { isTyping } from '@/fleet/utils/field_typing';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { ANDROID_COLUMN_OVERRIDES } from '../../device_list_page/android/android_columns';
 
@@ -299,3 +307,26 @@ export const AndroidDeviceDetailsPage = () => {
     </div>
   );
 };
+
+export function Component() {
+  const { id = '' } = useParams();
+  const { platform } = usePlatform();
+  return (
+    <TrackLeafRoutePageView contentGroup="fleet-console-device-details">
+      <RecoverableErrorBoundary
+        // See the documentation for `<LoginPage />` for why we handle error
+        // this way.
+        key="fleet-device-details-page"
+      >
+        <FleetHelmet pageTitle={`${id ? `${id} | ` : ''}Device Details`} />
+        <LoggedInBoundary>
+          {platform !== Platform.ANDROID ? (
+            <PlatformNotAvailable availablePlatforms={[Platform.ANDROID]} />
+          ) : (
+            <AndroidDeviceDetailsPage />
+          )}
+        </LoggedInBoundary>
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
+}

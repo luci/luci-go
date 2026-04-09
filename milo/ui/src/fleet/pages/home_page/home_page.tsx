@@ -28,6 +28,7 @@ import browserLogo from '@/fleet/assets/logos/browser.png';
 import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
@@ -76,6 +77,7 @@ export const HomePage = () => {
 
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-home">
+      <FleetHelmet pageTitle="" />
       <Box
         sx={{
           p: 4,

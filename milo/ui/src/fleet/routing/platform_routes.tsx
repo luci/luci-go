@@ -89,14 +89,14 @@ export const platformRoutes: RouteObject[] = [
                 import(
                   '@/fleet/pages/device_details_page/android/android_device_details_page'
                 ).then((module) => ({
-                  default: module.AndroidDeviceDetailsPage,
+                  default: module.Component,
                 })),
               ),
               [Platform.CHROMIUM]: lazy(() =>
                 import(
                   '@/fleet/pages/device_details_page/browser/browser_device_details_page'
                 ).then((module) => ({
-                  default: module.BrowserDeviceDetailsPage,
+                  default: module.Component,
                 })),
               ),
             }}

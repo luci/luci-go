@@ -21,6 +21,7 @@ import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { platformRenderString } from '../hooks/usePlatform';
+import { FleetHelmet } from '../layouts/fleet_helmet';
 
 export const PlatformNotAvailable = ({
   availablePlatforms,
@@ -29,51 +30,54 @@ export const PlatformNotAvailable = ({
 }) => {
   const platform = usePlatform();
   return (
-    <div
-      css={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        margin: 50,
-      }}
-    >
-      <img
-        alt="logo"
-        id="luci-icon"
-        src={sadBass}
+    <>
+      <FleetHelmet pageTitle="Platform not yet available" />
+      <div
         css={{
-          width: '50%',
-          maxWidth: 400,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          margin: 50,
         }}
-      />
-      <Typography variant="h1" sx={{ fontSize: 50, textAlign: 'center' }}>
-        Platform not yet available
-      </Typography>
-
-      {availablePlatforms && availablePlatforms.length > 0 && (
-        <Box
-          sx={{
-            display: 'flex',
-            gap: '10px',
-            marginTop: '30px',
-            alignItems: 'center',
+      >
+        <img
+          alt="logo"
+          id="luci-icon"
+          src={sadBass}
+          css={{
+            width: '50%',
+            maxWidth: 400,
           }}
-        >
-          <Typography variant="body1">Try</Typography>
-          {availablePlatforms.map((p) => (
-            <Chip
-              key={p}
-              label={_.lowerCase(platformRenderString(p))}
-              onClick={() => platform.setPlatform(p)}
-              variant="outlined"
-              sx={{
-                fontSize: '1rem',
-              }}
-            />
-          ))}
-        </Box>
-      )}
-    </div>
+        />
+        <Typography variant="h1" sx={{ fontSize: 50, textAlign: 'center' }}>
+          Platform not yet available
+        </Typography>
+
+        {availablePlatforms && availablePlatforms.length > 0 && (
+          <Box
+            sx={{
+              display: 'flex',
+              gap: '10px',
+              marginTop: '30px',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant="body1">Try</Typography>
+            {availablePlatforms.map((p) => (
+              <Chip
+                key={p}
+                label={_.lowerCase(platformRenderString(p))}
+                onClick={() => platform.setPlatform(p)}
+                variant="outlined"
+                sx={{
+                  fontSize: '1rem',
+                }}
+              />
+            ))}
+          </Box>
+        )}
+      </div>
+    </>
   );
 };
