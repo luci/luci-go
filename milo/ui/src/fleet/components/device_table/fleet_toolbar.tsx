@@ -30,7 +30,7 @@ import {
 import {
   Device,
   Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { RunAutorepair } from '../actions/autorepair/run_autorepair';
 import { CopyButton } from '../actions/copy/copy_button';

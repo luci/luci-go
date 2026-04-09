@@ -19,7 +19,7 @@ import { useDevices } from '@/fleet/hooks/use_devices';
 import { BaseDeviceRedirect } from '@/fleet/pages/redirects/base_device_redirect';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { ListDevicesRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { ListDevicesRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export function SingleDeviceRedirect() {
   const [searchParams] = useSyncedSearchParams();

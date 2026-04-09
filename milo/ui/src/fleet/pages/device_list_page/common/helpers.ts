@@ -15,7 +15,7 @@
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
-import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { GetDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const getLabelFromOverride = (
   key: string,

@@ -15,7 +15,7 @@
 import {
   Device,
   DeviceState,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
   extractDutId,

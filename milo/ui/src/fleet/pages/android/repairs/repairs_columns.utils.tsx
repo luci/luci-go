@@ -20,7 +20,7 @@ import { colors } from '@/fleet/theme/colors';
 import {
   RepairMetric,
   RepairMetric_Priority,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const getPriorityIcon = (priority: RepairMetric_Priority) => {
   switch (priority) {

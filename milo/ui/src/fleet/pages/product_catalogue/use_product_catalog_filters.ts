@@ -25,7 +25,7 @@ import {
   Int32Range,
   ProductCatalogEntry,
   ProductCatalogFilterValue,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { COLUMNS } from './product_catalogue_columns';
 

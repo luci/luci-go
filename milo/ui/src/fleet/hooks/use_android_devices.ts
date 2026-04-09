@@ -24,7 +24,7 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
   ListAndroidDevicesRequest,
   ListAndroidDevicesResponse,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 const useListAndroidDevicesQueryKey = (request?: ListAndroidDevicesRequest) => {
   const { identity } = useAuthState();

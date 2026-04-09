@@ -15,7 +15,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import {
   BotInfo,
   BotInfoListResponse,

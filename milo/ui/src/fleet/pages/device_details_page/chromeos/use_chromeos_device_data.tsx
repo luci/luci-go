@@ -20,7 +20,7 @@ import {
   Device,
   ListDevicesRequest,
   ListDevicesResponse,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export type UseChromeOSDeviceDataResult = {
   error?: unknown;

@@ -32,7 +32,7 @@ import {
   Device,
   DeviceState,
   DeviceType,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 // current_task is populated separated from ListDevices through direct calls to the Swarming
 // API, requiring device data to be merged with task data.

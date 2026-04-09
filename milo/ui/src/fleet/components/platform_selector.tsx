@@ -28,7 +28,7 @@ import { useState } from 'react';
 
 import { usePlatform, platformRenderString } from '@/fleet/hooks/usePlatform';
 import { colors } from '@/fleet/theme/colors';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getFeatureFlag } from '../config/features';
 

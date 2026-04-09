@@ -21,7 +21,7 @@ import { OptionCategory, StringListCategory } from '@/fleet/types';
 import {
   GetBrowserDeviceDimensionsResponse,
   LabelValues,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 const mapDimensionsToCategories = (
   dimensions: { [key: string]: LabelValues },

@@ -15,11 +15,11 @@
 import { Duration } from 'luxon';
 
 import { toIsoString, toLuxonDateTime } from '@/fleet/utils/dates';
-import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 import {
   ResourceRequest,
   ResourceRequest_Status,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
 import { fulfillmentStatusDisplayValueMap } from './fulfillment_status';
 

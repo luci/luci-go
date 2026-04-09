@@ -27,7 +27,7 @@ import { getFilterQueryString } from '@/fleet/utils/search_param';
 import {
   RepairMetric_Priority,
   repairMetric_PriorityToJSON,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getPriorityIcon, type Row } from './repairs_columns.utils';
 

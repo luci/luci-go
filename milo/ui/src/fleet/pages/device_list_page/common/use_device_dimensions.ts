@@ -20,7 +20,7 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
   GetDeviceDimensionsRequest,
   Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const useDeviceDimensions = ({ platform }: { platform: Platform }) => {
   const { identity } = useAuthState();

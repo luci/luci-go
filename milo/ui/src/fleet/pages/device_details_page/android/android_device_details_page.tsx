@@ -45,7 +45,7 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { isTyping } from '@/fleet/utils/field_typing';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { ANDROID_COLUMN_OVERRIDES } from '../../device_list_page/android/android_columns';
 

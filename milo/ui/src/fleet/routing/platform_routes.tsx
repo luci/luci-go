@@ -15,7 +15,7 @@
 import { lazy, ReactElement } from 'react';
 import { Navigate, RouteObject } from 'react-router';
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { initiateSurvey } from '../utils/survey';
 

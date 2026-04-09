@@ -32,7 +32,7 @@ import {
   ANDROID_PLATFORM,
 } from '@/fleet/constants/paths';
 import { FC_CellProps } from '@/fleet/types/table';
-import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { AndroidDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getAndroidStatusColor } from './android_state';
 

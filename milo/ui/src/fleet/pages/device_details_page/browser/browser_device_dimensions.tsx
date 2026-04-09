@@ -33,7 +33,7 @@ import { FC_CellProps } from '@/fleet/types/table';
 import {
   BrowserDevice,
   Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
   BROWSER_COLUMN_OVERRIDES,

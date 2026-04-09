@@ -34,7 +34,7 @@ import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
 import { useUfsClient } from '@/fleet/hooks/prpc_clients';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
-import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { Machine } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine.pb';
 import { MachineLSE } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/machine_lse.pb';
 import {

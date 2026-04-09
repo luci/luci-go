@@ -19,7 +19,7 @@ import { FC_ColumnDef } from '@/fleet/components/fc_data_table/use_fc_data_table
 import {
   GetResourceRequestsMultiselectFilterValuesResponse,
   ResourceRequest_Status,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { fulfillmentStatusDisplayValueMap } from './fulfillment_status';
 import { formatBugUrl } from './rri_url_utils';

@@ -19,7 +19,7 @@ import { useState } from 'react';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
-import { ScheduleDeployRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { ScheduleDeployRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminAccessRequiredDialog } from '../shared/admin_access_required_dialog';
 import { DutToRepair } from '../shared/types';

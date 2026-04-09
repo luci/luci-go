@@ -17,7 +17,7 @@ import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import {
   AndroidDevice,
   ListAndroidDevicesRequest,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export type UseAndroidDeviceDataResult = {
   error?: unknown;

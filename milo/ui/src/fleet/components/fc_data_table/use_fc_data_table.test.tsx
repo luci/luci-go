@@ -46,7 +46,7 @@ import {
   Device,
   DeviceState,
   DeviceType,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { getDensityPadding } from './fleet_column_header.styles';

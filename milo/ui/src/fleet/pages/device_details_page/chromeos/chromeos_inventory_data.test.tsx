@@ -14,7 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ChromeOSInventoryData } from './chromeos_inventory_data';

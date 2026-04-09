@@ -14,7 +14,7 @@
 
 import { TokenType } from '@/common/components/auth_state_provider';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import { FleetConsoleClientImpl } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { FleetConsoleClientImpl } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FleetClientImpl } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
 export function useFleetConsoleClient() {

@@ -29,7 +29,7 @@ import {
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { isPartnerNamespace } from '@/fleet/utils/devices';
-import { ScheduleDeployResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { ScheduleDeployResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import CodeSnippet from '../../code_snippet/code_snippet';
 

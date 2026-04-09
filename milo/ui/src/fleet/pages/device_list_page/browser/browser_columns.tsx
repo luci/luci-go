@@ -38,7 +38,7 @@ import { getTaskURL } from '@/fleet/utils/swarming';
 import {
   BrowserDevice,
   GetBrowserDeviceDimensionsResponse,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getStatusColor } from '../chromeos/dut_state';
 

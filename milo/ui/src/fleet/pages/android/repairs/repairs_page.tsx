@@ -79,7 +79,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import {
   Platform,
   RepairMetric_Priority,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { COLUMNS } from './repairs_columns';
 import { getPriorityIcon, getRow, type Row } from './repairs_columns.utils';

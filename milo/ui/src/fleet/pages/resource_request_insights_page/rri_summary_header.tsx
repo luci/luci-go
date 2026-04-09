@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { ResourceRequest_Status } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { ResourceRequest_Status } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { RriFilterKey, RriFilters, useRriFilters } from './use_rri_filters';
 

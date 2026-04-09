@@ -22,7 +22,7 @@ import { BotInformation } from '@/fleet/pages/device_details_page/common/bot_inf
 import { BotState } from '@/fleet/pages/device_details_page/common/bot_state';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { getDeviceStateString } from '@/fleet/utils/devices';
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { CHROMEOS_COLUMN_OVERRIDES } from '../../device_list_page/chromeos/chromeos_columns';
 

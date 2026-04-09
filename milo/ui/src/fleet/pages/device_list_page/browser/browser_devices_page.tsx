@@ -59,7 +59,7 @@ import {
   BrowserDevice,
   ListBrowserDevicesRequest,
   Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
 import { filterOptionsPlaceholder } from '../common/helpers';

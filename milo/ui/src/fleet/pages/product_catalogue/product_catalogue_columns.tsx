@@ -14,7 +14,7 @@
 
 import { MRT_ColumnDef } from 'material-react-table';
 
-import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { ProductCatalogEntry } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const COLUMNS: MRT_ColumnDef<ProductCatalogEntry>[] &
   { accessorKey: keyof ProductCatalogEntry }[] = [

@@ -15,7 +15,7 @@
 import { renderHook } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useIsInPlatformScope, usePlatform } from './usePlatform';
 

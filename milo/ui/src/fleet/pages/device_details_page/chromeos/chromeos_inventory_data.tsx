@@ -24,7 +24,7 @@ import { useUfsClient } from '@/fleet/hooks/prpc_clients';
 import { extractDutLabel } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { GetMachineLSERequest } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
 export const ChromeOSInventoryData = ({ device }: { device: Device }) => {

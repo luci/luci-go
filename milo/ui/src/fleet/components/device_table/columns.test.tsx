@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { getChromeOSColumns } from '@/fleet/pages/device_list_page/chromeos/chromeos_columns';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { orderColumns } from './columns';
 

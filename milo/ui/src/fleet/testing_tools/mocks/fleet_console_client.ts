@@ -20,7 +20,7 @@ import {
   ListRepairMetricsResponse,
   RepairMetric,
   RepairMetric_Priority,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 const MOCK_REPAIR_METRICS: readonly RepairMetric[] = [
   {

@@ -15,7 +15,7 @@
 import {
   ResourceRequest,
   ResourceRequest_Status,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { getRow } from './rri_utils';
 

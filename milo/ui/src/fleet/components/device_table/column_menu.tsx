@@ -20,7 +20,7 @@ import {
 } from '@mui/x-data-grid';
 
 import { getFeatureFlag } from '@/fleet/config/features';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { FilterItem } from './filter_item';
 

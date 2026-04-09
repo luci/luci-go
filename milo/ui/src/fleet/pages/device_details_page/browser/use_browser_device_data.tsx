@@ -17,7 +17,7 @@ import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import {
   BrowserDevice,
   ListBrowserDevicesRequest,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export type UseBrowserDeviceDataResult = {
   error?: unknown;

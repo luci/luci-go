@@ -18,7 +18,7 @@ import { useMemo } from 'react';
 
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { extractDutId } from '@/fleet/utils/devices';
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import {
   BotInfo,
   BotsRequest,

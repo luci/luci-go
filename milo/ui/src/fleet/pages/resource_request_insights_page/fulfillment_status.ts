@@ -14,7 +14,7 @@
 
 import { OptionValue } from '@/fleet/types/option';
 import { SortedElement, fuzzySort } from '@/fleet/utils/fuzzy_sort';
-import { ResourceRequest_Status } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { ResourceRequest_Status } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const fulfillmentStatusDisplayValueMap: Record<
   keyof typeof ResourceRequest_Status,

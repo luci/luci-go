@@ -16,7 +16,7 @@ import { GridColDef } from '@mui/x-data-grid';
 import { MRT_ColumnDef, MRT_RowData } from 'material-react-table';
 
 import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 // This may be used later to add a 'common columns' section.
 // Currently, the columns from this string will appear

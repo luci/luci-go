@@ -16,7 +16,7 @@ import { QueryKey, useQuery, keepPreviousData } from '@tanstack/react-query';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { ListBrowserDevicesRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { ListBrowserDevicesRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 const useListBrowserDevicesQueryKey = (request?: ListBrowserDevicesRequest) => {
   const { identity } = useAuthState();

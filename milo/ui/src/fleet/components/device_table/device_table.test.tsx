@@ -36,7 +36,7 @@ import {
   DeviceState,
   DeviceType,
   ExportDevicesToCSVRequest,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { ShortcutProvider } from '../shortcut_provider';

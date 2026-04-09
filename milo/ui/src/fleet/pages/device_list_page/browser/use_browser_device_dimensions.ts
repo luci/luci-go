@@ -17,7 +17,7 @@ import { QueryKey, useQuery } from '@tanstack/react-query';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { PERSIST_INDEXED_DB } from '@/fleet/constants/caching_keys';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { GetBrowserDeviceDimensionsRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { GetBrowserDeviceDimensionsRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const useBrowserDeviceDimensions = () => {
   const { identity } = useAuthState();

@@ -65,7 +65,7 @@ import {
   AndroidDevice,
   ListDevicesRequest,
   Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
 import { dimensionsToFilterOptions } from '../common/helpers';

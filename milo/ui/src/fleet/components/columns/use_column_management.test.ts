@@ -17,7 +17,7 @@ import { act, renderHook } from '@testing-library/react';
 
 import { fakeLocalStorage } from '@/fleet/testing_tools/mocks/fake_local_storage';
 import { fakeUseSyncedSearchParams } from '@/fleet/testing_tools/mocks/fake_search_params';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
   ColumnManagementConfig,

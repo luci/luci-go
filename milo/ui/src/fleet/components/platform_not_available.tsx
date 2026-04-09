@@ -18,7 +18,7 @@ import _ from 'lodash';
 
 import sadBass from '@/fleet/assets/pngs/sad_bass.png';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { platformRenderString } from '../hooks/usePlatform';
 import { FleetHelmet } from '../layouts/fleet_helmet';

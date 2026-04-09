@@ -14,7 +14,7 @@
 import {
   Platform,
   platformToJSON,
-} from '../../proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '../../proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const FLEET_CONSOLE_BASE_URL = '/ui/fleet';
 

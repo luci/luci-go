@@ -19,7 +19,7 @@ import { OptionCategory } from '@/fleet/types';
 import {
   GetRepairMetricsDimensionsResponse,
   GetRepairMetricsDimensionsResponse_Values,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const dimensionsToFilterOptions = (
   dimensionData: GetRepairMetricsDimensionsResponse,

@@ -29,11 +29,11 @@ import { OptionValue } from '@/fleet/types/option';
 import { toIsoString } from '@/fleet/utils/dates';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 import {
   GetResourceRequestsMultiselectFilterValuesResponse,
   ResourceRequest_Status,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
 import {
   fulfillmentStatusDisplayValueMap,

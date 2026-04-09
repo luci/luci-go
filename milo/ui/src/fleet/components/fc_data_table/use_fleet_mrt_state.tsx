@@ -30,7 +30,7 @@ import { PagerContext } from '@/common/components/params_pager/context';
 import { GetFiltersResult } from '@/fleet/components/filter_dropdown/parser/parser';
 import { filtersUpdater } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { OptionCategory, StringListCategory } from '@/fleet/types/option';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useMRTColumnManagement } from '../columns/use_mrt_column_management';
 import { normalizeFilterKey } from '../filters/normalize_filter_key';

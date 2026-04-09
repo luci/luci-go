@@ -15,7 +15,7 @@
 import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { StringListCategory } from '@/fleet/types';
-import { GetBrowserDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { GetBrowserDeviceDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { dimensionsToFilterOptions } from './dimensions_to_filter_options';
 

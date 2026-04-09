@@ -15,7 +15,7 @@
 import {
   Device,
   ListDevicesResponse,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { mockFetchRaw } from '@/testing_tools/jest_utils';
 
 export const MOCK_DEVICE_1 = Device.fromPartial({

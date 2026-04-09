@@ -14,7 +14,7 @@
 
 import { isValidElement } from 'react';
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { PlatformNotAvailable } from '../components/platform_not_available';
 import { usePlatform } from '../hooks/usePlatform';

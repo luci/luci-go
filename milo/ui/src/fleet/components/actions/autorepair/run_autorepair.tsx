@@ -22,7 +22,7 @@ import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import {
   ScheduleAutorepairRequest_AutorepairFlag,
   ScheduleAutorepairRequest,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminAccessRequiredDialog } from '../shared/admin_access_required_dialog';
 import { DutToRepair } from '../shared/types';

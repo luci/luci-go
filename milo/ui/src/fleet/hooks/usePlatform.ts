@@ -14,7 +14,7 @@
 
 import { useNavigate, useParams } from 'react-router';
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { generateAnotherPlatformCorrespondingURL } from '../constants/paths';
 

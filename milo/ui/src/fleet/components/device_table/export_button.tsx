@@ -29,7 +29,7 @@ import { useState, SyntheticEvent } from 'react';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { exportAs } from '@/fleet/utils/export';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
-import { Column } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Column } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useExportData } from './use_export_data';
 

@@ -14,7 +14,7 @@
 
 import type { RouteObject } from 'react-router';
 
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { obtainAuthState } from '../common/api/auth_state';
 import { trackedRedirect } from '../generic_libs/tools/react_router_utils/route_utils';

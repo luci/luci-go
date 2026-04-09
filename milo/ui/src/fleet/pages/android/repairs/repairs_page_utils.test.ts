@@ -14,7 +14,7 @@
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { StringListCategory } from '@/fleet/types';
-import { GetRepairMetricsDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { GetRepairMetricsDimensionsResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { dimensionsToFilterOptions } from './repairs_page_utils';
 

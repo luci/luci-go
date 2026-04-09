@@ -29,7 +29,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import {
   GetDeviceDimensionsResponse,
   Platform,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useDeviceDimensions } from '../../pages/device_list_page/common/use_device_dimensions';
 import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';

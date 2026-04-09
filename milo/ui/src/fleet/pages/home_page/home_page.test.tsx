@@ -16,7 +16,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 
 import { useUserProfile } from '@/common/hooks/use_user_profile';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { HomePage } from './home_page';

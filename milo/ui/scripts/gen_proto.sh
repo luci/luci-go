@@ -152,6 +152,5 @@ protoc \
   ./go.chromium.org/luci/tree_status/proto/v1/trees.proto \
   ./go.chromium.org/infra/appengine/cr-rev/frontend/api/v1/service.proto \
   ./go.chromium.org/infra/appengine/sheriff-o-matic/proto/v1/alerts.proto \
-  ./go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.proto \
   ./go.chromium.org/infra/unifiedfleet/api/v1/rpc/fleet.proto \
   ${TURBOCI_PROTOS}
