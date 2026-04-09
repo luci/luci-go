@@ -35,8 +35,6 @@ import {
   type MRT_ColumnDef,
   useMaterialReactTable,
 } from 'material-react-table';
-import { useEffect, useRef } from 'react';
-import { flushSync } from 'react-dom';
 
 export type FC_ColumnDef<
   TData extends MRT_RowData,
@@ -67,7 +65,6 @@ export const useFCDataTable = <TData extends MRT_RowData>(
   tableOptions: MRT_TableOptions<TData>,
 ): MRT_TableInstance<TData> => {
   const [settings, setSettings] = useSettings();
-  const closeMenuRef = useRef<() => void>(null);
 
   const defaultOptions: Partial<MRT_TableOptions<TData>> = {
     enableKeyboardShortcuts: false, // Prevents stealing Arrow Keys from Dropdown Menus
@@ -127,7 +124,6 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     },
 
     renderColumnActionsMenuItems: ({ column, closeMenu }) => {
-      closeMenuRef.current = closeMenu;
       const sortingState = column.getIsSorted();
 
       const items = [];
@@ -385,29 +381,6 @@ export const useFCDataTable = <TData extends MRT_RowData>(
   if (data) {
     mergedTableOptions.data = data;
   }
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const closeMenu = closeMenuRef.current;
-      if (closeMenu) {
-        // We use flushSync to force the menu to close immediately in the same frame.
-        // This prevents the menu from briefly flashing/repositioning to the upper left
-        // corner due to React's async state batching latency.
-        flushSync(() => {
-          closeMenu();
-        });
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, {
-      capture: true,
-      passive: true,
-    });
-    return () => {
-      window.removeEventListener('scroll', handleScroll, { capture: true });
-      closeMenuRef.current = null;
-    };
-  }, []);
 
   return useMaterialReactTable(mergedTableOptions);
 };
