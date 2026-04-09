@@ -30,6 +30,7 @@ import {
   useDeferredValue,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -97,6 +98,11 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
   const [openCategory, setOpenCategory] = useState<
     { value: FilterCategory; anchor: HTMLElement } | undefined
   >();
+  useLayoutEffect(() => {
+    // if the current open category is filterd out by the search it should no longer be open
+    if (openCategory && !openCategory.anchor.isConnected)
+      setOpenCategory(undefined);
+  }, [openCategory, searchQuery]);
 
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const openCategoryRef = useRef<OptionComponentHandle>(null);

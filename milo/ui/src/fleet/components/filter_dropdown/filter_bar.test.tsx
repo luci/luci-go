@@ -411,7 +411,7 @@ describe('FilterBar', () => {
     });
   });
 
-  it.skip('should close secondary menu when primary menu item has been filtered out', async () => {
+  it('should close secondary menu when primary menu item has been filtered out', async () => {
     render(
       <FakeContextProvider>
         <TestComponent />
