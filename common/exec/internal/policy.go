@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package auth
+package internal
 
-import (
-	"os"
-	"testing"
+// Define ExecMockPolicy here so that
+// both execmock and execmockctx can import it.
+type ExecMockPolicy int
 
-	"go.chromium.org/luci/common/exec/execmock"
+const (
+	Lax ExecMockPolicy = iota
+	Strict
+	Panic
 )
-
-func TestMain(m *testing.M) {
-	execmock.Intercept(execmock.Strict)
-	os.Exit(m.Run())
-}

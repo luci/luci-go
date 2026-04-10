@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package auth
+package stricttest
 
 import (
+	"context"
 	"os"
 	"testing"
 
+	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/exec/execmock"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMain(m *testing.M) {
-	execmock.Intercept(execmock.Strict)
+	execmock.Intercept(execmock.Panic)
 	os.Exit(m.Run())
+}
+
+// TestUnmockedCommandPanics tests that an unmocked command panics.
+func TestUnmockedCommandPanics(t *testing.T) {
+	t.Parallel()
+
+	assert.That(t, func() {
+		_ = exec.Command(context.Background(), "ls").Run()
+	}, should.Panic)
 }

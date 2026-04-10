@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"go.chromium.org/luci/common/exec/internal"
 	"go.chromium.org/luci/common/exec/internal/execmockctx"
 	"go.chromium.org/luci/common/exec/internal/execmockserver"
 )
@@ -44,18 +45,29 @@ const (
 // Intercept must be called from TestMain like:
 //
 //	func TestMain(m *testing.M) {
-//		execmock.Intercept(false)
+//		execmock.Intercept(execmock.Lax)
 //		os.Exit(m.Run())
 //	}
 //
 // If process flags have not yet been parsed, this will call flag.Parse().
 //
-// If strict is `true`, it requires that 100% of luci/common/exec uses consume
+// If policy is `execmock.Lax`, luci/common/exec uses with a context without any mock
+// information will be passed-through to the real execution.
+//
+// If policy is `execmock.Strict`, it requires that 100% of luci/common/exec uses consume
 // a context which was prepared with execmock.Init.
 //
-// If strict is `false`, luci/common/exec uses with a context without any mock
-// information will be passed-through to the real execution.
-func Intercept(strict bool) {
+// `execmock.Panic` is similar to `execmock.Strict`, but it panics instead of making the
+// command invocation return a non-nil error.
+type ExecMockPolicy = internal.ExecMockPolicy
+
+const (
+	Lax    = internal.Lax
+	Strict = internal.Strict
+	Panic  = internal.Panic
+)
+
+func Intercept(policy ExecMockPolicy) {
 	runnerMu.Lock()
 	runnerRegistryMutable = false
 	registry := runnerRegistry
@@ -144,6 +156,6 @@ func Intercept(strict bool) {
 	}
 
 	// This is the real `go test` invocation.
-	execmockctx.EnableMockingForThisProcess(getMocker, strict)
+	execmockctx.EnableMockingForThisProcess(getMocker, policy)
 	startServer()
 }

@@ -16,6 +16,7 @@ package execmock
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sort"
 	"sync"
@@ -95,15 +96,22 @@ func addMockEntry[Out any](ctx context.Context, f filter, i *execmockserver.Invo
 	return u
 }
 
-func getMocker(ctx context.Context, strict bool) (mocker execmockctx.CreateMockInvocation, chatty bool) {
+func getMocker(ctx context.Context, policy ExecMockPolicy) (mocker execmockctx.CreateMockInvocation, chatty bool) {
 	state := getState(ctx)
 	if state == nil {
-		if strict {
+		switch policy {
+		case Lax:
+			return nil, false
+		case Strict:
 			return func(mc *execmockctx.MockCriteria, proc **os.Process) (*execmockctx.MockInvocation, error) {
-				return nil, errors.Fmt("execmock.Init not called on context: %w", execmockctx.ErrNoMatchingMock)
+				err := errors.Fmt("execmock.Init not called on context: %w", execmockctx.ErrNoMatchingMock)
+				return nil, err
 			}, false
+		case Panic:
+			panic(errors.Fmt("execmock.Init not called on context: %w", execmockctx.ErrNoMatchingMock))
+		default:
+			panic(fmt.Sprintf("unknown ExecMockPolicy %v", policy))
 		}
-		return nil, false
 	}
 	return state.createMockInvocation, state.chatty
 }

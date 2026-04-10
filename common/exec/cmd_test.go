@@ -208,6 +208,6 @@ func TestMain(m *testing.M) {
 		os.Stdout.WriteString("EXEC_TEST_SELF_CALL")
 		os.Exit(0)
 	}
-	execmock.Intercept(true)
+	execmock.Intercept(execmock.Strict)
 	os.Exit(m.Run())
 }

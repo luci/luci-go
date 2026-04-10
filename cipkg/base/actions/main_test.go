@@ -22,6 +22,6 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	execmock.Intercept(true)
+	execmock.Intercept(execmock.Strict)
 	os.Exit(m.Run())
 }

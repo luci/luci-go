@@ -48,6 +48,6 @@ func mkRepo(t *testing.T, prefetch ...string) *repoCache {
 }
 
 func TestMain(m *testing.M) {
-	execmock.Intercept(false)
+	execmock.Intercept(execmock.Lax)
 	os.Exit(m.Run())
 }

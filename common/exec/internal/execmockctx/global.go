@@ -27,6 +27,7 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/exec/internal"
 	"go.chromium.org/luci/common/system/environ"
 )
 
@@ -88,18 +89,18 @@ type MockInvocation struct {
 // through (run as normal).
 type CreateMockInvocation func(mc *MockCriteria, proc **os.Process) (*MockInvocation, error)
 
-type MockFactory func(ctx context.Context, strict bool) (mocker CreateMockInvocation, chatty bool)
+type MockFactory func(ctx context.Context, policy internal.ExecMockPolicy) (mocker CreateMockInvocation, chatty bool)
 
 var mockCreator MockFactory
-var mockStrict bool
+var mockPolicy internal.ExecMockPolicy
 var mockCreatorOnce sync.Once
 
 // EnableMockingForThisProcess is called from execmock to install the mocker service here.
-func EnableMockingForThisProcess(mcFactory MockFactory, strict bool) {
+func EnableMockingForThisProcess(mcFactory MockFactory, policy internal.ExecMockPolicy) {
 	alreadySet := true
 	mockCreatorOnce.Do(func() {
 		alreadySet = false
-		mockStrict = strict
+		mockPolicy = policy
 		mockCreator = mcFactory
 	})
 
@@ -124,7 +125,7 @@ func GetMockCreator(ctx context.Context) (mocker CreateMockInvocation, chatty bo
 		mockCreator = nil
 	})
 	if mockCreator != nil {
-		mocker, chatty = mockCreator(ctx, mockStrict)
+		mocker, chatty = mockCreator(ctx, mockPolicy)
 	}
 	return
 }
