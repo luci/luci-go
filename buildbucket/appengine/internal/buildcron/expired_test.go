@@ -40,8 +40,7 @@ import (
 )
 
 // now needs to be further fresh enough from buildid.beginningOfTheWorld
-var now = outageEndTime.Add(time.Minute)
-var outageTime = outageStartTime.Add(time.Minute)
+var now = time.Date(2020, 01, 01, 0, 0, 0, 0, time.UTC)
 
 func setUp() (context.Context, store.Store, *tqtesting.Scheduler) {
 	ctx := memory.Use(context.Background())
@@ -94,15 +93,14 @@ func newInfraFromBuild(ctx context.Context, b *model.Build) *model.BuildInfra {
 }
 
 func TestTimeoutExpiredBuilds(t *testing.T) {
-	t.Skip("temporary broken")
 	t.Parallel()
 
 	ftt.Run("TimeoutExpiredBuilds", t, func(t *ftt.Test) {
 		ctx, store, sch := setUp()
 
 		t.Run("skips young, running builds", func(t *ftt.Test) {
-			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, outageTime)
-			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, outageTime)
+			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime))
+			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime))
 			assert.Loosely(t, datastore.Put(ctx, b1, b2, bs1, bs2), should.BeNil)
 			assert.Loosely(t, TimeoutExpiredBuilds(ctx), should.BeNil)
 
@@ -120,8 +118,8 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 		})
 
 		t.Run("skips old, completed builds", func(t *ftt.Test) {
-			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SUCCESS, outageTime)
-			b2, bs2 := newBuildAndStatus(ctx, pb.Status_FAILURE, outageTime)
+			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SUCCESS, now.Add(-model.BuildMaxCompletionTime))
+			b2, bs2 := newBuildAndStatus(ctx, pb.Status_FAILURE, now.Add(-model.BuildMaxCompletionTime))
 			assert.Loosely(t, datastore.Put(ctx, b1, b2, bs1, bs2), should.BeNil)
 			assert.Loosely(t, TimeoutExpiredBuilds(ctx), should.BeNil)
 
@@ -138,7 +136,7 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 			bs := make([]*model.Build, 128)
 			bss := make([]*model.BuildStatus, len(bs))
 			infs := make([]*model.BuildInfra, len(bs))
-			createTime := outageTime.Add(-time.Minute)
+			createTime := now.Add(-model.BuildMaxCompletionTime - time.Minute)
 			for i := range bs {
 				bs[i], bss[i] = newBuildAndStatus(ctx, pb.Status_SCHEDULED, createTime)
 				infs[i] = newInfraFromBuild(ctx, bs[i])
@@ -170,11 +168,11 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 					Metric: cm,
 				},
 			}
-			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, outageTime.Add(-time.Minute))
+			b1, bs1 := newBuildAndStatus(ctx, pb.Status_SCHEDULED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
 			inf1 := newInfraFromBuild(ctx, b1)
 			b1.LegacyProperties.LeaseProperties.IsLeased = true
 			b1.CustomMetrics = cms
-			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, outageTime.Add(-time.Minute))
+			b2, bs2 := newBuildAndStatus(ctx, pb.Status_STARTED, now.Add(-model.BuildMaxCompletionTime-time.Minute))
 			inf2 := newInfraFromBuild(ctx, b2)
 			b2.CustomMetrics = cms
 			bldr := &model.Builder{
