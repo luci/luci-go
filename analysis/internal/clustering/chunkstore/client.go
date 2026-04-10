@@ -20,16 +20,15 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"net/http"
 	"regexp"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/server/auth"
 
 	cpb "go.chromium.org/luci/analysis/internal/clustering/proto"
@@ -50,22 +49,22 @@ type Client struct {
 // NewClient initialises a new chunk storage client, that uses the specified
 // GCS bucket as the backing store.
 func NewClient(ctx context.Context, bucket string) (*Client, error) {
-	// Credentials with Cloud scope.
-	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.CloudScopeSet()...))
+	// Get authenticated transport.
+	requiredScopes := []string{storage.ScopeReadWrite}
+	requiredScopes = append(requiredScopes, scopes.CloudScopeSet()...)
+	tr, err := auth.GetRPCTransport(ctx, auth.AsSelf, auth.WithScopes(requiredScopes...))
 	if err != nil {
-		return nil, errors.Fmt("failed to get PerRPCCredentials: %w", err)
+		return nil, errors.Fmt("get RPCTransport: %w", err)
 	}
 
 	// Initialize the client.
 	options := []option.ClientOption{
-		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(creds)),
-		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
-		option.WithScopes(storage.ScopeReadWrite),
+		option.WithHTTPClient(&http.Client{Transport: tr}),
 	}
 	cl, err := storage.NewClient(ctx, options...)
 
 	if err != nil {
-		return nil, errors.Fmt("failed to instantiate Cloud Storage client: %w", err)
+		return nil, errors.Fmt("instantiate Cloud Storage client: %w", err)
 	}
 	return &Client{
 		client: cl,
