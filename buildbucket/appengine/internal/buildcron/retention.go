@@ -40,6 +40,17 @@ func buildKeyByAge(ctx context.Context, age time.Duration) *datastore.Key {
 	return datastore.MakeKey(ctx, model.BuildKind, idHigh)
 }
 
+// buildKeyByTS returns a datastore key for a given timestamp.
+func buildKeyByTS(ctx context.Context, ts time.Time) *datastore.Key {
+	// the low time yields the high ID.
+	// i.e., 1st param yields 2nd element in the return tuple.
+	_, idHigh := buildid.IDRange(
+		ts, /* low time */
+		ts, /* high time */
+	)
+	return datastore.MakeKey(ctx, model.BuildKind, idHigh)
+}
+
 func deleteBuilds(ctx context.Context, keys []*datastore.Key) error {
 	if len(keys) == 0 {
 		return nil
