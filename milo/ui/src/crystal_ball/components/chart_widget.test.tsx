@@ -200,6 +200,71 @@ describe('ChartWidget', () => {
     ).toBeInTheDocument();
   });
 
+  it('should display required message when no metrics are selected', () => {
+    const widgetWithoutSeries = PerfChartWidget.fromPartial({
+      ...baseWidget,
+      series: [],
+    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        multiMetricChartData: {
+          xAxisDataKey: 'x',
+          yAxisDataKey: 'y',
+          lines: [],
+        },
+      }),
+    );
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={widgetWithoutSeries}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+    expect(
+      screen.getByText(COMMON_MESSAGES.METRIC_REQUIRED),
+    ).toBeInTheDocument();
+  });
+
+  it('should display empty metric field message when a series has no metric field', () => {
+    const widgetWithEmptyMetric = PerfChartWidget.fromPartial({
+      ...baseWidget,
+      series: [
+        {
+          metricField: '',
+          filters: [],
+        },
+      ],
+    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        hasData: false,
+      }),
+    );
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={widgetWithEmptyMetric}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+    expect(
+      screen.getByText(COMMON_MESSAGES.EMPTY_METRIC_FIELD),
+    ).toBeInTheDocument();
+    expect(mockUseFetchDashboardWidgetData).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        enabled: false,
+      }),
+    );
+  });
+
   it('should NOT display required message when atp_test_name filter is present in series', () => {
     const widgetWithSeriesFilter = PerfChartWidget.fromPartial({
       ...baseWidget,

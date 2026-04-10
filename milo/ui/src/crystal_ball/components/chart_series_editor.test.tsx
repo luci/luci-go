@@ -92,7 +92,7 @@ describe('ChartSeriesEditor', () => {
   it('renders with no series initially', async () => {
     render(<ChartSeriesEditor {...defaultProps} />);
     expect(
-      screen.getByRole('button', { name: /Add Another Series/i }),
+      screen.getByRole('button', { name: /Add\/Filter Metric Series/i }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /Remove series/i }),
@@ -121,10 +121,10 @@ describe('ChartSeriesEditor', () => {
     expect(screen.getByLabelText('Metric Field')).toHaveValue('metric1');
   });
 
-  it('adds a new series when "Add Another Series" is clicked', async () => {
+  it('adds a new series when "Add/Filter Metric Series" is clicked', async () => {
     render(<ChartSeriesEditor {...defaultProps} />);
     fireEvent.click(
-      screen.getByRole('button', { name: /Add Another Series/i }),
+      screen.getByRole('button', { name: /Add\/Filter Metric Series/i }),
     );
 
     expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
@@ -309,7 +309,7 @@ describe('ChartSeriesEditor', () => {
 
     // Add a new one
     fireEvent.click(
-      screen.getByRole('button', { name: /Add Another Series/i }),
+      screen.getByRole('button', { name: /Add\/Filter Metric Series/i }),
     );
     expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(2);
     const seriesAfterAdd = defaultProps.onUpdateSeries.mock.lastCall[0];

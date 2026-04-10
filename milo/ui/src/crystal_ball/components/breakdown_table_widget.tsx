@@ -16,7 +16,7 @@ import { Box } from '@mui/material';
 import { useMemo } from 'react';
 
 import { ChartSeriesItem } from '@/crystal_ball/components';
-import { COMMON_MESSAGES } from '@/crystal_ball/constants';
+import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
 import {
   EditorUiKeyPrefix,
   useFetchDashboardWidgetData,
@@ -74,6 +74,23 @@ export function BreakdownTableWidget({
     ];
   }, [widget.breakdownTableWidgetChartConfig]);
 
+  const hasAtpTestFilter = useMemo(() => {
+    const allFilters = [
+      ...(globalFilters ?? []),
+      ...(widget.filters ?? []),
+      ...(widget.series?.flatMap((s) => s.filters ?? []) ?? []),
+    ];
+    return allFilters.some(
+      (f) =>
+        f.column === Column.ATP_TEST_NAME &&
+        f.textInput?.defaultValue?.values?.[0],
+    );
+  }, [globalFilters, widget.filters, widget.series]);
+
+  const hasEmptyMetricField = useMemo(() => {
+    return widget.series?.some((s) => !s.metricField);
+  }, [widget.series]);
+
   const metricFilterColumns = useMemo(
     () =>
       filterColumns.filter(
@@ -115,7 +132,11 @@ export function BreakdownTableWidget({
     isLoading,
     error,
   } = useFetchDashboardWidgetData(fetchRequest, {
-    enabled: !!widgetId && (widget.series?.length ?? 0) > 0,
+    enabled:
+      !!widgetId &&
+      (widget.series?.length ?? 0) > 0 &&
+      hasAtpTestFilter &&
+      !hasEmptyMetricField,
   });
 
   const sections = responseData?.breakdownTableData?.sections ?? [];
@@ -156,7 +177,7 @@ export function BreakdownTableWidget({
           hideColorPicker={true}
           hideVisibility={true}
           hideDelete={true}
-          titlePlaceholder={COMMON_MESSAGES.METRIC_REQUIRED}
+          titlePlaceholder={COMMON_MESSAGES.ADD_FILTER_METRIC_SERIES}
         />
       </Box>
       <BreakdownTableChart
@@ -164,6 +185,8 @@ export function BreakdownTableWidget({
         isLoading={isLoading}
         error={error}
         currentAggregations={currentAggregations}
+        hasAtpTestFilter={hasAtpTestFilter}
+        hasEmptyMetricField={hasEmptyMetricField}
         onUpdateAggregations={(finalValues) => {
           onUpdate(
             PerfChartWidget.fromPartial({

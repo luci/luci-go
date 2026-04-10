@@ -43,7 +43,7 @@ describe('BreakdownTableChart', () => {
     );
   }
 
-  it(`renders "${COMMON_MESSAGES.NO_DATA_FOUND}" when sections are empty`, () => {
+  it(`renders "${COMMON_MESSAGES.NO_DATA_FOUND}" when sections are empty and filters are valid`, () => {
     render(
       <BreakdownTableChart
         sections={[]}
@@ -51,9 +51,42 @@ describe('BreakdownTableChart', () => {
         onUpdateAggregations={mockOnUpdateAggregations}
         onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
+        hasAtpTestFilter={true}
       />,
     );
     expect(screen.getByText(COMMON_MESSAGES.NO_DATA_FOUND)).toBeInTheDocument();
+  });
+
+  it(`renders "${COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED}" when ATP test filter is missing`, () => {
+    render(
+      <BreakdownTableChart
+        sections={[]}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+        hasAtpTestFilter={false}
+      />,
+    );
+    expect(
+      screen.getByText(COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED),
+    ).toBeInTheDocument();
+  });
+
+  it(`renders "${COMMON_MESSAGES.EMPTY_METRIC_FIELD}" when a series has no metric field`, () => {
+    render(
+      <BreakdownTableChart
+        sections={[]}
+        currentAggregations={[]}
+        onUpdateAggregations={mockOnUpdateAggregations}
+        onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
+        hasSeries={true}
+        hasEmptyMetricField={true}
+      />,
+    );
+    expect(
+      screen.getByText(COMMON_MESSAGES.EMPTY_METRIC_FIELD),
+    ).toBeInTheDocument();
   });
 
   it('renders the tabs and table when data is provided', () => {
@@ -225,6 +258,7 @@ describe('BreakdownTableChart', () => {
         onUpdateAggregations={mockOnUpdateAggregations}
         onUpdateDefaultDimension={mockOnUpdateDefaultDimension}
         hasSeries={true}
+        hasAtpTestFilter={true}
       />,
     );
 

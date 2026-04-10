@@ -17,6 +17,7 @@
  */
 export enum COMMON_MESSAGES {
   ADD_WIDGET = 'Add Widget',
+  ADD_FILTER_METRIC_SERIES = 'Add/Filter Metric Series',
   AGGREGATE_BY = 'Aggregate By',
   AGGREGATES = 'Aggregates',
   APPLY = 'Apply',
@@ -32,6 +33,7 @@ export enum COMMON_MESSAGES {
   DISPLAY_NAME = 'Display Name',
   EMPTY_DASHBOARD_HINT = 'Add a widget to start building your custom view.',
   EMPTY_DASHBOARD_MESSAGE = 'This dashboard is empty',
+  EMPTY_METRIC_FIELD = 'One of the series metric fields is empty. Please select a metric.',
   ERROR_FETCHING_MEASUREMENTS = 'Error fetching measurements: ',
   FILTERS = 'Filters',
   FROM_UTC = 'From (UTC)',

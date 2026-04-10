@@ -172,19 +172,22 @@ export function ChartSeriesEditor({
         );
       })}
       <Button
-        startIcon={<AddIcon />}
         onClick={handleAddSeries}
         variant="text"
         fullWidth
+        startIcon={<AddIcon />}
         sx={{
           justifyContent: 'flex-start',
           px: 2,
-          py: 0.5,
+          py: 0,
+          minHeight: (theme) => theme.spacing(5),
           color: 'primary.main',
           textTransform: 'none',
+          typography: 'body2',
+          fontWeight: (theme) => theme.typography.fontWeightBold,
         }}
       >
-        Add Another Series
+        {COMMON_MESSAGES.ADD_FILTER_METRIC_SERIES}
       </Button>
     </Box>
   );
@@ -238,6 +241,11 @@ export function ChartSeriesItem({
   const [inputValue, setInputValue] = useState(series.metricField);
   const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
   const [isFocused, setIsFocused] = useState(false);
+
+  const isShowingPlaceholder =
+    (series.displayName ?? '') === '' &&
+    (series.metricField ?? '') === '' &&
+    (titlePlaceholder ?? '') !== '';
 
   useDebounce(
     () => {
@@ -299,13 +307,19 @@ export function ChartSeriesItem({
 
   const handleMetricFieldChange = (newValue: string) => {
     setInputValue(newValue);
+    const isDefaultOrEmpty =
+      (series.displayName ?? '') === '' ||
+      series.displayName.startsWith('series-');
+    const newDisplayName = isDefaultOrEmpty
+      ? newValue !== ''
+        ? newValue
+        : series.displayName
+      : series.displayName;
+    setDisplayName(newDisplayName);
     onUpdate({
       ...series,
       metricField: newValue,
-      displayName:
-        !series.displayName || series.displayName.startsWith('series-')
-          ? newValue || series.displayName
-          : series.displayName,
+      displayName: newDisplayName,
     });
   };
 
@@ -356,14 +370,17 @@ export function ChartSeriesItem({
           },
         }}
       >
-        <ChevronRightIcon
-          fontSize="small"
-          sx={{
-            transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s',
-            cursor: 'pointer',
-          }}
-        />
+        {!isShowingPlaceholder && (
+          <ChevronRightIcon
+            fontSize="small"
+            sx={{
+              transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s',
+              cursor: 'pointer',
+            }}
+          />
+        )}
+        {isShowingPlaceholder && <AddIcon fontSize="small" color="primary" />}
         {!hideColorPicker && (
           <Box
             data-testid="series-color-circle"
@@ -379,7 +396,13 @@ export function ChartSeriesItem({
         )}
         <Typography
           variant="body2"
-          sx={{ fontWeight: (theme) => theme.typography.fontWeightBold }}
+          sx={{
+            fontWeight: (theme) => theme.typography.fontWeightBold,
+            color:
+              !series.displayName && !series.metricField && titlePlaceholder
+                ? 'primary.main'
+                : 'inherit',
+          }}
         >
           {series.displayName ||
             series.metricField ||

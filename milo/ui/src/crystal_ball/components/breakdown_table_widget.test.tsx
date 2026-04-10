@@ -15,7 +15,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 
-import { COMMON_MESSAGES } from '@/crystal_ball/constants';
+import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
 import {
   UseEditorUiStateOptions,
   useFetchDashboardWidgetData,
@@ -35,6 +35,9 @@ jest.mock('@/crystal_ball/hooks', () => ({
     return [val, setVal];
   },
   useFetchDashboardWidgetData: jest.fn(),
+}));
+
+jest.mock('@/crystal_ball/hooks/use_measurement_filter_api', () => ({
   useSuggestMeasurementFilterValues: jest.fn(() => ({ data: [] })),
 }));
 
@@ -44,7 +47,17 @@ const mockUseFetchDashboardWidgetData = jest.mocked(
 
 const baseWidget = PerfChartWidget.fromPartial({
   displayName: 'Test Breakdown',
-  series: [{ metricField: 'test_metric' }],
+  series: [
+    {
+      metricField: 'test_metric',
+      filters: [
+        {
+          column: Column.ATP_TEST_NAME,
+          textInput: { defaultValue: { values: ['test_value'] } },
+        },
+      ],
+    },
+  ],
 });
 
 describe('BreakdownTableWidget', () => {

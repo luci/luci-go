@@ -299,13 +299,21 @@ export function ChartWidget({
     );
   }, [globalFilters, widget.filters, widget.series]);
 
+  const hasEmptyMetricField = useMemo(() => {
+    return widget.series?.some((s) => !s.metricField);
+  }, [widget.series]);
+
   const {
     data: widgetResponse,
     isLoading: isWidgetLoading,
     isError: isWidgetError,
     error: widgetError,
   } = useFetchDashboardWidgetData(fetchRequest, {
-    enabled: !!widgetId && hasAtpTestFilter,
+    enabled:
+      !!widgetId &&
+      hasAtpTestFilter &&
+      !hasEmptyMetricField &&
+      (widget.series?.length ?? 0) > 0,
   });
 
   const chartSeries = useMemo(
@@ -522,9 +530,13 @@ export function ChartWidget({
                 variant="body1"
                 sx={{ p: 2, color: 'text.secondary' }}
               >
-                {!hasAtpTestFilter
-                  ? COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED
-                  : COMMON_MESSAGES.NO_DATA_FOUND}
+                {!widget.series || widget.series.length === 0
+                  ? COMMON_MESSAGES.METRIC_REQUIRED
+                  : hasEmptyMetricField
+                    ? COMMON_MESSAGES.EMPTY_METRIC_FIELD
+                    : !hasAtpTestFilter
+                      ? COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED
+                      : COMMON_MESSAGES.NO_DATA_FOUND}
               </Typography>
             </Box>
           )}

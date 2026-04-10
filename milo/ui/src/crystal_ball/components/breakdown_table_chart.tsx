@@ -364,6 +364,8 @@ export interface BreakdownTableChartProps {
   currentAggregations: readonly number[];
   onUpdateAggregations: (aggregations: number[]) => void;
   hasSeries: boolean;
+  hasAtpTestFilter?: boolean;
+  hasEmptyMetricField?: boolean;
   defaultDimension?: string;
   onUpdateDefaultDimension: (dimension: string) => void;
 }
@@ -379,6 +381,8 @@ export function BreakdownTableChart({
   currentAggregations,
   onUpdateAggregations,
   hasSeries,
+  hasAtpTestFilter = true,
+  hasEmptyMetricField = false,
   defaultDimension,
   onUpdateDefaultDimension,
 }: BreakdownTableChartProps): React.ReactElement {
@@ -670,7 +674,11 @@ export function BreakdownTableChart({
             <Typography variant="body1" sx={{ p: 2, color: 'text.secondary' }}>
               {!hasSeries
                 ? COMMON_MESSAGES.METRIC_REQUIRED
-                : COMMON_MESSAGES.NO_DATA_FOUND}
+                : hasEmptyMetricField
+                  ? COMMON_MESSAGES.EMPTY_METRIC_FIELD
+                  : !hasAtpTestFilter
+                    ? COMMON_MESSAGES.ATP_TEST_NAME_REQUIRED
+                    : COMMON_MESSAGES.NO_DATA_FOUND}
             </Typography>
           </Box>
         )}
