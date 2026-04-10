@@ -25,11 +25,50 @@ import "elements-sk/styles/buttons";
  *
  */
 
+export const BANNER_CONFIG = {
+  "chromeos-swarming.appspot.com": {
+    text: "Fleet Console is now the recommended UI for tracking ChromeOS devices.",
+    linkText: "See these devices from FCon.",
+  },
+  "chromium-swarm.appspot.com": {
+    text: "Browser devices can now be viewed from the Fleet Console!",
+    linkText: "View these devices in FCon here",
+    platform: "chromium",
+  },
+  "chrome-swarming.appspot.com": {
+    text: "Browser devices can now be viewed from the Fleet Console!",
+    linkText: "View these devices in FCon here",
+    platform: "chromium",
+  },
+  "chromium-swarm-dev.appspot.com": {
+    text: "Browser devices can now be viewed from the Fleet Console!",
+    linkText: "View these devices in FCon here",
+    platform: "chromium",
+  },
+};
+
+export function getMockableHostname() {
+  const hostname = window.location.hostname;
+  const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+  if (!isLocal) {
+    return hostname;
+  }
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get("mock_hostname") || hostname;
+}
+
+export function getProjectId(hostname) {
+  const match = hostname.match(/^([^.]+)\.appspot\.com$/);
+  return match ? match[1] : "not_found";
+}
+
 const template = (ele) => html`
   <div class="fleet-console-banner">
-    Fleet Console is now the recommended UI for tracking ChromeOS devices.
+    ${ele.config.text || ""}
     <!-- the onclick is needed to synch the link with current query params -->
-    <a role="link" href=${ele.link} @click=${ele.updateLink}>See these devices from FCon.</a>
+    <a role="link" href=${ele.link} @click=${ele.updateLink}>
+      ${ele.config.linkText || ""}
+    </a>
   </div>
 `;
 
@@ -38,17 +77,27 @@ window.customElements.define(
   class extends HTMLElement {
     constructor() {
       super();
-      this.link = this._getLink();
+      const hostname = getMockableHostname();
+      this.config = BANNER_CONFIG[hostname] || {};
+      this.link = this._getLink(hostname);
     }
 
     updateLink() {
-      this.link = this._getLink();
+      const hostname = getMockableHostname();
+      this.link = this._getLink(hostname);
       this.render();
     }
 
-    _getLink() {
+    _getLink(hostname) {
       const urlPath = window.location.pathname;
-      const queryParams = window.location.search;
+      let queryParams = window.location.search;
+
+      const config = BANNER_CONFIG[hostname];
+      if (config && config.platform) {
+        const params = new URLSearchParams(queryParams);
+        params.set("platform", config.platform);
+        queryParams = "?" + params.toString();
+      }
 
       return (
         "https://ci.chromium.org/ui/fleet/redirects/swarming" +

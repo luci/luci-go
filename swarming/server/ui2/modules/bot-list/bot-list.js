@@ -1,6 +1,16 @@
-// Copyright 2018 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /** @module swarming-ui/modules/bot-list
  * @description <h2><code>bot-list</code></h2>
@@ -17,6 +27,11 @@
 
 import { $$ } from "common-sk/modules/dom";
 import { errorMessage } from "elements-sk/errorMessage";
+import {
+  BANNER_CONFIG,
+  getMockableHostname,
+  getProjectId,
+} from "../fleet-console-banner/fleet-console-banner.js";
 import { html } from "lit-html";
 import { ifDefined } from "lit-html/directives/if-defined";
 import naturalSort from "javascript-natural-sort/naturalSort";
@@ -296,7 +311,7 @@ const template = (ele) => html`
   <main @click=${(e) => ele._showColSelector && ele._toggleColSelector(e)}>
     <h2 class=message ?hidden=${ele.loggedInAndAuthorized}>${ele._message}</h2>
     <fleet-console-banner
-      ?hidden=${ele._projectId !== "chromeos-swarming"}
+      ?hidden=${!(ele._projectId + ".appspot.com" in BANNER_CONFIG)}
     ></fleet-console-banner>
 
     ${ele.loggedInAndAuthorized ? header(ele) : ""}
@@ -440,8 +455,8 @@ window.customElements.define(
       this._fetchController = null;
       this._ignoreScrolls = 0;
 
-      const idx = location.hostname.indexOf(".appspot.com");
-      this._projectId = location.hostname.substring(0, idx) || "not_found";
+      const hostname = getMockableHostname();
+      this._projectId = getProjectId(hostname);
     }
 
     connectedCallback() {

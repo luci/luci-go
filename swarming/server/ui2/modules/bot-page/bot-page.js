@@ -1,9 +1,24 @@
-// Copyright 2019 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import { $$ } from "common-sk/modules/dom";
 import { errorMessage } from "elements-sk/errorMessage";
+import {
+  BANNER_CONFIG,
+  getMockableHostname,
+  getProjectId,
+} from "../fleet-console-banner/fleet-console-banner.js";
 import { html } from "lit-html";
 import { ifDefined } from "lit-html/directives/if-defined";
 import { stateReflector } from "common-sk/modules/stateReflector";
@@ -398,14 +413,17 @@ const template = (ele) => html`
   <main>
     <h2 class=message ?hidden=${ele.loggedInAndAuthorized}>${ele._message}</h2>
     <fleet-console-banner
-      ?hidden=${ele._projectId !== "chromeos-swarming" ||
-      // Fleet Console uses the `dut_name` to retrieve ChromeOS device details,
-      // so hide the banner if that information isn't available.
-      !(
-        ele._bot &&
-        ele._bot.dimensions &&
-        ele._bot.dimensions.some((d) => d.key === "dut_name")
-      )}
+      ?hidden=${
+        !(ele._projectId + ".appspot.com" in BANNER_CONFIG) ||
+        // For ChromeOS, Fleet Console uses the `dut_name` to retrieve device details,
+        // so hide the banner if that information isn't available.
+        (ele._projectId === "chromeos-swarming" &&
+          !(
+            ele._bot &&
+            ele._bot.dimensions &&
+            ele._bot.dimensions.some((d) => d.key === "dut_name")
+          ))
+      }
     ></fleet-console-banner>
 
     <div class=top ?hidden=${!ele.loggedInAndAuthorized}>
@@ -503,8 +521,8 @@ window.customElements.define(
       // Allows us to abort fetches that are tied to the id when the id changes.
       this._fetchController = null;
 
-      const idx = location.hostname.indexOf(".appspot.com");
-      this._projectId = location.hostname.substring(0, idx) || "not_found";
+      const hostname = getMockableHostname();
+      this._projectId = getProjectId(hostname);
     }
 
     connectedCallback() {
