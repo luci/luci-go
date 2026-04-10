@@ -14,7 +14,7 @@
 
 import LaunchIcon from '@mui/icons-material/Launch';
 import MenuIcon from '@mui/icons-material/Menu';
-import { styled, Typography } from '@mui/material';
+import { styled, Tooltip, Typography } from '@mui/material';
 import MuiDrawer from '@mui/material/Drawer';
 import MaterialLink from '@mui/material/Link';
 import List from '@mui/material/List';
@@ -81,19 +81,15 @@ export const Sidebar = ({ open }: { open: boolean }) => {
             {sidebarSection.title && (
               <ListSubheader>{sidebarSection.title}</ListSubheader>
             )}
-            {sidebarSection.pages.map((sidebarPage) => (
-              <ListItem
-                dense
-                key={sidebarPage.url}
-                disablePadding
-                sx={{ display: 'block' }}
-              >
+            {sidebarSection.pages.map((sidebarPage) => {
+              const button = (
                 <ListItemButton
                   sx={{ px: 2.5 }}
                   selected={sidebarPage.url === location.pathname}
                   component={sidebarPage.external ? MaterialLink : Link}
                   to={sidebarPage.url}
                   target={sidebarPage.external ? '_blank' : ''}
+                  disabled={sidebarPage.disabled}
                 >
                   <ListItemIcon sx={{ minWidth: 0, mr: 1 }}>
                     {sidebarPage.icon}
@@ -107,8 +103,29 @@ export const Sidebar = ({ open }: { open: boolean }) => {
                     </ListItemIcon>
                   )}
                 </ListItemButton>
-              </ListItem>
-            ))}
+              );
+
+              return (
+                <ListItem
+                  dense
+                  key={sidebarPage.url}
+                  disablePadding
+                  sx={{ display: 'block' }}
+                >
+                  {sidebarPage.tooltip ? (
+                    <Tooltip
+                      title={sidebarPage.tooltip}
+                      placement="right"
+                      arrow
+                    >
+                      <span style={{ display: 'block' }}>{button}</span>
+                    </Tooltip>
+                  ) : (
+                    button
+                  )}
+                </ListItem>
+              );
+            })}
           </Fragment>
         ))}
 

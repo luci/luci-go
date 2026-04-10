@@ -37,6 +37,8 @@ export interface SidebarPage {
   readonly url: string;
   readonly icon: React.ReactNode;
   readonly external?: boolean;
+  readonly disabled?: boolean;
+  readonly tooltip?: string;
 }
 
 export interface SidebarSection {
@@ -67,6 +69,7 @@ function generateHomeSection(): SidebarSection {
 }
 
 function generateLabHealthSection(platform?: Platform): SidebarSection {
+  const isRepairsEnabled = !platform || platform === Platform.ANDROID;
   return {
     title: 'Lab Health',
     pages: [
@@ -86,9 +89,26 @@ function generateLabHealthSection(platform?: Platform): SidebarSection {
         label: 'Repairs',
         url: generateRepairsURL(platformToURL(platform || Platform.ANDROID)),
         icon: <ConstructionIcon />,
+        disabled: !isRepairsEnabled,
+        tooltip: !isRepairsEnabled
+          ? `Repairs for ${getPlatformName(platform)} are not available yet`
+          : undefined,
       },
     ],
   };
+}
+
+function getPlatformName(platform?: Platform): string {
+  switch (platform) {
+    case Platform.CHROMEOS:
+      return 'ChromeOS';
+    case Platform.ANDROID:
+      return 'Android';
+    case Platform.CHROMIUM:
+      return 'Chrome Browser';
+    default:
+      return 'this platform';
+  }
 }
 
 function generateResourceRequestsSection(): SidebarSection {

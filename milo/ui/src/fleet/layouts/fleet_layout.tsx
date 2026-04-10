@@ -78,7 +78,10 @@ const FleetLayoutContent = () => {
     'Go to Repairs',
     'g r',
     () => navigate(generateRepairsURL(platformStr || ANDROID_PLATFORM)),
-    { category: 'Navigation' },
+    {
+      category: 'Navigation',
+      enabled: !currentPlatform || platformStr === ANDROID_PLATFORM,
+    },
   );
   useShortcut(
     'Go to Metrics',
