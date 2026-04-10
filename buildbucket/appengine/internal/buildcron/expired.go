@@ -16,8 +16,6 @@ package buildcron
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -96,20 +94,6 @@ func expireBuilds(ctx context.Context, bs []*model.Build, mr parallel.MultiRunne
 	return err
 }
 
-var (
-	outageStartTime time.Time
-	outageEndTime   time.Time
-)
-
-func init() {
-	loc, err := time.LoadLocation("America/Los_Angeles")
-	if err != nil {
-		panic(fmt.Sprintf("Los Angeles is gone: %s", err))
-	}
-	outageStartTime = time.Date(2026, time.April, 9, 17, 0, 0, 0, loc)
-	outageEndTime = time.Date(2026, time.April, 9, 19, 30, 0, 0, loc)
-}
-
 // TimeoutExpiredBuilds marks incomplete builds that were created longer than
 // model.BuildMaxCompletionTime w/ INFRA_FAILURE.
 func TimeoutExpiredBuilds(ctx context.Context) error {
@@ -127,8 +111,7 @@ func TimeoutExpiredBuilds(ctx context.Context) error {
 	// Hence, this can run at most 6 transactions in parallel.
 	const nWorkers = 32
 	q := datastore.NewQuery(model.BuildKind).
-		Lt("__key__", buildKeyByTS(ctx, outageStartTime)).
-		Gt("__key__", buildKeyByTS(ctx, outageEndTime)).
+		Gt("__key__", buildKeyByAge(ctx, model.BuildMaxCompletionTime)).
 		KeysOnly(true)
 
 	return parallel.RunMulti(ctx, nWorkers, func(mr parallel.MultiRunner) error {
@@ -137,10 +120,10 @@ func TimeoutExpiredBuilds(ctx context.Context) error {
 			workC <- func() error {
 				defer close(ch)
 
-				// Queries within a transaction must include an Ancestor filter.
+				// Queries within a transcation must include an Ancestor filter.
 				// Hence, this searches expired builds out of a transaction first,
 				// and then update them in a transaction.
-				for _, st := range []pb.Status{pb.Status_SCHEDULED} {
+				for _, st := range []pb.Status{pb.Status_SCHEDULED, pb.Status_STARTED} {
 					bs := make([]*model.Build, 0, batchSize)
 					err := datastore.RunBatch(ctx, int32(batchSize), q.Eq("status_v2", st),
 						func(b *model.Build) error {
