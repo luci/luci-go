@@ -384,15 +384,22 @@ type TestIdEntry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The name of the module. Exact match.
 	// E.g. "CtsSdkExtensionsTestCases".
+	// You cannot specify both odule_name and module_name_pattern at the same time.
+	// If both are empty, this entry matches all modules.
 	ModuleName string `protobuf:"bytes,1,opt,name=module_name,json=moduleName,proto3" json:"module_name,omitempty"`
 	// The coarse name (e.g. package). Exact match.
 	// E.g. "com.android.os.ext".
+	// If left blank, any coarse_name will match.
 	CoarseName string `protobuf:"bytes,2,opt,name=coarse_name,json=coarseName,proto3" json:"coarse_name,omitempty"`
 	// The fine name (e.g. class). Exact match.
 	// E.g. "SdkExtensionsTest".
-	FineName      string `protobuf:"bytes,3,opt,name=fine_name,json=fineName,proto3" json:"fine_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// If left blank, any fine_name will match.
+	FineName string `protobuf:"bytes,3,opt,name=fine_name,json=fineName,proto3" json:"fine_name,omitempty"`
+	// The name of the module. Match by regex.
+	// E.g. "^Cts.*TestCases$".
+	ModuleNamePattern string `protobuf:"bytes,4,opt,name=module_name_pattern,json=moduleNamePattern,proto3" json:"module_name_pattern,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *TestIdEntry) Reset() {
@@ -442,6 +449,13 @@ func (x *TestIdEntry) GetCoarseName() string {
 func (x *TestIdEntry) GetFineName() string {
 	if x != nil {
 		return x.FineName
+	}
+	return ""
+}
+
+func (x *TestIdEntry) GetModuleNamePattern() string {
+	if x != nil {
+		return x.ModuleNamePattern
 	}
 	return ""
 }
@@ -532,13 +546,14 @@ const file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDesc = "" 
 	"\x17full_build_url_template\x18\x01 \x01(\tR\x14fullBuildUrlTemplate\x1as\n" +
 	"\x0fDataRealmsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12J\n" +
-	"\x05value\x18\x02 \x01(\v24.luci.resultdb.config.AndroidBuild.ByDataRealmConfigR\x05value:\x028\x01\"l\n" +
+	"\x05value\x18\x02 \x01(\v24.luci.resultdb.config.AndroidBuild.ByDataRealmConfigR\x05value:\x028\x01\"\x9c\x01\n" +
 	"\vTestIdEntry\x12\x1f\n" +
 	"\vmodule_name\x18\x01 \x01(\tR\n" +
 	"moduleName\x12\x1f\n" +
 	"\vcoarse_name\x18\x02 \x01(\tR\n" +
 	"coarseName\x12\x1b\n" +
-	"\tfine_name\x18\x03 \x01(\tR\bfineNameB5Z3go.chromium.org/luci/resultdb/proto/config;configpbb\x06proto3"
+	"\tfine_name\x18\x03 \x01(\tR\bfineName\x12.\n" +
+	"\x13module_name_pattern\x18\x04 \x01(\tR\x11moduleNamePatternB5Z3go.chromium.org/luci/resultdb/proto/config;configpbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_resultdb_proto_config_config_proto_rawDescOnce sync.Once

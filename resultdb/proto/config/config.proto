@@ -148,13 +148,21 @@ message AndroidBuild {
 message TestIdEntry {
   // The name of the module. Exact match.
   // E.g. "CtsSdkExtensionsTestCases".
+  // You cannot specify both odule_name and module_name_pattern at the same time.
+  // If both are empty, this entry matches all modules.
   string module_name = 1;
 
   // The coarse name (e.g. package). Exact match.
   // E.g. "com.android.os.ext".
+  // If left blank, any coarse_name will match.
   string coarse_name = 2;
 
   // The fine name (e.g. class). Exact match.
   // E.g. "SdkExtensionsTest".
+  // If left blank, any fine_name will match.
   string fine_name = 3;
+
+  // The name of the module. Match by regex.
+  // E.g. "^Cts.*TestCases$".
+  string module_name_pattern = 4;
 }

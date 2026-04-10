@@ -116,6 +116,7 @@ func validateServiceConfig(ctx *validation.Context, cfg *configpb.Config) {
 	validateSchemes(ctx, cfg.Schemes)
 	validateProducerSystems(ctx, cfg.ProducerSystems)
 	validateAndroidBuild(ctx, cfg.AndroidBuild)
+	validateTestIdsWithHigherLimit(ctx, cfg.TestIdsWithHigherLimit)
 }
 
 func validateBQArtifactExportConfig(ctx *validation.Context, cfg *configpb.BqArtifactExportConfig) {
@@ -358,4 +359,32 @@ func validateByDataRealmConfig(ctx *validation.Context, name string, cfg *config
 		"build_id":     {},
 	}
 	validateURLTemplate(ctx, "full_build_url_template", cfg.FullBuildUrlTemplate, allowedVars)
+}
+
+// validateTestIdsWithHigherLimit validates the test IDs with higher limit configuration.
+func validateTestIdsWithHigherLimit(ctx *validation.Context, entries []*configpb.TestIdEntry) {
+	ctx.Enter("test_ids_with_higher_limit")
+	defer ctx.Exit()
+
+	for i, entry := range entries {
+		validateTestIdEntry(ctx, fmt.Sprintf("[%d]", i), entry)
+	}
+}
+
+// validateTestIdEntry validates a single TestIdEntry.
+func validateTestIdEntry(ctx *validation.Context, name string, entry *configpb.TestIdEntry) {
+	ctx.Enter("%s", name)
+	defer ctx.Exit()
+
+	if entry.ModuleName == "" && entry.ModuleNamePattern == "" && entry.CoarseName == "" && entry.FineName == "" {
+		ctx.Errorf("at least one of module_name, module_name_pattern, coarse_name, or fine_name must be set")
+	}
+
+	if entry.ModuleName != "" && entry.ModuleNamePattern != "" {
+		ctx.Errorf("cannot specify both module_name and module_name_pattern")
+	}
+
+	if entry.ModuleNamePattern != "" {
+		validatePattern(ctx, "module_name_pattern", entry.ModuleNamePattern)
+	}
 }

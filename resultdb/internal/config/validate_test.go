@@ -523,4 +523,33 @@ func TestServiceConfigValidator(t *testing.T) {
 			})
 		})
 	})
+
+	ftt.Run("test ids with higher limit", t, func(t *ftt.Test) {
+		cfg := CreatePlaceholderServiceConfig()
+		cfg.TestIdsWithHigherLimit = []*configpb.TestIdEntry{
+			{
+				ModuleName: "CtsSdkExtensionsTestCases",
+			},
+		}
+		path := "test_ids_with_higher_limit / [0]"
+		t.Run("Valid", func(t *ftt.Test) {
+			assert.Loosely(t, validate(cfg), should.BeNil)
+		})
+		t.Run("Both module_name and module_name_pattern specified", func(t *ftt.Test) {
+			cfg.TestIdsWithHigherLimit[0].ModuleNamePattern = "^Cts.*$"
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): cannot specify both module_name and module_name_pattern`))
+		})
+		t.Run("Invalid module_name_pattern", func(t *ftt.Test) {
+			cfg.TestIdsWithHigherLimit[0].ModuleName = ""
+			cfg.TestIdsWithHigherLimit[0].ModuleNamePattern = "Cts.*" // Invalid, no ^/$
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+` / module_name_pattern): pattern must start and end with ^ and $`))
+		})
+		t.Run("All fields empty", func(t *ftt.Test) {
+			cfg.TestIdsWithHigherLimit[0].ModuleName = ""
+			cfg.TestIdsWithHigherLimit[0].ModuleNamePattern = ""
+			cfg.TestIdsWithHigherLimit[0].CoarseName = ""
+			cfg.TestIdsWithHigherLimit[0].FineName = ""
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): at least one of module_name, module_name_pattern, coarse_name, or fine_name must be set`))
+		})
+	})
 }
