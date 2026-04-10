@@ -113,11 +113,15 @@ export function OptionsDropdown({
   const placement = mapOriginToPlacement(anchorOrigin, transformOrigin);
 
   useEffect(() => {
-    if (open && enableSearchInput) {
+    if (enableSearchInput) {
       // Small timeout to allow the popover to mount and settle
-      setTimeout(() => {
-        searchInput.current?.focus();
-      }, 0);
+      if (open) {
+        setTimeout(() => {
+          searchInput.current?.focus();
+        }, 0);
+      } else {
+        setSearchQuery('');
+      }
     }
   }, [open, enableSearchInput]);
 
@@ -162,9 +166,6 @@ export function OptionsDropdown({
             return;
           }
           if (onClose) onClose(e, 'backdropClick');
-          if (enableSearchInput) {
-            setSearchQuery('');
-          }
         }}
       >
         <Paper
