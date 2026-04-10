@@ -142,6 +142,11 @@ export const formatBugUrl = (bugId: string): string => {
     return `https://b.corp.google.com/issues/${bugId}`;
   }
 
+  // If it starts with 'b/', use http as requested in b/501429892
+  if (bugId.startsWith('b/')) {
+    return `http://${bugId}`;
+  }
+
   // Otherwise, default to prepending https
   return `https://${bugId}`;
 };

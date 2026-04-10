@@ -94,16 +94,18 @@ export const COLUMNS = {
             overflow: 'hidden',
           }}
         >
-          <sup style={{ display: 'inline-flex', flexShrink: 0 }}>
-            <IconButton
-              href={formatBugUrl(x.row.original.resource_request_bug_id)}
-              target="_blank"
-              color="primary"
-              sx={{ padding: 0, marginRight: '4px' }}
-            >
-              <OpenInNewIcon sx={{ width: 14, height: 14 }} />
-            </IconButton>
-          </sup>
+          {x.row.original.resource_request_bug_id && (
+            <sup style={{ display: 'inline-flex', flexShrink: 0 }}>
+              <IconButton
+                href={formatBugUrl(x.row.original.resource_request_bug_id)}
+                target="_blank"
+                color="primary"
+                sx={{ padding: 0, marginRight: '4px' }}
+              >
+                <OpenInNewIcon sx={{ width: 14, height: 14 }} />
+              </IconButton>
+            </sup>
+          )}
           <Box sx={{ minWidth: 0, flex: 1, width: '100%', overflow: 'hidden' }}>
             <EllipsisTooltip>{x.cell.getValue()}</EllipsisTooltip>
           </Box>

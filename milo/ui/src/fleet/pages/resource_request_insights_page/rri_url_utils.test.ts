@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  formatBugUrl,
   multiselectFilterToUrlString,
   parseMultiselectFilter,
 } from './rri_url_utils';
@@ -161,5 +162,33 @@ describe('multi_select_search_param_utils', () => {
 
       expect(result).toEqual('');
     });
+  });
+});
+
+describe('formatBugUrl', () => {
+  it('should return empty string for empty bugId', () => {
+    expect(formatBugUrl('')).toEqual('');
+  });
+
+  it('should ensure https for http URLs', () => {
+    expect(formatBugUrl('http://example.com')).toEqual('https://example.com');
+  });
+
+  it('should keep https for https URLs', () => {
+    expect(formatBugUrl('https://example.com')).toEqual('https://example.com');
+  });
+
+  it('should format pure numbers as b.corp.google.com issues', () => {
+    expect(formatBugUrl('421313809')).toEqual(
+      'https://b.corp.google.com/issues/421313809',
+    );
+  });
+
+  it('should use http for b/ links', () => {
+    expect(formatBugUrl('b/421313809')).toEqual('http://b/421313809');
+  });
+
+  it('should default to prepending https', () => {
+    expect(formatBugUrl('some-other-link')).toEqual('https://some-other-link');
   });
 });
