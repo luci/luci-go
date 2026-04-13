@@ -61,8 +61,12 @@ export const DEFAULT_FILTER_VALUES: Partial<
 
 export const useProductCatalogFilters = (onApply?: () => void) => {
   const [filterOptions, setFilterOptions] = useState<
-    Record<string, StringListFilterCategoryBuilder | RangeFilterCategoryBuilder>
-  >({});
+    | Record<
+        string,
+        StringListFilterCategoryBuilder | RangeFilterCategoryBuilder
+      >
+    | undefined
+  >(undefined);
   const { filterValues, aip160 } = useFilters(filterOptions, {
     allowExtraKeys: true,
   });
@@ -73,6 +77,8 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
   });
 
   const nextFilterOptions = useMemo(() => {
+    if (!filterOptionsQuery.data) return undefined;
+
     const options: Record<
       string,
       StringListFilterCategoryBuilder | RangeFilterCategoryBuilder
