@@ -25,7 +25,7 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
-func TestMergeData(t *testing.T) {
+func TestPickData(t *testing.T) {
 	t.Parallel()
 
 	mkBin := func(val string) *orchestratorpb.ValueData {
@@ -49,87 +49,70 @@ func TestMergeData(t *testing.T) {
 
 	t.Run("a is nil", func(t *testing.T) {
 		b := mkBin("b")
-		delta, ret := MergeData(nil, b)
-		assert.That(t, delta, should.Equal(int64(proto.Size(b))))
-		assert.That(t, ret, should.Match(b))
+		ret := PickData(nil, b)
+		assert.That(t, ret, should.Equal(b))
 	})
 
 	t.Run("no-op same", func(t *testing.T) {
 		a := mkBin("a")
-		delta, ret := MergeData(a, a)
-		assert.Loosely(t, delta, should.Equal(0))
+		ret := PickData(a, a)
 		assert.That(t, ret, should.Equal(a))
 	})
 
 	t.Run("binary + json -> json", func(t *testing.T) {
 		a := mkBin("a")
 		b := mkJson("b")
-		delta, ret := MergeData(a, b)
-		// * type_url: binary -> json
-		assert.That(t, delta, should.Equal(int64(-2)))
-		assert.That(t, ret.HasJson(), should.BeTrue)
-		assert.That(t, ret.GetJson().GetValue(), should.Equal("b"))
+		ret := PickData(a, b)
+		assert.That(t, ret, should.Equal(b))
 	})
 
 	t.Run("binary + binary -> no-op", func(t *testing.T) {
 		a := mkBin("a")
 		b := mkBin("b")
-		delta, ret := MergeData(a, b)
-		assert.Loosely(t, delta, should.Equal(0))
+		ret := PickData(a, b)
 		assert.That(t, ret, should.Equal(a))
 	})
 
 	t.Run("json + binary -> no-op", func(t *testing.T) {
 		a := mkJson("a")
 		b := mkBin("b")
-		delta, ret := MergeData(a, b)
-		assert.Loosely(t, delta, should.Equal(0))
+		ret := PickData(a, b)
 		assert.That(t, ret, should.Equal(a))
 	})
 
 	t.Run("json + json -> no-op", func(t *testing.T) {
 		a := mkJson("a")
 		b := mkJson("b")
-		delta, ret := MergeData(a, b)
-		assert.Loosely(t, delta, should.Equal(0))
+		ret := PickData(a, b)
 		assert.That(t, ret, should.Equal(a))
 	})
 
 	t.Run("json + failure -> json", func(t *testing.T) {
 		a := mkJson("a")
 		b := withFail(mkBin("a"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)
-		delta, ret := MergeData(a, b)
-		assert.That(t, delta, should.Equal(int64(0)))
+		ret := PickData(a, b)
 		assert.That(t, ret, should.Equal(a))
 	})
 
 	t.Run("failure merge", func(t *testing.T) {
 		a := mkBin("a")
 		b := withFail(mkBin("b"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)
-		delta, ret := MergeData(a, b)
+		ret := PickData(a, b)
 		// * failure: unset -> set
-		assert.That(t, delta, should.Equal(int64(2)))
-		assert.That(t, ret.GetConversionFailure(),
-			should.Equal(orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR))
-		assert.That(t, ret.HasBinary(), should.BeTrue)
+		assert.That(t, ret, should.Equal(b))
 	})
 
 	t.Run("existing failure -> no-op", func(t *testing.T) {
 		a := withFail(mkBin("a"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)
 		b := withFail(mkBin("b"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR)
-		delta, ret := MergeData(a, b)
-		assert.Loosely(t, delta, should.Equal(0))
+		ret := PickData(a, b)
 		assert.That(t, ret, should.Equal(a))
 	})
 
 	t.Run("binary w/ failure + json -> json w/o failure", func(t *testing.T) {
 		a := withFail(mkBin("a"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)
 		b := mkJson("b")
-		delta, ret := MergeData(a, b)
-		// * type url: binary -> json
-		// * failure: set -> unset
-		assert.That(t, delta, should.Equal(int64(-4)))
-		assert.That(t, ret.HasJson(), should.BeTrue)
-		assert.That(t, ret.HasConversionFailure(), should.BeFalse)
+		ret := PickData(a, b)
+		assert.That(t, ret, should.Equal(b))
 	})
 }

@@ -41,12 +41,12 @@ func (s SimpleDataSource) Retrieve(digest Digest) *orchestratorpb.ValueData {
 // InternOne implements [DataSource].
 func (s SimpleDataSource) Intern(digest Digest, data *orchestratorpb.ValueData) {
 	digestS := string(digest)
-	_, s[digestS] = MergeData(s[digestS], data)
+	s[digestS] = PickData(s[digestS], data)
 }
 
 // UpdateFrom implements [DataSource].
 func (s SimpleDataSource) UpdateFrom(data map[string]*orchestratorpb.ValueData) {
 	for digest, dat := range data {
-		_, s[digest] = MergeData(s[digest], dat)
+		s[digest] = PickData(s[digest], dat)
 	}
 }

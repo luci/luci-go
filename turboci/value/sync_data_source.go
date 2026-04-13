@@ -70,16 +70,18 @@ func (s *SyncDataSource) Retrieve(digest Digest) *orchestratorpb.ValueData {
 func (s *SyncDataSource) Intern(digest Digest, data *orchestratorpb.ValueData) {
 	if curVal, loaded := s.data.LoadOrStore(digest, data); loaded {
 		cur := curVal.(*orchestratorpb.ValueData)
-		delta, newDat := MergeData(cur, data)
+		newDat := PickData(cur, data)
 		for cur != newDat && !s.data.CompareAndSwap(digest, cur, newDat) {
 			curVal, loaded = s.data.Load(digest)
 			if !loaded {
 				panic("impossible")
 			}
 			cur = curVal.(*orchestratorpb.ValueData)
-			delta, newDat = MergeData(cur, data)
+			newDat = PickData(cur, data)
 		}
-		s.dataSize.Add(delta)
+		if cur != newDat {
+			s.dataSize.Add(int64(proto.Size(newDat) - proto.Size(cur)))
+		}
 	} else {
 		s.dataSize.Add(int64(proto.Size(data) + len(digest)))
 		s.sizeHint.Add(1)

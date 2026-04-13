@@ -15,8 +15,6 @@
 package value
 
 import (
-	"google.golang.org/protobuf/proto"
-
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -30,7 +28,7 @@ type DataSource interface {
 
 	// Intern ingests one digest/data pair.
 	//
-	// For existing values, use [MergeData] to merge `data` with the existing
+	// For existing values, use [PickData] to merge `data` with the existing
 	// value.
 	//
 	// A set conversion failure must override an unset conversion failure.
@@ -42,52 +40,36 @@ type DataSource interface {
 	UpdateFrom(data map[string]*orchestratorpb.ValueData)
 }
 
-// MergeData returns a shallow copy of `a` with `b` merged into it using the
-// rules defined in [DataSource.Intern].
+// PickData returns either `a` or `b` depending on which is better.
 //
-// If a is nil, returns b.
-// If a already contains json, returns a,
-// If merging b into a is a no-op, returns `a` unmodified.
+// Both `a` and `b` must be well-formed (one of `binary` or `json` must be
+// populated)
 //
-// Returns the size delta of replacing `a` with `b`.
-func MergeData(a, b *orchestratorpb.ValueData) (int64, *orchestratorpb.ValueData) {
+// Prefers JSON without unknown fields to JSON with unknown fields.
+// Prefers JSON to binary data.
+// Prefers binary data with conversion_failure enum to binary data without.
+func PickData(a, b *orchestratorpb.ValueData) *orchestratorpb.ValueData {
 	if a == nil {
-		return int64(proto.Size(b)), b
-	}
-	if a.HasJson() {
-		return 0, a
-	}
-
-	var ret *orchestratorpb.ValueData
-	cow := func() *orchestratorpb.ValueData {
-		if ret == nil {
-			// Shallow copy avoids duplicating binary.value which is `[]byte`.
-			ret = &orchestratorpb.ValueData{}
-			if a.HasBinary() {
-				ret.SetBinary(a.GetBinary())
-			} else {
-				ret.SetJson(a.GetJson())
-			}
-			if a.HasConversionFailure() {
-				ret.SetConversionFailure(a.GetConversionFailure())
-			}
-		}
-		return ret
+		return b
 	}
 
 	if a.HasBinary() && b.HasJson() {
-		mod := cow()
-		mod.SetJson(b.GetJson())
-		mod.ClearConversionFailure()
-	} else if !a.HasConversionFailure() && b.HasConversionFailure() {
-		cow().SetConversionFailure(b.GetConversionFailure())
+		return b
 	}
 
-	var delta int64
-	if ret == nil {
-		ret = a
-	} else {
-		delta = int64(proto.Size(ret) - proto.Size(a))
+	if a.HasJson() && b.HasJson() {
+		if a.GetJson().GetHasUnknownFields() && !b.GetJson().GetHasUnknownFields() {
+			return b
+		}
 	}
-	return delta, ret
+
+	if a.HasJson() && !b.HasJson() {
+		return a
+	}
+
+	if !a.HasConversionFailure() && b.HasConversionFailure() {
+		return b
+	}
+
+	return a
 }

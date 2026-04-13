@@ -245,7 +245,7 @@ func (m *mutexMap) Intern(data map[string]*orchestratorpb.ValueData) {
 	defer m.mu.Unlock()
 
 	for digest, dat := range data {
-		_, m.data[digest] = MergeData(m.data[digest], dat)
+		m.data[digest] = PickData(m.data[digest], dat)
 	}
 }
 

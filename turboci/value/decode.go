@@ -88,8 +88,6 @@ func Decode[T proto.Message](source DataSource, ref *orchestratorpb.ValueRef) (T
 //
 // This assumes that `set` is sorted by "type_url" and will do a binary search.
 //
-// If `set` is not sorted, use [First] to do a linear search instead.
-//
 // If none is found, or ref is omitted, this returns nil.
 func Lookup[T proto.Message](source DataSource, set []*orchestratorpb.ValueRef) (T, error) {
 	val := Find(set, URL[T]())
@@ -123,4 +121,19 @@ func Find(list []*orchestratorpb.ValueRef, typeURL string) *orchestratorpb.Value
 		}
 	}
 	return nil
+}
+
+func Results[T proto.Message](source DataSource, check *orchestratorpb.Check) ([]T, error) {
+	var zero T
+	ret := make([]T, 0, len(check.GetResults()))
+	for _, rslt := range check.GetResults() {
+		x, err := Lookup[T](source, rslt.GetData())
+		if err != nil {
+			return nil, err
+		}
+		if !proto.Equal(zero, x) {
+			ret = append(ret, x)
+		}
+	}
+	return ret, nil
 }

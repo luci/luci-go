@@ -245,6 +245,7 @@ func TestEnsureJSONInSource(t *testing.T) {
 
 		AbsorbInline(dSrc, v)
 		dSrc.Intern(dgst, orchestratorpb.ValueData_builder{
+			Binary:            emptyInline,
 			ConversionFailure: orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_NO_DESCRIPTOR.Enum(),
 		}.Build())
 
