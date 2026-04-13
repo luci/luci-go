@@ -362,10 +362,11 @@ const OptionComponent = function OptionComponent({
           el: {
             value: a.el.optionValue.value,
             label: a.el.optionValue.label,
+            inScope: a.el.optionValue.inScope,
             isSignificant:
               isNaN(threshold) || // happens if no scores are >=0
               a.score >= threshold,
-          },
+          } as OptionValue,
         };
       });
   }, [deferredSearchQuery, options]);

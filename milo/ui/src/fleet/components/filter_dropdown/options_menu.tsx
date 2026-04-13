@@ -127,13 +127,14 @@ export const OptionsMenu = ({
                   width: '100%',
                   padding: '6px 12px',
                   ...(item.el.label === BLANK_VALUE && {
-                    color: colors.grey[500],
+                    fontStyle: 'italic',
+                    color: colors.grey[700],
                   }),
                   ...(item.el.inScope === false && {
-                    color: colors.grey[300],
+                    color: colors.grey[500],
                   }),
                   ...(item.el.isSignificant === false && {
-                    color: colors.grey[300],
+                    color: colors.grey[500],
                   }),
                 }}
               >
