@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
@@ -170,4 +171,67 @@ func TestFind(t *testing.T) {
 
 	emptyGot := Find(options, URL[*emptypb.Empty]())
 	assert.That(t, emptyGot, should.Match(MustInline(&emptypb.Empty{}, "proj:other_realm")))
+}
+
+func TestResults(t *testing.T) {
+	t.Parallel()
+
+	sortedData := func(refs ...*orchestratorpb.ValueRef) []*orchestratorpb.ValueRef {
+		ret := make([]*orchestratorpb.ValueRef, 0, len(refs))
+		for _, ref := range refs {
+			ok := false
+			ret, ok = AddByTypeIn(ret, ref)
+			assert.That(t, ok, should.BeTrue, truth.Explain("duplicate type %q", ref.GetTypeUrl()))
+		}
+		return ret
+	}
+
+	check := orchestratorpb.Check_builder{
+		Results: []*orchestratorpb.Check_Result{
+			orchestratorpb.Check_Result_builder{
+				Data: sortedData(
+					MustInline(&emptypb.Empty{}, ""),
+					MustInline(wrapperspb.Bool(true), ""),
+					MustInline(wrapperspb.String("hey"), ""),
+				),
+			}.Build(),
+			orchestratorpb.Check_Result_builder{
+				Data: sortedData(
+					MustInline(&emptypb.Empty{}, ""),
+					MustInline(wrapperspb.String("norp"), ""),
+				),
+			}.Build(),
+			orchestratorpb.Check_Result_builder{}.Build(),
+			orchestratorpb.Check_Result_builder{
+				Data: sortedData(
+					MustInline(&emptypb.Empty{}, ""),
+					MustInline(wrapperspb.Bool(false), ""),
+					MustInline(wrapperspb.String("dorp"), ""),
+				),
+			}.Build(),
+		},
+	}.Build()
+
+	emptyRslts, err := Results[*emptypb.Empty](nil, check)
+	assert.NoErr(t, err)
+	assert.Loosely(t, emptyRslts, should.HaveLength(3))
+
+	boolRslts, err := Results[*wrapperspb.BoolValue](nil, check)
+	assert.NoErr(t, err)
+	assert.That(t, boolRslts, should.Match([]*wrapperspb.BoolValue{
+		wrapperspb.Bool(true),
+		wrapperspb.Bool(false),
+	}))
+
+	strResults, err := Results[*wrapperspb.StringValue](nil, check)
+	assert.NoErr(t, err)
+	assert.That(t, strResults, should.Match([]*wrapperspb.StringValue{
+		wrapperspb.String("hey"),
+		wrapperspb.String("norp"),
+		wrapperspb.String("dorp"),
+	}))
+
+	intResults, err := Results[*wrapperspb.Int32Value](nil, check)
+	assert.NoErr(t, err)
+	assert.Loosely(t, intResults, should.BeEmpty)
 }

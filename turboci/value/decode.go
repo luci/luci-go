@@ -16,6 +16,7 @@ package value
 
 import (
 	"cmp"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -123,17 +124,24 @@ func Find(list []*orchestratorpb.ValueRef, typeURL string) *orchestratorpb.Value
 	return nil
 }
 
+// Results collects and decodes all result data present in the check of the
+// given type.
+//
+// If there is no result data of the given type, returns an empty slice.
+//
+// Returns collected results IN ADDITION TO any encountered errors.
 func Results[T proto.Message](source DataSource, check *orchestratorpb.Check) ([]T, error) {
 	var zero T
+	var errs []error
 	ret := make([]T, 0, len(check.GetResults()))
 	for _, rslt := range check.GetResults() {
 		x, err := Lookup[T](source, rslt.GetData())
 		if err != nil {
-			return nil, err
+			errs = append(errs, err)
 		}
 		if !proto.Equal(zero, x) {
 			ret = append(ret, x)
 		}
 	}
-	return ret, nil
+	return ret, errors.Join(errs...)
 }
