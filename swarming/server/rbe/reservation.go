@@ -581,6 +581,9 @@ func (s *ReservationServer) handleCancelRBETask(ctx context.Context, task *inter
 	case codes.OK:
 		logging.Infof(ctx, "Cancel result: %s", resp.Result)
 		return nil
+	case codes.FailedPrecondition:
+		logging.Infof(ctx, "Cancel result: %s", err)
+		return nil
 	case codes.NotFound:
 		logging.Warningf(ctx, "No such reservation, nothing to cancel")
 		return tq.Ignore.Apply(err)

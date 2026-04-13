@@ -41,6 +41,8 @@ queue:
   bucket_size: 100
   rate: 500/s
   target: default
+  retry_parameters:
+    task_age_limit: 4h
 
 # /internal/tasks/t/bq-export-interval
 - name: bq-export-interval
