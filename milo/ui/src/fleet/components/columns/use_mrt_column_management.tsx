@@ -166,6 +166,20 @@ export function useMRTColumnManagement<
     [visibleColumnIds, setVisibleColumnIds, temporaryColumnIds],
   );
 
+  const selectOnlyColumn = useCallback(
+    (columnId: string) => {
+      const newVisibility: MRT_VisibilityState = {};
+      MRT_INTERNAL_COLUMNS.forEach((id) => {
+        if (id in columnVisibility) {
+          newVisibility[id] = columnVisibility[id];
+        }
+      });
+      newVisibility[columnId] = true;
+      setColumnVisibility(newVisibility);
+    },
+    [columnVisibility, setColumnVisibility],
+  );
+
   const allColumns = useMemo(
     () =>
       rawColumns.map((c) => {
@@ -221,6 +235,7 @@ export function useMRTColumnManagement<
     setColumnVisibility,
     visibleColumnIds,
     onToggleColumn,
+    selectOnlyColumn,
     allColumns,
     resetDefaultColumns: () => setVisibleColumnIds([...defaultColumnIds]),
   };

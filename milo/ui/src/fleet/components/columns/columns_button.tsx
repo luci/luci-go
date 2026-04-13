@@ -28,6 +28,7 @@ interface ColumnsButtonProps {
   allColumns: { id: string; label: string }[];
   visibleColumns: string[];
   onToggleColumn: (id: string) => void;
+  selectOnlyColumn?: (id: string) => void;
   renderTrigger?: (
     props: {
       onClick: (event: React.MouseEvent<HTMLElement>) => void;
@@ -47,6 +48,7 @@ export function ColumnsButton({
   allColumns,
   visibleColumns,
   onToggleColumn,
+  selectOnlyColumn,
   renderTrigger,
 }: ColumnsButtonProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
@@ -86,6 +88,7 @@ export function ColumnsButton({
         allColumns={allColumns}
         visibleColumns={visibleColumns}
         onToggleColumn={onToggleColumn}
+        selectOnlyColumn={selectOnlyColumn}
       />
     </>
   );

@@ -32,6 +32,7 @@ interface ColumnsButtonProps {
   allColumns: { id: string; label: string }[];
   visibleColumns: string[];
   onToggleColumn: (id: string) => void;
+  selectOnlyColumn?: (id: string) => void;
 }
 
 /**
@@ -47,6 +48,7 @@ export function ColumnsManageDropDown({
   allColumns,
   visibleColumns,
   onToggleColumn,
+  selectOnlyColumn,
 }: ColumnsButtonProps) {
   const toggleColumn = (field: string) => {
     if (temporaryColumns?.includes(field)) {
@@ -116,6 +118,7 @@ export function ColumnsManageDropDown({
             elements={finalSortedColumns}
             selectedElements={new Set(selectedColumns)}
             flipOption={toggleColumn}
+            selectOnly={selectOnlyColumn}
           />
         );
       }}

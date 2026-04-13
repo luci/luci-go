@@ -414,6 +414,7 @@ export const AndroidDevicesPage = () => {
       setColumnVisibility,
       onToggleColumn,
       resetDefaultColumns,
+      selectOnlyColumn,
     },
     visibleColumnIds,
     goToPrevPage,
@@ -495,6 +496,7 @@ export const AndroidDevicesPage = () => {
             allColumns={allDimensionColumns}
             visibleColumns={visibleColumnIds}
             onToggleColumn={onToggleColumn}
+            selectOnlyColumn={selectOnlyColumn}
             resetDefaultColumns={resetDefaultColumns}
             renderTrigger={({ onClick }, ref) => (
               <Button
@@ -596,6 +598,7 @@ export const AndroidDevicesPage = () => {
       allDimensionColumns,
       onToggleColumn,
       resetDefaultColumns,
+      selectOnlyColumn,
       devicesQuery.data?.totalSize,
       devicesQuery.data?.nextPageToken,
       devicesQuery.data?.devices.length,

@@ -293,6 +293,7 @@ export const BrowserDevicesPage = () => {
           allColumns={fleetMrtState.allColumns}
           visibleColumns={fleetMrtState.visibleColumnIds}
           onToggleColumn={fleetMrtState.mrtColumnManager.onToggleColumn}
+          selectOnlyColumn={fleetMrtState.mrtColumnManager.selectOnlyColumn}
           resetDefaultColumns={
             fleetMrtState.mrtColumnManager.resetDefaultColumns
           }

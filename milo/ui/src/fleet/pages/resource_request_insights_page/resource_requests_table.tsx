@@ -221,6 +221,7 @@ export const ResourceRequestTable = () => {
           allColumns={mrtColumnManager.allColumns}
           visibleColumns={mrtColumnManager.visibleColumnIds}
           onToggleColumn={mrtColumnManager.onToggleColumn}
+          selectOnlyColumn={mrtColumnManager.selectOnlyColumn}
           resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
           renderTrigger={({ onClick }, ref) => (
             <Button

@@ -405,6 +405,15 @@ const OptionComponent = function OptionComponent({
               },
             }));
           }}
+          selectOnly={(key) => {
+            setTempOptions((old) => {
+              const next = { ...old };
+              for (const k of Object.keys(next)) {
+                next[k] = { ...next[k], isSelected: k === key };
+              }
+              return next;
+            });
+          }}
           onNavigateUp={onNavigateUp}
           onNavigateDown={() => {}} // currently just blocking navigating down from the last element
         />

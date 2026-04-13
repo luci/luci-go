@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Checkbox, colors, MenuItem } from '@mui/material';
+import { Button, Checkbox, colors, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import React, { useRef } from 'react';
 
@@ -27,6 +27,7 @@ interface OptionsMenuProps {
   elements: SortedElement<OptionValue>[];
   selectedElements: Set<string>;
   flipOption: (value: string) => void;
+  selectOnly?: (value: string) => void;
   onNavigateUp?: (e: React.KeyboardEvent) => void;
   onNavigateDown?: (e: React.KeyboardEvent) => void;
 }
@@ -35,6 +36,7 @@ export const OptionsMenu = ({
   elements,
   selectedElements,
   flipOption,
+  selectOnly,
   onNavigateUp,
   onNavigateDown,
 }: OptionsMenuProps) => {
@@ -136,6 +138,16 @@ export const OptionsMenu = ({
                   ...(item.el.isSignificant === false && {
                     color: colors.grey[500],
                   }),
+                  '&:hover .only-button': {
+                    opacity: 1,
+                    visibility: 'visible',
+                  },
+                  '& .only-button': {
+                    opacity: 0,
+                    visibility: 'hidden',
+                    transition: 'opacity 0.2s, visibility 0.2s',
+                    marginLeft: 'auto',
+                  },
                 }}
               >
                 <Checkbox
@@ -161,10 +173,32 @@ export const OptionsMenu = ({
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     display: 'block',
+                    flexGrow: 1,
                   }}
                 >
                   {item.el.label}
                 </HighlightCharacter>
+                {selectOnly && (
+                  <Button
+                    className="only-button"
+                    size="small"
+                    variant="text"
+                    color="primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selectOnly(elements[virtualRow.index].el.value);
+                    }}
+                    sx={{
+                      minWidth: 'unset',
+                      padding: '2px 6px',
+                      textTransform: 'none',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    Only
+                  </Button>
+                )}
               </MenuItem>
             );
           })}
