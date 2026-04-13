@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import _ from 'lodash';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { parseFilter } from '@/fleet/utils/aip160/parser/parser';
@@ -39,100 +38,55 @@ export const useFilters = <
   getAip160String: () => string;
 } => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-  const filtersAIP160 = useRef(searchParams.get(FILTERS_PARAM_KEY) ?? '');
-  const updateUrl = useCallback(
-    (newFilter: string) => {
-      filtersAIP160.current = newFilter;
-      setSearchParams((prev) => {
-        const newParams = new URLSearchParams(prev);
-        newParams.set(FILTERS_PARAM_KEY, newFilter);
-        return newParams;
-      });
-    },
-    [setSearchParams],
-  );
+  const filtersAIP160 = searchParams.get(FILTERS_PARAM_KEY);
 
   // Stabilize builders to prevent infinite loops if the parent passes a new object every render.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const builders = useMemo(() => rawBuilders, [JSON.stringify(rawBuilders)]);
 
-  const onFilterUpdate = useCallback(
-    function onFilterUpdate(key: string, newFilterValue: FilterCategory) {
-      setFilterValues((newF) => {
-        const newFilterCategories = {
-          ...newF,
-          [key]: newFilterValue.clone(),
-        } as FilterValuesFromBuilders<T>;
+  const updateUrl = useCallback(
+    function onFilterUpdate(
+      filterValues: Record<string, FilterCategory>,
+      replaceHistory: boolean = false,
+    ): void {
+      setSearchParams(
+        (prev: URLSearchParams) => {
+          const filter = Object.values(filterValues)
+            .map((f) => f.toAIP160())
+            .filter((f) => f !== '')
+            .join(' AND ');
 
-        const currentAIP160 = Object.values(newFilterCategories)
-          .filter((newFilterCategories) => newFilterCategories.isActive())
-          .map((f) => f.toAIP160())
-          .filter((f) => f !== '')
-          .join(' AND ');
-
-        if (currentAIP160 !== filtersAIP160.current) {
-          updateUrl(currentAIP160);
-          setParseError(undefined);
-        }
-
-        return newFilterCategories;
-      });
+          prev.set(FILTERS_PARAM_KEY, filter);
+          return prev;
+        },
+        { replace: replaceHistory },
+      );
     },
-    [updateUrl],
+    [setSearchParams],
   );
-  const [parseError, setParseError] = useState<string | undefined>();
-  const [filterValues, setFilterValues] = useState<
-    FilterValuesFromBuilders<T> | undefined
-  >(() => {
-    if (builders === undefined) return undefined;
+
+  const [filterValues, parseError]: [
+    FilterValuesFromBuilders<T> | undefined,
+    string | undefined,
+  ] = useMemo(() => {
+    if (builders === undefined) return [undefined, undefined];
 
     const { filters, parseError } = buildFilters(
       builders,
-      onFilterUpdate,
-      filtersAIP160.current,
+      updateUrl,
+      filtersAIP160,
       options.allowExtraKeys,
     );
+    if (
+      filters !== undefined &&
+      parseError === undefined &&
+      !Object.values(filters).some((o) => o instanceof LoadingFilterCategory)
+    ) {
+      updateUrl(filters, true);
+    }
 
-    setParseError(parseError);
-    return filters;
-  });
-
-  const currentFiltersParam = searchParams.get(FILTERS_PARAM_KEY) ?? '';
-
-  // Listen to external URL changes and reload filters
-  useEffect(() => {
-    if (currentFiltersParam === filtersAIP160.current) return;
-    filtersAIP160.current = currentFiltersParam;
-
-    if (builders === undefined) return;
-
-    setParseError(undefined);
-    const { filters, parseError } = buildFilters(
-      builders,
-      onFilterUpdate,
-      currentFiltersParam,
-      options.allowExtraKeys,
-    );
-
-    setParseError(parseError);
-    setFilterValues(filters);
-  }, [currentFiltersParam, builders, onFilterUpdate, options.allowExtraKeys]);
-
-  // When the builders change, create new filterCategories taking the values from the current url
-  useEffect(() => {
-    if (builders === undefined) return;
-
-    setParseError(undefined);
-    const { filters, parseError } = buildFilters(
-      builders,
-      onFilterUpdate,
-      filtersAIP160.current,
-      options.allowExtraKeys,
-    );
-
-    setParseError(parseError);
-    setFilterValues(filters);
-  }, [builders, onFilterUpdate, options.allowExtraKeys]);
+    return [filters, parseError];
+  }, [builders, filtersAIP160, updateUrl, options.allowExtraKeys]);
 
   const getAip160String = useCallback(() => {
     if (!filterValues) return '';
@@ -143,15 +97,12 @@ export const useFilters = <
       .join(' AND ');
   }, [filterValues]);
 
-  return useMemo(
-    () => ({
-      filterValues: filterValues,
-      aip160: filtersAIP160.current,
-      parseError,
-      getAip160String,
-    }),
-    [filterValues, filtersAIP160, parseError, getAip160String],
-  );
+  return {
+    filterValues: filterValues,
+    aip160: filtersAIP160 ?? '',
+    parseError,
+    getAip160String,
+  };
 };
 
 export interface FilterCategoryBuilder<T extends FilterCategory> {
@@ -159,7 +110,8 @@ export interface FilterCategoryBuilder<T extends FilterCategory> {
   build(
     key: string,
     reRender: (newFilter: T) => void,
-    terms: (ast.Term & { simple: ast.Restriction })[] | undefined,
+    // If the url is missing FILTERS_PARAM_KEY terms will equal null
+    terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ): T;
 }
 
@@ -179,7 +131,7 @@ export interface FilterCategory {
   isActive: () => boolean;
   clear: () => void;
   getChildrenSearchScore: (searchQuery: string) => number;
-  clone(): FilterCategory;
+  setReRender: (reRender: (newFilter: FilterCategory) => void) => void;
 }
 
 type ParseResult =
@@ -306,15 +258,18 @@ function buildFilters<
   T extends Record<string, FilterCategoryBuilder<FilterCategory>>,
 >(
   builders: T,
-  onFilterUpdate: (key: string, newFilterValue: FilterCategory) => void,
-  filtersAIP160: string,
+  // onFilterUpdate: (key: string, newFilterValue: FilterCategory) => void,
+  onFilterUpdate: (filterValues: Record<string, FilterCategory>) => void,
+  filtersAIP160: string | null,
   allowExtraKeys: boolean,
 ): {
   filters: FilterValuesFromBuilders<T> | undefined;
   parseError: string | undefined;
 } {
-  const parseResult = constructFiltersFromAIP160(filtersAIP160);
-  if (parseResult.isError) {
+  const parseResult =
+    filtersAIP160 === null ? null : constructFiltersFromAIP160(filtersAIP160);
+
+  if (parseResult?.isError) {
     return { filters: undefined, parseError: parseResult.error };
   }
 
@@ -325,26 +280,31 @@ function buildFilters<
     if (!bob.isFilledIn()) {
       throw new Error(`Builder ${key} is not filled in: ${bob}`);
     }
-    const update = (newFilterValue: FilterCategory) => {
-      onFilterUpdate(key, newFilterValue);
-    };
 
-    const terms = parseResult.terms[key];
+    const terms = parseResult === null ? null : (parseResult.terms[key] ?? []);
     try {
-      filters[key] = bob.build(key, update, terms);
+      filters[key] = bob.build(key, () => {}, terms);
     } catch (e) {
-      parseErrors.push(e instanceof Error ? e.message : String(e));
+      parseErrors.push(
+        `Error with ${key}: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
 
-  for (const [key, _terms] of Object.entries(parseResult.terms)) {
-    if (!filters[key]) {
-      if (allowExtraKeys) {
-        filters[key] = new LoadingFilterCategory(key);
-      } else {
-        parseErrors.push(`${key} is not a valid filter`);
+  if (parseResult !== null) {
+    for (const [key, _terms] of Object.entries(parseResult.terms)) {
+      if (!filters[key]) {
+        if (allowExtraKeys) {
+          filters[key] = new LoadingFilterCategory(key);
+        } else {
+          parseErrors.push(`${key} is not a valid filter`);
+        }
       }
     }
+  }
+
+  for (const [key, filter] of Object.entries(filters)) {
+    filter.setReRender((newF) => onFilterUpdate({ ...filters, [key]: newF }));
   }
 
   return {

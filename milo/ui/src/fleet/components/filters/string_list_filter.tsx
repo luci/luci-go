@@ -48,7 +48,6 @@ export class StringListFilterCategory implements FilterCategory {
   public label: string;
   public key: string;
   private reRender: () => void;
-  private actualReRender: (newFilter: StringListFilterCategory) => void;
 
   public getOptions() {
     return this.options;
@@ -58,19 +57,26 @@ export class StringListFilterCategory implements FilterCategory {
     label: string,
     key: string,
     options: OptionValue[],
+    defaultOptions: string[],
     reRender: (newFilter: StringListFilterCategory) => void,
-    terms: (ast.Term & { simple: ast.Restriction })[] = [],
+    terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ) {
     this.label = label;
     this.key = key;
     this.options = Object.fromEntries(
-      options.map((o) => [o.value, { optionValue: o, isSelected: false }]),
+      options.map((o) => [
+        o.value,
+        {
+          optionValue: o,
+          isSelected: terms === null ? defaultOptions.includes(o.value) : false,
+        },
+      ]),
     );
-    this.actualReRender = reRender;
     this.reRender = () => {
       reRender(this);
     };
 
+    if (terms === null) return;
     for (const term of terms) {
       if (!term.simple.arg) {
         if (!term.negated) {
@@ -136,15 +142,10 @@ export class StringListFilterCategory implements FilterCategory {
     }
   }
 
-  public clone() {
-    const newInst = new StringListFilterCategory(
-      this.label,
-      this.key,
-      [],
-      this.actualReRender,
-    );
-    newInst.options = this.options;
-    return newInst as FilterCategory;
+  public setReRender(reRender: (newFilter: FilterCategory) => void) {
+    this.reRender = () => {
+      reRender(this);
+    };
   }
 
   public toAIP160(): string {
@@ -422,6 +423,7 @@ export class StringListFilterCategoryBuilder
 {
   public label: string | undefined;
   public options: OptionValue[] | undefined;
+  public defaultOptions: string[] = [];
 
   constructor() {}
 
@@ -434,6 +436,11 @@ export class StringListFilterCategoryBuilder
     return this;
   }
 
+  public setDefaultOptions(defaultOptions: string[]) {
+    this.defaultOptions = defaultOptions;
+    return this;
+  }
+
   public isFilledIn() {
     return this.label !== undefined && this.options !== undefined;
   }
@@ -441,7 +448,7 @@ export class StringListFilterCategoryBuilder
   public build(
     key: string,
     reRender: (newFilter: StringListFilterCategory) => void,
-    terms: (ast.Term & { simple: ast.Restriction })[] | undefined,
+    terms: (ast.Term & { simple: ast.Restriction })[] | null,
   ) {
     if (!this.isFilledIn())
       throw new Error(
@@ -452,6 +459,7 @@ export class StringListFilterCategoryBuilder
       this.label!,
       key!,
       this.options!,
+      this.defaultOptions,
       reRender,
       terms,
     );

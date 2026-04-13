@@ -44,13 +44,7 @@ export class LoadingFilterCategory implements FilterCategory {
 
     this.chipLabel = `${terms.length} | [ ${this.key} ]: ${opt.join(', ')} `;
   }
-
-  public clone() {
-    const newInst = new LoadingFilterCategory(this.label);
-    newInst.chipLabel = this.chipLabel;
-    newInst.isActiveInternal = this.isActiveInternal;
-    return newInst as FilterCategory;
-  }
+  public setReRender() {}
 
   public toAIP160(): string {
     return '';

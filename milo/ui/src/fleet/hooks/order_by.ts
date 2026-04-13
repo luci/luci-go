@@ -47,9 +47,14 @@ export function useOrderByParam(): [string, (value: string) => void] {
         newSearchParams.set(ORDER_BY_PARAM_KEY, newOrderBy);
       }
 
+      // Prevents polluting the browser history
+      if (orderByParam === newOrderBy) {
+        return;
+      }
+
       setSearchParams(newSearchParams);
     },
-    [searchParams, setSearchParams],
+    [orderByParam, searchParams, setSearchParams],
   );
 
   return [orderByParam, updateOrderByParam];

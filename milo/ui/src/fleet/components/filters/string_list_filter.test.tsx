@@ -23,7 +23,9 @@ describe('StringListFilterCategory', () => {
         { value: '"pixel"', label: 'Pixel' },
         { value: '"nexus"', label: 'Nexus' },
       ],
+      [],
       () => {},
+      [],
     );
 
     category.setSelectedOptions(['pixel']);
@@ -38,7 +40,9 @@ describe('StringListFilterCategory', () => {
         { value: '"pixel"', label: 'Pixel' },
         { value: '"nexus"', label: 'Nexus' },
       ],
+      [],
       () => {},
+      [],
     );
 
     category.setSelectedOptions(['pixel']);
@@ -53,7 +57,9 @@ describe('StringListFilterCategory', () => {
         { value: 'pixel', label: 'Pixel' },
         { value: 'nexus', label: 'Nexus' },
       ],
+      [],
       () => {},
+      [],
     );
 
     category.setSelectedOptions(['pixel']);
@@ -64,7 +70,9 @@ describe('StringListFilterCategory', () => {
       'Model',
       'model',
       [{ value: '"device \\"pro\\" model"', label: 'Pro Model' }],
+      [],
       () => {},
+      [],
     );
 
     category.setSelectedOptions(['device \\"pro\\" model']);
@@ -79,7 +87,9 @@ describe('StringListFilterCategory', () => {
         { value: '"pixel"', label: 'Pixel' },
         { value: '"nexus"', label: 'Nexus' },
       ],
+      [],
       () => {},
+      [],
     );
 
     category.setSelectedOptions(['pixel']);

@@ -85,7 +85,7 @@ const TestComponent = ({
               prev.map((f) => (f.key === newFilter.key ? newFilter : f)),
             );
           },
-          undefined, // terms
+          [],
         );
         initCategories.push(category);
       });

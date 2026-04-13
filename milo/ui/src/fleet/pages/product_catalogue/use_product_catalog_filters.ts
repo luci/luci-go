@@ -23,29 +23,40 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import {
   GetProductCatalogFilterValuesResponse,
   Int32Range,
-  ProductCatalogEntry,
   ProductCatalogFilterValue,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { COLUMNS } from './product_catalogue_columns';
 
-const FILTERS: Partial<
-  Record<
-    keyof ProductCatalogEntry,
-    { type: 'string_list' | 'range'; filterKey: string }
-  >
-> = {
+export const FILTERS = {
   productCatalogId: { type: 'string_list', filterKey: 'product_catalog_id' },
   productName: { type: 'string_list', filterKey: 'product_name' },
   gpn: { type: 'string_list', filterKey: 'gpn' },
   resourceType: { type: 'string_list', filterKey: 'resource_type' },
-  fleetPlmStatus: { type: 'string_list', filterKey: 'fleet_plm_status' },
+  fleetPlmStatus: {
+    type: 'string_list',
+    filterKey: 'fleet_plm_status',
+  },
   r11n: { type: 'string_list', filterKey: 'r11n' },
   numberOfDevicesPerRack: {
     type: 'range',
     filterKey: 'number_of_devices_per_rack',
   },
   productType: { type: 'string_list', filterKey: 'product_type' },
+} satisfies Partial<
+  Record<
+    keyof GetProductCatalogFilterValuesResponse,
+    {
+      type: 'string_list' | 'range';
+      filterKey: string;
+    }
+  >
+>;
+
+export const DEFAULT_FILTER_VALUES: Partial<
+  Record<keyof typeof FILTERS, readonly string[]>
+> = {
+  fleetPlmStatus: ['GA', 'LA', 'NPI'],
 };
 
 export const useProductCatalogFilters = (onApply?: () => void) => {
@@ -55,7 +66,6 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
   const { filterValues, aip160 } = useFilters(filterOptions, {
     allowExtraKeys: true,
   });
-
   const client = useFleetConsoleClient();
   const filterOptionsQuery = useQuery({
     ...client.GetProductCatalogFilterValues.query({ filter: aip160 }),
@@ -68,34 +78,30 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
       StringListFilterCategoryBuilder | RangeFilterCategoryBuilder
     > = {};
     for (const column of COLUMNS) {
-      const accessorKey = column.accessorKey as keyof ProductCatalogEntry;
+      if (!(column.accessorKey in FILTERS)) continue;
+      const accessorKey = column.accessorKey as keyof typeof FILTERS;
       const config = FILTERS[accessorKey];
-      if (!config) {
-        continue;
-      }
 
-      const responseKey =
-        accessorKey as keyof GetProductCatalogFilterValuesResponse;
-      const data = filterOptionsQuery.data?.[responseKey];
+      const data = filterOptionsQuery.data?.[accessorKey];
       const filterKey = `"${config.filterKey}"`;
       const scopedKey =
         `scoped${accessorKey.charAt(0).toUpperCase()}${accessorKey.slice(1)}` as keyof GetProductCatalogFilterValuesResponse;
-      const scopedData = filterOptionsQuery.data?.[
-        scopedKey
-      ] as ProductCatalogFilterValue[];
+      const scopedData = filterOptionsQuery.data?.[scopedKey] as
+        | ProductCatalogFilterValue[]
+        | undefined;
 
       if (config.type === 'string_list') {
+        const defaultOptions = DEFAULT_FILTER_VALUES[accessorKey] ?? [];
         options[filterKey] = new StringListFilterCategoryBuilder()
           .setLabel(column.header as string)
           .setOptions(
-            scopedData?.map((v) => {
-              return {
-                label: v.value === '' ? BLANK_VALUE : v.value,
-                value: `"${v.value}"`,
-                inScope: v.inScope,
-              };
-            }) ?? [],
-          );
+            scopedData?.map((v) => ({
+              label: v.value === '' ? BLANK_VALUE : v.value,
+              value: `"${v.value}"`,
+              inScope: v.inScope,
+            })) ?? [],
+          )
+          .setDefaultOptions(defaultOptions.map((val) => `"${val}"`));
       } else if (config.type === 'range') {
         const range = data as Int32Range;
         options[filterKey] = new RangeFilterCategoryBuilder()
