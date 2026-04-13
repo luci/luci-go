@@ -17,7 +17,7 @@ import type { RouteObject } from 'react-router';
 
 import { Layout } from '@/crystal_ball/components/layout/layout';
 
-export const CRYSTAL_BALL_BASE_PATH = '/ui/labs/crystal-ball';
+export const CRYSTAL_BALL_BASE_PATH = '/ui/crystal-ball';
 
 export const CRYSTAL_BALL_ROUTES = {
   LANDING: CRYSTAL_BALL_BASE_PATH,

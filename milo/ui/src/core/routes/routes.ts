@@ -315,10 +315,6 @@ export const routes: RouteObject[] = [
           },
         ],
       },
-      {
-        path: 'crystal-ball',
-        children: crystalBallRoutes,
-      },
     ],
   },
   {
@@ -348,5 +344,9 @@ export const routes: RouteObject[] = [
   {
     path: 'auth',
     children: authRoutes,
+  },
+  {
+    path: 'crystal-ball',
+    children: crystalBallRoutes,
   },
 ];
