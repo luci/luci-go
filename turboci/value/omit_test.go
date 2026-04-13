@@ -36,7 +36,7 @@ func TestOmit(t *testing.T) {
 
 		assert.That(t, ref, should.Match(orchestratorpb.ValueRef_builder{
 			TypeUrl:    proto.String(URL[*structpb.Value]()),
-			Digest:     proto.String("E4Va4xxp3BGN61fY0u4azK_FAF7_dA4-X58V7IkJrshiAQ"),
+			Digest:     proto.String("E4Va4xxp3BGN61fY0u4azK_FAF7_dA4-X58V7IkJrsgxAQ"),
 			OmitReason: orchestratorpb.OmitReason_OMIT_REASON_UNWANTED.Enum(),
 			Realm:      proto.String("proj:realm"),
 		}.Build()))
@@ -66,7 +66,7 @@ func TestOmit(t *testing.T) {
 
 		assert.That(t, ref, should.Match(orchestratorpb.ValueRef_builder{
 			TypeUrl:    proto.String(URL[*structpb.Value]()),
-			Digest:     proto.String("E4Va4xxp3BGN61fY0u4azK_FAF7_dA4-X58V7IkJrshiAQ"),
+			Digest:     proto.String("E4Va4xxp3BGN61fY0u4azK_FAF7_dA4-X58V7IkJrsgxAQ"),
 			OmitReason: orchestratorpb.OmitReason_OMIT_REASON_UNWANTED.Enum().Enum(),
 			Realm:      proto.String("proj:realm"),
 		}.Build()))

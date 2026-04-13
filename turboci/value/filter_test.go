@@ -67,7 +67,7 @@ func TestFilterRef(t *testing.T) {
 	t.Run(`want_binary_remote`, func(t *testing.T) {
 		mSrc := SimpleDataSource{}
 		ref := makeRef(t, mSrc, structpb.NewBoolValue(true))
-		dgst := "nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ5eAQ"
+		dgst := "nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ4vAQ"
 
 		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
@@ -92,7 +92,7 @@ func TestFilterRef(t *testing.T) {
 		assert.NoErr(t, err)
 
 		ref := makeRef(t, mSrc, lst)
-		dgst := "TiL2hG12z5bCnO-q4sXjaMqObIM7ZeZNAYcHd56bTRFqAQ"
+		dgst := "TiL2hG12z5bCnO-q4sXjaMqObIM7ZeZNAYcHd56bTRE1AQ"
 
 		wantJSON, err := filter(StageArgsSlot, ref)
 		assert.NoErr(t, err)
@@ -138,7 +138,7 @@ func TestFilterRef(t *testing.T) {
 		assert.That(t, wantJSON, should.BeFalse)
 
 		assert.That(t, ref.GetDigest(), should.Equal(
-			"nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ5eAQ"))
+			"nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ4vAQ"))
 		assert.That(t, ref.HasInline(), should.BeFalse)
 	})
 
@@ -161,7 +161,7 @@ func TestFilterRef(t *testing.T) {
 		assert.That(t, wantJSON, should.BeFalse)
 
 		assert.That(t, ref.GetDigest(), should.Equal(
-			"nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ5eAQ"))
+			"nP03LSTuMLuLfYp94hWnwHOj2kT2Pg_DikrWVQk2tJ4vAQ"))
 		assert.That(t, ref.HasInline(), should.BeFalse)
 	})
 
@@ -178,7 +178,7 @@ func TestFilterRef(t *testing.T) {
 		assert.That(t, wantJSON, should.BeFalse)
 
 		assert.That(t, ref.GetDigest(), should.Equal(
-			"hvSVT6KdvPHO0-h55_J5by3wAe3u5ymMnl0ColX35QliAQ"))
+			"hvSVT6KdvPHO0-h55_J5by3wAe3u5ymMnl0ColX35QkxAQ"))
 		assert.That(t, ref.HasInline(), should.BeFalse)
 	})
 

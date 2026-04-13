@@ -42,17 +42,17 @@ func TestComputeDigest(t *testing.T) {
 		{
 			"empty",
 			&emptypb.Empty{},
-			"zC1HiB0gq_T1muuCh5VIAoC4FjWvxp00E9waqU1YMhlWAQ",
+			"zC1HiB0gq_T1muuCh5VIAoC4FjWvxp00E9waqU1YMhkrAQ",
 		},
 		{
 			"float_val",
 			structpb.NewNumberValue(123.456),
-			"aexUjcBYp_UhSBsbm6TwadrRm0ZAYUrR5mRAKiJ2XtRsAQ",
+			"aexUjcBYp_UhSBsbm6TwadrRm0ZAYUrR5mRAKiJ2XtQ2AQ",
 		},
 		{
 			"long_string",
 			structpb.NewStringValue(strings.Repeat("this is a very long string", 40000)),
-			"tvpg39g5kBqzdMKxPOWxvE82_CR13ZmPUmuaq186WyDm-n4B",
+			"tvpg39g5kBqzdMKxPOWxvE82_CR13ZmPUmuaq186WyCzvT8B",
 		},
 	}
 

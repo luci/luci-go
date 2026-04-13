@@ -59,14 +59,15 @@ func (d Digest) ToProto() (*orchestratorpb.ValueDigest, error) {
 	raw := buf[:sha256.Size]
 
 	buf = buf[sha256.Size:]
-	siz, num := binary.Varint(buf)
+	siz, num := binary.Uvarint(buf)
 	if num != len(buf) {
 		return nil, fmt.Errorf("extra bytes while decoding size")
 	}
+	sSiz := int64(siz)
 
 	return orchestratorpb.ValueDigest_builder{
 		Hash:      raw,
-		SizeBytes: &siz,
+		SizeBytes: &sSiz,
 		Algo:      orchestratorpb.ValueHashAlgo_VALUE_HASH_ALGO_SHA256.Enum(),
 	}.Build(), nil
 }
@@ -76,10 +77,10 @@ func writeAnyDeterministically[W io.Writer](apb *anypb.Any, w W) int {
 	// reflection, since Any is so simple:
 	//
 	//   protoTag(1, bytes)
-	//   varint(len(type_url))
+	//   uvarint(len(type_url))
 	//   type_url
 	//   protoTag(2, bytes)
-	//   varint(len(value))
+	//   uvarint(len(value))
 	//   value
 	//
 	// NOTE: We omit empty fields per the behavior of proto2/proto3 encoding.
@@ -126,7 +127,7 @@ func ComputeDigest(apb *anypb.Any) Digest {
 
 	buf := make([]byte, 0, hsh.Size()+binary.MaxVarintLen64+1)
 	buf = hsh.Sum(buf)
-	buf = binary.AppendVarint(buf, int64(size))
+	buf = binary.AppendUvarint(buf, uint64(size))
 	buf = append(buf, byte(orchestratorpb.ValueHashAlgo_VALUE_HASH_ALGO_SHA256))
 	return Digest(base64.RawURLEncoding.EncodeToString(buf))
 }

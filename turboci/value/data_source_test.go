@@ -95,6 +95,14 @@ func TestMergeData(t *testing.T) {
 		assert.That(t, ret, should.Equal(a))
 	})
 
+	t.Run("json + failure -> json", func(t *testing.T) {
+		a := mkJson("a")
+		b := withFail(mkBin("a"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)
+		delta, ret := MergeData(a, b)
+		assert.That(t, delta, should.Equal(int64(0)))
+		assert.That(t, ret, should.Equal(a))
+	})
+
 	t.Run("failure merge", func(t *testing.T) {
 		a := mkBin("a")
 		b := withFail(mkBin("b"), orchestratorpb.DataConversionFailure_DATA_CONVERSION_FAILURE_ERROR)

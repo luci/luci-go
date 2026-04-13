@@ -82,7 +82,7 @@ func TestAbsorbInline(t *testing.T) {
 	AbsorbInline(dSrc, ref)
 
 	// ref now contains the digest
-	wantDigest := Digest("Umz0vGbOEPay3Z8mD9wDfGKojbSTVMQMyosq3zgqszloAQ")
+	wantDigest := Digest("Umz0vGbOEPay3Z8mD9wDfGKojbSTVMQMyosq3zgqszk0AQ")
 	assert.That(t, ref.GetDigest(), should.Equal(string(wantDigest)))
 
 	// dSrc now has the data and it's identical.

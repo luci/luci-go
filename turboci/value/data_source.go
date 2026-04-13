@@ -46,12 +46,16 @@ type DataSource interface {
 // rules defined in [DataSource.Intern].
 //
 // If a is nil, returns b.
+// If a already contains json, returns a,
 // If merging b into a is a no-op, returns `a` unmodified.
 //
 // Returns the size delta of replacing `a` with `b`.
 func MergeData(a, b *orchestratorpb.ValueData) (int64, *orchestratorpb.ValueData) {
 	if a == nil {
 		return int64(proto.Size(b)), b
+	}
+	if a.HasJson() {
+		return 0, a
 	}
 
 	var ret *orchestratorpb.ValueData
