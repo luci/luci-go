@@ -20,6 +20,13 @@ import { useState } from 'react';
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
 import { useShortcut } from '../shortcut_provider';
 
+const sanitizeValue = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  const str = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  // Replace tabs and newlines with spaces to preserve TSV integrity
+  return str.replace(/[\t\n\r]/g, ' ');
+};
+
 export function FCDataTableCopy<T extends MRT_RowData>({
   table,
 }: {
@@ -30,11 +37,33 @@ export function FCDataTableCopy<T extends MRT_RowData>({
   const rows = table.getSelectedRowModel().rows;
 
   const copy = () => {
-    const keys = Object.keys(rows[0]?.original);
+    const currentRows = table.getSelectedRowModel().rows;
+    if (currentRows.length === 0) return;
+
+    const visibleColumns = table.getVisibleLeafColumns();
+    const columnsToCopy = visibleColumns.filter((col) => {
+      const def = col.columnDef as {
+        accessorKey?: string;
+        accessorFn?: unknown;
+      };
+      return def.accessorKey || def.accessorFn;
+    });
+
+    const headers = columnsToCopy.map((col) => {
+      const header = col.columnDef.header;
+      return typeof header === 'string' ? header : col.id;
+    });
+
     const textToCopy =
-      keys.join('\t') +
+      headers.join('\t') +
       '\n' +
-      rows.map((r) => keys.map((key) => r.original[key]).join('\t')).join('\n');
+      currentRows
+        .map((r) =>
+          columnsToCopy
+            .map((col) => sanitizeValue(r.getValue(col.id)))
+            .join('\t'),
+        )
+        .join('\n');
 
     setShowCopySuccess(true);
     navigator.clipboard.writeText(textToCopy);
