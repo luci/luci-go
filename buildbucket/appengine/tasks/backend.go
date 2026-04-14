@@ -158,7 +158,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 	// Create StartBuildToken and secrets.
 	startBuildToken, err := buildtoken.GenerateToken(ctx, build.ID, pb.TokenBody_START_BUILD)
 	if err != nil {
-		return nil, err
+		return nil, tq.Fatal.Apply(err)
 	}
 	secrets := &pb.BuildSecrets{
 		StartBuildToken:               startBuildToken,
@@ -166,7 +166,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 	}
 	backend := infra.Proto.GetBackend()
 	if backend == nil {
-		return nil, errors.New("infra.Proto.Backend isn't set")
+		return nil, tq.Fatal.Apply(errors.New("infra.Proto.Backend isn't set"))
 	}
 	caches := computeTaskCaches(infra)
 	gracePeriod := &durationpb.Duration{
@@ -179,7 +179,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 
 	pubsubTopic, err := computeBackendPubsubTopic(ctx, backend.Task.Id.Target, globalCfg)
 	if err != nil {
-		return nil, err
+		return nil, tq.Fatal.Apply(err)
 	}
 
 	// Add task name into backend config.
@@ -211,6 +211,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 	taskReq.Agent = &pb.RunTaskRequest_AgentExecutable{}
 	taskReq.Agent.Source, err = extractCipdDetails(ctx, project, infra.Proto)
 	if err != nil {
+		// err already tagged
 		return nil, err
 	}
 
@@ -222,7 +223,7 @@ func computeBackendNewTaskReq(ctx context.Context, build *model.Build, infra *mo
 	}
 	tagsList, err := structpb.NewList(tagsAny)
 	if err != nil {
-		return nil, err
+		return nil, tq.Fatal.Apply(err)
 	}
 	if taskReq.BackendConfig == nil {
 		taskReq.BackendConfig = &structpb.Struct{}
@@ -254,19 +255,19 @@ func extractCipdDetails(ctx context.Context, project string, infra *pb.BuildInfr
 	cipdServer := infra.Buildbucket.Agent.Source.GetCipd().GetServer()
 	cipdClient, err := NewCipdClient(ctx, cipdServer, project)
 	if err != nil {
-		return nil, err
+		return nil, transient.Tag.Apply(err)
 	}
 	req := createCipdDescribeBootstrapBundleRequest(infra)
 	bytes, err := proto.Marshal(req)
 	if err != nil {
-		return nil, err
+		return nil, tq.Fatal.Apply(err)
 	}
 	cachePrefix := base64.StdEncoding.EncodeToString(bytes)
 	cipdDetails, err := cipdDescribeBootstrapBundleCache.GetOrCreate(ctx, cachePrefix, func() (cipdPackageDetailsMap, time.Duration, error) {
 		out := &repopb.DescribeBootstrapBundleResponse{}
 		err := cipdClient.Call(ctx, "cipd.Repository", "DescribeBootstrapBundle", req, out)
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, transient.Tag.Apply(err)
 		}
 		resp := make(cipdPackageDetailsMap, len(out.Files))
 		hasErrFile := false
@@ -322,10 +323,27 @@ func isFatalError(err error) bool {
 }
 
 // CreateBackendTask creates a backend task for the build.
-func CreateBackendTask(ctx context.Context, buildID int64, requestID string, dequeueTime *timestamppb.Timestamp) error {
+func CreateBackendTask(ctx context.Context, buildID int64, requestID string, dequeueTime *timestamppb.Timestamp) (err error) {
+	defer func() {
+		if tq.Fatal.In(err) {
+			logging.Errorf(ctx, "attempting to fail build %d: got fatal error from CreateBackendTask: %q", buildID, err)
+			dsPutErr := failBuild(ctx, buildID, "Backend task creation failure.")
+			if errors.Is(dsPutErr, datastore.ErrNoSuchEntity) {
+				logging.Errorf(ctx, "failed to cancel build on fatal error with `no such entity`, got %q - giving up", dsPutErr)
+			} else if dsPutErr != nil {
+				logging.Errorf(ctx, "failed to cancel build on fatal error, got %q - retrying", dsPutErr)
+				err = dsPutErr
+			}
+		}
+	}()
+
 	entities, err := common.GetBuildEntities(ctx, buildID, model.BuildKind, model.BuildInfraKind)
 	if err != nil {
-		return errors.Fmt("failed to get build %d: %w", buildID, err)
+		err = errors.Fmt("failed to get build %d: %w", buildID, err)
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			err = tq.Fatal.Apply(err)
+		}
+		return err
 	}
 	bld := entities[0].(*model.Build)
 	if protoutil.IsEnded(bld.Status) {
@@ -380,10 +398,6 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 
 	// If task creation has already expired, fail the build immediately.
 	if clock.Now(ctx).Sub(sentToBackendTime) >= runTaskGiveUpTimeout {
-		dsPutErr := failBuild(ctx, buildID, "Backend task creation failure.")
-		if dsPutErr != nil {
-			return dsPutErr
-		}
 		return tq.Fatal.Apply(errors.Fmt("creating backend task for build %d with requestID %s has expired after %s", buildID, requestID, runTaskGiveUpTimeout.String()))
 	}
 
@@ -396,7 +410,8 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 
 	taskReq, err := computeBackendNewTaskReq(ctx, bld, infra, requestID, globalCfg)
 	if err != nil {
-		return tq.Fatal.Apply(err)
+		// error already tagged
+		return err
 	}
 
 	// Create a backend task via RunTask
@@ -418,10 +433,6 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 			logging.Errorf(ctx, "Give up backend task creation retry after %s", runTaskGiveUpTimeout.String())
 		}
 		logging.Errorf(ctx, "Backend task creation failure:%s. RunTask request: %+v", err, taskReq)
-		dsPutErr := failBuild(ctx, bld.ID, "Backend task creation failure.")
-		if dsPutErr != nil {
-			return dsPutErr
-		}
 		return tq.Fatal.Apply(errors.Fmt("failed to create a backend task: %w", err))
 	}
 	if taskResp.Task.GetUpdateId() == 0 {
