@@ -23,10 +23,20 @@ import {
   Box,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   IconButton,
   MenuItem,
   Popover,
+  Radio,
+  RadioGroup,
   Snackbar,
+  TextField,
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -59,6 +69,7 @@ import {
 import { EditorUiKeyPrefix } from '@/crystal_ball/hooks';
 import {
   getDashboardStateQueryKey,
+  useCreateDashboardState,
   useDeleteDashboardState,
   useGetDashboardState,
   useUpdateDashboardState,
@@ -67,12 +78,14 @@ import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measur
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import { WidgetType } from '@/crystal_ball/types';
 import {
+  extractIdFromName,
   formatApiError,
   isStringArray,
   sanitizeChartWidget,
 } from '@/crystal_ball/utils';
 import {
   BreakdownTableConfig_BreakdownAggregation,
+  CreateDashboardStateRequest,
   DashboardState,
   DeleteDashboardStateRequest,
   MeasurementFilterColumn,
@@ -326,6 +339,78 @@ const WIDGET_CREATORS: Record<WidgetType, () => Partial<PerfWidget>> = {
   }),
 };
 
+function DuplicateOptionsDialog({
+  open,
+  onClose,
+  onSubmit,
+  initialTitle,
+  showChoices,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (title: string, includeUnsaved: boolean) => void;
+  initialTitle: string;
+  showChoices: boolean;
+}) {
+  const [title, setTitle] = useState('');
+  const [includeUnsaved, setIncludeUnsaved] = useState(true);
+
+  useEffect(() => {
+    if (open) {
+      setTitle(initialTitle);
+      setIncludeUnsaved(true);
+    }
+  }, [open, initialTitle]);
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Duplicate Dashboard</DialogTitle>
+      <DialogContent>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <TextField
+            label="Dashboard Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            fullWidth
+          />
+          {showChoices && (
+            <FormControl component="fieldset">
+              <FormLabel component="legend" sx={{ mb: 1, typography: 'body2' }}>
+                You have unsaved edits. How would you like to duplicate?
+              </FormLabel>
+              <RadioGroup
+                value={includeUnsaved ? 'true' : 'false'}
+                onChange={(e) => setIncludeUnsaved(e.target.value === 'true')}
+              >
+                <FormControlLabel
+                  value="true"
+                  control={<Radio size="small" />}
+                  label="Duplicate with pending edits"
+                />
+                <FormControlLabel
+                  value="false"
+                  control={<Radio size="small" />}
+                  label="Duplicate original saved version"
+                />
+              </RadioGroup>
+            </FormControl>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          variant="contained"
+          onClick={() => onSubmit(title, includeUnsaved)}
+          disabled={!title.trim()}
+        >
+          Duplicate
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 /**
  * A customizable dashboard page that renders a dynamic collection of widgets.
  */
@@ -336,6 +421,7 @@ export function DashboardPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addWidgetModalOpen, setAddWidgetModalOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [duplicateOptionsOpen, setDuplicateOptionsOpen] = useState(false);
 
   const {
     data: dashboardState,
@@ -459,6 +545,68 @@ export function DashboardPage() {
 
   const { mutateAsync: deleteDashboard, isPending: isDeleting } =
     useDeleteDashboardState();
+
+  const { mutateAsync: createDashboard } = useCreateDashboardState();
+
+  const handleDuplicateSubmit = useCallback(
+    async (title: string, includeUnsaved: boolean) => {
+      setDuplicateOptionsOpen(false);
+      const stateToClone = includeUnsaved
+        ? localDashboardState
+        : dashboardState;
+      if (!stateToClone) return;
+
+      try {
+        const deepClonedWidgets = JSON.parse(
+          JSON.stringify(stateToClone.dashboardContent?.widgets ?? []),
+        ).map((w: PerfWidget) => PerfWidget.fromPartial(w));
+
+        const payload = DashboardState.fromPartial({
+          displayName: title,
+          description: stateToClone.description,
+          isPublic: stateToClone.isPublic,
+          dashboardContent: {
+            widgets: deepClonedWidgets,
+            dataSpecs: JSON.parse(
+              JSON.stringify(stateToClone.dashboardContent?.dataSpecs ?? {}),
+            ),
+            globalFilters: JSON.parse(
+              JSON.stringify(
+                stateToClone.dashboardContent?.globalFilters ?? [],
+              ),
+            ),
+          },
+        });
+
+        const response = await createDashboard(
+          CreateDashboardStateRequest.fromPartial({
+            dashboardState: payload,
+          }),
+        );
+
+        const newName = response.response?.name;
+        if (!newName) {
+          throw new Error(
+            'Duplicated dashboard was created but resource name is undefined',
+          );
+        }
+
+        const newId = extractIdFromName(newName);
+        showSuccessToast('Dashboard duplicated successfully');
+        const url = CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL(newId);
+        window.open(url, '_blank');
+      } catch (e) {
+        showErrorToast(e, 'Failed to duplicate dashboard');
+      }
+    },
+    [
+      localDashboardState,
+      dashboardState,
+      createDashboard,
+      showSuccessToast,
+      showErrorToast,
+    ],
+  );
 
   const handleDelete = async () => {
     if (!dashboardState?.name) return;
@@ -767,14 +915,23 @@ export function DashboardPage() {
 
   const topBarMenuItems = useMemo(
     () => (
-      <MenuItem
-        onClick={() => {
-          setDeleteDialogOpen(true);
-        }}
-        sx={{ color: 'error.main' }}
-      >
-        Delete Dashboard
-      </MenuItem>
+      <>
+        <MenuItem
+          onClick={() => {
+            setDuplicateOptionsOpen(true);
+          }}
+        >
+          Copy Dashboard
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setDeleteDialogOpen(true);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          Delete Dashboard
+        </MenuItem>
+      </>
     ),
     [],
   );
@@ -983,6 +1140,13 @@ export function DashboardPage() {
         dashboardState={localDashboardState}
         onApplyPermissions={handleUpdatePublicAccess}
         isPending={isUpdating}
+      />
+      <DuplicateOptionsDialog
+        open={duplicateOptionsOpen}
+        onClose={() => setDuplicateOptionsOpen(false)}
+        onSubmit={handleDuplicateSubmit}
+        initialTitle={`[Copy] ${localDashboardState?.displayName ?? 'Dashboard'}`}
+        showChoices={hasUnsavedChanges}
       />
     </Box>
   );

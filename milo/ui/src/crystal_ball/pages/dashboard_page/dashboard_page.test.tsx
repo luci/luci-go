@@ -48,6 +48,10 @@ jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
     mutateAsync: jest.fn(),
     isPending: false,
   })),
+  useCreateDashboardState: jest.fn(() => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  })),
 }));
 
 const mockUseListMeasurementFilterColumns = jest.fn(() => ({
@@ -516,5 +520,96 @@ describe('<DashboardPage />', () => {
         }),
       );
     });
+  });
+
+  it('duplicates dashboard successfully with custom title and opens in new tab', async () => {
+    const mockMutateAsync = jest
+      .fn()
+      .mockResolvedValue({ response: { name: 'dashboardStates/new123' } });
+    jest
+      .mocked(useDashboardStateApi.useCreateDashboardState)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockMutateAsync }),
+      );
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(mockDashboard));
+
+    const originalWindowOpen = window.open;
+    window.open = jest.fn();
+
+    renderDashboard();
+
+    const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
+    render(<>{lastCall[2]}</>);
+
+    fireEvent.click(screen.getByText('Copy Dashboard'));
+
+    const titleInput = await screen.findByLabelText(/Dashboard Title/i);
+    expect(titleInput).toHaveValue('[Copy] Test Dashboard');
+
+    fireEvent.change(titleInput, { target: { value: 'Custom Clone' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Duplicate' }));
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dashboardState: expect.objectContaining({
+            displayName: 'Custom Clone',
+          }),
+        }),
+      );
+      expect(window.open).toHaveBeenCalledWith(
+        CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL('new123'),
+        '_blank',
+      );
+    });
+
+    window.open = originalWindowOpen;
+  });
+
+  it('prompts choices when unsaved edits are detected during duplication', async () => {
+    const mockMutateAsync = jest
+      .fn()
+      .mockResolvedValue({ response: { name: 'dashboardStates/new123' } });
+    jest
+      .mocked(useDashboardStateApi.useCreateDashboardState)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockMutateAsync }),
+      );
+
+    const dashboardWithWidget = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        widgets: [
+          { id: 'widget-1', displayName: 'Orig', chart: { chartType: 1 } },
+        ],
+      },
+    });
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(dashboardWithWidget));
+
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Update Widget' }));
+
+    const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
+    render(<>{lastCall[2]}</>);
+
+    fireEvent.click(screen.getByText('Copy Dashboard'));
+
+    expect(
+      screen.getByText(
+        /You have unsaved edits. How would you like to duplicate?/i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Duplicate with pending edits'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Duplicate original saved version'),
+    ).toBeInTheDocument();
   });
 });
