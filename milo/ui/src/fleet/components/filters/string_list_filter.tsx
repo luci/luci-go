@@ -264,17 +264,34 @@ export class StringListFilterCategory implements FilterCategory {
       .map((o) => o.optionValue.value);
   }
 
-  public setSelectedOptions(selectedKeys: string[], silent = false) {
+  public setSelectedOptions(
+    selectedKeys: string[],
+    silent = false,
+  ): string | undefined {
     const unquotedSelectedKeys = selectedKeys.map((k) =>
       k.replace(/^"(.*)"$/, '$1'),
     );
     const map: Record<string, boolean> = {};
+    const foundKeys = new Set<string>();
+
     for (const opt of Object.values(this.options)) {
       const unquotedOptKey = opt.optionValue.value.replace(/^"(.*)"$/, '$1');
-      map[opt.optionValue.value] =
-        unquotedSelectedKeys.includes(unquotedOptKey);
+      const isSelected = unquotedSelectedKeys.includes(unquotedOptKey);
+      map[opt.optionValue.value] = isSelected;
+      if (isSelected) {
+        foundKeys.add(unquotedOptKey);
+      }
     }
+
     this.setOptions(map, silent);
+
+    for (const key of unquotedSelectedKeys) {
+      if (!foundKeys.has(key)) {
+        return `Invalid option: ${key}`;
+      }
+    }
+
+    return undefined;
   }
 
   public getChildrenSearchScore(searchQuery: string) {

@@ -149,6 +149,27 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           onChangeDropdownOpen(true);
         }}
         onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            const match = value.match(/^([^:]+):(.+)$/);
+            if (match) {
+              const [, filterKey, filterValue] = match;
+              const category = filterCategoryDatas.find(
+                (c) => c.key === filterKey || c.label === filterKey,
+              );
+              if (category && category instanceof StringListFilterCategory) {
+                const current = category.getSelectedOptions();
+                const error = category.setSelectedOptions([
+                  ...current,
+                  filterValue,
+                ]);
+                if (!error) {
+                  onChange('');
+                  onChipEditApplied();
+                  e.preventDefault();
+                }
+              }
+            }
+          }
           if (e.key === 'Escape') {
             if (!isDropdownOpen) {
               (e.target as HTMLElement).blur();

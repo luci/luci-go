@@ -811,6 +811,48 @@ describe('FilterBar', () => {
     });
   });
 
+  it('should add filter on Enter if exact match filter:value is typed', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent
+          initialOptions={[
+            { label: 'Option 1', key: 'option-1', options: ['Value 1'] },
+          ]}
+        />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBarInput();
+    await user.type(searchInput, 'option-1:Value 1');
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByText('1 | [ Option 1 ]: Value 1')).toBeInTheDocument();
+    expect(searchInput).toHaveValue('');
+  });
+
+  it('should NOT clear search query if typed value is invalid', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent
+          initialOptions={[
+            { label: 'Option 1', key: 'option-1', options: ['Value 1'] },
+          ]}
+        />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBarInput();
+    await user.type(searchInput, 'option-1:Invalid Value');
+    await user.keyboard('{Enter}');
+
+    expect(
+      screen.queryByText('1 | [ Option 1 ]: Invalid Value'),
+    ).not.toBeInTheDocument();
+    expect(searchInput).toHaveValue('option-1:Invalid Value');
+  });
+
   it('should order filter results correctly', async () => {
     render(
       <FakeContextProvider>
