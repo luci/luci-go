@@ -16,7 +16,7 @@ import { StringListFilterCategory } from './string_list_filter';
 
 describe('StringListFilterCategory', () => {
   it('should get selected options', () => {
-    const category = new StringListFilterCategory(
+    const result = StringListFilterCategory.create(
       'Model',
       'model',
       [
@@ -27,13 +27,16 @@ describe('StringListFilterCategory', () => {
       () => {},
       [],
     );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
 
     category.setSelectedOptions(['pixel']);
     expect(category.getSelectedOptions()).toEqual(['"pixel"']);
   });
 
   it('should set selected options correctly with quotes', () => {
-    const category = new StringListFilterCategory(
+    const result = StringListFilterCategory.create(
       'Model',
       'model',
       [
@@ -44,13 +47,16 @@ describe('StringListFilterCategory', () => {
       () => {},
       [],
     );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
 
     category.setSelectedOptions(['pixel']);
     expect(category.getSelectedOptions()).toEqual(['"pixel"']);
   });
 
   it('should handle unquoted keys for unquoted options', () => {
-    const category = new StringListFilterCategory(
+    const result = StringListFilterCategory.create(
       'Model',
       'model',
       [
@@ -61,12 +67,15 @@ describe('StringListFilterCategory', () => {
       () => {},
       [],
     );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
 
     category.setSelectedOptions(['pixel']);
     expect(category.getSelectedOptions()).toEqual(['pixel']);
   });
   it('should handle internal quotes in keys', () => {
-    const category = new StringListFilterCategory(
+    const result = StringListFilterCategory.create(
       'Model',
       'model',
       [{ value: '"device \\"pro\\" model"', label: 'Pro Model' }],
@@ -74,13 +83,16 @@ describe('StringListFilterCategory', () => {
       () => {},
       [],
     );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
 
     category.setSelectedOptions(['device \\"pro\\" model']);
     expect(category.getSelectedOptions()).toEqual(['"device \\"pro\\" model"']);
   });
 
   it('should clear all options when an empty array is passed', () => {
-    const category = new StringListFilterCategory(
+    const result = StringListFilterCategory.create(
       'Model',
       'model',
       [
@@ -91,6 +103,9 @@ describe('StringListFilterCategory', () => {
       () => {},
       [],
     );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
 
     category.setSelectedOptions(['pixel']);
     expect(category.getSelectedOptions()).toEqual(['"pixel"']);

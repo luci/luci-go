@@ -78,7 +78,7 @@ const TestComponent = ({
           .setLabel(o.label)
           .setOptions(o.options.map((val) => ({ label: val, value: val })));
 
-        const category = builder.build(
+        const result = builder.build(
           o.key,
           (newFilter) => {
             setFilterCategories((prev) =>
@@ -87,7 +87,10 @@ const TestComponent = ({
           },
           [],
         );
-        initCategories.push(category);
+        if (result.isError) {
+          throw new Error(result.error);
+        }
+        initCategories.push(result.value);
       });
       return initCategories;
     },

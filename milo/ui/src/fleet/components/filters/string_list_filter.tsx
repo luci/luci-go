@@ -32,6 +32,7 @@ import { Footer } from '../options_dropdown/footer';
 
 import { filterDropdownKeyDown } from './filter_dropdown_keydown';
 import {
+  BuildResult,
   FilterCategory,
   FilterCategoryBuilder,
   memberToKey,
@@ -53,17 +54,30 @@ export class StringListFilterCategory implements FilterCategory {
     return this.options;
   }
 
-  constructor(
+  private constructor(
+    label: string,
+    key: string,
+    options: Record<string, OptionWithSelection>,
+    reRender: (newFilter: StringListFilterCategory) => void,
+  ) {
+    this.label = label;
+    this.key = key;
+    this.options = options;
+    this.reRender = () => {
+      reRender(this);
+    };
+  }
+
+  public static create(
     label: string,
     key: string,
     options: OptionValue[],
     defaultOptions: string[],
     reRender: (newFilter: StringListFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
-  ) {
-    this.label = label;
-    this.key = key;
-    this.options = Object.fromEntries(
+  ): BuildResult<StringListFilterCategory> {
+    const warnings: string[] = [];
+    const optionsMap: Record<string, OptionWithSelection> = Object.fromEntries(
       options.map((o) => [
         o.value,
         {
@@ -72,74 +86,93 @@ export class StringListFilterCategory implements FilterCategory {
         },
       ]),
     );
-    this.reRender = () => {
-      reRender(this);
-    };
 
-    if (terms === null) return;
-    for (const term of terms) {
-      if (!term.simple.arg) {
-        if (!term.negated) {
-          throw new Error(
-            `Found ${this.key}. Expected "NOT ${this.key}" or "${this.key} = ..."`,
-          );
+    if (terms !== null) {
+      for (const term of terms) {
+        if (!term.simple.arg) {
+          if (!term.negated) {
+            return {
+              isError: true,
+              error: `Found ${key}. Expected "NOT ${key}" or "${key} = ..."`,
+            };
+          }
+          if (!optionsMap[BLANK_VALUE]) {
+            return {
+              isError: true,
+              error: `Option ${BLANK_VALUE} doesn't exist for ${key}`,
+            };
+          }
+
+          optionsMap[BLANK_VALUE].isSelected = true;
+          continue;
         }
-        if (!this.options[BLANK_VALUE]) {
-          throw new Error(
-            `Option ${BLANK_VALUE} doesn't exist for ${this.key}`,
-          );
+
+        if (term.simple.comparator !== ':' && term.simple.comparator !== '=') {
+          return {
+            isError: true,
+            error: 'StringListFilterCategory only supports : or = comparator',
+          };
         }
 
-        this.options[BLANK_VALUE].isSelected = true;
-        continue;
-      }
-
-      if (term.simple.comparator !== ':' && term.simple.comparator !== '=') {
-        throw new Error(
-          'StringListFilterCategory only supports : or = comparator',
-        );
-      }
-
-      const arg = term.simple.arg;
-      switch (arg.kind) {
-        case 'Comparable':
-          const value = memberToKey(arg.member);
-          if (!this.options[value]) {
-            throw new Error(`Option ${value} doesn't exist for ${this.key}`);
-          }
-          this.options[value].isSelected = true;
-          break;
-        case 'Expression':
-          if (arg.sequences.length !== 1) {
-            throw new Error(`${this.key} = (... AND ...) is not supported.`);
-          }
-
-          const sequence = arg.sequences[0];
-          if (sequence.factors.length !== 1) {
-            throw new Error(`${this.key} = (... AND ...) is not supported.`);
-          }
-          const factor = sequence.factors[0];
-          for (const term of factor.terms) {
-            if (term.simple.kind !== 'Restriction') {
-              throw new Error(
-                `${this.key} = (value OR (...)) is not supported`,
-              );
+        const arg = term.simple.arg;
+        switch (arg.kind) {
+          case 'Comparable':
+            const value = memberToKey(arg.member);
+            if (!optionsMap[value]) {
+              warnings.push(`Option ${value} doesn't exist for ${key}`);
+              continue;
             }
-            if (term.simple.arg !== null) {
-              throw new Error(
-                `${this.key} = (... key = value ...) is not supported`,
-              );
+            optionsMap[value].isSelected = true;
+            break;
+          case 'Expression':
+            if (arg.sequences.length !== 1) {
+              return {
+                isError: true,
+                error: `${key} = (... AND ...) is not supported.`,
+              };
             }
 
-            const value = memberToKey(term.simple.comparable.member);
-            if (!this.options[value]) {
-              throw new Error(`Option ${value} doesn't exist for ${this.key}`);
+            const sequence = arg.sequences[0];
+            if (sequence.factors.length !== 1) {
+              return {
+                isError: true,
+                error: `${key} = (... AND ...) is not supported.`,
+              };
             }
-            this.options[value].isSelected = true;
-          }
-          break;
+            const factor = sequence.factors[0];
+            for (const term of factor.terms) {
+              if (term.simple.kind !== 'Restriction') {
+                return {
+                  isError: true,
+                  error: `${key} = (value OR (...)) is not supported`,
+                };
+              }
+              if (term.simple.arg !== null) {
+                return {
+                  isError: true,
+                  error: `${key} = (... key = value ...) is not supported`,
+                };
+              }
+
+              const value = memberToKey(term.simple.comparable.member);
+              if (!optionsMap[value]) {
+                warnings.push(`Option ${value} doesn't exist for ${key}`);
+                continue;
+              }
+              optionsMap[value].isSelected = true;
+            }
+            break;
+        }
       }
     }
+
+    const filter = new StringListFilterCategory(
+      label,
+      key,
+      optionsMap,
+      reRender,
+    );
+    return { isError: false, value: filter, warnings };
   }
 
   public setReRender(reRender: (newFilter: FilterCategory) => void) {
@@ -476,15 +509,17 @@ export class StringListFilterCategoryBuilder
     key: string,
     reRender: (newFilter: StringListFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
-  ) {
-    if (!this.isFilledIn())
-      throw new Error(
-        'StringListFilterCategoryBuilder is not filled in :' + this,
-      );
+  ): BuildResult<StringListFilterCategory> {
+    if (!this.isFilledIn()) {
+      return {
+        isError: true,
+        error: 'StringListFilterCategoryBuilder is not filled in',
+      };
+    }
 
-    return new StringListFilterCategory(
+    return StringListFilterCategory.create(
       this.label!,
-      key!,
+      key,
       this.options!,
       this.defaultOptions,
       reRender,

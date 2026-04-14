@@ -370,12 +370,6 @@ export const AndroidDevicesPage = () => {
   useEffect(() => {
     if (!isDimensionsQueryProperlyLoaded) return;
     if (!filterCategoryDatas.parseError) return;
-    if (
-      warnings.some((w) =>
-        w.startsWith('There was an error parsing your filters:'),
-      )
-    )
-      return;
 
     addWarning(
       `There was an error parsing your filters: ${filterCategoryDatas.parseError}`,

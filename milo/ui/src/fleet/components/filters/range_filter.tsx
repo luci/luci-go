@@ -21,7 +21,11 @@ import { RangeFilter, RangeFilterValue } from '../filter_dropdown/range_filter';
 import { Footer } from '../options_dropdown/footer';
 
 import { filterDropdownKeyDown } from './filter_dropdown_keydown';
-import { FilterCategory, FilterCategoryBuilder } from './use_filters';
+import {
+  BuildResult,
+  FilterCategory,
+  FilterCategoryBuilder,
+} from './use_filters';
 
 export class RangeFilterCategory implements FilterCategory {
   public value: RangeFilterValue;
@@ -32,49 +36,71 @@ export class RangeFilterCategory implements FilterCategory {
   public max: number;
   private reRender: () => void;
 
-  constructor(
+  private constructor(
+    label: string,
+    key: string,
+    min: number,
+    max: number,
+    value: RangeFilterValue,
+    reRender: (newFilter: RangeFilterCategory) => void,
+  ) {
+    this.label = label;
+    this.key = key;
+    this.min = min;
+    this.max = max;
+    this.value = value;
+    this.reRender = () => {
+      reRender(this);
+    };
+  }
+
+  public static create(
     label: string,
     key: string,
     min: number,
     max: number,
     reRender: (newFilter: RangeFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
-  ) {
-    this.label = label;
-    this.key = key;
-    this.min = min;
-    this.max = max;
-    this.value = {};
-    this.reRender = () => {
-      reRender(this);
-    };
+  ): BuildResult<RangeFilterCategory> {
+    const value: RangeFilterValue = {};
 
-    if (terms === null) return;
-    for (const term of terms) {
-      if (term.negated) {
-        continue;
-      }
+    if (terms !== null) {
+      for (const term of terms) {
+        if (term.negated) {
+          continue;
+        }
 
-      if (term.simple.arg?.kind !== 'Comparable') {
-        continue;
-      }
+        if (term.simple.arg?.kind !== 'Comparable') {
+          continue;
+        }
 
-      const valStr = term.simple.arg.member.value.value;
-      const num = parseInt(valStr, 10);
-      if (isNaN(num)) {
-        continue;
-      }
+        const valStr = term.simple.arg.member.value.value;
+        const num = parseInt(valStr, 10);
+        if (isNaN(num)) {
+          continue;
+        }
 
-      const comparator = term.simple.comparator;
-      if (comparator === '>=') {
-        this.value.min = num;
-      } else if (comparator === '<=') {
-        this.value.max = num;
-      } else if (comparator === '=') {
-        this.value.min = num;
-        this.value.max = num;
+        const comparator = term.simple.comparator;
+        if (comparator === '>=') {
+          value.min = num;
+        } else if (comparator === '<=') {
+          value.max = num;
+        } else if (comparator === '=') {
+          value.min = num;
+          value.max = num;
+        }
       }
     }
+
+    const filter = new RangeFilterCategory(
+      label,
+      key,
+      min,
+      max,
+      value,
+      reRender,
+    );
+    return { isError: false, value: filter, warnings: [] };
   }
 
   public setReRender(reRender: (newFilter: FilterCategory) => void) {
@@ -227,14 +253,15 @@ export class RangeFilterCategoryBuilder
     key: string,
     reRender: (newFilter: RangeFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
-  ) {
+  ): BuildResult<RangeFilterCategory> {
     if (!this.isFilledIn()) {
-      throw new Error(
-        `RangeFilterCategoryBuilder is not filled in: ${JSON.stringify(this)}`,
-      );
+      return {
+        isError: true,
+        error: `RangeFilterCategoryBuilder is not filled in: ${JSON.stringify(this)}`,
+      };
     }
 
-    return new RangeFilterCategory(
+    return RangeFilterCategory.create(
       this.label!,
       key,
       this.min!,

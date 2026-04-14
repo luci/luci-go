@@ -105,6 +105,10 @@ export const useFilters = <
   };
 };
 
+export type BuildResult<T> =
+  | { isError: false; value: T; warnings: string[] }
+  | { isError: true; error: string };
+
 export interface FilterCategoryBuilder<T extends FilterCategory> {
   isFilledIn(): boolean;
   build(
@@ -112,7 +116,7 @@ export interface FilterCategoryBuilder<T extends FilterCategory> {
     reRender: (newFilter: T) => void,
     // If the url is missing FILTERS_PARAM_KEY terms will equal null
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
-  ): T;
+  ): BuildResult<T>;
 }
 
 export interface FilterCategory {
@@ -274,7 +278,8 @@ function buildFilters<
   }
 
   const filters: Record<string, FilterCategory> = {};
-  const parseErrors: string[] = [];
+  const errors: string[] = [];
+  const warnings: string[] = [];
 
   for (const [key, bob] of Object.entries(builders)) {
     if (!bob.isFilledIn()) {
@@ -282,12 +287,16 @@ function buildFilters<
     }
 
     const terms = parseResult === null ? null : (parseResult.terms[key] ?? []);
-    try {
-      filters[key] = bob.build(key, () => {}, terms);
-    } catch (e) {
-      parseErrors.push(
-        `Error with ${key}: ${e instanceof Error ? e.message : String(e)}`,
-      );
+    const result = bob.build(key, () => {}, terms);
+    if (result.isError) {
+      errors.push(`Error with ${key}: ${result.error}`);
+    } else {
+      filters[key] = result.value;
+      if (result.warnings.length > 0) {
+        warnings.push(
+          ...result.warnings.map((w) => `Warning with ${key}: ${w}`),
+        );
+      }
     }
   }
 
@@ -297,7 +306,7 @@ function buildFilters<
         if (allowExtraKeys) {
           filters[key] = new LoadingFilterCategory(key);
         } else {
-          parseErrors.push(`${key} is not a valid filter`);
+          errors.push(`${key} is not a valid filter`);
         }
       }
     }
@@ -307,11 +316,10 @@ function buildFilters<
     filter.setReRender((newF) => onFilterUpdate({ ...filters, [key]: newF }));
   }
 
+  const allErrors = [...errors, ...warnings];
+
   return {
-    parseError:
-      parseErrors.length === 0
-        ? undefined
-        : parseErrors.filter((pe) => pe).join(', '),
+    parseError: allErrors.length === 0 ? undefined : allErrors.join(', '),
     filters: filters as FilterValuesFromBuilders<T>,
   };
 }

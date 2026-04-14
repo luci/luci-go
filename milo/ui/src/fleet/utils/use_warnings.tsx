@@ -13,18 +13,18 @@
 // limitations under the License.
 
 import { Alert } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 export const useWarnings = () => {
   const [warnings, setWarnings] = useState<Record<string, NodeJS.Timeout>>({});
+  const pastWarnings = useRef(new Set());
 
   const addWarning = useCallback((newWarning: string) => {
+    if (pastWarnings.current.has(newWarning)) {
+      return;
+    }
+    pastWarnings.current.add(newWarning);
     setWarnings((warnings) => {
-      if (newWarning in warnings) {
-        warnings[newWarning]?.refresh?.(); // care for race conditions
-        return warnings;
-      }
-
       const t = setTimeout(
         () =>
           setWarnings((warnings) => {

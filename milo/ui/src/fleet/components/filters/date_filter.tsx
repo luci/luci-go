@@ -23,7 +23,11 @@ import { OptionComponentHandle } from '../filter_dropdown/filter_dropdown';
 import { Footer } from '../options_dropdown/footer';
 
 import { filterDropdownKeyDown } from './filter_dropdown_keydown';
-import { FilterCategory, FilterCategoryBuilder } from './use_filters';
+import {
+  BuildResult,
+  FilterCategory,
+  FilterCategoryBuilder,
+} from './use_filters';
 
 export class DateFilterCategoryData implements FilterCategory {
   public value: DateFilterValue;
@@ -32,46 +36,59 @@ export class DateFilterCategoryData implements FilterCategory {
   public key: string;
   private reRender: () => void;
 
-  constructor(
+  private constructor(
+    label: string,
+    key: string,
+    value: DateFilterValue,
+    reRender: (newFilter: DateFilterCategoryData) => void,
+  ) {
+    this.label = label;
+    this.key = key;
+    this.value = value;
+    this.reRender = () => {
+      reRender(this);
+    };
+  }
+
+  public static create(
     label: string,
     key: string,
     reRender: (newFilter: DateFilterCategoryData) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
-  ) {
-    this.label = label;
-    this.key = key;
-    this.value = {};
-    this.reRender = () => {
-      reRender(this);
-    };
+  ): BuildResult<DateFilterCategoryData> {
+    const value: DateFilterValue = {};
 
-    if (terms === null) return;
-    for (const term of terms) {
-      if (term.negated) {
-        continue;
-      }
+    if (terms !== null) {
+      for (const term of terms) {
+        if (term.negated) {
+          continue;
+        }
 
-      if (term.simple.arg?.kind !== 'Comparable') {
-        continue;
-      }
+        if (term.simple.arg?.kind !== 'Comparable') {
+          continue;
+        }
 
-      const valStr = term.simple.arg.member.value.value;
-      const date = DateTime.fromISO(valStr, { zone: 'utc' }).toJSDate();
+        const valStr = term.simple.arg.member.value.value;
+        const date = DateTime.fromISO(valStr, { zone: 'utc' }).toJSDate();
 
-      if (isNaN(date.getTime())) {
-        continue;
-      }
+        if (isNaN(date.getTime())) {
+          continue;
+        }
 
-      const comparator = term.simple.comparator;
-      if (comparator === '>=' || comparator === '>') {
-        this.value.min = date;
-      } else if (comparator === '<=' || comparator === '<') {
-        this.value.max = date;
-      } else if (comparator === '=' || comparator === ':') {
-        this.value.min = date;
-        this.value.max = date;
+        const comparator = term.simple.comparator;
+        if (comparator === '>=' || comparator === '>') {
+          value.min = date;
+        } else if (comparator === '<=' || comparator === '<') {
+          value.max = date;
+        } else if (comparator === '=' || comparator === ':') {
+          value.min = date;
+          value.max = date;
+        }
       }
     }
+
+    const filter = new DateFilterCategoryData(label, key, value, reRender);
+    return { isError: false, value: filter, warnings: [] };
   }
 
   public setReRender(reRender: (newFilter: FilterCategory) => void) {
@@ -198,11 +215,14 @@ export class DateFilterCategoryDataBuilder
     key: string,
     reRender: (newFilter: DateFilterCategoryData) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
-  ) {
+  ): BuildResult<DateFilterCategoryData> {
     if (!this.isFilledIn()) {
-      throw new Error('DateFilterCategoryDataBuilder is not filled in');
+      return {
+        isError: true,
+        error: 'DateFilterCategoryDataBuilder is not filled in',
+      };
     }
 
-    return new DateFilterCategoryData(this.label!, key, reRender, terms);
+    return DateFilterCategoryData.create(this.label!, key, reRender, terms);
   }
 }

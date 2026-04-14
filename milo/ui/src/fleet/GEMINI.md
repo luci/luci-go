@@ -155,3 +155,8 @@ You are a highly experienced code reviewer specializing in Git patches. Your tas
 5. Review the feedback written so far. Is the feedback comprehensive and sufficiently detailed? If not, go back to step 2.
 6. Output the complete review.
 ```
+
+## 4. Coding Conventions & Best Practices
+- **Avoid type casting unless strictly necessary.** Try to rely on TypeScript's type inference and narrowing instead of using `as Type`.
+
+
