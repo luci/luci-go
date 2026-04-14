@@ -16,7 +16,6 @@ package workflow
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 
@@ -24,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/system/environ"
 
+	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/core"
 )
@@ -71,8 +71,8 @@ func (g *Generator) Generate(ctx context.Context, plats generators.Platforms) (*
 		if d.Runtime {
 			metadata.RuntimeDeps = append(metadata.RuntimeDeps, a)
 		}
-		envDeps[d.Type.String()] = append(envDeps[d.Type.String()], fmt.Sprintf("{{.%s}}", a.Name))
-		env.Set(a.Name, fmt.Sprintf("{{.%s}}", a.Name))
+		envDeps[d.Type.String()] = append(envDeps[d.Type.String()], actions.DepRef(a.Name))
+		env.Set(a.Name, actions.DepRef(a.Name))
 	}
 
 	// Add dependencies' environment variables.

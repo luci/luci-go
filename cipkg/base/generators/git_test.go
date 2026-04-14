@@ -41,9 +41,9 @@ func TestFetchGit(t *testing.T) {
 
 		t.Run("Generate with commit hash", func(t *ftt.Test) {
 			g := &FetchGit{
-				Name: "git-commit",
-				URL:  repoURL,
-				Ref:  commit,
+				Name:   "git-commit",
+				URL:    repoURL,
+				Commit: commit,
 			}
 			a, err := g.Generate(ctx, Platforms{})
 			assert.Loosely(t, err, should.BeNil)
@@ -52,32 +52,24 @@ func TestFetchGit(t *testing.T) {
 			assert.Loosely(t, a.GetGit().Url, should.Equal(repoURL))
 		})
 
-		t.Run("Generate with tag", func(t *ftt.Test) {
-			tagName := "v1.0"
-			repo, err := git.PlainOpen(dir)
-			assert.Loosely(t, err, should.BeNil)
-			_, err = repo.CreateTag(tagName, plumbing.NewHash(commit), nil)
-			assert.Loosely(t, err, should.BeNil)
+		t.Run("Resolve ref", func(t *ftt.Test) {
+			t.Run("tag", func(t *ftt.Test) {
+				tagName := "v1.0"
+				repo, err := git.PlainOpen(dir)
+				assert.Loosely(t, err, should.BeNil)
+				_, err = repo.CreateTag(tagName, plumbing.NewHash(commit), nil)
+				assert.Loosely(t, err, should.BeNil)
 
-			g := &FetchGit{
-				Name: "git-tag",
-				URL:  repoURL,
-				Ref:  tagName,
-			}
-			a, err := g.Generate(ctx, Platforms{})
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, a.GetGit().Commit, should.Equal(commit))
-		})
+				hash, err := ResolveRef(ctx, repoURL, tagName)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, hash.String(), should.Equal(commit))
+			})
 
-		t.Run("Generate with full ref", func(t *ftt.Test) {
-			g := &FetchGit{
-				Name: "git-ref",
-				URL:  repoURL,
-				Ref:  "refs/heads/master",
-			}
-			a, err := g.Generate(ctx, Platforms{})
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, a.GetGit().Commit, should.Equal(commit))
+			t.Run("full ref", func(t *ftt.Test) {
+				hash, err := ResolveRef(ctx, repoURL, "refs/heads/master")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, hash.String(), should.Equal(commit))
+			})
 		})
 	})
 }

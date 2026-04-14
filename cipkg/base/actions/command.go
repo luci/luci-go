@@ -75,3 +75,9 @@ func renderAll(raw []string, vals map[string]string) (ret []string, err error) {
 	}
 	return ret, nil
 }
+
+// DepRef is a helper to convert name to reference which will be rendered by
+// command Action to output directory.
+func DepRef(name string) string {
+	return "{{." + name + "}}"
+}

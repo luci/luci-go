@@ -101,3 +101,14 @@ func stableID(m proto.Message, n uint) (string, error) {
 	enc := base32.HexEncoding.WithPadding(base32.NoPadding)
 	return strings.ToLower(enc.EncodeToString(h.Sum(nil)[:n])), nil
 }
+
+func HashFromString(h string) (core.HashAlgorithm, error) {
+	switch h {
+	case "md5":
+		return core.HashAlgorithm_HASH_MD5, nil
+	case "sha256":
+		return core.HashAlgorithm_HASH_SHA256, nil
+	default:
+		return core.HashAlgorithm_HASH_UNSPECIFIED, fmt.Errorf("unknown hash algorithem: %q", h)
+	}
+}

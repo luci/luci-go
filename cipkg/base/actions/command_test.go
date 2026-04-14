@@ -32,8 +32,8 @@ func TestProcessCommand(t *testing.T) {
 
 		t.Run("ok", func(t *ftt.Test) {
 			cmd := &core.ActionCommand{
-				Args: []string{"bin", "arg1", "arg2", "{{.something}}/{{.something}}"},
-				Env:  []string{"env1=var1", "env2=var2", "env3={{.something}}"},
+				Args: []string{"bin", "arg1", "arg2", DepRef("something") + "/" + DepRef("something")},
+				Env:  []string{"env1=var1", "env2=var2", "env3=" + DepRef("something")},
 			}
 
 			pkg, err := ap.Process("", pm, &core.Action{
@@ -77,7 +77,7 @@ func TestProcessCommand(t *testing.T) {
 
 		t.Run("unknown key", func(t *ftt.Test) {
 			cmd := &core.ActionCommand{
-				Env: []string{"{{.else}}"},
+				Env: []string{DepRef("else")},
 			}
 
 			_, err := ap.Process("", pm, &core.Action{

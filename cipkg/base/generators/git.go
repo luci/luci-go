@@ -18,8 +18,6 @@ package generators
 
 import (
 	"context"
-	"crypto/sha1"
-	"crypto/sha256"
 	"fmt"
 
 	"github.com/go-git/go-git/v5"
@@ -35,42 +33,25 @@ type FetchGit struct {
 	Name     string
 	Metadata *core.Action_Metadata
 
-	URL string
-	Ref string
+	URL    string
+	Commit string
 }
 
 func (g *FetchGit) Generate(ctx context.Context, plats Platforms) (*core.Action, error) {
-	commit := parseCommit(g.Ref)
-	if commit.IsZero() {
-		var err error
-		if commit, err = resolveRef(ctx, g.URL, g.Ref); err != nil {
-			return nil, fmt.Errorf("failed to resolve git ref %s: %w", g.Ref, err)
-		}
-	}
-
 	return &core.Action{
 		Name:     g.Name,
 		Metadata: g.Metadata,
 		Spec: &core.Action_Git{
 			Git: &core.ActionGitFetch{
 				Url:    g.URL,
-				Commit: commit.String(),
+				Commit: g.Commit,
 			},
 		},
 	}, nil
 }
 
-func parseCommit(s string) plumbing.Hash {
-	switch len(s) {
-	case sha1.Size * 2:
-	case sha256.Size * 2:
-	default:
-		return plumbing.Hash{}
-	}
-	return plumbing.NewHash(s)
-}
-
-func resolveRef(ctx context.Context, url, ref string) (plumbing.Hash, error) {
+// ResolveRef returns the commit hash of the provided git ref.
+func ResolveRef(ctx context.Context, url, ref string) (plumbing.Hash, error) {
 	remote := git.NewRemote(memory.NewStorage(), &config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{url},

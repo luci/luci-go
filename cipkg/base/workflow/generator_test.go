@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/cipkg/core"
 	"go.chromium.org/luci/cipkg/internal/testutils"
@@ -47,6 +48,9 @@ func TestGenerator(t *testing.T) {
 		assert.Loosely(t, a.Metadata.RuntimeDeps, should.HaveLength(1))
 		assert.Loosely(t, a.Metadata.RuntimeDeps[0], should.Match(a.Deps[0]))
 		cmd := testutils.Assert[*core.Action_Command](t, a.Spec)
-		assert.Loosely(t, cmd.Command.Env, should.Match([]string{"depsBuildHost={{.second}}", "second={{.second}}"}))
+		assert.Loosely(t, cmd.Command.Env, should.Match([]string{
+			"depsBuildHost=" + actions.DepRef("second"),
+			"second=" + actions.DepRef("second"),
+		}))
 	})
 }
