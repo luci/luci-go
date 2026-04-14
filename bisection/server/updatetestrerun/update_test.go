@@ -620,6 +620,22 @@ func TestUpdate(t *testing.T) {
 			assert.Loosely(t, tfa.VerifiedCulpritKey, should.Match(datastore.KeyForObj(ctx, suspect)))
 		})
 
+		t.Run("Late update does not overwrite terminal status", func(t *ftt.Test) {
+			// Set suspect status to Canceled
+			suspect.VerificationStatus = model.SuspectVerificationStatus_Canceled
+			assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Simulate another update
+			err := Update(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Verify status is still Canceled
+			assert.Loosely(t, datastore.Get(ctx, suspect), should.BeNil)
+			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Canceled))
+		})
+
 		t.Run("suspect not verified", func(t *ftt.Test) {
 			// ParentSuspect finished running.
 			parentRerun.Status = pb.RerunStatus_RERUN_STATUS_FAILED

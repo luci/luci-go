@@ -169,6 +169,12 @@ func processCulpritVerificationUpdate(ctx context.Context, rerun *model.TestSing
 		if e != nil {
 			return e
 		}
+		if suspect.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit ||
+			suspect.VerificationStatus == model.SuspectVerificationStatus_Vindicated ||
+			suspect.VerificationStatus == model.SuspectVerificationStatus_Canceled {
+			logging.Infof(ctx, "Suspect %d is already in terminal state %s, skipping update", suspect.Id, suspect.VerificationStatus)
+			return nil
+		}
 		suspect.VerificationStatus = suspectStatus
 		return datastore.Put(ctx, suspect)
 	}, nil); err != nil {

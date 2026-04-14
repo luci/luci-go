@@ -401,12 +401,18 @@ func updateSuspect(c context.Context, suspect *model.Suspect) error {
 	suspectStatus := model.SuspectStatus(rerunStatus, parentRerunStatus)
 
 	return datastore.RunInTransaction(c, func(ctx context.Context) error {
-		e := datastore.Get(c, suspect)
+		e := datastore.Get(ctx, suspect)
 		if e != nil {
 			return e
 		}
+		if suspect.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit ||
+			suspect.VerificationStatus == model.SuspectVerificationStatus_Vindicated ||
+			suspect.VerificationStatus == model.SuspectVerificationStatus_Canceled {
+			logging.Infof(ctx, "Suspect %d is already in terminal state %s, skipping update", suspect.Id, suspect.VerificationStatus)
+			return nil
+		}
 		suspect.VerificationStatus = suspectStatus
-		return datastore.Put(c, suspect)
+		return datastore.Put(ctx, suspect)
 	}, nil)
 }
 

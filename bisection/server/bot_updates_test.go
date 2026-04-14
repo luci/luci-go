@@ -60,10 +60,10 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 	cl := testclock.New(testclock.TestTimeUTC)
 	c = clock.Set(c, cl)
 
+	c, scheduler := tq.TestingContext(c, nil)
+	cancelanalysis.RegisterTaskClass()
+	culpritverification.RegisterTaskClass()
 	ftt.Run("UpdateAnalysisProgress Culprit Verification", t, func(t *ftt.Test) {
-		c, scheduler := tq.TestingContext(c, nil)
-		cancelanalysis.RegisterTaskClass()
-		culpritverification.RegisterTaskClass()
 
 		// Setup the models
 		// Set up suspects
@@ -193,6 +193,35 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 		}
 		expected := proto.Clone(task).(*tpb.CancelAnalysisTask)
 		assert.Loosely(t, scheduler.Tasks().Payloads()[0], should.Match(expected))
+
+		t.Run("Late update does not overwrite terminal status", func(t *ftt.Test) {
+			// Set suspect status to Canceled
+			suspect.VerificationStatus = model.SuspectVerificationStatus_Canceled
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// Simulate another update that would normally change status
+			req3 := &pb.UpdateAnalysisProgressRequest{
+				AnalysisId: 1234,
+				Bbid:       8800,
+				GitilesCommit: &bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "3425",
+				},
+				RerunResult: &pb.RerunResult{
+					RerunStatus: pb.RerunStatus_RERUN_STATUS_PASSED,
+				},
+				BotId: "abc",
+			}
+
+			_, err := server.UpdateAnalysisProgress(c, req3)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify status is still Canceled
+			assert.Loosely(t, datastore.Get(c, suspect), should.BeNil)
+			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_Canceled))
+		})
 	})
 
 	ftt.Run("UpdateAnalysisProgress NthSection", t, func(t *ftt.Test) {
