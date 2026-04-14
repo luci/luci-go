@@ -231,6 +231,7 @@ export const MRTFilterMenuItem = forwardRef<
           onResetClick={handleReset}
           footerButtons={['reset', 'cancel', 'apply']}
           onApply={handleApply}
+          closeOnScroll={true}
           renderChild={(searchQuery, onNavigateUp) => {
             if (!isFilterable) {
               return null;

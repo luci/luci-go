@@ -164,6 +164,7 @@ export function FilterItem({ platform, ...props }: FilterItemProps) {
         <Typography variant="inherit">Filter</Typography>
       </MenuItem>
       <OptionsDropdown
+        disableScrollUpdate={true}
         open={open}
         anchorEl={anchorEl}
         onClose={handleClose}

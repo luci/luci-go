@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 
@@ -82,5 +82,68 @@ describe('OptionsDropdown', () => {
 
     // For now, let's just make sure testing-library doesn't complain about no assertions.
     expect(searchInput).toHaveValue('abc');
+  });
+
+  it('should close on window scroll if closeOnScroll is true', async () => {
+    const onClose = jest.fn();
+    const anchorEl = document.createElement('div');
+    render(
+      <OptionsDropdown
+        open={true}
+        anchorEl={anchorEl}
+        onClose={onClose}
+        onApply={() => {}}
+        closeOnScroll={true}
+        renderChild={() => <div>Child</div>}
+      />,
+    );
+
+    fireEvent.scroll(window);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('should NOT close on internal scroll if closeOnScroll is true', async () => {
+    const onClose = jest.fn();
+    const anchorEl = document.createElement('div');
+    render(
+      <OptionsDropdown
+        open={true}
+        anchorEl={anchorEl}
+        onClose={onClose}
+        onApply={() => {}}
+        closeOnScroll={true}
+        renderChild={() => (
+          <div
+            data-testid="scrollable"
+            style={{ height: '100px', overflow: 'auto' }}
+          >
+            <div style={{ height: '200px' }}>Scrollable Content</div>
+          </div>
+        )}
+      />,
+    );
+
+    const scrollable = screen.getByTestId('scrollable');
+    fireEvent.scroll(scrollable);
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('should NOT close on scroll if closeOnScroll is false', async () => {
+    const onClose = jest.fn();
+    const anchorEl = document.createElement('div');
+    render(
+      <OptionsDropdown
+        open={true}
+        anchorEl={anchorEl}
+        onClose={onClose}
+        onApply={() => {}}
+        closeOnScroll={false}
+        renderChild={() => <div>Child</div>}
+      />,
+    );
+
+    fireEvent.scroll(window);
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

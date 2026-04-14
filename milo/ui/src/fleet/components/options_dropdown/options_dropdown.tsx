@@ -30,6 +30,7 @@ import {
   type ReactNode,
   CSSProperties,
 } from 'react';
+import { flushSync } from 'react-dom';
 
 import { hasAnyModifier, keyboardListNavigationHandler } from '../../utils';
 import { SearchInput } from '../search_input';
@@ -57,6 +58,8 @@ type OptionsDropdownProps = Omit<MenuProps, 'open' | 'maxHeight'> & {
   disableRestoreFocus?: boolean;
   hideBackdrop?: boolean;
   sx?: SxProps;
+  disableScrollUpdate?: boolean;
+  closeOnScroll?: boolean;
 };
 
 const mapOriginToPlacement = (
@@ -105,6 +108,8 @@ export function OptionsDropdown({
   footerButtons = ['apply', 'cancel'],
   disablePortal,
   sx,
+  closeOnScroll = false,
+  disableScrollUpdate = false,
 }: OptionsDropdownProps) {
   const searchInput = useRef<HTMLInputElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
@@ -125,6 +130,37 @@ export function OptionsDropdown({
     }
   }, [open, enableSearchInput]);
 
+  useEffect(() => {
+    if (!open || !closeOnScroll) return;
+
+    const handleScroll = (event: Event) => {
+      const target = event.target;
+
+      // Don't close if the scroll event originates from inside the dropdown.
+      // We need to check if target is an Element, as it can be the document itself.
+      if (
+        target instanceof Element &&
+        target.closest('.fc-dropdown-container')
+      ) {
+        return;
+      }
+
+      if (onClose) {
+        flushSync(() => {
+          onClose(event, 'backdropClick');
+        });
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, {
+      capture: true,
+      passive: true,
+    });
+    return () => {
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+    };
+  }, [open, onClose, closeOnScroll]);
+
   return (
     <Popper
       disablePortal={disablePortal}
@@ -132,6 +168,10 @@ export function OptionsDropdown({
       anchorEl={anchorEl}
       placement={placement}
       modifiers={[
+        {
+          name: 'eventListeners',
+          options: { scroll: !disableScrollUpdate },
+        },
         {
           name: 'flip',
           enabled: true,
@@ -170,6 +210,7 @@ export function OptionsDropdown({
       >
         <Paper
           elevation={2}
+          className="fc-dropdown-container"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => {
             e.stopPropagation();
@@ -212,6 +253,8 @@ export function OptionsDropdown({
             paddingTop: '8px',
             paddingBottom: 0,
             pointerEvents: 'auto',
+            overscrollBehavior: 'contain',
+            width: 360,
           }}
         >
           {enableSearchInput && (
@@ -246,11 +289,14 @@ export function OptionsDropdown({
               maxHeight: maxHeight,
               overflow: 'auto',
               paddingTop: '8px',
+              overscrollBehavior: 'contain',
             }}
             tabIndex={-1}
             role="menu"
             key="options-menu-container"
             ref={listContainerRef}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
           >
             {renderChild(searchQuery, (e) => {
               searchInput.current?.focus();
