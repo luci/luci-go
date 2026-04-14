@@ -1101,6 +1101,13 @@ message PerfChartSeries {
 
   // CSS color string for rendering this series line (e.g., "#8884d8", "red").
   string color = 10 [(google.api.field_behavior) = OPTIONAL];
+
+  // Unique identifier for this series within its chart.
+  // The ID should be 4-63 characters and conform to RFC-1034.
+  // It must start with a lowercase letter, and all subsequent characters
+  // must be lowercase letters, numbers, or hyphens, and the value must not
+  // end with a hyphen.
+  string id = 11 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Configuration for the X axis.

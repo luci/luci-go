@@ -1022,6 +1022,14 @@ export interface PerfChartSeries {
   readonly effectiveYAxisAssignment: PerfChartSeries_YAxisAssignment;
   /** CSS color string for rendering this series line (e.g., "#8884d8", "red"). */
   readonly color: string;
+  /**
+   * Unique identifier for this series within its chart.
+   * The ID should be 4-63 characters and conform to RFC-1034.
+   * It must start with a lowercase letter, and all subsequent characters
+   * must be lowercase letters, numbers, or hyphens, and the value must not
+   * end with a hyphen.
+   */
+  readonly id: string;
 }
 
 /**
@@ -6162,6 +6170,7 @@ function createBasePerfChartSeries(): PerfChartSeries {
     effectiveDataSpecId: "",
     effectiveYAxisAssignment: 0,
     color: "",
+    id: "",
   };
 }
 
@@ -6196,6 +6205,9 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     }
     if (message.color !== "") {
       writer.uint32(82).string(message.color);
+    }
+    if (message.id !== "") {
+      writer.uint32(90).string(message.id);
     }
     return writer;
   },
@@ -6287,6 +6299,14 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
           message.color = reader.string();
           continue;
         }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6314,6 +6334,7 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
         ? perfChartSeries_YAxisAssignmentFromJSON(object.effectiveYAxisAssignment)
         : 0,
       color: isSet(object.color) ? globalThis.String(object.color) : "",
+      id: isSet(object.id) ? globalThis.String(object.id) : "",
     };
   },
 
@@ -6349,6 +6370,9 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     if (message.color !== "") {
       obj.color = message.color;
     }
+    if (message.id !== "") {
+      obj.id = message.id;
+    }
     return obj;
   },
 
@@ -6367,6 +6391,7 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     message.effectiveDataSpecId = object.effectiveDataSpecId ?? "";
     message.effectiveYAxisAssignment = object.effectiveYAxisAssignment ?? 0;
     message.color = object.color ?? "";
+    message.id = object.id ?? "";
     return message;
   },
 };

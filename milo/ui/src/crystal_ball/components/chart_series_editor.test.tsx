@@ -131,6 +131,7 @@ describe('ChartSeriesEditor', () => {
     const updatedSeries = defaultProps.onUpdateSeries.mock.lastCall[0];
     expect(updatedSeries.length).toBe(1);
     expect(updatedSeries[0]).toMatchObject({
+      id: expectedMockUUID,
       displayName: `series-${expectedMockUUID}`,
       metricField: '',
       dataSpecId: 'test-spec-id',

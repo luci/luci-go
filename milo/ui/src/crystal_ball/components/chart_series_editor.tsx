@@ -99,8 +99,10 @@ export function ChartSeriesEditor({
   isLoadingFilterColumns,
 }: ChartSeriesEditorProps) {
   const handleAddSeries = () => {
+    const id = crypto.randomUUID();
     const newSeries: PerfChartSeries = PerfChartSeries.fromPartial({
-      displayName: `series-${crypto.randomUUID()}`,
+      id,
+      displayName: `series-${id}`,
       metricField: '',
       dataSpecId: dataSpecId,
       color: generateColor(series.length),
@@ -151,7 +153,7 @@ export function ChartSeriesEditor({
       }}
     >
       {series.map((s, index) => {
-        const key = `series-${index}`;
+        const key = s.id ?? index;
         return (
           <ChartSeriesItem
             key={key}
