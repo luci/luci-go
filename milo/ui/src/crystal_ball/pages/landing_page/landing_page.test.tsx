@@ -19,7 +19,9 @@ import { TopBarProvider } from '@/crystal_ball/components/layout/top_bar_provide
 import {
   useCreateDashboardWorkflow,
   useDeleteDashboardState,
+  useGenerateDashboardWorkflow,
   useListDashboardStatesInfinite,
+  useSuggestMeasurementFilterValues,
   useUndeleteDashboardState,
 } from '@/crystal_ball/hooks';
 import { LandingPage } from '@/crystal_ball/pages/landing_page';
@@ -27,6 +29,7 @@ import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import {
   createMockInfiniteQueryResult,
   createMockMutationResult,
+  createMockQueryResult,
 } from '@/crystal_ball/tests';
 import { DashboardState } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -35,7 +38,9 @@ jest.mock('@/crystal_ball/hooks', () => ({
   useCreateDashboardState: jest.fn(),
   useCreateDashboardWorkflow: jest.fn(),
   useDeleteDashboardState: jest.fn(),
+  useGenerateDashboardWorkflow: jest.fn(),
   useListDashboardStatesInfinite: jest.fn(),
+  useSuggestMeasurementFilterValues: jest.fn(),
   useUndeleteDashboardState: jest.fn(),
 }));
 
@@ -85,6 +90,17 @@ describe('<LandingPage />', () => {
       errorMsg: '',
       setErrorMsg: jest.fn(),
     });
+    jest.mocked(useGenerateDashboardWorkflow).mockReturnValue({
+      generateDashboard: jest.fn(),
+      isPending: false,
+      errorMsg: '',
+      setErrorMsg: jest.fn(),
+    });
+    jest.mocked(useSuggestMeasurementFilterValues).mockReturnValue(
+      createMockQueryResult({
+        values: [],
+      }),
+    );
     jest.mocked(useDeleteDashboardState).mockReturnValue(
       createMockMutationResult({
         mutateAsync: jest.fn(),
@@ -143,6 +159,31 @@ describe('<LandingPage />', () => {
 
     expect(
       await screen.findByRole('dialog', { name: /Create New Dashboard/i }),
+    ).toBeVisible();
+  });
+
+  test('opens Generate Dashboard modal when clicking Generate Dashboard', async () => {
+    render(
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: [CRYSTAL_BALL_ROUTES.LANDING],
+        }}
+        mountedPath={CRYSTAL_BALL_ROUTES.LANDING}
+      >
+        <TopBarProvider>
+          <TopBar />
+          <LandingPage />
+        </TopBarProvider>
+      </FakeContextProvider>,
+    );
+
+    const generateButton = screen.getByRole('button', {
+      name: /Generate Dashboard/i,
+    });
+    fireEvent.click(generateButton);
+
+    expect(
+      await screen.findByRole('dialog', { name: /Generate Dashboard/i }),
     ).toBeVisible();
   });
 
@@ -224,6 +265,58 @@ describe('<LandingPage />', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith(
         CRYSTAL_BALL_ROUTES.DASHBOARD_DETAIL('newly-created-id'),
+      );
+    });
+  });
+
+  test('submits generate dashboard form', async () => {
+    const mockGenerateDashboard = jest.fn(async (_data, onSuccess) => {
+      onSuccess?.();
+    });
+    jest.mocked(useGenerateDashboardWorkflow).mockReturnValue({
+      generateDashboard: mockGenerateDashboard,
+      isPending: false,
+      errorMsg: '',
+      setErrorMsg: jest.fn(),
+    });
+
+    render(
+      <FakeContextProvider
+        routerOptions={{
+          initialEntries: [CRYSTAL_BALL_ROUTES.LANDING],
+        }}
+        mountedPath={CRYSTAL_BALL_ROUTES.LANDING}
+      >
+        <TopBarProvider>
+          <TopBar />
+          <LandingPage />
+        </TopBarProvider>
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /Generate Dashboard/i }),
+    );
+
+    const dialog = await screen.findByRole('dialog', {
+      name: /Generate Dashboard/i,
+    });
+    expect(dialog).toBeVisible();
+
+    const promptInput = screen.getByLabelText(
+      /What kind of dashboard do you want?/i,
+    );
+    fireEvent.change(promptInput, { target: { value: 'Cold startup times' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Generate/i }));
+
+    await waitFor(() => {
+      expect(mockGenerateDashboard).toHaveBeenCalledWith(
+        {
+          prompt: 'Cold startup times',
+          metricKeys: [],
+        },
+        expect.any(Function),
       );
     });
   });

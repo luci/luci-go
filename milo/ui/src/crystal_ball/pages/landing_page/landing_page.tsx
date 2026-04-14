@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, AutoAwesome } from '@mui/icons-material';
 import { Button, Box, Tab, Tabs } from '@mui/material';
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
@@ -20,10 +20,14 @@ import { useNavigate } from 'react-router';
 import {
   DashboardDialog,
   DashboardListTable,
+  GenerateDashboardDialog,
   RequireLogin,
   useTopBarConfig,
 } from '@/crystal_ball/components';
-import { useCreateDashboardWorkflow } from '@/crystal_ball/hooks';
+import {
+  useCreateDashboardWorkflow,
+  useGenerateDashboardWorkflow,
+} from '@/crystal_ball/hooks';
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
 import { extractIdFromName } from '@/crystal_ball/utils';
 import { DashboardState } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
@@ -36,6 +40,7 @@ export function LandingPage() {
 
   const [currentTab, setCurrentTab] = useState(0);
   const [isDialogsOpen, setIsDialogsOpen] = useState(false);
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
 
   const {
     createDashboard,
@@ -43,6 +48,13 @@ export function LandingPage() {
     errorMsg: createErrorMsg,
     setErrorMsg: setCreateErrorMsg,
   } = useCreateDashboardWorkflow();
+
+  const {
+    generateDashboard,
+    isPending: isGenerating,
+    errorMsg: generateErrorMsg,
+    setErrorMsg: setGenerateErrorMsg,
+  } = useGenerateDashboardWorkflow();
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
@@ -63,6 +75,16 @@ export function LandingPage() {
     [setIsDialogsOpen],
   );
 
+  const handleOpenGenerateDialog = useCallback(() => {
+    setGenerateErrorMsg('');
+    setIsGenerateDialogOpen(true);
+  }, [setGenerateErrorMsg]);
+
+  const handleCloseGenerateDialog = useCallback(
+    () => setIsGenerateDialogOpen(false),
+    [setIsGenerateDialogOpen],
+  );
+
   const handleCreate = async (data: {
     displayName: string;
     description: string;
@@ -81,6 +103,13 @@ export function LandingPage() {
     () => (
       <Box sx={{ display: 'flex', gap: 2 }}>
         <Button
+          variant="outlined"
+          startIcon={<AutoAwesome />}
+          onClick={handleOpenGenerateDialog}
+        >
+          Generate Dashboard
+        </Button>
+        <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleOpenDialog}
@@ -89,7 +118,7 @@ export function LandingPage() {
         </Button>
       </Box>
     ),
-    [handleOpenDialog],
+    [handleOpenDialog, handleOpenGenerateDialog],
   );
 
   useTopBarConfig(null, actions);
@@ -122,6 +151,15 @@ export function LandingPage() {
         onSubmit={handleCreate}
         isPending={isCreating}
         errorMsg={createErrorMsg}
+      />
+      <GenerateDashboardDialog
+        open={isGenerateDialogOpen}
+        onClose={handleCloseGenerateDialog}
+        onSubmit={async (data) => {
+          await generateDashboard(data, handleCloseGenerateDialog);
+        }}
+        isPending={isGenerating}
+        errorMsg={generateErrorMsg}
       />
     </Box>
   );
