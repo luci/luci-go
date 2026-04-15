@@ -123,7 +123,7 @@ func TestResultMessages(t testing.TB, trs []*pb.TestResult) []*spanner.Mutation 
 		if pbutil.IsLegacyTestResultName(tr.Name) {
 			var err error
 			var invIDString string
-			invIDString, testID, resultID, err = pbutil.ParseLegacyTestResultName(tr.Name)
+			invIDString, testID, resultID, err = pbutil.ParseLegacyTestResultName(tr.Name, pbutil.QuerySideTestIDLimitCallback)
 			assert.Loosely(t, err, should.BeNil, truth.LineContext())
 			invID = invocations.ID(invIDString)
 		} else {
@@ -207,7 +207,7 @@ func TestResultMessagesLegacy(t testing.TB, trs []*pb.TestResult) []*spanner.Mut
 
 	ms := make([]*spanner.Mutation, len(trs))
 	for i, tr := range trs {
-		invID, testID, resultID, err := pbutil.ParseLegacyTestResultName(tr.Name)
+		invID, testID, resultID, err := pbutil.ParseLegacyTestResultName(tr.Name, pbutil.QuerySideTestIDLimitCallback)
 		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 		mutMap := map[string]any{

@@ -31,6 +31,14 @@ import (
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
+// CompiledTestIdEntry is a compiled version of TestIdEntry.
+type CompiledTestIdEntry struct {
+	ModuleName        string
+	CoarseName        string
+	FineName          string
+	ModuleNamePattern *regexp.Regexp
+}
+
 // CompiledServiceConfig is a copy of service configuration with
 // regular expression pre-compiled.
 // This object is shared between multiple request handlers and
@@ -46,6 +54,8 @@ type CompiledServiceConfig struct {
 	ProducerSystems map[string]*producersystems.ProducerSystem
 	// The compiled android build system configuration.
 	AndroidBuild *androidbuild.Config
+	// The compiled test ID allowlist for higher limits.
+	TestIDsWithHigherLimit []CompiledTestIdEntry
 }
 
 // NewCompiledServiceConfig compiles the given raw service config
@@ -76,12 +86,31 @@ func NewCompiledServiceConfig(cfg *configpb.Config, revision string) (*CompiledS
 		return nil, err
 	}
 
+	compiledTestIds := make([]CompiledTestIdEntry, 0, len(cfg.TestIdsWithHigherLimit))
+	for _, entry := range cfg.TestIdsWithHigherLimit {
+		compiledEntry := CompiledTestIdEntry{
+			ModuleName: entry.ModuleName,
+			CoarseName: entry.CoarseName,
+			FineName:   entry.FineName,
+		}
+		if entry.ModuleNamePattern != "" {
+			var err error
+			compiledEntry.ModuleNamePattern, err = regexp.Compile(entry.ModuleNamePattern)
+			if err != nil {
+				// This should never happen as the configuration has been validated.
+				return nil, errors.Fmt("could not compile module name pattern %q: %w", entry.ModuleNamePattern, err)
+			}
+		}
+		compiledTestIds = append(compiledTestIds, compiledEntry)
+	}
+
 	return &CompiledServiceConfig{
-		Config:          cfg,
-		Revision:        revision,
-		Schemes:         compiledSchemes,
-		ProducerSystems: compiledProducerSystems,
-		AndroidBuild:    androidBuild,
+		Config:                 cfg,
+		Revision:               revision,
+		Schemes:                compiledSchemes,
+		ProducerSystems:        compiledProducerSystems,
+		AndroidBuild:           androidBuild,
+		TestIDsWithHigherLimit: compiledTestIds,
 	}, nil
 }
 
@@ -164,4 +193,28 @@ func Service(ctx context.Context) (*CompiledServiceConfig, error) {
 		return nil, err
 	}
 	return result.(*CompiledServiceConfig), nil
+}
+
+// TestIDLimits returns the validation limits for a given base test identifier.
+func (c *CompiledServiceConfig) TestIDLimits(id pbutil.BaseTestIdentifier) pbutil.TestIDValidationLimits {
+	for _, entry := range c.TestIDsWithHigherLimit {
+		matched := true
+		if entry.ModuleName != "" && entry.ModuleName != id.ModuleName {
+			matched = false
+		}
+		if matched && entry.ModuleNamePattern != nil && !entry.ModuleNamePattern.MatchString(id.ModuleName) {
+			matched = false
+		}
+		if matched && entry.CoarseName != "" && entry.CoarseName != id.CoarseName {
+			matched = false
+		}
+		if matched && entry.FineName != "" && entry.FineName != id.FineName {
+			matched = false
+		}
+
+		if matched {
+			return pbutil.HigherTestIDValidationLimits
+		}
+	}
+	return pbutil.DefaultTestIDValidationLimits
 }

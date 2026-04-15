@@ -97,14 +97,14 @@ type ValidateToScheme func(id BaseTestIdentifier) error
 //
 // For full valdiation, supply a validateToScheme function that validates the test ID
 // matches configured scheme. Otherwise, leave it nil.
-func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb.TestResult) error {
+func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, getLimits TestIDValidationLimitsCallback, tr *pb.TestResult) error {
 	if tr == nil {
 		return validate.Unspecified()
 	}
 	if tr.TestIdStructured == nil && tr.TestId != "" {
 		// For backwards compatibility, we still accept legacy uploaders setting
 		// the test_id and variant fields (even though they are officially OUTPUT_ONLY now).
-		testID, err := ParseAndValidateTestID(tr.TestId)
+		testID, err := ParseAndValidateTestID(tr.TestId, getLimits)
 		if err != nil {
 			return errors.Fmt("test_id: %w", err)
 		}
@@ -126,7 +126,7 @@ func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb
 		// The TestId and Variant fields are treated as output only as per
 		// the API spec and should be ignored. Instead read from the TestIdStructured field.
 
-		if err := ValidateStructuredTestIdentifierForStorage(tr.TestIdStructured); err != nil {
+		if err := ValidateStructuredTestIdentifierForStorage(tr.TestIdStructured, getLimits); err != nil {
 			return errors.Fmt("test_id_structured: %w", err)
 		}
 		if validateToScheme != nil {
@@ -210,7 +210,7 @@ func ValidateTestResult(now time.Time, validateToScheme ValidateToScheme, tr *pb
 		return errors.Fmt("tags: %w", err)
 	}
 	if tr.TestMetadata != nil {
-		if err := ValidateTestMetadata(tr.TestMetadata); err != nil {
+		if err := ValidateTestMetadata(tr.TestMetadata, getLimits); err != nil {
 			return errors.Fmt("test_metadata: %w", err)
 		}
 	}
@@ -245,7 +245,7 @@ func ValidateResultID(resultID string) error {
 // ValidateLegacyTestResultName returns a non-nil error if name is an
 // invalid legacy test result name.
 func ValidateLegacyTestResultName(name string) error {
-	_, _, _, err := ParseLegacyTestResultName(name)
+	_, _, _, err := ParseLegacyTestResultName(name, QuerySideTestIDLimitCallback)
 	return err
 }
 
@@ -309,7 +309,7 @@ func ValidateTestResultStatusV2(s pb.TestResult_Status) error {
 }
 
 // ValidateTestMetadata returns a non-nil error if tmd is invalid.
-func ValidateTestMetadata(tmd *pb.TestMetadata) error {
+func ValidateTestMetadata(tmd *pb.TestMetadata, getLimits TestIDValidationLimitsCallback) error {
 	if len(tmd.Name) > maxLenTestMetadataName {
 		return errors.Fmt("name: exceeds the maximum size of %d bytes", maxLenTestMetadataName)
 	}
@@ -332,7 +332,7 @@ func ValidateTestMetadata(tmd *pb.TestMetadata) error {
 		}
 	}
 	if tmd.PreviousTestId != "" {
-		if err := ValidateTestID(tmd.PreviousTestId); err != nil {
+		if err := ValidateTestID(tmd.PreviousTestId, getLimits); err != nil {
 			return errors.Fmt("previous_test_id: %w", err)
 		}
 	}
@@ -637,7 +637,7 @@ func ValidateTestResultSkipReason(status pb.TestStatus, reason pb.SkipReason) er
 
 // ParseLegacyTestResultName extracts the invocation ID, unescaped test id, and
 // result ID.
-func ParseLegacyTestResultName(name string) (invID, testID, resultID string, err error) {
+func ParseLegacyTestResultName(name string, getLimits TestIDValidationLimitsCallback) (invID, testID, resultID string, err error) {
 	if name == "" {
 		err = validate.Unspecified()
 		return
@@ -654,7 +654,7 @@ func ParseLegacyTestResultName(name string) (invID, testID, resultID string, err
 		return
 	}
 
-	if ve := ValidateTestID(unescapedTestID); ve != nil {
+	if ve := ValidateTestID(unescapedTestID, getLimits); ve != nil {
 		err = errors.Fmt("test id %q: %w", unescapedTestID, ve)
 		return
 	}
@@ -707,7 +707,7 @@ func unescapeAndValidateTestID(escaped string) (string, error) {
 		return "", errors.Fmt("%q: %w", escaped, err)
 	}
 
-	if err := ValidateTestID(unescaped); err != nil {
+	if err := ValidateTestID(unescaped, QuerySideTestIDLimitCallback); err != nil {
 		return "", errors.Fmt("%q: %w", unescaped, err)
 	}
 

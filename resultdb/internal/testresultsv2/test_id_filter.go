@@ -67,10 +67,11 @@ func (s *TestIDFieldBackend) RestrictionQuery(restriction aip160.RestrictionCont
 	switch restriction.Comparator {
 	case "=", "!=":
 		negated := restriction.Comparator == "!="
-		testID, err := pbutil.ParseAndValidateTestID(argValueUnsafe)
+		testID, err := pbutil.ParseAndValidateTestID(argValueUnsafe, pbutil.QuerySideTestIDLimitCallback)
 		if err != nil {
 			return "", fmt.Errorf("argument for field %q: %w", restriction.FieldPath.String(), err)
 		}
+
 		result := fmt.Sprintf("(%s = %s AND %s = %s AND %s = %s AND %s = %s AND %s = %s)",
 			g.ColumnReference(s.columns.ModuleName), g.BindString(testID.ModuleName),
 			g.ColumnReference(s.columns.ModuleScheme), g.BindString(testID.ModuleScheme),

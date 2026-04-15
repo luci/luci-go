@@ -30,7 +30,7 @@ import (
 )
 
 func verifyGetTestResultPermission(ctx context.Context, resultName string) error {
-	invID, _, _, err := pbutil.ParseLegacyTestResultName(resultName)
+	invID, _, _, err := pbutil.ParseLegacyTestResultName(resultName, pbutil.QuerySideTestIDLimitCallback)
 	if err != nil {
 		return appstatus.BadRequest(errors.Fmt("name: %w", err))
 	}

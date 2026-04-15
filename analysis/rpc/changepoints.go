@@ -414,7 +414,7 @@ func validateGroupKey(key *pb.QueryChangepointsInGroupRequest_ChangepointIdentif
 	if key == nil {
 		return errors.New("unspecified")
 	}
-	if err := rdbpbutil.ValidateTestID(key.TestId); err != nil {
+	if err := rdbpbutil.ValidateTestID(key.TestId, rdbpbutil.QuerySideTestIDLimitCallback); err != nil {
 		return errors.Fmt("test_id: %w", err)
 	}
 	if err := pbutil.ValidateVariantHash(key.VariantHash); err != nil {

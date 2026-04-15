@@ -101,16 +101,16 @@ func TestQueryTestMetadata(t *testing.T) {
 
 			t.Run("Predicate", func(t *ftt.Test) {
 				t.Run("Invalid test ID", func(t *ftt.Test) {
-					request.Predicate.TestIds = []string{strings.Repeat("a", 600)}
+					request.Predicate.TestIds = []string{strings.Repeat("a", 15001)}
 					_, err := srv.QueryTestMetadata(ctx, request)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike(`predicate: test_ids[0]: longer than 512 bytes`))
+					assert.Loosely(t, err, should.ErrLike(`predicate: test_ids[0]: longer than 15000 bytes`))
 				})
 				t.Run("Invalid previous test ID", func(t *ftt.Test) {
-					request.Predicate.PreviousTestIds = []string{strings.Repeat("a", 600)}
+					request.Predicate.PreviousTestIds = []string{strings.Repeat("a", 15001)}
 					_, err := srv.QueryTestMetadata(ctx, request)
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike(`predicate: previous_test_ids[0]: longer than 512 bytes`))
+					assert.Loosely(t, err, should.ErrLike(`predicate: previous_test_ids[0]: longer than 15000 bytes`))
 				})
 				t.Run("Both test ID and previous test ID", func(t *ftt.Test) {
 					request.Predicate.TestIds = []string{"test"}

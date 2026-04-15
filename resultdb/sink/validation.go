@@ -32,6 +32,8 @@ import (
 //
 // Note: This will not pick up all errors on results uploaded to ResultDB,
 // but it will pick up a significant set.
+//
+// TODO(b/446175448): Support dynamic limits in sink if needed. Currently using default limits.
 func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID bool) (err error) {
 	if msg == nil {
 		return errors.New("unspecified")
@@ -41,7 +43,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 	// Note: Some clients report empty test ID (for suites that have only one result),
 	// expecting a valid test ID to come from concatenation with a test prefix.
 	if msg.TestId != "" {
-		if err := pbutil.ValidateTestID(msg.TestId); err != nil {
+		if err := pbutil.ValidateTestID(msg.TestId, pbutil.DefaultTestIDLimitCallback); err != nil {
 			return errors.Fmt("test_id: %w", err)
 		}
 	}
@@ -62,7 +64,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 			CaseName:     pbutil.EncodeCaseName(msg.TestIdStructured.CaseNameComponents...),
 		}
 
-		if err := pbutil.ValidateBaseTestIdentifier(baseID); err != nil {
+		if err := pbutil.ValidateBaseTestIdentifier(baseID, pbutil.DefaultTestIDLimitCallback); err != nil {
 			return errors.Fmt("test_id_structured: %w", err)
 		}
 	}
@@ -95,10 +97,11 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 		return errors.Fmt("artifacts: %w", err)
 	}
 	if msg.TestMetadata != nil {
-		if err := pbutil.ValidateTestMetadata(msg.TestMetadata); err != nil {
+		if err := pbutil.ValidateTestMetadata(msg.TestMetadata, pbutil.DefaultTestIDLimitCallback); err != nil {
 			return errors.Fmt("test_metadata: %w", err)
 		}
 	}
+
 	if msg.FailureReason != nil {
 		useStrictValidation := msg.StatusV2 != resultpb.TestResult_STATUS_UNSPECIFIED
 		if err := pbutil.ValidateFailureReason(msg.FailureReason, useStrictValidation); err != nil {

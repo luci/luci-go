@@ -379,9 +379,11 @@ func parseStreamingArtifactUploadRequest(c *router.Context, maxStreamLength int6
 
 	// Validate the test ID and result ID.
 	if testIDStructured != nil {
-		if err := pbutil.ValidateStructuredTestIdentifierForStorage(testIDStructured); err != nil {
+		getLimits := cfg.TestIDLimits
+		if err := pbutil.ValidateStructuredTestIdentifierForStorage(testIDStructured, getLimits); err != nil {
 			return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: test_id_structured: %s", err)
 		}
+
 		testIDBase := pbutil.ExtractBaseTestIdentifier(testIDStructured)
 		if err := validateTestIDToScheme(cfg, testIDBase); err != nil {
 			return nil, appstatus.Errorf(codes.InvalidArgument, "artifact: test_id_structured: %s", err)

@@ -140,15 +140,16 @@ func ValidateArtifactPredicate(p *pb.ArtifactPredicate, isRootInvocationQuery bo
 // invalid.
 func ValidateTestMetadataPredicate(p *pb.TestMetadataPredicate) error {
 	for i, testID := range p.GetTestIds() {
-		if err := ValidateTestID(testID); err != nil {
+		if err := ValidateTestID(testID, QuerySideTestIDLimitCallback); err != nil {
 			return errors.Fmt("test_ids[%v]: %w", i, err)
 		}
 	}
 	for i, testID := range p.GetPreviousTestIds() {
-		if err := ValidateTestID(testID); err != nil {
+		if err := ValidateTestID(testID, QuerySideTestIDLimitCallback); err != nil {
 			return errors.Fmt("previous_test_ids[%v]: %w", i, err)
 		}
 	}
+
 	if len(p.GetTestIds()) > 0 && len(p.GetPreviousTestIds()) > 0 {
 		return errors.New("either test_ids or previous_test_ids may be specified; not both")
 	}

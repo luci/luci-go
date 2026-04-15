@@ -985,7 +985,7 @@ func validateBatchGetTestAnalysesRequest(req *pb.BatchGetTestAnalysesRequest) er
 		if tf.SourcePosition < 0 {
 			return errors.Fmt("test_variants[%v]: source_position: must not be negative", i)
 		}
-		if err := rdbpbutil.ValidateTestID(tf.TestId); err != nil {
+		if err := rdbpbutil.ValidateTestID(tf.TestId, rdbpbutil.QuerySideTestIDLimitCallback); err != nil {
 			return errors.Fmt("test_variants[%v].test_id: %w", i, err)
 		}
 		if err := util.ValidateVariantHash(tf.VariantHash); err != nil {

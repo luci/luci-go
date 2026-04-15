@@ -47,9 +47,51 @@ const LegacySchemeID = "legacy"
 // in the structured test ID space.
 const LegacyModuleName = "legacy"
 
+// TestIDValidationLimits defines the length limits for various components of a test ID.
+type TestIDValidationLimits struct {
+	MaxCoarseNameLength int
+	MaxFineNameLength   int
+	MaxCaseNameLength   int
+	MaxTotalLength      int
+}
+
+// DefaultTestIDValidationLimits are the default limits for test ID components.
+// This is best for URL compatibility and UI legibility
+// (e.g. encoded test IDs remain within 2048 character URL limit,
+// and test IDs are less likely to be truncated on UI.)
+var DefaultTestIDValidationLimits = TestIDValidationLimits{
+	MaxCoarseNameLength: 300,
+	MaxFineNameLength:   300,
+	MaxCaseNameLength:   512,
+	MaxTotalLength:      512,
+}
+
+// HigherTestIDValidationLimits are the relaxed limits for allowlisted tests.
+// (grandfathered AnTS tests).
+var HigherTestIDValidationLimits = TestIDValidationLimits{
+	MaxCoarseNameLength: 350,
+	MaxFineNameLength:   300,
+	MaxCaseNameLength:   15000,
+	MaxTotalLength:      15000,
+}
+
+// TestIDValidationLimitsCallback is a callback function that returns the validation limits
+// for a given base test identifier.
+type TestIDValidationLimitsCallback func(id BaseTestIdentifier) TestIDValidationLimits
+
+// DefaultTestIDLimitCallback is a callback that always returns DefaultTestIDValidationLimits.
+var DefaultTestIDLimitCallback TestIDValidationLimitsCallback = func(id BaseTestIdentifier) TestIDValidationLimits {
+	return DefaultTestIDValidationLimits
+}
+
+// QuerySideTestIDLimitCallback is a callback that always returns HigherTestIDValidationLimits.
+var QuerySideTestIDLimitCallback TestIDValidationLimitsCallback = func(id BaseTestIdentifier) TestIDValidationLimits {
+	return HigherTestIDValidationLimits
+}
+
 // ValidateTestID returns a non-nil error if testID is invalid.
-func ValidateTestID(testID string) error {
-	_, err := ParseAndValidateTestID(testID)
+func ValidateTestID(testID string, getLimits TestIDValidationLimitsCallback) error {
+	_, err := ParseAndValidateTestID(testID, getLimits)
 	return err
 }
 
@@ -59,7 +101,7 @@ func ValidateFlatTestIdentifierForQuery(id *pb.FlatTestIdentifier) error {
 	if id == nil {
 		return validate.Unspecified()
 	}
-	if err := ValidateTestID(id.TestId); err != nil {
+	if err := ValidateTestID(id.TestId, QuerySideTestIDLimitCallback); err != nil {
 		return errors.Fmt("test_id: %w", err)
 	}
 	if err := ValidateVariantHash(id.VariantHash); err != nil {
@@ -90,12 +132,13 @@ type BaseTestIdentifier struct {
 //
 // See TestVariantIdentifier in common.proto for more details about
 // structured test identifiers.
-func ParseAndValidateTestID(testID string) (BaseTestIdentifier, error) {
+func ParseAndValidateTestID(testID string, getLimits TestIDValidationLimitsCallback) (BaseTestIdentifier, error) {
 	// Perform some basic validation before we try to parse the ID.
 	if testID == "" {
 		return BaseTestIdentifier{}, validate.Unspecified()
 	}
-	if err := ValidateUTF8Printable(testID, 512, ValidationModeLoose); err != nil {
+	// Use the maximum possible limit for initial UTF-8 check.
+	if err := ValidateUTF8Printable(testID, HigherTestIDValidationLimits.MaxTotalLength, ValidationModeLoose); err != nil {
 		return BaseTestIdentifier{}, err
 	}
 
@@ -103,7 +146,7 @@ func ParseAndValidateTestID(testID string) (BaseTestIdentifier, error) {
 	if err != nil {
 		return BaseTestIdentifier{}, err
 	}
-	err = ValidateBaseTestIdentifier(id)
+	err = ValidateBaseTestIdentifier(id, getLimits)
 	return id, err
 }
 
@@ -395,7 +438,7 @@ func VariantHashFromStructuredTestIdentifier(id *pb.TestIdentifier) string {
 // ParseStructuredTestIdentifierForInput constructs a test identifier from the
 // given flat test ID and variant. OUTPUT_ONLY fields are NOT set.
 func ParseStructuredTestIdentifierForInput(testID string, variant *pb.Variant) (*pb.TestIdentifier, error) {
-	testIdentifier, err := ParseAndValidateTestID(testID)
+	testIdentifier, err := ParseAndValidateTestID(testID, QuerySideTestIDLimitCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -435,11 +478,11 @@ func PopulateStructuredTestIdentifierHashes(id *pb.TestIdentifier) {
 // N.B. This does not validate the test ID against the configured schemes; this
 // should also be applied at upload time. (And must not be applied at other times
 // to ensure old tests uploaded under old schemes continue to be queryable.)
-func ValidateStructuredTestIdentifierForStorage(id *pb.TestIdentifier) error {
+func ValidateStructuredTestIdentifierForStorage(id *pb.TestIdentifier, getLimits TestIDValidationLimitsCallback) error {
 	if id == nil {
 		return validate.Unspecified()
 	}
-	if err := ValidateBaseTestIdentifier(ExtractBaseTestIdentifier(id)); err != nil {
+	if err := ValidateBaseTestIdentifier(ExtractBaseTestIdentifier(id), getLimits); err != nil {
 		return err
 	}
 
@@ -495,7 +538,7 @@ func validatePartialStructuredTestIdentifierForQuery(id *pb.TestIdentifier, leve
 	if id == nil {
 		return validate.Unspecified()
 	}
-	if err := validatePartialBaseTestIdentifier(ExtractBaseTestIdentifier(id), level); err != nil {
+	if err := validatePartialBaseTestIdentifier(ExtractBaseTestIdentifier(id), level, QuerySideTestIDLimitCallback); err != nil {
 		return err
 	}
 
@@ -539,14 +582,15 @@ func validatePartialStructuredTestIdentifierForQuery(id *pb.TestIdentifier, leve
 // ValidateBaseTestIdentifier validates a structured base test identifier.
 //
 // Errors are annotated using field names in snake_case.
-func ValidateBaseTestIdentifier(id BaseTestIdentifier) error {
-	return validatePartialBaseTestIdentifier(id, pb.AggregationLevel_CASE)
+func ValidateBaseTestIdentifier(id BaseTestIdentifier, getLimits TestIDValidationLimitsCallback) error {
+	return validatePartialBaseTestIdentifier(id, pb.AggregationLevel_CASE, getLimits)
 }
 
 // validatePartialBaseTestIdentifier validates a (possibly) partial base test identifier.
 //
 // Errors are annotated using field names in snake_case.
-func validatePartialBaseTestIdentifier(id BaseTestIdentifier, level pb.AggregationLevel) error {
+func validatePartialBaseTestIdentifier(id BaseTestIdentifier, level pb.AggregationLevel, getLimits TestIDValidationLimitsCallback) error {
+	limits := getLimits(id)
 	// Set to true if the the module name is "legacy". Only use this variable
 	// if the test identifier is at least a module-level prefix.
 	isLegacyModule := id.ModuleName == LegacyModuleName
@@ -574,7 +618,7 @@ func validatePartialBaseTestIdentifier(id BaseTestIdentifier, level pb.Aggregati
 	// Validate coarse name for coarse, fine or case-level-prefix.
 	if level >= pb.AggregationLevel_COARSE {
 		// Coarse name
-		if err := ValidateUTF8PrintableStrict(id.CoarseName, 300); err != nil {
+		if err := ValidateUTF8PrintableStrict(id.CoarseName, limits.MaxCoarseNameLength); err != nil {
 			return errors.Fmt("coarse_name: %w", err)
 		}
 		if err := validateCoarseOrFineNameLeadingCharacter(id.CoarseName); err != nil {
@@ -595,7 +639,7 @@ func validatePartialBaseTestIdentifier(id BaseTestIdentifier, level pb.Aggregati
 	// Validate fine name for fine or case-level-prefix.
 	if level >= pb.AggregationLevel_FINE {
 		// Fine name
-		if err := ValidateUTF8PrintableStrict(id.FineName, 300); err != nil {
+		if err := ValidateUTF8PrintableStrict(id.FineName, limits.MaxFineNameLength); err != nil {
 			return errors.Fmt("fine_name: %w", err)
 		}
 		if err := validateCoarseOrFineNameLeadingCharacter(id.FineName); err != nil {
@@ -629,7 +673,7 @@ func validatePartialBaseTestIdentifier(id BaseTestIdentifier, level pb.Aggregati
 			if strings.HasPrefix(id.CaseName, ":") {
 				return errors.Fmt("case_name: must not start with ':' for tests in the %q module", LegacyModuleName)
 			}
-			if err := ValidateUTF8Printable(id.CaseName, 512, ValidationModeLoose); err != nil {
+			if err := ValidateUTF8Printable(id.CaseName, limits.MaxCaseNameLength, ValidationModeLoose); err != nil {
 				return errors.Fmt("case_name: %w", err)
 			}
 			// This is a lightweight version of validateCaseNameNotReserved for legacy tests
@@ -639,7 +683,7 @@ func validatePartialBaseTestIdentifier(id BaseTestIdentifier, level pb.Aggregati
 			}
 		} else {
 			// Additional validation for natively structured test identifiers.
-			if err := ValidateUTF8PrintableStrict(id.CaseName, 512); err != nil {
+			if err := ValidateUTF8PrintableStrict(id.CaseName, limits.MaxCaseNameLength); err != nil {
 				return errors.Fmt("case_name: %w", err)
 			}
 			if err := validateCaseNameNonLegacy(id.CaseName); err != nil {
@@ -648,9 +692,9 @@ func validatePartialBaseTestIdentifier(id BaseTestIdentifier, level pb.Aggregati
 		}
 
 		// Ensure that when we encode the structured test ID to a flat ID,
-		// it is less than 512 bytes.
-		if sizeEscapedTestID(id) > 512 {
-			return errors.New("test ID exceeds 512 bytes in encoded form")
+		// it is less than the limit.
+		if sizeEscapedTestID(id) > limits.MaxTotalLength {
+			return errors.Fmt("test ID exceeds %d bytes in encoded form", limits.MaxTotalLength)
 		}
 	} else {
 		// Should be unset for fine, coarse, module or invocation-level prefix.

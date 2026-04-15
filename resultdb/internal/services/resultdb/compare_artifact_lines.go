@@ -350,7 +350,7 @@ func decodePageToken(tok string) (*pageToken, error) {
 func constructPassingArtifactName(passingResultName string, isInvocationLevelArtifact bool, artifactID string) (string, error) {
 	if isInvocationLevelArtifact {
 		if pbutil.IsLegacyTestResultName(passingResultName) {
-			passInvID, _, _, err := pbutil.ParseLegacyTestResultName(passingResultName)
+			passInvID, _, _, err := pbutil.ParseLegacyTestResultName(passingResultName, pbutil.QuerySideTestIDLimitCallback)
 			if err != nil {
 				return "", appstatus.BadRequest(errors.Fmt("invalid legacy passing_result_name: %s: %w", passingResultName, err))
 			}

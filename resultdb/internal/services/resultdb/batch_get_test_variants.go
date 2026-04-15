@@ -52,7 +52,7 @@ func validateBatchGetTestVariantsRequest(in *pb.BatchGetTestVariantsRequest) err
 				return errors.Fmt("test_variants[%v]: variant_hash: may not be set at same time as test_id_structured", i)
 			}
 		} else if tvID.TestId != "" || tvID.VariantHash != "" {
-			if err := pbutil.ValidateTestID(tvID.TestId); err != nil {
+			if err := pbutil.ValidateTestID(tvID.TestId, pbutil.QuerySideTestIDLimitCallback); err != nil {
 				return errors.Fmt("test_variants[%v]: test_id: %w", i, err)
 			}
 			if err := pbutil.ValidateVariantHash(tvID.VariantHash); err != nil {

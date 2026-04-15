@@ -747,7 +747,8 @@ func validateTestResult(now time.Time, cfg *config.CompiledServiceConfig, tr *pb
 	validateToScheme := func(testID pbutil.BaseTestIdentifier) error {
 		return validateTestIDToScheme(cfg, testID)
 	}
-	if err := pbutil.ValidateTestResult(now, validateToScheme, tr); err != nil {
+	getLimits := cfg.TestIDLimits
+	if err := pbutil.ValidateTestResult(now, validateToScheme, getLimits, tr); err != nil {
 		return err
 	}
 	return nil

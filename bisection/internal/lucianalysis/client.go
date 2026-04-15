@@ -520,7 +520,7 @@ func (c *Client) TestIsUnexpectedConsistently(ctx context.Context, project strin
 
 func validateTestVerdictKeys(keys []TestVerdictKey) error {
 	for _, key := range keys {
-		if err := rdbpbutil.ValidateTestID(key.TestID); err != nil {
+		if err := rdbpbutil.ValidateTestID(key.TestID, rdbpbutil.QuerySideTestIDLimitCallback); err != nil {
 			return err
 		}
 		if err := util.ValidateVariantHash(key.VariantHash); err != nil {

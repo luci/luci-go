@@ -1433,11 +1433,11 @@ func TestRules(t *testing.T) {
 							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 						})
 						t.Run("invalid", func(t *ftt.Test) {
-							request.TestResult.TestId = strings.Repeat("a", 513)
+							request.TestResult.TestId = strings.Repeat("a", 15001)
 
 							_, err := srv.PrepareDefaults(ctx, request)
 							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-							assert.Loosely(t, err, should.ErrLike("test_result: test_id: longer than 512 bytes"))
+							assert.Loosely(t, err, should.ErrLike("test_result: test_id: longer than 15000 bytes"))
 						})
 					})
 					t.Run("failure reason", func(t *ftt.Test) {

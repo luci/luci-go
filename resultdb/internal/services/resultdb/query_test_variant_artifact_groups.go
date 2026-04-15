@@ -177,10 +177,11 @@ func validateTestIDMatcher(m *pb.IDMatcher, allowNonExactMatch bool) error {
 			return errors.Fmt("search by prefix is not allowed: %w", insufficientPermissionWithQueryFilter)
 		}
 		// ValidateTestID can also be used to validate test id prefix.
-		return pbutil.ValidateTestID(m.GetHasPrefix())
+		return pbutil.ValidateTestID(m.GetHasPrefix(), pbutil.QuerySideTestIDLimitCallback)
 	case *pb.IDMatcher_ExactEqual:
-		return pbutil.ValidateTestID(m.GetExactEqual())
+		return pbutil.ValidateTestID(m.GetExactEqual(), pbutil.QuerySideTestIDLimitCallback)
 	default:
+
 		return fmt.Errorf("has unexpected type %T", x)
 	}
 }

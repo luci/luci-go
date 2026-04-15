@@ -52,7 +52,7 @@ func TestLegacyTestResultName(t *testing.T) {
 	ftt.Run("ParseLegacyTestResultName", t, func(t *ftt.Test) {
 		t.Run("Parse", func(t *ftt.Test) {
 			invID, testID, resultID, err := ParseLegacyTestResultName(
-				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
+				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5", DefaultTestIDLimitCallback)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, invID, should.Equal("a"))
 			assert.Loosely(t, testID, should.Equal("ninja://chrome/test:foo_tests/BarTest.DoBaz"))
@@ -62,19 +62,19 @@ func TestLegacyTestResultName(t *testing.T) {
 		t.Run("Invalid", func(t *ftt.Test) {
 			t.Run(`has slashes`, func(t *ftt.Test) {
 				_, _, _, err := ParseLegacyTestResultName(
-					"invocations/inv/tests/ninja://test/results/result1")
+					"invocations/inv/tests/ninja://test/results/result1", DefaultTestIDLimitCallback)
 				assert.Loosely(t, err, should.ErrLike("does not match pattern"))
 			})
 
 			t.Run(`bad unescape`, func(t *ftt.Test) {
 				_, _, _, err := ParseLegacyTestResultName(
-					"invocations/a/tests/bad_hex_%gg/results/result1")
+					"invocations/a/tests/bad_hex_%gg/results/result1", DefaultTestIDLimitCallback)
 				assert.Loosely(t, err, should.ErrLike("test id"))
 			})
 
 			t.Run(`unescaped unprintable`, func(t *ftt.Test) {
 				_, _, _, err := ParseLegacyTestResultName(
-					"invocations/a/tests/unprintable_%07/results/result1")
+					"invocations/a/tests/unprintable_%07/results/result1", DefaultTestIDLimitCallback)
 				assert.Loosely(t, err, should.ErrLike("non-printable rune"))
 			})
 		})
@@ -162,7 +162,7 @@ func TestValidateTestResult(t *testing.T) {
 			return nil
 		}
 		validateTR := func(result *pb.TestResult) error {
-			return ValidateTestResult(now, validateToScheme, result)
+			return ValidateTestResult(now, validateToScheme, DefaultTestIDLimitCallback, result)
 		}
 
 		msg := validTestResult(now)

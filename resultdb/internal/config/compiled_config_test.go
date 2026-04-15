@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 )
 
@@ -124,4 +126,96 @@ func generateServiceConfig(uniqifier int) *configpb.Config {
 		},
 	}
 	return cfg
+}
+
+func TestTestIDLimits(t *testing.T) {
+	ftt.Run(`TestIDLimits`, t, func(t *ftt.Test) {
+		c := &CompiledServiceConfig{
+			TestIDsWithHigherLimit: []CompiledTestIdEntry{
+				{
+					ModuleName: "exact_module",
+					CoarseName: "exact_coarse",
+					FineName:   "exact_fine",
+				},
+				{
+					ModuleNamePattern: regexp.MustCompile(`^pattern_.*$`),
+					CoarseName:        "pattern_coarse",
+				},
+				{
+					ModuleName: "any_coarse_fine",
+				},
+				{
+					CoarseName: "any_module_fine",
+				},
+				{
+					FineName: "any_module_coarse",
+				},
+			},
+		}
+
+		callback := c.TestIDLimits
+
+		t.Run(`Exact match`, func(t *ftt.Test) {
+			id := pbutil.BaseTestIdentifier{
+				ModuleName: "exact_module",
+				CoarseName: "exact_coarse",
+				FineName:   "exact_fine",
+			}
+			assert.Loosely(t, callback(id), should.Match(pbutil.HigherTestIDValidationLimits))
+		})
+
+		t.Run(`Pattern match`, func(t *ftt.Test) {
+			id := pbutil.BaseTestIdentifier{
+				ModuleName: "pattern_module",
+				CoarseName: "pattern_coarse",
+			}
+			assert.Loosely(t, callback(id), should.Match(pbutil.HigherTestIDValidationLimits))
+		})
+
+		t.Run(`Any coarse and fine match`, func(t *ftt.Test) {
+			id := pbutil.BaseTestIdentifier{
+				ModuleName: "any_coarse_fine",
+				CoarseName: "something",
+				FineName:   "else",
+			}
+			assert.Loosely(t, callback(id), should.Match(pbutil.HigherTestIDValidationLimits))
+		})
+
+		t.Run(`Any module and fine match`, func(t *ftt.Test) {
+			id := pbutil.BaseTestIdentifier{
+				ModuleName: "something",
+				CoarseName: "any_module_fine",
+				FineName:   "else",
+			}
+			assert.Loosely(t, callback(id), should.Match(pbutil.HigherTestIDValidationLimits))
+		})
+
+		t.Run(`Any module and coarse match`, func(t *ftt.Test) {
+			id := pbutil.BaseTestIdentifier{
+				ModuleName: "something",
+				CoarseName: "else",
+				FineName:   "any_module_coarse",
+			}
+			assert.Loosely(t, callback(id), should.Match(pbutil.HigherTestIDValidationLimits))
+		})
+
+		t.Run(`Default limits when no match`, func(t *ftt.Test) {
+			id := pbutil.BaseTestIdentifier{
+				ModuleName: "nomatch",
+				CoarseName: "nomatch",
+				FineName:   "nomatch",
+			}
+			assert.Loosely(t, callback(id), should.Match(pbutil.DefaultTestIDValidationLimits))
+		})
+
+		t.Run(`Empty string in ID does not match non-empty in config`, func(t *ftt.Test) {
+			id := pbutil.BaseTestIdentifier{
+				ModuleName: "",
+				CoarseName: "exact_coarse",
+				FineName:   "exact_fine",
+			}
+			// Should not match the first entry because ModuleName is empty in ID but "exact_module" in config.
+			assert.Loosely(t, callback(id), should.Match(pbutil.DefaultTestIDValidationLimits))
+		})
+	})
 }

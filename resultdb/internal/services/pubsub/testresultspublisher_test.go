@@ -94,6 +94,7 @@ func createExpectedTR(b *testresults.Builder, rootInvID string, wuID string) *pb
 	if expectedTR.TestIdStructured == nil {
 		expectedTR.TestIdStructured, _ = pbutil.ParseStructuredTestIdentifierForOutput(expectedTR.TestId, expectedTR.Variant)
 	}
+
 	return expectedTR
 }
 

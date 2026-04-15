@@ -185,11 +185,9 @@ func unescapeAndValidateArtifactID(escaped string) (string, error) {
 	if err != nil {
 		return "", errors.Fmt("%q: %w", escaped, err)
 	}
-
 	if err := ValidateArtifactID(unescaped); err != nil {
 		return "", errors.Fmt("%q: %w", unescaped, err)
 	}
-
 	return unescaped, nil
 }
 

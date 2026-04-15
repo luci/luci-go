@@ -285,7 +285,7 @@ func ValidateSources(sources *pb.Sources) error {
 
 // ValidateTestID validates a test ID.
 func ValidateTestID(testID string) error {
-	return pbutil.ValidateTestID(testID)
+	return pbutil.ValidateTestID(testID, pbutil.QuerySideTestIDLimitCallback)
 }
 
 // ValidateStructuredTestIdentifierForQuery validates a structured test identifier

@@ -161,7 +161,7 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, batchLevelParent 
 			} else {
 				var invIDStr string
 				var err error
-				invIDStr, testID, resultID, err = pbutil.ParseLegacyTestResultName(req.Parent)
+				invIDStr, testID, resultID, err = pbutil.ParseLegacyTestResultName(req.Parent, pbutil.QuerySideTestIDLimitCallback)
 				if err != nil {
 					return nil, errors.Fmt("parent: not a valid work unit name, invocation name or test result name; got %q", req.Parent)
 				}
@@ -172,10 +172,11 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, batchLevelParent 
 
 	var testIDStructured *pb.TestIdentifier
 	if testID != "" {
-		testIDBase, err := pbutil.ParseAndValidateTestID(testID)
+		testIDBase, err := pbutil.ParseAndValidateTestID(testID, cfg.TestIDLimits)
 		if err != nil {
 			return nil, errors.Fmt("parent: encoded test id: %w", err)
 		}
+
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
 		if err := validateTestIDToScheme(cfg, testIDBase); err != nil {
@@ -199,7 +200,8 @@ func parseCreateArtifactRequest(req *pb.CreateArtifactRequest, batchLevelParent 
 		}
 
 		testIDBase := pbutil.ExtractBaseTestIdentifier(testIDToValidate)
-		if err := pbutil.ValidateStructuredTestIdentifierForStorage(testIDToValidate); err != nil {
+		getLimits := cfg.TestIDLimits
+		if err := pbutil.ValidateStructuredTestIdentifierForStorage(testIDToValidate, getLimits); err != nil {
 			return nil, errors.Fmt("artifact: test_id_structured: %w", err)
 		}
 		// Validate the test identifier meets the requirements of the scheme.

@@ -102,7 +102,7 @@ func validateQueryRecentPassesRequest(req *pb.QueryRecentPassesRequest) error {
 	if err := pbutil.ValidateProject(req.Project); err != nil {
 		return errors.Fmt("project: %w", err)
 	}
-	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+	if err := rdbpbutil.ValidateTestID(req.TestId, rdbpbutil.QuerySideTestIDLimitCallback); err != nil {
 		return errors.Fmt("test_id: %w", err)
 	}
 	if err := pbutil.ValidateVariantHash(req.VariantHash); err != nil {

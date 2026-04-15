@@ -189,7 +189,7 @@ func parseTestVariantBranchName(name string) (project, testID, variantHash, refH
 		return "", "", "", "", errors.Fmt("malformed test id: %w", err)
 	}
 
-	if err := rdbpbutil.ValidateTestID(testID); err != nil {
+	if err := rdbpbutil.ValidateTestID(testID, rdbpbutil.QuerySideTestIDLimitCallback); err != nil {
 		return "", "", "", "", errors.Fmt("test id %q: %w", testID, err)
 	}
 

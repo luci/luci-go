@@ -33,7 +33,7 @@ func StructuredTestIdentifier(testID string, variant *pb.Variant) (*bqpb.TestIde
 // StructuredTestIdentifierRDB constructs a BigQuery-format TestIdentifier from
 // a flat ResultDB test ID and variant combination.
 func StructuredTestIdentifierRDB(testID string, variant *rdbpb.Variant) (*bqpb.TestIdentifier, error) {
-	test, err := rdbpbutil.ParseAndValidateTestID(testID)
+	test, err := rdbpbutil.ParseAndValidateTestID(testID, rdbpbutil.QuerySideTestIDLimitCallback)
 	if err != nil {
 		return nil, errors.Fmt("parse test ID: %w", err)
 	}

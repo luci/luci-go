@@ -43,7 +43,7 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		// For backwards compatibility, we still accept legacy uploaders setting
 		// the test_id and variant or variant_hash fields (even though they are
 		// officially OUTPUT_ONLY now).
-		testID, err := pbutil.ParseAndValidateTestID(ex.TestId)
+		testID, err := pbutil.ParseAndValidateTestID(ex.TestId, cfg.TestIDLimits)
 		if err != nil {
 			return errors.Fmt("test_id: %w", err)
 		}
@@ -87,9 +87,11 @@ func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledService
 		// Note that TestIdStructured.ModuleVariantHash is also output only and should
 		// also be ignored.
 
-		if err := pbutil.ValidateStructuredTestIdentifierForStorage(ex.TestIdStructured); err != nil {
+		getLimits := cfg.TestIDLimits
+		if err := pbutil.ValidateStructuredTestIdentifierForStorage(ex.TestIdStructured, getLimits); err != nil {
 			return errors.Fmt("test_id_structured: %w", err)
 		}
+
 		// Validate the test identifier meets the requirements of the scheme.
 		// This is enforced only at upload time.
 		if err := validateTestIDToScheme(cfg, pbutil.ExtractBaseTestIdentifier(ex.TestIdStructured)); err != nil {

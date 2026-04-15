@@ -1455,7 +1455,7 @@ func estimateTestVariantSize(tv *pb.TestVariant) int {
 
 func legacyInvocationIDFromTestResultName(name string) (invocations.ID, error) {
 	if pbutil.IsLegacyTestResultName(name) {
-		id, _, _, err := pbutil.ParseLegacyTestResultName(name)
+		id, _, _, err := pbutil.ParseLegacyTestResultName(name, pbutil.QuerySideTestIDLimitCallback)
 		if err != nil {
 			return "", err
 		}

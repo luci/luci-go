@@ -81,7 +81,7 @@ func (s *resultDBServer) BatchGetTestVerdicts(ctx context.Context, req *pb.Batch
 		} else if tv.GetTestIdFlat() != nil {
 			testIdFlat := tv.GetTestIdFlat()
 			// Flat test ID. Parse it into a structured ID.
-			base, err := pbutil.ParseAndValidateTestID(testIdFlat.TestId)
+			base, err := pbutil.ParseAndValidateTestID(testIdFlat.TestId, pbutil.QuerySideTestIDLimitCallback)
 			if err != nil {
 				// This should not happen if validateBatchGetTestVerdictsRequest is correct,
 				// but check just in case.

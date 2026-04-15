@@ -237,7 +237,8 @@ func (c *ServerConfig) Validate() error {
 			if pbutil.IsStructuredTestID(*c.PreviousTestIDPrefix) {
 				return errors.New("PreviousTestIDPrefix: must not start with prefix of structured test IDs")
 			}
-			if err := pbutil.ValidateTestID(*c.PreviousTestIDPrefix); err != nil {
+			// TODO(b/446175448): Use higher limit.
+			if err := pbutil.ValidateTestID(*c.PreviousTestIDPrefix, pbutil.DefaultTestIDLimitCallback); err != nil {
 				return errors.Fmt("PreviousTestIDPrefix: %w", err)
 			}
 		}
@@ -247,7 +248,7 @@ func (c *ServerConfig) Validate() error {
 		if pbutil.IsStructuredTestID(c.TestIDPrefix) {
 			return errors.New("TestIDPrefix: must not start with prefix of structured test IDs")
 		}
-		if err := pbutil.ValidateTestID(c.TestIDPrefix); err != nil {
+		if err := pbutil.ValidateTestID(c.TestIDPrefix, pbutil.DefaultTestIDLimitCallback); err != nil {
 			return errors.Fmt("TestIDPrefix: %w", err)
 		}
 	}

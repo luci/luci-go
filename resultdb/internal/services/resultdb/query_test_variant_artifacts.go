@@ -70,13 +70,12 @@ func validateQueryTestVariantArtifactsRequest(req *pb.QueryTestVariantArtifactsR
 	if err := validateSearchString(req.SearchString); err != nil {
 		return errors.Fmt("search_string: %w", err)
 	}
-	if err := pbutil.ValidateTestID(req.TestId); err != nil {
+	if err := pbutil.ValidateTestID(req.TestId, pbutil.QuerySideTestIDLimitCallback); err != nil {
 		return errors.Fmt("test_id: %w", err)
 	}
 	if err := pbutil.ValidateVariantHash(req.VariantHash); err != nil {
 		return errors.Fmt("variant_hash: %w", err)
 	}
-
 	if err := pbutil.ValidateArtifactID(req.ArtifactId); err != nil {
 		return errors.Fmt("artifact_id: %w", err)
 	}

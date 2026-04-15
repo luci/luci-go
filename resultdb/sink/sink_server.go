@@ -226,7 +226,8 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		validateToScheme := func(b pbutil.BaseTestIdentifier) error {
 			return s.cfg.ModuleScheme.Validate(b)
 		}
-		if err := pbutil.ValidateTestResult(now, validateToScheme, rdbtr); err != nil {
+		// TODO(b/446175448): Support higher limits in sink if needed. Currently using default limits.
+		if err := pbutil.ValidateTestResult(now, validateToScheme, pbutil.DefaultTestIDLimitCallback, rdbtr); err != nil {
 			logging.Warningf(ctx, "Test result for %q is invalid (after applying resultsink config): %s", clientTestID, err)
 			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: validate after applying ResultSink config: %s", i, err)
 		}
@@ -240,7 +241,8 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			if rdbtr.TestIdStructured != nil {
 				testID = rdbtr.TestIdStructured
 			} else {
-				testIDBase, err := pbutil.ParseAndValidateTestID(rdbtr.TestId)
+				// TODO(b/446175448): Use higher limit.
+				testIDBase, err := pbutil.ParseAndValidateTestID(rdbtr.TestId, pbutil.DefaultTestIDLimitCallback)
 				if err != nil {
 					return nil, errors.Fmt("parent: encoded test id: %w", err)
 				}

@@ -50,10 +50,11 @@ func parseArtifactParent(parent string) (invocations.ID, workunits.ID, string, e
 			// Fetch only invocation-level artifacts. They have empty ParentId.
 			return invocations.ID(invIDStr), workunits.ID{}, "^$", nil
 		}
-		invIDStr, testID, resultID, err := pbutil.ParseLegacyTestResultName(parent)
+		invIDStr, testID, resultID, err := pbutil.ParseLegacyTestResultName(parent, pbutil.QuerySideTestIDLimitCallback)
 		if err == nil {
 			return invocations.ID(invIDStr), workunits.ID{}, regexp.QuoteMeta(artifacts.ParentID(testID, resultID)), nil
 		}
+
 		// Fall through to error path.
 	} else {
 		if wuID, ok := workunits.TryParseName(parent); ok {

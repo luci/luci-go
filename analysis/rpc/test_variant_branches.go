@@ -642,7 +642,7 @@ func (s *testVariantBranchesServer) Query(ctx context.Context, req *pb.QueryTest
 
 func validateQueryTestVariantBranchRequest(req *pb.QueryTestVariantBranchRequest) error {
 	// Project already validated.
-	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+	if err := rdbpbutil.ValidateTestID(req.TestId, rdbpbutil.QuerySideTestIDLimitCallback); err != nil {
 		return errors.Fmt("test_id: %w", err)
 	}
 	if err := pagination.ValidatePageSize(req.GetPageSize()); err != nil {
@@ -694,7 +694,7 @@ func validateQueryChangepointAIAnalysisRequest(req *pb.QueryChangepointAIAnalysi
 	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
 		return errors.Fmt("project: %w", err)
 	}
-	if err := rdbpbutil.ValidateTestID(req.TestId); err != nil {
+	if err := rdbpbutil.ValidateTestID(req.TestId, rdbpbutil.QuerySideTestIDLimitCallback); err != nil {
 		return errors.Fmt("test_id: %w", err)
 	}
 	if err := pbutil.ValidateVariantHash(req.VariantHash); err != nil {
