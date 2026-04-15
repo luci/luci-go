@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -39,12 +41,15 @@ func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return "", transient.Tag.Apply(errors.Reason("error sending http request: %s", err))
 	}
 
 	defer resp.Body.Close()
 	status := resp.StatusCode
 	if status != http.StatusOK {
+		if status >= 500 || status == http.StatusTooManyRequests {
+			return "", transient.Tag.Apply(errors.Reason("Bad response code: %v", status))
+		}
 		return "", fmt.Errorf("Bad response code: %v", status)
 	}
 
