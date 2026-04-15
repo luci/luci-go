@@ -463,6 +463,7 @@ export function ChartWidget({
           uiStateOptions={{
             prefix: EditorUiKeyPrefix.WIDGET_FILTERS,
             key: widgetId,
+            initialValue: true,
           }}
         />
         <Divider light />

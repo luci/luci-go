@@ -412,6 +412,28 @@ describe('ChartWidget', () => {
     });
   });
 
+  it('should pass initialValue: true in uiStateOptions to FilterEditor', () => {
+    const MockFilterEditor = jest.mocked(FilterEditor);
+    MockFilterEditor.mockClear();
+
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={baseWidget}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+
+    expect(MockFilterEditor).toHaveBeenCalledTimes(1);
+    expect(MockFilterEditor.mock.calls[0][0]).toMatchObject({
+      uiStateOptions: expect.objectContaining({
+        initialValue: true,
+      }),
+    });
+  });
+
   it('should pass value xAxisType to TimeSeriesChart when xAxisDataKey is Column.BUILD_ID', () => {
     mockUseFetchDashboardWidgetData.mockReturnValue(
       createMockQueryResult({
