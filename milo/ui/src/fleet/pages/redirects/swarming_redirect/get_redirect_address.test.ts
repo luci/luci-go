@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { DecoratedClient } from '@/common/hooks/prpc_query';
+import { FleetConsoleClientImpl } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { BotsClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
 import { getRedirectAddress } from './get_redirect_address';
@@ -26,12 +27,19 @@ describe('getRedirectAddress', () => {
     }),
   }) as unknown as DecoratedClient<BotsClientImpl>;
 
+  const fleetConsoleClient = jest.mocked({
+    ListBrowserDevices: () => ({
+      devices: [{ id: 'machine-id' }],
+    }),
+  }) as unknown as DecoratedClient<FleetConsoleClientImpl>;
+
   describe('/botlist page', () => {
     test('basic botist', async () => {
       const to = await getRedirectAddress(
         'botlist',
         new URLSearchParams(),
         swarmingClient,
+        fleetConsoleClient,
         [],
       );
       expect(to).toEqual({
@@ -49,6 +57,7 @@ describe('getRedirectAddress', () => {
           ['f', 'label-bluetooth:True'],
         ]),
         swarmingClient,
+        fleetConsoleClient,
         [],
       );
       expect(to).toEqual({
@@ -68,6 +77,7 @@ describe('getRedirectAddress', () => {
         'botlist',
         new URLSearchParams([['f', 'label-model:lapis|sapphire']]),
         swarmingClient,
+        fleetConsoleClient,
         [],
       );
       expect(to).toEqual({
@@ -89,6 +99,7 @@ describe('getRedirectAddress', () => {
           ['c', 'col4'],
         ]),
         swarmingClient,
+        fleetConsoleClient,
         [],
       );
       expect(to).toEqual({
@@ -111,6 +122,7 @@ describe('getRedirectAddress', () => {
           ['d', 'asc'],
         ]),
         swarmingClient,
+        fleetConsoleClient,
         [],
       );
       expect(to).toEqual({
@@ -127,6 +139,7 @@ describe('getRedirectAddress', () => {
           ['d', 'desc'],
         ]),
         swarmingClient,
+        fleetConsoleClient,
         [],
       );
       expect(to).toEqual({
@@ -141,6 +154,7 @@ describe('getRedirectAddress', () => {
         'botlist',
         new URLSearchParams([['s', 'col1']]),
         swarmingClient,
+        fleetConsoleClient,
         [],
       );
       expect(to).toEqual({
@@ -158,6 +172,7 @@ describe('getRedirectAddress', () => {
         'botlist',
         new URLSearchParams(),
         swarmingClient,
+        fleetConsoleClient,
         [],
         'chromium',
       );
@@ -174,6 +189,7 @@ describe('getRedirectAddress', () => {
           ['f', 'label-model:sapphire'],
         ]),
         swarmingClient,
+        fleetConsoleClient,
         [],
         'chromium',
       );
@@ -197,6 +213,7 @@ describe('getRedirectAddress', () => {
           ['d', 'asc'],
         ]),
         swarmingClient,
+        fleetConsoleClient,
         [],
         'chromium',
       );
@@ -213,6 +230,7 @@ describe('getRedirectAddress', () => {
         'bot',
         new URLSearchParams({ id: 'bot-id' }),
         swarmingClient,
+        fleetConsoleClient,
         [],
       );
       expect(to).toEqual({
@@ -221,8 +239,50 @@ describe('getRedirectAddress', () => {
     });
     test('bot missing id', async () => {
       await expect(() =>
-        getRedirectAddress('bot', new URLSearchParams(), swarmingClient, []),
+        getRedirectAddress(
+          'bot',
+          new URLSearchParams(),
+          swarmingClient,
+          fleetConsoleClient,
+          [],
+        ),
       ).rejects.toThrow('Missing bot id');
+    });
+  });
+
+  describe('/bot page (browser)', () => {
+    test('bot', async () => {
+      const to = await getRedirectAddress(
+        'bot',
+        new URLSearchParams({ id: 'bot-id' }),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+        'chromium',
+      );
+      expect(to).toEqual({
+        pathname: '/ui/fleet/p/chromium/devices/machine-id',
+      });
+    });
+    test('bot missing in FCon', async () => {
+      const emptyFleetClient = jest.mocked({
+        ListBrowserDevices: () => ({
+          devices: [],
+        }),
+      }) as unknown as DecoratedClient<FleetConsoleClientImpl>;
+
+      await expect(() =>
+        getRedirectAddress(
+          'bot',
+          new URLSearchParams({ id: 'bot-id' }),
+          swarmingClient,
+          emptyFleetClient,
+          [],
+          'chromium',
+        ),
+      ).rejects.toThrow(
+        'Cannot find device with bot_id bot-id in Fleet Console',
+      );
     });
   });
 });

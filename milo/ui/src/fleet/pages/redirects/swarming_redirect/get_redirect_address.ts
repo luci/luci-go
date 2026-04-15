@@ -18,6 +18,10 @@ import { DecoratedClient } from '@/common/hooks/prpc_query';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
 import { getDutName } from '@/fleet/utils/swarming';
+import {
+  FleetConsoleClientImpl,
+  ListBrowserDevicesRequest,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { BotsClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
 const defaultPrefix = '/ui/fleet/labs/p/chromeos/';
@@ -26,6 +30,7 @@ export const getRedirectAddress = async (
   url: string | undefined,
   searchParams: URLSearchParams,
   swarmingClient: DecoratedClient<BotsClientImpl>,
+  fleetConsoleClient: DecoratedClient<FleetConsoleClientImpl>,
   baseDimensions: string[],
   platform: string = 'chromeos',
 ): Promise<To> => {
@@ -42,11 +47,38 @@ export const getRedirectAddress = async (
       const bot_id = searchParams.get('id');
       if (!bot_id) throw Error(`Missing bot id`);
 
-      const dutName = await getDutName(swarmingClient, bot_id);
-      if (!dutName) throw Error(`Cannot find dut_name of device ${bot_id}`);
+      // Validate bot_id to prevent injection in the filter string.
+      if (!/^[a-zA-Z0-9_-]+$/.test(bot_id)) {
+        throw Error(`Invalid bot id: ${bot_id}`);
+      }
+
+      let identifier: string | undefined;
+      // Browser devices are managed in UFS/Fleet Console and use different
+      // naming conventions than ChromeOS DUTs. We look up the machine ID
+      // by bot_id.
+      if (isBrowser) {
+        const res = await fleetConsoleClient.ListBrowserDevices(
+          ListBrowserDevicesRequest.fromPartial({
+            filter: `ufs."hostname" = "${bot_id}"`,
+            pageSize: 1,
+          }),
+        );
+        const device = res.devices[0];
+        if (!device) {
+          throw Error(
+            `Cannot find device with bot_id ${bot_id} in Fleet Console`,
+          );
+        }
+        identifier = device.id;
+      } else {
+        identifier = await getDutName(swarmingClient, bot_id);
+        if (!identifier) {
+          throw Error(`Cannot find dut_name of device ${bot_id}`);
+        }
+      }
 
       return {
-        pathname: targetPrefix + `devices/${dutName}`,
+        pathname: targetPrefix + `devices/${identifier}`,
       };
     }
   }

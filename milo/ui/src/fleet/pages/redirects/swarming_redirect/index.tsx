@@ -19,6 +19,7 @@ import { Navigate, useParams } from 'react-router';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -45,14 +46,23 @@ export function SwarmingRedirect() {
 
   const dimensionQuery = isBrowser ? browserDimensions : chromeosDimensions;
 
-  const client = useBotsClient(DEVICE_TASKS_SWARMING_HOST);
+  const swarmingClient = useBotsClient(DEVICE_TASKS_SWARMING_HOST);
+  const fleetConsoleClient = useFleetConsoleClient();
+
   const q = useQuery({
-    queryKey: [params['*'], searchParams, client, platform],
+    queryKey: [
+      params['*'],
+      searchParams,
+      swarmingClient,
+      fleetConsoleClient,
+      platform,
+    ],
     queryFn: () =>
       getRedirectAddress(
         params['*'],
         searchParams,
-        client,
+        swarmingClient,
+        fleetConsoleClient,
         Object.keys(dimensionQuery.data?.baseDimensions || {}),
         platform,
       ),
