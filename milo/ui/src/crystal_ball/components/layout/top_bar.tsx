@@ -12,19 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import HomeIcon from '@mui/icons-material/Home';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import Toolbar from '@mui/material/Toolbar';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
+import {
+  FeedbackOutlined as FeedbackIcon,
+  Home as HomeIcon,
+  MoreVert as MoreVertIcon,
+} from '@mui/icons-material';
+import {
+  AppBar,
+  Box,
+  Divider,
+  IconButton,
+  Menu,
+  Toolbar,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useState } from 'react';
 import { Link as RouterLink, useLocation } from 'react-router';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
+import { useAuthState } from '@/common/components/auth_state_provider';
+import { genFeedbackUrl } from '@/common/tools/utils';
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { CRYSTAL_BALL_ROUTES, isLandingPage } from '@/crystal_ball/routes';
 
@@ -38,6 +46,8 @@ export function TopBar() {
   const { title, actions, menuItems, subHeader } = useTopBar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const location = useLocation();
+  const authState = useAuthState();
+  const isLoggedIn = authState.identity !== ANONYMOUS_IDENTITY;
 
   const isLanding = isLandingPage(location.pathname);
 
@@ -105,6 +115,23 @@ export function TopBar() {
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {actions}
+          {isLoggedIn && (
+            <Tooltip title="Submit Feedback">
+              <IconButton
+                size="large"
+                aria-label="submit feedback"
+                onClick={() =>
+                  window.open(
+                    genFeedbackUrl({ bugComponent: '2000424' }),
+                    '_blank',
+                  )
+                }
+                color="inherit"
+              >
+                <FeedbackIcon />
+              </IconButton>
+            </Tooltip>
+          )}
           {menuItems && (
             <>
               <IconButton

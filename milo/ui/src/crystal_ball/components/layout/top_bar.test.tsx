@@ -23,6 +23,13 @@ import { TopBar } from './top_bar';
 import { useTopBarConfig } from './top_bar_context';
 import { TopBarProvider } from './top_bar_provider';
 
+jest.mock('@/common/components/auth_state_provider', () => ({
+  ...jest.requireActual('@/common/components/auth_state_provider'),
+  useAuthState: jest
+    .fn()
+    .mockReturnValue({ identity: 'user:test@example.com' }),
+}));
+
 // Helper component to set context values
 function ConfigSetter({
   title = null,

@@ -24,6 +24,12 @@ import { QueuedStickyScrollingBase } from '@/generic_libs/components/queued_stic
 
 import { Layout } from './layout';
 
+jest.mock('@/common/components/auth_state_provider', () => ({
+  useAuthState: () => ({
+    identity: 'test-identity',
+  }),
+}));
+
 describe('Layout', () => {
   const renderWithStickyContext = (ui: React.ReactNode) => {
     return render(<QueuedStickyScrollingBase>{ui}</QueuedStickyScrollingBase>);
