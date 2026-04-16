@@ -206,6 +206,7 @@ func TestQueryAnalysis(t *testing.T) {
 			VerificationStatus: model.SuspectVerificationStatus_Unverified,
 			ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysis),
 			Justification:      "GenAI Justification",
+			Score:              8,
 		}
 		assert.Loosely(t, datastore.Put(c, genaiSuspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -515,6 +516,7 @@ func TestQueryAnalysis(t *testing.T) {
 		assert.Loosely(t, genaiResult.Suspect.ReviewUrl, should.Equal("http://this/is/review/url2"))
 		assert.Loosely(t, genaiResult.Suspect.ReviewTitle, should.Equal("This is review title2"))
 		assert.Loosely(t, genaiResult.Suspect.Justification, should.Equal("GenAI Justification"))
+		assert.Loosely(t, genaiResult.Suspect.ConfidenceScore, should.Equal(8))
 		assert.Loosely(t, genaiResult.Suspect.VerificationDetails.Status, should.Equal(string(model.SuspectVerificationStatus_Unverified)))
 	})
 

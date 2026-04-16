@@ -74,6 +74,9 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
         <TableHead>
           <TableRow>
             <TableCell sx={{ whiteSpace: 'nowrap' }}>Suspect CL</TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+              Confidence Score
+            </TableCell>
             <TableCell sx={{ whiteSpace: 'nowrap' }}>Status</TableCell>
             <TableCell sx={{ whiteSpace: 'nowrap' }}>Start Time</TableCell>
             <TableCell sx={{ whiteSpace: 'nowrap' }}>End Time</TableCell>
@@ -92,6 +95,9 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
               </Link>
             </TableCell>
             <TableCell sx={{ whiteSpace: 'nowrap' }}>
+              {String(suspect.confidenceScore ?? 'N/A')}
+            </TableCell>
+            <TableCell sx={{ whiteSpace: 'nowrap' }}>
               <AnalysisStatusInfo
                 status={compileCheckResult.status}
               ></AnalysisStatusInfo>
@@ -104,7 +110,7 @@ export function GenAiAnalysisTable({ result }: GenAiAnalysisTableProps) {
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell colSpan={4} sx={{ whiteSpace: 'pre-wrap' }}>
+            <TableCell colSpan={5} sx={{ whiteSpace: 'pre-wrap' }}>
               <b>Justification:</b>
               <div style={{ paddingTop: '5px' }}>{suspect.justification}</div>
             </TableCell>

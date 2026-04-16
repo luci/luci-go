@@ -595,10 +595,11 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 
 			if suspect != nil {
 				pbSuspect := &pb.GenAiSuspect{
-					Commit:        &suspect.GitilesCommit,
-					ReviewUrl:     suspect.ReviewUrl,
-					ReviewTitle:   suspect.ReviewTitle,
-					Justification: suspect.Justification,
+					Commit:          &suspect.GitilesCommit,
+					ReviewUrl:       suspect.ReviewUrl,
+					ReviewTitle:     suspect.ReviewTitle,
+					Justification:   suspect.Justification,
+					ConfidenceScore: int32(suspect.Score),
 				}
 				verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
 				if err != nil {
