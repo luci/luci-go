@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MenuList } from '@mui/material';
+import { Button, Divider, MenuList } from '@mui/material';
 import _ from 'lodash';
 import {
   useRef,
@@ -421,14 +421,93 @@ const OptionComponent = function OptionComponent({
       });
   }, [deferredSearchQuery, options]);
 
+  const selectableOptions = useMemo(
+    () =>
+      fuzzySorted.filter(
+        (option) =>
+          option.el.isSignificant !== false && option.el.inScope !== false,
+      ),
+    [fuzzySorted],
+  );
+
+  const areAllSelectableOptionsSelected =
+    selectableOptions.length > 0 &&
+    selectableOptions.every(
+      (option) => tempOptions[option.el.value]?.isSelected,
+    );
+
+  const handleSelectClearAll = () => {
+    setTempOptions((previousOptions) => {
+      const updatedOptions = { ...previousOptions };
+      const allSelectableAreSelected =
+        selectableOptions.length > 0 &&
+        selectableOptions.every(
+          (option) => previousOptions[option.el.value]?.isSelected,
+        );
+
+      if (allSelectableAreSelected) {
+        for (const option of fuzzySorted) {
+          updatedOptions[option.el.value] = {
+            ...updatedOptions[option.el.value],
+            isSelected: false,
+          };
+        }
+      } else {
+        for (const option of selectableOptions) {
+          updatedOptions[option.el.value] = {
+            ...updatedOptions[option.el.value],
+            isSelected: true,
+          };
+        }
+      }
+      return updatedOptions;
+    });
+  };
+
+  const selectedCount = Object.values(tempOptions).filter(
+    (obj) => obj.isSelected,
+  ).length;
+  const applyDisabled = selectedCount > 200;
+
+  const handleApply = () => {
+    if (applyDisabled) {
+      return;
+    }
+    onApply(tempOptions);
+  };
+
   return (
     <div
       role="presentation"
       key={filterKey}
       onKeyDown={(e) => {
-        filterDropdownKeyDown(e, () => onApply(tempOptions), onClose);
+        filterDropdownKeyDown(e, handleApply, onClose);
       }}
     >
+      <div>
+        <div
+          css={{
+            display: 'flex',
+            gap: 12,
+            padding: '6px 30px',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexDirection: 'row-reverse',
+          }}
+        >
+          <Button disableElevation onClick={handleSelectClearAll} tabIndex={-1}>
+            {areAllSelectableOptionsSelected ? 'Clear All' : 'Select All'}
+          </Button>
+        </div>
+        <Divider
+          sx={{
+            backgroundColor: 'transparent',
+            paddingTop: 0,
+            marginTop: 0,
+            height: 1,
+          }}
+        />
+      </div>
       <MenuList
         ref={menuListRef}
         variant="selectedMenu"
@@ -470,9 +549,11 @@ const OptionComponent = function OptionComponent({
       </MenuList>
       <Footer
         onCancelClick={onClose}
-        onApplyClick={() => {
-          onApply(tempOptions);
-        }}
+        onApplyClick={handleApply}
+        applyDisabled={applyDisabled}
+        applyTooltip={
+          applyDisabled ? 'Cannot select more than 200 options.' : undefined
+        }
       />
     </div>
   );

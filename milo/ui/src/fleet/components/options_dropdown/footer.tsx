@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Button, Divider } from '@mui/material';
+import { Button, Divider, Tooltip } from '@mui/material';
 
 export type FooterProps = {
   footerButtons?: ('cancel' | 'apply' | 'reset')[];
   onCancelClick?: React.MouseEventHandler<HTMLButtonElement>;
   onApplyClick?: React.MouseEventHandler<HTMLButtonElement>;
   onResetClick?: React.MouseEventHandler<HTMLButtonElement>;
+  applyDisabled?: boolean;
+  applyTooltip?: string;
 };
 
 export function Footer({
@@ -26,7 +28,20 @@ export function Footer({
   onResetClick,
   onCancelClick,
   onApplyClick,
+  applyDisabled,
+  applyTooltip,
 }: FooterProps) {
+  const applyButton = (
+    <Button
+      disableElevation
+      variant="contained"
+      onClick={onApplyClick}
+      tabIndex={-1}
+      disabled={applyDisabled}
+    >
+      Apply
+    </Button>
+  );
   return (
     <div>
       <Divider
@@ -47,16 +62,14 @@ export function Footer({
           flexDirection: 'row-reverse',
         }}
       >
-        {footerButtons.includes('apply') && (
-          <Button
-            disableElevation
-            variant="contained"
-            onClick={onApplyClick}
-            tabIndex={-1}
-          >
-            Apply
-          </Button>
-        )}
+        {footerButtons.includes('apply') &&
+          (applyDisabled && applyTooltip ? (
+            <Tooltip title={applyTooltip}>
+              <span>{applyButton}</span>
+            </Tooltip>
+          ) : (
+            applyButton
+          ))}
         {footerButtons.includes('cancel') && (
           <Button disableElevation onClick={onCancelClick} tabIndex={-1}>
             Cancel
