@@ -159,4 +159,23 @@ You are a highly experienced code reviewer specializing in Git patches. Your tas
 ## 4. Coding Conventions & Best Practices
 - **Avoid type casting unless strictly necessary.** Try to rely on TypeScript's type inference and narrowing instead of using `as Type`.
 
+## Architectural Principles & Design Documentation
+
+We maintain documentation of key architectural principles and design tradeoffs in `decisions/` directories.
+- Frontend-specific and cross-cutting docs live in `./decisions/`
+- Backend-specific docs live in `../../../../../../infra/fleetconsole/decisions/`
+
+When documenting new major changes or design decisions, you should:
+1. Focus on the **current architecture** and the **tradeoffs** considered.
+2. Avoid logging historical events, dates, or individual names unless crucial for context.
+3. Use the standard template: Context, Current Architecture, Design Tradeoffs Considered (Options, Pros/Cons, Decision).
+4. Cross-link between frontend and backend docs as needed using relative paths.
+
+### Confidentiality Guidelines
+This project is open source. When writing code, documentation, or commit messages:
+- **DO NOT** leak internal confidential information.
+- **DO NOT** include sensitive server names, non-public URLs, or internal credentials in code or docs.
+- `go/` links are allowed, but the link text itself (e.g., the short link name) **must not** contain confidential information.
+- Redact or use placeholders for sensitive details if necessary.
+
 
