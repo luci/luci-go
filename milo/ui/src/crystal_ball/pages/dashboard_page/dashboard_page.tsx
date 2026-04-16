@@ -37,6 +37,7 @@ import {
   RadioGroup,
   Snackbar,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
@@ -144,13 +145,15 @@ function DashboardTitleBar({
         <Typography variant="h6">{dashboardState.displayName}</Typography>
         {dashboardState.description && (
           <>
-            <IconButton
-              size="small"
-              onClick={handleInfoClick}
-              aria-label="View dashboard description"
-            >
-              <InfoOutlinedIcon fontSize="small" />
-            </IconButton>
+            <Tooltip title={COMMON_MESSAGES.VIEW_DASHBOARD_DESCRIPTION}>
+              <IconButton
+                size="small"
+                onClick={handleInfoClick}
+                aria-label="View dashboard description"
+              >
+                <InfoOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <Popover
               open={openInfo}
               anchorEl={anchorEl}
@@ -166,14 +169,16 @@ function DashboardTitleBar({
             </Popover>
           </>
         )}
-        <IconButton
-          size="small"
-          onClick={() => setIsEditing(true)}
-          className="edit-icon-btn"
-          aria-label="Edit dashboard title and description"
-        >
-          <EditIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title={COMMON_MESSAGES.EDIT_DASHBOARD_TITLE_AND_DESCRIPTION}>
+          <IconButton
+            size="small"
+            onClick={() => setIsEditing(true)}
+            className="edit-icon-btn"
+            aria-label="Edit dashboard title and description"
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
       <DashboardDialog
         open={isEditing}
@@ -881,13 +886,15 @@ export function DashboardPage() {
         >
           {isUpdating || isSaving ? 'Saving...' : 'Save'}
         </Button>
-        <IconButton
-          onClick={() => setShareDialogOpen(true)}
-          aria-label="Share dashboard"
-          size="small"
-        >
-          <ShareIcon fontSize="small" />
-        </IconButton>
+        <Tooltip title={COMMON_MESSAGES.SHARE_DASHBOARD}>
+          <IconButton
+            onClick={() => setShareDialogOpen(true)}
+            aria-label="Share dashboard"
+            size="small"
+          >
+            <ShareIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
     ),
     [
@@ -1115,14 +1122,16 @@ export function DashboardPage() {
               >
                 COPY
               </Button>
-              <IconButton
-                size="small"
-                aria-label="close"
-                color="inherit"
-                onClick={handleCloseToast}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title={COMMON_MESSAGES.CLOSE}>
+                <IconButton
+                  size="small"
+                  aria-label="close"
+                  color="inherit"
+                  onClick={handleCloseToast}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </>
           ) : undefined
         }

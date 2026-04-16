@@ -32,9 +32,12 @@ import {
   IconButton,
   Box,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { ReactNode, useState } from 'react';
+
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 
 export interface WidgetContainerProps {
   title: string;
@@ -119,23 +122,28 @@ export function WidgetContainer({
                 {title}
               </Typography>
               {onTitleChange && (
-                <IconButton
-                  size="small"
-                  onClick={() => {
-                    setEditedTitle(title);
-                    setIsEditingTitle(true);
-                  }}
-                  aria-label={`Edit title ${title}`}
-                  className="title-edit-btn"
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    opacity: 0,
-                    transition: 'opacity 0.2s',
-                  }}
-                >
-                  <EditIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                </IconButton>
+                <Tooltip title={COMMON_MESSAGES.EDIT_TITLE}>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setEditedTitle(title);
+                      setIsEditingTitle(true);
+                    }}
+                    aria-label={`Edit title ${title}`}
+                    className="title-edit-btn"
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      opacity: 0,
+                      transition: 'opacity 0.2s',
+                    }}
+                  >
+                    <EditIcon
+                      fontSize="small"
+                      sx={{ color: 'text.secondary' }}
+                    />
+                  </IconButton>
+                </Tooltip>
               )}
             </Box>
           )
@@ -143,42 +151,54 @@ export function WidgetContainer({
         action={
           <Box sx={{ display: 'flex', gap: 0.5 }}>
             {onMoveUp && (
-              <IconButton
-                size="small"
-                onClick={onMoveUp}
-                disabled={disableMoveUp}
-                aria-label={`Move ${title} up`}
-              >
-                <ArrowUpwardIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title={COMMON_MESSAGES.MOVE_UP}>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={onMoveUp}
+                    disabled={disableMoveUp}
+                    aria-label={`Move ${title} up`}
+                  >
+                    <ArrowUpwardIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
             )}
             {onMoveDown && (
-              <IconButton
-                size="small"
-                onClick={onMoveDown}
-                disabled={disableMoveDown}
-                aria-label={`Move ${title} down`}
-              >
-                <ArrowDownwardIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title={COMMON_MESSAGES.MOVE_DOWN}>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={onMoveDown}
+                    disabled={disableMoveDown}
+                    aria-label={`Move ${title} down`}
+                  >
+                    <ArrowDownwardIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
             )}
             {onDuplicate && (
-              <IconButton
-                size="small"
-                onClick={onDuplicate}
-                aria-label={`Duplicate ${title}`}
-              >
-                <LibraryAddIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title={COMMON_MESSAGES.DUPLICATE}>
+                <IconButton
+                  size="small"
+                  onClick={onDuplicate}
+                  aria-label={`Duplicate ${title}`}
+                >
+                  <LibraryAddIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
             {onDelete && (
-              <IconButton
-                size="small"
-                onClick={() => setDeleteDialogOpen(true)}
-                aria-label={`Delete ${title}`}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title={COMMON_MESSAGES.DELETE}>
+                <IconButton
+                  size="small"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  aria-label={`Delete ${title}`}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             )}
           </Box>
         }

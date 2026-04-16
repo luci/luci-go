@@ -13,11 +13,19 @@
 // limitations under the License.
 
 import { Edit } from '@mui/icons-material';
-import { Box, Button, IconButton, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  IconButton,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useMemo, useState } from 'react';
 
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { PerfWidget } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 export interface MarkdownWidgetProps {
@@ -116,23 +124,24 @@ export function MarkdownWidget({ widget, onUpdate }: MarkdownWidgetProps) {
             )}
           </Box>
           <Box sx={{ display: 'flex', flexShrink: 0 }}>
-            <IconButton
-              size="small"
-              onClick={() => {
-                setMarkdown(widget.markdown?.content || '');
-                setIsEditing(true);
-              }}
-              title="Edit"
-              className="markdown-edit-btn"
-              sx={{
-                opacity: 0,
-                transition: 'opacity 0.2s',
-                width: 24,
-                height: 24,
-              }}
-            >
-              <Edit fontSize="small" sx={{ color: 'text.secondary' }} />
-            </IconButton>
+            <Tooltip title={COMMON_MESSAGES.EDIT}>
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setMarkdown(widget.markdown?.content || '');
+                  setIsEditing(true);
+                }}
+                className="markdown-edit-btn"
+                sx={{
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                  width: 24,
+                  height: 24,
+                }}
+              >
+                <Edit fontSize="small" sx={{ color: 'text.secondary' }} />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Box>
       )}

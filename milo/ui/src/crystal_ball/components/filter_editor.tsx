@@ -33,6 +33,7 @@ import {
   Select,
   SelectChangeEvent,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
@@ -273,14 +274,16 @@ function FilterEditorRow({
           />
         )}
       />
-      <IconButton
-        onClick={onRemove}
-        aria-label="Remove filter"
-        color="error"
-        size="small"
-      >
-        <DeleteIcon fontSize="small" />
-      </IconButton>
+      <Tooltip title={COMMON_MESSAGES.REMOVE_FILTER}>
+        <IconButton
+          onClick={onRemove}
+          aria-label="Remove filter"
+          color="error"
+          size="small"
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 }

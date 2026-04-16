@@ -39,7 +39,7 @@ describe('MarkdownWidget', () => {
 
   it('switches to edit mode on icon click', () => {
     render(<MarkdownWidget widget={mockWidget} onUpdate={jest.fn()} />);
-    fireEvent.click(screen.getByTitle('Edit'));
+    fireEvent.click(screen.getByLabelText('Edit'));
     expect(screen.getByRole('textbox')).toHaveValue('Current status');
   });
 
@@ -47,7 +47,7 @@ describe('MarkdownWidget', () => {
     const handleUpdate = jest.fn();
     render(<MarkdownWidget widget={mockWidget} onUpdate={handleUpdate} />);
 
-    fireEvent.click(screen.getByTitle('Edit'));
+    fireEvent.click(screen.getByLabelText('Edit'));
 
     const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: 'Updated' } });
@@ -75,7 +75,7 @@ describe('MarkdownWidget', () => {
     const handleUpdate = jest.fn();
     render(<MarkdownWidget widget={mockWidget} onUpdate={handleUpdate} />);
 
-    fireEvent.click(screen.getByTitle('Edit'));
+    fireEvent.click(screen.getByLabelText('Edit'));
 
     const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: 'Updated' } });

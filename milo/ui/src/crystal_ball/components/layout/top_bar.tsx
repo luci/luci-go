@@ -68,7 +68,7 @@ export function TopBar() {
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Tooltip title="CrystalBall Dashboards">
+          <Tooltip title={COMMON_MESSAGES.CRYSTAL_BALL_DASHBOARDS}>
             <Box
               component={RouterLink}
               to={CRYSTAL_BALL_ROUTES.LANDING}
@@ -134,16 +134,18 @@ export function TopBar() {
           )}
           {menuItems && (
             <>
-              <IconButton
-                size="large"
-                aria-label="show more"
-                aria-controls="menu-appbar"
-                aria-haspopup="true"
-                onClick={handleMenuClick}
-                color="inherit"
-              >
-                <MoreVertIcon />
-              </IconButton>
+              <Tooltip title={COMMON_MESSAGES.SHOW_MORE}>
+                <IconButton
+                  size="large"
+                  aria-label="show more"
+                  aria-controls="menu-appbar"
+                  aria-haspopup="true"
+                  onClick={handleMenuClick}
+                  color="inherit"
+                >
+                  <MoreVertIcon />
+                </IconButton>
+              </Tooltip>
               <Menu
                 id="menu-appbar"
                 anchorEl={anchorEl}

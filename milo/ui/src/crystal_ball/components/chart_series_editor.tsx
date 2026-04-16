@@ -35,6 +35,7 @@ import {
   Divider,
   IconButton,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useCallback, useMemo, useState } from 'react';
@@ -434,21 +435,23 @@ export function ChartSeriesItem({
           </Box>
         )}
         {!hideVisibility && (
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleVisibility?.();
-            }}
-            aria-label="Toggle series visibility"
-            size="small"
-            sx={{ ml: 'auto', p: 0.25 }}
-          >
-            {isVisible ? (
-              <VisibilityIcon fontSize="small" />
-            ) : (
-              <VisibilityOffIcon fontSize="small" />
-            )}
-          </IconButton>
+          <Tooltip title={COMMON_MESSAGES.TOGGLE_VISIBILITY}>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleVisibility?.();
+              }}
+              aria-label="Toggle series visibility"
+              size="small"
+              sx={{ ml: 'auto', p: 0.25 }}
+            >
+              {isVisible ? (
+                <VisibilityIcon fontSize="small" />
+              ) : (
+                <VisibilityOffIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
         )}
         {!hideVisibility && !hideDelete && (
           <Divider
@@ -458,18 +461,20 @@ export function ChartSeriesItem({
           />
         )}
         {!hideDelete && (
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            aria-label="Remove series"
-            color="error"
-            size="small"
-            sx={{ p: 0.25 }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title={COMMON_MESSAGES.REMOVE_SERIES}>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              aria-label="Remove series"
+              color="error"
+              size="small"
+              sx={{ p: 0.25 }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         )}
       </AccordionSummary>
       <AccordionDetails>
