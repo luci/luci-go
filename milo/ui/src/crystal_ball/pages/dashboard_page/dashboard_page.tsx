@@ -27,6 +27,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
   FormControlLabel,
   FormLabel,
@@ -862,37 +863,61 @@ export function DashboardPage() {
 
   const topBarAction = useMemo(
     () => (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         {localDashboardState && (
           <DashboardTimeRangeSelector
             dashboardState={localDashboardState}
             onApply={setLocalDashboardState}
           />
         )}
-        {hasUnsavedChanges && !isUpdating && !isSaving && (
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => setLocalDashboardState(dashboardState ?? null)}
-            disabled={isUpdating || isLoading || isSaving}
-          >
-            Undo changes
-          </Button>
+
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{ mx: 2, height: 24, alignSelf: 'center' }}
+        />
+
+        {(hasUnsavedChanges || isUpdating || isSaving) && (
+          <>
+            {!isUpdating && !isSaving && (
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => setLocalDashboardState(dashboardState ?? null)}
+                disabled={isUpdating || isLoading || isSaving}
+                sx={{
+                  textTransform: 'none',
+                }}
+              >
+                Undo changes
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              onClick={handleSaveToApi}
+              disabled={isUpdating || isLoading || isSaving}
+              sx={{
+                textTransform: 'none',
+              }}
+            >
+              {isUpdating || isSaving ? 'Saving...' : 'Save'}
+            </Button>
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ mx: 2, height: 24, alignSelf: 'center' }}
+            />
+          </>
         )}
-        <Button
-          variant="contained"
-          onClick={handleSaveToApi}
-          disabled={!hasUnsavedChanges || isUpdating || isLoading || isSaving}
-        >
-          {isUpdating || isSaving ? 'Saving...' : 'Save'}
-        </Button>
+
         <Tooltip title={COMMON_MESSAGES.SHARE_DASHBOARD}>
           <IconButton
             onClick={() => setShareDialogOpen(true)}
             aria-label="Share dashboard"
-            size="small"
+            size="medium"
+            sx={{ color: 'action.active' }}
           >
-            <ShareIcon fontSize="small" />
+            <ShareIcon />
           </IconButton>
         </Tooltip>
       </Box>

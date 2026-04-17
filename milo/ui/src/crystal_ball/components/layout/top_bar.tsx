@@ -113,12 +113,12 @@ export function TopBar() {
             </>
           )}
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           {actions}
           {isLoggedIn && (
             <Tooltip title="Submit Feedback">
               <IconButton
-                size="large"
+                size="medium"
                 aria-label="submit feedback"
                 onClick={() =>
                   window.open(
@@ -126,7 +126,7 @@ export function TopBar() {
                     '_blank',
                   )
                 }
-                color="inherit"
+                sx={{ color: 'action.active' }}
               >
                 <FeedbackIcon />
               </IconButton>
@@ -136,12 +136,12 @@ export function TopBar() {
             <>
               <Tooltip title={COMMON_MESSAGES.SHOW_MORE}>
                 <IconButton
-                  size="large"
+                  size="medium"
                   aria-label="show more"
                   aria-controls="menu-appbar"
                   aria-haspopup="true"
                   onClick={handleMenuClick}
-                  color="inherit"
+                  sx={{ color: 'action.active' }}
                 >
                   <MoreVertIcon />
                 </IconButton>
