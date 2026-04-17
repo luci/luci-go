@@ -176,7 +176,7 @@ export function BreakdownTableWidget({
           isLoadingColumns={isLoadingFilterColumns}
           hideColorPicker={true}
           hideVisibility={true}
-          hideDelete={true}
+          hideMultiSeriesActions={true}
           titlePlaceholder={COMMON_MESSAGES.ADD_FILTER_METRIC_SERIES}
         />
       </Box>

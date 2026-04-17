@@ -18,7 +18,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
-import { Column } from '@/crystal_ball/constants';
+import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
 import {
   PerfChartSeries,
@@ -318,6 +318,36 @@ describe('ChartSeriesEditor', () => {
     expect(seriesAfterAdd[0].metricField).toBe('m2'); // Existing
     expect(seriesAfterAdd[1].metricField).toBe(''); // New
     expect(seriesAfterAdd[1].displayName).toBe(`series-${expectedMockUUID}`);
+  });
+
+  it('duplicates a series when duplicate icon is clicked', async () => {
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        displayName: 'Series 1',
+        metricField: 'metric1',
+        dataSpecId: 'test-spec-id',
+      }),
+    ];
+    render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
+
+    // Expand the accordion
+    fireEvent.click(screen.getByText('Series 1'));
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: COMMON_MESSAGES.DUPLICATE }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: COMMON_MESSAGES.DUPLICATE }),
+    );
+
+    expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
+    const updatedSeries = defaultProps.onUpdateSeries.mock.lastCall[0];
+    expect(updatedSeries.length).toBe(2);
+    expect(updatedSeries[0].displayName).toBe('Series 1');
+    expect(updatedSeries[1].displayName).toBe('Series 1 (Copy)');
+    expect(updatedSeries[1].metricField).toBe('metric1');
   });
 });
 

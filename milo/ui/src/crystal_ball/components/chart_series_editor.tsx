@@ -16,6 +16,7 @@ import {
   Add as AddIcon,
   BarChart as BarChartIcon,
   ChevronRight as ChevronRightIcon,
+  ContentCopy as ContentCopyIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   FilterAlt as FunnelIcon,
@@ -128,6 +129,22 @@ export function ChartSeriesEditor({
     [series, onUpdateSeries],
   );
 
+  const handleDuplicateSeries = useCallback(
+    (index: number) => {
+      const sourceSeries = series[index];
+      const id = crypto.randomUUID();
+      const newSeries: PerfChartSeries = PerfChartSeries.fromPartial({
+        ...sourceSeries,
+        id,
+        displayName: `${sourceSeries.displayName}${COMMON_MESSAGES.COPY_SUFFIX}`,
+      });
+      const updatedSeries = [...series];
+      updatedSeries.splice(index + 1, 0, newSeries);
+      onUpdateSeries(updatedSeries);
+    },
+    [series, onUpdateSeries],
+  );
+
   const metricFilterColumns = useMemo(
     () =>
       filterColumns.filter(
@@ -152,7 +169,7 @@ export function ChartSeriesEditor({
       }}
     >
       {series.map((s, index) => {
-        const key = s.id ?? index;
+        const key = s.id || String(index);
         return (
           <ChartSeriesItem
             key={key}
@@ -162,6 +179,7 @@ export function ChartSeriesEditor({
               handleUpdateSeriesItem(index, updatedItem)
             }
             onRemove={() => handleRemoveSeries(index)}
+            onDuplicate={() => handleDuplicateSeries(index)}
             dataSpecId={dataSpecId}
             globalFilters={globalFilters}
             widgetFilters={widgetFilters}
@@ -201,6 +219,7 @@ export interface ChartSeriesItemProps {
   series: PerfChartSeries;
   onUpdate: (updatedSeries: PerfChartSeries) => void;
   onRemove: () => void;
+  onDuplicate?: () => void;
   dataSpecId: string;
   globalFilters?: readonly PerfFilter[];
   widgetFilters?: readonly PerfFilter[];
@@ -210,7 +229,7 @@ export interface ChartSeriesItemProps {
   isVisible?: boolean;
   onToggleVisibility?: () => void;
   hideVisibility?: boolean;
-  hideDelete?: boolean;
+  hideMultiSeriesActions?: boolean;
   titlePlaceholder?: string;
   uiStateOptions?: UseEditorUiStateOptions;
 }
@@ -219,6 +238,7 @@ export function ChartSeriesItem({
   series,
   onUpdate,
   onRemove,
+  onDuplicate,
   dataSpecId,
   globalFilters,
   widgetFilters,
@@ -228,7 +248,7 @@ export function ChartSeriesItem({
   isVisible = true,
   onToggleVisibility,
   hideVisibility = false,
-  hideDelete = false,
+  hideMultiSeriesActions = false,
   titlePlaceholder,
   uiStateOptions,
 }: ChartSeriesItemProps) {
@@ -442,14 +462,29 @@ export function ChartSeriesItem({
             </IconButton>
           </Tooltip>
         )}
-        {!hideVisibility && !hideDelete && (
+        {!hideVisibility && !hideMultiSeriesActions && (
           <Divider
             orientation="vertical"
             flexItem
             sx={{ mx: 0.25, height: 16 }}
           />
         )}
-        {!hideDelete && (
+        {!hideMultiSeriesActions && (
+          <Tooltip title={COMMON_MESSAGES.DUPLICATE}>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate?.();
+              }}
+              aria-label={COMMON_MESSAGES.DUPLICATE}
+              size="small"
+              sx={{ p: 0.25 }}
+            >
+              <ContentCopyIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {!hideMultiSeriesActions && (
           <Tooltip title={COMMON_MESSAGES.REMOVE_SERIES}>
             <IconButton
               onClick={(e) => {
