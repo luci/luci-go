@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
+	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -56,6 +57,7 @@ func application(p Params) *cli.Application {
 
 			{}, // a separator
 			subcommands.CmdHelp,
+			versioncli.CmdVersion(userAgent),
 		},
 	}
 }
