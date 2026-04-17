@@ -75,58 +75,37 @@ describe('buildFilterString', () => {
     },
   ];
 
-  it('filters by a single column', () => {
-    const result = buildFilterString(
-      [Column.ATP_TEST_NAME],
-      mockGlobalFilters,
-      mockWidgetFilters,
-    );
+  it('processes filters correctly', () => {
+    const atpFilters = [mockGlobalFilters[0], mockWidgetFilters[0]];
+    const result = buildFilterString(atpFilters);
     expect(result).toBe(
       'atp_test_name = "globalValue1" AND atp_test_name = "widgetValue1"',
     );
   });
 
-  it('filters by multiple columns', () => {
-    const result = buildFilterString(
-      [Column.ATP_TEST_NAME, 'other_column'],
-      mockGlobalFilters,
-      mockWidgetFilters,
-    );
+  it('includes all filters provided', () => {
+    const result = buildFilterString([
+      ...mockGlobalFilters,
+      ...mockWidgetFilters,
+    ]);
     expect(result).toBe(
-      'atp_test_name = "globalValue1" AND other_column = "globalValue2" AND atp_test_name = "widgetValue1"',
+      'atp_test_name = "globalValue1" AND other_column = "globalValue2" AND atp_test_name = "widgetValue1" AND numeric_column = 123',
     );
   });
 
   it('handles numeric filters without quotes', () => {
-    const result = buildFilterString(
-      ['numeric_column'],
-      mockGlobalFilters,
-      mockWidgetFilters,
-    );
+    const result = buildFilterString([mockWidgetFilters[1]]);
     expect(result).toBe('numeric_column = 123');
   });
 
   it('excludes current filter', () => {
-    const result = buildFilterString(
-      [Column.ATP_TEST_NAME],
-      mockGlobalFilters,
-      mockWidgetFilters,
-      'global-1',
-    );
+    const atpFilters = [mockGlobalFilters[0], mockWidgetFilters[0]];
+    const result = buildFilterString(atpFilters, 'global-1');
     expect(result).toBe('atp_test_name = "widgetValue1"');
   });
 
-  it('returns empty string if no filters match', () => {
-    const result = buildFilterString(
-      ['non_existent_column'],
-      mockGlobalFilters,
-      mockWidgetFilters,
-    );
-    expect(result).toBe('');
-  });
-
-  it('handles undefined filters gracefully', () => {
-    const result = buildFilterString([Column.ATP_TEST_NAME]);
+  it('returns empty string if no filters provided', () => {
+    const result = buildFilterString([]);
     expect(result).toBe('');
   });
 
@@ -157,7 +136,7 @@ describe('buildFilterString', () => {
         },
       },
     ];
-    const result = buildFilterString([Column.ATP_TEST_NAME], duplicateFilters);
+    const result = buildFilterString(duplicateFilters);
     expect(result).toBe('atp_test_name = "value1"');
   });
 
@@ -176,7 +155,7 @@ describe('buildFilterString', () => {
         },
       },
     ];
-    const result = buildFilterString([Column.ATP_TEST_NAME], filters);
+    const result = buildFilterString(filters);
     expect(result).toBe('atp_test_name = "v2/android*"');
   });
 
@@ -195,7 +174,7 @@ describe('buildFilterString', () => {
         },
       },
     ];
-    const result = buildFilterString([Column.ATP_TEST_NAME], filters);
+    const result = buildFilterString(filters);
     expect(result).toBe('atp_test_name != "v2/android"');
   });
 
@@ -214,7 +193,7 @@ describe('buildFilterString', () => {
         },
       },
     ];
-    const result = buildFilterString(['build_creation_timestamp'], filters);
+    const result = buildFilterString(filters);
     expect(result).toMatch(
       /^build_creation_timestamp >= "\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
     );
@@ -235,7 +214,7 @@ describe('buildFilterString', () => {
         },
       },
     ];
-    const result = buildFilterString(['build_creation_timestamp'], filters);
+    const result = buildFilterString(filters);
     expect(result).toBe(
       'build_creation_timestamp >= "2026-03-01T00:00:00Z" AND build_creation_timestamp <= "2026-03-04T00:00:00Z"',
     );

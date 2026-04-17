@@ -45,7 +45,6 @@ import {
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   Column,
   COMMON_MESSAGES,
-  GLOBAL_TIME_RANGE_COLUMN,
   MAX_SUGGEST_RESULTS,
   OPERATOR_DISPLAY_NAMES,
   TYPE_TO_OPERATORS,
@@ -139,18 +138,10 @@ function FilterEditorRow({
 
   const filterString = useMemo(() => {
     return buildFilterString(
-      [Column.ATP_TEST_NAME, GLOBAL_TIME_RANGE_COLUMN],
-      globalFilters,
-      widgetFilters,
+      [...(globalFilters ?? []), ...(widgetFilters ?? [])],
       filter.id,
     );
   }, [globalFilters, widgetFilters, filter.id]);
-
-  const isAtpTestCol = filter.column === Column.ATP_TEST_NAME;
-  const hasAtpTestFilter = useMemo(() => {
-    return new RegExp(`\\b${Column.ATP_TEST_NAME}\\b`).test(filterString);
-  }, [filterString]);
-  const isEnabled = isAtpTestCol || hasAtpTestFilter;
 
   const { data: suggestionData, isLoading } = useSuggestMeasurementFilterValues(
     {
@@ -162,11 +153,7 @@ function FilterEditorRow({
     },
     {
       enabled:
-        !!parent &&
-        !!filter.column &&
-        debouncedQuery.length > 0 &&
-        isFocused &&
-        isEnabled,
+        !!parent && !!filter.column && debouncedQuery.length > 0 && isFocused,
       retry: false,
     },
   );

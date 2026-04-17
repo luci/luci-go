@@ -37,10 +37,9 @@ export interface ParsedFilter {
  */
 export const parseSingleFilter = (
   f: PerfFilter,
-  columnsToFilterBy: string[],
   currentFilterId?: string,
 ): ParsedFilter[] => {
-  if (!columnsToFilterBy.includes(f.column) || f.id === currentFilterId) {
+  if (f.id === currentFilterId) {
     return [];
   }
 
@@ -140,24 +139,14 @@ export const parseSingleFilter = (
  * @returns An AIP-160 compliant filter string.
  */
 export const buildFilterString = (
-  columnsToFilterBy: string[],
-  globalFilters?: readonly PerfFilter[],
-  widgetFilters?: readonly PerfFilter[],
+  filters: readonly PerfFilter[],
   currentFilterId?: string,
 ): string => {
   const parsedFilters: ParsedFilter[] = [];
 
-  const addFilters = (filtersToProcess?: readonly PerfFilter[]) => {
-    if (!filtersToProcess) return;
-    filtersToProcess.forEach((f) => {
-      parsedFilters.push(
-        ...parseSingleFilter(f, columnsToFilterBy, currentFilterId),
-      );
-    });
-  };
-
-  addFilters(globalFilters);
-  addFilters(widgetFilters);
+  filters.forEach((f) => {
+    parsedFilters.push(...parseSingleFilter(f, currentFilterId));
+  });
 
   // Eliminate duplicates
   const uniqueFilters = parsedFilters.filter(

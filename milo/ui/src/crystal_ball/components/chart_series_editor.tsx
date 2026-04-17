@@ -45,9 +45,7 @@ import { useDebounce } from 'react-use';
 import { FilterEditor } from '@/crystal_ball/components';
 import {
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
-  Column,
   COMMON_MESSAGES,
-  GLOBAL_TIME_RANGE_COLUMN,
   MAX_SUGGEST_RESULTS,
   OPERATOR_DISPLAY_NAMES,
 } from '@/crystal_ball/constants';
@@ -264,16 +262,11 @@ export function ChartSeriesItem({
     : '';
 
   const filterString = useMemo(() => {
-    return buildFilterString(
-      [Column.ATP_TEST_NAME, GLOBAL_TIME_RANGE_COLUMN],
-      globalFilters,
-      widgetFilters,
-    );
+    return buildFilterString([
+      ...(globalFilters ?? []),
+      ...(widgetFilters ?? []),
+    ]);
   }, [globalFilters, widgetFilters]);
-
-  const hasAtpTestFilter = useMemo(() => {
-    return new RegExp(`\\b${Column.ATP_TEST_NAME}\\b`).test(filterString);
-  }, [filterString]);
 
   const { data: suggestionData, isLoading: isLoadingSuggestions } =
     useSuggestMeasurementFilterValues(
@@ -285,11 +278,7 @@ export function ChartSeriesItem({
         filter: filterString,
       },
       {
-        enabled:
-          !!parent &&
-          debouncedQuery.length > 0 &&
-          isFocused &&
-          hasAtpTestFilter,
+        enabled: !!parent && debouncedQuery.length > 0 && isFocused,
         retry: false,
       },
     );

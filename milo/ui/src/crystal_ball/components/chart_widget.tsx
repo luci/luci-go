@@ -334,7 +334,7 @@ export function ChartWidget({
     const timeFilters =
       globalFilters?.flatMap((f) => {
         if (f.column !== 'TIMESTAMP') return [];
-        return parseSingleFilter(f, ['TIMESTAMP']);
+        return parseSingleFilter(f);
       }) ?? [];
 
     timeFilters.forEach((f) => {
