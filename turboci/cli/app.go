@@ -46,6 +46,9 @@ func application(p Params) *cli.Application {
 			// TODO(b/502646298): Optimization - add a subcommand to keep a
 			// live connection throughout a build and use it for all TurboCI
 			// calls.
+			// TODO(b/502646298): Support json format for the sub commands.
+			// Pay attention to anypb.Any fields, we'll need special treatment
+			// for them.
 			cmdReadWorkplan(p),
 			cmdQueryNodes(p),
 			cmdWriteNodes(p),
