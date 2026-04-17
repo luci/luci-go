@@ -436,7 +436,7 @@ func TestRealmsValidator(t *testing.T) {
 						}},
 					}
 					validator.Validate(vCtx, testCfg)
-					assert.Loosely(t, vCtx.Finalize(), should.ErrLike("unknown attribute"))
+					assert.Loosely(t, vCtx.Finalize(), should.ErrLike("this condition is completely ineffective"))
 				})
 			})
 		})

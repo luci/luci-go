@@ -18,132 +18,122 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/stringset"
-	realmsconf "go.chromium.org/luci/common/proto/realms"
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
-	protocol "go.chromium.org/luci/server/auth/service/protocol"
+	"go.chromium.org/luci/server/auth/service/protocol"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 )
 
 func TestPermissionsDBGeneration(t *testing.T) {
 	t.Parallel()
-	ftt.Run("testing permissionsDB generation", t, func(t *ftt.Test) {
-		attrs := []string{"attr-A", "attr-B"}
-		cfg := &configspb.PermissionsConfig{
-			Role: []*configspb.PermissionsConfig_Role{
-				{
-					Name: "role/test.reader",
-					Permissions: []*protocol.Permission{
-						{
-							Name: "test.config.get",
-						},
-					},
-				},
-				{
-					Name: "role/test.writer",
-					Permissions: []*protocol.Permission{
-						{
-							Name: "test.config.create",
-						},
-					},
-				},
-				{
-					Name: "role/supertest.writer",
-					Permissions: []*protocol.Permission{
-						{
-							Name: "test.superconfig.create",
-						},
-					},
-					Includes: []string{
-						"role/test.writer",
-					},
-				},
-			},
-			Attribute: attrs,
-		}
-		expectedDB := &PermissionsDB{
-			Rev: fmt.Sprintf("permissionsDB:%d", 123),
-			Permissions: map[string]*protocol.Permission{
-				"test.config.get":         {Name: "test.config.get"},
-				"test.config.create":      {Name: "test.config.create"},
-				"test.superconfig.create": {Name: "test.superconfig.create"},
-			},
-			Roles: map[string]*Role{
-				"role/test.reader": {
-					Name: "role/test.reader",
-					Permissions: stringset.NewFromSlice(
-						"test.config.get",
-					),
-				},
-				"role/test.writer": {
-					Name: "role/test.writer",
-					Permissions: stringset.NewFromSlice(
-						"test.config.create",
-					),
-				},
-				"role/supertest.writer": {
-					Name: "role/supertest.writer",
-					Permissions: stringset.NewFromSlice(
-						"test.superconfig.create",
-						"test.config.create",
-					),
-				},
-			},
-			attributes: stringset.NewFromSlice(attrs...),
-			ImplicitRootBindings: func(projID string) []*realmsconf.Binding {
-				return []*realmsconf.Binding{
-					{
-						Role:       "role/luci.internal.system",
-						Principals: []string{fmt.Sprintf("project:%s", projID)},
-					},
-					{
-						Role:       "role/luci.internal.buildbucket.reader",
-						Principals: []string{"group:buildbucket-internal-readers"},
-					},
-					{
-						Role:       "role/luci.internal.resultdb.reader",
-						Principals: []string{"group:resultdb-internal-readers"},
-					},
-					{
-						Role:       "role/luci.internal.resultdb.invocationSubmittedSetter",
-						Principals: []string{"group:resultdb-internal-invocation-submitters"},
-					},
-				}
-			},
-		}
 
-		t.Run("succeeds without permissions config", func(t *ftt.Test) {
-			db := NewPermissionsDB(nil, nil)
-			assert.Loosely(t, db.Rev, should.Equal("config-without-metadata"))
-			assert.Loosely(t, db.Permissions, should.BeEmpty)
-			assert.Loosely(t, db.Roles, should.BeEmpty)
-			assert.Loosely(t, db.attributes, should.BeEmpty)
-		})
+	cfg := &configspb.PermissionsConfig{
+		Permission: []*protocol.Permission{
+			{Name: "test.config.get", Attributes: []string{"a", "b"}},
+			{Name: "test.config.create"},
+			{Name: "test.superconfig.create", Attributes: []string{"b", "c"}},
+		},
+		Role: []*configspb.PermissionsConfig_Role{
+			{
+				Name: "role/test.reader",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "test.config.get",
+					},
+				},
+			},
+			{
+				Name: "role/supertest.writer",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "test.superconfig.create",
+					},
+				},
+				Includes: []string{
+					"role/test.writer",
+					"role/test.reader",
+				},
+			},
+			{
+				Name: "role/test.writer",
+				Permissions: []*protocol.Permission{
+					{
+						Name: "test.config.create",
+					},
+				},
+				Includes: []string{
+					"role/test.reader",
+				},
+			},
+		},
+	}
 
-		t.Run("succeeds without metadata", func(t *ftt.Test) {
-			db := NewPermissionsDB(cfg, nil)
-			assert.Loosely(t, db.Rev, should.Equal("config-without-metadata"))
-			assert.Loosely(t, db.Permissions, should.Match(expectedDB.Permissions))
-			assert.Loosely(t, db.Roles, should.Match(expectedDB.Roles))
-			assert.Loosely(t, setsAreEqual(db.attributes, expectedDB.attributes), should.BeTrue)
-		})
+	expectedDB := &PermissionsDB{
+		Rev: fmt.Sprintf("permissionsDB:%d", 123),
+		Permissions: map[string]*protocol.Permission{
+			"test.config.get": {
+				Name:       "test.config.get",
+				Attributes: []string{"a", "b"},
+			},
+			"test.config.create": {
+				Name: "test.config.create",
+			},
+			"test.superconfig.create": {
+				Name:       "test.superconfig.create",
+				Attributes: []string{"b", "c"},
+			},
+		},
+		Roles: map[string]*Role{
+			"role/test.reader": {
+				Name: "role/test.reader",
+				Permissions: stringset.NewFromSlice(
+					"test.config.get",
+				),
+				RelevantAttributes: stringset.NewFromSlice("a", "b"),
+			},
+			"role/test.writer": {
+				Name: "role/test.writer",
+				Permissions: stringset.NewFromSlice(
+					"test.config.create",
+					"test.config.get",
+				),
+				Includes: []string{
+					"role/test.reader",
+				},
+				RelevantAttributes: stringset.NewFromSlice("a", "b"),
+			},
+			"role/supertest.writer": {
+				Name: "role/supertest.writer",
+				Permissions: stringset.NewFromSlice(
+					"test.superconfig.create",
+					"test.config.create",
+					"test.config.get",
+				),
+				Includes: []string{
+					"role/test.writer",
+					"role/test.reader",
+				},
+				RelevantAttributes: stringset.NewFromSlice("a", "b", "c"),
+			},
+		},
+	}
 
-		t.Run("has metadata info", func(t *ftt.Test) {
-			db := NewPermissionsDB(cfg, &config.Meta{
-				Path:     "permissions.cfg",
-				Revision: "123",
-			})
-			assert.Loosely(t, db.Rev, should.Equal("permissions.cfg:123"))
-			assert.Loosely(t, db.Permissions, should.Match(expectedDB.Permissions))
-			assert.Loosely(t, db.Roles, should.Match(expectedDB.Roles))
-			assert.Loosely(t, setsAreEqual(db.attributes, expectedDB.attributes), should.BeTrue)
-		})
+	t.Run("succeeds without permissions config", func(t *testing.T) {
+		db := NewPermissionsDB(nil, nil)
+		assert.Loosely(t, db.Rev, should.Equal("config-without-metadata"))
+		assert.Loosely(t, db.Permissions, should.BeEmpty)
+		assert.Loosely(t, db.Roles, should.BeEmpty)
 	})
-}
 
-func setsAreEqual(a, b stringset.Set) bool {
-	return a.Contains(b) && b.Contains(a)
+	t.Run("works", func(t *testing.T) {
+		db := NewPermissionsDB(cfg, &config.Meta{
+			Path:     "permissions.cfg",
+			Revision: "123",
+		})
+		assert.Loosely(t, db.Rev, should.Equal("permissions.cfg:123"))
+		assert.Loosely(t, db.Permissions, should.Match(expectedDB.Permissions))
+		assert.Loosely(t, db.Roles, should.Match(expectedDB.Roles))
+	})
 }

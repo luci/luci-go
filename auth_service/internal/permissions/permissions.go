@@ -16,6 +16,9 @@ package permissions
 
 import (
 	"fmt"
+	"slices"
+
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
@@ -25,8 +28,8 @@ import (
 	"go.chromium.org/luci/auth_service/api/configspb"
 )
 
-// PermissionsDB is a representation of all defined roles, permissions
-// and implicit bindings.
+// PermissionsDB is a representation of all defined roles, permissions and
+// implicit bindings.
 //
 // This will be generated from permissions.cfg, once constructed this must
 // be treated as immutable.
@@ -35,84 +38,119 @@ import (
 // than they are identical, but if they don't have the same revision it does
 // not necessarily mean they are not identical.
 type PermissionsDB struct {
-	// Rev is the revision of this permissionDB
+	// Rev is the revision of this permissions DB.
 	Rev string
-
-	// Permissions is a map of Permissions str -> *protocol.Permission
+	// Permissions is a map of permission name -> *protocol.Permission.
 	Permissions map[string]*protocol.Permission
-
-	// Roles is a mapping of RoleName to Role.
+	// Roles is a mapping of role name to Role.
 	Roles map[string]*Role
-
-	// attributes is a set with attribute names allowed in conditions
-	attributes stringset.Set
-
-	// func(projID) -> []*realmsconf.Binding
-	ImplicitRootBindings func(string) []*realmsconf.Binding
+	// ImplicitRootBindings generates implicit bindings for the given project.
+	ImplicitRootBindings func(projID string) []*realmsconf.Binding
 }
 
-// Role represents a single role, containing the role
-// name and the permissions associated with this role.
+// Role represents a single role with the fully expanded permissions set.
 type Role struct {
-	// Name is the full name for this role
+	// Name is the full name for this role.
 	Name string
-
-	// Permissions contains all the permission strings for this
-	// role
+	// Permissions are all permissions that this role expands into.
 	Permissions stringset.Set
+	// Includes is a list of roles directly included by this role.
+	Includes []string
+	// RelevantAttributes is a union of attributes of all included permissions.
+	RelevantAttributes stringset.Set
 }
 
-// NewPermissionsDB constructs a new instance of PermissionsDB from a given permissions.cfg.
+// NewPermissionsDB constructs a new instance of PermissionsDB from a given
+// validated permissions.cfg.
 func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta *config.Meta) *PermissionsDB {
 	rev := "config-without-metadata"
 	if meta != nil {
 		rev = fmt.Sprintf("%s:%s", meta.Path, meta.Revision)
 	}
 
-	permissionsDB := &PermissionsDB{
+	permissions := make(map[string]*protocol.Permission, len(permissionscfg.GetPermission()))
+	for _, perm := range permissionscfg.GetPermission() {
+		perm = proto.CloneOf(perm)
+		slices.Sort(perm.Attributes)
+		permissions[perm.Name] = perm
+	}
+
+	roles := make(map[string]*Role, len(permissionscfg.GetRole()))
+	for _, role := range permissionscfg.GetRole() {
+		perms := make(stringset.Set, len(role.Permissions))
+		for _, perm := range role.Permissions {
+			perms.Add(perm.Name)
+		}
+		roles[role.Name] = &Role{
+			Name:        role.Name,
+			Permissions: perms,
+			Includes:    role.Includes,
+		}
+	}
+
+	// Recursively expand all "includes" relations.
+	expanded := make(map[string]bool, len(roles))
+	var expandRole func(role *Role)
+	expandRole = func(role *Role) {
+		if expanded[role.Name] {
+			return
+		}
+		expanded[role.Name] = true
+		for _, included := range role.Includes {
+			expandRole(roles[included])
+			for perm := range roles[included].Permissions {
+				role.Permissions.Add(perm)
+			}
+		}
+	}
+	for _, role := range roles {
+		expandRole(role)
+	}
+
+	// Collect RelevantAttributes sets.
+	for _, role := range roles {
+		for perm := range role.Permissions {
+			if attrs := permissions[perm].GetAttributes(); len(attrs) > 0 {
+				if role.RelevantAttributes == nil {
+					role.RelevantAttributes = make(stringset.Set, len(attrs))
+				}
+				role.RelevantAttributes.AddAll(attrs)
+			}
+		}
+	}
+
+	return &PermissionsDB{
 		Rev:         rev,
-		Permissions: make(map[string]*protocol.Permission),
-		Roles:       make(map[string]*Role),
+		Permissions: permissions,
+		Roles:       roles,
+		ImplicitRootBindings: func(projID string) []*realmsconf.Binding {
+			return []*realmsconf.Binding{
+				{
+					Role:       "role/luci.internal.system",
+					Principals: []string{fmt.Sprintf("project:%s", projID)},
+				},
+				{
+					Role:       "role/luci.internal.buildbucket.reader",
+					Principals: []string{"group:buildbucket-internal-readers"},
+				},
+				{
+					Role:       "role/luci.internal.resultdb.reader",
+					Principals: []string{"group:resultdb-internal-readers"},
+				},
+				{
+					Role:       "role/luci.internal.resultdb.invocationSubmittedSetter",
+					Principals: []string{"group:resultdb-internal-invocation-submitters"},
+				},
+			}
+		},
 	}
-
-	for _, role := range permissionscfg.GetRole() {
-		permissionsDB.Roles[role.GetName()] = &Role{role.GetName(), stringset.Set{}}
-		for _, perm := range role.GetPermissions() {
-			permissionsDB.Permissions[perm.GetName()] = perm
-			permissionsDB.Roles[role.GetName()].Permissions.Add(perm.GetName())
-		}
-	}
-
-	// Expand includes after all values in map
-	for _, role := range permissionscfg.GetRole() {
-		for _, inc := range role.GetIncludes() {
-			permissionsDB.Roles[role.GetName()].Permissions = permissionsDB.Roles[role.GetName()].Permissions.Union(permissionsDB.Roles[inc].Permissions)
-		}
-	}
-	permissionsDB.attributes = stringset.NewFromSlice(permissionscfg.GetAttribute()...)
-	permissionsDB.ImplicitRootBindings = func(projID string) []*realmsconf.Binding {
-		return []*realmsconf.Binding{
-			{
-				Role:       "role/luci.internal.system",
-				Principals: []string{fmt.Sprintf("project:%s", projID)},
-			},
-			{
-				Role:       "role/luci.internal.buildbucket.reader",
-				Principals: []string{"group:buildbucket-internal-readers"},
-			},
-			{
-				Role:       "role/luci.internal.resultdb.reader",
-				Principals: []string{"group:resultdb-internal-readers"},
-			},
-			{
-				Role:       "role/luci.internal.resultdb.invocationSubmittedSetter",
-				Principals: []string{"group:resultdb-internal-invocation-submitters"},
-			},
-		}
-	}
-	return permissionsDB
 }
 
-func (db *PermissionsDB) HasAttribute(attr string) bool {
-	return db.attributes.Has(attr)
+// IsAttributeRelevantForRole returns true if the given attribute is referenced
+// by at least one permission the given role expands into.
+func (db *PermissionsDB) IsAttributeRelevantForRole(attr, role string) bool {
+	if r, ok := db.Roles[role]; ok {
+		return r.RelevantAttributes.Has(attr)
+	}
+	return false
 }

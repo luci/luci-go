@@ -88,23 +88,15 @@ func PermissionsCfg() *configspb.PermissionsConfig {
 			{
 				Name: "role/dev.a",
 				Permissions: []*protocol.Permission{
-					{
-						Name: "luci.dev.p1",
-					},
-					{
-						Name: "luci.dev.p2",
-					},
+					{Name: "luci.dev.p1"},
+					{Name: "luci.dev.p2"},
 				},
 			},
 			{
 				Name: "role/dev.b",
 				Permissions: []*protocol.Permission{
-					{
-						Name: "luci.dev.p2",
-					},
-					{
-						Name: "luci.dev.p3",
-					},
+					{Name: "luci.dev.p2"},
+					{Name: "luci.dev.p3"},
 				},
 			},
 			{
@@ -117,42 +109,53 @@ func PermissionsCfg() *configspb.PermissionsConfig {
 			{
 				Name: "role/dev.unused",
 				Permissions: []*protocol.Permission{
-					{
-						Name: "luci.dev.p2",
-					},
-					{
-						Name: "luci.dev.p3",
-					},
-					{
-						Name: "luci.dev.p4",
-					},
-					{
-						Name: "luci.dev.p5",
-					},
-					{
-						Name: "luci.dev.unused",
-					},
+					{Name: "luci.dev.p2"},
+					{Name: "luci.dev.p3"},
+					{Name: "luci.dev.p4"},
+					{Name: "luci.dev.p5"},
+					{Name: "luci.dev.unused"},
 				},
 			},
 			{
 				Name: "role/implicitRoot",
 				Permissions: []*protocol.Permission{
-					{
-						Name:     "luci.dev.implicitRoot",
-						Internal: true,
-					},
+					{Name: "luci.dev.implicitRoot"},
 				},
 			},
 			{
 				Name: "role/luci.internal.tester",
 				Permissions: []*protocol.Permission{
-					{
-						Name: "luci.dev.p1",
-					},
+					{Name: "luci.dev.p1"},
 				},
 			},
 		},
-		Attribute: []string{"a1", "a2", "root"},
+		Permission: []*protocol.Permission{
+			{
+				Name:       "luci.dev.p1",
+				Attributes: []string{"a1", "root"},
+			},
+			{
+				Name:       "luci.dev.p2",
+				Attributes: []string{"a1", "a2"},
+			},
+			{
+				Name: "luci.dev.p3",
+			},
+			{
+				Name: "luci.dev.p4",
+			},
+			{
+				Name: "luci.dev.p5",
+			},
+			{
+				Name: "luci.dev.unused",
+			},
+			{
+				Name:       "luci.dev.implicitRoot",
+				Internal:   true,
+				Attributes: []string{"root"},
+			},
+		},
 	}
 }
 

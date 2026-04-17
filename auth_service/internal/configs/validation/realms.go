@@ -362,16 +362,17 @@ func (rv *realmsValidator) validateBinding(ctx *validation.Context, binding *rea
 	// Check the conditions are valid.
 	for i, condition := range binding.GetConditions() {
 		ctx.Enter("condition #%d", i+1)
-
-		restrict := condition.GetRestrict()
-		if restrict == nil {
-			ctx.Errorf("invalid empty condition")
-		} else {
-			if !rv.db.HasAttribute(restrict.Attribute) {
-				ctx.Errorf("unknown attribute %q", restrict.Attribute)
+		switch cond := condition.GetOp().(type) {
+		case *realmsconf.Condition_Restrict:
+			attr := cond.Restrict.Attribute
+			if attr == "" {
+				ctx.Errorf("invalid empty condition")
+			} else if !rv.db.IsAttributeRelevantForRole(attr, binding.GetRole()) {
+				ctx.Errorf("none of the permissions in role %q evaluate attribute %q, this condition is completely ineffective", binding.GetRole(), attr)
 			}
+		default:
+			ctx.Errorf("unrecognized condition format")
 		}
-
 		ctx.Exit()
 	}
 }
