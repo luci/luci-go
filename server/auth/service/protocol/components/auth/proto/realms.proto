@@ -71,8 +71,8 @@ message Realms {
 
 // Permission is a symbol that has form "<service>.<subject>.<verb>", which
 // describes some elementary action ("<verb>") that can be done to some category
-// of resources ("<subject>"), managed by some particular kind of LUCI service
-// ("<service>").
+// of resources ("<subject>", usually plural), managed by some particular kind
+// of LUCI service ("<service>").
 //
 // Within each individual realm (see Realm message), a principal (such as an end
 // user or a service account) can have zero or more permissions that describe
@@ -80,9 +80,9 @@ message Realms {
 // message for the definition of what "belonging to the realm" means.
 //
 // Examples of permissions:
-//   * buildbucket.build.create
-//   * swarming.pool.listBots
-//   * swarming.task.cancel
+//   * buildbucket.builds.create
+//   * swarming.pools.listBots
+//   * swarming.tasks.cancel
 //
 // Note that permission names are composed of generic terms, not some specific
 // IDs of service deployments or resources. Generally, using a concrete
@@ -96,12 +96,20 @@ message Realms {
 // some predefined roles by the LUCI Auth service itself. They are used to setup
 // ACLs for internal interactions between LUCI components.
 //
-// Each individual LUCI service should document what permissions it checks and
-// when. It becomes a part of service's public API. Usually services should
-// check only permissions of resources they own (e.g. "<service>.<subject>.*"),
-// but in exceptional cases they may also check permissions intended for other
-// services. This is primarily useful for services that somehow "proxy" access
-// to resources.
+// Permission checks done by a service may be accompanied by a map of attributes
+// that describe a context of the call (like what resource is being accessed).
+// Such attributes can be used to make role bindings conditional. Attribute keys
+// have form "<service>.<noun>[.<field>]+" (for example, "scheduler.job.name").
+// Each permission predeclares what attributes are supplied when it is being
+// checked. The service must consistently supply values of all such declared
+// attributes every time it checks the permission.
+//
+// Each individual LUCI service should document what permissions it checks, when
+// and with what attributes. It becomes a part of service's public API. Usually
+// services should check only permissions of resources they own (e.g.
+// "<service>.<subject>.*"), but in exceptional cases they may also check
+// permissions intended for other services. This is primarily useful for
+// services that somehow "proxy" access to resources.
 //
 // Field `permissions` in Realms message describes all permissions known to the
 // LUCI Auth service. The LUCI Auth service guarantees that all permissions
@@ -113,6 +121,7 @@ message Realms {
 message Permission {
   string name = 1;  // "<service>.<subject>.<verb>"
   bool internal = 2; // internal permissions cannot be used in project realms
+  repeated string attributes = 3;  // the list of recognized attributes
 }
 
 
@@ -127,8 +136,8 @@ message Permission {
 // the check.
 //
 // A list of available attributes and meaning of their values depends on
-// the permission being checked and the service should document it in its API
-// documentation.
+// the permission being checked and it is part of the permission configuration.
+// The service should also document it in its API documentation.
 message Condition {
   // AttributeRestriction checks that the attributes set (as a set of key-value
   // pairs) contains a particular (attribute, value) pair. Checked values are
@@ -145,7 +154,12 @@ message Condition {
 }
 
 
-// Realm is a named collection of (<principal>, <permission>) pairs.
+// Realm is a named map {<permission> -> [(<principalsSet>, <conditions>)]}.
+//
+// A principal is said to have a permission in a realm with a specific
+// context (a set of attributes) if there's a (<principalsSet>, <conditions>)
+// pair in this permission's list, such that the principal is in <principalsSet>
+// and the context matches <conditions>.
 //
 // Realms are primarily defined in realms.cfg project config files. Such realms
 // are called project realms. They are controlled by respective **project**
@@ -198,11 +212,9 @@ message Condition {
 // administration responsibilities to the project (rather than relying on
 // exclusively LUCI service administrators).
 //
-// The actual list of (<principal>, <permission>) pairs is defined via a list of
-// bindings, where each binding basically says "all these principals have all
-// these permissions". In other words, each binding defines some subset of
-// permissions and the overall realm permissions is a union of all such subsets.
-// Subsets defined by bindings may potentially intersect or be empty.
+// The actual permissions mapping is defined via a list of bindings, where each
+// binding basically says "all these principals have all these permissions if
+// the given conditions are satisfied".
 //
 // The LUCI Auth service constructs bindings by interpreting realms.cfg files
 // using some set of rules. Individual LUCI services **must not care** about
@@ -229,7 +241,9 @@ message Realm {
 }
 
 
-// Binding assigns all specified permissions to all specified principals.
+// Binding assigns all specified permissions to all specified principals if
+// the specified conditions are satisfied based on value of attributes passed
+// to the permission check.
 message Binding {
   // Permissions in increasing order of their indexes.
   //

@@ -131,33 +131,41 @@ message OAuthConfig {
 // Defines the list of roles and their respective permissions.
 message PermissionsConfig {
   // Defines a role that includes given permissions and other roles.
-  // The role should not have been defined before. To include this role into another
-  // role, you can specify this role by name.
+  // The role should not have been defined before. To include this role into
+  // another role, you can specify this role by name.
   message Role {
-    // Identifier for a role, will have the form <prefix><project>.<noun>
-    //  examples:
-    //    "role/exampleproject.reader"
-    //    "role/exampleproject.owner"
+    // Identifier for a role, will have the form "role/<service>.<noun>". The
+    // noun usually ends with "-er".
     //
-    // Prefixes:
-    //  "role/" -- role names defined in Auth service code.
-    //  "customRole/" -- role names that can be defined in user-supplied realms.cfg.
-    //  "role/luci.internal." -- interally used roles that are forbidden in realms.cfg.
+    // Examples:
+    //    "role/buildbucket.reader"
+    //    "role/buildbucket.owner"
+    //
+    // Service name "luci.internal" is used for internal roles that are
+    // forbidden to be referenced from project's realms.cfg.
     string name = 1;
 
     // List of permissions associated with this role, same permission may not be
     // declared more than once per role.
-    // Permissions should be of the form: <service>.<subject>.<verb>
+    //
+    // Only "name" is required and allowed. Other fields must be empty (their
+    // values will be taken from "permission" list in the top-level
+    // PermissionsConfig message). We use full Permission message here (instead
+    // of a string) for historical reasons.
     repeated components.auth.realms.Permission permissions = 2;
 
-    // List of other roles to include in this role, includes all the permissions
-    // that the included role contains. The referenced role should be defined already.
+    // List of other roles to include in this role.
+    //
+    // All their permission will be added to the current role's permissions.
     repeated string includes = 3;
   }
 
   // Representation of all defined roles.
   repeated Role role = 1;
 
-  // Defines attributes that can be referenced in certain conditions.
-  repeated string attribute = 2;
+  // A union of all attributes across all permissions.
+  repeated string attribute = 2 [ deprecated = true ];
+
+  // All permissions across all defined roles.
+  repeated components.auth.realms.Permission permission = 3;
 }
