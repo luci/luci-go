@@ -128,13 +128,28 @@ export function AnalysisDetailsPage() {
 
   // TODO: display alert if the build ID queried is not the first failed build
   //       linked to the failure analysis
+  const errorStr = `${error}`;
+  const isNotFound =
+    errorStr.includes('NOT_FOUND') || errorStr.includes('not found');
+  const isUnimplemented =
+    errorStr.includes('UNIMPLEMENTED') ||
+    errorStr.includes('API method not implemented');
+
   if (isError) {
+    if (isNotFound || isUnimplemented) {
+      return (
+        <div className="section">
+          <Alert severity="info">
+            <AlertTitle>Analysis Not Found</AlertTitle>
+            Analysis for Buildbucket ID &quot;{bbid}&quot; is not found.
+          </Alert>
+        </div>
+      );
+    }
     return (
       <div className="section">
         <Alert severity="error">
           <AlertTitle>Failed to load analysis details</AlertTitle>
-          {/* TODO: display more error detail for input issues e.g.
-              Build not found, No analysis for that build, etc */}
           An error occurred when querying for the analysis details using build
           ID &quot;{bbid}&quot;:
           <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
@@ -157,7 +172,14 @@ export function AnalysisDetailsPage() {
   }
 
   if (!data.analyses.length) {
-    return <></>;
+    return (
+      <div className="section">
+        <Alert severity="info">
+          <AlertTitle>Analysis Not Found</AlertTitle>
+          Analysis for build ID &quot;{bbid}&quot; is not found.
+        </Alert>
+      </div>
+    );
   }
   const analysis = data.analyses[0];
 
