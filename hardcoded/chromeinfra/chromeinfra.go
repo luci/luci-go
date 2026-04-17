@@ -94,6 +94,9 @@ const (
 
 	// RPCExplorerClientID is the default client ID used by RPC Explorer.
 	RPCExplorerClientID = "446450136466-e77v49thuh5dculh78gumq3oncqe28m3.apps.googleusercontent.com"
+
+	// TurboCIEndpoint is the default endpoint for Turbo CI Orchestrator Private API.
+	TurboCIEndpoint = "turboci.pa.googleapis.com"
 )
 
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra
