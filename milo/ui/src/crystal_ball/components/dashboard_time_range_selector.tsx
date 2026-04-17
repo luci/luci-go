@@ -84,6 +84,8 @@ export function DashboardTimeRangeSelector({
   const [localUnit, setLocalUnit] = useState<string>(initialUnit);
   const [localStartTime, setLocalStartTime] = useState<DateTime | null>(null);
   const [localEndTime, setLocalEndTime] = useState<DateTime | null>(null);
+  const [startTimeError, setStartTimeError] = useState<string | null>(null);
+  const [endTimeError, setEndTimeError] = useState<string | null>(null);
 
   const { startTime, endTime, timeOption } = useMemo<{
     startTime: DateTime | null;
@@ -173,6 +175,8 @@ export function DashboardTimeRangeSelector({
     setAnchorEl(event.currentTarget);
     setLocalStartTime(startTime);
     setLocalEndTime(endTime);
+    setStartTimeError(null);
+    setEndTimeError(null);
     if (timeOption !== CUSTOMIZE_OPTION) {
       const match = timeOption.match(/^(\d+)([a-zA-Z])$/);
       if (match) {
@@ -188,8 +192,28 @@ export function DashboardTimeRangeSelector({
   };
 
   const handleApplyAbsolute = () => {
-    updateTimeRange(localStartTime, localEndTime, CUSTOMIZE_OPTION);
-    setAnchorEl(null);
+    let isValid = true;
+    setStartTimeError(null);
+    setEndTimeError(null);
+
+    if (!localStartTime) {
+      setStartTimeError(COMMON_MESSAGES.FROM_DATE_REQUIRED);
+      isValid = false;
+    }
+    if (!localEndTime) {
+      setEndTimeError(COMMON_MESSAGES.TO_DATE_REQUIRED);
+      isValid = false;
+    }
+    if (localStartTime && localEndTime && localStartTime > localEndTime) {
+      setStartTimeError(COMMON_MESSAGES.FROM_DATE_MUST_BE_BEFORE_TO);
+      setEndTimeError(COMMON_MESSAGES.TO_DATE_MUST_BE_AFTER_FROM);
+      isValid = false;
+    }
+
+    if (isValid) {
+      updateTimeRange(localStartTime, localEndTime, CUSTOMIZE_OPTION);
+      setAnchorEl(null);
+    }
   };
 
   return (
@@ -288,15 +312,33 @@ export function DashboardTimeRangeSelector({
               label={COMMON_MESSAGES.FROM_UTC}
               timezone="UTC"
               value={localStartTime}
-              onChange={(newValue) => setLocalStartTime(newValue)}
-              slotProps={{ field: { clearable: true } }}
+              onChange={(newValue) => {
+                setLocalStartTime(newValue);
+                if (startTimeError) setStartTimeError(null);
+              }}
+              slotProps={{
+                textField: {
+                  error: Boolean(startTimeError),
+                  helperText: startTimeError,
+                },
+                field: { clearable: true },
+              }}
             />
             <DateTimePicker
               label={COMMON_MESSAGES.TO_UTC}
               timezone="UTC"
               value={localEndTime}
-              onChange={(newValue) => setLocalEndTime(newValue)}
-              slotProps={{ field: { clearable: true } }}
+              onChange={(newValue) => {
+                setLocalEndTime(newValue);
+                if (endTimeError) setEndTimeError(null);
+              }}
+              slotProps={{
+                textField: {
+                  error: Boolean(endTimeError),
+                  helperText: endTimeError,
+                },
+                field: { clearable: true },
+              }}
             />
             <Button variant="contained" onClick={handleApplyAbsolute}>
               {COMMON_MESSAGES.APPLY}
