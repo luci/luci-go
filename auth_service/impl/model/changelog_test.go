@@ -1155,22 +1155,12 @@ func TestGenerateChanges(t *testing.T) {
 
 		t.Run("AuthRealmsGlobals changes", func(t *ftt.Test) {
 			permCfg := &configspb.PermissionsConfig{
-				Role: []*configspb.PermissionsConfig_Role{
+				Permission: []*protocol.Permission{
 					{
-						Name: "role/test.role.editor",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "test.perm.edit",
-							},
-						},
+						Name: "test.perm.edit",
 					},
 					{
-						Name: "role/test.role.creator",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "test.perm.create",
-							},
-						},
+						Name: "test.perm.create",
 					},
 				},
 			}
@@ -1184,15 +1174,10 @@ func TestGenerateChanges(t *testing.T) {
 			}})
 
 			permCfg = &configspb.PermissionsConfig{
-				Role: []*configspb.PermissionsConfig_Role{
+				Permission: []*protocol.Permission{
 					{
-						Name: "role/test.role.creator",
-						Permissions: []*protocol.Permission{
-							{
-								Name:     "test.perm.create",
-								Internal: true,
-							},
-						},
+						Name:     "test.perm.create",
+						Internal: true,
 					},
 				},
 			}
@@ -1207,22 +1192,11 @@ func TestGenerateChanges(t *testing.T) {
 			}})
 
 			permCfg = &configspb.PermissionsConfig{
-				Role: []*configspb.PermissionsConfig_Role{
+				Permission: []*protocol.Permission{
 					{
-						Name: "role/test.role.editor",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "test.perm.edit",
-							},
-						},
-					},
-					{
-						Name: "role/test.role.creator",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "test.perm.create",
-							},
-						},
+						Name:       "test.perm.create",
+						Internal:   true,
+						Attributes: []string{"a", "b"},
 					},
 				},
 			}
@@ -1230,7 +1204,26 @@ func TestGenerateChanges(t *testing.T) {
 			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 			actualChanges, err = generateChanges(ctx, 3)
 			assert.Loosely(t, err, should.BeNil)
-			validateChanges(ctx, "add perm to realms globals, old config present", 3, actualChanges, []*AuthDBChange{{
+			validateChanges(ctx, "update realms globals, old config present", 3, actualChanges, []*AuthDBChange{{
+				ChangeType:         ChangeRealmsGlobalsChanged,
+				PermissionsChanged: []string{"test.perm.create"},
+			}})
+
+			permCfg = &configspb.PermissionsConfig{
+				Permission: []*protocol.Permission{
+					{
+						Name: "test.perm.edit",
+					},
+					{
+						Name: "test.perm.create",
+					},
+				},
+			}
+			assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(8))
+			actualChanges, err = generateChanges(ctx, 4)
+			assert.Loosely(t, err, should.BeNil)
+			validateChanges(ctx, "add perm to realms globals, old config present", 4, actualChanges, []*AuthDBChange{{
 				ChangeType:         ChangeRealmsGlobalsChanged,
 				PermissionsAdded:   []string{"test.perm.edit"},
 				PermissionsChanged: []string{"test.perm.create"},

@@ -489,7 +489,7 @@ func TestPermissionsConfigValidation(t *testing.T) {
 					}
 				`)
 				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
-				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`invalid prefix, possible prefixes: ("role/", "customRole/", "role/luci.internal.")`))
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`invalid role name, must start with "role/"`))
 			})
 
 			t.Run("role defined twice", func(t *ftt.Test) {
@@ -505,22 +505,44 @@ func TestPermissionsConfigValidation(t *testing.T) {
 					}
 				`)
 				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
-				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("role/test.role is already defined"))
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`"role/test.role"): such role was already declared`))
 			})
 
 			t.Run("invalid permissions format", func(t *ftt.Test) {
+				content := []byte(`
+					permission {
+						name: "examplePermission"
+					}
+				`)
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("must have the form <service>.<subject>.<verb>"))
+			})
+
+			t.Run("unknown permission", func(t *ftt.Test) {
 				content := []byte(`
 					role {
 						name: "role/test.role"
 						permissions: [
 							{
-								name: "examplePermission",
+								name: "testinternal.state.create",
 							}
 						]
 					}
 				`)
 				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
-				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("Permissions must have the form <service>.<subject>.<verb>"))
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("no such permission defined in the top-level permission list"))
+			})
+
+			t.Run("invalid attribute", func(t *ftt.Test) {
+				content := []byte(`
+					permission {
+						name: "testproject.state.create"
+						attributes: "a"
+						attributes: ""
+					}
+				`)
+				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("attribute #2: name is required"))
 			})
 
 			t.Run("invalid internal definition", func(t *ftt.Test) {
@@ -530,13 +552,16 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						permissions: [
 							{
 								name: "testinternal.state.create",
-								internal: true
 							}
 						]
 					}
+					permission {
+						name: "testinternal.state.create",
+						internal: true
+					}
 				`)
 				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
-				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("invalid format: can only define internal permissions for internal roles"))
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("it can only be added to internal roles"))
 			})
 
 			t.Run("role not defined in includes", func(t *ftt.Test) {
@@ -549,7 +574,7 @@ func TestPermissionsConfigValidation(t *testing.T) {
 					}
 				`)
 				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
-				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("role/not.defined not defined"))
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`unknown included role "role/not.defined"`))
 			})
 
 			t.Run("cycles", func(t *ftt.Test) {
@@ -563,7 +588,7 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						}
 					`)
 					assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
-					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("cycle found:"))
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("introduces an inclusion cycle"))
 				})
 
 				t.Run("small cycle", func(t *ftt.Test) {
@@ -582,7 +607,7 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						}
 					`)
 					assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
-					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("cycle found: role/test.role -> role/test.role2 -> role/test.role"))
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(`(role #1 "role/test.role"): inclusion of "role/test.role2" introduces an inclusion cycle`))
 				})
 
 				t.Run("bigger cycle", func(t *ftt.Test) {
@@ -613,7 +638,9 @@ func TestPermissionsConfigValidation(t *testing.T) {
 						}
 					`)
 					assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
-					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("cycle found: role/test.role -> role/test.role3 -> role/test.role4 -> role/test.role2 -> role/test.role"))
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring(
+						`(role #1 "role/test.role"): inclusion of "role/test.role3" introduces an inclusion cycle`,
+					))
 				})
 
 				t.Run("cross edge", func(t *ftt.Test) {
@@ -689,6 +716,17 @@ func TestPermissionsConfigValidation(t *testing.T) {
 							}
 						]
 					}
+					permission {
+						name: "testproject.state.create"
+						attributes: "a"
+						attributes: "b"
+					}
+					permission {
+						name: "testproject.state.update"
+					}
+					permission {
+						name: "testproject.state.extra"
+					}
 				`)
 				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)
 				assert.Loosely(t, vctx.Finalize(), should.BeNil)
@@ -738,6 +776,25 @@ func TestPermissionsConfigValidation(t *testing.T) {
 								internal: true
 							}
 						]
+					}
+					permission {
+						name: "testinternal.state.create"
+						internal: true
+					}
+					permission {
+						name: "testproject.state.create"
+					}
+					permission {
+						name: "testproject.state.update"
+					}
+					permission {
+						name: "testproject.state.delete"
+					}
+					permission {
+						name: "testproject.state.get"
+					}
+					permission {
+						name: "testproject.state.list"
 					}
 				`)
 				assert.Loosely(t, validatePermissionsCfg(vctx, configSet, path, content), should.BeNil)

@@ -17,6 +17,7 @@ package model
 
 import (
 	"bytes"
+	"cmp"
 	stdzlib "compress/zlib"
 	"context"
 	"crypto/sha256"
@@ -1765,6 +1766,8 @@ func permsEqual(permsA, permsB []*protocol.Permission) bool {
 // updateAuthRealmsGlobals updates the AuthRealmsGlobals singleton entity in
 // datastore, creating the entity if necessary.
 //
+// It contains the list of all known permissions as defined in permissions.cfg.
+//
 // Returns an annotated error if one occurs.
 func updateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.PermissionsConfig, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
@@ -1773,41 +1776,28 @@ func updateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.Permission
 			return errors.Fmt("error while fetching AuthRealmsGlobals entity: %w", err)
 		}
 
+		// Normalize the list of permissions in the config before storing them.
+		cfgPerms := make([]*protocol.Permission, 0, len(permsCfg.Permission))
+		for _, perm := range permsCfg.Permission {
+			perm = proto.CloneOf(perm)
+			slices.Sort(perm.Attributes)
+			cfgPerms = append(cfgPerms, perm)
+		}
+		slices.SortFunc(cfgPerms, func(a, b *protocol.Permission) int {
+			return cmp.Compare(a.Name, b.Name)
+		})
+
+		// Extract the currently stored permissions.
 		if stored == nil {
 			stored = makeAuthRealmsGlobals(ctx)
 		}
-
-		var storedPermsList []*protocol.Permission
+		var storedPerms []*protocol.Permission
 		if stored.PermissionsList != nil {
-			storedPermsList = stored.PermissionsList.GetPermissions()
-		}
-
-		// Get the permissions from the config, using the stored
-		// permissions count as a size hint for initial allocation.
-		storedCount := len(storedPermsList)
-		cfgPermsNames := make(stringset.Set, storedCount)
-		cfgPermsMap := make(map[string]*protocol.Permission, storedCount)
-		for _, r := range permsCfg.GetRole() {
-			for _, p := range r.GetPermissions() {
-				name := p.GetName()
-				if cfgPermsNames.Has(name) {
-					continue
-				}
-
-				cfgPermsNames.Add(name)
-				cfgPermsMap[name] = p
-			}
-		}
-
-		// The list of permissions must be in alphabetical order. See
-		// https://pkg.go.dev/go.chromium.org/luci/server/auth/service/protocol#Realms
-		orderedCfgPerms := make([]*protocol.Permission, len(cfgPermsNames))
-		for i, name := range cfgPermsNames.ToSortedSlice() {
-			orderedCfgPerms[i] = cfgPermsMap[name]
+			storedPerms = stored.PermissionsList.GetPermissions()
 		}
 
 		// Exit early if the permissions haven't actually changed.
-		if stored.PermissionsList != nil && permsEqual(storedPermsList, orderedCfgPerms) {
+		if stored.PermissionsList != nil && permsEqual(storedPerms, cfgPerms) {
 			logging.Infof(ctx, "skipping update of AuthRealmsGlobals; stored.PermissionsList matches latest permissions.cfg")
 			return nil
 		}
@@ -1818,7 +1808,7 @@ func updateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.Permission
 		}
 
 		stored.PermissionsList = &permissions.PermissionsList{
-			Permissions: orderedCfgPerms,
+			Permissions: cfgPerms,
 		}
 		return commitEntity(stored, clock.Now(ctx).UTC(), serviceIdentity, false)
 	})

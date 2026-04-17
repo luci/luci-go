@@ -195,154 +195,123 @@ func validateImportsCfg(ctx *validation.Context, configSet, path string, content
 	return nil
 }
 
-// validatePermissionsCfg does basic validation that the permissions.cfg file has the proper format.
+// validatePermissionsCfg does basic validation that the permissions.cfg file
+// has the proper format.
 func validatePermissionsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
 	cfg := configspb.PermissionsConfig{}
 
-	// Helper Functions
-	testPrefixes := func(s string, prefixes ...string) bool {
-		for _, p := range prefixes {
-			if strings.HasPrefix(s, p) {
+	if err := prototext.Unmarshal(content, &cfg); err != nil {
+		ctx.Error(err)
+		return nil
+	}
+
+	permMap := make(map[string]*protocol.Permission, len(cfg.Permission))
+	for idx, perm := range cfg.Permission {
+		ctx.Enter("permission #%d %q", idx+1, perm.Name)
+		validatePermission(ctx, perm, permMap)
+		ctx.Exit()
+	}
+
+	roleMap := make(map[string]*configspb.PermissionsConfig_Role, len(cfg.GetRole()))
+	for idx, role := range cfg.Role {
+		ctx.Enter("role #%d %q", idx+1, role.Name)
+		validateRole(ctx, role, permMap, roleMap)
+		ctx.Exit()
+	}
+
+	inclusions := make(map[string][]string, len(roleMap))
+	for _, role := range cfg.Role {
+		inclusions[role.Name] = role.Includes
+	}
+
+	for idx, role := range cfg.Role {
+		ctx.Enter("role #%d %q", idx+1, role.Name)
+		validateRoleExpansion(ctx, role.Name, inclusions)
+		ctx.Exit()
+	}
+
+	return nil
+}
+
+func validatePermission(ctx *validation.Context, perm *protocol.Permission, permMap map[string]*protocol.Permission) {
+	if perm.Name == "" {
+		ctx.Errorf("name is required")
+	} else if permMap[perm.Name] != nil {
+		ctx.Errorf("such permission was already declared")
+	} else {
+		if strings.Count(perm.Name, ".") != 2 {
+			ctx.Errorf("permission name must have the form <service>.<subject>.<verb>")
+		}
+		permMap[perm.Name] = perm
+	}
+	for idx, attr := range perm.Attributes {
+		if attr == "" {
+			ctx.Errorf("attribute #%d: name is required", idx+1)
+		}
+	}
+}
+
+func validateRole(ctx *validation.Context,
+	role *configspb.PermissionsConfig_Role,
+	permMap map[string]*protocol.Permission,
+	roleMap map[string]*configspb.PermissionsConfig_Role,
+) {
+	if role.Name == "" {
+		ctx.Errorf("name is required")
+	} else if roleMap[role.Name] != nil {
+		ctx.Errorf("such role was already declared")
+	} else {
+		if !strings.HasPrefix(role.Name, constants.PrefixBuiltinRole) {
+			ctx.Errorf("invalid role name, must start with %q", constants.PrefixBuiltinRole)
+		}
+		roleMap[role.Name] = role
+	}
+
+	for idx, perm := range role.Permissions {
+		ctx.Enter("permission #%d %q", idx+1, perm.Name)
+		if perm.Name == "" {
+			ctx.Errorf("name is required")
+		} else if def := permMap[perm.Name]; def != nil {
+			if def.GetInternal() && !strings.HasPrefix(role.Name, constants.PrefixInternalRole) {
+				ctx.Errorf("this is an internal permission, it can only be added to internal roles")
+			}
+		} else {
+			ctx.Errorf("no such permission defined in the top-level permission list")
+		}
+		ctx.Exit()
+	}
+}
+
+func validateRoleExpansion(ctx *validation.Context, role string, inclusions map[string][]string) {
+	for _, inc := range inclusions[role] {
+		if _, ok := inclusions[inc]; !ok {
+			ctx.Errorf("unknown included role %q", inc)
+		} else if isRoleIncludedBy(role, inc, inclusions) {
+			ctx.Errorf("inclusion of %q introduces an inclusion cycle", inc)
+		}
+	}
+}
+
+// isRoleIncludedBy is true if role is in a transitive inclusion set of root.
+func isRoleIncludedBy(role, root string, inclusionMap map[string][]string) bool {
+	explored := stringset.New(0)
+	var explore func(node string) bool
+	explore = func(node string) bool {
+		if node == role {
+			return true
+		}
+		if !explored.Add(node) {
+			return false // already explored or exploring now
+		}
+		for _, included := range inclusionMap[node] {
+			if explore(included) {
 				return true
 			}
 		}
 		return false
 	}
-
-	// Start validation
-	ctx.Enter("validating permissions.cfg")
-	defer ctx.Exit()
-
-	if err := prototext.Unmarshal(content, &cfg); err != nil {
-		ctx.Error(err)
-	}
-
-	roleMap := make(map[string]*configspb.PermissionsConfig_Role, len(cfg.GetRole()))
-	roleSet := stringset.Set{}
-
-	ctx.Enter("checking role names and building map")
-	for _, role := range cfg.GetRole() {
-		if role.GetName() == "" {
-			ctx.Errorf("name is required")
-		}
-
-		if !testPrefixes(role.GetName(), constants.PrefixBuiltinRole, constants.PrefixCustomRole, constants.PrefixInternalRole) {
-			ctx.Errorf(`invalid prefix, possible prefixes: (%q, %q, %q)`,
-				constants.PrefixBuiltinRole,
-				constants.PrefixCustomRole,
-				constants.PrefixInternalRole)
-		}
-
-		if _, ok := roleMap[role.GetName()]; ok {
-			ctx.Errorf("%s is already defined", role.GetName())
-		}
-		roleMap[role.GetName()] = role
-		roleSet.Add(role.GetName())
-	}
-	ctx.Exit()
-
-	ctx.Enter("checking permissions and includes")
-	for _, roleObj := range roleMap {
-		for _, perm := range roleObj.GetPermissions() {
-			if strings.Count(perm.GetName(), ".") != 2 {
-				ctx.Errorf("invalid format: Permissions must have the form <service>.<subject>.<verb>")
-			}
-			if perm.GetInternal() && !strings.HasPrefix(roleObj.GetName(), constants.PrefixInternalRole) {
-				ctx.Errorf("invalid format: can only define internal permissions for internal roles")
-			}
-		}
-
-		for _, inc := range roleObj.GetIncludes() {
-			if _, ok := roleMap[inc]; !ok {
-				ctx.Errorf("%s not defined", inc)
-			}
-		}
-	}
-	ctx.Exit()
-
-	ctx.Enter("checking for cycles")
-	seen := stringset.New(len(roleSet))
-	for _, roleName := range roleSet.ToSortedSlice() {
-		if !seen.Has(roleName) {
-			cycle, visited, err := findRoleDependencyCycle(roleName, roleMap)
-			if err != nil {
-				ctx.Error(err)
-			}
-			if cycle != nil {
-				cycleStr := strings.Join(cycle, " -> ")
-				ctx.Errorf("cycle found: %s", cycleStr)
-			}
-			seen.AddAll(visited)
-		}
-	}
-
-	ctx.Exit()
-
-	return nil
-}
-
-// findRoleDependencyCycle performs a DFS over our roleMap to see if there is a cycle present.
-func findRoleDependencyCycle(startPoint string, roleMap map[string]*configspb.PermissionsConfig_Role) ([]string, []string, error) {
-	visited := stringset.Set{}
-
-	stack := []*configspb.PermissionsConfig_Role{}
-
-	indexOf := func(roles []*configspb.PermissionsConfig_Role, name string) int {
-		for i, r := range roles {
-			if r.GetName() == name {
-				return i
-			}
-		}
-		return -1
-	}
-
-	var visit func(roleName string) (bool, error)
-	visit = func(roleName string) (bool, error) {
-		// Push the current role mapping onto the stack
-		stack = append(stack, roleMap[roleName])
-
-		// Examine children.
-		for _, included := range roleMap[roleName].GetIncludes() {
-			if visited.Has(included) {
-				// cross edge is okay.
-				continue
-			}
-
-			if i := indexOf(stack, included); i > -1 {
-				stack = append(stack, stack[i])
-				return true, nil
-			}
-
-			cycle, err := visit(included)
-			if err != nil {
-				return false, err
-			}
-			if cycle {
-				return true, nil
-			}
-		}
-		stack = stack[:len(stack)-1]
-		visited.Add(roleName)
-
-		return false, nil
-	}
-
-	cycle, err := visit(startPoint)
-	if err != nil {
-		return nil, nil, err
-	}
-	if cycle {
-		if len(stack) == 0 {
-			return nil, nil, errors.New("cycle found with empty stack")
-		}
-		names := make([]string, len(stack))
-		for i, g := range stack {
-			names[i] = g.GetName()
-		}
-		return names, nil, nil
-	}
-	return nil, visited.ToSlice(), nil
+	return explore(root)
 }
 
 func validateSystems(systems []string, seenSystems map[string]bool, title string) error {

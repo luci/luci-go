@@ -2046,14 +2046,11 @@ func TestAuthRealmsConfig(t *testing.T) {
 			ctx, ts := getCtx()
 
 			permCfg := &configspb.PermissionsConfig{
-				Role: []*configspb.PermissionsConfig_Role{
+				Permission: []*protocol.Permission{
 					{
-						Name: "role/test.role",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "test.perm.create",
-							},
-						},
+						Name:       "test.perm.create",
+						Attributes: []string{"a", "c", "b"},
+						Internal:   true,
 					},
 				},
 			}
@@ -2067,8 +2064,9 @@ func TestAuthRealmsConfig(t *testing.T) {
 			assert.Loosely(t, fetched.PermissionsList.GetPermissions(), should.Match(
 				[]*protocol.Permission{
 					{
-						Name:     "test.perm.create",
-						Internal: false,
+						Name:       "test.perm.create",
+						Internal:   true,
+						Attributes: []string{"a", "b", "c"},
 					},
 				}))
 		})
@@ -2079,32 +2077,16 @@ func TestAuthRealmsConfig(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, authRealmGlobals), should.BeNil)
 
 			permsCfg := &configspb.PermissionsConfig{
-				Role: []*configspb.PermissionsConfig_Role{
+				Permission: []*protocol.Permission{
 					{
-						Name: "role/test.role",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "test.perm.create",
-							},
-						},
-						Includes: []string{},
+						Name: "test.perm.create",
 					},
 					{
-						Name: "role/test.role.two",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "testtwo.perm.delete",
-							},
-						},
+						Name: "testtwo.perm.delete",
 					},
 					{
-						Name: "role/luci.internal.testint.role",
-						Permissions: []*protocol.Permission{
-							{
-								Name:     "testint.perm.schedule",
-								Internal: true,
-							},
-						},
+						Name:     "testint.perm.schedule",
+						Internal: true,
 					},
 				},
 			}
@@ -2153,32 +2135,18 @@ func TestAuthRealmsConfig(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, authRealmGlobals), should.BeNil)
 
 			permsCfg := &configspb.PermissionsConfig{
-				Role: []*configspb.PermissionsConfig_Role{
+				Permission: []*protocol.Permission{
 					{
-						Name: "role/test.role",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "test.perm.create",
-							},
-						},
-						Includes: []string{},
+						Name:     "testint.perm.schedule",
+						Internal: true,
 					},
 					{
-						Name: "role/test.role.two",
-						Permissions: []*protocol.Permission{
-							{
-								Name: "testtwo.perm.delete",
-							},
-						},
+						Name:     "testtwo.perm.delete",
+						Internal: false,
 					},
 					{
-						Name: "role/luci.internal.testint.role",
-						Permissions: []*protocol.Permission{
-							{
-								Name:     "testint.perm.schedule",
-								Internal: true,
-							},
-						},
+						Name:     "test.perm.create",
+						Internal: false,
 					},
 				},
 			}
