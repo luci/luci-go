@@ -242,7 +242,7 @@ func (b *Bundle) generateErrorEmail(templateName string, input *config.TemplateI
 	return
 }
 
-const defaultStatusTemplateStr = "{{ stepNames .MatchingFailedSteps }} on {{ buildUrl . }} {{ .Build.Builder.Builder }}{{ if .Build.Input.GitilesCommit }} from {{ .Build.Input.GitilesCommit.Id }}{{end}}"
+const defaultStatusTemplateStr = "{{ stepNames .MatchingFailedSteps }} on {{ buildUrl . }} {{ .Build.Builder.Builder }}{{ if eq .Build.Builder.Project \"chromium\" }})(Culprit analysis: https://ci.chromium.org/ui/p/chromium/bisection/compile-analysis/b/{{ .Build.Id }}{{ else }}{{ if .Build.Input.GitilesCommit }} from {{ .Build.Input.GitilesCommit.Id }}{{end}}{{end}}"
 
 var defaultStatusTemplate *text.Template = text.Must(text.New("").Funcs(Funcs).Parse(defaultStatusTemplateStr))
 
