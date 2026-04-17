@@ -15,6 +15,7 @@
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
+  DragIndicator as DragIndicatorIcon,
   ExpandMore as ExpandMoreIcon,
   FilterAlt as FunnelIcon,
 } from '@mui/icons-material';
@@ -98,6 +99,8 @@ function FilterEditorRow({
   onUpdateOperator,
   onUpdateValue,
   onRemove,
+  onDragStart,
+  onDrop,
   globalFilters,
   widgetFilters,
 }: {
@@ -110,6 +113,8 @@ function FilterEditorRow({
   onUpdateOperator: (operator: PerfFilterDefault_FilterOperator) => void;
   onUpdateValue: (value: string) => void;
   onRemove: () => void;
+  onDragStart: () => void;
+  onDrop: () => void;
   globalFilters?: readonly PerfFilter[];
   widgetFilters?: readonly PerfFilter[];
 }) {
@@ -175,7 +180,19 @@ function FilterEditorRow({
   };
 
   return (
-    <Box sx={COMPACT_FILTER_ROW_SX}>
+    <Box
+      sx={{
+        ...COMPACT_FILTER_ROW_SX,
+        gridTemplateColumns: 'auto 2fr 1fr 4fr auto',
+        cursor: 'grab',
+        '&:active': { cursor: 'grabbing' },
+      }}
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={onDrop}
+    >
+      <DragIndicatorIcon sx={{ color: 'text.secondary', mr: 0.5 }} />
       <Select
         value={filter.column}
         onChange={(e: SelectChangeEvent<string>) =>
@@ -274,16 +291,18 @@ function FilterEditorRow({
           />
         )}
       />
-      <Tooltip title={COMMON_MESSAGES.REMOVE_FILTER}>
-        <IconButton
-          onClick={onRemove}
-          aria-label="Remove filter"
-          color="error"
-          size="small"
-        >
-          <DeleteIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Tooltip title={COMMON_MESSAGES.REMOVE_FILTER}>
+          <IconButton
+            onClick={onRemove}
+            aria-label="Remove filter"
+            color="error"
+            size="small"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
     </Box>
   );
 }
@@ -307,6 +326,21 @@ export function FilterEditor({
     initialValue: false,
     ...uiStateOptions,
   });
+
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDrop = (targetIndex: number) => {
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+    const updatedFilters = [...filters];
+    const [removed] = updatedFilters.splice(draggedIndex, 1);
+    updatedFilters.splice(targetIndex, 0, removed);
+    onUpdateFilters(updatedFilters);
+    setDraggedIndex(null);
+  };
 
   const handleAddFilter = () => {
     const newFilterId = `filter-${crypto.randomUUID()}`;
@@ -497,6 +531,8 @@ export function FilterEditor({
                   handleDefaultValueChange(index, 'values', [value])
                 }
                 onRemove={() => handleRemoveFilter(index)}
+                onDragStart={() => handleDragStart(index)}
+                onDrop={() => handleDrop(index)}
                 globalFilters={globalFilters}
                 widgetFilters={filters}
               />

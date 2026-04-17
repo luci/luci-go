@@ -605,4 +605,78 @@ describe('FilterEditor', () => {
     wrapWithProviders(<FilterEditor {...defaultProps} title="Custom Title" />);
     expect(screen.getByText('Custom Title')).toBeInTheDocument();
   });
+
+  it('moves a filter up when dragged', async () => {
+    const initialFilters: PerfFilter[] = [
+      {
+        id: 'filter-1',
+        column: 'test_name',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name 1',
+      },
+      {
+        id: 'filter-2',
+        column: 'model',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name 2',
+      },
+    ];
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
+    fireEvent.click(screen.getByText('Filters')); // Expand
+
+    const columns = await screen.findAllByLabelText('Column');
+    const sourceRow = columns[1].closest('div[draggable="true"]');
+    const targetRow = columns[0].closest('div[draggable="true"]');
+
+    expect(sourceRow).toBeTruthy();
+    expect(targetRow).toBeTruthy();
+
+    fireEvent.dragStart(sourceRow!);
+    fireEvent.drop(targetRow!);
+
+    expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onUpdateFilters).toHaveBeenLastCalledWith([
+      expect.objectContaining({ id: 'filter-2' }),
+      expect.objectContaining({ id: 'filter-1' }),
+    ]);
+  });
+
+  it('moves a filter down when dragged', async () => {
+    const initialFilters: PerfFilter[] = [
+      {
+        id: 'filter-1',
+        column: 'test_name',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name 1',
+      },
+      {
+        id: 'filter-2',
+        column: 'model',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name 2',
+      },
+    ];
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
+    fireEvent.click(screen.getByText('Filters')); // Expand
+
+    const columns = await screen.findAllByLabelText('Column');
+    const sourceRow = columns[0].closest('div[draggable="true"]');
+    const targetRow = columns[1].closest('div[draggable="true"]');
+
+    expect(sourceRow).toBeTruthy();
+    expect(targetRow).toBeTruthy();
+
+    fireEvent.dragStart(sourceRow!);
+    fireEvent.drop(targetRow!);
+
+    expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onUpdateFilters).toHaveBeenLastCalledWith([
+      expect.objectContaining({ id: 'filter-2' }),
+      expect.objectContaining({ id: 'filter-1' }),
+    ]);
+  });
 });
