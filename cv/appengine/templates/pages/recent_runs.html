@@ -36,10 +36,11 @@
       <thead>
         <tr>
           <th style="width: 10%;">PROJECT</th>
-          <th style="width: 27.5%;">ID</th>
+          <th style="width: 15%;">CREATOR</th>
+          <th style="width: 20%;">ID</th>
           <th style="width: 10%;">MODE</th>
           <th style="width: 10%;">STATUS</th>
-          <th style="width: 20%;">CREATE_TIME</th>
+          <th style="width: 15%;">CREATE_TIME</th>
           <th style="width: *">CLs</th>
         </tr>
       </thead>
@@ -49,6 +50,7 @@
         {{range .Runs}}
           <tr>
             <td><a href="/ui/recents/{{.ID.LUCIProject}}">{{.ID.LUCIProject}}</a></td>
+            <td>{{.Creator}}</td>
             <td>
               <a href="/ui/run/{{.ID}}">
                 ({{slice .ID.Inner 5 10}})

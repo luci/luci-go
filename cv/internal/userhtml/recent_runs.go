@@ -195,3 +195,7 @@ type runWithExternalCLs struct {
 	*run.Run
 	ExternalCLs []changelist.ExternalID
 }
+
+func (r runWithExternalCLs) Creator() string {
+	return r.Run.CreatedBy.Value()
+}
