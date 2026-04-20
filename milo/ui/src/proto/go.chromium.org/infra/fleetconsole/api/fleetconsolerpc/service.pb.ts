@@ -9,6 +9,8 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import {
   CheckAdminTaskPermissionRequest,
   CheckAdminTaskPermissionResponse,
+  CheckPermissionRequest,
+  CheckPermissionResponse,
   GetDeviceACLsRequest,
   GetDeviceACLsResponse,
 } from "./admintask.pb";
@@ -305,7 +307,9 @@ export interface FleetConsole {
   ScheduleAutorepair(request: ScheduleAutorepairRequest): Promise<ScheduleAutorepairResponse>;
   ScheduleDeploy(request: ScheduleDeployRequest): Promise<ScheduleDeployResponse>;
   UpdateAndroidMetrics(request: UpdateAndroidMetricsRequest): Promise<UpdateAndroidMetricsResponse>;
+  /** @deprecated */
   CheckAdminTaskPermission(request: CheckAdminTaskPermissionRequest): Promise<CheckAdminTaskPermissionResponse>;
+  CheckPermission(request: CheckPermissionRequest): Promise<CheckPermissionResponse>;
   ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse>;
   CountResourceRequests(request: CountResourceRequestsRequest): Promise<CountResourceRequestsResponse>;
   GetResourceRequestsMultiselectFilterValues(
@@ -355,6 +359,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ScheduleDeploy = this.ScheduleDeploy.bind(this);
     this.UpdateAndroidMetrics = this.UpdateAndroidMetrics.bind(this);
     this.CheckAdminTaskPermission = this.CheckAdminTaskPermission.bind(this);
+    this.CheckPermission = this.CheckPermission.bind(this);
     this.ListResourceRequests = this.ListResourceRequests.bind(this);
     this.CountResourceRequests = this.CountResourceRequests.bind(this);
     this.GetResourceRequestsMultiselectFilterValues = this.GetResourceRequestsMultiselectFilterValues.bind(this);
@@ -499,6 +504,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = CheckAdminTaskPermissionRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CheckAdminTaskPermission", data);
     return promise.then((data) => CheckAdminTaskPermissionResponse.fromJSON(data));
+  }
+
+  CheckPermission(request: CheckPermissionRequest): Promise<CheckPermissionResponse> {
+    const data = CheckPermissionRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CheckPermission", data);
+    return promise.then((data) => CheckPermissionResponse.fromJSON(data));
   }
 
   ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse> {

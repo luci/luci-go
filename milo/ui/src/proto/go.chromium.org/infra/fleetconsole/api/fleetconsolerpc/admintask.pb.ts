@@ -24,10 +24,21 @@ export interface GetDeviceACLsResponse {
   readonly userAccessGroups: readonly string[];
 }
 
+/** @deprecated */
 export interface CheckAdminTaskPermissionRequest {
 }
 
+/** @deprecated */
 export interface CheckAdminTaskPermissionResponse {
+  readonly hasPermission: boolean;
+}
+
+export interface CheckPermissionRequest {
+  /** The MDB group to check permissions for. */
+  readonly group: string;
+}
+
+export interface CheckPermissionResponse {
   readonly hasPermission: boolean;
 }
 
@@ -299,6 +310,122 @@ export const CheckAdminTaskPermissionResponse: MessageFns<CheckAdminTaskPermissi
   },
   fromPartial(object: DeepPartial<CheckAdminTaskPermissionResponse>): CheckAdminTaskPermissionResponse {
     const message = createBaseCheckAdminTaskPermissionResponse() as any;
+    message.hasPermission = object.hasPermission ?? false;
+    return message;
+  },
+};
+
+function createBaseCheckPermissionRequest(): CheckPermissionRequest {
+  return { group: "" };
+}
+
+export const CheckPermissionRequest: MessageFns<CheckPermissionRequest> = {
+  encode(message: CheckPermissionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.group !== "") {
+      writer.uint32(10).string(message.group);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckPermissionRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckPermissionRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.group = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckPermissionRequest {
+    return { group: isSet(object.group) ? globalThis.String(object.group) : "" };
+  },
+
+  toJSON(message: CheckPermissionRequest): unknown {
+    const obj: any = {};
+    if (message.group !== "") {
+      obj.group = message.group;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckPermissionRequest>): CheckPermissionRequest {
+    return CheckPermissionRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CheckPermissionRequest>): CheckPermissionRequest {
+    const message = createBaseCheckPermissionRequest() as any;
+    message.group = object.group ?? "";
+    return message;
+  },
+};
+
+function createBaseCheckPermissionResponse(): CheckPermissionResponse {
+  return { hasPermission: false };
+}
+
+export const CheckPermissionResponse: MessageFns<CheckPermissionResponse> = {
+  encode(message: CheckPermissionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.hasPermission !== false) {
+      writer.uint32(8).bool(message.hasPermission);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CheckPermissionResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCheckPermissionResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.hasPermission = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CheckPermissionResponse {
+    return { hasPermission: isSet(object.hasPermission) ? globalThis.Boolean(object.hasPermission) : false };
+  },
+
+  toJSON(message: CheckPermissionResponse): unknown {
+    const obj: any = {};
+    if (message.hasPermission !== false) {
+      obj.hasPermission = message.hasPermission;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CheckPermissionResponse>): CheckPermissionResponse {
+    return CheckPermissionResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CheckPermissionResponse>): CheckPermissionResponse {
+    const message = createBaseCheckPermissionResponse() as any;
     message.hasPermission = object.hasPermission ?? false;
     return message;
   },

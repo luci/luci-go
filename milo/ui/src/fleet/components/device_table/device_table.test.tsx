@@ -233,9 +233,7 @@ const mockFleetConsoleClient = {
       queryFn: jest.fn(),
     }),
   },
-  CheckAdminTaskPermission: jest
-    .fn()
-    .mockResolvedValue({ hasPermission: true }),
+  CheckPermission: jest.fn().mockResolvedValue({ hasPermission: true }),
 };
 
 jest.mock('@/fleet/hooks/prpc_clients', () => ({

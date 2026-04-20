@@ -25,7 +25,9 @@ export function useAdminTaskPermission() {
     let isMounted = true;
     const checkPermission = async () => {
       try {
-        const resp = await fleetConsoleClient.CheckAdminTaskPermission({});
+        const resp = await fleetConsoleClient.CheckPermission({
+          group: 'mdb/fleet-console-admin-tasks-policy',
+        });
         if (isMounted) {
           setHasPermission(resp.hasPermission);
         }
