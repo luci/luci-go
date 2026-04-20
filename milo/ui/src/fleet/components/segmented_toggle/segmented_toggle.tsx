@@ -29,16 +29,34 @@ interface SegmentedToggleProps {
   onChange: (newValue: string) => void;
 }
 
-const StyledToggleButtonGroup = styled(ToggleButtonGroup)(() => ({
+const StyledToggleButtonGroup = styled(ToggleButtonGroup)<{
+  selectedIndex: number;
+  totalOptions: number;
+}>(({ selectedIndex, totalOptions, theme }) => ({
+  position: 'relative',
   borderRadius: '20px',
   border: 'none',
   overflow: 'hidden',
   backgroundColor: colors.blue[50],
   width: '100%',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: `${100 / totalOptions}%`,
+    height: '100%',
+    backgroundColor: theme.palette.primary.main,
+    borderRadius: '20px',
+    transition: 'transform 0.1s ease-in-out',
+    transform: `translateX(${selectedIndex * 100}%)`,
+    zIndex: 0,
+  },
   '& .MuiToggleButtonGroup-grouped': {
     margin: 0,
     border: 0,
     borderRadius: '20px',
+    zIndex: 1,
     '&.Mui-disabled': {
       border: 0,
     },
@@ -46,7 +64,8 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(() => ({
 }));
 
 const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
-  padding: '4px 12px',
+  transition: 'ease-in-out 0.2s all',
+  padding: '4px 4px',
   fontSize: '14px',
   fontWeight: 500,
   textTransform: 'none',
@@ -55,11 +74,11 @@ const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
   border: 'none',
   flex: 1,
   '&.Mui-selected': {
-    backgroundColor: theme.palette.primary.main,
+    backgroundColor: 'transparent',
     color: theme.palette.primary.contrastText,
     borderRadius: '20px',
     '&:hover': {
-      backgroundColor: theme.palette.primary.dark,
+      backgroundColor: 'transparent',
     },
   },
   '&:hover': {
@@ -82,6 +101,8 @@ export const SegmentedToggle = ({
     }
   };
 
+  const selectedIndex = options.findIndex((option) => option.value === value);
+
   return (
     <StyledToggleButtonGroup
       value={value}
@@ -89,6 +110,8 @@ export const SegmentedToggle = ({
       onChange={handleChange}
       aria-label="segmented toggle"
       size="small"
+      selectedIndex={selectedIndex}
+      totalOptions={options.length}
     >
       {options.map((option) => (
         <StyledToggleButton
