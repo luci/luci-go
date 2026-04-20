@@ -3,14 +3,14 @@
 ## Description
 
 LUCI UI has a feature toggling ability that allows you to rollout
-UI changes gradually to users. This feature is runs in the UI and
+UI changes gradually to users. This feature runs in the UI and
 does not have backend support, which introduces some limitations:
 
 1. Rollout percentages represent each individual user's
    probability of having the feature turned on/off not the total
    percentage of users who will get the feature.
 
-2. Granualar user targeting or targeting users in a specific group is not possible.
+2. Granular user targeting or targeting users in a specific group is not possible.
 
 3. Increasing the rollout percentage requires a new CL.
 
@@ -47,10 +47,10 @@ does not have backend support, which introduces some limitations:
 
 * Once you have created the `FeatureFlag` object you can then pass that to `useFeatureFlag` hook.
 
-* This hook will calcualte the user's activation threshold, which the percentage that will activate
+* This hook will calculate the user's activation threshold, which is the percentage that will activate
   the feature for the user. It will return a boolean to indicate the flag status.
 
-* If the user has overriden the flag activation, then the hook will use instead.
+* If the user has overridden the flag activation, then the hook will use it instead.
 
 Example usage:
 
@@ -68,4 +68,4 @@ For more information about this hook please read [feature flags context](../../s
 * Users can override flag values using the feature flags dialog,
  this can be accessed using the lab icon button in the app bar.
 
-* User overrides will always take precendence over flag calcuated rollout percentages and values.
+* User overrides will always take precedence over flag calculated rollout percentages and values.
