@@ -17,7 +17,7 @@ import { useEffect, useState } from 'react';
 import { logging } from '@/common/tools/logging';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 
-export function useAdminTaskPermission() {
+export function usePermission(group: string) {
   const fleetConsoleClient = useFleetConsoleClient();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
@@ -26,14 +26,14 @@ export function useAdminTaskPermission() {
     const checkPermission = async () => {
       try {
         const resp = await fleetConsoleClient.CheckPermission({
-          group: 'mdb/fleet-console-admin-tasks-policy',
+          group: group,
         });
         if (isMounted) {
           setHasPermission(resp.hasPermission);
         }
       } catch (e) {
         if (isMounted) {
-          logging.error('Failed to check admin task permission:', e);
+          logging.error(`Failed to check permission for ${group}:`, e);
           setHasPermission(false);
         }
       }
@@ -42,7 +42,11 @@ export function useAdminTaskPermission() {
     return () => {
       isMounted = false;
     };
-  }, [fleetConsoleClient]);
+  }, [fleetConsoleClient, group]);
 
   return hasPermission;
+}
+
+export function useAdminTaskPermission() {
+  return usePermission('mdb/fleet-console-admin-tasks-policy');
 }

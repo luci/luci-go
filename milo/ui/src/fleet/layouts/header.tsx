@@ -21,6 +21,7 @@ import { Link } from 'react-router';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { AvailableFlags } from '@/common/layouts/app_bar/available_flags/available_flags';
 import { getLoginUrl, getLogoutUrl } from '@/common/tools/url_utils';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import fleetConsoleMascot from '@/fleet/assets/pngs/fleet-console-mascot.png';
@@ -41,6 +42,10 @@ export const Header = ({
 }) => {
   const authState = useAuthState();
   const isInPlatformScope = useIsInPlatformScope();
+
+  const showAvailableFlags =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname.includes('-dev');
 
   return (
     <header
@@ -122,6 +127,7 @@ export const Header = ({
             <Feedback sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
+        {showAvailableFlags && <AvailableFlags />}
         <SettingsMenu />
         {!authState.identity || authState.identity === ANONYMOUS_IDENTITY ? (
           <Button
