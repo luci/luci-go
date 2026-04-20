@@ -18,6 +18,9 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+import Stepper from '@mui/material/Stepper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
@@ -48,6 +51,12 @@ import {
 } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status as BuildStatus } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+
+import {
+  getActiveStep,
+  getStages,
+  isStepFailed,
+} from './analysis_progress_utils';
 
 export interface TabPanelProps {
   readonly name: string;
@@ -190,6 +199,22 @@ export function AnalysisDetailsPage() {
           Analysis Details
         </Typography>
         <AnalysisOverview analysis={analysis} />
+        {analysis.genAiResult && (
+          <Box sx={{ width: '100%', mt: 2 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Bisection Progress
+            </Typography>
+            <Stepper activeStep={getActiveStep(analysis)} alternativeLabel>
+              {getStages(analysis).map((label, index) => (
+                <Step key={label}>
+                  <StepLabel error={isStepFailed(analysis, index)}>
+                    {label}
+                  </StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Box>
+        )}
       </div>
       {analysis.culprits.length > 0 && (
         <div className="section">

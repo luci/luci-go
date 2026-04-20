@@ -185,6 +185,8 @@ message Analysis {
   repeated luci.bisection.v1.Culprit culprits = 14;
   // Result of the GenAI culprit finder analysis.
   luci.bisection.v1.GenAiAnalysisResult gen_ai_result = 15;
+  // Indicates if actions have been taken for the analysis.
+  bool has_taken_actions = 16;
 }
 
 enum BuildFailureType {
