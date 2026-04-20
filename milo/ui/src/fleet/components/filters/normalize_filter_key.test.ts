@@ -12,14 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/**
- * Removes surrounding quotes from a string.
- */
-export const unquote = (val: string) => val.replace(/^"(.*)"$/, '$1');
+import { normalizeFilterKey } from './normalize_filter_key';
 
-/**
- * Normalizes a filter key by removing 'labels.' prefix and quotes.
- * E.g., 'labels."build"' -> 'build'
- */
-export const normalizeFilterKey = (key: string) =>
-  unquote(key.replace(/^labels\./, ''));
+describe('normalizeFilterKey', () => {
+  it('should remove labels. prefix', () => {
+    expect(normalizeFilterKey('labels.dut_state')).toEqual('dut_state');
+  });
+
+  it('should remove quotes', () => {
+    expect(normalizeFilterKey('"dut_state"')).toEqual('dut_state');
+  });
+
+  it('should remove both', () => {
+    expect(normalizeFilterKey('labels."dut_state"')).toEqual('dut_state');
+  });
+
+  it('should leave other keys unchanged', () => {
+    expect(normalizeFilterKey('dut_state')).toEqual('dut_state');
+  });
+});

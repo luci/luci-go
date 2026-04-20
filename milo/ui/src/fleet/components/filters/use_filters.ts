@@ -21,6 +21,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { FILTERS_PARAM_KEY } from '../filter_dropdown/search_param_utils';
 
 import { LoadingFilterCategory } from './loading_filter';
+import { normalizeFilterKey } from './normalize_filter_key';
 
 type FilterValuesFromBuilders<T> = {
   [Key in keyof T]: T[Key] extends FilterCategoryBuilder<infer FC> ? FC : never;
@@ -296,7 +297,14 @@ function buildFilters<
       throw new Error(`Builder ${key} is not filled in: ${bob}`);
     }
 
-    const terms = parseResult === null ? null : (parseResult.terms[key] ?? []);
+    let terms = parseResult === null ? null : (parseResult.terms[key] ?? []);
+    if (parseResult !== null) {
+      const matchKey = normalizeFilterKey(key);
+      const matches = Object.entries(parseResult.terms).filter(
+        ([k]) => normalizeFilterKey(k) === matchKey,
+      );
+      terms = parseResult.terms[key] ?? matches[0]?.[1] ?? [];
+    }
     const result = bob.build(key, () => {}, terms);
     if (result.isError) {
       errors.push(`Error with ${key}: ${result.error}`);
@@ -312,7 +320,11 @@ function buildFilters<
 
   if (parseResult !== null) {
     for (const [key, _terms] of Object.entries(parseResult.terms)) {
-      if (!filters[key]) {
+      const matchKey = normalizeFilterKey(key);
+      const hasMatch = Object.keys(filters).some(
+        (k) => normalizeFilterKey(k) === matchKey,
+      );
+      if (!hasMatch) {
         if (allowExtraKeys) {
           filters[key] = new LoadingFilterCategory(key);
         } else {

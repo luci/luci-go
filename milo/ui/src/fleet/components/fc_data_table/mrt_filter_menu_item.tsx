@@ -44,6 +44,7 @@ import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetco
 import {
   parseCommaSeparatedText,
   formatCommaSeparatedText,
+  stripQuotes,
 } from './mrt_filter_menu_item_utils';
 
 export type FilterOption =
@@ -77,6 +78,17 @@ export const MRTFilterMenuItem = forwardRef<
     column.columnDef.enableColumnFilter !== false &&
     (filterVariant !== 'multi-select' ||
       (!!filterSelectOptions && filterSelectOptions.length > 0));
+
+  const options: OptionValue[] = (filterSelectOptions || []).map((v) => {
+    if (typeof v === 'string') {
+      return { value: v, label: v };
+    }
+    // Handle { text: string, value: string } or { label: string, value: string }
+    return {
+      value: v.value,
+      label: 'label' in v ? v.label : 'text' in v ? v.text : String(v),
+    };
+  });
 
   // Local state of selected value while the dropdown is open
   const [localFilterValue, setLocalFilterValue] = useState<unknown>(undefined);
@@ -112,9 +124,29 @@ export const MRTFilterMenuItem = forwardRef<
         setLocalFilterValue(new Set());
       }
     } else {
-      setLocalFilterValue(
-        new Set(Array.isArray(currentFilterValue) ? currentFilterValue : []),
-      );
+      const valArray = Array.isArray(currentFilterValue)
+        ? currentFilterValue
+        : typeof currentFilterValue === 'string'
+          ? parseCommaSeparatedText(currentFilterValue)
+          : [];
+
+      const set = new Set<string>();
+      valArray.forEach((v) => {
+        const s = String(v);
+        const unquoted = stripQuotes(s);
+        const quoted = `"${unquoted}"`;
+
+        const match = options.find(
+          (opt) =>
+            opt.value === s || opt.value === unquoted || opt.value === quoted,
+        );
+        if (match) {
+          set.add(match.value);
+        } else {
+          set.add(s);
+        }
+      });
+      setLocalFilterValue(set);
     }
 
     setAnchorEl(event.currentTarget);
@@ -182,17 +214,6 @@ export const MRTFilterMenuItem = forwardRef<
     setLocalFilterValue(newSelectedValues);
   };
 
-  const options: OptionValue[] = (filterSelectOptions || []).map((v) => {
-    if (typeof v === 'string') {
-      return { value: v, label: v };
-    }
-    // Handle { text: string, value: string } or { label: string, value: string }
-    return {
-      value: v.value,
-      label: 'label' in v ? v.label : 'text' in v ? v.text : String(v),
-    };
-  });
-
   return (
     <MenuItem
       ref={handleForkRef}
@@ -232,6 +253,7 @@ export const MRTFilterMenuItem = forwardRef<
           footerButtons={['reset', 'cancel', 'apply']}
           onApply={handleApply}
           closeOnScroll={true}
+          disableScrollUpdate={true}
           renderChild={(searchQuery, onNavigateUp) => {
             if (!isFilterable) {
               return null;

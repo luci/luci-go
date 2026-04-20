@@ -36,14 +36,6 @@ import {
   useMaterialReactTable,
 } from 'material-react-table';
 
-export type FC_ColumnDef<
-  TData extends MRT_RowData,
-  TValue = unknown,
-> = MRT_ColumnDef<TData, TValue> & {
-  filterRangeMin?: number;
-  filterRangeMax?: number;
-};
-
 import { MRT_INTERNAL_COLUMNS } from '@/fleet/components/columns/use_mrt_column_management';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { FleetColumnHeader } from '@/fleet/components/fc_data_table/fleet_column_header';
@@ -58,6 +50,16 @@ import {
   useSettings,
 } from '@/fleet/hooks/use_settings';
 import { colors } from '@/fleet/theme/colors';
+
+import { MenuScrollCloser } from './menu_scroll_closer';
+
+export type FC_ColumnDef<
+  TData extends MRT_RowData,
+  TValue = unknown,
+> = MRT_ColumnDef<TData, TValue> & {
+  filterRangeMin?: number;
+  filterRangeMax?: number;
+};
 
 const SELECT_COL_PADDING = '8px !important';
 
@@ -224,6 +226,10 @@ export const useFCDataTable = <TData extends MRT_RowData>(
         );
       }
 
+      items.push(
+        <MenuScrollCloser key="scroll-closer" closeMenu={closeMenu} />,
+      );
+
       return items;
     },
 
@@ -257,6 +263,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
           paddingRight: isSelectCol
             ? SELECT_COL_PADDING
             : `var(--cell-padding-horizontal) !important`,
+          transition: 'padding 0.2s',
         } as SxProps<Theme>,
         'aria-description': title,
         title: title,
@@ -285,6 +292,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
           paddingRight: isSelectCol
             ? SELECT_COL_PADDING
             : `var(--cell-padding-horizontal)`,
+          transition: 'padding 0.2s',
           ...(isHighlighted && {
             backgroundColor: `${colors.blue[50]} !important`,
             color: `${colors.blue[600]} !important`,

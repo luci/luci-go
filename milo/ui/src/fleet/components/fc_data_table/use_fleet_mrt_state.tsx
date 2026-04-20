@@ -192,7 +192,7 @@ export const useFleetMRTState = <
 
   const columnFilters = useMemo(() => {
     return Object.entries(selectedOptions?.filters || {}).map(([id, value]) => {
-      const colId = filterByFieldToId.get(id) || id;
+      const colId = filterByFieldToId.get(normalizeFilterKey(id)) || id;
       return {
         id: colId,
         value,
@@ -220,7 +220,10 @@ export const useFleetMRTState = <
           filter: { id: string; value: unknown },
         ) => {
           const urlKey = idToFilterByField.get(filter.id) || filter.id;
-          acc[urlKey] = filter.value as string[];
+          acc[urlKey] =
+            typeof filter.value === 'string'
+              ? filter.value.split(',').map((v) => v.trim())
+              : (filter.value as string[]);
           return acc;
         },
         {},

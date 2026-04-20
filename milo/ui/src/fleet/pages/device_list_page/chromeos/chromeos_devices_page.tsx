@@ -10,28 +10,55 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
 
-import { Chip } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import '@emotion/react';
+import { ViewColumnOutlined } from '@mui/icons-material';
+import { Button, colors, TablePagination, Stack, Box } from '@mui/material';
+import { useQuery, UseQueryResult } from '@tanstack/react-query';
 import _ from 'lodash';
-import { useEffect, useMemo } from 'react';
+import {
+  MaterialReactTable,
+  MRT_ColumnDef,
+  MRT_TableInstance,
+  MRT_TableOptions,
+} from 'material-react-table';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
+  getCurrentPageIndex,
   getPageSize,
   getPageToken,
   usePagerContext,
+  PagerContext,
 } from '@/common/components/params_pager';
-import { DeviceTable } from '@/fleet/components/device_table';
-import { DeviceListFilterBar_OLD as DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar_OLD';
+import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
+import { CopyButton } from '@/fleet/components/actions/copy/copy_button';
+import { CopySnackbar } from '@/fleet/components/actions/copy/copy_snackbar';
+import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
+import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
+import { ColumnsButton } from '@/fleet/components/columns/columns_button';
+import { ExportButton_MRT } from '@/fleet/components/device_table/export_button_mrt';
 import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tasks';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
+import { stripQuotes } from '@/fleet/components/fc_data_table/mrt_filter_menu_item_utils';
+import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
-  filtersUpdater,
-  getFilters,
-} from '@/fleet/components/filter_dropdown/search_param_utils';
+  FleetColumnDefExt,
+  useFleetMRTState,
+} from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
+import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
+import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils';
+import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
+import {
+  StringListFilterCategory,
+  StringListFilterCategoryBuilder,
+} from '@/fleet/components/filters/string_list_filter';
+import { FilterState } from '@/fleet/components/filters/types';
+import {
+  FilterCategory,
+  useFilters,
+} from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { CHROMEOS_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
@@ -40,8 +67,12 @@ import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useDevices } from '@/fleet/hooks/use_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { SelectedOptions } from '@/fleet/types';
-import { extractDutId } from '@/fleet/utils/devices';
+import {
+  extractDutId,
+  extractDutLabel,
+  extractDutLabels,
+  extractDutState,
+} from '@/fleet/utils/devices';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
@@ -51,36 +82,93 @@ import {
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   CountDevicesRequest,
+  CountDevicesResponse,
   Device,
   ListDevicesRequest,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
-import {
-  dimensionsToFilterOptions_OLD as dimensionsToFilterOptions,
-  filterOptionsPlaceholder_OLD as filterOptionsPlaceholder,
-} from '../common/helpers_OLD';
+import { dimensionsToFilterOptions } from '../common/helpers';
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
 import {
   CHROMEOS_COLUMN_OVERRIDES,
   getChromeOSColumns,
+  ChromeOSDevice,
+  EXTRA_COLUMN_IDS,
 } from './chromeos_columns';
 import { ChromeOSSummaryHeader } from './chromeos_summary_header';
+import { dutState } from './dut_state';
 
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500, 1000];
 const DEFAULT_PAGE_SIZE = 100;
 
-type DeviceWithCurrentTask = Device & { current_task?: string };
+const platform = Platform.CHROMEOS;
 
-const formatDeviceColumn = (value: string, columnName: string): string => {
-  switch (columnName) {
-    case 'current_task':
-      if (value !== undefined && value !== '') return value;
-      else return 'idle';
-    default:
-      return value;
+const computeSelectedOptions = (
+  filterValues: Record<string, FilterCategory> | undefined,
+): FilterState => {
+  const filters: Record<string, string[]> = {};
+  if (filterValues) {
+    for (const [key, category] of Object.entries(filterValues)) {
+      if (!category.isActive()) continue;
+      let selected: string[] = [];
+      if (category instanceof StringListFilterCategory) {
+        selected = category.getSelectedOptions();
+      }
+      if (selected.length > 0) {
+        const matchKey = key;
+        const unquotedSelected = selected.map((k) =>
+          typeof k === 'string' ? stripQuotes(k) : k,
+        );
+        filters[matchKey] = unquotedSelected;
+      }
+    }
+  }
+  return { filters, error: undefined };
+};
+
+// TODO(b/479452001): Extract this to a shared utility file when another page needs it.
+const syncFilterCategory = (
+  key: string,
+  category: FilterCategory,
+  newFilters: Record<string, string[]>,
+  prevTableFilterKeys: string[],
+) => {
+  const matchKey = normalizeFilterKey(key);
+
+  const isInNewFilters =
+    newFilters[matchKey] !== undefined || newFilters[key] !== undefined;
+  const wasInTable =
+    prevTableFilterKeys.includes(matchKey) || prevTableFilterKeys.includes(key);
+
+  if (!isInNewFilters && !wasInTable) {
+    return;
+  }
+
+  const newValues = newFilters[matchKey] || newFilters[key] || [];
+
+  let currentSelected: string[] = [];
+  if (category instanceof StringListFilterCategory) {
+    currentSelected = category.getSelectedOptions();
+  }
+
+  let isChanged = false;
+  if (currentSelected.length !== newValues.length) {
+    isChanged = true;
+  } else {
+    for (const k of currentSelected) {
+      if (!newValues.includes(k) && !newValues.includes(`"${k}"`)) {
+        isChanged = true;
+      }
+    }
+  }
+
+  if (isChanged) {
+    if (category instanceof StringListFilterCategory) {
+      category.setSelectedOptions(newValues, true);
+    }
   }
 };
 
@@ -93,80 +181,166 @@ export const ChromeOSDevicesPage = () => {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const selectedOptions = useMemo(
-    () => getFilters(searchParams),
-    [searchParams],
-  );
-
-  const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
-    trackEvent('filter_changed', {
-      componentName: 'device_list_filter',
-    });
-    setSearchParams(filtersUpdater(newSelectedOptions));
-
-    // Clear out all the page tokens when the filter changes.
-    // An AIP-158 page token is only valid for the filter
-    // option that generated it.
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  };
-
-  const stringifiedSelectedOptions = selectedOptions.error
-    ? ''
-    : stringifyFilters(selectedOptions.filters);
-
   const client = useFleetConsoleClient();
-  const dimensionsQuery = useDeviceDimensions({ platform: Platform.CHROMEOS });
+  const dimensionsQuery = useDeviceDimensions({ platform });
 
-  // TODO: b/419764393, b/420287987 - In local storage REACT_QUERY_OFFLINE_CACHE can contain empty data object which causes app to crash.
   const isDimensionsQueryProperlyLoaded =
     dimensionsQuery.data &&
     dimensionsQuery.data.baseDimensions &&
     dimensionsQuery.data.labels;
 
+  const filterOptions = useMemo(() => {
+    if (!isDimensionsQueryProperlyLoaded) return {};
+    return dimensionsToFilterOptions(
+      dimensionsQuery.data!,
+      CHROMEOS_COLUMN_OVERRIDES,
+    );
+  }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data]);
+
+  const filterCategoryDatas = useFilters(filterOptions, {
+    allowExtraKeys: !isDimensionsQueryProperlyLoaded,
+  });
+
+  const columnFiltersRef = useRef<{ id: string; value: unknown }[]>([]);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [showCopySuccess, setShowCopySuccess] = useState(false);
+
+  const selectedOptions = useMemo<FilterState>(
+    () => computeSelectedOptions(filterCategoryDatas.filterValues),
+    [filterCategoryDatas.filterValues],
+  );
+
+  const onApplyFilter = useCallback(() => {
+    trackEvent('filter_changed', {
+      componentName: 'device_list_filter',
+    });
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
+  }, [pagerCtx, setSearchParams, trackEvent]);
+
+  const onColumnFiltersChangeOverride = useCallback(
+    (newFilters: Record<string, string[]>) => {
+      trackEvent('filter_changed', {
+        componentName: 'device_list_filter',
+      });
+      if (!filterCategoryDatas.filterValues) return;
+
+      const prevTableFilterKeys = columnFiltersRef.current.map((f) =>
+        normalizeFilterKey(f.id),
+      );
+
+      for (const [key, category] of Object.entries(
+        filterCategoryDatas.filterValues as Record<string, FilterCategory>,
+      )) {
+        syncFilterCategory(key, category, newFilters, prevTableFilterKeys);
+      }
+
+      const currentAIP160 = filterCategoryDatas.getAip160String();
+      const prevAIP160 = searchParams.get(FILTERS_PARAM_KEY) || '';
+
+      if (currentAIP160 !== prevAIP160) {
+        setIsFiltering(true);
+        setSearchParams((prev) => {
+          let newParams = new URLSearchParams(prev);
+          newParams.set(FILTERS_PARAM_KEY, currentAIP160);
+          newParams = emptyPageTokenUpdater(pagerCtx)(newParams);
+          return newParams;
+        });
+      }
+    },
+    [filterCategoryDatas, pagerCtx, searchParams, setSearchParams, trackEvent],
+  );
+
+  const filterOptionsConfig = useMemo(() => {
+    if (!isDimensionsQueryProperlyLoaded) return [];
+
+    const options = Object.entries(filterOptions).map(([key, builder]) => {
+      const b = builder as StringListFilterCategoryBuilder;
+      return {
+        label: b.label || key,
+        type: 'string_list' as const,
+        value: key,
+        options: b.options || [],
+      };
+    });
+
+    return [
+      ...options,
+      {
+        label: 'Dut State',
+        type: 'string_list' as const,
+        value: 'labels.dut_state',
+        options: Object.values(dutState).map((val) => ({
+          label: val,
+          value: val,
+        })),
+      },
+    ];
+  }, [isDimensionsQueryProperlyLoaded, filterOptions]);
+
   const countQuery = useQuery({
     ...client.CountDevices.query(
       CountDevicesRequest.fromPartial({
-        filter: stringifiedSelectedOptions,
+        filter: filterCategoryDatas.parseError
+          ? ''
+          : filterCategoryDatas.aip160,
         platform: Platform.CHROMEOS,
       }),
     ),
   });
 
-  const request = ListDevicesRequest.fromPartial({
-    pageSize: getPageSize(pagerCtx, searchParams),
-    pageToken: getPageToken(pagerCtx, searchParams),
-    orderBy: orderByParam,
-    filter: stringifiedSelectedOptions,
-    platform: Platform.CHROMEOS,
-  });
+  const request = useMemo(
+    () =>
+      ListDevicesRequest.fromPartial({
+        pageSize: getPageSize(pagerCtx, searchParams),
+        pageToken: getPageToken(pagerCtx, searchParams),
+        orderBy: orderByParam,
+        filter: filterCategoryDatas.parseError
+          ? ''
+          : filterCategoryDatas.aip160,
+        platform: Platform.CHROMEOS,
+      }),
+    [pagerCtx, searchParams, orderByParam, filterCategoryDatas],
+  );
 
   const devicesQuery = useDevices(request);
 
+  useEffect(() => {
+    if (!devicesQuery.isFetching) {
+      setIsFiltering(false);
+    }
+  }, [devicesQuery.isFetching]);
+
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
+
   const columnIds = useMemo(() => {
-    const ids: string[] = [];
-    if (isDimensionsQueryProperlyLoaded) {
-      ids.push(
-        ...Object.keys(dimensionsQuery.data.baseDimensions),
-        ...Object.keys(dimensionsQuery.data.labels),
-        'current_task',
+    const columnsParamStr = searchParams.getAll(COLUMNS_PARAM_KEY).join(',');
+    const urlCols = columnsParamStr ? columnsParamStr.split(',') : [];
+    const requiredCols =
+      urlCols.length > 0 ? urlCols : CHROMEOS_DEFAULT_COLUMNS;
+
+    return _.uniq([...requiredCols, ...EXTRA_COLUMN_IDS]);
+  }, [searchParams]);
+
+  const columnsList = useMemo(() => {
+    return getChromeOSColumns(columnIds);
+  }, [columnIds]);
+
+  const allDimensionColumns = useMemo(() => {
+    const list: { id: string; label: string }[] = [];
+
+    CHROMEOS_DEFAULT_COLUMNS.forEach((id) => list.push({ id, label: id }));
+    EXTRA_COLUMN_IDS.forEach((id) => list.push({ id, label: id }));
+
+    if (dimensionsQuery.data) {
+      Object.keys(dimensionsQuery.data.baseDimensions).forEach((id) =>
+        list.push({ id, label: id }),
+      );
+      Object.keys(dimensionsQuery.data.labels).forEach((id) =>
+        list.push({ id, label: id }),
       );
     }
-
-    if (devicesQuery.data) {
-      ids.push(
-        ...devicesQuery.data.devices.flatMap((d) =>
-          Object.keys(d.deviceSpec?.labels ?? {}),
-        ),
-      );
-    }
-
-    return _.uniq(ids);
-  }, [
-    isDimensionsQueryProperlyLoaded,
-    dimensionsQuery.data,
-    devicesQuery.data,
-  ]);
+    return _.uniqBy(list, 'id');
+  }, [dimensionsQuery.data]);
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
@@ -185,7 +359,6 @@ export const ChromeOSDevicesPage = () => {
     for (const col of missingParamsColumns) {
       searchParams.delete(COLUMNS_PARAM_KEY, col);
     }
-
     if (searchParams.getAll(COLUMNS_PARAM_KEY).length <= 1)
       searchParams.delete(COLUMNS_PARAM_KEY);
 
@@ -200,60 +373,216 @@ export const ChromeOSDevicesPage = () => {
   ]);
 
   useEffect(() => {
-    if (selectedOptions.error) return;
-    if (!dimensionsQuery.isSuccess) return;
+    if (!isDimensionsQueryProperlyLoaded) return;
+    if (!filterCategoryDatas.parseError) return;
+    if (
+      warnings.some((w) =>
+        w.startsWith('There was an error parsing your filters:'),
+      )
+    )
+      return;
 
-    const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
-      (filterKey) =>
-        isDimensionsQueryProperlyLoaded &&
-        // TODO: Hotfix for b/449956551, needs further investigation on quote handling
-        !dimensionsQuery.data.labels[
-          filterKey.replace(/labels\."?([^"]+)"?/, '$1')
-        ] &&
-        !dimensionsQuery.data.baseDimensions[filterKey],
-    );
-    if (missingParamsFilters.length === 0) return;
     addWarning(
-      'The following filters are not available: ' +
-        missingParamsFilters?.join(', '),
+      `There was an error parsing your filters: ${filterCategoryDatas.parseError}`,
     );
-    for (const key of missingParamsFilters) {
-      delete selectedOptions.filters[key];
-    }
-    setSearchParams(filtersUpdater(selectedOptions.filters));
   }, [
-    isDimensionsQueryProperlyLoaded,
     addWarning,
-    dimensionsQuery,
-    selectedOptions,
-    setSearchParams,
+    filterCategoryDatas,
+    isDimensionsQueryProperlyLoaded,
+    warnings,
   ]);
-
-  useEffect(() => {
-    if (!selectedOptions.error) return;
-    addWarning('Invalid filters');
-    setSearchParams(filtersUpdater({}));
-  }, [addWarning, selectedOptions.error, setSearchParams]);
 
   const currentTasks = useCurrentTasks(devices);
 
-  const rows: DeviceWithCurrentTask[] = useMemo(() => {
-    if (currentTasks.isPending) {
-      return devices.map((d) => ({
-        ...d,
-        current_task: undefined,
-      }));
-    }
-    return devices.map((d) => ({
-      ...d,
-      current_task: currentTasks.map.get(extractDutId(d)) || '',
-    }));
+  const fleetMrtState = useFleetMRTState({
+    setSearchParams,
+    pagerCtx,
+    selectedOptions,
+    filterOptionsConfig,
+    columnsList: columnsList as unknown as FleetColumnDefExt[],
+    orderByParam,
+    localStorageKey: CHROMEOS_DEVICES_LOCAL_STORAGE_KEY,
+    defaultColumnIds: CHROMEOS_DEFAULT_COLUMNS,
+    onColumnFiltersChangeOverride,
+    platform,
+    isLoadingOptions: !isDimensionsQueryProperlyLoaded,
+  });
+
+  const {
+    enrichedColumns,
+    onRowSelectionChange,
+    onSortingChange,
+    onColumnFiltersChange,
+    rowSelection,
+    sorting,
+    columnFilters,
+    columnVisibility,
+    mrtColumnManager: {
+      setColumnVisibility,
+      onToggleColumn,
+      resetDefaultColumns,
+    },
+    visibleColumnIds,
+    goToPrevPage,
+    goToNextPage,
+    onRowsPerPageChange,
+  } = fleetMrtState;
+
+  const rows: ChromeOSDevice[] = useMemo(() => {
+    const baseRows = currentTasks.isPending
+      ? devices.map((d) => ({
+          ...d,
+          current_task: undefined,
+        }))
+      : devices.map((d) => ({
+          ...d,
+          current_task: currentTasks.map.get(extractDutId(d)) || '',
+        }));
+
+    return baseRows;
   }, [devices, currentTasks.map, currentTasks.isPending]);
+
+  useEffect(() => {
+    columnFiltersRef.current = columnFilters;
+  }, [columnFilters]);
+
+  // TODO(b/479452001): Extract this to a hook / shared between chromeos and other pages.
+  const handleCopy = useCallback((table: MRT_TableInstance<ChromeOSDevice>) => {
+    const selectedRows = table
+      .getSelectedRowModel()
+      .rows.map((r) => r.original);
+
+    const visibleColumns = table.getVisibleLeafColumns();
+
+    const headers = visibleColumns
+      .map((c) => c.columnDef.header ?? c.id)
+      .join('\t');
+
+    const body = selectedRows
+      .map((row) => {
+        return visibleColumns
+          .map((c) => {
+            const colDef = c.columnDef;
+            const val =
+              'accessorFn' in colDef && typeof colDef.accessorFn === 'function'
+                ? colDef.accessorFn(row, 0)
+                : row[c.id as keyof ChromeOSDevice];
+            return String(val ?? '');
+          })
+          .join('\t');
+      })
+      .join('\n');
+
+    const finalString = `${headers}\n${body}`;
+    navigator.clipboard.writeText(finalString);
+    setShowCopySuccess(true);
+  }, []);
+
+  const tableOptions: MRT_TableOptions<ChromeOSDevice> = useMemo(
+    () => ({
+      columns: fleetMrtState.enrichedColumns as MRT_ColumnDef<ChromeOSDevice>[],
+      data: rows,
+      displayColumnDefOptions: {
+        'mrt-row-select': {
+          size: 40,
+        },
+      },
+      enableRowSelection: true,
+      positionToolbarAlertBanner: 'none',
+      getRowId: (row: ChromeOSDevice) => row.id,
+      onRowSelectionChange,
+      onSortingChange,
+      onColumnFiltersChange,
+      enablePagination: false,
+      enableColumnVirtualization: process.env.NODE_ENV !== 'test',
+      state: {
+        rowSelection,
+        sorting,
+        columnFilters,
+        columnVisibility,
+        isLoading: devicesQuery.isPending && !devicesQuery.isPlaceholderData,
+        showProgressBars: isFiltering || devicesQuery.isFetching,
+        columnOrder: [
+          'mrt-row-select',
+          ...enrichedColumns
+            .filter((col) => {
+              const id = (col.id || col.accessorKey) as string;
+              return columnVisibility[id];
+            })
+            .map((col) => (col.id || col.accessorKey) as string),
+        ],
+      },
+      manualFiltering: true,
+      manualPagination: true,
+      onColumnVisibilityChange: setColumnVisibility,
+      muiTopToolbarProps: {
+        sx: {
+          '& [aria-label="Show/Hide filters"]': {
+            display: 'none',
+          },
+        },
+      },
+      renderTopToolbarCustomActions: ({ table }) => (
+        <TopToolbarCustomActions
+          table={table}
+          handleCopy={handleCopy}
+          allDimensionColumns={allDimensionColumns}
+          visibleColumnIds={visibleColumnIds}
+          onToggleColumn={onToggleColumn}
+          resetDefaultColumns={resetDefaultColumns}
+        />
+      ),
+      renderBottomToolbarCustomActions: () => (
+        <BottomToolbarCustomActions
+          devicesQuery={devicesQuery}
+          nextPageToken={nextPageToken}
+          devices={devices}
+          pagerCtx={pagerCtx}
+          searchParams={searchParams}
+          goToPrevPage={goToPrevPage}
+          goToNextPage={goToNextPage}
+          onRowsPerPageChange={onRowsPerPageChange}
+          countQuery={countQuery}
+        />
+      ),
+    }),
+    [
+      enrichedColumns,
+      rows,
+      onRowSelectionChange,
+      onSortingChange,
+      onColumnFiltersChange,
+      rowSelection,
+      sorting,
+      columnFilters,
+      fleetMrtState.enrichedColumns,
+      columnVisibility,
+      countQuery,
+      devices,
+      devicesQuery,
+      isFiltering,
+      setColumnVisibility,
+      visibleColumnIds,
+      allDimensionColumns,
+      onToggleColumn,
+      resetDefaultColumns,
+      nextPageToken,
+      pagerCtx,
+      searchParams,
+      goToPrevPage,
+      goToNextPage,
+      onRowsPerPageChange,
+      handleCopy,
+    ],
+  );
+
+  const table = useFCDataTable(tableOptions);
 
   return (
     <div
       css={{
         margin: '24px',
+        paddingBottom: '40px',
       }}
     >
       <WarningNotifications warnings={warnings} />
@@ -273,31 +602,17 @@ export const ChromeOSDevicesPage = () => {
           borderRadius: 4,
         }}
       >
-        {selectedOptions.error ? (
-          <Chip
-            variant="outlined"
-            onDelete={() => setSearchParams(filtersUpdater({}))}
-            label="Invalid filters"
-            color="error"
-          />
-        ) : (
-          <DeviceListFilterBar
-            filterOptions={
-              isDimensionsQueryProperlyLoaded
-                ? dimensionsToFilterOptions(
-                    dimensionsQuery.data,
-                    CHROMEOS_COLUMN_OVERRIDES,
-                  )
-                : filterOptionsPlaceholder(
-                    selectedOptions.filters,
-                    CHROMEOS_COLUMN_OVERRIDES,
-                  )
-            }
-            selectedOptions={selectedOptions.filters}
-            onSelectedOptionsChange={onSelectedOptionsChange}
-            isLoading={dimensionsQuery.isPending}
-          />
-        )}
+        <FilterBar
+          filterCategoryDatas={Object.values(
+            filterCategoryDatas.filterValues || {},
+          )}
+          onApply={onApplyFilter}
+          isLoading={
+            dimensionsQuery.isPending ||
+            filterCategoryDatas.filterValues === undefined
+          }
+          searchPlaceholder='Add a filter (e.g. "dut1" or "state:ready")'
+        />
       </div>
       <div
         css={{
@@ -305,27 +620,13 @@ export const ChromeOSDevicesPage = () => {
           marginTop: 24,
         }}
       >
-        <DeviceTable
-          defaultColumnIds={CHROMEOS_DEFAULT_COLUMNS}
-          localStorageKey={CHROMEOS_DEVICES_LOCAL_STORAGE_KEY}
-          rows={rows}
-          availableColumns={getChromeOSColumns(columnIds)}
-          nextPageToken={nextPageToken}
-          pagerCtx={pagerCtx}
-          isError={
-            devicesQuery.isError ||
-            dimensionsQuery.isError ||
-            currentTasks.isError
-          }
-          error={
-            devicesQuery.error || dimensionsQuery.error || currentTasks.error
-          }
-          isLoading={devicesQuery.isPending || devicesQuery.isPlaceholderData}
-          isLoadingColumns={dimensionsQuery.isPending || devicesQuery.isPending}
-          totalRowCount={countQuery?.data?.total}
-          formatDeviceColumn={formatDeviceColumn}
-        />
+        {/* TODO(b/479452001): Extract some DeviceTable back / split this file into smaller pieces in a followup CL. */}
+        <MaterialReactTable table={table} />
       </div>
+      <CopySnackbar
+        open={showCopySuccess}
+        onClose={() => setShowCopySuccess(false)}
+      />
     </div>
   );
 };
@@ -334,15 +635,161 @@ export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <FleetHelmet pageTitle="Device List" />
-      <RecoverableErrorBoundary
-        // See the documentation for `<LoginPage />` for why we handle error
-        // this way.
-        key="fleet-device-list-page"
-      >
+      <RecoverableErrorBoundary key="fleet-device-list-page">
         <LoggedInBoundary>
           <ChromeOSDevicesPage />
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
+  );
+}
+
+function TopToolbarCustomActions({
+  table,
+  handleCopy,
+  allDimensionColumns,
+  visibleColumnIds,
+  onToggleColumn,
+  resetDefaultColumns,
+}: {
+  table: MRT_TableInstance<ChromeOSDevice>;
+  handleCopy: (table: MRT_TableInstance<ChromeOSDevice>) => void;
+  allDimensionColumns: { id: string; label: string }[];
+  visibleColumnIds: string[];
+  onToggleColumn: (id: string) => void;
+  resetDefaultColumns: () => void;
+}) {
+  const selectedModelRows = table.getSelectedRowModel().rows;
+  const selectedRows = useMemo(
+    () => selectedModelRows.map((r) => r.original),
+    [selectedModelRows],
+  );
+  const selectedDuts = useMemo(
+    () =>
+      selectedRows.map((row) => ({
+        name: `${row.id}`,
+        dutId: `${row.dutId}`,
+        state: extractDutState(row as Device),
+        pool: extractDutLabel('label-pool', row as Device),
+        board: extractDutLabel('label-board', row as Device),
+        model: extractDutLabel('label-model', row as Device),
+        namespace: extractDutLabels('ufs_namespace', row as Device),
+      })),
+    [selectedRows],
+  );
+
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        width: '100%',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}
+    >
+      <Stack direction="row" spacing={1} alignItems="center">
+        {selectedRows.length === 0 ? (
+          <ExportButton_MRT table={table} selectedRowIds={[]} />
+        ) : (
+          <>
+            <RunAutorepair selectedDuts={selectedDuts} />
+            <RunDeploy selectedDuts={selectedDuts} />
+            <CopyButton onClick={() => handleCopy(table)} />
+            <RequestRepair selectedDuts={selectedDuts} />
+            <ExportButton_MRT
+              table={table}
+              selectedRowIds={selectedRows.map((row) => `${row.id}`)}
+            />
+          </>
+        )}
+      </Stack>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <ColumnsButton
+          allColumns={allDimensionColumns}
+          visibleColumns={visibleColumnIds}
+          onToggleColumn={onToggleColumn}
+          resetDefaultColumns={resetDefaultColumns}
+          renderTrigger={({ onClick }, ref) => (
+            <Button
+              ref={ref}
+              startIcon={<ViewColumnOutlined sx={{ fontSize: '20px' }} />}
+              onClick={onClick}
+              color="inherit"
+              sx={{
+                color: colors.grey[600],
+                height: '40px',
+                fontSize: '0.875rem',
+                textTransform: 'none',
+                fontWeight: 500,
+              }}
+            >
+              Columns
+            </Button>
+          )}
+        />
+      </Stack>
+    </Stack>
+  );
+}
+
+function BottomToolbarCustomActions({
+  devicesQuery,
+  nextPageToken,
+  devices,
+  pagerCtx,
+  searchParams,
+  goToPrevPage,
+  goToNextPage,
+  onRowsPerPageChange,
+  countQuery,
+}: {
+  devicesQuery: ReturnType<typeof useDevices>;
+  nextPageToken: string;
+  devices: readonly Device[];
+  pagerCtx: PagerContext;
+  searchParams: URLSearchParams;
+  goToPrevPage: () => void;
+  goToNextPage: (token: string) => void;
+  onRowsPerPageChange: (size: number) => void;
+  countQuery: UseQueryResult<CountDevicesResponse, Error>;
+}) {
+  return (
+    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+      <TablePagination
+        component="div"
+        count={
+          (devicesQuery.data?.devices.length || 0) === 0 &&
+          !nextPageToken &&
+          !devices.length
+            ? 0
+            : -1
+        }
+        page={getCurrentPageIndex(pagerCtx)}
+        rowsPerPage={getPageSize(pagerCtx, searchParams)}
+        onPageChange={(_, page) => {
+          const currentPage = getCurrentPageIndex(pagerCtx);
+          const isPrevPage = page < currentPage;
+          const isNextPage = page > currentPage;
+
+          if (isPrevPage) {
+            goToPrevPage();
+          } else if (isNextPage) {
+            goToNextPage(nextPageToken);
+          }
+        }}
+        onRowsPerPageChange={(e) => {
+          onRowsPerPageChange(Number(e.target.value));
+        }}
+        rowsPerPageOptions={DEFAULT_PAGE_SIZE_OPTIONS}
+        labelDisplayedRows={({ from, to }) => {
+          const total = countQuery?.data?.total;
+          if (total !== undefined && total > 0) {
+            return `${from}-${to} of ${total}`;
+          }
+          return `${from}-${to} of ${nextPageToken ? `more than ${to}` : to}`;
+        }}
+      />
+    </Box>
   );
 }

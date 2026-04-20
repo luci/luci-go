@@ -202,7 +202,12 @@ export function OptionsDropdown({
     >
       <ClickAwayListener
         onClickAway={(e) => {
-          if (anchorEl && anchorEl.contains(e.target as Node)) {
+          if (
+            anchorEl &&
+            'contains' in anchorEl &&
+            typeof (anchorEl as unknown as Node).contains === 'function' &&
+            (anchorEl as unknown as Node).contains(e.target as Node)
+          ) {
             return;
           }
           if (onClose) onClose(e, 'backdropClick');

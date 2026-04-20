@@ -35,6 +35,7 @@ import { Footer } from '../options_dropdown/footer';
 import { SegmentedToggle } from '../segmented_toggle/segmented_toggle';
 
 import { filterDropdownKeyDown } from './filter_dropdown_keydown';
+import { unquote } from './normalize_filter_key';
 import {
   BuildResult,
   FilterCategory,
@@ -341,27 +342,29 @@ export class StringListFilterCategory implements FilterCategory {
       .map((o) => o.optionValue.value);
   }
 
-  public setSelectedOptions(selectedKeys: string[], silent = false) {
-    const unquotedSelectedKeys = new Set(
-      selectedKeys.map((k) => k.replace(/^"(.*)"$/, '$1')),
+  public setSelectedOptions(
+    selectedKeys: string[],
+    silent = false,
+  ): string | undefined {
+    const unquotedLowerSelectedKeys = selectedKeys.map((k) =>
+      unquote(k).toLowerCase(),
     );
-
+    const lowerUnquotedSelectedKeysSet = new Set(unquotedLowerSelectedKeys);
     const map: Record<string, boolean> = {};
     const foundKeys = new Set<string>();
 
     for (const opt of Object.values(this.options)) {
-      const unquotedOptKey = opt.optionValue.value.replace(/^"(.*)"$/, '$1');
-      const isSelected = unquotedSelectedKeys.has(unquotedOptKey);
-
+      const lowerUnquotedOptKey = unquote(opt.optionValue.value).toLowerCase();
+      const isSelected = lowerUnquotedSelectedKeysSet.has(lowerUnquotedOptKey);
       map[opt.optionValue.value] = isSelected;
       if (isSelected) {
-        foundKeys.add(unquotedOptKey);
+        foundKeys.add(lowerUnquotedOptKey);
       }
     }
 
     this.setOptions(map, silent);
 
-    for (const key of unquotedSelectedKeys) {
+    for (const key of unquotedLowerSelectedKeys) {
       if (!foundKeys.has(key)) {
         return `Invalid option: ${key}`;
       }

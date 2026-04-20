@@ -160,6 +160,7 @@ export const AndroidDeviceDetailsPage = () => {
     return l;
   }, [device]);
 
+  // TODO: Refactor these device dimensions tables to use shared styles.
   const table = useFCDataTable({
     columns,
     data: labels,
@@ -168,8 +169,19 @@ export const AndroidDeviceDetailsPage = () => {
     enableSorting: false,
     enableTopToolbar: true,
     enableStickyHeader: true,
+    muiTableHeadRowProps: {
+      sx: { minHeight: 'unset' },
+    },
     muiTableContainerProps: {
-      sx: { maxWidth: '100%', overflowX: 'hidden', maxHeight: '80vh' },
+      sx: {
+        maxWidth: '100%',
+        overflowX: 'hidden',
+        maxHeight: '80vh',
+        '--cell-padding-horizontal': '16px',
+        '& .Mui-TableHeadCell-Content': {
+          minHeight: 'unset !important',
+        },
+      },
     },
   });
 

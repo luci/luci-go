@@ -41,6 +41,7 @@ import {
 import { OptionsMenu } from '../filter_dropdown/options_menu';
 
 /** @deprecated use DeviceListFilterBar instead */
+// TODO(http://b/479452001): Get rid of DeviceListFilterBar_OLD
 export function DeviceListFilterBar_OLD({
   filterOptions,
   selectedOptions,

@@ -48,8 +48,14 @@ export const parseCommaSeparatedText = (value: string): string[] => {
     result.push(current);
   }
 
-  return result.map((v) => v.trim().replace(/^"(.*)"$/, '$1')).filter(Boolean);
+  return result.map((v) => stripQuotes(v.trim())).filter(Boolean);
 };
+
+/**
+ * Removes one level of surrounding quotes if present.
+ */
+export const stripQuotes = (val: string): string =>
+  val.startsWith('"') && val.endsWith('"') ? val.slice(1, -1) : val;
 
 /**
  * Formats an array of strings into a comma-separated string, quoting strings that contain commas.

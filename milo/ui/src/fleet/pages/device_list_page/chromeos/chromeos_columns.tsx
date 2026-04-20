@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 
 import Typography from '@mui/material/Typography';
-import { GridRenderCellParams } from '@mui/x-data-grid';
+import { MRT_ColumnDef } from 'material-react-table';
 
-import { DeviceTableGridColDef } from '@/fleet/components/device_table/device_table';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
 import { CellWithTooltip } from '@/fleet/components/table';
-import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
+import {
+  renderChipCell,
+  StateUnion,
+} from '@/fleet/components/table/cell_with_chip';
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
 import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { getStatusColor } from '@/fleet/pages/device_list_page/chromeos/dut_state';
+import { FC_CellProps } from '@/fleet/types/table';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { getTaskURL } from '@/fleet/utils/swarming';
@@ -34,179 +37,272 @@ import {
   DeviceType,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+export const chromeOSFriendlyNames: Record<string, string> = {
+  id: 'ID',
+  dut_id: 'Dut ID',
+  type: 'Type',
+  state: 'Lease state',
+  host: 'Address',
+  port: 'Port',
+  current_task: 'Current Task',
+  // TODO: Address underlying mapping issue to use friendly name.
+  // User explicitly requested to keep 'dut_state' raw to avoid mapping issues.
+  dut_state: 'dut_state',
+  'label-servo_state': 'Servo State',
+  bluetooth_state: 'Bluetooth State',
+  'label-model': 'Model',
+  'label-board': 'Board',
+  dut_name: 'Dut Name',
+  'label-associated_hostname': 'Associated Hostname',
+};
 // current_task is populated separated from ListDevices through direct calls to the Swarming
 // API, requiring device data to be merged with task data.
-type ChromeOSDevice = Device & { current_task?: string };
+export type ChromeOSDevice = Device & { current_task?: string };
+
+export type ChromeOSColumnDef = MRT_ColumnDef<ChromeOSDevice> & {
+  orderByField?: string;
+  filterByField?: string;
+};
+
+export type ChromeOSColumnOverride = Omit<
+  Partial<ChromeOSColumnDef>,
+  'Cell'
+> & {
+  renderCell?: (props: FC_CellProps<ChromeOSDevice>) => React.ReactNode;
+};
 
 export const getChromeOSColumns = (
   columnIds: string[],
-): DeviceTableGridColDef<Device>[] => {
+): ChromeOSColumnDef[] => {
+  const topLevelProtoFields = [
+    'id',
+    'dut_id',
+    'type',
+    'state',
+    'host',
+    'port',
+    'realm',
+  ];
+
   return columnIds.map((id) => {
+    const isTopLevelProtoField = topLevelProtoFields.includes(id);
+
+    const override = CHROMEOS_COLUMN_OVERRIDES[id] ?? {};
+
     return {
-      field: id,
-      headerName: id,
+      accessorKey: id,
+      header: id,
       orderByField: 'labels.' + id,
-      editable: false,
-      minWidth: 70,
-      maxWidth: 700,
-      sortable: true,
-      valueGetter: (_, device) => {
+      filterByField: isTopLevelProtoField ? id : `labels."${id}"`,
+      enableEditing: false,
+      minSize: 70,
+      maxSize: 700,
+      enableSorting: true,
+      accessorFn: (device) => {
         const labels = device.deviceSpec?.labels?.[id]?.values;
         if (!labels) return undefined;
 
         return labelValuesToString(labels);
       },
-      flex: 1,
-      renderCell: (param) => (
-        <EllipsisTooltip>{param.value ?? ''}</EllipsisTooltip>
-      ),
-      ...(CHROMEOS_COLUMN_OVERRIDES[id] ?? {}),
+      ...(override.renderCell
+        ? {
+            Cell: (props: FC_CellProps<ChromeOSDevice>) =>
+              override.renderCell!(props),
+          }
+        : {
+            Cell: ({ cell }: FC_CellProps<ChromeOSDevice>) => (
+              <EllipsisTooltip>{String(cell.getValue() ?? '')}</EllipsisTooltip>
+            ),
+          }),
+      ...(() => {
+        const { renderCell: _, ...rest } = override;
+        return rest;
+      })(),
     };
   });
 };
 
-/**
- * BASE_DIMENSIONS are dimensions associated with a device that are not labels,
- * which essentially defined how the UI renders non-label fields from the
- * `ListDevices` response.
- */
-// export const BASE_DIMENSIONS: DimensionOverride = {
-
-export const CHROMEOS_COLUMN_OVERRIDES: Record<
-  string,
-  Partial<DeviceTableGridColDef<Device>>
-> = {
-  id: {
-    headerName: 'ID',
-    valueGetter: (_, device) => device.id,
-    renderCell: renderCellWithLink(
-      (value) => generateChromeOsDeviceDetailsURL(value),
-      false,
-    ),
-    orderByField: 'id',
-  },
-  // TODO(b/400711755): Rename this to Asset Tag
-  dut_id: {
-    headerName: 'Dut ID',
-    valueGetter: (_, device) => device.dutId,
-    orderByField: 'dut_id',
-  },
-  type: {
-    headerName: 'Type',
-    valueGetter: (_, device) => DeviceType[device.type],
-    orderByField: 'type',
-  },
-  state: {
-    headerName: 'Lease state',
-    valueGetter: (_, device) => getDeviceStateString(device),
-    orderByField: 'state',
-    renderCell: (params: GridRenderCellParams<Device>) => {
-      const stateValue = params.value ?? '';
-
-      if (stateValue === '') return <></>;
-
-      const stateToTooltip: Record<string, string> = {
-        [DeviceState.DEVICE_STATE_UNSPECIFIED]:
-          'This device is not available for lease.',
-      };
-
-      if (stateToTooltip[params.row.state] !== undefined) {
-        return (
-          <FCHtmlTooltip
-            title={
-              <Typography color="inherit" variant="body2">
-                {stateToTooltip[params.row.state]}
-              </Typography>
-            }
-          >
-            {stateValue}
-          </FCHtmlTooltip>
-        );
-      } else {
-        return <CellWithTooltip {...params}></CellWithTooltip>;
-      }
+export const CHROMEOS_COLUMN_OVERRIDES: Record<string, ChromeOSColumnOverride> =
+  {
+    id: {
+      header: 'ID',
+      accessorFn: (device) => device.id,
+      renderCell: renderCellWithLink<ChromeOSDevice>(
+        (value) => generateChromeOsDeviceDetailsURL(value),
+        false,
+      ),
+      orderByField: 'id',
+      filterByField: 'id',
     },
-  },
-  host: {
-    headerName: 'Address',
-    valueGetter: (_, device) => device.address?.host || '',
-    orderByField: 'host',
-  },
-  port: {
-    headerName: 'Port',
-    valueGetter: (_, device) => String(device.address?.port) || '',
-    orderByField: 'port',
-  },
-  current_task: {
-    headerName: 'Current Task',
-    sortable: false,
-    valueGetter: (_, row) => (row as ChromeOSDevice).current_task,
-    renderCell: (props) => {
-      if (props.value === undefined) {
-        return <></>;
-      }
-      if (props.value === '') {
-        return <CellWithTooltip {...props} value="idle"></CellWithTooltip>;
-      }
-      return renderCurrentTaskCell(props);
+    dut_id: {
+      header: 'Dut ID',
+      accessorFn: (device) => device.dutId,
+      orderByField: 'dut_id',
+      filterByField: 'dut_id',
     },
-  },
-  dut_state: {
-    valueGetter: (_, device) =>
-      device.deviceSpec?.labels['dut_state']?.values?.[0]?.toUpperCase() ?? '',
-    renderCell: (params: GridRenderCellParams<Device>) => {
-      const stateValue = params.value ?? '';
+    type: {
+      header: 'Type',
+      accessorFn: (device) => DeviceType[device.type],
+      orderByField: 'type',
+      filterByField: 'type',
+    },
+    state: {
+      header: 'Lease state',
+      accessorFn: (device) => getDeviceStateString(device),
+      orderByField: 'state',
+      filterByField: 'state',
+      renderCell: (params: FC_CellProps<ChromeOSDevice>) => {
+        const stateValue = String(params.cell.getValue() ?? '');
 
-      if (stateValue === '') return <></>;
+        if (stateValue === '') return <></>;
 
-      return renderChipCell(
+        const stateToTooltip: Record<string, string> = {
+          [DeviceState.DEVICE_STATE_UNSPECIFIED]:
+            'This device is not available for lease.',
+        };
+
+        const device = params.row.original;
+        if (stateToTooltip[device.state] !== undefined) {
+          return (
+            <FCHtmlTooltip
+              title={
+                <Typography color="inherit" variant="body2">
+                  {stateToTooltip[device.state]}
+                </Typography>
+              }
+            >
+              <span>{stateValue}</span>
+            </FCHtmlTooltip>
+          );
+        } else {
+          return (
+            <CellWithTooltip
+              column={params.column}
+              value={stateValue}
+            ></CellWithTooltip>
+          );
+        }
+      },
+    },
+    host: {
+      header: 'Address',
+      accessorFn: (device) => device.address?.host || '',
+      orderByField: 'host',
+      filterByField: 'host',
+    },
+    port: {
+      header: 'Port',
+      accessorFn: (device) => String(device.address?.port) || '',
+      orderByField: 'port',
+      filterByField: 'port',
+    },
+    current_task: {
+      header: 'Current Task',
+      enableSorting: false,
+      enableColumnFilter: false,
+      accessorFn: (row) => row.current_task,
+      renderCell: (props: FC_CellProps<ChromeOSDevice>) => {
+        const val = props.cell.getValue();
+        if (val === undefined || val === null) {
+          return <></>;
+        }
+        const value = String(val);
+        if (value === '') {
+          return (
+            <CellWithTooltip
+              column={props.column}
+              value="idle"
+            ></CellWithTooltip>
+          );
+        }
+        return renderCurrentTaskCell(props);
+      },
+    },
+    dut_state: {
+      header: 'dut_state',
+      accessorFn: (device) =>
+        device.deviceSpec?.labels['dut_state']?.values?.[0]?.toUpperCase() ??
+        '',
+      renderCell: (params: FC_CellProps<ChromeOSDevice>) => {
+        const stateValue = String(params.cell.getValue() ?? '');
+
+        if (stateValue === '') return <></>;
+
+        return renderChipCell<ChromeOSDevice>(
+          getSwarmingStateDocLinkForLabel,
+          getStatusColor,
+          undefined,
+          true,
+          stateValue.toUpperCase() as StateUnion,
+        )(params);
+      },
+    },
+    'label-servo_state': {
+      renderCell: renderCellWithLink<ChromeOSDevice>(
         getSwarmingStateDocLinkForLabel,
-        getStatusColor,
-      )({ ...params, value: stateValue.toUpperCase() });
+      ),
     },
-  },
-  'label-servo_state': {
-    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
-  },
-  bluetooth_state: {
-    renderCell: renderCellWithLink(getSwarmingStateDocLinkForLabel),
-  },
-  'label-model': {
-    renderCell: renderCellWithLink((value) => `http://go/dlm-model/${value}`),
-  },
-  'label-board': {
-    renderCell: renderCellWithLink((value) => `http://go/dlm-board/${value}`),
-  },
-  dut_name: {
-    renderCell: renderCellWithLink(generateDutNameRedirectURL),
-  },
-  'label-associated_hostname': {
-    renderCell: renderCellWithLink(generateDutNameRedirectURL),
-  },
-  'label-primary_dut': {
-    renderCell: renderCellWithLink(generateDutNameRedirectURL),
-  },
-  'label-managed_dut': {
-    renderCell: renderCellWithLink(generateDutNameRedirectURL),
-  },
-  'label-servo_usb_state': {
-    renderCell: renderCellWithLink((value) =>
-      getSwarmingStateDocLinkForLabel(`${value}-2`),
-    ),
-  },
-  bot_id: {
-    renderCell: renderCellWithLink(
-      (value) => `https://${DEVICE_TASKS_SWARMING_HOST}/bot?id=${value}`,
-    ),
-  },
-  realm: {
-    headerName: 'Realm',
-    valueGetter: (_, device) =>
-      (device as Device & { realm?: string }).realm || '',
-    orderByField: 'realm',
-  },
-};
+    bluetooth_state: {
+      renderCell: renderCellWithLink<ChromeOSDevice>(
+        getSwarmingStateDocLinkForLabel,
+      ),
+    },
+    'label-model': {
+      renderCell: renderCellWithLink<ChromeOSDevice>(
+        (value) => `http://go/dlm-model/${value}`,
+      ),
+    },
+    'label-board': {
+      renderCell: renderCellWithLink<ChromeOSDevice>(
+        (value) => `http://go/dlm-board/${value}`,
+      ),
+    },
+    dut_name: {
+      renderCell: renderCellWithLink<ChromeOSDevice>(
+        generateDutNameRedirectURL,
+      ),
+    },
+    'label-associated_hostname': {
+      renderCell: renderCellWithLink<ChromeOSDevice>(
+        generateDutNameRedirectURL,
+      ),
+    },
+    'label-primary_dut': {
+      renderCell: renderCellWithLink<ChromeOSDevice>(
+        generateDutNameRedirectURL,
+      ),
+    },
+    'label-managed_dut': {
+      renderCell: renderCellWithLink<ChromeOSDevice>(
+        generateDutNameRedirectURL,
+      ),
+    },
+    'label-servo_usb_state': {
+      renderCell: renderCellWithLink<ChromeOSDevice>((value) =>
+        getSwarmingStateDocLinkForLabel(`${value}-2`),
+      ),
+    },
+    bot_id: {
+      renderCell: renderCellWithLink<ChromeOSDevice>(
+        (value) => `https://${DEVICE_TASKS_SWARMING_HOST}/bot?id=${value}`,
+      ),
+    },
+    realm: {
+      header: 'Realm',
+      accessorFn: (device) =>
+        (device as Device & { realm?: string }).realm || '',
+      orderByField: 'realm',
+      filterByField: 'realm',
+    },
+  };
 
-const renderCurrentTaskCell = renderCellWithLink((task_id) =>
+const renderCurrentTaskCell = renderCellWithLink<ChromeOSDevice>((task_id) =>
   getTaskURL(task_id),
 );
+
+export const EXTRA_COLUMN_IDS = [
+  'id',
+  'dut_id',
+  'current_task',
+  'realm',
+] satisfies (keyof typeof CHROMEOS_COLUMN_OVERRIDES)[];

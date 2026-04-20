@@ -85,7 +85,6 @@ export const useCurrentTasks = (
   });
 
   // 3. Aggregate the results from all queries into a single map and state.
-  const map = new Map<string, string>();
   // Find the first error object among the queries.
   const error = queries.find((q) => q.error)?.error || null;
   // The overall state is an error if any of the queries have an error.
@@ -94,21 +93,29 @@ export const useCurrentTasks = (
   const isPending = queries.some((q) => q.isPending);
 
   // Combine data from all successful queries.
-  if (!isPending && !isError) {
-    for (const query of queries) {
-      if (query.data) {
-        for (const bot of query.data) {
-          if (bot.taskId) {
-            const dutIdDimension = bot.dimensions?.find(
-              (dim) => dim.key === 'dut_id',
-            );
-            if (dutIdDimension?.value?.length) {
-              map.set(dutIdDimension.value[0], bot.taskId);
+  const map = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!isPending && !isError) {
+      for (const query of queries) {
+        if (query.data) {
+          for (const bot of query.data) {
+            if (bot.taskId) {
+              const dutIdDimension = bot.dimensions?.find(
+                (dim) => dim.key === 'dut_id',
+              );
+              if (dutIdDimension?.value?.length) {
+                m.set(dutIdDimension.value[0], bot.taskId);
+              }
             }
           }
         }
       }
     }
-  }
-  return { map, error, isError, isPending };
+    return m;
+  }, [queries, isPending, isError]);
+
+  return useMemo(
+    () => ({ map, error, isError, isPending }),
+    [map, error, isError, isPending],
+  );
 };

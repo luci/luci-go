@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getChromeOSColumns } from '@/fleet/pages/device_list_page/chromeos/chromeos_columns';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { orderColumns } from './columns';
+import { orderMRTColumns } from './columns';
 
 describe('getColumns - Ordering Tests', () => {
   it('should order visible columns then the rest, each group alphabetically, prioritizing common ones', () => {
@@ -29,11 +28,13 @@ describe('getColumns - Ordering Tests', () => {
     ];
     const visibleColumnIds = ['type', 'dut_id', 'port'];
 
-    const result = orderColumns(
+    const mockColumns = columnIds.map((id) => ({ id, header: id }));
+
+    const result = orderMRTColumns(
       Platform.CHROMEOS,
-      getChromeOSColumns(columnIds),
+      mockColumns,
       visibleColumnIds,
-    ).map((col) => col.field); // Extract just the field for ordering check
+    ).map((col) => col.id); // Extract just the field for ordering check
 
     expect(result).toEqual(['dut_id', 'port', 'type', 'id', 'state', 'host']);
   });
@@ -42,12 +43,37 @@ describe('getColumns - Ordering Tests', () => {
     const columnIds = ['col2', 'col1'];
     const visibleColumnIds = ['col3', 'col1'];
 
-    const result = orderColumns(
+    const mockColumns = columnIds.map((id) => ({ id, header: id }));
+
+    const result = orderMRTColumns(
       Platform.CHROMEOS,
-      getChromeOSColumns(columnIds),
+      mockColumns,
       visibleColumnIds,
-    ).map((col) => col.field);
+    ).map((col) => col.id);
 
     expect(result).toEqual(['col1', 'col2']);
+  });
+
+  it('should order non-visible columns by common then rest, both alphabetically', () => {
+    const columnIds = [
+      'host', // rest
+      'id', // common
+      'dut_id', // common
+      'port', // rest
+    ];
+    const visibleColumnIds: string[] = []; // none visible
+
+    const mockColumns = columnIds.map((id) => ({ id, header: id }));
+
+    const result = orderMRTColumns(
+      Platform.CHROMEOS,
+      mockColumns,
+      visibleColumnIds,
+    ).map((col) => col.id);
+
+    // Common: id, dut_id -> ordered by COMMON_COLUMNS: id, dut_id
+    // Rest: host, port -> alphabetical: host, port
+    // Result: id, dut_id, host, port
+    expect(result).toEqual(['id', 'dut_id', 'host', 'port']);
   });
 });

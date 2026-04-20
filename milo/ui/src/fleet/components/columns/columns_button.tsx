@@ -59,18 +59,40 @@ export function ColumnsButton({
   });
 
   return (
-    <>
+    <div style={{ position: 'relative' }}>
       {renderTrigger ? (
         renderTrigger(
           {
-            onClick: (_) => setAnchorEL(anchorEl ? null : buttonRef.current),
+            onClick: (e) => {
+              if (anchorEl) {
+                setAnchorEL(null);
+              } else {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setAnchorEL({
+                  getBoundingClientRect: () => rect,
+                  clientWidth: rect.width,
+                  clientHeight: rect.height,
+                } as unknown as HTMLElement);
+              }
+            },
           },
           buttonRef,
         )
       ) : (
         <Button
           ref={buttonRef}
-          onClick={(_) => setAnchorEL(anchorEl ? null : buttonRef.current)}
+          onClick={(e) => {
+            if (anchorEl) {
+              setAnchorEL(null);
+            } else {
+              const rect = e.currentTarget.getBoundingClientRect();
+              setAnchorEL({
+                getBoundingClientRect: () => rect,
+                clientWidth: rect.width,
+                clientHeight: rect.height,
+              } as unknown as HTMLElement);
+            }
+          }}
           startIcon={<GridColumnIcon />}
           color="primary"
           size="small"
@@ -90,6 +112,6 @@ export function ColumnsButton({
         onToggleColumn={onToggleColumn}
         selectOnlyColumn={selectOnlyColumn}
       />
-    </>
+    </div>
   );
 }

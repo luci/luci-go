@@ -157,8 +157,11 @@ export const OptionsMenuOld = forwardRef(function OptionsMenuOld(
                   }}
                   size="small"
                   checked={
-                    selectedElements.has(elements[virtualRow.index].el.value) ??
-                    false
+                    selectedElements.has(item.el.value) ||
+                    selectedElements.has(`"${item.el.value}"`) ||
+                    selectedElements.has(
+                      item.el.value.replace(/^"(.*)"$/, '$1'),
+                    )
                   }
                   tabIndex={-1}
                 />

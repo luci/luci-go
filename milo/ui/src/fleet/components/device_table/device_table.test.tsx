@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GridValidRowModel } from '@mui/x-data-grid';
 import {
   act,
   cleanup,
@@ -28,7 +29,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { SettingsProvider } from '@/fleet/context/providers';
-import { getChromeOSColumns } from '@/fleet/pages/device_list_page/chromeos/chromeos_columns';
+import { chromeOSFriendlyNames } from '@/fleet/pages/device_list_page/chromeos/chromeos_columns';
 import { mockVirtualizedListDomProperties } from '@/fleet/testing_tools/dom_mocks';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -41,7 +42,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { ShortcutProvider } from '../shortcut_provider';
 
-import { DeviceTable } from './device_table';
+import { DeviceTable, DeviceTableGridColDef } from './device_table';
 
 const COLUMN_IDS: string[] = ['id', 'dut_id', 'state', 'type'];
 
@@ -204,12 +205,19 @@ function TestComponent({
   const currentRowCount = getPrevFullRowCount(pagerCtx) + currentDevices.length;
   const nextPageToken =
     currentRowCount < totalRowCount ? String(currentRowCount) : '';
+  const mockColumns = COLUMN_IDS.map((id) => ({
+    field: id,
+    headerName: chromeOSFriendlyNames[id] || id,
+    orderByField: id,
+  }));
   return (
     <SettingsProvider>
       <ShortcutProvider>
         <DeviceTable
           rows={currentDevices}
-          availableColumns={getChromeOSColumns(COLUMN_IDS)}
+          availableColumns={
+            mockColumns as unknown as DeviceTableGridColDef<GridValidRowModel>[]
+          }
           nextPageToken={nextPageToken}
           pagerCtx={pagerCtx}
           isError={false}

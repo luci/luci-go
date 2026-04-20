@@ -20,17 +20,25 @@ import { MRTFilterMenuItem } from './mrt_filter_menu_item';
 jest.mock('@/fleet/components/filter_dropdown/options_menu_old', () => ({
   OptionsMenuOld: ({
     elements,
+    selectedElements,
     flipOption,
   }: {
     elements: { el: { value: string; label: string } }[];
+    selectedElements: Set<string>;
     flipOption: (val: string) => void;
   }) => (
     <div data-testid="mock-options-menu">
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       {elements.map((x: any) => (
-        <button key={x.el.value} onClick={() => flipOption(x.el.value)}>
-          {x.el.label}
-        </button>
+        <div key={x.el.value}>
+          <input
+            type="checkbox"
+            checked={selectedElements.has(x.el.value)}
+            onChange={() => flipOption(x.el.value)}
+            aria-label={x.el.label}
+          />
+          <span>{x.el.label}</span>
+        </div>
       ))}
     </div>
   ),
@@ -111,7 +119,7 @@ describe('<MRTFilterMenuItem />', () => {
 
     fireEvent.click(screen.getByText('Filter'));
 
-    const option1 = screen.getByText('option1');
+    const option1 = screen.getByLabelText('option1');
     fireEvent.click(option1);
 
     const applyButton = screen.getByRole('button', { name: /apply/i });
@@ -119,6 +127,36 @@ describe('<MRTFilterMenuItem />', () => {
 
     expect(mockSetFilterValue).toHaveBeenCalledWith(['option1']);
     expect(mockCloseMenu).toHaveBeenCalled();
+  });
+
+  it('checks items that are already filtered', () => {
+    mockGetFilterValue.mockReturnValue(['option1']);
+    const column = createMockColumn(['option1', 'option2']);
+    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+
+    fireEvent.click(screen.getByText('Filter'));
+
+    const checkbox1 = screen.getByLabelText('option1') as HTMLInputElement;
+    const checkbox2 = screen.getByLabelText('option2') as HTMLInputElement;
+
+    expect(checkbox1.checked).toBe(true);
+    expect(checkbox2.checked).toBe(false);
+  });
+
+  it('checks items that are already filtered (quoted case)', () => {
+    mockGetFilterValue.mockReturnValue(['DEVICE_STATE_AVAILABLE']);
+    const column = createMockColumn([
+      { value: '"DEVICE_STATE_AVAILABLE"', label: 'DEVICE_STATE_AVAILABLE' },
+    ]);
+    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+
+    fireEvent.click(screen.getByText('Filter'));
+
+    const checkbox1 = screen.getByLabelText(
+      'DEVICE_STATE_AVAILABLE',
+    ) as HTMLInputElement;
+
+    expect(checkbox1.checked).toBe(true);
   });
 
   it('resets selected filters back to undefined if none selected', () => {
@@ -129,7 +167,7 @@ describe('<MRTFilterMenuItem />', () => {
     fireEvent.click(screen.getByText('Filter'));
 
     // Deselect option1
-    const option1 = screen.getByText('option1');
+    const option1 = screen.getByLabelText('option1');
     fireEvent.click(option1);
 
     const applyButton = screen.getByRole('button', { name: /apply/i });

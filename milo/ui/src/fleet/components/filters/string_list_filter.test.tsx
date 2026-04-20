@@ -234,4 +234,27 @@ describe('StringListFilterCategory', () => {
     expect(category.isExcluded).toBe(true);
     expect(category.getSelectedOptions()).toEqual(['(Blank)']);
   });
+
+  it('should set selected options case-insensitively', () => {
+    const result = StringListFilterCategory.create(
+      'Dut State',
+      'dut_state',
+      [
+        { value: '"ready"', label: 'Ready' },
+        { value: '"repair_failed"', label: 'Repair Failed' },
+      ],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    category.setSelectedOptions(['READY', 'REPAIR_FAILED']);
+    expect(category.getSelectedOptions()).toEqual([
+      '"ready"',
+      '"repair_failed"',
+    ]);
+  });
 });

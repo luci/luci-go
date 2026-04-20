@@ -132,6 +132,7 @@ export const BrowserDeviceDimensions = ({
     ];
   }, [device]);
 
+  // TODO: Refactor these device dimensions tables to use shared styles.
   const table = useFCDataTable({
     columns,
     data: rows,
@@ -147,9 +148,16 @@ export const BrowserDeviceDimensions = ({
     enableStickyHeader: true,
     enableBottomToolbar: false,
     enableRowSelection: false,
+    muiTableHeadRowProps: {
+      sx: { minHeight: 'unset' },
+    },
     muiTableContainerProps: {
       sx: {
         maxHeight: '600px', // or whatever constraints are appropriate
+        '--cell-padding-horizontal': '16px',
+        '& .Mui-TableHeadCell-Content': {
+          minHeight: 'unset !important',
+        },
       },
     },
   });
