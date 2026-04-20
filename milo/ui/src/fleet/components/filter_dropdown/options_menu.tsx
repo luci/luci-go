@@ -30,6 +30,7 @@ interface OptionsMenuProps {
   selectOnly?: (value: string) => void;
   onNavigateUp?: (e: React.KeyboardEvent) => void;
   onNavigateDown?: (e: React.KeyboardEvent) => void;
+  checkedIcon?: React.ReactNode;
 }
 
 export const OptionsMenu = ({
@@ -39,6 +40,7 @@ export const OptionsMenu = ({
   selectOnly,
   onNavigateUp,
   onNavigateDown,
+  checkedIcon,
 }: OptionsMenuProps) => {
   const parentRef = useRef(null);
 
@@ -161,7 +163,12 @@ export const OptionsMenu = ({
                     false
                   }
                   tabIndex={-1}
-                  inputProps={{ 'aria-label': item.el.label }}
+                  slotProps={{
+                    input: {
+                      'aria-label': item.el.label,
+                    },
+                  }}
+                  checkedIcon={checkedIcon}
                 />
                 <HighlightCharacter
                   variant="body2"

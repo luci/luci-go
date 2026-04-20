@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as ast from '@/fleet/utils/aip160/ast/ast';
+
 import { StringListFilterCategory } from './string_list_filter';
 
 describe('StringListFilterCategory', () => {
@@ -112,5 +114,124 @@ describe('StringListFilterCategory', () => {
 
     category.setSelectedOptions([]);
     expect(category.getSelectedOptions()).toEqual([]);
+  });
+
+  it('should generate correct AIP-160 string when excluded', () => {
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [
+        { value: 'pixel', label: 'Pixel' },
+        { value: 'nexus', label: 'Nexus' },
+      ],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    category.setSelectedOptions(['pixel']);
+    category.isExcluded = true;
+    expect(category.toAIP160()).toEqual('(model != pixel)');
+
+    category.setSelectedOptions(['pixel', 'nexus']);
+    expect(category.toAIP160()).toEqual('(model != pixel AND model != nexus)');
+  });
+
+  it('should parse negated filter string correctly', () => {
+    const mockTerm = {
+      kind: 'Term',
+      negated: true,
+      simple: {
+        kind: 'Restriction',
+        comparator: '=',
+        arg: {
+          kind: 'Comparable',
+          member: {
+            value: { value: 'pixel', quoted: false },
+            fields: [],
+          },
+        },
+      },
+    } as unknown as ast.Term & { simple: ast.Restriction };
+
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [
+        { value: 'pixel', label: 'Pixel' },
+        { value: 'nexus', label: 'Nexus' },
+      ],
+      [],
+      () => {},
+      [mockTerm],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    expect(category.isExcluded).toBe(true);
+    expect(category.getSelectedOptions()).toEqual(['pixel']);
+  });
+
+  it('should generate correct AIP-160 string for Blank', () => {
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [
+        { value: 'pixel', label: 'Pixel' },
+        { value: '(Blank)', label: 'Blank' },
+      ],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    category.setSelectedOptions(['(Blank)']);
+    expect(category.toAIP160()).toEqual('NOT model:*');
+
+    category.isExcluded = true;
+    expect(category.toAIP160()).toEqual('model:*');
+  });
+
+  it('should parse Blank filter in Exclude mode correctly', () => {
+    const mockTerm = {
+      kind: 'Term',
+      negated: false,
+      simple: {
+        kind: 'Restriction',
+        comparator: ':',
+        arg: {
+          kind: 'Comparable',
+          member: {
+            value: { value: '*', quoted: false },
+            fields: [],
+          },
+        },
+      },
+    } as unknown as ast.Term & { simple: ast.Restriction };
+
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [
+        { value: 'pixel', label: 'Pixel' },
+        { value: '(Blank)', label: 'Blank' },
+      ],
+      [],
+      () => {},
+      [mockTerm],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    expect(category.isExcluded).toBe(true);
+    expect(category.getSelectedOptions()).toEqual(['(Blank)']);
   });
 });

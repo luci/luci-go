@@ -223,14 +223,24 @@ const constructFiltersFromAIP160 = (filtersAIP160: string): ParseResult => {
           };
         }
 
+        const result = wrapper(node.simple);
+        if (result.isError) return result;
+
         if (node.negated) {
-          return {
-            isError: true,
-            error: 'NOT (...) terms are not supported yet',
-          };
+          const negatedTerms: Record<
+            string,
+            (ast.Term & { simple: ast.Restriction })[]
+          > = {};
+          for (const [key, terms] of Object.entries(result.terms)) {
+            negatedTerms[key] = terms.map((t) => ({
+              ...t,
+              negated: !t.negated,
+            }));
+          }
+          return { isError: false, terms: negatedTerms };
         }
 
-        return wrapper(node.simple);
+        return result;
       case 'Restriction':
       case 'Comparable':
       case 'Member':

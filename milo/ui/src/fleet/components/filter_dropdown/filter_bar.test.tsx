@@ -198,7 +198,7 @@ describe('FilterBar', () => {
     await user.click(screen.getByText('Value 1'));
     await user.click(screen.getByText('Apply'));
 
-    expect(screen.getByText('1 | [ Option 1 ]: Value 1')).toBeInTheDocument();
+    expect(screen.getByText('1 | Option 1 IN Value 1')).toBeInTheDocument();
   });
 
   it('should allow moving between chips with arrows', async () => {
@@ -223,8 +223,8 @@ describe('FilterBar', () => {
     await user.click(screen.getAllByText('Value 1')[0]);
     await user.click(screen.getByText('Apply'));
 
-    const chip1 = screen.getByText('1 | [ Option 1 ]: Value 1');
-    const chip2 = screen.getByText('1 | [ Option 2 ]: Value 1');
+    const chip1 = screen.getByText('1 | Option 1 IN Value 1');
+    const chip2 = screen.getByText('1 | Option 2 IN Value 1');
 
     expect(chip1).toBeInTheDocument();
     expect(chip2).toBeInTheDocument();
@@ -468,7 +468,7 @@ describe('FilterBar', () => {
     await user.click(screen.getByText('Value 1'));
     await user.click(screen.getByText('Apply'));
 
-    const chip = screen.getByText('1 | [ Option 1 ]: Value 1');
+    const chip = screen.getByText('1 | Option 1 IN Value 1');
     expect(chip).toBeInTheDocument();
 
     // Focus input and press backspace when cursor is at the beginning.
@@ -528,7 +528,7 @@ describe('FilterBar', () => {
     await user.click(screen.getByText('Value 1'));
     await user.click(screen.getByText('Apply'));
 
-    const chip1 = screen.getByText('1 | [ Option 1 ]: Value 1');
+    const chip1 = screen.getByText('1 | Option 1 IN Value 1');
     expect(chip1).toBeInTheDocument();
 
     // Add a filter to get a chip.
@@ -536,7 +536,7 @@ describe('FilterBar', () => {
     await user.click(screen.getAllByText('Value 1')[0]);
     await user.click(screen.getByText('Apply'));
 
-    const chip2 = screen.getByText('1 | [ Option 2 ]: Value 1');
+    const chip2 = screen.getByText('1 | Option 2 IN Value 1');
     expect(chip2).toBeInTheDocument();
 
     // Focus input and press backspace when cursor is at the beginning.
@@ -566,7 +566,7 @@ describe('FilterBar', () => {
     await user.click(screen.getByText('Value 1'));
     await user.click(screen.getByText('Apply'));
 
-    const chip = screen.getByText('1 | [ Option 1 ]: Value 1');
+    const chip = screen.getByText('1 | Option 1 IN Value 1');
 
     // Click the chip to open its dropdown.
     await user.click(chip);
@@ -581,7 +581,7 @@ describe('FilterBar', () => {
 
     // We unchecked the option, the chip goes away.
     expect(
-      screen.queryByText('1 | [ Option 1 ]: Value 1'),
+      screen.queryByText('1 | Option 1 IN Value 1'),
     ).not.toBeInTheDocument();
   });
 
@@ -711,7 +711,7 @@ describe('FilterBar', () => {
     await user.click(screen.getByText('Value 1'));
     await user.click(screen.getByText('Apply'));
 
-    const chip = screen.getByText('1 | [ Option 1 ]: Value 1');
+    const chip = screen.getByText('1 | Option 1 IN Value 1');
     expect(chip).toBeInTheDocument();
 
     // Middle click on the chip.
@@ -757,7 +757,7 @@ describe('FilterBar', () => {
     await user.click(screen.getByText('Apply'));
 
     // Wait for chip to appear to ensure apply is done.
-    screen.getByText('1 | [ Option 1 ]: Value 1');
+    screen.getByText('1 | Option 1 IN Value 1');
 
     expect(searchInput).toHaveValue('');
     expect(searchInput).toHaveFocus();
@@ -830,7 +830,7 @@ describe('FilterBar', () => {
     await user.type(searchInput, 'option-1:Value 1');
     await user.keyboard('{Enter}');
 
-    expect(screen.getByText('1 | [ Option 1 ]: Value 1')).toBeInTheDocument();
+    expect(screen.getByText('1 | Option 1 IN Value 1')).toBeInTheDocument();
     expect(searchInput).toHaveValue('');
   });
 
@@ -945,7 +945,7 @@ describe('FilterBar', () => {
 
     await user.click(screen.getByText('Apply'));
 
-    const chip = screen.getByText('1 | [ Option 1 ]: Value 1');
+    const chip = screen.getByText('1 | Option 1 IN Value 1');
     expect(chip).toBeInTheDocument();
 
     expect(searchInput).toHaveFocus();
