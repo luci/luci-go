@@ -29,9 +29,11 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+// TODO(b/502668022): This type may want to be renamed to exonerationChannel.
+
 // unexpectedPassChannel is the channel for unexpected passes which will be exonerated.
 type unexpectedPassChannel struct {
-	ch  dispatcher.Channel[*pb.TestResult]
+	ch  dispatcher.Channel[*pb.TestExoneration]
 	cfg *ServerConfig
 
 	// wgActive indicates if there are active goroutines invoking reportTestExonerations.
@@ -49,7 +51,7 @@ type unexpectedPassChannel struct {
 func newTestExonerationChannel(ctx context.Context, cfg *ServerConfig) *unexpectedPassChannel {
 	var err error
 	c := &unexpectedPassChannel{cfg: cfg}
-	opts := &dispatcher.Options[*pb.TestResult]{
+	opts := &dispatcher.Options[*pb.TestExoneration]{
 		Buffer: buffer.Options{
 			// BatchRequest can include up to 500 requests. KEEP BatchItemsMax <= 500
 			// to keep report() simple. For more details, visit
@@ -59,7 +61,7 @@ func newTestExonerationChannel(ctx context.Context, cfg *ServerConfig) *unexpect
 			FullBehavior:  &buffer.BlockNewItems{MaxItems: 8000},
 		},
 	}
-	c.ch, err = dispatcher.NewChannel[*pb.TestResult](ctx, opts, func(b *buffer.Batch[*pb.TestResult]) error {
+	c.ch, err = dispatcher.NewChannel[*pb.TestExoneration](ctx, opts, func(b *buffer.Batch[*pb.TestExoneration]) error {
 		return c.report(ctx, b)
 	})
 	if err != nil {
@@ -78,7 +80,7 @@ func (c *unexpectedPassChannel) closeAndDrain(ctx context.Context) {
 	c.ch.CloseAndDrain(ctx)
 }
 
-func (c *unexpectedPassChannel) schedule(trs ...*pb.TestResult) {
+func (c *unexpectedPassChannel) schedule(trs ...*pb.TestExoneration) {
 	c.wgActive.Add(1)
 	defer c.wgActive.Done()
 	// if the channel already has been closed, drop the test exonerations.
@@ -90,22 +92,14 @@ func (c *unexpectedPassChannel) schedule(trs ...*pb.TestResult) {
 	}
 }
 
-func (c *unexpectedPassChannel) report(ctx context.Context, b *buffer.Batch[*pb.TestResult]) error {
+func (c *unexpectedPassChannel) report(ctx context.Context, b *buffer.Batch[*pb.TestExoneration]) error {
 	if b.Meta == nil {
 		reqs := make([]*pb.CreateTestExonerationRequest, len(b.Data))
 		for i, d := range b.Data {
 			tr := d.Item
 
 			reqs[i] = &pb.CreateTestExonerationRequest{
-				TestExoneration: &pb.TestExoneration{
-					// Note: either TestIdStructured or (TestId and Variant) will actually
-					// be set, not all at the same time.
-					TestIdStructured: tr.TestIdStructured,
-					TestId:           tr.TestId,
-					Variant:          tr.Variant,
-					ExplanationHtml:  "Unexpected passes are exonerated",
-					Reason:           pb.ExonerationReason_UNEXPECTED_PASS,
-				},
+				TestExoneration: tr,
 			}
 		}
 		b.Meta = &pb.BatchCreateTestExonerationsRequest{

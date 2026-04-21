@@ -145,7 +145,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 	// create a slice with a rough estimate.
 	uts := make([]*uploadTask, 0, len(in.TestResults)*4)
 	// Unexpected passed test results that need to be exonerated.
-	trsForExo := make([]*pb.TestResult, 0, len(in.TestResults))
+	trsForExo := make([]*pb.TestExoneration, 0, len(in.TestResults))
 	trsForUpload := make([]*pb.TestResult, 0, len(in.TestResults))
 
 	for i, tr := range in.TestResults {
@@ -269,7 +269,15 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		trsForUpload = append(trsForUpload, rdbtr)
 
 		if s.ec != nil && isUnexpectedlyPassed(tr) {
-			trsForExo = append(trsForExo, rdbtr)
+			trsForExo = append(trsForExo, &pb.TestExoneration{
+				// Note: either TestIdStructured or (TestId and Variant) will actually
+				// be set, not all at the same time.
+				TestIdStructured: rdbtr.TestIdStructured,
+				TestId:           rdbtr.TestId,
+				Variant:          rdbtr.Variant,
+				ExplanationHtml:  "Unexpected passes are exonerated",
+				Reason:           pb.ExonerationReason_UNEXPECTED_PASS,
+			})
 		}
 	}
 
