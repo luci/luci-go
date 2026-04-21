@@ -27,6 +27,7 @@ const BASE_SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/gerritcodereview',
   'https://www.googleapis.com/auth/buganizer',
+  'https://www.googleapis.com/auth/spreadsheets',
 ];
 
 const ANDROID_SCOPES = [

@@ -73,6 +73,7 @@ entrypoint: >
   -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
   -encrypted-cookies-required-scopes https://www.googleapis.com/auth/gerritcodereview
   -encrypted-cookies-optional-scopes https://www.googleapis.com/auth/buganizer
+  -encrypted-cookies-optional-scopes https://www.googleapis.com/auth/spreadsheets
   -encrypted-cookies-expose-state-endpoint
   -redis-addr ${REDIS_ADDR}
   -ds-cache ${DS_CACHE}

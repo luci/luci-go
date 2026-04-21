@@ -47,7 +47,7 @@ you need to ensure your local environment requests the correct OAuth scopes:
         `https://www.googleapis.com/auth/androidbuild.internal` scope,
         similar to this:
         ```bash
-        luci-auth login -scopes "profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gerritcodereview https://www.googleapis.com/auth/buganizer https://www.googleapis.com/auth/androidbuild.internal"
+        luci-auth login -scopes "profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gerritcodereview https://www.googleapis.com/auth/buganizer https://www.googleapis.com/auth/androidbuild.internal https://www.googleapis.com/auth/spreadsheets"
         ```
     *   Run this exact command in your terminal and complete the browser-based
         authentication flow.
