@@ -272,4 +272,29 @@ describe('<BaseLayout />', () => {
       screen.getByText(PAGE_LABEL_MAP[UiPage.BuilderSearch]),
     ).not.toBeVisible();
   });
+
+  it('should hide feedback button when hideGlobalFeedback is specified in handle', async () => {
+    useMatchesMock.mockImplementation(() => [
+      {
+        id: '',
+        pathname: '',
+        params: {},
+        data: '',
+        handle: {
+          hideGlobalFeedback: true,
+        },
+        loaderData: [],
+      },
+    ]);
+
+    render(
+      <StoreProvider value={store}>
+        <FakeContextProvider>
+          <BaseLayout />
+        </FakeContextProvider>
+      </StoreProvider>,
+    );
+
+    expect(screen.queryByTitle('Send feedback')).not.toBeInTheDocument();
+  });
 });

@@ -33,7 +33,7 @@ export const isLandingPage = (pathname: string) =>
 export const crystalBallRoutes: RouteObject[] = [
   {
     element: createElement(Layout),
-    handle: { defaultSidebarOpen: false },
+    handle: { defaultSidebarOpen: false, hideGlobalFeedback: true },
     children: [
       {
         path: '',

@@ -42,12 +42,14 @@ interface Props {
   open: boolean;
   handleSidebarChanged: (isOpen: boolean) => void;
   showSidebarToggle?: boolean;
+  hideGlobalFeedback?: boolean;
 }
 
 export const AppBar = ({
   open,
   handleSidebarChanged,
   showSidebarToggle = true,
+  hideGlobalFeedback = false,
 }: Props) => {
   const authState = useAuthState();
 
@@ -79,7 +81,7 @@ export const AppBar = ({
           sx={{ right: 'calc(var(--accumulated-right) + 30px)', gap: 1 }}
         >
           <AvailableFlags />
-          <FeedbackButton />
+          {!hideGlobalFeedback && <FeedbackButton />}
           <AppMenu />
           <LoginStatus
             identity={authState.identity}

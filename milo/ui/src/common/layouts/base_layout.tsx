@@ -52,14 +52,24 @@ export const BaseLayout = () => {
   );
   const project = useProjectCtx();
   const shouldShowSidebar = project !== 'android';
+  // Sub-apps can customize their parent layouts by exporting properties in their
+  // route handles. For more details, see `docs/guides/customizing_layouts.md`.
   const matches = useMatches() as UIMatch<
     unknown,
-    { layout?: () => ReactNode; defaultSidebarOpen?: boolean }
+    {
+      layout?: () => ReactNode;
+      defaultSidebarOpen?: boolean;
+      hideGlobalFeedback?: boolean;
+    }
   >[];
 
   const defaultSidebarOpen = matches
     .filter((m) => m.handle?.defaultSidebarOpen !== undefined)
     .at(-1)?.handle?.defaultSidebarOpen;
+
+  const hideGlobalFeedback = matches
+    .filter((m) => m.handle?.hideGlobalFeedback !== undefined)
+    .at(-1)?.handle?.hideGlobalFeedback;
 
   const effectiveSidebarOpen = sidebarOpen ?? defaultSidebarOpen ?? false;
 
@@ -85,6 +95,7 @@ export const BaseLayout = () => {
           open={effectiveSidebarOpen}
           handleSidebarChanged={setSidebarOpen}
           showSidebarToggle={shouldShowSidebar}
+          hideGlobalFeedback={hideGlobalFeedback}
         />
       </Sticky>
       <Sticky
