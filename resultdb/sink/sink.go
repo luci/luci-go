@@ -237,8 +237,7 @@ func (c *ServerConfig) Validate() error {
 			if pbutil.IsStructuredTestID(*c.PreviousTestIDPrefix) {
 				return errors.New("PreviousTestIDPrefix: must not start with prefix of structured test IDs")
 			}
-			// TODO(b/446175448): Use higher limit.
-			if err := pbutil.ValidateTestID(*c.PreviousTestIDPrefix, pbutil.DefaultTestIDLimitCallback); err != nil {
+			if err := pbutil.ValidateTestID(*c.PreviousTestIDPrefix, pbutil.QuerySideTestIDLimitCallback); err != nil {
 				return errors.Fmt("PreviousTestIDPrefix: %w", err)
 			}
 		}
@@ -248,7 +247,7 @@ func (c *ServerConfig) Validate() error {
 		if pbutil.IsStructuredTestID(c.TestIDPrefix) {
 			return errors.New("TestIDPrefix: must not start with prefix of structured test IDs")
 		}
-		if err := pbutil.ValidateTestID(c.TestIDPrefix, pbutil.DefaultTestIDLimitCallback); err != nil {
+		if err := pbutil.ValidateTestID(c.TestIDPrefix, pbutil.QuerySideTestIDLimitCallback); err != nil {
 			return errors.Fmt("TestIDPrefix: %w", err)
 		}
 	}
@@ -267,8 +266,13 @@ type Server struct {
 	// 1 indicates that the server is starting or has started. 0, otherwise.
 	started int32
 
-	mu  sync.Mutex // protects err
+	mu       sync.Mutex // protects err
+	uploadMu sync.Mutex // protects uploadErr
+	// err captures server lifecycle errors (e.g. start or shutdown failures).
 	err error
+
+	// uploadErr captures unretriable background upload errors (e.g. permanent RPC failures).
+	uploadErr error
 }
 
 // NewServer creates a Server value and populates optional values with defaults.
@@ -329,6 +333,13 @@ func (s *Server) Err() error {
 	return s.err
 }
 
+// UploadErr returns the first unretriable background upload error, if any.
+func (s *Server) UploadErr() error {
+	s.uploadMu.Lock()
+	defer s.uploadMu.Unlock()
+	return s.uploadErr
+}
+
 // Run starts a server and runs callback in a context where the server is running.
 //
 // The context passed to callback will be cancelled if the server has stopped due to
@@ -344,10 +355,15 @@ func Run(ctx context.Context, cfg ServerConfig, callback func(context.Context, S
 		return err
 	}
 	defer func() {
-		// Run returns nil IFF both of the callback and Shutdown returned nil.
 		sErr := s.Shutdown(ctx)
 		if err == nil {
 			err = sErr
+		}
+		if err == nil {
+			err = s.Err()
+		}
+		if err == nil {
+			err = s.UploadErr()
 		}
 	}()
 
@@ -389,7 +405,17 @@ func (s *Server) Start(ctx context.Context) error {
 	routes.Use(router.NewMiddlewareChain(middleware.WithPanicCatcher))
 	s.httpSrv.Handler = routes
 	s.httpSrv.BaseContext = func(net.Listener) context.Context { return ctx }
-	ss, err := newSinkServer(ctx, s.cfg)
+	// Wire an internal callback to capture unretriable backend errors (e.g. InvalidArgument)
+	// triggered during async upload channels. This stores the first permanent failure
+	// on Server.uploadErr, ensuring it can be bubbled out when sink.Run tears down.
+	uploadErrCb := func(err error) {
+		s.uploadMu.Lock()
+		defer s.uploadMu.Unlock()
+		if s.uploadErr == nil {
+			s.uploadErr = err
+		}
+	}
+	ss, err := newSinkServer(ctx, s.cfg, uploadErrCb)
 	if err != nil {
 		return err
 	}

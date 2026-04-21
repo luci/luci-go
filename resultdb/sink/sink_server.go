@@ -61,7 +61,7 @@ type sinkServer struct {
 	mu                    sync.Mutex
 }
 
-func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, error) {
+func newSinkServer(ctx context.Context, cfg ServerConfig, uploadErrCb func(error)) (sinkpb.SinkServer, error) {
 	// random bytes to generate a ResultID when ResultID unspecified in
 	// a TestResult.
 	bytes := make([]byte, 4)
@@ -73,7 +73,7 @@ func newSinkServer(ctx context.Context, cfg ServerConfig) (sinkpb.SinkServer, er
 	ss := &sinkServer{
 		cfg:                   cfg,
 		ac:                    newArtifactChannel(ctx, &cfg),
-		tc:                    newTestResultChannel(ctx, &cfg),
+		tc:                    newTestResultChannel(ctx, &cfg, uploadErrCb),
 		resultIDBase:          hex.EncodeToString(bytes),
 		invocationArtifactIDs: stringset.New(0),
 	}
@@ -226,8 +226,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		validateToScheme := func(b pbutil.BaseTestIdentifier) error {
 			return s.cfg.ModuleScheme.Validate(b)
 		}
-		// TODO(b/446175448): Support higher limits in sink if needed. Currently using default limits.
-		if err := pbutil.ValidateTestResult(now, validateToScheme, pbutil.DefaultTestIDLimitCallback, rdbtr); err != nil {
+		if err := pbutil.ValidateTestResult(now, validateToScheme, pbutil.QuerySideTestIDLimitCallback, rdbtr); err != nil {
 			logging.Warningf(ctx, "Test result for %q is invalid (after applying resultsink config): %s", clientTestID, err)
 			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: validate after applying ResultSink config: %s", i, err)
 		}
@@ -241,8 +240,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			if rdbtr.TestIdStructured != nil {
 				testID = rdbtr.TestIdStructured
 			} else {
-				// TODO(b/446175448): Use higher limit.
-				testIDBase, err := pbutil.ParseAndValidateTestID(rdbtr.TestId, pbutil.DefaultTestIDLimitCallback)
+				testIDBase, err := pbutil.ParseAndValidateTestID(rdbtr.TestId, pbutil.QuerySideTestIDLimitCallback)
 				if err != nil {
 					return nil, errors.Fmt("parent: encoded test id: %w", err)
 				}

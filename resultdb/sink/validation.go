@@ -43,7 +43,10 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 	// Note: Some clients report empty test ID (for suites that have only one result),
 	// expecting a valid test ID to come from concatenation with a test prefix.
 	if msg.TestId != "" {
-		if err := pbutil.ValidateTestID(msg.TestId, pbutil.DefaultTestIDLimitCallback); err != nil {
+		// Note: resultsink cannot access the ResultDB service config for the allowlist,
+		// so it uses higher limits (QuerySideTestIDLimitCallback) for Test ID lengths.
+		// The stricter length validation occurs at the ResultDB backend.
+		if err := pbutil.ValidateTestID(msg.TestId, pbutil.QuerySideTestIDLimitCallback); err != nil {
 			return errors.Fmt("test_id: %w", err)
 		}
 	}
@@ -64,7 +67,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 			CaseName:     pbutil.EncodeCaseName(msg.TestIdStructured.CaseNameComponents...),
 		}
 
-		if err := pbutil.ValidateBaseTestIdentifier(baseID, pbutil.DefaultTestIDLimitCallback); err != nil {
+		if err := pbutil.ValidateBaseTestIdentifier(baseID, pbutil.QuerySideTestIDLimitCallback); err != nil {
 			return errors.Fmt("test_id_structured: %w", err)
 		}
 	}
@@ -97,7 +100,7 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 		return errors.Fmt("artifacts: %w", err)
 	}
 	if msg.TestMetadata != nil {
-		if err := pbutil.ValidateTestMetadata(msg.TestMetadata, pbutil.DefaultTestIDLimitCallback); err != nil {
+		if err := pbutil.ValidateTestMetadata(msg.TestMetadata, pbutil.QuerySideTestIDLimitCallback); err != nil {
 			return errors.Fmt("test_metadata: %w", err)
 		}
 	}

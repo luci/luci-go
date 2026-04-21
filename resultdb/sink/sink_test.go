@@ -22,12 +22,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/lucictx"
 
 	"go.chromium.org/luci/resultdb/pbutil"
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
 
@@ -198,6 +200,30 @@ func TestServer(t *testing.T) {
 			assert.Loosely(t, isClosed(), should.BeTrue)
 		})
 
+		t.Run("UploadErr captures background errors", func(t *ftt.Test) {
+			expectedErr := status.Error(codes.InvalidArgument, "test ID too long")
+			mockRec := &mockRecorder{
+				batchCreateTestResults: func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
+					return nil, expectedErr
+				},
+			}
+			cfg := testServerConfig("", "secret")
+			cfg.Recorder = mockRec
+			srv, err := NewServer(ctx, cfg)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, srv.Start(ctx), should.BeNil)
+
+			req := &sinkpb.ReportTestResultsRequest{
+				TestResults: []*sinkpb.TestResult{validTestResult(t)},
+			}
+			_, err = reportTestResults(ctx, srv.Config().Address, "secret", req)
+			assert.Loosely(t, err, should.BeNil)
+
+			assert.Loosely(t, srv.Shutdown(ctx), should.BeNil)
+			assert.Loosely(t, srv.Err(), should.BeNil)
+			assert.Loosely(t, srv.UploadErr(), should.ErrLike("test ID too long"))
+		})
+
 		t.Run("Run", func(t *ftt.Test) {
 			handlerErr := make(chan error, 1)
 			runErr := make(chan error)
@@ -215,6 +241,66 @@ func TestServer(t *testing.T) {
 				// returned.
 				handlerErr <- expected
 				assert.Loosely(t, <-runErr, should.Equal(expected))
+			})
+
+			t.Run("returns permanent upload error from background channel", func(t *ftt.Test) {
+				expectedErr := status.Error(codes.InvalidArgument, "test ID too long")
+				mockRec := &mockRecorder{
+					batchCreateTestResults: func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
+						return nil, expectedErr
+					},
+				}
+				cfgWithMock := testServerConfig("", "secret")
+				cfgWithMock.Recorder = mockRec
+
+				go func() {
+					runErr <- Run(ctx, cfgWithMock, func(ctx context.Context, cfg ServerConfig) error {
+						resReq := &sinkpb.ReportTestResultsRequest{
+							TestResults: []*sinkpb.TestResult{validTestResult(t)},
+						}
+						sinkCtx := lucictx.GetResultSink(ctx)
+						_, err := reportTestResults(ctx, sinkCtx.Address, "secret", resReq)
+						assert.Loosely(t, err, should.BeNil)
+						return nil
+					})
+				}()
+				assert.Loosely(t, <-runErr, should.ErrLike("test ID too long"))
+			})
+
+			t.Run("ignores transient upload error from background channel", func(t *ftt.Test) {
+				transientErr := transient.Tag.Apply(status.Error(codes.Unavailable, "service unavailable"))
+				called := make(chan struct{}, 1)
+				mockRec := &mockRecorder{
+					batchCreateTestResults: func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
+						select {
+						// Return a transient error when channel is empty.
+						case called <- struct{}{}:
+							return nil, transientErr
+						default:
+							return &pb.BatchCreateTestResultsResponse{}, nil
+						}
+					},
+				}
+				cfgWithMock := testServerConfig("", "secret")
+				cfgWithMock.Recorder = mockRec
+
+				go func() {
+					runErr <- Run(ctx, cfgWithMock, func(ctx context.Context, cfg ServerConfig) error {
+						resReq := &sinkpb.ReportTestResultsRequest{
+							TestResults: []*sinkpb.TestResult{validTestResult(t)},
+						}
+						sinkCtx := lucictx.GetResultSink(ctx)
+						_, err := reportTestResults(ctx, sinkCtx.Address, "secret", resReq)
+						assert.Loosely(t, err, should.BeNil)
+
+						// Wait for the mock recorder to be called at least once.
+						<-called
+
+						// Now it should retry and succeed.
+						return nil
+					})
+				}()
+				assert.Loosely(t, <-runErr, should.BeNil)
 			})
 
 			t.Run("serves requests", func(t *ftt.Test) {

@@ -23,6 +23,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
 
@@ -45,10 +47,22 @@ type testResultChannel struct {
 	closed int32
 }
 
-func newTestResultChannel(ctx context.Context, cfg *ServerConfig) *testResultChannel {
+func newTestResultChannel(ctx context.Context, cfg *ServerConfig, uploadErrCb func(error)) *testResultChannel {
 	var err error
 	c := &testResultChannel{cfg: cfg}
 	opts := &dispatcher.Options[*pb.TestResult]{
+		ErrorFn: func(b *buffer.Batch[*pb.TestResult], err error) bool {
+			retry := transient.Tag.In(err)
+			if !retry {
+				logging.Errorf(ctx, "failed to send Batch(len(Data): %d, Meta: %+v): %s", len(b.Data), b.Meta, err)
+				if uploadErrCb != nil {
+					uploadErrCb(err)
+				}
+			} else {
+				logging.Infof(ctx, "failed to send Batch(len(Data): %d, Meta: %+v): %s", len(b.Data), b.Meta, err)
+			}
+			return retry
+		},
 		Buffer: buffer.Options{
 			// BatchRequest can include up to 500 requests. KEEP BatchItemsMax <= 500
 			// to keep report() simple. For more details, visit

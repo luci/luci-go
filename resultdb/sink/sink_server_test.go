@@ -94,7 +94,7 @@ func TestReportTestResults(t *testing.T) {
 		}).(*pb.TestResult)
 
 		checkResults := func() {
-			sink, err := newSinkServer(ctx, cfg)
+			sink, err := newSinkServer(ctx, cfg, nil)
 			sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultIDBase = "foo"
 			sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultCounter = 100
 			assert.Loosely(t, err, should.BeNil)
@@ -179,7 +179,7 @@ func TestReportTestResults(t *testing.T) {
 					// upfront.
 					tr.TestId = ":module!myscheme:coarse:fine#method"
 
-					sink, err := newSinkServer(ctx, cfg)
+					sink, err := newSinkServer(ctx, cfg, nil)
 					assert.Loosely(t, err, should.BeNil)
 					req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 					_, err = sink.ReportTestResults(ctx, req)
@@ -333,7 +333,7 @@ func TestReportTestResults(t *testing.T) {
 			t.Run("with coarse name missing", func(t *ftt.Test) {
 				tr.TestIdStructured.CoarseName = ""
 
-				sink, err := newSinkServer(ctx, cfg)
+				sink, err := newSinkServer(ctx, cfg, nil)
 				assert.Loosely(t, err, should.BeNil)
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
@@ -345,7 +345,7 @@ func TestReportTestResults(t *testing.T) {
 				// the ResultDB proto instead of the ResultSink proto.
 				tr.TestIdStructured.CaseNameComponents = nil
 
-				sink, err := newSinkServer(ctx, cfg)
+				sink, err := newSinkServer(ctx, cfg, nil)
 				assert.Loosely(t, err, should.BeNil)
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
@@ -384,7 +384,7 @@ func TestReportTestResults(t *testing.T) {
 			t.Run("without CoerceNegativeDuration", func(t *ftt.Test) {
 				// duration < 0
 				tr.Duration = durationpb.New(-8)
-				sink, err := newSinkServer(ctx, cfg)
+				sink, err := newSinkServer(ctx, cfg, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
@@ -428,7 +428,7 @@ func TestReportTestResults(t *testing.T) {
 						PrimaryErrorMessage: b.String(),
 					}
 
-					sink, err := newSinkServer(ctx, cfg)
+					sink, err := newSinkServer(ctx, cfg, nil)
 					assert.Loosely(t, err, should.BeNil)
 
 					req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
@@ -475,7 +475,7 @@ func TestReportTestResults(t *testing.T) {
 			t.Run("kind unspecified", func(t *ftt.Test) {
 				tr.FailureReason.Kind = pb.FailureReason_KIND_UNSPECIFIED
 
-				sink, err := newSinkServer(ctx, cfg)
+				sink, err := newSinkServer(ctx, cfg, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
@@ -486,7 +486,7 @@ func TestReportTestResults(t *testing.T) {
 				tr.FailureReason = nil
 				expectedTR.FailureReason = nil
 
-				sink, err := newSinkServer(ctx, cfg)
+				sink, err := newSinkServer(ctx, cfg, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
@@ -510,7 +510,7 @@ func TestReportTestResults(t *testing.T) {
 					TruncatedErrorsCount: 0,
 				}
 
-				sink, err := newSinkServer(ctx, cfg)
+				sink, err := newSinkServer(ctx, cfg, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{
@@ -561,7 +561,7 @@ func TestReportTestResults(t *testing.T) {
 					},
 				}
 
-				sink, err := newSinkServer(ctx, cfg)
+				sink, err := newSinkServer(ctx, cfg, nil)
 				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
@@ -690,7 +690,7 @@ func TestReportTestResults(t *testing.T) {
 		})
 
 		t.Run("reports artifacts", func(t *ftt.Test) {
-			sink, err := newSinkServer(ctx, cfg)
+			sink, err := newSinkServer(ctx, cfg, nil)
 			assert.Loosely(t, err, should.BeNil)
 			defer closeSinkServer(ctx, sink)
 
@@ -752,7 +752,7 @@ func TestReportTestResults(t *testing.T) {
 				cfg.ModuleScheme = legacyScheme()
 				cfg.Variant = pbutil.Variant("bucket", "try", "builder", "linux-rel")
 
-				sink, err := newSinkServer(ctx, cfg)
+				sink, err := newSinkServer(ctx, cfg, nil)
 				assert.Loosely(t, err, should.BeNil)
 				defer closeSinkServer(ctx, sink)
 
@@ -776,7 +776,7 @@ func TestReportTestResults(t *testing.T) {
 				cfg.ModuleName = "modulename"
 				cfg.ModuleScheme = testScheme("scheme")
 				cfg.Variant = pbutil.Variant("bucket", "try", "builder", "linux-rel")
-				sink, err := newSinkServer(ctx, cfg)
+				sink, err := newSinkServer(ctx, cfg, nil)
 				assert.Loosely(t, err, should.BeNil)
 				defer closeSinkServer(ctx, sink)
 
@@ -868,7 +868,7 @@ func TestReportInvocationLevelArtifacts(t *testing.T) {
 		defer cancel()
 
 		cfg := testServerConfig("", "secret")
-		sink, err := newSinkServer(ctx, cfg)
+		sink, err := newSinkServer(ctx, cfg, nil)
 		assert.Loosely(t, err, should.BeNil)
 		defer closeSinkServer(ctx, sink)
 
@@ -898,7 +898,7 @@ func TestUpdateInvocation(t *testing.T) {
 		defer cancel()
 
 		cfg := testServerConfig("", "secret")
-		sink, err := newSinkServer(ctx, cfg)
+		sink, err := newSinkServer(ctx, cfg, nil)
 		assert.Loosely(t, err, should.BeNil)
 		defer closeSinkServer(ctx, sink)
 
