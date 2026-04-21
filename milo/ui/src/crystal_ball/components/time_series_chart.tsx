@@ -328,6 +328,9 @@ export function TimeSeriesChart({
           : {
               type: 'value',
               splitLine: { show: true, lineStyle: { type: 'dashed' } },
+              axisLabel: {
+                formatter: (val: number) => val.toString(),
+              },
               min: 'dataMin',
               max: 'dataMax',
             },
