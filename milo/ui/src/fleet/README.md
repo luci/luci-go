@@ -4,6 +4,8 @@ This is the folder for the client side code for the Fleet Console.
 
 For overall docs on the Fleet Console, see: [go/fleet-console](http://go/fleet-console)
 
+For architectural decisions regarding Material-React-Table usage, see: [mrt-table-architecture.md](./decisions/mrt-table-architecture.md)
+
 ## To run
 
 This codebase is hosted as part of Milo UI. To run the frontend, see the overall [Milo dev docs](https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/go/src/go.chromium.org/luci/milo/ui/docs/guides/local_development_workflows.md).

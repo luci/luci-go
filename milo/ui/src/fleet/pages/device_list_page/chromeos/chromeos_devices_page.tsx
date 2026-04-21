@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 
 import '@emotion/react';
-import { ViewColumnOutlined } from '@mui/icons-material';
-import { Button, colors, TablePagination, Stack, Box } from '@mui/material';
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import {
   MaterialReactTable,
@@ -27,21 +25,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
-  getCurrentPageIndex,
   getPageSize,
   getPageToken,
   usePagerContext,
-  PagerContext,
 } from '@/common/components/params_pager';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { CopyButton } from '@/fleet/components/actions/copy/copy_button';
 import { CopySnackbar } from '@/fleet/components/actions/copy/copy_snackbar';
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
-import { ColumnsButton } from '@/fleet/components/columns/columns_button';
 import { ExportButton_MRT } from '@/fleet/components/device_table/export_button_mrt';
 import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tasks';
+import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
+import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { stripQuotes } from '@/fleet/components/fc_data_table/mrt_filter_menu_item_utils';
+import {
+  FleetTableMeta,
+  useFleetTableMeta,
+} from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
   FleetColumnDefExt,
@@ -82,7 +83,6 @@ import {
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   CountDevicesRequest,
-  CountDevicesResponse,
   Device,
   ListDevicesRequest,
   Platform,
@@ -170,6 +170,42 @@ const syncFilterCategory = (
       category.setSelectedOptions(newValues, true);
     }
   }
+};
+
+const ChromeOSActions = ({
+  table,
+}: {
+  table: MRT_TableInstance<ChromeOSDevice>;
+}) => {
+  const selectedModelRows = table.getSelectedRowModel().rows;
+  const selectedRows = selectedModelRows.map((r) => r.original);
+  const selectedDuts = selectedRows.map((row) => ({
+    name: `${row.id}`,
+    dutId: `${row.dutId}`,
+    state: extractDutState(row as Device),
+    pool: extractDutLabel('label-pool', row as Device),
+    board: extractDutLabel('label-board', row as Device),
+    model: extractDutLabel('label-model', row as Device),
+    namespace: extractDutLabels('ufs_namespace', row as Device),
+  }));
+  const meta = useFleetTableMeta(table);
+
+  if (selectedRows.length === 0) {
+    return <ExportButton_MRT table={table} selectedRowIds={[]} />;
+  }
+
+  return (
+    <>
+      <RunAutorepair selectedDuts={selectedDuts} />
+      <RunDeploy selectedDuts={selectedDuts} />
+      <CopyButton onClick={() => meta.handleCopy?.(table)} />
+      <RequestRepair selectedDuts={selectedDuts} />
+      <ExportButton_MRT
+        table={table}
+        selectedRowIds={selectedRows.map((row) => `${row.id}`)}
+      />
+    </>
+  );
 };
 
 export const ChromeOSDevicesPage = () => {
@@ -478,6 +514,42 @@ export const ChromeOSDevicesPage = () => {
     setShowCopySuccess(true);
   }, []);
 
+  const meta = useMemo<FleetTableMeta<ChromeOSDevice>>(
+    () => ({
+      handleCopy,
+      allDimensionColumns,
+      visibleColumnIds,
+      onToggleColumn,
+      resetDefaultColumns,
+      devicesQuery,
+      nextPageToken,
+      devices,
+      pagerCtx,
+      searchParams,
+      goToPrevPage,
+      goToNextPage,
+      onRowsPerPageChange,
+      countQuery,
+      totalSize: countQuery?.data?.total,
+    }),
+    [
+      handleCopy,
+      allDimensionColumns,
+      visibleColumnIds,
+      onToggleColumn,
+      resetDefaultColumns,
+      devicesQuery,
+      nextPageToken,
+      devices,
+      pagerCtx,
+      searchParams,
+      goToPrevPage,
+      goToNextPage,
+      onRowsPerPageChange,
+      countQuery,
+    ],
+  );
+
   const tableOptions: MRT_TableOptions<ChromeOSDevice> = useMemo(
     () => ({
       columns: fleetMrtState.enrichedColumns as MRT_ColumnDef<ChromeOSDevice>[],
@@ -495,6 +567,7 @@ export const ChromeOSDevicesPage = () => {
       onColumnFiltersChange,
       enablePagination: false,
       enableColumnVirtualization: process.env.NODE_ENV !== 'test',
+      meta,
       state: {
         rowSelection,
         sorting,
@@ -523,30 +596,16 @@ export const ChromeOSDevicesPage = () => {
         },
       },
       renderTopToolbarCustomActions: ({ table }) => (
-        <TopToolbarCustomActions
-          table={table}
-          handleCopy={handleCopy}
-          allDimensionColumns={allDimensionColumns}
-          visibleColumnIds={visibleColumnIds}
-          onToggleColumn={onToggleColumn}
-          resetDefaultColumns={resetDefaultColumns}
-        />
+        <FleetTopToolbar table={table}>
+          <ChromeOSActions table={table} />
+        </FleetTopToolbar>
       ),
-      renderBottomToolbarCustomActions: () => (
-        <BottomToolbarCustomActions
-          devicesQuery={devicesQuery}
-          nextPageToken={nextPageToken}
-          devices={devices}
-          pagerCtx={pagerCtx}
-          searchParams={searchParams}
-          goToPrevPage={goToPrevPage}
-          goToNextPage={goToNextPage}
-          onRowsPerPageChange={onRowsPerPageChange}
-          countQuery={countQuery}
-        />
+      renderBottomToolbarCustomActions: ({ table }) => (
+        <FleetBottomToolbar table={table} />
       ),
     }),
     [
+      meta,
       enrichedColumns,
       rows,
       onRowSelectionChange,
@@ -557,22 +616,9 @@ export const ChromeOSDevicesPage = () => {
       columnFilters,
       fleetMrtState.enrichedColumns,
       columnVisibility,
-      countQuery,
-      devices,
       devicesQuery,
       isFiltering,
       setColumnVisibility,
-      visibleColumnIds,
-      allDimensionColumns,
-      onToggleColumn,
-      resetDefaultColumns,
-      nextPageToken,
-      pagerCtx,
-      searchParams,
-      goToPrevPage,
-      goToNextPage,
-      onRowsPerPageChange,
-      handleCopy,
     ],
   );
 
@@ -641,155 +687,5 @@ export function Component() {
         </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
-  );
-}
-
-function TopToolbarCustomActions({
-  table,
-  handleCopy,
-  allDimensionColumns,
-  visibleColumnIds,
-  onToggleColumn,
-  resetDefaultColumns,
-}: {
-  table: MRT_TableInstance<ChromeOSDevice>;
-  handleCopy: (table: MRT_TableInstance<ChromeOSDevice>) => void;
-  allDimensionColumns: { id: string; label: string }[];
-  visibleColumnIds: string[];
-  onToggleColumn: (id: string) => void;
-  resetDefaultColumns: () => void;
-}) {
-  const selectedModelRows = table.getSelectedRowModel().rows;
-  const selectedRows = useMemo(
-    () => selectedModelRows.map((r) => r.original),
-    [selectedModelRows],
-  );
-  const selectedDuts = useMemo(
-    () =>
-      selectedRows.map((row) => ({
-        name: `${row.id}`,
-        dutId: `${row.dutId}`,
-        state: extractDutState(row as Device),
-        pool: extractDutLabel('label-pool', row as Device),
-        board: extractDutLabel('label-board', row as Device),
-        model: extractDutLabel('label-model', row as Device),
-        namespace: extractDutLabels('ufs_namespace', row as Device),
-      })),
-    [selectedRows],
-  );
-
-  return (
-    <Stack
-      direction="row"
-      spacing={1}
-      sx={{
-        width: '100%',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}
-    >
-      <Stack direction="row" spacing={1} alignItems="center">
-        {selectedRows.length === 0 ? (
-          <ExportButton_MRT table={table} selectedRowIds={[]} />
-        ) : (
-          <>
-            <RunAutorepair selectedDuts={selectedDuts} />
-            <RunDeploy selectedDuts={selectedDuts} />
-            <CopyButton onClick={() => handleCopy(table)} />
-            <RequestRepair selectedDuts={selectedDuts} />
-            <ExportButton_MRT
-              table={table}
-              selectedRowIds={selectedRows.map((row) => `${row.id}`)}
-            />
-          </>
-        )}
-      </Stack>
-      <Stack direction="row" spacing={1} alignItems="center">
-        <ColumnsButton
-          allColumns={allDimensionColumns}
-          visibleColumns={visibleColumnIds}
-          onToggleColumn={onToggleColumn}
-          resetDefaultColumns={resetDefaultColumns}
-          renderTrigger={({ onClick }, ref) => (
-            <Button
-              ref={ref}
-              startIcon={<ViewColumnOutlined sx={{ fontSize: '20px' }} />}
-              onClick={onClick}
-              color="inherit"
-              sx={{
-                color: colors.grey[600],
-                height: '40px',
-                fontSize: '0.875rem',
-                textTransform: 'none',
-                fontWeight: 500,
-              }}
-            >
-              Columns
-            </Button>
-          )}
-        />
-      </Stack>
-    </Stack>
-  );
-}
-
-function BottomToolbarCustomActions({
-  devicesQuery,
-  nextPageToken,
-  devices,
-  pagerCtx,
-  searchParams,
-  goToPrevPage,
-  goToNextPage,
-  onRowsPerPageChange,
-  countQuery,
-}: {
-  devicesQuery: ReturnType<typeof useDevices>;
-  nextPageToken: string;
-  devices: readonly Device[];
-  pagerCtx: PagerContext;
-  searchParams: URLSearchParams;
-  goToPrevPage: () => void;
-  goToNextPage: (token: string) => void;
-  onRowsPerPageChange: (size: number) => void;
-  countQuery: UseQueryResult<CountDevicesResponse, Error>;
-}) {
-  return (
-    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-      <TablePagination
-        component="div"
-        count={
-          (devicesQuery.data?.devices.length || 0) === 0 &&
-          !nextPageToken &&
-          !devices.length
-            ? 0
-            : -1
-        }
-        page={getCurrentPageIndex(pagerCtx)}
-        rowsPerPage={getPageSize(pagerCtx, searchParams)}
-        onPageChange={(_, page) => {
-          const currentPage = getCurrentPageIndex(pagerCtx);
-          const isPrevPage = page < currentPage;
-          const isNextPage = page > currentPage;
-
-          if (isPrevPage) {
-            goToPrevPage();
-          } else if (isNextPage) {
-            goToNextPage(nextPageToken);
-          }
-        }}
-        onRowsPerPageChange={(e) => {
-          onRowsPerPageChange(Number(e.target.value));
-        }}
-        rowsPerPageOptions={DEFAULT_PAGE_SIZE_OPTIONS}
-        labelDisplayedRows={({ from, to }) => {
-          const total = countQuery?.data?.total;
-          if (total !== undefined && total > 0) {
-            return `${from}-${to} of ${total}`;
-          }
-          return `${from}-${to} of ${nextPageToken ? `more than ${to}` : to}`;
-        }}
-      />
-    </Box>
   );
 }

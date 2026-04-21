@@ -334,13 +334,17 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     },
   };
 
-  const { columns, data, muiTableContainerProps, ...restTableOptions } =
+  const { columns, data, muiTableContainerProps, meta, ...restTableOptions } =
     tableOptions;
   const mergedTableOptions = _.merge(
     {},
     defaultOptions,
     restTableOptions,
   ) as MRT_TableOptions<TData>;
+
+  if (meta) {
+    mergedTableOptions.meta = meta;
+  }
 
   mergedTableOptions.muiTableContainerProps = (props) => {
     const density = props.table.getState().density;

@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ViewColumnOutlined } from '@mui/icons-material';
-import { Button, Chip, colors, TablePagination } from '@mui/material';
+import { Chip } from '@mui/material';
 import _ from 'lodash';
 import { MaterialReactTable, MRT_ColumnDef } from 'material-react-table';
 import { useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
-  getCurrentPageIndex,
   getPageSize,
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { ColumnsButton } from '@/fleet/components/columns/columns_button';
 import { DeviceListFilterBar_OLD as DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar_OLD';
-import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
+import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
+import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
+import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
   FleetColumnDefExt,
@@ -237,9 +236,41 @@ export const BrowserDevicesPage = () => {
     platform: Platform.CHROMIUM,
   });
 
+  const meta = useMemo<FleetTableMeta<BrowserDevice>>(
+    () => ({
+      allDimensionColumns: fleetMrtState.allColumns,
+      visibleColumnIds: fleetMrtState.visibleColumnIds,
+      onToggleColumn: fleetMrtState.mrtColumnManager.onToggleColumn,
+      selectOnlyColumn: fleetMrtState.mrtColumnManager.selectOnlyColumn,
+      resetDefaultColumns: fleetMrtState.mrtColumnManager.resetDefaultColumns,
+      devices,
+      nextPageToken,
+      totalSize,
+      pagerCtx,
+      searchParams,
+      goToPrevPage: fleetMrtState.goToPrevPage,
+      goToNextPage: fleetMrtState.goToNextPage,
+      onRowsPerPageChange: fleetMrtState.onRowsPerPageChange,
+    }),
+    [
+      fleetMrtState.allColumns,
+      fleetMrtState.visibleColumnIds,
+      fleetMrtState.mrtColumnManager,
+      devices,
+      nextPageToken,
+      totalSize,
+      pagerCtx,
+      searchParams,
+      fleetMrtState.goToPrevPage,
+      fleetMrtState.goToNextPage,
+      fleetMrtState.onRowsPerPageChange,
+    ],
+  );
+
   const table = useFCDataTable({
     columns: fleetMrtState.enrichedColumns as MRT_ColumnDef<BrowserDevice>[],
     data: devices as BrowserDevice[],
+    meta,
     displayColumnDefOptions: {
       'mrt-row-select': {
         size: 40,
@@ -279,88 +310,10 @@ export const BrowserDevicesPage = () => {
       },
     },
     renderTopToolbarCustomActions: ({ table }) => (
-      <div
-        css={{
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        <FCDataTableCopy table={table} />
-        <ColumnsButton
-          allColumns={fleetMrtState.allColumns}
-          visibleColumns={fleetMrtState.visibleColumnIds}
-          onToggleColumn={fleetMrtState.mrtColumnManager.onToggleColumn}
-          selectOnlyColumn={fleetMrtState.mrtColumnManager.selectOnlyColumn}
-          resetDefaultColumns={
-            fleetMrtState.mrtColumnManager.resetDefaultColumns
-          }
-          renderTrigger={({ onClick }, ref) => (
-            <Button
-              ref={ref}
-              startIcon={<ViewColumnOutlined sx={{ fontSize: '20px' }} />}
-              onClick={onClick}
-              color="inherit"
-              sx={{
-                color: colors.grey[600],
-                height: '40px',
-                fontSize: '0.875rem',
-                textTransform: 'none',
-                fontWeight: 500,
-              }}
-            >
-              Columns
-            </Button>
-          )}
-        />
-      </div>
+      <FleetTopToolbar table={table} />
     ),
-    renderBottomToolbarCustomActions: () => (
-      <div css={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-        <TablePagination
-          component="div"
-          count={totalSize === 0 && !nextPageToken && !devices.length ? 0 : -1}
-          page={getCurrentPageIndex(pagerCtx)}
-          rowsPerPage={getPageSize(pagerCtx, searchParams)}
-          onPageChange={(_, page) => {
-            const currentPage = getCurrentPageIndex(pagerCtx);
-            const isPrevPage = page < currentPage;
-            const isNextPage = page > currentPage;
-
-            if (isPrevPage) {
-              fleetMrtState.goToPrevPage();
-            } else if (isNextPage) {
-              fleetMrtState.goToNextPage(nextPageToken);
-            }
-          }}
-          onRowsPerPageChange={(e) => {
-            fleetMrtState.onRowsPerPageChange(Number(e.target.value));
-          }}
-          rowsPerPageOptions={DEFAULT_PAGE_SIZE_OPTIONS}
-          labelDisplayedRows={({ from, to }) => {
-            if (totalSize !== undefined && totalSize > 0) {
-              return `${from}-${to} of ${totalSize}`;
-            }
-            return `${from}-${to} of ${nextPageToken ? `more than ${to}` : to}`;
-          }}
-          slotProps={{
-            actions: {
-              previousButtonProps: {
-                disabled: getCurrentPageIndex(pagerCtx) === 0,
-                onClick: fleetMrtState.goToPrevPage,
-              },
-              nextButtonProps: {
-                disabled: devices.length === 0 || nextPageToken === '',
-                onClick: () => fleetMrtState.goToNextPage(nextPageToken),
-              },
-            } as NonNullable<
-              React.ComponentProps<typeof TablePagination>['slotProps']
-            >['actions'],
-          }}
-        />
-      </div>
+    renderBottomToolbarCustomActions: ({ table }) => (
+      <FleetBottomToolbar table={table} />
     ),
   });
 

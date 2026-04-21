@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import '@emotion/react';
-import { ViewColumnOutlined } from '@mui/icons-material';
-import { Button, colors, TablePagination } from '@mui/material';
 import _ from 'lodash';
 import {
   MaterialReactTable,
   MRT_ColumnDef,
-  MRT_TableInstance,
   MRT_TableOptions,
 } from 'material-react-table';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -26,13 +23,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
-  getCurrentPageIndex,
   getPageSize,
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { ColumnsButton } from '@/fleet/components/columns/columns_button';
-import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
+import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
+import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
+import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
   FleetColumnDefExt,
@@ -428,6 +425,37 @@ export const AndroidDevicesPage = () => {
     columnFiltersRef.current = columnFilters;
   }, [columnFilters]);
 
+  const meta = useMemo<FleetTableMeta<AndroidDevice>>(
+    () => ({
+      allDimensionColumns,
+      visibleColumnIds,
+      onToggleColumn,
+      selectOnlyColumn,
+      resetDefaultColumns,
+      pagerCtx,
+      searchParams,
+      goToPrevPage,
+      goToNextPage,
+      onRowsPerPageChange,
+      totalSize: devicesQuery.data?.totalSize,
+      nextPageToken: devicesQuery.data?.nextPageToken,
+    }),
+    [
+      allDimensionColumns,
+      visibleColumnIds,
+      onToggleColumn,
+      selectOnlyColumn,
+      resetDefaultColumns,
+      pagerCtx,
+      searchParams,
+      goToPrevPage,
+      goToNextPage,
+      onRowsPerPageChange,
+      devicesQuery.data?.totalSize,
+      devicesQuery.data?.nextPageToken,
+    ],
+  );
+
   const tableOptions: MRT_TableOptions<AndroidDevice> = useMemo(
     () => ({
       columns: visibleEnrichedColumns as MRT_ColumnDef<AndroidDevice>[],
@@ -444,6 +472,7 @@ export const AndroidDevicesPage = () => {
       onSortingChange,
       onColumnFiltersChange,
       enablePagination: false,
+      meta,
       state: {
         rowSelection,
         sorting,
@@ -471,109 +500,17 @@ export const AndroidDevicesPage = () => {
           },
         },
       },
-      renderTopToolbarCustomActions: ({
-        table,
-      }: {
-        table: MRT_TableInstance<AndroidDevice>;
-      }) => (
-        <div
-          css={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <FCDataTableCopy table={table} />
-          <ColumnsButton
-            allColumns={allDimensionColumns}
-            visibleColumns={visibleColumnIds}
-            onToggleColumn={onToggleColumn}
-            selectOnlyColumn={selectOnlyColumn}
-            resetDefaultColumns={resetDefaultColumns}
-            renderTrigger={({ onClick }, ref) => (
-              <Button
-                ref={ref}
-                startIcon={<ViewColumnOutlined sx={{ fontSize: '20px' }} />}
-                onClick={onClick}
-                color="inherit"
-                sx={{
-                  color: colors.grey[600],
-                  height: '40px',
-                  fontSize: '0.875rem',
-                  textTransform: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                Columns
-              </Button>
-            )}
-          />
-        </div>
+      renderTopToolbarCustomActions: ({ table }) => (
+        <FleetTopToolbar table={table} />
       ),
-      renderBottomToolbarCustomActions: () => (
-        <div
-          css={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}
-        >
-          <TablePagination
-            component="div"
-            count={
-              (devicesQuery.data?.totalSize || 0) === 0 &&
-              !devicesQuery.data?.nextPageToken &&
-              !devicesQuery.data?.devices.length
-                ? 0
-                : -1
-            }
-            page={getCurrentPageIndex(pagerCtx)}
-            rowsPerPage={getPageSize(pagerCtx, searchParams)}
-            onPageChange={(_, page) => {
-              const currentPage = getCurrentPageIndex(pagerCtx);
-              const isPrevPage = page < currentPage;
-              const isNextPage = page > currentPage;
-
-              if (isPrevPage) {
-                goToPrevPage();
-              } else if (isNextPage) {
-                goToNextPage(devicesQuery.data?.nextPageToken || '');
-              }
-            }}
-            onRowsPerPageChange={(e) => {
-              onRowsPerPageChange(Number(e.target.value));
-            }}
-            rowsPerPageOptions={DEFAULT_PAGE_SIZE_OPTIONS}
-            labelDisplayedRows={({ from, to }) => {
-              const totalSize = devicesQuery.data?.totalSize;
-              if (totalSize !== undefined && totalSize > 0) {
-                return `${from}-${to} of ${totalSize}`;
-              }
-              return `${from}-${to} of ${
-                devicesQuery.data?.nextPageToken ? `more than ${to}` : to
-              }`;
-            }}
-            slotProps={{
-              actions: {
-                previousButtonProps: {
-                  disabled: getCurrentPageIndex(pagerCtx) === 0,
-                  onClick: goToPrevPage,
-                },
-                nextButtonProps: {
-                  disabled:
-                    !devicesQuery.data?.devices.length ||
-                    !devicesQuery.data?.nextPageToken,
-                  onClick: () =>
-                    goToNextPage(devicesQuery.data?.nextPageToken || ''),
-                },
-              } as NonNullable<
-                React.ComponentProps<typeof TablePagination>['slotProps']
-              >['actions'],
-            }}
-          />
-        </div>
+      renderBottomToolbarCustomActions: ({ table }) => (
+        <FleetBottomToolbar table={table} />
       ),
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       visibleEnrichedColumns,
+      devicesQuery,
       enrichedColumns,
       devices,
       onRowSelectionChange,
