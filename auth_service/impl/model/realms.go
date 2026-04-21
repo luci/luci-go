@@ -17,6 +17,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -213,8 +214,8 @@ func MergeRealms(
 					// Permissions and Conditions in a protocol.Binding must be
 					// in ascending order. See
 					// go.chromium.org/luci/server/auth/service/protocol#Binding
-					sortIndices(permIndices)
-					sortIndices(condIndices)
+					slices.Sort(permIndices)
+					slices.Sort(condIndices)
 					newBinding := &protocol.Binding{
 						Permissions: permIndices,
 						Conditions:  condIndices,
@@ -239,47 +240,12 @@ func MergeRealms(
 	return result, nil
 }
 
-// /////////////////////////////////////////////////////////////////////
-// ///////////////////// Sorting helper functions //////////////////////
-// /////////////////////////////////////////////////////////////////////
-
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}
-
-func sliceCompare[T string | uint32](sliceA []T, sliceB []T) bool {
-	maxCommonIndex := min(len(sliceA), len(sliceB))
-	for idx := range maxCommonIndex {
-		if sliceA[idx] != sliceB[idx] {
-			return sliceA[idx] < sliceB[idx]
-		}
-	}
-	return len(sliceA) < len(sliceB)
-}
-
-func sortIndices(indices []uint32) {
-	sort.Slice(indices, func(i, j int) bool {
-		return indices[i] < indices[j]
-	})
-}
-
-func sortBindings(bindings []*protocol.Binding) {
+func sortBindings(b []*protocol.Binding) {
 	// Sort by Permissions primarily. Fallback to comparing Conditions,
 	// then Principals.
-	sort.Slice(bindings, sortby.Chain{
-		func(i, j int) bool {
-			return sliceCompare(bindings[i].Permissions, bindings[j].Permissions)
-		},
-		func(i, j int) bool {
-			return sliceCompare(bindings[i].Conditions, bindings[j].Conditions)
-		},
-		func(i, j int) bool {
-			return sliceCompare(bindings[i].Principals, bindings[j].Principals)
-		},
+	sort.Slice(b, sortby.Chain{
+		func(i, j int) bool { return slices.Compare(b[i].Permissions, b[j].Permissions) < 0 },
+		func(i, j int) bool { return slices.Compare(b[i].Conditions, b[j].Conditions) < 0 },
+		func(i, j int) bool { return slices.Compare(b[i].Principals, b[j].Principals) < 0 },
 	}.Use)
 }
-
-///////////////////////////////////////////////////////////////////////

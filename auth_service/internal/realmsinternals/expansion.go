@@ -15,8 +15,11 @@
 package realmsinternals
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
+	"iter"
+	"maps"
 	"slices"
 	"sort"
 	"strings"
@@ -47,20 +50,21 @@ var (
 	ErrImpossibleRole = errors.New("role is impossible, does not include one of the approved prefixes")
 )
 
-//	ConditionsSet normalizes and dedups conditions, maps them to integers.
-//	Assumes all incoming realmsconf.Condition are immutable and dedups
-//	them by pointer, as well as by normalized values.
-//	Also assumes the set of all possible *objects* ever passed to indexes(...) was
-//	also passed to addCond(...) first (so it could build id => index map).
+// ConditionsSet normalizes and dedups conditions, maps them to integers.
 //
-// This makes hot indexes(...) function fast by allowing to lookup ids instead
-// of (potentially huge) protobuf message values.
+// Assumes all incoming realmsconf.Condition are immutable and dedups them by
+// pointer, as well as by normalized values. Also assumes the set of all
+// possible *objects* ever passed to indexes(...) was also passed to
+// addCond(...) first (so it could build pointer => index map).
+//
+// This makes hot indexes(...) function fast by allowing to lookup pointers
+// instead of (potentially huge) protobuf message values.
 type ConditionsSet struct {
 	// normalized is a mapping from a serialized normalized protocol.Condition
-	// to a pair (normalized *protocol.Condition, its unique index)
-	normalized map[string]*conditionMapTuple
+	// to a pair (normalized *protocol.Condition, its unique index).
+	normalized map[string]conditionMapTuple
 
-	// indexMapping from serialized realms_config to its index.
+	// indexMapping from serialized Condition to its index.
 	indexMapping map[*realmsconf.Condition]uint32
 
 	// finalized is true if finalize() was called, see finalize for more info.
@@ -77,7 +81,7 @@ type conditionMapTuple struct {
 // addCond adds a *Condition from realms.cfg definition to the set if it's
 // not already there.
 //
-// Returns ErrFinalized -- if set has already been finalized
+// Returns ErrFinalized -- if set has already been finalized.
 func (cs *ConditionsSet) addCond(cond *realmsconf.Condition) error {
 	if cs.finalized {
 		return ErrFinalized
@@ -103,7 +107,7 @@ func (cs *ConditionsSet) addCond(cond *realmsconf.Condition) error {
 	if condTup, ok := cs.normalized[ck]; ok {
 		idx = condTup.idx
 	}
-	cs.normalized[ck] = &conditionMapTuple{norm, idx}
+	cs.normalized[ck] = conditionMapTuple{norm, idx}
 	cs.indexMapping[cond] = idx
 	return nil
 }
@@ -119,7 +123,7 @@ func conditionKey(cond *protocol.Condition) string {
 
 // sortConditionEntries sorts a given conditionMapTuple slice by attribute first
 // then by values.
-func sortConditionEntries(entries []*conditionMapTuple) {
+func sortConditionEntries(entries []conditionMapTuple) {
 	sort.Slice(entries, sortby.Chain{
 		func(i, j int) bool {
 			return entries[i].cond.GetRestrict().GetAttribute() < entries[j].cond.GetRestrict().GetAttribute()
@@ -152,7 +156,7 @@ func (cs *ConditionsSet) finalize() []*protocol.Condition {
 	}
 
 	// Make a slice of the entries in cs.normalized to sort.
-	normalized := make([]*conditionMapTuple, 0, count)
+	normalized := make([]conditionMapTuple, 0, count)
 	for _, entry := range cs.normalized {
 		normalized = append(normalized, entry)
 	}
@@ -163,7 +167,7 @@ func (cs *ConditionsSet) finalize() []*protocol.Condition {
 
 	// Build the map of {old index -> new index} now that the final set of
 	// conditions has been ordered.
-	oldToNew := map[uint32]uint32{}
+	oldToNew := make(map[uint32]uint32, len(normalized))
 	for idx, entry := range normalized {
 		oldToNew[entry.idx] = uint32(idx)
 	}
@@ -181,34 +185,34 @@ func (cs *ConditionsSet) finalize() []*protocol.Condition {
 	return conds
 }
 
-// indexes returns a sorted slice of indexes
+// indexes returns a sorted slice of indexes.
 //
-// Can be called only after finalize(). All given conditions must have previously
-// been put into the set via addCond(). The returned indexes can have fewer
-// elements if some conditions in conds are equivalent.
+// Can be called only after finalize(). All given conditions must have
+// previously been put into the set via addCond(). The returned indexes can have
+// fewer elements if some conditions in conds are equivalent.
 //
 // The returned indexes is essentially a compact encoding of the overall AND
 // condition expression in a binding.
 func (cs *ConditionsSet) indexes(conds []*realmsconf.Condition) []uint32 {
 	if !cs.finalized {
-		return nil
+		panic("indexes() called before finalize()")
 	}
-	if conds == nil {
+	if len(conds) == 0 {
 		return nil
 	}
 	if len(conds) == 1 {
 		if idx, ok := cs.indexMapping[conds[0]]; ok {
 			return []uint32{idx}
 		}
-		return nil
+		panic(fmt.Sprintf("unexpected condition not seen by addCond: %v", conds[0]))
 	}
 
-	indexesSet := emptyIndexSet()
+	indexesSet := emptyIndexSet(len(conds))
 
 	for _, cond := range conds {
 		v, ok := cs.indexMapping[cond]
 		if !ok {
-			return nil
+			panic(fmt.Sprintf("unexpected condition not seen by addCond: %v", cond))
 		}
 		indexesSet.add(v)
 	}
@@ -216,19 +220,15 @@ func (cs *ConditionsSet) indexes(conds []*realmsconf.Condition) []uint32 {
 	return indexesSet.toSortedSlice()
 }
 
-// indexSet is a set data structure for managing indexes when expanding realms and permissions.
+// indexSet is a set data structure for managing indexes when expanding realms
+// and permissions.
 type indexSet struct {
 	set map[uint32]struct{}
 }
 
-// add adds a given uint32 to the index set.
-func (is *indexSet) add(v uint32) {
-	is.set[v] = struct{}{}
-}
-
-// IndexSetFromSlice converts a given slice of indexes and returns an IndexSet from them.
-func IndexSetFromSlice(src []uint32) *indexSet {
-	res := emptyIndexSet()
+// indexSetFromSlice converts a given slice of indexes to be indexSet.
+func indexSetFromSlice(src []uint32) indexSet {
+	res := emptyIndexSet(len(src))
 	for _, val := range src {
 		res.set[val] = struct{}{}
 	}
@@ -236,19 +236,24 @@ func IndexSetFromSlice(src []uint32) *indexSet {
 }
 
 // emptyIndexSet initializes and returns an empty IndexSet.
-func emptyIndexSet() *indexSet {
-	return &indexSet{make(map[uint32]struct{})}
+func emptyIndexSet(capacity int) indexSet {
+	return indexSet{make(map[uint32]struct{}, capacity)}
+}
+
+// add adds a given uint32 to the index set.
+func (is indexSet) add(v uint32) {
+	is.set[v] = struct{}{}
 }
 
 // update adds all indexes from other set.
-func (is *indexSet) update(other *indexSet) {
+func (is indexSet) update(other indexSet) {
 	for k := range other.set {
 		is.add(k)
 	}
 }
 
 // toSlice converts an IndexSet to a slice and returns it.
-func (is *indexSet) toSlice() []uint32 {
+func (is indexSet) toSlice() []uint32 {
 	res := make([]uint32, 0, len(is.set))
 	for k := range is.set {
 		res = append(res, k)
@@ -256,14 +261,17 @@ func (is *indexSet) toSlice() []uint32 {
 	return res
 }
 
-// toSortedSlice converts an IndexSet to a slice and then sorts the indexes, returning the
-// result.
-func (is *indexSet) toSortedSlice() []uint32 {
+// toSortedSlice converts an IndexSet to a slice and then sorts the indexes,
+// returning the result.
+func (is indexSet) toSortedSlice() []uint32 {
 	res := is.toSlice()
-	sort.Slice(res, func(i, j int) bool {
-		return res[i] < res[j]
-	})
+	slices.Sort(res)
 	return res
+}
+
+// clone makes a clone of the index set.
+func (is indexSet) clone() indexSet {
+	return indexSet{set: maps.Clone(is.set)}
 }
 
 // RolesExpander keeps track of permissions and role -> [permission] expansions.
@@ -272,6 +280,9 @@ func (is *indexSet) toSortedSlice() []uint32 {
 //
 // Should be used only with validated realmsconf.RealmsCfg.
 type RolesExpander struct {
+	// permissionsDB is a database of all known permissions.
+	permissionsDB map[string]*protocol.Permission
+
 	// builtinRoles is a mapping from roleName -> *permissions.Role
 	// these are generated from the permissions.cfg and translated to permissions
 	// db which is where these roles come from. If a role is not found here
@@ -287,7 +298,7 @@ type RolesExpander struct {
 
 	// permissions is a mapping from permission name to the internal index
 	// all permissions are converted to a uint32 index for faster queries
-	// this is the list of all declared permissions, this is initially definied
+	// this is the list of all declared permissions, this is initially defined
 	// in permissions.cfg and initialized in permissionsDB. This is assumed
 	// final state and should not be modified.
 	permissions map[string]uint32
@@ -295,7 +306,7 @@ type RolesExpander struct {
 	// roles contains role to permissions mapping, keyed by roleName
 	// this mapping contains a set of all the permissions a given role
 	// is associated with.
-	roles map[string]*indexSet
+	roles map[string]indexSet
 }
 
 // permIndex returns an internal index that represents the given permission string.
@@ -308,13 +319,16 @@ func (re *RolesExpander) permIndex(name string) uint32 {
 	return idx
 }
 
-// permIndexes returns internal indexes representing the given permission strings.
-func (re *RolesExpander) permIndexes(names ...string) []uint32 {
-	res := make([]uint32, len(names))
-	for idx, name := range names {
-		res[idx] = re.permIndex(name)
+// permIndexes returns internal indexes representing the given permissions.
+func (re *RolesExpander) permIndexes(names iter.Seq[string]) indexSet {
+	// Note sorting is needed for the test determinism, this is removed in
+	// the next CL.
+	nameList := slices.Sorted(names)
+	set := emptyIndexSet(len(nameList))
+	for _, name := range nameList {
+		set.add(re.permIndex(name))
 	}
-	return res
+	return set
 }
 
 // role returns an IndexSet of permissions for a given role.
@@ -323,37 +337,33 @@ func (re *RolesExpander) permIndexes(names ...string) []uint32 {
 //
 // ErrRoleNotFound - if given roleName doesn't exist in permissionsDB
 // ErrImpossibleRole - if roleName format is invalid
-func (re *RolesExpander) role(roleName string) (*indexSet, error) {
+func (re *RolesExpander) role(roleName string) (indexSet, error) {
 	if perms, ok := re.roles[roleName]; ok {
 		return perms, nil
 	}
 
-	var perms *indexSet
+	var perms indexSet
 	if strings.HasPrefix(roleName, constants.PrefixBuiltinRole) {
 		role, ok := re.builtinRoles[roleName]
 		if !ok {
-			return nil, lucierr.Annotate(ErrRoleNotFound, "builtinRole: %s", roleName)
+			return indexSet{}, lucierr.Annotate(ErrRoleNotFound, "builtinRole: %s", roleName)
 		}
-		perms = IndexSetFromSlice(re.permIndexes(role.Permissions.ToSortedSlice()...))
+		perms = re.permIndexes(maps.Keys(role.Permissions))
 	} else if strings.HasPrefix(roleName, constants.PrefixCustomRole) {
 		customRole, ok := re.customRoles[roleName]
 		if !ok {
-			return nil, lucierr.Annotate(ErrRoleNotFound, "customRole: %s", roleName)
+			return indexSet{}, lucierr.Annotate(ErrRoleNotFound, "customRole: %s", roleName)
 		}
-		perms = IndexSetFromSlice(re.permIndexes(customRole.GetPermissions()...))
+		perms = re.permIndexes(slices.Values(customRole.GetPermissions()))
 		for _, parent := range customRole.Extends {
 			parentRole, err := re.role(parent)
 			if err != nil {
-				return nil, err
+				return indexSet{}, err
 			}
 			perms.update(parentRole)
 		}
 	} else {
-		return nil, ErrImpossibleRole
-	}
-
-	if perms == nil {
-		perms = emptyIndexSet()
+		return indexSet{}, ErrImpossibleRole
 	}
 
 	re.roles[roleName] = perms
@@ -362,16 +372,17 @@ func (re *RolesExpander) role(roleName string) (*indexSet, error) {
 
 // sortedPermissions returns a sorted slice of permissions and slice
 // mapping old -> new indexes.
-func (re *RolesExpander) sortedPermissions() ([]string, []uint32) {
-	perms := make([]string, 0, len(re.permissions))
+func (re *RolesExpander) sortedPermissions() ([]*protocol.Permission, []uint32) {
+	perms := make([]*protocol.Permission, 0, len(re.permissions))
 	for k := range re.permissions {
-		perms = append(perms, k)
+		perms = append(perms, re.permissionsDB[k])
 	}
-	sort.Strings(perms)
-
-	mapping := make([]uint32, len(re.permissions))
+	slices.SortFunc(perms, func(a, b *protocol.Permission) int {
+		return cmp.Compare(a.Name, b.Name)
+	})
+	mapping := make([]uint32, len(perms))
 	for newIdx, perm := range perms {
-		oldIdx := re.permissions[perm]
+		oldIdx := re.permissions[perm.Name]
 		mapping[oldIdx] = uint32(newIdx)
 	}
 	return perms, mapping
@@ -398,7 +409,7 @@ func parents(realm *realmsconf.Realm) []string {
 	if realm.GetName() == realms.RootRealm {
 		return nil
 	}
-	pRealms := []string{}
+	pRealms := make([]string, 0, 1+len(realm.Extends))
 	pRealms = append(pRealms, realms.RootRealm)
 	for _, name := range realm.Extends {
 		if name != realms.RootRealm {
@@ -408,22 +419,21 @@ func parents(realm *realmsconf.Realm) []string {
 	return pRealms
 }
 
-// principalBindings binds a principal to a set of
-// permissions and conditions
+// principalBindings binds a principal to a set of permissions and conditions.
 type principalBindings struct {
-	// name is the name of this principal, can be a user, group, glob
+	// name is the name of this principal, can be a user or a group.
 	name string
-	// permissions contains the indexes of permissions bound to this principal
-	permissions *indexSet
-	// conditions contains the indexes of conditions related to this principal
+	// permissions contains the indexes of permissions bound to this principal.
+	permissions indexSet
+	// conditions contains the sorted indexes of conditions guarding this binding.
 	conditions []uint32
 }
 
-// perPrincipalBindings returns a slice of principalBindings.
+// perPrincipalBindings visits all bindings in the realm and its parent realms
+// and appends them to the given slice (returning it in the end).
 //
-// Visits all bindings in the realm and its parent realms. Returns a lot
-// of duplicates. It's the caller's job to skip them.
-func (rlme *RealmsExpander) perPrincipalBindings(realm string) ([]*principalBindings, error) {
+// Produces a lot of duplicates. It's the caller's job to skip them.
+func (rlme *RealmsExpander) perPrincipalBindings(realm string, bindings []principalBindings) ([]principalBindings, error) {
 	r, ok := rlme.realms[realm]
 	if !ok {
 		return nil, fmt.Errorf("realm %s not found in RealmsExpander", realm)
@@ -431,9 +441,9 @@ func (rlme *RealmsExpander) perPrincipalBindings(realm string) ([]*principalBind
 	if r.GetName() != realm {
 		return nil, fmt.Errorf("given realm: %s does not match name found internally: %s", realm, r.GetName())
 	}
-	pBindings := []*principalBindings{}
+
 	for _, b := range r.Bindings {
-		// set of permissions associated with this role
+		// Set of permissions associated with this role.
 		perms, err := rlme.rolesExpander.role(b.GetRole())
 		if err != nil {
 			return nil, lucierr.Annotate(err, "there was an issue fetching permissions for this binding role")
@@ -444,23 +454,22 @@ func (rlme *RealmsExpander) perPrincipalBindings(realm string) ([]*principalBind
 			continue
 		}
 
-		// sorted conditions associated with this binding
-		// conditions must be finalized at this point
+		// Sorted conditions associated with this binding.
 		conds := rlme.condsSet.indexes(b.GetConditions())
 		for _, principal := range b.GetPrincipals() {
-			pBindings = append(pBindings, &principalBindings{principal, perms, conds})
+			bindings = append(bindings, principalBindings{principal, perms, conds})
 		}
 	}
 
-	// go through parents and get the bindings too
+	// Go through parents and get their bindings too.
 	for _, parent := range parents(r) {
-		parentBindings, err := rlme.perPrincipalBindings(parent)
+		var err error
+		bindings, err = rlme.perPrincipalBindings(parent, bindings)
 		if err != nil {
 			return nil, fmt.Errorf("failed when getting parent bindings for %s", realm)
 		}
-		pBindings = append(pBindings, parentBindings...)
 	}
-	return pBindings, nil
+	return bindings, nil
 }
 
 // realmData returns calculated protocol.RealmData for a given realm.

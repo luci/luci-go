@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	configpb "go.chromium.org/luci/common/proto/config"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -29,6 +31,18 @@ import (
 
 	"go.chromium.org/luci/auth_service/testsupport"
 )
+
+func expectedPermissions(perms ...string) []*protocol.Permission {
+	available := map[string]*protocol.Permission{}
+	for _, perm := range testsupport.PermissionsCfg().Permission {
+		available[perm.Name] = perm
+	}
+	var out []*protocol.Permission
+	for _, perm := range perms {
+		out = append(out, proto.CloneOf(available[perm]))
+	}
+	return out
+}
 
 func TestRealmsExpansion(t *testing.T) {
 	t.Parallel()
@@ -128,11 +142,11 @@ func TestRealmsExpansion(t *testing.T) {
 			})
 
 			expectedRealms := &protocol.Realms{
-				Permissions: []*protocol.Permission{
-					{Name: "luci.dev.p1"},
-					{Name: "luci.dev.p2"},
-					{Name: "luci.dev.p3"},
-				},
+				Permissions: expectedPermissions(
+					"luci.dev.p1",
+					"luci.dev.p2",
+					"luci.dev.p3",
+				),
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
@@ -181,11 +195,11 @@ func TestRealmsExpansion(t *testing.T) {
 			})
 
 			expectedRealms := &protocol.Realms{
-				Permissions: []*protocol.Permission{
-					{Name: "luci.dev.p1"},
-					{Name: "luci.dev.p2"},
-					{Name: "luci.dev.p3"},
-				},
+				Permissions: expectedPermissions(
+					"luci.dev.p1",
+					"luci.dev.p2",
+					"luci.dev.p3",
+				),
 				Conditions: []*protocol.Condition{
 					{
 						Op: &protocol.Condition_Restrict{
@@ -267,11 +281,11 @@ func TestRealmsExpansion(t *testing.T) {
 			})
 
 			expectedRealms := &protocol.Realms{
-				Permissions: []*protocol.Permission{
-					{Name: "luci.dev.p1"},
-					{Name: "luci.dev.p2"},
-					{Name: "luci.dev.p3"},
-				},
+				Permissions: expectedPermissions(
+					"luci.dev.p1",
+					"luci.dev.p2",
+					"luci.dev.p3",
+				),
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
@@ -335,11 +349,11 @@ func TestRealmsExpansion(t *testing.T) {
 			})
 
 			expectedRealms := &protocol.Realms{
-				Permissions: []*protocol.Permission{
-					{Name: "luci.dev.p1"},
-					{Name: "luci.dev.p2"},
-					{Name: "luci.dev.p3"},
-				},
+				Permissions: expectedPermissions(
+					"luci.dev.p1",
+					"luci.dev.p2",
+					"luci.dev.p3",
+				),
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
@@ -419,11 +433,11 @@ func TestRealmsExpansion(t *testing.T) {
 			})
 
 			expectedRealms := &protocol.Realms{
-				Permissions: []*protocol.Permission{
-					{Name: "luci.dev.p1"},
-					{Name: "luci.dev.p2"},
-					{Name: "luci.dev.p3"},
-				},
+				Permissions: expectedPermissions(
+					"luci.dev.p1",
+					"luci.dev.p2",
+					"luci.dev.p3",
+				),
 				Conditions: []*protocol.Condition{
 					{
 						Op: &protocol.Condition_Restrict{
@@ -531,13 +545,13 @@ func TestRealmsExpansion(t *testing.T) {
 			})
 
 			expectedRealms := &protocol.Realms{
-				Permissions: []*protocol.Permission{
-					{Name: "luci.dev.p1"},
-					{Name: "luci.dev.p2"},
-					{Name: "luci.dev.p3"},
-					{Name: "luci.dev.p4"},
-					{Name: "luci.dev.p5"},
-				},
+				Permissions: expectedPermissions(
+					"luci.dev.p1",
+					"luci.dev.p2",
+					"luci.dev.p3",
+					"luci.dev.p4",
+					"luci.dev.p5",
+				),
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
@@ -589,11 +603,11 @@ func TestRealmsExpansion(t *testing.T) {
 						},
 					},
 				},
-				Permissions: []*protocol.Permission{
-					{Name: "luci.dev.implicitRoot"},
-					{Name: "luci.dev.p1"},
-					{Name: "luci.dev.p2"},
-				},
+				Permissions: expectedPermissions(
+					"luci.dev.implicitRoot",
+					"luci.dev.p1",
+					"luci.dev.p2",
+				),
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
@@ -674,11 +688,11 @@ func TestRealmsExpansion(t *testing.T) {
 						},
 					},
 				},
-				Permissions: []*protocol.Permission{
-					{Name: "luci.dev.implicitRoot"},
-					{Name: "luci.dev.p1"},
-					{Name: "luci.dev.p2"},
-				},
+				Permissions: expectedPermissions(
+					"luci.dev.implicitRoot",
+					"luci.dev.p1",
+					"luci.dev.p2",
+				),
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
@@ -747,10 +761,10 @@ func TestRealmsExpansion(t *testing.T) {
 			})
 
 			expectedRealms := &protocol.Realms{
-				Permissions: []*protocol.Permission{
-					{Name: "luci.dev.p1", Internal: true},
-					{Name: "luci.dev.p2", Internal: true},
-				},
+				Permissions: expectedPermissions(
+					"luci.dev.p1",
+					"luci.dev.p2",
+				),
 				Realms: []*protocol.Realm{
 					{
 						Name: "@internal:@root",
