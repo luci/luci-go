@@ -101,7 +101,8 @@ export function WidgetContainer({
     <Card variant="outlined" sx={{ width: '100%', mb: 2, minWidth: 0 }}>
       <CardHeader
         sx={{
-          p: 1.5,
+          px: 2,
+          py: 1.5,
           '& .MuiCardHeader-action': { alignSelf: 'center', m: 0 },
           '&:hover .title-edit-btn': { opacity: 1 },
         }}
@@ -114,11 +115,21 @@ export function WidgetContainer({
               onKeyDown={handleKeyDown}
               size="small"
               variant="standard"
-              inputProps={{ style: { fontSize: '1rem', fontWeight: 500 } }}
+              sx={{
+                '& .MuiInputBase-input': {
+                  fontSize: (theme) => theme.typography.body1.fontSize,
+                  fontWeight: (theme) => theme.typography.fontWeightMedium,
+                },
+              }}
             />
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: (theme) => theme.typography.fontWeightMedium,
+                }}
+              >
                 {title}
               </Typography>
               {onTitleChange && (
@@ -195,6 +206,7 @@ export function WidgetContainer({
                   size="small"
                   onClick={() => setDeleteDialogOpen(true)}
                   aria-label={`Delete ${title}`}
+                  sx={{ color: 'text.secondary' }}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>

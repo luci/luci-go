@@ -14,54 +14,45 @@
 
 import {
   Add as AddIcon,
+  ContentPaste as ContentPasteIcon,
+  CopyAll as CopyAllIcon,
   Delete as DeleteIcon,
-  DragIndicator as DragIndicatorIcon,
   ExpandMore as ExpandMoreIcon,
-  FilterAlt as FunnelIcon,
 } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Autocomplete,
+  Badge,
   Box,
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
+  Menu,
   MenuItem,
-  Select,
-  SelectChangeEvent,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
-import { useParams } from 'react-router';
-import { useDebounce } from 'react-use';
 
 import {
-  AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   Column,
   COMMON_MESSAGES,
-  MAX_SUGGEST_RESULTS,
   OPERATOR_DISPLAY_NAMES,
-  TYPE_TO_OPERATORS,
 } from '@/crystal_ball/constants';
 import {
   useEditorUiState,
+  useFiltersClipboard,
+  useToast,
   UseEditorUiStateOptions,
 } from '@/crystal_ball/hooks';
-import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks/use_measurement_filter_api';
-import {
-  COMPACT_FILTER_ROW_SX,
-  COMPACT_ICON_SX,
-  COMPACT_SELECT_SX,
-  COMPACT_TEXTFIELD_SX,
-} from '@/crystal_ball/styles';
 import { DataTestId } from '@/crystal_ball/tests/constants';
-import { buildFilterString } from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
   MeasurementFilterColumn_ColumnDataType,
@@ -71,6 +62,8 @@ import {
   PerfFilterDefault_FilterOperator,
   perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+import { FilterEditorRow } from './filter_editor_row';
 
 /**
  * Props for the FilterEditor component.
@@ -88,203 +81,116 @@ interface FilterEditorProps {
   uiStateOptions?: UseEditorUiStateOptions;
 }
 
-function FilterEditorRow({
-  filter,
-  dataSpecId,
-  primaryColumns,
-  secondaryColumns,
-  dataType,
-  onUpdateColumn,
-  onUpdateOperator,
-  onUpdateValue,
-  onRemove,
-  onDragStart,
-  onDrop,
-  globalFilters,
-  widgetFilters,
-}: {
-  filter: PerfFilter;
-  dataSpecId: string;
-  primaryColumns: string[];
-  secondaryColumns: string[];
-  dataType: MeasurementFilterColumn_ColumnDataType;
-  onUpdateColumn: (column: string) => void;
-  onUpdateOperator: (operator: PerfFilterDefault_FilterOperator) => void;
-  onUpdateValue: (value: string) => void;
-  onRemove: () => void;
-  onDragStart: () => void;
-  onDrop: () => void;
-  globalFilters?: readonly PerfFilter[];
-  widgetFilters?: readonly PerfFilter[];
-}) {
-  const activeInput = filter.numberInput ?? filter.textInput;
-  const initialValue = activeInput?.defaultValue?.values?.[0] ?? '';
-  const [inputValue, setInputValue] = useState(initialValue);
-  const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
-  const [isFocused, setIsFocused] = useState(false);
+interface FilterEditorHeaderActionsProps {
+  expanded: boolean;
+  setExpanded: (val: boolean) => void;
+  clipboardCount: number;
+  setPasteMenuAnchor: (el: HTMLElement | null) => void;
+  handleAddFilter: () => void;
+  handleCopyFilters: () => void;
+  handleClearFilters: () => void;
+  disableAccordion?: boolean;
+}
 
-  useDebounce(
-    () => {
-      setDebouncedQuery(inputValue);
-    },
-    AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
-    [inputValue],
-  );
-
-  const { dashboardId } = useParams<{ dashboardId: string }>();
-  const parent = dashboardId
-    ? `dashboardStates/${dashboardId}/dataSpecs/${dataSpecId}`
-    : '';
-
-  const filterString = useMemo(() => {
-    return buildFilterString(
-      [...(globalFilters ?? []), ...(widgetFilters ?? [])],
-      filter.id,
-    );
-  }, [globalFilters, widgetFilters, filter.id]);
-
-  const { data: suggestionData, isLoading } = useSuggestMeasurementFilterValues(
-    {
-      parent,
-      column: filter.column,
-      query: debouncedQuery,
-      maxResultCount: MAX_SUGGEST_RESULTS,
-      filter: filterString,
-    },
-    {
-      enabled:
-        !!parent && !!filter.column && debouncedQuery.length > 0 && isFocused,
-      retry: false,
-    },
-  );
-
-  const options = suggestionData?.values ?? [];
-
-  const handleBlur = () => {
-    if (inputValue !== initialValue) {
-      onUpdateValue(inputValue);
-    }
-  };
-
+function FilterEditorHeaderActions({
+  expanded,
+  setExpanded,
+  clipboardCount,
+  setPasteMenuAnchor,
+  handleAddFilter,
+  handleCopyFilters,
+  handleClearFilters,
+  disableAccordion = false,
+}: FilterEditorHeaderActionsProps) {
   return (
     <Box
       sx={{
-        ...COMPACT_FILTER_ROW_SX,
-        gridTemplateColumns: 'auto 2fr 1fr 4fr auto',
-        cursor: 'grab',
-        '&:active': { cursor: 'grabbing' },
+        display: 'flex',
+        alignItems: 'center',
+        ml: 1,
+        alignSelf: 'center',
       }}
-      draggable
-      onDragStart={onDragStart}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDrop}
     >
-      <DragIndicatorIcon sx={{ color: 'text.secondary', mr: 0.5 }} />
-      <Select
-        value={filter.column}
-        onChange={(e: SelectChangeEvent<string>) =>
-          onUpdateColumn(e.target.value)
-        }
-        size="small"
-        displayEmpty
-        inputProps={{ 'aria-label': 'Column' }}
-        sx={COMPACT_SELECT_SX}
-        MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
-      >
-        {filter.column &&
-          !primaryColumns.includes(filter.column) &&
-          !secondaryColumns.includes(filter.column) && (
-            <MenuItem key={filter.column} value={filter.column}>
-              {filter.column}
-            </MenuItem>
-          )}
-        {primaryColumns.map((col) => (
-          <MenuItem key={col} value={col}>
-            {col}
-          </MenuItem>
-        ))}
-
-        {secondaryColumns.length > 0 && [
-          <Divider key="divider" />,
-          ...secondaryColumns.map((col) => (
-            <MenuItem key={col} value={col}>
-              {col}
-            </MenuItem>
-          )),
-        ]}
-      </Select>
-
-      <Select
-        value={
-          activeInput?.defaultValue?.filterOperator !== undefined
-            ? perfFilterDefault_FilterOperatorFromJSON(
-                activeInput.defaultValue.filterOperator,
-              )
-            : PerfFilterDefault_FilterOperator.EQUAL
-        }
-        onChange={(e: SelectChangeEvent<number>) => {
-          onUpdateOperator(Number(e.target.value));
-        }}
-        size="small"
-        displayEmpty
-        inputProps={{ 'aria-label': 'Operator' }}
-        sx={COMPACT_SELECT_SX}
-        MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
-      >
-        {(TYPE_TO_OPERATORS[dataType] ?? []).map((opEnum) => (
-          <MenuItem
-            key={PerfFilterDefault_FilterOperator[opEnum]}
-            value={opEnum}
-          >
-            {OPERATOR_DISPLAY_NAMES[opEnum] ??
-              PerfFilterDefault_FilterOperator[opEnum]}
-          </MenuItem>
-        ))}
-      </Select>
-
-      <Autocomplete
-        freeSolo
-        size="small"
-        options={options}
-        filterOptions={(x) => x}
-        value={initialValue || null}
-        inputValue={inputValue}
-        onInputChange={(_event, newInputValue) => {
-          setInputValue(newInputValue);
-        }}
-        onChange={(_event, newValue, reason) => {
-          if (reason === 'selectOption' || reason === 'createOption') {
-            if (typeof newValue === 'string') {
-              setInputValue(newValue);
-              onUpdateValue(newValue);
+      <Tooltip title={COMMON_MESSAGES.ADD_FILTER}>
+        <Button
+          data-testid={DataTestId.ADD_FILTER_BUTTON_TOP}
+          startIcon={<AddIcon />}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!disableAccordion && !expanded) {
+              setExpanded(true);
             }
-          }
-        }}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => {
-          setIsFocused(false);
-          handleBlur();
-        }}
-        loading={isLoading && isFocused}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            placeholder="Value"
-            inputProps={{
-              ...params.inputProps,
-              'aria-label': 'Value',
-            }}
-            sx={COMPACT_TEXTFIELD_SX}
-          />
-        )}
-      />
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <Tooltip title={COMMON_MESSAGES.REMOVE_FILTER}>
+            handleAddFilter();
+          }}
+          variant="text"
+          size="small"
+          color="primary"
+          sx={{
+            textTransform: 'none',
+            fontWeight: (theme) => theme.typography.fontWeightBold,
+            ml: disableAccordion ? 1 : 0,
+          }}
+        >
+          {COMMON_MESSAGES.ADD}
+        </Button>
+      </Tooltip>
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.5 }} />
+      <Box sx={{ display: 'flex', gap: 0.5 }}>
+        <Tooltip title={COMMON_MESSAGES.PASTE_FILTERS}>
+          <span>
+            <IconButton
+              aria-label={COMMON_MESSAGES.PASTE_FILTERS}
+              size="small"
+              sx={{
+                color: 'text.secondary',
+                '&.Mui-disabled': {
+                  color: 'text.disabled',
+                },
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setPasteMenuAnchor(e.currentTarget);
+              }}
+              disabled={clipboardCount === 0}
+            >
+              <Badge
+                badgeContent={clipboardCount}
+                color="primary"
+                invisible={clipboardCount === 0}
+                sx={{
+                  '& .MuiBadge-badge': {
+                    height: 16,
+                    minWidth: 16,
+                  },
+                }}
+              >
+                <ContentPasteIcon fontSize="small" />
+              </Badge>
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title={COMMON_MESSAGES.COPY_FILTERS}>
           <IconButton
-            onClick={onRemove}
-            aria-label="Remove filter"
-            color="error"
+            aria-label={COMMON_MESSAGES.COPY_FILTERS}
             size="small"
+            sx={{ color: 'text.secondary' }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopyFilters();
+            }}
+          >
+            <CopyAllIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={COMMON_MESSAGES.CLEAR_ALL_FILTERS}>
+          <IconButton
+            aria-label={COMMON_MESSAGES.CLEAR_ALL_FILTERS}
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClearFilters();
+            }}
+            sx={{ color: 'text.secondary' }}
           >
             <DeleteIcon fontSize="small" />
           </IconButton>
@@ -309,12 +215,68 @@ export function FilterEditor({
   titleIcon,
   uiStateOptions,
 }: FilterEditorProps) {
+  const { showSuccessToast, showWarningToast } = useToast();
   const [expanded, setExpanded] = useEditorUiState({
     initialValue: false,
     ...uiStateOptions,
   });
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  const { clipboardCount, copyFilters, getClipboardFilters, clearClipboard } =
+    useFiltersClipboard();
+  const [pasteMenuAnchor, setPasteMenuAnchor] = useState<null | HTMLElement>(
+    null,
+  );
+
+  const handleCopyFilters = () => {
+    copyFilters(filters);
+    showSuccessToast('Filters copied to clipboard');
+  };
+
+  const handlePasteFilters = (replace: boolean) => {
+    const pastedFilters = getClipboardFilters();
+
+    // Filter out filters that don't match available columns in the target context
+    const validFilters = pastedFilters.filter((f) =>
+      availableColumns.some((c) => c.column === f.column),
+    );
+    const invalidCount = pastedFilters.length - validFilters.length;
+
+    const newFilters = validFilters.map((f) => ({
+      ...f,
+      id: `filter-${crypto.randomUUID()}`,
+      dataSpecId: dataSpecId,
+    }));
+    if (replace) {
+      onUpdateFilters(newFilters);
+    } else {
+      onUpdateFilters([...filters, ...newFilters]);
+    }
+
+    let msg = '';
+    if (validFilters.length > 0) {
+      msg += `${validFilters.length} filter(s) pasted.`;
+    }
+    if (invalidCount > 0) {
+      msg += ` ${invalidCount} filter(s) ignored.`;
+    }
+
+    if (invalidCount > 0) {
+      showWarningToast(msg.trim());
+    } else if (validFilters.length > 0) {
+      showSuccessToast(msg.trim());
+    }
+
+    setPasteMenuAnchor(null);
+  };
+
+  const handleClearFilters = () => {
+    if (filters.length > 0) {
+      setConfirmClearOpen(true);
+    }
+  };
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
@@ -345,7 +307,7 @@ export function FilterEditor({
       id: newFilterId,
       column: selectedColumn?.column ?? '',
       dataSpecId: dataSpecId,
-      displayName: 'New Filter',
+      displayName: COMMON_MESSAGES.NEW_FILTER,
       ...(isNumber
         ? {
             numberInput: {
@@ -461,32 +423,22 @@ export function FilterEditor({
         <>
           {filters.length === 0 && (
             <Box
-              data-testid={DataTestId.ADD_FILTER_EMPTY_STATE}
-              onClick={handleAddFilter}
               sx={{
                 border: '1px dashed',
-                borderColor: 'primary.main',
-                borderRadius: 2,
+                borderColor: 'divider',
+                borderRadius: 1,
                 p: 1.5,
                 textAlign: 'center',
                 mb: 1.5,
-                cursor: 'pointer',
                 bgcolor: 'background.paper',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  bgcolor: (theme) => theme.palette.action.selected,
-                  borderColor: 'primary.dark',
-                },
               }}
             >
               <Typography
                 variant="body2"
-                color="primary.main"
-                sx={{
-                  fontWeight: (theme) => theme.typography.fontWeightBold,
-                }}
+                color="text.secondary"
+                sx={{ fontStyle: 'italic' }}
               >
-                Add Filter
+                No filters applied.
               </Typography>
             </Box>
           )}
@@ -525,69 +477,58 @@ export function FilterEditor({
               />
             );
           })}
-          {filters.length > 0 && (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1 }}>
-              <Button
-                data-testid={DataTestId.ADD_FILTER_BUTTON_BOTTOM}
-                startIcon={<AddIcon />}
-                onClick={handleAddFilter}
-                variant="outlined"
-                size="small"
-                color="primary"
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: (theme) => theme.typography.fontWeightBold,
-                  bgcolor: 'background.paper',
-                }}
-              >
-                Add Filter
-              </Button>
-            </Box>
-          )}
         </>
       )}
     </>
   );
 
-  if (disableAccordion) {
-    return (
-      <Box
-        sx={{
-          mt: 1,
-          display: 'block',
-          alignItems: 'stretch',
-          gap: 0,
-        }}
-      >
-        {title && (
-          <Box
+  const mainContent = disableAccordion ? (
+    <Box
+      sx={{
+        mt: 1,
+        display: 'block',
+        alignItems: 'stretch',
+        gap: 0,
+      }}
+    >
+      {title && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            mb: 1,
+            width: '100%',
+          }}
+        >
+          {titleIcon}
+          <Typography
+            variant="caption"
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              mb: 1,
+              color: 'text.secondary',
+              fontWeight: (theme) => theme.typography.fontWeightBold,
+              textTransform: 'uppercase',
+              lineHeight: 1,
             }}
           >
-            {titleIcon}
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'text.secondary',
-                fontWeight: (theme) => theme.typography.fontWeightBold,
-                display: 'block',
-                textTransform: 'uppercase',
-              }}
-            >
-              {title}
-            </Typography>
-          </Box>
-        )}
-        {content}
-      </Box>
-    );
-  }
-
-  return (
+            {title}
+          </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          <FilterEditorHeaderActions
+            expanded={true}
+            setExpanded={() => {}}
+            clipboardCount={clipboardCount}
+            setPasteMenuAnchor={setPasteMenuAnchor}
+            handleAddFilter={handleAddFilter}
+            handleCopyFilters={handleCopyFilters}
+            handleClearFilters={handleClearFilters}
+            disableAccordion={true}
+          />
+        </Box>
+      )}
+      {content}
+    </Box>
+  ) : (
     <Box sx={{ mt: 0 }}>
       <Accordion
         expanded={expanded}
@@ -608,23 +549,35 @@ export function FilterEditor({
           aria-controls="filters-content"
           id="filters-header"
           sx={{
+            px: 2,
+            flexDirection: 'row-reverse',
             minHeight: (theme) => theme.spacing(4.5),
             '&.Mui-expanded': {
               minHeight: (theme) => theme.spacing(4.5),
             },
+            '& .MuiAccordionSummary-expandIconWrapper': {
+              marginRight: (theme) => theme.spacing(1),
+            },
             '& .MuiAccordionSummary-content': {
               alignItems: 'center',
-              flexWrap: 'wrap',
+              flexWrap: 'nowrap',
               gap: 1,
               margin: '4px 0',
+              width: '100%',
               '&.Mui-expanded': {
                 margin: '4px 0',
               },
             },
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <FunnelIcon sx={COMPACT_ICON_SX} />
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              flexShrink: 0,
+            }}
+          >
             <Typography
               variant="caption"
               sx={{
@@ -638,31 +591,103 @@ export function FilterEditor({
               {title ?? COMMON_MESSAGES.FILTERS}
             </Typography>
           </Box>
-          {!expanded && filters.length > 0 && (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {filters.map((filter) => (
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 0.5,
+              flexGrow: 1,
+              mx: 1,
+              minWidth: 0,
+            }}
+          >
+            {!expanded &&
+              filters.map((filter) => (
                 <Chip
                   key={filter.id}
                   label={renderFilterLabel(filter)}
                   size="small"
                 />
               ))}
-            </Box>
-          )}
-          {!expanded && filters.length === 0 && (
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', fontStyle: 'italic' }}
-            >
-              {COMMON_MESSAGES.NO_FILTERS_CLICK_TO_EXPAND}
-            </Typography>
-          )}
-          <Box sx={{ flexGrow: 1 }} />
+            {!expanded && filters.length === 0 && (
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', fontStyle: 'italic' }}
+              >
+                {COMMON_MESSAGES.NO_FILTERS_APPLIED}
+              </Typography>
+            )}
+          </Box>
+          <FilterEditorHeaderActions
+            expanded={expanded}
+            setExpanded={setExpanded}
+            clipboardCount={clipboardCount}
+            setPasteMenuAnchor={setPasteMenuAnchor}
+            handleAddFilter={handleAddFilter}
+            handleCopyFilters={handleCopyFilters}
+            handleClearFilters={handleClearFilters}
+            disableAccordion={false}
+          />
         </AccordionSummary>
-        <AccordionDetails sx={{ pt: 0, pb: 1, px: 2 }}>
+        <AccordionDetails sx={{ pt: 1, pb: 2, px: 2 }}>
           {content}
         </AccordionDetails>
       </Accordion>
     </Box>
+  );
+
+  return (
+    <>
+      {mainContent}
+      <Menu
+        anchorEl={pasteMenuAnchor}
+        open={Boolean(pasteMenuAnchor)}
+        onClose={() => setPasteMenuAnchor(null)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <MenuItem onClick={() => handlePasteFilters(false)}>
+          {COMMON_MESSAGES.APPEND_FILTERS}
+        </MenuItem>
+        <MenuItem onClick={() => handlePasteFilters(true)}>
+          {COMMON_MESSAGES.REPLACE_FILTERS}
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            clearClipboard();
+            setPasteMenuAnchor(null);
+            showSuccessToast('Clipboard cleared');
+          }}
+        >
+          {COMMON_MESSAGES.CLEAR_CLIPBOARD}
+        </MenuItem>
+      </Menu>
+      <Dialog
+        open={confirmClearOpen}
+        onClose={() => setConfirmClearOpen(false)}
+      >
+        <DialogTitle>Clear all filters</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to clear all filters?</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setConfirmClearOpen(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              onUpdateFilters([]);
+              setConfirmClearOpen(false);
+            }}
+            color="error"
+            variant="contained"
+            disableElevation
+            data-testid="confirm-dialog-confirm"
+          >
+            Clear
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }

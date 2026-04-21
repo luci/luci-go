@@ -16,7 +16,7 @@ import {
   Add as AddIcon,
   BarChart as BarChartIcon,
   ChevronRight as ChevronRightIcon,
-  ContentCopy as ContentCopyIcon,
+  LibraryAdd as LibraryAddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   FilterAlt as FunnelIcon,
@@ -432,74 +432,68 @@ export function ChartSeriesItem({
                   : PerfFilterDefault_FilterOperator.EQUAL;
               const val = filter.textInput?.defaultValue?.values?.[0] ?? '';
               const label = `${filter.column} ${OPERATOR_DISPLAY_NAMES[op] ?? PerfFilterDefault_FilterOperator[op]} "${val}"`;
-              return (
-                <Chip
-                  key={filter.id}
-                  label={label}
-                  size="small"
-                  variant="outlined"
-                />
-              );
+              return <Chip key={filter.id} label={label} size="small" />;
             })}
           </Box>
         )}
-        {!hideVisibility && (
-          <Tooltip title={COMMON_MESSAGES.TOGGLE_VISIBILITY}>
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleVisibility?.();
-              }}
-              aria-label="Toggle series visibility"
-              size="small"
-              sx={{ ml: 'auto', p: 0.25 }}
-            >
-              {isVisible ? (
-                <VisibilityIcon fontSize="small" />
-              ) : (
-                <VisibilityOffIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-        )}
-        {!hideVisibility && !hideMultiSeriesActions && (
-          <Divider
-            orientation="vertical"
-            flexItem
-            sx={{ mx: 0.25, height: 16 }}
-          />
-        )}
-        {!hideMultiSeriesActions && (
-          <Tooltip title={COMMON_MESSAGES.DUPLICATE}>
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                onDuplicate?.();
-              }}
-              aria-label={COMMON_MESSAGES.DUPLICATE}
-              size="small"
-              sx={{ p: 0.25 }}
-            >
-              <ContentCopyIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
-        {!hideMultiSeriesActions && (
-          <Tooltip title={COMMON_MESSAGES.REMOVE_SERIES}>
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-              aria-label="Remove series"
-              color="error"
-              size="small"
-              sx={{ p: 0.25 }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
+        <Box sx={{ display: 'flex', gap: 0.5, ml: 'auto' }}>
+          {!hideVisibility && (
+            <Tooltip title={COMMON_MESSAGES.TOGGLE_VISIBILITY}>
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleVisibility?.();
+                }}
+                aria-label="Toggle series visibility"
+                size="small"
+                sx={{ p: 0.25 }}
+              >
+                {isVisible ? (
+                  <VisibilityIcon fontSize="small" />
+                ) : (
+                  <VisibilityOffIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
+          {!hideVisibility && !hideMultiSeriesActions && (
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ height: 16, alignSelf: 'center' }}
+            />
+          )}
+          {!hideMultiSeriesActions && (
+            <Tooltip title={COMMON_MESSAGES.DUPLICATE}>
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate?.();
+                }}
+                aria-label={COMMON_MESSAGES.DUPLICATE}
+                size="small"
+                sx={{ p: 0.25 }}
+              >
+                <LibraryAddIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {!hideMultiSeriesActions && (
+            <Tooltip title={COMMON_MESSAGES.REMOVE_SERIES}>
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove();
+                }}
+                aria-label="Remove series"
+                size="small"
+                sx={{ p: 0.25, color: 'text.secondary' }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
       </AccordionSummary>
       <AccordionDetails>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>

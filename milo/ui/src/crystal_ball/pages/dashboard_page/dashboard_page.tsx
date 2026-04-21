@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {
-  Close as CloseIcon,
   Edit as EditIcon,
   InfoOutlined as InfoOutlinedIcon,
   Share as ShareIcon,
@@ -36,7 +35,6 @@ import {
   Popover,
   Radio,
   RadioGroup,
-  Snackbar,
   TextField,
   Tooltip,
   Typography,
@@ -68,7 +66,7 @@ import {
   GLOBAL_TIME_RANGE_FILTER_ID,
   MAX_PAGE_SIZE,
 } from '@/crystal_ball/constants';
-import { EditorUiKeyPrefix } from '@/crystal_ball/hooks';
+import { EditorUiKeyPrefix, useToast } from '@/crystal_ball/hooks';
 import {
   getDashboardStateQueryKey,
   useCreateDashboardState,
@@ -424,6 +422,7 @@ export function DashboardPage() {
   const { dashboardId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showSuccessToast, showErrorToast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addWidgetModalOpen, setAddWidgetModalOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -473,23 +472,6 @@ export function DashboardPage() {
       ),
     [filterColumns],
   );
-
-  const [toastState, setToastState] = useState({ message: '', isError: false });
-
-  const handleCloseToast = () => {
-    setToastState((prev) => ({ ...prev, message: '' }));
-  };
-
-  const showSuccessToast = useCallback((message: string) => {
-    setToastState({ message, isError: false });
-  }, []);
-
-  const showErrorToast = useCallback((e: unknown, defaultMessage: string) => {
-    setToastState({
-      message: formatApiError(e, defaultMessage),
-      isError: true,
-    });
-  }, []);
 
   const [localDashboardState, setLocalDashboardState] =
     useState<DashboardState | null>(null);
@@ -953,7 +935,7 @@ export function DashboardPage() {
             setDuplicateOptionsOpen(true);
           }}
         >
-          Copy Dashboard
+          {COMMON_MESSAGES.COPY_DASHBOARD}
         </MenuItem>
         <MenuItem
           onClick={() => {
@@ -961,7 +943,7 @@ export function DashboardPage() {
           }}
           sx={{ color: 'error.main' }}
         >
-          Delete Dashboard
+          {COMMON_MESSAGES.DELETE_DASHBOARD}
         </MenuItem>
       </>
     ),
@@ -1123,44 +1105,6 @@ export function DashboardPage() {
         onAdd={handleAddWidget}
       />
 
-      <Snackbar
-        open={Boolean(toastState.message)}
-        autoHideDuration={toastState.isError ? undefined : 4000}
-        onClose={handleCloseToast}
-        message={toastState.message}
-        slotProps={{
-          content: {
-            sx: toastState.isError
-              ? { bgcolor: 'error.main', color: 'error.contrastText' }
-              : {},
-          },
-        }}
-        action={
-          toastState.isError ? (
-            <>
-              <Button
-                color="inherit"
-                size="small"
-                onClick={() =>
-                  navigator.clipboard.writeText(toastState.message)
-                }
-              >
-                COPY
-              </Button>
-              <Tooltip title={COMMON_MESSAGES.CLOSE}>
-                <IconButton
-                  size="small"
-                  aria-label="close"
-                  color="inherit"
-                  onClick={handleCloseToast}
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </>
-          ) : undefined
-        }
-      />
       <DeleteDashboardDialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}

@@ -59,10 +59,16 @@ jest.mock('@/crystal_ball/hooks', () => ({
     const [val, setVal] = useState(initialValue);
     return [val, setVal];
   },
+  useToast: () => ({
+    showSuccessToast: jest.fn(),
+    showWarningToast: jest.fn(),
+    showErrorToast: jest.fn(),
+  }),
 }));
 
 let mockUUIDCount = 0;
 const expectedMockUUID = 'a-b-c-d-1';
+
 beforeAll(() => {
   jest.spyOn(self.crypto, 'randomUUID').mockImplementation(() => {
     mockUUIDCount++;

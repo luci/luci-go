@@ -24,17 +24,32 @@ jest.mock('react-router', () => ({
   useParams: jest.fn(),
 }));
 
+jest.mock('@mui/material', () => ({
+  ...jest.requireActual('@mui/material'),
+  Collapse: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+}));
+
+const mockShowSuccessToast = jest.fn();
+const mockShowWarningToast = jest.fn();
+
 jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
   useEditorUiState: ({ initialValue = false }: UseEditorUiStateOptions) => {
     const [val, setVal] = useState(initialValue);
     return [val, setVal];
   },
+  useToast: () => ({
+    showSuccessToast: mockShowSuccessToast,
+    showWarningToast: mockShowWarningToast,
+    showErrorToast: jest.fn(),
+  }),
 }));
 
 const mockedUseParams = jest.mocked(jest.requireMock('react-router').useParams);
 
-import { Column } from '@/crystal_ball/constants';
+import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
 import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
 import {
@@ -134,6 +149,7 @@ describe('FilterEditor', () => {
     mockedUseParams.mockReturnValue({ dashboardId: 'test-dashboard' });
     defaultProps.onUpdateFilters.mockClear();
     mockedSuggestValues.mockClear();
+    localStorage.clear();
     mockedSuggestValues.mockReturnValue({
       data: { values: ['suggest1', 'suggest2'] },
       isLoading: false,
@@ -146,18 +162,25 @@ describe('FilterEditor', () => {
   it('renders with no filters initially', () => {
     wrapWithProviders(<FilterEditor {...defaultProps} />);
     expect(screen.getByText('Filters')).toBeInTheDocument();
-    expect(
-      screen.getByText('No filters. Click to expand and add.'),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId('add-filter-empty-state')).toBeInTheDocument();
+    expect(screen.getAllByText('No filters applied.')).toHaveLength(2);
+    expect(screen.getByTestId('add-filter-button-top')).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /Remove filter/i }),
     ).not.toBeInTheDocument();
   });
 
-  it('does not render "Add Filter" button when collapsed', () => {
+  it('renders placeholder when expanded and empty', () => {
     wrapWithProviders(<FilterEditor {...defaultProps} />);
-    expect(screen.queryByTestId('add-filter-button')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Filters')); // Expand
+    expect(screen.getByText('No filters applied.')).toBeInTheDocument();
+  });
+
+  it('renders "Add" button even when collapsed', () => {
+    wrapWithProviders(<FilterEditor {...defaultProps} />);
+    expect(screen.getByTestId('add-filter-button-top')).toBeInTheDocument();
+    expect(screen.getByTestId('add-filter-button-top')).toHaveTextContent(
+      'Add',
+    );
   });
 
   it('renders with initial filters', async () => {
@@ -185,22 +208,28 @@ describe('FilterEditor', () => {
     // Expand the accordion
     fireEvent.click(screen.getByText('Filters'));
     await waitFor(() => {
-      expect(screen.getByLabelText('Value')).toBeInTheDocument();
+      expect(screen.getByLabelText(COMMON_MESSAGES.VALUE)).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText('Value')).toHaveValue('initialValue');
-    expect(screen.getByLabelText('Column')).toHaveTextContent('test_name');
-    expect(screen.getByLabelText('Operator')).toHaveTextContent('=');
+    expect(screen.getByLabelText(COMMON_MESSAGES.VALUE)).toHaveValue(
+      'initialValue',
+    );
+    expect(screen.getByLabelText(COMMON_MESSAGES.COLUMN)).toHaveTextContent(
+      'test_name',
+    );
+    expect(screen.getByLabelText(COMMON_MESSAGES.OPERATOR)).toHaveTextContent(
+      '=',
+    );
   });
 
-  it('adds a new filter when empty state is clicked', async () => {
+  it('adds a new filter when "Add" button is clicked when empty', async () => {
     wrapWithProviders(<FilterEditor {...defaultProps} />);
-    fireEvent.click(screen.getByText('Filters')); // Expand
-    await waitFor(() => {
-      expect(screen.getByTestId('add-filter-empty-state')).toBeInTheDocument();
-    });
 
-    fireEvent.click(screen.getByTestId('add-filter-empty-state'));
+    // Button should be visible
+    expect(screen.getByTestId('add-filter-button-top')).toBeInTheDocument();
+
+    // Click "Add" button
+    fireEvent.click(screen.getByTestId('add-filter-button-top'));
 
     expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
     const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
@@ -218,7 +247,7 @@ describe('FilterEditor', () => {
     });
   });
 
-  it('adds a new filter when "Add Filter" button at the bottom is clicked', async () => {
+  it('adds a new filter when "Add" button is clicked and expands', async () => {
     const initialFilters: PerfFilter[] = [
       {
         id: 'filter-1',
@@ -230,18 +259,22 @@ describe('FilterEditor', () => {
     wrapWithProviders(
       <FilterEditor {...defaultProps} filters={initialFilters} />,
     );
-    fireEvent.click(screen.getByText('Filters')); // Expand
-    await waitFor(() => {
-      expect(
-        screen.getByTestId('add-filter-button-bottom'),
-      ).toBeInTheDocument();
-    });
 
-    fireEvent.click(screen.getByTestId('add-filter-button-bottom'));
+    // Button should be visible even when collapsed
+    expect(screen.getByTestId('add-filter-button-top')).toBeInTheDocument();
 
+    // Click "Add" button while collapsed
+    fireEvent.click(screen.getByTestId('add-filter-button-top'));
+
+    // Should add a filter
     expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
     const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
     expect(updatedFilters.length).toBe(2);
+
+    // Should expand accordion (Value input should become visible)
+    await waitFor(() => {
+      expect(screen.getByLabelText(COMMON_MESSAGES.VALUE)).toBeInTheDocument();
+    });
   });
 
   it('removes a filter when delete icon is clicked', async () => {
@@ -289,11 +322,11 @@ describe('FilterEditor', () => {
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
     await waitFor(() => {
-      expect(screen.getByLabelText('Column')).toBeInTheDocument();
+      expect(screen.getByLabelText(COMMON_MESSAGES.COLUMN)).toBeInTheDocument();
     });
 
     // interact with the combobox
-    fireEvent.mouseDown(screen.getByLabelText('Column'));
+    fireEvent.mouseDown(screen.getByLabelText(COMMON_MESSAGES.COLUMN));
     await waitFor(() => {
       expect(screen.getByRole('option', { name: 'sku' })).toBeInTheDocument();
     });
@@ -324,11 +357,13 @@ describe('FilterEditor', () => {
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
     await waitFor(() => {
-      expect(screen.getByLabelText('Operator')).toBeInTheDocument();
+      expect(
+        screen.getByLabelText(COMMON_MESSAGES.OPERATOR),
+      ).toBeInTheDocument();
     });
 
     // interact with the combobox
-    fireEvent.mouseDown(screen.getByLabelText('Operator'));
+    fireEvent.mouseDown(screen.getByLabelText(COMMON_MESSAGES.OPERATOR));
     await waitFor(() => {
       expect(
         screen.getByRole('option', { name: 'contains' }),
@@ -362,7 +397,7 @@ describe('FilterEditor', () => {
       <FilterEditor {...defaultProps} filters={initialFilters} />,
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
-    const valueInput = await screen.findByLabelText('Value');
+    const valueInput = await screen.findByLabelText(COMMON_MESSAGES.VALUE);
 
     fireEvent.change(valueInput, { target: { value: 'newValue' } });
     // onUpdateFilters should not be called yet
@@ -397,7 +432,7 @@ describe('FilterEditor', () => {
       <FilterEditor {...defaultProps} filters={initialFilters} />,
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
-    const valueInput = await screen.findByLabelText('Value');
+    const valueInput = await screen.findByLabelText(COMMON_MESSAGES.VALUE);
 
     fireEvent.focus(valueInput);
     fireEvent.blur(valueInput);
@@ -450,7 +485,7 @@ describe('FilterEditor', () => {
     fireEvent.click(screen.getByText('Filters'));
 
     // Wait for the column combobox to appear
-    const columnSelect = await screen.findByLabelText('Column');
+    const columnSelect = await screen.findByLabelText(COMMON_MESSAGES.COLUMN);
     fireEvent.mouseDown(columnSelect);
 
     // Primary components should be visible and sorted alphabetically
@@ -520,7 +555,7 @@ describe('FilterEditor', () => {
       />,
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
-    const valueInput = await screen.findByLabelText('Value');
+    const valueInput = await screen.findByLabelText(COMMON_MESSAGES.VALUE);
 
     fireEvent.focus(valueInput);
     fireEvent.change(valueInput, { target: { value: 'newValue' } });
@@ -554,7 +589,7 @@ describe('FilterEditor', () => {
       <FilterEditor {...defaultProps} filters={initialFilters} />,
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
-    const valueInput = await screen.findByLabelText('Value');
+    const valueInput = await screen.findByLabelText(COMMON_MESSAGES.VALUE);
 
     fireEvent.focus(valueInput);
     fireEvent.change(valueInput, { target: { value: 'newValue' } });
@@ -588,7 +623,7 @@ describe('FilterEditor', () => {
       <FilterEditor {...defaultProps} filters={initialFilters} />,
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
-    const valueInput = await screen.findByLabelText('Value');
+    const valueInput = await screen.findByLabelText(COMMON_MESSAGES.VALUE);
 
     fireEvent.focus(valueInput);
     fireEvent.change(valueInput, { target: { value: 'newValue' } });
@@ -626,7 +661,7 @@ describe('FilterEditor', () => {
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
 
-    const columns = await screen.findAllByLabelText('Column');
+    const columns = await screen.findAllByLabelText(COMMON_MESSAGES.COLUMN);
     const sourceRow = columns[1].closest('div[draggable="true"]');
     const targetRow = columns[0].closest('div[draggable="true"]');
 
@@ -663,7 +698,7 @@ describe('FilterEditor', () => {
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
 
-    const columns = await screen.findAllByLabelText('Column');
+    const columns = await screen.findAllByLabelText(COMMON_MESSAGES.COLUMN);
     const sourceRow = columns[0].closest('div[draggable="true"]');
     const targetRow = columns[1].closest('div[draggable="true"]');
 
@@ -678,5 +713,175 @@ describe('FilterEditor', () => {
       expect.objectContaining({ id: 'filter-2' }),
       expect.objectContaining({ id: 'filter-1' }),
     ]);
+  });
+
+  describe('Copy/Paste functionality', () => {
+    const initialFilters: PerfFilter[] = [
+      {
+        id: 'filter-1',
+        column: 'test_name',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name 1',
+      },
+    ];
+
+    it('copies filters to localStorage', async () => {
+      wrapWithProviders(
+        <FilterEditor {...defaultProps} filters={initialFilters} />,
+      );
+      fireEvent.click(screen.getByText('Filters')); // Expand
+
+      const copyButton = screen.getByRole('button', {
+        name: 'Copy all filters',
+      });
+      fireEvent.click(copyButton);
+
+      const stored = localStorage.getItem('crystal_ball_filters_clipboard');
+      expect(stored).toBeTruthy();
+      expect(JSON.parse(stored!)).toEqual(initialFilters);
+    });
+
+    it('disables paste button when clipboard is empty', async () => {
+      wrapWithProviders(<FilterEditor {...defaultProps} />);
+      const pasteButton = screen.getByRole('button', { name: 'Paste filters' });
+      expect(pasteButton).toBeDisabled();
+    });
+
+    it('enables paste button and shows count when clipboard has items', async () => {
+      localStorage.setItem(
+        'crystal_ball_filters_clipboard',
+        JSON.stringify(initialFilters),
+      );
+      wrapWithProviders(<FilterEditor {...defaultProps} />);
+
+      const pasteButton = screen.getByRole('button', { name: 'Paste filters' });
+      expect(pasteButton).not.toBeDisabled();
+
+      const badge = screen.getByText('1');
+      expect(badge).toBeInTheDocument();
+    });
+
+    it('pastes and appends filters', async () => {
+      localStorage.setItem(
+        'crystal_ball_filters_clipboard',
+        JSON.stringify(initialFilters),
+      );
+      const existingFilters: PerfFilter[] = [
+        {
+          id: 'filter-existing',
+          column: 'model',
+          dataSpecId: 'test-spec-id',
+          displayName: 'Existing Filter',
+        },
+      ];
+      wrapWithProviders(
+        <FilterEditor {...defaultProps} filters={existingFilters} />,
+      );
+
+      const pasteButton = screen.getByRole('button', { name: 'Paste filters' });
+      fireEvent.click(pasteButton);
+
+      const appendItem = screen.getByText('Append filters');
+      fireEvent.click(appendItem);
+
+      expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
+      const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
+      expect(updatedFilters).toHaveLength(2);
+      expect(updatedFilters[0].id).toBe('filter-existing');
+      expect(updatedFilters[1].column).toBe('test_name');
+    });
+
+    it('pastes and replaces filters via menu', async () => {
+      localStorage.setItem(
+        'crystal_ball_filters_clipboard',
+        JSON.stringify(initialFilters),
+      );
+      const existingFilters: PerfFilter[] = [
+        {
+          id: 'filter-existing',
+          column: 'model',
+          dataSpecId: 'test-spec-id',
+          displayName: 'Existing Filter',
+        },
+      ];
+      wrapWithProviders(
+        <FilterEditor {...defaultProps} filters={existingFilters} />,
+      );
+
+      const pasteButton = screen.getByRole('button', { name: 'Paste filters' });
+      fireEvent.click(pasteButton);
+
+      const replaceItem = screen.getByText('Replace all filters');
+      fireEvent.click(replaceItem);
+
+      expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
+      const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
+      expect(updatedFilters).toHaveLength(1);
+      expect(updatedFilters[0].column).toBe('test_name');
+    });
+
+    it('clears clipboard via menu', async () => {
+      localStorage.setItem(
+        'crystal_ball_filters_clipboard',
+        JSON.stringify(initialFilters),
+      );
+      wrapWithProviders(<FilterEditor {...defaultProps} />);
+
+      const pasteButton = screen.getByRole('button', { name: 'Paste filters' });
+      fireEvent.click(pasteButton);
+
+      const clearItem = screen.getByText('Clear copied filters');
+      fireEvent.click(clearItem);
+
+      expect(localStorage.getItem('crystal_ball_filters_clipboard')).toBeNull();
+      expect(mockShowSuccessToast).toHaveBeenCalledWith('Clipboard cleared');
+    });
+
+    it('filters out incompatible filters on paste', async () => {
+      localStorage.setItem(
+        'crystal_ball_filters_clipboard',
+        JSON.stringify([
+          ...initialFilters,
+          {
+            id: 'filter-invalid',
+            column: 'non-existent-column',
+            dataSpecId: 'test-spec-id',
+            displayName: 'Invalid Filter',
+          },
+        ]),
+      );
+      wrapWithProviders(<FilterEditor {...defaultProps} />);
+
+      const pasteButton = screen.getByRole('button', { name: 'Paste filters' });
+      fireEvent.click(pasteButton);
+
+      const appendItem = screen.getByText('Append filters');
+      fireEvent.click(appendItem);
+
+      expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
+      const updatedFilters = defaultProps.onUpdateFilters.mock.calls[0][0];
+      expect(updatedFilters).toHaveLength(1);
+      expect(updatedFilters[0].column).toBe('test_name');
+      expect(mockShowWarningToast).toHaveBeenCalledWith(
+        '1 filter(s) pasted. 1 filter(s) ignored.',
+      );
+    });
+
+    it('clears all filters via confirm dialog', async () => {
+      wrapWithProviders(
+        <FilterEditor {...defaultProps} filters={initialFilters} />,
+      );
+      fireEvent.click(screen.getByText('Filters')); // Expand
+
+      const clearButton = screen.getByRole('button', {
+        name: 'Clear all filters',
+      });
+      fireEvent.click(clearButton);
+
+      const confirmButton = screen.getByTestId('confirm-dialog-confirm');
+      fireEvent.click(confirmButton);
+
+      expect(defaultProps.onUpdateFilters).toHaveBeenCalledWith([]);
+    });
   });
 });

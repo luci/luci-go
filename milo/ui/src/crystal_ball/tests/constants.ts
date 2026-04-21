@@ -17,5 +17,6 @@
  */
 export enum DataTestId {
   ADD_FILTER_BUTTON_BOTTOM = 'add-filter-button-bottom',
+  ADD_FILTER_BUTTON_TOP = 'add-filter-button-top',
   ADD_FILTER_EMPTY_STATE = 'add-filter-empty-state',
 }

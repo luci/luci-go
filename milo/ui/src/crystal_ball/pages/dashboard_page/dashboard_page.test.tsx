@@ -16,6 +16,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { useTopBarConfig } from '@/crystal_ball/components/layout/top_bar_context';
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
+import { ToastProvider } from '@/crystal_ball/context';
 import * as useDashboardStateApi from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { DashboardPage } from '@/crystal_ball/pages/dashboard_page';
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
@@ -180,7 +181,11 @@ describe('<DashboardPage />', () => {
   });
 
   const renderDashboard = () => {
-    const { rerender } = render(<DashboardPage />);
+    const { rerender } = render(
+      <ToastProvider>
+        <DashboardPage />
+      </ToastProvider>,
+    );
     return { rerender };
   };
 

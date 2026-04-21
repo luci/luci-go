@@ -53,7 +53,15 @@ jest.mock('@mui/material', () => ({
   ),
 }));
 
-jest.mock('@/crystal_ball/hooks');
+jest.mock('@/crystal_ball/hooks', () => ({
+  ...jest.requireActual('@/crystal_ball/hooks'),
+  useToast: () => ({
+    showSuccessToast: jest.fn(),
+    showWarningToast: jest.fn(),
+    showErrorToast: jest.fn(),
+  }),
+  useFetchDashboardWidgetData: jest.fn(),
+}));
 const mockUseFetchDashboardWidgetData = jest.mocked(
   useFetchDashboardWidgetData,
 );
@@ -97,6 +105,21 @@ const baseWidget: PerfChartWidget = PerfChartWidget.fromPartial({
   ],
 });
 
+const renderChartWidget = (
+  props: Partial<React.ComponentProps<typeof ChartWidget>> = {},
+) => {
+  return render(
+    <ChartWidget
+      onUpdate={jest.fn()}
+      widget={baseWidget}
+      dashboardName="dashboardStates/d1"
+      widgetId="w1"
+      filterColumns={[]}
+      {...props}
+    />,
+  );
+};
+
 describe('ChartWidget', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -118,15 +141,7 @@ describe('ChartWidget', () => {
 
   it('should display loading state', () => {
     mockUseFetchDashboardWidgetData.mockReturnValue(createMockPendingResult());
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={baseWidget}
-        dashboardName="dashboardStates/d1"
-        widgetId="w1"
-        filterColumns={[]}
-      />,
-    );
+    renderChartWidget();
     expect(screen.getByTestId('circular-progress')).toBeInTheDocument();
   });
 
@@ -134,15 +149,7 @@ describe('ChartWidget', () => {
     mockUseFetchDashboardWidgetData.mockReturnValue(
       createMockErrorResult(new Error('Failed to fetch')),
     );
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={baseWidget}
-        dashboardName="dashboardStates/d1"
-        widgetId="w1"
-        filterColumns={[]}
-      />,
-    );
+    renderChartWidget();
     expect(screen.getByTestId('alert')).toHaveTextContent(
       `${COMMON_MESSAGES.ERROR_FETCHING_MEASUREMENTS}Failed to fetch`,
     );
@@ -546,15 +553,7 @@ describe('ChartWidget', () => {
       ),
     );
 
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={distributionWidget}
-        dashboardName="dashboardStates/d1"
-        widgetId="w1"
-        filterColumns={[]}
-      />,
-    );
+    renderChartWidget({ widget: distributionWidget });
 
     expect(screen.getByTestId('time-series-chart')).toBeInTheDocument();
     expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
@@ -594,15 +593,7 @@ describe('ChartWidget', () => {
       ),
     );
 
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={distributionWidget}
-        dashboardName="dashboardStates/d1"
-        widgetId="w1"
-        filterColumns={[]}
-      />,
-    );
+    renderChartWidget({ widget: distributionWidget });
 
     expect(screen.getByTestId('time-series-chart')).toBeInTheDocument();
     expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
@@ -639,15 +630,7 @@ describe('ChartWidget', () => {
       ),
     );
 
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={distributionWidget}
-        dashboardName="dashboardStates/d1"
-        widgetId="w1"
-        filterColumns={[]}
-      />,
-    );
+    renderChartWidget({ widget: distributionWidget });
 
     expect(screen.getByText(COMMON_MESSAGES.NO_DATA_FOUND)).toBeInTheDocument();
     expect(MockTimeSeriesChart).not.toHaveBeenCalled();
@@ -655,15 +638,7 @@ describe('ChartWidget', () => {
 
   it('should call onUpdate with toggled chart type when toggle button is clicked', () => {
     const onUpdateMock = jest.fn();
-    render(
-      <ChartWidget
-        onUpdate={onUpdateMock}
-        widget={baseWidget}
-        dashboardName="dashboardStates/d1"
-        widgetId="w1"
-        filterColumns={[]}
-      />,
-    );
+    renderChartWidget({ onUpdate: onUpdateMock });
 
     const toggleButton = screen.getByTitle('Scatter Plot');
     expect(toggleButton).toBeInTheDocument();
@@ -684,15 +659,7 @@ describe('ChartWidget', () => {
       ...baseWidget,
       chartType: PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
     });
-    render(
-      <ChartWidget
-        onUpdate={onUpdateMock}
-        widget={distributionWidget}
-        dashboardName="dashboardStates/d1"
-        widgetId="w1"
-        filterColumns={[]}
-      />,
-    );
+    renderChartWidget({ onUpdate: onUpdateMock, widget: distributionWidget });
 
     const toggleButton = screen.getByTitle('Line Chart');
     expect(toggleButton).toBeInTheDocument();
@@ -741,16 +708,7 @@ describe('ChartWidget', () => {
       ),
     );
 
-    render(
-      <ChartWidget
-        onUpdate={jest.fn()}
-        widget={baseWidget}
-        dashboardName="dashboardStates/d1"
-        widgetId="w1"
-        filterColumns={[]}
-        globalFilters={mockFilters}
-      />,
-    );
+    renderChartWidget({ globalFilters: mockFilters });
 
     expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
     const lastCallProps = MockTimeSeriesChart.mock.lastCall![0];

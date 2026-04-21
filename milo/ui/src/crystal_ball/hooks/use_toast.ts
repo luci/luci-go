@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './use_android_perf_api';
-export * from './use_dashboard_state_api';
-export * from './use_dashboard_workflows';
-export * from './use_editor_ui_state';
-export * from './use_filters_clipboard';
-export * from './use_measurement_filter_api';
-export * from './use_search_query_sync';
-export * from './use_toast';
-export * from './use_user_settings_api';
-export * from './use_widget_data_api';
+import { useContext } from 'react';
+
+import { ToastContext } from '@/crystal_ball/context/toast_context_instance';
+
+/**
+ * A custom hook to use the ToastContext.
+ * Throws an error if used outside a ToastProvider.
+ */
+export function useToast() {
+  const context = useContext(ToastContext);
+  if (context === undefined) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context;
+}
