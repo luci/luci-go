@@ -135,11 +135,11 @@ export const AndroidDevicesPage = () => {
   const filterOptions = useMemo(() => {
     if (!isDimensionsQueryProperlyLoaded) return ANDROID_EXTRA_FILTERS;
     return {
-      ...ANDROID_EXTRA_FILTERS,
       ...dimensionsToFilterOptions(
         dimensionsQuery.data!,
         ANDROID_COLUMN_OVERRIDES,
       ),
+      ...ANDROID_EXTRA_FILTERS,
     };
   }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data]);
 

@@ -20,10 +20,13 @@ export const ANDROID_EXTRA_FILTERS = {
   fc_offline_since: new DateFilterCategoryDataBuilder().setLabel(
     `Offline Since`,
   ),
-  state: new StringListFilterCategoryBuilder().setLabel('State').setOptions(
-    Object.values(androidState).map((val) => ({
-      label: val,
-      value: val,
-    })),
-  ),
+  ['"state"']: new StringListFilterCategoryBuilder()
+    .setLabel('State')
+    .setOptions([
+      { label: '(Blank)', value: '(Blank)' },
+      ...Object.values(androidState).map((val) => ({
+        label: val,
+        value: '"' + val + '"',
+      })),
+    ]),
 };
