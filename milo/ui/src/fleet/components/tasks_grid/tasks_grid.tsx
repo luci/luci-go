@@ -12,16 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColDef } from '@mui/x-data-grid';
+import { TablePagination } from '@mui/material';
+import {
+  MaterialReactTable,
+  MRT_Cell,
+  MRT_ColumnDef,
+  MRT_Row,
+  MRT_TableInstance,
+} from 'material-react-table';
+import { useMemo } from 'react';
 
 import {
   getCurrentPageIndex,
   getPageSize,
+  getPrevFullRowCount,
+  nextPageTokenUpdater,
   PagerContext,
+  pageSizeUpdater,
+  prevPageTokenUpdater,
 } from '@/common/components/params_pager';
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
-import { Pagination } from '@/fleet/components/device_table/pagination';
-import { StyledGrid } from '@/fleet/components/styled_data_grid';
+import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { colors } from '@/fleet/theme/colors';
 import { extractBuildUrlFromTagData } from '@/fleet/utils/builds';
@@ -35,8 +47,6 @@ import {
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { TaskResultResponse } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
-const UNKNOWN_ROW_COUNT = -1;
-
 export type TaskGridColumnKey =
   | 'task'
   | 'buildVersion'
@@ -45,60 +55,66 @@ export type TaskGridColumnKey =
   | 'duration'
   | 'dut_name';
 
-interface ColumnConfig {
-  colDef: GridColDef;
-  valueGetter: (task: TaskResultResponse) => unknown;
-}
+const COLUMN_CONFIG: Record<
+  TaskGridColumnKey,
+  { header: string; size: number; grow?: number }
+> = {
+  task: { header: 'Task', size: 300, grow: 2 },
+  buildVersion: { header: 'Build version', size: 150 },
+  result: { header: 'Result', size: 100 },
+  started: { header: 'Started', size: 250 },
+  duration: { header: 'Duration', size: 150 },
+  dut_name: { header: 'DUT Name', size: 200 },
+};
 
-const COLUMN_DEFINITIONS: Record<TaskGridColumnKey, ColumnConfig> = {
-  task: {
-    colDef: {
-      field: 'task',
-      headerName: 'Task',
-      flex: 2,
-    },
-    valueGetter: (task) => task.name,
-  },
-  buildVersion: {
-    colDef: {
-      field: 'buildVersion',
-      headerName: 'Build version',
-      flex: 1,
-    },
-    valueGetter: (task) => getTaskTagValue(task, 'build'),
-  },
-  result: {
-    colDef: {
-      field: 'result',
-      headerName: 'Result',
-      flex: 1,
-    },
-    valueGetter: (task) => prettifySwarmingState(task),
-  },
-  started: {
-    colDef: {
-      field: 'started',
-      headerName: 'Started',
-      flex: 1,
-    },
-    valueGetter: (task) => prettyDateTime(task.startedTs),
-  },
-  duration: {
-    colDef: {
-      field: 'duration',
-      headerName: 'Duration',
-      flex: 1,
-    },
-    valueGetter: (task) => getTaskDuration(task),
-  },
-  dut_name: {
-    colDef: {
-      field: 'dut_name',
-      headerName: 'DUT Name',
-      width: 200,
-    },
-    valueGetter: (task) => getTaskTagValue(task, 'dut-name'),
-  },
+const TaskCell = ({
+  cell,
+  row,
+  table,
+}: {
+  cell: MRT_Cell<Record<string, unknown>, unknown>;
+  row: MRT_Row<Record<string, unknown>>;
+  table: MRT_TableInstance<Record<string, unknown>>;
+}) => {
+  const meta = table.options.meta as {
+    taskMap: Map<string, TaskResultResponse>;
+    swarmingHost: string;
+    miloHost?: string;
+  };
+  const taskId = row.original.id as string;
+  const task = meta.taskMap.get(taskId);
+  let url: string | undefined;
+  if (meta.miloHost && task?.tags) {
+    url = extractBuildUrlFromTagData(task.tags, meta.miloHost);
+  }
+
+  return (
+    <EllipsisTooltip>
+      <a
+        href={url ?? getSwarmingTaskURL(meta.swarmingHost, taskId)}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {cell.getValue<string>()}
+      </a>
+    </EllipsisTooltip>
+  );
+};
+
+const DutNameCell = ({
+  cell,
+}: {
+  cell: MRT_Cell<Record<string, unknown>, unknown>;
+}) => {
+  const dutName = cell.getValue<string>();
+  if (!dutName) {
+    return null;
+  }
+  return (
+    <EllipsisTooltip>
+      <a href={generateChromeOsDeviceDetailsURL(dutName)}>{dutName}</a>
+    </EllipsisTooltip>
+  );
 };
 
 export interface TasksGridProps {
@@ -110,7 +126,6 @@ export interface TasksGridProps {
   miloHost?: string;
 }
 
-// TODO(http://b/479452001): Migrate TasksGrid to MRT
 export const TasksGrid = ({
   tasks,
   pagerCtx,
@@ -119,108 +134,137 @@ export const TasksGrid = ({
   swarmingHost,
   miloHost,
 }: TasksGridProps) => {
-  const [searchParams] = useSyncedSearchParams();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
 
-  const taskMap = new Map(tasks.map((t) => [t.taskId, t]));
-  const taskGridData = tasks.map((t) => {
-    const row: { [key: string]: unknown } = {
-      id: t.taskId,
-      // This is needed for getRowClassName to work correctly.
-      result: prettifySwarmingState(t),
-    };
-    for (const key of columnKeys) {
-      row[key] = COLUMN_DEFINITIONS[key].valueGetter(t);
-    }
-    return row;
-  });
-  // TODO: 371010330 - Prettify these columns.
-  const columns: GridColDef[] = columnKeys.map((key) => {
-    const config = COLUMN_DEFINITIONS[key];
-    if (key === 'task') {
-      return {
-        ...config.colDef,
-        renderCell: (params) => {
-          const task = taskMap.get(params.id.toString());
-          let url: string | undefined;
-          if (miloHost && task?.tags) {
-            url = extractBuildUrlFromTagData(task.tags, miloHost);
-          }
+  const taskMap = useMemo(
+    () => new Map(tasks.map((t) => [t.taskId, t])),
+    [tasks],
+  );
 
-          return (
-            <a
-              href={
-                url ?? getSwarmingTaskURL(swarmingHost, params.id.toString())
-              }
-              target="_blank"
-              rel="noreferrer"
-            >
-              {params.value}
-            </a>
-          );
-        },
-      };
-    }
-    if (key === 'dut_name') {
-      return {
-        ...config.colDef,
-        renderCell: (params) => {
-          const dutName = params.value as string;
-          if (!dutName) {
-            return '';
-          }
-          return (
-            <a href={generateChromeOsDeviceDetailsURL(dutName)}>
-              {params.value}
-            </a>
-          );
-        },
-      };
-    }
-    return config.colDef;
-  });
+  const taskGridData = useMemo(
+    () =>
+      tasks.map((t) => ({
+        id: t.taskId,
+        result: prettifySwarmingState(t),
+        task: t.name,
+        buildVersion: getTaskTagValue(t, 'build'),
+        started: prettyDateTime(t.startedTs),
+        duration: getTaskDuration(t),
+        dut_name: getTaskTagValue(t, 'dut-name'),
+      })),
+    [tasks],
+  );
 
-  return (
-    <StyledGrid
-      rows={taskGridData}
-      columns={columns}
-      slots={{ pagination: Pagination }}
-      slotProps={{
-        pagination: {
-          pagerCtx: pagerCtx,
-          nextPageToken: nextPageToken,
+  const columns = useMemo<MRT_ColumnDef<Record<string, unknown>>[]>(
+    () =>
+      columnKeys.map((key) => {
+        const config = COLUMN_CONFIG[key];
+        const colDef: MRT_ColumnDef<Record<string, unknown>> = {
+          accessorKey: key,
+          header: config.header,
+          size: config.size,
+          grow: config.grow,
+        };
+
+        if (key === 'task') {
+          colDef.Cell = TaskCell;
+        } else if (key === 'dut_name') {
+          colDef.Cell = DutNameCell;
+        }
+        return colDef;
+      }),
+    [columnKeys],
+  );
+
+  const table = useFCDataTable({
+    columns,
+    data: taskGridData,
+    meta: {
+      taskMap,
+      swarmingHost,
+      miloHost,
+    },
+    enablePagination: false,
+    enableColumnActions: false,
+    enableColumnFilters: false,
+    enableSorting: false,
+    enableTopToolbar: true,
+    enableStickyHeader: true,
+    muiTableHeadRowProps: {
+      sx: {
+        minHeight: 'unset',
+        '& .MuiTableCell-head:hover': {
+          backgroundColor: `${colors.grey[100]} !important`,
         },
-      }}
-      paginationMode="server"
-      pageSizeOptions={pagerCtx.options.pageSizeOptions}
-      paginationModel={{
-        page: getCurrentPageIndex(pagerCtx),
-        pageSize: getPageSize(pagerCtx, searchParams),
-      }}
-      rowCount={UNKNOWN_ROW_COUNT}
-      disableColumnMenu
-      disableColumnFilter
-      disableRowSelectionOnClick
-      getRowClassName={getRowClassName}
-      sx={{
+      },
+    },
+    muiTableBodyRowProps: (params: {
+      row: MRT_Row<Record<string, unknown>>;
+    }) => ({
+      className: getRowClassName({
+        result: params.row.original.result as string,
+      }),
+    }),
+    muiTableContainerProps: {
+      sx: {
+        maxWidth: '100%',
+        overflowX: 'hidden',
+        maxHeight: '80vh',
+        '--cell-padding-horizontal': '16px',
+        '& .Mui-TableHeadCell-Content': {
+          minHeight: 'unset !important',
+        },
         '& .row--failure, .row--failure:hover': {
-          backgroundColor: colors.red[100],
+          backgroundColor: `${colors.red[100]} !important`,
         },
         '& .row--pending, .row--pending:hover': {
-          backgroundColor: colors.yellow[100],
+          backgroundColor: `${colors.yellow[100]} !important`,
         },
         '& .row--bot_died, .row--bot_died:hover': {
-          backgroundColor: colors.grey[100],
+          backgroundColor: `${colors.grey[100]} !important`,
         },
         '& .row--client_error, .row--client_error:hover': {
-          backgroundColor: colors.orange[100],
+          backgroundColor: `${colors.orange[100]} !important`,
         },
         '& .row--exception, .row--exception:hover': {
-          backgroundColor: colors.purple[100],
+          backgroundColor: `${colors.purple[100]} !important`,
         },
-        '& .MuiDataGrid-row:hover': {
-          filter: 'brightness(0.94)',
-        },
-      }}
-    />
+      },
+    },
+  });
+
+  const currentPage = getCurrentPageIndex(pagerCtx);
+  const pageSize = getPageSize(pagerCtx, searchParams);
+
+  return (
+    <>
+      <MaterialReactTable table={table} />
+      <TablePagination
+        component="div"
+        count={tasks.length === 0 && !nextPageToken ? 0 : -1}
+        page={currentPage}
+        rowsPerPage={pageSize}
+        onPageChange={(_, page) => {
+          const isPrevPage = page < currentPage;
+          const isNextPage = page > currentPage;
+
+          if (isPrevPage) {
+            setSearchParams(prevPageTokenUpdater(pagerCtx));
+          } else if (isNextPage && nextPageToken) {
+            setSearchParams(nextPageTokenUpdater(pagerCtx, nextPageToken));
+          }
+        }}
+        onRowsPerPageChange={(e) => {
+          setSearchParams(pageSizeUpdater(pagerCtx, Number(e.target.value)));
+        }}
+        rowsPerPageOptions={pagerCtx.options.pageSizeOptions}
+        labelDisplayedRows={() => {
+          const realFrom = getPrevFullRowCount(pagerCtx) + 1;
+          const realTo = realFrom + tasks.length - 1;
+          const hasNextPage = !!nextPageToken;
+          return `${realFrom}-${realTo} of ${hasNextPage ? `more than ${realTo}` : realTo}`;
+        }}
+      />
+    </>
   );
 };

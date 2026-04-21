@@ -2,7 +2,6 @@
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //      http://www.apache.org/licenses/LICENSE-2.0
@@ -12,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-import { GridRowParams } from '@mui/x-data-grid';
 
 import {
   TaskResultResponse,
@@ -55,33 +52,33 @@ describe('task utils', () => {
 
   describe('getRowClassName', () => {
     it('should return row--failure for FAILURE result', () => {
-      const params = { row: { result: 'FAILURE' } } as GridRowParams;
-      expect(getRowClassName(params)).toBe('row--failure');
+      const row = { result: 'FAILURE' };
+      expect(getRowClassName(row)).toBe('row--failure');
     });
 
     it('should return row--pending for ongoing states', () => {
-      const params = { row: { result: 'RUNNING' } } as GridRowParams;
-      expect(getRowClassName(params)).toBe('row--pending');
+      const row = { result: 'RUNNING' };
+      expect(getRowClassName(row)).toBe('row--pending');
     });
 
     it('should return row--bot_died for BOT_DIED result', () => {
-      const params = { row: { result: 'BOT_DIED' } } as GridRowParams;
-      expect(getRowClassName(params)).toBe('row--bot_died');
+      const row = { result: 'BOT_DIED' };
+      expect(getRowClassName(row)).toBe('row--bot_died');
     });
 
     it('should return row--client_error for CLIENT_ERROR result', () => {
-      const params = { row: { result: 'CLIENT_ERROR' } } as GridRowParams;
-      expect(getRowClassName(params)).toBe('row--client_error');
+      const row = { result: 'CLIENT_ERROR' };
+      expect(getRowClassName(row)).toBe('row--client_error');
     });
 
     it('should return row--exception for exceptional states', () => {
-      const params = { row: { result: 'TIMED_OUT' } } as GridRowParams;
-      expect(getRowClassName(params)).toBe('row--exception');
+      const row = { result: 'TIMED_OUT' };
+      expect(getRowClassName(row)).toBe('row--exception');
     });
 
     it('should return empty string for other states', () => {
-      const params = { row: { result: 'SUCCESS' } } as GridRowParams;
-      expect(getRowClassName(params)).toBe('');
+      const row = { result: 'SUCCESS' };
+      expect(getRowClassName(row)).toBe('');
     });
   });
 

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridRowParams } from '@mui/x-data-grid';
-
 import {
   TASK_EXCEPTIONAL_STATES,
   TASK_ONGOING_STATES,
@@ -41,8 +39,8 @@ export const prettifySwarmingState = (task: TaskResultResponse): string => {
 
 // Similar to Swarming's implementation in:
 // https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/swarming/ui2/modules/task-list/task-list-helpers.js#480
-export const getRowClassName = (params: GridRowParams): string => {
-  const result = params.row.result;
+export const getRowClassName = (row: { result: string }): string => {
+  const result = row.result;
   if (result === 'FAILURE') {
     return 'row--failure';
   }
