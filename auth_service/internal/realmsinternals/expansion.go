@@ -17,6 +17,7 @@ package realmsinternals
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -125,16 +126,7 @@ func sortConditionEntries(entries []*conditionMapTuple) {
 		},
 		func(i, j int) bool {
 			iVals, jVals := entries[i].cond.GetRestrict().GetValues(), entries[j].cond.GetRestrict().GetValues()
-			iValsLen, jValsLen := len(iVals), len(jVals)
-			if iValsLen == jValsLen {
-				for idx, iVal := range iVals {
-					if iVal == jVals[idx] {
-						continue
-					}
-					return iVal < jVals[idx]
-				}
-			}
-			return iValsLen < jValsLen
+			return slices.Compare(iVals, jVals) < 0
 		},
 	}.Use)
 }
@@ -445,6 +437,11 @@ func (rlme *RealmsExpander) perPrincipalBindings(realm string) ([]*principalBind
 		perms, err := rlme.rolesExpander.role(b.GetRole())
 		if err != nil {
 			return nil, lucierr.Annotate(err, "there was an issue fetching permissions for this binding role")
+		}
+
+		// Skip empty roles, they don't affect the end result.
+		if len(perms.set) == 0 {
+			continue
 		}
 
 		// sorted conditions associated with this binding
