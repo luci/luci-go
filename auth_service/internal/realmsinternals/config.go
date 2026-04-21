@@ -109,8 +109,8 @@ func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projs *pro
 	}
 
 	condsSet := &ConditionsSet{
-		indexMapping: make(map[*realmsconf.Condition]uint32),
-		normalized:   make(map[string]conditionMapTuple),
+		normalized: make(map[string]*conditionDetails),
+		conditions: make(map[*realmsconf.Condition]*conditionDetails),
 	}
 
 	// Prepopulate condsSet with all conditions mentioned in all bindings to
@@ -132,8 +132,8 @@ func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projs *pro
 		permissionsDB: db.Permissions,
 		builtinRoles:  db.Roles,
 		customRoles:   customRolesMap,
-		permissions:   map[string]uint32{},
-		roles:         map[string]indexSet{},
+		permissions:   map[string]permissionDetails{},
+		roles:         map[string]roleDetails{},
 	}
 
 	realmsExpander := &RealmsExpander{
@@ -319,20 +319,10 @@ func normalizedBindings(bindings []*protocol.Binding, indexMapping []uint32) {
 		slices.Sort(b.Permissions)
 	}
 	sort.Slice(bindings, sortby.Chain{
-		func(i, j int) bool { return sliceCompare(bindings[i].Permissions, bindings[j].Permissions) },
-		func(i, j int) bool { return sliceCompare(bindings[i].Conditions, bindings[j].Conditions) },
-		func(i, j int) bool { return sliceCompare(bindings[i].Principals, bindings[j].Principals) },
+		func(i, j int) bool { return slices.Compare(bindings[i].Permissions, bindings[j].Permissions) < 0 },
+		func(i, j int) bool { return slices.Compare(bindings[i].Conditions, bindings[j].Conditions) < 0 },
+		func(i, j int) bool { return slices.Compare(bindings[i].Principals, bindings[j].Principals) < 0 },
 	}.Use)
-}
-
-func sliceCompare[T string | uint32](sli []T, slj []T) bool {
-	sliceLen := min(len(sli), len(slj))
-	for idx := range sliceLen {
-		if sli[idx] != slj[idx] {
-			return sli[idx] < slj[idx]
-		}
-	}
-	return len(sli) < len(slj)
 }
 
 // FetchLatestRealmsConfigs fetches the latest configs from luci-cfg

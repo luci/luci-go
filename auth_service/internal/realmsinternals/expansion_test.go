@@ -14,12 +14,12 @@
 package realmsinternals
 
 import (
+	"slices"
+	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-
+	"go.chromium.org/luci/common/data/stringset"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -30,6 +30,7 @@ import (
 
 func TestConditionsSet(t *testing.T) {
 	t.Parallel()
+
 	restriction := func(attr string, values []string) *realmsconf.Condition {
 		return &realmsconf.Condition{
 			Op: &realmsconf.Condition_Restrict{
@@ -40,7 +41,8 @@ func TestConditionsSet(t *testing.T) {
 			},
 		}
 	}
-	ftt.Run("test key", t, func(t *ftt.Test) {
+
+	t.Run("test key", func(t *testing.T) {
 		cond1 := &protocol.Condition{
 			Op: &protocol.Condition_Restrict{
 				Restrict: &protocol.Condition_AttributeRestriction{
@@ -63,23 +65,23 @@ func TestConditionsSet(t *testing.T) {
 		condEmpty := &protocol.Condition{}
 		assert.Loosely(t, conditionKey(condEmpty), should.BeEmpty)
 	})
-	ftt.Run("errors", t, func(t *ftt.Test) {
+
+	t.Run("errors", func(t *testing.T) {
 		cs := &ConditionsSet{
-			normalized:   map[string]conditionMapTuple{},
-			indexMapping: map[*realmsconf.Condition]uint32{},
+			normalized: map[string]*conditionDetails{},
+			conditions: map[*realmsconf.Condition]*conditionDetails{},
 		}
 		r1 := restriction("a", []string{"1", "2"})
-		r2 := restriction("b", []string{"1"})
 		assert.Loosely(t, cs.addCond(r1), should.BeNil)
-		cs.finalize()
-		assert.Loosely(t, cs.addCond(r2), should.Equal(ErrFinalized))
+		assert.Loosely(t, cs.addCond(&realmsconf.Condition{}), should.NotBeNil)
 	})
-	ftt.Run("works", t, func(t *ftt.Test) {
+
+	t.Run("works", func(t *testing.T) {
 		cs := &ConditionsSet{
-			normalized:   map[string]conditionMapTuple{},
-			indexMapping: map[*realmsconf.Condition]uint32{},
-			finalized:    false,
+			normalized: map[string]*conditionDetails{},
+			conditions: map[*realmsconf.Condition]*conditionDetails{},
 		}
+		allAttrs := newAttrSet([]string{"a", "b"})
 		r1 := restriction("b", []string{"1", "2"})
 		r2 := restriction("a", []string{"2", "1", "1"})
 		r3 := restriction("a", []string{"1", "2"})
@@ -117,11 +119,11 @@ func TestConditionsSet(t *testing.T) {
 			},
 		}
 		assert.Loosely(t, out, should.Match(expected))
-		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r1}), should.Match([]uint32{2}))
-		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r2}), should.Match([]uint32{0}))
-		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r3}), should.Match([]uint32{0}))
-		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r4}), should.Match([]uint32{1}))
-		inds := cs.indexes([]*realmsconf.Condition{r1, r2, r3, r4})
+		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r1}, &allAttrs), should.Match([]uint32{2}))
+		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r2}, &allAttrs), should.Match([]uint32{0}))
+		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r3}, &allAttrs), should.Match([]uint32{0}))
+		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r4}, &allAttrs), should.Match([]uint32{1}))
+		inds := cs.indexes([]*realmsconf.Condition{r1, r2, r3, r4}, &allAttrs)
 		assert.Loosely(t, inds, should.Match([]uint32{0, 1, 2}))
 	})
 }
@@ -129,57 +131,38 @@ func TestConditionsSet(t *testing.T) {
 func TestRolesExpander(t *testing.T) {
 	t.Parallel()
 
-	indexSetComp := cmp.AllowUnexported(indexSet{})
+	permDB := testsupport.PermissionsDB(false)
 
-	ftt.Run("errors", t, func(t *ftt.Test) {
+	rolePerms := func(t *testing.T, r *RolesExpander, role string) []string {
+		t.Helper()
+		perms := stringset.New(0)
+		assert.NoErr(t, r.rolePermissions(role, perms))
+		return perms.ToSortedSlice()
+	}
+
+	t.Run("errors", func(t *testing.T) {
 		permDB := testsupport.PermissionsDB(false)
 		r := &RolesExpander{
 			permissionsDB: permDB.Permissions,
 			builtinRoles:  permDB.Roles,
 			customRoles:   map[string]*realmsconf.CustomRole{},
-			permissions:   map[string]uint32{},
-			roles:         map[string]indexSet{},
+			permissions:   map[string]permissionDetails{},
+			roles:         map[string]roleDetails{},
 		}
-		_, err := r.role("role/notbuiltin")
+		_, err := r.roleDetails("role/notbuiltin")
 		assert.Loosely(t, err, should.ErrLike(ErrRoleNotFound))
-		_, err = r.role("customRole/notarole")
+		_, err = r.roleDetails("customRole/notarole")
 		assert.Loosely(t, err, should.ErrLike(ErrRoleNotFound))
-		_, err = r.role("notarole/test")
+		_, err = r.roleDetails("notarole/test")
 		assert.Loosely(t, err, should.ErrLike(ErrImpossibleRole))
 	})
-	ftt.Run("test builtin roles works", t, func(t *ftt.Test) {
-		permDB := testsupport.PermissionsDB(false)
+
+	t.Run("works", func(t *testing.T) {
 		r := &RolesExpander{
 			permissionsDB: permDB.Permissions,
 			builtinRoles:  permDB.Roles,
-			permissions:   map[string]uint32{},
-			roles:         map[string]indexSet{},
-		}
-		actual, err := r.role("role/dev.a")
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Match(indexSetFromSlice([]uint32{0, 1}), indexSetComp))
-		actual, err = r.role("role/dev.b")
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Match(indexSetFromSlice([]uint32{1, 2}), indexSetComp))
-		perms, mapping := r.sortedPermissions()
-		assert.Loosely(t, perms, should.Match([]*protocol.Permission{
-			{
-				Name:       "luci.dev.p1",
-				Attributes: []string{"a1", "root"},
-			},
-			{
-				Name:       "luci.dev.p2",
-				Attributes: []string{"a1", "a2"},
-			},
-			{Name: "luci.dev.p3"},
-		}))
-		assert.Loosely(t, mapping, should.Match([]uint32{0, 1, 2}))
-	})
-	ftt.Run("test custom roles works", t, func(t *ftt.Test) {
-		permDB := testsupport.PermissionsDB(false)
-		r := &RolesExpander{
-			permissionsDB: permDB.Permissions,
-			builtinRoles:  permDB.Roles,
+			permissions:   map[string]permissionDetails{},
+			roles:         map[string]roleDetails{},
 			customRoles: map[string]*realmsconf.CustomRole{
 				"customRole/custom1": {
 					Name:        "customRole/custom1",
@@ -197,79 +180,121 @@ func TestRolesExpander(t *testing.T) {
 					Permissions: []string{"luci.dev.p5"},
 				},
 			},
-			permissions: map[string]uint32{},
-			roles:       map[string]indexSet{},
 		}
-		actual, err := r.role("customRole/custom1")
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual,
-			should.Match(indexSetFromSlice([]uint32{0, 1, 2, 3, 4}), indexSetComp))
-		actual, err = r.role("customRole/custom2")
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual,
-			should.Match(indexSetFromSlice([]uint32{1, 2, 3, 4}), indexSetComp))
-		actual, err = r.role("customRole/custom3")
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual,
-			should.Match(indexSetFromSlice([]uint32{2, 3, 4}), indexSetComp))
+
+		expected := []struct {
+			role    string
+			perms   []string
+			indexes []uint32
+			groups  map[string][]uint32
+		}{
+			{
+				role:    "role/dev.a",
+				perms:   []string{"luci.dev.p1", "luci.dev.p2"},
+				indexes: []uint32{0, 1},
+				groups:  map[string][]uint32{"a1,a2": {1}, "a1,root": {0}},
+			},
+			{
+				role:    "role/dev.b",
+				perms:   []string{"luci.dev.p2", "luci.dev.p3"},
+				indexes: []uint32{1, 2},
+				groups:  map[string][]uint32{"": {2}, "a1,a2": {1}},
+			},
+			{
+				role: "customRole/custom1",
+				perms: []string{
+					"luci.dev.p1",
+					"luci.dev.p2",
+					"luci.dev.p3",
+					"luci.dev.p4",
+					"luci.dev.p5",
+				},
+				indexes: []uint32{0, 1, 2, 3, 4},
+				groups:  map[string][]uint32{"": {2, 3, 4}, "a1,a2": {1}, "a1,root": {0}},
+			},
+			{
+				role: "customRole/custom2",
+				perms: []string{
+					"luci.dev.p2",
+					"luci.dev.p3",
+					"luci.dev.p4",
+					"luci.dev.p5",
+				},
+				indexes: []uint32{1, 2, 3, 4},
+				groups:  map[string][]uint32{"": {2, 3, 4}, "a1,a2": {1}},
+			},
+			{
+				role: "customRole/custom3",
+				perms: []string{
+					"luci.dev.p2",
+					"luci.dev.p3",
+					"luci.dev.p5",
+				},
+				indexes: []uint32{1, 2, 4},
+				groups:  map[string][]uint32{"": {2, 4}, "a1,a2": {1}},
+			},
+		}
+
+		// Note this also prefill all permission indexes.
+		for _, tc := range expected {
+			t.Run(tc.role, func(t *testing.T) {
+				assert.That(t, rolePerms(t, r, tc.role), should.Match(tc.perms))
+				_, err := r.roleDetails(tc.role)
+				assert.NoErr(t, err)
+			})
+		}
+
+		// Get the final set of all permission used across all roles.
 		perms, mapping := r.sortedPermissions()
-		assert.Loosely(t, perms, should.Match(expectedPermissions(
-			"luci.dev.p1",
-			"luci.dev.p2",
-			"luci.dev.p3",
-			"luci.dev.p4",
-			"luci.dev.p5",
-		)))
-		assert.Loosely(t, mapping,
-			should.Match([]uint32{0, 3, 1, 4, 2}))
-		reMap := func(perms []*protocol.Permission, mapping []uint32, permSet []uint32) []string {
-			res := make([]string, 0, len(permSet))
-			for _, idx := range permSet {
-				res = append(res, perms[mapping[idx]].Name)
+		assert.That(t, perms, should.Match([]*protocol.Permission{
+			{Name: "luci.dev.p1", Attributes: []string{"a1", "root"}},
+			{Name: "luci.dev.p2", Attributes: []string{"a1", "a2"}},
+			{Name: "luci.dev.p3"},
+			{Name: "luci.dev.p4"},
+			{Name: "luci.dev.p5"},
+		}))
+
+		reMap := func(role roleDetails) (all []uint32, groups map[string][]uint32) {
+			groups = map[string][]uint32{}
+			for _, gr := range role.groups {
+				var group []uint32
+				for old := range gr.perms.set {
+					group = append(group, mapping[old])
+					all = append(all, mapping[old])
+				}
+				slices.Sort(group)
+				groups[strings.Join(gr.attrs.asSet, ",")] = group
 			}
-			return res
+			slices.Sort(all)
+			return all, groups
 		}
-		// This test is a bit redundant but just to ensure the permissions since
-		// eyeballing the numbers is difficult.
-		permSet, err := r.role("customRole/custom1")
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, reMap(perms, mapping, permSet.toSortedSlice()), should.Match([]string{
-			"luci.dev.p1",
-			"luci.dev.p4",
-			"luci.dev.p2",
-			"luci.dev.p5",
-			"luci.dev.p3",
-		}))
-		permSet, err = r.role("customRole/custom2")
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, reMap(perms, mapping, permSet.toSortedSlice()), should.Match([]string{
-			"luci.dev.p4",
-			"luci.dev.p2",
-			"luci.dev.p5",
-			"luci.dev.p3",
-		}))
-		permSet, err = r.role("customRole/custom3")
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, reMap(perms, mapping, permSet.toSortedSlice()), should.Match([]string{
-			"luci.dev.p2",
-			"luci.dev.p5",
-			"luci.dev.p3",
-		}))
+
+		// Now that we have stable final indexes for permissions, verify
+		// roleDetails returns expected index sets.
+		for _, tc := range expected {
+			t.Run(tc.role+"_indexes", func(t *testing.T) {
+				role, err := r.roleDetails(tc.role)
+				assert.NoErr(t, err)
+				all, groups := reMap(role)
+				assert.That(t, all, should.Match(tc.indexes))
+				assert.That(t, groups, should.Match(tc.groups))
+			})
+		}
 	})
 }
 
 func TestRealmsExpander(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("test perPrincipalBindings", t, func(t *ftt.Test) {
-		t.Run("errors", func(t *ftt.Test) {
-			t.Run("realm not found", func(t *ftt.Test) {
+	t.Run("test perPrincipalBindings", func(t *testing.T) {
+		t.Run("errors", func(t *testing.T) {
+			t.Run("realm not found", func(t *testing.T) {
 				r := &RealmsExpander{}
 				_, err := r.perPrincipalBindings("test", nil)
 				assert.Loosely(t, err, should.ErrLike("realm test not found in RealmsExpander"))
 			})
 
-			t.Run("parent not found", func(t *ftt.Test) {
+			t.Run("parent not found", func(t *testing.T) {
 				r := &RealmsExpander{
 					realms: map[string]*realmsconf.Realm{
 						"test": {
@@ -280,10 +305,10 @@ func TestRealmsExpander(t *testing.T) {
 				}
 
 				_, err := r.perPrincipalBindings("test", nil)
-				assert.Loosely(t, err, should.ErrLike("failed when getting parent bindings"))
+				assert.Loosely(t, err, should.ErrLike(`parent realm "test": realm @root not found in RealmsExpander`))
 			})
 
-			t.Run("realm name mismatch", func(t *ftt.Test) {
+			t.Run("realm name mismatch", func(t *testing.T) {
 				r := &RealmsExpander{
 					realms: map[string]*realmsconf.Realm{
 						"test": {
@@ -295,12 +320,12 @@ func TestRealmsExpander(t *testing.T) {
 				assert.Loosely(t, err, should.ErrLike("given realm: test does not match name found internally: not-test"))
 			})
 
-			t.Run("permissions fetch issue (ErrRoleNotfound)", func(t *ftt.Test) {
+			t.Run("permissions fetch issue (ErrRoleNotfound)", func(t *testing.T) {
 				r := &RealmsExpander{
 					rolesExpander: &RolesExpander{
-						permissions:  map[string]uint32{},
 						builtinRoles: map[string]*permissions.Role{},
-						roles:        map[string]indexSet{},
+						permissions:  map[string]permissionDetails{},
+						roles:        map[string]roleDetails{},
 					},
 					realms: map[string]*realmsconf.Realm{
 						"@root": {
@@ -320,7 +345,7 @@ func TestRealmsExpander(t *testing.T) {
 					},
 				}
 				_, err := r.perPrincipalBindings("test", nil)
-				assert.Loosely(t, err, should.ErrLike("there was an issue fetching permissions"))
+				assert.Loosely(t, err, should.ErrLike("role does not exist in internal representation: builtinRole: role/test-role"))
 			})
 		})
 	})

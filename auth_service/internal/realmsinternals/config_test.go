@@ -196,9 +196,9 @@ func TestRealmsExpansion(t *testing.T) {
 
 			expectedRealms := &protocol.Realms{
 				Permissions: expectedPermissions(
-					"luci.dev.p1",
-					"luci.dev.p2",
-					"luci.dev.p3",
+					"luci.dev.p1", // #0, evaluates attrs ["a1", "root"]
+					"luci.dev.p2", // #1, evaluates attrs ["a1", "a2"]
+					"luci.dev.p3", // #2, evaluates attrs []
 				),
 				Conditions: []*protocol.Condition{
 					{
@@ -231,7 +231,7 @@ func TestRealmsExpansion(t *testing.T) {
 							},
 							{
 								Permissions: []uint32{0, 1},
-								Principals:  []string{"group:gr1"},
+								Principals:  []string{"group:gr1", "group:gr2"},
 								Conditions:  []uint32{0},
 							},
 							{
@@ -239,18 +239,13 @@ func TestRealmsExpansion(t *testing.T) {
 								Principals:  []string{"group:gr3", "group:gr4"},
 							},
 							{
-								Permissions: []uint32{0, 1, 2},
-								Principals:  []string{"group:gr2"},
-								Conditions:  []uint32{0},
-							},
-							{
-								Permissions: []uint32{1, 2},
-								Principals:  []string{"group:gr2"},
-							},
-							{
-								Permissions: []uint32{1, 2},
+								Permissions: []uint32{1},
 								Principals:  []string{"group:gr2"},
 								Conditions:  []uint32{1},
+							},
+							{
+								Permissions: []uint32{1, 2},
+								Principals:  []string{"group:gr2"},
 							},
 						},
 					},
@@ -689,9 +684,9 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 				Permissions: expectedPermissions(
-					"luci.dev.implicitRoot",
-					"luci.dev.p1",
-					"luci.dev.p2",
+					"luci.dev.implicitRoot", // #0, evaluates attrs ["root"]
+					"luci.dev.p1",           // #1, evaluates attrs ["a1", "root"]
+					"luci.dev.p2",           // #2, evaluates attrs ["a1", "a2"]
 				),
 				Realms: []*protocol.Realm{
 					{
@@ -702,9 +697,9 @@ func TestRealmsExpansion(t *testing.T) {
 								Principals:  []string{"project:p"},
 							},
 							{
-								Conditions:  []uint32{1},
 								Permissions: []uint32{0},
 								Principals:  []string{"group:root"},
+								Conditions:  []uint32{1},
 							},
 							{
 								Permissions: []uint32{1, 2},
@@ -720,23 +715,23 @@ func TestRealmsExpansion(t *testing.T) {
 								Principals:  []string{"project:p"},
 							},
 							{
-								Conditions:  []uint32{1},
 								Permissions: []uint32{0},
 								Principals:  []string{"group:root"},
+								Conditions:  []uint32{1},
+							},
+							{
+								Permissions: []uint32{1},
+								Principals:  []string{"group:gr2"},
+								Conditions:  []uint32{1},
 							},
 							{
 								Permissions: []uint32{1, 2},
 								Principals:  []string{"group:gr1", "group:gr2"},
 							},
 							{
-								Conditions:  []uint32{0},
 								Permissions: []uint32{1, 2},
 								Principals:  []string{"group:gr3"},
-							},
-							{
-								Conditions:  []uint32{1},
-								Permissions: []uint32{1, 2},
-								Principals:  []string{"group:gr2"},
+								Conditions:  []uint32{0},
 							},
 						},
 					},

@@ -18,17 +18,13 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
-	"iter"
 	"maps"
 	"slices"
-	"sort"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
-	lucierr "go.chromium.org/luci/common/errors"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
@@ -39,10 +35,6 @@ import (
 )
 
 var (
-	// ErrFinalized is used when the ConditionsSet has already been finalized
-	// and further modifications are attempted.
-	ErrFinalized = errors.New("conditions set has already been finalized")
-
 	// ErrRoleNotFound is used when a role requested is not found in the internal permissionsDB.
 	ErrRoleNotFound = errors.New("role does not exist in internal representation")
 
@@ -60,55 +52,79 @@ var (
 // This makes hot indexes(...) function fast by allowing to lookup pointers
 // instead of (potentially huge) protobuf message values.
 type ConditionsSet struct {
-	// normalized is a mapping from a serialized normalized protocol.Condition
-	// to a pair (normalized *protocol.Condition, its unique index).
-	normalized map[string]conditionMapTuple
+	// normalized is a map from a serialized normalized Condition to its details.
+	//
+	// Used only during construction.
+	normalized map[string]*conditionDetails
 
-	// indexMapping from serialized Condition to its index.
-	indexMapping map[*realmsconf.Condition]uint32
+	// conditions is a map from an added Condition (by address) to its details and
+	// index in the finalize() list.
+	//
+	// Shares values with `normalized`. Multiple entries can map to the exact same
+	// *conditionDetails value (if they normalize to the same condition).
+	conditions map[*realmsconf.Condition]*conditionDetails
 
 	// finalized is true if finalize() was called, see finalize for more info.
 	finalized bool
 }
 
-// conditionMapTuple is to represent the entries of normalized, reflects
-// what index a Condition is tied to.
-type conditionMapTuple struct {
+// conditionDetails is a normalized condition and an attribute it examines.
+type conditionDetails struct {
+	// An index of this condition in the list returned by finalize().
+	idx uint32
+	// The condition in normalized form.
 	cond *protocol.Condition
-	idx  uint32
+	// An attribute this condition examines.
+	attr string
+	// An associated attribute values, used exclusively for sorting.
+	values []string
 }
 
 // addCond adds a *Condition from realms.cfg definition to the set if it's
 // not already there.
 //
-// Returns ErrFinalized -- if set has already been finalized.
+// Panics if ConditionsSet is already finalized. Returns an error if the
+// condition has unrecognized type.
 func (cs *ConditionsSet) addCond(cond *realmsconf.Condition) error {
 	if cs.finalized {
-		return ErrFinalized
+		panic("already finalized")
 	}
-	if _, ok := cs.indexMapping[cond]; ok {
+	if _, ok := cs.conditions[cond]; ok {
 		return nil
 	}
 
-	norm := &protocol.Condition{}
-	if r := cond.GetRestrict(); r != nil {
-		condSet := stringset.NewFromSlice(r.GetValues()...)
-		norm.Op = &protocol.Condition_Restrict{
-			Restrict: &protocol.Condition_AttributeRestriction{
-				Attribute: r.GetAttribute(),
-				Values:    condSet.ToSortedSlice(),
+	var norm *protocol.Condition
+	var attr string
+	var values []string
+	switch op := cond.Op.(type) {
+	case *realmsconf.Condition_Restrict:
+		attr = op.Restrict.Attribute
+		values = stringset.NewFromSlice(op.Restrict.Values...).ToSortedSlice()
+		norm = &protocol.Condition{
+			Op: &protocol.Condition_Restrict{
+				Restrict: &protocol.Condition_AttributeRestriction{
+					Attribute: attr,
+					Values:    values,
+				},
 			},
 		}
+	default:
+		return fmt.Errorf("unrecognized condition kind in %v", cond)
 	}
 
-	// Get the key for this condition and add it to the set of conditions.
+	// If we've seen an equivalent of this condition already, point `cond` entry
+	// to an existing *conditionDetails. Otherwise add a new one.
 	ck := conditionKey(norm)
-	idx := uint32(len(cs.normalized))
-	if condTup, ok := cs.normalized[ck]; ok {
-		idx = condTup.idx
+	details, ok := cs.normalized[ck]
+	if !ok {
+		details = &conditionDetails{
+			cond:   norm,
+			attr:   attr,
+			values: values,
+		}
+		cs.normalized[ck] = details
 	}
-	cs.normalized[ck] = conditionMapTuple{norm, idx}
-	cs.indexMapping[cond] = idx
+	cs.conditions[cond] = details
 	return nil
 }
 
@@ -121,32 +137,16 @@ func conditionKey(cond *protocol.Condition) string {
 	return string(key)
 }
 
-// sortConditionEntries sorts a given conditionMapTuple slice by attribute first
-// then by values.
-func sortConditionEntries(entries []conditionMapTuple) {
-	sort.Slice(entries, sortby.Chain{
-		func(i, j int) bool {
-			return entries[i].cond.GetRestrict().GetAttribute() < entries[j].cond.GetRestrict().GetAttribute()
-		},
-		func(i, j int) bool {
-			iVals, jVals := entries[i].cond.GetRestrict().GetValues(), entries[j].cond.GetRestrict().GetValues()
-			return slices.Compare(iVals, jVals) < 0
-		},
-	}.Use)
-}
-
 // finalize finalizes the set by preventing any future addCond calls.
 //
 // Sorts the list of stored conditions by attribute first then by values.
-// returns the final sorted list of protocol.Condition.
+// Returns the final sorted list of protocol.Condition. Indexes returned by
+// indexes() will refer to the indexes in this list.
 //
-// Returns nil if ConditionSet is already finalized or if
-// ConditionsSet is empty.
-//
-// Indexes returned by indexes() will refer to the indexes in this list.
+// Panics of the ConditionsSet is already finalized.
 func (cs *ConditionsSet) finalize() []*protocol.Condition {
 	if cs.finalized {
-		return nil
+		panic("already finalized")
 	}
 	cs.finalized = true
 
@@ -155,45 +155,35 @@ func (cs *ConditionsSet) finalize() []*protocol.Condition {
 		return nil
 	}
 
-	// Make a slice of the entries in cs.normalized to sort.
-	normalized := make([]conditionMapTuple, 0, count)
-	for _, entry := range cs.normalized {
-		normalized = append(normalized, entry)
-	}
-	sortConditionEntries(normalized)
+	// Convert `normalized` to a sorted slice of values.
+	normalized := slices.SortedFunc(maps.Values(cs.normalized), func(a, b *conditionDetails) int {
+		if res := cmp.Compare(a.attr, b.attr); res != 0 {
+			return res
+		}
+		return slices.Compare(a.values, b.values)
+	})
 
 	// Not needed any more.
 	cs.normalized = nil
 
-	// Build the map of {old index -> new index} now that the final set of
-	// conditions has been ordered.
-	oldToNew := make(map[uint32]uint32, len(normalized))
-	for idx, entry := range normalized {
-		oldToNew[entry.idx] = uint32(idx)
-	}
-
-	// Update the index mapping to use the new order.
-	for key, old := range cs.indexMapping {
-		cs.indexMapping[key] = oldToNew[old]
-	}
-
-	// Return the list of conditions in the final order.
+	// Compose the list of conditions in the final order. Populate indexes in
+	// *conditionDetail to allow indexes(...) to resolve a *Condition to its
+	// index in the returned list.
 	conds := make([]*protocol.Condition, count)
 	for i, entry := range normalized {
 		conds[i] = entry.cond
+		entry.idx = uint32(i)
 	}
 	return conds
 }
 
-// indexes returns a sorted slice of indexes.
+// indexes returns a subset of `conds` with conditions that evaluate any of
+// the given attributes.
 //
-// Can be called only after finalize(). All given conditions must have
-// previously been put into the set via addCond(). The returned indexes can have
-// fewer elements if some conditions in conds are equivalent.
-//
-// The returned indexes is essentially a compact encoding of the overall AND
-// condition expression in a binding.
-func (cs *ConditionsSet) indexes(conds []*realmsconf.Condition) []uint32 {
+// The subset is returned as a sorted set of indexes in the list returned by
+// finalize(). Can be called only after finalize(). All given condition pointers
+// must have previously been put into the set via addCond(), panics otherwise.
+func (cs *ConditionsSet) indexes(conds []*realmsconf.Condition, attrs *attrSet) []uint32 {
 	if !cs.finalized {
 		panic("indexes() called before finalize()")
 	}
@@ -201,20 +191,26 @@ func (cs *ConditionsSet) indexes(conds []*realmsconf.Condition) []uint32 {
 		return nil
 	}
 	if len(conds) == 1 {
-		if idx, ok := cs.indexMapping[conds[0]]; ok {
-			return []uint32{idx}
+		details, ok := cs.conditions[conds[0]]
+		if !ok {
+			panic(fmt.Sprintf("unexpected condition not seen by addCond: %v", conds[0]))
 		}
-		panic(fmt.Sprintf("unexpected condition not seen by addCond: %v", conds[0]))
+		if attrs.has(details.attr) {
+			return []uint32{details.idx}
+		}
+		return nil
 	}
 
 	indexesSet := emptyIndexSet(len(conds))
 
 	for _, cond := range conds {
-		v, ok := cs.indexMapping[cond]
+		details, ok := cs.conditions[cond]
 		if !ok {
 			panic(fmt.Sprintf("unexpected condition not seen by addCond: %v", cond))
 		}
-		indexesSet.add(v)
+		if attrs.has(details.attr) {
+			indexesSet.add(details.idx)
+		}
 	}
 
 	return indexesSet.toSortedSlice()
@@ -280,97 +276,173 @@ func (is indexSet) clone() indexSet {
 //
 // Should be used only with validated realmsconf.RealmsCfg.
 type RolesExpander struct {
-	// permissionsDB is a database of all known permissions.
+	// permissionsDB is a database of all known permissions in normalized form.
+	//
+	// It is taken from PermissionsDB.Permissions. Attributes are sorted.
 	permissionsDB map[string]*protocol.Permission
 
-	// builtinRoles is a mapping from roleName -> *permissions.Role
-	// these are generated from the permissions.cfg and translated to permissions
+	// builtinRoles is a mapping from roleName -> *permissions.Role.
+	//
+	// These are generated from the permissions.cfg and translated to permissions
 	// db which is where these roles come from. If a role is not found here
 	// then it has not been defined in the permissions.cfg. This is assumed
 	// final state and should not be modified.
 	builtinRoles map[string]*permissions.Role
 
-	// customRoles is a mapping from roleName -> *realmsconf.CustomRole
-	// this mapping will be generated from permissionsDB and is defined in
-	// permissisions.go when the DB is initialized. This is assumed final
-	// state and should not be modifed.
+	// customRoles is a mapping from roleName -> *realmsconf.CustomRole.
+	//
+	// This mapping is generated from realms.cfg in ExpandRealms.
 	customRoles map[string]*realmsconf.CustomRole
 
-	// permissions is a mapping from permission name to the internal index
-	// all permissions are converted to a uint32 index for faster queries
-	// this is the list of all declared permissions, this is initially defined
-	// in permissions.cfg and initialized in permissionsDB. This is assumed
-	// final state and should not be modified.
-	permissions map[string]uint32
+	// permissions is a mapping from permission name to its details, including
+	// the internal index.
+	//
+	// All permissions are converted to a uint32 index for faster queries.
+	// Populated on the fly via permissionDetails(...). All these indexes are
+	// remapped at the end of ExpandRealms to match indexes in sortedPermissions()
+	// list.
+	permissions map[string]permissionDetails
 
-	// roles contains role to permissions mapping, keyed by roleName
-	// this mapping contains a set of all the permissions a given role
-	// is associated with.
-	roles map[string]indexSet
+	// roles contains role to permissions mapping, keyed by roleName.
+	//
+	// This mapping contains a set of all the permissions a given role
+	// is associated with grouped by set of attributes they evaluate.
+	//
+	// Populated on the fly via roleDetails(...).
+	roles map[string]roleDetails
 }
 
-// permIndex returns an internal index that represents the given permission string.
-func (re *RolesExpander) permIndex(name string) uint32 {
-	idx, ok := re.permissions[name]
-	if !ok {
-		idx = uint32(len(re.permissions))
-		re.permissions[name] = idx
-	}
-	return idx
+// permissionDetails holds details of a permission in RolesExpander.
+type permissionDetails struct {
+	// A unique index assigned to this permission.
+	idx uint32
+	// Attributes evaluated by this permission.
+	attrs attrSet
 }
 
-// permIndexes returns internal indexes representing the given permissions.
-func (re *RolesExpander) permIndexes(names iter.Seq[string]) indexSet {
-	// Note sorting is needed for the test determinism, this is removed in
-	// the next CL.
-	nameList := slices.Sorted(names)
-	set := emptyIndexSet(len(nameList))
-	for _, name := range nameList {
-		set.add(re.permIndex(name))
-	}
-	return set
+// permissionGroup is a group of permissions the all belong to the same role
+// and which all evaluate the exact same set of attributes.
+type permissionGroup struct {
+	// Indexes of permissions in the group.
+	perms indexSet
+	// Attributes all these permissions evaluate (each one evaluates all `attrs`).
+	attrs attrSet
 }
 
-// role returns an IndexSet of permissions for a given role.
-//
-// returns
-//
-// ErrRoleNotFound - if given roleName doesn't exist in permissionsDB
-// ErrImpossibleRole - if roleName format is invalid
-func (re *RolesExpander) role(roleName string) (indexSet, error) {
-	if perms, ok := re.roles[roleName]; ok {
-		return perms, nil
-	}
+// roleDetails holds details of an expanded role.
+type roleDetails struct {
+	// Permissions grouped by set of attributes they evaluate.
+	groups []permissionGroup
+}
 
-	var perms indexSet
+// attrSet is an immutable set of attribute names.
+type attrSet struct {
+	// The set of attribute names as a sorted list.
+	asSet []string
+	// A serialized form of `asSet` to use as a map key.
+	asKey string
+}
+
+// newAttrSet constructs an attrSet from a sorted list of attributes.
+func newAttrSet(attrs []string) attrSet {
+	if !slices.IsSorted(attrs) {
+		panic(fmt.Sprintf("attributes must be sorted: %v", attrs))
+	}
+	return attrSet{
+		asSet: attrs,
+		asKey: strings.Join(attrs, "\x00"),
+	}
+}
+
+// has returns true if `attr` is in the set.
+func (s *attrSet) has(attr string) bool {
+	_, found := slices.BinarySearch(s.asSet, attr)
+	return found
+}
+
+// permissionDetails returns details of the given permission.
+func (re *RolesExpander) permissionDetails(name string) permissionDetails {
+	if details, ok := re.permissions[name]; ok {
+		return details
+	}
+	details := permissionDetails{
+		idx:   uint32(len(re.permissions)),
+		attrs: newAttrSet(re.permissionsDB[name].GetAttributes()),
+	}
+	re.permissions[name] = details
+	return details
+}
+
+// rolePermissions adds all permissions in the role to the given set.
+func (re *RolesExpander) rolePermissions(roleName string, perms stringset.Set) error {
 	if strings.HasPrefix(roleName, constants.PrefixBuiltinRole) {
 		role, ok := re.builtinRoles[roleName]
 		if !ok {
-			return indexSet{}, lucierr.Annotate(ErrRoleNotFound, "builtinRole: %s", roleName)
+			return fmt.Errorf("%w: builtinRole: %s", ErrRoleNotFound, roleName)
 		}
-		perms = re.permIndexes(maps.Keys(role.Permissions))
-	} else if strings.HasPrefix(roleName, constants.PrefixCustomRole) {
-		customRole, ok := re.customRoles[roleName]
-		if !ok {
-			return indexSet{}, lucierr.Annotate(ErrRoleNotFound, "customRole: %s", roleName)
+		for perm := range role.Permissions {
+			perms.Add(perm)
 		}
-		perms = re.permIndexes(slices.Values(customRole.GetPermissions()))
-		for _, parent := range customRole.Extends {
-			parentRole, err := re.role(parent)
-			if err != nil {
-				return indexSet{}, err
-			}
-			perms.update(parentRole)
-		}
-	} else {
-		return indexSet{}, ErrImpossibleRole
+		return nil
 	}
 
-	re.roles[roleName] = perms
-	return perms, nil
+	if strings.HasPrefix(roleName, constants.PrefixCustomRole) {
+		customRole, ok := re.customRoles[roleName]
+		if !ok {
+			return fmt.Errorf("%w: customRole: %s", ErrRoleNotFound, roleName)
+		}
+
+		perms.AddAll(customRole.Permissions)
+
+		for _, parent := range customRole.Extends {
+			if err := re.rolePermissions(parent, perms); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return ErrImpossibleRole
 }
 
-// sortedPermissions returns a sorted slice of permissions and slice
+// roleDetails returns all permissions in a role grouped by attributes.
+//
+// Returns:
+//
+//	ErrRoleNotFound - if given roleName is not defined.
+//	ErrImpossibleRole - if roleName format is invalid.
+func (re *RolesExpander) roleDetails(roleName string) (roleDetails, error) {
+	if details, ok := re.roles[roleName]; ok {
+		return details, nil
+	}
+
+	// All permission in the role (as strings).
+	permsByName := stringset.New(0)
+	if err := re.rolePermissions(roleName, permsByName); err != nil {
+		return roleDetails{}, err
+	}
+
+	// attrSet.asKey -> permissions that all evaluate these attributes.
+	groups := make(map[string]permissionGroup, 1)
+
+	for perm := range permsByName {
+		details := re.permissionDetails(perm)
+		if group, ok := groups[details.attrs.asKey]; ok {
+			group.perms.add(details.idx)
+		} else {
+			groups[details.attrs.asKey] = permissionGroup{
+				perms: indexSetFromSlice([]uint32{details.idx}),
+				attrs: details.attrs,
+			}
+		}
+	}
+
+	role := roleDetails{groups: slices.Collect(maps.Values(groups))}
+	re.roles[roleName] = role
+	return role, nil
+}
+
+// sortedPermissions returns a sorted slice of permissions and a slice
 // mapping old -> new indexes.
 func (re *RolesExpander) sortedPermissions() ([]*protocol.Permission, []uint32) {
 	perms := make([]*protocol.Permission, 0, len(re.permissions))
@@ -382,7 +454,7 @@ func (re *RolesExpander) sortedPermissions() ([]*protocol.Permission, []uint32) 
 	})
 	mapping := make([]uint32, len(perms))
 	for newIdx, perm := range perms {
-		oldIdx := re.permissions[perm.Name]
+		oldIdx := re.permissions[perm.Name].idx
 		mapping[oldIdx] = uint32(newIdx)
 	}
 	return perms, mapping
@@ -443,21 +515,23 @@ func (rlme *RealmsExpander) perPrincipalBindings(realm string, bindings []princi
 	}
 
 	for _, b := range r.Bindings {
-		// Set of permissions associated with this role.
-		perms, err := rlme.rolesExpander.role(b.GetRole())
+		// Role details, including permissions grouped by attributes they evaluate.
+		role, err := rlme.rolesExpander.roleDetails(b.Role)
 		if err != nil {
-			return nil, lucierr.Annotate(err, "there was an issue fetching permissions for this binding role")
+			return nil, err
 		}
-
-		// Skip empty roles, they don't affect the end result.
-		if len(perms.set) == 0 {
-			continue
-		}
-
-		// Sorted conditions associated with this binding.
-		conds := rlme.condsSet.indexes(b.GetConditions())
-		for _, principal := range b.GetPrincipals() {
-			bindings = append(bindings, principalBindings{principal, perms, conds})
+		// For each permission group pick only conditions on attributes relevant
+		// to this permission group. All other conditions won't affect evaluation
+		// of this particular permission group and can be omitted.
+		for _, permGroup := range role.groups {
+			conds := rlme.condsSet.indexes(b.Conditions, &permGroup.attrs)
+			for _, principal := range b.Principals {
+				bindings = append(bindings, principalBindings{
+					principal,
+					permGroup.perms,
+					conds,
+				})
+			}
 		}
 	}
 
@@ -466,7 +540,7 @@ func (rlme *RealmsExpander) perPrincipalBindings(realm string, bindings []princi
 		var err error
 		bindings, err = rlme.perPrincipalBindings(parent, bindings)
 		if err != nil {
-			return nil, fmt.Errorf("failed when getting parent bindings for %s", realm)
+			return nil, fmt.Errorf("parent realm %q: %w", realm, err)
 		}
 	}
 	return bindings, nil
