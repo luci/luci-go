@@ -15,7 +15,11 @@
 import Box from '@mui/material/Box';
 import { Outlet } from 'react-router';
 
-import { EditorUiProvider, ToastProvider } from '@/crystal_ball/context';
+import {
+  EditorUiProvider,
+  FiltersClipboardProvider,
+  ToastProvider,
+} from '@/crystal_ball/context';
 import { Sticky } from '@/generic_libs/components/queued_sticky';
 
 import { TopBar } from './top_bar';
@@ -30,22 +34,24 @@ export function Layout() {
     <EditorUiProvider>
       <TopBarProvider>
         <ToastProvider>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: '100vh',
-              backgroundColor: (theme) =>
-                theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
-            }}
-          >
-            <Sticky top sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-              <TopBar />
-            </Sticky>
-            <Box component="main" sx={{ flexGrow: 1 }}>
-              <Outlet />
+          <FiltersClipboardProvider>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '100vh',
+                backgroundColor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+              }}
+            >
+              <Sticky top sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+                <TopBar />
+              </Sticky>
+              <Box component="main" sx={{ flexGrow: 1 }}>
+                <Outlet />
+              </Box>
             </Box>
-          </Box>
+          </FiltersClipboardProvider>
         </ToastProvider>
       </TopBarProvider>
     </EditorUiProvider>

@@ -50,7 +50,11 @@ jest.mock('@/crystal_ball/hooks', () => ({
 const mockedUseParams = jest.mocked(jest.requireMock('react-router').useParams);
 
 import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
-import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
+import { FiltersClipboardProvider } from '@/crystal_ball/context';
+import {
+  EditorUiKeyPrefix,
+  UseEditorUiStateOptions,
+} from '@/crystal_ball/hooks';
 import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
 import {
   MeasurementFilterColumn_ColumnDataType,
@@ -75,7 +79,9 @@ const queryClient = new QueryClient({
 function wrapWithProviders(ui: React.ReactElement) {
   return render(
     <MemoryRouter initialEntries={['/dashboard/test-dashboard']}>
-      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <FiltersClipboardProvider>{ui}</FiltersClipboardProvider>
+      </QueryClientProvider>
     </MemoryRouter>,
   );
 }
@@ -865,6 +871,59 @@ describe('FilterEditor', () => {
       expect(mockShowWarningToast).toHaveBeenCalledWith(
         '1 filter(s) pasted. 1 filter(s) ignored.',
       );
+    });
+
+    it('shares clipboard state between different instances', async () => {
+      const initialFilters: PerfFilter[] = [
+        {
+          id: 'filter-1',
+          column: 'test_name',
+          dataSpecId: 'test-spec-id',
+          displayName: 'Test Name 1',
+        },
+      ];
+
+      function DoubleEditor() {
+        const [filters1, setFilters1] = useState<PerfFilter[]>(initialFilters);
+        const [filters2, setFilters2] = useState<PerfFilter[]>([]);
+        return (
+          <>
+            <FilterEditor
+              {...defaultProps}
+              title="Editor 1"
+              filters={filters1}
+              onUpdateFilters={setFilters1}
+              uiStateOptions={{ prefix: EditorUiKeyPrefix.GLOBAL_FILTERS }}
+            />
+            <FilterEditor
+              {...defaultProps}
+              title="Editor 2"
+              filters={filters2}
+              onUpdateFilters={setFilters2}
+              uiStateOptions={{ prefix: EditorUiKeyPrefix.WIDGET_FILTERS }}
+            />
+          </>
+        );
+      }
+
+      wrapWithProviders(<DoubleEditor />);
+
+      fireEvent.click(screen.getByText('Editor 1'));
+
+      const copyButton = screen.getAllByRole('button', {
+        name: 'Copy all filters',
+      })[0];
+      fireEvent.click(copyButton);
+
+      const pasteButtons = screen.getAllByRole('button', {
+        name: 'Paste filters',
+      });
+      const pasteButton2 = pasteButtons[1];
+
+      expect(pasteButton2).not.toBeDisabled();
+
+      const badges = screen.getAllByText('1');
+      expect(badges.length).toBeGreaterThanOrEqual(2);
     });
 
     it('clears all filters via confirm dialog', async () => {

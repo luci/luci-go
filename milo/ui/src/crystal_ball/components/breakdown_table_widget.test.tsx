@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import { useState } from 'react';
 
 import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
+import { FiltersClipboardProvider } from '@/crystal_ball/context';
 import {
   UseEditorUiStateOptions,
   useFetchDashboardWidgetData,
@@ -61,6 +62,16 @@ const baseWidget = PerfChartWidget.fromPartial({
     },
   ],
 });
+
+const AllProviders = ({ children }: { children: React.ReactNode }) => (
+  <FiltersClipboardProvider>{children}</FiltersClipboardProvider>
+);
+
+// Override render to automatically include FiltersClipboardProvider,
+// avoiding the need to wrap every test case manually and ensuring
+// that rerender() also uses the provider automatically.
+const render = (ui: React.ReactElement) =>
+  rtlRender(ui, { wrapper: AllProviders });
 
 describe('BreakdownTableWidget', () => {
   it('calls useFetchDashboardWidgetData with correct arguments', () => {

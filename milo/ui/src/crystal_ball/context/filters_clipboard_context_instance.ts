@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useContext } from 'react';
+import { createContext } from 'react';
 
-import { FiltersClipboardContext } from '@/crystal_ball/context';
+import { PerfFilter } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
-/**
- * A custom hook to use the FiltersClipboardContext.
- * Throws an error if used outside a FiltersClipboardProvider.
- */
-export function useFiltersClipboard() {
-  const context = useContext(FiltersClipboardContext);
-  if (context === undefined) {
-    throw new Error(
-      'useFiltersClipboard must be used within a FiltersClipboardProvider',
-    );
-  }
-  return context;
+export interface FiltersClipboardContextType {
+  clipboardCount: number;
+  copyFilters: (newFilters: PerfFilter[]) => void;
+  getClipboardFilters: () => PerfFilter[];
+  clearClipboard: () => void;
 }
+
+export const FiltersClipboardContext = createContext<
+  FiltersClipboardContextType | undefined
+>(undefined);

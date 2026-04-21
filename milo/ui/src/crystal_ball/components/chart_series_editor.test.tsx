@@ -14,11 +14,17 @@
 
 import '@testing-library/jest-dom';
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { useState } from 'react';
 
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
 import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
+import { FiltersClipboardProvider } from '@/crystal_ball/context';
 import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
 import {
   PerfChartSeries,
@@ -86,6 +92,16 @@ const defaultProps = {
   dataSpecId: 'test-spec-id',
   filterColumns: [],
 };
+
+const AllProviders = ({ children }: { children: React.ReactNode }) => (
+  <FiltersClipboardProvider>{children}</FiltersClipboardProvider>
+);
+
+// Override render to automatically include FiltersClipboardProvider,
+// avoiding the need to wrap every test case manually and ensuring
+// that rerender() also uses the provider automatically.
+const render = (ui: React.ReactElement) =>
+  rtlRender(ui, { wrapper: AllProviders });
 
 describe('ChartSeriesEditor', () => {
   beforeEach(() => {
