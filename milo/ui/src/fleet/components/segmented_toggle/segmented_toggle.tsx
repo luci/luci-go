@@ -65,7 +65,7 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)<{
 
 const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
   transition: 'ease-in-out 0.2s all',
-  padding: '4px 4px',
+  padding: '2px 16px',
   fontSize: '14px',
   fontWeight: 500,
   textTransform: 'none',

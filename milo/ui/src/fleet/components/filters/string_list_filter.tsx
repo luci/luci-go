@@ -552,7 +552,11 @@ const OptionComponent = function OptionComponent({
         filterDropdownKeyDown(e, handleApply, onClose);
       }}
     >
-      <Box sx={{ padding: '0 4px', display: 'flex', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          padding: '12px 12px 0px 12px',
+        }}
+      >
         <SegmentedToggle
           options={[
             {
