@@ -21,6 +21,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"math"
+	"slices"
 	"sort"
 	"sync"
 
@@ -279,12 +280,19 @@ func toRealmsMap(realmsCfg *realmsconf.RealmsCfg, implicitRootBindings []*realms
 	for _, r := range realmsCfg.GetRealms() {
 		realmsMap[r.GetName()] = r
 	}
-	root := &realmsconf.Realm{Name: realms.RootRealm}
-	if res, ok := realmsMap[realms.RootRealm]; ok {
-		root = res
+
+	root, _ := realmsMap[realms.RootRealm]
+
+	// Make sure there's a root realm with implicit bindings. If there's a root
+	// already, make a shallow copy to avoid mutating `Bindings` list of
+	// the original.
+	realmsMap[realms.RootRealm] = &realmsconf.Realm{
+		Name:             realms.RootRealm,
+		Extends:          root.GetExtends(),
+		Bindings:         append(slices.Clip(root.GetBindings()), implicitRootBindings...),
+		EnforceInService: root.GetEnforceInService(),
 	}
-	root.Bindings = append(root.Bindings, implicitRootBindings...)
-	realmsMap[realms.RootRealm] = root
+
 	return realmsMap
 }
 
