@@ -32,12 +32,12 @@ interface SegmentedToggleProps {
 const StyledToggleButtonGroup = styled(ToggleButtonGroup)<{
   selectedIndex: number;
   totalOptions: number;
-}>(({ selectedIndex, totalOptions, theme }) => ({
+}>(({ selectedIndex, totalOptions }) => ({
   position: 'relative',
   borderRadius: '20px',
   border: 'none',
   overflow: 'hidden',
-  backgroundColor: colors.blue[50],
+  backgroundColor: colors.grey[50],
   width: '100%',
   '&::before': {
     content: '""',
@@ -46,7 +46,7 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)<{
     left: 0,
     width: `${100 / totalOptions}%`,
     height: '100%',
-    backgroundColor: theme.palette.primary.main,
+    backgroundColor: colors.blue[50],
     borderRadius: '20px',
     transition: 'transform 0.1s ease-in-out',
     transform: `translateX(${selectedIndex * 100}%)`,
@@ -63,26 +63,27 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)<{
   },
 }));
 
-const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
+const StyledToggleButton = styled(ToggleButton)(() => ({
   transition: 'ease-in-out 0.2s all',
   padding: '2px 16px',
   fontSize: '14px',
   fontWeight: 500,
   textTransform: 'none',
-  color: colors.blue[800],
+  color: colors.grey[700],
   borderRadius: '20px',
   border: 'none',
   flex: 1,
   '&.Mui-selected': {
     backgroundColor: 'transparent',
-    color: theme.palette.primary.contrastText,
+    fontWeight: 500,
+    color: colors.blue[700],
     borderRadius: '20px',
     '&:hover': {
-      backgroundColor: 'transparent',
+      backgroundColor: colors.blue[100],
     },
   },
   '&:hover': {
-    backgroundColor: colors.blue[100],
+    backgroundColor: colors.grey[100],
     borderRadius: '20px',
   },
 }));
