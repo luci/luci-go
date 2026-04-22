@@ -214,8 +214,6 @@ func (c *Subcommand) ConfigService(ctx context.Context, host string) (*grpc.Clie
 	if err != nil {
 		return nil, err
 	}
-	authOpts.UseIDTokens = true
-	authOpts.Audience = "https://" + host
 
 	creds, err := auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts).PerRPCCredentials()
 	if err != nil {
