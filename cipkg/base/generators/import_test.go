@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cipkg/core"
-	"go.chromium.org/luci/cipkg/internal/testutils"
+	"go.chromium.org/luci/cipkg/testutils"
 )
 
 func TestImport(t *testing.T) {

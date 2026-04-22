@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	"go.chromium.org/luci/cipkg/internal/testutils"
+	"go.chromium.org/luci/cipkg/testutils"
 )
 
 func TestFetchGit(t *testing.T) {
