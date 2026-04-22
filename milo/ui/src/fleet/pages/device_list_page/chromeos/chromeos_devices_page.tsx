@@ -30,8 +30,6 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
-import { CopyButton } from '@/fleet/components/actions/copy/copy_button';
-import { CopySnackbar } from '@/fleet/components/actions/copy/copy_snackbar';
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import { ExportButton_MRT } from '@/fleet/components/device_table/export_button_mrt';
@@ -39,10 +37,7 @@ import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tas
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { stripQuotes } from '@/fleet/components/fc_data_table/mrt_filter_menu_item_utils';
-import {
-  FleetTableMeta,
-  useFleetTableMeta,
-} from '@/fleet/components/fc_data_table/types';
+import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
   FleetColumnDefExt,
@@ -188,7 +183,6 @@ const ChromeOSActions = ({
     model: extractDutLabel('label-model', row as Device),
     namespace: extractDutLabels('ufs_namespace', row as Device),
   }));
-  const meta = useFleetTableMeta(table);
 
   if (selectedRows.length === 0) {
     return <ExportButton_MRT table={table} selectedRowIds={[]} />;
@@ -198,7 +192,6 @@ const ChromeOSActions = ({
     <>
       <RunAutorepair selectedDuts={selectedDuts} />
       <RunDeploy selectedDuts={selectedDuts} />
-      <CopyButton onClick={() => meta.handleCopy?.(table)} />
       <RequestRepair selectedDuts={selectedDuts} />
       <ExportButton_MRT
         table={table}
@@ -239,7 +232,6 @@ export const ChromeOSDevicesPage = () => {
 
   const columnFiltersRef = useRef<{ id: string; value: unknown }[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
-  const [showCopySuccess, setShowCopySuccess] = useState(false);
 
   const selectedOptions = useMemo<FilterState>(
     () => computeSelectedOptions(filterCategoryDatas.filterValues),
@@ -482,41 +474,8 @@ export const ChromeOSDevicesPage = () => {
     columnFiltersRef.current = columnFilters;
   }, [columnFilters]);
 
-  // TODO(b/479452001): Extract this to a hook / shared between chromeos and other pages.
-  const handleCopy = useCallback((table: MRT_TableInstance<ChromeOSDevice>) => {
-    const selectedRows = table
-      .getSelectedRowModel()
-      .rows.map((r) => r.original);
-
-    const visibleColumns = table.getVisibleLeafColumns();
-
-    const headers = visibleColumns
-      .map((c) => c.columnDef.header ?? c.id)
-      .join('\t');
-
-    const body = selectedRows
-      .map((row) => {
-        return visibleColumns
-          .map((c) => {
-            const colDef = c.columnDef;
-            const val =
-              'accessorFn' in colDef && typeof colDef.accessorFn === 'function'
-                ? colDef.accessorFn(row, 0)
-                : row[c.id as keyof ChromeOSDevice];
-            return String(val ?? '');
-          })
-          .join('\t');
-      })
-      .join('\n');
-
-    const finalString = `${headers}\n${body}`;
-    navigator.clipboard.writeText(finalString);
-    setShowCopySuccess(true);
-  }, []);
-
   const meta = useMemo<FleetTableMeta<ChromeOSDevice>>(
     () => ({
-      handleCopy,
       allDimensionColumns,
       visibleColumnIds,
       onToggleColumn,
@@ -533,7 +492,6 @@ export const ChromeOSDevicesPage = () => {
       totalSize: countQuery?.data?.total,
     }),
     [
-      handleCopy,
       allDimensionColumns,
       visibleColumnIds,
       onToggleColumn,
@@ -669,10 +627,6 @@ export const ChromeOSDevicesPage = () => {
         {/* TODO(b/479452001): Extract some DeviceTable back / split this file into smaller pieces in a followup CL. */}
         <MaterialReactTable table={table} />
       </div>
-      <CopySnackbar
-        open={showCopySuccess}
-        onClose={() => setShowCopySuccess(false)}
-      />
     </div>
   );
 };
