@@ -63,7 +63,7 @@ func resolveVersion(ctx context.Context, packagePrefix, version string, clientOp
 		return nil, err
 	}
 
-	client, err := clientOpts.makeCIPDClient(ctx, "")
+	client, err := clientOpts.makeCIPDClient(ctx, "", nil)
 	if err != nil {
 		return nil, err
 	}

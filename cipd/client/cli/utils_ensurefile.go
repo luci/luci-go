@@ -32,8 +32,8 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 // Ensure-file related helpers.
 
-func resolveEnsureFile(ctx context.Context, f *ensure.File, clientOpts clientOptions) (map[string][]pinInfo, ensure.VersionsFile, error) {
-	client, err := clientOpts.makeCIPDClient(ctx, f.ServiceURL)
+func resolveEnsureFile(ctx context.Context, lef *loadedEnsureFile, clientOpts clientOptions) (map[string][]pinInfo, ensure.VersionsFile, error) {
+	client, err := clientOpts.makeCIPDClient(ctx, lef.ef.ServiceURL, lef.vf)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -51,7 +51,7 @@ func resolveEnsureFile(ctx context.Context, f *ensure.File, clientOpts clientOpt
 			mu.Unlock()
 		},
 	}
-	results, err := resolver.ResolveAllPlatforms(ctx, f)
+	results, err := resolver.ResolveAllPlatforms(ctx, lef.ef)
 	if err != nil {
 		return nil, nil, err
 	}

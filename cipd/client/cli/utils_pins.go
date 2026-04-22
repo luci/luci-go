@@ -33,7 +33,7 @@ type visitPinsArgs struct {
 }
 
 func visitPins(ctx context.Context, args *visitPinsArgs) ([]pinInfo, error) {
-	client, err := args.clientOptions.makeCIPDClient(ctx, "")
+	client, err := args.clientOptions.makeCIPDClient(ctx, "", nil)
 	if err != nil {
 		return nil, err
 	}

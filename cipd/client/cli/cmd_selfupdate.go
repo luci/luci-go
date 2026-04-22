@@ -100,7 +100,7 @@ func (c *selfupdateRun) Run(a subcommands.Application, args []string, env subcom
 		if err != nil {
 			return common.Pin{}, err
 		}
-		opts, err := c.clientOptions.toCIPDClientOpts(ctx, "")
+		opts, err := c.clientOptions.toCIPDClientOpts(ctx, "", nil)
 		if err != nil {
 			return common.Pin{}, err
 		}

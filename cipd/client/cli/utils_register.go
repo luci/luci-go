@@ -53,7 +53,7 @@ func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *co
 	}
 	inspectPin(ctx, pin)
 
-	client, err := opts.clientOptions.makeCIPDClient(ctx, "")
+	client, err := opts.clientOptions.makeCIPDClient(ctx, "", nil)
 	if err != nil {
 		return common.Pin{}, err
 	}

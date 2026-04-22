@@ -80,12 +80,19 @@ func (opts *ensureFileOptions) registerFlags(f *flag.FlagSet, out ensureOutFlag,
 	}
 }
 
+type loadedEnsureFile struct {
+	ef *ensure.File
+	vf ensure.VersionsFile
+}
+
 // loadEnsureFile parses the ensure file.
-func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *clientOptions, verifying verifyingEnsureFile, parseVers versionFileOpt) (*ensure.File, error) {
+func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, verifying verifyingEnsureFile, parseVers versionFileOpt) (*loadedEnsureFile, error) {
 	parsedFile, err := ensure.LoadEnsureFile(opts.ensureFile)
 	if err != nil {
 		return nil, err
 	}
+
+	ret := &loadedEnsureFile{ef: parsedFile}
 
 	if verifying && len(parsedFile.VerifyPlatforms) == 0 {
 		defaultVerifiedPlatform := template.DefaultTemplate()
@@ -96,12 +103,12 @@ func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *c
 	}
 
 	if parseVers && parsedFile.ResolvedVersions != "" {
-		clientOpts.versions, err = loadVersionsFile(parsedFile.ResolvedVersions, opts.ensureFile)
+		ret.vf, err = loadVersionsFile(parsedFile.ResolvedVersions, opts.ensureFile)
 		if err != nil {
 			return nil, err
 		}
 		logging.Debugf(ctx, "Using the resolved version file %q", filepath.Base(parsedFile.ResolvedVersions))
 	}
 
-	return parsedFile, nil
+	return ret, nil
 }

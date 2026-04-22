@@ -62,7 +62,7 @@ func (c *listACLRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func listACL(ctx context.Context, packagePath string, clientOpts clientOptions) (map[string][]cipd.PackageACL, error) {
-	client, err := clientOpts.makeCIPDClient(ctx, "")
+	client, err := clientOpts.makeCIPDClient(ctx, "", nil)
 	if err != nil {
 		return nil, err
 	}

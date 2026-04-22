@@ -60,26 +60,26 @@ func (c *ensureFileResolveRun) Run(a subcommands.Application, args []string, env
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, requireVerifyPlatforms, ignoreVersionsFile)
+	lef, err := c.loadEnsureFile(ctx, requireVerifyPlatforms, ignoreVersionsFile)
 	switch {
 	case err != nil:
 		return c.done(nil, err)
-	case ef.ResolvedVersions == "":
+	case lef.ef.ResolvedVersions == "":
 		logging.Errorf(ctx,
 			"The ensure file doesn't have $ResolvedVersion directive that specifies "+
 				"where to put the resolved package versions, so it can't be resolved.")
 		return c.done(nil, cipderr.BadArgument.Apply(errors.New("no resolved versions file configured")))
 	}
 
-	pinMap, versions, err := resolveEnsureFile(ctx, ef, c.clientOptions)
+	pinMap, versions, err := resolveEnsureFile(ctx, lef, c.clientOptions)
 	if err != nil {
 		return c.doneWithPinMap(pinMap, err)
 	}
 
-	if err := saveVersionsFile(ef.ResolvedVersions, versions); err != nil {
+	if err := saveVersionsFile(lef.ef.ResolvedVersions, versions); err != nil {
 		return c.done(nil, err)
 	}
 
-	fmt.Printf("The resolved versions have been written to %s.\n\n", filepath.Base(ef.ResolvedVersions))
+	fmt.Printf("The resolved versions have been written to %s.\n\n", filepath.Base(lef.ef.ResolvedVersions))
 	return c.doneWithPinMap(pinMap, nil)
 }

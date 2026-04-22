@@ -113,7 +113,7 @@ func editACL(ctx context.Context, packagePath string, owners, writers, readers, 
 		return nil
 	}
 
-	client, err := clientOpts.makeCIPDClient(ctx, "")
+	client, err := clientOpts.makeCIPDClient(ctx, "", nil)
 	if err != nil {
 		return err
 	}

@@ -86,7 +86,7 @@ func (c *checkACLRun) Run(a subcommands.Application, args []string, env subcomma
 }
 
 func checkACL(ctx context.Context, packagePath string, roles []string, clientOpts clientOptions) (bool, error) {
-	client, err := clientOpts.makeCIPDClient(ctx, "")
+	client, err := clientOpts.makeCIPDClient(ctx, "", nil)
 	if err != nil {
 		return false, err
 	}

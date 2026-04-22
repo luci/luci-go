@@ -65,7 +65,7 @@ func (c *searchRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func searchInstances(ctx context.Context, packageName string, tags []string, clientOpts clientOptions) ([]common.Pin, error) {
-	client, err := clientOpts.makeCIPDClient(ctx, "")
+	client, err := clientOpts.makeCIPDClient(ctx, "", nil)
 	if err != nil {
 		return nil, err
 	}

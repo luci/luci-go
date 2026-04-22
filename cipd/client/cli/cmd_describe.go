@@ -76,7 +76,7 @@ func describeInstance(ctx context.Context, pkg, version string, clientOpts clien
 		return nil, err
 	}
 
-	client, err := clientOpts.makeCIPDClient(ctx, "")
+	client, err := clientOpts.makeCIPDClient(ctx, "", nil)
 	if err != nil {
 		return nil, err
 	}

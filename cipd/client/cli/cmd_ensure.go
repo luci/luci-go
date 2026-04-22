@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/cipd/client/cipd"
-	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipderr"
@@ -77,17 +76,17 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms, parseVersionsFile)
+	lef, err := c.loadEnsureFile(ctx, ignoreVerifyPlatforms, parseVersionsFile)
 	if err != nil {
 		return c.done(nil, err)
 	}
 
-	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, false, c.clientOptions)
+	pins, _, err := ensurePackages(ctx, lef, c.ensureFileOut, false, c.clientOptions)
 	return c.done(pins, err)
 }
 
-func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
-	client, err := clientOpts.makeCIPDClient(ctx, ef.ServiceURL)
+func ensurePackages(ctx context.Context, lef *loadedEnsureFile, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
+	client, err := clientOpts.makeCIPDClient(ctx, lef.ef.ServiceURL, lef.vf)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -97,7 +96,7 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 	defer client.EndBatch(ctx)
 
 	resolver := cipd.Resolver{Client: client}
-	resolved, err := resolver.Resolve(ctx, ef, template.DefaultExpander())
+	resolved, err := resolver.Resolve(ctx, lef.ef, template.DefaultExpander())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -113,7 +112,7 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 
 	if ensureFileOut != "" {
 		buf := bytes.Buffer{}
-		resolved.ServiceURL = clientOpts.resolvedServiceURL(ctx, ef.ServiceURL)
+		resolved.ServiceURL = clientOpts.resolvedServiceURL(ctx, lef.ef.ServiceURL)
 		resolved.ParanoidMode = ""
 		if err = resolved.Serialize(&buf); err == nil {
 			err = os.WriteFile(ensureFileOut, buf.Bytes(), 0666)

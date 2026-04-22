@@ -59,20 +59,20 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, requireVerifyPlatforms, ignoreVersionsFile)
+	lef, err := c.loadEnsureFile(ctx, requireVerifyPlatforms, ignoreVersionsFile)
 	if err != nil {
 		return c.done(nil, err)
 	}
 
 	// Resolving all versions in the ensure file also naturally verifies all
 	// versions exist.
-	pinMap, versions, err := resolveEnsureFile(ctx, ef, c.clientOptions)
-	if err != nil || ef.ResolvedVersions == "" {
+	pinMap, versions, err := resolveEnsureFile(ctx, lef, c.clientOptions)
+	if err != nil || lef.ef.ResolvedVersions == "" {
 		return c.doneWithPinMap(pinMap, err)
 	}
 
 	// Verify $ResolvedVersions file is up-to-date too.
-	switch existing, err := loadVersionsFile(ef.ResolvedVersions, c.ensureFile); {
+	switch existing, err := loadVersionsFile(lef.ef.ResolvedVersions, c.ensureFile); {
 	case err != nil:
 		return c.done(nil, err)
 	case !existing.Equal(versions):
@@ -80,7 +80,7 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 
 			cipderr.Stale.Apply(errors.Fmt("the resolved versions file %s is stale, "+
 				"use 'cipd ensure-file-resolve -ensure-file %q' to update it",
-				filepath.Base(ef.ResolvedVersions), c.ensureFile)))
+				filepath.Base(lef.ef.ResolvedVersions), c.ensureFile)))
 	default:
 		return c.doneWithPinMap(pinMap, err)
 	}

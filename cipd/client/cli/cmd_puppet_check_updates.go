@@ -58,12 +58,12 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms, parseVersionsFile)
+	lef, err := c.loadEnsureFile(ctx, ignoreVerifyPlatforms, parseVersionsFile)
 	if err != nil {
 		return 0 // on fatal errors ask puppet to run 'ensure' for real
 	}
 
-	_, actions, err := ensurePackages(ctx, ef, "", true, c.clientOptions)
+	_, actions, err := ensurePackages(ctx, lef, "", true, c.clientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
 		if transient.Tag.In(err) {

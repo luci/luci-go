@@ -79,13 +79,13 @@ func (c *exportRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms, parseVersionsFile)
+	lef, err := c.loadEnsureFile(ctx, ignoreVerifyPlatforms, parseVersionsFile)
 	if err != nil {
 		return c.done(nil, err)
 	}
-	ef.OverrideInstallMode = pkg.InstallModeCopy
+	lef.ef.OverrideInstallMode = pkg.InstallModeCopy
 
-	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, false, c.clientOptions)
+	pins, _, err := ensurePackages(ctx, lef, c.ensureFileOut, false, c.clientOptions)
 	if err != nil {
 		return c.done(pins, err)
 	}

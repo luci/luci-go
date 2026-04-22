@@ -56,8 +56,7 @@ type clientOptions struct {
 	cliServiceURL string
 	cacheDir      string
 	maxThreads    maxThreadsOption
-	rootDir       string              // used only if registerFlags got withRootDir arg
-	versions      ensure.VersionsFile // mutated by loadEnsureFile
+	rootDir       string // used only if registerFlags got withRootDir arg
 
 	authFlags authcli.Flags
 }
@@ -96,7 +95,7 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 	opts.authFlags.RegisterADCFlags(f)
 }
 
-func (opts *clientOptions) toCIPDClientOpts(ctx context.Context, ensureFileURL string) (cipd.ClientOptions, error) {
+func (opts *clientOptions) toCIPDClientOpts(ctx context.Context, ensureFileURL string, versions ensure.VersionsFile) (cipd.ClientOptions, error) {
 	authOpts, err := opts.authFlags.Options()
 	if err != nil {
 		return cipd.ClientOptions{}, cipderr.BadArgument.Apply(errors.Fmt("bad auth options: %w", err))
@@ -105,7 +104,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context, ensureFileURL s
 	realOpts := cipd.ClientOptions{
 		Root:              opts.rootDir,
 		CacheDir:          opts.cacheDir,
-		Versions:          opts.versions,
+		Versions:          versions,
 		MaxThreads:        opts.maxThreads.maxThreads,
 		AnonymousClient:   http.DefaultClient,
 		PluginsContext:    ctx,
@@ -131,8 +130,8 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context, ensureFileURL s
 	return realOpts, nil
 }
 
-func (opts *clientOptions) makeCIPDClient(ctx context.Context, ensureFileURL string) (cipd.Client, error) {
-	cipdOpts, err := opts.toCIPDClientOpts(ctx, ensureFileURL)
+func (opts *clientOptions) makeCIPDClient(ctx context.Context, ensureFileURL string, versions ensure.VersionsFile) (cipd.Client, error) {
+	cipdOpts, err := opts.toCIPDClientOpts(ctx, ensureFileURL, versions)
 	if err != nil {
 		return nil, err
 	}
