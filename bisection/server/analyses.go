@@ -618,7 +618,6 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 
 	// Get culprits
 	culprits := make([]*pb.Culprit, len(analysis.VerifiedCulprits))
-	hasTakenActions := false
 	for i, culprit := range analysis.VerifiedCulprits {
 		suspect := &model.Suspect{
 			Id:             culprit.IntID(),
@@ -627,10 +626,6 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 		err = datastore.Get(c, suspect)
 		if err != nil {
 			return nil, err
-		}
-
-		if suspect.HasTakenActions {
-			hasTakenActions = true
 		}
 
 		pbCulprit := &pb.Culprit{
@@ -649,7 +644,6 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 		culprits[i] = pbCulprit
 	}
 	result.Culprits = culprits
-	result.HasTakenActions = hasTakenActions
 
 	nthSectionResult, err := getNthSectionResult(c, analysis)
 	if err != nil {

@@ -29,14 +29,14 @@ export const getStages = (analysis: Analysis) => [
 export function getActiveStep(analysis: Analysis): number {
   const runStatus = analysis.runStatus;
   const status = analysis.status;
-  // TODO(jiameil): Clean up this cast once the proto is updated in frontend to include hasTakenActions.
-  const hasTakenActions =
-    (analysis as unknown as { hasTakenActions?: boolean }).hasTakenActions ||
-    false;
+  const hasCulpritActions =
+    analysis.culprits?.some(
+      (culprit) => culprit.culpritAction && culprit.culpritAction.length > 0,
+    ) || false;
 
   switch (status) {
     case AnalysisStatus.FOUND:
-      return hasTakenActions ? 4 : 3;
+      return hasCulpritActions ? 4 : 3;
 
     case AnalysisStatus.SUSPECTFOUND:
       if (runStatus === AnalysisRunStatus.STARTED) {
@@ -44,6 +44,8 @@ export function getActiveStep(analysis: Analysis): number {
           analysis.genAiResult?.suspect || analysis.nthSectionResult?.suspect;
         const verificationStatus = suspect?.verificationDetails?.status;
         if (
+          verificationStatus === 'Under Verification' ||
+          verificationStatus === 'Verification Scheduled' ||
           verificationStatus === 'UNDER_VERIFICATION' ||
           verificationStatus === 'VERIFICATION_SCHEDULED'
         ) {

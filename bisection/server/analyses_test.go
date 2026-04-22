@@ -366,7 +366,6 @@ func TestQueryAnalysis(t *testing.T) {
 			Builder: "android",
 		}))
 		assert.Loosely(t, analysis.BuildFailureType, should.Equal(pb.BuildFailureType_COMPILE))
-		assert.Loosely(t, analysis.HasTakenActions, should.BeTrue)
 		assert.Loosely(t, len(analysis.Culprits), should.Equal(1))
 		assert.Loosely(t, proto.Equal(analysis.Culprits[0], &pb.Culprit{
 			Commit: &buildbucketpb.GitilesCommit{

@@ -99,14 +99,19 @@ describe('getActiveStep', () => {
     },
   );
 
-  test('should return 4 if status is FOUND and hasTakenActions is true', () => {
+  test('should return 4 if status is FOUND and culprit has actions', () => {
     const analysis = Analysis.fromPartial({
       status: AnalysisStatus.FOUND,
+      culprits: [
+        {
+          culpritAction: [
+            {
+              actionType: 4,
+            },
+          ],
+        },
+      ],
     });
-    const analysisWithActions = analysis as unknown as {
-      hasTakenActions: boolean;
-    };
-    analysisWithActions.hasTakenActions = true;
     expect(getActiveStep(analysis)).toBe(4);
   });
 
@@ -133,6 +138,35 @@ describe('getActiveStep', () => {
         suspect: {
           verificationDetails: {
             status: 'VERIFICATION_SCHEDULED',
+          },
+        },
+      },
+    });
+    expect(getActiveStep(analysis)).toBe(2);
+  });
+  test('should return 2 if status is SUSPECTFOUND and verification is Under Verification', () => {
+    const analysis = Analysis.fromPartial({
+      status: AnalysisStatus.SUSPECTFOUND,
+      runStatus: AnalysisRunStatus.STARTED,
+      genAiResult: {
+        suspect: {
+          verificationDetails: {
+            status: 'Under Verification',
+          },
+        },
+      },
+    });
+    expect(getActiveStep(analysis)).toBe(2);
+  });
+
+  test('should return 2 if status is SUSPECTFOUND and verification is Verification Scheduled', () => {
+    const analysis = Analysis.fromPartial({
+      status: AnalysisStatus.SUSPECTFOUND,
+      runStatus: AnalysisRunStatus.STARTED,
+      genAiResult: {
+        suspect: {
+          verificationDetails: {
+            status: 'Verification Scheduled',
           },
         },
       },
