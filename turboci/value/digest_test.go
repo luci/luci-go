@@ -85,7 +85,7 @@ func TestComputeDigest(t *testing.T) {
 			sha := sha256.Sum256(detEnc)
 			assert.That(t, dgstPb.GetHash(), should.Match(sha[:]))
 
-			assert.That(t, dgstPb.GetSizeBytes(), should.Equal(int64(wantSize)), truth.LineContext())
+			assert.That(t, dgstPb.GetSizeBytes(), should.Equal(uint64(wantSize)), truth.LineContext())
 		})
 	}
 }

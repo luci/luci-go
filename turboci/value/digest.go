@@ -63,11 +63,10 @@ func (d Digest) ToProto() (*orchestratorpb.ValueDigest, error) {
 	if num != len(buf) {
 		return nil, fmt.Errorf("extra bytes while decoding size")
 	}
-	sSiz := int64(siz)
 
 	return orchestratorpb.ValueDigest_builder{
 		Hash:      raw,
-		SizeBytes: &sSiz,
+		SizeBytes: &siz,
 		Algo:      orchestratorpb.ValueHashAlgo_VALUE_HASH_ALGO_SHA256.Enum(),
 	}.Build(), nil
 }
