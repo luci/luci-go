@@ -25,7 +25,6 @@ import (
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 )
 
 // server is a service supporting log stream registration.
@@ -39,7 +38,7 @@ func New() logdog.RegistrationServer {
 			// Enter a datastore namespace based on the message type. All RPC messages
 			// in RegistrationServer must implement ProjectBoundMessage. We panic if
 			// they don't.
-			project := req.(endpoints.ProjectBoundMessage).GetMessageProject()
+			project := req.(interface{ GetProject() string }).GetProject()
 			if project == "" {
 				return nil, status.Error(codes.InvalidArgument, "project is required")
 			}

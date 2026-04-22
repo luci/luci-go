@@ -27,7 +27,6 @@ import (
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 )
 
 // server is a service supporting privileged support services.
@@ -108,8 +107,8 @@ func New(settings ServerSettings) logdog.ServicesServer {
 // maybeEnterProjectNamespace enters a datastore namespace based on the request
 // message type.
 func maybeEnterProjectNamespace(c context.Context, req proto.Message) (context.Context, error) {
-	if pbm, ok := req.(endpoints.ProjectBoundMessage); ok {
-		project := pbm.GetMessageProject()
+	if pbm, ok := req.(interface{ GetProject() string }); ok {
+		project := pbm.GetProject()
 		return c, coordinator.WithProjectNamespace(&c, project)
 	}
 	return c, nil
