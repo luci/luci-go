@@ -22,7 +22,9 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
+	"cloud.google.com/go/spanner"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -50,6 +52,7 @@ import (
 type mockPassInserter struct {
 	insertedMessages []*bq.Row
 	mu               sync.Mutex
+	onPut            func()
 }
 
 func (i *mockPassInserter) Put(ctx context.Context, src any) error {
@@ -57,6 +60,9 @@ func (i *mockPassInserter) Put(ctx context.Context, src any) error {
 	i.mu.Lock()
 	i.insertedMessages = append(i.insertedMessages, messages...)
 	i.mu.Unlock()
+	if i.onPut != nil {
+		i.onPut()
+	}
 	return nil
 }
 
@@ -219,7 +225,7 @@ func TestExportToBigQuery(t *testing.T) {
 
 	ftt.Run(`TestExportTextArtifactToBigQuery`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		testutil.MustApply(ctx, t,
+		mutations := []*spanner.Mutation{
 			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Inclusion("a", "inv1"),
@@ -229,7 +235,11 @@ func TestExportToBigQuery(t *testing.T) {
 			insert.Artifact("inv1", "tr/t/r", "a2", map[string]any{"ContentType": "text/plain;encoding=ascii", "Size": "100", "RBECASHash": "deadbeef"}),
 			insert.Artifact("inv1", "tr/t/r", "a3", map[string]any{"ContentType": "image/jpg", "Size": "100"}),
 			insert.Artifact("inv1", "tr/t/r", "a4", map[string]any{"ContentType": "text/plain;encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
-		)
+		}
+		for i := 5; i <= 54; i++ {
+			mutations = append(mutations, insert.Artifact("inv1", "tr/t/r", fmt.Sprintf("a%d", i), map[string]any{"ContentType": "text/plain", "Size": "100", "RBECASHash": "deadbeef"}))
+		}
+		testutil.MustApply(ctx, t, mutations...)
 
 		bqExport := &pb.BigQueryExport{
 			Project: "project",
@@ -243,6 +253,7 @@ func TestExportToBigQuery(t *testing.T) {
 		}
 
 		opts := DefaultOptions()
+		opts.MaxBatchRowCount = 1
 		b := &bqExporter{
 			Options:    &opts,
 			putLimiter: rate.NewLimiter(100, 1),
@@ -255,19 +266,78 @@ func TestExportToBigQuery(t *testing.T) {
 
 		t.Run(`success`, func(t *ftt.Test) {
 			i := &mockPassInserter{}
-			err := b.exportTextArtifactsToBigQuery(ctx, i, "a", bqExport)
+			err := b.exportTextArtifactsToBigQuery(ctx, i, &taskspb.ExportInvocationArtifactsToBQ{InvocationId: "a", BqExport: bqExport})
 			assert.Loosely(t, err, should.BeNil)
 
 			i.mu.Lock()
 			defer i.mu.Unlock()
-			// This reflects 4 text artifacts, each split over two rows
-			// (due to the size of the RBE-CAS response) exceeding 1 MiB.
-			assert.Loosely(t, len(i.insertedMessages), should.Equal(8))
+			// 54 matching artifacts, each yielding 2 rows due to size splitting.
+			assert.Loosely(t, len(i.insertedMessages), should.Equal(108))
 		})
 
 		t.Run(`fail`, func(t *ftt.Test) {
-			err := b.exportTextArtifactsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport)
+			err := b.exportTextArtifactsToBigQuery(ctx, &mockFailInserter{}, &taskspb.ExportInvocationArtifactsToBQ{InvocationId: "a", BqExport: bqExport})
 			assert.Loosely(t, err, should.ErrLike("some error"))
+		})
+
+		t.Run(`timeout schedules continuation task`, func(t *ftt.Test) {
+			ctx, sched := tq.TestingContext(ctx, nil)
+			ctx, tc := testclock.UseTime(ctx, testclock.TestTimeUTC)
+
+			putStarted := make(chan struct{})
+			continuePut := make(chan struct{})
+			i := &mockPassInserter{
+				onPut: func() {
+					select {
+					case putStarted <- struct{}{}:
+					default:
+					}
+					<-continuePut // Block until signaled.
+				},
+			}
+
+			// Goroutine to advance clock after Put starts.
+			go func() {
+				<-putStarted
+				tc.Add(3 * time.Minute)
+				close(continuePut) // Unblock Put.
+			}()
+
+			err := b.exportTextArtifactsToBigQuery(ctx, i, &taskspb.ExportInvocationArtifactsToBQ{InvocationId: "a", BqExport: bqExport})
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify that task 1 did some work but not all.
+			i.mu.Lock()
+			rowsAfterFirstRun := len(i.insertedMessages)
+			i.mu.Unlock()
+			assert.Loosely(t, rowsAfterFirstRun, should.BeGreaterThan(0))
+			assert.Loosely(t, rowsAfterFirstRun, should.BeLessThan(108))
+
+			// Verify that a task was scheduled.
+			tasks := sched.Tasks()
+			assert.Loosely(t, len(tasks), should.Equal(1))
+			payload := tasks.Payloads()[0].(*taskspb.ExportInvocationArtifactsToBQ)
+			assert.Loosely(t, payload.InvocationId, should.Equal("a"))
+
+			// Assert full task contents.
+			assert.Loosely(t, payload.CurrentBatchIndex, should.Equal(0))
+			assert.Loosely(t, payload.PageToken, should.NotBeEmpty)
+			assert.Loosely(t, payload.ProcessedCount, should.BeGreaterThan(0))
+
+			// Run said continuation task to ensure after all is said and done, rows are written.
+			i.onPut = nil
+
+			err = b.exportTextArtifactsToBigQuery(ctx, i, payload)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify that no NEW task was scheduled by the continuation task.
+			assert.Loosely(t, len(sched.Tasks()), should.Equal(1))
+
+			// Verify that all rows were written.
+			i.mu.Lock()
+			defer i.mu.Unlock()
+			// 54 matching artifacts, each yielding 2 rows due to size splitting.
+			assert.Loosely(t, len(i.insertedMessages), should.Equal(108))
 		})
 	})
 

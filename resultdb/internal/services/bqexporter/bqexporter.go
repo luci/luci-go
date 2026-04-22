@@ -129,7 +129,7 @@ var TestResultTasks = tq.RegisterTaskClass(tq.TaskClass{
 var ArtifactTasks = tq.RegisterTaskClass(tq.TaskClass{
 	ID:            "bq-artifact-export",
 	Prototype:     &taskspb.ExportInvocationArtifactsToBQ{},
-	Kind:          tq.Transactional,
+	Kind:          tq.FollowsContext,
 	Queue:         "bqartifactexports",
 	RoutingPrefix: "/internal/tasks/bqexporter",
 })
@@ -179,11 +179,11 @@ func InitServer(srv *server.Server, opts Options) error {
 	}
 	TestResultTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.ExportInvocationTestResultsToBQ)
-		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
+		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport, nil)
 	})
 	ArtifactTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.ExportInvocationArtifactsToBQ)
-		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport)
+		return b.exportResultsToBigQuery(ctx, invocations.ID(task.InvocationId), task.BqExport, task)
 	})
 	InvocationTasks.AttachHandler(func(ctx context.Context, msg proto.Message) error {
 		task := msg.(*taskspb.ExportInvocationToBQ)
@@ -309,7 +309,7 @@ func (b *bqExporter) insertRowsWithRetries(ctx context.Context, ins inserter, ro
 }
 
 // exportResultsToBigQuery exports results of an invocation to a BigQuery table.
-func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocations.ID, bqExport *pb.BigQueryExport) error {
+func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocations.ID, bqExport *pb.BigQueryExport, artifactTask *taskspb.ExportInvocationArtifactsToBQ) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
 	ctx = span.ModifyRequestOptions(ctx, func(opts *span.RequestOptions) {
@@ -360,7 +360,10 @@ func (b *bqExporter) exportResultsToBigQuery(ctx context.Context, invID invocati
 			}
 			return errors.Fmt("ensure text artifacts bq table: %w", err)
 		}
-		return errors.WrapIf(b.exportTextArtifactsToBigQuery(ctx, ins, invID, bqExport), "export text artifacts")
+		if artifactTask == nil {
+			return errors.New("artifactTask is required for text artifacts export")
+		}
+		return errors.WrapIf(b.exportTextArtifactsToBigQuery(ctx, ins, artifactTask), "export text artifacts")
 	case nil:
 		return fmt.Errorf("bqExport.ResultType is unspecified")
 	default:

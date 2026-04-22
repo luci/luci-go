@@ -288,21 +288,25 @@ func (q *Query) FetchProtos(ctx context.Context) (arts []*pb.Artifact, nextPageT
 	// If we got pageSize results, then we haven't exhausted the collection and
 	// need to return the next page token.
 	if len(arts) == q.PageSize {
-		last := arts[q.PageSize-1]
-		var invID invocations.ID
-		var testID, resultID, artifactID string
-		if pbutil.IsLegacyArtifactName(last.Name) {
-			invID, testID, resultID, artifactID = MustParseLegacyName(last.Name)
-		} else {
-			var wuID workunits.ID
-			wuID, testID, resultID, artifactID = MustParseName(last.Name)
-			invID = wuID.LegacyInvocationID()
-		}
-		parentID := ParentID(testID, resultID)
-		nextPageToken = pagination.Token(string(invID), parentID, artifactID)
+		nextPageToken = PageToken(arts[q.PageSize-1])
 	}
 
 	return
+}
+
+// PageToken constructs a pagination token from an Artifact.
+func PageToken(a *pb.Artifact) string {
+	var invID invocations.ID
+	var testID, resultID, artifactID string
+	if pbutil.IsLegacyArtifactName(a.Name) {
+		invID, testID, resultID, artifactID = MustParseLegacyName(a.Name)
+	} else {
+		var wuID workunits.ID
+		wuID, testID, resultID, artifactID = MustParseName(a.Name)
+		invID = wuID.LegacyInvocationID()
+	}
+	parentID := ParentID(testID, resultID)
+	return pagination.Token(string(invID), parentID, artifactID)
 }
 
 // parentIDRegexp returns a regular expression for ParentId column.

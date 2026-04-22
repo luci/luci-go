@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -31,14 +32,17 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/bq"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/artifactcontent"
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
+	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -63,10 +67,11 @@ const (
 	// Number of workers to download artifact content.
 	artifactWorkers = 10
 
-	// maxArtifactCount is the maximum number of artifacts to export per invocation.
-	// Artifacts beyond this limit are skipped to ensure the export task
-	// completes within the 10-minute Cloud Task timeout.
-	maxArtifactCount = 200_000
+
+
+	// softTimeoutLimit is the time limit after which the export task will
+	// stop processing new artifacts and schedule a continuation task.
+	softTimeoutLimit = 150 * time.Second
 )
 
 func init() {
@@ -220,27 +225,38 @@ type artifact struct {
 	parent   *pb.Invocation
 }
 
-func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocations.ID, bqExport *pb.BigQueryExport, artifactC chan *artifact) error {
+func (b *bqExporter) queryTextArtifacts(ctx context.Context, task *taskspb.ExportInvocationArtifactsToBQ, startTime time.Time, artifactC chan *artifact) (completed bool, nextBatchIndex int32, nextPageToken string, count int64, err error) {
+	exportedID := invocations.ID(task.InvocationId)
+	bqExport := task.BqExport
+
 	exportedInv, err := invocations.Read(ctx, exportedID, invocations.ExcludeExtendedProperties)
 	if err != nil {
-		return errors.Fmt("error reading exported invocation: %w", err)
+		return false, 0, "", 0, errors.Fmt("error reading exported invocation: %w", err)
 	}
 	if exportedInv.State != pb.Invocation_FINALIZED {
-		return errors.Fmt("%s is not finalized yet", exportedID.Name())
+		return false, 0, "", 0, errors.Fmt("%s is not finalized yet", exportedID.Name())
 	}
 
 	invs, err := graph.Reachable(ctx, invocations.NewIDSet(exportedID))
 	if err != nil {
-		return errors.Fmt("querying reachable invocations: %w", err)
+		return false, 0, "", 0, errors.Fmt("querying reachable invocations: %w", err)
 	}
-	for _, batch := range invs.Batches() {
+
+	batches := invs.Batches()
+	var lastProcessed *artifacts.Artifact
+	processedCount := task.ProcessedCount
+	errTimeout := errors.New("soft timeout limit reached")
+
+	for i := int(task.CurrentBatchIndex); i < len(batches); i++ {
+		batch := batches[i]
+		lastProcessed = nil
 		contentTypeRegexp := bqExport.GetTextArtifacts().GetPredicate().GetContentTypeRegexp()
 		if contentTypeRegexp == "" {
 			contentTypeRegexp = "text/.*"
 		}
 		batchInvocations, err := batch.IDSet()
 		if err != nil {
-			return err
+			return false, 0, "", 0, err
 		}
 		q := artifacts.Query{
 			InvocationIDs:       batchInvocations,
@@ -248,28 +264,53 @@ func (b *bqExporter) queryTextArtifacts(ctx context.Context, exportedID invocati
 			ContentTypeRegexp:   contentTypeRegexp,
 			ArtifactIDRegexp:    bqExport.GetTextArtifacts().GetPredicate().GetArtifactIdRegexp(),
 			WithRBECASHash:      true,
-			PageSize:            maxArtifactCount,
+		}
+
+		// Resume from page token of previous task.
+		if i == int(task.CurrentBatchIndex) && task.PageToken != "" {
+			q.PageToken = task.PageToken
 		}
 
 		invs, err := invocations.ReadBatch(ctx, q.InvocationIDs, invocations.ExcludeExtendedProperties)
 		if err != nil {
-			return err
+			return false, 0, "", 0, err
 		}
 
 		err = q.Run(ctx, func(a *artifacts.Artifact) error {
+			if clock.Now(ctx).Sub(startTime) > softTimeoutLimit {
+				return errTimeout
+			}
 			invID, _, _, _ := artifacts.MustParseLegacyName(a.Name)
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			case artifactC <- &artifact{Artifact: a, exported: exportedInv, parent: invs[invID]}:
 			}
+			lastProcessed = a
+			processedCount++
 			return nil
 		})
+
+		if errors.Is(err, errTimeout) {
+			completed = false
+			nextBatchIndex = int32(i)
+			if lastProcessed != nil {
+				nextPageToken = artifacts.PageToken(lastProcessed.Artifact)
+			} else {
+				if processedCount == task.ProcessedCount {
+					return false, 0, "", 0, errors.New("task made no progress, likely a single item is too large or blocking")
+				}
+				nextPageToken = ""
+			}
+			return completed, nextBatchIndex, nextPageToken, processedCount, nil
+		}
+
 		if err != nil {
-			return errors.Fmt("exporting batch: %w", err)
+			return false, 0, "", 0, errors.Fmt("exporting batch %d: %w", i, err)
 		}
 	}
-	return nil
+
+	return true, 0, "", processedCount, nil
 }
 
 func (b *bqExporter) artifactRowInputToBatch(ctx context.Context, rowC chan bigqueryRow, batchC chan []bigqueryRow) error {
@@ -299,7 +340,8 @@ func (b *bqExporter) artifactRowInputToBatch(ctx context.Context, rowC chan bigq
 }
 
 // exportTextArtifactsToBigQuery queries text artifacts in Spanner then exports them to BigQuery.
-func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inserter, invID invocations.ID, bqExport *pb.BigQueryExport) error {
+func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inserter, task *taskspb.ExportInvocationArtifactsToBQ) error {
+	startTime := clock.Now(ctx)
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
@@ -309,10 +351,10 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 	artifactC := make(chan *artifact, artifactWorkers)
 
 	// Batch exports rows to BigQuery.
-	eg, ctx := errgroup.WithContext(ctx)
+	eg, gctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		err := b.batchExportRows(ctx, ins, batchC, func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row) {
+		err := b.batchExportRows(gctx, ins, batchC, func(ctx context.Context, err bigquery.PutMultiError, rows []*bq.Row) {
 			// Print up to 10 errors.
 			for i := 0; i < 10 && i < len(err); i++ {
 				a := rows[err[i].RowIndex].Message.(*bqpb.TextArtifactRowLegacy)
@@ -333,17 +375,17 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 
 	eg.Go(func() error {
 		defer close(batchC)
-		return errors.WrapIf(b.artifactRowInputToBatch(ctx, rowC, batchC), "artifact row input to batch")
+		return errors.WrapIf(b.artifactRowInputToBatch(gctx, rowC, batchC), "artifact row input to batch")
 	})
 
 	eg.Go(func() error {
 		defer close(rowC)
 
-		subEg, ctx := errgroup.WithContext(ctx)
+		subEg, sctx := errgroup.WithContext(gctx)
 		for range artifactWorkers {
 			subEg.Go(func() error {
 				for a := range artifactC {
-					if err := b.downloadArtifactContent(ctx, a, rowC); err != nil {
+					if err := b.downloadArtifactContent(sctx, a, rowC); err != nil {
 						return err
 					}
 				}
@@ -353,10 +395,40 @@ func (b *bqExporter) exportTextArtifactsToBigQuery(ctx context.Context, ins inse
 		return errors.WrapIf(subEg.Wait(), "download artifact contents")
 	})
 
+	var completed bool
+	var nextBatchIndex int32
+	var nextPageToken string
+	var processedCount int64
+
 	eg.Go(func() error {
 		defer close(artifactC)
-		return errors.WrapIf(b.queryTextArtifacts(ctx, invID, bqExport, artifactC), "query text artifacts")
+		var err error
+		completed, nextBatchIndex, nextPageToken, processedCount, err = b.queryTextArtifacts(gctx, task, startTime, artifactC)
+		return errors.WrapIf(err, "query text artifacts")
 	})
 
-	return eg.Wait()
+	err := eg.Wait()
+	if err != nil {
+		return err
+	}
+
+	if !completed {
+		logging.Infof(ctx, "Artifact export for %s exceeded soft timeout after processing %d items. Scheduling continuation task.", task.InvocationId, processedCount)
+		// Schedule continuation task
+		continuationTask := &taskspb.ExportInvocationArtifactsToBQ{
+			InvocationId:      task.InvocationId,
+			BqExport:          task.BqExport,
+			CurrentBatchIndex: nextBatchIndex,
+			PageToken:         nextPageToken,
+			ProcessedCount:    processedCount,
+		}
+		tq.MustAddTask(ctx, &tq.Task{
+			Payload: continuationTask,
+			Title:   fmt.Sprintf("%s:cont:%d", task.InvocationId, processedCount),
+		})
+	} else {
+		logging.Infof(ctx, "Artifact export for %s completed successfully. Processed %d items.", task.InvocationId, processedCount)
+	}
+
+	return nil
 }
