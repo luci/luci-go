@@ -56,7 +56,7 @@ func (c *repairDeploymentRun) Run(a subcommands.Application, args []string, env 
 }
 
 func repairDeployment(ctx context.Context, clientOpts clientOptions) (cipd.ActionMap, error) {
-	client, err := clientOpts.makeCIPDClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}

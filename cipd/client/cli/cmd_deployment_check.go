@@ -59,7 +59,7 @@ func (c *checkDeploymentRun) Run(a subcommands.Application, args []string, env s
 }
 
 func checkDeployment(ctx context.Context, clientOpts clientOptions) (cipd.ActionMap, error) {
-	client, err := clientOpts.makeCIPDClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}

@@ -53,18 +53,21 @@ const (
 type clientOptions struct {
 	hardcoded Parameters // whatever was passed to registerFlags(...)
 
-	serviceURL string // also mutated by loadEnsureFile
-	cacheDir   string
-	maxThreads maxThreadsOption
-	rootDir    string              // used only if registerFlags got withRootDir arg
-	versions   ensure.VersionsFile // mutated by loadEnsureFile
+	cliServiceURL string
+	cacheDir      string
+	maxThreads    maxThreadsOption
+	rootDir       string              // used only if registerFlags got withRootDir arg
+	versions      ensure.VersionsFile // mutated by loadEnsureFile
 
 	authFlags authcli.Flags
 }
 
-func (opts *clientOptions) resolvedServiceURL(ctx context.Context) string {
-	if opts.serviceURL != "" {
-		return opts.serviceURL
+func (opts *clientOptions) resolvedServiceURL(ctx context.Context, ensureFileURL string) string {
+	if ensureFileURL != "" {
+		return ensureFileURL
+	}
+	if opts.cliServiceURL != "" {
+		return opts.cliServiceURL
 	}
 	if v := environ.FromCtx(ctx).Get(cipd.EnvCIPDServiceURL); v != "" {
 		return v
@@ -75,7 +78,7 @@ func (opts *clientOptions) resolvedServiceURL(ctx context.Context) string {
 func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, rootDir rootDirFlag, maxThreads maxThreadsFlag) {
 	opts.hardcoded = params
 
-	f.StringVar(&opts.serviceURL, "service-url", "",
+	f.StringVar(&opts.cliServiceURL, "service-url", "",
 		fmt.Sprintf(`Backend URL. If provided via an "ensure" file, the URL in the file takes precedence. `+
 			`(default %s)`, params.ServiceURL))
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
@@ -93,7 +96,7 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 	opts.authFlags.RegisterADCFlags(f)
 }
 
-func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOptions, error) {
+func (opts *clientOptions) toCIPDClientOpts(ctx context.Context, ensureFileURL string) (cipd.ClientOptions, error) {
 	authOpts, err := opts.authFlags.Options()
 	if err != nil {
 		return cipd.ClientOptions{}, cipderr.BadArgument.Apply(errors.Fmt("bad auth options: %w", err))
@@ -111,7 +114,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 	if err := realOpts.LoadFromEnv(ctx); err != nil {
 		return cipd.ClientOptions{}, err
 	}
-	realOpts.ServiceURL = opts.resolvedServiceURL(ctx)
+	realOpts.ServiceURL = opts.resolvedServiceURL(ctx, ensureFileURL)
 
 	// When using a proxy, the proxy does authenticated requests to the backend
 	// and the client just hits it anonymously (see ClientOptions.ProxyURL). Skip
@@ -128,8 +131,8 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 	return realOpts, nil
 }
 
-func (opts *clientOptions) makeCIPDClient(ctx context.Context) (cipd.Client, error) {
-	cipdOpts, err := opts.toCIPDClientOpts(ctx)
+func (opts *clientOptions) makeCIPDClient(ctx context.Context, ensureFileURL string) (cipd.Client, error) {
+	cipdOpts, err := opts.toCIPDClientOpts(ctx, ensureFileURL)
 	if err != nil {
 		return nil, err
 	}

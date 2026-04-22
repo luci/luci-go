@@ -80,22 +80,11 @@ func (opts *ensureFileOptions) registerFlags(f *flag.FlagSet, out ensureOutFlag,
 	}
 }
 
-// loadEnsureFile parses the ensure file and mutates clientOpts to point to a
-// service URL specified in the ensure file.
+// loadEnsureFile parses the ensure file.
 func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *clientOptions, verifying verifyingEnsureFile, parseVers versionFileOpt) (*ensure.File, error) {
 	parsedFile, err := ensure.LoadEnsureFile(opts.ensureFile)
 	if err != nil {
 		return nil, err
-	}
-
-	// Prefer the ServiceURL from the file (if set), and log a warning if the user
-	// provided one on the command line that doesn't match the one in the file.
-	if parsedFile.ServiceURL != "" {
-		if clientOpts.serviceURL != "" && clientOpts.serviceURL != parsedFile.ServiceURL {
-			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
-				parsedFile.ServiceURL, clientOpts.serviceURL, parsedFile.ServiceURL)
-		}
-		clientOpts.serviceURL = parsedFile.ServiceURL
 	}
 
 	if verifying && len(parsedFile.VerifyPlatforms) == 0 {

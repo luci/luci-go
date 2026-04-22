@@ -70,7 +70,7 @@ func (c *fetchRun) Run(a subcommands.Application, args []string, env subcommands
 }
 
 func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile string, clientOpts clientOptions) (pin common.Pin, err error) {
-	client, err := clientOpts.makeCIPDClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx, "")
 	if err != nil {
 		return common.Pin{}, err
 	}

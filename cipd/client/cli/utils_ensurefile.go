@@ -33,7 +33,7 @@ import (
 // Ensure-file related helpers.
 
 func resolveEnsureFile(ctx context.Context, f *ensure.File, clientOpts clientOptions) (map[string][]pinInfo, ensure.VersionsFile, error) {
-	client, err := clientOpts.makeCIPDClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx, f.ServiceURL)
 	if err != nil {
 		return nil, nil, err
 	}

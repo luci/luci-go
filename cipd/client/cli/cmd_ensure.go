@@ -87,7 +87,7 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
-	client, err := clientOpts.makeCIPDClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx, ef.ServiceURL)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -113,7 +113,7 @@ func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, 
 
 	if ensureFileOut != "" {
 		buf := bytes.Buffer{}
-		resolved.ServiceURL = clientOpts.resolvedServiceURL(ctx)
+		resolved.ServiceURL = clientOpts.resolvedServiceURL(ctx, ef.ServiceURL)
 		resolved.ParanoidMode = ""
 		if err = resolved.Serialize(&buf); err == nil {
 			err = os.WriteFile(ensureFileOut, buf.Bytes(), 0666)

@@ -226,12 +226,12 @@ func (site *installationSite) initClient(ctx context.Context, authFlags authcli.
 		return cipderr.BadArgument.Apply(errors.New("client is already initialized"))
 	}
 	clientOpts := clientOptions{
-		authFlags:  authFlags,
-		serviceURL: site.cfg.ServiceURL,
-		cacheDir:   site.cfg.CacheDir,
-		rootDir:    site.siteRoot,
+		authFlags:     authFlags,
+		cliServiceURL: site.cfg.ServiceURL,
+		cacheDir:      site.cfg.CacheDir,
+		rootDir:       site.siteRoot,
 	}
-	site.client, err = clientOpts.makeCIPDClient(ctx)
+	site.client, err = clientOpts.makeCIPDClient(ctx, "")
 	return err
 }
 

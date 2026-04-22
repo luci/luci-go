@@ -67,7 +67,7 @@ func (c *listPackagesRun) Run(a subcommands.Application, args []string, env subc
 }
 
 func listPackages(ctx context.Context, path string, recursive, showHidden bool, clientOpts clientOptions) ([]string, error) {
-	client, err := clientOpts.makeCIPDClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}

@@ -76,7 +76,7 @@ func listInstances(ctx context.Context, pkg string, limit int, clientOpts client
 		return nil, err
 	}
 
-	client, err := clientOpts.makeCIPDClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx, "")
 	if err != nil {
 		return nil, err
 	}

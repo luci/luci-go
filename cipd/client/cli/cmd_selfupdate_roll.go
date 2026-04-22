@@ -87,7 +87,7 @@ func (c *selfupdateRollRun) Run(a subcommands.Application, args []string, env su
 	}
 
 	ctx := cli.GetContext(a, c, env)
-	client, err := c.clientOptions.makeCIPDClient(ctx)
+	client, err := c.clientOptions.makeCIPDClient(ctx, "")
 	if err != nil {
 		return c.done(nil, err)
 	}
