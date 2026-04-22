@@ -66,7 +66,14 @@ func TestRealmsExpansion(t *testing.T) {
 		}
 	}
 
-	projs := testsupport.Projects(nil)
+	projs := testsupport.Projects([]*configpb.Project{
+		{
+			Id: "p",
+			IdentityConfig: &configpb.IdentityConfig{
+				ServiceAccountEmail: "p-scoped@example.com",
+			},
+		},
+	})
 
 	ftt.Run("ExpandRealms works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
@@ -79,6 +86,9 @@ func TestRealmsExpansion(t *testing.T) {
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 					},
 				},
 			}
@@ -113,6 +123,9 @@ func TestRealmsExpansion(t *testing.T) {
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 					},
 					{
 						Name: "p:r1",
@@ -150,6 +163,9 @@ func TestRealmsExpansion(t *testing.T) {
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 					},
 					{
 						Name: "p:r",
@@ -221,6 +237,9 @@ func TestRealmsExpansion(t *testing.T) {
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 					},
 					{
 						Name: "p:r",
@@ -284,6 +303,9 @@ func TestRealmsExpansion(t *testing.T) {
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 						Bindings: []*protocol.Binding{
 							{
 								Permissions: []uint32{0, 1, 2},
@@ -352,6 +374,9 @@ func TestRealmsExpansion(t *testing.T) {
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 						Bindings: []*protocol.Binding{
 							{
 								Permissions: []uint32{0, 1, 2},
@@ -446,6 +471,9 @@ func TestRealmsExpansion(t *testing.T) {
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 						Bindings: []*protocol.Binding{
 							{
 								Permissions: []uint32{0, 1},
@@ -550,6 +578,9 @@ func TestRealmsExpansion(t *testing.T) {
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 					},
 					{
 						Name: "p:r",
@@ -599,6 +630,7 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 				Permissions: expectedPermissions(
+					"luci.dev.implicitProjectScopedAccount",
 					"luci.dev.implicitRoot",
 					"luci.dev.p1",
 					"luci.dev.p2",
@@ -606,13 +638,20 @@ func TestRealmsExpansion(t *testing.T) {
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 						Bindings: []*protocol.Binding{
 							{
 								Permissions: []uint32{0},
+								Principals:  []string{"user:p-scoped@example.com"},
+							},
+							{
+								Permissions: []uint32{1},
 								Principals:  []string{"project:p"},
 							},
 							{
-								Permissions: []uint32{0},
+								Permissions: []uint32{1},
 								Conditions:  []uint32{0},
 								Principals:  []string{"group:root"},
 							},
@@ -623,15 +662,19 @@ func TestRealmsExpansion(t *testing.T) {
 						Bindings: []*protocol.Binding{
 							{
 								Permissions: []uint32{0},
+								Principals:  []string{"user:p-scoped@example.com"},
+							},
+							{
+								Permissions: []uint32{1},
 								Principals:  []string{"project:p"},
 							},
 							{
-								Permissions: []uint32{0},
+								Permissions: []uint32{1},
 								Conditions:  []uint32{0},
 								Principals:  []string{"group:root"},
 							},
 							{
-								Permissions: []uint32{1, 2},
+								Permissions: []uint32{2, 3},
 								Principals:  []string{"group:gr"},
 							},
 						},
@@ -684,25 +727,33 @@ func TestRealmsExpansion(t *testing.T) {
 					},
 				},
 				Permissions: expectedPermissions(
-					"luci.dev.implicitRoot", // #0, evaluates attrs ["root"]
-					"luci.dev.p1",           // #1, evaluates attrs ["a1", "root"]
-					"luci.dev.p2",           // #2, evaluates attrs ["a1", "a2"]
+					"luci.dev.implicitProjectScopedAccount", // #0, evaluates attrs []
+					"luci.dev.implicitRoot",                 // #1, evaluates attrs ["root"]
+					"luci.dev.p1",                           // #2, evaluates attrs ["a1", "root"]
+					"luci.dev.p2",                           // #3, evaluates attrs ["a1", "a2"]
 				),
 				Realms: []*protocol.Realm{
 					{
 						Name: "p:@root",
+						Data: &protocol.RealmData{
+							ProjectScopedAccount: "p-scoped@example.com",
+						},
 						Bindings: []*protocol.Binding{
 							{
 								Permissions: []uint32{0},
+								Principals:  []string{"user:p-scoped@example.com"},
+							},
+							{
+								Permissions: []uint32{1},
 								Principals:  []string{"project:p"},
 							},
 							{
-								Permissions: []uint32{0},
+								Permissions: []uint32{1},
 								Principals:  []string{"group:root"},
 								Conditions:  []uint32{1},
 							},
 							{
-								Permissions: []uint32{1, 2},
+								Permissions: []uint32{2, 3},
 								Principals:  []string{"group:gr1"},
 							},
 						},
@@ -712,24 +763,28 @@ func TestRealmsExpansion(t *testing.T) {
 						Bindings: []*protocol.Binding{
 							{
 								Permissions: []uint32{0},
+								Principals:  []string{"user:p-scoped@example.com"},
+							},
+							{
+								Permissions: []uint32{1},
 								Principals:  []string{"project:p"},
 							},
 							{
-								Permissions: []uint32{0},
+								Permissions: []uint32{1},
 								Principals:  []string{"group:root"},
 								Conditions:  []uint32{1},
 							},
 							{
-								Permissions: []uint32{1},
+								Permissions: []uint32{2},
 								Principals:  []string{"group:gr2"},
 								Conditions:  []uint32{1},
 							},
 							{
-								Permissions: []uint32{1, 2},
+								Permissions: []uint32{2, 3},
 								Principals:  []string{"group:gr1", "group:gr2"},
 							},
 							{
-								Permissions: []uint32{1, 2},
+								Permissions: []uint32{2, 3},
 								Principals:  []string{"group:gr3"},
 								Conditions:  []uint32{0},
 							},
@@ -812,7 +867,8 @@ func TestRealmsExpansion(t *testing.T) {
 					{
 						Name: "p:@root",
 						Data: &protocol.RealmData{
-							EnforceInService: []string{"a"},
+							ProjectScopedAccount: "p-scoped@example.com",
+							EnforceInService:     []string{"a"},
 						},
 					},
 					{

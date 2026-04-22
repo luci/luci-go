@@ -123,6 +123,12 @@ func PermissionsCfg() *configspb.PermissionsConfig {
 				},
 			},
 			{
+				Name: "role/implicitProjectScopedAccount",
+				Permissions: []*protocol.Permission{
+					{Name: "luci.dev.implicitProjectScopedAccount"},
+				},
+			},
+			{
 				Name: "role/luci.internal.tester",
 				Permissions: []*protocol.Permission{
 					{Name: "luci.dev.p1"},
@@ -155,6 +161,10 @@ func PermissionsCfg() *configspb.PermissionsConfig {
 				Internal:   true,
 				Attributes: []string{"root"},
 			},
+			{
+				Name:     "luci.dev.implicitProjectScopedAccount",
+				Internal: true,
+			},
 		},
 	}
 }
@@ -169,10 +179,10 @@ func PermissionsCfgMeta() *config.Meta {
 // PermissionsDB creates a PermissionsDB for tests.
 func PermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
 	db := permissions.NewPermissionsDB(PermissionsCfg(), PermissionsCfgMeta())
-	db.ImplicitRootBindings = func(s string) []*realmsconf.Binding { return nil }
+	db.ImplicitRootBindings = func(string, string) []*realmsconf.Binding { return nil }
 	if implicitRootBindings {
-		db.ImplicitRootBindings = func(projectID string) []*realmsconf.Binding {
-			return []*realmsconf.Binding{
+		db.ImplicitRootBindings = func(projectID, projectAccount string) []*realmsconf.Binding {
+			bindings := []*realmsconf.Binding{
 				{
 					Role:       "role/implicitRoot",
 					Principals: []string{fmt.Sprintf("project:%s", projectID)},
@@ -192,6 +202,13 @@ func PermissionsDB(implicitRootBindings bool) *permissions.PermissionsDB {
 					},
 				},
 			}
+			if projectAccount != "" {
+				bindings = append(bindings, &realmsconf.Binding{
+					Role:       "role/implicitProjectScopedAccount",
+					Principals: []string{fmt.Sprintf("user:%s", projectAccount)},
+				})
+			}
+			return bindings
 		}
 	}
 	return db

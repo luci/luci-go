@@ -83,6 +83,9 @@ func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projs *pro
 		return nil, errors.Fmt("invalid realms config: %w", err)
 	}
 
+	// A snippet of projects.cfg config for this project.
+	projectCfg := projs.ProjectConfig(ctx, projectID, isDev)
+
 	// Make sure @root realm exists and append implicit bindings to it. We need
 	// to do this before enumerating the conditions below to actually instantiate
 	// all Condition objects that we'll need to visit (some of them may come from
@@ -90,7 +93,7 @@ func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projs *pro
 	// their pointer address as map keys for lookups.
 	bindings := []*realmsconf.Binding{}
 	if !internal {
-		bindings = db.ImplicitRootBindings(projectID)
+		bindings = db.ImplicitRootBindings(projectID, projectCfg.ProjectScopedAccount)
 	}
 	realmsMap := toRealmsMap(realmsCfg, bindings)
 
@@ -139,7 +142,7 @@ func ExpandRealms(ctx context.Context, db *permissions.PermissionsDB, projs *pro
 	realmsExpander := &RealmsExpander{
 		rolesExpander: rolesExpander,
 		condsSet:      condsSet,
-		projectCfg:    projs.ProjectConfig(ctx, projectID, isDev),
+		projectCfg:    projectCfg,
 		realms:        realmsMap,
 		data:          map[string]*protocol.RealmData{},
 	}

@@ -45,7 +45,7 @@ type PermissionsDB struct {
 	// Roles is a mapping of role name to Role.
 	Roles map[string]*Role
 	// ImplicitRootBindings generates implicit bindings for the given project.
-	ImplicitRootBindings func(projID string) []*realmsconf.Binding
+	ImplicitRootBindings func(projID, projAcc string) []*realmsconf.Binding
 }
 
 // Role represents a single role with the fully expanded permissions set.
@@ -123,8 +123,8 @@ func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta *config.
 		Rev:         rev,
 		Permissions: permissions,
 		Roles:       roles,
-		ImplicitRootBindings: func(projID string) []*realmsconf.Binding {
-			return []*realmsconf.Binding{
+		ImplicitRootBindings: func(projID, projAcc string) []*realmsconf.Binding {
+			bindings := []*realmsconf.Binding{
 				{
 					Role:       "role/luci.internal.system",
 					Principals: []string{fmt.Sprintf("project:%s", projID)},
@@ -142,6 +142,13 @@ func NewPermissionsDB(permissionscfg *configspb.PermissionsConfig, meta *config.
 					Principals: []string{"group:resultdb-internal-invocation-submitters"},
 				},
 			}
+			if projAcc != "" {
+				bindings = append(bindings, &realmsconf.Binding{
+					Role:       "role/luci.internal.projectScopedAccount",
+					Principals: []string{fmt.Sprintf("user:%s", projAcc)},
+				})
+			}
+			return bindings
 		},
 	}
 }
