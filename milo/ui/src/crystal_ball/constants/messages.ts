@@ -24,7 +24,7 @@ export enum COMMON_MESSAGES {
   AGGREGATE_BY = 'Aggregate By',
   APPEND_FILTERS = 'Append filters',
   APPLY = 'Apply',
-  ATP_TEST_NAME_REQUIRED = 'A filter on atp_test_name is required to view data.',
+  ATP_TEST_NAME_REQUIRED = 'Each metric series must be filtered by atp_test_name at the series, widget, or global level to view data.',
   BREAKDOWN_BY = 'Breakdown By',
   CLEAR_ALL_FILTERS = 'Clear all filters',
   CLEAR_CLIPBOARD = 'Clear copied filters',
