@@ -413,9 +413,13 @@ func TestGetOtherSuspectsWithSameCL(t *testing.T) {
 	c := memory.Use(context.Background())
 
 	ftt.Run("GetOtherSuspectsWithSameCL", t, func(t *ftt.Test) {
+		analysis := &model.CompileGenAIAnalysis{Id: 1}
+		assert.Loosely(t, datastore.Put(c, analysis), should.BeNil)
+
 		suspect := &model.Suspect{
-			ReviewUrl: "https://this/is/review/url",
-			Id:        123,
+			ReviewUrl:      "https://this/is/review/url",
+			Id:             123,
+			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
 		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
@@ -424,8 +428,9 @@ func TestGetOtherSuspectsWithSameCL(t *testing.T) {
 		assert.Loosely(t, len(suspects), should.BeZero)
 
 		suspect1 := &model.Suspect{
-			ReviewUrl: "https://this/is/review/url",
-			Id:        124,
+			ReviewUrl:      "https://this/is/review/url",
+			Id:             124,
+			ParentAnalysis: datastore.KeyForObj(c, analysis),
 		}
 		assert.Loosely(t, datastore.Put(c, suspect1), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()

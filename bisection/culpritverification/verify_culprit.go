@@ -27,8 +27,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/bisection/compilefailureanalysis/statusupdater"
+	"go.chromium.org/luci/bisection/culpritaction/revertculprit"
 	cpvt "go.chromium.org/luci/bisection/culpritverification/task"
 	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/config"
@@ -41,6 +43,8 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 )
+
+const treeName = "chromium"
 
 // RegisterTaskClass registers the task class for tq dispatcher
 func RegisterTaskClass() {
@@ -125,6 +129,15 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 		return nil
 	}
 
+	// Check if the same suspect has been confirmed and reverted in another analysis
+	skipped, err := skipVerificationIfConfirmed(c, suspect, cfa, analysisID)
+	if err != nil {
+		return err
+	}
+	if skipped {
+		return nil // Skip verification
+	}
+
 	// Get failed compile targets
 	compileFailure, err := datastoreutil.GetCompileFailureForAnalysisID(c, analysisID)
 	if err != nil {
@@ -171,8 +184,8 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	}
 
 	// TODO(nqmtuan): Pass in the project.
-	// For now, hardcode to "chromium", since we only support chromium for compile failure.
-	suspectBuild, parentBuild, err := VerifySuspectCommit(c, "chromium", suspect, failedBuildID, props, priority)
+	// For now, hardcode to treeName, since we only support chromium for compile failure.
+	suspectBuild, parentBuild, err := VerifySuspectCommit(c, treeName, suspect, failedBuildID, props, priority)
 	if err != nil {
 		logging.Errorf(c, "Error triggering rerun for build %d: %s", failedBuildID, err)
 		return err
@@ -202,6 +215,81 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 		return err
 	}
 	return nil
+}
+
+// skipVerificationIfConfirmed checks if the suspect has already been confirmed in another analysis.
+// If so, it skips verification, notifies LUCI Notify to reopen the tree if a revert was created,
+// schedules a revert action task, and returns true.
+func skipVerificationIfConfirmed(c context.Context, suspect *model.Suspect, cfa *model.CompileFailureAnalysis, analysisID int64) (bool, error) {
+	otherSuspects, err := datastoreutil.GetOtherSuspectsWithSameCL(c, suspect)
+	if err != nil {
+		logging.Errorf(c, "Failed to GetOtherSuspectsWithSameCL: %v", err)
+		return false, nil // Don't fail verification if query fails
+	}
+
+	for _, s := range otherSuspects {
+		if s.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit {
+			logging.Infof(c, "Suspect %d is already confirmed in analysis %d. Fast-tracking.",
+				suspect.Id, s.ParentAnalysis.Parent().IntID())
+
+			// Only notify tree reopen if a revert was actually created
+			if s.ActionDetails.IsRevertCreated {
+				// Notify LUCI Notify to reopen the tree
+				// Use treeName constant
+				err = revertculprit.NotifyRevertLanded(c, treeName, suspect, s.ActionDetails.RevertURL)
+				if err != nil {
+					logging.Errorf(c, "Failed to notify LUCI Notify about revert: %v", err)
+				}
+			}
+
+			// Fast-track the suspect and analysis
+			err = datastore.RunInTransaction(c, func(ctx context.Context) error {
+				// Update suspect status
+				e := datastore.Get(ctx, suspect)
+				if e != nil {
+					return e
+				}
+				suspect.VerificationStatus = model.SuspectVerificationStatus_ConfirmedCulprit
+				e = datastore.Put(ctx, suspect)
+				if e != nil {
+					return e
+				}
+
+				// Update analysis verified culprits
+				e = datastore.Get(ctx, cfa)
+				if e != nil {
+					return e
+				}
+				cfa.VerifiedCulprits = append(cfa.VerifiedCulprits, datastore.KeyForObj(ctx, suspect))
+				return datastore.Put(ctx, cfa)
+			}, nil)
+			if err != nil {
+				return false, errors.Fmt("failed to update datastore for fast-track suspect: %w", err)
+			}
+
+			// Update analysis status
+			err = statusupdater.UpdateAnalysisStatus(c, cfa)
+			if err != nil {
+				logging.Errorf(c, "Failed to update analysis status: %v", err)
+			}
+
+			// Add task to take action (revert/comment)
+			err = tq.AddTask(c, &tq.Task{
+				Title: fmt.Sprintf("revert_culprit_%d_%d", suspect.Id, analysisID),
+				Payload: &taskpb.RevertCulpritTask{
+					AnalysisId: analysisID,
+					CulpritId:  suspect.Id,
+				},
+			})
+			if err != nil {
+				return false, errors.Fmt("failed to schedule revert task: %w", err)
+			}
+
+			return true, nil // Fast-tracked
+		}
+	}
+
+	return false, nil // Not fast-tracked
 }
 
 func checkSuspectWithSameCommitExist(c context.Context, cfa *model.CompileFailureAnalysis, suspect *model.Suspect) (bool, error) {
@@ -325,7 +413,7 @@ func updateSuspectStatus(c context.Context, suspect *model.Suspect, cfa *model.C
 	// If after VerifySuspect, the suspect verification status is not
 	// SuspectVerificationStatus_UnderVerification, it means no reruns have been scheduled
 	// so we should set the status back to SuspectVerificationStatus_Unverified
-	if suspect.VerificationStatus != model.SuspectVerificationStatus_UnderVerification {
+	if suspect.VerificationStatus != model.SuspectVerificationStatus_UnderVerification && suspect.VerificationStatus != model.SuspectVerificationStatus_ConfirmedCulprit {
 		err := datastore.RunInTransaction(c, func(c context.Context) error {
 			// Update suspect status
 			e := datastore.Get(c, suspect)

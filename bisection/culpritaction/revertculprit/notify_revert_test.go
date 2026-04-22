@@ -37,7 +37,7 @@ import (
 func TestNotifyRevertLanded(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("notifyRevertLanded", t, func(t *ftt.Test) {
+	ftt.Run("NotifyRevertLanded", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		testutil.UpdateIndices(ctx)
 
@@ -86,7 +86,7 @@ func TestNotifyRevertLanded(t *testing.T) {
 				})
 
 			// Execute with mocked context
-			err := notifyRevertLanded(mockedClient.Ctx, treeName, culpritModel, revertURL)
+			err := NotifyRevertLanded(mockedClient.Ctx, treeName, culpritModel, revertURL)
 
 			// Verify
 			assert.Loosely(t, err, should.BeNil)
@@ -117,7 +117,7 @@ func TestNotifyRevertLanded(t *testing.T) {
 			mockedClient.Client.EXPECT().NotifyCulpritRevert(gomock.Any(), gomock.Any()).Times(0)
 
 			// Execute with mocked context
-			err := notifyRevertLanded(mockedClient.Ctx, treeName, culpritModel, revertURL)
+			err := NotifyRevertLanded(mockedClient.Ctx, treeName, culpritModel, revertURL)
 
 			// Verify - no error, but notification was skipped
 			assert.Loosely(t, err, should.BeNil)
@@ -130,7 +130,7 @@ func TestNotifyRevertLanded(t *testing.T) {
 			culpritModel.GitilesCommit.Id = "ghi789"
 
 			// Execute
-			err := notifyRevertLanded(ctx, treeName, culpritModel, revertURL)
+			err := NotifyRevertLanded(ctx, treeName, culpritModel, revertURL)
 
 			// Verify - should return nil (logs warning but doesn't fail)
 			assert.Loosely(t, err, should.BeNil)
@@ -142,7 +142,7 @@ func TestNotifyRevertLanded(t *testing.T) {
 			culpritModel.ParentAnalysis = nil
 
 			// Execute
-			err := notifyRevertLanded(ctx, treeName, culpritModel, revertURL)
+			err := NotifyRevertLanded(ctx, treeName, culpritModel, revertURL)
 
 			// Verify - should return nil (not a tree closer, skips notification)
 			assert.Loosely(t, err, should.BeNil)

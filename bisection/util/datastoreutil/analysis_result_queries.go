@@ -248,7 +248,9 @@ func GetOtherSuspectsWithSameCL(c context.Context, suspect *model.Suspect) ([]*m
 
 	// Remove this suspect
 	for i, s := range suspects {
-		if s.Id == suspect.Id {
+		parentsMatch := (s.ParentAnalysis == nil && suspect.ParentAnalysis == nil) ||
+			(s.ParentAnalysis != nil && suspect.ParentAnalysis != nil && s.ParentAnalysis.Equal(suspect.ParentAnalysis))
+		if s.Id == suspect.Id && parentsMatch {
 			return append(suspects[:i], suspects[i+1:]...), nil
 		}
 	}

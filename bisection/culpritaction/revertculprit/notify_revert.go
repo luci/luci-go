@@ -28,11 +28,11 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
-// notifyRevertLanded notifies LUCI Notify about a culprit revert landing.
+// NotifyRevertLanded notifies LUCI Notify about a culprit revert landing.
 // LUCI Notify will then consider this event when automatically managing tree status,
 // potentially reopening the tree if the revert landed after all failing builds started.
 // It checks if the culprit is a tree closer before notifying.
-func notifyRevertLanded(ctx context.Context, treeName string, culpritModel *model.Suspect, revertURL string) error {
+func NotifyRevertLanded(ctx context.Context, treeName string, culpritModel *model.Suspect, revertURL string) error {
 	// Check if this culprit is a tree closer
 	isTreeCloser, err := isCulpritTreeCloser(ctx, culpritModel)
 	if err != nil {

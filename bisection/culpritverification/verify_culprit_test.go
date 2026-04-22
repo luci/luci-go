@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -31,15 +33,20 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	lnpb "go.chromium.org/luci/luci_notify/api/service/v1"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gitiles"
+	"go.chromium.org/luci/bisection/internal/lucinotify"
 	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/testutil"
+
+	_ "go.chromium.org/luci/bisection/culpritaction/revertculprit"
 )
 
 func TestVerifySuspect(t *testing.T) {
@@ -228,6 +235,112 @@ func TestVerifySuspect(t *testing.T) {
 			err = datastore.GetAll(c, q, &singleReruns)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(singleReruns), should.Equal(1))
+		})
+
+		t.Run("Verify Suspect fast-tracks if already confirmed in another analysis", func(t *ftt.Test) {
+			ctl := gomock.NewController(t)
+			defer ctl.Finish()
+
+			// Setup mock for LUCI Notify
+			mockedClient := lucinotify.NewMockedClient(c, ctl)
+			c = mockedClient.Ctx
+			c, _ = tq.TestingContext(c, nil)
+
+			req := &lnpb.NotifyCulpritRevertRequest{
+				TreeName:         "chromium",
+				CulpritReviewUrl: "review_url",
+				RevertReviewUrl:  "revert_url",
+			}
+			// We expect NotifyCulpritRevert to be called
+			mockedClient.Client.EXPECT().NotifyCulpritRevert(gomock.Any(), gomock.Any()).DoAndReturn(
+				func(ctx context.Context, r *lnpb.NotifyCulpritRevertRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+					assert.Loosely(t, r.TreeName, should.Equal(req.TreeName))
+					assert.Loosely(t, r.CulpritReviewUrl, should.Equal(req.CulpritReviewUrl))
+					assert.Loosely(t, r.RevertReviewUrl, should.Equal(req.RevertReviewUrl))
+					return &emptypb.Empty{}, nil
+				},
+			).Times(1)
+
+			// Setup Gitiles mock
+			gitilesResponse := model.ChangeLogResponse{
+				Log: []*model.ChangeLog{
+					{
+						Commit: "3424",
+					},
+				},
+			}
+			gitilesResponseStr, _ := json.Marshal(gitilesResponse)
+			c = gitiles.MockedGitilesClientContext(c, map[string]string{
+				"https://chromium.googlesource.com/chromium/src/+log/3425~2..3425^": string(gitilesResponseStr),
+			})
+
+			// Setup existing confirmed suspect
+			_, _, cfaOther := testutil.CreateCompileFailureAnalysisAnalysisChain(c, t, 8000, "chromium", 555)
+
+			genaiAnalysisOther := &model.CompileGenAIAnalysis{
+				ParentAnalysis: datastore.KeyForObj(c, cfaOther),
+			}
+			assert.Loosely(t, datastore.Put(c, genaiAnalysisOther), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			suspectOther := &model.Suspect{
+				Score:              10,
+				ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysisOther),
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				ReviewUrl:          "review_url",
+				ActionDetails: model.ActionDetails{
+					IsRevertCreated: true,
+					RevertURL:       "revert_url",
+				},
+			}
+			assert.Loosely(t, datastore.Put(c, suspectOther), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// Setup current analysis
+			_, _, cfa := testutil.CreateCompileFailureAnalysisAnalysisChain(c, t, 8001, "chromium", 666)
+			cfa.IsTreeCloser = true
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			genaiAnalysis := &model.CompileGenAIAnalysis{
+				ParentAnalysis: datastore.KeyForObj(c, cfa),
+			}
+			assert.Loosely(t, datastore.Put(c, genaiAnalysis), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			suspect := &model.Suspect{
+				Score:          10,
+				ParentAnalysis: datastore.KeyForObj(c, genaiAnalysis),
+				ReviewUrl:      "review_url",
+				AnalysisType:   pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+				GitilesCommit: bbpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      "3425",
+				},
+			}
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			err := VerifySuspect(c, suspect, 8001, 666)
+			assert.Loosely(t, err, should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// Verify suspect status is updated to ConfirmedCulprit
+			assert.Loosely(t, datastore.Get(c, suspect), should.BeNil)
+			assert.Loosely(t, suspect.VerificationStatus, should.Equal(model.SuspectVerificationStatus_ConfirmedCulprit))
+
+			// Verify analysis verified culprits is updated
+			assert.Loosely(t, datastore.Get(c, cfa), should.BeNil)
+			assert.Loosely(t, len(cfa.VerifiedCulprits), should.Equal(1))
+			assert.Loosely(t, cfa.VerifiedCulprits[0], should.Match(datastore.KeyForObj(c, suspect)))
+
+			// Verify no reruns were created
+			q := datastore.NewQuery("SingleRerun").Eq("analysis", datastore.KeyForObj(c, cfa))
+			singleReruns := []*model.SingleRerun{}
+			err = datastore.GetAll(c, q, &singleReruns)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(singleReruns), should.BeZero)
 		})
 
 		t.Run("Verify Suspect should not trigger any rerun if culprit found", func(t *ftt.Test) {
