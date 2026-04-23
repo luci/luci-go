@@ -1479,7 +1479,7 @@ func TestNewClientFromEnv(t *testing.T) {
 		assert.Loosely(t, opts.AnonymousClient, should.Equal(http.DefaultClient))
 		assert.Loosely(t, opts.AuthenticatedClient, should.NotBeNil)
 		assert.Loosely(t, opts.MaxThreads, should.Equal(runtime.NumCPU()))
-		assert.Loosely(t, opts.ParallelDownloads, should.BeZero) // replaced with DefaultParallelDownloads later
+		assert.Loosely(t, opts.ParallelDownloads, should.Equal(DefaultParallelDownloads))
 		assert.Loosely(t, opts.UserAgent, should.Equal(UserAgent))
 		assert.Loosely(t, opts.LoginInstructions, should.NotBeEmpty)
 		assert.Loosely(t, opts.PluginsContext, should.Equal(ctx))

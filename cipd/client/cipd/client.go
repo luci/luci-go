@@ -134,7 +134,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.7.17"
+	UserAgent = "cipd 2.7.18"
 )
 
 func init() {
@@ -675,6 +675,9 @@ func NewClient(opts ClientOptions) (Client, error) {
 	if opts.MaxThreads <= 0 {
 		opts.MaxThreads = runtime.NumCPU()
 	}
+	if opts.ParallelDownloads == 0 {
+		opts.ParallelDownloads = DefaultParallelDownloads
+	}
 
 	// Validate and normalize service URL.
 	if opts.ServiceURL == "" {
@@ -951,22 +954,11 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache
 		}
 	}
 
-	// Since 0 is used as "use defaults" indicator, we have to use negatives to
-	// represent "do not do anything in parallel at all" (by passing 0 to
-	// the InstanceCache).
-	parallelDownloads := c.ParallelDownloads
-	switch {
-	case parallelDownloads == 0:
-		parallelDownloads = DefaultParallelDownloads
-	case parallelDownloads < 0:
-		parallelDownloads = 0
-	}
-
 	cache := &internal.InstanceCache{
 		FS:                fs.NewFileSystem(cacheDir, ""),
 		Tmp:               tmp,
 		Fetcher:           c.remoteFetchInstance,
-		ParallelDownloads: parallelDownloads,
+		ParallelDownloads: max(0, c.Options().ParallelDownloads),
 	}
 	cache.Launch(ctx) // start background download goroutines
 	return cache, nil
