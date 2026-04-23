@@ -16,6 +16,7 @@ package actions
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 
 	"go.chromium.org/luci/cipkg/core"
@@ -78,6 +79,6 @@ func renderAll(raw []string, vals map[string]string) (ret []string, err error) {
 
 // DepRef is a helper to convert name to reference which will be rendered by
 // command Action to output directory.
-func DepRef(name string) string {
-	return "{{." + name + "}}"
+func DepRef(name string, path ...string) string {
+	return filepath.Join(append([]string{"{{." + name + "}}"}, path...)...)
 }
