@@ -25,7 +25,7 @@ import {
   MRT_ColumnFiltersState,
   MRT_Updater,
 } from 'material-react-table';
-import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useCallback } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -44,17 +44,30 @@ import {
   getColumnId,
   useMRTColumnManagement,
 } from '@/fleet/components/columns/use_mrt_column_management';
-import { DeviceListFilterBar_OLD as DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar_OLD';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
+import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
+import {
+  GetFiltersResult,
+  stringifyFilters,
+} from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   filtersUpdater,
-  getFilters,
+  FILTERS_PARAM_KEY,
 } from '@/fleet/components/filter_dropdown/search_param_utils';
+import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
+import {
+  StringListFilterCategory,
+  StringListFilterCategoryBuilder,
+} from '@/fleet/components/filters/string_list_filter';
+import {
+  useFilters,
+  FilterCategory,
+} from '@/fleet/components/filters/use_filters';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
+import { BLANK_VALUE } from '@/fleet/constants/filters';
 import {
   ANDROID_PLATFORM,
   generateDeviceListURL,
@@ -67,14 +80,17 @@ import {
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { colors } from '@/fleet/theme/colors';
-import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { computeSelectedOptions } from '@/fleet/utils/filters';
 import {
   getFilterQueryString,
   parseOrderByParam,
 } from '@/fleet/utils/search_param';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
-import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import {
+  TrackLeafRoutePageView,
+  useGoogleAnalytics,
+} from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Platform,
@@ -83,12 +99,12 @@ import {
 
 import { COLUMNS } from './repairs_columns';
 import { getPriorityIcon, getRow, type Row } from './repairs_columns.utils';
-import { dimensionsToFilterOptions } from './repairs_page_utils';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
 
 export const RepairListPage = () => {
+  const { trackEvent } = useGoogleAnalytics();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam, updateOrderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
@@ -96,44 +112,69 @@ export const RepairListPage = () => {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const selectedOptions = useMemo(
-    () => getFilters(searchParams),
-    [searchParams],
-  );
-
-  const onSelectedOptionsChange = useCallback(
-    (newSelectedOptions: SelectedOptions) => {
-      setSearchParams(filtersUpdater(newSelectedOptions));
-
-      // Clear out all the page tokens when the filter changes.
-      // An AIP-158 page token is only valid for the filter
-      // option that generated it.
-      setSearchParams(emptyPageTokenUpdater(pagerCtx));
-    },
-    [pagerCtx, setSearchParams],
-  );
-
-  const stringifiedSelectedOptions = selectedOptions.error
-    ? ''
-    : stringifyFilters(selectedOptions.filters);
-
   const client = useFleetConsoleClient();
-
-  const repairMetricsList = useQuery({
-    ...client.ListRepairMetrics.query({
-      platform: Platform.ANDROID,
-      filter: stringifiedSelectedOptions,
-      pageSize: getPageSize(pagerCtx, searchParams),
-      pageToken: getPageToken(pagerCtx, searchParams),
-      orderBy: orderByParam,
-    }),
-    placeholderData: keepPreviousData,
-  });
 
   const repairMetricsFilterValues = useQuery({
     ...client.GetRepairMetricsDimensions.query({
       platform: Platform.ANDROID,
     }),
+  });
+
+  const loadedFilterOptions = useMemo(() => {
+    if (!repairMetricsFilterValues.data) return {};
+
+    const filters: Record<string, StringListFilterCategoryBuilder> = {};
+    for (const [key, value] of Object.entries(
+      repairMetricsFilterValues.data.dimensions,
+    )) {
+      const mappedKey =
+        key === 'hostGroup'
+          ? 'host_group'
+          : key === 'labName'
+            ? 'lab_name'
+            : key;
+      filters[mappedKey] = new StringListFilterCategoryBuilder()
+        .setLabel(_.startCase(key))
+        .setOptions([
+          { label: BLANK_VALUE, value: BLANK_VALUE },
+          ...(value.values || [])
+            .filter((v) => v !== '' && v !== BLANK_VALUE)
+            .map((v) => ({ label: v, value: v })),
+        ]);
+    }
+    return filters;
+  }, [repairMetricsFilterValues.data]);
+
+  const filterCategoryDatas = useFilters(loadedFilterOptions, {
+    allowExtraKeys: !repairMetricsFilterValues.data,
+  });
+
+  const selectedOptions = useMemo<GetFiltersResult>(() => {
+    if (filterCategoryDatas.parseError) {
+      return {
+        filters: undefined,
+        error: new Error(filterCategoryDatas.parseError),
+      };
+    }
+    return {
+      filters: computeSelectedOptions(filterCategoryDatas.filterValues),
+      error: undefined,
+    };
+  }, [filterCategoryDatas.filterValues, filterCategoryDatas.parseError]);
+
+  const stringifiedSelectedOptions = selectedOptions.error
+    ? ''
+    : stringifyFilters(selectedOptions.filters || {});
+
+  const repairMetricsList = useQuery({
+    ...client.ListRepairMetrics.query({
+      platform: Platform.ANDROID,
+      filter: filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160,
+      pageSize: getPageSize(pagerCtx, searchParams),
+      pageToken: getPageToken(pagerCtx, searchParams),
+      orderBy: orderByParam,
+    }),
+    placeholderData: keepPreviousData,
   });
 
   const [warnings, addWarning] = useWarnings();
@@ -156,6 +197,7 @@ export const RepairListPage = () => {
 
   useEffect(() => {
     if (!selectedOptions.error) return;
+
     addWarning('Invalid filters');
     setSearchParams(filtersUpdater({}));
   }, [addWarning, selectedOptions.error, setSearchParams]);
@@ -177,21 +219,22 @@ export const RepairListPage = () => {
   );
 
   const columns = useMemo(() => {
-    const filterCategories = repairMetricsFilterValues.data
-      ? dimensionsToFilterOptions(repairMetricsFilterValues.data)
-      : [];
-
     return Object.values(COLUMNS).map((c) => {
       const id = getColumnId(c as MRT_ColumnDef<Row>);
-      const category = filterCategories.find((cat) => cat.value === id);
+      const builder = loadedFilterOptions[id];
       return {
         ...c,
         filterVariant: 'multi-select',
         filterSelectOptions:
-          category && 'options' in category ? category.options : [],
+          builder && builder.options
+            ? builder.options.map((opt) => ({
+                text: opt.label,
+                value: String(opt.value),
+              }))
+            : [],
       };
     }) as MRT_ColumnDef<Row>[];
-  }, [repairMetricsFilterValues.data]);
+  }, [loadedFilterOptions]);
 
   const columnFilters = useMemo<MRT_ColumnFiltersState>(() => {
     return Object.entries(selectedOptions?.filters || {}).map(
@@ -202,17 +245,69 @@ export const RepairListPage = () => {
     );
   }, [selectedOptions.filters]);
 
+  const columnFiltersRef = useRef<MRT_ColumnFiltersState>([]);
+  useEffect(() => {
+    columnFiltersRef.current = columnFilters;
+  }, [columnFilters]);
+
   const onColumnFiltersChange = useCallback(
     (updater: MRT_Updater<MRT_ColumnFiltersState>) => {
       const newFilters =
         typeof updater === 'function' ? updater(columnFilters) : updater;
-      const newSelectedOptions = Object.fromEntries(
-        newFilters.map((f: { id: string; value: unknown }) => [f.id, f.value]),
-      ) as SelectedOptions;
 
-      onSelectedOptionsChange(newSelectedOptions);
+      if (!filterCategoryDatas.filterValues) return;
+
+      const prevTableFilterKeys = columnFiltersRef.current.map((f) =>
+        normalizeFilterKey(f.id),
+      );
+
+      let hasChanges = false;
+      for (const [key, category] of Object.entries(
+        filterCategoryDatas.filterValues as Record<string, FilterCategory>,
+      )) {
+        const matchKey = normalizeFilterKey(key);
+        const isInNewFilters = newFilters.some(
+          (f) => normalizeFilterKey(f.id) === matchKey,
+        );
+        const wasInTable = prevTableFilterKeys.includes(matchKey);
+
+        if (!isInNewFilters && !wasInTable) {
+          continue;
+        }
+
+        const filterObj = newFilters.find(
+          (f) => normalizeFilterKey(f.id) === matchKey,
+        );
+        const newValues = filterObj
+          ? typeof filterObj.value === 'string'
+            ? [filterObj.value]
+            : (filterObj.value as string[])
+          : [];
+
+        if (category instanceof StringListFilterCategory) {
+          const currentValues = category.getSelectedOptions();
+          if (!_.isEqual([...newValues].sort(), [...currentValues].sort())) {
+            hasChanges = true;
+            category.setSelectedOptions(newValues, true);
+          }
+        }
+      }
+
+      if (!hasChanges) return;
+
+      const currentAIP160 = filterCategoryDatas.getAip160String();
+
+      setSearchParams((prev) => {
+        const prevAIP160 = prev.get(FILTERS_PARAM_KEY) ?? '';
+        if (currentAIP160 === prevAIP160) return prev;
+
+        let newParams = new URLSearchParams(prev);
+        newParams.set(FILTERS_PARAM_KEY, currentAIP160);
+        newParams = emptyPageTokenUpdater(pagerCtx)(newParams);
+        return newParams;
+      });
     },
-    [columnFilters, onSelectedOptionsChange],
+    [filterCategoryDatas, pagerCtx, setSearchParams, columnFilters],
   );
 
   const defaultColumnIds = useMemo(
@@ -358,7 +453,11 @@ export const RepairListPage = () => {
       }}
     >
       <WarningNotifications warnings={warnings} />
-      <Metrics filters={stringifiedSelectedOptions} pagerContext={pagerCtx} />
+      <Metrics
+        filters={stringifiedSelectedOptions}
+        pagerContext={pagerCtx}
+        onColumnFiltersChange={onColumnFiltersChange}
+      />
       <div
         css={{
           marginTop: 24,
@@ -378,18 +477,20 @@ export const RepairListPage = () => {
             color="error"
           />
         ) : (
-          <DeviceListFilterBar
-            filterOptions={
-              repairMetricsFilterValues.data
-                ? dimensionsToFilterOptions(repairMetricsFilterValues.data)
-                : []
-            }
-            selectedOptions={selectedOptions.filters}
-            onSelectedOptionsChange={onSelectedOptionsChange}
+          <FilterBar
+            filterCategoryDatas={Object.values(
+              filterCategoryDatas.filterValues || {},
+            )}
+            onApply={() => {
+              trackEvent('filter_changed', {
+                componentName: 'device_list_filter',
+              });
+            }}
             isLoading={
               repairMetricsFilterValues.isPending ||
-              repairMetricsFilterValues.isPlaceholderData
+              filterCategoryDatas.filterValues === undefined
             }
+            searchPlaceholder='Add a filter (e.g. "state:ready" or "priority:high")'
           />
         )}
       </div>
@@ -408,9 +509,11 @@ export const RepairListPage = () => {
 function Metrics({
   filters,
   pagerContext,
+  onColumnFiltersChange,
 }: {
   filters: string;
   pagerContext: PagerContext;
+  onColumnFiltersChange: (updater: MRT_Updater<MRT_ColumnFiltersState>) => void;
 }) {
   const client = useFleetConsoleClient();
   const [searchParams, _] = useSyncedSearchParams();
@@ -606,10 +709,11 @@ function Metrics({
               total={countQuery.data?.totalRepairGroup}
               Icon={getPriorityIcon(RepairMetric_Priority.BREACHED)}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                { priority: ['BREACHED'] },
-                searchParams,
-              )}
+              handleClick={() => {
+                onColumnFiltersChange([
+                  { id: 'priority', value: ['BREACHED'] },
+                ]);
+              }}
             />
             <SingleMetric
               name="Watch"
@@ -617,10 +721,9 @@ function Metrics({
               total={countQuery.data?.totalRepairGroup}
               Icon={getPriorityIcon(RepairMetric_Priority.WATCH)}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                { priority: ['WATCH'] },
-                searchParams,
-              )}
+              handleClick={() => {
+                onColumnFiltersChange([{ id: 'priority', value: ['WATCH'] }]);
+              }}
             />
             <SingleMetric
               name="Nice"
@@ -628,10 +731,9 @@ function Metrics({
               total={countQuery.data?.totalRepairGroup}
               Icon={getPriorityIcon(RepairMetric_Priority.NICE)}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                { priority: ['NICE'] },
-                searchParams,
-              )}
+              handleClick={() => {
+                onColumnFiltersChange([{ id: 'priority', value: ['NICE'] }]);
+              }}
             />
           </div>
         </div>

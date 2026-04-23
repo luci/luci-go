@@ -338,6 +338,7 @@ export const COLUMNS = {
   [Key in keyof Row | `static-${string}`]: Key extends keyof Row
     ? MRT_ColumnDef<Row, Row[Key]> & {
         accessorKey: Key;
+        filterByField?: string;
       }
     : MRT_ColumnDef<Row, undefined>;
 }>;
