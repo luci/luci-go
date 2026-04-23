@@ -42,7 +42,7 @@ func cmdEnsureFileResolve(params Parameters) *subcommands.Command {
 			c := &ensureFileResolveRun{}
 			c.registerBaseFlags()
 			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
-			c.ensureFileOptions.registerFlags(&c.Flags, withoutEnsureOutFlag, withoutLegacyListFlag)
+			c.ensureFileOptions.registerFlags(&c.cipdSubcommand, singleEnsureFile, withoutEnsureOutFlag, withoutLegacyListFlag)
 			return c
 		},
 	}

@@ -58,7 +58,7 @@ For the full syntax of the ensure file, see:
 			c := &ensureRun{}
 			c.registerBaseFlags()
 			c.clientOptions.registerFlags(&c.Flags, params, withRootDir, withMaxThreads)
-			c.ensureFileOptions.registerFlags(&c.Flags, withEnsureOutFlag, withLegacyListFlag)
+			c.ensureFileOptions.registerFlags(&c.cipdSubcommand, singleEnsureFile, withEnsureOutFlag, withLegacyListFlag)
 			return c
 		},
 	}

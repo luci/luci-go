@@ -40,7 +40,7 @@ func cmdPuppetCheckUpdates(params Parameters) *subcommands.Command {
 			c := &checkUpdatesRun{}
 			c.registerBaseFlags()
 			c.clientOptions.registerFlags(&c.Flags, params, withRootDir, withMaxThreads)
-			c.ensureFileOptions.registerFlags(&c.Flags, withoutEnsureOutFlag, withLegacyListFlag)
+			c.ensureFileOptions.registerFlags(&c.cipdSubcommand, singleEnsureFile, withoutEnsureOutFlag, withLegacyListFlag)
 			return c
 		},
 	}

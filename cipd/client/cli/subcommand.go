@@ -51,6 +51,8 @@ const envSimpleTerminalUI = "CIPD_SIMPLE_TERMINAL_UI"
 type cipdSubcommand struct {
 	subcommands.CommandRunBase
 
+	customCheck map[*flag.Flag]func() (missing bool, err error)
+
 	jsonOutput string
 	logConfig  logging.Config
 
@@ -124,22 +126,53 @@ func (c *cipdSubcommand) checkArgs(args []string, minPosCount, maxPosCount int) 
 	}
 
 	// Check required unset flags.
-	unset := []*flag.Flag{}
+	var missingFlags []string
+	var errs []error
 	c.Flags.VisitAll(func(f *flag.Flag) {
-		if strings.HasPrefix(f.DefValue, "<") && f.Value.String() == f.DefValue {
-			unset = append(unset, f)
+		if checkFn := c.customCheck[f]; checkFn != nil {
+			missing, err := checkFn()
+			if missing {
+				missingFlags = append(missingFlags, f.Name)
+			}
+			if err != nil {
+				errs = append(errs, err)
+			}
+		} else if strings.HasPrefix(f.DefValue, "<") && f.Value.String() == f.DefValue {
+			missingFlags = append(missingFlags, f.Name)
 		}
 	})
-	if len(unset) != 0 {
-		missing := make([]string, len(unset))
-		for i, f := range unset {
-			missing[i] = f.Name
+	if len(missingFlags) > 0 || len(errs) > 0 {
+		msg := fmt.Sprintf("missing required flags: %v", missingFlags)
+		if len(errs) > 0 {
+			allMsgs := []string{msg}
+			for _, err := range errs {
+				allMsgs = append(allMsgs, err.Error())
+			}
+			msg = strings.Join(allMsgs, ", ")
 		}
-		c.printError(makeCLIError("missing required flags: %v", missing))
+		c.printError(makeCLIError("%s", msg))
 		return false
 	}
 
 	return true
+}
+
+// setCustomCheckFunc adds a `check` function which will be called when
+// checkArgs processes the flag indicated by `forFlag`.
+//
+// The function can return `true` to mark this flag as missing, or an error to
+// report some other error condition.
+//
+// The flag must already be registered in c.Flags by this name.
+func (c *cipdSubcommand) setCustomCheckFunc(forFlag string, check func() (bool, error)) {
+	flagObj := c.Flags.Lookup(forFlag)
+	if flagObj == nil {
+		panic(fmt.Sprintf("setCustomCheckFunc(%q); flag not registered", forFlag))
+	}
+	if c.customCheck == nil {
+		c.customCheck = map[*flag.Flag]func() (bool, error){}
+	}
+	c.customCheck[flagObj] = check
 }
 
 // printError prints error to stderr (recognizing cliErrorTag).

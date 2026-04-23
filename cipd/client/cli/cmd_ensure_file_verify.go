@@ -41,7 +41,7 @@ func cmdEnsureFileVerify(params Parameters) *subcommands.Command {
 			c := &ensureFileVerifyRun{}
 			c.registerBaseFlags()
 			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir, withoutMaxThreads)
-			c.ensureFileOptions.registerFlags(&c.Flags, withoutEnsureOutFlag, withoutLegacyListFlag)
+			c.ensureFileOptions.registerFlags(&c.cipdSubcommand, singleEnsureFile, withoutEnsureOutFlag, withoutLegacyListFlag)
 			return c
 		},
 	}
@@ -72,15 +72,14 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 	}
 
 	// Verify $ResolvedVersions file is up-to-date too.
-	switch existing, err := loadVersionsFile(lef.ef.ResolvedVersions, c.ensureFile); {
+	switch existing, err := loadVersionsFile(lef.ef.ResolvedVersions, lef.path); {
 	case err != nil:
 		return c.done(nil, err)
 	case !existing.Equal(versions):
 		return c.done(nil,
-
 			cipderr.Stale.Apply(errors.Fmt("the resolved versions file %s is stale, "+
 				"use 'cipd ensure-file-resolve -ensure-file %q' to update it",
-				filepath.Base(lef.ef.ResolvedVersions), c.ensureFile)))
+				filepath.Base(lef.ef.ResolvedVersions), lef.path)))
 	default:
 		return c.doneWithPinMap(pinMap, err)
 	}
