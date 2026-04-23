@@ -577,7 +577,7 @@ export const AndroidDevicesPage = () => {
             dimensionsQuery.isPending ||
             filterCategoryDatas.filterValues === undefined
           }
-          searchPlaceholder='Add a filter (e.g. "dut1" or "state:ready")'
+          searchPlaceholder='Add a filter (e.g. "state:ready", "pool:default", or "device_id:123")'
         />
       </div>
       <div

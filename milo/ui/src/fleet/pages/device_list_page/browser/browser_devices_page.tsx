@@ -15,7 +15,7 @@
 import { Chip } from '@mui/material';
 import _ from 'lodash';
 import { MaterialReactTable, MRT_ColumnDef } from 'material-react-table';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -23,7 +23,7 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { DeviceListFilterBar_OLD as DeviceListFilterBar } from '@/fleet/components/device_table/device_list_filter_bar_OLD';
+import { emptyPageTokenUpdater } from '@/common/components/params_pager';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
@@ -32,21 +32,40 @@ import {
   FleetColumnDefExt,
   useFleetMRTState,
 } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
+import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
+import {
+  GetFiltersResult,
+  stringifyFilters,
+} from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   filtersUpdater,
   getFilters,
 } from '@/fleet/components/filter_dropdown/search_param_utils';
+import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils';
+import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
+import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
+import {
+  FilterCategory,
+  useFilters,
+} from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { BROWSER_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { getFeatureFlag } from '@/fleet/config/features';
+import {
+  BROWSER_SWARMING_SOURCE,
+  BROWSER_UFS_SOURCE,
+} from '@/fleet/constants/browser';
+import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { BROWSER_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { SelectedOptions } from '@/fleet/types';
+import {
+  computeSelectedOptions,
+  syncFilterCategory,
+} from '@/fleet/utils/filters';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
@@ -61,11 +80,9 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
-import { filterOptionsPlaceholder } from '../common/helpers';
 
 import { getBrowserColumn, getBrowserColumnIds } from './browser_columns';
 import { BrowserSummaryHeader } from './browser_summary_header';
-import { dimensionsToFilterOptions } from './dimensions_to_filter_options';
 import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500, 1000];
@@ -80,39 +97,7 @@ export const BrowserDevicesPage = () => {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const selectedOptions = useMemo(
-    () => getFilters(searchParams),
-    [searchParams],
-  );
-
-  const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
-    trackEvent('filter_changed', {
-      componentName: 'device_list_filter',
-    });
-
-    setSearchParams(filtersUpdater(newSelectedOptions));
-  };
-
-  const stringifiedSelectedOptions = selectedOptions.error
-    ? ''
-    : stringifyFilters(selectedOptions.filters);
-
   const dimensionsQuery = useBrowserDeviceDimensions();
-
-  const request = ListBrowserDevicesRequest.fromPartial({
-    pageSize: getPageSize(pagerCtx, searchParams),
-    pageToken: getPageToken(pagerCtx, searchParams),
-    orderBy: orderByParam,
-    filter: stringifiedSelectedOptions,
-  });
-
-  const devicesQuery = useBrowserDevices(request);
-
-  const {
-    devices = [],
-    nextPageToken = '',
-    totalSize = 0,
-  } = devicesQuery.data || {};
 
   const columnsParamStr = searchParams.getAll(COLUMNS_PARAM_KEY).join(',');
 
@@ -207,27 +192,150 @@ export const BrowserDevicesPage = () => {
     dimensionsQuery.data.ufsLabels;
 
   const loadedFilterOptions = useMemo(() => {
-    if (!isDimensionsQueryProperlyLoaded) return [];
-    return dimensionsToFilterOptions(dimensionsQuery.data, columnsRecord);
+    if (!isDimensionsQueryProperlyLoaded) return {};
+
+    const filters: Record<string, StringListFilterCategoryBuilder> = {};
+
+    const addDimensions = (
+      dimensions: Record<string, { values: readonly string[] }>,
+      getColumnId: (k: string) => string,
+    ) => {
+      for (const [filterKey, filterValues] of Object.entries(dimensions)) {
+        const key = getColumnId(filterKey);
+        const label = (columnsRecord[key]?.header || key) as string;
+        const value = columnsRecord[key]?.filterByField || key;
+
+        filters[value] = new StringListFilterCategoryBuilder()
+          .setLabel(label)
+          .setOptions([
+            { label: BLANK_VALUE, value: BLANK_VALUE },
+            ...(filterValues.values || [])
+              .filter((v) => v !== '' && v !== BLANK_VALUE)
+              .map((v) => ({ label: v, value: v })),
+          ]);
+      }
+    };
+
+    addDimensions(dimensionsQuery.data.baseDimensions, (k) => k);
+    addDimensions(
+      dimensionsQuery.data.swarmingLabels,
+      (k) => `${BROWSER_SWARMING_SOURCE}."${k}"`,
+    );
+    addDimensions(
+      dimensionsQuery.data.ufsLabels,
+      (k) => `${BROWSER_UFS_SOURCE}."${k}"`,
+    );
+
+    return filters;
   }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data, columnsRecord]);
 
-  const placeholderFilterOptions = useMemo(() => {
-    if (isDimensionsQueryProperlyLoaded) return [];
-    return filterOptionsPlaceholder(
-      selectedOptions.filters || {},
-      columnsRecord,
-    );
-  }, [isDimensionsQueryProperlyLoaded, selectedOptions.filters, columnsRecord]);
+  const filterCategoryDatas = useFilters(loadedFilterOptions, {
+    allowExtraKeys: !isDimensionsQueryProperlyLoaded,
+  });
 
-  const filterOptionsConfig = isDimensionsQueryProperlyLoaded
-    ? loadedFilterOptions
-    : placeholderFilterOptions;
+  const selectedOptions = useMemo<GetFiltersResult>(() => {
+    if (filterCategoryDatas.parseError) {
+      return {
+        filters: undefined,
+        error: new Error(filterCategoryDatas.parseError),
+      };
+    }
+    return {
+      filters: computeSelectedOptions(filterCategoryDatas.filterValues),
+      error: undefined,
+    };
+  }, [filterCategoryDatas.filterValues, filterCategoryDatas.parseError]);
+
+  const onColumnFiltersChangeOverride = useCallback(
+    (newFilters: Record<string, string[]>) => {
+      trackEvent('filter_changed', {
+        componentName: 'device_list_filter',
+      });
+      if (!filterCategoryDatas.filterValues) return;
+
+      const prevTableFilterKeys = Object.keys(
+        selectedOptions.filters || {},
+      ).map((id) => normalizeFilterKey(id));
+
+      for (const [key, category] of Object.entries(
+        filterCategoryDatas.filterValues as Record<string, FilterCategory>,
+      )) {
+        syncFilterCategory(key, category, newFilters, prevTableFilterKeys);
+      }
+
+      const currentAIP160 = filterCategoryDatas.getAip160String();
+      setSearchParams((prev) => {
+        let newParams = new URLSearchParams(prev);
+        newParams.set(FILTERS_PARAM_KEY, currentAIP160);
+        newParams = emptyPageTokenUpdater(pagerCtx)(newParams);
+        return newParams;
+      });
+    },
+    [
+      filterCategoryDatas,
+      pagerCtx,
+      setSearchParams,
+      trackEvent,
+      selectedOptions.filters,
+    ],
+  );
+
+  const request = ListBrowserDevicesRequest.fromPartial({
+    pageSize: getPageSize(pagerCtx, searchParams),
+    pageToken: getPageToken(pagerCtx, searchParams),
+    orderBy: orderByParam,
+    filter: filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160,
+  });
+
+  const devicesQuery = useBrowserDevices(request);
+
+  const {
+    devices = [],
+    nextPageToken = '',
+    totalSize = 0,
+  } = devicesQuery.data || {};
+
+  const fallbackRealms = useMemo(() => {
+    const realms = new Set<string>();
+    devices.forEach((dev: BrowserDevice) => {
+      if (dev.realm) realms.add(dev.realm);
+    });
+    return Array.from(realms).map((r) => ({ label: r, value: r }));
+  }, [devices]);
+
+  const filterOptionsConfig = useMemo(() => {
+    if (!isDimensionsQueryProperlyLoaded) return [];
+
+    const options = Object.entries(loadedFilterOptions).map(
+      ([key, builder]) => {
+        const b = builder as StringListFilterCategoryBuilder;
+        return {
+          label: b.label || key,
+          type: 'string_list' as const,
+          value: key,
+          options: b.options || [],
+        };
+      },
+    );
+
+    if (!options.some((o) => o.value === 'realm')) {
+      options.push({
+        label: 'Realm',
+        type: 'string_list' as const,
+        value: 'realm',
+        options: fallbackRealms,
+      });
+    }
+
+    return options;
+  }, [isDimensionsQueryProperlyLoaded, loadedFilterOptions, fallbackRealms]);
 
   const fleetMrtState = useFleetMRTState({
     setSearchParams,
     pagerCtx,
     selectedOptions,
     filterOptionsConfig,
+    onColumnFiltersChangeOverride,
     columnsList: columnsList as unknown as FleetColumnDefExt[],
 
     orderByParam,
@@ -390,11 +498,20 @@ export const BrowserDevicesPage = () => {
             color="error"
           />
         ) : (
-          <DeviceListFilterBar
-            filterOptions={filterOptionsConfig}
-            selectedOptions={selectedOptions.filters}
-            onSelectedOptionsChange={onSelectedOptionsChange}
-            isLoading={dimensionsQuery.isPending}
+          <FilterBar
+            filterCategoryDatas={Object.values(
+              filterCategoryDatas.filterValues || {},
+            )}
+            onApply={() => {
+              trackEvent('filter_changed', {
+                componentName: 'device_list_filter',
+              });
+            }}
+            isLoading={
+              dimensionsQuery.isPending ||
+              filterCategoryDatas.filterValues === undefined
+            }
+            searchPlaceholder='Add a filter (e.g. "os:Linux" or "sw.pool:default")'
           />
         )}
       </div>

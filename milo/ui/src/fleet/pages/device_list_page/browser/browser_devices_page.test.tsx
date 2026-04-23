@@ -20,6 +20,22 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { BrowserDevicesPage } from './browser_devices_page';
 
+jest.mock('./use_browser_device_dimensions', () => {
+  const mockData = {
+    baseDimensions: {
+      os: { values: ['Linux', 'Windows'] },
+    },
+    swarmingLabels: {},
+    ufsLabels: {},
+  };
+  return {
+    useBrowserDeviceDimensions: () => ({
+      data: mockData,
+      isPending: false,
+    }),
+  };
+});
+
 describe('<BrowserDevicesPage />', () => {
   it('should render', async () => {
     render(
