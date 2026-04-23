@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { stripQuotes } from '@/fleet/components/fc_data_table/mrt_filter_menu_item_utils';
+
 /**
  * Removes surrounding quotes from a string.
  */
-export const unquote = (val: string) => val.replace(/^"(.*)"$/, '$1');
+export const unquote = (val: string) => stripQuotes(val);
 
 /**
  * Normalizes a filter key by removing 'labels.' prefix and quotes.
  * E.g., 'labels."build"' -> 'build'
  */
 export const normalizeFilterKey = (key: string) =>
-  unquote(key.replace(/^labels\./, ''));
+  stripQuotes(key.replace(/^labels\./, ''));

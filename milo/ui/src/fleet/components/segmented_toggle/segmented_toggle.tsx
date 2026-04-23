@@ -29,7 +29,10 @@ interface SegmentedToggleProps {
   onChange: (newValue: string) => void;
 }
 
-const StyledToggleButtonGroup = styled(ToggleButtonGroup)<{
+const StyledToggleButtonGroup = styled(ToggleButtonGroup, {
+  shouldForwardProp: (prop) =>
+    prop !== 'selectedIndex' && prop !== 'totalOptions',
+})<{
   selectedIndex: number;
   totalOptions: number;
 }>(({ selectedIndex, totalOptions }) => ({

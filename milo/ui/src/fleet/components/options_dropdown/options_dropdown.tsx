@@ -174,14 +174,14 @@ export function OptionsDropdown({
         },
         {
           name: 'flip',
-          enabled: true,
+          enabled: !disableScrollUpdate,
           options: {
             boundary: 'viewport',
           },
         },
         {
           name: 'preventOverflow',
-          enabled: true,
+          enabled: !disableScrollUpdate,
           options: {
             boundary: 'viewport',
           },
