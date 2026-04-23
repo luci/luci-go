@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import Chip from '@mui/material/Chip';
-import { GridRenderCellParams } from '@mui/x-data-grid';
 import { MRT_RowData } from 'material-react-table';
 import React from 'react';
 
@@ -64,23 +63,15 @@ function ChipComponent(props: {
 }
 
 export function renderChipCell<R extends MRT_RowData>(
-  getValueOrUrl: (
-    value: string,
-    rowOrProps: R | GridRenderCellParams<R>,
-  ) => string,
+  getValueOrUrl: (value: string, rowOrProps: R) => string,
   getColor: (value: StateUnion) => string,
   label?: string,
   openInNewTab: boolean = true,
   overrideValue?: StateUnion,
-): (props: FC_CellProps<R> | GridRenderCellParams<R>) => React.ReactElement {
-  const CellWithChip = (props: FC_CellProps<R> | GridRenderCellParams<R>) => {
-    const isMRT = 'cell' in props;
-
-    const valueStr = String(
-      overrideValue ??
-        (isMRT ? (props.cell.getValue() ?? '') : (props.value ?? '')),
-    );
-    const paramsOrRow = isMRT ? props.row.original : props;
+): (props: FC_CellProps<R>) => React.ReactElement {
+  const CellWithChip = (props: FC_CellProps<R>) => {
+    const valueStr = String(overrideValue ?? props.cell.getValue() ?? '');
+    const paramsOrRow = props.row.original;
     const url = getValueOrUrl(valueStr, paramsOrRow);
 
     return (

@@ -21,9 +21,8 @@ import {
 import { useMemo, useCallback, useState } from 'react';
 
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
+import { orderMRTColumns } from '@/fleet/utils/columns';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
-
-import { orderMRTColumns } from '../device_table/columns';
 
 import { useParamsAndLocalStorage } from './use_params_and_local_storage';
 

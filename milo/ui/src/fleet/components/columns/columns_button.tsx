@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import { Button } from '@mui/material';
-import { GridColumnIcon } from '@mui/x-data-grid';
 import { RefObject, useRef, useState } from 'react';
 
 import { useShortcut } from '../shortcut_provider';
@@ -93,7 +93,7 @@ export function ColumnsButton({
               } as unknown as HTMLElement);
             }
           }}
-          startIcon={<GridColumnIcon />}
+          startIcon={<ViewColumnIcon />}
           color="primary"
           size="small"
         >

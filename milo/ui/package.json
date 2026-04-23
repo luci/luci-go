@@ -39,7 +39,6 @@
     "@mui/icons-material": "^6.5.0",
     "@mui/lab": "^6.0.1-beta.36",
     "@mui/material": "^6.5.0",
-    "@mui/x-data-grid": "^7.29.9",
     "@mui/x-date-pickers": "^7.29.4",
     "@protobuf-ts/grpcweb-transport": "^2.11.1",
     "@protobuf-ts/runtime": "^2.11.1",

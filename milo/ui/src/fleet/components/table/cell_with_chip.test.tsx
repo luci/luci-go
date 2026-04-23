@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridRenderCellParams } from '@mui/x-data-grid';
 import { render, screen } from '@testing-library/react';
 
 import { SettingsProvider } from '@/fleet/context/providers';
@@ -30,35 +29,6 @@ describe('renderChipCell', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-  });
-
-  test('should render properly using legacy GridRenderCellParams (MUI Data Grid)', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const CellComponent = renderChipCell<any>(
-      mockGetValueOrUrl,
-      mockGetColor,
-      undefined,
-      true,
-    );
-
-    const legacyProps = {
-      value: 'ready',
-      row: { id: '1' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as unknown as GridRenderCellParams<any>;
-
-    render(
-      <FakeContextProvider>
-        <SettingsProvider>
-          <CellComponent {...legacyProps} />
-        </SettingsProvider>
-      </FakeContextProvider>,
-    );
-
-    const chip = screen.getByText('ready');
-    expect(chip.closest('a')).toHaveAttribute('href', '/test/ready');
-    // Ensure the color was retrieved successfully via the correct value
-    expect(mockGetColor).toHaveBeenCalledWith('ready');
   });
 
   test('should render properly using MRT_Cell (Material React Table)', () => {

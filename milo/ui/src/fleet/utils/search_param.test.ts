@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColumnVisibilityModel } from '@mui/x-data-grid';
-
 import { getVisibilityModel } from '@/fleet/utils/search_param';
 
 describe('data_table_search_param_utils', () => {
   describe('getVisibilityModel', () => {
     it('should work in the basic case', () => {
-      const newColumnVisibilityModel: GridColumnVisibilityModel = {
+      const newColumnVisibilityModel: Record<string, boolean> = {
         column1: true,
         column2: false,
         column3: false,
@@ -30,7 +28,7 @@ describe('data_table_search_param_utils', () => {
       ).toEqual(newColumnVisibilityModel);
     });
     it('should ignore columns set to visible that dont really exists', () => {
-      const newColumnVisibilityModel: GridColumnVisibilityModel = {
+      const newColumnVisibilityModel: Record<string, boolean> = {
         column1: true,
         column2: false,
         column3: false,

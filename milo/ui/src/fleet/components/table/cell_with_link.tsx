@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridRenderCellParams } from '@mui/x-data-grid';
 import { MRT_RowData } from 'material-react-table';
 import React from 'react';
 import { Link } from 'react-router';
@@ -31,27 +30,17 @@ const getPathnameWithParams = () => {
  * @returns A function that renders a <DeviceDataCell /> based on FC_CellProps or GridRenderCellParams
  */
 export function renderCellWithLink<R extends MRT_RowData>(
-  linkGenerator: (
-    value: string,
-    rowOrProps: R | GridRenderCellParams<R>,
-  ) => string,
+  linkGenerator: (value: string, rowOrProps: R) => string,
   newTab: boolean = true,
-): (props: FC_CellProps<R> | GridRenderCellParams<R>) => React.ReactElement {
-  const CellWithLink = (props: FC_CellProps<R> | GridRenderCellParams<R>) => {
-    const isMRT = 'cell' in props;
-
-    let valueStr: string;
-    if (isMRT) {
-      valueStr = String(props.cell.getValue() ?? '');
-    } else {
-      valueStr = String(props.value ?? '');
-    }
-    const paramsOrRow = isMRT ? props.row.original : props;
+): (props: FC_CellProps<R>) => React.ReactElement {
+  const CellWithLink = (props: FC_CellProps<R>) => {
+    const valueStr = String(props.cell.getValue() ?? '');
+    const paramsOrRow = props.row.original;
     const url = linkGenerator(valueStr, paramsOrRow);
 
     return (
       <CellWithTooltip
-        {...(isMRT ? { column: props.column } : props)}
+        column={props.column}
         value={
           <Link
             key={valueStr}

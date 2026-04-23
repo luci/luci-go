@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColumnVisibilityModel } from '@mui/x-data-grid';
-
 import {
   emptyPageTokenUpdater,
   PagerContext,
@@ -44,7 +42,7 @@ export const addOrUpdateQueryParam = (
 export function getVisibilityModel(
   allColumns: string[],
   visibleColumns: string[],
-): GridColumnVisibilityModel {
+): Record<string, boolean> {
   return allColumns.reduce(
     (acc, val) => ({
       ...acc,

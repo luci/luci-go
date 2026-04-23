@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColDef } from '@mui/x-data-grid';
 import { MRT_ColumnDef, MRT_RowData } from 'material-react-table';
 
 import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-// This may be used later to add a 'common columns' section.
-// Currently, the columns from this string will appear
-// first and in the same order in the device table.
 const COMMON_COLUMNS: Record<Platform, string[]> = {
   [Platform.UNSPECIFIED]: [],
   [Platform.ANDROID]: ANDROID_DEFAULT_COLUMNS,
@@ -35,11 +31,6 @@ const COMMON_COLUMNS: Record<Platform, string[]> = {
   ],
 };
 
-/**
- * The idea is to first have the visible columns, then the rest.
- * Inside each group keep COMMON_COLUMNS in the order as they appear
- * in the array.
- */
 const sortingComparator = (
   platform: Platform,
   a: string,
@@ -53,7 +44,6 @@ const sortingComparator = (
     return bIsVisible - aIsVisible;
   }
 
-  // Both visible or neither visible, check temporary status
   const aIsTemporary = temporaryColumnIds.includes(a) ? 1 : 0;
   const bIsTemporary = temporaryColumnIds.includes(b) ? 1 : 0;
   if (aIsTemporary !== bIsTemporary) {
@@ -63,9 +53,8 @@ const sortingComparator = (
   const aCommonIndex = COMMON_COLUMNS[platform].findIndex((c) => c === a);
   const bCommonIndex = COMMON_COLUMNS[platform].findIndex((c) => c === b);
 
-  // Fall back to common columns
   if (aCommonIndex !== -1 && bCommonIndex !== -1) {
-    return aCommonIndex < bCommonIndex ? -1 : 1; // Sort as in COMMON_COLUMNS
+    return aCommonIndex < bCommonIndex ? -1 : 1;
   }
   if (aCommonIndex !== -1 && bCommonIndex === -1) {
     return -1;
@@ -74,24 +63,7 @@ const sortingComparator = (
     return 1;
   }
 
-  return a.localeCompare(b); // Sort alphabetically
-};
-
-export const orderColumns = (
-  platform: Platform,
-  columnDefs: GridColDef[],
-  visibleColumnIds: string[],
-  temporaryColumnIds: string[] = [],
-): GridColDef[] => {
-  return columnDefs.sort((a, b) =>
-    sortingComparator(
-      platform,
-      a.field,
-      b.field,
-      visibleColumnIds,
-      temporaryColumnIds,
-    ),
-  );
+  return a.localeCompare(b);
 };
 
 export const orderMRTColumns = <TData extends MRT_RowData>(

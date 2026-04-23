@@ -22,7 +22,6 @@ import {
 } from 'material-react-table';
 import { ReactNode, useMemo } from 'react';
 
-import { orderMRTColumns } from '@/fleet/components/device_table/columns';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
@@ -30,6 +29,7 @@ import {
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
 import { FC_CellProps } from '@/fleet/types/table';
+import { orderMRTColumns } from '@/fleet/utils/columns';
 import {
   BrowserDevice,
   Platform,

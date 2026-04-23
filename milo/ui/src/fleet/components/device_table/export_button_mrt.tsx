@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import SaveAltIcon from '@mui/icons-material/SaveAlt';
 import { Button, Menu, Snackbar, Alert, AlertColor } from '@mui/material';
-import { GridSaveAltIcon } from '@mui/x-data-grid';
 import { MRT_TableInstance, MRT_RowData } from 'material-react-table';
 import { useState, SyntheticEvent, useMemo } from 'react';
 
@@ -88,7 +88,7 @@ export function ExportButton_MRT<TData extends MRT_RowData>({
       <Button
         onClick={(event) => setAnchorEl(event.currentTarget)}
         size="small"
-        startIcon={<GridSaveAltIcon />}
+        startIcon={<SaveAltIcon />}
       >
         Export
       </Button>

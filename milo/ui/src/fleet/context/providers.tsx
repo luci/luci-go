@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridDensity } from '@mui/x-data-grid';
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createContext, ReactNode } from 'react';
@@ -21,6 +20,7 @@ import { useLocalStorage } from 'react-use';
 import { SETTINGS_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 
 import { PERSIST_INDEXED_DB } from '../constants/caching_keys';
+import { GridDensity } from '../hooks/use_settings';
 
 import { createIDBPersister } from './indexed_db_wrapper';
 

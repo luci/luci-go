@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridDensity } from '@mui/x-data-grid';
 import { MRT_DensityState } from 'material-react-table';
 import { useContext } from 'react';
+
+export type GridDensity = 'compact' | 'standard' | 'comfortable';
 
 import { SettingsContext } from '../context/providers';
 
