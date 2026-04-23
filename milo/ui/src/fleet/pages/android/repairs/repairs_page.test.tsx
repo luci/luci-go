@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
@@ -55,5 +55,26 @@ describe('RepairListPage', () => {
     expect(screen.getByText('Repair metrics')).toBeInTheDocument();
     expect(screen.getByText('Offline / Total Devices')).toBeInTheDocument();
     expect(mockUseFleetConsoleClient).toHaveBeenCalled();
+  });
+
+  it('renders table data', async () => {
+    expect(await screen.findByText('lab1')).toBeInTheDocument();
+    expect(await screen.findByText('lab2')).toBeInTheDocument();
+  });
+
+  it('allows opening filter menu for Lab Name', async () => {
+    // Wait for the table to be rendered and headers to be available
+    await act(async () => {
+      jest.runAllTimers();
+    });
+
+    const header = await screen.findByText('Lab Name');
+    const th = header.closest('th');
+    const filterButton = th?.querySelector('.ColumnActionsMenuButton');
+    expect(filterButton).toBeTruthy();
+
+    await act(async () => fireEvent.click(filterButton!));
+
+    expect(screen.getByText('Filter')).toBeVisible();
   });
 });

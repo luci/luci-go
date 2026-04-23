@@ -297,11 +297,11 @@ const getPrevPageButton = () => {
 };
 
 const goToNextPage = async () => {
-  await act(async () => fireEvent.click(getNextPageButton()));
+  fireEvent.click(getNextPageButton());
 };
 
 const goToPrevPage = async () => {
-  await act(async () => fireEvent.click(getPrevPageButton()));
+  fireEvent.click(getPrevPageButton());
 };
 
 const changePageSize = async (size: number) => {
@@ -314,7 +314,7 @@ const changePageSize = async (size: number) => {
   const newSizeOption = screen
     .getAllByRole('option')
     .find((option) => option.getAttribute('data-value') === String(size))!;
-  await act(async () => fireEvent.click(newSizeOption));
+  fireEvent.click(newSizeOption);
 };
 
 describe('<MaterialReactTable />', () => {
@@ -437,6 +437,51 @@ describe('<MaterialReactTable />', () => {
     expect(screen.getByText('Sort by ASC')).toBeVisible();
     expect(screen.getByText('Sort by DESC')).toBeVisible();
     expect(screen.getByText('Hide column')).toBeVisible();
+  });
+
+  it('should render Unsort item when column is sorted', async () => {
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestComponent />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    const actionButtons = document.querySelectorAll('.ColumnActionsMenuButton');
+    fireEvent.click(actionButtons[0]);
+
+    expect(screen.queryByText('Unsort')).toBeNull();
+
+    const sortAsc = screen.getByText('Sort by ASC');
+    fireEvent.click(sortAsc);
+
+    fireEvent.click(actionButtons[0]);
+
+    expect(screen.getByText('Unsort')).toBeVisible();
+  });
+
+  it('should render filter dropdown item for filterable columns', async () => {
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestComponent />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    const actionButtons = document.querySelectorAll('.ColumnActionsMenuButton');
+    fireEvent.click(actionButtons[0]);
+
+    expect(screen.getByText('Filter')).toBeVisible();
   });
 
   it('should have a narrowed checkbox selection column', async () => {
