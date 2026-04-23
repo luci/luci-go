@@ -259,7 +259,8 @@ export function OptionsDropdown({
             paddingBottom: 0,
             pointerEvents: 'auto',
             overscrollBehavior: 'contain',
-            width: 360,
+            width: '100%',
+            minWidth: 360,
           }}
         >
           {enableSearchInput && (

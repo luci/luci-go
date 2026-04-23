@@ -64,16 +64,7 @@ export function ColumnsButton({
         renderTrigger(
           {
             onClick: (e) => {
-              if (anchorEl) {
-                setAnchorEL(null);
-              } else {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setAnchorEL({
-                  getBoundingClientRect: () => rect,
-                  clientWidth: rect.width,
-                  clientHeight: rect.height,
-                } as unknown as HTMLElement);
-              }
+              setAnchorEL(anchorEl ? null : e.currentTarget);
             },
           },
           buttonRef,
@@ -81,17 +72,8 @@ export function ColumnsButton({
       ) : (
         <Button
           ref={buttonRef}
-          onClick={(e) => {
-            if (anchorEl) {
-              setAnchorEL(null);
-            } else {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setAnchorEL({
-                getBoundingClientRect: () => rect,
-                clientWidth: rect.width,
-                clientHeight: rect.height,
-              } as unknown as HTMLElement);
-            }
+          onClick={() => {
+            setAnchorEL(anchorEl ? null : buttonRef.current);
           }}
           startIcon={<ViewColumnIcon />}
           color="primary"

@@ -58,4 +58,8 @@ describe('<ColumnsButton />', () => {
       screen.queryByLabelText('Customize columns'),
     ).not.toBeInTheDocument();
   });
+
+  // TODO: Add tests to make sure we don't regress on scroll behavior for these columns in the future.
+  // Testing live node references and scroll updates requires a real browser environment (like Cypress or Playwright)
+  // as JSDOM does not perform layout or handle actual scrolls.
 });
