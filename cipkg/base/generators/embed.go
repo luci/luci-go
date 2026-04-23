@@ -114,6 +114,14 @@ func (e *EmbeddedFiles) SubDir(dir string) *EmbeddedFiles {
 	return &ret
 }
 
+// SubDirWithName returns a generator copies files in the sub directory of the
+// source with a new name.
+func (e *EmbeddedFiles) SubDirWithName(name, dir string) *EmbeddedFiles {
+	ret := e.SubDir(dir)
+	ret.name = name
+	return ret
+}
+
 // WithModeOverride overrides file modes while copying.
 func (e *EmbeddedFiles) WithModeOverride(f func(name string) (fs.FileMode, error)) *EmbeddedFiles {
 	ret := *e

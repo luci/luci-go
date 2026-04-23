@@ -86,5 +86,11 @@ func TestEmbeddedFiles(t *testing.T) {
 				},
 			}))
 		})
+
+		t.Run("Test subdir with name", func(t *ftt.Test) {
+			a, err := embeddedFilesTestGen.SubDirWithName("new name", "testdata").Generate(ctx, plats)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.Name, should.Equal("new name"))
+		})
 	})
 }
