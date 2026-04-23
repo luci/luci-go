@@ -56,6 +56,7 @@ import {
   UseEditorUiStateOptions,
 } from '@/crystal_ball/hooks';
 import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
+import { DataTestId } from '@/crystal_ball/tests';
 import {
   MeasurementFilterColumn_ColumnDataType,
   PerfFilter,
@@ -667,14 +668,15 @@ describe('FilterEditor', () => {
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
 
-    const columns = await screen.findAllByLabelText(COMMON_MESSAGES.COLUMN);
-    const sourceRow = columns[1].closest('div[draggable="true"]');
-    const targetRow = columns[0].closest('div[draggable="true"]');
+    const rows = await screen.findAllByTestId(DataTestId.FILTER_EDITOR_ROW);
+    const handles = await screen.findAllByTestId(DataTestId.FILTER_DRAG_HANDLE);
+    const sourceHandle = handles[1];
+    const targetRow = rows[0];
 
-    expect(sourceRow).toBeTruthy();
+    expect(sourceHandle).toBeTruthy();
     expect(targetRow).toBeTruthy();
 
-    fireEvent.dragStart(sourceRow!);
+    fireEvent.dragStart(sourceHandle!);
     fireEvent.drop(targetRow!);
 
     expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);
@@ -704,14 +706,15 @@ describe('FilterEditor', () => {
     );
     fireEvent.click(screen.getByText('Filters')); // Expand
 
-    const columns = await screen.findAllByLabelText(COMMON_MESSAGES.COLUMN);
-    const sourceRow = columns[0].closest('div[draggable="true"]');
-    const targetRow = columns[1].closest('div[draggable="true"]');
+    const rows = await screen.findAllByTestId(DataTestId.FILTER_EDITOR_ROW);
+    const handles = await screen.findAllByTestId(DataTestId.FILTER_DRAG_HANDLE);
+    const sourceHandle = handles[0];
+    const targetRow = rows[1];
 
-    expect(sourceRow).toBeTruthy();
+    expect(sourceHandle).toBeTruthy();
     expect(targetRow).toBeTruthy();
 
-    fireEvent.dragStart(sourceRow!);
+    fireEvent.dragStart(sourceHandle!);
     fireEvent.drop(targetRow!);
 
     expect(defaultProps.onUpdateFilters).toHaveBeenCalledTimes(1);

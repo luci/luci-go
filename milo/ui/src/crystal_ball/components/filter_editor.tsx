@@ -52,7 +52,7 @@ import {
   useToast,
   UseEditorUiStateOptions,
 } from '@/crystal_ball/hooks';
-import { DataTestId } from '@/crystal_ball/tests/constants';
+import { DataTestId } from '@/crystal_ball/tests';
 import {
   MeasurementFilterColumn,
   MeasurementFilterColumn_ColumnDataType,

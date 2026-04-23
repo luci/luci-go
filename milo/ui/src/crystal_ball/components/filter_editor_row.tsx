@@ -28,7 +28,7 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
@@ -48,6 +48,7 @@ import {
   COMPACT_SELECT_SX,
   COMPACT_TEXTFIELD_SX,
 } from '@/crystal_ball/styles';
+import { DataTestId } from '@/crystal_ball/tests';
 import { buildFilterString } from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn_ColumnDataType,
@@ -88,6 +89,7 @@ export function FilterEditorRow({
   widgetFilters,
 }: FilterEditorRowProps) {
   const { copyFilters } = useFiltersClipboard();
+  const rowRef = useRef<HTMLDivElement>(null);
   const activeInput = filter.numberInput ?? filter.textInput;
   const initialValue = activeInput?.defaultValue?.values?.[0] ?? '';
   const [inputValue, setInputValue] = useState(initialValue);
@@ -139,20 +141,33 @@ export function FilterEditorRow({
 
   return (
     <Box
+      ref={rowRef}
       sx={{
         ...COMPACT_FILTER_ROW_SX,
         gridTemplateColumns: 'auto 2fr 1fr 4fr auto',
-        cursor: 'grab',
-        '&:active': { cursor: 'grabbing' },
         mb: 1,
         gap: 1,
       }}
-      draggable
-      onDragStart={onDragStart}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
+      data-testid={DataTestId.FILTER_EDITOR_ROW}
     >
-      <DragIndicatorIcon sx={{ color: 'text.secondary', mr: 0.5 }} />
+      <Box
+        draggable
+        onDragStart={(e) => {
+          if (rowRef.current && e.dataTransfer) {
+            const rect = rowRef.current.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            e.dataTransfer.setDragImage(rowRef.current, x, y);
+          }
+          onDragStart();
+        }}
+        sx={{ display: 'inline-flex', cursor: 'grab' }}
+        data-testid={DataTestId.FILTER_DRAG_HANDLE}
+      >
+        <DragIndicatorIcon sx={{ color: 'text.secondary', mr: 0.5 }} />
+      </Box>
       <Select
         value={filter.column}
         onChange={(e: SelectChangeEvent<string>) =>
