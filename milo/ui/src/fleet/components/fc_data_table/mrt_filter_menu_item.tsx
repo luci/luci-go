@@ -38,13 +38,13 @@ import { OptionsDropdown } from '@/fleet/components/options_dropdown';
 import { DateFilterValue } from '@/fleet/types';
 import { OptionValue } from '@/fleet/types/option';
 import { fromLuxonDateTime, toLuxonDateTime } from '@/fleet/utils/dates';
+import { stripQuotes } from '@/fleet/utils/filters';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
 import {
   parseCommaSeparatedText,
   formatCommaSeparatedText,
-  stripQuotes,
 } from './mrt_filter_menu_item_utils';
 
 export type FilterOption =

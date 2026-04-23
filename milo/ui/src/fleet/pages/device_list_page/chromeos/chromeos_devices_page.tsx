@@ -36,7 +36,6 @@ import { ExportButton_MRT } from '@/fleet/components/device_table/export_button_
 import { useCurrentTasks } from '@/fleet/components/device_table/use_current_tasks';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
-import { stripQuotes } from '@/fleet/components/fc_data_table/mrt_filter_menu_item_utils';
 import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
@@ -69,6 +68,7 @@ import {
   extractDutLabels,
   extractDutState,
 } from '@/fleet/utils/devices';
+import { stripQuotes } from '@/fleet/utils/filters';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {

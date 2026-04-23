@@ -134,10 +134,12 @@ describe('StringListFilterCategory', () => {
 
     category.setSelectedOptions(['pixel']);
     category.isExcluded = true;
-    expect(category.toAIP160()).toEqual('(model != pixel)');
+    expect(category.toAIP160()).toEqual('model != "pixel"');
 
     category.setSelectedOptions(['pixel', 'nexus']);
-    expect(category.toAIP160()).toEqual('(model != pixel AND model != nexus)');
+    expect(category.toAIP160()).toEqual(
+      'model != "pixel" AND model != "nexus"',
+    );
   });
 
   it('should parse negated filter string correctly', () => {
@@ -256,5 +258,56 @@ describe('StringListFilterCategory', () => {
       '"ready"',
       '"repair_failed"',
     ]);
+  });
+
+  it('should quote values containing colons', () => {
+    const result = StringListFilterCategory.create(
+      'Host Group',
+      'host_group',
+      [{ value: 'atc:crystalball', label: 'Crystalball' }],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    category.setSelectedOptions(['atc:crystalball']);
+    expect(category.toAIP160()).toEqual('host_group = ("atc:crystalball")');
+  });
+
+  it('should quote values containing spaces', () => {
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [{ value: 'pixel pro', label: 'Pixel Pro' }],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    category.setSelectedOptions(['pixel pro']);
+    expect(category.toAIP160()).toEqual('model = ("pixel pro")');
+  });
+
+  it('should quote values containing parentheses', () => {
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [{ value: 'pixel(gen1)', label: 'Pixel Gen1' }],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    category.setSelectedOptions(['pixel(gen1)']);
+    expect(category.toAIP160()).toEqual('model = ("pixel(gen1)")');
   });
 });

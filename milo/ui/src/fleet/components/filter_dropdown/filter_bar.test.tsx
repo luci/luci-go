@@ -834,7 +834,7 @@ describe('FilterBar', () => {
     expect(searchInput).toHaveValue('');
   });
 
-  it('should NOT clear search query if typed value is invalid', async () => {
+  it('should add chip and clear search query for value not in options list', async () => {
     render(
       <FakeContextProvider>
         <TestComponent
@@ -851,9 +851,9 @@ describe('FilterBar', () => {
     await user.keyboard('{Enter}');
 
     expect(
-      screen.queryByText('1 | [ Option 1 ]: Invalid Value'),
-    ).not.toBeInTheDocument();
-    expect(searchInput).toHaveValue('option-1:Invalid Value');
+      await screen.findByText('1 | Option 1 IN Invalid Value'),
+    ).toBeInTheDocument();
+    expect(searchInput).toHaveValue('');
   });
 
   it('should order filter results correctly', async () => {

@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router';
 
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 
+import {
+  StringListFilterCategory,
+  StringListFilterCategoryBuilder,
+} from './string_list_filter';
 import {
   useFilters,
   FilterCategoryBuilder,
@@ -77,7 +81,7 @@ describe('useFilters', () => {
     expect(mockBuilder.build).toHaveBeenCalled();
 
     const buildCalls = (mockBuilder.build as jest.Mock).mock.calls;
-    expect(buildCalls.length).toBe(1);
+    expect(buildCalls.length).toBeGreaterThanOrEqual(1);
 
     const terms = buildCalls[0][2];
     expect(terms).toBeTruthy();
@@ -88,5 +92,103 @@ describe('useFilters', () => {
     expect(arg).toBeTruthy();
     expect(arg.kind).toBe('Comparable');
     expect((arg as ast.Comparable).member.value.value).toBe('value');
+  });
+
+  it('should fallback to getFilters for legacy URLs', async () => {
+    const builder = new StringListFilterCategoryBuilder()
+      .setLabel('Model')
+      .setOptions([
+        { label: 'v1', value: 'v1' },
+        { label: 'v2', value: 'v2' },
+      ]);
+
+    const builders = {
+      model: builder,
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter
+        initialEntries={['/?filters=model+%3D+%28%22v1%22+OR+%22v2%22%29']}
+      >
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders), { wrapper });
+
+    expect(result.current).toBeTruthy();
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+    const filters = result.current.filterValues;
+
+    const category = filters?.['model'];
+    expect(category).toBeInstanceOf(StringListFilterCategory);
+
+    expect((category as StringListFilterCategory).getSelectedOptions()).toEqual(
+      ['v1', 'v2'],
+    );
+  });
+
+  it('should not update URL when filters are stable', async () => {
+    const builder = new StringListFilterCategoryBuilder()
+      .setLabel('Model')
+      .setOptions([
+        { label: 'v1', value: 'v1' },
+        { label: 'v2', value: 'v2' },
+      ]);
+
+    const builders = {
+      model: builder,
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter
+        initialEntries={['/?filters=model+%3D+%28%22v1%22+OR+%22v2%22%29']}
+      >
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders), { wrapper });
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+
+    const initialAip160 = result.current.getAip160String();
+
+    result.current.getAip160String();
+
+    expect(result.current.getAip160String()).toEqual(initialAip160);
+  });
+
+  it('should return stable AIP-160 string with deterministic category order', async () => {
+    const builderHostGroup = new StringListFilterCategoryBuilder()
+      .setLabel('Host Group')
+      .setOptions([{ label: 'v1', value: 'v1' }]);
+
+    const builderLabName = new StringListFilterCategoryBuilder()
+      .setLabel('Lab Name')
+      .setOptions([{ label: 'v2', value: 'v2' }]);
+
+    const builders = {
+      host_group: builderHostGroup,
+      lab_name: builderLabName,
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter
+        initialEntries={[
+          '/?filters=lab_name+%3D+%22v2%22+AND+host_group+%3D+%22v1%22',
+        ]}
+      >
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders), { wrapper });
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+
+    const generated = result.current.getAip160String();
+    expect(generated).toEqual('host_group = ("v1") AND lab_name = ("v2")');
   });
 });

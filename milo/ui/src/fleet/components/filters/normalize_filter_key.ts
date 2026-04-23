@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { stripQuotes } from '@/fleet/components/fc_data_table/mrt_filter_menu_item_utils';
+import { stripQuotes } from '@/fleet/utils/filters';
 
 /**
  * Removes surrounding quotes from a string.

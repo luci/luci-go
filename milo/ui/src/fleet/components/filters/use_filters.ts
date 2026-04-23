@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { parseFilter } from '@/fleet/utils/aip160/parser/parser';
@@ -31,7 +31,7 @@ export const useFilters = <
   T extends Record<string, FilterCategoryBuilder<FilterCategory>>,
 >(
   rawBuilders: T | undefined,
-  options = { allowExtraKeys: false },
+  options: { allowExtraKeys?: boolean } = {},
 ): {
   filterValues: FilterValuesFromBuilders<T> | undefined;
   aip160: string;
@@ -57,6 +57,10 @@ export const useFilters = <
             .filter((f) => f !== '')
             .join(' AND ');
 
+          if (filter === prev.get(FILTERS_PARAM_KEY)) {
+            return prev;
+          }
+
           prev.set(FILTERS_PARAM_KEY, filter);
           return prev;
         },
@@ -76,18 +80,23 @@ export const useFilters = <
       builders,
       updateUrl,
       filtersAIP160,
-      options.allowExtraKeys,
+      options.allowExtraKeys || false,
     );
-    if (
-      filters !== undefined &&
-      parseError === undefined &&
-      !Object.values(filters).some((o) => o instanceof LoadingFilterCategory)
-    ) {
-      updateUrl(filters, true);
-    }
 
     return [filters, parseError];
   }, [builders, filtersAIP160, updateUrl, options.allowExtraKeys]);
+
+  useEffect(() => {
+    if (
+      filterValues !== undefined &&
+      parseError === undefined &&
+      !Object.values(filterValues).some(
+        (o) => o instanceof LoadingFilterCategory,
+      )
+    ) {
+      updateUrl(filterValues, true);
+    }
+  }, [filterValues, parseError, updateUrl]);
 
   const getAip160String = useCallback(() => {
     if (!filterValues) return '';
@@ -299,9 +308,9 @@ function buildFilters<
 
     let terms = parseResult === null ? null : (parseResult.terms[key] ?? []);
     if (parseResult !== null) {
-      const matchKey = normalizeFilterKey(key);
+      const matchKey = normalizeFilterKey(key).toLowerCase();
       const matches = Object.entries(parseResult.terms).filter(
-        ([k]) => normalizeFilterKey(k) === matchKey,
+        ([k]) => normalizeFilterKey(k).toLowerCase() === matchKey,
       );
       terms = parseResult.terms[key] ?? matches[0]?.[1] ?? [];
     }
@@ -309,7 +318,9 @@ function buildFilters<
     if (result.isError) {
       errors.push(`Error with ${key}: ${result.error}`);
     } else {
-      filters[key] = result.value;
+      const category = result.value;
+
+      filters[key] = category;
       if (result.warnings.length > 0) {
         warnings.push(
           ...result.warnings.map((w) => `Warning with ${key}: ${w}`),
@@ -320,10 +331,11 @@ function buildFilters<
 
   if (parseResult !== null) {
     for (const [key, _terms] of Object.entries(parseResult.terms)) {
-      const matchKey = normalizeFilterKey(key);
-      const hasMatch = Object.keys(filters).some(
-        (k) => normalizeFilterKey(k) === matchKey,
-      );
+      const matchKey = normalizeFilterKey(key).toLowerCase();
+      const hasMatch = Object.keys(filters).some((k) => {
+        const normalizedK = normalizeFilterKey(k).toLowerCase();
+        return normalizedK === matchKey;
+      });
       if (!hasMatch) {
         if (allowExtraKeys) {
           filters[key] = new LoadingFilterCategory(key);

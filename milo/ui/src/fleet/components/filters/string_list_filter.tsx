@@ -28,6 +28,7 @@ import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { colors } from '@/fleet/theme/colors';
 import { OptionValue } from '@/fleet/types/option';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
+import { stripQuotes } from '@/fleet/utils/filters';
 import { fuzzySort, fuzzyMaxScore } from '@/fleet/utils/fuzzy_sort';
 
 import { OptionsMenu } from '../filter_dropdown/options_menu';
@@ -110,7 +111,10 @@ export class StringListFilterCategory implements FilterCategory {
 
     const processTermValue = (value: string, isNegated: boolean) => {
       if (!optionsMap[value] && value !== ANY_VALUE) {
-        return `Option ${value} doesn't exist for ${key}`;
+        optionsMap[value] = {
+          optionValue: { label: value, value: value },
+          isSelected: false,
+        };
       }
 
       const isBlank = value === ANY_VALUE;
@@ -185,7 +189,9 @@ export class StringListFilterCategory implements FilterCategory {
               };
             }
 
-            const innerValue = memberToKey(innerTerm.simple.comparable.member);
+            const innerValue = stripQuotes(
+              memberToKey(innerTerm.simple.comparable.member),
+            );
             const err = processTermValue(
               innerValue,
               isNegated ? !innerTerm.negated : innerTerm.negated,
@@ -222,15 +228,8 @@ export class StringListFilterCategory implements FilterCategory {
       .map((o) => {
         const val = o.optionValue.value;
         const isQuoted = val.startsWith('"') && val.endsWith('"');
-        if (
-          !isQuoted &&
-          (val.includes(' ') ||
-            val.includes('"') ||
-            val.includes('(') ||
-            val.includes(')'))
-        ) {
-          // If the value contains special characters, we quote it.
-          // Inside a quoted string in AIP-160, only quotes need to be escaped.
+        if (!isQuoted) {
+          // Always quote values to match stringifyFilters behavior and avoid parser issues
           return `"${val.replace(/"/g, '\\"')}"`;
         }
         return val;
@@ -249,11 +248,11 @@ export class StringListFilterCategory implements FilterCategory {
       selectedValues.length > 0
         ? this.isExcluded
           ? selectedValues.map((v) => `${this.key} != ${v}`).join(' AND ')
-          : selectedValues.map((v) => `${this.key} = ${v}`).join(' OR ')
+          : `${this.key} = (${selectedValues.join(' OR ')})`
         : '';
 
     if (!regularPart) return blankPart;
-    if (!blankPart) return `(${regularPart})`;
+    if (!blankPart) return regularPart;
 
     return this.isExcluded
       ? `(${regularPart} AND ${blankPart})`
@@ -364,9 +363,15 @@ export class StringListFilterCategory implements FilterCategory {
 
     this.setOptions(map, silent);
 
-    for (const key of unquotedLowerSelectedKeys) {
+    for (let i = 0; i < unquotedLowerSelectedKeys.length; i++) {
+      const key = unquotedLowerSelectedKeys[i];
       if (!foundKeys.has(key)) {
-        return `Invalid option: ${key}`;
+        const originalValue = selectedKeys[i];
+        this.options[originalValue] = {
+          optionValue: { label: originalValue, value: originalValue },
+          isSelected: true,
+        };
+        foundKeys.add(key);
       }
     }
 

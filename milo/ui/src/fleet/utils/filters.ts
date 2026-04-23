@@ -14,10 +14,15 @@
 
 import _ from 'lodash';
 
-import { stripQuotes } from '@/fleet/components/fc_data_table/mrt_filter_menu_item_utils';
 import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
+
+/**
+ * Removes one level of surrounding quotes if present.
+ */
+export const stripQuotes = (val: string): string =>
+  val.startsWith('"') && val.endsWith('"') ? val.slice(1, -1) : val;
 
 /**
  * Computes the selected options from the filter values provided by useFilters.

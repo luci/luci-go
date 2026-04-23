@@ -54,8 +54,18 @@ export function TopToolbarCustomActions<TData extends MRT_RowData>({ table }: { 
 }
 ```
 
+### 3. URL Synchronization and Filter Parsing
+To avoid conflicts between different filter formats, we strictly use the new `useFilters` hook and its AIP-160 compliant parser for URL synchronization.
+- **Avoid Legacy Parsers**: Do not use legacy parsers like `getFilters` in new pages, as they may reject valid AIP-160 operators like `:` or `!=`.
+- **In-Column Filtering**: When enabling MRT in-column filtering, intercept changes using `onColumnFiltersChangeOverride` (or handling `onColumnFiltersChange` directly) and synchronize them with the `useFilters` hook. Use a `useRef` to store current column filters to safely prevent circular update loops during state synchronization.
+- **Key Mapping Principle**: Avoid complex key mapping and regex replacements at the hook level. Instead, translate backend dimension keys to canonical URL/Table keys at the edge (e.g., during page-level initialization of filter builders) to ensure consistency across all systems.
+
+### 4. Fallback Options for Missing Dimensions
+If a column needs a dropdown filter but its available values are not returned by the backend dimensions API (e.g., `Realm`), extract the unique values from the currently visible rows in the table and inject them as fallback options.
+
 ## Benefits
 - **Maintainability**: Main files are smaller and easier to read.
 - **Consistency**: All tables follow the same structural pattern.
 - **Customization**: Each page can define its own toolbar component with specific buttons, while sharing the core table setup.
 - **Testability**: Dumb toolbars are easier to unit test by mocking the `table` instance.
+- **Robustness**: Centralized URL state management prevents conflicting UI states.
