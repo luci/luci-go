@@ -88,6 +88,15 @@ func (v VersionsFile) AddVersion(pkg, ver, iid string) error {
 	return nil
 }
 
+// Pins yields all the (pkg, iid) pins in this VersionsFile.
+func (v VersionsFile) Pins(yield func(common.Pin) bool) {
+	for uv, iid := range v {
+		if !yield(common.Pin{PackageName: uv.pkg, InstanceID: iid}) {
+			return
+		}
+	}
+}
+
 // ResolveVersion returns a pin matching the given version or an error if such
 // version is not in the map.
 //
