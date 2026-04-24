@@ -97,7 +97,7 @@ import {
   RepairMetric_Priority,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { COLUMNS } from './repairs_columns';
+import { getRepairsColumns, DEFAULT_COLUMNS } from './repairs_columns';
 import { getPriorityIcon, getRow, type Row } from './repairs_columns.utils';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -182,7 +182,7 @@ export const RepairListPage = () => {
     if (selectedOptions.error) return;
 
     const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
-      (filterKey) => !COLUMNS[_.snakeCase(filterKey) as keyof typeof COLUMNS],
+      (filterKey) => !DEFAULT_COLUMNS.includes(_.snakeCase(filterKey)),
     );
     if (missingParamsFilters.length === 0) return;
     addWarning(
@@ -207,7 +207,7 @@ export const RepairListPage = () => {
     .map(parseOrderByParam)
     .filter((orderBy) => !!orderBy)
     .map((orderBy: { field: string; direction: OrderByDirection }) => ({
-      id: COLUMNS[orderBy.field as keyof typeof COLUMNS].accessorKey,
+      id: orderBy.field,
       desc: orderBy.direction === OrderByDirection.DESC,
     }));
   const pagination = useMemo<MRT_PaginationState>(
@@ -219,7 +219,7 @@ export const RepairListPage = () => {
   );
 
   const columns = useMemo(() => {
-    return Object.values(COLUMNS).map((c) => {
+    return getRepairsColumns(DEFAULT_COLUMNS).map((c) => {
       const id = getColumnId(c as MRT_ColumnDef<Row>);
       const builder = loadedFilterOptions[id];
       return {

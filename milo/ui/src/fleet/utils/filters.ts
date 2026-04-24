@@ -60,7 +60,7 @@ export const syncFilterCategory = (
   category: FilterCategory,
   newFilters: Record<string, string[]>,
   prevTableFilterKeys: string[],
-) => {
+): boolean => {
   const matchKey = _.snakeCase(normalizeFilterKey(key));
 
   const isInNewFilters =
@@ -69,7 +69,7 @@ export const syncFilterCategory = (
     prevTableFilterKeys.includes(matchKey) || prevTableFilterKeys.includes(key);
 
   if (!isInNewFilters && !wasInTable) {
-    return;
+    return false;
   }
 
   const newValues = newFilters[matchKey] || newFilters[key] || [];
@@ -88,4 +88,5 @@ export const syncFilterCategory = (
       category.setSelectedOptions(newValues, true);
     }
   }
+  return isChanged;
 };

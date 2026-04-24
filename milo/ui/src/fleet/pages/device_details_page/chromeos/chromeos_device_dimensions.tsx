@@ -29,8 +29,10 @@ import { BotState } from '@/fleet/pages/device_details_page/common/bot_state';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { CHROMEOS_COLUMN_OVERRIDES } from '../../device_list_page/chromeos/chromeos_columns';
-import { ChromeOSDevice } from '../../device_list_page/chromeos/chromeos_columns';
+import {
+  CHROMEOS_COLUMN_OVERRIDES,
+  ChromeOSDevice,
+} from '../../device_list_page/chromeos/chromeos_fields';
 
 interface ChromeOSDeviceDimensionsProps {
   device?: Device;

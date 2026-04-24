@@ -17,7 +17,7 @@ import { Button, Menu, Snackbar, Alert, AlertColor } from '@mui/material';
 import { MRT_TableInstance, MRT_RowData } from 'material-react-table';
 import { useState, SyntheticEvent, useMemo } from 'react';
 
-import { chromeOSFriendlyNames } from '../../pages/device_list_page/chromeos/chromeos_columns';
+import { chromeOSFriendlyNames } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
 
 import { CSVExportMenuItem } from './csv_export_menu_item';
 

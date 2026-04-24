@@ -87,12 +87,12 @@ import { AdminTasksAlert } from '../common/admin_tasks_alert';
 import { dimensionsToFilterOptions } from '../common/helpers';
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
+import { getChromeOSColumns } from './chromeos_columns';
 import {
   CHROMEOS_COLUMN_OVERRIDES,
-  getChromeOSColumns,
   ChromeOSDevice,
   EXTRA_COLUMN_IDS,
-} from './chromeos_columns';
+} from './chromeos_fields';
 import { ChromeOSSummaryHeader } from './chromeos_summary_header';
 import { dutState } from './dut_state';
 

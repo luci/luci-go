@@ -68,11 +68,8 @@ import { AdminTasksAlert } from '../common/admin_tasks_alert';
 import { dimensionsToFilterOptions } from '../common/helpers';
 import { useDeviceDimensions } from '../common/use_device_dimensions';
 
-import {
-  ANDROID_COLUMN_OVERRIDES,
-  getAndroidColumns,
-  AndroidColumnDef,
-} from './android_columns';
+import { getAndroidColumns } from './android_columns';
+import { ANDROID_COLUMN_OVERRIDES, AndroidColumnDef } from './android_fields';
 import { ANDROID_EXTRA_FILTERS } from './android_filters';
 import { androidState } from './android_state';
 import { AndroidSummaryHeader } from './android_summary_header';

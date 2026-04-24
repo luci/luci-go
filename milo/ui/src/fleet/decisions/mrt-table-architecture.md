@@ -63,6 +63,17 @@ To avoid conflicts between different filter formats, we strictly use the new `us
 ### 4. Fallback Options for Missing Dimensions
 If a column needs a dropdown filter but its available values are not returned by the backend dimensions API (e.g., `Realm`), extract the unique values from the currently visible rows in the table and inject them as fallback options.
 
+### 5. Column Configuration Patterns
+To ensure column configurations are centralized, easy to edit, and maintain a clear separation of concerns:
+
+- **Standardize on the Dynamic Generator Pattern:** All tables should use a generator function pattern (e.g., `getColumns(columnIds: string[])`) to construct the column list dynamically. This provides a consistent interface for column management hooks, even for tables with a fixed set of columns.
+- **Decouple Field Configs from Layout:** All field-specific data accessors, headers, and custom cell renderers (overrides) must be moved out of the table-layout columns file and placed into a dedicated domain configuration file (e.g., `src/fleet/config/fields/chromeos.tsx`).
+- **Declarative Column Definitions:** The columns file should only describe the *layout* and *assembly* of columns, mapping the requested IDs to the field overrides.
+
+#### File Organization Plan
+To ensure high locality and make it intuitive for developers:
+- **Co-locate Configurations and Layouts:** Both field configurations (data accessors, fallbacks) and table layout definitions should live in the **same directory as the page component** that uses them (e.g., `src/fleet/pages/device_list_page/chromeos/`).
+
 ## Benefits
 - **Maintainability**: Main files are smaller and easier to read.
 - **Consistency**: All tables follow the same structural pattern.

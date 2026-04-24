@@ -35,10 +35,8 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import {
-  BROWSER_COLUMN_OVERRIDES,
-  getBrowserColumn,
-} from '../../device_list_page/browser/browser_columns';
+import { getBrowserColumn } from '../../device_list_page/browser/browser_columns';
+import { BROWSER_COLUMN_OVERRIDES } from '../../device_list_page/browser/browser_fields';
 import { BotInformation } from '../common/bot_information';
 import { BotState } from '../common/bot_state';
 

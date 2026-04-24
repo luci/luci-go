@@ -14,7 +14,8 @@
 
 import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 
-import { AndroidColumnDef, getAndroidColumns } from './android_columns';
+import { getAndroidColumns } from './android_columns';
+import { AndroidColumnDef } from './android_fields';
 
 describe('Android Columns', () => {
   it('should generate proper order_by_fields for base dimensions mapped as labels', () => {
