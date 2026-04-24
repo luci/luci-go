@@ -134,7 +134,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.7.19"
+	UserAgent = "cipd 2.7.20"
 )
 
 func init() {
@@ -908,7 +908,7 @@ func (c *clientImpl) getVersionCache() *internal.VersionCache {
 		if err != nil {
 			panic(err) // the URL has been validated in NewClient already
 		}
-		c.versionCache = internal.NewVersionCache(fs.NewFileSystem(dir, ""), parsed.Host)
+		c.versionCache = internal.NewVersionCache(fs.NewFileSystem(dir, ""), parsed.Host, internal.WriteLegacyVersionCacheName)
 	})
 	return c.versionCache
 }
