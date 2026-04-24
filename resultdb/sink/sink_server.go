@@ -366,6 +366,11 @@ func (s *sinkServer) UpdateInvocation(ctx context.Context, sinkin *sinkpb.Update
 	return ret, nil
 }
 
+// ReportTestExonerations implement sinkpb.SinkServer
+func (s *sinkServer) ReportTestExonerations(ctx context.Context, sinkin *sinkpb.ReportTestExonerationsRequest) (*sinkpb.ReportTestExonerationsResponse, error) {
+	return nil, errors.ErrUnsupported
+}
+
 func prepareRDBTestResult(tr *sinkpb.TestResult, cfg *ServerConfig) (*pb.TestResult, error) {
 	setLocationSpecificFields(tr, cfg)
 

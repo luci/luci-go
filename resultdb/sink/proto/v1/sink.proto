@@ -19,6 +19,7 @@ package luci.resultsink.v1;
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
+import "go.chromium.org/luci/resultdb/sink/proto/v1/test_exoneration.proto";
 import "go.chromium.org/luci/resultdb/sink/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
@@ -48,6 +49,9 @@ service Sink {
   // Update an invocation
   rpc UpdateInvocation(UpdateInvocationRequest)
       returns (Invocation) {};
+
+  rpc ReportTestExonerations(ReportTestExonerationsRequest)
+      returns (ReportTestExonerationsResponse) {};
 }
 
 message ReportTestResultsRequest {
@@ -87,4 +91,15 @@ message Invocation {
   // See 'extended_properties' field of the luci.resultdb.v1.Invocation message
   // for details.
   map<string, google.protobuf.Struct> extended_properties = 1;
+}
+
+message ReportTestExonerationsRequest {
+  // Test exponerations to report.
+  repeated TestExoneration test_exonerations = 1;
+}
+
+message ReportTestExonerationsResponse {
+  // List of unique identifiers that can be used to link to these exonerations
+  // or requested via luci.resultdb.v1.ResultDB service.
+  repeated string test_exoneration_names = 1;
 }

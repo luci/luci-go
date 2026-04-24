@@ -75,3 +75,20 @@ func (s *DecoratedSink) UpdateInvocation(ctx context.Context, req *UpdateInvocat
 	}
 	return
 }
+
+func (s *DecoratedSink) ReportTestExonerations(ctx context.Context, req *ReportTestExonerationsRequest) (rsp *ReportTestExonerationsResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "ReportTestExonerations", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.ReportTestExonerations(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "ReportTestExonerations", rsp, err)
+	}
+	return
+}
