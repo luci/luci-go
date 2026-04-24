@@ -35,7 +35,7 @@ func TestFakeLogs(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`fakelogs`, t, func(t *ftt.Test) {
-		c := NewClient()
+		c := NewClient(t.Context())
 		ctx := gologger.StdConfig.Use(context.Background())
 
 		t.Run(`can open streams`, func(t *ftt.Test) {

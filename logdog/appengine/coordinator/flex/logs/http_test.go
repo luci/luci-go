@@ -37,7 +37,7 @@ func TestHTTP(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`With a testing configuration`, t, func(t *ftt.Test) {
-		c, env := ct.Install()
+		c, env := ct.Install(t.Context())
 		c, tc := testclock.UseTime(c, testclock.TestRecentTimeUTC)
 
 		const project = "proj-foo"

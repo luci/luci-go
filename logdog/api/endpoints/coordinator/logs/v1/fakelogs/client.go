@@ -247,8 +247,8 @@ func (s storageclient) GetSignedURLs(context.Context, *coordinator.URLSigningReq
 // coordinator (since it's the same code). Additionally, the 'Open' methods on
 // the Client do the full Prefix/Stream registration process, and so should also
 // behave like the real thing.
-func NewClient() *Client {
-	ctx, env := coordinatorTest.Install()
+func NewClient(ctx context.Context) *Client {
+	ctx, env := coordinatorTest.Install(ctx)
 	env.AddProject(ctx, Project)
 	env.ActAsWriter(Project, Realm)
 	env.JoinAdmins()

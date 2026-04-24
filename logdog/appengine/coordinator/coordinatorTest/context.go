@@ -198,7 +198,7 @@ func (e *Environment) addConfigEntry(configSet config.Set, path, content string)
 
 // Install creates a testing Context and installs common test facilities into
 // it, returning the Environment to which they're bound.
-func Install() (context.Context, *Environment) {
+func Install(ctx context.Context) (context.Context, *Environment) {
 	e := Environment{
 		ServiceID: "logdog-app-id",
 		GSClient:  GSClient{},
@@ -209,7 +209,7 @@ func Install() (context.Context, *Environment) {
 	}
 
 	// Get our starting context.
-	c := gaeMemory.UseWithAppID(memlogger.Use(context.Background()), e.ServiceID)
+	c := gaeMemory.UseWithAppID(memlogger.Use(ctx), e.ServiceID)
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC.Round(time.Millisecond))
 	c = cryptorand.MockForTest(c, 765589025) // as chosen by fair dice roll
 	ds.GetTestable(c).Consistent(true)

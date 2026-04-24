@@ -74,7 +74,7 @@ func TestQuery(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`With a testing configuration, a Query request`, t, func(t *ftt.Test) {
-		c, env := ct.Install()
+		c, env := ct.Install(t.Context())
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
 		svr := New()

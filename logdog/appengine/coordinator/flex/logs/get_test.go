@@ -96,7 +96,7 @@ func zeroRecords(d []byte) {
 
 func testGetImpl(t *testing.T, archived bool) {
 	ftt.Run(fmt.Sprintf(`With a testing configuration, a Get request (archived=%v)`, archived), t, func(t *ftt.Test) {
-		c, env := ct.Install()
+		c, env := ct.Install(t.Context())
 
 		svr := New()
 

@@ -38,7 +38,7 @@ func TestLoadStream(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`With a testing configuration`, t, func(t *ftt.Test) {
-		c, env := ct.Install()
+		c, env := ct.Install(t.Context())
 
 		svr := New(ServerSettings{NumQueues: 2})
 

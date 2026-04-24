@@ -35,7 +35,7 @@ import (
 
 func TestTaskQueue(t *testing.T) {
 	ftt.Run(`With a testing configuration`, t, func(t *ftt.Test) {
-		c, env := ct.Install()
+		c, env := ct.Install(t.Context())
 		c = mathrand.Set(c, rand.New(rand.NewSource(1234)))
 
 		// By default, the testing user is a service.

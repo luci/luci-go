@@ -43,7 +43,7 @@ func TestRegisterStream(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run(`With a testing configuration`, t, func(t *ftt.Test) {
-		c, env := ct.Install()
+		c, env := ct.Install(t.Context())
 		env.AddProject(c, "proj-foo")
 
 		// By default, the testing user is a service.
@@ -290,7 +290,7 @@ func TestRegisterStream(t *testing.T) {
 }
 
 func BenchmarkRegisterStream(b *testing.B) {
-	c, env := ct.Install()
+	c, env := ct.Install(b.Context())
 
 	// By default, the testing user is a service.
 	env.ActAsService()
