@@ -19,7 +19,7 @@ message BlobWithSHA256 {
   bytes sha256 = 3;
 }
 
-// TagCache stores a mapping (service, package name, tag) -> instance ID to
+// VersionCache stores a mapping (service, package name, tag) -> instance ID to
 // speed up subsequent ResolveVersion calls when tags are used.
 //
 // It also contains a '(service, instance_id, file_name) -> encoded ObjectRef'
@@ -28,7 +28,7 @@ message BlobWithSHA256 {
 //
 // A service is specified by its hostname. We make it part of the key since
 // same tags may point to different instances on different services.
-message TagCache {
+message VersionCache {
   message Entry {
     string service     = 4; // e.g. 'chrome-infra-packages.appspot.com'
     string package     = 1; // name of a tagged CIPD package

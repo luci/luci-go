@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/cipd/common"
 )
 
-func TestTagCacheWorks(t *testing.T) {
+func TestVersionCacheWorks(t *testing.T) {
 	ctx := context.Background()
 
 	numberedObjRef := func(i int) *caspb.ObjectRef {
@@ -62,7 +62,7 @@ func TestTagCacheWorks(t *testing.T) {
 		}
 
 		t.Run("single tag", func(t *ftt.Test) {
-			tc := NewTagCache(fs, "service.example.com")
+			tc := NewVersionCache(fs, "service.example.com")
 			pin, err := tc.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, pin, should.Match(common.Pin{}))
@@ -107,7 +107,7 @@ func TestTagCacheWorks(t *testing.T) {
 			assert.Loosely(t, tc.Save(ctx), should.BeNil)
 
 			// Load.
-			another := NewTagCache(fs, "service.example.com")
+			another := NewVersionCache(fs, "service.example.com")
 			pin, err = another.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, pin, should.Match(common.Pin{
@@ -120,13 +120,13 @@ func TestTagCacheWorks(t *testing.T) {
 		})
 
 		t.Run("many tags", func(t *ftt.Test) {
-			tc := NewTagCache(fs, "service.example.com")
+			tc := NewVersionCache(fs, "service.example.com")
 
 			// Fill up to capacity.
-			for i := range tagCacheMaxSize {
+			for i := range maxCachedTags {
 				assert.Loosely(t, tc.AddTag(ctx, cannedPin, fmt.Sprintf("tag:%d", i)), should.BeNil)
 			}
-			for i := range tagCacheMaxExeSize {
+			for i := range maxCachedExecutables {
 				assert.Loosely(t, tc.AddExtractedObjectRef(ctx, numberedPin(i), "filename", numberedObjRef(i)), should.BeNil)
 			}
 			assert.Loosely(t, tc.Save(ctx), should.BeNil)
@@ -141,7 +141,7 @@ func TestTagCacheWorks(t *testing.T) {
 
 			// Add one more tag. Should evict the oldest one.
 			assert.Loosely(t, tc.AddTag(ctx, cannedPin, "one_more_tag:0"), should.BeNil)
-			assert.Loosely(t, tc.AddExtractedObjectRef(ctx, numberedPin(tagCacheMaxExeSize), "filename", numberedObjRef(tagCacheMaxExeSize)), should.BeNil)
+			assert.Loosely(t, tc.AddExtractedObjectRef(ctx, numberedPin(maxCachedExecutables), "filename", numberedObjRef(maxCachedExecutables)), should.BeNil)
 			assert.Loosely(t, tc.Save(ctx), should.BeNil)
 
 			// Oldest tag is evicted.
@@ -164,14 +164,14 @@ func TestTagCacheWorks(t *testing.T) {
 			pin, err = tc.ResolveTag(ctx, "pkg", "one_more_tag:0")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, pin, should.Match(cannedPin))
-			file, err = tc.ResolveExtractedObjectRef(ctx, numberedPin(tagCacheMaxExeSize), "filename")
+			file, err = tc.ResolveExtractedObjectRef(ctx, numberedPin(maxCachedExecutables), "filename")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, file, should.Match(numberedObjRef(tagCacheMaxExeSize)))
+			assert.Loosely(t, file, should.Match(numberedObjRef(maxCachedExecutables)))
 		})
 
 		t.Run("parallel update", func(t *ftt.Test) {
-			tc1 := NewTagCache(fs, "service.example.com")
-			tc2 := NewTagCache(fs, "service.example.com")
+			tc1 := NewVersionCache(fs, "service.example.com")
+			tc2 := NewVersionCache(fs, "service.example.com")
 
 			assert.Loosely(t, tc1.AddTag(ctx, cannedPin, "tag:1"), should.BeNil)
 			assert.Loosely(t, tc1.AddExtractedObjectRef(ctx, numberedPin(0), "filename", numberedObjRef(0)), should.BeNil)
@@ -181,7 +181,7 @@ func TestTagCacheWorks(t *testing.T) {
 			assert.Loosely(t, tc1.Save(ctx), should.BeNil)
 			assert.Loosely(t, tc2.Save(ctx), should.BeNil)
 
-			tc3 := NewTagCache(fs, "service.example.com")
+			tc3 := NewVersionCache(fs, "service.example.com")
 
 			// Both tags are resolvable.
 			pin, err := tc3.ResolveTag(ctx, "pkg", "tag:1")
@@ -199,8 +199,8 @@ func TestTagCacheWorks(t *testing.T) {
 		})
 
 		t.Run("multiple services", func(t *ftt.Test) {
-			tc1 := NewTagCache(fs, "service1.example.com")
-			tc2 := NewTagCache(fs, "service2.example.com")
+			tc1 := NewVersionCache(fs, "service1.example.com")
+			tc2 := NewVersionCache(fs, "service2.example.com")
 
 			// Add same tags and files, that resolve to different hashes on different
 			// servers.
@@ -212,8 +212,8 @@ func TestTagCacheWorks(t *testing.T) {
 			assert.Loosely(t, tc1.Save(ctx), should.BeNil)
 			assert.Loosely(t, tc2.Save(ctx), should.BeNil)
 
-			tc1 = NewTagCache(fs, "service1.example.com")
-			tc2 = NewTagCache(fs, "service2.example.com")
+			tc1 = NewVersionCache(fs, "service1.example.com")
+			tc2 = NewVersionCache(fs, "service2.example.com")
 
 			// Tags are resolvable. tc2.Save didn't overwrite tc1 data.
 			pin, err := tc1.ResolveTag(ctx, "pkg", "tag:1")
@@ -232,7 +232,7 @@ func TestTagCacheWorks(t *testing.T) {
 			assert.Loosely(t, file, should.Match(numberedObjRef(20)))
 
 			// No "ghost" records for some different service.
-			tc3 := NewTagCache(fs, "service3.example.com")
+			tc3 := NewVersionCache(fs, "service3.example.com")
 			pin, err = tc3.ResolveTag(ctx, "pkg", "tag:1")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, pin, should.Match(common.Pin{}))

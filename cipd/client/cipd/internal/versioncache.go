@@ -32,12 +32,12 @@ import (
 )
 
 const (
-	tagCacheMaxSize    = 300
-	tagCacheMaxExeSize = 20
-	tagCacheFilename   = "tagcache.db"
+	maxCachedTags        = 300
+	maxCachedExecutables = 20
+	versionCacheName     = "tagcache.db"
 )
 
-// TagCache provides a mapping (package name, tag) -> instance ID.
+// VersionCache provides a mapping (package name, tag) -> instance ID.
 //
 // This mapping is safe to cache because tags are not detachable: once a tag is
 // successfully resolved to an instance ID it is guaranteed to resolve to same
@@ -48,7 +48,7 @@ const (
 // 'cipd ensure' calls that use only tags to specify versions. It happens to be
 // the most common case of 'cipd ensure' usage by far.
 //
-// Additionally, this TagCache stores a mapping of (pin, file_name) ->
+// Additionally, this VersionCache stores a mapping of (pin, file_name) ->
 // encode(ObjectRef of extracted file) to assist in the `selfupdate` flow.
 //
 // Whenever selfupdate resolves what CIPD package instance ID (pin) it SHOULD be
@@ -56,21 +56,21 @@ const (
 // the client itself SHOULD have for this instance ID. The client then
 // calculates the hash of itself to see if it's actually already at that
 // instance ID.
-type TagCache struct {
+type VersionCache struct {
 	fs      fs.FileSystem
 	service string
 
 	lock sync.Mutex
 
-	cache      *messages.TagCache                       // the last loaded state, if not nil.
-	addedTags  map[tagKey]*messages.TagCache_Entry      // entries added by AddTag
-	addedFiles map[fileKey]*messages.TagCache_FileEntry // entries added by AddExtractedObjectRef
+	cache      *messages.VersionCache                       // the last loaded state, if not nil.
+	addedTags  map[tagKey]*messages.VersionCache_Entry      // entries added by AddTag
+	addedFiles map[fileKey]*messages.VersionCache_FileEntry // entries added by AddExtractedObjectRef
 }
 
 type tagKey string
 type fileKey string
 
-// makeTagKey constructs key for the TagCache.addedTags map.
+// makeTagKey constructs key for the VersionCache.addedTags map.
 //
 // We use string math instead of a struct to avoid reimplementing sorting
 // interface, ain't nobody got time for that.
@@ -78,26 +78,26 @@ func makeTagKey(pkg, tag string) tagKey {
 	return tagKey(pkg + ":" + tag)
 }
 
-// makeFileKey constructs key for the TagCache.addedFiles map.
+// makeFileKey constructs key for the VersionCache.addedFiles map.
 //
 // It is distinct from tagKey structurally, thus uses different type.
 func makeFileKey(pkg, instance, file string) fileKey {
 	return fileKey(pkg + ":" + instance + ":" + file)
 }
 
-// NewTagCache initializes TagCache.
+// NewVersionCache initializes VersionCache.
 //
 // fs will be the root of the cache. It will be searched for tagcache.db file.
-func NewTagCache(fs fs.FileSystem, service string) *TagCache {
-	return &TagCache{fs: fs, service: service}
+func NewVersionCache(fs fs.FileSystem, service string) *VersionCache {
+	return &VersionCache{fs: fs, service: service}
 }
 
-func (c *TagCache) lazyLoadLocked(ctx context.Context) (err error) {
+func (c *VersionCache) lazyLoadLocked(ctx context.Context) (err error) {
 	// Lazy-load the cache the first time it is used. We reload it again in Save
 	// right before overwriting the file. We don't reload it anywhere else though,
 	// so the implementation essentially assumes Save is called relatively soon
 	// after ResolveTag call. If it's not the case, cache updates made by other
-	// processes will be "invisible" to the TagCache. It still tries not to
+	// processes will be "invisible" to the VersionCache. It still tries not to
 	// overwrite them in Save, so it's fine.
 	if c.cache == nil {
 		c.cache, err = c.loadFromDisk(ctx, false)
@@ -108,7 +108,7 @@ func (c *TagCache) lazyLoadLocked(ctx context.Context) (err error) {
 // ResolveTag returns cached tag or empty Pin{} if such tag is not in the cache.
 //
 // Returns error if the cache can't be read.
-func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.Pin, err error) {
+func (c *VersionCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.Pin, err error) {
 	if err = common.ValidatePackageName(pkg); err != nil {
 		return pin, err
 	}
@@ -149,7 +149,7 @@ func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.
 // cache.
 //
 // Returns error if the cache can't be read.
-func (c *TagCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string) (*caspb.ObjectRef, error) {
+func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string) (*caspb.ObjectRef, error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (c *TagCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin
 // AddTag records that (pin.PackageName, tag) maps to pin.InstanceID.
 //
 // Call 'Save' later to persist these changes to the cache file on disk.
-func (c *TagCache) AddTag(ctx context.Context, pin common.Pin, tag string) error {
+func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -200,11 +200,11 @@ func (c *TagCache) AddTag(ctx context.Context, pin common.Pin, tag string) error
 	defer c.lock.Unlock()
 
 	if c.addedTags == nil {
-		c.addedTags = make(map[tagKey]*messages.TagCache_Entry, 1)
+		c.addedTags = make(map[tagKey]*messages.VersionCache_Entry, 1)
 	}
 
 	// 'Save' will merge this into 'c.cache' before dumping to disk.
-	c.addedTags[makeTagKey(pin.PackageName, tag)] = &messages.TagCache_Entry{
+	c.addedTags[makeTagKey(pin.PackageName, tag)] = &messages.VersionCache_Entry{
 		Service:    c.service,
 		Package:    pin.PackageName,
 		Tag:        tag,
@@ -221,7 +221,7 @@ func (c *TagCache) AddTag(ctx context.Context, pin common.Pin, tag string) error
 // digest).
 //
 // Call 'Save' later to persist these changes to the cache file on disk.
-func (c *TagCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string, ref *caspb.ObjectRef) error {
+func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string, ref *caspb.ObjectRef) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -233,9 +233,9 @@ func (c *TagCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fi
 	defer c.lock.Unlock()
 
 	if c.addedFiles == nil {
-		c.addedFiles = make(map[fileKey]*messages.TagCache_FileEntry)
+		c.addedFiles = make(map[fileKey]*messages.VersionCache_FileEntry)
 	}
-	c.addedFiles[makeFileKey(pin.PackageName, pin.InstanceID, fileName)] = &messages.TagCache_FileEntry{
+	c.addedFiles[makeFileKey(pin.PackageName, pin.InstanceID, fileName)] = &messages.VersionCache_FileEntry{
 		Service:    c.service,
 		Package:    pin.PackageName,
 		InstanceId: pin.InstanceID,
@@ -248,7 +248,7 @@ func (c *TagCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fi
 // Save stores all pending cache updates to the file system.
 //
 // It effectively resets the object to the initial state.
-func (c *TagCache) Save(ctx context.Context) error {
+func (c *VersionCache) Save(ctx context.Context) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -281,7 +281,7 @@ func (c *TagCache) Save(ctx context.Context) error {
 
 	// Copy existing entries, except the ones we are moving to the tail. Carefully
 	// copy entries belonging to other services too, we must not overwrite them.
-	mergedTags := make([]*messages.TagCache_Entry, 0, len(recent.Entries)+len(c.addedTags))
+	mergedTags := make([]*messages.VersionCache_Entry, 0, len(recent.Entries)+len(c.addedTags))
 	for _, e := range recent.Entries {
 		key := makeTagKey(e.Package, e.Tag)
 		if e.Service != c.service || c.addedTags[key] == nil {
@@ -295,12 +295,12 @@ func (c *TagCache) Save(ctx context.Context) error {
 	}
 
 	// Trim the end result, discard the head: it's where old items are.
-	if len(mergedTags) > tagCacheMaxSize {
-		mergedTags = mergedTags[len(mergedTags)-tagCacheMaxSize:]
+	if len(mergedTags) > maxCachedTags {
+		mergedTags = mergedTags[len(mergedTags)-maxCachedTags:]
 	}
 
 	// Do the same for file entries.
-	mergedFiles := make([]*messages.TagCache_FileEntry, 0, len(recent.FileEntries)+len(c.addedFiles))
+	mergedFiles := make([]*messages.VersionCache_FileEntry, 0, len(recent.FileEntries)+len(c.addedFiles))
 	for _, e := range recent.FileEntries {
 		key := makeFileKey(e.Package, e.InstanceId, e.FileName)
 		if e.Service != c.service || c.addedFiles[key] == nil {
@@ -310,14 +310,14 @@ func (c *TagCache) Save(ctx context.Context) error {
 	for _, k := range sortedFiles {
 		mergedFiles = append(mergedFiles, c.addedFiles[fileKey(k)])
 	}
-	if len(mergedFiles) > tagCacheMaxExeSize {
-		mergedFiles = mergedFiles[len(mergedFiles)-tagCacheMaxExeSize:]
+	if len(mergedFiles) > maxCachedExecutables {
+		mergedFiles = mergedFiles[len(mergedFiles)-maxCachedExecutables:]
 	}
 
 	// Serialize and write to disk. We still can accidentally replace someone
 	// else's changes, but the probability should be relatively low. It can happen
 	// only if two processes call 'Save' at the exact same time.
-	updated := &messages.TagCache{Entries: mergedTags, FileEntries: mergedFiles}
+	updated := &messages.VersionCache{Entries: mergedTags, FileEntries: mergedFiles}
 	if err := c.dumpToDisk(ctx, updated); err != nil {
 		return err
 	}
@@ -338,8 +338,8 @@ func (c *TagCache) Save(ctx context.Context) error {
 //
 // Returns empty struct if the file is missing or corrupted. Returns errors if
 // the file can't be read.
-func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*messages.TagCache, error) {
-	path, err := c.fs.RootRelToAbs(tagCacheFilename)
+func (c *VersionCache) loadFromDisk(ctx context.Context, allServices bool) (*messages.VersionCache, error) {
+	path, err := c.fs.RootRelToAbs(versionCacheName)
 	if err != nil {
 		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad tag cache path: %w", err))
 	}
@@ -347,7 +347,7 @@ func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*message
 	blob, err := os.ReadFile(path)
 	switch {
 	case os.IsNotExist(err):
-		return &messages.TagCache{}, nil
+		return &messages.VersionCache{}, nil
 	case err != nil:
 		return nil, cipderr.IO.Apply(errors.
 
@@ -355,15 +355,15 @@ func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*message
 			Fmt("reading tag cache: %w", err))
 	}
 
-	cache := messages.TagCache{}
+	cache := messages.VersionCache{}
 	if err := UnmarshalWithSHA256(blob, &cache); err != nil {
 		logging.Warningf(ctx, "Can't deserialize tag cache: %s", err)
-		return &messages.TagCache{}, nil
+		return &messages.VersionCache{}, nil
 	}
 
 	// Throw away all entries with empty Service. They are not longer valid.
 	// Also apply 'allServices' filter.
-	filtered := &messages.TagCache{}
+	filtered := &messages.VersionCache{}
 	for _, e := range cache.Entries {
 		if e.Service != "" && (e.Service == c.service || allServices) {
 			filtered.Entries = append(filtered.Entries, e)
@@ -379,8 +379,8 @@ func (c *TagCache) loadFromDisk(ctx context.Context, allServices bool) (*message
 }
 
 // dumpToDisk serializes the tag cache and writes it to the file system.
-func (c *TagCache) dumpToDisk(ctx context.Context, msg *messages.TagCache) error {
-	path, err := c.fs.RootRelToAbs(tagCacheFilename)
+func (c *VersionCache) dumpToDisk(ctx context.Context, msg *messages.VersionCache) error {
+	path, err := c.fs.RootRelToAbs(versionCacheName)
 	if err != nil {
 		return cipderr.BadArgument.Apply(errors.Fmt("bad tag cache path: %w", err))
 	}

@@ -1056,7 +1056,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		c.Run("Resolves tag (with tag cache)", func(c *ftt.Test) {
-			setupTagCache(client, c)
+			setupVersionCache(client, c)
 
 			// Only one RPC, even though we did two ResolveVersion calls.
 			repo.expect(rpcCall{
@@ -1669,10 +1669,10 @@ func mockedCipdClient(t testing.TB) (*clientImpl, *mockedStorageClient, *mockedR
 	return impl, cas, repo, storage
 }
 
-func setupTagCache(cl *clientImpl, t testing.TB) string {
-	assert.Loosely(t, cl.tagCache, should.BeNil)
+func setupVersionCache(cl *clientImpl, t testing.TB) string {
+	assert.Loosely(t, cl.versionCache, should.BeNil)
 	tempDir := t.TempDir()
-	cl.tagCache = internal.NewTagCache(fs.NewFileSystem(tempDir, ""), "service.example.com")
+	cl.versionCache = internal.NewVersionCache(fs.NewFileSystem(tempDir, ""), "service.example.com")
 	return tempDir
 }
 

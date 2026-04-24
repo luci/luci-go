@@ -845,9 +845,9 @@ type clientImpl struct {
 	// proxyTransport is used to communicate with the CIPD proxy, if any.
 	proxyTransport *proxyclient.ProxyTransport
 
-	// tagCache is a file-system based cache of resolved tags.
-	tagCache     *internal.TagCache
-	tagCacheInit sync.Once
+	// versionCache is a file-system based cache of resolved tags.
+	versionCache     *internal.VersionCache
+	versionCacheInit sync.Once
 
 	// Plugin system.
 	pluginHost      plugin.Host            // nil if disabled
@@ -857,21 +857,21 @@ type clientImpl struct {
 type batchAwareOp int
 
 const (
-	batchAwareOpSaveTagCache batchAwareOp = iota
+	batchAwareOpSaveVersionCache batchAwareOp = iota
 	batchAwareOpCleanupTrash
 	batchAwareOpClearAdmissionCache
 )
 
 // See https://golang.org/ref/spec#Method_expressions
 var batchAwareOps = map[batchAwareOp]func(*clientImpl, context.Context){
-	batchAwareOpSaveTagCache:        (*clientImpl).saveTagCache,
+	batchAwareOpSaveVersionCache:    (*clientImpl).saveVersionCache,
 	batchAwareOpCleanupTrash:        (*clientImpl).cleanupTrash,
 	batchAwareOpClearAdmissionCache: (*clientImpl).clearAdmissionCache,
 }
 
-func (c *clientImpl) saveTagCache(ctx context.Context) {
-	if c.tagCache != nil {
-		if err := c.tagCache.Save(ctx); err != nil {
+func (c *clientImpl) saveVersionCache(ctx context.Context) {
+	if c.versionCache != nil {
+		if err := c.versionCache.Save(ctx); err != nil {
 			logging.Warningf(ctx, "Failed to save tag cache: %s", err)
 		}
 	}
@@ -890,11 +890,11 @@ func (c *clientImpl) clearAdmissionCache(ctx context.Context) {
 	}
 }
 
-// getTagCache lazy-initializes tagCache and returns it.
+// getVersionCache lazy-initializes versionCache and returns it.
 //
 // May return nil if tag cache is disabled.
-func (c *clientImpl) getTagCache() *internal.TagCache {
-	c.tagCacheInit.Do(func() {
+func (c *clientImpl) getVersionCache() *internal.VersionCache {
+	c.versionCacheInit.Do(func() {
 		var dir string
 		switch {
 		case c.CacheDir != "":
@@ -908,9 +908,9 @@ func (c *clientImpl) getTagCache() *internal.TagCache {
 		if err != nil {
 			panic(err) // the URL has been validated in NewClient already
 		}
-		c.tagCache = internal.NewTagCache(fs.NewFileSystem(dir, ""), parsed.Host)
+		c.versionCache = internal.NewVersionCache(fs.NewFileSystem(dir, ""), parsed.Host)
 	})
-	return c.tagCache
+	return c.versionCache
 }
 
 // instanceCache returns an instance cache to download packages into.
@@ -1183,9 +1183,9 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 
 	// Use a local cache when resolving tags to avoid round trips to the backend
 	// when calling same 'cipd ensure' command again and again.
-	var cache *internal.TagCache
+	var cache *internal.VersionCache
 	if common.ValidateInstanceTag(version) == nil {
-		cache = c.getTagCache() // note: may be nil if the cache is disabled
+		cache = c.getVersionCache() // note: may be nil if the cache is disabled
 	}
 	if cache != nil {
 		cached, err := cache.ResolveTag(ctx, packageName, version)
@@ -1219,7 +1219,7 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 		if err := cache.AddTag(ctx, pin, version); err != nil {
 			logging.Warningf(ctx, "Could not add tag to the cache")
 		}
-		c.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
+		c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
 	}
 
 	return pin, nil
@@ -1301,9 +1301,9 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 
 	// rememberClientRef populates the extracted refs cache.
 	rememberClientRef := func(pin common.Pin, ref *caspb.ObjectRef) {
-		if cache := c.getTagCache(); cache != nil {
+		if cache := c.getVersionCache(); cache != nil {
 			cache.AddExtractedObjectRef(ctx, pin, clientFileName, ref)
-			c.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
+			c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
 		}
 	}
 
@@ -1313,7 +1313,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	// allows skipping RPCs to the backend on a "happy path", when the client is
 	// already up-to-date.
 	var clientRef *caspb.ObjectRef
-	if cache := c.getTagCache(); cache != nil {
+	if cache := c.getVersionCache(); cache != nil {
 		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, pin, clientFileName); err != nil {
 			return common.Pin{}, err
 		}

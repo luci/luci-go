@@ -27,8 +27,8 @@ import (
 )
 
 func TestChecksumCheckingWorks(t *testing.T) {
-	msg := messages.TagCache{
-		Entries: []*messages.TagCache_Entry{
+	msg := messages.VersionCache{
+		Entries: []*messages.VersionCache_Entry{
 			{
 				Package:    "package",
 				Tag:        "tag",
@@ -40,7 +40,7 @@ func TestChecksumCheckingWorks(t *testing.T) {
 	ftt.Run("Works", t, func(c *ftt.Test) {
 		buf, err := MarshalWithSHA256(&msg)
 		assert.Loosely(c, err, should.BeNil)
-		out := messages.TagCache{}
+		out := messages.VersionCache{}
 		assert.Loosely(c, UnmarshalWithSHA256(buf, &out), should.BeNil)
 		assert.Loosely(c, &out, should.Match(&msg))
 	})
@@ -49,14 +49,14 @@ func TestChecksumCheckingWorks(t *testing.T) {
 		buf, err := MarshalWithSHA256(&msg)
 		assert.Loosely(c, err, should.BeNil)
 		buf[10] = 0
-		out := messages.TagCache{}
+		out := messages.VersionCache{}
 		assert.Loosely(c, UnmarshalWithSHA256(buf, &out), should.NotBeNil)
 	})
 
 	ftt.Run("Skips empty sha256", t, func(c *ftt.Test) {
 		buf, err := proto.Marshal(&messages.BlobWithSHA256{Blob: []byte{1, 2, 3}})
 		assert.Loosely(c, err, should.BeNil)
-		out := messages.TagCache{}
+		out := messages.VersionCache{}
 		assert.Loosely(c, UnmarshalWithSHA256(buf, &out), should.Equal(ErrUnknownSHA256))
 	})
 }
