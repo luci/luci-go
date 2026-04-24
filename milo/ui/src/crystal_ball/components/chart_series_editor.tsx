@@ -14,13 +14,17 @@
 
 import {
   Add as AddIcon,
+  AddBox as AddBoxIcon,
   BarChart as BarChartIcon,
+  CallSplit as SplitIcon,
   ChevronRight as ChevronRightIcon,
-  LibraryAdd as LibraryAddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   FilterAlt as FunnelIcon,
+  IndeterminateCheckBox as IndeterminateCheckBoxIcon,
+  LibraryAdd as LibraryAddIcon,
   Palette as PaletteIcon,
+  UnfoldMore as UnfoldMoreIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
@@ -39,17 +43,18 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useContext, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
-import { FilterEditor } from '@/crystal_ball/components';
+import { FilterEditor, SplitSeriesDialog } from '@/crystal_ball/components';
 import {
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   COMMON_MESSAGES,
   MAX_SUGGEST_RESULTS,
   OPERATOR_DISPLAY_NAMES,
 } from '@/crystal_ball/constants';
+import { EditorUiContext } from '@/crystal_ball/context';
 import {
   EditorUiKeyPrefix,
   useEditorUiState,
@@ -98,6 +103,27 @@ export function ChartSeriesEditor({
   filterColumns,
   isLoadingFilterColumns,
 }: ChartSeriesEditorProps) {
+  const [listExpanded, setListExpanded] = useEditorUiState({
+    initialValue: true,
+    key: 'chart_series_list',
+    prefix: EditorUiKeyPrefix.CHART_SERIES,
+  });
+
+  const context = useContext(EditorUiContext);
+  const uiStates = context?.uiStates ?? {};
+  const setUiState = context?.setUiState;
+
+  const getChildrenExpanded = (seriesId: string) => {
+    return (
+      uiStates[`${EditorUiKeyPrefix.CHART_SERIES}:${seriesId}:children`] ?? true
+    );
+  };
+
+  const toggleChildrenExpanded = (seriesId: string) => {
+    const key = `${EditorUiKeyPrefix.CHART_SERIES}:${seriesId}:children`;
+    setUiState?.(key, !getChildrenExpanded(seriesId));
+  };
+
   const handleAddSeries = () => {
     const id = crypto.randomUUID();
     const newSeries: PerfChartSeries = PerfChartSeries.fromPartial({
@@ -122,8 +148,20 @@ export function ChartSeriesEditor({
 
   const handleRemoveSeries = useCallback(
     (index: number) => {
-      const updatedSeries = [...series];
-      updatedSeries.splice(index, 1);
+      const sourceSeries = series[index];
+      const getIdsToRemove = (parentId: string): string[] => {
+        if (!parentId) return [];
+        const childIds = series
+          .filter((s) => s.parentSeriesId === parentId && s.id !== parentId)
+          .flatMap((s) => [s.id, ...getIdsToRemove(s.id)]);
+        return childIds;
+      };
+
+      const idsToRemove = new Set([
+        sourceSeries.id,
+        ...getIdsToRemove(sourceSeries.id),
+      ]);
+      const updatedSeries = series.filter((s) => !idsToRemove.has(s.id));
       onUpdateSeries(updatedSeries);
     },
     [series, onUpdateSeries],
@@ -145,6 +183,59 @@ export function ChartSeriesEditor({
     [series, onUpdateSeries],
   );
 
+  const [splitDialogOpen, setSplitDialogOpen] = useState(false);
+  const [seriesToSplit, setSeriesToSplit] = useState<PerfChartSeries | null>(
+    null,
+  );
+
+  const handleSplitSeries = useCallback(
+    (index: number) => {
+      setSeriesToSplit(series[index]);
+      setSplitDialogOpen(true);
+    },
+    [series],
+  );
+
+  const handleCompleteSplit = useCallback(
+    (selectedValues: string[], column: string) => {
+      if (!seriesToSplit) return;
+
+      const newSeriesList: PerfChartSeries[] = [];
+      selectedValues.forEach((val, i) => {
+        const id = crypto.randomUUID();
+        const newSeries: PerfChartSeries = PerfChartSeries.fromPartial({
+          ...seriesToSplit,
+          id,
+          color: generateColor(series.length + i),
+          displayName: `${seriesToSplit.displayName} - ${val}`,
+          parentSeriesId: seriesToSplit.id,
+          filters: [
+            ...(seriesToSplit.filters ?? []),
+            {
+              id: `filter-${crypto.randomUUID()}`,
+              column: column,
+              dataSpecId: dataSpecId,
+              displayName: `${column} = ${val}`,
+              textInput: {
+                defaultValue: {
+                  values: [val],
+                  filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+                },
+              },
+            },
+          ],
+        });
+        newSeriesList.push(newSeries);
+      });
+
+      const index = series.findIndex((s) => s.id === seriesToSplit.id);
+      const updatedSeries = [...series];
+      updatedSeries.splice(index + 1, 0, ...newSeriesList);
+      onUpdateSeries(updatedSeries);
+    },
+    [series, seriesToSplit, onUpdateSeries, dataSpecId],
+  );
+
   const metricFilterColumns = useMemo(
     () =>
       filterColumns.filter(
@@ -158,6 +249,66 @@ export function ChartSeriesEditor({
     [filterColumns],
   );
 
+  const renderSeriesTree = (
+    parentId?: string,
+    depth = 0,
+  ): React.ReactElement[] => {
+    const filteredSeries = series.filter((s) =>
+      parentId
+        ? s.parentSeriesId === parentId && s.id !== parentId
+        : !s.parentSeriesId,
+    );
+
+    return filteredSeries.flatMap((s) => {
+      const originalIndex = series.findIndex((orig) => orig.id === s.id);
+      const key = s.id || String(originalIndex);
+      const hasChildren = s.id
+        ? series.some(
+            (child) => child.parentSeriesId === s.id && child.id !== s.id,
+          )
+        : false;
+      const childrenExpanded = getChildrenExpanded(s.id);
+
+      return [
+        <Box
+          key={key}
+          sx={{
+            pl: depth * 3,
+            bgcolor: (theme) =>
+              depth > 0
+                ? alpha(theme.palette.action.hover, BackgroundAlpha.LOW)
+                : 'transparent',
+          }}
+        >
+          <ChartSeriesItem
+            key={key}
+            uiStateOptions={{ key }}
+            series={s}
+            onUpdate={(updatedItem) =>
+              handleUpdateSeriesItem(originalIndex, updatedItem)
+            }
+            onRemove={() => handleRemoveSeries(originalIndex)}
+            onDuplicate={() => handleDuplicateSeries(originalIndex)}
+            onSplit={() => handleSplitSeries(originalIndex)}
+            dataSpecId={dataSpecId}
+            globalFilters={globalFilters}
+            widgetFilters={widgetFilters}
+            metricFilterColumns={metricFilterColumns}
+            isLoadingColumns={isLoadingFilterColumns}
+            isVisible={!hiddenSeriesNames?.has(s.displayName)}
+            onToggleVisibility={() => onToggleVisibility?.(s.displayName)}
+            hasChildren={hasChildren}
+            childrenExpanded={childrenExpanded}
+            onToggleChildren={() => toggleChildrenExpanded(s.id)}
+          />
+        </Box>,
+        ...(hasChildren && childrenExpanded && s.id
+          ? renderSeriesTree(s.id, depth + 1)
+          : []),
+      ];
+    });
+  };
+
   return (
     <Box
       sx={{
@@ -168,46 +319,98 @@ export function ChartSeriesEditor({
         mb: -2,
       }}
     >
-      {series.map((s, index) => {
-        const key = s.id || String(index);
-        return (
-          <ChartSeriesItem
-            key={key}
-            uiStateOptions={{ key }}
-            series={s}
-            onUpdate={(updatedItem) =>
-              handleUpdateSeriesItem(index, updatedItem)
-            }
-            onRemove={() => handleRemoveSeries(index)}
-            onDuplicate={() => handleDuplicateSeries(index)}
-            dataSpecId={dataSpecId}
-            globalFilters={globalFilters}
-            widgetFilters={widgetFilters}
-            metricFilterColumns={metricFilterColumns}
-            isLoadingColumns={isLoadingFilterColumns}
-            isVisible={!hiddenSeriesNames?.has(s.displayName)}
-            onToggleVisibility={() => onToggleVisibility?.(s.displayName)}
-          />
-        );
-      })}
-      <Button
-        onClick={handleAddSeries}
-        variant="text"
-        fullWidth
-        startIcon={<AddIcon />}
+      <Accordion
+        expanded={listExpanded}
+        onChange={() => setListExpanded(!listExpanded)}
+        disableGutters
+        elevation={0}
+        square
         sx={{
-          justifyContent: 'flex-start',
-          px: 2,
-          py: 0,
-          minHeight: (theme) => theme.spacing(5),
-          color: 'primary.main',
-          textTransform: 'none',
-          typography: 'body2',
-          fontWeight: (theme) => theme.typography.fontWeightBold,
+          bgcolor: 'transparent',
+          '&:before': { display: 'none' },
+          border: 'none',
+          boxShadow: 'none',
         }}
       >
-        {COMMON_MESSAGES.ADD_FILTER_METRIC_SERIES}
-      </Button>
+        <AccordionSummary
+          component="div"
+          expandIcon={<UnfoldMoreIcon />}
+          aria-controls="series-content"
+          id="series-header"
+          sx={{
+            px: 2,
+            flexDirection: 'row-reverse',
+            minHeight: (theme) => theme.spacing(4.5),
+            '&.Mui-expanded': {
+              minHeight: (theme) => theme.spacing(4.5),
+            },
+            '& .MuiAccordionSummary-expandIconWrapper': {
+              marginRight: (theme) => theme.spacing(1),
+              transform: 'none !important',
+            },
+            '& .MuiAccordionSummary-content': {
+              alignItems: 'center',
+              flexWrap: 'nowrap',
+              gap: 1,
+              margin: '4px 0',
+              width: '100%',
+              '&.Mui-expanded': {
+                margin: '4px 0',
+              },
+            },
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              flexShrink: 0,
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                flexShrink: 0,
+                color: 'text.secondary',
+                fontWeight: (theme) => theme.typography.fontWeightBold,
+                textTransform: 'uppercase',
+                lineHeight: 1,
+              }}
+            >
+              CHART SERIES
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ p: 0 }}>
+          {renderSeriesTree()}
+          <Button
+            onClick={handleAddSeries}
+            variant="text"
+            fullWidth
+            startIcon={<AddIcon />}
+            sx={{
+              justifyContent: 'flex-start',
+              px: 2,
+              py: 0,
+              minHeight: (theme) => theme.spacing(5),
+              color: 'primary.main',
+              textTransform: 'none',
+              typography: 'body2',
+              fontWeight: (theme) => theme.typography.fontWeightBold,
+            }}
+          >
+            {COMMON_MESSAGES.ADD_FILTER_METRIC_SERIES}
+          </Button>
+        </AccordionDetails>
+      </Accordion>
+      <SplitSeriesDialog
+        open={splitDialogOpen}
+        onClose={() => setSplitDialogOpen(false)}
+        series={seriesToSplit}
+        onSplit={handleCompleteSplit}
+        dataSpecId={dataSpecId}
+      />
     </Box>
   );
 }
@@ -220,6 +423,7 @@ export interface ChartSeriesItemProps {
   onUpdate: (updatedSeries: PerfChartSeries) => void;
   onRemove: () => void;
   onDuplicate?: () => void;
+  onSplit?: () => void;
   dataSpecId: string;
   globalFilters?: readonly PerfFilter[];
   widgetFilters?: readonly PerfFilter[];
@@ -232,6 +436,9 @@ export interface ChartSeriesItemProps {
   hideMultiSeriesActions?: boolean;
   titlePlaceholder?: string;
   uiStateOptions?: UseEditorUiStateOptions;
+  hasChildren?: boolean;
+  childrenExpanded?: boolean;
+  onToggleChildren?: (e: React.MouseEvent) => void;
 }
 
 export function ChartSeriesItem({
@@ -239,6 +446,7 @@ export function ChartSeriesItem({
   onUpdate,
   onRemove,
   onDuplicate,
+  onSplit,
   dataSpecId,
   globalFilters,
   widgetFilters,
@@ -251,6 +459,9 @@ export function ChartSeriesItem({
   hideMultiSeriesActions = false,
   titlePlaceholder,
   uiStateOptions,
+  hasChildren = false,
+  childrenExpanded = false,
+  onToggleChildren,
 }: ChartSeriesItemProps) {
   const [expanded, setExpanded] = useEditorUiState({
     initialValue: false,
@@ -382,6 +593,23 @@ export function ChartSeriesItem({
           },
         }}
       >
+        {hasChildren && (
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleChildren?.(e);
+            }}
+            size="small"
+            sx={{ p: 0, mr: 0.5 }}
+            aria-label="Toggle child series"
+          >
+            {childrenExpanded ? (
+              <IndeterminateCheckBoxIcon fontSize="small" />
+            ) : (
+              <AddBoxIcon fontSize="small" />
+            )}
+          </IconButton>
+        )}
         {!isShowingPlaceholder && (
           <ChevronRightIcon
             fontSize="small"
@@ -462,6 +690,21 @@ export function ChartSeriesItem({
               flexItem
               sx={{ height: 16, alignSelf: 'center' }}
             />
+          )}
+          {!hideMultiSeriesActions && (
+            <Tooltip title="Split Series">
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSplit?.();
+                }}
+                aria-label="Split Series"
+                size="small"
+                sx={{ p: 0.25 }}
+              >
+                <SplitIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
           {!hideMultiSeriesActions && (
             <Tooltip title={COMMON_MESSAGES.DUPLICATE}>

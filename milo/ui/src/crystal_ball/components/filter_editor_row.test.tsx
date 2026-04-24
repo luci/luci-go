@@ -69,7 +69,9 @@ describe('FilterEditorRow', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSuggest.mockReturnValue(createMockQueryResult({ values: [] }));
+    mockSuggest.mockReturnValue(
+      createMockQueryResult({ values: [], suggestions: [] }),
+    );
     mockedUseParams.mockReturnValue({ dashboardId: 'dash-1' });
   });
 

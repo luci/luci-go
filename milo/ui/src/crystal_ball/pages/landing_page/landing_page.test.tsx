@@ -99,6 +99,7 @@ describe('<LandingPage />', () => {
     jest.mocked(useSuggestMeasurementFilterValues).mockReturnValue(
       createMockQueryResult({
         values: [],
+        suggestions: [],
       }),
     );
     jest.mocked(useDeleteDashboardState).mockReturnValue(

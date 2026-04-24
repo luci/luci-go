@@ -41,7 +41,13 @@ const mockedSuggestValues = jest.fn(
     _request?: SuggestMeasurementFilterValuesRequest,
     _options?: WrapperQueryOptions<SuggestMeasurementFilterValuesResponse>,
   ) => ({
-    data: { values: ['suggest1', 'suggest2'] },
+    data: {
+      suggestions: [
+        { value: 'suggest1', count: '1' },
+        { value: 'suggest2', count: '2' },
+      ],
+      values: ['suggest1', 'suggest2'],
+    },
     isLoading: false,
     isError: false,
   }),
@@ -70,6 +76,24 @@ jest.mock('@/crystal_ball/hooks', () => ({
     showWarningToast: jest.fn(),
     showErrorToast: jest.fn(),
   }),
+}));
+
+interface MockSplitProps {
+  open: boolean;
+  onSplit: (values: string[], col: string) => void;
+}
+
+jest.mock('@/crystal_ball/components', () => ({
+  ...jest.requireActual('@/crystal_ball/components'),
+  SplitSeriesDialog: ({ open, onSplit }: MockSplitProps) =>
+    open ? (
+      <button
+        data-testid="mock-split-complete"
+        onClick={() => onSplit(['val1', 'val2'], 'build_branch')}
+      >
+        Mock Split Complete
+      </button>
+    ) : null,
 }));
 
 let mockUUIDCount = 0;
@@ -163,6 +187,7 @@ describe('ChartSeriesEditor', () => {
   it('removes a series when delete icon is clicked', async () => {
     const initialSeries: PerfChartSeries[] = [
       PerfChartSeries.fromPartial({
+        id: 'series-1',
         displayName: 'Series 1',
         metricField: 'metric1',
         dataSpecId: 'test-spec-id',
@@ -298,11 +323,13 @@ describe('ChartSeriesEditor', () => {
   it('handles multiple series correctly', async () => {
     const initialSeries: PerfChartSeries[] = [
       PerfChartSeries.fromPartial({
+        id: 'series-s1',
         displayName: 's1',
         metricField: 'm1',
         dataSpecId: 'test-spec-id',
       }),
       PerfChartSeries.fromPartial({
+        id: 'series-s2',
         displayName: 's2',
         metricField: 'm2',
         dataSpecId: 'test-spec-id',
@@ -370,6 +397,40 @@ describe('ChartSeriesEditor', () => {
     expect(updatedSeries[0].displayName).toBe('Series 1');
     expect(updatedSeries[1].displayName).toBe('Series 1 (Copy)');
     expect(updatedSeries[1].metricField).toBe('metric1');
+  });
+
+  it('splits a series when split button is clicked in dialog', async () => {
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        id: 'series-1',
+        displayName: 'Series 1',
+        metricField: 'metric1',
+        dataSpecId: 'test-spec-id',
+      }),
+    ];
+    render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
+
+    // Expand the accordion
+    fireEvent.click(screen.getByText('Series 1'));
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'Split Series' }),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Split Series' }));
+
+    // Click the mock complete button
+    fireEvent.click(screen.getByTestId('mock-split-complete'));
+
+    expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
+    const updatedSeries = defaultProps.onUpdateSeries.mock.lastCall[0];
+    expect(updatedSeries.length).toBe(3); // Original + 2 split
+    expect(updatedSeries[0].id).toBe('series-1');
+    expect(updatedSeries[1].displayName).toBe('Series 1 - val1');
+    expect(updatedSeries[1].parentSeriesId).toBe('series-1');
+    expect(updatedSeries[2].displayName).toBe('Series 1 - val2');
+    expect(updatedSeries[2].parentSeriesId).toBe('series-1');
   });
 });
 

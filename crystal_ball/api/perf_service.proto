@@ -469,8 +469,20 @@ message SuggestMeasurementFilterValuesRequest {
 
 // Response message for getting filter values.
 message SuggestMeasurementFilterValuesResponse {
+  // A suggested filter value with its occurrence count.
+  message ValueSuggestion {
+    // The suggested filter value.
+    string value = 1;
+    // The number of occurrences for this value.
+    int64 count = 2;
+  }
+
+  // Deprecated: Use `suggestions`
   // The list of filter values.
-  repeated string values = 1;
+  repeated string values = 1 [deprecated = true];
+
+  // The list of filter values with their occurrence counts.
+  repeated ValueSuggestion suggestions = 2;
 }
 
 // New Request/Response Messages:
@@ -1108,6 +1120,10 @@ message PerfChartSeries {
   // must be lowercase letters, numbers, or hyphens, and the value must not
   // end with a hyphen.
   string id = 11 [(google.api.field_behavior) = OPTIONAL];
+
+  // The ID of the PerfChartSeries from which this series was split.
+  // Empty if this is not a split series.
+  string parent_series_id = 12 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Configuration for the X axis.

@@ -382,8 +382,23 @@ export interface SuggestMeasurementFilterValuesRequest {
 
 /** Response message for getting filter values. */
 export interface SuggestMeasurementFilterValuesResponse {
-  /** The list of filter values. */
+  /**
+   * Deprecated: Use `suggestions`
+   * The list of filter values.
+   *
+   * @deprecated
+   */
   readonly values: readonly string[];
+  /** The list of filter values with their occurrence counts. */
+  readonly suggestions: readonly SuggestMeasurementFilterValuesResponse_ValueSuggestion[];
+}
+
+/** A suggested filter value with its occurrence count. */
+export interface SuggestMeasurementFilterValuesResponse_ValueSuggestion {
+  /** The suggested filter value. */
+  readonly value: string;
+  /** The number of occurrences for this value. */
+  readonly count: string;
 }
 
 /** New Request/Response Messages: */
@@ -1030,6 +1045,11 @@ export interface PerfChartSeries {
    * end with a hyphen.
    */
   readonly id: string;
+  /**
+   * The ID of the PerfChartSeries from which this series was split.
+   * Empty if this is not a split series.
+   */
+  readonly parentSeriesId: string;
 }
 
 /**
@@ -3101,13 +3121,16 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
 };
 
 function createBaseSuggestMeasurementFilterValuesResponse(): SuggestMeasurementFilterValuesResponse {
-  return { values: [] };
+  return { values: [], suggestions: [] };
 }
 
 export const SuggestMeasurementFilterValuesResponse: MessageFns<SuggestMeasurementFilterValuesResponse> = {
   encode(message: SuggestMeasurementFilterValuesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.values) {
       writer.uint32(10).string(v!);
+    }
+    for (const v of message.suggestions) {
+      SuggestMeasurementFilterValuesResponse_ValueSuggestion.encode(v!, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -3127,6 +3150,16 @@ export const SuggestMeasurementFilterValuesResponse: MessageFns<SuggestMeasureme
           message.values.push(reader.string());
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.suggestions.push(
+            SuggestMeasurementFilterValuesResponse_ValueSuggestion.decode(reader, reader.uint32()),
+          );
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3139,6 +3172,9 @@ export const SuggestMeasurementFilterValuesResponse: MessageFns<SuggestMeasureme
   fromJSON(object: any): SuggestMeasurementFilterValuesResponse {
     return {
       values: globalThis.Array.isArray(object?.values) ? object.values.map((e: any) => globalThis.String(e)) : [],
+      suggestions: globalThis.Array.isArray(object?.suggestions)
+        ? object.suggestions.map((e: any) => SuggestMeasurementFilterValuesResponse_ValueSuggestion.fromJSON(e))
+        : [],
     };
   },
 
@@ -3146,6 +3182,11 @@ export const SuggestMeasurementFilterValuesResponse: MessageFns<SuggestMeasureme
     const obj: any = {};
     if (message.values?.length) {
       obj.values = message.values;
+    }
+    if (message.suggestions?.length) {
+      obj.suggestions = message.suggestions.map((e) =>
+        SuggestMeasurementFilterValuesResponse_ValueSuggestion.toJSON(e)
+      );
     }
     return obj;
   },
@@ -3156,6 +3197,93 @@ export const SuggestMeasurementFilterValuesResponse: MessageFns<SuggestMeasureme
   fromPartial(object: DeepPartial<SuggestMeasurementFilterValuesResponse>): SuggestMeasurementFilterValuesResponse {
     const message = createBaseSuggestMeasurementFilterValuesResponse() as any;
     message.values = object.values?.map((e) => e) || [];
+    message.suggestions =
+      object.suggestions?.map((e) => SuggestMeasurementFilterValuesResponse_ValueSuggestion.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseSuggestMeasurementFilterValuesResponse_ValueSuggestion(): SuggestMeasurementFilterValuesResponse_ValueSuggestion {
+  return { value: "", count: "0" };
+}
+
+export const SuggestMeasurementFilterValuesResponse_ValueSuggestion: MessageFns<
+  SuggestMeasurementFilterValuesResponse_ValueSuggestion
+> = {
+  encode(
+    message: SuggestMeasurementFilterValuesResponse_ValueSuggestion,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.value !== "") {
+      writer.uint32(10).string(message.value);
+    }
+    if (message.count !== "0") {
+      writer.uint32(16).int64(message.count);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SuggestMeasurementFilterValuesResponse_ValueSuggestion {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSuggestMeasurementFilterValuesResponse_ValueSuggestion() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.count = reader.int64().toString();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SuggestMeasurementFilterValuesResponse_ValueSuggestion {
+    return {
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+      count: isSet(object.count) ? globalThis.String(object.count) : "0",
+    };
+  },
+
+  toJSON(message: SuggestMeasurementFilterValuesResponse_ValueSuggestion): unknown {
+    const obj: any = {};
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    if (message.count !== "0") {
+      obj.count = message.count;
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<SuggestMeasurementFilterValuesResponse_ValueSuggestion>,
+  ): SuggestMeasurementFilterValuesResponse_ValueSuggestion {
+    return SuggestMeasurementFilterValuesResponse_ValueSuggestion.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<SuggestMeasurementFilterValuesResponse_ValueSuggestion>,
+  ): SuggestMeasurementFilterValuesResponse_ValueSuggestion {
+    const message = createBaseSuggestMeasurementFilterValuesResponse_ValueSuggestion() as any;
+    message.value = object.value ?? "";
+    message.count = object.count ?? "0";
     return message;
   },
 };
@@ -6171,6 +6299,7 @@ function createBasePerfChartSeries(): PerfChartSeries {
     effectiveYAxisAssignment: 0,
     color: "",
     id: "",
+    parentSeriesId: "",
   };
 }
 
@@ -6208,6 +6337,9 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     }
     if (message.id !== "") {
       writer.uint32(90).string(message.id);
+    }
+    if (message.parentSeriesId !== "") {
+      writer.uint32(98).string(message.parentSeriesId);
     }
     return writer;
   },
@@ -6307,6 +6439,14 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
           message.id = reader.string();
           continue;
         }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.parentSeriesId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6335,6 +6475,7 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
         : 0,
       color: isSet(object.color) ? globalThis.String(object.color) : "",
       id: isSet(object.id) ? globalThis.String(object.id) : "",
+      parentSeriesId: isSet(object.parentSeriesId) ? globalThis.String(object.parentSeriesId) : "",
     };
   },
 
@@ -6373,6 +6514,9 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     if (message.id !== "") {
       obj.id = message.id;
     }
+    if (message.parentSeriesId !== "") {
+      obj.parentSeriesId = message.parentSeriesId;
+    }
     return obj;
   },
 
@@ -6392,6 +6536,7 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     message.effectiveYAxisAssignment = object.effectiveYAxisAssignment ?? 0;
     message.color = object.color ?? "";
     message.id = object.id ?? "";
+    message.parentSeriesId = object.parentSeriesId ?? "";
     return message;
   },
 };

@@ -415,6 +415,62 @@ function DuplicateOptionsDialog({
   );
 }
 
+interface DashboardUpgradeRule {
+  needsUpgrade: (state: DashboardState) => boolean;
+  upgrade: (state: DashboardState) => DashboardState;
+}
+
+const DASHBOARD_UPGRADE_RULES: readonly DashboardUpgradeRule[] = [
+  {
+    needsUpgrade: (state) =>
+      state.dashboardContent?.widgets?.some((w) =>
+        w.chart?.series?.some((s) => !s.id),
+      ) ?? false,
+    upgrade: (state) => {
+      const upgradedWidgets =
+        state.dashboardContent?.widgets?.map((w) => {
+          if (!w.chart?.series) return w;
+          const upgradedSeries = w.chart.series.map((s) => {
+            if (s.id) return s;
+            return {
+              ...s,
+              id: crypto.randomUUID(),
+            };
+          });
+          return PerfWidget.fromPartial({
+            ...w,
+            chart: {
+              ...w.chart,
+              series: upgradedSeries,
+            },
+          });
+        }) ?? [];
+
+      return DashboardState.fromPartial({
+        ...state,
+        dashboardContent: {
+          ...state.dashboardContent,
+          widgets: upgradedWidgets,
+        },
+      });
+    },
+  },
+];
+
+function needsDashboardUpgrade(state: DashboardState): boolean {
+  return DASHBOARD_UPGRADE_RULES.some((r) => r.needsUpgrade(state));
+}
+
+function upgradeDashboardState(state: DashboardState): DashboardState {
+  let upgraded = state;
+  for (const rule of DASHBOARD_UPGRADE_RULES) {
+    if (rule.needsUpgrade(upgraded)) {
+      upgraded = rule.upgrade(upgraded);
+    }
+  }
+  return upgraded;
+}
+
 /**
  * A customizable dashboard page that renders a dynamic collection of widgets.
  */
@@ -476,6 +532,7 @@ export function DashboardPage() {
   const [localDashboardState, setLocalDashboardState] =
     useState<DashboardState | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   const hasUnsavedChanges = useMemo(() => {
     return (
@@ -530,6 +587,34 @@ export function DashboardPage() {
 
   const { mutateAsync: updateDashboard, isPending: isUpdating } =
     useUpdateDashboardState();
+
+  useEffect(() => {
+    async function checkAndUpgrade() {
+      if (!dashboardState || isUpgrading) return;
+
+      if (needsDashboardUpgrade(dashboardState)) {
+        setIsUpgrading(true);
+        try {
+          const upgraded = upgradeDashboardState(dashboardState);
+          const payload = UpdateDashboardStateRequest.fromPartial({
+            dashboardState: upgraded,
+            updateMask: ['dashboardContent.widgets'],
+          });
+          const response = await updateDashboard(payload);
+          await refetch();
+          if (response.response) {
+            setLocalDashboardState(response.response);
+          }
+        } catch (e) {
+          showErrorToast(e, 'Failed to upgrade dashboard missing series ids');
+        } finally {
+          setIsUpgrading(false);
+        }
+      }
+    }
+
+    checkAndUpgrade();
+  }, [dashboardState, updateDashboard, refetch, showErrorToast, isUpgrading]);
 
   const { mutateAsync: deleteDashboard, isPending: isDeleting } =
     useDeleteDashboardState();
@@ -986,10 +1071,24 @@ export function DashboardPage() {
 
   useTopBarConfig(topBarTitle, topBarAction, topBarMenuItems, subHeader);
 
-  if (isLoading) {
+  if (isLoading || isUpgrading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
+          gap: 2,
+        }}
+      >
         <CircularProgress />
+        {isUpgrading && (
+          <Typography variant="body2" color="text.secondary">
+            Applying automatic dashboard upgrades...
+          </Typography>
+        )}
       </Box>
     );
   }
