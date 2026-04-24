@@ -73,3 +73,20 @@ func (s *DecoratedLogs) Query(ctx context.Context, req *QueryRequest) (rsp *Quer
 	}
 	return
 }
+
+func (s *DecoratedLogs) DeletePrefix(ctx context.Context, req *DeletePrefixRequest) (rsp *DeletePrefixResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "DeletePrefix", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.DeletePrefix(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "DeletePrefix", rsp, err)
+	}
+	return
+}

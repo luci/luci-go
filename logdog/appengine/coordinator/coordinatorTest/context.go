@@ -141,6 +141,26 @@ func (e *Environment) ActAsReader(project, realm string) {
 	}
 }
 
+// ActAsDeleter mocks the auth state to indicate it's a prefix deleter calling.
+func (e *Environment) ActAsPrefixDeleter(project, realm string) {
+	e.AuthState.Identity = "user:client@example.com"
+	e.AuthState.IdentityGroups = nil
+	e.AuthState.IdentityPermissions = []authtest.RealmPermission{
+		{
+			Realm:      realms.Join(project, realm),
+			Permission: coordinator.PermLogsGet,
+		},
+		{
+			Realm:      realms.Join(project, realm),
+			Permission: coordinator.PermLogsList,
+		},
+		{
+			Realm:      realms.Join(project, realm),
+			Permission: coordinator.PermDeletePrefix,
+		},
+	}
+}
+
 // JoinAdmins adds the current caller to the administrators group.
 func (e *Environment) JoinAdmins() {
 	e.AuthState.IdentityGroups = append(e.AuthState.IdentityGroups, "admin")

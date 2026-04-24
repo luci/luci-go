@@ -37,3 +37,7 @@ func (s *testLogsServiceBase) Tail(c context.Context, req *logdog.TailRequest) (
 func (s *testLogsServiceBase) Query(c context.Context, req *logdog.QueryRequest) (*logdog.QueryResponse, error) {
 	panic("not implemented")
 }
+
+func (s *testLogsServiceBase) DeletePrefix(c context.Context, req *logdog.DeletePrefixRequest) (*logdog.DeletePrefixResponse, error) {
+	panic("not implemented")
+}

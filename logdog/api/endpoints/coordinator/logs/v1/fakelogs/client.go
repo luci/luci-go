@@ -85,23 +85,30 @@ type Client struct {
 
 // Get implements logs.Get.
 func (c *Client) Get(_ context.Context, in *logs_api.GetRequest, _ ...grpc.CallOption) (*logs_api.GetResponse, error) {
-	realIn := proto.Clone(in).(*logs_api.GetRequest)
+	realIn := proto.CloneOf(in)
 	realIn.Project = Project
 	return c.logsServ.Get(c.ctx, realIn)
 }
 
 // Tail implements logs.Tail.
 func (c *Client) Tail(_ context.Context, in *logs_api.TailRequest, _ ...grpc.CallOption) (*logs_api.GetResponse, error) {
-	realIn := proto.Clone(in).(*logs_api.TailRequest)
+	realIn := proto.CloneOf(in)
 	realIn.Project = Project
 	return c.logsServ.Tail(c.ctx, realIn)
 }
 
 // Query implements logs.Query.
 func (c *Client) Query(_ context.Context, in *logs_api.QueryRequest, _ ...grpc.CallOption) (*logs_api.QueryResponse, error) {
-	realIn := proto.Clone(in).(*logs_api.QueryRequest)
+	realIn := proto.CloneOf(in)
 	realIn.Project = Project
 	return c.logsServ.Query(c.ctx, realIn)
+}
+
+// DeletePrefix implements logs.DeletePrefix.
+func (c *Client) DeletePrefix(_ context.Context, in *logs_api.DeletePrefixRequest, _ ...grpc.CallOption) (*logs_api.DeletePrefixResponse, error) {
+	realIn := proto.CloneOf(in)
+	realIn.Project = Project
+	return c.logsServ.DeletePrefix(c.ctx, realIn)
 }
 
 // OpenTextStream returns a stream for text (line delimited) data.

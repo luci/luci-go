@@ -264,6 +264,20 @@ message QueryResponse {
   string next = 3;
 }
 
+// DeletePrefixRequest is the request for Logs.DeletePrefix.
+message DeletePrefixRequest {
+  // (required) The project to delete a log prefix from.
+  string project = 1;
+
+  // (required) The prefix (or hash of the prefix) to delete.
+  string prefix = 2;
+}
+
+// DeletePrefixResponse is the response for Logs.DeletePrefix.
+message DeletePrefixResponse {
+  // Currently empty.
+}
+
 // Logs is the user-facing log access and query endpoint service.
 //
 // Use of LUCI is subject to the Google [Terms of Service](https://policies.google.com/terms)
@@ -277,4 +291,7 @@ service Logs {
 
   // Query returns log stream paths that match the requested query.
   rpc Query(QueryRequest) returns (QueryResponse);
+
+  // Delete permanently removes a log prefix from service.
+  rpc DeletePrefix(DeletePrefixRequest) returns (DeletePrefixResponse);
 }

@@ -36,6 +36,8 @@ var (
 	PermLogsGet = realms.RegisterPermission("logdog.logs.get")
 	// PermLogsList is a permission required for listing streams in a prefix.
 	PermLogsList = realms.RegisterPermission("logdog.logs.list")
+	// PermDeletePrefix is a permission required for deleting prefixes.
+	PermDeletePrefix = realms.RegisterPermission("logdog.logs.deletePrefix")
 )
 
 // PermissionDeniedErr is a generic "doesn't exist or don't have access" error.
