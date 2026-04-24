@@ -16,9 +16,10 @@ package internal
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"os"
-	"sort"
+	"slices"
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
@@ -89,22 +90,30 @@ const (
 	WriteVersionCacheName LegacyVersionCache = false
 )
 
-type tagKey string
-type fileKey string
-
-// makeTagKey constructs key for the VersionCache.addedTags map.
-//
-// We use string math instead of a struct to avoid reimplementing sorting
-// interface, ain't nobody got time for that.
-func makeTagKey(pkg, tag string) tagKey {
-	return tagKey(pkg + ":" + tag)
+type tagKey struct {
+	pkg string
+	tag string
 }
 
-// makeFileKey constructs key for the VersionCache.addedFiles map.
-//
-// It is distinct from tagKey structurally, thus uses different type.
-func makeFileKey(pkg, instance, file string) fileKey {
-	return fileKey(pkg + ":" + instance + ":" + file)
+func (t tagKey) cmp(o tagKey) int {
+	return cmp.Or(
+		cmp.Compare(t.pkg, o.pkg),
+		cmp.Compare(t.tag, o.tag),
+	)
+}
+
+type fileKey struct {
+	pkg      string
+	instance string
+	file     string
+}
+
+func (t fileKey) cmp(o fileKey) int {
+	return cmp.Or(
+		cmp.Compare(t.pkg, o.pkg),
+		cmp.Compare(t.instance, o.instance),
+		cmp.Compare(t.file, o.file),
+	)
 }
 
 // NewVersionCache initializes VersionCache.
@@ -146,7 +155,7 @@ func (c *VersionCache) ResolveTag(ctx context.Context, pkg, tag string) (pin com
 	defer c.lock.Unlock()
 
 	// Already added with AddTag recently?
-	if e := c.addedTags[makeTagKey(pkg, tag)]; e != nil {
+	if e := c.addedTags[tagKey{pkg, tag}]; e != nil {
 		return common.Pin{
 			PackageName: e.Package,
 			InstanceID:  e.InstanceId,
@@ -191,7 +200,7 @@ func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	key := makeFileKey(pin.PackageName, pin.InstanceID, fileName)
+	key := fileKey{pin.PackageName, pin.InstanceID, fileName}
 	if e := c.addedFiles[key]; e != nil {
 		return ignoreBrokenObjectRef(e.ObjectRef), nil
 	}
@@ -230,7 +239,7 @@ func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) e
 	}
 
 	// 'Save' will merge this into 'c.cache' before dumping to disk.
-	c.addedTags[makeTagKey(pin.PackageName, tag)] = &messages.VersionCache_Entry{
+	c.addedTags[tagKey{pin.PackageName, tag}] = &messages.VersionCache_Entry{
 		Service:    c.service,
 		Package:    pin.PackageName,
 		Tag:        tag,
@@ -261,7 +270,7 @@ func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin
 	if c.addedFiles == nil {
 		c.addedFiles = make(map[fileKey]*messages.VersionCache_FileEntry)
 	}
-	c.addedFiles[makeFileKey(pin.PackageName, pin.InstanceID, fileName)] = &messages.VersionCache_FileEntry{
+	c.addedFiles[fileKey{pin.PackageName, pin.InstanceID, fileName}] = &messages.VersionCache_FileEntry{
 		Service:    c.service,
 		Package:    pin.PackageName,
 		InstanceId: pin.InstanceID,
@@ -286,16 +295,17 @@ func (c *VersionCache) Save(ctx context.Context) error {
 	}
 
 	// Sort all new entries, for consistency.
-	sortedTags := make([]string, 0, len(c.addedTags))
-	for k := range c.addedTags {
-		sortedTags = append(sortedTags, string(k))
+	sortedTags := make([]tagKey, 0, len(c.addedTags))
+	for key := range c.addedTags {
+		sortedTags = append(sortedTags, key)
 	}
-	sort.Strings(sortedTags)
-	sortedFiles := make([]string, 0, len(c.addedFiles))
-	for k := range c.addedFiles {
-		sortedFiles = append(sortedFiles, string(k))
+	slices.SortFunc(sortedTags, tagKey.cmp)
+
+	sortedFiles := make([]fileKey, 0, len(c.addedFiles))
+	for key := range c.addedFiles {
+		sortedFiles = append(sortedFiles, key)
 	}
-	sort.Strings(sortedFiles)
+	slices.SortFunc(sortedFiles, fileKey.cmp)
 
 	// Load the most recent data to avoid overwriting it. Load ALL entries, even
 	// if they belong to different service: we have one global cache file and
@@ -309,7 +319,7 @@ func (c *VersionCache) Save(ctx context.Context) error {
 	// copy entries belonging to other services too, we must not overwrite them.
 	mergedTags := make([]*messages.VersionCache_Entry, 0, len(recent.Entries)+len(c.addedTags))
 	for _, e := range recent.Entries {
-		key := makeTagKey(e.Package, e.Tag)
+		key := tagKey{e.Package, e.Tag}
 		if e.Service != c.service || c.addedTags[key] == nil {
 			mergedTags = append(mergedTags, e)
 		}
@@ -328,7 +338,7 @@ func (c *VersionCache) Save(ctx context.Context) error {
 	// Do the same for file entries.
 	mergedFiles := make([]*messages.VersionCache_FileEntry, 0, len(recent.FileEntries)+len(c.addedFiles))
 	for _, e := range recent.FileEntries {
-		key := makeFileKey(e.Package, e.InstanceId, e.FileName)
+		key := fileKey{e.Package, e.InstanceId, e.FileName}
 		if e.Service != c.service || c.addedFiles[key] == nil {
 			mergedFiles = append(mergedFiles, e)
 		}
