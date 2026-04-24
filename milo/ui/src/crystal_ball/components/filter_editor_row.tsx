@@ -26,9 +26,11 @@ import {
   Select,
   SelectChangeEvent,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
 } from '@mui/material';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
@@ -65,7 +67,7 @@ interface FilterEditorRowProps {
   dataType: MeasurementFilterColumn_ColumnDataType;
   onUpdateColumn: (column: string) => void;
   onUpdateOperator: (operator: PerfFilterDefault_FilterOperator) => void;
-  onUpdateValue: (value: string) => void;
+  onUpdateValue: (values: string[]) => void;
   onRemove: () => void;
   onDragStart: () => void;
   onDrop: () => void;
@@ -95,6 +97,29 @@ export function FilterEditorRow({
   const [inputValue, setInputValue] = useState(initialValue);
   const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
   const [isFocused, setIsFocused] = useState(false);
+
+  const currentOperator =
+    activeInput?.defaultValue?.filterOperator !== undefined
+      ? perfFilterDefault_FilterOperatorFromJSON(
+          activeInput.defaultValue.filterOperator,
+        )
+      : PerfFilterDefault_FilterOperator.EQUAL;
+
+  const isMultiSelect =
+    currentOperator === PerfFilterDefault_FilterOperator.IN ||
+    currentOperator === PerfFilterDefault_FilterOperator.NOT_IN;
+
+  const prevOperatorRef = useRef(currentOperator);
+  useEffect(() => {
+    if (currentOperator !== prevOperatorRef.current) {
+      prevOperatorRef.current = currentOperator;
+      if (isMultiSelect) {
+        setInputValue('');
+      } else {
+        setInputValue(initialValue);
+      }
+    }
+  }, [currentOperator, initialValue, isMultiSelect]);
 
   useDebounce(
     () => {
@@ -134,8 +159,8 @@ export function FilterEditorRow({
   const options = suggestionData?.values ?? [];
 
   const handleBlur = () => {
-    if (inputValue !== initialValue) {
-      onUpdateValue(inputValue);
+    if (!isMultiSelect && inputValue !== initialValue) {
+      onUpdateValue([inputValue]);
     }
   };
 
@@ -202,70 +227,127 @@ export function FilterEditorRow({
         ]}
       </Select>
 
-      <Select
-        value={
-          activeInput?.defaultValue?.filterOperator !== undefined
-            ? perfFilterDefault_FilterOperatorFromJSON(
-                activeInput.defaultValue.filterOperator,
-              )
-            : PerfFilterDefault_FilterOperator.EQUAL
-        }
-        onChange={(e: SelectChangeEvent<number>) => {
-          onUpdateOperator(Number(e.target.value));
-        }}
-        size="small"
-        displayEmpty
-        inputProps={{ 'aria-label': COMMON_MESSAGES.OPERATOR }}
-        sx={COMPACT_SELECT_SX}
-        MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
-      >
-        {(TYPE_TO_OPERATORS[dataType] ?? []).map((opEnum) => (
-          <MenuItem
-            key={PerfFilterDefault_FilterOperator[opEnum]}
-            value={opEnum}
-          >
-            {OPERATOR_DISPLAY_NAMES[opEnum] ??
-              PerfFilterDefault_FilterOperator[opEnum]}
-          </MenuItem>
-        ))}
-      </Select>
-
-      <Autocomplete
-        freeSolo
-        size="small"
-        options={options}
-        filterOptions={(x) => x}
-        value={initialValue || null}
-        inputValue={inputValue}
-        onInputChange={(_event, newInputValue) => {
-          setInputValue(newInputValue);
-        }}
-        onChange={(_event, newValue, reason) => {
-          if (reason === 'selectOption' || reason === 'createOption') {
-            if (typeof newValue === 'string') {
-              setInputValue(newValue);
-              onUpdateValue(newValue);
+      {dataType === MeasurementFilterColumn_ColumnDataType.BOOLEAN ? (
+        <Box
+          sx={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center' }}
+        >
+          <ToggleButtonGroup
+            size="small"
+            value={
+              currentOperator === PerfFilterDefault_FilterOperator.IS_TRUE
+                ? 'true'
+                : currentOperator === PerfFilterDefault_FilterOperator.IS_FALSE
+                  ? 'false'
+                  : null
             }
-          }
-        }}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => {
-          setIsFocused(false);
-          handleBlur();
-        }}
-        loading={isLoading && isFocused}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            placeholder={COMMON_MESSAGES.VALUE}
-            inputProps={{
-              ...params.inputProps,
-              'aria-label': COMMON_MESSAGES.VALUE,
+            exclusive
+            onChange={(_event, newValue) => {
+              if (newValue === null) return; // Enforce that one must remain selected
+              if (newValue === 'true') {
+                onUpdateOperator(PerfFilterDefault_FilterOperator.IS_TRUE);
+              } else if (newValue === 'false') {
+                onUpdateOperator(PerfFilterDefault_FilterOperator.IS_FALSE);
+              }
             }}
-            sx={COMPACT_TEXTFIELD_SX}
+            sx={{ height: '32px' }}
+          >
+            <ToggleButton value="true" sx={{ px: 2 }}>
+              True
+            </ToggleButton>
+            <ToggleButton value="false" sx={{ px: 2 }}>
+              False
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+      ) : (
+        <>
+          <Select
+            value={
+              activeInput?.defaultValue?.filterOperator !== undefined
+                ? perfFilterDefault_FilterOperatorFromJSON(
+                    activeInput.defaultValue.filterOperator,
+                  )
+                : PerfFilterDefault_FilterOperator.EQUAL
+            }
+            onChange={(e: SelectChangeEvent<number>) => {
+              onUpdateOperator(Number(e.target.value));
+            }}
+            size="small"
+            displayEmpty
+            inputProps={{ 'aria-label': COMMON_MESSAGES.OPERATOR }}
+            sx={COMPACT_SELECT_SX}
+            MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
+          >
+            {(TYPE_TO_OPERATORS[dataType] ?? []).map((opEnum) => (
+              <MenuItem
+                key={PerfFilterDefault_FilterOperator[opEnum]}
+                value={opEnum}
+              >
+                {OPERATOR_DISPLAY_NAMES[opEnum] ??
+                  PerfFilterDefault_FilterOperator[opEnum]}
+              </MenuItem>
+            ))}
+          </Select>
+
+          <Autocomplete
+            multiple={isMultiSelect}
+            freeSolo
+            size="small"
+            options={options}
+            filterOptions={(x) => x}
+            value={
+              isMultiSelect
+                ? [...(activeInput?.defaultValue?.values ?? [])]
+                : initialValue || null
+            }
+            inputValue={inputValue}
+            onInputChange={(_event, newInputValue) => {
+              setInputValue(newInputValue);
+            }}
+            onChange={(_event, newValue, reason) => {
+              if (isMultiSelect) {
+                if (Array.isArray(newValue)) {
+                  onUpdateValue(newValue as string[]);
+                }
+              } else {
+                if (reason === 'selectOption' || reason === 'createOption') {
+                  if (typeof newValue === 'string') {
+                    setInputValue(newValue);
+                    onUpdateValue([newValue]);
+                  }
+                }
+              }
+            }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => {
+              setIsFocused(false);
+              handleBlur();
+            }}
+            loading={isLoading && isFocused}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder={COMMON_MESSAGES.VALUE}
+                inputProps={{
+                  ...params.inputProps,
+                  'aria-label': COMMON_MESSAGES.VALUE,
+                }}
+                sx={{
+                  ...COMPACT_TEXTFIELD_SX,
+                  ...(isMultiSelect && {
+                    '& .MuiInputBase-root': {
+                      height: 'auto',
+                      minHeight: (theme) => theme.spacing(4),
+                      flexWrap: 'wrap',
+                      py: 0.5,
+                    },
+                  }),
+                }}
+              />
+            )}
           />
-        )}
-      />
+        </>
+      )}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         <Tooltip title={COMMON_MESSAGES.COPY_FILTER}>
           <IconButton

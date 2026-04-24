@@ -466,8 +466,8 @@ export function FilterEditor({
                 onUpdateOperator={(operator) =>
                   handleDefaultValueChange(index, 'filterOperator', operator)
                 }
-                onUpdateValue={(value) =>
-                  handleDefaultValueChange(index, 'values', [value])
+                onUpdateValue={(values) =>
+                  handleDefaultValueChange(index, 'values', values)
                 }
                 onRemove={() => handleRemoveFilter(index)}
                 onDragStart={() => handleDragStart(index)}

@@ -134,7 +134,7 @@ describe('FilterEditorRow', () => {
     fireEvent.change(valueInput, { target: { value: 'newValue' } });
     fireEvent.blur(valueInput);
 
-    expect(defaultProps.onUpdateValue).toHaveBeenCalledWith('newValue');
+    expect(defaultProps.onUpdateValue).toHaveBeenCalledWith(['newValue']);
   });
 
   it('calls onRemove when delete button is clicked', () => {
@@ -155,5 +155,97 @@ describe('FilterEditorRow', () => {
     fireEvent.click(copyButton);
 
     expect(mockCopyFilters).toHaveBeenCalledWith([defaultProps.filter]);
+  });
+
+  it('renders multi-select Autocomplete when operator is IN', () => {
+    const props = {
+      ...defaultProps,
+      filter: {
+        ...defaultProps.filter,
+        textInput: {
+          defaultValue: {
+            values: ['val1', 'val2'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    };
+    render(<FilterEditorRow {...props} />);
+
+    expect(screen.getByText('val1')).toBeInTheDocument();
+    expect(screen.getByText('val2')).toBeInTheDocument();
+  });
+
+  it('renders toggle buttons for boolean data type', () => {
+    const props = {
+      ...defaultProps,
+      dataType: MeasurementFilterColumn_ColumnDataType.BOOLEAN,
+      filter: {
+        ...defaultProps.filter,
+        textInput: {
+          defaultValue: {
+            values: [],
+            filterOperator: PerfFilterDefault_FilterOperator.IS_TRUE,
+          },
+        },
+      },
+    };
+    render(<FilterEditorRow {...props} />);
+
+    expect(screen.getByRole('button', { name: 'True' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'False' })).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole('combobox', { name: COMMON_MESSAGES.OPERATOR }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('combobox', { name: COMMON_MESSAGES.VALUE }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('calls onUpdateOperator when clicking a different toggle button', () => {
+    const props = {
+      ...defaultProps,
+      dataType: MeasurementFilterColumn_ColumnDataType.BOOLEAN,
+      filter: {
+        ...defaultProps.filter,
+        textInput: {
+          defaultValue: {
+            values: [],
+            filterOperator: PerfFilterDefault_FilterOperator.IS_TRUE,
+          },
+        },
+      },
+    };
+    render(<FilterEditorRow {...props} />);
+
+    const falseButton = screen.getByRole('button', { name: 'False' });
+    fireEvent.click(falseButton);
+
+    expect(defaultProps.onUpdateOperator).toHaveBeenCalledWith(
+      PerfFilterDefault_FilterOperator.IS_FALSE,
+    );
+  });
+
+  it('does not call onUpdateOperator when clicking the already selected toggle button', () => {
+    const props = {
+      ...defaultProps,
+      dataType: MeasurementFilterColumn_ColumnDataType.BOOLEAN,
+      filter: {
+        ...defaultProps.filter,
+        textInput: {
+          defaultValue: {
+            values: [],
+            filterOperator: PerfFilterDefault_FilterOperator.IS_TRUE,
+          },
+        },
+      },
+    };
+    render(<FilterEditorRow {...props} />);
+
+    const trueButton = screen.getByRole('button', { name: 'True' });
+    fireEvent.click(trueButton);
+
+    expect(defaultProps.onUpdateOperator).not.toHaveBeenCalled();
   });
 });
