@@ -40,6 +40,8 @@ import (
 // conversion_failure field to ERROR.
 //
 // No-op if `ref` is digest based and `source` contains no data for this digest.
+//
+// See [ConvertToJSON].
 func AbsorbAsJSON(source DataSource, ref *orchestratorpb.ValueRef, mopt protojson.MarshalOptions) {
 	AbsorbInline(source, ref)
 	EnsureJSON(source, Digest(ref.GetDigest()), mopt)
@@ -86,6 +88,8 @@ func ensureJSONImpl(source DataSource, digest Digest, mopt protojson.MarshalOpti
 //   - The data does not exist in source.
 //   - The data is already JSON in source.
 //   - The data has a conversion failure in source.
+//
+// See [ConvertToJSON].
 func EnsureJSON(source DataSource, digest Digest, mopt protojson.MarshalOptions) {
 	ensureJSONImpl(source, digest, mopt, false)
 }
@@ -99,6 +103,8 @@ func EnsureJSON(source DataSource, digest Digest, mopt protojson.MarshalOptions)
 // No-op if:
 //   - The data does not exist in source.
 //   - The data is already JSON in source.
+//
+// See [ConvertToJSON].
 func EnsureJSONForced(source DataSource, digest Digest, mopt protojson.MarshalOptions) {
 	ensureJSONImpl(source, digest, mopt, true)
 }
@@ -108,6 +114,11 @@ func EnsureJSONForced(source DataSource, digest Digest, mopt protojson.MarshalOp
 // If marshaling is possible, the ValueData will contain a JsonAny. If there is
 // an error, the ValueData will contain `apb` as Binary plus a
 // conversion_failure.
+//
+// This function uses `mopt.Resolver` for both decoding and re-encoding as
+// JSON. If this is unset, it uses [protoregistry.GlobalTypes] for both. This
+// is intended to be used to allow the caller to restrict which proto type(s)
+// are available for this conversion process.
 func ConvertToJSON(apb *anypb.Any, mopt protojson.MarshalOptions) *orchestratorpb.ValueData {
 	resolver := mopt.Resolver
 	if resolver == nil {
