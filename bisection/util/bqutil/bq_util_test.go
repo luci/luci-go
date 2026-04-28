@@ -275,6 +275,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 			Justification:      "some justification",
 			VerificationStatus: model.SuspectVerificationStatus_Unverified,
 			AnalysisType:       pb.AnalysisType_TEST_FAILURE_ANALYSIS,
+			Score:              8,
 		}
 		assert.Loosely(t, datastore.Put(ctx, suspect), should.BeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
@@ -499,6 +500,7 @@ func TestConvertTestFailureAnalysisToBqRow(t *testing.T) {
 								ActionType: pb.CulpritActionType_NO_ACTION,
 							},
 						},
+						ConfidenceScore: 8,
 					},
 				},
 			},

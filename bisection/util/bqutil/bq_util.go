@@ -211,8 +211,13 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 		return result, nil
 	}
 	if ga != nil {
-		// For bq export, we want all fields for GenAi result.
-		genaiMask, err := mask.FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"*"}}, &pb.TestGenAiAnalysisResult{}, mask.AdvancedSemantics())
+		genaiMask, err := mask.FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{
+			"status",
+			"run_status",
+			"start_time",
+			"end_time",
+			"suspects.*",
+		}}, &pb.TestGenAiAnalysisResult{}, mask.AdvancedSemantics())
 		if err != nil {
 			return nil, errors.Fmt("from field mask for genai: %w", err)
 		}
