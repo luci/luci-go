@@ -67,7 +67,7 @@ const ClusterAnalysisSection = () => {
 
   let value = searchParams.get('tab');
   if (!value || validValues.indexOf(value) === -1) {
-    value = 'overview';
+    value = 'recent-failures';
   }
 
   return (
@@ -80,8 +80,8 @@ const ClusterAnalysisSection = () => {
         <TabContext value={value}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
-              <Tab label="Overview" value="overview" />
               <Tab label="Recent Failures" value="recent-failures" />
+              <Tab label="Overview" value="overview" />
               {(exonerationV1Available || exonerationV2Available) && (
                 <Tab label="Exonerations" value="exonerations" />
               )}
