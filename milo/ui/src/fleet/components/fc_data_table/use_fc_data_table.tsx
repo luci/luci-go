@@ -76,6 +76,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     enableColumnResizing: true,
     enableColumnActions: true,
     layoutMode: 'grid',
+    enableRowVirtualization: process.env.NODE_ENV !== 'test',
 
     displayColumnDefOptions: {
       'mrt-row-select': {
@@ -361,6 +362,8 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     const defaultSx = {
       maxWidth: '100%',
       overflowX: 'auto',
+      overflowY: 'auto',
+      maxHeight: 'calc(100vh - 200px)',
       '--cell-padding-vertical': `${vertical}px`,
       '--cell-padding-horizontal': `${horizontal}px`,
     };

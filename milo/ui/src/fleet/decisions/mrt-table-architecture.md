@@ -74,9 +74,15 @@ To ensure column configurations are centralized, easy to edit, and maintain a cl
 To ensure high locality and make it intuitive for developers:
 - **Co-locate Configurations and Layouts:** Both field configurations (data accessors, fallbacks) and table layout definitions should live in the **same directory as the page component** that uses them (e.g., `src/fleet/pages/device_list_page/chromeos/`).
 
+### 6. Virtualization for Large Datasets
+To prevent UI sluggishness when displaying large datasets (e.g., up to 1,000 rows per page), row virtualization is enabled by default in the centralized hook.
+- **Why**: Rendering 1,000 rows without virtualization floods the DOM, causing slow column resizing and heavy load times.
+- **UX Impact**: Virtualization requires a scroll container with a defined height, which automatically makes the table header sticky at the top of the container. In tests, row virtualization is disabled (via `process.env.NODE_ENV !== 'test'`) to prevent failures related to JSDOM's lack of layout engine.
+
 ## Benefits
 - **Maintainability**: Main files are smaller and easier to read.
 - **Consistency**: All tables follow the same structural pattern.
 - **Customization**: Each page can define its own toolbar component with specific buttons, while sharing the core table setup.
 - **Testability**: Dumb toolbars are easier to unit test by mocking the `table` instance.
 - **Robustness**: Centralized URL state management prevents conflicting UI states.
+- **Performance**: Virtualization provides smooth scrolling and interaction (like resizing) even at 1,000 rows.

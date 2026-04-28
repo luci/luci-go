@@ -18,10 +18,10 @@ import { colors } from '@/fleet/theme/colors';
 
 export type Density = 'spacious' | 'comfortable' | 'compact';
 
-export const TABLE_HEADER_MIN_HEIGHT = '56px';
+export const TABLE_HEADER_MIN_HEIGHT = '48px';
 
 export const getDensityPadding = (density: Density) => {
-  const vertical = density === 'spacious' ? 16 : density === 'compact' ? 8 : 12;
+  const vertical = density === 'spacious' ? 16 : density === 'compact' ? 4 : 12;
   const horizontal =
     density === 'spacious' ? 12 : density === 'compact' ? 4 : 8;
   return { vertical, horizontal };
