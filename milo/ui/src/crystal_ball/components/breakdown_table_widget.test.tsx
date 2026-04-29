@@ -36,7 +36,7 @@ jest.mock('@/crystal_ball/hooks', () => ({
     return [val, setVal];
   },
   useFetchDashboardWidgetData: jest.fn(),
-  useSuggestMeasurementFilterValues: jest.fn(() => ({ data: [] })),
+  useSuggestMeasurementFilterValues: jest.fn(() => ({ data: { values: [] } })),
   useToast: () => ({
     showSuccessToast: jest.fn(),
     showWarningToast: jest.fn(),

@@ -981,6 +981,7 @@ export function ChartSeriesItem({
           <FilterEditor
             title="SERIES FILTERS"
             titleIcon={<FunnelIcon sx={COMPACT_ICON_SX} />}
+            titleTooltip={COMMON_MESSAGES.SUGGESTIONS_CACHE_WARNING}
             filters={[...(series.filters ?? [])]}
             onUpdateFilters={handleUpdateFilters}
             dataSpecId={dataSpecId}

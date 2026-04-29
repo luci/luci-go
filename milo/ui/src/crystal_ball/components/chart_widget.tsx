@@ -28,6 +28,7 @@ import {
   TimeSeriesChart,
 } from '@/crystal_ball/components';
 import {
+  CHECKBOX_FILTERS,
   Column,
   COMMON_MESSAGES,
   DEFAULT_X_AXIS_CONFIG,
@@ -322,6 +323,34 @@ export function ChartWidget({
     return widget.series?.some((s) => !s.metricField);
   }, [widget.series]);
 
+  // Skip API call if a checkbox filter has no values selected. AIP-160 does not
+  // handle empty 'IN' conditions well, and it effectively means no results should
+  // be returned anyway.
+  const hasEmptyCheckboxFilter = useMemo(() => {
+    const allFilters = [
+      ...(globalFilters ?? []),
+      ...(widget.filters ?? []),
+      ...(widget.series?.flatMap((s) => s.filters ?? []) ?? []),
+    ];
+    return allFilters.some((f) => {
+      const isCheckbox = CHECKBOX_FILTERS.includes(f.column);
+      if (!isCheckbox) return false;
+
+      const activeInput = f.numberInput ?? f.textInput;
+      const values = activeInput?.defaultValue?.values ?? [];
+      const op = activeInput?.defaultValue?.filterOperator;
+
+      const numericOp =
+        typeof op === 'string'
+          ? perfFilterDefault_FilterOperatorFromJSON(op)
+          : op;
+
+      return (
+        numericOp === PerfFilterDefault_FilterOperator.IN && values.length === 0
+      );
+    });
+  }, [globalFilters, widget.filters, widget.series]);
+
   const {
     data: widgetResponse,
     isLoading: isWidgetLoading,
@@ -332,6 +361,7 @@ export function ChartWidget({
       !!widgetId &&
       hasAtpTestFilter &&
       !hasEmptyMetricField &&
+      !hasEmptyCheckboxFilter &&
       (widget.series?.length ?? 0) > 0,
   });
 
@@ -357,13 +387,18 @@ export function ChartWidget({
       }) ?? [];
 
     timeFilters.forEach((f) => {
-      if (
-        f.operator === PerfFilterDefault_FilterOperator.GREATER_THAN_OR_EQUAL
-      ) {
-        timeRangeStart = Date.parse(f.value);
-      }
-      if (f.operator === PerfFilterDefault_FilterOperator.LESS_THAN_OR_EQUAL) {
-        timeRangeEnd = Date.parse(f.value);
+      const val = f.value;
+      if (typeof val === 'string') {
+        if (
+          f.operator === PerfFilterDefault_FilterOperator.GREATER_THAN_OR_EQUAL
+        ) {
+          timeRangeStart = Date.parse(val);
+        }
+        if (
+          f.operator === PerfFilterDefault_FilterOperator.LESS_THAN_OR_EQUAL
+        ) {
+          timeRangeEnd = Date.parse(val);
+        }
       }
     });
 
@@ -473,6 +508,7 @@ export function ChartWidget({
       >
         <FilterEditor
           title="Widget Filters"
+          titleTooltip={COMMON_MESSAGES.SUGGESTIONS_CACHE_WARNING}
           filters={[...(widget.filters ?? [])]}
           onUpdateFilters={handleFiltersUpdate}
           dataSpecId={widget.dataSpecId}

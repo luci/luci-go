@@ -219,4 +219,23 @@ describe('buildFilterString', () => {
       'build_creation_timestamp >= "2026-03-01T00:00:00Z" AND build_creation_timestamp <= "2026-03-04T00:00:00Z"',
     );
   });
+
+  it('handles IN operator with multiple values', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: Column.BUILD_TYPE,
+        displayName: 'Build Type',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['Postsubmit', 'Presubmit'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toBe('build_type IN ("Postsubmit", "Presubmit")');
+  });
 });

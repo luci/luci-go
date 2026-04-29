@@ -18,6 +18,7 @@ import {
   CopyAll as CopyAllIcon,
   Delete as DeleteIcon,
   ExpandMore as ExpandMoreIcon,
+  InfoOutlined as InfoIcon,
 } from '@mui/icons-material';
 import {
   Accordion,
@@ -42,6 +43,7 @@ import {
 import { useMemo, useState } from 'react';
 
 import {
+  CHECKBOX_FILTERS,
   Column,
   COMMON_MESSAGES,
   OPERATOR_DISPLAY_NAMES,
@@ -79,6 +81,8 @@ interface FilterEditorProps {
   disableAccordion?: boolean;
   titleIcon?: React.ReactNode;
   uiStateOptions?: UseEditorUiStateOptions;
+  /** Tooltip message to show next to the title. */
+  titleTooltip?: string;
 }
 
 interface FilterEditorHeaderActionsProps {
@@ -214,6 +218,7 @@ export function FilterEditor({
   disableAccordion = false,
   titleIcon,
   uiStateOptions,
+  titleTooltip,
 }: FilterEditorProps) {
   const { showSuccessToast, showWarningToast } = useToast();
   const [expanded, setExpanded] = useEditorUiState({
@@ -347,6 +352,37 @@ export function FilterEditor({
     onUpdateFilters(updatedFilters);
   };
 
+  const handleColumnChange = (index: number, column: string) => {
+    const colDef = availableColumns.find((c) => c.column === column);
+    const isNumber =
+      colDef?.dataType === MeasurementFilterColumn_ColumnDataType.INT64 ||
+      colDef?.dataType === MeasurementFilterColumn_ColumnDataType.DOUBLE;
+    const isCheckboxFilter = CHECKBOX_FILTERS.includes(column);
+
+    handleFilterChange(index, {
+      column,
+      ...(isNumber
+        ? {
+            numberInput: {
+              defaultValue: {
+                values: [],
+                filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+              },
+            },
+          }
+        : {
+            textInput: {
+              defaultValue: {
+                values: [],
+                filterOperator: isCheckboxFilter
+                  ? PerfFilterDefault_FilterOperator.IN
+                  : PerfFilterDefault_FilterOperator.EQUAL,
+              },
+            },
+          }),
+    });
+  };
+
   const handleDefaultValueChange = <K extends keyof PerfFilterDefault>(
     index: number,
     key: K,
@@ -454,15 +490,14 @@ export function FilterEditor({
 
             return (
               <FilterEditorRow
-                key={filter.id}
+                key={`${filter.id}-${filter.column}`}
                 filter={filter}
                 dataSpecId={dataSpecId}
                 primaryColumns={primaryColumns}
                 secondaryColumns={secondaryColumns}
                 dataType={dataType}
-                onUpdateColumn={(column) =>
-                  handleFilterChange(index, { column })
-                }
+                isCheckboxFilter={CHECKBOX_FILTERS.includes(filter.column)}
+                onUpdateColumn={(column) => handleColumnChange(index, column)}
                 onUpdateOperator={(operator) =>
                   handleDefaultValueChange(index, 'filterOperator', operator)
                 }
@@ -513,6 +548,16 @@ export function FilterEditor({
           >
             {title}
           </Typography>
+          {titleTooltip && (
+            <Tooltip title={titleTooltip}>
+              <IconButton
+                size="small"
+                sx={{ p: 0, ml: 0.5, color: 'text.secondary' }}
+              >
+                <InfoIcon fontSize="inherit" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Box sx={{ flexGrow: 1 }} />
           <FilterEditorHeaderActions
             expanded={true}
@@ -590,6 +635,16 @@ export function FilterEditor({
             >
               {title ?? COMMON_MESSAGES.FILTERS}
             </Typography>
+            {titleTooltip && (
+              <Tooltip title={titleTooltip}>
+                <IconButton
+                  size="small"
+                  sx={{ p: 0, ml: 0.5, color: 'text.secondary' }}
+                >
+                  <InfoIcon fontSize="inherit" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
           <Box
             sx={{

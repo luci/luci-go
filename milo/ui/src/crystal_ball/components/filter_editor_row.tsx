@@ -20,6 +20,7 @@ import {
 import {
   Autocomplete,
   Box,
+  Checkbox,
   Divider,
   IconButton,
   MenuItem,
@@ -65,6 +66,7 @@ interface FilterEditorRowProps {
   primaryColumns: string[];
   secondaryColumns: string[];
   dataType: MeasurementFilterColumn_ColumnDataType;
+  isCheckboxFilter?: boolean;
   onUpdateColumn: (column: string) => void;
   onUpdateOperator: (operator: PerfFilterDefault_FilterOperator) => void;
   onUpdateValue: (values: string[]) => void;
@@ -75,12 +77,17 @@ interface FilterEditorRowProps {
   widgetFilters?: readonly PerfFilter[];
 }
 
+/**
+ * Renders a single row in the filter editor, allowing the user to select a column,
+ * operator, and value. Supports custom rendering for checkbox filters.
+ */
 export function FilterEditorRow({
   filter,
   dataSpecId,
   primaryColumns,
   secondaryColumns,
   dataType,
+  isCheckboxFilter = false,
   onUpdateColumn,
   onUpdateOperator,
   onUpdateValue,
@@ -145,18 +152,30 @@ export function FilterEditorRow({
     {
       parent,
       column: filter.column,
-      query: debouncedQuery,
+      query: isCheckboxFilter ? '' : debouncedQuery,
       maxResultCount: MAX_SUGGEST_RESULTS,
-      filter: filterString,
+      filter: isCheckboxFilter ? '' : filterString,
     },
     {
       enabled:
-        !!parent && !!filter.column && debouncedQuery.length > 0 && isFocused,
+        !!parent &&
+        !!filter.column &&
+        (isCheckboxFilter || (debouncedQuery.length > 0 && isFocused)),
       retry: false,
     },
   );
 
-  const options = suggestionData?.values ?? [];
+  const options = useMemo(
+    () =>
+      (suggestionData?.values ?? []).filter(
+        (v): v is string => typeof v === 'string',
+      ),
+    [suggestionData?.values],
+  );
+
+  const sortedOptions = useMemo(() => {
+    return [...options].sort((a, b) => a.localeCompare(b));
+  }, [options]);
 
   const handleBlur = () => {
     if (!isMultiSelect && inputValue !== initialValue) {
@@ -169,7 +188,9 @@ export function FilterEditorRow({
       ref={rowRef}
       sx={{
         ...COMPACT_FILTER_ROW_SX,
-        gridTemplateColumns: 'auto 2fr 1fr 4fr auto',
+        gridTemplateColumns: isCheckboxFilter
+          ? 'auto 2fr 5fr auto'
+          : 'auto 2fr 1fr 4fr auto',
         mb: 1,
         gap: 1,
       }}
@@ -261,40 +282,58 @@ export function FilterEditorRow({
         </Box>
       ) : (
         <>
-          <Select
-            value={
-              activeInput?.defaultValue?.filterOperator !== undefined
-                ? perfFilterDefault_FilterOperatorFromJSON(
-                    activeInput.defaultValue.filterOperator,
-                  )
-                : PerfFilterDefault_FilterOperator.EQUAL
-            }
-            onChange={(e: SelectChangeEvent<number>) => {
-              onUpdateOperator(Number(e.target.value));
-            }}
-            size="small"
-            displayEmpty
-            inputProps={{ 'aria-label': COMMON_MESSAGES.OPERATOR }}
-            sx={COMPACT_SELECT_SX}
-            MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
-          >
-            {(TYPE_TO_OPERATORS[dataType] ?? []).map((opEnum) => (
-              <MenuItem
-                key={PerfFilterDefault_FilterOperator[opEnum]}
-                value={opEnum}
-              >
-                {OPERATOR_DISPLAY_NAMES[opEnum] ??
-                  PerfFilterDefault_FilterOperator[opEnum]}
-              </MenuItem>
-            ))}
-          </Select>
+          {!isCheckboxFilter && (
+            <Select
+              value={
+                activeInput?.defaultValue?.filterOperator !== undefined
+                  ? perfFilterDefault_FilterOperatorFromJSON(
+                      activeInput.defaultValue.filterOperator,
+                    )
+                  : PerfFilterDefault_FilterOperator.EQUAL
+              }
+              onChange={(e: SelectChangeEvent<number>) => {
+                onUpdateOperator(Number(e.target.value));
+              }}
+              size="small"
+              displayEmpty
+              inputProps={{ 'aria-label': COMMON_MESSAGES.OPERATOR }}
+              sx={COMPACT_SELECT_SX}
+              MenuProps={{ PaperProps: { style: { maxHeight: 400 } } }}
+            >
+              {(TYPE_TO_OPERATORS[dataType] ?? []).map((opEnum) => (
+                <MenuItem
+                  key={PerfFilterDefault_FilterOperator[opEnum]}
+                  value={opEnum}
+                >
+                  {OPERATOR_DISPLAY_NAMES[opEnum] ??
+                    PerfFilterDefault_FilterOperator[opEnum]}
+                </MenuItem>
+              ))}
+            </Select>
+          )}
 
           <Autocomplete
             multiple={isMultiSelect}
             freeSolo
             size="small"
-            options={options}
+            options={isCheckboxFilter ? sortedOptions : options}
             filterOptions={(x) => x}
+            disableCloseOnSelect={isMultiSelect}
+            getOptionLabel={(option) => option || ''}
+            renderOption={
+              isMultiSelect
+                ? (props, option, { selected }) => (
+                    <li {...props}>
+                      <Checkbox
+                        style={{ marginRight: 8 }}
+                        checked={selected}
+                        size="small"
+                      />
+                      {option}
+                    </li>
+                  )
+                : undefined
+            }
             value={
               isMultiSelect
                 ? [...(activeInput?.defaultValue?.values ?? [])]
@@ -307,7 +346,7 @@ export function FilterEditorRow({
             onChange={(_event, newValue, reason) => {
               if (isMultiSelect) {
                 if (Array.isArray(newValue)) {
-                  onUpdateValue(newValue as string[]);
+                  onUpdateValue(newValue);
                 }
               } else {
                 if (reason === 'selectOption' || reason === 'createOption') {
@@ -327,7 +366,11 @@ export function FilterEditorRow({
             renderInput={(params) => (
               <TextField
                 {...params}
-                placeholder={COMMON_MESSAGES.VALUE}
+                placeholder={
+                  isCheckboxFilter
+                    ? COMMON_MESSAGES.SELECT_VALUES
+                    : COMMON_MESSAGES.VALUE
+                }
                 inputProps={{
                   ...params.inputProps,
                   'aria-label': COMMON_MESSAGES.VALUE,

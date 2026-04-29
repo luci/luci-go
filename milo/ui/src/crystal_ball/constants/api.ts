@@ -18,6 +18,7 @@
 export enum Column {
   ATP_TEST_NAME = 'atp_test_name',
   BUILD_ID = 'build_id',
+  BUILD_TYPE = 'build_type',
 }
 
 /**

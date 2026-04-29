@@ -1053,6 +1053,7 @@ export function DashboardPage() {
       >
         <FilterEditor
           title="Global Filters"
+          titleTooltip={COMMON_MESSAGES.SUGGESTIONS_CACHE_WARNING}
           filters={activeGlobalFilters}
           onUpdateFilters={handleUpdateGlobalFilters}
           dataSpecId={DATA_SPEC_ID}

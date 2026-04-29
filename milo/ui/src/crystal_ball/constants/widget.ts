@@ -98,3 +98,8 @@ export const AGGREGATION_FUNCTION_LABELS: Record<
   [PerfChartSeries_PerfAggregationFunction.MAX]: 'Max',
   [PerfChartSeries_PerfAggregationFunction.COUNT]: 'Count',
 };
+
+/**
+ * The columns that are filtered using checkbox filters.
+ */
+export const CHECKBOX_FILTERS: string[] = [Column.BUILD_TYPE];

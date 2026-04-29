@@ -25,7 +25,7 @@ import {
  */
 export interface ParsedFilter {
   column: string;
-  value: string;
+  value: string | readonly string[];
   operator: PerfFilterDefault_FilterOperator;
   type: 'number' | 'string';
 }
@@ -101,27 +101,44 @@ export const parseSingleFilter = (
       }
     }
   } else {
-    const val =
-      f.textInput?.defaultValue?.values?.[0] ??
-      f.numberInput?.defaultValue?.values?.[0];
+    const values =
+      f.textInput?.defaultValue?.values ??
+      f.numberInput?.defaultValue?.values ??
+      [];
     const isNumber = Boolean(f.numberInput);
-    if (val) {
-      const op =
-        f.textInput?.defaultValue?.filterOperator !== undefined
+    const op =
+      f.textInput?.defaultValue?.filterOperator !== undefined
+        ? perfFilterDefault_FilterOperatorFromJSON(
+            f.textInput.defaultValue.filterOperator,
+          )
+        : f.numberInput?.defaultValue?.filterOperator !== undefined
           ? perfFilterDefault_FilterOperatorFromJSON(
-              f.textInput.defaultValue.filterOperator,
+              f.numberInput.defaultValue.filterOperator,
             )
-          : f.numberInput?.defaultValue?.filterOperator !== undefined
-            ? perfFilterDefault_FilterOperatorFromJSON(
-                f.numberInput.defaultValue.filterOperator,
-              )
-            : PerfFilterDefault_FilterOperator.EQUAL;
-      results.push({
-        column: f.column,
-        value: val,
-        operator: op,
-        type: isNumber ? 'number' : 'string',
-      });
+          : PerfFilterDefault_FilterOperator.EQUAL;
+
+    if (
+      op === PerfFilterDefault_FilterOperator.IN ||
+      op === PerfFilterDefault_FilterOperator.NOT_IN
+    ) {
+      if (values.length > 0) {
+        results.push({
+          column: f.column,
+          value: values,
+          operator: op,
+          type: isNumber ? 'number' : 'string',
+        });
+      }
+    } else {
+      const val = values[0];
+      if (val) {
+        results.push({
+          column: f.column,
+          value: val,
+          operator: op,
+          type: isNumber ? 'number' : 'string',
+        });
+      }
     }
   }
 
@@ -162,7 +179,21 @@ export const buildFilterString = (
 
   return uniqueFilters
     .map((f) => {
-      let val = f.value;
+      const vals = Array.isArray(f.value) ? f.value : [f.value];
+
+      if (
+        f.operator === PerfFilterDefault_FilterOperator.IN ||
+        f.operator === PerfFilterDefault_FilterOperator.NOT_IN
+      ) {
+        const opStr =
+          f.operator === PerfFilterDefault_FilterOperator.IN ? 'IN' : 'NOT IN';
+        const formattedVals = vals
+          .map((v) => (f.type === 'number' ? v : `"${v.replace(/"/g, '\\"')}"`))
+          .join(', ');
+        return `${f.column} ${opStr} (${formattedVals})`;
+      }
+
+      const val = vals[0] ?? '';
       let opStr = '=';
 
       if (f.type === 'number') {
@@ -189,10 +220,11 @@ export const buildFilterString = (
         }
         return `${f.column} ${opStr} ${val}`;
       } else {
+        let finalVal = val;
         switch (f.operator) {
           case PerfFilterDefault_FilterOperator.STARTS_WITH:
-            if (!val.includes('*') && !val.includes('%')) {
-              val += '*';
+            if (!finalVal.includes('*') && !finalVal.includes('%')) {
+              finalVal += '*';
             }
             opStr = '=';
             break;
@@ -216,7 +248,7 @@ export const buildFilterString = (
             opStr = '=';
             break;
         }
-        const formattedVal = val.replace(/"/g, '\\"');
+        const formattedVal = finalVal.replace(/"/g, '\\"');
         return `${f.column} ${opStr} "${formattedVal}"`;
       }
     })

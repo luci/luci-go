@@ -15,7 +15,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useParams } from 'react-router';
 
-import { COMMON_MESSAGES } from '@/crystal_ball/constants';
+import {
+  Column,
+  COMMON_MESSAGES,
+  MAX_SUGGEST_RESULTS,
+} from '@/crystal_ball/constants';
 import { useSuggestMeasurementFilterValues } from '@/crystal_ball/hooks';
 import { createMockQueryResult } from '@/crystal_ball/tests';
 import {
@@ -135,6 +139,46 @@ describe('FilterEditorRow', () => {
     fireEvent.blur(valueInput);
 
     expect(defaultProps.onUpdateValue).toHaveBeenCalledWith(['newValue']);
+  });
+
+  it('renders checkboxes for build_type column and preloads options', () => {
+    const buildTypeProps = {
+      ...defaultProps,
+      filter: {
+        ...defaultProps.filter,
+        column: Column.BUILD_TYPE,
+        textInput: {
+          defaultValue: {
+            values: ['Postsubmit', 'Presubmit'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    };
+    mockSuggest.mockReturnValue(
+      createMockQueryResult({
+        values: ['Postsubmit', 'Presubmit'],
+        suggestions: [],
+      }),
+    );
+
+    render(<FilterEditorRow {...buildTypeProps} isCheckboxFilter={true} />);
+
+    expect(
+      screen.queryByRole('combobox', { name: COMMON_MESSAGES.OPERATOR }),
+    ).not.toBeInTheDocument();
+
+    expect(screen.getByText('Postsubmit')).toBeInTheDocument();
+    expect(screen.getByText('Presubmit')).toBeInTheDocument();
+
+    expect(mockSuggest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        column: Column.BUILD_TYPE,
+        query: '',
+        maxResultCount: MAX_SUGGEST_RESULTS,
+      }),
+      expect.anything(),
+    );
   });
 
   it('calls onRemove when delete button is clicked', () => {

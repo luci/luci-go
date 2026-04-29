@@ -272,6 +272,45 @@ describe('ChartWidget', () => {
     );
   });
 
+  it('should disable data fetching when a checkbox filter has no values selected', () => {
+    const widgetWithEmptyCheckboxFilter = PerfChartWidget.fromPartial({
+      ...baseWidget,
+      filters: [
+        ...(baseWidget.filters ?? []),
+        {
+          column: Column.BUILD_TYPE,
+          textInput: {
+            defaultValue: {
+              values: [],
+              filterOperator: PerfFilterDefault_FilterOperator.IN,
+            },
+          },
+        },
+      ],
+    });
+    mockUseFetchDashboardWidgetData.mockReturnValue(
+      createMockQueryResult({
+        widgetId: 'w1',
+        hasData: false,
+      }),
+    );
+    render(
+      <ChartWidget
+        onUpdate={jest.fn()}
+        widget={widgetWithEmptyCheckboxFilter}
+        dashboardName="dashboardStates/d1"
+        widgetId="w1"
+        filterColumns={[]}
+      />,
+    );
+    expect(mockUseFetchDashboardWidgetData).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        enabled: false,
+      }),
+    );
+  });
+
   it('should NOT display required message when atp_test_name filter is present in series', () => {
     const widgetWithSeriesFilter = PerfChartWidget.fromPartial({
       ...baseWidget,
