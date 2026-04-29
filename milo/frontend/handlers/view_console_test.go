@@ -180,3 +180,20 @@ func TestRenderOncallers(t *testing.T) {
 		})
 	})
 }
+
+func TestConsoleHeader(t *testing.T) {
+	t.Parallel()
+	ctx := gaetesting.TestingContext()
+	ftt.Run("consoleHeader works", t, func(t *ftt.Test) {
+		t.Run("Only tree_name specified", func(t *ftt.Test) {
+			header := &projectconfigpb.Header{
+				TreeName: "devtools",
+			}
+			result, err := consoleHeader(ctx, "devtools-project", header)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.NotBeNil)
+			assert.Loosely(t, result.TreeStatus, should.NotBeNil)
+		})
+	})
+}
+

@@ -486,6 +486,8 @@ func consoleHeader(c context.Context, project string, header *projectconfigpb.He
 		// continue
 	case header.TreeStatusHost != "":
 		// continue
+	case header.TreeName != "":
+		// continue
 	default:
 		return nil, nil
 	}
