@@ -432,6 +432,28 @@ describe('ChartSeriesEditor', () => {
     expect(updatedSeries[2].displayName).toBe('Series 1 - val2');
     expect(updatedSeries[2].parentSeriesId).toBe('series-1');
   });
+
+  it('calls onShowAll when "Show All" is clicked', async () => {
+    const onShowAll = jest.fn();
+    render(<ChartSeriesEditor {...defaultProps} onShowAll={onShowAll} />);
+
+    const showAllButton = screen.getByText('Show All');
+    expect(showAllButton).toBeInTheDocument();
+
+    fireEvent.click(showAllButton);
+    expect(onShowAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onHideAll when "Hide All" is clicked', async () => {
+    const onHideAll = jest.fn();
+    render(<ChartSeriesEditor {...defaultProps} onHideAll={onHideAll} />);
+
+    const hideAllButton = screen.getByText('Hide All');
+    expect(hideAllButton).toBeInTheDocument();
+
+    fireEvent.click(hideAllButton);
+    expect(onHideAll).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('ChartSeriesItem', () => {
@@ -473,5 +495,16 @@ describe('ChartSeriesItem', () => {
       expect(screen.getByLabelText('Metric Field')).toBeInTheDocument();
     });
     expect(screen.getByLabelText('Color')).toBeInTheDocument();
+  });
+
+  it('calls onShowOnly when "Only" button is clicked', async () => {
+    const onShowOnly = jest.fn();
+    render(<ChartSeriesItem {...itemProps} onShowOnly={onShowOnly} />);
+
+    const onlyButton = screen.getByText('Only');
+    expect(onlyButton).toBeInTheDocument();
+
+    fireEvent.click(onlyButton);
+    expect(onShowOnly).toHaveBeenCalledTimes(1);
   });
 });

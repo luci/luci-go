@@ -192,6 +192,25 @@ export function ChartWidget({
     });
   }, []);
 
+  const handleShowOnly = useCallback(
+    (seriesName: string) => {
+      const allNames = widget.series?.map((s) => s.displayName) ?? [];
+      setHiddenSeriesNames(
+        new Set(allNames.filter((name) => name !== seriesName)),
+      );
+    },
+    [widget.series],
+  );
+
+  const handleShowAll = useCallback(() => {
+    setHiddenSeriesNames(new Set());
+  }, []);
+
+  const handleHideAll = useCallback(() => {
+    const allNames = widget.series?.map((s) => s.displayName) ?? [];
+    setHiddenSeriesNames(new Set(allNames));
+  }, [widget.series]);
+
   const handleFiltersUpdate = (updatedFilters: PerfFilter[]) => {
     onUpdate(
       PerfChartWidget.fromPartial({
@@ -565,6 +584,9 @@ export function ChartWidget({
         onUpdateSeries={handleSeriesUpdate}
         hiddenSeriesNames={hiddenSeriesNames}
         onToggleVisibility={handleToggleVisibility}
+        onShowOnly={handleShowOnly}
+        onShowAll={handleShowAll}
+        onHideAll={handleHideAll}
         dataSpecId={widget.dataSpecId}
         globalFilters={globalFilters}
         widgetFilters={widget.filters}

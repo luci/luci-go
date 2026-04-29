@@ -85,6 +85,9 @@ interface ChartSeriesEditorProps {
   onUpdateSeries: (updatedSeries: PerfChartSeries[]) => void;
   hiddenSeriesNames?: Set<string>;
   onToggleVisibility?: (name: string) => void;
+  onShowOnly?: (name: string) => void;
+  onShowAll?: () => void;
+  onHideAll?: () => void;
   dataSpecId: string;
   globalFilters?: readonly PerfFilter[];
   widgetFilters?: readonly PerfFilter[];
@@ -97,6 +100,9 @@ export function ChartSeriesEditor({
   onUpdateSeries,
   hiddenSeriesNames,
   onToggleVisibility,
+  onShowOnly,
+  onShowAll,
+  onHideAll,
   dataSpecId,
   globalFilters,
   widgetFilters,
@@ -297,6 +303,7 @@ export function ChartSeriesEditor({
             isLoadingColumns={isLoadingFilterColumns}
             isVisible={!hiddenSeriesNames?.has(s.displayName)}
             onToggleVisibility={() => onToggleVisibility?.(s.displayName)}
+            onShowOnly={() => onShowOnly?.(s.displayName)}
             hasChildren={hasChildren}
             childrenExpanded={childrenExpanded}
             onToggleChildren={() => toggleChildrenExpanded(s.id)}
@@ -381,6 +388,47 @@ export function ChartSeriesEditor({
               CHART SERIES
             </Typography>
           </Box>
+          <Box
+            sx={{ ml: 'auto', display: 'flex', gap: 1, alignItems: 'center' }}
+          >
+            <Typography
+              variant="caption"
+              component="span"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowAll?.();
+              }}
+              sx={{
+                color: 'primary.main',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              Show All
+            </Typography>
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ height: 12, alignSelf: 'center' }}
+            />
+            <Typography
+              variant="caption"
+              component="span"
+              onClick={(e) => {
+                e.stopPropagation();
+                onHideAll?.();
+              }}
+              sx={{
+                color: 'primary.main',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              Hide All
+            </Typography>
+          </Box>
         </AccordionSummary>
         <AccordionDetails sx={{ p: 0 }}>
           {renderSeriesTree()}
@@ -432,6 +480,7 @@ export interface ChartSeriesItemProps {
   hideColorPicker?: boolean;
   isVisible?: boolean;
   onToggleVisibility?: () => void;
+  onShowOnly?: () => void;
   hideVisibility?: boolean;
   hideMultiSeriesActions?: boolean;
   titlePlaceholder?: string;
@@ -455,6 +504,7 @@ export function ChartSeriesItem({
   hideColorPicker,
   isVisible = true,
   onToggleVisibility,
+  onShowOnly,
   hideVisibility = false,
   hideMultiSeriesActions = false,
   titlePlaceholder,
@@ -591,6 +641,10 @@ export function ChartSeriesItem({
           '&.Mui-expanded .MuiAccordionSummary-content': {
             margin: '4px 0',
           },
+          '&:hover .only-button': {
+            opacity: 1,
+            visibility: 'visible',
+          },
         }}
       >
         {hasChildren && (
@@ -664,7 +718,35 @@ export function ChartSeriesItem({
             })}
           </Box>
         )}
-        <Box sx={{ display: 'flex', gap: 0.5, ml: 'auto' }}>
+        <Box
+          sx={{ display: 'flex', gap: 0.5, ml: 'auto', alignItems: 'center' }}
+        >
+          {!hideVisibility && (
+            <Typography
+              className="only-button"
+              variant="caption"
+              component="span"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowOnly?.();
+              }}
+              sx={{
+                color: 'primary.main',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                opacity: 0,
+                visibility: 'hidden',
+                transition: 'opacity 0.2s, visibility 0.2s',
+                '&:hover': {
+                  textDecoration: 'underline',
+                },
+                ml: 0.5,
+                mr: 0.5,
+              }}
+            >
+              Only
+            </Typography>
+          )}
           {!hideVisibility && (
             <Tooltip title={COMMON_MESSAGES.TOGGLE_VISIBILITY}>
               <IconButton
