@@ -100,6 +100,7 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage, req *pb.Sch
 		[]*pb.ScheduleBuildRequest{req},
 		&scheduleBuildsParams{
 			OverrideParent: pBld,
+			LaunchAsNative: true,
 		})
 	if merr[0] != nil {
 		return nil, "", merr[0]
