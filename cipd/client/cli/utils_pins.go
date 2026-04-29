@@ -17,10 +17,11 @@ package cli
 import (
 	"context"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipderr"
-	"go.chromium.org/luci/common/errors"
 )
 
 type visitPinsArgs struct {

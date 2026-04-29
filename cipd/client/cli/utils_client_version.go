@@ -19,10 +19,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipderr"
-	"go.chromium.org/luci/common/errors"
 )
 
 // loadClientVersion reads a version string from a file.

@@ -18,11 +18,12 @@ import (
 	"context"
 	"os"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipderr"
-	"go.chromium.org/luci/common/errors"
 )
 
 func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *common.Pin, opts *registerOpts) (common.Pin, error) {
