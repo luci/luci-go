@@ -60,6 +60,9 @@ entrypoint: >
   -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
   -encrypted-cookies-client-secret ${OAUTH_CLIENT_SECRET}
   -encrypted-cookies-redirect-url ${OAUTH_REDIRECT_URL}
+  -frontend-client-id ${OAUTH_CLIENT_ID}
+  -frontend-oauth-scopes https://www.googleapis.com/auth/userinfo.email
+  -frontend-oauth-scopes https://www.googleapis.com/auth/androidbuild.internal
   -turbo-ci-api-endpoint ${TURBO_CI_API_ENDPOINT}
   -turbo-ci-stages-service-account ${TURBO_CI_STAGES_SERVICE_ACCOUNT}
 
