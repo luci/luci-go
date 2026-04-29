@@ -62,6 +62,9 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage, req *pb.Sch
 	if req.GetParentBuildId() != 0 {
 		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with parent_build_id is not supported"))
 	}
+	if req.GetMask() != nil || req.GetFields() != nil {
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with field masks is not supported"))
+	}
 
 	// Stage execution policy
 	// The timeout fields in req must be unset.

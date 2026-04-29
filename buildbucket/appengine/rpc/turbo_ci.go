@@ -116,8 +116,9 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	}
 	logging.Infof(ctx, "turbo-ci: workplan %s", id.ToString(plan.GetIdentifier()))
 
-	// The mask field makes no sense inside Turbo CI stage args.
+	// Field masks make no sense inside Turbo CI stage args.
 	req.Mask = nil
+	req.Fields = nil
 
 	// Extract timeouts (if any) into Turbo CI stage attempt execution policy,
 	// since we want them to be enforced and visible via Turbo CI, not just

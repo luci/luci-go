@@ -88,6 +88,10 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 	reqPolicy := stage.GetExecutionPolicy().GetValidated().GetAttemptExecutionPolicyTemplate()
 	fillScheduleBuildRequestWithPolicy(schReq, reqPolicy.GetTimeout())
 
+	// Strip out field masks from schReq, they don't make sense inside Turbo CI
+	// stage args.
+	schReq.Fields = nil
+	// Override schReq.Mask to get all the fields of the created builds.
 	schReq.Mask = &pb.BuildMask{
 		AllFields: true,
 	}
