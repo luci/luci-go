@@ -146,9 +146,9 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 		}
 	}
 
-	// For now, we only handle chromium/ci builds
+	// For now, we only handle chromium/ci and chrome/ci builds
 	// TODO (nqmtuan): Move this into config
-	if !(project == "chromium" && bucket == "ci") {
+	if !(project == "chromium" && bucket == "ci") && !(project == "chrome" && bucket == "ci") {
 		logging.Debugf(c, "Unsupported build for bucket (%q, %q). Exiting early...", project, bucket)
 		bbCounter.Add(c, 1, project, string(OutcomeTypeUnsupported))
 		return nil

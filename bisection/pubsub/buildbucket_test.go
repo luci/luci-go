@@ -100,7 +100,7 @@ func TestBuildBucketPubsub(t *testing.T) {
 			buildPubsub := &buildbucketpb.BuildsV2PubSub{
 				Build: &buildbucketpb.Build{
 					Builder: &buildbucketpb.BuilderID{
-						Project: "chrome",
+						Project: "v8",
 						Bucket:  "ci",
 					},
 					Status: buildbucketpb.Status_FAILURE,
@@ -108,7 +108,7 @@ func TestBuildBucketPubsub(t *testing.T) {
 			}
 			err := BuildbucketPubSubHandler(c, message, buildPubsub)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bbCounter.Get(c, "chrome", "unsupported"), should.Equal(1))
+			assert.Loosely(t, bbCounter.Get(c, "v8", "unsupported"), should.Equal(1))
 		})
 
 		t.Run("Excluded builder group", func(t *ftt.Test) {
