@@ -254,3 +254,43 @@ export const buildFilterString = (
     })
     .join(' AND ');
 };
+
+/**
+ * Generates a human-readable label for a PerfFilter, handling multiple values for IN and NOT_IN operators.
+ */
+export const getFilterLabel = (
+  filter: PerfFilter,
+  operatorDisplayNames: Record<PerfFilterDefault_FilterOperator, string>,
+): string => {
+  const values =
+    filter.textInput?.defaultValue?.values ??
+    filter.numberInput?.defaultValue?.values ??
+    [];
+  const op =
+    filter.textInput?.defaultValue?.filterOperator !== undefined
+      ? perfFilterDefault_FilterOperatorFromJSON(
+          filter.textInput.defaultValue.filterOperator,
+        )
+      : filter.numberInput?.defaultValue?.filterOperator !== undefined
+        ? perfFilterDefault_FilterOperatorFromJSON(
+            filter.numberInput.defaultValue.filterOperator,
+          )
+        : PerfFilterDefault_FilterOperator.EQUAL;
+
+  const opStr =
+    operatorDisplayNames[op] ?? PerfFilterDefault_FilterOperator[op];
+  const isNumber = Boolean(filter.numberInput);
+
+  if (
+    op === PerfFilterDefault_FilterOperator.IN ||
+    op === PerfFilterDefault_FilterOperator.NOT_IN
+  ) {
+    const formattedVals = values
+      .map((v) => (isNumber ? v : `"${v}"`))
+      .join(', ');
+    return `${filter.column} ${opStr} (${formattedVals})`;
+  }
+
+  const val = values[0] ?? '';
+  return `${filter.column} ${opStr} ${isNumber ? val : `"${val}"`}`;
+};

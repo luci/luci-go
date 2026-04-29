@@ -229,6 +229,30 @@ describe('FilterEditor', () => {
     );
   });
 
+  it('renders chip label correctly for IN operator with multiple values', async () => {
+    const initialFilters: PerfFilter[] = [
+      {
+        id: 'filter-1',
+        column: 'test_name',
+        dataSpecId: 'test-spec-id',
+        displayName: 'Test Name',
+        textInput: {
+          defaultValue: {
+            values: ['val1', 'val2'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    ];
+    wrapWithProviders(
+      <FilterEditor {...defaultProps} filters={initialFilters} />,
+    );
+
+    expect(
+      screen.getByText('test_name in ("val1", "val2")'),
+    ).toBeInTheDocument();
+  });
+
   it('adds a new filter when "Add" button is clicked when empty', async () => {
     wrapWithProviders(<FilterEditor {...defaultProps} />);
 

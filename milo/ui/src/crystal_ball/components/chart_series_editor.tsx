@@ -70,6 +70,7 @@ import {
   buildFilterString,
   isStringArray,
   generateColor,
+  getFilterLabel,
 } from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
@@ -77,7 +78,6 @@ import {
   PerfChartSeries,
   PerfFilter,
   PerfFilterDefault_FilterOperator,
-  perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 interface ChartSeriesEditorProps {
@@ -706,14 +706,7 @@ export function ChartSeriesItem({
         {!expanded && series.filters?.length > 0 && (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, ml: 1 }}>
             {series.filters.map((filter) => {
-              const op =
-                filter.textInput?.defaultValue?.filterOperator !== undefined
-                  ? perfFilterDefault_FilterOperatorFromJSON(
-                      filter.textInput.defaultValue.filterOperator,
-                    )
-                  : PerfFilterDefault_FilterOperator.EQUAL;
-              const val = filter.textInput?.defaultValue?.values?.[0] ?? '';
-              const label = `${filter.column} ${OPERATOR_DISPLAY_NAMES[op] ?? PerfFilterDefault_FilterOperator[op]} "${val}"`;
+              const label = getFilterLabel(filter, OPERATOR_DISPLAY_NAMES);
               return <Chip key={filter.id} label={label} size="small" />;
             })}
           </Box>

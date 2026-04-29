@@ -55,6 +55,7 @@ import {
   UseEditorUiStateOptions,
 } from '@/crystal_ball/hooks';
 import { DataTestId } from '@/crystal_ball/tests';
+import { getFilterLabel } from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
   MeasurementFilterColumn_ColumnDataType,
@@ -62,7 +63,6 @@ import {
   PerfFilter,
   PerfFilterDefault,
   PerfFilterDefault_FilterOperator,
-  perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 import { FilterEditorRow } from './filter_editor_row';
@@ -438,17 +438,6 @@ export function FilterEditor({
     [availableColumns],
   );
 
-  const renderFilterLabel = (filter: PerfFilter) => {
-    const op =
-      filter.textInput?.defaultValue?.filterOperator !== undefined
-        ? perfFilterDefault_FilterOperatorFromJSON(
-            filter.textInput.defaultValue.filterOperator,
-          )
-        : PerfFilterDefault_FilterOperator.EQUAL;
-    const val = filter.textInput?.defaultValue?.values?.[0] ?? '';
-    return `${filter.column} ${OPERATOR_DISPLAY_NAMES[op] ?? PerfFilterDefault_FilterOperator[op]} \"${val}\"`;
-  };
-
   const content = (
     <>
       {isLoadingColumns ? (
@@ -660,7 +649,7 @@ export function FilterEditor({
               filters.map((filter) => (
                 <Chip
                   key={filter.id}
-                  label={renderFilterLabel(filter)}
+                  label={getFilterLabel(filter, OPERATOR_DISPLAY_NAMES)}
                   size="small"
                 />
               ))}
