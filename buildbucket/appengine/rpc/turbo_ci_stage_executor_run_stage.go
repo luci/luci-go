@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/grpc/appstatus"
@@ -64,7 +65,7 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 	schReq := TurboCICall(ctx).ScheduleBuild
 	creds, err := turboci.ProjectRPCCredentials(ctx, schReq.GetBuilder().GetProject())
 	if err != nil {
-		return nil, err
+		return nil, appstatus.Errorf(codes.Internal, "project credentials: %s", err)
 	}
 	cl := &turboci.Client{
 		Creds: creds,
@@ -74,15 +75,13 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 
 	pBld, err := getParentViaStage(ctx, stage)
 	if err != nil {
-		if grpcutil.IsTransientCode(grpcutil.Code(err)) {
+		if grpcutil.IsTransientCode(appstatus.Code(err)) {
 			// Let TurboCI retry on transient errors.
 			return nil, err
 		}
-		err = cl.FailCurrentAttempt(ctx, attemptID, &turboci.AttemptFailure{Err: err})
-		if err != nil {
-			return nil, err
-		}
-		return &executorpb.RunStageResponse{}, nil
+		return &executorpb.RunStageResponse{}, appstatus.FromStatusErr(
+			cl.FailCurrentAttempt(ctx, attemptID, &turboci.AttemptFailure{Err: err}),
+		)
 	}
 
 	reqPolicy := stage.GetExecutionPolicy().GetValidated().GetAttemptExecutionPolicyTemplate()
@@ -113,15 +112,13 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 		})
 	err = merr[0]
 	if err != nil {
-		if grpcutil.IsTransientCode(grpcutil.Code(err)) {
+		if grpcutil.IsTransientCode(appstatus.Code(err)) {
 			// Let TurboCI retry on transient errors.
 			return nil, err
 		}
-		err = cl.FailCurrentAttempt(ctx, attemptID, &turboci.AttemptFailure{Err: err})
-		if err != nil {
-			return nil, err
-		}
-		return &executorpb.RunStageResponse{}, nil
+		return &executorpb.RunStageResponse{}, appstatus.FromStatusErr(
+			cl.FailCurrentAttempt(ctx, attemptID, &turboci.AttemptFailure{Err: err}),
+		)
 	}
 
 	return &executorpb.RunStageResponse{}, updateStageAttemptToScheduled(ctx, cl, blds[0])

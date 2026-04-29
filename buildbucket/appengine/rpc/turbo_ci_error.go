@@ -33,17 +33,21 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-// handleStageAttemptStatusConflict handles the *orchestratorpb.StageAttemptCurrentState
-// from err's details.
+// handleStageAttemptStatusConflict handles the StageAttemptCurrentState
+// from gRPC status details and converts the error to an appstatus error.
 func handleStageAttemptStatusConflict(ctx context.Context, b *pb.Build, err error) error {
+	if err == nil {
+		return nil
+	}
+
 	sacs, sErr := rpc.StageAttemptCurrentState(err)
 	if sErr != nil {
-		logging.Errorf(ctx, "Failed to extract StageAttemptCurrentState from error: %s, original error: %s", sErr, err)
+		logging.Errorf(ctx, "Not a gRPC status error, returning it as is: %s", err)
 		return err
 	}
 
 	if sacs == nil {
-		return err
+		return appstatus.FromStatusErr(err)
 	}
 
 	switch curState := sacs.GetState(); curState {

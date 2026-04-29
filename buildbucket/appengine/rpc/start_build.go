@@ -19,10 +19,10 @@ import (
 	"strings"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/protowalk"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -54,6 +54,10 @@ func validateStartBuildRequest(ctx context.Context, req *pb.StartBuildRequest) e
 	return nil
 }
 
+// startBuildOnBackendOnFirstReq submits the backend task for the build if it
+// hasn't been submitted already and does nothing if it has.
+//
+// Called in a transaction. Returns appstatus errors.
 func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildRequest, b *model.Build, infra *model.BuildInfra) (bool, error) {
 	taskID := infra.Proto.Backend.Task.GetId()
 	if taskID.GetId() != "" && taskID.GetId() != req.TaskId {
@@ -80,7 +84,7 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 	b.StartBuildRequestID = req.RequestId
 	updateBuildToken, err := buildtoken.GenerateToken(ctx, b.ID, pb.TokenBody_BUILD)
 	if err != nil {
-		return false, errors.Fmt("failed to generate BUILD token for build %d: %w", b.ID, err)
+		return false, appstatus.Errorf(codes.Internal, "failed to generate BUILD token for build %d: %s", b.ID, err)
 	}
 	b.UpdateToken = updateBuildToken
 	if b.Proto.Output == nil {
@@ -109,7 +113,7 @@ func startBuildOnBackendOnFirstReq(ctx context.Context, req *pb.StartBuildReques
 	}
 	err = datastore.Put(ctx, toSave)
 	if err != nil {
-		return false, errors.Fmt("failed to start build %d: %s: %w", b.ID, err, err)
+		return false, appstatus.Errorf(codes.Internal, "failed to start build %d: %s", b.ID, err)
 	}
 
 	return true, nil
@@ -121,6 +125,10 @@ type startBuildResult struct {
 	buildStatusChanged bool
 }
 
+// startBuildOnBackend verifies the build has a backend task.
+//
+// Called in a transaction. Returns appstatus errors. On errors returns both
+// the startBuildResult (perhaps partially filled) and the error.
 func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (startBuildResult, error) {
 	var b *model.Build
 	var infra *model.BuildInfra
@@ -130,7 +138,7 @@ func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (startB
 		buildStatusChanged = false
 		entities, err := common.GetBuildEntities(ctx, req.BuildId, model.BuildKind, model.BuildInfraKind)
 		if err != nil {
-			return errors.Fmt("failed to get build %d: %w", req.BuildId, err)
+			return err
 		}
 		b = entities[0].(*model.Build)
 		infra = entities[1].(*model.BuildInfra)
@@ -148,18 +156,19 @@ func startBuildOnBackend(ctx context.Context, req *pb.StartBuildRequest) (startB
 		return checkSubsequentRequest(req, b.StartBuildRequestID, infra.Proto.Backend.Task.GetId().GetId())
 	}, nil)
 	if txErr != nil {
-		// On transient errors, we'll ask bbagent to retry without communicating
-		// with TurboCI, so no need to return b.
-		if errIsTransient(txErr) {
-			return startBuildResult{}, txErr
-		}
-		// On fatal error we need to set the build stage attempt to INCOMPLETE
-		// in TurboCI, return the entities to do that.
-		return startBuildResult{bld: b, infra: infra, buildStatusChanged: false}, txErr
+		buildStatusChanged = false
 	}
-	return startBuildResult{bld: b, infra: infra, buildStatusChanged: buildStatusChanged}, nil
+	return startBuildResult{
+		bld:                b,
+		infra:              infra,
+		buildStatusChanged: buildStatusChanged,
+	}, txErr
 }
 
+// checkSubsequentRequest verifies a retry of startBuildOnBackend is indeed
+// a retry and not a conflicting operation.
+//
+// Called in a transaction. Returns appstatus errors.
 func checkSubsequentRequest(req *pb.StartBuildRequest, savedReqID, savedTaskID string) error {
 	// Subsequent StartBuild request.
 	if savedReqID != req.RequestId {
@@ -173,7 +182,7 @@ func checkSubsequentRequest(req *pb.StartBuildRequest, savedReqID, savedTaskID s
 			"build %d has associated with task id %q with StartBuild request id %q", req.BuildId, savedTaskID, savedReqID))
 	}
 
-	// Idempotent
+	// Idempotent.
 	return nil
 }
 
@@ -183,7 +192,7 @@ func (b *Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb
 		return nil, appstatus.BadRequest(err)
 	}
 
-	// a token is required
+	// A token is required.
 	rawToken, err, _ := getBuildbucketToken(ctx, false)
 	if err != nil {
 		return nil, err
@@ -197,9 +206,12 @@ func (b *Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb
 		return nil, appstatus.Errorf(codes.Unauthenticated, "impossible: invalid token purpose: %s", tok.Purpose)
 	}
 
+	// Note this returns both `res` and `err` on errors.
 	res, err := startBuildOnBackend(ctx, req)
-	// Let bbagent retry if err is transient.
-	if errIsTransient(err) {
+	// On transient errors, we'll ask the bbagent to retry without communicating
+	// with TurboCI. On fatal errors we need to set the build stage attempt to
+	// INCOMPLETE in Turbo CI.
+	if grpcutil.IsTransientCode(appstatus.Code(err)) {
 		return nil, err
 	}
 	bld := res.bld
@@ -227,42 +239,45 @@ func (b *Builds) StartBuild(ctx context.Context, req *pb.StartBuildRequest) (*pb
 
 	mask, err := model.NewBuildMask("", nil, &pb.BuildMask{AllFields: true})
 	if err != nil {
-		return nil, errors.Fmt("failed to construct build mask: %w", err)
+		return nil, appstatus.Errorf(codes.Internal, "constructing build mask: %s", err)
 	}
 	bp, err := bld.ToProto(ctx, mask, nil)
 	if err != nil {
-		return nil, errors.Fmt("failed to generate build proto from model: %w", err)
+		return nil, appstatus.Errorf(codes.Internal, "generating build proto from model: %s", err)
 	}
 
 	return &pb.StartBuildResponse{
 		Build:             bp,
 		UpdateBuildToken:  bld.UpdateToken,
-		StageAttemptToken: bld.StageAttemptToken}, nil
+		StageAttemptToken: bld.StageAttemptToken,
+	}, nil
 }
 
 // notifyTurboCI marks the attempt as either RUNNING on INCOMPLETE depending
 // on `startErr`.
 //
-// If to RUNNING but failed, use grpcutil.WrapIfTransient to wrap the error
-// and return it so that bbagent could retry or stop the build accordingly.
+// If switching to RUNNING fails, returns the Turbo CI WriteNodes error to make
+// the bbagent either retry the call or stop the build depending on the error
+// code.
 //
-// If to INCOMPLETE but failed,
-//   - On transient error return it to trigger bbagent retry.
-//   - On fatal error log it but don't return it. So the original startErr can
-//     be returned to bbagent.
+// If switching to INCOMPLETE fails,
+//   - On transient error returns it as is to trigger the bbagent retry.
+//   - On fatal error logs it but doesn't return it. So the original `startErr`
+//     can be returned to the bbagent.
+//
+// Both `startErr` and the returned error are appstatus errors.
 func notifyTurboCI(ctx context.Context, res startBuildResult, startErr error) error {
-	var cl *turboci.Client
 	bld := res.bld
 	creds, err := turboci.ProjectRPCCredentials(ctx, bld.Project)
 	if err != nil {
-		return err
+		return appstatus.Errorf(codes.Internal, "project credentials: %s", err)
 	}
-	cl = &turboci.Client{
+	cl := &turboci.Client{
 		Creds: creds,
 		Token: bld.StageAttemptToken,
 	}
 
-	bp := proto.Clone(bld.Proto).(*pb.Build)
+	bp := proto.CloneOf(bld.Proto)
 	if res.infra != nil {
 		bp.Infra = res.infra.Proto
 	}
@@ -274,16 +289,12 @@ func notifyTurboCI(ctx context.Context, res startBuildResult, startErr error) er
 			return nil
 		}
 		err = cl.FailCurrentAttempt(ctx, aID.GetStageAttempt(), &turboci.AttemptFailure{Err: startErr}, tasks.PopulateBuildDetails(bp)...)
-		if err != nil && !errIsTransient(err) {
+		if err != nil && !grpcutil.IsTransientCode(status.Code(err)) {
 			logging.Errorf(ctx, "Failed to update TurboCI on failure to start build %d (attempt %s): %s", bld.ID, bld.StageAttemptID, err)
 			return nil
 		}
-		return err
+		return appstatus.FromStatusErr(err)
 	}
 
-	return grpcutil.WrapIfTransient(updateStageAttemptToRunning(ctx, cl, bp, bld.StartBuildRequestID))
-}
-
-func errIsTransient(err error) bool {
-	return grpcutil.IsTransientCode(grpcutil.Code(err))
+	return updateStageAttemptToRunning(ctx, cl, bp, bld.StartBuildRequestID)
 }

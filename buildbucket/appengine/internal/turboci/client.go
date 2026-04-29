@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
@@ -41,6 +40,8 @@ import (
 
 // Client is a short-lived TurboCIOrchestratorClient scoped to a
 // particular caller and plan.
+//
+// All errors are gRPC status errors.
 type Client struct {
 	// Creds is the credentials to use to call TurboCI Orchestrator.
 	Creds credentials.PerRPCCredentials
@@ -58,10 +59,12 @@ type Client struct {
 //
 // As a precaution against Buildbucket clients treating it as a fatal build
 // failure. See also the TODO in turboCICreds.
+//
+// Recognizes and returns only gRPC status errors.
 func AdjustTurboCIRPCError(err error) error {
 	if status.Code(err) == codes.Unauthenticated {
 		return status.Errorf(codes.Internal,
-			"delegated call to the Turbo CI Orchestrator failed with an authentication error, "+
+			"the delegated call to the Turbo CI Orchestrator failed with an authentication error, "+
 				"you may need to retry your Buildbucket request with a fresher access token; "+
 				"the original error: %s", status.Convert(err).Message())
 	}
@@ -69,9 +72,11 @@ func AdjustTurboCIRPCError(err error) error {
 }
 
 // ProjectRPCCredentials creates a credential using the provided project.
+//
+// Returned errors can be considered internal.
 func ProjectRPCCredentials(ctx context.Context, project string) (credentials.PerRPCCredentials, error) {
 	if project == "" {
-		return nil, appstatus.Errorf(codes.Unauthenticated, "no project specified")
+		return nil, fmt.Errorf("no project specified")
 	}
 
 	// Regular users usually use BuildbucketScopeSet() to call us. Use the same
@@ -83,7 +88,7 @@ func ProjectRPCCredentials(ctx context.Context, project string) (credentials.Per
 		auth.WithScopes(scopes.BuildbucketScopeSet()...),
 	)
 	if err != nil {
-		return nil, appstatus.Errorf(codes.Internal, "error acting as project account of %q: %s", project, err)
+		return nil, fmt.Errorf("acting as project account of %q: %w", project, err)
 	}
 	return creds, nil
 }
@@ -102,7 +107,6 @@ func (c *Client) stageID(sid *idspb.Stage) *idspb.Stage {
 // This succeeds if the stage was submitted or it already exists.
 func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.ScheduleBuildRequest, realm string, timeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout) error {
 	writeReq := write.NewRequest()
-	writeReq.Msg.SetToken(c.Token)
 	stg := writeReq.AddNewStage(c.stageID(stageID), req)
 	writeReq.SetReason("Submitting stage via Buildbucket")
 	stg.Msg.SetRealm(realm)
@@ -114,8 +118,8 @@ func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.S
 		}.Build())
 	}
 
-	_, err := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
-	return AdjustTurboCIRPCError(err)
+	_, err := c.WriteNodes(ctx, writeReq)
+	return err
 }
 
 // buildStageDetailsTypeSet is a TypeSet composed of just BuildStageDetails.
@@ -220,7 +224,6 @@ type AttemptFailure struct {
 func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageAttempt, failure *AttemptFailure, details ...proto.Message) error {
 	logging.Errorf(ctx, "Fail stage attempt: %s", failure.Err)
 	writeReq := write.NewRequest()
-	writeReq.Msg.SetToken(c.Token)
 	writeReq.SetReason(fmt.Sprintf("Set the stage attempt %s to INCOMPLETE due to an error: %s", id.ToString(attemptID), failure.Err))
 	curWrite := writeReq.GetCurrentAttempt()
 	prog := curWrite.AddProgress(failure.Err.Error(), value.MustWrite(failure.Details))
@@ -233,8 +236,8 @@ func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageA
 	st := curWrite.GetStateTransition()
 	st.SetIncomplete()
 
-	_, err := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
-	return AdjustTurboCIRPCError(err)
+	_, err := c.WriteNodes(ctx, writeReq)
+	return err
 }
 
 // AbortCurrentAttempt sets the current stage attempt (by c.Token as StageAttemptToken)
@@ -242,7 +245,6 @@ func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageA
 func (c *Client) AbortCurrentAttempt(ctx context.Context, attemptID string, details ...proto.Message) error {
 	logging.Infof(ctx, "Abort stage attempt: %s", attemptID)
 	writeReq := write.NewRequest()
-	writeReq.Msg.SetToken(c.Token)
 	writeReq.SetReason("Buildbucket build cancelled")
 
 	curWrite := writeReq.GetCurrentAttempt()
@@ -255,8 +257,8 @@ func (c *Client) AbortCurrentAttempt(ctx context.Context, attemptID string, deta
 	st := curWrite.GetStateTransition()
 	st.SetIncomplete()
 
-	_, nErr := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
-	return AdjustTurboCIRPCError(nErr)
+	_, err := c.WriteNodes(ctx, writeReq)
+	return err
 }
 
 // CompleteCurrentAttempt sets the current stage attempt (by c.Token as StageAttemptToken)
@@ -264,10 +266,18 @@ func (c *Client) AbortCurrentAttempt(ctx context.Context, attemptID string, deta
 func (c *Client) CompleteCurrentAttempt(ctx context.Context, attemptID string) error {
 	logging.Infof(ctx, "Complete stage attempt: %s", attemptID)
 	writeReq := write.NewRequest()
-	writeReq.Msg.SetToken(c.Token)
 	writeReq.SetReason("Buildbucket build completed")
 	st := writeReq.GetCurrentAttempt().GetStateTransition()
 	st.SetComplete()
-	_, nErr := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
-	return AdjustTurboCIRPCError(nErr)
+	_, err := c.WriteNodes(ctx, writeReq)
+	return err
+}
+
+// WriteNodes calls the Turbo CI RPC with correct credentials.
+//
+// It mutates the request by inserting the token into it.
+func (c *Client) WriteNodes(ctx context.Context, req write.Request) (*orchestratorpb.WriteNodesResponse, error) {
+	req.Msg.SetToken(c.Token)
+	resp, err := WriteNodes(ctx, req.Msg, grpc.PerRPCCredentials(c.Creds))
+	return resp, AdjustTurboCIRPCError(err)
 }

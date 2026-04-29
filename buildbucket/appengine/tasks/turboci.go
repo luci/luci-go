@@ -37,8 +37,11 @@ import (
 
 // writeStageAttemptOnBuildCompletion updates a stage attempt to TurboCI when
 // its underlying build completes.
+//
+// Returns TQ-annotated errors, i.e. any error **not** tagged as tq.Fatal will
+// result in an retry.
 func writeStageAttemptOnBuildCompletion(ctx context.Context, bID int64, oldStatus pb.Status) error {
-	// Get build, no need to be in a transaction since the build should have
+	// Get the build, no need to be in a transaction since the build should have
 	// ended.
 	// Check build status and call different turboci client code accordingly.
 	bld := &model.Build{ID: bID}
@@ -74,31 +77,33 @@ func writeStageAttemptOnBuildCompletion(ctx context.Context, bID int64, oldStatu
 
 	creds, err := turboci.ProjectRPCCredentials(ctx, bld.Project)
 	if err != nil {
-		return err
+		return transient.Tag.Apply(err)
 	}
 	cl := &turboci.Client{
 		Creds: creds,
 		Token: bld.StageAttemptToken,
 	}
 
-	bp := bld.Proto
 	if infra != nil {
-		bp.Infra = infra.Proto
+		bld.Proto.Infra = infra.Proto
 	}
 
-	switch bld.Status {
+	switch bld.Proto.Status {
 	case pb.Status_SUCCESS, pb.Status_FAILURE:
-		err = cl.CompleteCurrentAttempt(ctx, bld.StageAttemptID)
+		return cl.CompleteCurrentAttempt(ctx, bld.StageAttemptID)
 	case pb.Status_CANCELED:
-		err = cancelBuildStageAttempt(ctx, cl, bld.Proto, bld.StageAttemptID, oldStatus)
+		return cancelBuildStageAttempt(ctx, cl, bld.Proto, bld.StageAttemptID, oldStatus)
 	case pb.Status_INFRA_FAILURE:
-		err = failBuildStageAttemptWithDetails(ctx, cl, bld.Proto, bld.StageAttemptID, oldStatus)
+		return failBuildStageAttemptWithDetails(ctx, cl, bld.Proto, bld.StageAttemptID, oldStatus)
 	default:
-		tq.Fatal.Apply(errors.Fmt("invalid status %s", bld.Status))
+		return tq.Fatal.Apply(errors.Fmt("invalid status %s", bld.Proto.Status))
 	}
-	return nil
 }
 
+// cancelBuildStageAttempt marks the attempt into INCOMPLETE, reporting it
+// as canceled via progress details.
+//
+// Returns gRPC status errors.
 func cancelBuildStageAttempt(ctx context.Context, cl *turboci.Client, bp *pb.Build, attemptID string, oldStatus pb.Status) error {
 	var details []proto.Message
 	// The build failed to start, needs to populate details.
@@ -109,6 +114,10 @@ func cancelBuildStageAttempt(ctx context.Context, cl *turboci.Client, bp *pb.Bui
 	return cl.AbortCurrentAttempt(ctx, attemptID, details...)
 }
 
+// failBuildStageAttemptWithDetails marks the attempt into INCOMPLETE, reporting
+// it as failed via progress details.
+//
+// Returns gRPC status errors.
 func failBuildStageAttemptWithDetails(ctx context.Context, cl *turboci.Client, bp *pb.Build, attemptID string, oldStatus pb.Status) error {
 	aID, aErr := id.FromString(attemptID)
 	if aErr != nil {

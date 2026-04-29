@@ -28,6 +28,20 @@ func ToError(s *status.Status) error {
 	return Attach(s.Err(), s)
 }
 
+// FromStatusErr converts a gRPC status error into an appstatus error.
+//
+// If err is nil or indicates an OK status, returns nil.
+func FromStatusErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	st := status.Convert(err)
+	if st.Code() == codes.OK {
+		return nil
+	}
+	return ToError(st)
+}
+
 // Error returns an error with an application-specific status.
 // The message will be shared with the RPC client as is.
 func Error(code codes.Code, msg string) error {

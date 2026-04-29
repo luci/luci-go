@@ -24,6 +24,9 @@ import (
 
 // StageAttemptCurrentState extracts *orchestratorpb.StageAttemptCurrentState
 // from error details.
+//
+// Returns an error if `err` is not a gRPC status error. If the current attempt
+// state is missing from the error details, just returns (nil, nil).
 func StageAttemptCurrentState(err error) (*orchestratorpb.StageAttemptCurrentState, error) {
 	if err == nil {
 		return nil, nil

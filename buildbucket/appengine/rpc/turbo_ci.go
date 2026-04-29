@@ -85,7 +85,7 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	// using Turbo CI API directly (making Buildbucket piggy back on it as well).
 	projectCreds, err := turboci.ProjectRPCCredentials(ctx, req.Builder.Project)
 	if err != nil {
-		return err
+		return appstatus.Errorf(codes.Internal, "project credentials: %s", err)
 	}
 	callerCreds, err := turboCICallerCreds(ctx)
 	if err != nil {
@@ -112,7 +112,7 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	}.Build(), grpc.PerRPCCredentials(projectCreds))
 	if err != nil {
 		logging.Errorf(ctx, "turbo-ci: CreateWorkPlan call failed: %s", err)
-		return appstatus.ToError(status.Convert(turboci.AdjustTurboCIRPCError(err)))
+		return appstatus.FromStatusErr(turboci.AdjustTurboCIRPCError(err))
 	}
 	logging.Infof(ctx, "turbo-ci: workplan %s", id.ToString(plan.GetIdentifier()))
 
@@ -145,7 +145,7 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	}).WriteStage(ctx, rootStageID, req, build.Realm(), timeouts)
 	if err != nil {
 		logging.Errorf(ctx, "turbo-ci: failed to submit the stage: %s", err)
-		return appstatus.ToError(status.Convert(err))
+		return appstatus.FromStatusErr(err)
 	}
 
 	// Wait until the stage starts running and gets a build ID assigned to it.
@@ -156,7 +156,7 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	}, rootStageID)
 	if err != nil {
 		logging.Errorf(ctx, "turbo-ci: giving up: %s", err)
-		return appstatus.ToError(status.Convert(err))
+		return appstatus.FromStatusErr(err)
 	}
 
 	// Update `build` in-place with the state of the build right now.
@@ -194,7 +194,11 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 func turboCICallerCreds(ctx context.Context) (credentials.PerRPCCredentials, error) {
 	caller := auth.CurrentIdentity(ctx)
 	if caller.Kind() == identity.Project {
-		return turboci.ProjectRPCCredentials(ctx, caller.Value())
+		creds, err := turboci.ProjectRPCCredentials(ctx, caller.Value())
+		if err != nil {
+			return nil, appstatus.Errorf(codes.Internal, "project credentials: %s", err)
+		}
+		return creds, nil
 	}
 
 	// TODO: We may need to add some hack to make sure the token we've got has
@@ -264,6 +268,8 @@ func pollingSchedule(ctx context.Context, attempt, errs int) time.Duration {
 }
 
 // pollStage periodically queries the stage until it gets assigned a build ID.
+//
+// Returns gRPC status errors.
 func pollStage(ctx context.Context, cl *turboci.Client, stageID *idspb.Stage) (int64, error) {
 	deadline := clock.Now(ctx).Add(30 * time.Second)
 	ctx, cancel := clock.WithDeadline(ctx, deadline)
@@ -349,8 +355,10 @@ func pollStage(ctx context.Context, cl *turboci.Client, stageID *idspb.Stage) (i
 }
 
 // updateStageAttemptToScheduled sets the current stage attempt (conveyed by
-// cl.Token as StageAttemptToken) to SCHEDULED and report the build details
+// cl.Token as StageAttemptToken) to SCHEDULED and reports the build details
 // (e.g. build ID).
+//
+// Returns appstatus errors.
 func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld *pb.Build) error {
 	// This can happen if a previous RunTask created the build but failed to
 	// update TurboCI, so TurboCI retries the RunTask. And after TurboCI sends
@@ -362,7 +370,6 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld 
 	}
 
 	writeReq := write.NewRequest()
-	writeReq.Msg.SetToken(cl.Token)
 	writeReq.SetReason("Buildbucket build scheduled")
 
 	curWrite := writeReq.GetCurrentAttempt()
@@ -374,14 +381,16 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld 
 	st := curWrite.GetStateTransition()
 	st.SetScheduled(updatedPolicy)
 
-	_, err := turboci.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(cl.Creds))
-	return handleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
+	_, err := cl.WriteNodes(ctx, writeReq)
+	return handleStageAttemptStatusConflict(ctx, bld, err)
 }
 
-// updateStageAttemptToRunning sets the StageAttempt to RUNNING and reports its process_uid and details.
+// updateStageAttemptToRunning sets the StageAttempt to RUNNING and reports its
+// process_uid and details.
+//
+// Returns appstatus errors.
 func updateStageAttemptToRunning(ctx context.Context, cl *turboci.Client, bld *pb.Build, reqID string) error {
 	writeReq := write.NewRequest()
-	writeReq.Msg.SetToken(cl.Token)
 	writeReq.SetReason("Buildbucket build started")
 
 	curWrite := writeReq.GetCurrentAttempt()
@@ -392,6 +401,6 @@ func updateStageAttemptToRunning(ctx context.Context, cl *turboci.Client, bld *p
 	st := curWrite.GetStateTransition()
 	st.SetRunning(reqID, nil)
 
-	_, err := turboci.WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(cl.Creds))
-	return handleStageAttemptStatusConflict(ctx, bld, turboci.AdjustTurboCIRPCError(err))
+	_, err := cl.WriteNodes(ctx, writeReq)
+	return handleStageAttemptStatusConflict(ctx, bld, err)
 }
