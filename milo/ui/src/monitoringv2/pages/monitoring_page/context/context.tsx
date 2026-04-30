@@ -165,7 +165,9 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
           includeExperimental: true,
           status: Status.ENDED_MASK,
         },
-        pageSize: 10,
+        //increase pageSize to 20, since we want 10 builds
+        //after excluding some builds
+        pageSize: 20,
         fields: FIELD_MASK,
       });
       return {
@@ -177,17 +179,27 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
   });
 
   const histories = historiesQueries
-    .map(
-      (q) =>
-        q.data?.builds?.map((build) => {
-          const btv: BuildAndTestVariants = {
-            build: build,
-            testVariants: [],
-            analysis: undefined,
-          };
-          return btv;
-        }) || [],
-    )
+    .map((q) => {
+      const builds = q.data?.builds || [];
+      const excludeFilter = tree?.excludeFilter;
+      //exclude builds that meet the exclude fiter criteria
+      const nonExcludedBuilds = builds.filter((build) => {
+        if (!excludeFilter) return true;
+        const actualValue = excludeFilter.path.reduce(
+          (prev, curr) => (prev as Record<string, unknown>)?.[curr],
+          build as unknown,
+        );
+        return actualValue !== excludeFilter.value;
+      });
+      return nonExcludedBuilds.slice(0, 10).map((build) => {
+        const btv: BuildAndTestVariants = {
+          build: build,
+          testVariants: [],
+          analysis: undefined,
+        };
+        return btv;
+      });
+    })
     .filter((btvs) => !!btvs?.[0]?.build);
   const buildHistories = histories.flatMap((btvs) => btvs);
 
@@ -253,7 +265,6 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
   const filteredHistories = histories.filter(
     (history: BuildAndTestVariants[]) => {
       const filter = tree?.filter;
-      const excludeFilter = tree?.excludeFilter;
 
       const latestBuild = history[0]?.build;
       if (!latestBuild) {
@@ -269,16 +280,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
         included = actualValue === filter.value;
       }
 
-      let excluded = false;
-      if (excludeFilter) {
-        const actualValue = excludeFilter.path.reduce(
-          (prev, curr) => (prev as Record<string, unknown>)?.[curr],
-          latestBuild as unknown,
-        );
-        excluded = actualValue === excludeFilter.value;
-      }
-
-      return included && !excluded;
+      return included;
     },
   );
 
