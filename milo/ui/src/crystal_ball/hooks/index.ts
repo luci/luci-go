@@ -16,6 +16,7 @@ export * from './use_android_perf_api';
 export * from './use_dashboard_state_api';
 export * from './use_dashboard_workflows';
 export * from './use_editor_ui_state';
+export * from './use_export_to_sheets';
 export * from './use_filters_clipboard';
 export * from './use_measurement_filter_api';
 export * from './use_search_query_sync';

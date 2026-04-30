@@ -318,11 +318,42 @@ describe('BreakdownTableChart', () => {
     );
 
     const aggregatesSelect = screen.getByRole('combobox', {
-      name: 'Aggregates',
+      name: COMMON_MESSAGES.AGGREGATES,
     });
     fireEvent.mouseDown(aggregatesSelect);
 
     const listbox = screen.getByRole('listbox');
     expect(listbox).toBeInTheDocument();
+  });
+
+  it('calls onExport when export button is clicked', () => {
+    const sections: BreakdownSection[] = [
+      {
+        dimensionColumn: 'testname',
+        rows: [{ dimension_value: 'test1', COUNT: 10 }],
+      },
+    ];
+
+    const mockOnExport = jest.fn();
+
+    render(
+      <BreakdownTableChart
+        sections={sections}
+        currentAggregations={[]}
+        onUpdateAggregations={jest.fn()}
+        onUpdateDefaultDimension={jest.fn()}
+        hasSeries={true}
+        onExport={mockOnExport}
+      />,
+    );
+
+    const exportButton = screen.getByRole('button', {
+      name: COMMON_MESSAGES.EXPORT_TO_SHEETS,
+    });
+    expect(exportButton).toBeInTheDocument();
+
+    fireEvent.click(exportButton);
+
+    expect(mockOnExport).toHaveBeenCalledTimes(1);
   });
 });

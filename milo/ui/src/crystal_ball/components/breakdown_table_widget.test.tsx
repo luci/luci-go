@@ -42,6 +42,10 @@ jest.mock('@/crystal_ball/hooks', () => ({
     showWarningToast: jest.fn(),
     showErrorToast: jest.fn(),
   }),
+  useExportToSheets: jest.fn(() => ({
+    mutate: jest.fn(),
+    isPending: false,
+  })),
 }));
 
 const mockUseFetchDashboardWidgetData = jest.mocked(

@@ -16,11 +16,13 @@ import {
   Functions as FunctionsIcon,
   GroupWork as GroupWorkIcon,
   Lock as LockIcon,
+  OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import {
   Alert,
   alpha,
   Box,
+  Button,
   Checkbox,
   CircularProgress,
   Divider,
@@ -52,15 +54,10 @@ import {
   breakdownTableConfig_BreakdownAggregationFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
-/**
- * The set of metric keys that might appear in breakdown data.
- * Used to distinguish metric columns from dimension columns.
- */
-const BREAKDOWN_METRIC_KEYS = new Set(
-  Object.keys(BreakdownTableConfig_BreakdownAggregation).filter(
-    (key) => isNaN(Number(key)) && key !== 'BREAKDOWN_AGGREGATION_UNSPECIFIED',
-  ),
-);
+import {
+  deriveTableColumns,
+  UNKNOWN_DIMENSION,
+} from '../utils/breakdown_utils';
 
 /**
  * Labels for breakdown aggregations.
@@ -80,16 +77,6 @@ const AGGREGATION_LABELS: Record<
   [BreakdownTableConfig_BreakdownAggregation.P90]: 'P90',
   [BreakdownTableConfig_BreakdownAggregation.P99]: 'P99',
 };
-
-/**
- * The key used for the dimension column in the breakdown table.
- */
-export const DIMENSION_COLUMN_KEY = 'dimension_value';
-
-/**
- * The fallback label used for unknown dimensions.
- */
-const UNKNOWN_DIMENSION = 'UNKNOWN';
 
 /**
  * Represents a single row of breakdown data, where keys are dimension names
@@ -229,22 +216,10 @@ function InnerTable({
     [section.rows],
   );
 
-  const dimensionKey = useMemo(() => {
-    if (!data.length) return DIMENSION_COLUMN_KEY;
-    const keys = Object.keys(data[0]);
-    const nonMetricKeys = keys.filter((key) => {
-      const isMetric = Array.from(BREAKDOWN_METRIC_KEYS).some(
-        (k) => k.toUpperCase() === key.toUpperCase(),
-      );
-      return !isMetric;
-    });
-    return nonMetricKeys[0] ?? DIMENSION_COLUMN_KEY;
-  }, [data]);
-
-  const metricColumns = useMemo(() => {
-    if (!data.length) return [];
-    return Object.keys(data[0]).filter((key) => key !== dimensionKey);
-  }, [data, dimensionKey]);
+  const { dimensionKey, metricColumns } = useMemo(
+    () => deriveTableColumns(data),
+    [data],
+  );
 
   const { minKey, maxKey } = useMemo(() => {
     if (!data.length) return { minKey: undefined, maxKey: undefined };
@@ -368,6 +343,8 @@ export interface BreakdownTableChartProps {
   hasEmptyMetricField?: boolean;
   defaultDimension?: string;
   onUpdateDefaultDimension: (dimension: string) => void;
+  onExport?: () => void;
+  isExporting?: boolean;
 }
 
 /**
@@ -385,6 +362,8 @@ export function BreakdownTableChart({
   hasEmptyMetricField = false,
   defaultDimension,
   onUpdateDefaultDimension,
+  onExport,
+  isExporting = false,
 }: BreakdownTableChartProps): React.ReactElement {
   const [pagination, setPagination] = useState<MRT_PaginationState>({
     pageIndex: 0,
@@ -635,6 +614,34 @@ export function BreakdownTableChart({
             </Select>
           </FormControl>
         </Box>
+        <Divider orientation="vertical" flexItem light />
+        {onExport &&
+          sections.length > 0 &&
+          hasAtpTestFilter &&
+          !hasEmptyMetricField && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                ml: 'auto',
+                pr: 1,
+                gap: 1,
+              }}
+            >
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<OpenInNewIcon sx={COMPACT_ICON_SX} />}
+                onClick={onExport}
+                disabled={isExporting || !sections.length}
+                sx={{ height: '32px' }}
+              >
+                {isExporting
+                  ? COMMON_MESSAGES.EXPORTING
+                  : COMMON_MESSAGES.EXPORT_TO_SHEETS}
+              </Button>
+            </Box>
+          )}
       </Box>
 
       <Box sx={{ position: 'relative', minHeight: '100px', flexGrow: 1 }}>

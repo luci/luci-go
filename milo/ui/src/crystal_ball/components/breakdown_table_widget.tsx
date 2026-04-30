@@ -20,7 +20,9 @@ import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
 import {
   EditorUiKeyPrefix,
   useFetchDashboardWidgetData,
+  useExportToSheets,
 } from '@/crystal_ball/hooks';
+import { prepareExportData, UNKNOWN_DIMENSION } from '@/crystal_ball/utils';
 import {
   BreakdownTableConfig_BreakdownAggregation,
   MeasurementFilterColumn,
@@ -141,6 +143,31 @@ export function BreakdownTableWidget({
 
   const sections = responseData?.breakdownTableData?.sections ?? [];
 
+  const { mutate: exportToSheets, isPending: isExporting } =
+    useExportToSheets();
+
+  const handleExport = () => {
+    const activeDimension =
+      widget.breakdownTableWidgetChartConfig?.defaultDimension ||
+      sections[0]?.dimensionColumn ||
+      UNKNOWN_DIMENSION;
+    const activeSection =
+      sections.find((s) => s.dimensionColumn === activeDimension) ??
+      sections[0];
+
+    if (!activeSection) return;
+
+    const { title, values } = prepareExportData(
+      activeSection,
+      widget.series?.[0]?.metricField,
+      globalFilters,
+      widget.filters,
+      widget.series?.[0]?.filters,
+    );
+
+    exportToSheets({ title, values });
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box>
@@ -214,6 +241,8 @@ export function BreakdownTableWidget({
             }),
           );
         }}
+        onExport={handleExport}
+        isExporting={isExporting}
       />
     </Box>
   );
