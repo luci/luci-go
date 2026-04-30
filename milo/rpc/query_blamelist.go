@@ -82,9 +82,9 @@ func (s *MiloInternalService) QueryBlamelist(ctx context.Context, req *milopb.Qu
 	}
 	logRes, err := gitilesClient.Log(ctx, logReq)
 	if err != nil {
-		// Bubble up authentication-related errors.
+		// Pass through status codes while preserving message format expected by tests.
 		status, ok := status.FromError(err)
-		if ok && (status.Code() == codes.Unauthenticated || status.Code() == codes.PermissionDenied) {
+		if ok {
 			return nil, appstatus.Errorf(status.Code(), "retrieving log from gitiles: %s", status.Message())
 		}
 		return nil, fmt.Errorf("retrieve gitiles log: %w", err)
