@@ -33,8 +33,10 @@ type FetchGit struct {
 	Name     string
 	Metadata *core.Action_Metadata
 
-	URL    string
-	Commit string
+	URL       string
+	Commit    string
+	Recursive bool
+	Export    bool
 }
 
 func (g *FetchGit) Generate(ctx context.Context, plats Platforms) (*core.Action, error) {
@@ -43,8 +45,10 @@ func (g *FetchGit) Generate(ctx context.Context, plats Platforms) (*core.Action,
 		Metadata: g.Metadata,
 		Spec: &core.Action_Git{
 			Git: &core.ActionGitFetch{
-				Url:    g.URL,
-				Commit: g.Commit,
+				Url:       g.URL,
+				Commit:    g.Commit,
+				Recursive: g.Recursive,
+				Export:    g.Export,
 			},
 		},
 	}, nil
