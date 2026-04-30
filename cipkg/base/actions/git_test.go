@@ -18,9 +18,9 @@ package actions
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
-
-	"github.com/go-git/go-git/v5"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -60,17 +60,70 @@ func TestExecuteGit(t *testing.T) {
 			a := &core.ActionGitFetch{
 				Url:    repo,
 				Commit: commit,
+				Export: true,
 			}
 
 			err := ActionGitFetchExecutor(ctx, a, out)
 			assert.Loosely(t, err, should.BeNil)
 
 			// Verify the repo was cloned and checked out
-			fetched, err := git.PlainOpen(out)
+			_, err = os.Stat(filepath.Join(out, "file"))
 			assert.Loosely(t, err, should.BeNil)
-			head, err := fetched.Head()
+
+			// Verify .git does not exist in out
+			_, err = os.Stat(filepath.Join(out, ".git"))
+			assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
+		})
+
+		t.Run("Test not export", func(t *ftt.Test) {
+			a := &core.ActionGitFetch{
+				Url:    repo,
+				Commit: commit,
+				Export: false,
+			}
+			out2 := t.TempDir()
+
+			err := ActionGitFetchExecutor(ctx, a, out2)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, head.Hash().String(), should.Equal(commit))
+
+			// Verify the repo was cloned and checked out
+			_, err = os.Stat(filepath.Join(out2, "file"))
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify .git does exist in out
+			_, err = os.Stat(filepath.Join(out2, ".git"))
+			assert.Loosely(t, err, should.BeNil)
+		})
+
+		t.Run("Test clone and checkout commit with submodule", func(t *ftt.Test) {
+			subRepo, subCommit := testutils.InitGitRepoWithSubmodule(t)
+			out3 := t.TempDir()
+
+			a := &core.ActionGitFetch{
+				Url:       subRepo,
+				Commit:    subCommit,
+				Export:    true,
+				Recursive: true,
+			}
+
+			err := ActionGitFetchExecutor(ctx, a, out3)
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify the repo was cloned and checked out
+			_, err = os.Stat(filepath.Join(out3, "file"))
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify submodule was cloned and checked out
+			_, err = os.Stat(filepath.Join(out3, "sub", "subfile"))
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify .git does not exist in out
+			_, err = os.Stat(filepath.Join(out3, ".git"))
+			assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
+
+			// Verify submodule .git does not exist
+			_, err = os.Stat(filepath.Join(out3, "sub", ".git"))
+			assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
 		})
 	})
 }
@@ -88,6 +141,7 @@ func TestReexecGit(t *testing.T) {
 			Spec: &core.Action_Git{Git: &core.ActionGitFetch{
 				Url:    repo,
 				Commit: commit,
+				Export: true,
 			}},
 		})
 		assert.Loosely(t, err, should.BeNil)
@@ -95,10 +149,11 @@ func TestReexecGit(t *testing.T) {
 		runWithDrv(t, ctx, pkg.Derivation, out)
 
 		// Verify the repo was cloned and checked out
-		fetched, err := git.PlainOpen(out)
+		_, err = os.Stat(filepath.Join(out, "file"))
 		assert.Loosely(t, err, should.BeNil)
-		head, err := fetched.Head()
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, head.Hash().String(), should.Equal(commit))
+
+		// Verify .git does not exist in out
+		_, err = os.Stat(filepath.Join(out, ".git"))
+		assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
 	})
 }

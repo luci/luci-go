@@ -58,6 +58,10 @@ message ActionGitFetch {
   string url = 1;
   // Commit hash for the repository.
   string commit = 2;
+  // Checkout submodules recursively.
+  bool recursive = 3;
+  // Remove .git dir from the output.
+  bool export = 4;
 }
 
 // ActionFilesCopy copies listed files into the output directory.

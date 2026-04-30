@@ -244,7 +244,11 @@ type ActionGitFetch struct {
 	// Git repository URL.
 	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	// Commit hash for the repository.
-	Commit        string `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
+	Commit string `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
+	// Checkout submodules recursively.
+	Recursive bool `protobuf:"varint,3,opt,name=recursive,proto3" json:"recursive,omitempty"`
+	// Remove .git dir from the output.
+	Export        bool `protobuf:"varint,4,opt,name=export,proto3" json:"export,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -291,6 +295,20 @@ func (x *ActionGitFetch) GetCommit() string {
 		return x.Commit
 	}
 	return ""
+}
+
+func (x *ActionGitFetch) GetRecursive() bool {
+	if x != nil {
+		return x.Recursive
+	}
+	return false
+}
+
+func (x *ActionGitFetch) GetExport() bool {
+	if x != nil {
+		return x.Export
+	}
+	return false
 }
 
 // ActionFilesCopy copies listed files into the output directory.
@@ -722,10 +740,12 @@ const file_go_chromium_org_luci_cipkg_core_specs_proto_rawDesc = "" +
 	"\n" +
 	"hash_value\x18\x03 \x01(\tR\thashValue\x12\x12\n" +
 	"\x04Name\x18\x04 \x01(\tR\x04Name\x12\x12\n" +
-	"\x04mode\x18\x05 \x01(\rR\x04mode\":\n" +
+	"\x04mode\x18\x05 \x01(\rR\x04mode\"p\n" +
 	"\x0eActionGitFetch\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
-	"\x06commit\x18\x02 \x01(\tR\x06commit\"\xdb\x04\n" +
+	"\x06commit\x18\x02 \x01(\tR\x06commit\x12\x1c\n" +
+	"\trecursive\x18\x03 \x01(\bR\trecursive\x12\x16\n" +
+	"\x06export\x18\x04 \x01(\bR\x06export\"\xdb\x04\n" +
 	"\x0fActionFilesCopy\x121\n" +
 	"\x05files\x18\x01 \x03(\v2\x1b.ActionFilesCopy.FilesEntryR\x05files\x1aQ\n" +
 	"\n" +

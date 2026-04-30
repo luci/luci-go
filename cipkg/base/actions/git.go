@@ -19,6 +19,9 @@ package actions
 import (
 	"context"
 	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -54,6 +57,42 @@ func ActionGitFetchExecutor(ctx context.Context, a *core.ActionGitFetch, out str
 
 	if err = wt.Checkout(&git.CheckoutOptions{Hash: commit}); err != nil {
 		return fmt.Errorf("failed to checkout commit: %w", err)
+	}
+
+	// Checkout git submodules recursively.
+	if a.Recursive {
+		subs, err := wt.Submodules()
+		if err != nil {
+			return fmt.Errorf("failed to get submodules: %w", err)
+		}
+
+		if err := subs.Update(&git.SubmoduleUpdateOptions{
+			Init:              true,
+			RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+		}); err != nil {
+			return fmt.Errorf("failed to update submodules: %w", err)
+		}
+	}
+
+	// Clean up any .git files or directories that may have been created
+	// in the worktree (e.g., inside submodule directories).
+	if a.Export {
+		if err = filepath.WalkDir(out, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.Name() == ".git" {
+				if err := os.RemoveAll(path); err != nil {
+					return err
+				}
+				if d.IsDir() {
+					return filepath.SkipDir
+				}
+			}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("failed to remove .git metadata: %w", err)
+		}
 	}
 
 	return nil
