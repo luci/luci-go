@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { MRT_Row, MRT_TableInstance } from 'material-react-table';
 import { act } from 'react';
 
+import { OutputBuild } from '@/build/types';
 import { usePagerContext } from '@/common/components/params_pager';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
@@ -25,7 +28,16 @@ import {
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { TasksGrid, TaskGridColumnKey } from './tasks_grid';
+import { TasksGrid, TaskGridColumnKey, TasksDetailPanel } from './tasks_grid';
+
+jest.mock('@tanstack/react-query', () => ({
+  ...jest.requireActual('@tanstack/react-query'),
+  useQuery: jest.fn(),
+}));
+
+jest.mock('@/generic_libs/components/code_mirror_editor', () => ({
+  CodeMirrorEditor: ({ value }: { value: string }) => <pre>{value}</pre>,
+}));
 
 const MOCK_TASKS: TaskResultResponse[] = [
   TaskResultResponse.fromPartial({
@@ -34,7 +46,7 @@ const MOCK_TASKS: TaskResultResponse[] = [
     state: TaskState.COMPLETED,
     startedTs: '2026-04-20T14:00:00Z',
     duration: 60,
-    tags: ['build:123', 'dut-name:dut-1'],
+    tags: ['build:123', 'dut-name:dut-1', 'buildbucket_build_id:123'],
   }),
   TaskResultResponse.fromPartial({
     taskId: 'task-2',
@@ -84,6 +96,12 @@ describe('TasksGrid', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     cleanupDomMocks = mockVirtualizedListDomProperties();
+    jest.mocked(useQuery).mockReturnValue({
+      data: null,
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as unknown as UseQueryResult<OutputBuild, Error>);
   });
 
   afterEach(() => {
@@ -133,5 +151,173 @@ describe('TasksGrid', () => {
 
     // Check pagination text
     expect(screen.getByText('1-2 of more than 2')).toBeInTheDocument();
+  });
+
+  it('should expand row and show detail panel on click', async () => {
+    jest.mocked(useQuery).mockReturnValue({
+      data: {
+        output: {
+          properties: {
+            key1: 'value1',
+          },
+        },
+      },
+      isLoading: false,
+      isError: false,
+    } as unknown as UseQueryResult<OutputBuild, Error>);
+
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestWrapper tasks={MOCK_TASKS} />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    const expandButtons = screen.getAllByRole('button', { name: /expand/i });
+    expect(expandButtons.length).toBeGreaterThan(0);
+
+    act(() => {
+      fireEvent.click(expandButtons[0]);
+    });
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(await screen.findByText(/"key1": "value1"/)).toBeInTheDocument();
+  });
+
+  describe('TasksDetailPanel', () => {
+    const mockRow = {
+      original: {
+        id: 'task-1',
+      },
+    } as unknown as MRT_Row<Record<string, unknown>>;
+
+    const mockTable = {
+      options: {
+        meta: {
+          taskMap: new Map([
+            [
+              'task-1',
+              TaskResultResponse.fromPartial({
+                taskId: 'task-1',
+                tags: ['buildbucket_build_id:123'],
+              }),
+            ],
+            [
+              'task-3',
+              TaskResultResponse.fromPartial({
+                taskId: 'task-3',
+                tags: ['dut-name:dut-3'],
+              }),
+            ],
+          ]),
+          swarmingHost: 'swarming.example.com',
+          miloHost: 'milo.example.com',
+        },
+      },
+    } as unknown as MRT_TableInstance<Record<string, unknown>>;
+
+    it('should render loading state', async () => {
+      jest.mocked(useQuery).mockReturnValue({
+        isLoading: true,
+      } as unknown as UseQueryResult<OutputBuild, Error>);
+
+      render(
+        <FakeContextProvider>
+          <TasksDetailPanel row={mockRow} table={mockTable} />
+        </FakeContextProvider>,
+      );
+
+      expect(await screen.findByRole('progressbar')).toBeInTheDocument();
+    });
+
+    it('should render error state', async () => {
+      jest.mocked(useQuery).mockReturnValue({
+        isError: true,
+        error: new Error('Failed to fetch build'),
+        isLoading: false,
+      } as unknown as UseQueryResult<OutputBuild, Error>);
+
+      render(
+        <FakeContextProvider>
+          <TasksDetailPanel row={mockRow} table={mockTable} />
+        </FakeContextProvider>,
+      );
+
+      expect(
+        (await screen.findAllByText(/Failed to fetch build/))[0],
+      ).toBeInTheDocument();
+    });
+
+    it('should render success state with properties', async () => {
+      jest.mocked(useQuery).mockReturnValue({
+        data: {
+          output: {
+            properties: {
+              key1: 'value1',
+            },
+          },
+        },
+        isLoading: false,
+        isError: false,
+      } as unknown as UseQueryResult<OutputBuild, Error>);
+
+      render(
+        <FakeContextProvider>
+          <TasksDetailPanel row={mockRow} table={mockTable} />
+        </FakeContextProvider>,
+      );
+
+      expect(
+        (await screen.findAllByText(/"key1": "value1"/))[0],
+      ).toBeInTheDocument();
+    });
+
+    it('should render success state without properties', async () => {
+      jest.mocked(useQuery).mockReturnValue({
+        data: {
+          output: {},
+        },
+        isLoading: false,
+        isError: false,
+      } as unknown as UseQueryResult<OutputBuild, Error>);
+
+      render(
+        <FakeContextProvider>
+          <TasksDetailPanel row={mockRow} table={mockTable} />
+        </FakeContextProvider>,
+      );
+
+      expect(
+        (
+          await screen.findAllByText(
+            'No output properties found for this build.',
+          )
+        )[0],
+      ).toBeInTheDocument();
+    });
+
+    it('should render warning when build ID is not found', async () => {
+      const mockRowWithoutBuild = {
+        original: {
+          id: 'task-3',
+        },
+      } as unknown as MRT_Row<Record<string, unknown>>;
+
+      render(
+        <FakeContextProvider>
+          <TasksDetailPanel row={mockRowWithoutBuild} table={mockTable} />
+        </FakeContextProvider>,
+      );
+
+      expect(
+        (await screen.findAllByText('Build ID not found!'))[0],
+      ).toBeInTheDocument();
+    });
   });
 });

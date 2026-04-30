@@ -11,8 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-import { TablePagination } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  TablePagination,
+  Typography,
+} from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { EditorConfiguration } from 'codemirror';
 import {
   MaterialReactTable,
   MRT_Cell,
@@ -20,8 +27,10 @@ import {
   MRT_Row,
   MRT_TableInstance,
 } from 'material-react-table';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
+import { useBuildsClient } from '@/build/hooks/prpc_clients';
+import { OutputBuild } from '@/build/types';
 import {
   getCurrentPageIndex,
   getPageSize,
@@ -34,18 +43,24 @@ import {
 import { getSwarmingTaskURL } from '@/common/tools/url_utils';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { colors } from '@/fleet/theme/colors';
-import { extractBuildUrlFromTagData } from '@/fleet/utils/builds';
+import { extractBuildUrlFromTagData, tagsToMap } from '@/fleet/utils/builds';
 import { prettyDateTime } from '@/fleet/utils/dates';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import {
   getRowClassName,
   getTaskDuration,
   getTaskTagValue,
   prettifySwarmingState,
 } from '@/fleet/utils/task_utils';
+import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { TaskResultResponse } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
+
+import AlertWithFeedback from '../feedback/alert_with_feedback';
 
 export type TaskGridColumnKey =
   | 'task'
@@ -54,6 +69,12 @@ export type TaskGridColumnKey =
   | 'started'
   | 'duration'
   | 'dut_name';
+
+export interface TasksGridTableOptionsMeta {
+  taskMap: Map<string, TaskResultResponse>;
+  swarmingHost: string;
+  miloHost?: string;
+}
 
 const COLUMN_CONFIG: Record<
   TaskGridColumnKey,
@@ -76,11 +97,7 @@ const TaskCell = ({
   row: MRT_Row<Record<string, unknown>>;
   table: MRT_TableInstance<Record<string, unknown>>;
 }) => {
-  const meta = table.options.meta as {
-    taskMap: Map<string, TaskResultResponse>;
-    swarmingHost: string;
-    miloHost?: string;
-  };
+  const meta = table.options.meta as TasksGridTableOptionsMeta;
   const taskId = row.original.id as string;
   const task = meta.taskMap.get(taskId);
   let url: string | undefined;
@@ -114,6 +131,89 @@ const DutNameCell = ({
     <EllipsisTooltip>
       <a href={generateChromeOsDeviceDetailsURL(dutName)}>{dutName}</a>
     </EllipsisTooltip>
+  );
+};
+
+export const TasksDetailPanel = ({
+  row,
+  table,
+}: {
+  row: MRT_Row<Record<string, unknown>>;
+  table: MRT_TableInstance<Record<string, unknown>>;
+}) => {
+  const editorOptions = useRef<EditorConfiguration>(DEFAULT_CODE_MIRROR_CONFIG);
+  const buildsClient = useBuildsClient();
+  const meta = table.options.meta as TasksGridTableOptionsMeta;
+  const taskId = row.original.id as string;
+  const task = meta.taskMap.get(taskId);
+
+  const tagMap = task?.tags ? tagsToMap([...task.tags]) : undefined;
+  const buildId = tagMap?.get('buildbucket_build_id');
+
+  const {
+    data: build,
+    isError,
+    error,
+    isLoading,
+  } = useQuery({
+    ...buildsClient.GetBuild.query(
+      GetBuildRequest.fromPartial({
+        id: buildId,
+        mask: {
+          fields: ['output'],
+        },
+      }),
+    ),
+    select: (data) => data as OutputBuild,
+    enabled: !!buildId,
+  });
+
+  if (isLoading) {
+    return <CircularProgress />;
+  }
+
+  let content;
+
+  if (isError) {
+    content = (
+      <Alert severity="error">
+        {getErrorMessage(error, 'build output properties')}{' '}
+      </Alert>
+    );
+  } else if (!buildId) {
+    content = (
+      <AlertWithFeedback
+        severity="warning"
+        title="Build ID not found!"
+        bugErrorMessage={`Build ID not found for task: ${taskId}`}
+      >
+        <p>
+          Oh no! Build was not found for this task (
+          <code>task_id={taskId}</code>
+          ).
+        </p>
+      </AlertWithFeedback>
+    );
+  } else {
+    content = build?.output?.properties ? (
+      <CodeMirrorEditor
+        value={JSON.stringify(build.output.properties, null, 2)}
+        initOptions={editorOptions.current}
+      />
+    ) : (
+      <Alert severity="warning">
+        No output properties found for this build.
+      </Alert>
+    );
+  }
+
+  return (
+    <Box sx={{ display: 'grid', width: '100%', backgroundColor: colors.white }}>
+      <Typography variant="h6" sx={{ mb: 1 }}>
+        Task Output Properties
+      </Typography>
+      {content}
+    </Box>
   );
 };
 
@@ -190,6 +290,21 @@ export const TasksGrid = ({
     enableSorting: false,
     enableTopToolbar: true,
     enableStickyHeader: true,
+    renderDetailPanel: ({ row, table }) => (
+      <TasksDetailPanel row={row} table={table} />
+    ),
+    muiDetailPanelProps: {
+      sx: {
+        width: '100%',
+        backgroundColor: `${colors.white} !important`,
+      },
+    },
+    displayColumnDefOptions: {
+      'mrt-row-expand': {
+        size: 100,
+        grow: false,
+      },
+    },
     muiTableHeadRowProps: {
       sx: {
         minHeight: 'unset',
