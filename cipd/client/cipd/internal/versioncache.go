@@ -15,21 +15,17 @@
 package internal
 
 import (
-	"bytes"
 	"cmp"
 	"context"
-	"os"
 	"slices"
 	"sync"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 const (
@@ -65,9 +61,10 @@ type VersionCache struct {
 
 	lock sync.Mutex
 
-	cache      *messages.VersionCache                       // the last loaded state, if not nil.
-	addedTags  map[tagKey]*messages.VersionCache_Entry      // entries added by AddTag
-	addedFiles map[fileKey]*messages.VersionCache_FileEntry // entries added by AddExtractedObjectRef
+	cache       *messages.VersionCache // the last loaded state, if not nil.
+	cacheLoaded bool
+	addedTags   map[tagKey]*messages.VersionCache_Entry      // entries added by AddTag
+	addedFiles  map[fileKey]*messages.VersionCache_FileEntry // entries added by AddExtractedObjectRef
 }
 
 type tagKey struct {
@@ -107,17 +104,47 @@ func NewVersionCache(fs fs.FileSystem, service string, useName LegacyVersionCach
 	}
 }
 
-func (c *VersionCache) lazyLoadLocked(ctx context.Context) (err error) {
+func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 	// Lazy-load the cache the first time it is used. We reload it again in Flush
 	// right before overwriting the file. We don't reload it anywhere else
 	// though, so the implementation essentially assumes Flush is called
 	// relatively soon after ResolveTag call. If it's not the case, cache updates
 	// made by other processes will be "invisible" to the VersionCache. It still
 	// tries not to overwrite them in Flush, so it's fine.
-	if c.cache == nil {
-		c.cache, err = c.loadFromDisk(ctx, false)
+	if c.cacheLoaded {
+		return nil
 	}
-	return err
+	rawCache, err := ReadVersionCache(ctx, c.fs)
+	if err != nil {
+		return err
+	}
+	if len(rawCache.GetEntries()) > 0 {
+		rawCache.Entries = slices.DeleteFunc(rawCache.Entries, func(e *messages.VersionCache_Entry) bool {
+			return e.Service != c.service
+		})
+	}
+	if len(rawCache.GetFileEntries()) > 0 {
+		rawCache.FileEntries = slices.DeleteFunc(rawCache.FileEntries, func(e *messages.VersionCache_FileEntry) bool {
+			if e.Service != c.service {
+				return true
+			}
+
+			if err := common.ValidateInstanceID(e.ObjectRef, common.AnyHash); err != nil {
+				pin := common.Pin{
+					PackageName: e.Package,
+					InstanceID:  e.InstanceId,
+				}
+				logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it: %s",
+					e.ObjectRef, e.FileName, pin, err)
+				return true
+			}
+
+			return false
+		})
+	}
+	c.cache = rawCache
+	c.cacheLoaded = true
+	return nil
 }
 
 // ResolveTag returns cached tag or empty Pin{} if such tag is not in the cache.
@@ -148,7 +175,7 @@ func (c *VersionCache) ResolveTag(ctx context.Context, pkg, tag string) (pin com
 
 	// Most recently used tags are usually at the end, search in reverse as a
 	// silly optimization.
-	for i := len(c.cache.Entries) - 1; i >= 0; i-- {
+	for i := len(c.cache.GetEntries()) - 1; i >= 0; i-- {
 		e := c.cache.Entries[i]
 		if e.Package == pkg && e.Tag == tag {
 			return common.Pin{
@@ -169,20 +196,12 @@ func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common
 		return nil, err
 	}
 
-	ignoreBrokenObjectRef := func(iid string) *caspb.ObjectRef {
-		if err := common.ValidateInstanceID(iid, common.AnyHash); err != nil {
-			logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it: %s", iid, fileName, pin, err)
-			return nil
-		}
-		return common.InstanceIDToObjectRef(iid)
-	}
-
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	key := fileKey{pin.PackageName, pin.InstanceID, fileName}
 	if e := c.addedFiles[key]; e != nil {
-		return ignoreBrokenObjectRef(e.ObjectRef), nil
+		return common.InstanceIDToObjectRef(e.ObjectRef), nil
 	}
 
 	if err := c.lazyLoadLocked(ctx); err != nil {
@@ -191,10 +210,10 @@ func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common
 
 	// Most recently used entries are usually at the end, search in reverse as a
 	// silly optimization.
-	for i := len(c.cache.FileEntries) - 1; i >= 0; i-- {
+	for i := len(c.cache.GetFileEntries()) - 1; i >= 0; i-- {
 		e := c.cache.FileEntries[i]
 		if e.Package == pin.PackageName && e.InstanceId == pin.InstanceID && e.FileName == fileName {
-			return ignoreBrokenObjectRef(e.ObjectRef), nil
+			return common.InstanceIDToObjectRef(e.ObjectRef), nil
 		}
 	}
 	return nil, nil
@@ -291,15 +310,15 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	// Load the most recent data to avoid overwriting it. Load ALL entries, even
 	// if they belong to different service: we have one global cache file and
 	// should preserve all entries there.
-	recent, err := c.loadFromDisk(ctx, true)
+	recent, err := ReadVersionCache(ctx, c.fs)
 	if err != nil {
 		return err
 	}
 
 	// Copy existing entries, except the ones we are moving to the tail. Carefully
 	// copy entries belonging to other services too, we must not overwrite them.
-	mergedTags := make([]*messages.VersionCache_Entry, 0, len(recent.Entries)+len(c.addedTags))
-	for _, e := range recent.Entries {
+	mergedTags := make([]*messages.VersionCache_Entry, 0, len(recent.GetEntries())+len(c.addedTags))
+	for _, e := range recent.GetEntries() {
 		key := tagKey{e.Package, e.Tag}
 		if e.Service != c.service || c.addedTags[key] == nil {
 			mergedTags = append(mergedTags, e)
@@ -317,8 +336,8 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	}
 
 	// Do the same for file entries.
-	mergedFiles := make([]*messages.VersionCache_FileEntry, 0, len(recent.FileEntries)+len(c.addedFiles))
-	for _, e := range recent.FileEntries {
+	mergedFiles := make([]*messages.VersionCache_FileEntry, 0, len(recent.GetFileEntries())+len(c.addedFiles))
+	for _, e := range recent.GetFileEntries() {
 		key := fileKey{e.Package, e.InstanceId, e.FileName}
 		if e.Service != c.service || c.addedFiles[key] == nil {
 			mergedFiles = append(mergedFiles, e)
@@ -335,7 +354,7 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	// else's changes, but the probability should be relatively low. It can happen
 	// only if two processes call 'Flush' at the exact same time.
 	updated := &messages.VersionCache{Entries: mergedTags, FileEntries: mergedFiles}
-	if err := c.dumpToDiskLocked(ctx, updated); err != nil {
+	if err := WriteVersionCache(ctx, c.fs, updated, c.useName); err != nil {
 		return err
 	}
 
@@ -343,87 +362,6 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	c.cache = updated
 	c.addedTags = nil
 	c.addedFiles = nil
-
-	return nil
-}
-
-// loadFromDisk loads and parses the tag cache file.
-//
-// If 'allService' is true, returns all cache entries (regardless of what
-// service they correspond to), otherwise filters out all entries that don't
-// match c.service.
-//
-// Returns empty struct if the file is missing or corrupted. Returns errors if
-// the file can't be read.
-func (c *VersionCache) loadFromDisk(ctx context.Context, allServices bool) (*messages.VersionCache, error) {
-	curPath, err := c.fs.RootRelToAbs(versionCacheName)
-	if err != nil {
-		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad tag cache path: %w", err))
-	}
-	legacyPath, err := c.fs.RootRelToAbs(legacyVersionCacheName)
-	if err != nil {
-		return nil, cipderr.BadArgument.Apply(errors.Fmt("bad tag cache path: %w", err))
-	}
-
-	var blob []byte
-	// Load from the new path or the legacy path.
-	for _, pickedPath := range []string{curPath, legacyPath} {
-		blob, err = os.ReadFile(pickedPath)
-		switch {
-		case os.IsNotExist(err):
-			continue
-		case err != nil:
-			// Just ignore the corrupted cache file.
-			return nil, cipderr.IO.Apply(errors.
-				Fmt("reading tag cache: %w", err))
-		}
-		break
-	}
-	if os.IsNotExist(err) {
-		return &messages.VersionCache{}, nil
-	}
-
-	cache := messages.VersionCache{}
-	if err := UnmarshalWithSHA256(blob, &cache); err != nil {
-		logging.Warningf(ctx, "Can't deserialize tag cache: %s", err)
-		return &messages.VersionCache{}, nil
-	}
-
-	// Also apply 'allServices' filter.
-	filtered := &messages.VersionCache{}
-	for _, e := range cache.Entries {
-		if e.Service == c.service || allServices {
-			filtered.Entries = append(filtered.Entries, e)
-		}
-	}
-	for _, e := range cache.FileEntries {
-		if e.Service == c.service || allServices {
-			filtered.FileEntries = append(filtered.FileEntries, e)
-		}
-	}
-
-	return filtered, nil
-}
-
-// dumpToDiskLocked serializes the tag cache and writes it to the file system.
-func (c *VersionCache) dumpToDiskLocked(ctx context.Context, msg *messages.VersionCache) error {
-	var name = versionCacheName
-	if c.useName == UseLegacyVCName {
-		name = legacyVersionCacheName
-	}
-	path, err := c.fs.RootRelToAbs(name)
-	if err != nil {
-		return cipderr.BadArgument.Apply(errors.Fmt("bad tag cache path: %w", err))
-	}
-
-	blob, err := MarshalWithSHA256(msg)
-	if err != nil {
-		return cipderr.BadArgument.Apply(errors.Fmt("serializing tag cache: %w", err))
-	}
-
-	if err := fs.EnsureFile(ctx, c.fs, path, bytes.NewReader(blob)); err != nil {
-		return cipderr.IO.Apply(errors.Fmt("writing tag cache: %w", err))
-	}
 
 	return nil
 }

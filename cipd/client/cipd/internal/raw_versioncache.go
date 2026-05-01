@@ -14,6 +14,69 @@
 
 package internal
 
+import (
+	"bytes"
+	"context"
+	"os"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
+	"go.chromium.org/luci/cipd/common/cipderr"
+)
+
+func mkVersionCachePaths(cacheDir fs.FileSystem) (curPath, legacyPath string, err error) {
+	curPath, err = cacheDir.RootRelToAbs(versionCacheName)
+	if err != nil {
+		return "", "", cipderr.BadArgument.Apply(errors.Fmt("bad version cache path: %w", err))
+	}
+	legacyPath, err = cacheDir.RootRelToAbs(legacyVersionCacheName)
+	if err != nil {
+		return "", "", cipderr.BadArgument.Apply(errors.Fmt("bad version cache path: %w", err))
+	}
+	return curPath, legacyPath, nil
+}
+
+// ReadVersionCache loads and parses a version cache file.
+//
+// `cacheDir` should be a cipd cache directory.
+//
+// Returns nil if the file is missing or corrupted.
+// Returns errors if the file can't be read.
+func ReadVersionCache(ctx context.Context, cacheDir fs.FileSystem) (ret *messages.VersionCache, err error) {
+	curPath, legacyPath, err := mkVersionCachePaths(cacheDir)
+	if err != nil {
+		return nil, err
+	}
+
+	var blob []byte
+	// Load from the new path or the legacy path.
+	for _, pickedPath := range []string{curPath, legacyPath} {
+		blob, err = os.ReadFile(pickedPath)
+		switch {
+		case os.IsNotExist(err):
+			continue
+		case err != nil:
+			return nil, cipderr.IO.Apply(errors.Fmt("reading version cache: %w", err))
+		}
+		break
+	}
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+
+	cache := &messages.VersionCache{}
+	if err := UnmarshalWithSHA256(blob, cache); err != nil {
+		// Just ignore the corrupted cache file.
+		logging.Warningf(ctx, "Can't deserialize version cache: %s", err)
+		return nil, nil
+	}
+
+	return cache, nil
+}
+
 // LegacyVersionCache indicates that this use of VersionCache should use the
 // legacy name when writing the cache.
 //
@@ -27,3 +90,26 @@ const (
 	// When writing a tagcache, use the legacy name.
 	UseLegacyVCName LegacyVersionCache = true
 )
+
+// WriteVersionCache serializes the version cache and writes it to the file system.
+func WriteVersionCache(ctx context.Context, cacheDir fs.FileSystem, msg *messages.VersionCache, useName LegacyVersionCache) error {
+	var name = versionCacheName
+	if useName == UseLegacyVCName {
+		name = legacyVersionCacheName
+	}
+	path, err := cacheDir.RootRelToAbs(name)
+	if err != nil {
+		return cipderr.BadArgument.Apply(errors.Fmt("bad version cache path: %w", err))
+	}
+
+	blob, err := MarshalWithSHA256(msg)
+	if err != nil {
+		return cipderr.BadArgument.Apply(errors.Fmt("serializing version cache: %w", err))
+	}
+
+	if err := fs.EnsureFile(ctx, cacheDir, path, bytes.NewReader(blob)); err != nil {
+		return cipderr.IO.Apply(errors.Fmt("writing version cache: %w", err))
+	}
+
+	return nil
+}
