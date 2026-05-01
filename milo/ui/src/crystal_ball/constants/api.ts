@@ -16,6 +16,8 @@
  * Supported columns for querying and filtering.
  */
 export enum Column {
+  ANTS_INVOCATION_ID = 'ants_invocation_id',
+  ANTS_TEST_RESULT_ID = 'ants_test_result_id',
   ATP_TEST_NAME = 'atp_test_name',
   BOARD = 'board',
   BUILD_BRANCH = 'build_branch',

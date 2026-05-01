@@ -26,10 +26,10 @@ import React from 'react';
 
 import {
   AB_BASE_URL,
-  ARC_REGRESSION_DASHBOARD_URL,
   ATP_BASE_URL,
   Column,
   COMMON_MESSAGES,
+  INVOCATION_BASE_URL,
 } from '@/crystal_ball/constants';
 import type { RawSampleRow } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -48,6 +48,19 @@ const formatMtvTimestamp = (ts: unknown) => {
   });
   return `${formatter.format(date)} MTV`;
 };
+
+function constructAtiUrl(row: RawSampleRow): string {
+  const invocationId = row.values?.[Column.ANTS_INVOCATION_ID];
+  const antsTestResultId = row.values?.[Column.ANTS_TEST_RESULT_ID];
+
+  if (invocationId && antsTestResultId) {
+    return `${INVOCATION_BASE_URL}${invocationId}/test/${antsTestResultId}/`;
+  }
+  if (invocationId) {
+    return `${INVOCATION_BASE_URL}${invocationId}/`;
+  }
+  return '';
+}
 
 interface RawSampleItemProps {
   row: RawSampleRow;
@@ -71,22 +84,7 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
   atpUrl.searchParams.set('offset', '0');
   atpUrl.searchParams.set('buildTarget', buildTarget);
 
-  const arcUrl = new URL(ARC_REGRESSION_DASHBOARD_URL);
-  arcUrl.searchParams.append('f', `atp_test_name:eq:${atpTestName}`);
-  arcUrl.searchParams.append('f', `build_branch:in:${buildBranch}`);
-  arcUrl.searchParams.append('f', `build_target:in:${buildTarget}`);
-  arcUrl.searchParams.append(
-    'f',
-    `metric_key:eq:${String(row.values?.[Column.METRIC_KEY] ?? '')}`,
-  );
-  arcUrl.searchParams.append(
-    'f',
-    `build_id:gte:${String(row.values?.[Column.BUILD_ID] ?? '')}`,
-  );
-  arcUrl.searchParams.append(
-    'f',
-    `test_name:ct:${String(row.values?.[Column.TEST_NAME] ?? '')}`,
-  );
+  const atiUrl = constructAtiUrl(row);
 
   // Option A: Format Value
   const rawVal = row.values?.[Column.VALUE];
@@ -135,9 +133,9 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
 
         {/* Action Links (Reordered: ATI, ATP, ARC, Perfetto) */}
         <Box sx={{ display: 'flex', gap: 1.5 }}>
-          {row.values?.[Column.INVOCATION_URL] && (
+          {atiUrl && (
             <Link
-              href={String(row.values[Column.INVOCATION_URL])}
+              href={atiUrl}
               target="_blank"
               rel="noopener noreferrer"
               variant="caption"
@@ -161,18 +159,7 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
           >
             ATP
           </Link>
-          <Link
-            href={arcUrl.toString()}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="caption"
-            sx={{
-              fontWeight: (theme) => theme.typography.fontWeightBold,
-              textDecoration: 'none',
-            }}
-          >
-            ARC
-          </Link>
+
           {row.values?.[Column.PERFETTO_ARTIFACT_URL] && (
             <Link
               href={String(row.values[Column.PERFETTO_ARTIFACT_URL])}

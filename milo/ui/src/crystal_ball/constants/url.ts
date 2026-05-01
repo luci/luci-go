@@ -24,10 +24,10 @@ export const URL_SEARCH_QUERY_PARAM = 'q';
 export const ATP_BASE_URL = 'https://atp.corp.google.com';
 
 /**
- * URL for the ARC regression dashboard.
+ * Base URL for Invocation Details (ATI).
  */
-export const ARC_REGRESSION_DASHBOARD_URL =
-  'https://goto.google.com/arc_regression_dashboard';
+export const INVOCATION_BASE_URL =
+  'https://android-build.corp.google.com/test_investigate/invocation/';
 
 /**
  * Base URL for Android Build (AB).

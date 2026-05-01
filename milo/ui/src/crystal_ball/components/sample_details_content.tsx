@@ -149,6 +149,8 @@ export function SampleDetailsContent({
         Column.PERFETTO_ARTIFACT_URL,
         Column.SKU,
         Column.TEST_NAME,
+        Column.ANTS_INVOCATION_ID,
+        Column.ANTS_TEST_RESULT_ID,
       ],
     });
   }, [
