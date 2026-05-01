@@ -128,12 +128,12 @@ func NewVersionCache(fs fs.FileSystem, service string, useLegacyName LegacyVersi
 }
 
 func (c *VersionCache) lazyLoadLocked(ctx context.Context) (err error) {
-	// Lazy-load the cache the first time it is used. We reload it again in Save
-	// right before overwriting the file. We don't reload it anywhere else though,
-	// so the implementation essentially assumes Save is called relatively soon
-	// after ResolveTag call. If it's not the case, cache updates made by other
-	// processes will be "invisible" to the VersionCache. It still tries not to
-	// overwrite them in Save, so it's fine.
+	// Lazy-load the cache the first time it is used. We reload it again in Flush
+	// right before overwriting the file. We don't reload it anywhere else
+	// though, so the implementation essentially assumes Flush is called
+	// relatively soon after ResolveTag call. If it's not the case, cache updates
+	// made by other processes will be "invisible" to the VersionCache. It still
+	// tries not to overwrite them in Flush, so it's fine.
 	if c.cache == nil {
 		c.cache, err = c.loadFromDisk(ctx, false)
 	}
@@ -222,7 +222,7 @@ func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common
 
 // AddTag records that (pin.PackageName, tag) maps to pin.InstanceID.
 //
-// Call 'Save' later to persist these changes to the cache file on disk.
+// Call 'Flush' later to persist these changes to the cache file on disk.
 func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
@@ -238,7 +238,7 @@ func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) e
 		c.addedTags = make(map[tagKey]*messages.VersionCache_Entry, 1)
 	}
 
-	// 'Save' will merge this into 'c.cache' before dumping to disk.
+	// 'Flush' will merge this into 'c.cache' before dumping to disk.
 	c.addedTags[tagKey{pin.PackageName, tag}] = &messages.VersionCache_Entry{
 		Service:    c.service,
 		Package:    pin.PackageName,
@@ -255,7 +255,7 @@ func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) e
 // The hash is represented as ObjectRef, which is a tuple (hash algo, hex
 // digest).
 //
-// Call 'Save' later to persist these changes to the cache file on disk.
+// Call 'Flush' later to persist these changes to the cache file on disk.
 func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string, ref *caspb.ObjectRef) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
@@ -280,10 +280,11 @@ func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin
 	return nil
 }
 
-// Save stores all pending cache updates to the file system.
+// Flush flushes all pending cache updates to the file system.
 //
-// It effectively resets the object to the initial state.
-func (c *VersionCache) Save(ctx context.Context) error {
+// It effectively resets the object to the initial state (except that all saved
+// versions are treated as if they were just loaded from the disk).
+func (c *VersionCache) Flush(ctx context.Context) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -352,7 +353,7 @@ func (c *VersionCache) Save(ctx context.Context) error {
 
 	// Serialize and write to disk. We still can accidentally replace someone
 	// else's changes, but the probability should be relatively low. It can happen
-	// only if two processes call 'Save' at the exact same time.
+	// only if two processes call 'Flush' at the exact same time.
 	updated := &messages.VersionCache{Entries: mergedTags, FileEntries: mergedFiles}
 	if err := c.dumpToDiskLocked(ctx, updated); err != nil {
 		return err

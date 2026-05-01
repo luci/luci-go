@@ -871,7 +871,7 @@ var batchAwareOps = map[batchAwareOp]func(*clientImpl, context.Context){
 
 func (c *clientImpl) saveVersionCache(ctx context.Context) {
 	if c.versionCache != nil {
-		if err := c.versionCache.Save(ctx); err != nil {
+		if err := c.versionCache.Flush(ctx); err != nil {
 			logging.Warningf(ctx, "Failed to save tag cache: %s", err)
 		}
 	}

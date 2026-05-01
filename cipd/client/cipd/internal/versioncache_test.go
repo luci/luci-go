@@ -102,8 +102,8 @@ func TestVersionCacheWorks(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(2)))
 
-				// Save.
-				assert.Loosely(t, tc.Save(t.Context()), should.BeNil)
+				// Flush.
+				assert.Loosely(t, tc.Flush(t.Context()), should.BeNil)
 
 				// Load.
 				another := NewVersionCache(fs, "service.example.com", useLegacyName)
@@ -128,7 +128,7 @@ func TestVersionCacheWorks(t *testing.T) {
 				for i := range maxCachedExecutables {
 					assert.Loosely(t, tc.AddExtractedObjectRef(t.Context(), numberedPin(i), "filename", numberedObjRef(i)), should.BeNil)
 				}
-				assert.Loosely(t, tc.Save(t.Context()), should.BeNil)
+				assert.Loosely(t, tc.Flush(t.Context()), should.BeNil)
 
 				// Oldest tag is still resolvable.
 				pin, err := tc.ResolveTag(t.Context(), "pkg", "tag:0")
@@ -141,7 +141,7 @@ func TestVersionCacheWorks(t *testing.T) {
 				// Add one more tag. Should evict the oldest one.
 				assert.Loosely(t, tc.AddTag(t.Context(), cannedPin, "one_more_tag:0"), should.BeNil)
 				assert.Loosely(t, tc.AddExtractedObjectRef(t.Context(), numberedPin(maxCachedExecutables), "filename", numberedObjRef(maxCachedExecutables)), should.BeNil)
-				assert.Loosely(t, tc.Save(t.Context()), should.BeNil)
+				assert.Loosely(t, tc.Flush(t.Context()), should.BeNil)
 
 				// Oldest tag is evicted.
 				pin, err = tc.ResolveTag(t.Context(), "pkg", "tag:0")
@@ -177,8 +177,8 @@ func TestVersionCacheWorks(t *testing.T) {
 				assert.Loosely(t, tc2.AddTag(t.Context(), cannedPin, "tag:2"), should.BeNil)
 				assert.Loosely(t, tc2.AddExtractedObjectRef(t.Context(), numberedPin(1), "filename", numberedObjRef(1)), should.BeNil)
 
-				assert.Loosely(t, tc1.Save(t.Context()), should.BeNil)
-				assert.Loosely(t, tc2.Save(t.Context()), should.BeNil)
+				assert.Loosely(t, tc1.Flush(t.Context()), should.BeNil)
+				assert.Loosely(t, tc2.Flush(t.Context()), should.BeNil)
 
 				tc3 := NewVersionCache(fs, "service.example.com", useLegacyName)
 
@@ -208,13 +208,13 @@ func TestVersionCacheWorks(t *testing.T) {
 				assert.Loosely(t, tc2.AddTag(t.Context(), numberedPin(2), "tag:1"), should.BeNil)
 				assert.Loosely(t, tc2.AddExtractedObjectRef(t.Context(), numberedPin(1), "filename", numberedObjRef(20)), should.BeNil)
 
-				assert.Loosely(t, tc1.Save(t.Context()), should.BeNil)
-				assert.Loosely(t, tc2.Save(t.Context()), should.BeNil)
+				assert.Loosely(t, tc1.Flush(t.Context()), should.BeNil)
+				assert.Loosely(t, tc2.Flush(t.Context()), should.BeNil)
 
 				tc1 = NewVersionCache(fs, "service1.example.com", useLegacyName)
 				tc2 = NewVersionCache(fs, "service2.example.com", useLegacyName)
 
-				// Tags are resolvable. tc2.Save didn't overwrite tc1 data.
+				// Tags are resolvable. tc2.Flush didn't overwrite tc1 data.
 				pin, err := tc1.ResolveTag(t.Context(), "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(numberedPin(0)))
@@ -246,13 +246,13 @@ func TestVersionCacheWorks(t *testing.T) {
 func TestVersionCacheUpgrade(t *testing.T) {
 	fs := fs.NewFileSystem(t.TempDir(), "")
 
-	// Make a legacy cache with a tag and save it.
+	// Make a legacy cache with a tag and flush it.
 	tc := NewVersionCache(fs, "service.example.com", WriteLegacyVersionCacheName)
 	tc.AddTag(t.Context(), common.Pin{
 		PackageName: "pkg",
 		InstanceID:  strings.Repeat("a", 40),
 	}, "tag:1")
-	assert.NoErr(t, tc.Save(t.Context()))
+	assert.NoErr(t, tc.Flush(t.Context()))
 
 	// Legacy filename is there.
 	legacyPath, err := fs.RootRelToAbs(legacyVersionCacheName)
@@ -281,8 +281,8 @@ func TestVersionCacheUpgrade(t *testing.T) {
 		InstanceID:  strings.Repeat("b", 40),
 	}, "tag:2")
 
-	// Save the new cache.
-	assert.NoErr(t, another.Save(t.Context()))
+	// Flush the new cache.
+	assert.NoErr(t, another.Flush(t.Context()))
 
 	// New name is there.
 	currentPath, err := fs.RootRelToAbs(versionCacheName)
