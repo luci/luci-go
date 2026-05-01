@@ -17,3 +17,4 @@ export * from './editor_ui_provider';
 export * from './filters_clipboard_context';
 export * from './filters_clipboard_context_instance';
 export * from './toast_context';
+export * from './widget_portal_context';

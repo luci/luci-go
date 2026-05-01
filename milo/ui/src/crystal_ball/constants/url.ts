@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,3 +17,19 @@
  * SearchMeasurementsRequest.
  */
 export const URL_SEARCH_QUERY_PARAM = 'q';
+
+/**
+ * Base URL for ATP (Android Test Platform).
+ */
+export const ATP_BASE_URL = 'https://atp.corp.google.com';
+
+/**
+ * URL for the ARC regression dashboard.
+ */
+export const ARC_REGRESSION_DASHBOARD_URL =
+  'https://goto.google.com/arc_regression_dashboard';
+
+/**
+ * Base URL for Android Build (AB).
+ */
+export const AB_BASE_URL = 'https://goto.google.com/ab';

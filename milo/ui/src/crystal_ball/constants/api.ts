@@ -17,8 +17,20 @@
  */
 export enum Column {
   ATP_TEST_NAME = 'atp_test_name',
+  BOARD = 'board',
+  BUILD_BRANCH = 'build_branch',
+  BUILD_CREATION_TIMESTAMP = 'build_creation_timestamp',
   BUILD_ID = 'build_id',
+  BUILD_TARGET = 'build_target',
   BUILD_TYPE = 'build_type',
+  INVOCATION_COMPLETE_TIMESTAMP = 'invocation_complete_timestamp',
+  INVOCATION_URL = 'invocation_url',
+  METRIC_KEY = 'metric_key',
+  MODEL = 'model',
+  PERFETTO_ARTIFACT_URL = 'perfetto_artifact_url',
+  SKU = 'sku',
+  TEST_NAME = 'test_name',
+  VALUE = 'value',
 }
 
 /**

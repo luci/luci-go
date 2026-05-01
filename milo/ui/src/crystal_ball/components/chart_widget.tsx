@@ -18,14 +18,24 @@ import {
   Divider,
   Typography,
 } from '@mui/material';
-import { useCallback, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   ChartSeriesEditor,
   ChartTooltipParam,
   ChartWidgetToolbar,
   FilterEditor,
+  PointClickParams,
+  SampleDetailsContent,
   TimeSeriesChart,
+  WidgetSidePanel,
 } from '@/crystal_ball/components';
 import {
   CHECKBOX_FILTERS,
@@ -36,6 +46,7 @@ import {
   GROUP_BY_CONFIG,
   NUM_AGGREGATED_ROWS,
 } from '@/crystal_ball/constants';
+import { WidgetPortalContext } from '@/crystal_ball/context';
 import {
   useFetchDashboardWidgetData,
   EditorUiKeyPrefix,
@@ -67,6 +78,30 @@ import {
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
+ * Information about the selected point, used to display details and fetch raw samples.
+ */
+export interface SelectedPointInfo {
+  componentType: string;
+  seriesName: string;
+  x: number;
+  y: number;
+  count: number;
+  point?: Record<string, unknown>;
+  seriesId?: string;
+  seriesIndex?: number;
+}
+
+function isPointClickParams(params: unknown): params is PointClickParams {
+  return (
+    typeof params === 'object' &&
+    params !== null &&
+    'componentType' in params &&
+    'seriesName' in params &&
+    'data' in params
+  );
+}
+
+/**
  * Helper to get chart series based on chart type.
  */
 function getChartSeries(
@@ -83,13 +118,26 @@ function getChartSeries(
 
       return widgetResponse.invocationDistributionData.points
         .map((group, index) => {
-          const seriesConfig = widgetSeries?.find(
+          const seriesIndex = widgetSeries?.findIndex(
             (s) => s.displayName === group.legendLabel,
           );
+          const seriesConfig =
+            seriesIndex !== undefined && seriesIndex >= 0
+              ? widgetSeries?.[seriesIndex]
+              : undefined;
           return {
             name: group.legendLabel,
             data: (group.points ?? []).map(
-              (point): { x: number; y: number; count: number } => {
+              (
+                point,
+              ): {
+                x: number;
+                y: number;
+                count: number;
+                point?: Record<string, unknown>;
+                seriesId?: string;
+                seriesIndex?: number;
+              } => {
                 const xValue = point[xAxisKey];
                 let x: number;
                 if (typeof xValue === 'number') {
@@ -114,7 +162,17 @@ function getChartSeries(
                       : 0;
                 const countVal = point[NUM_AGGREGATED_ROWS];
                 const count = typeof countVal === 'number' ? countVal : 1;
-                return { x, y, count };
+                return {
+                  x,
+                  y,
+                  count,
+                  point,
+                  seriesId: seriesConfig?.id,
+                  seriesIndex:
+                    seriesIndex !== undefined && seriesIndex >= 0
+                      ? seriesIndex
+                      : undefined,
+                };
               },
             ),
             stroke: seriesConfig?.color ?? generateColor(index),
@@ -130,13 +188,26 @@ function getChartSeries(
 
       return widgetResponse.multiMetricChartData.lines
         .map((line, index) => {
-          const seriesConfig = widgetSeries?.find(
+          const seriesIndex = widgetSeries?.findIndex(
             (s) => s.displayName === line.legendLabel,
           );
+          const seriesConfig =
+            seriesIndex !== undefined && seriesIndex >= 0
+              ? widgetSeries?.[seriesIndex]
+              : undefined;
           return {
             name: line.legendLabel,
             data: isDataPointsValid(line.dataPoints, xAxisKey, yAxisKey)
-              ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey)
+              ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey).map(
+                  (pt) => ({
+                    ...pt,
+                    seriesId: seriesConfig?.id,
+                    seriesIndex:
+                      seriesIndex !== undefined && seriesIndex >= 0
+                        ? seriesIndex
+                        : undefined,
+                  }),
+                )
               : [],
             stroke: seriesConfig?.color ?? generateColor(index),
           };
@@ -169,6 +240,7 @@ export function ChartWidget({
   isLoadingFilterColumns,
   globalFilters,
   dataSpecs,
+  dashboardName,
 }: ChartWidgetProps) {
   const isDistribution = useMemo(
     () =>
@@ -179,6 +251,43 @@ export function ChartWidget({
 
   const [hiddenSeriesNames, setHiddenSeriesNames] = useState<Set<string>>(
     new Set(),
+  );
+  const [selectedPoint, setSelectedPoint] = useState<SelectedPointInfo | null>(
+    null,
+  );
+  const [isStale, setIsStale] = useState(false);
+  const portalContext = useContext(WidgetPortalContext);
+
+  const handlePointClick = useCallback(
+    (params: unknown) => {
+      if (isPointClickParams(params) && params.componentType === 'series') {
+        setIsStale(false);
+        const [x, y, count, rawPointStr, seriesId, seriesIndex] = params.data;
+        let point: Record<string, unknown> | undefined;
+        if (rawPointStr) {
+          try {
+            point = JSON.parse(rawPointStr);
+          } catch {
+            return;
+          }
+        }
+        setSelectedPoint({
+          componentType: params.componentType,
+          seriesName: params.seriesName,
+          x,
+          y,
+          count,
+          point,
+          seriesId,
+          seriesIndex,
+        });
+        portalContext?.setOpen(true);
+        if (portalContext?.isFolded) {
+          portalContext?.expand?.();
+        }
+      }
+    },
+    [portalContext],
   );
 
   const handleToggleVisibility = useCallback((seriesName: string) => {
@@ -365,6 +474,17 @@ export function ChartWidget({
       (widget.series?.length ?? 0) > 0,
   });
 
+  const selectedPointRef = useRef(selectedPoint);
+  useEffect(() => {
+    selectedPointRef.current = selectedPoint;
+  }, [selectedPoint]);
+
+  useEffect(() => {
+    if (selectedPointRef.current) {
+      setIsStale(true);
+    }
+  }, [widgetResponse]);
+
   const chartSeries = useMemo(
     () =>
       getChartSeries(
@@ -463,6 +583,8 @@ export function ChartWidget({
       }
 
       let result = `<strong>${xDisplay}</strong><br/>`;
+      result += `<div style="font-size: 12px; color: rgba(0, 0, 0, 0.6); margin-bottom: 4px;">`;
+      result += `${COMMON_MESSAGES.CLICK_POINT_TO_VIEW_SAMPLES}</div>`;
 
       items.forEach((item) => {
         const val = item.data[1];
@@ -470,7 +592,8 @@ export function ChartWidget({
 
         result += `${item.marker}${item.seriesName}: ${val.toLocaleString()}`;
         if (count !== undefined && count !== 0) {
-          result += ` (n=${count})`;
+          const unit = count === 1 ? 'sample' : 'samples';
+          result += ` (${count} ${unit}${isDistribution ? '' : ' aggregated'})`;
         }
         result += '<br/>';
       });
@@ -612,7 +735,34 @@ export function ChartWidget({
             tooltipFormatter={tooltipFormatter}
             xAxisMin={xAxisBounds.min}
             xAxisMax={xAxisBounds.max}
+            onPointClick={handlePointClick}
           />
+        )}
+        {selectedPoint && (
+          <WidgetSidePanel
+            title={COMMON_MESSAGES.POINT_DETAILS}
+            onClose={() => {
+              setSelectedPoint(null);
+              portalContext?.setOpen(false);
+            }}
+          >
+            {isStale ? (
+              <Box sx={{ p: 2 }}>
+                <Alert severity="warning">
+                  {COMMON_MESSAGES.CHART_CONFIG_CHANGED}
+                </Alert>
+              </Box>
+            ) : (
+              <SampleDetailsContent
+                selectedPoint={selectedPoint}
+                widgetId={widgetId}
+                widget={widget}
+                globalFilters={globalFilters}
+                dataSpecs={dataSpecs}
+                dashboardName={dashboardName}
+              />
+            )}
+          </WidgetSidePanel>
         )}
       </Box>
       <ChartSeriesEditor

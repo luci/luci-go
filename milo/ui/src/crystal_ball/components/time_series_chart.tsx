@@ -31,18 +31,50 @@ export interface TimeSeriesDataSet {
    * 'y' should be a number.
    * 'count' is the number of aggregated rows.
    */
-  data: Array<{ x: number; y: number; count: number }>;
+  data: Array<{
+    x: number;
+    y: number;
+    count: number;
+    point?: Record<string, unknown>;
+    seriesId?: string;
+    seriesIndex?: number;
+  }>;
   /**
    * CSS color for the line.
    */
   stroke: string;
 }
 
+/**
+ * Parameters for the chart tooltip, provided by ECharts.
+ */
 export interface ChartTooltipParam {
   axisValue: string | number;
   marker: string;
   seriesName: string;
   data: [number, number, number?];
+}
+
+/**
+ * Parameters provided by the chart component when a data point is clicked.
+ */
+export interface PointClickParams {
+  componentType: string;
+  seriesName: string;
+  data: [number, number, number, string?, string?, number?];
+}
+
+/**
+ * Type guard to check if an object is PointClickParams.
+ */
+function isPointClickParams(params: unknown): params is PointClickParams {
+  return (
+    typeof params === 'object' &&
+    params !== null &&
+    'componentType' in params &&
+    'seriesName' in params &&
+    'data' in params
+  );
 }
 
 function isChartTooltipParam(obj: unknown): obj is ChartTooltipParam {
@@ -105,6 +137,10 @@ interface TimeSeriesChartProps {
    * Optional explicit max value for X-axis.
    */
   xAxisMax?: number;
+  /**
+   * Optional callback when a data point is clicked.
+   */
+  onPointClick?: (params: PointClickParams) => void;
 }
 
 /**
@@ -241,6 +277,7 @@ export function TimeSeriesChart({
   tooltipFormatter,
   xAxisMin,
   xAxisMax,
+  onPointClick,
 }: TimeSeriesChartProps) {
   const theme = useTheme();
 
@@ -338,21 +375,30 @@ export function TimeSeriesChart({
         ...BASE_OPTION.yAxis,
         name: yAxisLabel,
       },
-      series: series.map((s) => ({
-        name: s.name,
-        type: chartType,
-        smooth: false,
-        showSymbol: chartType === 'scatter' || s.data.length === 1,
-        data: s.data.map((pt) => [pt.x, pt.y, pt.count]),
-        itemStyle: { color: s.stroke },
-        clip: true,
-        valueFormatter: (val: number | string) => {
-          if (typeof val === 'number') {
-            return val.toLocaleString();
-          }
-          return val;
-        },
-      })),
+      series: series.map((s) => {
+        const common = {
+          name: s.name,
+          smooth: false,
+          showSymbol: chartType === 'scatter' || s.data.length === 1,
+          data: s.data.map((pt) => [
+            pt.x,
+            pt.y,
+            pt.count,
+            pt.point ? JSON.stringify(pt.point) : '',
+            pt.seriesId,
+            pt.seriesIndex,
+          ]),
+          itemStyle: { color: s.stroke },
+          clip: true,
+          valueFormatter: (val: number | string) => {
+            if (typeof val === 'number') {
+              return val.toLocaleString();
+            }
+            return val;
+          },
+        };
+        return { ...common, type: chartType };
+      }),
     };
   }, [
     series,
@@ -366,6 +412,17 @@ export function TimeSeriesChart({
     xAxisMax,
   ]);
 
+  const onEvents = useMemo(
+    () => ({
+      click: (params: unknown) => {
+        if (onPointClick && isPointClickParams(params)) {
+          onPointClick(params);
+        }
+      },
+    }),
+    [onPointClick],
+  );
+
   return (
     <Box
       data-testid="time-series-chart"
@@ -377,7 +434,12 @@ export function TimeSeriesChart({
         overflow: 'hidden',
       }}
     >
-      <ReactECharts option={option} style={CHART_STYLE} notMerge={true} />
+      <ReactECharts
+        option={option}
+        style={CHART_STYLE}
+        notMerge={true}
+        onEvents={onEvents}
+      />
     </Box>
   );
 }

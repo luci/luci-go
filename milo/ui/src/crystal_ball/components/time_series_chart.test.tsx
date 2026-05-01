@@ -35,6 +35,7 @@ interface MockEChartsProps
     series: {
       name: string;
       clip?: boolean;
+      data?: Array<[number, number, number, string?, string?, number?]>;
     }[];
     xAxis?: {
       type: string;
@@ -219,5 +220,63 @@ describe('TimeSeriesChart', () => {
 
     expect(option.series).toBeDefined();
     expect(option.series[0]?.clip).toBe(true);
+  });
+
+  test('calls onPointClick when a point is clicked', () => {
+    const mockOnPointClick = jest.fn();
+    render(
+      <TimeSeriesChart series={mockSeries} onPointClick={mockOnPointClick} />,
+    );
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const onEvents = lastCallProps.onEvents;
+
+    expect(onEvents).toBeDefined();
+    expect(onEvents!.click).toBeDefined();
+
+    const mockParams = {
+      componentType: 'series',
+      seriesName: 'mock_series',
+      data: [1000, 50, 1],
+    };
+    onEvents!.click(mockParams);
+
+    expect(mockOnPointClick).toHaveBeenCalledWith(mockParams);
+  });
+
+  test('passes extra data fields to ECharts series data', () => {
+    const mockSeriesWithExtras: TimeSeriesDataSet[] = [
+      {
+        name: 'Metric A',
+        data: [
+          {
+            x: 1000,
+            y: 10,
+            count: 1,
+            point: { foo: 'bar' },
+            seriesId: 's1',
+            seriesIndex: 0,
+          },
+        ],
+        stroke: '#8884d8',
+      },
+    ];
+
+    render(<TimeSeriesChart series={mockSeriesWithExtras} />);
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const option = lastCallProps.option;
+
+    expect(option.series).toBeDefined();
+    const seriesData = option.series[0]?.data;
+    expect(seriesData).toBeDefined();
+    expect(seriesData![0]).toEqual([
+      1000,
+      10,
+      1,
+      JSON.stringify({ foo: 'bar' }),
+      's1',
+      0,
+    ]);
   });
 });

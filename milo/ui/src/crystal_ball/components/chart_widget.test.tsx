@@ -416,8 +416,22 @@ describe('ChartWidget', () => {
     expect(screen.getByTestId('time-series-chart')).toBeInTheDocument();
     expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
     expect(MockTimeSeriesChart.mock.calls[0][0].series[0].data).toEqual([
-      { x: 1000, y: 10, count: 1 },
-      { x: 2000, y: 20, count: 1 },
+      {
+        x: 1000,
+        y: 10,
+        count: 1,
+        point: { timestamp: 1000, value: 10 },
+        seriesId: undefined,
+        seriesIndex: undefined,
+      },
+      {
+        x: 2000,
+        y: 20,
+        count: 1,
+        point: { timestamp: 2000, value: 20 },
+        seriesId: undefined,
+        seriesIndex: undefined,
+      },
     ]);
   });
 
@@ -598,8 +612,22 @@ describe('ChartWidget', () => {
     expect(MockTimeSeriesChart).toHaveBeenCalledTimes(1);
     const lastCallProps = MockTimeSeriesChart.mock.lastCall![0];
     expect(lastCallProps.series[0].data).toEqual([
-      { x: 1000, y: 10, count: 1 },
-      { x: 2000, y: 20, count: 1 },
+      {
+        x: 1000,
+        y: 10,
+        count: 1,
+        point: { timestamp: 1000, value: 10 },
+        seriesId: undefined,
+        seriesIndex: undefined,
+      },
+      {
+        x: 2000,
+        y: 20,
+        count: 1,
+        point: { timestamp: 2000, value: 20 },
+        seriesId: undefined,
+        seriesIndex: undefined,
+      },
     ]);
     expect(lastCallProps.chartType).toBe('scatter');
   });
@@ -640,8 +668,22 @@ describe('ChartWidget', () => {
     const expectedTime2 = Date.parse('2026-04-04T11:00:00Z');
     const lastCallProps = MockTimeSeriesChart.mock.lastCall![0];
     expect(lastCallProps.series[0].data).toEqual([
-      { x: expectedTime1, y: 10, count: 1 },
-      { x: expectedTime2, y: 20, count: 1 },
+      {
+        x: expectedTime1,
+        y: 10,
+        count: 1,
+        point: { timestamp: '2026-04-04T10:00:00Z', value: 10 },
+        seriesId: undefined,
+        seriesIndex: undefined,
+      },
+      {
+        x: expectedTime2,
+        y: 20,
+        count: 1,
+        point: { timestamp: '2026-04-04T11:00:00Z', value: 20 },
+        seriesId: undefined,
+        seriesIndex: undefined,
+      },
     ]);
   });
 

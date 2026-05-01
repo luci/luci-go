@@ -23,7 +23,7 @@ import {
  * Returns a safe chart type from the given chart type.
  */
 export function getSafeChartType(
-  chartType: unknown,
+  chartType: string | number | undefined | null,
 ): PerfChartWidget_ChartType {
   if (
     (typeof chartType === 'string' || typeof chartType === 'number') &&
@@ -81,7 +81,12 @@ export function dataPointsToData(
   dataPoints: { [axisDataKey: string]: number | string }[],
   xAxisDataKey: string,
   yAxisDataKey: string,
-): Array<{ x: number; y: number; count: number }> {
+): Array<{
+  x: number;
+  y: number;
+  count: number;
+  point?: Record<string, unknown>;
+}> {
   return dataPoints.map((pt) => {
     const xValue = pt[xAxisDataKey];
     let x: number;
@@ -109,6 +114,6 @@ export function dataPointsToData(
     const countVal = pt[NUM_AGGREGATED_ROWS];
     const count = typeof countVal === 'number' ? countVal : 1;
 
-    return { x, y, count };
+    return { x, y, count, point: pt };
   });
 }

@@ -15,30 +15,40 @@
 import {
   ArrowDownward as ArrowDownwardIcon,
   ArrowUpward as ArrowUpwardIcon,
-  LibraryAdd as LibraryAddIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  LibraryAdd as LibraryAddIcon,
 } from '@mui/icons-material';
 import {
+  Box,
   Button,
   Card,
-  CardHeader,
   CardContent,
+  CardHeader,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
   IconButton,
-  Box,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useRef, useState } from 'react';
+import {
+  ImperativePanelHandle,
+  Panel,
+  PanelGroup,
+  PanelResizeHandle,
+} from 'react-resizable-panels';
 
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
+import { WidgetPortalContext } from '@/crystal_ball/context';
 
+/**
+ * Props for the WidgetContainer component.
+ */
 export interface WidgetContainerProps {
   title: string;
   children: ReactNode;
@@ -97,161 +107,245 @@ export function WidgetContainer({
     }
   };
 
+  const [isOpen, setOpen] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLDivElement | null>(null);
+  const [isFolded, setIsFolded] = useState(false);
+  const sidePanelRef = useRef<ImperativePanelHandle>(null);
+  const [previousSize, setPreviousSize] = useState(30);
+  const fold = () => sidePanelRef.current?.resize(5);
+  const expand = () => sidePanelRef.current?.resize(previousSize);
+
   return (
-    <Card variant="outlined" sx={{ width: '100%', mb: 2, minWidth: 0 }}>
-      <CardHeader
+    <WidgetPortalContext.Provider
+      value={{ target: portalTarget, setOpen, isOpen, isFolded, fold, expand }}
+    >
+      <Box
         sx={{
-          px: 2,
-          py: 1.5,
-          '& .MuiCardHeader-action': { alignSelf: 'center', m: 0 },
-          '&:hover .title-edit-btn': { opacity: 1 },
+          display: 'flex',
+          position: 'relative',
+          gap: 1,
+          marginBottom: '16px',
         }}
-        title={
-          isEditingTitle ? (
-            <TextField
-              value={editedTitle}
-              onChange={(e) => setEditedTitle(e.target.value)}
-              onBlur={handleTitleSubmit}
-              onKeyDown={handleKeyDown}
-              size="small"
-              variant="standard"
-              sx={{
-                '& .MuiInputBase-input': {
-                  fontSize: (theme) => theme.typography.body1.fontSize,
-                  fontWeight: (theme) => theme.typography.fontWeightMedium,
-                },
-              }}
-            />
-          ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography
-                variant="body1"
+      >
+        <PanelGroup direction="horizontal" style={{ flex: 1 }}>
+          <Panel defaultSize={isOpen && !isFolded ? 70 : 100} minSize={30}>
+            <Card variant="outlined" sx={{ width: '100%', minWidth: 0 }}>
+              <CardHeader
                 sx={{
-                  fontWeight: (theme) => theme.typography.fontWeightMedium,
+                  px: 2,
+                  py: 1.5,
+                  '& .MuiCardHeader-action': { alignSelf: 'center', m: 0 },
+                  '&:hover .title-edit-btn': { opacity: 1 },
                 }}
-              >
-                {title}
-              </Typography>
-              {onTitleChange && (
-                <Tooltip title={COMMON_MESSAGES.EDIT_TITLE}>
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      setEditedTitle(title);
-                      setIsEditingTitle(true);
-                    }}
-                    aria-label={`Edit title ${title}`}
-                    className="title-edit-btn"
-                    sx={{
-                      width: 24,
-                      height: 24,
-                      opacity: 0,
-                      transition: 'opacity 0.2s',
-                    }}
-                  >
-                    <EditIcon
-                      fontSize="small"
-                      sx={{ color: 'text.secondary' }}
+                title={
+                  isEditingTitle ? (
+                    <TextField
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      onBlur={handleTitleSubmit}
+                      onKeyDown={handleKeyDown}
+                      size="small"
+                      variant="standard"
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          fontSize: (theme) => theme.typography.body1.fontSize,
+                          fontWeight: (theme) =>
+                            theme.typography.fontWeightMedium,
+                        },
+                      }}
                     />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-          )
-        }
-        action={
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
-            {onMoveUp && (
-              <Tooltip title={COMMON_MESSAGES.MOVE_UP}>
-                <span>
-                  <IconButton
-                    size="small"
-                    onClick={onMoveUp}
-                    disabled={disableMoveUp}
-                    aria-label={`Move ${title} up`}
-                  >
-                    <ArrowUpwardIcon fontSize="small" />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-            {onMoveDown && (
-              <Tooltip title={COMMON_MESSAGES.MOVE_DOWN}>
-                <span>
-                  <IconButton
-                    size="small"
-                    onClick={onMoveDown}
-                    disabled={disableMoveDown}
-                    aria-label={`Move ${title} down`}
-                  >
-                    <ArrowDownwardIcon fontSize="small" />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-            {onDuplicate && (
-              <Tooltip title={COMMON_MESSAGES.DUPLICATE}>
-                <IconButton
-                  size="small"
-                  onClick={onDuplicate}
-                  aria-label={`Duplicate ${title}`}
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: (theme) =>
+                            theme.typography.fontWeightMedium,
+                        }}
+                      >
+                        {title}
+                      </Typography>
+                      {onTitleChange && (
+                        <Tooltip title={COMMON_MESSAGES.EDIT_TITLE}>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setEditedTitle(title);
+                              setIsEditingTitle(true);
+                            }}
+                            aria-label={`Edit title ${title}`}
+                            className="title-edit-btn"
+                            sx={{
+                              width: 24,
+                              height: 24,
+                              opacity: 0,
+                              transition: 'opacity 0.2s',
+                            }}
+                          >
+                            <EditIcon
+                              fontSize="small"
+                              sx={{ color: 'text.secondary' }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+                  )
+                }
+                action={
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    {onMoveUp && (
+                      <Tooltip title={COMMON_MESSAGES.MOVE_UP}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            onClick={onMoveUp}
+                            disabled={disableMoveUp}
+                            aria-label={`Move ${title} up`}
+                          >
+                            <ArrowUpwardIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
+                    {onMoveDown && (
+                      <Tooltip title={COMMON_MESSAGES.MOVE_DOWN}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            onClick={onMoveDown}
+                            disabled={disableMoveDown}
+                            aria-label={`Move ${title} down`}
+                          >
+                            <ArrowDownwardIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
+                    {onDuplicate && (
+                      <Tooltip title={COMMON_MESSAGES.DUPLICATE}>
+                        <IconButton
+                          size="small"
+                          onClick={onDuplicate}
+                          aria-label={`Duplicate ${title}`}
+                        >
+                          <LibraryAddIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {onDelete && (
+                      <Tooltip title={COMMON_MESSAGES.DELETE}>
+                        <IconButton
+                          size="small"
+                          onClick={() => setDeleteDialogOpen(true)}
+                          aria-label={`Delete ${title}`}
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
+                }
+              />
+              <Divider />
+              <CardContent
+                sx={
+                  disablePadding
+                    ? { p: 0, '&:last-child': { pb: 0 } }
+                    : { p: 2, '&:last-child': { pb: 2 } }
+                }
+              >
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0, 1fr)',
+                  }}
                 >
-                  <LibraryAddIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {onDelete && (
-              <Tooltip title={COMMON_MESSAGES.DELETE}>
-                <IconButton
-                  size="small"
-                  onClick={() => setDeleteDialogOpen(true)}
-                  aria-label={`Delete ${title}`}
-                  sx={{ color: 'text.secondary' }}
+                  {children}
+                </Box>
+              </CardContent>
+              <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+              >
+                <DialogTitle>Delete Widget</DialogTitle>
+                <DialogContent>
+                  <Typography>
+                    Are you sure you want to delete this widget?
+                  </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, pt: 0 }}>
+                  <Button
+                    onClick={() => setDeleteDialogOpen(false)}
+                    color="inherit"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setDeleteDialogOpen(false);
+                      onDelete?.();
+                    }}
+                    color="error"
+                    variant="contained"
+                    disableElevation
+                  >
+                    Delete
+                  </Button>
+                </DialogActions>
+              </Dialog>
+            </Card>
+          </Panel>
+          {isOpen && (
+            <>
+              <PanelResizeHandle>
+                <Box
+                  sx={{
+                    width: '8px',
+                    height: '100%',
+                    cursor: 'col-resize',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'action.hover',
+                    '&:hover': { bgcolor: 'action.selected' },
+                  }}
                 >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-        }
-      />
-      <Divider />
-      <CardContent
-        sx={
-          disablePadding
-            ? { p: 0, '&:last-child': { pb: 0 } }
-            : { p: 2, '&:last-child': { pb: 2 } }
-        }
-      >
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)' }}>
-          {children}
-        </Box>
-      </CardContent>
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-      >
-        <DialogTitle>Delete Widget</DialogTitle>
-        <DialogContent>
-          <Typography>Are you sure you want to delete this widget?</Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              setDeleteDialogOpen(false);
-              onDelete?.();
-            }}
-            color="error"
-            variant="contained"
-            disableElevation
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Card>
+                  <Box
+                    sx={{ width: '2px', height: '24px', bgcolor: 'divider' }}
+                  />
+                </Box>
+              </PanelResizeHandle>
+              <Panel
+                ref={sidePanelRef}
+                defaultSize={30}
+                minSize={5}
+                collapsible={false}
+                onResize={(size) => {
+                  setIsFolded(size <= 5);
+                  if (size > 5) {
+                    setPreviousSize(size);
+                  }
+                }}
+                style={{ position: 'relative' }}
+              >
+                <Box
+                  ref={setPortalTarget}
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    overflow: 'hidden',
+                  }}
+                />
+              </Panel>
+            </>
+          )}
+        </PanelGroup>
+      </Box>
+    </WidgetPortalContext.Provider>
   );
 }

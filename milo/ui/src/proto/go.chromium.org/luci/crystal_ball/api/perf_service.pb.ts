@@ -1956,6 +1956,101 @@ export interface GenerateDashboardStateResponse {
   readonly dashboardState: DashboardState | undefined;
 }
 
+/**
+ * Request message for fetching raw samples for a specific widget.
+ * This is typically used when a user clicks on a point in a chart or a row in a
+ * table and wants to see the underlying raw data that contributed to that
+ * aggregated value.
+ *
+ * Note: If both 'name' and 'dashboard_content' are provided,
+ * 'dashboard_content' takes precedence. This supports REST transcoding where
+ * the URL path maps to 'name' and the body contains 'dashboard_content'.
+ */
+export interface FetchWidgetRawSamplesRequest {
+  /**
+   * The resource name of the DashboardState to fetch data from.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly name: string;
+  /**
+   * The core content of the dashboard to fetch data from.
+   * Useful for previewing unsaved changes or when the dashboard is not yet
+   * saved.
+   */
+  readonly dashboardContent:
+    | PerfDashboardContent
+    | undefined;
+  /** The ID of the widget within the dashboard to fetch data for. */
+  readonly widgetId: string;
+  /**
+   * The ID of the specific series within the widget.
+   * If provided, the backend applies filters specific to this series.
+   * This field takes precedence over `series_index`.
+   */
+  readonly seriesId: string;
+  /**
+   * The 0-based index of the specific series within the widget.
+   * Used only if `series_id` is not provided.
+   * Either `series_id` or `series_index` must be provided when the widget has
+   * multiple series to disambiguate which series' filters to apply.
+   */
+  readonly seriesIndex?:
+    | number
+    | undefined;
+  /**
+   * Context identifying the clicked point or row.
+   * This maps dimension names to their values at the selected point.
+   * The backend uses this to filter the raw samples to match the selected
+   * point. Example: {"build_id": "12345", "test_name": "my_test"}
+   */
+  readonly selectionContext: { [key: string]: string };
+  /**
+   * Optional. Extra columns to return in the response.
+   * By default, only a set of essential columns are returned.
+   */
+  readonly extraColumns: readonly string[];
+  /**
+   * Optional. Sorting order for the returned samples.
+   * Standard format is a comma-separated list of fields with an optional "
+   * desc" suffix.
+   */
+  readonly orderBy: string;
+  /**
+   * Optional. The maximum number of results to return. The service may return
+   * fewer than this value. If unspecified, at most 50 samples will be returned.
+   */
+  readonly pageSize: number;
+  /**
+   * Optional. A page token, received from a previous `FetchWidgetRawSamples`
+   * call. Provide this to retrieve the subsequent page.
+   */
+  readonly pageToken: string;
+}
+
+export interface FetchWidgetRawSamplesRequest_SelectionContextEntry {
+  readonly key: string;
+  readonly value: string;
+}
+
+/** Response message for the FetchWidgetRawSamples method. */
+export interface FetchWidgetRawSamplesResponse {
+  /** The raw measurement rows. */
+  readonly rows: readonly RawSampleRow[];
+  /** A token, which can be sent as `page_token` to retrieve the next page. */
+  readonly nextPageToken: string;
+}
+
+/** Row message for holding the raw sample results. */
+export interface RawSampleRow {
+  /** Known or requested standard columns. */
+  readonly values: { [key: string]: any | undefined };
+}
+
+export interface RawSampleRow_ValuesEntry {
+  readonly key: string;
+  readonly value: any | undefined;
+}
+
 function createBaseTestConnectionRequest(): TestConnectionRequest {
   return {};
 }
@@ -8736,6 +8831,571 @@ export const GenerateDashboardStateResponse: MessageFns<GenerateDashboardStateRe
   },
 };
 
+function createBaseFetchWidgetRawSamplesRequest(): FetchWidgetRawSamplesRequest {
+  return {
+    name: "",
+    dashboardContent: undefined,
+    widgetId: "",
+    seriesId: "",
+    seriesIndex: undefined,
+    selectionContext: {},
+    extraColumns: [],
+    orderBy: "",
+    pageSize: 0,
+    pageToken: "",
+  };
+}
+
+export const FetchWidgetRawSamplesRequest: MessageFns<FetchWidgetRawSamplesRequest> = {
+  encode(message: FetchWidgetRawSamplesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.dashboardContent !== undefined) {
+      PerfDashboardContent.encode(message.dashboardContent, writer.uint32(18).fork()).join();
+    }
+    if (message.widgetId !== "") {
+      writer.uint32(26).string(message.widgetId);
+    }
+    if (message.seriesId !== "") {
+      writer.uint32(34).string(message.seriesId);
+    }
+    if (message.seriesIndex !== undefined) {
+      writer.uint32(40).int32(message.seriesIndex);
+    }
+    Object.entries(message.selectionContext).forEach(([key, value]) => {
+      FetchWidgetRawSamplesRequest_SelectionContextEntry.encode({ key: key as any, value }, writer.uint32(50).fork())
+        .join();
+    });
+    for (const v of message.extraColumns) {
+      writer.uint32(58).string(v!);
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(66).string(message.orderBy);
+    }
+    if (message.pageSize !== 0) {
+      writer.uint32(72).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(82).string(message.pageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FetchWidgetRawSamplesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFetchWidgetRawSamplesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dashboardContent = PerfDashboardContent.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.widgetId = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.seriesId = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.seriesIndex = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          const entry6 = FetchWidgetRawSamplesRequest_SelectionContextEntry.decode(reader, reader.uint32());
+          if (entry6.value !== undefined) {
+            message.selectionContext[entry6.key] = entry6.value;
+          }
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.extraColumns.push(reader.string());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FetchWidgetRawSamplesRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      dashboardContent: isSet(object.dashboardContent)
+        ? PerfDashboardContent.fromJSON(object.dashboardContent)
+        : undefined,
+      widgetId: isSet(object.widgetId) ? globalThis.String(object.widgetId) : "",
+      seriesId: isSet(object.seriesId) ? globalThis.String(object.seriesId) : "",
+      seriesIndex: isSet(object.seriesIndex) ? globalThis.Number(object.seriesIndex) : undefined,
+      selectionContext: isObject(object.selectionContext)
+        ? Object.entries(object.selectionContext).reduce<{ [key: string]: string }>((acc, [key, value]) => {
+          acc[key] = String(value);
+          return acc;
+        }, {})
+        : {},
+      extraColumns: globalThis.Array.isArray(object?.extraColumns)
+        ? object.extraColumns.map((e: any) => globalThis.String(e))
+        : [],
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+    };
+  },
+
+  toJSON(message: FetchWidgetRawSamplesRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.dashboardContent !== undefined) {
+      obj.dashboardContent = PerfDashboardContent.toJSON(message.dashboardContent);
+    }
+    if (message.widgetId !== "") {
+      obj.widgetId = message.widgetId;
+    }
+    if (message.seriesId !== "") {
+      obj.seriesId = message.seriesId;
+    }
+    if (message.seriesIndex !== undefined) {
+      obj.seriesIndex = Math.round(message.seriesIndex);
+    }
+    if (message.selectionContext) {
+      const entries = Object.entries(message.selectionContext);
+      if (entries.length > 0) {
+        obj.selectionContext = {};
+        entries.forEach(([k, v]) => {
+          obj.selectionContext[k] = v;
+        });
+      }
+    }
+    if (message.extraColumns?.length) {
+      obj.extraColumns = message.extraColumns;
+    }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<FetchWidgetRawSamplesRequest>): FetchWidgetRawSamplesRequest {
+    return FetchWidgetRawSamplesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<FetchWidgetRawSamplesRequest>): FetchWidgetRawSamplesRequest {
+    const message = createBaseFetchWidgetRawSamplesRequest() as any;
+    message.name = object.name ?? "";
+    message.dashboardContent = (object.dashboardContent !== undefined && object.dashboardContent !== null)
+      ? PerfDashboardContent.fromPartial(object.dashboardContent)
+      : undefined;
+    message.widgetId = object.widgetId ?? "";
+    message.seriesId = object.seriesId ?? "";
+    message.seriesIndex = object.seriesIndex ?? undefined;
+    message.selectionContext = Object.entries(object.selectionContext ?? {}).reduce<{ [key: string]: string }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = globalThis.String(value);
+        }
+        return acc;
+      },
+      {},
+    );
+    message.extraColumns = object.extraColumns?.map((e) => e) || [];
+    message.orderBy = object.orderBy ?? "";
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseFetchWidgetRawSamplesRequest_SelectionContextEntry(): FetchWidgetRawSamplesRequest_SelectionContextEntry {
+  return { key: "", value: "" };
+}
+
+export const FetchWidgetRawSamplesRequest_SelectionContextEntry: MessageFns<
+  FetchWidgetRawSamplesRequest_SelectionContextEntry
+> = {
+  encode(
+    message: FetchWidgetRawSamplesRequest_SelectionContextEntry,
+    writer: BinaryWriter = new BinaryWriter(),
+  ): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FetchWidgetRawSamplesRequest_SelectionContextEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFetchWidgetRawSamplesRequest_SelectionContextEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FetchWidgetRawSamplesRequest_SelectionContextEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: FetchWidgetRawSamplesRequest_SelectionContextEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(
+    base?: DeepPartial<FetchWidgetRawSamplesRequest_SelectionContextEntry>,
+  ): FetchWidgetRawSamplesRequest_SelectionContextEntry {
+    return FetchWidgetRawSamplesRequest_SelectionContextEntry.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<FetchWidgetRawSamplesRequest_SelectionContextEntry>,
+  ): FetchWidgetRawSamplesRequest_SelectionContextEntry {
+    const message = createBaseFetchWidgetRawSamplesRequest_SelectionContextEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
+    return message;
+  },
+};
+
+function createBaseFetchWidgetRawSamplesResponse(): FetchWidgetRawSamplesResponse {
+  return { rows: [], nextPageToken: "" };
+}
+
+export const FetchWidgetRawSamplesResponse: MessageFns<FetchWidgetRawSamplesResponse> = {
+  encode(message: FetchWidgetRawSamplesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.rows) {
+      RawSampleRow.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): FetchWidgetRawSamplesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseFetchWidgetRawSamplesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.rows.push(RawSampleRow.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): FetchWidgetRawSamplesResponse {
+    return {
+      rows: globalThis.Array.isArray(object?.rows) ? object.rows.map((e: any) => RawSampleRow.fromJSON(e)) : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: FetchWidgetRawSamplesResponse): unknown {
+    const obj: any = {};
+    if (message.rows?.length) {
+      obj.rows = message.rows.map((e) => RawSampleRow.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<FetchWidgetRawSamplesResponse>): FetchWidgetRawSamplesResponse {
+    return FetchWidgetRawSamplesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<FetchWidgetRawSamplesResponse>): FetchWidgetRawSamplesResponse {
+    const message = createBaseFetchWidgetRawSamplesResponse() as any;
+    message.rows = object.rows?.map((e) => RawSampleRow.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseRawSampleRow(): RawSampleRow {
+  return { values: {} };
+}
+
+export const RawSampleRow: MessageFns<RawSampleRow> = {
+  encode(message: RawSampleRow, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    Object.entries(message.values).forEach(([key, value]) => {
+      if (value !== undefined) {
+        RawSampleRow_ValuesEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
+      }
+    });
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RawSampleRow {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRawSampleRow() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = RawSampleRow_ValuesEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.values[entry1.key] = entry1.value;
+          }
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RawSampleRow {
+    return {
+      values: isObject(object.values)
+        ? Object.entries(object.values).reduce<{ [key: string]: any | undefined }>((acc, [key, value]) => {
+          acc[key] = value as any | undefined;
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: RawSampleRow): unknown {
+    const obj: any = {};
+    if (message.values) {
+      const entries = Object.entries(message.values);
+      if (entries.length > 0) {
+        obj.values = {};
+        entries.forEach(([k, v]) => {
+          obj.values[k] = v;
+        });
+      }
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RawSampleRow>): RawSampleRow {
+    return RawSampleRow.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RawSampleRow>): RawSampleRow {
+    const message = createBaseRawSampleRow() as any;
+    message.values = Object.entries(object.values ?? {}).reduce<{ [key: string]: any | undefined }>(
+      (acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {},
+    );
+    return message;
+  },
+};
+
+function createBaseRawSampleRow_ValuesEntry(): RawSampleRow_ValuesEntry {
+  return { key: "", value: undefined };
+}
+
+export const RawSampleRow_ValuesEntry: MessageFns<RawSampleRow_ValuesEntry> = {
+  encode(message: RawSampleRow_ValuesEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      Value.encode(Value.wrap(message.value), writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RawSampleRow_ValuesEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRawSampleRow_ValuesEntry() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = Value.unwrap(Value.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): RawSampleRow_ValuesEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object?.value) ? object.value : undefined,
+    };
+  },
+
+  toJSON(message: RawSampleRow_ValuesEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<RawSampleRow_ValuesEntry>): RawSampleRow_ValuesEntry {
+    return RawSampleRow_ValuesEntry.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<RawSampleRow_ValuesEntry>): RawSampleRow_ValuesEntry {
+    const message = createBaseRawSampleRow_ValuesEntry() as any;
+    message.key = object.key ?? "";
+    message.value = object.value ?? undefined;
+    return message;
+  },
+};
+
 /** Service for Android performance-related data. */
 export interface PerfService {
   /** RPC for getting CrystalBall measurements. */
@@ -8801,6 +9461,22 @@ export interface PerfService {
    * --)
    */
   FetchDashboardWidgetData(request: FetchDashboardWidgetDataRequest): Promise<FetchDashboardWidgetDataResponse>;
+  /**
+   * Fetches raw samples for a specific point in a dashboard widget on-demand.
+   * This method applies all relevant filters to return the underlying raw data.
+   * (-- api-linter: core::0131::synonyms=disabled
+   *     aip.dev/not-precedent: This is a custom method to fetch data for a
+   *     specific widget within a dashboard, not a standard Get on a resource.
+   *     It requires additional parameters like widget_id and selection context.
+   * --)
+   * (-- api-linter: core::0136::http-method=disabled
+   *     aip.dev/not-precedent: This method uses POST instead of GET because
+   *     the request message includes the 'dashboard_content' field, which can
+   *     be large and complex. This data must be sent in the request body,
+   *     which is only supported by POST, not GET, as per AIP-136.
+   * --)
+   */
+  FetchWidgetRawSamples(request: FetchWidgetRawSamplesRequest): Promise<FetchWidgetRawSamplesResponse>;
   /** Lists revisions of a DashboardState. */
   ListDashboardStateRevisions(
     request: ListDashboardStateRevisionsRequest,
@@ -8857,6 +9533,7 @@ export class PerfServiceClientImpl implements PerfService {
     this.DeleteDashboardState = this.DeleteDashboardState.bind(this);
     this.UndeleteDashboardState = this.UndeleteDashboardState.bind(this);
     this.FetchDashboardWidgetData = this.FetchDashboardWidgetData.bind(this);
+    this.FetchWidgetRawSamples = this.FetchWidgetRawSamples.bind(this);
     this.ListDashboardStateRevisions = this.ListDashboardStateRevisions.bind(this);
     this.GetDashboardStateRevision = this.GetDashboardStateRevision.bind(this);
     this.RollbackDashboardState = this.RollbackDashboardState.bind(this);
@@ -8940,6 +9617,12 @@ export class PerfServiceClientImpl implements PerfService {
     const data = FetchDashboardWidgetDataRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "FetchDashboardWidgetData", data);
     return promise.then((data) => FetchDashboardWidgetDataResponse.fromJSON(data));
+  }
+
+  FetchWidgetRawSamples(request: FetchWidgetRawSamplesRequest): Promise<FetchWidgetRawSamplesResponse> {
+    const data = FetchWidgetRawSamplesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "FetchWidgetRawSamples", data);
+    return promise.then((data) => FetchWidgetRawSamplesResponse.fromJSON(data));
   }
 
   ListDashboardStateRevisions(

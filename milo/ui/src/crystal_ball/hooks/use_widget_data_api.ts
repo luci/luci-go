@@ -20,6 +20,8 @@ import { API_V1_BASE_PATH as BASE_PATH } from '@/crystal_ball/constants';
 import {
   FetchDashboardWidgetDataRequest,
   FetchDashboardWidgetDataResponse,
+  FetchWidgetRawSamplesRequest,
+  FetchWidgetRawSamplesResponse,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
@@ -40,6 +42,32 @@ export const useFetchDashboardWidgetData = (
   const { name: _name, ...body } = request;
 
   return useGapiQuery<FetchDashboardWidgetDataResponse>(
+    {
+      path,
+      method: 'POST',
+      body,
+    },
+    options,
+  );
+};
+
+/**
+ * Hook for FetchWidgetRawSamples.
+ * @param request - The fetch request payload containing widget and selection context.
+ * @param options - Optional query options.
+ * @returns The raw samples response.
+ */
+export const useFetchWidgetRawSamples = (
+  request: FetchWidgetRawSamplesRequest,
+  options?: WrapperQueryOptions<FetchWidgetRawSamplesResponse>,
+): UseQueryResult<FetchWidgetRawSamplesResponse> => {
+  const path = request.name
+    ? `${BASE_PATH}/${request.name}:fetchWidgetRawSamples`
+    : `${BASE_PATH}/dashboardStates:fetchWidgetRawSamples`;
+
+  const { name: _name, ...body } = request;
+
+  return useGapiQuery<FetchWidgetRawSamplesResponse>(
     {
       path,
       method: 'POST',

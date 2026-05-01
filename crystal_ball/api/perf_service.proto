@@ -178,6 +178,31 @@ service PerfService {
     };
   }
 
+  // Fetches raw samples for a specific point in a dashboard widget on-demand.
+  // This method applies all relevant filters to return the underlying raw data.
+  // (-- api-linter: core::0131::synonyms=disabled
+  //     aip.dev/not-precedent: This is a custom method to fetch data for a
+  //     specific widget within a dashboard, not a standard Get on a resource.
+  //     It requires additional parameters like widget_id and selection context.
+  // --)
+  // (-- api-linter: core::0136::http-method=disabled
+  //     aip.dev/not-precedent: This method uses POST instead of GET because
+  //     the request message includes the 'dashboard_content' field, which can
+  //     be large and complex. This data must be sent in the request body,
+  //     which is only supported by POST, not GET, as per AIP-136.
+  // --)
+  rpc FetchWidgetRawSamples(FetchWidgetRawSamplesRequest)
+      returns (FetchWidgetRawSamplesResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=dashboardStates/*}:fetchWidgetRawSamples"
+      body: "*"
+      additional_bindings {
+        post: "/v1/dashboardStates:fetchWidgetRawSamples"
+        body: "*"
+      }
+    };
+  }
+
   // Lists revisions of a DashboardState.
   rpc ListDashboardStateRevisions(ListDashboardStateRevisionsRequest)
       returns (ListDashboardStateRevisionsResponse) {
@@ -1604,6 +1629,84 @@ message GenerateDashboardStateRequest {
 message GenerateDashboardStateResponse {
   // The generated dashboard state.
   DashboardState dashboard_state = 1;
+}
+
+// Request message for fetching raw samples for a specific widget.
+// This is typically used when a user clicks on a point in a chart or a row in a
+// table and wants to see the underlying raw data that contributed to that
+// aggregated value.
+//
+// Note: If both 'name' and 'dashboard_content' are provided,
+// 'dashboard_content' takes precedence. This supports REST transcoding where
+// the URL path maps to 'name' and the body contains 'dashboard_content'.
+message FetchWidgetRawSamplesRequest {
+  // The resource name of the DashboardState to fetch data from.
+  // Format: dashboardStates/{dashboard_state}
+  string name = 1 [
+    (google.api.field_behavior) = OPTIONAL,
+    (google.api.resource_reference) = {
+      type: "crystalballperf.googleapis.com/DashboardState"
+    }
+  ];
+
+  // The core content of the dashboard to fetch data from.
+  // Useful for previewing unsaved changes or when the dashboard is not yet
+  // saved.
+  PerfDashboardContent dashboard_content = 2
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // The ID of the widget within the dashboard to fetch data for.
+  string widget_id = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // The ID of the specific series within the widget.
+  // If provided, the backend applies filters specific to this series.
+  // This field takes precedence over `series_index`.
+  string series_id = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // The 0-based index of the specific series within the widget.
+  // Used only if `series_id` is not provided.
+  // Either `series_id` or `series_index` must be provided when the widget has
+  // multiple series to disambiguate which series' filters to apply.
+  optional int32 series_index = 5 [(google.api.field_behavior) = OPTIONAL];
+
+  // Context identifying the clicked point or row.
+  // This maps dimension names to their values at the selected point.
+  // The backend uses this to filter the raw samples to match the selected
+  // point. Example: {"build_id": "12345", "test_name": "my_test"}
+  map<string, string> selection_context = 6
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Extra columns to return in the response.
+  // By default, only a set of essential columns are returned.
+  repeated string extra_columns = 7 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Sorting order for the returned samples.
+  // Standard format is a comma-separated list of fields with an optional "
+  // desc" suffix.
+  string order_by = 8 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The maximum number of results to return. The service may return
+  // fewer than this value. If unspecified, at most 50 samples will be returned.
+  int32 page_size = 9 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. A page token, received from a previous `FetchWidgetRawSamples`
+  // call. Provide this to retrieve the subsequent page.
+  string page_token = 10 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for the FetchWidgetRawSamples method.
+message FetchWidgetRawSamplesResponse {
+  // The raw measurement rows.
+  repeated RawSampleRow rows = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  string next_page_token = 2;
+}
+
+// Row message for holding the raw sample results.
+message RawSampleRow {
+  // Known or requested standard columns.
+  map<string, google.protobuf.Value> values = 1;
 }
 
 // Test enum for testing.
