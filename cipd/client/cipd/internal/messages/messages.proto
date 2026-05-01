@@ -47,6 +47,18 @@ message VersionCache {
     string object_ref  = 4; // file's ObjectRef as encoded by ObjectRefToInstanceID (for legacy reasons)
   }
   repeated FileEntry file_entries = 2;
+
+  message RefEntry {
+    string service     = 5; // e.g. 'chrome-infra-packages.appspot.com'
+    string package     = 1; // name of a referenced CIPD package
+    string ref         = 2; // the ref, e.g. 'latest'
+    string instance_id = 3; // the instance ID it resolves to
+    google.protobuf.Timestamp captured = 4; // the time at which this ref was captured
+  }
+  // Note: ref_entries are NOT currently sorted by `captured`, but if we ever
+  // allow caching refs in the non-offline case, it may be a good idea to start
+  // doing so.
+  repeated RefEntry ref_entries = 3;
 }
 
 // InstanceCache stores a list of instances and their last access time.

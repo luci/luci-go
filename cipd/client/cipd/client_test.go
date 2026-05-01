@@ -1672,7 +1672,7 @@ func mockedCipdClient(t testing.TB) (*clientImpl, *mockedStorageClient, *mockedR
 func setupVersionCache(cl *clientImpl, t testing.TB) string {
 	assert.Loosely(t, cl.versionCache, should.BeNil)
 	tempDir := t.TempDir()
-	cl.versionCache = internal.NewVersionCache(fs.NewFileSystem(tempDir, ""), "service.example.com", internal.UseLegacyVCName)
+	cl.versionCache = internal.NewVersionCache(fs.NewFileSystem(tempDir, ""), "service.example.com", internal.UseLegacyVCName, nil)
 	return tempDir
 }
 

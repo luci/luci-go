@@ -15,8 +15,11 @@
 package internal
 
 import (
+	"cmp"
 	"context"
 	"sync"
+
+	"go.chromium.org/luci/common/clock"
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
@@ -27,33 +30,57 @@ import (
 const (
 	maxCachedTags          = 300
 	maxCachedExecutables   = 20
+	maxCachedRefs          = 300
 	legacyVersionCacheName = "tagcache.db"
 	versionCacheName       = "versioncache.db"
 )
 
-// VersionCache provides a mapping (package name, tag) -> instance ID.
+// RefConfig governs how a VersionCache loads refs.
+type RefConfig struct {
+	// If true, will load refs from disk.
+	Load bool
+
+	// If true, will save refs to disk.
+	Save bool
+
+	// TODO: Could also introduce some tolerable staleness duration or such.
+}
+
+// VersionCache caches several types of version information:
+//   - 'immutable' tags in the form (service, package, tag) -> instance ID.
+//   - mutable refs in the form (service, package, ref) -> (instance ID,
+//     capture time)
+//   - hashes of files-in-instaance in the form (service, package, instance ID)
+//     -> file name -> file hash.
 //
-// This mapping is safe to cache because tags are not detachable: once a tag is
-// successfully resolved to an instance ID it is guaranteed to resolve to same
-// instance ID later or not resolve at all (e.g. if one tag is attached to
-// multiple instances, in which case the tag is misused anyway). In any case,
-// returning a cached instance ID does make sense. The primary purpose of this
-// cache is to avoid round trips to the service to increase reliability of
-// 'cipd ensure' calls that use only tags to specify versions. It happens to be
-// the most common case of 'cipd ensure' usage by far.
+// Instance tags should not be detached, so the client keeps them indefinitely.
+// Service admins can detach them, but they are aware of the fact that the
+// clients will keep them indefinitely and should only detach them if no
+// clients have yet used this tag.
 //
-// Additionally, this VersionCache stores a mapping of (pin, file_name) ->
-// encode(ObjectRef of extracted file) to assist in the `selfupdate` flow.
+// The primary purpose of this cache is to avoid round trips to the service to
+// increase reliability of 'cipd ensure' calls that use only tags to specify
+// versions. It happens to be the most common case of 'cipd ensure' usage by
+// far.
 //
-// Whenever selfupdate resolves what CIPD package instance ID (pin) it SHOULD be
-// at, it looks at '(pin, 'cipd') => binary hash' map to figure out what hash
-// the client itself SHOULD have for this instance ID. The client then
-// calculates the hash of itself to see if it's actually already at that
-// instance ID.
+// Refs are inherently mutable. However, for *offline* caches it makes sense to
+// serve them when generating the offline cache from an ensurefile using refs.
+// We retain the capture timestamp for debugging, but also to potentially allow
+// setting some short retention period for ref caching in the future.
+//
+// The VersionCache's mapping for file hashes is primarially to assist in the
+// `selfupdate` flow where pre-cipd scripts need to check the hash of the
+// actual cipd binary hash, not the instance id which the binary was extracted
+// from. Whenever selfupdate resolves what CIPD package instance ID (pin) it
+// should be at, it looks at '(pin, 'cipd') => binary hash' map to figure out
+// what hash the binary itself should have for this instance ID. The client
+// then calculates the hash of itself to see if it's actually already at that
+// instance ID, and can make a decision to fetch a new client.
 type VersionCache struct {
-	fs      fs.FileSystem
-	service string
-	useName LegacyVersionCache
+	fs        fs.FileSystem
+	service   string
+	useName   LegacyVersionCache
+	refConfig RefConfig
 
 	lock sync.Mutex
 
@@ -68,12 +95,19 @@ type VersionCache struct {
 // NewVersionCache initializes VersionCache.
 //
 // fs will be the root of the cache. It will be searched for tagcache.db file.
-func NewVersionCache(fs fs.FileSystem, service string, useName LegacyVersionCache) *VersionCache {
+//
+// refConfig indicates how this VersionCache should interact with refs on disk.
+// If it's nil, then this versionCache will not load or save refs from disk.
+//
+// Regardless of this, [AddRef] and [ResolveRef] will save ref resolutions
+// in-memory between calls to [VersionCache.Flush].
+func NewVersionCache(fs fs.FileSystem, service string, useName LegacyVersionCache, refConfig *RefConfig) *VersionCache {
 	return &VersionCache{
-		fs:      fs,
-		service: service,
-		useName: useName,
-		added:   memoryVersionCache{service: service},
+		fs:        fs,
+		service:   service,
+		useName:   useName,
+		added:     memoryVersionCache{service: service},
+		refConfig: *cmp.Or(refConfig, &RefConfig{}),
 	}
 }
 
@@ -91,7 +125,7 @@ func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 	}
 
 	c.cache.service = c.service
-	c.cache.load(ctx, rawCache)
+	c.cache.load(ctx, rawCache, c.refConfig.Load)
 	c.cacheLoaded = true
 	return nil
 }
@@ -131,6 +165,26 @@ func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common
 		ref = common.InstanceIDToObjectRef(entry.ObjectRef)
 	}
 	return ref, err
+}
+
+// ResolveRef returns cached ref or empty Pin{} if such ref is not in the cache.
+//
+// Returns error if the cache can't be read.
+func (c *VersionCache) ResolveRef(ctx context.Context, pkg, ref string) (pin common.Pin, err error) {
+	if err = common.ValidatePackageName(pkg); err != nil {
+		return pin, err
+	}
+	if err = common.ValidatePackageRef(ref); err != nil {
+		return pin, err
+	}
+
+	key := refKey{pkg, ref}
+	entry, err := findEntry(ctx, c, key, (*memoryVersionCache).getRef)
+	if entry != nil && err == nil {
+		pin.PackageName = entry.Package
+		pin.InstanceID = entry.InstanceId
+	}
+	return pin, err
 }
 
 // AddTag records that (pin.PackageName, tag) maps to pin.InstanceID.
@@ -173,6 +227,26 @@ func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin
 	return nil
 }
 
+// AddRef records that (pin.PackageName, ref) maps to pin.InstanceID.
+//
+// Records the capture time as [clock.Now].
+//
+// Call [VersionCache.Flush] later to persist these changes to the cache file
+// on disk.
+func (c *VersionCache) AddRef(ctx context.Context, pin common.Pin, ref string) error {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
+		return err
+	}
+	if err := common.ValidatePackageRef(ref); err != nil {
+		return err
+	}
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.added.addRef(refKey{pin.PackageName, ref}, pin.InstanceID, clock.Now(ctx))
+	return nil
+}
+
 // Flush flushes all pending cache updates to the file system.
 //
 // It effectively resets the object to the initial state (except that all saved
@@ -201,8 +275,9 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	// happen only if two processes call [VersionCache.Flush] at the exact same
 	// time.
 	updated := &messages.VersionCache{
-		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, c.service, maxCachedTags),
-		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, c.service, maxCachedExecutables),
+		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, false, c.service, maxCachedTags),
+		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, false, c.service, maxCachedExecutables),
+		RefEntries:  pruneEntries(recent.GetRefEntries(), c.added.refs, !c.refConfig.Save, c.service, maxCachedRefs),
 	}
 	if err := WriteVersionCache(ctx, c.fs, updated, c.useName); err != nil {
 		return err
@@ -210,7 +285,7 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 
 	// The state is persisted now; load the updated proto back into c.cache as if
 	// we just read it form disk.
-	c.cache.load(ctx, updated)
+	c.cache.load(ctx, updated, c.refConfig.Load)
 	c.added.reset()
 
 	return nil

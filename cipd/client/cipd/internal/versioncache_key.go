@@ -83,3 +83,33 @@ func (f fileMap) sorted(yield func(fileKey, *messages.VersionCache_FileEntry) bo
 		}
 	}
 }
+
+type refKey struct {
+	pkg string
+	ref string
+}
+
+func mkRefKey(e *messages.VersionCache_RefEntry) refKey {
+	return refKey{e.Package, e.Ref}
+}
+
+type refMap map[refKey]*messages.VersionCache_RefEntry
+
+func (t refMap) has(e *messages.VersionCache_RefEntry) bool {
+	return t[mkRefKey(e)] != nil
+}
+
+func (f refMap) sorted(yield func(refKey, *messages.VersionCache_RefEntry) bool) {
+	keys := slices.AppendSeq(make([]refKey, 0, len(f)), maps.Keys(f))
+	slices.SortFunc(keys, func(a, b refKey) int {
+		return cmp.Or(
+			cmp.Compare(a.pkg, b.pkg),
+			cmp.Compare(a.ref, b.ref),
+		)
+	})
+	for _, k := range keys {
+		if !yield(k, f[k]) {
+			return
+		}
+	}
+}

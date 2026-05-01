@@ -16,8 +16,10 @@ package internal
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/logging"
 
@@ -33,12 +35,16 @@ type memoryVersionCache struct {
 
 	tags  tagMap
 	files fileMap
+	refs  refMap
 }
 
 // load resets the cache and populates it with data in `vc`.
 //
 // Safe to pass nil `vc`; it will just reset the memory cache.
-func (m *memoryVersionCache) load(ctx context.Context, vc *messages.VersionCache) {
+//
+// If `loadRefs` is true, this will also load refs (otherwise they are
+// ignored).
+func (m *memoryVersionCache) load(ctx context.Context, vc *messages.VersionCache, loadRefs bool) {
 	m.reset()
 
 	if entries := vc.GetEntries(); len(entries) > 0 {
@@ -62,6 +68,15 @@ func (m *memoryVersionCache) load(ctx context.Context, vc *messages.VersionCache
 					continue
 				}
 				m.files[mkFileKey(e)] = e
+			}
+		}
+	}
+
+	if entries := vc.GetRefEntries(); loadRefs && len(entries) > 0 {
+		m.refs = make(refMap, len(entries))
+		for _, e := range entries {
+			if e.Service == m.service {
+				m.refs[mkRefKey(e)] = e
 			}
 		}
 	}
@@ -105,16 +120,35 @@ func (m *memoryVersionCache) getFile(key fileKey) *messages.VersionCache_FileEnt
 	return m.files[key]
 }
 
+func (m *memoryVersionCache) addRef(key refKey, iid string, now time.Time) {
+	if m.refs == nil {
+		m.refs = make(refMap, 1)
+	}
+	m.refs[key] = &messages.VersionCache_RefEntry{
+		Service:    m.service,
+		Package:    key.pkg,
+		Ref:        key.ref,
+		InstanceId: iid,
+		Captured:   timestamppb.New(now),
+	}
+}
+
+// getRef is a helper for [resolveFrom].
+func (m *memoryVersionCache) getRef(key refKey) *messages.VersionCache_RefEntry {
+	return m.refs[key]
+}
+
 // count returns the total number of mappings trapped by this
 // memoryVersionCache.
 func (m *memoryVersionCache) count() int {
-	return len(m.tags) + len(m.files)
+	return len(m.tags) + len(m.files) + len(m.refs)
 }
 
 // reset clears this memoryVersionCache, resetting all its maps to nil.
 func (m *memoryVersionCache) reset() {
 	m.tags = nil
 	m.files = nil
+	m.refs = nil
 }
 
 // entry is the archetype of messages.VersionCache_*Entry.
@@ -150,7 +184,7 @@ func findEntry[K comparable, E entry](
 	return lookup(&c.cache, key), nil
 }
 
-// sortedEntryMap is the generic archetype of tagMap and fileMap.
+// sortedEntryMap is the generic archetype of tagMap, fileMap and refMap.
 type sortedEntryMap[K comparable, E entry] interface {
 	~map[K]E
 	has(E) bool
@@ -163,8 +197,24 @@ type sortedEntryMap[K comparable, E entry] interface {
 // Includes existing entries, except the ones we are moving to the tail.
 // Carefully includes entries belonging to other services too, we must not
 // overwrite them.
-func pruneEntries[E entry, K comparable, EM sortedEntryMap[K, E]](recent []E, added EM, service string, maxCount int) []E {
-	if len(added) == 0 {
+//
+// Args:
+//   - recent - recently-loaded entries.
+//   - added - map of entries which we have added in this process and want to
+//     merge.
+//   - dropAdded - if true, ignore `added` and return `recent` directly.
+//   - service - the service hostname our in-memory cache was attuned to.
+//   - maxCount - the maximum number of entries to return after merging
+//     `added`.
+//
+// If `dropAdded` is true, this ignores `added` completely (just returning
+// `recent`).
+func pruneEntries[E entry, K comparable, EM sortedEntryMap[K, E]](recent []E, added EM, dropAdded bool, service string, maxCount int) []E {
+	if len(added) == 0 || dropAdded {
+		// respect maxCount here as well to keep the argument behaviors orthogonal.
+		if len(recent) > maxCount {
+			recent = recent[len(recent)-maxCount:]
+		}
 		return recent
 	}
 
