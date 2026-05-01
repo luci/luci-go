@@ -78,7 +78,6 @@ type RefConfig struct {
 // instance ID, and can make a decision to fetch a new client.
 type VersionCache struct {
 	fs        fs.FileSystem
-	service   string
 	useName   LegacyVersionCache
 	refConfig RefConfig
 
@@ -101,12 +100,10 @@ type VersionCache struct {
 //
 // Regardless of this, [AddRef] and [ResolveRef] will save ref resolutions
 // in-memory between calls to [VersionCache.Flush].
-func NewVersionCache(fs fs.FileSystem, service string, useName LegacyVersionCache, refConfig *RefConfig) *VersionCache {
+func NewVersionCache(fs fs.FileSystem, useName LegacyVersionCache, refConfig *RefConfig) *VersionCache {
 	return &VersionCache{
 		fs:        fs,
-		service:   service,
 		useName:   useName,
-		added:     memoryVersionCache{service: service},
 		refConfig: *cmp.Or(refConfig, &RefConfig{}),
 	}
 }
@@ -124,7 +121,6 @@ func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 		return err
 	}
 
-	c.cache.service = c.service
 	c.cache.load(ctx, rawCache, c.refConfig.Load)
 	c.cacheLoaded = true
 	return nil
@@ -133,7 +129,7 @@ func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 // ResolveTag returns cached tag or empty Pin{} if such tag is not in the cache.
 //
 // Returns error if the cache can't be read.
-func (c *VersionCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.Pin, err error) {
+func (c *VersionCache) ResolveTag(ctx context.Context, service, pkg, tag string) (pin common.Pin, err error) {
 	if err = common.ValidatePackageName(pkg); err != nil {
 		return pin, err
 	}
@@ -141,7 +137,7 @@ func (c *VersionCache) ResolveTag(ctx context.Context, pkg, tag string) (pin com
 		return pin, err
 	}
 
-	key := tagKey{pkg, tag}
+	key := tagKey{service, pkg, tag}
 	entry, err := findEntry(ctx, c, key, (*memoryVersionCache).getTag)
 	if entry != nil && err == nil {
 		pin.PackageName = entry.Package
@@ -154,12 +150,12 @@ func (c *VersionCache) ResolveTag(ctx context.Context, pkg, tag string) (pin com
 // cache.
 //
 // Returns error if the cache can't be read.
-func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string) (ref *caspb.ObjectRef, err error) {
+func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, service string, pin common.Pin, fileName string) (ref *caspb.ObjectRef, err error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return ref, err
 	}
 
-	key := fileKey{pin.PackageName, pin.InstanceID, fileName}
+	key := fileKey{service, pin.PackageName, pin.InstanceID, fileName}
 	entry, err := findEntry(ctx, c, key, (*memoryVersionCache).getFile)
 	if entry != nil && err == nil {
 		ref = common.InstanceIDToObjectRef(entry.ObjectRef)
@@ -170,7 +166,7 @@ func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common
 // ResolveRef returns cached ref or empty Pin{} if such ref is not in the cache.
 //
 // Returns error if the cache can't be read.
-func (c *VersionCache) ResolveRef(ctx context.Context, pkg, ref string) (pin common.Pin, err error) {
+func (c *VersionCache) ResolveRef(ctx context.Context, service, pkg, ref string) (pin common.Pin, err error) {
 	if err = common.ValidatePackageName(pkg); err != nil {
 		return pin, err
 	}
@@ -178,7 +174,7 @@ func (c *VersionCache) ResolveRef(ctx context.Context, pkg, ref string) (pin com
 		return pin, err
 	}
 
-	key := refKey{pkg, ref}
+	key := refKey{service, pkg, ref}
 	entry, err := findEntry(ctx, c, key, (*memoryVersionCache).getRef)
 	if entry != nil && err == nil {
 		pin.PackageName = entry.Package
@@ -191,7 +187,7 @@ func (c *VersionCache) ResolveRef(ctx context.Context, pkg, ref string) (pin com
 //
 // Call [VersionCache.Flush] later to persist these changes to the cache file
 // on disk.
-func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) error {
+func (c *VersionCache) AddTag(ctx context.Context, service string, pin common.Pin, tag string) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -201,7 +197,7 @@ func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) e
 
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.added.addTag(tagKey{pin.PackageName, tag}, pin.InstanceID)
+	c.added.addTag(tagKey{service, pin.PackageName, tag}, pin.InstanceID)
 	return nil
 }
 
@@ -213,7 +209,7 @@ func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) e
 //
 // Call [VersionCache.Flush] later to persist these changes to the cache file
 // on disk.
-func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string, ref *caspb.ObjectRef) error {
+func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, service string, pin common.Pin, fileName string, ref *caspb.ObjectRef) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -223,7 +219,7 @@ func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin
 
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.added.addFile(fileKey{pin.PackageName, pin.InstanceID, fileName}, ref)
+	c.added.addFile(fileKey{service, pin.PackageName, pin.InstanceID, fileName}, ref)
 	return nil
 }
 
@@ -233,7 +229,7 @@ func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin
 //
 // Call [VersionCache.Flush] later to persist these changes to the cache file
 // on disk.
-func (c *VersionCache) AddRef(ctx context.Context, pin common.Pin, ref string) error {
+func (c *VersionCache) AddRef(ctx context.Context, service string, pin common.Pin, ref string) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -243,7 +239,7 @@ func (c *VersionCache) AddRef(ctx context.Context, pin common.Pin, ref string) e
 
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.added.addRef(refKey{pin.PackageName, ref}, pin.InstanceID, clock.Now(ctx))
+	c.added.addRef(refKey{service, pin.PackageName, ref}, pin.InstanceID, clock.Now(ctx))
 	return nil
 }
 
@@ -275,16 +271,16 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	// happen only if two processes call [VersionCache.Flush] at the exact same
 	// time.
 	updated := &messages.VersionCache{
-		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, false, c.service, maxCachedTags),
-		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, false, c.service, maxCachedExecutables),
-		RefEntries:  pruneEntries(recent.GetRefEntries(), c.added.refs, !c.refConfig.Save, c.service, maxCachedRefs),
+		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, false, maxCachedTags),
+		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, false, maxCachedExecutables),
+		RefEntries:  pruneEntries(recent.GetRefEntries(), c.added.refs, !c.refConfig.Save, maxCachedRefs),
 	}
 	if err := WriteVersionCache(ctx, c.fs, updated, c.useName); err != nil {
 		return err
 	}
 
 	// The state is persisted now; load the updated proto back into c.cache as if
-	// we just read it form disk.
+	// we just read it from disk.
 	c.cache.load(ctx, updated, c.refConfig.Load)
 	c.added.reset()
 

@@ -64,44 +64,44 @@ func TestVersionCacheWorks(t *testing.T) {
 			useLegacyName := LegacyVersionCache(legacy)
 
 			t.Run("single tag", func(t *ftt.Test) {
-				tc := NewVersionCache(fs, "service.example.com", useLegacyName, nil)
-				pin, err := tc.ResolveTag(t.Context(), "pkg", "tag:1")
+				tc := NewVersionCache(fs, useLegacyName, nil)
+				pin, err := tc.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(common.Pin{}))
 
-				file, err := tc.ResolveExtractedObjectRef(t.Context(), cannedPin, "filename")
+				file, err := tc.ResolveExtractedObjectRef(t.Context(), "service.example.com", cannedPin, "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.BeNil)
 
 				// Add new.
-				tc.AddTag(t.Context(), common.Pin{
+				tc.AddTag(t.Context(), "service.example.com", common.Pin{
 					PackageName: "pkg",
 					InstanceID:  strings.Repeat("a", 40),
 				}, "tag:1")
-				pin, err = tc.ResolveTag(t.Context(), "pkg", "tag:1")
+				pin, err = tc.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(common.Pin{
 					PackageName: "pkg",
 					InstanceID:  strings.Repeat("a", 40),
 				}))
-				tc.AddExtractedObjectRef(t.Context(), cannedPin, "filename", numberedObjRef(1))
-				file, err = tc.ResolveExtractedObjectRef(t.Context(), cannedPin, "filename")
+				tc.AddExtractedObjectRef(t.Context(), "service.example.com", cannedPin, "filename", numberedObjRef(1))
+				file, err = tc.ResolveExtractedObjectRef(t.Context(), "service.example.com", cannedPin, "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(1)))
 
 				// Replace existing.
-				tc.AddTag(t.Context(), common.Pin{
+				tc.AddTag(t.Context(), "service.example.com", common.Pin{
 					PackageName: "pkg",
 					InstanceID:  strings.Repeat("b", 40),
 				}, "tag:1")
-				pin, err = tc.ResolveTag(t.Context(), "pkg", "tag:1")
+				pin, err = tc.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(common.Pin{
 					PackageName: "pkg",
 					InstanceID:  strings.Repeat("b", 40),
 				}))
-				tc.AddExtractedObjectRef(t.Context(), cannedPin, "filename", numberedObjRef(2))
-				file, err = tc.ResolveExtractedObjectRef(t.Context(), cannedPin, "filename")
+				tc.AddExtractedObjectRef(t.Context(), "service.example.com", cannedPin, "filename", numberedObjRef(2))
+				file, err = tc.ResolveExtractedObjectRef(t.Context(), "service.example.com", cannedPin, "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(2)))
 
@@ -109,136 +109,136 @@ func TestVersionCacheWorks(t *testing.T) {
 				assert.Loosely(t, tc.Flush(t.Context()), should.BeNil)
 
 				// Load.
-				another := NewVersionCache(fs, "service.example.com", useLegacyName, nil)
-				pin, err = another.ResolveTag(t.Context(), "pkg", "tag:1")
+				another := NewVersionCache(fs, useLegacyName, nil)
+				pin, err = another.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(common.Pin{
 					PackageName: "pkg",
 					InstanceID:  strings.Repeat("b", 40),
 				}))
-				file, err = tc.ResolveExtractedObjectRef(t.Context(), cannedPin, "filename")
+				file, err = tc.ResolveExtractedObjectRef(t.Context(), "service.example.com", cannedPin, "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(2)))
 			})
 
 			t.Run("many tags", func(t *ftt.Test) {
-				tc := NewVersionCache(fs, "service.example.com", useLegacyName, nil)
+				tc := NewVersionCache(fs, useLegacyName, nil)
 
 				// Fill up to capacity.
 				for i := range maxCachedTags {
-					assert.Loosely(t, tc.AddTag(t.Context(), cannedPin, fmt.Sprintf("tag:%d", i)), should.BeNil)
+					assert.Loosely(t, tc.AddTag(t.Context(), "service.example.com", cannedPin, fmt.Sprintf("tag:%d", i)), should.BeNil)
 				}
 				for i := range maxCachedExecutables {
-					assert.Loosely(t, tc.AddExtractedObjectRef(t.Context(), numberedPin(i), "filename", numberedObjRef(i)), should.BeNil)
+					assert.Loosely(t, tc.AddExtractedObjectRef(t.Context(), "service.example.com", numberedPin(i), "filename", numberedObjRef(i)), should.BeNil)
 				}
 				assert.Loosely(t, tc.Flush(t.Context()), should.BeNil)
 
 				// Oldest tag is still resolvable.
-				pin, err := tc.ResolveTag(t.Context(), "pkg", "tag:0")
+				pin, err := tc.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:0")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(cannedPin))
-				file, err := tc.ResolveExtractedObjectRef(t.Context(), numberedPin(0), "filename")
+				file, err := tc.ResolveExtractedObjectRef(t.Context(), "service.example.com", numberedPin(0), "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(0)))
 
 				// Add one more tag. Should evict the oldest one.
-				assert.Loosely(t, tc.AddTag(t.Context(), cannedPin, "one_more_tag:0"), should.BeNil)
-				assert.Loosely(t, tc.AddExtractedObjectRef(t.Context(), numberedPin(maxCachedExecutables), "filename", numberedObjRef(maxCachedExecutables)), should.BeNil)
+				assert.Loosely(t, tc.AddTag(t.Context(), "service.example.com", cannedPin, "one_more_tag:0"), should.BeNil)
+				assert.Loosely(t, tc.AddExtractedObjectRef(t.Context(), "service.example.com", numberedPin(maxCachedExecutables), "filename", numberedObjRef(maxCachedExecutables)), should.BeNil)
 				assert.Loosely(t, tc.Flush(t.Context()), should.BeNil)
 
 				// Oldest tag is evicted.
-				pin, err = tc.ResolveTag(t.Context(), "pkg", "tag:0")
+				pin, err = tc.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:0")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(common.Pin{}))
-				file, err = tc.ResolveExtractedObjectRef(t.Context(), numberedPin(0), "filename")
+				file, err = tc.ResolveExtractedObjectRef(t.Context(), "service.example.com", numberedPin(0), "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.BeNil)
 
 				// But next one is alive.
-				pin, err = tc.ResolveTag(t.Context(), "pkg", "tag:1")
+				pin, err = tc.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(cannedPin))
-				file, err = tc.ResolveExtractedObjectRef(t.Context(), numberedPin(1), "filename")
+				file, err = tc.ResolveExtractedObjectRef(t.Context(), "service.example.com", numberedPin(1), "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(1)))
 
 				// Most recent one is also alive.
-				pin, err = tc.ResolveTag(t.Context(), "pkg", "one_more_tag:0")
+				pin, err = tc.ResolveTag(t.Context(), "service.example.com", "pkg", "one_more_tag:0")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(cannedPin))
-				file, err = tc.ResolveExtractedObjectRef(t.Context(), numberedPin(maxCachedExecutables), "filename")
+				file, err = tc.ResolveExtractedObjectRef(t.Context(), "service.example.com", numberedPin(maxCachedExecutables), "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(maxCachedExecutables)))
 			})
 
 			t.Run("parallel update", func(t *ftt.Test) {
-				tc1 := NewVersionCache(fs, "service.example.com", useLegacyName, nil)
-				tc2 := NewVersionCache(fs, "service.example.com", useLegacyName, nil)
+				tc1 := NewVersionCache(fs, useLegacyName, nil)
+				tc2 := NewVersionCache(fs, useLegacyName, nil)
 
-				assert.Loosely(t, tc1.AddTag(t.Context(), cannedPin, "tag:1"), should.BeNil)
-				assert.Loosely(t, tc1.AddExtractedObjectRef(t.Context(), numberedPin(0), "filename", numberedObjRef(0)), should.BeNil)
-				assert.Loosely(t, tc2.AddTag(t.Context(), cannedPin, "tag:2"), should.BeNil)
-				assert.Loosely(t, tc2.AddExtractedObjectRef(t.Context(), numberedPin(1), "filename", numberedObjRef(1)), should.BeNil)
+				assert.Loosely(t, tc1.AddTag(t.Context(), "service.example.com", cannedPin, "tag:1"), should.BeNil)
+				assert.Loosely(t, tc1.AddExtractedObjectRef(t.Context(), "service.example.com", numberedPin(0), "filename", numberedObjRef(0)), should.BeNil)
+				assert.Loosely(t, tc2.AddTag(t.Context(), "service.example.com", cannedPin, "tag:2"), should.BeNil)
+				assert.Loosely(t, tc2.AddExtractedObjectRef(t.Context(), "service.example.com", numberedPin(1), "filename", numberedObjRef(1)), should.BeNil)
 
 				assert.Loosely(t, tc1.Flush(t.Context()), should.BeNil)
 				assert.Loosely(t, tc2.Flush(t.Context()), should.BeNil)
 
-				tc3 := NewVersionCache(fs, "service.example.com", useLegacyName, nil)
+				tc3 := NewVersionCache(fs, useLegacyName, nil)
 
 				// Both tags are resolvable.
-				pin, err := tc3.ResolveTag(t.Context(), "pkg", "tag:1")
+				pin, err := tc3.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(cannedPin))
-				file, err := tc3.ResolveExtractedObjectRef(t.Context(), numberedPin(0), "filename")
+				file, err := tc3.ResolveExtractedObjectRef(t.Context(), "service.example.com", numberedPin(0), "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(0)))
-				pin, err = tc3.ResolveTag(t.Context(), "pkg", "tag:2")
+				pin, err = tc3.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:2")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(cannedPin))
-				file, err = tc3.ResolveExtractedObjectRef(t.Context(), numberedPin(1), "filename")
+				file, err = tc3.ResolveExtractedObjectRef(t.Context(), "service.example.com", numberedPin(1), "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(1)))
 			})
 
 			t.Run("multiple services", func(t *ftt.Test) {
-				tc1 := NewVersionCache(fs, "service1.example.com", useLegacyName, nil)
-				tc2 := NewVersionCache(fs, "service2.example.com", useLegacyName, nil)
+				tc1 := NewVersionCache(fs, useLegacyName, nil)
+				tc2 := NewVersionCache(fs, useLegacyName, nil)
 
 				// Add same tags and files, that resolve to different hashes on different
 				// servers.
-				assert.Loosely(t, tc1.AddTag(t.Context(), numberedPin(0), "tag:1"), should.BeNil)
-				assert.Loosely(t, tc1.AddExtractedObjectRef(t.Context(), numberedPin(1), "filename", numberedObjRef(10)), should.BeNil)
-				assert.Loosely(t, tc2.AddTag(t.Context(), numberedPin(2), "tag:1"), should.BeNil)
-				assert.Loosely(t, tc2.AddExtractedObjectRef(t.Context(), numberedPin(1), "filename", numberedObjRef(20)), should.BeNil)
+				assert.Loosely(t, tc1.AddTag(t.Context(), "service1.example.com", numberedPin(0), "tag:1"), should.BeNil)
+				assert.Loosely(t, tc1.AddExtractedObjectRef(t.Context(), "service1.example.com", numberedPin(1), "filename", numberedObjRef(10)), should.BeNil)
+				assert.Loosely(t, tc2.AddTag(t.Context(), "service2.example.com", numberedPin(2), "tag:1"), should.BeNil)
+				assert.Loosely(t, tc2.AddExtractedObjectRef(t.Context(), "service2.example.com", numberedPin(1), "filename", numberedObjRef(20)), should.BeNil)
 
 				assert.Loosely(t, tc1.Flush(t.Context()), should.BeNil)
 				assert.Loosely(t, tc2.Flush(t.Context()), should.BeNil)
 
-				tc1 = NewVersionCache(fs, "service1.example.com", useLegacyName, nil)
-				tc2 = NewVersionCache(fs, "service2.example.com", useLegacyName, nil)
+				tc1 = NewVersionCache(fs, useLegacyName, nil)
+				tc2 = NewVersionCache(fs, useLegacyName, nil)
 
 				// Tags are resolvable. tc2.Flush didn't overwrite tc1 data.
-				pin, err := tc1.ResolveTag(t.Context(), "pkg", "tag:1")
+				pin, err := tc1.ResolveTag(t.Context(), "service1.example.com", "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(numberedPin(0)))
-				pin, err = tc2.ResolveTag(t.Context(), "pkg", "tag:1")
+				pin, err = tc2.ResolveTag(t.Context(), "service2.example.com", "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(numberedPin(2)))
 
 				// File hashes are cached too.
-				file, err := tc1.ResolveExtractedObjectRef(t.Context(), numberedPin(1), "filename")
+				file, err := tc1.ResolveExtractedObjectRef(t.Context(), "service1.example.com", numberedPin(1), "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(10)))
-				file, err = tc2.ResolveExtractedObjectRef(t.Context(), numberedPin(1), "filename")
+				file, err = tc2.ResolveExtractedObjectRef(t.Context(), "service2.example.com", numberedPin(1), "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.Match(numberedObjRef(20)))
 
 				// No "ghost" records for some different service.
-				tc3 := NewVersionCache(fs, "service3.example.com", useLegacyName, nil)
-				pin, err = tc3.ResolveTag(t.Context(), "pkg", "tag:1")
+				tc3 := NewVersionCache(fs, useLegacyName, nil)
+				pin, err = tc3.ResolveTag(t.Context(), "service3.example.com", "pkg", "tag:1")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pin, should.Match(common.Pin{}))
-				file, err = tc3.ResolveExtractedObjectRef(t.Context(), numberedPin(1), "filename")
+				file, err = tc3.ResolveExtractedObjectRef(t.Context(), "service3.example.com", numberedPin(1), "filename")
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, file, should.BeNil)
 			})
@@ -252,8 +252,8 @@ func TestVersionCacheUpgrade(t *testing.T) {
 	fs := fs.NewFileSystem(t.TempDir(), "")
 
 	// Make a legacy cache with a tag and flush it.
-	tc := NewVersionCache(fs, "service.example.com", UseLegacyVCName, nil)
-	tc.AddTag(t.Context(), common.Pin{
+	tc := NewVersionCache(fs, UseLegacyVCName, nil)
+	tc.AddTag(t.Context(), "service.example.com", common.Pin{
 		PackageName: "pkg",
 		InstanceID:  strings.Repeat("a", 40),
 	}, "tag:1")
@@ -266,14 +266,14 @@ func TestVersionCacheUpgrade(t *testing.T) {
 	assert.NoErr(t, err)
 
 	// Load.
-	another := NewVersionCache(fs, "service.example.com", UseModernVCName, nil)
+	another := NewVersionCache(fs, UseModernVCName, nil)
 
 	// Legacy filename is still there.
 	_, err = fs.Stat(t.Context(), legacyPath)
 	assert.NoErr(t, err)
 
 	// Make sure our tag is there.
-	pin, err := another.ResolveTag(t.Context(), "pkg", "tag:1")
+	pin, err := another.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:1")
 	assert.Loosely(t, err, should.BeNil)
 	assert.Loosely(t, pin, should.Match(common.Pin{
 		PackageName: "pkg",
@@ -281,7 +281,7 @@ func TestVersionCacheUpgrade(t *testing.T) {
 	}))
 
 	// Make a change so that our cache is updated.
-	another.AddTag(t.Context(), common.Pin{
+	another.AddTag(t.Context(), "service.example.com", common.Pin{
 		PackageName: "pkg",
 		InstanceID:  strings.Repeat("b", 40),
 	}, "tag:2")
@@ -307,9 +307,9 @@ func TestVersionCacheUpgrade(t *testing.T) {
 	// continue to use the old cache, and the new clients will continue to use
 	// the new one.
 	assert.NoErr(t, os.Remove(currentPath))
-	tc = NewVersionCache(fs, "service.example.com", UseLegacyVCName, nil)
+	tc = NewVersionCache(fs, UseLegacyVCName, nil)
 	// Has the old tag.
-	pin, err = tc.ResolveTag(t.Context(), "pkg", "tag:1")
+	pin, err = tc.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:1")
 	assert.NoErr(t, err)
 	assert.That(t, pin, should.Match(common.Pin{
 		PackageName: "pkg",
@@ -317,7 +317,7 @@ func TestVersionCacheUpgrade(t *testing.T) {
 	}))
 
 	// But not the new one.
-	pin, err = tc.ResolveTag(t.Context(), "pkg", "tag:2")
+	pin, err = tc.ResolveTag(t.Context(), "service.example.com", "pkg", "tag:2")
 	assert.NoErr(t, err)
 	assert.That(t, pin, should.Match(common.Pin{}))
 }
@@ -331,15 +331,15 @@ func TestVersionCacheOfflineRefs(t *testing.T) {
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
 
 	// Make a legacy cache with a tag and save it.
-	tc := NewVersionCache(fs, "service.example.com", UseModernVCName, &RefConfig{Save: true})
-	tc.AddRef(ctx, common.Pin{
+	tc := NewVersionCache(fs, UseModernVCName, &RefConfig{Save: true})
+	assert.NoErr(t, tc.AddRef(ctx, "service.example.com", common.Pin{
 		PackageName: "pkg",
 		InstanceID:  strings.Repeat("a", 40),
-	}, "latest")
+	}, "latest"))
 	assert.NoErr(t, tc.Flush(ctx))
 
-	tc = NewVersionCache(fs, "service.example.com", UseModernVCName, &RefConfig{Load: true})
-	pin, err := tc.ResolveRef(ctx, "pkg", "latest")
+	tc = NewVersionCache(fs, UseModernVCName, &RefConfig{Load: true})
+	pin, err := tc.ResolveRef(ctx, "service.example.com", "pkg", "latest")
 	assert.NoErr(t, err)
 	assert.That(t, pin, should.Equal(common.Pin{
 		PackageName: "pkg",
@@ -347,27 +347,60 @@ func TestVersionCacheOfflineRefs(t *testing.T) {
 	}))
 
 	// Verify that by default we don't load refs, but we do pass them through.
-	tc = NewVersionCache(fs, "service.example.com", UseModernVCName, nil)
-	pin, err = tc.ResolveRef(ctx, "pkg", "latest")
+	tc = NewVersionCache(fs, UseModernVCName, nil)
+	pin, err = tc.ResolveRef(ctx, "service.example.com", "pkg", "latest")
 	assert.NoErr(t, err)
 	assert.That(t, pin, should.Equal(common.Pin{}))
-	tc.AddTag(ctx, common.Pin{
+	assert.NoErr(t, tc.AddTag(ctx, "service.example.com", common.Pin{
 		PackageName: "pkg",
 		InstanceID:  strings.Repeat("b", 40),
-	}, "version:123")
+	}, "version:123"))
 	assert.NoErr(t, tc.Flush(ctx))
 
 	// Still there.
-	tc = NewVersionCache(fs, "service.example.com", UseModernVCName, &RefConfig{Load: true})
-	pin, err = tc.ResolveRef(ctx, "pkg", "latest")
+	tc = NewVersionCache(fs, UseModernVCName, &RefConfig{Load: true})
+	pin, err = tc.ResolveRef(ctx, "service.example.com", "pkg", "latest")
 	assert.NoErr(t, err)
 	assert.That(t, pin, should.Equal(common.Pin{
 		PackageName: "pkg",
 		InstanceID:  strings.Repeat("a", 40),
 	}))
-	pin, err = tc.ResolveTag(ctx, "pkg", "version:123")
+	pin, err = tc.ResolveTag(ctx, "service.example.com", "pkg", "version:123")
 	assert.NoErr(t, err)
 	assert.That(t, pin, should.Equal(common.Pin{
+		PackageName: "pkg",
+		InstanceID:  strings.Repeat("b", 40),
+	}))
+}
+
+func TestVersionCacheMultiService(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	fsInst := fs.NewFileSystem(t.TempDir(), "")
+
+	tc := NewVersionCache(fsInst, UseModernVCName, nil)
+	assert.NoErr(t, tc.AddTag(ctx, "service1.example.com", common.Pin{
+		PackageName: "pkg",
+		InstanceID:  strings.Repeat("a", 40),
+	}, "some:tag"))
+	assert.NoErr(t, tc.AddTag(ctx, "service2.example.com", common.Pin{
+		PackageName: "pkg",
+		InstanceID:  strings.Repeat("b", 40),
+	}, "some:tag"))
+	assert.NoErr(t, tc.Flush(ctx))
+
+	tc = NewVersionCache(fsInst, UseModernVCName, nil)
+	pin, err := tc.ResolveTag(ctx, "service1.example.com", "pkg", "some:tag")
+	assert.NoErr(t, err)
+	assert.That(t, pin, should.Match(common.Pin{
+		PackageName: "pkg",
+		InstanceID:  strings.Repeat("a", 40),
+	}))
+	pin, err = tc.ResolveTag(ctx, "service2.example.com", "pkg", "some:tag")
+	assert.NoErr(t, err)
+	assert.That(t, pin, should.Match(common.Pin{
 		PackageName: "pkg",
 		InstanceID:  strings.Repeat("b", 40),
 	}))

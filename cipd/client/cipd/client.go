@@ -848,6 +848,10 @@ type clientImpl struct {
 	// versionCache is a file-system based cache of resolved tags.
 	versionCache     *internal.VersionCache
 	versionCacheInit sync.Once
+	// This is the 'service' (i.e. ServiceURL.host) that we always use when
+	// interacting with the version cache. We cache it here because it requires
+	// handling an error from [url.Parse].
+	versionCacheService string
 
 	// Plugin system.
 	pluginHost      plugin.Host            // nil if disabled
@@ -908,7 +912,8 @@ func (c *clientImpl) getVersionCache() *internal.VersionCache {
 		if err != nil {
 			panic(err) // the URL has been validated in NewClient already
 		}
-		c.versionCache = internal.NewVersionCache(fs.NewFileSystem(dir, ""), parsed.Host, internal.UseLegacyVCName, nil)
+		c.versionCache = internal.NewVersionCache(fs.NewFileSystem(dir, ""), internal.UseLegacyVCName, nil)
+		c.versionCacheService = parsed.Host
 	})
 	return c.versionCache
 }
@@ -1188,7 +1193,7 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 		cache = c.getVersionCache() // note: may be nil if the cache is disabled
 	}
 	if cache != nil {
-		cached, err := cache.ResolveTag(ctx, packageName, version)
+		cached, err := cache.ResolveTag(ctx, c.versionCacheService, packageName, version)
 		if err != nil {
 			logging.Warningf(ctx, "Could not query tag cache: %s", err)
 		}
@@ -1216,7 +1221,7 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 
 	// If was resolving a tag, store it in the cache.
 	if cache != nil {
-		if err := cache.AddTag(ctx, pin, version); err != nil {
+		if err := cache.AddTag(ctx, c.versionCacheService, pin, version); err != nil {
 			logging.Warningf(ctx, "Could not add tag to the cache")
 		}
 		c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
@@ -1302,7 +1307,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	// rememberClientRef populates the extracted refs cache.
 	rememberClientRef := func(pin common.Pin, ref *caspb.ObjectRef) {
 		if cache := c.getVersionCache(); cache != nil {
-			cache.AddExtractedObjectRef(ctx, pin, clientFileName, ref)
+			cache.AddExtractedObjectRef(ctx, c.versionCacheService, pin, clientFileName, ref)
 			c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
 		}
 	}
@@ -1314,7 +1319,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	// already up-to-date.
 	var clientRef *caspb.ObjectRef
 	if cache := c.getVersionCache(); cache != nil {
-		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, pin, clientFileName); err != nil {
+		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, c.versionCacheService, pin, clientFileName); err != nil {
 			return common.Pin{}, err
 		}
 	}

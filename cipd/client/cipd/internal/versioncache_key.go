@@ -23,12 +23,13 @@ import (
 )
 
 type tagKey struct {
-	pkg string
-	tag string
+	service string
+	pkg     string
+	tag     string
 }
 
 func mkTagKey(e *messages.VersionCache_Entry) tagKey {
-	return tagKey{e.Package, e.Tag}
+	return tagKey{e.Service, e.Package, e.Tag}
 }
 
 type tagMap map[tagKey]*messages.VersionCache_Entry
@@ -53,13 +54,14 @@ func (t tagMap) sorted(yield func(tagKey, *messages.VersionCache_Entry) bool) {
 }
 
 type fileKey struct {
+	service  string
 	pkg      string
 	instance string
 	file     string
 }
 
 func mkFileKey(e *messages.VersionCache_FileEntry) fileKey {
-	return fileKey{e.Package, e.InstanceId, e.FileName}
+	return fileKey{e.Service, e.Package, e.InstanceId, e.FileName}
 }
 
 type fileMap map[fileKey]*messages.VersionCache_FileEntry
@@ -85,12 +87,13 @@ func (f fileMap) sorted(yield func(fileKey, *messages.VersionCache_FileEntry) bo
 }
 
 type refKey struct {
-	pkg string
-	ref string
+	service string
+	pkg     string
+	ref     string
 }
 
 func mkRefKey(e *messages.VersionCache_RefEntry) refKey {
-	return refKey{e.Package, e.Ref}
+	return refKey{e.Service, e.Package, e.Ref}
 }
 
 type refMap map[refKey]*messages.VersionCache_RefEntry

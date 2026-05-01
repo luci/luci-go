@@ -28,11 +28,9 @@ import (
 	"go.chromium.org/luci/cipd/common"
 )
 
-// memoryVersionCache is a single-service version of the versioncache suitable
-// for making fast lookups and fast insertions.
+// memoryVersionCache is a version of the versioncache suitable for making fast
+// lookups and fast insertions.
 type memoryVersionCache struct {
-	service string
-
 	tags  tagMap
 	files fileMap
 	refs  refMap
@@ -50,34 +48,28 @@ func (m *memoryVersionCache) load(ctx context.Context, vc *messages.VersionCache
 	if entries := vc.GetEntries(); len(entries) > 0 {
 		m.tags = make(tagMap, len(entries))
 		for _, e := range entries {
-			if e.Service == m.service {
-				m.tags[mkTagKey(e)] = e
-			}
+			m.tags[mkTagKey(e)] = e
 		}
 	}
 
 	if entries := vc.GetFileEntries(); len(entries) > 0 {
 		m.files = make(fileMap, len(entries))
 		for _, e := range entries {
-			if e.Service == m.service {
-				// We do this because we will call common.InstanceIDToObjectRef on
-				// these values later, which will panic if the InstanceId is malformed.
-				if err := common.ValidateInstanceID(e.ObjectRef, common.AnyHash); err != nil {
-					logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it: %s",
-						e.ObjectRef, e.FileName, e.Package, err)
-					continue
-				}
-				m.files[mkFileKey(e)] = e
+			// We do this because we will call common.InstanceIDToObjectRef on
+			// these values later, which will panic if the InstanceId is malformed.
+			if err := common.ValidateInstanceID(e.ObjectRef, common.AnyHash); err != nil {
+				logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it: %s",
+					e.ObjectRef, e.FileName, e.Package, err)
+				continue
 			}
+			m.files[mkFileKey(e)] = e
 		}
 	}
 
 	if entries := vc.GetRefEntries(); loadRefs && len(entries) > 0 {
 		m.refs = make(refMap, len(entries))
 		for _, e := range entries {
-			if e.Service == m.service {
-				m.refs[mkRefKey(e)] = e
-			}
+			m.refs[mkRefKey(e)] = e
 		}
 	}
 }
@@ -88,7 +80,7 @@ func (m *memoryVersionCache) addTag(key tagKey, iid string) {
 		m.tags = make(tagMap, 1)
 	}
 	m.tags[key] = &messages.VersionCache_Entry{
-		Service:    m.service,
+		Service:    key.service,
 		Package:    key.pkg,
 		Tag:        key.tag,
 		InstanceId: iid,
@@ -107,7 +99,7 @@ func (m *memoryVersionCache) addFile(key fileKey, ref *caspb.ObjectRef) {
 		m.files = make(fileMap, 1)
 	}
 	m.files[key] = &messages.VersionCache_FileEntry{
-		Service:    m.service,
+		Service:    key.service,
 		Package:    key.pkg,
 		InstanceId: key.instance,
 		FileName:   key.file,
@@ -125,7 +117,7 @@ func (m *memoryVersionCache) addRef(key refKey, iid string, now time.Time) {
 		m.refs = make(refMap, 1)
 	}
 	m.refs[key] = &messages.VersionCache_RefEntry{
-		Service:    m.service,
+		Service:    key.service,
 		Package:    key.pkg,
 		Ref:        key.ref,
 		InstanceId: iid,
@@ -195,21 +187,18 @@ type sortedEntryMap[K comparable, E entry] interface {
 // entries, truncates this to `maxCount` and returns it.
 //
 // Includes existing entries, except the ones we are moving to the tail.
-// Carefully includes entries belonging to other services too, we must not
-// overwrite them.
 //
 // Args:
 //   - recent - recently-loaded entries.
 //   - added - map of entries which we have added in this process and want to
 //     merge.
 //   - dropAdded - if true, ignore `added` and return `recent` directly.
-//   - service - the service hostname our in-memory cache was attuned to.
 //   - maxCount - the maximum number of entries to return after merging
 //     `added`.
 //
 // If `dropAdded` is true, this ignores `added` completely (just returning
 // `recent`).
-func pruneEntries[E entry, K comparable, EM sortedEntryMap[K, E]](recent []E, added EM, dropAdded bool, service string, maxCount int) []E {
+func pruneEntries[E entry, K comparable, EM sortedEntryMap[K, E]](recent []E, added EM, dropAdded bool, maxCount int) []E {
 	if len(added) == 0 || dropAdded {
 		// respect maxCount here as well to keep the argument behaviors orthogonal.
 		if len(recent) > maxCount {
@@ -220,7 +209,7 @@ func pruneEntries[E entry, K comparable, EM sortedEntryMap[K, E]](recent []E, ad
 
 	ret := make([]E, 0, len(recent)+len(added))
 	for _, e := range recent {
-		if e.GetService() != service || !added.has(e) {
+		if !added.has(e) {
 			ret = append(ret, e)
 		}
 	}
