@@ -50,7 +50,7 @@ const MaxSizeTestMetadataProperties = 4 * 1024 // 4 KB
 //
 // [1]: https://cloud.google.com/bigquery/quotas#write-api-limits
 // [2]: https://chromium.googlesource.com/infra/luci/luci-go/+/e83766e441050596aaaa22dbdaad4228bacf0929/resultdb/internal/testvariants/query.go#49
-const MaxSizeTestResultProperties = 8 * 1024 // 8 KB
+const MaxSizeTestResultProperties = 20 * 1024 // 20 KB
 
 const MaxInstructionsSize = 1024 * 1024 // 1 MB
 
