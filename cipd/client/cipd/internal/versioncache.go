@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"cmp"
 	"context"
 	"slices"
 	"sync"
@@ -65,32 +64,6 @@ type VersionCache struct {
 	cacheLoaded bool
 	addedTags   map[tagKey]*messages.VersionCache_Entry      // entries added by AddTag
 	addedFiles  map[fileKey]*messages.VersionCache_FileEntry // entries added by AddExtractedObjectRef
-}
-
-type tagKey struct {
-	pkg string
-	tag string
-}
-
-func (t tagKey) cmp(o tagKey) int {
-	return cmp.Or(
-		cmp.Compare(t.pkg, o.pkg),
-		cmp.Compare(t.tag, o.tag),
-	)
-}
-
-type fileKey struct {
-	pkg      string
-	instance string
-	file     string
-}
-
-func (t fileKey) cmp(o fileKey) int {
-	return cmp.Or(
-		cmp.Compare(t.pkg, o.pkg),
-		cmp.Compare(t.instance, o.instance),
-		cmp.Compare(t.file, o.file),
-	)
 }
 
 // NewVersionCache initializes VersionCache.
