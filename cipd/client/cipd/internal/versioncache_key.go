@@ -14,18 +14,42 @@
 
 package internal
 
-import "cmp"
+import (
+	"cmp"
+	"maps"
+	"slices"
+
+	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
+)
 
 type tagKey struct {
 	pkg string
 	tag string
 }
 
-func (t tagKey) cmp(o tagKey) int {
-	return cmp.Or(
-		cmp.Compare(t.pkg, o.pkg),
-		cmp.Compare(t.tag, o.tag),
-	)
+func mkTagKey(e *messages.VersionCache_Entry) tagKey {
+	return tagKey{e.Package, e.Tag}
+}
+
+type tagMap map[tagKey]*messages.VersionCache_Entry
+
+func (t tagMap) has(e *messages.VersionCache_Entry) bool {
+	return t[mkTagKey(e)] != nil
+}
+
+func (t tagMap) sorted(yield func(tagKey, *messages.VersionCache_Entry) bool) {
+	keys := slices.AppendSeq(make([]tagKey, 0, len(t)), maps.Keys(t))
+	slices.SortFunc(keys, func(a, b tagKey) int {
+		return cmp.Or(
+			cmp.Compare(a.pkg, b.pkg),
+			cmp.Compare(a.tag, b.tag),
+		)
+	})
+	for _, k := range keys {
+		if !yield(k, t[k]) {
+			return
+		}
+	}
 }
 
 type fileKey struct {
@@ -34,10 +58,28 @@ type fileKey struct {
 	file     string
 }
 
-func (t fileKey) cmp(o fileKey) int {
-	return cmp.Or(
-		cmp.Compare(t.pkg, o.pkg),
-		cmp.Compare(t.instance, o.instance),
-		cmp.Compare(t.file, o.file),
-	)
+func mkFileKey(e *messages.VersionCache_FileEntry) fileKey {
+	return fileKey{e.Package, e.InstanceId, e.FileName}
+}
+
+type fileMap map[fileKey]*messages.VersionCache_FileEntry
+
+func (t fileMap) has(e *messages.VersionCache_FileEntry) bool {
+	return t[mkFileKey(e)] != nil
+}
+
+func (f fileMap) sorted(yield func(fileKey, *messages.VersionCache_FileEntry) bool) {
+	keys := slices.AppendSeq(make([]fileKey, 0, len(f)), maps.Keys(f))
+	slices.SortFunc(keys, func(a, b fileKey) int {
+		return cmp.Or(
+			cmp.Compare(a.pkg, b.pkg),
+			cmp.Compare(a.instance, b.instance),
+			cmp.Compare(a.file, b.file),
+		)
+	})
+	for _, k := range keys {
+		if !yield(k, f[k]) {
+			return
+		}
+	}
 }

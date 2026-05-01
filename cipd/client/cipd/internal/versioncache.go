@@ -16,10 +16,7 @@ package internal
 
 import (
 	"context"
-	"slices"
 	"sync"
-
-	"go.chromium.org/luci/common/logging"
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
@@ -60,10 +57,12 @@ type VersionCache struct {
 
 	lock sync.Mutex
 
-	cache       *messages.VersionCache // the last loaded state, if not nil.
+	// The last-loaded state.
+	cache       memoryVersionCache
 	cacheLoaded bool
-	addedTags   map[tagKey]*messages.VersionCache_Entry      // entries added by AddTag
-	addedFiles  map[fileKey]*messages.VersionCache_FileEntry // entries added by AddExtractedObjectRef
+
+	// These are added values which have not been flushed to disk yet.
+	added memoryVersionCache
 }
 
 // NewVersionCache initializes VersionCache.
@@ -74,48 +73,25 @@ func NewVersionCache(fs fs.FileSystem, service string, useName LegacyVersionCach
 		fs:      fs,
 		service: service,
 		useName: useName,
+		added:   memoryVersionCache{service: service},
 	}
 }
 
+// lazyLoadLocked loads the cache from disk.
+//
+// By the time this returns nil, `c.cache` is guaranteed to be non-nil.
 func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
-	// Lazy-load the cache the first time it is used. We reload it again in Flush
-	// right before overwriting the file. We don't reload it anywhere else
-	// though, so the implementation essentially assumes Flush is called
-	// relatively soon after ResolveTag call. If it's not the case, cache updates
-	// made by other processes will be "invisible" to the VersionCache. It still
-	// tries not to overwrite them in Flush, so it's fine.
 	if c.cacheLoaded {
 		return nil
 	}
+
 	rawCache, err := ReadVersionCache(ctx, c.fs)
 	if err != nil {
 		return err
 	}
-	if len(rawCache.GetEntries()) > 0 {
-		rawCache.Entries = slices.DeleteFunc(rawCache.Entries, func(e *messages.VersionCache_Entry) bool {
-			return e.Service != c.service
-		})
-	}
-	if len(rawCache.GetFileEntries()) > 0 {
-		rawCache.FileEntries = slices.DeleteFunc(rawCache.FileEntries, func(e *messages.VersionCache_FileEntry) bool {
-			if e.Service != c.service {
-				return true
-			}
 
-			if err := common.ValidateInstanceID(e.ObjectRef, common.AnyHash); err != nil {
-				pin := common.Pin{
-					PackageName: e.Package,
-					InstanceID:  e.InstanceId,
-				}
-				logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it: %s",
-					e.ObjectRef, e.FileName, pin, err)
-				return true
-			}
-
-			return false
-		})
-	}
-	c.cache = rawCache
+	c.cache.service = c.service
+	c.cache.load(ctx, rawCache)
 	c.cacheLoaded = true
 	return nil
 }
@@ -131,31 +107,11 @@ func (c *VersionCache) ResolveTag(ctx context.Context, pkg, tag string) (pin com
 		return pin, err
 	}
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	// Already added with AddTag recently?
-	if e := c.addedTags[tagKey{pkg, tag}]; e != nil {
-		return common.Pin{
-			PackageName: e.Package,
-			InstanceID:  e.InstanceId,
-		}, nil
-	}
-
-	if err = c.lazyLoadLocked(ctx); err != nil {
-		return pin, err
-	}
-
-	// Most recently used tags are usually at the end, search in reverse as a
-	// silly optimization.
-	for i := len(c.cache.GetEntries()) - 1; i >= 0; i-- {
-		e := c.cache.Entries[i]
-		if e.Package == pkg && e.Tag == tag {
-			return common.Pin{
-				PackageName: pkg,
-				InstanceID:  e.InstanceId,
-			}, nil
-		}
+	key := tagKey{pkg, tag}
+	entry, err := findEntry(ctx, c, key, (*memoryVersionCache).getTag)
+	if entry != nil && err == nil {
+		pin.PackageName = entry.Package
+		pin.InstanceID = entry.InstanceId
 	}
 	return pin, err
 }
@@ -164,37 +120,23 @@ func (c *VersionCache) ResolveTag(ctx context.Context, pkg, tag string) (pin com
 // cache.
 //
 // Returns error if the cache can't be read.
-func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string) (*caspb.ObjectRef, error) {
+func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string) (ref *caspb.ObjectRef, err error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
-		return nil, err
+		return ref, err
 	}
-
-	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	key := fileKey{pin.PackageName, pin.InstanceID, fileName}
-	if e := c.addedFiles[key]; e != nil {
-		return common.InstanceIDToObjectRef(e.ObjectRef), nil
+	entry, err := findEntry(ctx, c, key, (*memoryVersionCache).getFile)
+	if entry != nil && err == nil {
+		ref = common.InstanceIDToObjectRef(entry.ObjectRef)
 	}
-
-	if err := c.lazyLoadLocked(ctx); err != nil {
-		return nil, err
-	}
-
-	// Most recently used entries are usually at the end, search in reverse as a
-	// silly optimization.
-	for i := len(c.cache.GetFileEntries()) - 1; i >= 0; i-- {
-		e := c.cache.FileEntries[i]
-		if e.Package == pin.PackageName && e.InstanceId == pin.InstanceID && e.FileName == fileName {
-			return common.InstanceIDToObjectRef(e.ObjectRef), nil
-		}
-	}
-	return nil, nil
+	return ref, err
 }
 
 // AddTag records that (pin.PackageName, tag) maps to pin.InstanceID.
 //
-// Call 'Flush' later to persist these changes to the cache file on disk.
+// Call [VersionCache.Flush] later to persist these changes to the cache file
+// on disk.
 func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
@@ -205,19 +147,7 @@ func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) e
 
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
-	if c.addedTags == nil {
-		c.addedTags = make(map[tagKey]*messages.VersionCache_Entry, 1)
-	}
-
-	// 'Flush' will merge this into 'c.cache' before dumping to disk.
-	c.addedTags[tagKey{pin.PackageName, tag}] = &messages.VersionCache_Entry{
-		Service:    c.service,
-		Package:    pin.PackageName,
-		Tag:        tag,
-		InstanceId: pin.InstanceID,
-	}
-
+	c.added.addTag(tagKey{pin.PackageName, tag}, pin.InstanceID)
 	return nil
 }
 
@@ -227,7 +157,8 @@ func (c *VersionCache) AddTag(ctx context.Context, pin common.Pin, tag string) e
 // The hash is represented as ObjectRef, which is a tuple (hash algo, hex
 // digest).
 //
-// Call 'Flush' later to persist these changes to the cache file on disk.
+// Call [VersionCache.Flush] later to persist these changes to the cache file
+// on disk.
 func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string, ref *caspb.ObjectRef) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
@@ -238,17 +169,7 @@ func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin
 
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
-	if c.addedFiles == nil {
-		c.addedFiles = make(map[fileKey]*messages.VersionCache_FileEntry)
-	}
-	c.addedFiles[fileKey{pin.PackageName, pin.InstanceID, fileName}] = &messages.VersionCache_FileEntry{
-		Service:    c.service,
-		Package:    pin.PackageName,
-		InstanceId: pin.InstanceID,
-		FileName:   fileName,
-		ObjectRef:  common.ObjectRefToInstanceID(ref),
-	}
+	c.added.addFile(fileKey{pin.PackageName, pin.InstanceID, fileName}, ref)
 	return nil
 }
 
@@ -262,23 +183,10 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 
 	// Nothing to store? Just clean the state, so that ResolveTag can fetch the
 	// up-to-date cache from disk later if needed.
-	if len(c.addedTags) == 0 && len(c.addedFiles) == 0 {
-		c.cache = nil
+	if c.added.count() == 0 {
+		c.cacheLoaded = false
 		return nil
 	}
-
-	// Sort all new entries, for consistency.
-	sortedTags := make([]tagKey, 0, len(c.addedTags))
-	for key := range c.addedTags {
-		sortedTags = append(sortedTags, key)
-	}
-	slices.SortFunc(sortedTags, tagKey.cmp)
-
-	sortedFiles := make([]fileKey, 0, len(c.addedFiles))
-	for key := range c.addedFiles {
-		sortedFiles = append(sortedFiles, key)
-	}
-	slices.SortFunc(sortedFiles, fileKey.cmp)
 
 	// Load the most recent data to avoid overwriting it. Load ALL entries, even
 	// if they belong to different service: we have one global cache file and
@@ -288,53 +196,22 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 		return err
 	}
 
-	// Copy existing entries, except the ones we are moving to the tail. Carefully
-	// copy entries belonging to other services too, we must not overwrite them.
-	mergedTags := make([]*messages.VersionCache_Entry, 0, len(recent.GetEntries())+len(c.addedTags))
-	for _, e := range recent.GetEntries() {
-		key := tagKey{e.Package, e.Tag}
-		if e.Service != c.service || c.addedTags[key] == nil {
-			mergedTags = append(mergedTags, e)
-		}
-	}
-
-	// Add new entries to the tail.
-	for _, k := range sortedTags {
-		mergedTags = append(mergedTags, c.addedTags[tagKey(k)])
-	}
-
-	// Trim the end result, discard the head: it's where old items are.
-	if len(mergedTags) > maxCachedTags {
-		mergedTags = mergedTags[len(mergedTags)-maxCachedTags:]
-	}
-
-	// Do the same for file entries.
-	mergedFiles := make([]*messages.VersionCache_FileEntry, 0, len(recent.GetFileEntries())+len(c.addedFiles))
-	for _, e := range recent.GetFileEntries() {
-		key := fileKey{e.Package, e.InstanceId, e.FileName}
-		if e.Service != c.service || c.addedFiles[key] == nil {
-			mergedFiles = append(mergedFiles, e)
-		}
-	}
-	for _, k := range sortedFiles {
-		mergedFiles = append(mergedFiles, c.addedFiles[fileKey(k)])
-	}
-	if len(mergedFiles) > maxCachedExecutables {
-		mergedFiles = mergedFiles[len(mergedFiles)-maxCachedExecutables:]
-	}
-
 	// Serialize and write to disk. We still can accidentally replace someone
-	// else's changes, but the probability should be relatively low. It can happen
-	// only if two processes call 'Flush' at the exact same time.
-	updated := &messages.VersionCache{Entries: mergedTags, FileEntries: mergedFiles}
+	// else's changes, but the probability should be relatively low. It can
+	// happen only if two processes call [VersionCache.Flush] at the exact same
+	// time.
+	updated := &messages.VersionCache{
+		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, c.service, maxCachedTags),
+		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, c.service, maxCachedExecutables),
+	}
 	if err := WriteVersionCache(ctx, c.fs, updated, c.useName); err != nil {
 		return err
 	}
 
-	// The state is persisted now.
-	c.cache = updated
-	c.addedTags = nil
-	c.addedFiles = nil
+	// The state is persisted now; load the updated proto back into c.cache as if
+	// we just read it form disk.
+	c.cache.load(ctx, updated)
+	c.added.reset()
 
 	return nil
 }
