@@ -236,21 +236,13 @@ func (s *storageImpl) getNextOffset(ctx context.Context, url string, length int6
 // TODO(vadimsh): Use resumable download protocol.
 
 func (s *storageImpl) download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error {
-	activity := ui.CurrentActivity(ctx)
-
 	// download is a separate function to be able to use deferred close.
 	download := func(out io.Writer, src io.ReadCloser, totalLen int64) error {
 		defer src.Close()
+		r, cancel := ui.MonitorReader(ctx, src, "Fetching", totalLen)
+		defer cancel()
 
-		progress := func(read int64) {
-			activity.Progress(ctx, "Fetching", ui.UnitBytes, read, totalLen)
-		}
-
-		progress(0)
-		_, err := io.Copy(out, &readerWithProgress{
-			reader:   src,
-			callback: progress,
-		})
+		_, err := io.Copy(out, r)
 		if err != nil {
 			return cipderr.IO.Apply(errors.Fmt("writing to the output instance file: %w", err))
 		}
@@ -322,21 +314,5 @@ func (s *storageImpl) download(ctx context.Context, url string, output io.WriteS
 		return nil
 	}
 
-	return cipderr.CAS.Apply(errors.
-		New("failed to download after multiple attempts"))
-}
-
-// readerWithProgress is io.Reader that calls callback whenever something is
-// read from it.
-type readerWithProgress struct {
-	reader   io.Reader
-	total    int64
-	callback func(total int64)
-}
-
-func (r *readerWithProgress) Read(p []byte) (int, error) {
-	n, err := r.reader.Read(p)
-	r.total += int64(n)
-	r.callback(r.total)
-	return n, err
+	return cipderr.CAS.Apply(errors.New("failed to download after multiple attempts"))
 }

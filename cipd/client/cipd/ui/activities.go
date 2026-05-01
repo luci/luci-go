@@ -17,8 +17,13 @@ package ui
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
+
+	"golang.org/x/time/rate"
 
 	"go.chromium.org/luci/common/logging"
 )
@@ -157,6 +162,49 @@ func CurrentActivity(ctx context.Context) Activity {
 		return a
 	}
 	return &primitiveActivity{logger: logging.GetFactory(ctx)}
+}
+
+// MonitorReader returns an io.Reader wrapping `reader` which tracks progress
+// at a constant rate of 120fps.
+//
+// The caller must call `cancel` when they are done with the monitor to avoid
+// leaking threads.
+func MonitorReader(ctx context.Context, reader io.Reader, title string, total int64) (io.Reader, func()) {
+	act := CurrentActivity(ctx)
+	act.Progress(ctx, title, UnitBytes, 0, total)
+
+	ctx, innerCancel := context.WithCancel(ctx)
+	done := make(chan struct{})
+
+	prog := &progressReader{reader: reader}
+
+	go func() {
+		defer close(done)
+
+		lim := rate.NewLimiter(rate.Every(time.Second/120), 1)
+		totalptr := &prog.total
+		for lim.Wait(ctx) == nil {
+			act.Progress(ctx, title, UnitBytes, totalptr.Load(), total)
+		}
+	}()
+
+	return prog, func() {
+		innerCancel()
+		<-done
+	}
+}
+
+type progressReader struct {
+	reader io.Reader
+	total  atomic.Int64
+}
+
+var _ io.Reader = (*progressReader)(nil)
+
+func (r *progressReader) Read(p []byte) (n int, err error) {
+	amt, err := r.reader.Read(p)
+	r.total.Add(int64(amt))
+	return amt, err
 }
 
 // activityLogger forwards messages to the given activity.
