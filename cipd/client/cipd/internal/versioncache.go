@@ -59,36 +59,16 @@ const (
 // calculates the hash of itself to see if it's actually already at that
 // instance ID.
 type VersionCache struct {
-	fs            fs.FileSystem
-	service       string
-	useLegacyName bool
+	fs      fs.FileSystem
+	service string
+	useName LegacyVersionCache
 
 	lock sync.Mutex
-
-	// If set, we loaded the old name from disk and `writeLegacyName` is false.
-	legacyNameNeedsRemoval bool
 
 	cache      *messages.VersionCache                       // the last loaded state, if not nil.
 	addedTags  map[tagKey]*messages.VersionCache_Entry      // entries added by AddTag
 	addedFiles map[fileKey]*messages.VersionCache_FileEntry // entries added by AddExtractedObjectRef
 }
-
-// LegacyVersionCache indicates that this use of VersionCache should if use the
-// legacy name when writing the cache.
-//
-// All TagCache instances will attempt to read the old and new names.
-//
-// This boolean can be removed after we are confident that all deployed
-// versions of CIPD can read both the old and new names.
-type LegacyVersionCache bool
-
-const (
-	// When writing a tagcache, use the legacy name.
-	WriteLegacyVersionCacheName LegacyVersionCache = true
-	// When writing a tagcache, use the current name and remove the legacy one if
-	// it exists.
-	WriteVersionCacheName LegacyVersionCache = false
-)
 
 type tagKey struct {
 	pkg string
@@ -119,11 +99,11 @@ func (t fileKey) cmp(o fileKey) int {
 // NewVersionCache initializes VersionCache.
 //
 // fs will be the root of the cache. It will be searched for tagcache.db file.
-func NewVersionCache(fs fs.FileSystem, service string, useLegacyName LegacyVersionCache) *VersionCache {
+func NewVersionCache(fs fs.FileSystem, service string, useName LegacyVersionCache) *VersionCache {
 	return &VersionCache{
-		fs:            fs,
-		service:       service,
-		useLegacyName: useLegacyName == WriteLegacyVersionCacheName,
+		fs:      fs,
+		service: service,
+		useName: useName,
 	}
 }
 
@@ -363,7 +343,6 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	c.cache = updated
 	c.addedTags = nil
 	c.addedFiles = nil
-	c.legacyNameNeedsRemoval = false
 
 	return nil
 }
@@ -398,9 +377,6 @@ func (c *VersionCache) loadFromDisk(ctx context.Context, allServices bool) (*mes
 			return nil, cipderr.IO.Apply(errors.
 				Fmt("reading tag cache: %w", err))
 		}
-		if !c.useLegacyName && pickedPath == legacyPath {
-			c.legacyNameNeedsRemoval = true
-		}
 		break
 	}
 	if os.IsNotExist(err) {
@@ -433,7 +409,7 @@ func (c *VersionCache) loadFromDisk(ctx context.Context, allServices bool) (*mes
 // dumpToDiskLocked serializes the tag cache and writes it to the file system.
 func (c *VersionCache) dumpToDiskLocked(ctx context.Context, msg *messages.VersionCache) error {
 	var name = versionCacheName
-	if c.useLegacyName {
+	if c.useName == UseLegacyVCName {
 		name = legacyVersionCacheName
 	}
 	path, err := c.fs.RootRelToAbs(name)
@@ -448,16 +424,6 @@ func (c *VersionCache) dumpToDiskLocked(ctx context.Context, msg *messages.Versi
 
 	if err := fs.EnsureFile(ctx, c.fs, path, bytes.NewReader(blob)); err != nil {
 		return cipderr.IO.Apply(errors.Fmt("writing tag cache: %w", err))
-	}
-
-	if c.legacyNameNeedsRemoval {
-		legacyPath, err := c.fs.RootRelToAbs(legacyVersionCacheName)
-		if err != nil {
-			return cipderr.BadArgument.Apply(errors.Fmt("bad tag cache path: %w", err))
-		}
-		if err := c.fs.EnsureFileGone(ctx, legacyPath); err != nil {
-			logging.Warningf(ctx, "Cannot clean legacy %q: %s", legacyVersionCacheName, err)
-		}
 	}
 
 	return nil

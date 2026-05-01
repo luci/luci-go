@@ -247,7 +247,7 @@ func TestVersionCacheUpgrade(t *testing.T) {
 	fs := fs.NewFileSystem(t.TempDir(), "")
 
 	// Make a legacy cache with a tag and flush it.
-	tc := NewVersionCache(fs, "service.example.com", WriteLegacyVersionCacheName)
+	tc := NewVersionCache(fs, "service.example.com", UseLegacyVCName)
 	tc.AddTag(t.Context(), common.Pin{
 		PackageName: "pkg",
 		InstanceID:  strings.Repeat("a", 40),
@@ -261,7 +261,7 @@ func TestVersionCacheUpgrade(t *testing.T) {
 	assert.NoErr(t, err)
 
 	// Load.
-	another := NewVersionCache(fs, "service.example.com", WriteVersionCacheName)
+	another := NewVersionCache(fs, "service.example.com", UseModernVCName)
 
 	// Legacy filename is still there.
 	_, err = fs.Stat(t.Context(), legacyPath)
@@ -290,7 +290,29 @@ func TestVersionCacheUpgrade(t *testing.T) {
 	_, err = fs.Stat(t.Context(), currentPath)
 	assert.NoErr(t, err)
 
-	// Old name is not.
+	// Old name is still there, too.
 	_, err = fs.Stat(t.Context(), legacyPath)
-	assert.ErrIsLike(t, err, os.ErrNotExist)
+	assert.NoErr(t, err)
+
+	// Delete the new name so that the cache will load the old one; make sure old
+	// one does not have our `tag:2` from above; at this point new clients have
+	// effectively abandoned the old cache name. In the event that the cache is
+	// ONLY used by new clients, this will waste one or two KB. In the event that
+	// the cache has both new and old clients sharing it, the old clients will
+	// continue to use the old cache, and the new clients will continue to use
+	// the new one.
+	assert.NoErr(t, os.Remove(currentPath))
+	tc = NewVersionCache(fs, "service.example.com", UseLegacyVCName)
+	// Has the old tag.
+	pin, err = tc.ResolveTag(t.Context(), "pkg", "tag:1")
+	assert.NoErr(t, err)
+	assert.That(t, pin, should.Match(common.Pin{
+		PackageName: "pkg",
+		InstanceID:  strings.Repeat("a", 40),
+	}))
+
+	// But not the new one.
+	pin, err = tc.ResolveTag(t.Context(), "pkg", "tag:2")
+	assert.NoErr(t, err)
+	assert.That(t, pin, should.Match(common.Pin{}))
 }
