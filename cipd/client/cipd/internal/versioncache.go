@@ -389,16 +389,15 @@ func (c *VersionCache) loadFromDisk(ctx context.Context, allServices bool) (*mes
 		return &messages.VersionCache{}, nil
 	}
 
-	// Throw away all entries with empty Service. They are not longer valid.
 	// Also apply 'allServices' filter.
 	filtered := &messages.VersionCache{}
 	for _, e := range cache.Entries {
-		if e.Service != "" && (e.Service == c.service || allServices) {
+		if e.Service == c.service || allServices {
 			filtered.Entries = append(filtered.Entries, e)
 		}
 	}
 	for _, e := range cache.FileEntries {
-		if e.Service != "" && (e.Service == c.service || allServices) {
+		if e.Service == c.service || allServices {
 			filtered.FileEntries = append(filtered.FileEntries, e)
 		}
 	}
