@@ -194,14 +194,14 @@ type sortedEntryMap[K comparable, E entry] interface {
 //     merge.
 //   - dropAdded - if true, ignore `added` and return `recent` directly.
 //   - maxCount - the maximum number of entries to return after merging
-//     `added`.
+//     `added`. If maxCount is <= 0, it is ignored.
 //
 // If `dropAdded` is true, this ignores `added` completely (just returning
 // `recent`).
 func pruneEntries[E entry, K comparable, EM sortedEntryMap[K, E]](recent []E, added EM, dropAdded bool, maxCount int) []E {
 	if len(added) == 0 || dropAdded {
 		// respect maxCount here as well to keep the argument behaviors orthogonal.
-		if len(recent) > maxCount {
+		if maxCount > 0 && len(recent) > maxCount {
 			recent = recent[len(recent)-maxCount:]
 		}
 		return recent
@@ -220,7 +220,7 @@ func pruneEntries[E entry, K comparable, EM sortedEntryMap[K, E]](recent []E, ad
 	}
 
 	// Trim the end result, discard the head: it's where old items are.
-	if len(ret) > maxCount {
+	if maxCount > 0 && len(ret) > maxCount {
 		ret = ret[len(ret)-maxCount:]
 	}
 

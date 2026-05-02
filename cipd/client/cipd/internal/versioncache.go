@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"cmp"
 	"context"
 	"sync"
 
@@ -27,11 +28,11 @@ import (
 )
 
 const (
-	maxCachedTags          = 300
-	maxCachedExecutables   = 20
-	maxCachedRefs          = 300
-	legacyVersionCacheName = "tagcache.db"
-	versionCacheName       = "versioncache.db"
+	defaultMaxTags                = 300
+	defaultMaxExtractedObjectRefs = 20
+	defaultMaxRefs                = 300
+	legacyVersionCacheName        = "tagcache.db"
+	versionCacheName              = "versioncache.db"
 )
 
 // VersionCache caches several types of version information:
@@ -82,6 +83,25 @@ type VersionCache struct {
 
 	// ChainTo, if set, will be consulted before loading our cache from disk.
 	ChainTo *VersionCache
+
+	// MaxTags is the maximum number of tags to write when flushing.
+	//
+	// If 0, a default is used.
+	// If <0, no limit applies.
+	MaxTags int
+
+	// MaxExtractedObjectRefs is the maximum number of file ObjectRefs to write when
+	// flushing.
+	//
+	// If 0, a default is used.
+	// If <0, no limit applies.
+	MaxExtractedObjectRefs int
+
+	// MaxRefs is the maximum number of refs to write when flushing.
+	//
+	// If 0, a default is used.
+	// If <0, no limit applies.
+	MaxRefs int
 
 	mu sync.Mutex
 
@@ -286,9 +306,9 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	// happen only if two processes call [VersionCache.Flush] at the exact same
 	// time.
 	updated := &messages.VersionCache{
-		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, false, maxCachedTags),
-		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, false, maxCachedExecutables),
-		RefEntries:  pruneEntries(recent.GetRefEntries(), c.added.refs, !c.SaveRefs, maxCachedRefs),
+		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, false, cmp.Or(c.MaxTags, defaultMaxTags)),
+		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, false, cmp.Or(c.MaxExtractedObjectRefs, defaultMaxExtractedObjectRefs)),
+		RefEntries:  pruneEntries(recent.GetRefEntries(), c.added.refs, !c.SaveRefs, cmp.Or(c.MaxRefs, defaultMaxRefs)),
 	}
 	if err := WriteVersionCache(ctx, c.FS, updated, c.SaveName); err != nil {
 		return err

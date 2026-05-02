@@ -73,11 +73,11 @@ func TestVersionCacheWorks(t *testing.T) {
 				tc := &VersionCache{FS: fs, SaveName: legacy}
 
 				// Fill up to capacity.
-				for i := range maxCachedTags {
+				for i := range defaultMaxTags {
 					assert.That(t, tc, shouldAddTag(ctx, "service.example.com", "pkg", fmt.Sprintf("tag:%d", i), IID1("a")))
 				}
-				pkgIIDs := make([]string, maxCachedExecutables)
-				for i := range maxCachedExecutables {
+				pkgIIDs := make([]string, defaultMaxExtractedObjectRefs)
+				for i := range defaultMaxExtractedObjectRefs {
 					pkgIIDs[i] = IID2(i)
 				}
 				slices.Sort(pkgIIDs)
@@ -92,7 +92,7 @@ func TestVersionCacheWorks(t *testing.T) {
 
 				// Add one more tag. Should evict the oldest one.
 				assert.That(t, tc, shouldAddTag(ctx, "service.example.com", "pkg", "one_more_tag:0", IID1("a")))
-				assert.That(t, tc, shouldAddFile(ctx, "service.example.com", "pkg", IID2(maxCachedExecutables), "filename", IID2(maxCachedExecutables)))
+				assert.That(t, tc, shouldAddFile(ctx, "service.example.com", "pkg", IID2(defaultMaxExtractedObjectRefs), "filename", IID2(defaultMaxExtractedObjectRefs)))
 				assert.NoErr(t, tc.Flush(ctx))
 
 				// Oldest tag is evicted.
@@ -105,7 +105,7 @@ func TestVersionCacheWorks(t *testing.T) {
 
 				// Most recent one is also alive.
 				assert.That(t, tc, shouldHaveTag(ctx, "service.example.com", "pkg", "one_more_tag:0", IID1("a")))
-				assert.That(t, tc, shouldHaveFile(ctx, "service.example.com", "pkg", IID2(maxCachedExecutables), "filename", IID2(maxCachedExecutables)))
+				assert.That(t, tc, shouldHaveFile(ctx, "service.example.com", "pkg", IID2(defaultMaxExtractedObjectRefs), "filename", IID2(defaultMaxExtractedObjectRefs)))
 			})
 
 			t.Run("parallel update", func(t *ftt.Test) {
@@ -319,4 +319,67 @@ func TestVersionCacheChaining(t *testing.T) {
 	assert.That(t, tcOffline2, shouldNotHaveTag(ctx, "service.example.com", "pkg", "other:tag"))
 	assert.That(t, tcOffline2, shouldNotHaveFile(ctx, "service.example.com", "pkg", IID1("b"), "aFile"))
 	assert.That(t, tcOffline2, shouldNotHaveRef(ctx, "service.example.com", "pkg", "other/ref"))
+}
+
+func TestVersionCacheLimits(t *testing.T) {
+	t.Parallel()
+
+	t.Run("custom limit", func(t *testing.T) {
+		ctx := t.Context()
+
+		fsInst := fs.NewFileSystem(t.TempDir(), "")
+		tc := &VersionCache{
+			FS:                     fsInst,
+			MaxTags:                2,
+			MaxExtractedObjectRefs: 2,
+			MaxRefs:                2,
+			SaveRefs:               true,
+		}
+
+		// Add 3 tags/files/refs.
+		assert.That(t, tc, shouldAddTag(ctx, "service.example.com", "pkg", "tag:1", IID1("a")))
+		assert.That(t, tc, shouldAddTag(ctx, "service.example.com", "pkg", "tag:2", IID1("b")))
+		assert.That(t, tc, shouldAddTag(ctx, "service.example.com", "pkg", "tag:3", IID1("c")))
+		assert.That(t, tc, shouldAddFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile", IID1("a")))
+		assert.That(t, tc, shouldAddFile(ctx, "service.example.com", "pkg", IID1("b"), "bFile", IID1("b")))
+		assert.That(t, tc, shouldAddFile(ctx, "service.example.com", "pkg", IID1("c"), "cFile", IID1("c")))
+		assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "ref/1", IID1("a")))
+		assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "ref/2", IID1("b")))
+		assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "ref/3", IID1("c")))
+
+		assert.NoErr(t, tc.Flush(ctx))
+
+		tc2 := &VersionCache{FS: fsInst, LoadRefs: true}
+		// The first tag/file/ref should be evicted because MaxTags is 2.
+		assert.That(t, tc2, shouldNotHaveTag(ctx, "service.example.com", "pkg", "tag:1"))
+		assert.That(t, tc2, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:2", IID1("b")))
+		assert.That(t, tc2, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:3", IID1("c")))
+		assert.That(t, tc2, shouldNotHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile"))
+		assert.That(t, tc2, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("b"), "bFile", IID1("b")))
+		assert.That(t, tc2, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("c"), "cFile", IID1("c")))
+		assert.That(t, tc2, shouldNotHaveRef(ctx, "service.example.com", "pkg", "ref/1"))
+		assert.That(t, tc2, shouldHaveRef(ctx, "service.example.com", "pkg", "ref/2", IID1("b")))
+		assert.That(t, tc2, shouldHaveRef(ctx, "service.example.com", "pkg", "ref/3", IID1("c")))
+	})
+
+	t.Run("no limit", func(t *testing.T) {
+		ctx := t.Context()
+
+		fsInst := fs.NewFileSystem(t.TempDir(), "")
+		tc := &VersionCache{
+			FS:      fsInst,
+			MaxTags: -1, // No limit.
+		}
+
+		// Add more tags than default maxCachedTags.
+		for i := range defaultMaxTags + 5 {
+			assert.That(t, tc, shouldAddTag(ctx, "service.example.com", "pkg", fmt.Sprintf("tag:%d", i), IID1("a")))
+		}
+		assert.NoErr(t, tc.Flush(ctx))
+
+		tc2 := &VersionCache{FS: fsInst}
+		// Since there's no limit, even tag:0 should be preserved.
+		assert.That(t, tc2, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:0", IID1("a")))
+		assert.That(t, tc2, shouldHaveTag(ctx, "service.example.com", "pkg", fmt.Sprintf("tag:%d", defaultMaxTags+4), IID1("a")))
+	})
 }
