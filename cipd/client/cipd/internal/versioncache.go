@@ -19,6 +19,8 @@ import (
 	"context"
 	"sync"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/clock"
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
@@ -69,8 +71,9 @@ type VersionCache struct {
 	// FS is a filesystem rooted on the cache directory.
 	FS fs.FileSystem
 
-	// UseLegacyName indicates that this cache should use the legacy cache name
-	// when saving the version cache.
+	// SaveName indicates which version cache file name this instance should
+	// WRITE to. The cache will always consider both names when reading,
+	// preferring the modern name.
 	SaveName LegacyVersionCache
 
 	// LoadRefs indicates that we should load refs when reading the version cache
@@ -115,7 +118,9 @@ type VersionCache struct {
 
 // lazyLoadLocked loads the cache from disk.
 //
-// By the time this returns nil, `c.cache` is guaranteed to be non-nil.
+// After this returns `nil`, `cacheLoaded` will be true, and `c.cache` will
+// have on-disk data merged into it. This will not reload from the disk until
+// after [Flush] is called.
 func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 	if c.cacheLoaded {
 		return nil
@@ -126,7 +131,7 @@ func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 		return err
 	}
 
-	c.cache.load(ctx, rawCache, c.LoadRefs)
+	c.cache.merge(ctx, rawCache, c.LoadRefs)
 	c.cacheLoaded = true
 	return nil
 }
@@ -301,6 +306,8 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 		return err
 	}
 
+	recentClone := proto.CloneOf(recent)
+
 	// Serialize and write to disk. We still can accidentally replace someone
 	// else's changes, but the probability should be relatively low. It can
 	// happen only if two processes call [VersionCache.Flush] at the exact same
@@ -314,9 +321,14 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 		return err
 	}
 
-	// The state is persisted now; load the updated proto back into c.cache as if
-	// we just read it from disk.
-	c.cache.load(ctx, updated, c.LoadRefs)
+	// The state is persisted now; merge the just-loaded data into c.cache and
+	// clear `added`. `c.cache` will now be a superset of `updated` for this
+	// cache instance. This allows us to not swap back and forth to disk in the
+	// case where we must process more than maxCachedXXX with multiple flush
+	// events.
+	c.cache.merge(ctx, recentClone, c.LoadRefs)
+	c.cache.mergeFrom(&c.added)
+	c.cacheLoaded = true
 	c.added.reset()
 
 	return nil

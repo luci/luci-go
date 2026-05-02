@@ -16,6 +16,7 @@ package internal
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -36,24 +37,42 @@ type memoryVersionCache struct {
 	refs  refMap
 }
 
-// load resets the cache and populates it with data in `vc`.
+func (m *memoryVersionCache) getTags(sizeHint int) tagMap {
+	if m.tags == nil {
+		m.tags = make(tagMap, sizeHint)
+	}
+	return m.tags
+}
+
+func (m *memoryVersionCache) getFiles(sizeHint int) fileMap {
+	if m.files == nil {
+		m.files = make(fileMap, sizeHint)
+	}
+	return m.files
+}
+
+func (m *memoryVersionCache) getRefs(sizeHint int) refMap {
+	if m.refs == nil {
+		m.refs = make(refMap, sizeHint)
+	}
+	return m.refs
+}
+
+// merge updates this cache with data in `vc`.
 //
 // Safe to pass nil `vc`; it will just reset the memory cache.
 //
-// If `loadRefs` is true, this will also load refs (otherwise they are
-// ignored).
-func (m *memoryVersionCache) load(ctx context.Context, vc *messages.VersionCache, loadRefs bool) {
-	m.reset()
-
+// If `loadRefs` is true, this will also load refs (otherwise they are ignored).
+func (m *memoryVersionCache) merge(ctx context.Context, vc *messages.VersionCache, loadRefs bool) {
 	if entries := vc.GetEntries(); len(entries) > 0 {
-		m.tags = make(tagMap, len(entries))
+		tags := m.getTags(len(entries))
 		for _, e := range entries {
-			m.tags[mkTagKey(e)] = e
+			tags[mkTagKey(e)] = e
 		}
 	}
 
 	if entries := vc.GetFileEntries(); len(entries) > 0 {
-		m.files = make(fileMap, len(entries))
+		files := m.getFiles(len(entries))
 		for _, e := range entries {
 			// We do this because we will call common.InstanceIDToObjectRef on
 			// these values later, which will panic if the InstanceId is malformed.
@@ -62,24 +81,36 @@ func (m *memoryVersionCache) load(ctx context.Context, vc *messages.VersionCache
 					e.ObjectRef, e.FileName, e.Package, err)
 				continue
 			}
-			m.files[mkFileKey(e)] = e
+			files[mkFileKey(e)] = e
 		}
 	}
 
 	if entries := vc.GetRefEntries(); loadRefs && len(entries) > 0 {
-		m.refs = make(refMap, len(entries))
+		refs := m.getRefs(len(entries))
 		for _, e := range entries {
-			m.refs[mkRefKey(e)] = e
+			refs[mkRefKey(e)] = e
 		}
+	}
+}
+
+// mergeFrom updates this cache from another memoryVersionCache.
+func (m *memoryVersionCache) mergeFrom(o *memoryVersionCache) {
+	if len(o.tags) > 0 {
+		maps.Insert(m.getTags(len(o.tags)), maps.All(o.tags))
+	}
+
+	if len(o.files) > 0 {
+		maps.Insert(m.getFiles(len(o.files)), maps.All(o.files))
+	}
+
+	if len(o.refs) > 0 {
+		maps.Insert(m.getRefs(len(o.refs)), maps.All(o.refs))
 	}
 }
 
 // addTag inserts/overwrites any existing mapping of `tagKey` -> `iid`.
 func (m *memoryVersionCache) addTag(key tagKey, iid string) {
-	if m.tags == nil {
-		m.tags = make(tagMap, 1)
-	}
-	m.tags[key] = &messages.VersionCache_Entry{
+	m.getTags(1)[key] = &messages.VersionCache_Entry{
 		Service:    key.service,
 		Package:    key.pkg,
 		Tag:        key.tag,
@@ -95,10 +126,7 @@ func (m *memoryVersionCache) getTag(key tagKey) *messages.VersionCache_Entry {
 // addFile inserts/overwrites any existing mapping of `fileKey` ->
 // InstanceID(`ref`).
 func (m *memoryVersionCache) addFile(key fileKey, ref *caspb.ObjectRef) {
-	if m.files == nil {
-		m.files = make(fileMap, 1)
-	}
-	m.files[key] = &messages.VersionCache_FileEntry{
+	m.getFiles(1)[key] = &messages.VersionCache_FileEntry{
 		Service:    key.service,
 		Package:    key.pkg,
 		InstanceId: key.instance,
@@ -113,10 +141,7 @@ func (m *memoryVersionCache) getFile(key fileKey) *messages.VersionCache_FileEnt
 }
 
 func (m *memoryVersionCache) addRef(key refKey, iid string, now time.Time) {
-	if m.refs == nil {
-		m.refs = make(refMap, 1)
-	}
-	m.refs[key] = &messages.VersionCache_RefEntry{
+	m.getRefs(1)[key] = &messages.VersionCache_RefEntry{
 		Service:    key.service,
 		Package:    key.pkg,
 		Ref:        key.ref,

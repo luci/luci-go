@@ -95,6 +95,8 @@ func TestVersionCacheWorks(t *testing.T) {
 				assert.That(t, tc, shouldAddFile(ctx, "service.example.com", "pkg", IID2(defaultMaxExtractedObjectRefs), "filename", IID2(defaultMaxExtractedObjectRefs)))
 				assert.NoErr(t, tc.Flush(ctx))
 
+				tc = &VersionCache{FS: fs, SaveName: legacy}
+
 				// Oldest tag is evicted.
 				assert.That(t, tc, shouldNotHaveTag(ctx, "service.example.com", "pkg", "tag:0"))
 				assert.That(t, tc, shouldNotHaveFile(ctx, "service.example.com", "pkg", pkgIIDs[0], "filename"))
@@ -381,5 +383,45 @@ func TestVersionCacheLimits(t *testing.T) {
 		// Since there's no limit, even tag:0 should be preserved.
 		assert.That(t, tc2, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:0", IID1("a")))
 		assert.That(t, tc2, shouldHaveTag(ctx, "service.example.com", "pkg", fmt.Sprintf("tag:%d", defaultMaxTags+4), IID1("a")))
+	})
+
+	t.Run("refs limit", func(t *testing.T) {
+		ctx := t.Context()
+
+		fsInst := fs.NewFileSystem(t.TempDir(), "")
+		tc := &VersionCache{
+			FS:       fsInst,
+			LoadRefs: true,
+			SaveRefs: true,
+			MaxRefs:  2,
+		}
+
+		// Add 3 refs, which is greater than max limit of 2.
+		assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "ref000", IID1("a")))
+		assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "ref001", IID1("b")))
+		assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "ref002", IID1("c")))
+
+		t.Log(tc.cache.refs)
+
+		// Flush the cache.
+		assert.NoErr(t, tc.Flush(ctx))
+
+		t.Log(tc.cache.refs)
+
+		// The just-flushed cache should contain both the oldest and newest refs in memory.
+		assert.That(t, tc, shouldHaveRef(ctx, "service.example.com", "pkg", "ref000", IID1("a")))
+		assert.That(t, tc, shouldHaveRef(ctx, "service.example.com", "pkg", "ref002", IID1("c")))
+
+		// Load a new cache.
+		tc2 := &VersionCache{
+			FS:       fsInst,
+			LoadRefs: true,
+			SaveRefs: true,
+			MaxRefs:  2,
+		}
+		// "ref000" should be evicted from disk because MaxRefs is 2.
+		assert.That(t, tc2, shouldNotHaveRef(ctx, "service.example.com", "pkg", "ref000"))
+		assert.That(t, tc2, shouldHaveRef(ctx, "service.example.com", "pkg", "ref001", IID1("b")))
+		assert.That(t, tc2, shouldHaveRef(ctx, "service.example.com", "pkg", "ref002", IID1("c")))
 	})
 }
