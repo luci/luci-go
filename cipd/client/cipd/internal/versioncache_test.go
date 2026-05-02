@@ -266,3 +266,57 @@ func TestVersionCacheMultiService(t *testing.T) {
 	assert.That(t, tc, shouldHaveTag(ctx, "service1.example.com", "pkg", "some:tag", IID1("a")))
 	assert.That(t, tc, shouldHaveTag(ctx, "service2.example.com", "pkg", "some:tag", IID1("b")))
 }
+
+func TestVersionCacheChaining(t *testing.T) {
+	t.Parallel()
+
+	ctx := t.Context()
+
+	offlineFS := fs.NewFileSystem(t.TempDir(), "")
+	tcOffline := &VersionCache{FS: offlineFS, SaveRefs: true, LoadRefs: true}
+	assert.That(t, tcOffline, shouldAddTag(ctx, "service.example.com", "pkg", "some:tag", IID1("a")))
+	assert.That(t, tcOffline, shouldAddFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile", IID1("a")))
+	assert.That(t, tcOffline, shouldAddRef(ctx, "service.example.com", "pkg", "some/ref", IID1("a")))
+	assert.NoErr(t, tcOffline.Flush(ctx))
+
+	onlineFS := fs.NewFileSystem(t.TempDir(), "")
+	tcOnline := &VersionCache{
+		FS:       onlineFS,
+		ChainTo:  tcOffline,
+		LoadRefs: true,
+		SaveRefs: true,
+	}
+
+	// We can read the offline tag via tcOnline.
+	assert.That(t, tcOnline, shouldHaveTag(ctx, "service.example.com", "pkg", "some:tag", IID1("a")))
+	assert.That(t, tcOnline, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile", IID1("a")))
+	assert.That(t, tcOnline, shouldHaveRef(ctx, "service.example.com", "pkg", "some/ref", IID1("a")))
+
+	// Directly overwrite all three.
+	assert.That(t, tcOnline, shouldAddTag(ctx, "service.example.com", "pkg", "some:tag", IID1("b")))
+	assert.That(t, tcOnline, shouldAddFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile", IID1("b")))
+	assert.That(t, tcOnline, shouldAddRef(ctx, "service.example.com", "pkg", "some/ref", IID1("b")))
+	// Add three new ones.
+	assert.That(t, tcOnline, shouldAddTag(ctx, "service.example.com", "pkg", "other:tag", IID1("c")))
+	assert.That(t, tcOnline, shouldAddFile(ctx, "service.example.com", "pkg", IID1("b"), "aFile", IID1("c")))
+	assert.That(t, tcOnline, shouldAddRef(ctx, "service.example.com", "pkg", "other/ref", IID1("c")))
+	assert.NoErr(t, tcOnline.Flush(ctx))
+
+	// We should observe all 6 in the online cache.
+	tcOnline2 := &VersionCache{FS: onlineFS, LoadRefs: true}
+	assert.That(t, tcOnline2, shouldHaveTag(ctx, "service.example.com", "pkg", "some:tag", IID1("b")))
+	assert.That(t, tcOnline2, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile", IID1("b")))
+	assert.That(t, tcOnline2, shouldHaveRef(ctx, "service.example.com", "pkg", "some/ref", IID1("b")))
+	assert.That(t, tcOnline2, shouldHaveTag(ctx, "service.example.com", "pkg", "other:tag", IID1("c")))
+	assert.That(t, tcOnline2, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("b"), "aFile", IID1("c")))
+	assert.That(t, tcOnline2, shouldHaveRef(ctx, "service.example.com", "pkg", "other/ref", IID1("c")))
+
+	// And the original cache is untouched.
+	tcOffline2 := &VersionCache{FS: offlineFS, SaveRefs: true, LoadRefs: true}
+	assert.That(t, tcOffline2, shouldAddTag(ctx, "service.example.com", "pkg", "some:tag", IID1("a")))
+	assert.That(t, tcOffline2, shouldAddFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile", IID1("a")))
+	assert.That(t, tcOffline2, shouldAddRef(ctx, "service.example.com", "pkg", "some/ref", IID1("a")))
+	assert.That(t, tcOffline2, shouldNotHaveTag(ctx, "service.example.com", "pkg", "other:tag"))
+	assert.That(t, tcOffline2, shouldNotHaveFile(ctx, "service.example.com", "pkg", IID1("b"), "aFile"))
+	assert.That(t, tcOffline2, shouldNotHaveRef(ctx, "service.example.com", "pkg", "other/ref"))
+}

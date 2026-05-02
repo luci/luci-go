@@ -80,6 +80,9 @@ type VersionCache struct {
 	// when saving.
 	SaveRefs bool
 
+	// ChainTo, if set, will be consulted before loading our cache from disk.
+	ChainTo *VersionCache
+
 	mu sync.Mutex
 
 	// The last-loaded state.
@@ -112,11 +115,21 @@ func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 //
 // Returns error if the cache can't be read.
 func (c *VersionCache) ResolveTag(ctx context.Context, service, pkg, tag string) (pin common.Pin, err error) {
-	if err = common.ValidatePackageName(pkg); err != nil {
-		return pin, err
-	}
-	if err = common.ValidateInstanceTag(tag); err != nil {
-		return pin, err
+	if c.ChainTo != nil {
+		// NOTE: ResolveTag is calling into another instance of this method, which
+		// means the very bottom of the chain will do the validate calls (so we
+		// don't have to do them for every link in the chain).
+		pin, err = c.ChainTo.ResolveTag(ctx, service, pkg, tag)
+		if err != nil || pin.InstanceID != "" {
+			return pin, err
+		}
+	} else {
+		if err = common.ValidatePackageName(pkg); err != nil {
+			return pin, err
+		}
+		if err = common.ValidateInstanceTag(tag); err != nil {
+			return pin, err
+		}
 	}
 
 	key := tagKey{service, pkg, tag}
@@ -133,8 +146,18 @@ func (c *VersionCache) ResolveTag(ctx context.Context, service, pkg, tag string)
 //
 // Returns error if the cache can't be read.
 func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, service string, pin common.Pin, fileName string) (ref *caspb.ObjectRef, err error) {
-	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
-		return ref, err
+	if c.ChainTo != nil {
+		// NOTE: ResolveExtractedObjectRef is calling into another instance of this
+		// method, which means the very bottom of the chain will do the validate
+		// calls (so we don't have to do them for every link in the chain).
+		ref, err = c.ChainTo.ResolveExtractedObjectRef(ctx, service, pin, fileName)
+		if err != nil || ref != nil {
+			return ref, err
+		}
+	} else {
+		if err := common.ValidatePin(pin, common.AnyHash); err != nil {
+			return ref, err
+		}
 	}
 
 	key := fileKey{service, pin.PackageName, pin.InstanceID, fileName}
@@ -149,11 +172,21 @@ func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, service st
 //
 // Returns error if the cache can't be read.
 func (c *VersionCache) ResolveRef(ctx context.Context, service, pkg, ref string) (pin common.Pin, err error) {
-	if err = common.ValidatePackageName(pkg); err != nil {
-		return pin, err
-	}
-	if err = common.ValidatePackageRef(ref); err != nil {
-		return pin, err
+	if c.ChainTo != nil {
+		// NOTE: ResolveRef is calling into another instance of this method, which
+		// means the very bottom of the chain will do the validate calls (so we
+		// don't have to do them for every link in the chain).
+		pin, err = c.ChainTo.ResolveRef(ctx, service, pkg, ref)
+		if err != nil || pin.InstanceID != "" {
+			return pin, err
+		}
+	} else {
+		if err = common.ValidatePackageName(pkg); err != nil {
+			return pin, err
+		}
+		if err = common.ValidatePackageRef(ref); err != nil {
+			return pin, err
+		}
 	}
 
 	key := refKey{service, pkg, ref}
