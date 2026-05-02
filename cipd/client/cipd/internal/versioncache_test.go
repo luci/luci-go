@@ -233,24 +233,77 @@ func TestVersionCacheOfflineRefs(t *testing.T) {
 	ctx := t.Context()
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
 
-	// Make a legacy cache with a tag and save it.
-	tc := &VersionCache{FS: fs, SaveRefs: true}
+	tc := &VersionCache{FS: fs}
 	assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "latest", IID1("a")))
 	assert.NoErr(t, tc.Flush(ctx))
 
-	tc = &VersionCache{FS: fs, LoadRefs: true}
+	tc = &VersionCache{FS: fs}
 	assert.That(t, tc, shouldHaveRef(ctx, "service.example.com", "pkg", "latest", IID1("a")))
 
-	// Verify that by default we don't load refs, but we do pass them through.
-	tc = &VersionCache{FS: fs}
+	// Verify that we can stop loading/saving refs, but still pass them through.
+	tc = &VersionCache{FS: fs, Refs: Disabled}
 	assert.That(t, tc, shouldNotHaveRef(ctx, "service.example.com", "pkg", "latest"))
 	assert.That(t, tc, shouldAddTag(ctx, "service.example.com", "pkg", "version:123", IID1("b")))
 	assert.NoErr(t, tc.Flush(ctx))
 
 	// Still there.
-	tc = &VersionCache{FS: fs, LoadRefs: true}
+	tc = &VersionCache{FS: fs}
 	assert.That(t, tc, shouldHaveRef(ctx, "service.example.com", "pkg", "latest", IID1("a")))
 	assert.That(t, tc, shouldHaveTag(ctx, "service.example.com", "pkg", "version:123", IID1("b")))
+}
+
+func TestVersionCacheDisabledTags(t *testing.T) {
+	t.Parallel()
+
+	fsInst := fs.NewFileSystem(t.TempDir(), "")
+
+	ctx := t.Context()
+	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+
+	tc := &VersionCache{FS: fsInst}
+	assert.That(t, tc, shouldAddTag(ctx, "service.example.com", "pkg", "version:1", IID1("a")))
+	assert.NoErr(t, tc.Flush(ctx))
+
+	tc = &VersionCache{FS: fsInst}
+	assert.That(t, tc, shouldHaveTag(ctx, "service.example.com", "pkg", "version:1", IID1("a")))
+
+	// Verify that we can stop loading/saving tags, but still pass them through.
+	tc = &VersionCache{FS: fsInst, Tags: Disabled}
+	assert.That(t, tc, shouldNotHaveTag(ctx, "service.example.com", "pkg", "version:1"))
+	assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "latest", IID1("b")))
+	assert.NoErr(t, tc.Flush(ctx))
+
+	// Still there.
+	tc = &VersionCache{FS: fsInst}
+	assert.That(t, tc, shouldHaveTag(ctx, "service.example.com", "pkg", "version:1", IID1("a")))
+	assert.That(t, tc, shouldHaveRef(ctx, "service.example.com", "pkg", "latest", IID1("b")))
+}
+
+func TestVersionCacheDisabledFileObjectRefs(t *testing.T) {
+	t.Parallel()
+
+	fsInst := fs.NewFileSystem(t.TempDir(), "")
+
+	ctx := t.Context()
+	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+
+	tc := &VersionCache{FS: fsInst}
+	assert.That(t, tc, shouldAddFile(ctx, "service.example.com", "pkg", IID1("a"), "filename", IID1("1")))
+	assert.NoErr(t, tc.Flush(ctx))
+
+	tc = &VersionCache{FS: fsInst}
+	assert.That(t, tc, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "filename", IID1("1")))
+
+	// Verify that we can stop loading/saving file object refs, but still pass them through.
+	tc = &VersionCache{FS: fsInst, FileObjectRefs: Disabled}
+	assert.That(t, tc, shouldNotHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "filename"))
+	assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "latest", IID1("b")))
+	assert.NoErr(t, tc.Flush(ctx))
+
+	// Still there.
+	tc = &VersionCache{FS: fsInst}
+	assert.That(t, tc, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "filename", IID1("1")))
+	assert.That(t, tc, shouldHaveRef(ctx, "service.example.com", "pkg", "latest", IID1("b")))
 }
 
 func TestVersionCacheMultiService(t *testing.T) {
@@ -275,7 +328,7 @@ func TestVersionCacheChaining(t *testing.T) {
 	ctx := t.Context()
 
 	offlineFS := fs.NewFileSystem(t.TempDir(), "")
-	tcOffline := &VersionCache{FS: offlineFS, SaveRefs: true, LoadRefs: true}
+	tcOffline := &VersionCache{FS: offlineFS}
 	assert.That(t, tcOffline, shouldAddTag(ctx, "service.example.com", "pkg", "some:tag", IID1("a")))
 	assert.That(t, tcOffline, shouldAddFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile", IID1("a")))
 	assert.That(t, tcOffline, shouldAddRef(ctx, "service.example.com", "pkg", "some/ref", IID1("a")))
@@ -283,10 +336,8 @@ func TestVersionCacheChaining(t *testing.T) {
 
 	onlineFS := fs.NewFileSystem(t.TempDir(), "")
 	tcOnline := &VersionCache{
-		FS:       onlineFS,
-		ChainTo:  tcOffline,
-		LoadRefs: true,
-		SaveRefs: true,
+		FS:      onlineFS,
+		ChainTo: tcOffline,
 	}
 
 	// We can read the offline tag via tcOnline.
@@ -305,7 +356,7 @@ func TestVersionCacheChaining(t *testing.T) {
 	assert.NoErr(t, tcOnline.Flush(ctx))
 
 	// We should observe all 6 in the online cache.
-	tcOnline2 := &VersionCache{FS: onlineFS, LoadRefs: true}
+	tcOnline2 := &VersionCache{FS: onlineFS}
 	assert.That(t, tcOnline2, shouldHaveTag(ctx, "service.example.com", "pkg", "some:tag", IID1("b")))
 	assert.That(t, tcOnline2, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile", IID1("b")))
 	assert.That(t, tcOnline2, shouldHaveRef(ctx, "service.example.com", "pkg", "some/ref", IID1("b")))
@@ -314,7 +365,7 @@ func TestVersionCacheChaining(t *testing.T) {
 	assert.That(t, tcOnline2, shouldHaveRef(ctx, "service.example.com", "pkg", "other/ref", IID1("c")))
 
 	// And the original cache is untouched.
-	tcOffline2 := &VersionCache{FS: offlineFS, SaveRefs: true, LoadRefs: true}
+	tcOffline2 := &VersionCache{FS: offlineFS}
 	assert.That(t, tcOffline2, shouldAddTag(ctx, "service.example.com", "pkg", "some:tag", IID1("a")))
 	assert.That(t, tcOffline2, shouldAddFile(ctx, "service.example.com", "pkg", IID1("a"), "aFile", IID1("a")))
 	assert.That(t, tcOffline2, shouldAddRef(ctx, "service.example.com", "pkg", "some/ref", IID1("a")))
@@ -335,7 +386,6 @@ func TestVersionCacheLimits(t *testing.T) {
 			MaxTags:                2,
 			MaxExtractedObjectRefs: 2,
 			MaxRefs:                2,
-			SaveRefs:               true,
 		}
 
 		// Add 3 tags/files/refs.
@@ -351,7 +401,7 @@ func TestVersionCacheLimits(t *testing.T) {
 
 		assert.NoErr(t, tc.Flush(ctx))
 
-		tc2 := &VersionCache{FS: fsInst, LoadRefs: true}
+		tc2 := &VersionCache{FS: fsInst}
 		// The first tag/file/ref should be evicted because MaxTags is 2.
 		assert.That(t, tc2, shouldNotHaveTag(ctx, "service.example.com", "pkg", "tag:1"))
 		assert.That(t, tc2, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:2", IID1("b")))
@@ -390,10 +440,8 @@ func TestVersionCacheLimits(t *testing.T) {
 
 		fsInst := fs.NewFileSystem(t.TempDir(), "")
 		tc := &VersionCache{
-			FS:       fsInst,
-			LoadRefs: true,
-			SaveRefs: true,
-			MaxRefs:  2,
+			FS:      fsInst,
+			MaxRefs: 2,
 		}
 
 		// Add 3 refs, which is greater than max limit of 2.
@@ -414,14 +462,85 @@ func TestVersionCacheLimits(t *testing.T) {
 
 		// Load a new cache.
 		tc2 := &VersionCache{
-			FS:       fsInst,
-			LoadRefs: true,
-			SaveRefs: true,
-			MaxRefs:  2,
+			FS:      fsInst,
+			MaxRefs: 2,
 		}
 		// "ref000" should be evicted from disk because MaxRefs is 2.
 		assert.That(t, tc2, shouldNotHaveRef(ctx, "service.example.com", "pkg", "ref000"))
 		assert.That(t, tc2, shouldHaveRef(ctx, "service.example.com", "pkg", "ref001", IID1("b")))
 		assert.That(t, tc2, shouldHaveRef(ctx, "service.example.com", "pkg", "ref002", IID1("c")))
+	})
+}
+
+func TestVersionCacheToggles(t *testing.T) {
+	t.Parallel()
+
+	// Set up initial cache state.
+	init := func(t testing.TB, tc *VersionCache) {
+		assert.That(t, tc, shouldAddTag(t.Context(), "service.example.com", "pkg", "tag:1", IID1("a")))
+		assert.That(t, tc, shouldAddFile(t.Context(), "service.example.com", "pkg", IID1("a"), "filename", IID2("1")))
+		assert.NoErr(t, tc.Flush(t.Context()))
+	}
+
+	t.Run("DisableRead", func(t *testing.T) {
+		ctx := t.Context()
+		fsInst := fs.NewFileSystem(t.TempDir(), "")
+		tc := &VersionCache{FS: fsInst}
+		init(t, tc)
+
+		// With DisableRead, the cache shouldn't load existing entries.
+		tcNoRead := &VersionCache{
+			FS:             fsInst,
+			Tags:           DisableRead,
+			FileObjectRefs: DisableRead,
+		}
+		assert.That(t, tcNoRead, shouldNotHaveTag(ctx, "service.example.com", "pkg", "tag:1"))
+		assert.That(t, tcNoRead, shouldNotHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "filename"))
+
+		// But we can still add and flush new entries.
+		assert.That(t, tcNoRead, shouldAddTag(ctx, "service.example.com", "pkg", "tag:2", IID1("b")))
+		assert.NoErr(t, tcNoRead.Flush(ctx))
+
+		// Verify the new entry was saved.
+		tcCheck := &VersionCache{FS: fsInst}
+		assert.That(t, tcCheck, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:2", IID1("b")))
+	})
+
+	t.Run("DisableWrite", func(t *testing.T) {
+		ctx := t.Context()
+		fsInst := fs.NewFileSystem(t.TempDir(), "")
+		tc := &VersionCache{FS: fsInst}
+		init(t, tc)
+
+		// With DisableWrite, the cache loads but doesn't save new entries.
+		tcNoWrite := &VersionCache{
+			FS:             fsInst,
+			Tags:           DisableWrite,
+			FileObjectRefs: DisableWrite,
+		}
+		// Existing entries should load.
+		assert.That(t, tcNoWrite, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:1", IID1("a")))
+
+		// Add new entries.
+		assert.That(t, tcNoWrite, shouldAddTag(ctx, "service.example.com", "pkg", "tag:3", IID1("c")))
+		assert.That(t, tcNoWrite, shouldAddFile(ctx, "service.example.com", "pkg", IID1("a"), "filename2", IID2("2")))
+
+		// And read them back in memory.
+		assert.That(t, tcNoWrite, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:3", IID1("c")))
+		assert.That(t, tcNoWrite, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "filename2", IID2("2")))
+
+		assert.NoErr(t, tcNoWrite.Flush(ctx))
+
+		// We still have them in memory.
+		assert.That(t, tcNoWrite, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:3", IID1("c")))
+		assert.That(t, tcNoWrite, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "filename2", IID2("2")))
+
+		// Verify new entries were NOT saved.
+		tcCheck := &VersionCache{FS: fsInst}
+		assert.That(t, tcCheck, shouldNotHaveTag(ctx, "service.example.com", "pkg", "tag:3"))
+		assert.That(t, tcCheck, shouldNotHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "filename2"))
+
+		// Existing entries should be preserved.
+		assert.That(t, tcCheck, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:1", IID1("a")))
 	})
 }

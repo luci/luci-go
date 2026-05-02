@@ -1675,6 +1675,7 @@ func setupVersionCache(cl *clientImpl, t testing.TB) string {
 	cl.versionCache = &internal.VersionCache{
 		FS:       fs.NewFileSystem(tempDir, ""),
 		SaveName: internal.UseLegacyVCName,
+		Refs:     internal.Disabled,
 	}
 	cl.versionCacheService = "service.example.com"
 	return tempDir

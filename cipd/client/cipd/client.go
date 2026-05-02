@@ -915,6 +915,7 @@ func (c *clientImpl) getVersionCache() *internal.VersionCache {
 		c.versionCache = &internal.VersionCache{
 			FS:       fs.NewFileSystem(dir, ""),
 			SaveName: internal.UseLegacyVCName,
+			Refs:     internal.Disabled,
 		}
 		c.versionCacheService = parsed.Host
 	})

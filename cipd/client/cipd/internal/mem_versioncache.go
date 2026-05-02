@@ -62,33 +62,40 @@ func (m *memoryVersionCache) getRefs(sizeHint int) refMap {
 //
 // Safe to pass nil `vc`; it will just reset the memory cache.
 //
-// If `loadRefs` is true, this will also load refs (otherwise they are ignored).
-func (m *memoryVersionCache) merge(ctx context.Context, vc *messages.VersionCache, loadRefs bool) {
-	if entries := vc.GetEntries(); len(entries) > 0 {
-		tags := m.getTags(len(entries))
-		for _, e := range entries {
-			tags[mkTagKey(e)] = e
-		}
-	}
-
-	if entries := vc.GetFileEntries(); len(entries) > 0 {
-		files := m.getFiles(len(entries))
-		for _, e := range entries {
-			// We do this because we will call common.InstanceIDToObjectRef on
-			// these values later, which will panic if the InstanceId is malformed.
-			if err := common.ValidateInstanceID(e.ObjectRef, common.AnyHash); err != nil {
-				logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it: %s",
-					e.ObjectRef, e.FileName, e.Package, err)
-				continue
+// `tags`, `files`, and `refs` will be checked to see if read is disabled, and
+// if so will skip merging that particular entry type.
+func (m *memoryVersionCache) merge(ctx context.Context, vc *messages.VersionCache, tags, files, refs CacheToggle) {
+	if !tags.has(DisableRead) {
+		if entries := vc.GetEntries(); len(entries) > 0 {
+			tags := m.getTags(len(entries))
+			for _, e := range entries {
+				tags[mkTagKey(e)] = e
 			}
-			files[mkFileKey(e)] = e
 		}
 	}
 
-	if entries := vc.GetRefEntries(); loadRefs && len(entries) > 0 {
-		refs := m.getRefs(len(entries))
-		for _, e := range entries {
-			refs[mkRefKey(e)] = e
+	if !files.has(DisableRead) {
+		if entries := vc.GetFileEntries(); len(entries) > 0 {
+			files := m.getFiles(len(entries))
+			for _, e := range entries {
+				// We do this because we will call common.InstanceIDToObjectRef on
+				// these values later, which will panic if the InstanceId is malformed.
+				if err := common.ValidateInstanceID(e.ObjectRef, common.AnyHash); err != nil {
+					logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it: %s",
+						e.ObjectRef, e.FileName, e.Package, err)
+					continue
+				}
+				files[mkFileKey(e)] = e
+			}
+		}
+	}
+
+	if !refs.has(DisableRead) {
+		if entries := vc.GetRefEntries(); len(entries) > 0 {
+			refs := m.getRefs(len(entries))
+			for _, e := range entries {
+				refs[mkRefKey(e)] = e
+			}
 		}
 	}
 }
@@ -214,7 +221,8 @@ type sortedEntryMap[K comparable, E entry] interface {
 // Includes existing entries, except the ones we are moving to the tail.
 //
 // Args:
-//   - recent - recently-loaded entries.
+//   - recent - recently-loaded entries. Values in this slice will not be
+//     modified.
 //   - added - map of entries which we have added in this process and want to
 //     merge.
 //   - dropAdded - if true, ignore `added` and return `recent` directly.

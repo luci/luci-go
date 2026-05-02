@@ -19,8 +19,6 @@ import (
 	"context"
 	"sync"
 
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/common/clock"
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
@@ -35,6 +33,32 @@ const (
 	defaultMaxRefs                = 300
 	legacyVersionCacheName        = "tagcache.db"
 	versionCacheName              = "versioncache.db"
+)
+
+// CacheToggle indicates how VersionCache should refs/files/tags.
+type CacheToggle int
+
+func (c CacheToggle) has(t CacheToggle) bool {
+	return c&t == t
+}
+
+const (
+	// ReadWrite (the default) means that the VersionCache should both read (from
+	// disk) and write (to disk) this VersionCache entry type.
+	ReadWrite CacheToggle = 0
+
+	// DisableRead means that the VersionCache should not attempt to load the
+	// current values form disk on a cache miss.
+	DisableRead CacheToggle = 1 << iota
+
+	// DisableWrite means that the VersionCache should not flush added values
+	// to disk. If the on-disk cache contains this type of entry, it will be
+	// passed through.
+	DisableWrite
+
+	// Disabled means that the VersionCache will neither read nor write this
+	// entry type from/to disk.
+	Disabled CacheToggle = DisableRead | DisableWrite
 )
 
 // VersionCache caches several types of version information:
@@ -76,13 +100,20 @@ type VersionCache struct {
 	// preferring the modern name.
 	SaveName LegacyVersionCache
 
-	// LoadRefs indicates that we should load refs when reading the version cache
-	// from disk.
-	LoadRefs bool
+	// Tags indicates how this cache interacts with tags.
+	//
+	// By default, they are [ReadWrite].
+	Tags CacheToggle
 
-	// SaveRefs indicates that refs added via AddRef should be persisted to disk
-	// when saving.
-	SaveRefs bool
+	// FileObjectRefs indicates how this cache interacts with file ObjectRefs.
+	//
+	// By default, they are [ReadWrite].
+	FileObjectRefs CacheToggle
+
+	// Refs indicates how this cache interacts with Refs.
+	//
+	// By default, they are [ReadWrite].
+	Refs CacheToggle
 
 	// ChainTo, if set, will be consulted before loading our cache from disk.
 	ChainTo *VersionCache
@@ -131,7 +162,7 @@ func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 		return err
 	}
 
-	c.cache.merge(ctx, rawCache, c.LoadRefs)
+	c.cache.merge(ctx, rawCache, c.Tags, c.FileObjectRefs, c.Refs)
 	c.cacheLoaded = true
 	return nil
 }
@@ -291,9 +322,13 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	noTags := c.Tags.has(DisableWrite)
+	noFileObjectRefs := c.FileObjectRefs.has(DisableWrite)
+	noRefs := c.Refs.has(DisableWrite)
+
 	// Nothing to store? Just clean the state, so that ResolveTag can fetch the
 	// up-to-date cache from disk later if needed.
-	if c.added.count() == 0 {
+	if c.added.count() == 0 || (noTags && noFileObjectRefs && noRefs) {
 		c.cacheLoaded = false
 		return nil
 	}
@@ -306,16 +341,14 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 		return err
 	}
 
-	recentClone := proto.CloneOf(recent)
-
 	// Serialize and write to disk. We still can accidentally replace someone
 	// else's changes, but the probability should be relatively low. It can
 	// happen only if two processes call [VersionCache.Flush] at the exact same
 	// time.
 	updated := &messages.VersionCache{
-		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, false, cmp.Or(c.MaxTags, defaultMaxTags)),
-		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, false, cmp.Or(c.MaxExtractedObjectRefs, defaultMaxExtractedObjectRefs)),
-		RefEntries:  pruneEntries(recent.GetRefEntries(), c.added.refs, !c.SaveRefs, cmp.Or(c.MaxRefs, defaultMaxRefs)),
+		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, c.Tags.has(DisableWrite), cmp.Or(c.MaxTags, defaultMaxTags)),
+		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, c.FileObjectRefs.has(DisableWrite), cmp.Or(c.MaxExtractedObjectRefs, defaultMaxExtractedObjectRefs)),
+		RefEntries:  pruneEntries(recent.GetRefEntries(), c.added.refs, c.Refs.has(DisableWrite), cmp.Or(c.MaxRefs, defaultMaxRefs)),
 	}
 	if err := WriteVersionCache(ctx, c.FS, updated, c.SaveName); err != nil {
 		return err
@@ -326,7 +359,7 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	// cache instance. This allows us to not swap back and forth to disk in the
 	// case where we must process more than maxCachedXXX with multiple flush
 	// events.
-	c.cache.merge(ctx, recentClone, c.LoadRefs)
+	c.cache.merge(ctx, recent, c.Tags, c.FileObjectRefs, c.Refs)
 	c.cache.mergeFrom(&c.added)
 	c.cacheLoaded = true
 	c.added.reset()
