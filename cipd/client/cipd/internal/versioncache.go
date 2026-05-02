@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"cmp"
 	"context"
 	"sync"
 
@@ -34,17 +33,6 @@ const (
 	legacyVersionCacheName = "tagcache.db"
 	versionCacheName       = "versioncache.db"
 )
-
-// RefConfig governs how a VersionCache loads refs.
-type RefConfig struct {
-	// If true, will load refs from disk.
-	Load bool
-
-	// If true, will save refs to disk.
-	Save bool
-
-	// TODO: Could also introduce some tolerable staleness duration or such.
-}
 
 // VersionCache caches several types of version information:
 //   - 'immutable' tags in the form (service, package, tag) -> instance ID.
@@ -77,11 +65,22 @@ type RefConfig struct {
 // then calculates the hash of itself to see if it's actually already at that
 // instance ID, and can make a decision to fetch a new client.
 type VersionCache struct {
-	fs        fs.FileSystem
-	useName   LegacyVersionCache
-	refConfig RefConfig
+	// FS is a filesystem rooted on the cache directory.
+	FS fs.FileSystem
 
-	lock sync.Mutex
+	// UseLegacyName indicates that this cache should use the legacy cache name
+	// when saving the version cache.
+	SaveName LegacyVersionCache
+
+	// LoadRefs indicates that we should load refs when reading the version cache
+	// from disk.
+	LoadRefs bool
+
+	// SaveRefs indicates that refs added via AddRef should be persisted to disk
+	// when saving.
+	SaveRefs bool
+
+	mu sync.Mutex
 
 	// The last-loaded state.
 	cache       memoryVersionCache
@@ -89,23 +88,6 @@ type VersionCache struct {
 
 	// These are added values which have not been flushed to disk yet.
 	added memoryVersionCache
-}
-
-// NewVersionCache initializes VersionCache.
-//
-// fs will be the root of the cache. It will be searched for tagcache.db file.
-//
-// refConfig indicates how this VersionCache should interact with refs on disk.
-// If it's nil, then this versionCache will not load or save refs from disk.
-//
-// Regardless of this, [AddRef] and [ResolveRef] will save ref resolutions
-// in-memory between calls to [VersionCache.Flush].
-func NewVersionCache(fs fs.FileSystem, useName LegacyVersionCache, refConfig *RefConfig) *VersionCache {
-	return &VersionCache{
-		fs:        fs,
-		useName:   useName,
-		refConfig: *cmp.Or(refConfig, &RefConfig{}),
-	}
 }
 
 // lazyLoadLocked loads the cache from disk.
@@ -116,12 +98,12 @@ func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 		return nil
 	}
 
-	rawCache, err := ReadVersionCache(ctx, c.fs)
+	rawCache, err := ReadVersionCache(ctx, c.FS)
 	if err != nil {
 		return err
 	}
 
-	c.cache.load(ctx, rawCache, c.refConfig.Load)
+	c.cache.load(ctx, rawCache, c.LoadRefs)
 	c.cacheLoaded = true
 	return nil
 }
@@ -195,8 +177,8 @@ func (c *VersionCache) AddTag(ctx context.Context, service string, pin common.Pi
 		return err
 	}
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.added.addTag(tagKey{service, pin.PackageName, tag}, pin.InstanceID)
 	return nil
 }
@@ -217,8 +199,8 @@ func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, service string
 		return err
 	}
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.added.addFile(fileKey{service, pin.PackageName, pin.InstanceID, fileName}, ref)
 	return nil
 }
@@ -237,8 +219,8 @@ func (c *VersionCache) AddRef(ctx context.Context, service string, pin common.Pi
 		return err
 	}
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.added.addRef(refKey{service, pin.PackageName, ref}, pin.InstanceID, clock.Now(ctx))
 	return nil
 }
@@ -248,8 +230,8 @@ func (c *VersionCache) AddRef(ctx context.Context, service string, pin common.Pi
 // It effectively resets the object to the initial state (except that all saved
 // versions are treated as if they were just loaded from the disk).
 func (c *VersionCache) Flush(ctx context.Context) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	// Nothing to store? Just clean the state, so that ResolveTag can fetch the
 	// up-to-date cache from disk later if needed.
@@ -261,7 +243,7 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	// Load the most recent data to avoid overwriting it. Load ALL entries, even
 	// if they belong to different service: we have one global cache file and
 	// should preserve all entries there.
-	recent, err := ReadVersionCache(ctx, c.fs)
+	recent, err := ReadVersionCache(ctx, c.FS)
 	if err != nil {
 		return err
 	}
@@ -273,15 +255,15 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	updated := &messages.VersionCache{
 		Entries:     pruneEntries(recent.GetEntries(), c.added.tags, false, maxCachedTags),
 		FileEntries: pruneEntries(recent.GetFileEntries(), c.added.files, false, maxCachedExecutables),
-		RefEntries:  pruneEntries(recent.GetRefEntries(), c.added.refs, !c.refConfig.Save, maxCachedRefs),
+		RefEntries:  pruneEntries(recent.GetRefEntries(), c.added.refs, !c.SaveRefs, maxCachedRefs),
 	}
-	if err := WriteVersionCache(ctx, c.fs, updated, c.useName); err != nil {
+	if err := WriteVersionCache(ctx, c.FS, updated, c.SaveName); err != nil {
 		return err
 	}
 
 	// The state is persisted now; load the updated proto back into c.cache as if
 	// we just read it from disk.
-	c.cache.load(ctx, updated, c.refConfig.Load)
+	c.cache.load(ctx, updated, c.LoadRefs)
 	c.added.reset()
 
 	return nil

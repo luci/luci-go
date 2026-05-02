@@ -159,8 +159,8 @@ func findEntry[K comparable, E entry](
 	key K,
 	lookup func(*memoryVersionCache, K) E,
 ) (E, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	var eZero E
 

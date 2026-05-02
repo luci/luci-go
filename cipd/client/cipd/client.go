@@ -912,7 +912,10 @@ func (c *clientImpl) getVersionCache() *internal.VersionCache {
 		if err != nil {
 			panic(err) // the URL has been validated in NewClient already
 		}
-		c.versionCache = internal.NewVersionCache(fs.NewFileSystem(dir, ""), internal.UseLegacyVCName, nil)
+		c.versionCache = &internal.VersionCache{
+			FS:       fs.NewFileSystem(dir, ""),
+			SaveName: internal.UseLegacyVCName,
+		}
 		c.versionCacheService = parsed.Host
 	})
 	return c.versionCache
