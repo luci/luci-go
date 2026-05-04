@@ -80,7 +80,7 @@ func TestMakeTypeMatcher(t *testing.T) {
 			rejects: []string{"hi", URL[*buildbucketpb.Build]()},
 		},
 		{
-			name: "wildcard_all",
+			name: "prefix_star",
 			urls: []string{
 				TypePrefix + "*",
 			},
@@ -95,9 +95,27 @@ func TestMakeTypeMatcher(t *testing.T) {
 			rejects: []string{"hi"},
 		},
 		{
-			name: "bad_prefix",
+			name: "bare_star",
 			urls: []string{
 				"*",
+			},
+			wantN: 1,
+			matches: []string{
+				URL[*structpb.Value](),
+				URL[*structpb.ListValue](),
+				URL[*structpb.Struct](),
+				URL[*emptypb.Empty](),
+				URL[*buildbucketpb.Build](),
+				TypePrefix + "very.long.package.Spam",
+				TypePrefix + "very.Cool",
+				TypePrefix + "very.Cool",
+				TypePrefix + "*",
+			},
+		},
+		{
+			name: "bad_prefix",
+			urls: []string{
+				"asdf*",
 			},
 			wantErr: "expected prefix",
 		},

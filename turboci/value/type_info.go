@@ -25,6 +25,9 @@ import (
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
+// AllTypes is the literal constant representing a wildcard for all types.
+const AllTypes = "*"
+
 // TypeInfo is a parsed and ready-to-use version of QueryNodesRequest.TypeInfo.
 //
 // Produced by [ParseTypeInfo].
@@ -121,6 +124,10 @@ func (t TypeMatcher) Match(typeURL string) bool {
 }
 
 func validateCheckPattern(typeURL string) error {
+	if typeURL == AllTypes {
+		return nil
+	}
+
 	if !strings.HasPrefix(typeURL, TypePrefix) {
 		return fmt.Errorf("expected prefix %q (got %q)", TypePrefix, typeURL)
 	}
