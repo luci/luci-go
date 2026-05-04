@@ -102,5 +102,35 @@ describe('fuzzy_sort', () => {
       const result = fuzzySort(query)(options);
       expect(result[0].matches).toEqual([0, 1]);
     });
+
+    it('finds scattered match when lookahead fails', () => {
+      const options = ['axybczab'];
+      const query = 'abc';
+
+      const result = fuzzySort(query)(options);
+      expect(result[0].score).toBeGreaterThan(0);
+    });
+
+    it('does not grey out Ubuntu-22.04 when querying ubun', () => {
+      const options = ['Ubuntu', 'Ubuntu-22.04'];
+      const query = 'ubun';
+
+      const result = fuzzySort(query)(options);
+
+      // Mimic threshold logic from string_list_filter.tsx
+      const scores = result.map((s) => s.score).filter((s) => s >= 0);
+      const maxScore = Math.max(...scores);
+      const significant = result.map((s) => ({
+        ...s,
+        isSignificant: scores.length === 0 || s.score >= maxScore * 0.8,
+      }));
+
+      const significantLabels = significant
+        .filter((s) => s.isSignificant)
+        .map((s) => s.el);
+
+      expect(significantLabels).toContain('Ubuntu');
+      expect(significantLabels).toContain('Ubuntu-22.04');
+    });
   });
 });

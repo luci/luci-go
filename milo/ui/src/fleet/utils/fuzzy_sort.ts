@@ -105,7 +105,8 @@ export const fuzzySubstring: ScoringFunction = (
         ) {
           if (
             target[lookAheadTargetIdx] === query[queryIndex] &&
-            target[lookAheadTargetIdx + 1] === query[queryIndex + 1]
+            target[lookAheadTargetIdx + 1] === query[queryIndex + 1] &&
+            target.length - lookAheadTargetIdx >= query.length - queryIndex
           ) {
             return false;
           }

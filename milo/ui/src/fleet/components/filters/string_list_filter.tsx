@@ -15,7 +15,6 @@
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { Button, Box, Divider, MenuList } from '@mui/material';
-import _ from 'lodash';
 import {
   useRef,
   useState,
@@ -428,15 +427,7 @@ const OptionComponent = function OptionComponent({
     );
 
     const scores = scored.map((s) => s.score).filter((s) => s >= 0);
-    const avg = _.sum(scores) / scores.length;
-    const sd = Math.sqrt(
-      _.sum(scores.map((a) => Math.pow(a - avg, 2))) / scores.length,
-    );
-
-    const threshold =
-      avg + sd > Math.max(...scores)
-        ? Math.max(0, avg - 2 * sd) // some queries are too "left skewed"
-        : avg + sd;
+    const maxScore = Math.max(...scores);
 
     return scored
       .sort((a, b) => {
@@ -463,7 +454,7 @@ const OptionComponent = function OptionComponent({
         ...a,
         el: {
           ...a.el.optionValue,
-          isSignificant: isNaN(threshold) || a.score >= threshold,
+          isSignificant: scores.length === 0 || a.score >= maxScore * 0.8,
         } as OptionValue,
       }));
   }, [deferredSearchQuery, options]);
