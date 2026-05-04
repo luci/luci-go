@@ -306,6 +306,24 @@ describe('AIP-160 Filter Parser', () => {
         'term{restriction{comparable{member{' +
         'value{quoted,"[Resource Request][Annual] BR-25-14 & BR-25-16: Falcon RAK w/ NVIDIA RTX 5070 x 6"}}}}}}}}}}}}}}',
     },
+    {
+      input: 'label != "A" AND label != "B"',
+      ast:
+        'filter{expression{sequence{factor{term{restriction{comparable{member{value{"label"}}},"!=",' +
+        'comparable{member{value{quoted,"A"}}}}}}},' +
+        'sequence{factor{term{restriction{comparable{member{value{"label"}}},"!=",comparable{member{value{quoted,"B"}}}}}}}}}',
+    },
+    {
+      input: 'NOT key:*',
+      ast: 'filter{expression{sequence{factor{term{-restriction{comparable{member{value{"key"}}},":",comparable{member{value{"*"}}}}}}}}}',
+    },
+    {
+      input: 'key = "v1" OR key = "v2"',
+      ast:
+        'filter{expression{sequence{factor{term{restriction{comparable{member{value{"key"}}},"=",' +
+        'comparable{member{value{quoted,"v1"}}}}},' +
+        'term{restriction{comparable{member{value{"key"}}},"=",comparable{member{value{quoted,"v2"}}}}}}}}}',
+    },
   ];
 
   it.each(testCases.filter((tc) => !tc.expectErr))(

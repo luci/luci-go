@@ -94,6 +94,34 @@ describe('useFilters', () => {
     expect((arg as ast.Comparable).member.value.value).toBe('value');
   });
 
+  it('should not double quote values when generating AIP-160 string', async () => {
+    const builder = new StringListFilterCategoryBuilder()
+      .setLabel('Model')
+      .setOptions([{ label: 'v1', value: 'v1' }]);
+
+    const builders2 = {
+      model: builder,
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders2), { wrapper });
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+
+    const category = result.current.filterValues?.[
+      'model'
+    ] as StringListFilterCategory;
+    category.setSelectedOptions(['v1']);
+
+    const generated = result.current.getAip160String();
+    expect(generated).toEqual('model = ("v1")');
+  });
+
   it('should fallback to getFilters for legacy URLs', async () => {
     const builder = new StringListFilterCategoryBuilder()
       .setLabel('Model')
