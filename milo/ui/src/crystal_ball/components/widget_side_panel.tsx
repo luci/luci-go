@@ -30,6 +30,7 @@ import {
 import { ReactNode, useContext } from 'react';
 import { createPortal } from 'react-dom';
 
+import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { WidgetPortalContext } from '@/crystal_ball/context';
 
 interface WidgetSidePanelProps {
@@ -88,21 +89,10 @@ export function WidgetSidePanel({
                 textTransform: 'uppercase',
                 letterSpacing: 0.5,
                 lineHeight: 1,
+                textAlign: 'center',
               }}
             >
-              Point
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'text.secondary',
-                fontWeight: 'bold',
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                lineHeight: 1,
-              }}
-            >
-              Details
+              {COMMON_MESSAGES.INVOCATION_DETAILS}
             </Typography>
           </Box>
         </Box>

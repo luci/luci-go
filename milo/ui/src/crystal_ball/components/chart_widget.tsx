@@ -740,7 +740,7 @@ export function ChartWidget({
         )}
         {selectedPoint && (
           <WidgetSidePanel
-            title={COMMON_MESSAGES.POINT_DETAILS}
+            title={COMMON_MESSAGES.INVOCATION_DETAILS}
             onClose={() => {
               setSelectedPoint(null);
               portalContext?.setOpen(false);

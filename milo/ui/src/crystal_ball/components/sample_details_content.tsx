@@ -26,11 +26,17 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { RawSampleList, SelectedPointInfo } from '@/crystal_ball/components';
-import { Column, COMMON_MESSAGES } from '@/crystal_ball/constants';
+import {
+  AGGREGATION_FUNCTION_LABELS,
+  Column,
+  COMMON_MESSAGES,
+} from '@/crystal_ball/constants';
 import { useFetchWidgetRawSamples } from '@/crystal_ball/hooks';
 import { getSafeChartType } from '@/crystal_ball/utils';
 import {
   FetchWidgetRawSamplesRequest,
+  PerfChartSeries_PerfAggregationFunction,
+  perfChartSeries_PerfAggregationFunctionFromJSON,
   PerfChartWidget,
   PerfChartWidget_ChartType,
   PerfDashboardContent,
@@ -214,6 +220,9 @@ export function SampleDetailsContent({
       <SeriesContextArea
         seriesColor={seriesColor}
         seriesName={selectedPoint.seriesName}
+        value={selectedPoint.y}
+        aggregation={seriesConfig?.aggregation}
+        count={selectedPoint.count}
       />
       <ListControlsArea
         count={accumulatedRows.length}
@@ -286,12 +295,35 @@ export function SampleDetailsContent({
 interface SeriesContextAreaProps {
   seriesColor?: string;
   seriesName?: string;
+  value?: number;
+  aggregation?: PerfChartSeries_PerfAggregationFunction;
+  count?: number;
 }
 
 function SeriesContextArea({
   seriesColor,
   seriesName,
+  value,
+  aggregation,
+  count,
 }: SeriesContextAreaProps) {
+  const numericAgg =
+    typeof aggregation === 'string'
+      ? perfChartSeries_PerfAggregationFunctionFromJSON(aggregation)
+      : aggregation;
+
+  const aggLabel =
+    numericAgg !== undefined
+      ? (
+          AGGREGATION_FUNCTION_LABELS[numericAgg] ??
+          PerfChartSeries_PerfAggregationFunction[numericAgg] ??
+          'value'
+        ).toLowerCase()
+      : 'value';
+
+  const unit = count === 1 ? 'sample' : 'samples';
+  const verb = count === 1 ? 'has' : 'have';
+
   return (
     <Box
       sx={{
@@ -343,6 +375,38 @@ function SeriesContextArea({
           }}
         >
           {seriesName}
+        </Typography>
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>
+        <Typography
+          variant="caption"
+          sx={{
+            color: 'text.secondary',
+          }}
+        >
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ fontWeight: 'bold', color: 'text.primary' }}
+          >
+            {count?.toLocaleString()}
+          </Typography>{' '}
+          {unit} {verb} a{' '}
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ fontWeight: 'bold', color: 'text.primary' }}
+          >
+            {aggLabel}
+          </Typography>{' '}
+          of{' '}
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ fontWeight: 'bold', color: 'text.primary' }}
+          >
+            {value?.toLocaleString()}
+          </Typography>
         </Typography>
       </Box>
     </Box>

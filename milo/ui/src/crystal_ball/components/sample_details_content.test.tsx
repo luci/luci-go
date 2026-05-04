@@ -27,6 +27,7 @@ import {
   createMockErrorResult,
 } from '@/crystal_ball/tests';
 import {
+  PerfChartSeries_PerfAggregationFunction,
   PerfChartWidget,
   PerfChartWidget_ChartType,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
@@ -53,7 +54,13 @@ describe('SampleDetailsContent', () => {
 
   const mockWidget: PerfChartWidget = PerfChartWidget.fromPartial({
     chartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
-    series: [{ id: 's1', color: '#ff0000' }],
+    series: [
+      {
+        id: 's1',
+        color: '#ff0000',
+        aggregation: PerfChartSeries_PerfAggregationFunction.MEAN,
+      },
+    ],
   });
 
   beforeEach(() => {
@@ -141,6 +148,52 @@ describe('SampleDetailsContent', () => {
     expect(screen.getAllByText('123')).not.toHaveLength(0);
     expect(screen.getAllByText('main')).not.toHaveLength(0);
     expect(screen.getAllByText('target')).not.toHaveLength(0);
+  });
+
+  it('should display descriptive sentence in header (plural)', () => {
+    mockUseFetchWidgetRawSamples.mockReturnValue(
+      createMockQueryResult({ rows: [], nextPageToken: '' }),
+    );
+    render(
+      <SampleDetailsContent
+        selectedPoint={{ ...mockPoint, y: 123.45, count: 5 }}
+        widgetId="w1"
+        widget={mockWidget}
+        dashboardName="dashboard1"
+      />,
+    );
+
+    expect(
+      screen.getByText((_content, element) => {
+        return (
+          element?.textContent === '5 samples have a mean of 123.45' &&
+          element.tagName === 'SPAN'
+        );
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('should display descriptive sentence in header (singular)', () => {
+    mockUseFetchWidgetRawSamples.mockReturnValue(
+      createMockQueryResult({ rows: [], nextPageToken: '' }),
+    );
+    render(
+      <SampleDetailsContent
+        selectedPoint={{ ...mockPoint, y: 123.45, count: 1 }}
+        widgetId="w1"
+        widget={mockWidget}
+        dashboardName="dashboard1"
+      />,
+    );
+
+    expect(
+      screen.getByText((_content, element) => {
+        return (
+          element?.textContent === '1 sample has a mean of 123.45' &&
+          element.tagName === 'SPAN'
+        );
+      }),
+    ).toBeInTheDocument();
   });
 
   it('should hide details with empty string values', () => {
