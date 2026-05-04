@@ -206,7 +206,13 @@ const BASE_OPTION: Partial<EChartsOption> = {
     feature: {
       restore: {},
       saveAsImage: {},
-      dataZoom: {},
+      dataZoom: {
+        yAxisIndex: 'none',
+        title: {
+          zoom: 'Horizontal Zoom',
+          back: 'Restore Zoom',
+        },
+      },
     },
   },
   dataZoom: [
@@ -327,10 +333,15 @@ export function TimeSeriesChart({
       title: {
         ...BASE_OPTION.title,
         text: chartTitle,
+        subtext:
+          'To Zoom: Click "Horizontal Zoom" in the toolbar, then click and drag to zoom in on a section.',
         textStyle: {
           fontSize: theme.typography.subtitle1.fontSize,
           fontWeight: 'bold',
           color: theme.palette.text.primary,
+        },
+        subtextStyle: {
+          color: theme.palette.text.secondary,
         },
       },
       tooltip: {
