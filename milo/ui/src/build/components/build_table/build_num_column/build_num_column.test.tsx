@@ -44,7 +44,7 @@ const buildWithoutNumber = Build.fromPartial({
   },
 }) as OutputBuild;
 
-describe('GerritChangesContentCell', () => {
+describe('BuildNumContentCell', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -72,6 +72,10 @@ describe('GerritChangesContentCell', () => {
 
     const cell = screen.getByRole('cell');
     expect(cell).toHaveTextContent('12');
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/ui/p/project/builders/bucket/builder/12',
+    );
   });
 
   it('can render build without build number', () => {
@@ -92,5 +96,9 @@ describe('GerritChangesContentCell', () => {
 
     const cell = screen.getByRole('cell');
     expect(cell).toHaveTextContent('b2345');
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/ui/p/project/builders/bucket/builder/b2345',
+    );
   });
 });

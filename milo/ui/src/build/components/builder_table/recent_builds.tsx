@@ -20,14 +20,14 @@ import { Link as RouterLink } from 'react-router';
 import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
 import { useBatchedBuildsClient } from '@/build/hooks/prpc_clients';
 import { SpecifiedStatus } from '@/build/types';
-import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
+import { getBuildURLPath } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { useMaxBatchSize, useNumOfBuilds } from './context';
 
-const SEARCH_BUILD_FIELD_MASK = Object.freeze(['status', 'id']);
+const SEARCH_BUILD_FIELD_MASK = Object.freeze(['status', 'id', 'number']);
 
 const Container = styled.div({
   display: 'grid',
@@ -120,7 +120,10 @@ export function RecentBuilds({ builder }: RecentBuildsProps) {
             component={RouterLink}
             key={build.id}
             className={`cell build ${statusClass}-cell`}
-            to={getBuildURLPathFromBuildId(build.id)}
+            to={getBuildURLPath(
+              builder,
+              build.number ? build.number.toString() : `b${build.id}`,
+            )}
             target="_blank"
             rel="noreferrer"
           />

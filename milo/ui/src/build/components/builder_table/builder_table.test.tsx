@@ -166,7 +166,7 @@ describe('<BuilderTable />', () => {
                 },
                 pageSize: 10,
                 mask: {
-                  fields: ['status', 'id'],
+                  fields: ['status', 'id', 'number'],
                 },
               },
             }),
@@ -186,7 +186,13 @@ describe('<BuilderTable />', () => {
 
     const builds = builder5.querySelectorAll('.cell.build');
     expect(builds).toHaveLength(10);
-    expect(builds![0]).toHaveAttribute('href', '/ui/b/55');
-    expect(builds![5]).toHaveAttribute('href', '/ui/b/60');
+    expect(builds![0]).toHaveAttribute(
+      'href',
+      '/ui/p/proj/builders/bucket/builder5/b55',
+    );
+    expect(builds![5]).toHaveAttribute(
+      'href',
+      '/ui/p/proj/builders/bucket/builder5/b60',
+    );
   });
 });

@@ -18,7 +18,7 @@ import { DateTime } from 'luxon';
 
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { DurationBadge } from '@/common/components/duration_badge';
-import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
+import { getBuildURLPath } from '@/common/tools/url_utils';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
@@ -76,7 +76,12 @@ export function PendingBuildsSection({ builderId }: PendingBuildsSectionProps) {
           {data.builds?.map((b) => {
             return (
               <li key={b.id}>
-                <Link href={getBuildURLPathFromBuildId(b.id)}>
+                <Link
+                  href={getBuildURLPath(
+                    builderId,
+                    b.number ? b.number.toString() : `b${b.id}`,
+                  )}
+                >
                   {b.number || `b${b.id}`}
                 </Link>{' '}
                 <DurationBadge

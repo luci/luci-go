@@ -15,7 +15,7 @@
 import { Link, TableCell } from '@mui/material';
 import { Link as RouterLink } from 'react-router';
 
-import { getBuildURLPathFromBuildId } from '@/common/tools/url_utils';
+import { getBuildURLPathFromBuildData } from '@/common/tools/url_utils';
 
 import { useBuild } from '../context';
 
@@ -28,7 +28,7 @@ export function BuildNumContentCell() {
 
   return (
     <TableCell>
-      <Link component={RouterLink} to={getBuildURLPathFromBuildId(build.id)}>
+      <Link component={RouterLink} to={getBuildURLPathFromBuildData(build)}>
         {build.number ? build.number : 'b' + build.id}
       </Link>
     </TableCell>

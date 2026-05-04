@@ -43,6 +43,7 @@ import {
 } from './search_param_utils';
 
 const FIELD_MASK = Object.freeze([
+  'builds.*.builder',
   'builds.*.status',
   'builds.*.id',
   'builds.*.number',
