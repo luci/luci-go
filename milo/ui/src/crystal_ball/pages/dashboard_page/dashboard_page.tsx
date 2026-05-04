@@ -96,6 +96,8 @@ import {
   PerfDataSpec,
   PerfFilter,
   PerfWidget,
+  PerfXAxisConfig,
+  PerfXAxisConfig_Granularity,
   UpdateDashboardStateRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -293,7 +295,10 @@ const WIDGET_CREATORS: Record<WidgetType, () => Partial<PerfWidget>> = {
       effectiveChartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
       series: [],
       filters: [],
-      xAxis: undefined,
+      xAxis: PerfXAxisConfig.fromPartial({
+        column: GLOBAL_TIME_RANGE_COLUMN,
+        granularity: PerfXAxisConfig_Granularity.PER_VALUE,
+      }),
       leftYAxis: undefined,
       rightYAxis: undefined,
       seriesSplit: undefined,
@@ -334,7 +339,10 @@ const WIDGET_CREATORS: Record<WidgetType, () => Partial<PerfWidget>> = {
       effectiveChartType: PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION,
       series: [],
       filters: [],
-      xAxis: undefined,
+      xAxis: PerfXAxisConfig.fromPartial({
+        column: GLOBAL_TIME_RANGE_COLUMN,
+        granularity: PerfXAxisConfig_Granularity.PER_VALUE,
+      }),
       leftYAxis: undefined,
       rightYAxis: undefined,
       seriesSplit: undefined,
@@ -444,6 +452,49 @@ const DASHBOARD_UPGRADE_RULES: readonly DashboardUpgradeRule[] = [
               series: upgradedSeries,
             },
           });
+        }) ?? [];
+
+      return DashboardState.fromPartial({
+        ...state,
+        dashboardContent: {
+          ...state.dashboardContent,
+          widgets: upgradedWidgets,
+        },
+      });
+    },
+  },
+  {
+    needsUpgrade: (state) =>
+      state.dashboardContent?.widgets?.some((w) => {
+        if (!w.chart) return false;
+        const chartType = getSafeChartType(w.chart.chartType);
+        const needsXAxis =
+          chartType === PerfChartWidget_ChartType.MULTI_METRIC_CHART ||
+          chartType === PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION;
+        return needsXAxis && (!w.chart.xAxis || !w.chart.xAxis.column);
+      }) ?? false,
+    upgrade: (state) => {
+      const upgradedWidgets =
+        state.dashboardContent?.widgets?.map((w) => {
+          if (!w.chart) return w;
+          const chartType = getSafeChartType(w.chart.chartType);
+          const needsXAxis =
+            chartType === PerfChartWidget_ChartType.MULTI_METRIC_CHART ||
+            chartType === PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION;
+
+          if (needsXAxis && (!w.chart.xAxis || !w.chart.xAxis.column)) {
+            return PerfWidget.fromPartial({
+              ...w,
+              chart: {
+                ...w.chart,
+                xAxis: PerfXAxisConfig.fromPartial({
+                  column: GLOBAL_TIME_RANGE_COLUMN,
+                  granularity: PerfXAxisConfig_Granularity.PER_VALUE,
+                }),
+              },
+            });
+          }
+          return w;
         }) ?? [];
 
       return DashboardState.fromPartial({

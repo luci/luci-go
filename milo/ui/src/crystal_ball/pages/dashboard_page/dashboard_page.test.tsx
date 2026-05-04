@@ -360,6 +360,60 @@ describe('<DashboardPage />', () => {
     });
   });
 
+  it('upgrades dashboard when missing xAxis and saves to API', async () => {
+    const mockMutateAsync = jest.fn().mockResolvedValue({});
+    jest
+      .mocked(useDashboardStateApi.useUpdateDashboardState)
+      .mockReturnValue(
+        createMockMutationResult({ mutateAsync: mockMutateAsync }),
+      );
+
+    const testWidget = {
+      id: 'widget-1',
+      displayName: 'Test Widget',
+      chart: {
+        chartType: 2, // MULTI_METRIC_CHART
+        dataSpecId: 'dataspec-1',
+      },
+    };
+
+    const dashboardNeedingUpgrade = DashboardState.fromPartial({
+      ...mockDashboard,
+      dashboardContent: {
+        ...mockDashboard.dashboardContent,
+        widgets: [testWidget],
+      },
+    });
+
+    jest
+      .mocked(useDashboardStateApi.useGetDashboardState)
+      .mockReturnValue(createMockQueryResult(dashboardNeedingUpgrade));
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(mockMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dashboardState: expect.objectContaining({
+            dashboardContent: expect.objectContaining({
+              widgets: [
+                expect.objectContaining({
+                  chart: expect.objectContaining({
+                    xAxis: expect.objectContaining({
+                      column: 'build_creation_timestamp',
+                      granularity: 1,
+                    }),
+                  }),
+                }),
+              ],
+            }),
+          }),
+          updateMask: ['dashboardContent.widgets'],
+        }),
+      );
+    });
+  });
+
   it('displays error toast on save failure', async () => {
     const mockMutateAsync = jest.fn().mockRejectedValue(new Error('API Error'));
     jest
