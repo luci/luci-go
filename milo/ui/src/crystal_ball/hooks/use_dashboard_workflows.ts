@@ -16,6 +16,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import {
+  BuildType,
+  Column,
   DATA_SPEC_ID,
   GLOBAL_TIME_RANGE_COLUMN,
   GLOBAL_TIME_RANGE_FILTER_ID,
@@ -35,6 +37,20 @@ import {
   PerfFilter,
   PerfFilterDefault_FilterOperator,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+function createDefaultBuildTypeFilter(): PerfFilter {
+  return PerfFilter.fromPartial({
+    id: `filter-${crypto.randomUUID()}`,
+    column: Column.BUILD_TYPE,
+    displayName: 'Build Type',
+    textInput: {
+      defaultValue: {
+        values: [BuildType.POSTSUBMIT],
+        filterOperator: PerfFilterDefault_FilterOperator.IN,
+      },
+    },
+  });
+}
 
 /**
  * Hook to handle the Generate Dashboard workflow.
@@ -95,6 +111,13 @@ export function useGenerateDashboardWorkflow() {
             },
           }),
         );
+      }
+
+      const hasBuildType = newGlobalFilters.some(
+        (f) => f.column === Column.BUILD_TYPE,
+      );
+      if (!hasBuildType) {
+        newGlobalFilters.push(createDefaultBuildTypeFilter());
       }
 
       const newDashboardState = DashboardState.fromPartial({
@@ -173,6 +196,7 @@ export function useCreateDashboardWorkflow() {
                     },
                   },
                 }),
+                createDefaultBuildTypeFilter(),
               ],
             },
           }),

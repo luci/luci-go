@@ -36,6 +36,18 @@ export enum Column {
 }
 
 /**
+ * Known valid values for the build_type column.
+ */
+export enum BuildType {
+  EXTERNAL = 'External',
+  LOCAL = 'Local',
+  OTHER = 'Other',
+  POSTSUBMIT = 'Postsubmit',
+  PRESUBMIT = 'Presubmit',
+  TRAIN = 'Train',
+}
+
+/**
  * API Configuration.
  */
 export const API_BASE_URL = 'https://crystalballperf.clients6.google.com';

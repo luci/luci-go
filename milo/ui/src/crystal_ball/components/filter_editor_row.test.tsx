@@ -220,6 +220,59 @@ describe('FilterEditorRow', () => {
     expect(screen.getByText('val2')).toBeInTheDocument();
   });
 
+  it('deduplicates options from suggestion data', async () => {
+    const props = {
+      ...defaultProps,
+      filter: {
+        ...defaultProps.filter,
+        column: Column.BUILD_TYPE,
+        textInput: {
+          defaultValue: {
+            values: [],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    };
+    mockSuggest.mockReturnValue(
+      createMockQueryResult({
+        values: ['Postsubmit', 'Postsubmit', 'Presubmit'],
+        suggestions: [],
+      }),
+    );
+
+    render(<FilterEditorRow {...props} isCheckboxFilter={true} />);
+
+    const valueInput = screen.getByRole('combobox', {
+      name: COMMON_MESSAGES.VALUE,
+    });
+    fireEvent.mouseDown(valueInput);
+
+    const postsubmitOptions = await screen.findAllByText('Postsubmit');
+    expect(postsubmitOptions.length).toBe(1);
+  });
+
+  it('initializes text input to empty string for multi-select filters', () => {
+    const props = {
+      ...defaultProps,
+      filter: {
+        ...defaultProps.filter,
+        textInput: {
+          defaultValue: {
+            values: ['val1'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    };
+    render(<FilterEditorRow {...props} />);
+
+    const valueInput = screen.getByRole('combobox', {
+      name: COMMON_MESSAGES.VALUE,
+    });
+    expect(valueInput).toHaveValue('');
+  });
+
   it('renders toggle buttons for boolean data type', () => {
     const props = {
       ...defaultProps,

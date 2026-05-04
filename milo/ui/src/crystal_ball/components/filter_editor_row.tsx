@@ -101,9 +101,6 @@ export function FilterEditorRow({
   const rowRef = useRef<HTMLDivElement>(null);
   const activeInput = filter.numberInput ?? filter.textInput;
   const initialValue = activeInput?.defaultValue?.values?.[0] ?? '';
-  const [inputValue, setInputValue] = useState(initialValue);
-  const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
-  const [isFocused, setIsFocused] = useState(false);
 
   const currentOperator =
     activeInput?.defaultValue?.filterOperator !== undefined
@@ -115,6 +112,12 @@ export function FilterEditorRow({
   const isMultiSelect =
     currentOperator === PerfFilterDefault_FilterOperator.IN ||
     currentOperator === PerfFilterDefault_FilterOperator.NOT_IN;
+
+  const [inputValue, setInputValue] = useState(
+    isMultiSelect ? '' : initialValue,
+  );
+  const [debouncedQuery, setDebouncedQuery] = useState(inputValue);
+  const [isFocused, setIsFocused] = useState(false);
 
   const prevOperatorRef = useRef(currentOperator);
   useEffect(() => {
@@ -167,8 +170,12 @@ export function FilterEditorRow({
 
   const options = useMemo(
     () =>
-      (suggestionData?.values ?? []).filter(
-        (v): v is string => typeof v === 'string',
+      Array.from(
+        new Set(
+          (suggestionData?.values ?? []).filter(
+            (v): v is string => typeof v === 'string',
+          ),
+        ),
       ),
     [suggestionData?.values],
   );
