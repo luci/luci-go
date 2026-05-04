@@ -14,12 +14,17 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
 import { DutToRepair } from '../shared/types';
 
 import { RequestRepair } from './request_repair';
-import { generateIssueDescription } from './request_repair_utils';
+import {
+  BrowserDeviceToRepair,
+  BrowserRepairConfig,
+} from './request_repair_browser_config';
+import { ChromeOSRepairConfig } from './request_repair_os_config';
 
 describe('<RequestRepair />', () => {
   let windowOpenSpy: jest.SpyInstance;
@@ -70,7 +75,10 @@ describe('<RequestRepair />', () => {
 
     render(
       <FakeAuthStateProvider>
-        <RequestRepair selectedDuts={selectedDuts} />
+        <RequestRepair
+          selectedItems={selectedDuts}
+          platform={Platform.CHROMEOS}
+        />
       </FakeAuthStateProvider>,
     );
     const button = screen.getByTestId('file-repair-bug-button');
@@ -79,13 +87,8 @@ describe('<RequestRepair />', () => {
     fireEvent.click(button);
 
     expect(windowOpenSpy).toHaveBeenCalledTimes(1);
-    const dutInfo = [
-      ' * http://go/fcdut/dut1 (Location: <Please add if known>, Board: board1, Model: model1, Pool: pool1)',
-      ' * http://go/fcdut/dut2 (Location: <Please add if known>, Board: board2, Model: model2, Pool: pool2)',
-      ' * http://go/fcdut/dut3 (Location: <Please add if known>, Board: board3, Model: model3, Pool: pool3)',
-      ' * http://go/fcdut/dut4 (Location: <Please add if known>, Board: board4, Model: model4, Pool: pool4)',
-    ];
-    const expectedDescription = generateIssueDescription(dutInfo.join('\n'));
+    const expectedDescription =
+      ChromeOSRepairConfig.generateDescription(selectedDuts);
 
     const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
     expect(openedUrl.origin).toBe('http://b');
@@ -113,10 +116,107 @@ describe('<RequestRepair />', () => {
   ])('should not render the button if $case', ({ duts }) => {
     render(
       <FakeAuthStateProvider>
-        <RequestRepair selectedDuts={duts} />
+        <RequestRepair selectedItems={duts} platform={Platform.CHROMEOS} />
       </FakeAuthStateProvider>,
     );
     const button = screen.queryByTestId('file-repair-bug-button');
     expect(button).not.toBeInTheDocument();
+  });
+
+  it('should render a button that opens a new tab with the correct URL for single repair (Browser)', () => {
+    const selectedDevices: BrowserDeviceToRepair[] = [
+      { id: 'machine1', hostname: 'host1', pool: 'pool1' },
+    ];
+
+    render(
+      <FakeAuthStateProvider>
+        <RequestRepair
+          selectedItems={selectedDevices}
+          platform={Platform.CHROMIUM}
+        />
+      </FakeAuthStateProvider>,
+    );
+    const button = screen.getByTestId('file-repair-bug-button');
+    expect(button).toBeInTheDocument();
+
+    fireEvent.click(button);
+
+    expect(windowOpenSpy).toHaveBeenCalledTimes(1);
+    const expectedDescription = BrowserRepairConfig.generateDescription([
+      { id: 'machine1', hostname: 'host1', pool: 'pool1' },
+    ]);
+
+    const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
+    expect(openedUrl.origin).toBe('http://b');
+    expect(openedUrl.pathname).toBe('/issues/new');
+    expect(openedUrl.searchParams.get('markdown')).toBe('true');
+    expect(openedUrl.searchParams.get('component')).toBe('1735976');
+    expect(openedUrl.searchParams.get('template')).toBe('2107381');
+    expect(openedUrl.searchParams.get('title')).toBe(
+      '[Unknown Zone][Browser][Repair][host1]',
+    );
+    expect(decodeURIComponent(openedUrl.searchParams.get('description')!)).toBe(
+      decodeURIComponent(expectedDescription),
+    );
+  });
+
+  it('should render correct title for exactly 2 devices (Browser)', () => {
+    const selectedDevices: BrowserDeviceToRepair[] = [
+      { id: 'machine1', hostname: 'host1', pool: 'pool1' },
+      { id: 'machine2', hostname: 'host2', pool: 'pool2' },
+    ];
+
+    render(
+      <FakeAuthStateProvider>
+        <RequestRepair
+          selectedItems={selectedDevices}
+          platform={Platform.CHROMIUM}
+        />
+      </FakeAuthStateProvider>,
+    );
+    const button = screen.getByTestId('file-repair-bug-button');
+    fireEvent.click(button);
+
+    const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
+    expect(openedUrl.searchParams.get('title')).toBe(
+      '[Unknown Zone][Browser][Repair][host1, host2]',
+    );
+  });
+
+  it('should render a button that opens a new tab with the correct URL for bulk repair (Browser)', () => {
+    const selectedDevices: BrowserDeviceToRepair[] = [
+      { id: 'machine1', hostname: 'host1', pool: 'pool1' },
+      { id: 'machine2', hostname: 'host2', pool: 'pool2' },
+      { id: 'machine3', hostname: 'host3', pool: 'pool3' },
+    ];
+
+    render(
+      <FakeAuthStateProvider>
+        <RequestRepair
+          selectedItems={selectedDevices}
+          platform={Platform.CHROMIUM}
+        />
+      </FakeAuthStateProvider>,
+    );
+    const button = screen.getByTestId('file-repair-bug-button');
+    expect(button).toBeInTheDocument();
+
+    fireEvent.click(button);
+
+    expect(windowOpenSpy).toHaveBeenCalledTimes(1);
+    const expectedDescription =
+      BrowserRepairConfig.generateDescription(selectedDevices);
+
+    const openedUrl = new URL(windowOpenSpy.mock.calls[0][0]);
+    expect(openedUrl.origin).toBe('http://b');
+    expect(openedUrl.pathname).toBe('/issues/new');
+    expect(openedUrl.searchParams.get('component')).toBe('1735976');
+    expect(openedUrl.searchParams.get('template')).toBe('2161122');
+    expect(openedUrl.searchParams.get('title')).toBe(
+      '[Unknown Zone][Browser] [Repair] [3] - [Multiple Devices]',
+    );
+    expect(decodeURIComponent(openedUrl.searchParams.get('description')!)).toBe(
+      decodeURIComponent(expectedDescription),
+    );
   });
 });

@@ -12,27 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const generateIssueDescription = (dutInfo: string) => {
-  const description = [
-    'Fleet Operations will repair DUTS that are in "needs_manual_repair" status. ' +
-      'repair_failed & needs_repair are being recovered by auto repair tasks. ' +
-      'You can submit a bug for DUTs in a different state if you suspect that the state is incorrect, ' +
-      'or something is wrong with devices peripherals. ' +
-      'Please do not explicitly assign bugs to individuals without prior ' +
-      'discussion with said individuals.',
-    '------------------------------------------------------------------------------------',
-    '',
-    '**DUT Link(s) / Locations:**:',
-    '',
-    `${dutInfo}`,
-    '',
-    '**Issue:**',
-    '',
-    '<Please provide a summary of the issue.>',
-    '',
-    '**Action Item:**',
-    '',
-    '**Logs (if applicable):**',
-  ].join('\n');
-  return encodeURIComponent(description);
+export const extractHostname = (device: {
+  ufsLabels?: Record<string, { values: readonly string[] }>;
+  id: string;
+  hostname?: string;
+}) => {
+  return (
+    device.ufsLabels?.['hostname']?.values?.[0] || device.hostname || device.id
+  );
 };
+
+export const extractPool = (device: {
+  swarmingLabels?: Record<string, { values: readonly string[] }>;
+}) => {
+  return device.swarmingLabels?.['pool']?.values?.[0];
+};
+
+export const FLEET_CONSOLE_TRACKING_HOTLIST = '7555487';

@@ -192,7 +192,10 @@ const ChromeOSActions = ({
     <>
       <RunAutorepair selectedDuts={selectedDuts} />
       <RunDeploy selectedDuts={selectedDuts} />
-      <RequestRepair selectedDuts={selectedDuts} />
+      <RequestRepair
+        selectedItems={selectedDuts}
+        platform={Platform.CHROMEOS}
+      />
       <ExportButton_MRT
         table={table}
         selectedRowIds={selectedRows.map((row) => `${row.id}`)}

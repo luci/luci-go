@@ -66,6 +66,11 @@ export interface EventPayload {
    * The kind of content being copied.
    */
   copyKind?: string;
+
+  /**
+   * The platform associated with the event.
+   */
+  platform?: string;
 }
 
 /**

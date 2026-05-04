@@ -13,88 +13,107 @@
 // limitations under the License.
 import { FeedbackOutlined } from '@mui/icons-material';
 import { Button } from '@mui/material';
-import React from 'react';
+import type { ReactElement } from 'react';
 
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+import {
+  Platform,
+  platformToJSON,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { DutToRepair } from '../shared/types';
 
-import { generateIssueDescription } from './request_repair_utils';
+import {
+  BrowserDeviceToRepair,
+  BrowserRepairConfig,
+} from './request_repair_browser_config';
+import { ChromeOSRepairConfig } from './request_repair_os_config';
 
-interface RequestRepairProps {
-  selectedDuts: DutToRepair[];
+export interface RepairConfig<T> {
+  componentId: string;
+  getTemplateId: (items: T[]) => string;
+  generateTitle: (items: T[]) => string;
+  generateDescription: (items: T[]) => string;
+  hotlistIds?: string | ((items: T[]) => string);
 }
 
-const TITLE_LOCATION_PLACEHOLDER = 'Location Unknown';
-const DESCRIPTION_LOCATION_PLACEHOLDER = '<Please add if known>';
-const REPAIR_COMPONENT_ID = '575445';
-const REPAIR_TEMPLATE_ID = '1509031';
-const TRACKING_HOTLIST_ID = '7555487';
-const LOCATION_MAP: { [key: string]: string[] } = {
-  EM25: ['chromeos8'],
-  '946': ['chromeos15', 'chromeos7', 'chromeos5', 'chromeos3'],
-};
-
-const getLocationForDut = (dutName: string): string | undefined => {
-  for (const [lab, prefixes] of Object.entries(LOCATION_MAP)) {
-    if (prefixes.some((prefix) => dutName.includes(prefix))) {
-      return lab;
-    }
-  }
-
-  return undefined;
-};
-
-const generateIssueTitle = (duts: DutToRepair[]): string => {
-  if (!duts.length) throw new Error('No DUTs specified');
-
-  const dutName = duts[0].name;
-  const board = duts[0].board;
-  const model = duts[0].model;
-  const pool = duts[0].pool;
-  const extraDuts = duts.length > 1 ? ` and ${duts.length - 1} more` : '';
-  const location = getLocationForDut(dutName) || TITLE_LOCATION_PLACEHOLDER;
-  return `[${location}][Repair][${board}.${model}] Pool: [${pool}] [${dutName}]${extraDuts}`;
-};
-
-const generateDutInfo = (selectedDuts: DutToRepair[]): string =>
-  selectedDuts
-    .map(({ name, board, model, pool }) => {
-      const extraInfo = [
-        `Location: ${getLocationForDut(name) || DESCRIPTION_LOCATION_PLACEHOLDER}`,
-        board && `Board: ${board}`,
-        model && `Model: ${model}`,
-        pool && `Pool: ${pool}`,
-      ];
-      return ` * http://go/fcdut/${name} (${extraInfo.join(', ')})`;
-    })
-    .join('\n');
-
-export const RequestRepair: React.FC<RequestRepairProps> = ({
-  selectedDuts,
-}) => {
+// Function overloads to provide type safety for callers based on the platform.
+export function RequestRepair(props: {
+  selectedItems: DutToRepair[];
+  platform: Platform.CHROMEOS;
+}): ReactElement;
+export function RequestRepair(props: {
+  selectedItems: BrowserDeviceToRepair[];
+  platform: Platform.CHROMIUM;
+}): ReactElement;
+export function RequestRepair({
+  selectedItems,
+  platform,
+}: {
+  selectedItems: DutToRepair[] | BrowserDeviceToRepair[];
+  platform: Platform.CHROMEOS | Platform.CHROMIUM;
+}) {
   const { trackEvent } = useGoogleAnalytics();
-  const showButton = selectedDuts?.length > 0;
+  const showButton = selectedItems?.length > 0;
 
   if (!showButton) {
     return <></>;
   }
 
-  const fileDutRepairRequest = () => {
+  const fileRepairRequest = () => {
+    let title = '';
+    let description = '';
+    let templateId = '';
+    let config;
+
+    let hotlistIds = '';
+
+    if (platform === Platform.CHROMEOS) {
+      const items = selectedItems as DutToRepair[];
+      config = ChromeOSRepairConfig;
+      title = config.generateTitle(items);
+      description = config.generateDescription(items);
+      templateId = config.getTemplateId(items);
+      hotlistIds =
+        typeof config.hotlistIds === 'function'
+          ? config.hotlistIds(items)
+          : config.hotlistIds || '';
+    } else {
+      const items = selectedItems as BrowserDeviceToRepair[];
+      config = BrowserRepairConfig;
+      title = config.generateTitle(items);
+      description = config.generateDescription(items);
+      templateId = config.getTemplateId(items);
+      hotlistIds =
+        typeof config.hotlistIds === 'function'
+          ? config.hotlistIds(items)
+          : config.hotlistIds || '';
+    }
+
     trackEvent('request_repair', {
       componentName: 'request_repair_button',
-      dutCount: selectedDuts.length,
+      dutCount: selectedItems.length,
+      platform: platformToJSON(platform).toLowerCase(),
     });
-    const dutInfo = generateDutInfo(selectedDuts);
-    const description = generateIssueDescription(dutInfo);
-    const title = encodeURIComponent(generateIssueTitle(selectedDuts));
-    const url = `http://b/issues/new?markdown=true&component=${REPAIR_COMPONENT_ID}&template=${REPAIR_TEMPLATE_ID}&title=${title}&description=${description}&hotlistIds=${TRACKING_HOTLIST_ID}`;
+
+    const params = new URLSearchParams({
+      markdown: 'true',
+      component: config.componentId,
+      template: templateId,
+      title,
+      description,
+    });
+    if (hotlistIds) {
+      params.set('hotlistIds', hotlistIds);
+    }
+    const url = `http://b/issues/new?${params.toString()}`;
     window.open(url, '_blank');
   };
+
   return (
     <Button
       data-testid="file-repair-bug-button"
-      onClick={fileDutRepairRequest}
+      onClick={fileRepairRequest}
       color="primary"
       size="small"
       startIcon={<FeedbackOutlined />}
@@ -102,4 +121,4 @@ export const RequestRepair: React.FC<RequestRepairProps> = ({
       Request Repair
     </Button>
   );
-};
+}

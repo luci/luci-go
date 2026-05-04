@@ -292,7 +292,10 @@ export const ChromeOSDeviceDetailsPage = () => {
           >
             <RunAutorepair selectedDuts={toRepair} />
             <RunDeploy selectedDuts={toRepair} />
-            <RequestRepair selectedDuts={toRepair} />
+            <RequestRepair
+              selectedItems={toRepair}
+              platform={Platform.CHROMEOS}
+            />
             <SshTip hostname={id} dutId={dutId} />
           </div>
           <TabContext value={selectedTab || TabValue.TASKS}>

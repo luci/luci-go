@@ -23,6 +23,12 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
+import { BrowserDeviceToRepair } from '@/fleet/components/actions/request_repair/request_repair_browser_config';
+import {
+  extractHostname,
+  extractPool,
+} from '@/fleet/components/actions/request_repair/request_repair_utils';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
@@ -168,6 +174,26 @@ export const BrowserDeviceDetailsPage = () => {
 
   const botId = device?.ufsLabels['hostname']?.values?.at(0) || device?.id;
 
+  const toRepair: BrowserDeviceToRepair[] = device
+    ? [
+        {
+          id: device.id,
+          hostname: extractHostname(device),
+          pool: extractPool(device),
+          zone: device.ufsLabels?.['zone']?.values?.[0],
+          serialNumber:
+            device.ufsLabels?.['serial_number']?.values?.[0] ||
+            device.ufsLabels?.['serialNumber']?.values?.[0],
+          type: device.swarmingLabels?.['type']?.values?.[0],
+          model: device.swarmingLabels?.['model']?.values?.[0],
+          status:
+            device.swarmingLabels?.['status']?.values?.[0] ||
+            device.swarmingLabels?.['dut_state']?.values?.[0],
+          lastSeen: device.swarmingLabels?.['last_seen']?.values?.[0],
+        },
+      ]
+    : [];
+
   return (
     <div
       css={{
@@ -241,7 +267,12 @@ export const BrowserDeviceDetailsPage = () => {
               flexDirection: 'row',
               gap: '8px',
             }}
-          ></div>
+          >
+            <RequestRepair
+              selectedItems={toRepair}
+              platform={Platform.CHROMIUM}
+            />
+          </div>
           <TabContext value={selectedTab || TabValue.TASKS}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>

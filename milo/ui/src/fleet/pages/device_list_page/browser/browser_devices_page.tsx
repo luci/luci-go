@@ -14,7 +14,11 @@
 
 import { Chip } from '@mui/material';
 import _ from 'lodash';
-import { MaterialReactTable, MRT_ColumnDef } from 'material-react-table';
+import {
+  MaterialReactTable,
+  MRT_ColumnDef,
+  MRT_TableInstance,
+} from 'material-react-table';
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -24,6 +28,12 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { emptyPageTokenUpdater } from '@/common/components/params_pager';
+import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
+import { BrowserDeviceToRepair } from '@/fleet/components/actions/request_repair/request_repair_browser_config';
+import {
+  extractHostname,
+  extractPool,
+} from '@/fleet/components/actions/request_repair/request_repair_utils';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
@@ -87,6 +97,37 @@ import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500, 1000];
 const DEFAULT_PAGE_SIZE = 100;
+
+const BrowserActions = ({
+  table,
+}: {
+  table: MRT_TableInstance<BrowserDevice>;
+}) => {
+  const selectedRows = table.getSelectedRowModel().rows.map((r) => r.original);
+
+  const selectedDevices: BrowserDeviceToRepair[] = selectedRows.map((row) => ({
+    id: row.id,
+    hostname: extractHostname(row),
+    pool: extractPool(row),
+    zone: row.ufsLabels?.['zone']?.values?.[0],
+    serialNumber:
+      row.ufsLabels?.['serial_number']?.values?.[0] ||
+      row.ufsLabels?.['serialNumber']?.values?.[0],
+    type: row.swarmingLabels?.['type']?.values?.[0],
+    model: row.swarmingLabels?.['model']?.values?.[0],
+    status:
+      row.swarmingLabels?.['status']?.values?.[0] ||
+      row.swarmingLabels?.['dut_state']?.values?.[0],
+    lastSeen: row.swarmingLabels?.['last_seen']?.values?.[0],
+  }));
+
+  return selectedRows.length > 0 ? (
+    <RequestRepair
+      selectedItems={selectedDevices}
+      platform={Platform.CHROMIUM}
+    />
+  ) : null;
+};
 
 export const BrowserDevicesPage = () => {
   const { trackEvent } = useGoogleAnalytics();
@@ -418,7 +459,9 @@ export const BrowserDevicesPage = () => {
       },
     },
     renderTopToolbarCustomActions: ({ table }) => (
-      <FleetTopToolbar table={table} />
+      <FleetTopToolbar table={table}>
+        <BrowserActions table={table} />
+      </FleetTopToolbar>
     ),
     renderBottomToolbarCustomActions: ({ table }) => (
       <FleetBottomToolbar table={table} />
