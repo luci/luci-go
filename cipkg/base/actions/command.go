@@ -30,49 +30,55 @@ func ActionCommandTransformer(a *core.ActionCommand, deps []Package) (*core.Deri
 	}
 
 	// Render templates
-	dirs := make(map[string]string)
-	for _, d := range deps {
-		dirs[d.Action.Name] = d.Handler.OutputDirectory()
-	}
-	if err := renderDerivation(dirs, drv); err != nil {
+	if err := renderDerivation(NewRenderEnv(deps), drv); err != nil {
 		return nil, err
 	}
 
 	return drv, nil
 }
 
-func renderDerivation(vals map[string]string, drv *core.Derivation) (err error) {
-	drv.Args, err = renderAll(drv.Args, vals)
-	if err != nil {
-		return
+type RenderEnv map[string]string
+
+// NewRenderEnv creates a mapping from package name to output path for
+// rendering.
+func NewRenderEnv(deps []Package) RenderEnv {
+	env := make(RenderEnv)
+	for _, d := range deps {
+		env[d.Action.Name] = d.Handler.OutputDirectory()
 	}
-	drv.Env, err = renderAll(drv.Env, vals)
-	if err != nil {
-		return err
-	}
-	return nil
+	return env
 }
 
-func renderAll(raw []string, vals map[string]string) (ret []string, err error) {
-	for _, r := range raw {
-		re := regexp.MustCompile(`{{.+?}}`)
-		rendered := re.ReplaceAllStringFunc(r, func(s string) string {
-			// removes "{{." and "}}" from {{.something}}
-			if s[2] != '.' {
-				err = fmt.Errorf("failed to render %s: use {{.key}} to reference value", r)
-				return "PANIC"
-			}
+var renderRefRe = regexp.MustCompile(`{{.+?}}`)
 
-			if v, ok := vals[s[3:len(s)-2]]; ok {
-				return v
-			}
-			err = fmt.Errorf("failed to render %s: unknown key %s", r, s)
-			return "PANIC"
-		})
-		if err != nil {
-			return
+// Render renders references in raw to the output directory.
+func (e RenderEnv) Render(raw string) (ret string, err error) {
+	ret = renderRefRe.ReplaceAllStringFunc(raw, func(s string) string {
+		// removes "{{." and "}}" from {{.something}}
+		if s[2] != '.' {
+			err = fmt.Errorf("failed to render %s: use {{.key}} to reference value", raw)
+			return ""
 		}
-		ret = append(ret, rendered)
+
+		if v, ok := e[s[3:len(s)-2]]; ok {
+			return v
+		}
+		err = fmt.Errorf("failed to render %s: unknown key %s", raw, s)
+		return ""
+	})
+
+	return
+}
+
+// RenderAll renders references in raw list to the output directory.
+func (e RenderEnv) RenderAll(raw []string) ([]string, error) {
+	var ret []string
+	for _, r := range raw {
+		s, err := e.Render(r)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, s)
 	}
 	return ret, nil
 }
@@ -81,4 +87,16 @@ func renderAll(raw []string, vals map[string]string) (ret []string, err error) {
 // command Action to output directory.
 func DepRef(name string, path ...string) string {
 	return filepath.Join(append([]string{"{{." + name + "}}"}, path...)...)
+}
+
+func renderDerivation(e RenderEnv, drv *core.Derivation) (err error) {
+	drv.Args, err = e.RenderAll(drv.Args)
+	if err != nil {
+		return
+	}
+	drv.Env, err = e.RenderAll(drv.Env)
+	if err != nil {
+		return err
+	}
+	return nil
 }
