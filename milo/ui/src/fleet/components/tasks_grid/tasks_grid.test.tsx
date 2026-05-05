@@ -215,6 +215,18 @@ describe('TasksGrid', () => {
                 tags: ['dut-name:dut-3'],
               }),
             ],
+            [
+              'task-4',
+              TaskResultResponse.fromPartial({
+                taskId: 'task-4',
+                tags: [
+                  'project:chromeos',
+                  'bucket:labpack_runner',
+                  'buildername:labpack-repair',
+                  'buildnumber:456',
+                ],
+              }),
+            ],
           ]),
           swarmingHost: 'swarming.example.com',
           miloHost: 'milo.example.com',
@@ -276,6 +288,17 @@ describe('TasksGrid', () => {
       expect(
         (await screen.findAllByText(/"key1": "value1"/))[0],
       ).toBeInTheDocument();
+
+      expect(useQuery).toHaveBeenCalledWith(
+        expect.objectContaining({
+          enabled: true,
+          queryKey: expect.arrayContaining([
+            expect.objectContaining({
+              id: '123',
+            }),
+          ]),
+        }),
+      );
     });
 
     it('should render success state without properties', async () => {
@@ -316,8 +339,55 @@ describe('TasksGrid', () => {
       );
 
       expect(
-        (await screen.findAllByText('Build ID not found!'))[0],
+        (await screen.findAllByText('Build not found!'))[0],
       ).toBeInTheDocument();
+    });
+
+    it('should fetch build properties via builder and buildNumber fallback tags when buildbucket_build_id is missing', async () => {
+      const mockRowWithFallback = {
+        original: {
+          id: 'task-4',
+        },
+      } as unknown as MRT_Row<Record<string, unknown>>;
+
+      jest.mocked(useQuery).mockReturnValue({
+        data: {
+          output: {
+            properties: {
+              fallbackKey: 'fallbackValue',
+            },
+          },
+        },
+        isLoading: false,
+        isError: false,
+      } as unknown as UseQueryResult<OutputBuild, Error>);
+
+      render(
+        <FakeContextProvider>
+          <TasksDetailPanel row={mockRowWithFallback} table={mockTable} />
+        </FakeContextProvider>,
+      );
+
+      expect(
+        (await screen.findAllByText(/"fallbackKey": "fallbackValue"/))[0],
+      ).toBeInTheDocument();
+
+      expect(useQuery).toHaveBeenCalledWith(
+        expect.objectContaining({
+          enabled: true,
+          queryKey: expect.arrayContaining([
+            expect.objectContaining({
+              id: '0',
+              builder: {
+                project: 'chromeos',
+                bucket: 'labpack_runner',
+                builder: 'labpack-repair',
+              },
+              buildNumber: 456,
+            }),
+          ]),
+        }),
+      );
     });
   });
 });

@@ -46,7 +46,12 @@ import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_tab
 import { DEFAULT_CODE_MIRROR_CONFIG } from '@/fleet/constants/component_config';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { colors } from '@/fleet/theme/colors';
-import { extractBuildUrlFromTagData, tagsToMap } from '@/fleet/utils/builds';
+import {
+  extractBuildUrlFromTagData,
+  getBuilder,
+  getProjectAndBucket,
+  tagsToMap,
+} from '@/fleet/utils/builds';
 import { prettyDateTime } from '@/fleet/utils/dates';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import {
@@ -57,6 +62,7 @@ import {
 } from '@/fleet/utils/task_utils';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { TaskResultResponse } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 
@@ -150,6 +156,24 @@ export const TasksDetailPanel = ({
   const tagMap = task?.tags ? tagsToMap([...task.tags]) : undefined;
   const buildId = tagMap?.get('buildbucket_build_id');
 
+  let builderId: BuilderID | undefined = undefined;
+  let buildNumber: number | undefined = undefined;
+
+  if (!buildId && tagMap) {
+    const builder = getBuilder(tagMap);
+    const buildNumStr = tagMap.get('buildnumber');
+    const [project, bucket] = getProjectAndBucket(tagMap);
+
+    if (project && bucket && builder && buildNumStr) {
+      builderId = { project, bucket, builder };
+      buildNumber = parseInt(buildNumStr, 10);
+    }
+  }
+
+  const hasBuildRequest =
+    !!buildId ||
+    (!!builderId && buildNumber !== undefined && !isNaN(buildNumber));
+
   const {
     data: build,
     isError,
@@ -158,14 +182,16 @@ export const TasksDetailPanel = ({
   } = useQuery({
     ...buildsClient.GetBuild.query(
       GetBuildRequest.fromPartial({
-        id: buildId,
+        id: buildId || undefined,
+        builder: builderId,
+        buildNumber: buildNumber,
         mask: {
           fields: ['output'],
         },
       }),
     ),
     select: (data) => data as OutputBuild,
-    enabled: !!buildId,
+    enabled: hasBuildRequest,
   });
 
   if (isLoading) {
@@ -180,17 +206,16 @@ export const TasksDetailPanel = ({
         {getErrorMessage(error, 'build output properties')}{' '}
       </Alert>
     );
-  } else if (!buildId) {
+  } else if (!hasBuildRequest) {
     content = (
       <AlertWithFeedback
         severity="warning"
-        title="Build ID not found!"
-        bugErrorMessage={`Build ID not found for task: ${taskId}`}
+        title="Build not found!"
+        bugErrorMessage={`Build identifiers not found for task: ${taskId}`}
       >
         <p>
-          Oh no! Build was not found for this task (
-          <code>task_id={taskId}</code>
-          ).
+          Oh no! Build could not be identified for this task (
+          <code>task_id={taskId}</code>).
         </p>
       </AlertWithFeedback>
     );

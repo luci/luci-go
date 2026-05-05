@@ -66,11 +66,11 @@ function getBuildId(tagMap: Map<string, string>) {
   return buildID ? `b${buildID}` : tagMap.get('buildnumber');
 }
 
-function getBuilder(tagMap: Map<string, string>) {
+export function getBuilder(tagMap: Map<string, string>) {
   return tagMap.get('builder') ?? tagMap.get('buildername');
 }
 
-function getProjectAndBucket(tagMap: Map<string, string>) {
+export function getProjectAndBucket(tagMap: Map<string, string>) {
   const scopedBucket = tagMap.get('buildbucket_bucket');
   if (scopedBucket !== undefined) {
     if (scopedBucket.includes('/')) {
