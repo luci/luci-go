@@ -580,9 +580,10 @@ func TestCompileFailureAnalysisToBqRow(t *testing.T) {
 					Id:      "genai_commit_id",
 					Ref:     "refs/heads/main",
 				},
-				ReviewUrl:   "genai_review_url",
-				ReviewTitle: "genai_review_title",
-				Verified:    false,
+				ReviewUrl:     "genai_review_url",
+				ReviewTitle:   "genai_review_title",
+				Verified:      false,
+				Justification: "some justification",
 			},
 		}
 

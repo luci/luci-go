@@ -31,7 +31,7 @@ func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration
 	c, cancel := context.WithTimeout(c, timeout)
 	defer cancel()
 
-	transport, err := auth.GetRPCTransport(c, auth.NoAuth)
+	transport, err := auth.GetRPCTransport(c, auth.AsSelf)
 	if err != nil {
 		return "", err
 	}
