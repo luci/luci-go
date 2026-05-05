@@ -47,10 +47,7 @@ import {
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import {
-  GetFiltersResult,
-  stringifyFilters,
-} from '@/fleet/components/filter_dropdown/parser/parser';
+import { GetFiltersResult } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   filtersUpdater,
   FILTERS_PARAM_KEY,
@@ -161,10 +158,6 @@ export const RepairListPage = () => {
       error: undefined,
     };
   }, [filterCategoryDatas.filterValues, filterCategoryDatas.parseError]);
-
-  const stringifiedSelectedOptions = selectedOptions.error
-    ? ''
-    : stringifyFilters(selectedOptions.filters || {});
 
   const repairMetricsList = useQuery({
     ...client.ListRepairMetrics.query({
@@ -454,7 +447,7 @@ export const RepairListPage = () => {
     >
       <WarningNotifications warnings={warnings} />
       <Metrics
-        filters={stringifiedSelectedOptions}
+        filters={filterCategoryDatas.aip160}
         pagerContext={pagerCtx}
         onColumnFiltersChange={onColumnFiltersChange}
       />
