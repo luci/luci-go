@@ -275,6 +275,8 @@ export interface ScheduleDeployResponse {
 export interface GetSmartRepairRequest {
   /** The unique identifiers for the devices (e.g., hostnames). */
   readonly deviceIds: readonly string[];
+  /** If true, forces a retrigger of the smart repair analysis, bypassing any cached results. */
+  readonly forceRetrigger: boolean;
 }
 
 export interface GetSmartRepairResult {
@@ -2733,13 +2735,16 @@ export const ScheduleDeployResponse: MessageFns<ScheduleDeployResponse> = {
 };
 
 function createBaseGetSmartRepairRequest(): GetSmartRepairRequest {
-  return { deviceIds: [] };
+  return { deviceIds: [], forceRetrigger: false };
 }
 
 export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
   encode(message: GetSmartRepairRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.deviceIds) {
       writer.uint32(10).string(v!);
+    }
+    if (message.forceRetrigger !== false) {
+      writer.uint32(16).bool(message.forceRetrigger);
     }
     return writer;
   },
@@ -2759,6 +2764,14 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
           message.deviceIds.push(reader.string());
           continue;
         }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.forceRetrigger = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2773,6 +2786,7 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
       deviceIds: globalThis.Array.isArray(object?.deviceIds)
         ? object.deviceIds.map((e: any) => globalThis.String(e))
         : [],
+      forceRetrigger: isSet(object.forceRetrigger) ? globalThis.Boolean(object.forceRetrigger) : false,
     };
   },
 
@@ -2780,6 +2794,9 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
     const obj: any = {};
     if (message.deviceIds?.length) {
       obj.deviceIds = message.deviceIds;
+    }
+    if (message.forceRetrigger !== false) {
+      obj.forceRetrigger = message.forceRetrigger;
     }
     return obj;
   },
@@ -2790,6 +2807,7 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
   fromPartial(object: DeepPartial<GetSmartRepairRequest>): GetSmartRepairRequest {
     const message = createBaseGetSmartRepairRequest() as any;
     message.deviceIds = object.deviceIds?.map((e) => e) || [];
+    message.forceRetrigger = object.forceRetrigger ?? false;
     return message;
   },
 };

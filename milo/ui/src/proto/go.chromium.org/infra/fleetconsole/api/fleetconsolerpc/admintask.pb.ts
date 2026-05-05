@@ -24,15 +24,6 @@ export interface GetDeviceACLsResponse {
   readonly userAccessGroups: readonly string[];
 }
 
-/** @deprecated */
-export interface CheckAdminTaskPermissionRequest {
-}
-
-/** @deprecated */
-export interface CheckAdminTaskPermissionResponse {
-  readonly hasPermission: boolean;
-}
-
 export interface CheckPermissionRequest {
   /** The MDB group to check permissions for. */
   readonly group: string;
@@ -210,107 +201,6 @@ export const GetDeviceACLsResponse: MessageFns<GetDeviceACLsResponse> = {
     message.realm = object.realm ?? "";
     message.realmGroups = object.realmGroups?.map((e) => e) || [];
     message.userAccessGroups = object.userAccessGroups?.map((e) => e) || [];
-    return message;
-  },
-};
-
-function createBaseCheckAdminTaskPermissionRequest(): CheckAdminTaskPermissionRequest {
-  return {};
-}
-
-export const CheckAdminTaskPermissionRequest: MessageFns<CheckAdminTaskPermissionRequest> = {
-  encode(_: CheckAdminTaskPermissionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): CheckAdminTaskPermissionRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseCheckAdminTaskPermissionRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): CheckAdminTaskPermissionRequest {
-    return {};
-  },
-
-  toJSON(_: CheckAdminTaskPermissionRequest): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create(base?: DeepPartial<CheckAdminTaskPermissionRequest>): CheckAdminTaskPermissionRequest {
-    return CheckAdminTaskPermissionRequest.fromPartial(base ?? {});
-  },
-  fromPartial(_: DeepPartial<CheckAdminTaskPermissionRequest>): CheckAdminTaskPermissionRequest {
-    const message = createBaseCheckAdminTaskPermissionRequest() as any;
-    return message;
-  },
-};
-
-function createBaseCheckAdminTaskPermissionResponse(): CheckAdminTaskPermissionResponse {
-  return { hasPermission: false };
-}
-
-export const CheckAdminTaskPermissionResponse: MessageFns<CheckAdminTaskPermissionResponse> = {
-  encode(message: CheckAdminTaskPermissionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.hasPermission !== false) {
-      writer.uint32(8).bool(message.hasPermission);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): CheckAdminTaskPermissionResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseCheckAdminTaskPermissionResponse() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.hasPermission = reader.bool();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): CheckAdminTaskPermissionResponse {
-    return { hasPermission: isSet(object.hasPermission) ? globalThis.Boolean(object.hasPermission) : false };
-  },
-
-  toJSON(message: CheckAdminTaskPermissionResponse): unknown {
-    const obj: any = {};
-    if (message.hasPermission !== false) {
-      obj.hasPermission = message.hasPermission;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<CheckAdminTaskPermissionResponse>): CheckAdminTaskPermissionResponse {
-    return CheckAdminTaskPermissionResponse.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<CheckAdminTaskPermissionResponse>): CheckAdminTaskPermissionResponse {
-    const message = createBaseCheckAdminTaskPermissionResponse() as any;
-    message.hasPermission = object.hasPermission ?? false;
     return message;
   },
 };

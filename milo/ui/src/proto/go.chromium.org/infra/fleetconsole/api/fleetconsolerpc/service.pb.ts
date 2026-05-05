@@ -7,8 +7,6 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import {
-  CheckAdminTaskPermissionRequest,
-  CheckAdminTaskPermissionResponse,
   CheckPermissionRequest,
   CheckPermissionResponse,
   GetDeviceACLsRequest,
@@ -307,8 +305,6 @@ export interface FleetConsole {
   ScheduleAutorepair(request: ScheduleAutorepairRequest): Promise<ScheduleAutorepairResponse>;
   ScheduleDeploy(request: ScheduleDeployRequest): Promise<ScheduleDeployResponse>;
   UpdateAndroidMetrics(request: UpdateAndroidMetricsRequest): Promise<UpdateAndroidMetricsResponse>;
-  /** @deprecated */
-  CheckAdminTaskPermission(request: CheckAdminTaskPermissionRequest): Promise<CheckAdminTaskPermissionResponse>;
   CheckPermission(request: CheckPermissionRequest): Promise<CheckPermissionResponse>;
   ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse>;
   CountResourceRequests(request: CountResourceRequestsRequest): Promise<CountResourceRequestsResponse>;
@@ -358,7 +354,6 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.ScheduleAutorepair = this.ScheduleAutorepair.bind(this);
     this.ScheduleDeploy = this.ScheduleDeploy.bind(this);
     this.UpdateAndroidMetrics = this.UpdateAndroidMetrics.bind(this);
-    this.CheckAdminTaskPermission = this.CheckAdminTaskPermission.bind(this);
     this.CheckPermission = this.CheckPermission.bind(this);
     this.ListResourceRequests = this.ListResourceRequests.bind(this);
     this.CountResourceRequests = this.CountResourceRequests.bind(this);
@@ -498,12 +493,6 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = UpdateAndroidMetricsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "UpdateAndroidMetrics", data);
     return promise.then((data) => UpdateAndroidMetricsResponse.fromJSON(data));
-  }
-
-  CheckAdminTaskPermission(request: CheckAdminTaskPermissionRequest): Promise<CheckAdminTaskPermissionResponse> {
-    const data = CheckAdminTaskPermissionRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "CheckAdminTaskPermission", data);
-    return promise.then((data) => CheckAdminTaskPermissionResponse.fromJSON(data));
   }
 
   CheckPermission(request: CheckPermissionRequest): Promise<CheckPermissionResponse> {

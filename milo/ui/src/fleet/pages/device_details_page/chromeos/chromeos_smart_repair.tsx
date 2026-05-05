@@ -48,6 +48,7 @@ export const ChromeOSSmartRepair = () => {
     queryFn: async () => {
       const response = await fleetConsoleClient.GetSmartRepair({
         deviceIds: [id],
+        forceRetrigger: false,
       });
       if (response.results && response.results.length > 0) {
         return response.results[0];
