@@ -916,6 +916,7 @@ func (c *clientImpl) getVersionCache() *internal.VersionCache {
 			FS:       fs.NewFileSystem(dir, ""),
 			SaveName: internal.UseLegacyVCName,
 			Refs:     internal.Disabled,
+			// TODO: Hook up ReadOnlyCacheDir
 		}
 		c.versionCacheService = parsed.Host
 	})
@@ -1190,24 +1191,38 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 		return c.Versions.ResolveVersion(packageName, version)
 	}
 
+	// cacheResolver will be nil, VersionCache.ResolveTag or
+	// VersionCache.ResolveRef.
+	//
+	// cacheAdder will be nil, VersionCache.AddTag or VersionCache.AddRef.
+	var cacheResolver func(ctx context.Context, server, pkg string, vers string) (common.Pin, error)
+	var cacheAdder func(ctx context.Context, server string, pin common.Pin, vers string) error
+
 	// Use a local cache when resolving tags to avoid round trips to the backend
 	// when calling same 'cipd ensure' command again and again.
-	var cache *internal.VersionCache
 	if common.ValidateInstanceTag(version) == nil {
-		cache = c.getVersionCache() // note: may be nil if the cache is disabled
+		if cache := c.getVersionCache(); cache != nil {
+			cacheResolver = cache.ResolveTag
+			cacheAdder = cache.AddTag
+		}
+	} else if common.ValidatePackageRef(version) == nil {
+		if cache := c.getVersionCache(); cache != nil {
+			cacheResolver = cache.ResolveRef
+			cacheAdder = cache.AddRef
+		}
 	}
-	if cache != nil {
-		cached, err := cache.ResolveTag(ctx, c.versionCacheService, packageName, version)
+	if cacheResolver != nil {
+		cached, err := cacheResolver(ctx, c.versionCacheService, packageName, version)
 		if err != nil {
-			logging.Warningf(ctx, "Could not query tag cache: %s", err)
+			logging.Warningf(ctx, "Could not query version cache for %q@%q: %s", packageName, version, err)
 		}
 		if cached.InstanceID != "" {
-			logging.Debugf(ctx, "Tag cache hit for %s:%s - %s", packageName, version, cached.InstanceID)
+			logging.Debugf(ctx, "Version cache hit for %s@%s - %s", packageName, version, cached.InstanceID)
 			return cached, nil
 		}
 	}
 
-	// Either resolving a ref, or a tag cache miss? Hit the backend.
+	// Cache wasn't useful, try the backend.
 	resp, err := c.repo.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
 		Package: packageName,
 		Version: version,
@@ -1223,10 +1238,9 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 		InstanceID:  common.ObjectRefToInstanceID(resp.Instance),
 	}
 
-	// If was resolving a tag, store it in the cache.
-	if cache != nil {
-		if err := cache.AddTag(ctx, c.versionCacheService, pin, version); err != nil {
-			logging.Warningf(ctx, "Could not add tag to the cache")
+	if cacheAdder != nil {
+		if err := cacheAdder(ctx, c.versionCacheService, pin, version); err != nil {
+			logging.Warningf(ctx, "Could not add version %q@%q - %s to the cache: %s", packageName, version, pin.InstanceID, err)
 		}
 		c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
 	}

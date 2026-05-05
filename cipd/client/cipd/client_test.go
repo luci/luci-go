@@ -28,6 +28,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -37,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
@@ -52,6 +54,12 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.Comparer(func(a, b UnixTime) bool {
+		return time.Time(a).Equal(time.Time(b))
+	}))
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // ACL related calls.
@@ -82,7 +90,7 @@ func TestFetchACL(t *testing.T) {
 			acl, err := client.FetchACL(ctx, "a/b/c")
 			assert.Loosely(c, err, should.BeNil)
 
-			assert.Loosely(c, acl, should.Resemble([]PackageACL{
+			assert.Loosely(c, acl, should.Match([]PackageACL{
 				{
 					PackagePath: "a",
 					Role:        "READER",
@@ -222,7 +230,7 @@ func TestFetchRoles(t *testing.T) {
 
 			roles, err := client.FetchRoles(ctx, "a/b/c")
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, roles, should.Resemble([]string{"OWNER", "WRITER", "READER"}))
+			assert.Loosely(c, roles, should.Match([]string{"OWNER", "WRITER", "READER"}))
 		})
 
 		c.Run("Bad prefix", func(c *ftt.Test) {
@@ -267,7 +275,7 @@ func TestFetchRolesOnBehalfOf(t *testing.T) {
 			id := identity.Identity("anonymous:anonymous")
 			roles, err := client.FetchRolesOnBehalfOf(ctx, "a/b/c", id)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, roles, should.Resemble([]string{"OWNER", "WRITER", "READER"}))
+			assert.Loosely(c, roles, should.Match([]string{"OWNER", "WRITER", "READER"}))
 		})
 
 		c.Run("Bad prefix", func(c *ftt.Test) {
@@ -616,7 +624,7 @@ func TestListPackages(t *testing.T) {
 
 			out, err := client.ListPackages(ctx, "a/b/c", true, true)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, out, should.Resemble([]string{
+			assert.Loosely(c, out, should.Match([]string{
 				"a/b/c/d/",
 				"a/b/c/d/pkg1",
 				"a/b/c/d/pkg2",
@@ -681,7 +689,7 @@ func TestSearchInstances(t *testing.T) {
 
 			out, err := client.SearchInstances(ctx, "a/b", []string{"k1:v1", "k2:v2"})
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, out, should.Resemble(common.PinSlice{
+			assert.Loosely(c, out, should.Match(common.PinSlice{
 				{PackageName: "a/b", InstanceID: fakeIID("0")},
 				{PackageName: "a/b", InstanceID: fakeIID("1")},
 			}))
@@ -783,7 +791,7 @@ func TestListInstances(t *testing.T) {
 				all = append(all, batch...)
 			}
 
-			assert.Loosely(c, all, should.Resemble([]InstanceInfo{
+			assert.Loosely(c, all, should.Match([]InstanceInfo{
 				fakeInstInfo("0"),
 				fakeInstInfo("1"),
 				fakeInstInfo("2"),
@@ -839,7 +847,7 @@ func TestFetchPackageRefs(t *testing.T) {
 
 			out, err := client.FetchPackageRefs(ctx, "a/b")
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, out, should.Resemble([]RefInfo{
+			assert.Loosely(c, out, should.Match([]RefInfo{
 				{Ref: "r1", InstanceID: fakeIID("0")},
 				{Ref: "r2", InstanceID: fakeIID("1")},
 			}))
@@ -896,7 +904,7 @@ func TestDescribeInstance(t *testing.T) {
 				DescribeTags: true,
 			})
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, desc, should.Resemble(&InstanceDescription{
+			assert.Loosely(c, desc, should.Match(&InstanceDescription{
 				InstanceInfo: InstanceInfo{Pin: pin},
 			}))
 		})
@@ -971,7 +979,7 @@ func TestDescribeClient(t *testing.T) {
 
 			desc, err := client.DescribeClient(ctx, pin)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, desc, should.Resemble(&ClientDescription{
+			assert.Loosely(c, desc, should.Match(&ClientDescription{
 				InstanceInfo:       InstanceInfo{Pin: pin},
 				Size:               12345,
 				SignedURL:          "http://example.com/client_binary",
@@ -1003,7 +1011,7 @@ func TestDescribeClient(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Version resolution (including tag cache).
+// Version resolution (including tag and ref cache).
 
 func TestResolveVersion(t *testing.T) {
 	t.Parallel()
@@ -1021,7 +1029,7 @@ func TestResolveVersion(t *testing.T) {
 			Instance: fakeObjectRef("0"),
 		}
 
-		c.Run("Resolves ref", func(c *ftt.Test) {
+		c.Run("Resolves ref (no ref cache)", func(c *ftt.Test) {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
 				in: &repopb.ResolveVersionRequest{
@@ -1032,13 +1040,35 @@ func TestResolveVersion(t *testing.T) {
 			})
 			pin, err := client.ResolveVersion(ctx, "a/b", "latest")
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(expectedPin))
+			assert.Loosely(c, pin, should.Match(expectedPin))
+		})
+
+		c.Run("Resolves ref (with ref cache)", func(c *ftt.Test) {
+			setupVersionCache(client, c)
+
+			// Only one RPC, even though we did two ResolveVersion calls.
+			repo.expect(rpcCall{
+				method: "ResolveVersion",
+				in: &repopb.ResolveVersionRequest{
+					Package: "a/b",
+					Version: "latest",
+				},
+				out: resolvedInst,
+			})
+
+			pin, err := client.ResolveVersion(ctx, "a/b", "latest")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Match(expectedPin))
+
+			pin, err = client.ResolveVersion(ctx, "a/b", "latest")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, pin, should.Match(expectedPin))
 		})
 
 		c.Run("Skips resolving instance ID", func(c *ftt.Test) {
 			pin, err := client.ResolveVersion(ctx, "a/b", expectedPin.InstanceID)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(expectedPin))
+			assert.Loosely(c, pin, should.Match(expectedPin))
 		})
 
 		c.Run("Resolves tag (no tag cache)", func(c *ftt.Test) {
@@ -1052,7 +1082,7 @@ func TestResolveVersion(t *testing.T) {
 			})
 			pin, err := client.ResolveVersion(ctx, "a/b", "k:v")
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(expectedPin))
+			assert.Loosely(c, pin, should.Match(expectedPin))
 		})
 
 		c.Run("Resolves tag (with tag cache)", func(c *ftt.Test) {
@@ -1071,12 +1101,12 @@ func TestResolveVersion(t *testing.T) {
 			// Cache miss.
 			pin, err := client.ResolveVersion(ctx, "a/b", "k:v")
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(expectedPin))
+			assert.Loosely(c, pin, should.Match(expectedPin))
 
 			// Cache hit.
 			pin, err = client.ResolveVersion(ctx, "a/b", "k:v")
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(expectedPin))
+			assert.Loosely(c, pin, should.Match(expectedPin))
 		})
 
 		c.Run("Bad package name", func(c *ftt.Test) {
@@ -1333,7 +1363,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(clientPin))
+			assert.Loosely(c, pin, should.Match(clientPin))
 
 			// Yep, updated.
 			assert.Loosely(c, readFile(clientBin), should.Equal("up-to-date"))
@@ -1347,7 +1377,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			// client is up-to-date and the tag cache is warm.
 			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(clientPin))
+			assert.Loosely(c, pin, should.Match(clientPin))
 
 			c.Run("Updates outdated client using warm cache", func(c *ftt.Test) {
 				writeFile(clientBin, "outdated")
@@ -1358,7 +1388,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 				expectDescribeClient()
 				pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 				assert.Loosely(c, err, should.BeNil)
-				assert.Loosely(c, pin, should.Resemble(clientPin))
+				assert.Loosely(c, pin, should.Match(clientPin))
 
 				// Yep, updated.
 				assert.Loosely(c, readFile(clientBin), should.Equal("up-to-date"))
@@ -1372,7 +1402,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(clientPin))
+			assert.Loosely(c, pin, should.Match(clientPin))
 
 			// Also drops .cipd_version file.
 			verFile := filepath.Join(tempDir, ".versions", clientFileName+".cipd_version")
@@ -1383,7 +1413,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			// client is up-to-date and the tag cache is warm.
 			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(clientPin))
+			assert.Loosely(c, pin, should.Match(clientPin))
 		})
 
 		c.Run("Updates outdated client using digests file", func(c *ftt.Test) {
@@ -1394,7 +1424,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(clientPin))
+			assert.Loosely(c, pin, should.Match(clientPin))
 
 			// Yep, updated.
 			assert.Loosely(c, readFile(clientBin), should.Equal("up-to-date"))
@@ -1403,7 +1433,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			// client is up-to-date already.
 			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
 			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Resemble(clientPin))
+			assert.Loosely(c, pin, should.Match(clientPin))
 		})
 
 		c.Run("Refuses to update if *.digests doesn't match what backend says", func(c *ftt.Test) {
@@ -1414,7 +1444,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
 			assert.Loosely(c, err, should.ErrLike("is not in *.digests file"))
-			assert.Loosely(c, pin, should.Resemble(common.Pin{}))
+			assert.Loosely(c, pin, should.Match(common.Pin{}))
 
 			// The client file wasn't replaced.
 			assert.Loosely(c, readFile(clientBin), should.Equal("outdated"))
@@ -1430,7 +1460,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			expectRPCs(expectedRef)
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
 			assert.Loosely(c, err, should.ErrLike("file hash mismatch"))
-			assert.Loosely(c, pin, should.Resemble(common.Pin{}))
+			assert.Loosely(c, pin, should.Match(common.Pin{}))
 
 			// The client file wasn't replaced.
 			assert.Loosely(c, readFile(clientBin), should.Equal("outdated"))
@@ -1443,7 +1473,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
 			assert.Loosely(c, err, should.ErrLike("there's no supported hash for"))
-			assert.Loosely(c, pin, should.Resemble(common.Pin{}))
+			assert.Loosely(c, pin, should.Match(common.Pin{}))
 
 			// The client file wasn't replaced.
 			assert.Loosely(c, readFile(clientBin), should.Equal("outdated"))
@@ -1505,7 +1535,7 @@ func TestNewClientFromEnv(t *testing.T) {
 		t.Run("Without CIPD_CONFIG_FILE", func(t *ftt.Test) {
 			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cl.Options().AdmissionPlugin, should.Resemble([]string{"something", "arg 1", "arg 2"}))
+			assert.Loosely(t, cl.Options().AdmissionPlugin, should.Match([]string{"something", "arg 1", "arg 2"}))
 		})
 
 		t.Run("With CIPD_CONFIG_FILE", func(t *ftt.Test) {
@@ -1524,7 +1554,7 @@ func TestNewClientFromEnv(t *testing.T) {
 
 			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cl.Options().AdmissionPlugin, should.Resemble([]string{"override"}))
+			assert.Loosely(t, cl.Options().AdmissionPlugin, should.Match([]string{"override"}))
 		})
 
 		t.Run("CIPD_CONFIG_FILE is empty", func(t *ftt.Test) {
@@ -1534,7 +1564,7 @@ func TestNewClientFromEnv(t *testing.T) {
 
 			cl, err := NewClientFromEnv(ctx, ClientOptions{mockedConfigFile: cfg})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, cl.Options().AdmissionPlugin, should.Resemble([]string{"something", "arg 1", "arg 2"}))
+			assert.Loosely(t, cl.Options().AdmissionPlugin, should.Match([]string{"something", "arg 1", "arg 2"}))
 		})
 
 		t.Run("CIPD_CONFIG_FILE is -", func(t *ftt.Test) {
