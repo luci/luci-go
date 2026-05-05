@@ -27,7 +27,7 @@ import {
   MRT_Row,
   MRT_TableInstance,
 } from 'material-react-table';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { OutputBuild } from '@/build/types';
@@ -61,6 +61,7 @@ import {
   prettifySwarmingState,
 } from '@/fleet/utils/task_utils';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
@@ -149,12 +150,22 @@ export const TasksDetailPanel = ({
 }) => {
   const editorOptions = useRef<EditorConfiguration>(DEFAULT_CODE_MIRROR_CONFIG);
   const buildsClient = useBuildsClient();
+  const { trackEvent } = useGoogleAnalytics();
   const meta = table.options.meta as TasksGridTableOptionsMeta;
   const taskId = row.original.id as string;
   const task = meta.taskMap.get(taskId);
 
   const tagMap = task?.tags ? tagsToMap([...task.tags]) : undefined;
   const buildId = tagMap?.get('buildbucket_build_id');
+
+  const [project] = tagMap ? getProjectAndBucket(tagMap) : [undefined];
+
+  useEffect(() => {
+    trackEvent('task_detail_panel_opened', {
+      componentName: 'TasksDetailPanel',
+      project,
+    });
+  }, [trackEvent, project]);
 
   let builderId: BuilderID | undefined = undefined;
   let buildNumber: number | undefined = undefined;

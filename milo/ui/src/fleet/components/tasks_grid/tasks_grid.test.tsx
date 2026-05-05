@@ -39,6 +39,11 @@ jest.mock('@/generic_libs/components/code_mirror_editor', () => ({
   CodeMirrorEditor: ({ value }: { value: string }) => <pre>{value}</pre>,
 }));
 
+const mockTrackEvent = jest.fn();
+jest.mock('@/generic_libs/components/google_analytics', () => ({
+  useGoogleAnalytics: () => ({ trackEvent: mockTrackEvent }),
+}));
+
 const MOCK_TASKS: TaskResultResponse[] = [
   TaskResultResponse.fromPartial({
     taskId: 'task-1',
@@ -94,6 +99,7 @@ describe('TasksGrid', () => {
   let cleanupDomMocks: () => void;
 
   beforeEach(() => {
+    mockTrackEvent.mockClear();
     jest.useFakeTimers();
     cleanupDomMocks = mockVirtualizedListDomProperties();
     jest.mocked(useQuery).mockReturnValue({
@@ -388,6 +394,64 @@ describe('TasksGrid', () => {
           ]),
         }),
       );
+    });
+
+    it('should track event on open/mount', async () => {
+      jest.mocked(useQuery).mockReturnValue({
+        data: {
+          output: {
+            properties: {
+              key1: 'value1',
+            },
+          },
+        },
+        isLoading: false,
+        isError: false,
+      } as unknown as UseQueryResult<OutputBuild, Error>);
+
+      render(
+        <FakeContextProvider>
+          <TasksDetailPanel row={mockRow} table={mockTable} />
+        </FakeContextProvider>,
+      );
+
+      expect(mockTrackEvent).toHaveBeenCalledWith(
+        'task_detail_panel_opened',
+        expect.objectContaining({
+          componentName: 'TasksDetailPanel',
+        }),
+      );
+    });
+
+    it('should track event on open/mount with project if available', async () => {
+      const mockRowWithProject = {
+        original: {
+          id: 'task-4',
+        },
+      } as unknown as MRT_Row<Record<string, unknown>>;
+
+      jest.mocked(useQuery).mockReturnValue({
+        data: {
+          output: {
+            properties: {
+              fallbackKey: 'fallbackValue',
+            },
+          },
+        },
+        isLoading: false,
+        isError: false,
+      } as unknown as UseQueryResult<OutputBuild, Error>);
+
+      render(
+        <FakeContextProvider>
+          <TasksDetailPanel row={mockRowWithProject} table={mockTable} />
+        </FakeContextProvider>,
+      );
+
+      expect(mockTrackEvent).toHaveBeenCalledWith('task_detail_panel_opened', {
+        componentName: 'TasksDetailPanel',
+        project: 'chromeos',
+      });
     });
   });
 });
