@@ -37,6 +37,8 @@ The parser is capable of understanding the target formats, but the UI components
 Backwards compatibility for legacy URL formats is supported on a **best-effort basis** rather than as a strict guarantee. Supporting all past versions and their bugs indefinitely impacts development velocity.
 In the future, a versioned URL system will be used with a dedicated migration function to translate old URLs. This avoids the need for parsers to support all historical formats. In rare occasions where a break occurs, users can re-add their filters.
 
+For a detailed set of principles guiding our approach to URL backwards compatibility, see [url-backwards-compatibility.md](./url-backwards-compatibility.md).
+
 ### Future of useFilters
 In the future, we want `useFilters` to be solely responsible for handling reading and writing to the `"filters"` URL param.
 
