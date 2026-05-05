@@ -65,6 +65,9 @@ export function FilterBar({
           filterDropdownRef.current?.focus();
           setIsDropdownOpen(true);
         }}
+        onDropdownFocusFirstPopperElement={() =>
+          filterDropdownRef.current?.focusFirstPopperElement?.() ?? false
+        }
         isDropdownOpen={isDropdownOpen}
         onChangeDropdownOpen={setIsDropdownOpen}
         isLoading={isLoading}

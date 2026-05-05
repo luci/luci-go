@@ -30,7 +30,10 @@ import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { stripQuotes } from '@/fleet/utils/filters';
 import { fuzzySort, fuzzyMaxScore } from '@/fleet/utils/fuzzy_sort';
 
-import { OptionsMenu } from '../filter_dropdown/options_menu';
+import {
+  OptionsMenu,
+  OptionsMenuHandle,
+} from '../filter_dropdown/options_menu';
 import { Footer } from '../options_dropdown/footer';
 import { SegmentedToggle } from '../segmented_toggle/segmented_toggle';
 
@@ -289,7 +292,7 @@ export class StringListFilterCategory implements FilterCategory {
 
   public render(
     childrenSearchQuery: string,
-    onNavigateUp: (e: React.KeyboardEvent) => void,
+    _onNavigateUp: (e: React.KeyboardEvent) => void,
     onApply: () => void,
     onClose: () => void,
     ref?: React.Ref<unknown>,
@@ -300,7 +303,6 @@ export class StringListFilterCategory implements FilterCategory {
         filterKey={this.key}
         isExcluded={this.isExcluded}
         childrenSearchQuery={childrenSearchQuery}
-        onNavigateUp={onNavigateUp}
         options={this.options}
         onApply={(newOpt, newIsExcluded) => {
           this.options = newOpt;
@@ -387,7 +389,6 @@ export class StringListFilterCategory implements FilterCategory {
 
 const OptionComponent = function OptionComponent({
   childrenSearchQuery,
-  onNavigateUp,
   options,
   onApply,
   onClose,
@@ -397,7 +398,6 @@ const OptionComponent = function OptionComponent({
 }: {
   filterKey: string;
   childrenSearchQuery: string;
-  onNavigateUp: (e: React.KeyboardEvent) => void;
   options: Record<string, OptionWithSelection>;
   onApply: (
     opt: Record<string, OptionWithSelection>,
@@ -408,11 +408,35 @@ const OptionComponent = function OptionComponent({
   ref?: React.Ref<unknown>;
 }) {
   const menuListRef = useRef<HTMLUListElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const optionsMenuRef = useRef<OptionsMenuHandle>(null);
   useImperativeHandle(ref, () => ({
     focus: () => {
       menuListRef.current
         ?.querySelector<HTMLElement>('[role=menuitem]')
         ?.focus();
+    },
+    focusFirst: () => {
+      optionsMenuRef.current?.focusFirst();
+    },
+    focusLast: () => {
+      optionsMenuRef.current?.focusLast();
+    },
+    focusFirstPopperElement: () => {
+      const toggleGroup = containerRef.current?.querySelector<HTMLElement>(
+        '.MuiToggleButtonGroup-root',
+      );
+      if (toggleGroup) {
+        toggleGroup.focus();
+        return true;
+      }
+      const menuItem =
+        containerRef.current?.querySelector<HTMLElement>('[role="menuitem"]');
+      if (menuItem) {
+        menuItem.focus();
+        return true;
+      }
+      return false;
     },
   }));
 
@@ -542,6 +566,7 @@ const OptionComponent = function OptionComponent({
 
   return (
     <div
+      ref={containerRef}
       role="presentation"
       key={filterKey}
       onKeyDown={(e) => {
@@ -581,7 +606,11 @@ const OptionComponent = function OptionComponent({
             flexDirection: 'row-reverse',
           }}
         >
-          <Button disableElevation onClick={handleSelectClearAll} tabIndex={-1}>
+          <Button
+            className="filter-select-all-btn"
+            disableElevation
+            onClick={handleSelectClearAll}
+          >
             {areAllSelectableOptionsSelected ? 'Clear All' : 'Select All'}
           </Button>
         </div>
@@ -603,6 +632,7 @@ const OptionComponent = function OptionComponent({
         }}
       >
         <OptionsMenu
+          ref={optionsMenuRef}
           elements={fuzzySorted}
           selectedElements={
             new Set(
@@ -629,8 +659,6 @@ const OptionComponent = function OptionComponent({
               return next;
             });
           }}
-          onNavigateUp={onNavigateUp}
-          onNavigateDown={() => {}} // currently just blocking navigating down from the last element
           checkedIcon={isExcluded ? ExclusionBoxIcon : undefined}
         />
       </MenuList>

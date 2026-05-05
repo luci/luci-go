@@ -37,7 +37,11 @@ import {
 } from 'react';
 
 import { colors } from '@/fleet/theme/colors';
-import { hasAnyModifier, keyboardListNavigationHandler } from '@/fleet/utils';
+import {
+  hasAnyModifier,
+  keyboardListNavigationHandler,
+  keyboardFilterDropdownNavigationHandler,
+} from '@/fleet/utils';
 import { fuzzySubstring, SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { EllipsisTooltip } from '../ellipsis_tooltip';
@@ -47,6 +51,9 @@ import { HighlightCharacter } from '../highlight_character';
 
 export interface OptionComponentHandle {
   focus: () => void;
+  focusFirst?: () => void;
+  focusLast?: () => void;
+  focusFirstPopperElement?: () => boolean;
 }
 
 export type OptionComponentProps<T> = {
@@ -75,6 +82,7 @@ interface FilterDropdownProps {
 
 export interface FilterDropdownHandle {
   focus: () => void;
+  focusFirstPopperElement?: () => boolean;
 }
 
 // randomly selected multiplier, seems to work well
@@ -115,6 +123,15 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
       } else {
         firstElementRef.current?.focus();
       }
+    },
+    focusFirstPopperElement: () => {
+      if (
+        openCategoryRef.current &&
+        openCategoryRef.current.focusFirstPopperElement
+      ) {
+        return openCategoryRef.current.focusFirstPopperElement();
+      }
+      return false;
     },
   }));
 
@@ -305,6 +322,30 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
         <Paper
           elevation={2}
           onClick={(e) => e.stopPropagation()}
+          onKeyDownCapture={(e: React.KeyboardEvent<HTMLDivElement>) => {
+            keyboardFilterDropdownNavigationHandler(e, e.currentTarget, {
+              onFocusFirstList: () => {
+                if (
+                  openCategoryRef.current &&
+                  openCategoryRef.current.focusFirst
+                ) {
+                  openCategoryRef.current.focusFirst();
+                  return true;
+                }
+                return false;
+              },
+              onFocusLastList: () => {
+                if (
+                  openCategoryRef.current &&
+                  openCategoryRef.current.focusLast
+                ) {
+                  openCategoryRef.current.focusLast();
+                  return true;
+                }
+                return false;
+              },
+            });
+          }}
           onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
             if (openCategory?.value instanceof StringListFilterCategory) {
               if (e.key === 'Backspace') {
@@ -321,10 +362,6 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
                 e.preventDefault();
                 return;
               }
-            }
-            if (e.key === 'Tab') {
-              closeMenu();
-              return;
             }
             if (e.key === 'Escape') {
               openCategory?.anchor.focus();

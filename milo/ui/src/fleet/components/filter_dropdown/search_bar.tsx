@@ -29,6 +29,7 @@ interface SearchBarProps {
   filterCategoryDatas: FilterCategory[];
 
   onDropdownFocus: () => void;
+  onDropdownFocusFirstPopperElement?: () => boolean;
   isDropdownOpen: boolean;
   onChangeDropdownOpen: (isOpen: boolean) => void;
   isLoading?: boolean;
@@ -43,6 +44,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       onChange,
       filterCategoryDatas,
       onDropdownFocus,
+      onDropdownFocusFirstPopperElement,
       isDropdownOpen,
       onChangeDropdownOpen,
       onChipEditApplied,
@@ -149,6 +151,14 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           onChangeDropdownOpen(true);
         }}
         onKeyDown={(e) => {
+          if (e.key === 'Tab' && isDropdownOpen) {
+            if (!e.shiftKey) {
+              const focused = onDropdownFocusFirstPopperElement?.();
+              if (focused) {
+                e.preventDefault();
+              }
+            }
+          }
           if (e.key === 'Enter') {
             const match = value.match(/^([^:]+):(.+)$/);
             if (match) {

@@ -36,7 +36,6 @@ export function Footer({
       disableElevation
       variant="contained"
       onClick={onApplyClick}
-      tabIndex={-1}
       disabled={applyDisabled}
     >
       Apply
@@ -53,32 +52,34 @@ export function Footer({
         }}
       />
       <div
+        className="options-menu-footer"
         css={{
           display: 'flex',
           gap: 12,
           padding: '6px 30px',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          flexDirection: 'row-reverse',
         }}
       >
-        {footerButtons.includes('apply') &&
-          (applyDisabled && applyTooltip ? (
-            <Tooltip title={applyTooltip}>
-              <span>{applyButton}</span>
-            </Tooltip>
-          ) : (
-            applyButton
-          ))}
+        {footerButtons.includes('reset') && (
+          <Button disableElevation onClick={onResetClick}>
+            Reset to default
+          </Button>
+        )}
         {footerButtons.includes('cancel') && (
-          <Button disableElevation onClick={onCancelClick} tabIndex={-1}>
+          <Button disableElevation onClick={onCancelClick}>
             Cancel
           </Button>
         )}
-        {footerButtons.includes('reset') && (
-          <Button disableElevation onClick={onResetClick} tabIndex={-1}>
-            Reset to default
-          </Button>
+        {footerButtons.includes('apply') && (
+          <span style={{ marginLeft: 'auto', display: 'inline-flex' }}>
+            {applyDisabled && applyTooltip ? (
+              <Tooltip title={applyTooltip}>
+                <span>{applyButton}</span>
+              </Tooltip>
+            ) : (
+              applyButton
+            )}
+          </span>
         )}
       </div>
     </div>

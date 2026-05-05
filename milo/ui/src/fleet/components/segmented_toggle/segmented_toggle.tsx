@@ -27,6 +27,7 @@ interface SegmentedToggleProps {
   options: ToggleOption[];
   value: string;
   onChange: (newValue: string) => void;
+  onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
 }
 
 const StyledToggleButtonGroup = styled(ToggleButtonGroup, {
@@ -42,6 +43,10 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup, {
   overflow: 'hidden',
   backgroundColor: colors.grey[50],
   width: '100%',
+  '&:focus-visible': {
+    outline: `2px solid ${colors.blue[700]}`,
+    outlineOffset: '2px',
+  },
   '&::before': {
     content: '""',
     position: 'absolute',
@@ -95,6 +100,7 @@ export const SegmentedToggle = ({
   options,
   value,
   onChange,
+  onKeyDown,
 }: SegmentedToggleProps) => {
   const handleChange = (
     _event: React.MouseEvent<HTMLElement>,
@@ -116,12 +122,44 @@ export const SegmentedToggle = ({
       size="small"
       selectedIndex={selectedIndex}
       totalOptions={options.length}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        const isLeft =
+          e.key === 'ArrowLeft' || (e.key === 'h' && (e.metaKey || e.ctrlKey));
+        const isRight =
+          e.key === 'ArrowRight' || (e.key === 'l' && (e.metaKey || e.ctrlKey));
+
+        if (isLeft || isRight) {
+          const currentIndex = options.findIndex((opt) => opt.value === value);
+          let nextIndex = currentIndex;
+          if (isLeft) {
+            nextIndex = Math.max(0, currentIndex - 1);
+          } else if (isRight) {
+            nextIndex = Math.min(options.length - 1, currentIndex + 1);
+          }
+          onChange(options[nextIndex].value);
+
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        if (e.key === ' ' || e.key === 'Enter') {
+          const currentIndex = options.findIndex((opt) => opt.value === value);
+          const nextIndex = (currentIndex + 1) % options.length;
+          onChange(options[nextIndex].value);
+
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        onKeyDown?.(e);
+      }}
     >
       {options.map((option) => (
         <StyledToggleButton
           key={option.value}
           value={option.value}
           aria-label={option.label}
+          tabIndex={-1}
         >
           {option.icon && (
             <span

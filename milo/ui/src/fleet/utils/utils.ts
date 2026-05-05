@@ -146,3 +146,157 @@ const findNeighborsInList = (target: HTMLElement) => {
 export const isProdEnvironment = () => {
   return window.location.hostname === MILO_PROD;
 };
+
+type NavigableRegion =
+  | { type: 'toggle'; element: HTMLElement }
+  | { type: 'select-all'; element: HTMLElement }
+  | { type: 'list'; element: HTMLElement }
+  | { type: 'footer'; elements: HTMLElement[] };
+
+export function keyboardFilterDropdownNavigationHandler(
+  e: React.KeyboardEvent<HTMLElement>,
+  container: HTMLElement,
+  options?: {
+    onFocusFirstList?: () => boolean;
+    onFocusLastList?: () => boolean;
+  },
+) {
+  if (e.key !== 'Tab') return;
+
+  const toggleGroup = container.querySelector<HTMLElement>(
+    '.MuiToggleButtonGroup-root',
+  );
+  const selectAllBtn = container.querySelector<HTMLElement>(
+    '.filter-select-all-btn',
+  );
+  const menuItems = Array.from(
+    container.querySelectorAll<HTMLElement>(
+      '.MuiMenuItem-root, [role="menuitem"], [data-index]',
+    ),
+  );
+  const menuList = container.querySelector<HTMLElement>('.MuiList-root');
+  const footerContainer = container.querySelector('.options-menu-footer');
+  const footerButtons = footerContainer
+    ? Array.from(footerContainer.querySelectorAll<HTMLElement>('button'))
+    : [];
+
+  const activeEl = document.activeElement as HTMLElement;
+
+  const navigableRegions: NavigableRegion[] = [];
+  if (toggleGroup)
+    navigableRegions.push({ type: 'toggle', element: toggleGroup });
+  if (selectAllBtn)
+    navigableRegions.push({ type: 'select-all', element: selectAllBtn });
+  if (menuItems.length > 0)
+    navigableRegions.push({ type: 'list', element: menuList || menuItems[0] });
+  if (footerButtons.length > 0)
+    navigableRegions.push({ type: 'footer', elements: footerButtons });
+
+  const isInsideValuesList =
+    activeEl === menuList ||
+    (menuList && menuList.contains(activeEl)) ||
+    menuItems.includes(activeEl) ||
+    (activeEl !== selectAllBtn &&
+      (!toggleGroup ||
+        (activeEl !== toggleGroup && !toggleGroup.contains(activeEl))) &&
+      !footerButtons.includes(activeEl));
+
+  const focusedOnToggle =
+    toggleGroup && (activeEl === toggleGroup || toggleGroup.contains(activeEl));
+
+  const activeRegionIndex = navigableRegions.findIndex((r) => {
+    if (r.type === 'toggle') return focusedOnToggle;
+    if (r.type === 'select-all') return activeEl === r.element;
+    if (r.type === 'list') return isInsideValuesList;
+    if (r.type === 'footer') return r.elements.includes(activeEl);
+    return false;
+  });
+
+  if (activeRegionIndex !== -1) {
+    const activeRegion = navigableRegions[activeRegionIndex];
+    const len = navigableRegions.length;
+
+    const focusFirstEnabled = (elements: HTMLElement[]) => {
+      const enabled = elements.find((el) => {
+        if (el instanceof HTMLButtonElement && el.disabled) return false;
+        return true;
+      });
+      if (enabled) {
+        enabled.focus();
+        return true;
+      }
+      return false;
+    };
+
+    const focusLastEnabled = (elements: HTMLElement[]) => {
+      const reversed = [...elements].reverse();
+      const enabled = reversed.find((el) => {
+        if (el instanceof HTMLButtonElement && el.disabled) return false;
+        return true;
+      });
+      if (enabled) {
+        enabled.focus();
+        return true;
+      }
+      return false;
+    };
+
+    if (e.shiftKey) {
+      // Shift + Tab (Backward)
+      if (activeRegion.type === 'footer') {
+        const firstEnabled = activeRegion.elements.find(
+          (el) => !(el instanceof HTMLButtonElement && el.disabled),
+        );
+        if (activeEl !== firstEnabled) {
+          return;
+        }
+      }
+
+      const prevRegionIndex = (activeRegionIndex - 1 + len) % len;
+      const prevRegion = navigableRegions[prevRegionIndex];
+
+      if (prevRegion.type === 'toggle') {
+        prevRegion.element.focus();
+      } else if (prevRegion.type === 'select-all') {
+        prevRegion.element.focus();
+      } else if (prevRegion.type === 'list') {
+        const focused = options?.onFocusLastList?.();
+        if (!focused) {
+          menuItems[menuItems.length - 1]?.focus();
+        }
+      } else if (prevRegion.type === 'footer') {
+        focusLastEnabled(prevRegion.elements);
+      }
+      e.preventDefault();
+      e.stopPropagation();
+    } else {
+      // Tab (Forward)
+      if (activeRegion.type === 'footer') {
+        const lastEnabled = [...activeRegion.elements]
+          .reverse()
+          .find((el) => !(el instanceof HTMLButtonElement && el.disabled));
+        if (activeEl !== lastEnabled) {
+          return;
+        }
+      }
+
+      const nextRegionIndex = (activeRegionIndex + 1) % len;
+      const nextRegion = navigableRegions[nextRegionIndex];
+
+      if (nextRegion.type === 'toggle') {
+        nextRegion.element.focus();
+      } else if (nextRegion.type === 'select-all') {
+        nextRegion.element.focus();
+      } else if (nextRegion.type === 'list') {
+        const focused = options?.onFocusFirstList?.();
+        if (!focused) {
+          menuItems[0]?.focus();
+        }
+      } else if (nextRegion.type === 'footer') {
+        focusFirstEnabled(nextRegion.elements);
+      }
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+}

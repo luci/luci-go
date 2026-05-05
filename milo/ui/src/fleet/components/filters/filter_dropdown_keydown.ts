@@ -20,7 +20,7 @@ export const filterDropdownKeyDown = (
   if (e.key === 'Enter' && e.ctrlKey) {
     onApply();
   }
-  if (e.key === 'Escape' || e.key === 'Tab') {
+  if (e.key === 'Escape') {
     onClose();
   }
 };

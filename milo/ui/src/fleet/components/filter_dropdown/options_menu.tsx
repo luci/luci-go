@@ -14,11 +14,10 @@
 
 import { Button, Checkbox, colors, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import React, { useRef } from 'react';
+import React, { useRef, forwardRef, useImperativeHandle } from 'react';
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { OptionValue } from '@/fleet/types/option';
-import { keyboardListNavigationHandler } from '@/fleet/utils';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
 import { HighlightCharacter } from '../highlight_character';
@@ -28,189 +27,236 @@ interface OptionsMenuProps {
   selectedElements: Set<string>;
   flipOption: (value: string) => void;
   selectOnly?: (value: string) => void;
-  onNavigateUp?: (e: React.KeyboardEvent) => void;
-  onNavigateDown?: (e: React.KeyboardEvent) => void;
   checkedIcon?: React.ReactNode;
 }
 
-export const OptionsMenu = ({
-  elements,
-  selectedElements,
-  flipOption,
-  selectOnly,
-  onNavigateUp,
-  onNavigateDown,
-  checkedIcon,
-}: OptionsMenuProps) => {
-  const parentRef = useRef(null);
+export interface OptionsMenuHandle {
+  focusFirst: () => void;
+  focusLast: () => void;
+}
 
-  const virtualizer = useVirtualizer({
-    count: elements.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 36, // Increased slightly to match Material UI MenuItem height typically
-    enabled: true,
-    overscan: 20,
-    getItemKey: (index) => elements[index].el.value, // Provide explicit key for virtualizer cache
-  });
+export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
+  function OptionsMenu(
+    {
+      elements,
+      selectedElements,
+      flipOption,
+      selectOnly,
+      checkedIcon,
+    }: OptionsMenuProps,
+    ref,
+  ) {
+    const parentRef = useRef<HTMLDivElement>(null);
 
-  const virtualRows = virtualizer.getVirtualItems();
+    const virtualizer = useVirtualizer({
+      count: elements.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 36, // Increased slightly to match Material UI MenuItem height typically
+      enabled: true,
+      overscan: 20,
+      getItemKey: (index) => elements[index].el.value, // Provide explicit key for virtualizer cache
+    });
 
-  if (elements.length === 0) {
+    const virtualRows = virtualizer.getVirtualItems();
+
+    const focusIndexResilient = (index: number, retries = 5) => {
+      virtualizer.scrollToIndex(index, { align: 'auto' });
+
+      const tryFocus = (count: number) => {
+        const el = parentRef.current?.querySelector<HTMLElement>(
+          `[data-index="${index}"]`,
+        );
+        if (el) {
+          el.focus();
+        } else if (count > 0) {
+          requestAnimationFrame(() => tryFocus(count - 1));
+        }
+      };
+
+      requestAnimationFrame(() => tryFocus(retries));
+    };
+
+    useImperativeHandle(ref, () => ({
+      focusFirst: () => {
+        focusIndexResilient(0);
+      },
+      focusLast: () => {
+        focusIndexResilient(elements.length - 1);
+      },
+    }));
+
+    if (elements.length === 0) {
+      return (
+        <div
+          css={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '8px',
+            justifyContent: 'center',
+          }}
+        >
+          <span>No options available</span>
+        </div>
+      );
+    }
+
     return (
       <div
+        role="menu"
+        ref={parentRef}
         css={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '8px',
-          justifyContent: 'center',
-        }}
-      >
-        <span>No options available</span>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      role="menu"
-      ref={parentRef}
-      css={{
-        overflow: 'auto',
-        maxHeight: 'inherit',
-        width: '100%',
-      }}
-    >
-      <div
-        css={{
+          overflow: 'auto',
+          maxHeight: 'inherit',
           width: '100%',
-          height: `${virtualizer.getTotalSize()}px`,
-          position: 'relative',
         }}
       >
         <div
-          style={{
-            transform: `translateY(${virtualRows[0]?.start ?? 0}px)`,
+          css={{
             width: '100%',
-            position: 'absolute',
-            top: 0,
-            left: 0,
+            height: `${virtualizer.getTotalSize()}px`,
+            position: 'relative',
           }}
         >
-          {virtualRows.map((virtualRow) => {
-            const item = elements[virtualRow.index];
-            return (
-              <MenuItem
-                key={item.el.value}
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                disableRipple
-                onClick={(e) => {
-                  if (e.type === 'keydown' || e.type === 'keyup') {
-                    const parsedE =
-                      e as unknown as React.KeyboardEvent<HTMLLIElement>;
-                    if (parsedE.key === ' ') return;
-                    if (parsedE.key === 'Enter' && parsedE.ctrlKey) return;
-                  }
-                  flipOption(elements[virtualRow.index].el.value);
-                }}
-                onKeyDown={(e) => {
-                  keyboardListNavigationHandler(
-                    e,
-                    virtualRow.index === virtualRows.length - 1 &&
-                      onNavigateDown
-                      ? () => onNavigateDown(e)
-                      : undefined,
-                    virtualRow.index === 0 && onNavigateUp
-                      ? () => onNavigateUp(e)
-                      : undefined,
-                  );
-                }}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: '100%',
-                  padding: '6px 12px',
-                  ...(item.el.label === BLANK_VALUE && {
-                    fontStyle: 'italic',
-                    color: colors.grey[700],
-                  }),
-                  ...(item.el.inScope === false && {
-                    color: colors.grey[500],
-                  }),
-                  ...(item.el.isSignificant === false && {
-                    color: colors.grey[500],
-                  }),
-                  '&:hover .only-button': {
-                    opacity: 1,
-                    visibility: 'visible',
-                  },
-                  '& .only-button': {
-                    opacity: 0,
-                    visibility: 'hidden',
-                    transition: 'opacity 0.2s, visibility 0.2s',
-                    marginLeft: 'auto',
-                  },
-                }}
-              >
-                <Checkbox
-                  sx={{
-                    padding: 0,
-                    marginRight: '13px',
+          <div
+            style={{
+              transform: `translateY(${virtualRows[0]?.start ?? 0}px)`,
+              width: '100%',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+            }}
+          >
+            {virtualRows.map((virtualRow) => {
+              const item = elements[virtualRow.index];
+              return (
+                <MenuItem
+                  key={item.el.value}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  disableRipple
+                  onClick={(e) => {
+                    if (e.type === 'keydown' || e.type === 'keyup') {
+                      const parsedE =
+                        e as unknown as React.KeyboardEvent<HTMLLIElement>;
+                      if (parsedE.key === ' ') return;
+                      if (parsedE.key === 'Enter' && parsedE.ctrlKey) return;
+                    }
+                    flipOption(elements[virtualRow.index].el.value);
                   }}
-                  size="small"
-                  checked={
-                    selectedElements.has(elements[virtualRow.index].el.value) ??
-                    false
-                  }
-                  tabIndex={-1}
-                  slotProps={{
-                    input: {
-                      'aria-label': item.el.label,
+                  onKeyDown={(e) => {
+                    const isDown =
+                      e.key === 'ArrowDown' ||
+                      (e.key === 'j' && (e.metaKey || e.ctrlKey));
+                    const isUp =
+                      e.key === 'ArrowUp' ||
+                      (e.key === 'k' && (e.metaKey || e.ctrlKey));
+
+                    if (isDown) {
+                      const nextIndex = virtualRow.index + 1;
+                      const targetIndex =
+                        nextIndex >= elements.length ? 0 : nextIndex;
+                      focusIndexResilient(targetIndex);
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+
+                    if (isUp) {
+                      const prevIndex = virtualRow.index - 1;
+                      const targetIndex =
+                        prevIndex < 0 ? elements.length - 1 : prevIndex;
+                      focusIndexResilient(targetIndex);
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    padding: '6px 12px',
+                    ...(item.el.label === BLANK_VALUE && {
+                      fontStyle: 'italic',
+                      color: colors.grey[700],
+                    }),
+                    ...(item.el.inScope === false && {
+                      color: colors.grey[500],
+                    }),
+                    ...(item.el.isSignificant === false && {
+                      color: colors.grey[500],
+                    }),
+                    '&:hover .only-button': {
+                      opacity: 1,
+                      visibility: 'visible',
+                    },
+                    '& .only-button': {
+                      opacity: 0,
+                      visibility: 'hidden',
+                      transition: 'opacity 0.2s, visibility 0.2s',
+                      marginLeft: 'auto',
                     },
                   }}
-                  checkedIcon={checkedIcon}
-                />
-                <HighlightCharacter
-                  variant="body2"
-                  highlightIndexes={
-                    item.el.isSignificant === false ? [] : item.matches
-                  }
-                  sx={{
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: 'block',
-                    flexGrow: 1,
-                  }}
                 >
-                  {item.el.label}
-                </HighlightCharacter>
-                {selectOnly && (
-                  <Button
-                    className="only-button"
-                    size="small"
-                    variant="text"
-                    color="primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      selectOnly(elements[virtualRow.index].el.value);
-                    }}
+                  <Checkbox
                     sx={{
-                      minWidth: 'unset',
-                      padding: '2px 6px',
-                      textTransform: 'none',
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold',
+                      padding: 0,
+                      marginRight: '13px',
+                    }}
+                    size="small"
+                    checked={
+                      selectedElements.has(
+                        elements[virtualRow.index].el.value,
+                      ) ?? false
+                    }
+                    tabIndex={-1}
+                    slotProps={{
+                      input: {
+                        'aria-label': item.el.label,
+                      },
+                    }}
+                    checkedIcon={checkedIcon}
+                  />
+                  <HighlightCharacter
+                    variant="body2"
+                    highlightIndexes={
+                      item.el.isSignificant === false ? [] : item.matches
+                    }
+                    sx={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: 'block',
+                      flexGrow: 1,
                     }}
                   >
-                    Only
-                  </Button>
-                )}
-              </MenuItem>
-            );
-          })}
+                    {item.el.label}
+                  </HighlightCharacter>
+                  {selectOnly && (
+                    <Button
+                      className="only-button"
+                      size="small"
+                      variant="text"
+                      color="primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        selectOnly(elements[virtualRow.index].el.value);
+                      }}
+                      sx={{
+                        minWidth: 'unset',
+                        padding: '2px 6px',
+                        textTransform: 'none',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      Only
+                    </Button>
+                  )}
+                </MenuItem>
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  },
+);
