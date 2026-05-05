@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Feedback } from '@mui/icons-material';
+import { ExtensionOutlined, FeedbackOutlined } from '@mui/icons-material';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -112,7 +112,7 @@ export const Header = ({
         }}
       >
         <IconButton onClick={() => window.open('http://go/fleet-console')}>
-          <Tooltip title="Fleet Console, work in progress">
+          <Tooltip title="Fleet Console Documentation">
             <HelpOutlineOutlinedIcon sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
@@ -124,7 +124,12 @@ export const Header = ({
           }
         >
           <Tooltip title="File a bug">
-            <Feedback sx={{ color: colors.grey[700] }} />
+            <FeedbackOutlined sx={{ color: colors.grey[700] }} />
+          </Tooltip>
+        </IconButton>
+        <IconButton onClick={() => window.open('http://go/fcon-feature')}>
+          <Tooltip title="Feature Requests">
+            <ExtensionOutlined sx={{ color: colors.grey[700] }} />
           </Tooltip>
         </IconButton>
         {showAvailableFlags && <AvailableFlags />}
