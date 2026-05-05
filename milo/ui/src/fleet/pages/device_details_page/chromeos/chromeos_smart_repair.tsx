@@ -31,7 +31,7 @@ import {
   Grid,
   Typography,
 } from '@mui/material';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router';
 
 import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
@@ -43,7 +43,22 @@ export const ChromeOSSmartRepair = () => {
   const fleetConsoleClient = useFleetConsoleClient();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+  const retriggerMutation = useMutation({
+    mutationFn: () =>
+      fleetConsoleClient.GetSmartRepair({
+        deviceIds: [id],
+        forceRetrigger: true,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['smart-repair', id] });
+    },
+    onError: (error) => {
+      // eslint-disable-next-line no-console
+      console.error('Failed to force retrigger:', error);
+    },
+  });
+
+  const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: ['smart-repair', id],
     queryFn: async () => {
       const response = await fleetConsoleClient.GetSmartRepair({
@@ -102,14 +117,19 @@ export const ChromeOSSmartRepair = () => {
         </Typography>
         <Button
           variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={() => {
-            queryClient.invalidateQueries({ queryKey: ['smart-repair', id] });
-            refetch();
-          }}
-          disabled={loading}
+          startIcon={
+            retriggerMutation.isPending ? (
+              <CircularProgress size={20} />
+            ) : (
+              <RefreshIcon />
+            )
+          }
+          onClick={() => retriggerMutation.mutate()}
+          disabled={loading || retriggerMutation.isPending}
         >
-          Refresh Analysis
+          {retriggerMutation.isPending
+            ? 'Retriggering...'
+            : 'Retrigger Analysis'}
         </Button>
       </Box>
 
