@@ -964,14 +964,12 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache
 		}
 	}
 
-	cache := &internal.InstanceCache{
+	return &internal.InstanceCache{
 		FS:                fs.NewFileSystem(cacheDir, ""),
 		Tmp:               tmp,
 		Fetcher:           c.remoteFetchInstance,
 		ParallelDownloads: max(0, c.Options().ParallelDownloads),
-	}
-	cache.Launch(ctx) // start background download goroutines
-	return cache, nil
+	}, nil
 }
 
 func (c *clientImpl) Options() ClientOptions {

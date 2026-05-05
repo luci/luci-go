@@ -84,7 +84,6 @@ func TestInstanceCache(t *testing.T) {
 			Fetcher: fetcher,
 			maxSize: testInstanceCacheMaxSize,
 		}
-		cache.Launch(ctx)
 		defer cache.Close(ctx)
 
 		access := func(cache *InstanceCache, pin common.Pin) (created bool, src pkg.Source) {
@@ -146,7 +145,6 @@ func TestInstanceCache(t *testing.T) {
 
 		t.Run("Works in general", func(t *ftt.Test) {
 			cache2 := &InstanceCache{FS: fs, Fetcher: fetcher}
-			cache2.Launch(ctx)
 			defer cache2.Close(ctx)
 
 			// Add new.
@@ -163,7 +161,6 @@ func TestInstanceCache(t *testing.T) {
 				Tmp:     true,
 				Fetcher: fetcher,
 			}
-			cache.Launch(ctx)
 			defer cache.Close(ctx)
 
 			assert.Loosely(t, countTempFiles(), should.BeZero)
@@ -236,7 +233,6 @@ func TestInstanceCache(t *testing.T) {
 
 			t.Run("Preserves the order when using single stream", func(t *ftt.Test) {
 				cache.ParallelDownloads = 1
-				cache.Launch(ctx)
 
 				cache.RequestInstances(ctx, reqs)
 				for i := 0; i < len(reqs); i++ {
@@ -250,7 +246,6 @@ func TestInstanceCache(t *testing.T) {
 
 			t.Run("Doesn't deadlock", func(t *ftt.Test) {
 				cache.ParallelDownloads = 4
-				cache.Launch(ctx)
 
 				seen := map[int]struct{}{}
 
@@ -269,7 +264,6 @@ func TestInstanceCache(t *testing.T) {
 				fetchErr = make(chan error, len(reqs))
 
 				cache.ParallelDownloads = 4
-				cache.Launch(ctx)
 
 				cache.RequestInstances(ctx, reqs)
 

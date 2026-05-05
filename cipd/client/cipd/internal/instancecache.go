@@ -119,7 +119,7 @@ type InstanceCache struct {
 
 	stateLock sync.Mutex // synchronizes access to the state file.
 
-	// true if Launch was called
+	// true if RequestInstances was called
 	launched bool
 
 	fetchPending int32
@@ -176,16 +176,16 @@ func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
 	return err
 }
 
-// Launch prepares the cache for fetching packages in background.
+// maybeLaunch prepares the cache for fetching packages in background.
 //
-// Must be called before RequestInstances.
-func (c *InstanceCache) Launch(ctx context.Context) {
+// called implicitly by RequestInstances.
+func (c *InstanceCache) maybeLaunch(ctx context.Context) {
 	if c.ParallelDownloads < 0 {
 		panic("ParallelDownloads must be non-negative")
 	}
 
 	if c.launched {
-		panic("Called InstanceCache.Launch more than once")
+		return
 	}
 	c.launched = true
 
@@ -243,7 +243,7 @@ func (c *InstanceCache) Launch(ctx context.Context) {
 	}
 }
 
-// Close shuts down goroutines started in Launch and cleans up temp files.
+// Close shuts down goroutines started and cleans up temp files.
 //
 // The caller should ensure there's no pending fetches before making this call.
 func (c *InstanceCache) Close(ctx context.Context) {
@@ -276,6 +276,9 @@ func (c *InstanceCache) Close(ctx context.Context) {
 // InstanceRequest will get an exactly one InstanceResponse (perhaps with an
 // error inside). The order of responses may not match the order of requests.
 func (c *InstanceCache) RequestInstances(ctx context.Context, reqs []*InstanceRequest) {
+	// Ensure we are launched.
+	c.maybeLaunch(ctx)
+
 	now := clock.Now(ctx)
 	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		for _, r := range reqs {
