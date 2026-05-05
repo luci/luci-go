@@ -66,6 +66,97 @@ const calculateEdgeProximityBonus = (
   );
 };
 
+function countConsecutiveMatches(
+  target: string,
+  query: string,
+  targetStart: number,
+  queryStart: number,
+): number {
+  let consecutive = 0;
+  while (
+    targetStart + consecutive < target.length &&
+    queryStart + consecutive < query.length &&
+    target[targetStart + consecutive] === query[queryStart + consecutive]
+  ) {
+    consecutive++;
+  }
+  return consecutive;
+}
+
+type MatchResult = { matched: true } | { matched: false; skipTo: number };
+function evaluateMatch(
+  target: string,
+  query: string,
+  targetIndex: number,
+  queryIndex: number,
+  seqMatchCount: number,
+): MatchResult {
+  const targetChar = target[targetIndex];
+  const queryChar = query[queryIndex];
+
+  if (targetChar !== queryChar)
+    return { matched: false, skipTo: targetIndex + 1 };
+  if (seqMatchCount > 0) return { matched: true };
+  if (targetIndex === target.length - 1) return { matched: true };
+
+  const currentConsecutive = countConsecutiveMatches(
+    target,
+    query,
+    targetIndex,
+    queryIndex,
+  );
+
+  let maxConsecutiveAhead = 0;
+  let bestLookAheadIdx = -1;
+  for (
+    let lookAheadTargetIdx = targetIndex + 1;
+    lookAheadTargetIdx < target.length;
+    lookAheadTargetIdx++
+  ) {
+    if (target[lookAheadTargetIdx] === query[queryIndex]) {
+      const consecutive = countConsecutiveMatches(
+        target,
+        query,
+        lookAheadTargetIdx,
+        queryIndex,
+      );
+      if (consecutive > maxConsecutiveAhead) {
+        maxConsecutiveAhead = consecutive;
+        bestLookAheadIdx = lookAheadTargetIdx;
+      }
+    }
+  }
+
+  if (
+    maxConsecutiveAhead > currentConsecutive &&
+    target.length - bestLookAheadIdx >= query.length - queryIndex
+  ) {
+    return { matched: false, skipTo: bestLookAheadIdx };
+  }
+
+  return { matched: true };
+}
+
+function calculateMatchScore(
+  targetIndex: number,
+  targetLength: number,
+  seqMatchCount: number,
+): number {
+  let score = 1.0 + seqMatchCount * 5.0; // Sequential match bonus
+
+  const startCharactersBonus = calculateEdgeProximityBonus(
+    targetIndex,
+    START_OF_STRING_BONUS_CHAR_LIMIT,
+  );
+  const endCharactersBonus = calculateEdgeProximityBonus(
+    targetLength - 1 - targetIndex,
+    END_OF_STRING_BONUS_CHAR_LIMIT,
+  );
+
+  score += startCharactersBonus + endCharactersBonus * 0.9;
+  return score;
+}
+
 /**
  * Inspired by vscode fuzzy finding it requires that all the
  * characters in the query are present in the target in the same
@@ -84,63 +175,29 @@ export const fuzzySubstring: ScoringFunction = (
   let score = 0.0;
   let seqMatchCount = 0;
 
-  const matchesIdx = [];
+  const matchesIdx: number[] = [];
 
   // Iterate through both strings
   while (targetIndex < target.length && queryIndex < query.length) {
-    const targetChar = target[targetIndex];
-    const queryChar = query[queryIndex];
+    const matchResult = evaluateMatch(
+      target,
+      query,
+      targetIndex,
+      queryIndex,
+      seqMatchCount,
+    );
 
-    const isMatch = (() => {
-      if (targetChar !== queryChar) return false;
-      if (seqMatchCount > 0) return true;
-      if (targetIndex === target.length - 1) return true;
-
-      // If this is an isolated match, look ahead. If there is a match ahead with at least 2 in in a row pick that one and skip this
-      if (target[targetIndex + 1] !== query[queryIndex + 1]) {
-        for (
-          let lookAheadTargetIdx = targetIndex + 1;
-          lookAheadTargetIdx < target.length - 1;
-          lookAheadTargetIdx++
-        ) {
-          if (
-            target[lookAheadTargetIdx] === query[queryIndex] &&
-            target[lookAheadTargetIdx + 1] === query[queryIndex + 1] &&
-            target.length - lookAheadTargetIdx >= query.length - queryIndex
-          ) {
-            return false;
-          }
-        }
-      }
-
-      return true;
-    })();
-
-    if (isMatch) {
-      // Characters match, increase score and sequential match count
-      score += 1.0 + seqMatchCount * 5.0; // Sequential match bonus
-
-      const startCharactersBonus = calculateEdgeProximityBonus(
-        targetIndex,
-        START_OF_STRING_BONUS_CHAR_LIMIT,
-      );
-      const endCharactersBonus = calculateEdgeProximityBonus(
-        target.length - 1 - targetIndex,
-        END_OF_STRING_BONUS_CHAR_LIMIT,
-      );
-
-      score += startCharactersBonus + endCharactersBonus * 0.9;
-
+    if (matchResult.matched) {
+      score += calculateMatchScore(targetIndex, target.length, seqMatchCount);
       seqMatchCount++;
       queryIndex++;
 
       matchesIdx.push(targetIndex);
+      targetIndex++;
     } else {
-      // No match, reset sequential match count
       seqMatchCount = 0;
+      targetIndex = matchResult.skipTo;
     }
-
-    targetIndex++;
   }
 
   // If we didn't reach the end of the query, it's not a match

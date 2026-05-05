@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fuzzySort } from './fuzzy_sort';
+import { fuzzySort, fuzzySubstring } from './fuzzy_sort';
 
 describe('fuzzy_sort', () => {
   describe('fuzzySort', () => {
@@ -131,6 +131,18 @@ describe('fuzzy_sort', () => {
 
       expect(significantLabels).toContain('Ubuntu');
       expect(significantLabels).toContain('Ubuntu-22.04');
+    });
+  });
+
+  describe('fuzzySubstring', () => {
+    it('prioritizes longer consecutive matches ahead', () => {
+      const [_, matches] = fuzzySubstring('abc', 'abXabc');
+      expect(matches).toEqual([3, 4, 5]);
+    });
+
+    it('matches the full word "bes" instead of "be" in "label"', () => {
+      const [_, matches] = fuzzySubstring('bes', 'label-working_bes_boards');
+      expect(matches).toEqual([14, 15, 16]);
     });
   });
 });
