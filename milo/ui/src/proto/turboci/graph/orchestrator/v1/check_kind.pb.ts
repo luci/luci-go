@@ -46,6 +46,13 @@ export enum CheckKind {
    * and tests and make a determiation like "this CL can land".
    */
   CHECK_KIND_ANALYSIS = 4,
+  /**
+   * CHECK_KIND_KICKOFF - KICKOFF is a Check which is used to store information that will be used to
+   * kick off a set of additional stages. Typically used at the beginning of a
+   * workplan to represent the work that will be done by other, not-yet-created,
+   * stages during that workplan's run.
+   */
+  CHECK_KIND_KICKOFF = 5,
 }
 
 export function checkKindFromJSON(object: any): CheckKind {
@@ -65,6 +72,9 @@ export function checkKindFromJSON(object: any): CheckKind {
     case 4:
     case "CHECK_KIND_ANALYSIS":
       return CheckKind.CHECK_KIND_ANALYSIS;
+    case 5:
+    case "CHECK_KIND_KICKOFF":
+      return CheckKind.CHECK_KIND_KICKOFF;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum CheckKind");
   }
@@ -82,6 +92,8 @@ export function checkKindToJSON(object: CheckKind): string {
       return "CHECK_KIND_TEST";
     case CheckKind.CHECK_KIND_ANALYSIS:
       return "CHECK_KIND_ANALYSIS";
+    case CheckKind.CHECK_KIND_KICKOFF:
+      return "CHECK_KIND_KICKOFF";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum CheckKind");
   }

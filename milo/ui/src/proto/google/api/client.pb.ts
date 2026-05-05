@@ -133,6 +133,56 @@ export function clientLibraryDestinationToJSON(object: ClientLibraryDestination)
   }
 }
 
+/** The behavior to take when the flow control limit is exceeded. */
+export enum FlowControlLimitExceededBehaviorProto {
+  /** UNSET_BEHAVIOR - Default behavior, system-defined. */
+  UNSET_BEHAVIOR = 0,
+  /** THROW_EXCEPTION - Stop operation, raise error. */
+  THROW_EXCEPTION = 1,
+  /** BLOCK - Pause operation until limit clears. */
+  BLOCK = 2,
+  /** IGNORE - Continue operation, disregard limit. */
+  IGNORE = 3,
+}
+
+export function flowControlLimitExceededBehaviorProtoFromJSON(object: any): FlowControlLimitExceededBehaviorProto {
+  switch (object) {
+    case 0:
+    case "UNSET_BEHAVIOR":
+      return FlowControlLimitExceededBehaviorProto.UNSET_BEHAVIOR;
+    case 1:
+    case "THROW_EXCEPTION":
+      return FlowControlLimitExceededBehaviorProto.THROW_EXCEPTION;
+    case 2:
+    case "BLOCK":
+      return FlowControlLimitExceededBehaviorProto.BLOCK;
+    case 3:
+    case "IGNORE":
+      return FlowControlLimitExceededBehaviorProto.IGNORE;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum FlowControlLimitExceededBehaviorProto",
+      );
+  }
+}
+
+export function flowControlLimitExceededBehaviorProtoToJSON(object: FlowControlLimitExceededBehaviorProto): string {
+  switch (object) {
+    case FlowControlLimitExceededBehaviorProto.UNSET_BEHAVIOR:
+      return "UNSET_BEHAVIOR";
+    case FlowControlLimitExceededBehaviorProto.THROW_EXCEPTION:
+      return "THROW_EXCEPTION";
+    case FlowControlLimitExceededBehaviorProto.BLOCK:
+      return "BLOCK";
+    case FlowControlLimitExceededBehaviorProto.IGNORE:
+      return "IGNORE";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum FlowControlLimitExceededBehaviorProto",
+      );
+  }
+}
+
 /** Required information for every language. */
 export interface CommonLanguageSettings {
   /**
@@ -144,7 +194,11 @@ export interface CommonLanguageSettings {
   readonly referenceDocsUri: string;
   /** The destination where API teams want this client library to be published. */
   readonly destinations: readonly ClientLibraryDestination[];
-  /** Configuration for which RPCs should be generated in the GAPIC client. */
+  /**
+   * Configuration for which RPCs should be generated in the GAPIC client.
+   *
+   * Note: This field should not be used in most cases.
+   */
   readonly selectiveGapicGeneration: SelectiveGapicGeneration | undefined;
 }
 
@@ -265,9 +319,10 @@ export interface JavaSettings {
    *
    * Example of a YAML configuration::
    *
-   *  publishing:
-   *    java_settings:
-   *      library_package: com.google.cloud.pubsub.v1
+   *     publishing:
+   *       library_settings:
+   *         java_settings:
+   *           library_package: com.google.cloud.pubsub.v1
    */
   readonly libraryPackage: string;
   /**
@@ -280,11 +335,11 @@ export interface JavaSettings {
    *
    * Example of a YAML configuration::
    *
-   *  publishing:
-   *    java_settings:
-   *      service_class_names:
-   *        - google.pubsub.v1.Publisher: TopicAdmin
-   *        - google.pubsub.v1.Subscriber: SubscriptionAdmin
+   *     publishing:
+   *       java_settings:
+   *         service_class_names:
+   *           - google.pubsub.v1.Publisher: TopicAdmin
+   *           - google.pubsub.v1.Subscriber: SubscriptionAdmin
    */
   readonly serviceClassNames: { [key: string]: string };
   /** Some settings. */
@@ -305,7 +360,24 @@ export interface CppSettings {
 /** Settings for Php client libraries. */
 export interface PhpSettings {
   /** Some settings. */
-  readonly common: CommonLanguageSettings | undefined;
+  readonly common:
+    | CommonLanguageSettings
+    | undefined;
+  /**
+   * The package name to use in Php. Clobbers the php_namespace option
+   * set in the protobuf. This should be used **only** by APIs
+   * who have already set the language_settings.php.package_name" field
+   * in gapic.yaml. API teams should use the protobuf php_namespace option
+   * where possible.
+   *
+   * Example of a YAML configuration::
+   *
+   *     publishing:
+   *       library_settings:
+   *         php_settings:
+   *           library_package: Google\Cloud\PubSub\V1
+   */
+  readonly libraryPackage: string;
 }
 
 /** Settings for Python client libraries. */
@@ -423,10 +495,12 @@ export interface GoSettings {
    * service names and values are the name to be used for the service client
    * and call options.
    *
-   * publishing:
-   *   go_settings:
-   *     renamed_services:
-   *       Publisher: TopicAdmin
+   * Example:
+   *
+   *     publishing:
+   *       go_settings:
+   *         renamed_services:
+   *           Publisher: TopicAdmin
    */
   readonly renamedServices: { [key: string]: string };
 }
@@ -444,10 +518,10 @@ export interface MethodSettings {
    *
    * Example:
    *
-   *    publishing:
-   *      method_settings:
-   *      - selector: google.storage.control.v2.StorageControl.CreateFolder
-   *        # method settings for CreateFolder...
+   *     publishing:
+   *       method_settings:
+   *       - selector: google.storage.control.v2.StorageControl.CreateFolder
+   *         # method settings for CreateFolder...
    */
   readonly selector: string;
   /**
@@ -457,14 +531,14 @@ export interface MethodSettings {
    *
    * Example of a YAML configuration::
    *
-   *    publishing:
-   *      method_settings:
-   *      - selector: google.cloud.speech.v2.Speech.BatchRecognize
-   *        long_running:
-   *          initial_poll_delay: 60s # 1 minute
-   *          poll_delay_multiplier: 1.5
-   *          max_poll_delay: 360s # 6 minutes
-   *          total_poll_timeout: 54000s # 90 minutes
+   *     publishing:
+   *       method_settings:
+   *       - selector: google.cloud.speech.v2.Speech.BatchRecognize
+   *         long_running:
+   *           initial_poll_delay: 60s # 1 minute
+   *           poll_delay_multiplier: 1.5
+   *           max_poll_delay: 360s # 6 minutes
+   *           total_poll_timeout: 54000s # 90 minutes
    */
   readonly longRunning:
     | MethodSettings_LongRunning
@@ -476,13 +550,27 @@ export interface MethodSettings {
    *
    * Example of a YAML configuration:
    *
-   *    publishing:
-   *      method_settings:
-   *      - selector: google.example.v1.ExampleService.CreateExample
-   *        auto_populated_fields:
-   *        - request_id
+   *     publishing:
+   *       method_settings:
+   *       - selector: google.example.v1.ExampleService.CreateExample
+   *         auto_populated_fields:
+   *         - request_id
    */
   readonly autoPopulatedFields: readonly string[];
+  /**
+   * Batching configuration for an API method in client libraries.
+   *
+   * Example of a YAML configuration:
+   *
+   *     publishing:
+   *       method_settings:
+   *       - selector: google.example.v1.ExampleService.BatchCreateExample
+   *         batching:
+   *           element_count_threshold: 1000
+   *           request_byte_threshold: 100000000
+   *           delay_threshold_millis: 10
+   */
+  readonly batching: BatchingConfigProto | undefined;
 }
 
 /**
@@ -523,6 +611,8 @@ export interface MethodSettings_LongRunning {
 /**
  * This message is used to configure the generation of a subset of the RPCs in
  * a service for client libraries.
+ *
+ * Note: This feature should not be used in most cases.
  */
 export interface SelectiveGapicGeneration {
   /**
@@ -539,6 +629,78 @@ export interface SelectiveGapicGeneration {
    * obfuscated identifiers, or other language idiomatic patterns.
    */
   readonly generateOmittedAsInternal: boolean;
+}
+
+/** `BatchingConfigProto` defines the batching configuration for an API method. */
+export interface BatchingConfigProto {
+  /** The thresholds which trigger a batched request to be sent. */
+  readonly thresholds:
+    | BatchingSettingsProto
+    | undefined;
+  /** The request and response fields used in batching. */
+  readonly batchDescriptor: BatchingDescriptorProto | undefined;
+}
+
+/**
+ * `BatchingSettingsProto` specifies a set of batching thresholds, each of
+ * which acts as a trigger to send a batch of messages as a request. At least
+ * one threshold must be positive nonzero.
+ */
+export interface BatchingSettingsProto {
+  /**
+   * The number of elements of a field collected into a batch which, if
+   * exceeded, causes the batch to be sent.
+   */
+  readonly elementCountThreshold: number;
+  /**
+   * The aggregated size of the batched field which, if exceeded, causes the
+   * batch to be sent. This size is computed by aggregating the sizes of the
+   * request field to be batched, not of the entire request message.
+   */
+  readonly requestByteThreshold: string;
+  /**
+   * The duration after which a batch should be sent, starting from the addition
+   * of the first message to that batch.
+   */
+  readonly delayThreshold:
+    | Duration
+    | undefined;
+  /**
+   * The maximum number of elements collected in a batch that could be accepted
+   * by server.
+   */
+  readonly elementCountLimit: number;
+  /** The maximum size of the request that could be accepted by server. */
+  readonly requestByteLimit: number;
+  /** The maximum number of elements allowed by flow control. */
+  readonly flowControlElementLimit: number;
+  /** The maximum size of data allowed by flow control. */
+  readonly flowControlByteLimit: number;
+  /** The behavior to take when the flow control limit is exceeded. */
+  readonly flowControlLimitExceededBehavior: FlowControlLimitExceededBehaviorProto;
+}
+
+/**
+ * `BatchingDescriptorProto` specifies the fields of the request message to be
+ * used for batching, and, optionally, the fields of the response message to be
+ * used for demultiplexing.
+ */
+export interface BatchingDescriptorProto {
+  /** The repeated field in the request message to be aggregated by batching. */
+  readonly batchedField: string;
+  /**
+   * A list of the fields in the request message. Two requests will be batched
+   * together only if the values of every field specified in
+   * `request_discriminator_fields` is equal between the two requests.
+   */
+  readonly discriminatorFields: readonly string[];
+  /**
+   * Optional. When present, indicates the field in the response message to be
+   * used to demultiplex the response into multiple response messages, in
+   * correspondence with the multiple request messages originally batched
+   * together.
+   */
+  readonly subresponseField: string;
 }
 
 function createBaseCommonLanguageSettings(): CommonLanguageSettings {
@@ -1395,13 +1557,16 @@ export const CppSettings: MessageFns<CppSettings> = {
 };
 
 function createBasePhpSettings(): PhpSettings {
-  return { common: undefined };
+  return { common: undefined, libraryPackage: "" };
 }
 
 export const PhpSettings: MessageFns<PhpSettings> = {
   encode(message: PhpSettings, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.common !== undefined) {
       CommonLanguageSettings.encode(message.common, writer.uint32(10).fork()).join();
+    }
+    if (message.libraryPackage !== "") {
+      writer.uint32(18).string(message.libraryPackage);
     }
     return writer;
   },
@@ -1421,6 +1586,14 @@ export const PhpSettings: MessageFns<PhpSettings> = {
           message.common = CommonLanguageSettings.decode(reader, reader.uint32());
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.libraryPackage = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1431,13 +1604,19 @@ export const PhpSettings: MessageFns<PhpSettings> = {
   },
 
   fromJSON(object: any): PhpSettings {
-    return { common: isSet(object.common) ? CommonLanguageSettings.fromJSON(object.common) : undefined };
+    return {
+      common: isSet(object.common) ? CommonLanguageSettings.fromJSON(object.common) : undefined,
+      libraryPackage: isSet(object.libraryPackage) ? globalThis.String(object.libraryPackage) : "",
+    };
   },
 
   toJSON(message: PhpSettings): unknown {
     const obj: any = {};
     if (message.common !== undefined) {
       obj.common = CommonLanguageSettings.toJSON(message.common);
+    }
+    if (message.libraryPackage !== "") {
+      obj.libraryPackage = message.libraryPackage;
     }
     return obj;
   },
@@ -1450,6 +1629,7 @@ export const PhpSettings: MessageFns<PhpSettings> = {
     message.common = (object.common !== undefined && object.common !== null)
       ? CommonLanguageSettings.fromPartial(object.common)
       : undefined;
+    message.libraryPackage = object.libraryPackage ?? "";
     return message;
   },
 };
@@ -2280,7 +2460,7 @@ export const GoSettings_RenamedServicesEntry: MessageFns<GoSettings_RenamedServi
 };
 
 function createBaseMethodSettings(): MethodSettings {
-  return { selector: "", longRunning: undefined, autoPopulatedFields: [] };
+  return { selector: "", longRunning: undefined, autoPopulatedFields: [], batching: undefined };
 }
 
 export const MethodSettings: MessageFns<MethodSettings> = {
@@ -2293,6 +2473,9 @@ export const MethodSettings: MessageFns<MethodSettings> = {
     }
     for (const v of message.autoPopulatedFields) {
       writer.uint32(26).string(v!);
+    }
+    if (message.batching !== undefined) {
+      BatchingConfigProto.encode(message.batching, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -2328,6 +2511,14 @@ export const MethodSettings: MessageFns<MethodSettings> = {
           message.autoPopulatedFields.push(reader.string());
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.batching = BatchingConfigProto.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2344,6 +2535,7 @@ export const MethodSettings: MessageFns<MethodSettings> = {
       autoPopulatedFields: globalThis.Array.isArray(object?.autoPopulatedFields)
         ? object.autoPopulatedFields.map((e: any) => globalThis.String(e))
         : [],
+      batching: isSet(object.batching) ? BatchingConfigProto.fromJSON(object.batching) : undefined,
     };
   },
 
@@ -2358,6 +2550,9 @@ export const MethodSettings: MessageFns<MethodSettings> = {
     if (message.autoPopulatedFields?.length) {
       obj.autoPopulatedFields = message.autoPopulatedFields;
     }
+    if (message.batching !== undefined) {
+      obj.batching = BatchingConfigProto.toJSON(message.batching);
+    }
     return obj;
   },
 
@@ -2371,6 +2566,9 @@ export const MethodSettings: MessageFns<MethodSettings> = {
       ? MethodSettings_LongRunning.fromPartial(object.longRunning)
       : undefined;
     message.autoPopulatedFields = object.autoPopulatedFields?.map((e) => e) || [];
+    message.batching = (object.batching !== undefined && object.batching !== null)
+      ? BatchingConfigProto.fromPartial(object.batching)
+      : undefined;
     return message;
   },
 };
@@ -2563,6 +2761,371 @@ export const SelectiveGapicGeneration: MessageFns<SelectiveGapicGeneration> = {
     const message = createBaseSelectiveGapicGeneration() as any;
     message.methods = object.methods?.map((e) => e) || [];
     message.generateOmittedAsInternal = object.generateOmittedAsInternal ?? false;
+    return message;
+  },
+};
+
+function createBaseBatchingConfigProto(): BatchingConfigProto {
+  return { thresholds: undefined, batchDescriptor: undefined };
+}
+
+export const BatchingConfigProto: MessageFns<BatchingConfigProto> = {
+  encode(message: BatchingConfigProto, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.thresholds !== undefined) {
+      BatchingSettingsProto.encode(message.thresholds, writer.uint32(10).fork()).join();
+    }
+    if (message.batchDescriptor !== undefined) {
+      BatchingDescriptorProto.encode(message.batchDescriptor, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BatchingConfigProto {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchingConfigProto() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.thresholds = BatchingSettingsProto.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.batchDescriptor = BatchingDescriptorProto.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchingConfigProto {
+    return {
+      thresholds: isSet(object.thresholds) ? BatchingSettingsProto.fromJSON(object.thresholds) : undefined,
+      batchDescriptor: isSet(object.batchDescriptor)
+        ? BatchingDescriptorProto.fromJSON(object.batchDescriptor)
+        : undefined,
+    };
+  },
+
+  toJSON(message: BatchingConfigProto): unknown {
+    const obj: any = {};
+    if (message.thresholds !== undefined) {
+      obj.thresholds = BatchingSettingsProto.toJSON(message.thresholds);
+    }
+    if (message.batchDescriptor !== undefined) {
+      obj.batchDescriptor = BatchingDescriptorProto.toJSON(message.batchDescriptor);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BatchingConfigProto>): BatchingConfigProto {
+    return BatchingConfigProto.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BatchingConfigProto>): BatchingConfigProto {
+    const message = createBaseBatchingConfigProto() as any;
+    message.thresholds = (object.thresholds !== undefined && object.thresholds !== null)
+      ? BatchingSettingsProto.fromPartial(object.thresholds)
+      : undefined;
+    message.batchDescriptor = (object.batchDescriptor !== undefined && object.batchDescriptor !== null)
+      ? BatchingDescriptorProto.fromPartial(object.batchDescriptor)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseBatchingSettingsProto(): BatchingSettingsProto {
+  return {
+    elementCountThreshold: 0,
+    requestByteThreshold: "0",
+    delayThreshold: undefined,
+    elementCountLimit: 0,
+    requestByteLimit: 0,
+    flowControlElementLimit: 0,
+    flowControlByteLimit: 0,
+    flowControlLimitExceededBehavior: 0,
+  };
+}
+
+export const BatchingSettingsProto: MessageFns<BatchingSettingsProto> = {
+  encode(message: BatchingSettingsProto, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.elementCountThreshold !== 0) {
+      writer.uint32(8).int32(message.elementCountThreshold);
+    }
+    if (message.requestByteThreshold !== "0") {
+      writer.uint32(16).int64(message.requestByteThreshold);
+    }
+    if (message.delayThreshold !== undefined) {
+      Duration.encode(message.delayThreshold, writer.uint32(26).fork()).join();
+    }
+    if (message.elementCountLimit !== 0) {
+      writer.uint32(32).int32(message.elementCountLimit);
+    }
+    if (message.requestByteLimit !== 0) {
+      writer.uint32(40).int32(message.requestByteLimit);
+    }
+    if (message.flowControlElementLimit !== 0) {
+      writer.uint32(48).int32(message.flowControlElementLimit);
+    }
+    if (message.flowControlByteLimit !== 0) {
+      writer.uint32(56).int32(message.flowControlByteLimit);
+    }
+    if (message.flowControlLimitExceededBehavior !== 0) {
+      writer.uint32(64).int32(message.flowControlLimitExceededBehavior);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BatchingSettingsProto {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchingSettingsProto() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.elementCountThreshold = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.requestByteThreshold = reader.int64().toString();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.delayThreshold = Duration.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.elementCountLimit = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.requestByteLimit = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.flowControlElementLimit = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.flowControlByteLimit = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.flowControlLimitExceededBehavior = reader.int32() as any;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchingSettingsProto {
+    return {
+      elementCountThreshold: isSet(object.elementCountThreshold) ? globalThis.Number(object.elementCountThreshold) : 0,
+      requestByteThreshold: isSet(object.requestByteThreshold) ? globalThis.String(object.requestByteThreshold) : "0",
+      delayThreshold: isSet(object.delayThreshold) ? Duration.fromJSON(object.delayThreshold) : undefined,
+      elementCountLimit: isSet(object.elementCountLimit) ? globalThis.Number(object.elementCountLimit) : 0,
+      requestByteLimit: isSet(object.requestByteLimit) ? globalThis.Number(object.requestByteLimit) : 0,
+      flowControlElementLimit: isSet(object.flowControlElementLimit)
+        ? globalThis.Number(object.flowControlElementLimit)
+        : 0,
+      flowControlByteLimit: isSet(object.flowControlByteLimit) ? globalThis.Number(object.flowControlByteLimit) : 0,
+      flowControlLimitExceededBehavior: isSet(object.flowControlLimitExceededBehavior)
+        ? flowControlLimitExceededBehaviorProtoFromJSON(object.flowControlLimitExceededBehavior)
+        : 0,
+    };
+  },
+
+  toJSON(message: BatchingSettingsProto): unknown {
+    const obj: any = {};
+    if (message.elementCountThreshold !== 0) {
+      obj.elementCountThreshold = Math.round(message.elementCountThreshold);
+    }
+    if (message.requestByteThreshold !== "0") {
+      obj.requestByteThreshold = message.requestByteThreshold;
+    }
+    if (message.delayThreshold !== undefined) {
+      obj.delayThreshold = Duration.toJSON(message.delayThreshold);
+    }
+    if (message.elementCountLimit !== 0) {
+      obj.elementCountLimit = Math.round(message.elementCountLimit);
+    }
+    if (message.requestByteLimit !== 0) {
+      obj.requestByteLimit = Math.round(message.requestByteLimit);
+    }
+    if (message.flowControlElementLimit !== 0) {
+      obj.flowControlElementLimit = Math.round(message.flowControlElementLimit);
+    }
+    if (message.flowControlByteLimit !== 0) {
+      obj.flowControlByteLimit = Math.round(message.flowControlByteLimit);
+    }
+    if (message.flowControlLimitExceededBehavior !== 0) {
+      obj.flowControlLimitExceededBehavior = flowControlLimitExceededBehaviorProtoToJSON(
+        message.flowControlLimitExceededBehavior,
+      );
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BatchingSettingsProto>): BatchingSettingsProto {
+    return BatchingSettingsProto.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BatchingSettingsProto>): BatchingSettingsProto {
+    const message = createBaseBatchingSettingsProto() as any;
+    message.elementCountThreshold = object.elementCountThreshold ?? 0;
+    message.requestByteThreshold = object.requestByteThreshold ?? "0";
+    message.delayThreshold = (object.delayThreshold !== undefined && object.delayThreshold !== null)
+      ? Duration.fromPartial(object.delayThreshold)
+      : undefined;
+    message.elementCountLimit = object.elementCountLimit ?? 0;
+    message.requestByteLimit = object.requestByteLimit ?? 0;
+    message.flowControlElementLimit = object.flowControlElementLimit ?? 0;
+    message.flowControlByteLimit = object.flowControlByteLimit ?? 0;
+    message.flowControlLimitExceededBehavior = object.flowControlLimitExceededBehavior ?? 0;
+    return message;
+  },
+};
+
+function createBaseBatchingDescriptorProto(): BatchingDescriptorProto {
+  return { batchedField: "", discriminatorFields: [], subresponseField: "" };
+}
+
+export const BatchingDescriptorProto: MessageFns<BatchingDescriptorProto> = {
+  encode(message: BatchingDescriptorProto, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.batchedField !== "") {
+      writer.uint32(10).string(message.batchedField);
+    }
+    for (const v of message.discriminatorFields) {
+      writer.uint32(18).string(v!);
+    }
+    if (message.subresponseField !== "") {
+      writer.uint32(26).string(message.subresponseField);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BatchingDescriptorProto {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBatchingDescriptorProto() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.batchedField = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.discriminatorFields.push(reader.string());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.subresponseField = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BatchingDescriptorProto {
+    return {
+      batchedField: isSet(object.batchedField) ? globalThis.String(object.batchedField) : "",
+      discriminatorFields: globalThis.Array.isArray(object?.discriminatorFields)
+        ? object.discriminatorFields.map((e: any) => globalThis.String(e))
+        : [],
+      subresponseField: isSet(object.subresponseField) ? globalThis.String(object.subresponseField) : "",
+    };
+  },
+
+  toJSON(message: BatchingDescriptorProto): unknown {
+    const obj: any = {};
+    if (message.batchedField !== "") {
+      obj.batchedField = message.batchedField;
+    }
+    if (message.discriminatorFields?.length) {
+      obj.discriminatorFields = message.discriminatorFields;
+    }
+    if (message.subresponseField !== "") {
+      obj.subresponseField = message.subresponseField;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<BatchingDescriptorProto>): BatchingDescriptorProto {
+    return BatchingDescriptorProto.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<BatchingDescriptorProto>): BatchingDescriptorProto {
+    const message = createBaseBatchingDescriptorProto() as any;
+    message.batchedField = object.batchedField ?? "";
+    message.discriminatorFields = object.discriminatorFields?.map((e) => e) || [];
+    message.subresponseField = object.subresponseField ?? "";
     return message;
   },
 };

@@ -11,12 +11,7 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
 /**
  * StageAttemptState describes the current state of a Stage Attempt.
  *
- * This state machine is much more complicated than Check or Stage state
- * because:
- *   * It revolves around synchronous / asynchronous state reconciliation
- *     with external Executors.
- *   * It subsumes a major portion of the historical WorkNode state machine in
- *     a way that will allow us to be compatible with WorkNode state semantics.
+ * Possible initial states are PENDING, THROTTLED and AWAITING_RETRY.
  *
  * This state evolves like:
  *
@@ -65,28 +60,50 @@ export enum StageAttemptState {
   /** STAGE_ATTEMPT_STATE_UNKNOWN - UNKNOWN is the default, invalid, state. */
   STAGE_ATTEMPT_STATE_UNKNOWN = 0,
   /**
-   * STAGE_ATTEMPT_STATE_PENDING - This is an initial state for a Stage Attempt and indicates that the
-   * Stage Attempt is available for an Executor, but either:
-   *   * The Orchestrator has not yet sent this Stage Attempt to the Executor.
-   *   * [WorkNode only] The Executor has advertised this Stage on pub/sub, but
-   *     it has not yet been "Popped".
+   * STAGE_ATTEMPT_STATE_PENDING - This state indicates that the Stage Attempt is being sent to be executed
+   * now.
+   *
+   * Either the attempt is queued to start running soon or executors' RunStage
+   * is already running but the executor hasn't updated the attempt's state yet.
+   *
+   * This is usually the initial state for an attempt. Two other possible
+   * initial states are THROTTLED (if the execution policy has
+   * `throttle_first_attempt_until` set and this is the first attempt or if
+   * a previous attempt finished as INCOMPLETE and `throttle_next_attempt_until`
+   * was set) and AWAITING_RETRY (if this attempt follows an INCOMPLETE previous
+   * attempt and no `throttle_next_attempt_until` was set).
    *
    * This state can transition to THROTTLED, SCHEDULED, RUNNING, COMPLETE or
    * INCOMPLETE.
    */
   STAGE_ATTEMPT_STATE_PENDING = 10,
   /**
-   * STAGE_ATTEMPT_STATE_THROTTLED - This state indicates that the Stage Attempt was PENDING, but is currently
-   * throttled.
+   * STAGE_ATTEMPT_STATE_THROTTLED - This state indicates that the Stage Attempt is currently throttled.
    *
-   * Throttling happens when the Executor explicitly marks this Stage Attempt as
-   * Throttled, or if an external Update/Patch to a WorkNode increases its
-   * availability_time_millis.
+   * It means the stage's execution is purposefully delayed until some specified
+   * time. An attempt either starts in this state (if it was throttled when
+   * the stage was submitted or by the previous attempt, see below) or it
+   * transitions into this state from PENDING.
    *
-   * This should be used by an Executor as a way to explicitly acknowledge a
-   * RunStage call for a valid stage, but have the orchestrator keep this stage
-   * on ice for some specified amount of time, indicated by setting the `until`
-   * field when transitioning the current attempt to Throttled.
+   * A similar state is AWAITING_RETRY, with the primary difference being that
+   * AWAITING_RETRY indicates that a previous attempt could not complete due to
+   * some unexpected reason. The delay time for AWAITING_RETRY is calculated by
+   * the Orchestrator itself using exponential backoff.
+   *
+   * Throttling can be activated via 3 mechanisms:
+   *   * Via StageExecutionPolicy's `throttle_first_attempt_until` field (set
+   *     either by whoever submits the stage or by executors' ValidateStage).
+   *     If the stage gets unblocked before this time, the first stage attempt
+   *     will start in THROTTLED state (instead of PENDING). This is useful for
+   *     throttling decisions that happen when the stage is inserted.
+   *   * By the executor in its RunStage by using CurrentAttemptWrite.Throttled.
+   *     The current PENDING attempt will become THROTTLED. This is useful for
+   *     throttling decisions that happen when the stage is about to run (which
+   *     can be much later than the time the stage was inserted).
+   *   * By the executor in its RunStage by using CurrentAttemptWrite.Incomplete
+   *     and setting `throttle_next_attempt_until`. The next attempt will start
+   *     in THROTTLED state. This is useful if the executors discovers it needs
+   *     to slow down after already starting the stage execution.
    *
    * This state can transition to PENDING or INCOMPLETE.
    */
@@ -124,7 +141,7 @@ export enum StageAttemptState {
   STAGE_ATTEMPT_STATE_CANCELLING = 50,
   /**
    * STAGE_ATTEMPT_STATE_TEARING_DOWN - This state indicates that the Stage Attempt is doing some work after the
-   * 'RUNNING' state.
+   * RUNNING state.
    *
    * This is meant to model things like:
    *   * doing best-effort cleanup
@@ -175,8 +192,8 @@ export enum StageAttemptState {
    * STAGE_ATTEMPT_STATE_AWAITING_RETRY - This is an initial state and indicates that a previous Stage Attempt went
    * to INCOMPLETE and the Stage's execution policy permitted a retry.
    *
-   * Transition to PENDING is automatic after the execution policy's computed
-   * retry delay.
+   * Transition to PENDING is automatic after the exponential backoff delay
+   * computed based on the number of previous incomplete attempts.
    *
    * This state can transition to PENDING or INCOMPLETE.
    */

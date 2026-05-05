@@ -578,7 +578,7 @@ export class FakeGraphGenerator {
             state: CheckState.CHECK_STATE_PLANNING,
             options: [data.optionsValueRef],
             dependencies: deps,
-            result: [],
+            results: [],
           },
         },
         this.getOrchestratorActor(),
@@ -597,7 +597,7 @@ export class FakeGraphGenerator {
             state: CheckState.CHECK_STATE_PLANNED,
             options: [data.optionsValueRef],
             dependencies: deps,
-            result: [],
+            results: [],
           },
         },
         planningActor,
@@ -614,7 +614,7 @@ export class FakeGraphGenerator {
         {
           check: {
             state: CheckState.CHECK_STATE_WAITING,
-            result: [],
+            results: [],
             options: [],
             dependencies: emptyDeps,
           },
@@ -649,7 +649,7 @@ export class FakeGraphGenerator {
               state: CheckState.CHECK_STATE_FINAL,
               options: [],
               dependencies: emptyDeps,
-              result: [
+              results: [
                 {
                   identifier: finalizedResultRef.identifier,
                   created: true,
@@ -1368,7 +1368,7 @@ export class FakeGraphGenerator {
       expireAt: expireStr, // Roughly +180 days
       realm: realm,
       createdBy: editor || this.getOrchestratorActor(),
-      transactionalSet: [forNode],
+      writeNodeSet: [forNode],
       reason: {
         message: reasonMsg,
         details: [],

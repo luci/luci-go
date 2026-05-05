@@ -37,8 +37,10 @@ export interface QueryNodesRequest {
    * types within type.googleapis.com/turboci.graph.* such as Check or Stage
    * are returned.
    *
-   * `Value` messages whose type_url is not listed in this TypeInfo's `wanted`
-   * list will have their data omitted and the OMIT_REASON_UNWANTED value set.
+   * `Value` messages whose type_url does not match a valid wildcard pattern
+   * listed in this TypeInfo's `wanted` list will have their data omitted and
+   * their OMIT_REASON_UNWANTED value set. See TypeInfo for a restrictions on
+   * the patterns we support filtering on.
    */
   readonly typeInfo?:
     | TypeInfo

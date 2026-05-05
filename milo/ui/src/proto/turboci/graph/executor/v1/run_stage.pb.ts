@@ -9,6 +9,7 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { StageAttempt } from "../../ids/v1/identifier.pb";
 import { Stage } from "../../orchestrator/v1/stage.pb";
 import { ValueData } from "../../orchestrator/v1/value_data.pb";
+import { WorkPlan } from "../../orchestrator/v1/workplan.pb";
 
 export const protobufPackage = "turboci.graph.executor.v1";
 
@@ -17,6 +18,14 @@ export interface RunStageRequest {
   /** Stage to run. */
   readonly stage?:
     | Stage
+    | undefined;
+  /**
+   * The partial view of the parent work plan.
+   *
+   * Stages and Checks are omitted.
+   */
+  readonly workplan?:
+    | WorkPlan
     | undefined;
   /**
    * A map containing [ValueData] for `stage`.
@@ -46,13 +55,16 @@ export interface RunStageResponse {
 }
 
 function createBaseRunStageRequest(): RunStageRequest {
-  return { stage: undefined, valueData: {}, attempt: undefined, stageAttemptToken: undefined };
+  return { stage: undefined, workplan: undefined, valueData: {}, attempt: undefined, stageAttemptToken: undefined };
 }
 
 export const RunStageRequest: MessageFns<RunStageRequest> = {
   encode(message: RunStageRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.stage !== undefined) {
       Stage.encode(message.stage, writer.uint32(10).fork()).join();
+    }
+    if (message.workplan !== undefined) {
+      WorkPlan.encode(message.workplan, writer.uint32(42).fork()).join();
     }
     Object.entries(message.valueData).forEach(([key, value]) => {
       RunStageRequest_ValueDataEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).join();
@@ -79,6 +91,14 @@ export const RunStageRequest: MessageFns<RunStageRequest> = {
           }
 
           message.stage = Stage.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.workplan = WorkPlan.decode(reader, reader.uint32());
           continue;
         }
         case 4: {
@@ -120,6 +140,7 @@ export const RunStageRequest: MessageFns<RunStageRequest> = {
   fromJSON(object: any): RunStageRequest {
     return {
       stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined,
+      workplan: isSet(object.workplan) ? WorkPlan.fromJSON(object.workplan) : undefined,
       valueData: isObject(object.valueData)
         ? Object.entries(object.valueData).reduce<{ [key: string]: ValueData }>((acc, [key, value]) => {
           acc[key] = ValueData.fromJSON(value);
@@ -135,6 +156,9 @@ export const RunStageRequest: MessageFns<RunStageRequest> = {
     const obj: any = {};
     if (message.stage !== undefined) {
       obj.stage = Stage.toJSON(message.stage);
+    }
+    if (message.workplan !== undefined) {
+      obj.workplan = WorkPlan.toJSON(message.workplan);
     }
     if (message.valueData) {
       const entries = Object.entries(message.valueData);
@@ -160,6 +184,9 @@ export const RunStageRequest: MessageFns<RunStageRequest> = {
   fromPartial(object: DeepPartial<RunStageRequest>): RunStageRequest {
     const message = createBaseRunStageRequest() as any;
     message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
+    message.workplan = (object.workplan !== undefined && object.workplan !== null)
+      ? WorkPlan.fromPartial(object.workplan)
+      : undefined;
     message.valueData = Object.entries(object.valueData ?? {}).reduce<{ [key: string]: ValueData }>(
       (acc, [key, value]) => {
         if (value !== undefined) {

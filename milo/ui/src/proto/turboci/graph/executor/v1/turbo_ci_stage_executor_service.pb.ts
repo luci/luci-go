@@ -55,8 +55,14 @@ export interface TurboCIStageExecutor {
    * RunStage instructs the executor to run the given stage attempt.
    *
    * This is called per attempt to either run the stage to completion (for
-   * "synchronous" stages) or to dispatch it to execute elsewhere (for
-   * "asynchronous" stages).
+   * *fast* "synchronous" stages) or to quickly dispatch it to execute
+   * elsewhere (for "asynchronous" stages).
+   *
+   * How fast is *fast*? As a rule of thumb, stages which take far less than
+   * 30s can be done synchronously, and stages which take longer than that
+   * should be done asynchronously. If this is not knowable in advance, this
+   * handler format allows the executor to make this decision dynamically on a
+   * per-attempt basis.
    *
    * RunStage RPC is generally expected to redo the validation done by
    * ValidateStage, since the stage parameters may change after the stage is
@@ -64,25 +70,149 @@ export interface TurboCIStageExecutor {
    * essentially finish it as failed by calling TurboCIOrchestrator.WriteNodes
    * (see below).
    *
-   * Expected behavior:
-   *   * If the stage is synchronous, at the end of this RPC the executor must
-   *     call TurboCIOrchestrator.WriteNodes with StageAttemptToken to do all
-   *     the writes in one transaction, including a CurrentStageWrite to mark
-   *     the StageAttempt as COMPLETE or INCOMPLETE.
-   *   * If the stage is asynchronous, this RPC must call
-   *     TurboCIOrchestrator.WriteNodes with CurrentStageWrite to mark the
-   *     StageAttempt as SCHEDULED or RUNNING.
-   *     * the executor must also write the validated execution policy for the
-   *       StageAttempt for the updated state (See
-   *       turboci.orchestrator.v1.StageAttemptExecutionPolicy for details).
+   * Expected behavior of the handler is that it will call WriteNodes at least
+   * once before the RPC deadline to update the current attempt state:
+   *   * Synchronous stages - COMPLETE/INCOMPLETE.
+   *   * Asynchronous stages - SCHEDULED/RUNNING/TEARING_DOWN.
+   *   * Over capacity/backoff - THROTTLED.
    *
-   * RunStage return value and even status code are essentially ignored.
-   * The orchestrator always looks at the state of the stage attempt after
+   * The RunStage return value and even status code are essentially ignored.
+   * The orchestrator *always* looks at the state of the stage attempt after
    * RunStage finishes (successfully or not) to decide if the request succeeded
    * or should be retried. This is needed to unify handling of synchronous and
    * asynchronous stages and to simplify handling of a class of race conditions
    * related to RPC peers (or network between them) dying midway through
    * execution.
+   *
+   * Examples:
+   *
+   * # Fast Synchronous stage - single write:
+   *
+   * This shows an implementation which does some work quickly (e.g. much less
+   * than 30 seconds) and does its writes and state update in a single atomic
+   * write_nodes call.
+   *
+   * If this crashes then the orchestrator will retry the attempt.
+   *
+   *   def run_stage(req):
+   *     with transaction:
+   *       dat = query_nodes(...)
+   *       # do some work quickly
+   *       write_nodes(current_attempt={COMPLETE}, <other node updates>)
+   *
+   * # Fast Synchronous stage - multiple writes:
+   *
+   * This shows a synchronous implementation which cannot do all its writes
+   * at once.
+   *
+   * If this crashes after the first write, then the orchestrator will mark
+   * this attempt as incomplete (via RUNNING timeout/heartbeat), and if
+   * the stage policy allows, create a new attempt.
+   *
+   *   def run_stage(req):
+   *     write_nodes(current_attempt={RUNNING}, <other node updates>)
+   *     # work
+   *     write_nodes(current_attempt={progress}, <other node updates>)
+   *     # work
+   *     write_nodes(
+   *       current_attempt={progress, COMPLETE}, <other node updates>,
+   *     )
+   *
+   * # Asynchronous stage - immediate handoff:
+   *
+   * This shows an asynchronous stage implementation which must take a long
+   * time to do its work, but which will start working immediately so the
+   * run_stage handler can coordinate directly with the worker.
+   *
+   * If this crashes after the first write, then the orchestrator will mark
+   * this attempt as incomplete (via timeout/heartbeat), and if the stage
+   * policy allows, create a new attempt.
+   *
+   * (apologies for the pseudocode; `ch` should be interpreted as a Go channel)
+   *
+   *   def run_stage(req):
+   *     ch = start_work(req)
+   *     <-ch
+   *
+   *   def start_work(req):
+   *     ch = Channel()
+   *     def _worker:
+   *       write_nodes(current_attempt={RUNNING, process_id=hostname+threadid})
+   *
+   *       # Unblock `run_stage`; it can return now that the attempt is
+   *       # RUNNING.
+   *       close(ch)
+   *
+   *       final_update = None
+   *       try:
+   *         # do a bunch of work
+   *         # set final_update to COMPLETE/INCOMPLETE write_nodes call.
+   *       finally:
+   *         # example of cleanup work
+   *         write_nodes(current_attempt=TEARING_DOWN)
+   *       write_nodes(final_update)
+   *
+   *     run_in_background(_worker)
+   *     return ch
+   *
+   * # Asynchronous stage - delayed handoff:
+   *
+   * This shows an asynchronous stage which the executor will enqueue and run
+   * later.
+   *
+   * If this crashes after the first write, then the orchestrator will mark
+   * this attempt as incomplete (via timeout/heartbeat), and if the stage
+   * policy allows, create a new attempt.
+   *
+   *   def run_stage(req):
+   *     send_work_to_gce(req)
+   *     write_nodes(current_attempt=SCHEDULED)
+   *
+   *   # sometime possibly much later
+   *   def gce_worker(req):
+   *     write_nodes(current_attempt={RUNNING, process_id=hostname+process_id})
+   *     # NOTE: in the case where work is multiply-enqueued, the process_id
+   *     # during the transition to RUNNING should ensure that only one of
+   *     # these write_nodes calls succeeds.
+   *     final_update = None
+   *     try:
+   *       # do a bunch of work
+   *       # set final_update to COMPLETE/INCOMPLETE write_nodes call.
+   *     finally:
+   *       # example of cleanup work
+   *       write_nodes(current_attempt=TEARING_DOWN)
+   *     write_nodes(final_update)
+   *
+   * # Hybrid stage:
+   *
+   * This shows a stage which is handled dynamically.
+   *
+   *   def run_stage(req):
+   *     cached = check_cache(req) # fast, no graph writes
+   *     if cached:
+   *       write_nodes(current_attempt=COMPLETE, ...)
+   *     else:
+   *       # See 'delayed handoff' above for send_work_to_gce.
+   *       send_work_to_gce(req)
+   *       write_nodes(current_attempt=SCHEDULED)
+   *
+   * # Executor over capacity
+   *
+   * This shows a stage preamble where the executor needs to implement
+   * backpressure. It can be used in conjunction with any of the other
+   * techniques above.
+   *
+   * When an attempt is THROTTLED, the orchestrator will call RunStage again
+   * later, but not until after the timestamp provided when writing the
+   * THROTTLED state.
+   *
+   *   def run_stage(req):
+   *     ok, next_check_time = check_capacity()
+   *     if not ok:
+   *       write_nodes(current_attempt={THROTTLED, until=next_check_time})
+   *       return
+   *
+   *     # Any other stage implementation.
    */
   RunStage(request: RunStageRequest): Promise<RunStageResponse>;
   /**

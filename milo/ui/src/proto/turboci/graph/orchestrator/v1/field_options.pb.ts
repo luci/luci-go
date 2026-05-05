@@ -54,7 +54,7 @@ export interface FieldOptions_CheckFieldOptions {
    *     ];
    *   }
    */
-  readonly editable?: CheckState | undefined;
+  readonly editable: readonly CheckState[];
 }
 
 /**
@@ -193,14 +193,16 @@ export const FieldOptions: MessageFns<FieldOptions> = {
 };
 
 function createBaseFieldOptions_CheckFieldOptions(): FieldOptions_CheckFieldOptions {
-  return { editable: undefined };
+  return { editable: [] };
 }
 
 export const FieldOptions_CheckFieldOptions: MessageFns<FieldOptions_CheckFieldOptions> = {
   encode(message: FieldOptions_CheckFieldOptions, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.editable !== undefined) {
-      writer.uint32(8).int32(message.editable);
+    writer.uint32(10).fork();
+    for (const v of message.editable) {
+      writer.int32(v);
     }
+    writer.join();
     return writer;
   },
 
@@ -212,12 +214,22 @@ export const FieldOptions_CheckFieldOptions: MessageFns<FieldOptions_CheckFieldO
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
-            break;
+          if (tag === 8) {
+            message.editable.push(reader.int32() as any);
+
+            continue;
           }
 
-          message.editable = reader.int32() as any;
-          continue;
+          if (tag === 10) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.editable.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -229,13 +241,17 @@ export const FieldOptions_CheckFieldOptions: MessageFns<FieldOptions_CheckFieldO
   },
 
   fromJSON(object: any): FieldOptions_CheckFieldOptions {
-    return { editable: isSet(object.editable) ? checkStateFromJSON(object.editable) : undefined };
+    return {
+      editable: globalThis.Array.isArray(object?.editable)
+        ? object.editable.map((e: any) => checkStateFromJSON(e))
+        : [],
+    };
   },
 
   toJSON(message: FieldOptions_CheckFieldOptions): unknown {
     const obj: any = {};
-    if (message.editable !== undefined) {
-      obj.editable = checkStateToJSON(message.editable);
+    if (message.editable?.length) {
+      obj.editable = message.editable.map((e) => checkStateToJSON(e));
     }
     return obj;
   },
@@ -245,7 +261,7 @@ export const FieldOptions_CheckFieldOptions: MessageFns<FieldOptions_CheckFieldO
   },
   fromPartial(object: DeepPartial<FieldOptions_CheckFieldOptions>): FieldOptions_CheckFieldOptions {
     const message = createBaseFieldOptions_CheckFieldOptions() as any;
-    message.editable = object.editable ?? undefined;
+    message.editable = object.editable?.map((e) => e) || [];
     return message;
   },
 };

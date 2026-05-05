@@ -210,6 +210,7 @@ export interface ChromeBrowserMachineLSE {
   readonly virtualDatacenter: string;
 }
 
+/** Next Tag: 22 */
 export interface VM {
   /** A unique vm name */
   readonly name: string;
@@ -249,6 +250,8 @@ export interface VM {
   readonly storage: string;
   /** Proxmox unique ID of the VM (100 - 999999999) */
   readonly vmid: string;
+  /** serial_identifier is used to uniquely identify the VM in our infrastructure */
+  readonly serialIdentifier: string;
 }
 
 /**
@@ -1080,6 +1083,7 @@ function createBaseVM(): VM {
     memory: "0",
     storage: "0",
     vmid: "0",
+    serialIdentifier: "",
   };
 }
 
@@ -1138,6 +1142,9 @@ export const VM: MessageFns<VM> = {
     }
     if (message.vmid !== "0") {
       writer.uint32(160).int64(message.vmid);
+    }
+    if (message.serialIdentifier !== "") {
+      writer.uint32(170).string(message.serialIdentifier);
     }
     return writer;
   },
@@ -1293,6 +1300,14 @@ export const VM: MessageFns<VM> = {
           message.vmid = reader.int64().toString();
           continue;
         }
+        case 21: {
+          if (tag !== 170) {
+            break;
+          }
+
+          message.serialIdentifier = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1322,6 +1337,7 @@ export const VM: MessageFns<VM> = {
       memory: isSet(object.memory) ? globalThis.String(object.memory) : "0",
       storage: isSet(object.storage) ? globalThis.String(object.storage) : "0",
       vmid: isSet(object.vmid) ? globalThis.String(object.vmid) : "0",
+      serialIdentifier: isSet(object.serialIdentifier) ? globalThis.String(object.serialIdentifier) : "",
     };
   },
 
@@ -1381,6 +1397,9 @@ export const VM: MessageFns<VM> = {
     if (message.vmid !== "0") {
       obj.vmid = message.vmid;
     }
+    if (message.serialIdentifier !== "") {
+      obj.serialIdentifier = message.serialIdentifier;
+    }
     return obj;
   },
 
@@ -1411,6 +1430,7 @@ export const VM: MessageFns<VM> = {
     message.memory = object.memory ?? "0";
     message.storage = object.storage ?? "0";
     message.vmid = object.vmid ?? "0";
+    message.serialIdentifier = object.serialIdentifier ?? "";
     return message;
   },
 };

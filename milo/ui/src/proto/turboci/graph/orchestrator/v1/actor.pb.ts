@@ -29,7 +29,11 @@ export interface Actor {
     | Actor_WorkplanCreator
     | undefined;
   /** An account not represented by one of the other Actor kinds. */
-  readonly external?: Actor_External | undefined;
+  readonly external?:
+    | Actor_External
+    | undefined;
+  /** Legacy API users. */
+  readonly legacyWorkplanUser?: Actor_LegacyWorkplanUser | undefined;
 }
 
 /** Placeholder type for when the Orchestrator itself makes this edit. */
@@ -47,8 +51,22 @@ export interface Actor_WorkplanCreator {
 export interface Actor_External {
 }
 
+/**
+ * Indicates the stage is a WorkNode stage inserted via legacy WorkPlan API.
+ *
+ * Such calls are authorized using legacy ACLs.
+ */
+export interface Actor_LegacyWorkplanUser {
+}
+
 function createBaseActor(): Actor {
-  return { stageAttempt: undefined, orchestrator: undefined, workplanCreator: undefined, external: undefined };
+  return {
+    stageAttempt: undefined,
+    orchestrator: undefined,
+    workplanCreator: undefined,
+    external: undefined,
+    legacyWorkplanUser: undefined,
+  };
 }
 
 export const Actor: MessageFns<Actor> = {
@@ -64,6 +82,9 @@ export const Actor: MessageFns<Actor> = {
     }
     if (message.external !== undefined) {
       Actor_External.encode(message.external, writer.uint32(34).fork()).join();
+    }
+    if (message.legacyWorkplanUser !== undefined) {
+      Actor_LegacyWorkplanUser.encode(message.legacyWorkplanUser, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -107,6 +128,14 @@ export const Actor: MessageFns<Actor> = {
           message.external = Actor_External.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.legacyWorkplanUser = Actor_LegacyWorkplanUser.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -124,6 +153,9 @@ export const Actor: MessageFns<Actor> = {
         ? Actor_WorkplanCreator.fromJSON(object.workplanCreator)
         : undefined,
       external: isSet(object.external) ? Actor_External.fromJSON(object.external) : undefined,
+      legacyWorkplanUser: isSet(object.legacyWorkplanUser)
+        ? Actor_LegacyWorkplanUser.fromJSON(object.legacyWorkplanUser)
+        : undefined,
     };
   },
 
@@ -140,6 +172,9 @@ export const Actor: MessageFns<Actor> = {
     }
     if (message.external !== undefined) {
       obj.external = Actor_External.toJSON(message.external);
+    }
+    if (message.legacyWorkplanUser !== undefined) {
+      obj.legacyWorkplanUser = Actor_LegacyWorkplanUser.toJSON(message.legacyWorkplanUser);
     }
     return obj;
   },
@@ -160,6 +195,9 @@ export const Actor: MessageFns<Actor> = {
       : undefined;
     message.external = (object.external !== undefined && object.external !== null)
       ? Actor_External.fromPartial(object.external)
+      : undefined;
+    message.legacyWorkplanUser = (object.legacyWorkplanUser !== undefined && object.legacyWorkplanUser !== null)
+      ? Actor_LegacyWorkplanUser.fromPartial(object.legacyWorkplanUser)
       : undefined;
     return message;
   },
@@ -290,6 +328,49 @@ export const Actor_External: MessageFns<Actor_External> = {
   },
   fromPartial(_: DeepPartial<Actor_External>): Actor_External {
     const message = createBaseActor_External() as any;
+    return message;
+  },
+};
+
+function createBaseActor_LegacyWorkplanUser(): Actor_LegacyWorkplanUser {
+  return {};
+}
+
+export const Actor_LegacyWorkplanUser: MessageFns<Actor_LegacyWorkplanUser> = {
+  encode(_: Actor_LegacyWorkplanUser, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Actor_LegacyWorkplanUser {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseActor_LegacyWorkplanUser() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): Actor_LegacyWorkplanUser {
+    return {};
+  },
+
+  toJSON(_: Actor_LegacyWorkplanUser): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<Actor_LegacyWorkplanUser>): Actor_LegacyWorkplanUser {
+    return Actor_LegacyWorkplanUser.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<Actor_LegacyWorkplanUser>): Actor_LegacyWorkplanUser {
+    const message = createBaseActor_LegacyWorkplanUser() as any;
     return message;
   },
 };

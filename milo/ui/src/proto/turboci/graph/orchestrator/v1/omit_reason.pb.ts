@@ -8,12 +8,7 @@
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
-/**
- * OmitReason details why the containing node's content is omitted. The node's
- * Identifier will be present (maybe plus "disambiguator" fields if the node has
- * those), but no other fields will be populated other than references to other
- * nodes if this node is necessary to represent the graph structure.
- */
+/** OmitReason details why the containing ValueRef's content is omitted. */
 export enum OmitReason {
   /**
    * OMIT_REASON_UNKNOWN - Default value. Indicates that the content for which this value applies was
@@ -21,15 +16,28 @@ export enum OmitReason {
    */
   OMIT_REASON_UNKNOWN = 0,
   /**
-   * OMIT_REASON_UNWANTED - This node was not requested by the caller. For example a Value that has a
-   * type_url which was not requested by the caller.
+   * OMIT_REASON_UNWANTED - This ValueRef was not requested by the caller. For example a Value that has
+   * a type_url which was not requested by the caller.
+   *
+   * The TypeURL, realm and digest (if the ValueRef was not inline) will remain
+   * in the ValueRef.
    */
   OMIT_REASON_UNWANTED = 1,
   /**
-   * OMIT_REASON_NO_ACCESS - This node WAS requested by the user, but the caller doesn't have access to
-   * it due to the caller's permissions in the realm associated with the node.
+   * OMIT_REASON_NO_ACCESS - This ValueRef WAS requested by the user, but the caller doesn't have access
+   * to it due to the caller's permissions in the realm associated with the
+   * ValueRef.
+   *
+   * The TypeURL and realm will remain in the ValueRef.
    */
   OMIT_REASON_NO_ACCESS = 2,
+  /**
+   * OMIT_REASON_MISSING - This ValueRef was not found in the orchestrator's CAS backing store (or
+   * the value was expired).
+   *
+   * The TypeURL, realm and digest will remain in the ValueRef.
+   */
+  OMIT_REASON_MISSING = 3,
 }
 
 export function omitReasonFromJSON(object: any): OmitReason {
@@ -43,6 +51,9 @@ export function omitReasonFromJSON(object: any): OmitReason {
     case 2:
     case "OMIT_REASON_NO_ACCESS":
       return OmitReason.OMIT_REASON_NO_ACCESS;
+    case 3:
+    case "OMIT_REASON_MISSING":
+      return OmitReason.OMIT_REASON_MISSING;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum OmitReason");
   }
@@ -56,6 +67,8 @@ export function omitReasonToJSON(object: OmitReason): string {
       return "OMIT_REASON_UNWANTED";
     case OmitReason.OMIT_REASON_NO_ACCESS:
       return "OMIT_REASON_NO_ACCESS";
+    case OmitReason.OMIT_REASON_MISSING:
+      return "OMIT_REASON_MISSING";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum OmitReason");
   }

@@ -23,15 +23,15 @@ export enum IdentifierKind {
   /** IDENTIFIER_KIND_CHECK - An Identifier.Check. */
   IDENTIFIER_KIND_CHECK = 2,
   /** IDENTIFIER_KIND_CHECK_RESULT - An Identifier.CheckResult. */
-  IDENTIFIER_KIND_CHECK_RESULT = 3,
+  IDENTIFIER_KIND_CHECK_RESULT = 4,
   /** IDENTIFIER_KIND_CHECK_EDIT - An Identifier.CheckEdit. */
-  IDENTIFIER_KIND_CHECK_EDIT = 4,
+  IDENTIFIER_KIND_CHECK_EDIT = 6,
   /** IDENTIFIER_KIND_STAGE - An Identifier.Stage. */
-  IDENTIFIER_KIND_STAGE = 5,
+  IDENTIFIER_KIND_STAGE = 8,
   /** IDENTIFIER_KIND_STAGE_ATTEMPT - An Identifier.StageAttempt. */
-  IDENTIFIER_KIND_STAGE_ATTEMPT = 6,
+  IDENTIFIER_KIND_STAGE_ATTEMPT = 9,
   /** IDENTIFIER_KIND_STAGE_EDIT - An Identifier.StageEdit. */
-  IDENTIFIER_KIND_STAGE_EDIT = 7,
+  IDENTIFIER_KIND_STAGE_EDIT = 10,
 }
 
 export function identifierKindFromJSON(object: any): IdentifierKind {
@@ -45,19 +45,19 @@ export function identifierKindFromJSON(object: any): IdentifierKind {
     case 2:
     case "IDENTIFIER_KIND_CHECK":
       return IdentifierKind.IDENTIFIER_KIND_CHECK;
-    case 3:
+    case 4:
     case "IDENTIFIER_KIND_CHECK_RESULT":
       return IdentifierKind.IDENTIFIER_KIND_CHECK_RESULT;
-    case 4:
+    case 6:
     case "IDENTIFIER_KIND_CHECK_EDIT":
       return IdentifierKind.IDENTIFIER_KIND_CHECK_EDIT;
-    case 5:
+    case 8:
     case "IDENTIFIER_KIND_STAGE":
       return IdentifierKind.IDENTIFIER_KIND_STAGE;
-    case 6:
+    case 9:
     case "IDENTIFIER_KIND_STAGE_ATTEMPT":
       return IdentifierKind.IDENTIFIER_KIND_STAGE_ATTEMPT;
-    case 7:
+    case 10:
     case "IDENTIFIER_KIND_STAGE_EDIT":
       return IdentifierKind.IDENTIFIER_KIND_STAGE_EDIT;
     default:

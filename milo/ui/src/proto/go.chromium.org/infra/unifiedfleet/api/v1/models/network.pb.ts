@@ -45,7 +45,15 @@ export interface Vlan {
   readonly name: string;
   /** The format will be subnet/CIDR. */
   readonly vlanAddress: string;
-  /** The number of IPs that in this vlan */
+  /**
+   * The number of IPs that in this vlan as an int32.
+   * WARNING: This field is nearly useless since a Vlan can have more
+   * than 2^31 things in it.
+   * Some scripts depend on this field having its historic behavior though,
+   * so let's maintain it indefinitely.
+   *
+   * @deprecated
+   */
   readonly capacityIp: number;
   /** Record the last update timestamp of this Vlan (In UTC timezone) */
   readonly updateTime:

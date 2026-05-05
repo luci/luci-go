@@ -74,14 +74,14 @@ export function valueHashAlgoToJSON(object: ValueHashAlgo): string {
  *
  * Serialized as:
  *
- *   BASE64_URLSAFE(hash || varint(size_bytes) || byte(algo))
+ *   BASE64_URLSAFE(hash || uvarint(size_bytes) || byte(algo))
  *
  * And de-serialized as:
  *
  *   rawDecoded = BASE64_URLSAFE_dec(encoded)
  *   algo = ALGOS[rawDecoded[-1]]
  *   rawHash = rawDecoded[algo.len]
- *   size = varintDecode(rawDecoded[algo.len:-1])
+ *   size = uvarintDecode(rawDecoded[algo.len:-1])
  *
  * This puts `hash` at the front, rather than `algo`, in order to help uses of
  * the ValueDigest as a primary key to avoid hotspotting. For the same reason,
@@ -111,7 +111,7 @@ export const ValueDigest: MessageFns<ValueDigest> = {
       writer.uint32(10).bytes(message.hash);
     }
     if (message.sizeBytes !== undefined) {
-      writer.uint32(16).int64(message.sizeBytes);
+      writer.uint32(16).uint64(message.sizeBytes);
     }
     if (message.algo !== undefined) {
       writer.uint32(24).int32(message.algo);
@@ -139,7 +139,7 @@ export const ValueDigest: MessageFns<ValueDigest> = {
             break;
           }
 
-          message.sizeBytes = reader.int64().toString();
+          message.sizeBytes = reader.uint64().toString();
           continue;
         }
         case 3: {

@@ -9,6 +9,7 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Empty } from "../../../../../../google/protobuf/empty.pb";
 import { FieldMask } from "../../../../../../google/protobuf/field_mask.pb";
 import { Struct } from "../../../../../../google/protobuf/struct.pb";
+import { TestExoneration } from "./test_exoneration.pb";
 import { Artifact, TestResult } from "./test_result.pb";
 
 export const protobufPackage = "luci.resultsink.v1";
@@ -71,6 +72,19 @@ export interface Invocation {
 export interface Invocation_ExtendedPropertiesEntry {
   readonly key: string;
   readonly value: { readonly [key: string]: any } | undefined;
+}
+
+export interface ReportTestExonerationsRequest {
+  /** Test exponerations to report. */
+  readonly testExonerations: readonly TestExoneration[];
+}
+
+export interface ReportTestExonerationsResponse {
+  /**
+   * List of unique identifiers that can be used to link to these exonerations
+   * or requested via luci.resultdb.v1.ResultDB service.
+   */
+  readonly testExonerationNames: readonly string[];
 }
 
 function createBaseReportTestResultsRequest(): ReportTestResultsRequest {
@@ -606,6 +620,130 @@ export const Invocation_ExtendedPropertiesEntry: MessageFns<Invocation_ExtendedP
   },
 };
 
+function createBaseReportTestExonerationsRequest(): ReportTestExonerationsRequest {
+  return { testExonerations: [] };
+}
+
+export const ReportTestExonerationsRequest: MessageFns<ReportTestExonerationsRequest> = {
+  encode(message: ReportTestExonerationsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.testExonerations) {
+      TestExoneration.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ReportTestExonerationsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReportTestExonerationsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testExonerations.push(TestExoneration.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReportTestExonerationsRequest {
+    return {
+      testExonerations: globalThis.Array.isArray(object?.testExonerations)
+        ? object.testExonerations.map((e: any) => TestExoneration.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ReportTestExonerationsRequest): unknown {
+    const obj: any = {};
+    if (message.testExonerations?.length) {
+      obj.testExonerations = message.testExonerations.map((e) => TestExoneration.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ReportTestExonerationsRequest>): ReportTestExonerationsRequest {
+    return ReportTestExonerationsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ReportTestExonerationsRequest>): ReportTestExonerationsRequest {
+    const message = createBaseReportTestExonerationsRequest() as any;
+    message.testExonerations = object.testExonerations?.map((e) => TestExoneration.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseReportTestExonerationsResponse(): ReportTestExonerationsResponse {
+  return { testExonerationNames: [] };
+}
+
+export const ReportTestExonerationsResponse: MessageFns<ReportTestExonerationsResponse> = {
+  encode(message: ReportTestExonerationsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.testExonerationNames) {
+      writer.uint32(10).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ReportTestExonerationsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReportTestExonerationsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.testExonerationNames.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReportTestExonerationsResponse {
+    return {
+      testExonerationNames: globalThis.Array.isArray(object?.testExonerationNames)
+        ? object.testExonerationNames.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ReportTestExonerationsResponse): unknown {
+    const obj: any = {};
+    if (message.testExonerationNames?.length) {
+      obj.testExonerationNames = message.testExonerationNames;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ReportTestExonerationsResponse>): ReportTestExonerationsResponse {
+    return ReportTestExonerationsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ReportTestExonerationsResponse>): ReportTestExonerationsResponse {
+    const message = createBaseReportTestExonerationsResponse() as any;
+    message.testExonerationNames = object.testExonerationNames?.map((e) => e) || [];
+    return message;
+  },
+};
+
 /**
  * Service to report test results.
  *
@@ -630,6 +768,7 @@ export interface Sink {
   ReportInvocationLevelArtifacts(request: ReportInvocationLevelArtifactsRequest): Promise<Empty>;
   /** Update an invocation */
   UpdateInvocation(request: UpdateInvocationRequest): Promise<Invocation>;
+  ReportTestExonerations(request: ReportTestExonerationsRequest): Promise<ReportTestExonerationsResponse>;
 }
 
 export const SinkServiceName = "luci.resultsink.v1.Sink";
@@ -643,6 +782,7 @@ export class SinkClientImpl implements Sink {
     this.ReportTestResults = this.ReportTestResults.bind(this);
     this.ReportInvocationLevelArtifacts = this.ReportInvocationLevelArtifacts.bind(this);
     this.UpdateInvocation = this.UpdateInvocation.bind(this);
+    this.ReportTestExonerations = this.ReportTestExonerations.bind(this);
   }
   ReportTestResults(request: ReportTestResultsRequest): Promise<ReportTestResultsResponse> {
     const data = ReportTestResultsRequest.toJSON(request);
@@ -660,6 +800,12 @@ export class SinkClientImpl implements Sink {
     const data = UpdateInvocationRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "UpdateInvocation", data);
     return promise.then((data) => Invocation.fromJSON(data));
+  }
+
+  ReportTestExonerations(request: ReportTestExonerationsRequest): Promise<ReportTestExonerationsResponse> {
+    const data = ReportTestExonerationsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ReportTestExonerations", data);
+    return promise.then((data) => ReportTestExonerationsResponse.fromJSON(data));
   }
 }
 

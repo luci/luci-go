@@ -35,7 +35,7 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  * See also:
  *   * Identifier.Stage* (Identifiers for Stages, StageAttempts, etc.)
  *
- * Next ID: 16
+ * Next ID: 17
  */
 export interface Stage {
   /** The Stage's identifier. */
@@ -105,6 +105,15 @@ export interface Stage {
    */
   readonly cancelledBy?:
     | Actor
+    | undefined;
+  /**
+   * Set only for stages that represent legacy WorkNodes.
+   *
+   * Such stages are submitted either via legacy WorkPlan API or as a special
+   * kind of a Stage (with `args` having type TBD).
+   */
+  readonly legacy?:
+    | Stage_Legacy
     | undefined;
   /**
    * Append-only list of StateHistoryEntry to record the database revision
@@ -182,6 +191,32 @@ export interface Stage {
    * Sorted ascending by `version`.
    */
   readonly edits: readonly Edit[];
+}
+
+/** Set for stages that represent legacy WorkNodes. */
+export interface Stage_Legacy {
+  /**
+   * Fully populated encoded WorkNode proto.
+   *
+   * Note the value of this field is changing over lifetime of the stage. It
+   * matches identically to what the legacy WorkPlan API returns.
+   *
+   * Type URL is type.googleapis.com/wireless.android.launchcontrol.WorkNode.
+   * The realm always matches the realm of the stage.
+   *
+   * This field, just like other ValueRef fields, is a subject of type
+   * filtering and JSON encoding during reads.
+   */
+  readonly worknode?:
+    | ValueRef
+    | undefined;
+  /**
+   * The WorkExecutorType as extracted from `worknode`.
+   *
+   * Have it as a separate field is useful for skipping decoding large proto
+   * during ACL checks (that just need the executor type).
+   */
+  readonly workExecutorType?: number | undefined;
 }
 
 /**
@@ -547,6 +582,7 @@ function createBaseStage(): Stage {
     version: undefined,
     state: undefined,
     cancelledBy: undefined,
+    legacy: undefined,
     stateHistory: [],
     dependencies: undefined,
     executionPolicy: undefined,
@@ -580,6 +616,9 @@ export const Stage: MessageFns<Stage> = {
     }
     if (message.cancelledBy !== undefined) {
       Actor.encode(message.cancelledBy, writer.uint32(114).fork()).join();
+    }
+    if (message.legacy !== undefined) {
+      Stage_Legacy.encode(message.legacy, writer.uint32(130).fork()).join();
     }
     for (const v of message.stateHistory) {
       Stage_StateHistoryEntry.encode(v!, writer.uint32(58).fork()).join();
@@ -671,6 +710,14 @@ export const Stage: MessageFns<Stage> = {
           message.cancelledBy = Actor.decode(reader, reader.uint32());
           continue;
         }
+        case 16: {
+          if (tag !== 130) {
+            break;
+          }
+
+          message.legacy = Stage_Legacy.decode(reader, reader.uint32());
+          continue;
+        }
         case 7: {
           if (tag !== 58) {
             break;
@@ -753,6 +800,7 @@ export const Stage: MessageFns<Stage> = {
       version: isSet(object.version) ? Revision.fromJSON(object.version) : undefined,
       state: isSet(object.state) ? stageStateFromJSON(object.state) : undefined,
       cancelledBy: isSet(object.cancelledBy) ? Actor.fromJSON(object.cancelledBy) : undefined,
+      legacy: isSet(object.legacy) ? Stage_Legacy.fromJSON(object.legacy) : undefined,
       stateHistory: globalThis.Array.isArray(object?.stateHistory)
         ? object.stateHistory.map((e: any) => Stage_StateHistoryEntry.fromJSON(e))
         : [],
@@ -794,6 +842,9 @@ export const Stage: MessageFns<Stage> = {
     }
     if (message.cancelledBy !== undefined) {
       obj.cancelledBy = Actor.toJSON(message.cancelledBy);
+    }
+    if (message.legacy !== undefined) {
+      obj.legacy = Stage_Legacy.toJSON(message.legacy);
     }
     if (message.stateHistory?.length) {
       obj.stateHistory = message.stateHistory.map((e) => Stage_StateHistoryEntry.toJSON(e));
@@ -842,6 +893,9 @@ export const Stage: MessageFns<Stage> = {
     message.cancelledBy = (object.cancelledBy !== undefined && object.cancelledBy !== null)
       ? Actor.fromPartial(object.cancelledBy)
       : undefined;
+    message.legacy = (object.legacy !== undefined && object.legacy !== null)
+      ? Stage_Legacy.fromPartial(object.legacy)
+      : undefined;
     message.stateHistory = object.stateHistory?.map((e) => Stage_StateHistoryEntry.fromPartial(e)) || [];
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? Dependencies.fromPartial(object.dependencies)
@@ -856,6 +910,84 @@ export const Stage: MessageFns<Stage> = {
       : undefined;
     message.concludedReason = object.concludedReason ?? undefined;
     message.edits = object.edits?.map((e) => Edit.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseStage_Legacy(): Stage_Legacy {
+  return { worknode: undefined, workExecutorType: undefined };
+}
+
+export const Stage_Legacy: MessageFns<Stage_Legacy> = {
+  encode(message: Stage_Legacy, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.worknode !== undefined) {
+      ValueRef.encode(message.worknode, writer.uint32(10).fork()).join();
+    }
+    if (message.workExecutorType !== undefined) {
+      writer.uint32(16).int32(message.workExecutorType);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Stage_Legacy {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStage_Legacy() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.worknode = ValueRef.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.workExecutorType = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Stage_Legacy {
+    return {
+      worknode: isSet(object.worknode) ? ValueRef.fromJSON(object.worknode) : undefined,
+      workExecutorType: isSet(object.workExecutorType) ? globalThis.Number(object.workExecutorType) : undefined,
+    };
+  },
+
+  toJSON(message: Stage_Legacy): unknown {
+    const obj: any = {};
+    if (message.worknode !== undefined) {
+      obj.worknode = ValueRef.toJSON(message.worknode);
+    }
+    if (message.workExecutorType !== undefined) {
+      obj.workExecutorType = Math.round(message.workExecutorType);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<Stage_Legacy>): Stage_Legacy {
+    return Stage_Legacy.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<Stage_Legacy>): Stage_Legacy {
+    const message = createBaseStage_Legacy() as any;
+    message.worknode = (object.worknode !== undefined && object.worknode !== null)
+      ? ValueRef.fromPartial(object.worknode)
+      : undefined;
+    message.workExecutorType = object.workExecutorType ?? undefined;
     return message;
   },
 };

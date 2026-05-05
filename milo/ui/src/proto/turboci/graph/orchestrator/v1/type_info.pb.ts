@@ -29,8 +29,12 @@ export interface TypeInfo {
    * even if all its Values are omitted, and it may contain an incomplete set of
    * Values if some are filtered.
    *
-   * The set may contain an URL with a trailing wildcard to indicate that you
-   * want all data whose type appears in this proto namespace. For example:
+   * The set may contain a bare wildcard ("*") or type URL patterns starting
+   * with "type.googleapis.com/" that are allowed to include a trailing wildcard
+   * following either a '.' or a '/', which indicates that you want all data
+   * whose type_url matches the namespace prefix. For example:
+   *   * *
+   *   * type.googleapis.com/turboci.data.common.DisplayMessage
    *   * type.googleapis.com/turboci.data.*
    *   * type.googleapis.com/*
    *

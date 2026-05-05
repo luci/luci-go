@@ -7,14 +7,14 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Timestamp } from "../../../../google/protobuf/timestamp.pb";
-import { Check, Identifier, Stage } from "../../ids/v1/identifier.pb";
+import { Check, Stage } from "../../ids/v1/identifier.pb";
 import { CheckKind, checkKindFromJSON, checkKindToJSON } from "./check_kind.pb";
 import { CheckState, checkStateFromJSON, checkStateToJSON } from "./check_state.pb";
 import { Edge } from "./edge.pb";
-import { Revision } from "./revision.pb";
 import { Stage_Assignment } from "./stage.pb";
 import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
 import { StageExecutionPolicy } from "./stage_execution_policy.pb";
+import { TransactionDetails } from "./transaction_details.pb";
 import { ValueWrite } from "./value_write.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
@@ -66,7 +66,7 @@ export interface WriteNodesRequest {
    * to the state of the graph, but it's not expected or required.
    */
   readonly txn?:
-    | WriteNodesRequest_TransactionDetails
+    | TransactionDetails
     | undefined;
   /** Write to zero or more Checks. */
   readonly checks: readonly WriteNodesRequest_CheckWrite[];
@@ -223,90 +223,18 @@ export interface WriteNodesRequest_Reason {
    * These are optional, but are meant to be a way to communicate
    * machine-readable context for this write.
    *
-   * These must be unique by (type_url, realm), and their order will be
-   * preserved in the generated Edit messages.
+   * These must be unique by (type_url, realm), and they will be
+   * stably-sorted by type_url in the generated Edit messages (e.g. for pairs
+   * of (type_url, realm), [(a, R2), (b, R3), (a, R1)] would be sorted to
+   * [(a, R2), (a, R1), (b, R3)]). This order is compatible with the
+   * expectations of the `Find` and `Lookup` methods in
+   * go.chromium.org/luci/turboci/value.
    *
    * By convention, these should be ordered from most to least specific, so
    * if a client has permission for multiple details of the same type, the
    * first in this list should be a superset of the others.
    */
   readonly details: readonly ValueWrite[];
-}
-
-/**
- * TransactionDetails encapsulates the information necessary to make this
- * write safe by describing the snapshot of the graph which the writer
- * observed. TurboCI Orchestrator will transactionally ensure that these
- * nodes haven't changed since the writer observed them.
- *
- * TurboCI Orchestrator will implicitly include all nodes which are being
- * written to - this message can provide additional nodes to that set.
- *
- * It is valid to include nodes which were absent from the snapshot, if the
- * writer wants to make its write conditional on their absence.
- *
- * Transaction Procedure:
- *   retry {
- *     nodes, snapshot_version = QueryNodes(...)
- *     # computations
- *
- *     more_nodes, _ = QueryNodes(..., ensure_version=snapshot_version)
- *     # This will cause QueryNodes to fail if any returned nodes have
- *     # a version greater than `snapshot_version`. This will allow the
- *     # transaction loop to retry immediately, rather than waiting for the
- *     # WriteNodes call.
- *
- *     # computations
- *
- *     if WriteNodes(..., txn={nodes+more_nodes, snapshot_version}) {
- *       # Success!
- *
- *       # If you need to make another transaction, you CAN use the
- *       # written_version in the response as an input snapshot_version to
- *       # the subsequent transaction. However, it's important that if this
- *       # second transaction gets a conflict, it restart with
- *       # snapshot_version unset.
- *       break
- *     } else {
- *       # failure - retry from the top
- *     }
- *   }
- */
-export interface WriteNodesRequest_TransactionDetails {
-  /**
-   * A list of all nodes observed which lead to this write.
-   *
-   * This SHOULD include all nodes which your computation used as inputs
-   * for making a decision. If you locally filtered the WorkPlan before the
-   * computation, it is OK to omit nodes which were filtered out, because you
-   * would do the same write regardless of those filtered nodes' content.
-   *
-   * This MAY include nodes which were absent from the WorkPlan - this means
-   * that the write is conditional on their absence (e.g. "I queried for X and
-   * didn't find it, so I'm doing a write based on that information. If X DOES
-   * exist at the time of the write, I want to abort and try again.").
-   *
-   * NOTE: If you are writing what you THINK are all new nodes, but haven't
-   * done a query to verify this, just providing `txn` with `nodes_observed`
-   * and `snapshot_version` left unset is sufficient to guard against the
-   * nodes already being written. However, if you get
-   * a TransactionConflictFailure because the nodes already exist, when you
-   * recover make sure to do the query before you try the write again! You
-   * may be conflicting with a previous incarnation of your own process!
-   */
-  readonly nodesObserved: readonly Identifier[];
-  /**
-   * The 'version' of the WorkPlan returned from QueryNodes.
-   *
-   * If multiple queries were made in this transaction, this revision MUST be
-   * the first revision observed. Providing version.require to QueryNodes
-   * will help enforce this.
-   *
-   * If `snapshot_version` is unset, it is treated as a 0 value (which means
-   * that all `nodes_observed` plus all nodes being written in this request
-   * must not already exist).
-   */
-  readonly snapshotVersion?: Revision | undefined;
 }
 
 /** A description of modifications to make to a single Check. */
@@ -325,19 +253,14 @@ export interface WriteNodesRequest_CheckWrite {
     | Check
     | undefined;
   /**
-   * Realm to assign to this check.
+   * Realm to assign to this Check.
    *
-   * If provided, must be the absolute form "<project>:<name>".
+   * If provided, must be the absolute form "<project>:<name>", or a
+   * special form "$from_token" or "$from_container". "$from_token" works
+   * as documented in [ValueWrite]. "$from_container" means "the same realm
+   * as the WorkPlan".
    *
-   * If this is set, and the Check DOES already exist, this MUST match the
-   * existing realm.
-   *
-   * If absent and this CheckWrite creates the Check, the written Check will
-   * copy its realm from the implied realm of the `token`. For Stage Attempt
-   * tokens, this will be the Stage's realm, and for Creator tokens, this
-   * will be the WorkPlan's realm.
-   *
-   * If `token` is unset and this field is absent, the write will be rejected.
+   * If omitted, it means that this check must already exist.
    */
   readonly realm?:
     | string
@@ -371,7 +294,7 @@ export interface WriteNodesRequest_CheckWrite {
   /**
    * Write data to a Result for this Check.
    *
-   * The Result to write in is keyed on:
+   * The Result to write to is automatically keyed on:
    *   * The Stage Attempt (if `token` is provided)
    *   * The caller's identity (if `token` is absent)
    *
@@ -386,7 +309,7 @@ export interface WriteNodesRequest_CheckWrite {
    *
    * Must be unique on `ValueWrite.data.type_url`.
    */
-  readonly results: readonly ValueWrite[];
+  readonly resultData: readonly ValueWrite[];
   /**
    * If set, finalize the Check.Result.
    *
@@ -487,8 +410,7 @@ export interface WriteNodesRequest_StageWrite {
    * The requested execution policy of the Stage.
    *
    * If the Stage already exists, this will only result in an error if this
-   * requested policy doesn't match doesn't match the existing requested
-   * policy.
+   * requested policy doesn't match the existing requested policy.
    *
    * If this write creates the stage and the requested_stage_execution_policy
    * is omitted, the stage will get the default StageExecutionPolicy from the
@@ -597,6 +519,11 @@ export interface WriteNodesRequest_CurrentAttemptWrite_StateTransition {
 /**
  * Throttled indicates that the Executor can run this Attempt, just not
  * right now.
+ *
+ * Can only be used for attempts in PENDING or THROTTLED state. If the
+ * attempt is already running, use Incomplete instead (since some work was
+ * done, but it was incomplete) with `throttle_next_attempt_until` field
+ * set.
  */
 export interface WriteNodesRequest_CurrentAttemptWrite_StateTransition_Throttled {
   /**
@@ -693,11 +620,27 @@ export interface WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplet
   /**
    * Controls if this Stage should make another Attempt.
    *
-   * If true, then no new Attempt is made, even if policy would permit one.
+   * If true, then no new Attempt is made, even if policy would permit
+   * one.
    *
    * Optional.
    */
-  readonly blockNewAttempts?: boolean | undefined;
+  readonly blockNewAttempts?:
+    | boolean
+    | undefined;
+  /**
+   * The earliest time the next attempt should start running.
+   *
+   * If set, a new Attempt (if allowed by the policy at all) will be
+   * created in THROTTLED state and will start running no sooner
+   * than the given timestamp.
+   *
+   * If unset, a new Attempt will be created in AWAITING_RETRY state and
+   * it will start running after some delay picked by the Orchestrator
+   * itself (using randomized exponential backoff based on the number of
+   * previous incomplete attempts).
+   */
+  readonly throttleNextAttemptUntil?: string | undefined;
 }
 
 /** Internal writes for the Stage indicated by the token. */
@@ -737,7 +680,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
       WriteNodesRequest_Reason.encode(message.reason, writer.uint32(18).fork()).join();
     }
     if (message.txn !== undefined) {
-      WriteNodesRequest_TransactionDetails.encode(message.txn, writer.uint32(26).fork()).join();
+      TransactionDetails.encode(message.txn, writer.uint32(26).fork()).join();
     }
     for (const v of message.checks) {
       WriteNodesRequest_CheckWrite.encode(v!, writer.uint32(34).fork()).join();
@@ -782,7 +725,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
             break;
           }
 
-          message.txn = WriteNodesRequest_TransactionDetails.decode(reader, reader.uint32());
+          message.txn = TransactionDetails.decode(reader, reader.uint32());
           continue;
         }
         case 4: {
@@ -830,7 +773,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
     return {
       token: isSet(object.token) ? globalThis.String(object.token) : undefined,
       reason: isSet(object.reason) ? WriteNodesRequest_Reason.fromJSON(object.reason) : undefined,
-      txn: isSet(object.txn) ? WriteNodesRequest_TransactionDetails.fromJSON(object.txn) : undefined,
+      txn: isSet(object.txn) ? TransactionDetails.fromJSON(object.txn) : undefined,
       checks: globalThis.Array.isArray(object?.checks)
         ? object.checks.map((e: any) => WriteNodesRequest_CheckWrite.fromJSON(e))
         : [],
@@ -855,7 +798,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
       obj.reason = WriteNodesRequest_Reason.toJSON(message.reason);
     }
     if (message.txn !== undefined) {
-      obj.txn = WriteNodesRequest_TransactionDetails.toJSON(message.txn);
+      obj.txn = TransactionDetails.toJSON(message.txn);
     }
     if (message.checks?.length) {
       obj.checks = message.checks.map((e) => WriteNodesRequest_CheckWrite.toJSON(e));
@@ -882,7 +825,7 @@ export const WriteNodesRequest: MessageFns<WriteNodesRequest> = {
       ? WriteNodesRequest_Reason.fromPartial(object.reason)
       : undefined;
     message.txn = (object.txn !== undefined && object.txn !== null)
-      ? WriteNodesRequest_TransactionDetails.fromPartial(object.txn)
+      ? TransactionDetails.fromPartial(object.txn)
       : undefined;
     message.checks = object.checks?.map((e) => WriteNodesRequest_CheckWrite.fromPartial(e)) || [];
     message.stages = object.stages?.map((e) => WriteNodesRequest_StageWrite.fromPartial(e)) || [];
@@ -1158,86 +1101,6 @@ export const WriteNodesRequest_Reason: MessageFns<WriteNodesRequest_Reason> = {
   },
 };
 
-function createBaseWriteNodesRequest_TransactionDetails(): WriteNodesRequest_TransactionDetails {
-  return { nodesObserved: [], snapshotVersion: undefined };
-}
-
-export const WriteNodesRequest_TransactionDetails: MessageFns<WriteNodesRequest_TransactionDetails> = {
-  encode(message: WriteNodesRequest_TransactionDetails, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.nodesObserved) {
-      Identifier.encode(v!, writer.uint32(10).fork()).join();
-    }
-    if (message.snapshotVersion !== undefined) {
-      Revision.encode(message.snapshotVersion, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): WriteNodesRequest_TransactionDetails {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseWriteNodesRequest_TransactionDetails() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.nodesObserved.push(Identifier.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.snapshotVersion = Revision.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): WriteNodesRequest_TransactionDetails {
-    return {
-      nodesObserved: globalThis.Array.isArray(object?.nodesObserved)
-        ? object.nodesObserved.map((e: any) => Identifier.fromJSON(e))
-        : [],
-      snapshotVersion: isSet(object.snapshotVersion) ? Revision.fromJSON(object.snapshotVersion) : undefined,
-    };
-  },
-
-  toJSON(message: WriteNodesRequest_TransactionDetails): unknown {
-    const obj: any = {};
-    if (message.nodesObserved?.length) {
-      obj.nodesObserved = message.nodesObserved.map((e) => Identifier.toJSON(e));
-    }
-    if (message.snapshotVersion !== undefined) {
-      obj.snapshotVersion = Revision.toJSON(message.snapshotVersion);
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<WriteNodesRequest_TransactionDetails>): WriteNodesRequest_TransactionDetails {
-    return WriteNodesRequest_TransactionDetails.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<WriteNodesRequest_TransactionDetails>): WriteNodesRequest_TransactionDetails {
-    const message = createBaseWriteNodesRequest_TransactionDetails() as any;
-    message.nodesObserved = object.nodesObserved?.map((e) => Identifier.fromPartial(e)) || [];
-    message.snapshotVersion = (object.snapshotVersion !== undefined && object.snapshotVersion !== null)
-      ? Revision.fromPartial(object.snapshotVersion)
-      : undefined;
-    return message;
-  },
-};
-
 function createBaseWriteNodesRequest_CheckWrite(): WriteNodesRequest_CheckWrite {
   return {
     identifier: undefined,
@@ -1245,7 +1108,7 @@ function createBaseWriteNodesRequest_CheckWrite(): WriteNodesRequest_CheckWrite 
     kind: undefined,
     options: [],
     dependencies: undefined,
-    results: [],
+    resultData: [],
     finalizeResults: undefined,
     state: undefined,
   };
@@ -1268,7 +1131,7 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
     if (message.dependencies !== undefined) {
       WriteNodesRequest_DependencyGroup.encode(message.dependencies, writer.uint32(42).fork()).join();
     }
-    for (const v of message.results) {
+    for (const v of message.resultData) {
       ValueWrite.encode(v!, writer.uint32(50).fork()).join();
     }
     if (message.finalizeResults !== undefined) {
@@ -1332,7 +1195,7 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
             break;
           }
 
-          message.results.push(ValueWrite.decode(reader, reader.uint32()));
+          message.resultData.push(ValueWrite.decode(reader, reader.uint32()));
           continue;
         }
         case 7: {
@@ -1369,7 +1232,9 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
       dependencies: isSet(object.dependencies)
         ? WriteNodesRequest_DependencyGroup.fromJSON(object.dependencies)
         : undefined,
-      results: globalThis.Array.isArray(object?.results) ? object.results.map((e: any) => ValueWrite.fromJSON(e)) : [],
+      resultData: globalThis.Array.isArray(object?.resultData)
+        ? object.resultData.map((e: any) => ValueWrite.fromJSON(e))
+        : [],
       finalizeResults: isSet(object.finalizeResults) ? globalThis.Boolean(object.finalizeResults) : undefined,
       state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
     };
@@ -1392,8 +1257,8 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
     if (message.dependencies !== undefined) {
       obj.dependencies = WriteNodesRequest_DependencyGroup.toJSON(message.dependencies);
     }
-    if (message.results?.length) {
-      obj.results = message.results.map((e) => ValueWrite.toJSON(e));
+    if (message.resultData?.length) {
+      obj.resultData = message.resultData.map((e) => ValueWrite.toJSON(e));
     }
     if (message.finalizeResults !== undefined) {
       obj.finalizeResults = message.finalizeResults;
@@ -1418,7 +1283,7 @@ export const WriteNodesRequest_CheckWrite: MessageFns<WriteNodesRequest_CheckWri
     message.dependencies = (object.dependencies !== undefined && object.dependencies !== null)
       ? WriteNodesRequest_DependencyGroup.fromPartial(object.dependencies)
       : undefined;
-    message.results = object.results?.map((e) => ValueWrite.fromPartial(e)) || [];
+    message.resultData = object.resultData?.map((e) => ValueWrite.fromPartial(e)) || [];
     message.finalizeResults = object.finalizeResults ?? undefined;
     message.state = object.state ?? undefined;
     return message;
@@ -2269,7 +2134,7 @@ export const WriteNodesRequest_CurrentAttemptWrite_StateTransition_Complete: Mes
 };
 
 function createBaseWriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete(): WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete {
-  return { blockNewAttempts: undefined };
+  return { blockNewAttempts: undefined, throttleNextAttemptUntil: undefined };
 }
 
 export const WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete: MessageFns<
@@ -2281,6 +2146,9 @@ export const WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete: M
   ): BinaryWriter {
     if (message.blockNewAttempts !== undefined) {
       writer.uint32(8).bool(message.blockNewAttempts);
+    }
+    if (message.throttleNextAttemptUntil !== undefined) {
+      Timestamp.encode(toTimestamp(message.throttleNextAttemptUntil), writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -2303,6 +2171,14 @@ export const WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete: M
           message.blockNewAttempts = reader.bool();
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.throttleNextAttemptUntil = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2315,6 +2191,9 @@ export const WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete: M
   fromJSON(object: any): WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete {
     return {
       blockNewAttempts: isSet(object.blockNewAttempts) ? globalThis.Boolean(object.blockNewAttempts) : undefined,
+      throttleNextAttemptUntil: isSet(object.throttleNextAttemptUntil)
+        ? globalThis.String(object.throttleNextAttemptUntil)
+        : undefined,
     };
   },
 
@@ -2322,6 +2201,9 @@ export const WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete: M
     const obj: any = {};
     if (message.blockNewAttempts !== undefined) {
       obj.blockNewAttempts = message.blockNewAttempts;
+    }
+    if (message.throttleNextAttemptUntil !== undefined) {
+      obj.throttleNextAttemptUntil = message.throttleNextAttemptUntil;
     }
     return obj;
   },
@@ -2336,6 +2218,7 @@ export const WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete: M
   ): WriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete {
     const message = createBaseWriteNodesRequest_CurrentAttemptWrite_StateTransition_Incomplete() as any;
     message.blockNewAttempts = object.blockNewAttempts ?? undefined;
+    message.throttleNextAttemptUntil = object.throttleNextAttemptUntil ?? undefined;
     return message;
   },
 };

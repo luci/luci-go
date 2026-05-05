@@ -64,7 +64,11 @@ export interface ValueFilter {
     | ValueMask
     | undefined;
   /** ValueMask for Values in Edit.stage.attempts.progress.details. */
-  readonly stageEditAttemptProgressDetails?: ValueMask | undefined;
+  readonly stageEditAttemptProgressDetails?:
+    | ValueMask
+    | undefined;
+  /** ValueMask for Values in Stage.legacy.worknode. */
+  readonly stageLegacyWorknode?: ValueMask | undefined;
 }
 
 function createBaseValueFilter(): ValueFilter {
@@ -79,6 +83,7 @@ function createBaseValueFilter(): ValueFilter {
     stageAttemptProgressDetails: undefined,
     stageEditAttemptDetails: undefined,
     stageEditAttemptProgressDetails: undefined,
+    stageLegacyWorknode: undefined,
   };
 }
 
@@ -113,6 +118,9 @@ export const ValueFilter: MessageFns<ValueFilter> = {
     }
     if (message.stageEditAttemptProgressDetails !== undefined) {
       writer.uint32(80).int32(message.stageEditAttemptProgressDetails);
+    }
+    if (message.stageLegacyWorknode !== undefined) {
+      writer.uint32(88).int32(message.stageLegacyWorknode);
     }
     return writer;
   },
@@ -204,6 +212,14 @@ export const ValueFilter: MessageFns<ValueFilter> = {
           message.stageEditAttemptProgressDetails = reader.int32() as any;
           continue;
         }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.stageLegacyWorknode = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -234,6 +250,9 @@ export const ValueFilter: MessageFns<ValueFilter> = {
         : undefined,
       stageEditAttemptProgressDetails: isSet(object.stageEditAttemptProgressDetails)
         ? valueMaskFromJSON(object.stageEditAttemptProgressDetails)
+        : undefined,
+      stageLegacyWorknode: isSet(object.stageLegacyWorknode)
+        ? valueMaskFromJSON(object.stageLegacyWorknode)
         : undefined,
     };
   },
@@ -270,6 +289,9 @@ export const ValueFilter: MessageFns<ValueFilter> = {
     if (message.stageEditAttemptProgressDetails !== undefined) {
       obj.stageEditAttemptProgressDetails = valueMaskToJSON(message.stageEditAttemptProgressDetails);
     }
+    if (message.stageLegacyWorknode !== undefined) {
+      obj.stageLegacyWorknode = valueMaskToJSON(message.stageLegacyWorknode);
+    }
     return obj;
   },
 
@@ -290,6 +312,7 @@ export const ValueFilter: MessageFns<ValueFilter> = {
     message.stageAttemptProgressDetails = object.stageAttemptProgressDetails ?? undefined;
     message.stageEditAttemptDetails = object.stageEditAttemptDetails ?? undefined;
     message.stageEditAttemptProgressDetails = object.stageEditAttemptProgressDetails ?? undefined;
+    message.stageLegacyWorknode = object.stageLegacyWorknode ?? undefined;
     return message;
   },
 };

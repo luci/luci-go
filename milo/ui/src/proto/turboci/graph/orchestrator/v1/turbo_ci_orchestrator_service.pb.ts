@@ -5,6 +5,8 @@
 // source: turboci/graph/orchestrator/v1/turbo_ci_orchestrator_service.proto
 
 /* eslint-disable */
+import { AllocateWorkNodeIDsRequest } from "./allocate_worknode_ids_request.pb";
+import { AllocateWorkNodeIDsResponse } from "./allocate_worknode_ids_response.pb";
 import { CreateWorkPlanRequest } from "./create_workplan_request.pb";
 import { CreateWorkPlanResponse } from "./create_workplan_response.pb";
 import { QueryNodesRequest } from "./query_nodes_request.pb";
@@ -113,6 +115,17 @@ export interface TurboCIOrchestrator {
    * use QueryNodes instead.
    */
   ReadWorkPlan(request: ReadWorkPlanRequest): Promise<ReadWorkPlanResponse>;
+  /**
+   * AllocateWorkNodeIDs generates a bunch of WorkNode Stage identifiers that
+   * are compatible with WorkPlan API and which are guaranteed to be unused yet.
+   *
+   * They then can be passed to WriteNodes to create new WorkNode stages. Note
+   * this should only be used for compatibility with WorkPlan API. Non-worknode
+   * stages must use more meaningful string-based identifiers instead and
+   * guarantee their uniqueness (or non-uniqueness) based on what the stage
+   * actually does.
+   */
+  AllocateWorkNodeIDs(request: AllocateWorkNodeIDsRequest): Promise<AllocateWorkNodeIDsResponse>;
 }
 
 export const TurboCIOrchestratorServiceName = "turboci.graph.orchestrator.v1.TurboCIOrchestrator";
@@ -127,6 +140,7 @@ export class TurboCIOrchestratorClientImpl implements TurboCIOrchestrator {
     this.WriteNodes = this.WriteNodes.bind(this);
     this.QueryNodes = this.QueryNodes.bind(this);
     this.ReadWorkPlan = this.ReadWorkPlan.bind(this);
+    this.AllocateWorkNodeIDs = this.AllocateWorkNodeIDs.bind(this);
   }
   CreateWorkPlan(request: CreateWorkPlanRequest): Promise<CreateWorkPlanResponse> {
     const data = CreateWorkPlanRequest.toJSON(request);
@@ -150,6 +164,12 @@ export class TurboCIOrchestratorClientImpl implements TurboCIOrchestrator {
     const data = ReadWorkPlanRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ReadWorkPlan", data);
     return promise.then((data) => ReadWorkPlanResponse.fromJSON(data));
+  }
+
+  AllocateWorkNodeIDs(request: AllocateWorkNodeIDsRequest): Promise<AllocateWorkNodeIDsResponse> {
+    const data = AllocateWorkNodeIDsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "AllocateWorkNodeIDs", data);
+    return promise.then((data) => AllocateWorkNodeIDsResponse.fromJSON(data));
   }
 }
 

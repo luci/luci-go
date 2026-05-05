@@ -51,7 +51,7 @@ export interface CheckDelta {
    *
    * Unique and sorted on `Result.identifier`.
    */
-  readonly result: readonly CheckDelta_Result[];
+  readonly results: readonly CheckDelta_Result[];
 }
 
 /** Information about a single Check.Result written as part of this edit. */
@@ -84,7 +84,7 @@ export interface CheckDelta_Result {
 }
 
 function createBaseCheckDelta(): CheckDelta {
-  return { state: undefined, dependencies: undefined, options: [], result: [] };
+  return { state: undefined, dependencies: undefined, options: [], results: [] };
 }
 
 export const CheckDelta: MessageFns<CheckDelta> = {
@@ -98,7 +98,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
     for (const v of message.options) {
       ValueRef.encode(v!, writer.uint32(26).fork()).join();
     }
-    for (const v of message.result) {
+    for (const v of message.results) {
       CheckDelta_Result.encode(v!, writer.uint32(34).fork()).join();
     }
     return writer;
@@ -140,7 +140,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
             break;
           }
 
-          message.result.push(CheckDelta_Result.decode(reader, reader.uint32()));
+          message.results.push(CheckDelta_Result.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -157,8 +157,8 @@ export const CheckDelta: MessageFns<CheckDelta> = {
       state: isSet(object.state) ? checkStateFromJSON(object.state) : undefined,
       dependencies: isSet(object.dependencies) ? Dependencies.fromJSON(object.dependencies) : undefined,
       options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => ValueRef.fromJSON(e)) : [],
-      result: globalThis.Array.isArray(object?.result)
-        ? object.result.map((e: any) => CheckDelta_Result.fromJSON(e))
+      results: globalThis.Array.isArray(object?.results)
+        ? object.results.map((e: any) => CheckDelta_Result.fromJSON(e))
         : [],
     };
   },
@@ -174,8 +174,8 @@ export const CheckDelta: MessageFns<CheckDelta> = {
     if (message.options?.length) {
       obj.options = message.options.map((e) => ValueRef.toJSON(e));
     }
-    if (message.result?.length) {
-      obj.result = message.result.map((e) => CheckDelta_Result.toJSON(e));
+    if (message.results?.length) {
+      obj.results = message.results.map((e) => CheckDelta_Result.toJSON(e));
     }
     return obj;
   },
@@ -190,7 +190,7 @@ export const CheckDelta: MessageFns<CheckDelta> = {
       ? Dependencies.fromPartial(object.dependencies)
       : undefined;
     message.options = object.options?.map((e) => ValueRef.fromPartial(e)) || [];
-    message.result = object.result?.map((e) => CheckDelta_Result.fromPartial(e)) || [];
+    message.results = object.results?.map((e) => CheckDelta_Result.fromPartial(e)) || [];
     return message;
   },
 };

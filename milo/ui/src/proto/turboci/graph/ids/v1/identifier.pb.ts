@@ -226,19 +226,19 @@ export const Identifier: MessageFns<Identifier> = {
       Check.encode(message.check, writer.uint32(18).fork()).join();
     }
     if (message.checkResult !== undefined) {
-      CheckResult.encode(message.checkResult, writer.uint32(26).fork()).join();
+      CheckResult.encode(message.checkResult, writer.uint32(34).fork()).join();
     }
     if (message.checkEdit !== undefined) {
-      CheckEdit.encode(message.checkEdit, writer.uint32(34).fork()).join();
+      CheckEdit.encode(message.checkEdit, writer.uint32(50).fork()).join();
     }
     if (message.stage !== undefined) {
-      Stage.encode(message.stage, writer.uint32(42).fork()).join();
+      Stage.encode(message.stage, writer.uint32(66).fork()).join();
     }
     if (message.stageAttempt !== undefined) {
-      StageAttempt.encode(message.stageAttempt, writer.uint32(50).fork()).join();
+      StageAttempt.encode(message.stageAttempt, writer.uint32(74).fork()).join();
     }
     if (message.stageEdit !== undefined) {
-      StageEdit.encode(message.stageEdit, writer.uint32(58).fork()).join();
+      StageEdit.encode(message.stageEdit, writer.uint32(82).fork()).join();
     }
     return writer;
   },
@@ -266,28 +266,12 @@ export const Identifier: MessageFns<Identifier> = {
           message.check = Check.decode(reader, reader.uint32());
           continue;
         }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.checkResult = CheckResult.decode(reader, reader.uint32());
-          continue;
-        }
         case 4: {
           if (tag !== 34) {
             break;
           }
 
-          message.checkEdit = CheckEdit.decode(reader, reader.uint32());
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.stage = Stage.decode(reader, reader.uint32());
+          message.checkResult = CheckResult.decode(reader, reader.uint32());
           continue;
         }
         case 6: {
@@ -295,11 +279,27 @@ export const Identifier: MessageFns<Identifier> = {
             break;
           }
 
+          message.checkEdit = CheckEdit.decode(reader, reader.uint32());
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.stage = Stage.decode(reader, reader.uint32());
+          continue;
+        }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
           message.stageAttempt = StageAttempt.decode(reader, reader.uint32());
           continue;
         }
-        case 7: {
-          if (tag !== 58) {
+        case 10: {
+          if (tag !== 82) {
             break;
           }
 

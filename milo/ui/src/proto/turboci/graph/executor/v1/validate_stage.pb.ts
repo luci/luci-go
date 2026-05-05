@@ -9,6 +9,7 @@ import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Stage } from "../../orchestrator/v1/stage.pb";
 import { StageExecutionPolicy } from "../../orchestrator/v1/stage_execution_policy.pb";
 import { ValueData } from "../../orchestrator/v1/value_data.pb";
+import { WorkPlan } from "../../orchestrator/v1/workplan.pb";
 
 export const protobufPackage = "turboci.graph.executor.v1";
 
@@ -17,6 +18,14 @@ export interface ValidateStageRequest {
   /** Stage to validate. */
   readonly stage?:
     | Stage
+    | undefined;
+  /**
+   * The partial view of the parent work plan.
+   *
+   * Stages and Checks are omitted.
+   */
+  readonly workplan?:
+    | WorkPlan
     | undefined;
   /**
    * A map containing [ValueData] for `stage`.
@@ -43,17 +52,37 @@ export interface ValidateStageResponse {
    *
    * Required.
    */
-  readonly stageExecutionPolicy?: StageExecutionPolicy | undefined;
+  readonly stageExecutionPolicy?:
+    | StageExecutionPolicy
+    | undefined;
+  /**
+   * Service accounts the stage can potentially use to call Turbo CI APIs.
+   *
+   * The stage attempt token passed to RunStage will be bound to these accounts
+   * (i.e. it can only be presented together with credentials of some account
+   * in this set). These accounts will be subjected to an ACL check that
+   * verifies they are allowed to be used in the work plan at all.
+   *
+   * Each entry is either an email or a special value "EUC", which means
+   * the stage will use the end user credentials of whoever submitted it to
+   * call Turbo CI APIs.
+   *
+   * If omitted, defaults to ["EUC"].
+   */
+  readonly stageServiceAccounts: readonly string[];
 }
 
 function createBaseValidateStageRequest(): ValidateStageRequest {
-  return { stage: undefined, valueData: {} };
+  return { stage: undefined, workplan: undefined, valueData: {} };
 }
 
 export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
   encode(message: ValidateStageRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.stage !== undefined) {
       Stage.encode(message.stage, writer.uint32(10).fork()).join();
+    }
+    if (message.workplan !== undefined) {
+      WorkPlan.encode(message.workplan, writer.uint32(42).fork()).join();
     }
     Object.entries(message.valueData).forEach(([key, value]) => {
       ValidateStageRequest_ValueDataEntry.encode({ key: key as any, value }, writer.uint32(34).fork()).join();
@@ -74,6 +103,14 @@ export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
           }
 
           message.stage = Stage.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.workplan = WorkPlan.decode(reader, reader.uint32());
           continue;
         }
         case 4: {
@@ -99,6 +136,7 @@ export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
   fromJSON(object: any): ValidateStageRequest {
     return {
       stage: isSet(object.stage) ? Stage.fromJSON(object.stage) : undefined,
+      workplan: isSet(object.workplan) ? WorkPlan.fromJSON(object.workplan) : undefined,
       valueData: isObject(object.valueData)
         ? Object.entries(object.valueData).reduce<{ [key: string]: ValueData }>((acc, [key, value]) => {
           acc[key] = ValueData.fromJSON(value);
@@ -112,6 +150,9 @@ export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
     const obj: any = {};
     if (message.stage !== undefined) {
       obj.stage = Stage.toJSON(message.stage);
+    }
+    if (message.workplan !== undefined) {
+      obj.workplan = WorkPlan.toJSON(message.workplan);
     }
     if (message.valueData) {
       const entries = Object.entries(message.valueData);
@@ -131,6 +172,9 @@ export const ValidateStageRequest: MessageFns<ValidateStageRequest> = {
   fromPartial(object: DeepPartial<ValidateStageRequest>): ValidateStageRequest {
     const message = createBaseValidateStageRequest() as any;
     message.stage = (object.stage !== undefined && object.stage !== null) ? Stage.fromPartial(object.stage) : undefined;
+    message.workplan = (object.workplan !== undefined && object.workplan !== null)
+      ? WorkPlan.fromPartial(object.workplan)
+      : undefined;
     message.valueData = Object.entries(object.valueData ?? {}).reduce<{ [key: string]: ValueData }>(
       (acc, [key, value]) => {
         if (value !== undefined) {
@@ -223,13 +267,16 @@ export const ValidateStageRequest_ValueDataEntry: MessageFns<ValidateStageReques
 };
 
 function createBaseValidateStageResponse(): ValidateStageResponse {
-  return { stageExecutionPolicy: undefined };
+  return { stageExecutionPolicy: undefined, stageServiceAccounts: [] };
 }
 
 export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
   encode(message: ValidateStageResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.stageExecutionPolicy !== undefined) {
       StageExecutionPolicy.encode(message.stageExecutionPolicy, writer.uint32(10).fork()).join();
+    }
+    for (const v of message.stageServiceAccounts) {
+      writer.uint32(18).string(v!);
     }
     return writer;
   },
@@ -249,6 +296,14 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
           message.stageExecutionPolicy = StageExecutionPolicy.decode(reader, reader.uint32());
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.stageServiceAccounts.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -263,6 +318,9 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
       stageExecutionPolicy: isSet(object.stageExecutionPolicy)
         ? StageExecutionPolicy.fromJSON(object.stageExecutionPolicy)
         : undefined,
+      stageServiceAccounts: globalThis.Array.isArray(object?.stageServiceAccounts)
+        ? object.stageServiceAccounts.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -270,6 +328,9 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
     const obj: any = {};
     if (message.stageExecutionPolicy !== undefined) {
       obj.stageExecutionPolicy = StageExecutionPolicy.toJSON(message.stageExecutionPolicy);
+    }
+    if (message.stageServiceAccounts?.length) {
+      obj.stageServiceAccounts = message.stageServiceAccounts;
     }
     return obj;
   },
@@ -282,6 +343,7 @@ export const ValidateStageResponse: MessageFns<ValidateStageResponse> = {
     message.stageExecutionPolicy = (object.stageExecutionPolicy !== undefined && object.stageExecutionPolicy !== null)
       ? StageExecutionPolicy.fromPartial(object.stageExecutionPolicy)
       : undefined;
+    message.stageServiceAccounts = object.stageServiceAccounts?.map((e) => e) || [];
     return message;
   },
 };

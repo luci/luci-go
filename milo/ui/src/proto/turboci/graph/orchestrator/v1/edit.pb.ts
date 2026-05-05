@@ -12,6 +12,7 @@ import { Actor } from "./actor.pb";
 import { CheckDelta } from "./check_delta.pb";
 import { Revision } from "./revision.pb";
 import { StageDelta } from "./stage_delta.pb";
+import { TransactionDetails } from "./transaction_details.pb";
 import { ValueRef } from "./value_ref.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
@@ -25,6 +26,8 @@ export const protobufPackage = "turboci.graph.orchestrator.v1";
  *
  * Edit Deltas are designed to be quite slim. Heavy bits of the delta (like
  * Option Data) will be stored separately from this Edit.
+ *
+ * Next ID: 14
  */
 export interface Edit {
   /** The node which this Edit is associated with. */
@@ -67,39 +70,32 @@ export interface Edit {
     | Actor
     | undefined;
   /**
-   * This is the set of nodes which were included in the same WriteNodes
-   * RPC as this Edit (one per `checks`, `stages`, and/or
-   * `current_stage_write`). For simplicity, this will also always include
-   * `for_node`.
-   *
-   * This may contain more nodes than were actually written in the case of
-   * a partially applied write, e.g.
-   *
-   *   * One writer writes Check["foo", BUILD]
-   *   * Another writer writes Check["foo", BUILD], Check["bar", BUILD].
-   *
-   * In this case, the edit on "bar" from the second write will include "foo"
-   * in this set because the requested write is compatible with the state of
-   * "foo".
-   *
-   * This can only happen with WriteNodes requests with `txn` unset (i.e.
-   * 'oblivious writes').
-   *
-   * If you need to detect this, load e.g. `Check["foo"] / Edit[version]`. If
-   * the edit does not exist, then it means foo was already written before this
+   * This is a copy of `txn` from the WriteNodes request which generated this
    * Edit.
-   */
-  readonly transactionalSet: readonly Identifier[];
-  /**
-   * If set, then the WriteNodes which created this edit was done as an
-   * 'oblivious' write - that is, `txn` was not supplied in WriteNodseRequest.
    *
-   * This is intended to be a hint when debugging that a non-transactional
-   * write could be an issue.
+   * Will be unset if the RPC was an `oblivious write` (that is; `txn` was
+   * unset).
+   *
+   * For Orchestrator-generated changes (see `created_by`), this may be empty
+   * (even if the orchestrator implementation is not actually making an
+   * oblivious change).
    */
-  readonly obliviousWrite?:
-    | boolean
+  readonly txn?:
+    | TransactionDetails
     | undefined;
+  /**
+   * This is the set of node writes ids from the WriteNodes request which
+   * generated this Edit, one per `checks`, `stages`, `current_stage`, and/or
+   * `current_attempt`).
+   *
+   * Note that this will be a superset of the actual nodes written; If the
+   * transaction determines that a write to a given target node is a no-op,
+   * there will be no corresponding edit on the target node with the same
+   * version.
+   *
+   * For Orchestrator-generated changes, this may be empty.
+   */
+  readonly writeNodeSet: readonly Identifier[];
   /** The writer-provided reason for this Edit. */
   readonly reason?:
     | Edit_Reason
@@ -146,7 +142,8 @@ export interface Edit_Reason {
    * first in this list for a given type_url should be a superset of the
    * others.
    *
-   * These are be unique by (type_url, realm)
+   * These are be unique by (type_url, realm), and partially ordered by
+   * type_url.
    *
    * NOTE: When viewing Edits, the reader will only see the details for which
    * they have read permissions (that is - two different users may see
@@ -162,8 +159,8 @@ function createBaseEdit(): Edit {
     expireAt: undefined,
     realm: undefined,
     createdBy: undefined,
-    transactionalSet: [],
-    obliviousWrite: undefined,
+    txn: undefined,
+    writeNodeSet: [],
     reason: undefined,
     check: undefined,
     stage: undefined,
@@ -187,11 +184,11 @@ export const Edit: MessageFns<Edit> = {
     if (message.createdBy !== undefined) {
       Actor.encode(message.createdBy, writer.uint32(50).fork()).join();
     }
-    for (const v of message.transactionalSet) {
-      Identifier.encode(v!, writer.uint32(58).fork()).join();
+    if (message.txn !== undefined) {
+      TransactionDetails.encode(message.txn, writer.uint32(98).fork()).join();
     }
-    if (message.obliviousWrite !== undefined) {
-      writer.uint32(88).bool(message.obliviousWrite);
+    for (const v of message.writeNodeSet) {
+      Identifier.encode(v!, writer.uint32(106).fork()).join();
     }
     if (message.reason !== undefined) {
       Edit_Reason.encode(message.reason, writer.uint32(66).fork()).join();
@@ -252,20 +249,20 @@ export const Edit: MessageFns<Edit> = {
           message.createdBy = Actor.decode(reader, reader.uint32());
           continue;
         }
-        case 7: {
-          if (tag !== 58) {
+        case 12: {
+          if (tag !== 98) {
             break;
           }
 
-          message.transactionalSet.push(Identifier.decode(reader, reader.uint32()));
+          message.txn = TransactionDetails.decode(reader, reader.uint32());
           continue;
         }
-        case 11: {
-          if (tag !== 88) {
+        case 13: {
+          if (tag !== 106) {
             break;
           }
 
-          message.obliviousWrite = reader.bool();
+          message.writeNodeSet.push(Identifier.decode(reader, reader.uint32()));
           continue;
         }
         case 8: {
@@ -308,10 +305,10 @@ export const Edit: MessageFns<Edit> = {
       expireAt: isSet(object.expireAt) ? globalThis.String(object.expireAt) : undefined,
       realm: isSet(object.realm) ? globalThis.String(object.realm) : undefined,
       createdBy: isSet(object.createdBy) ? Actor.fromJSON(object.createdBy) : undefined,
-      transactionalSet: globalThis.Array.isArray(object?.transactionalSet)
-        ? object.transactionalSet.map((e: any) => Identifier.fromJSON(e))
+      txn: isSet(object.txn) ? TransactionDetails.fromJSON(object.txn) : undefined,
+      writeNodeSet: globalThis.Array.isArray(object?.writeNodeSet)
+        ? object.writeNodeSet.map((e: any) => Identifier.fromJSON(e))
         : [],
-      obliviousWrite: isSet(object.obliviousWrite) ? globalThis.Boolean(object.obliviousWrite) : undefined,
       reason: isSet(object.reason) ? Edit_Reason.fromJSON(object.reason) : undefined,
       check: isSet(object.check) ? CheckDelta.fromJSON(object.check) : undefined,
       stage: isSet(object.stage) ? StageDelta.fromJSON(object.stage) : undefined,
@@ -335,11 +332,11 @@ export const Edit: MessageFns<Edit> = {
     if (message.createdBy !== undefined) {
       obj.createdBy = Actor.toJSON(message.createdBy);
     }
-    if (message.transactionalSet?.length) {
-      obj.transactionalSet = message.transactionalSet.map((e) => Identifier.toJSON(e));
+    if (message.txn !== undefined) {
+      obj.txn = TransactionDetails.toJSON(message.txn);
     }
-    if (message.obliviousWrite !== undefined) {
-      obj.obliviousWrite = message.obliviousWrite;
+    if (message.writeNodeSet?.length) {
+      obj.writeNodeSet = message.writeNodeSet.map((e) => Identifier.toJSON(e));
     }
     if (message.reason !== undefined) {
       obj.reason = Edit_Reason.toJSON(message.reason);
@@ -369,8 +366,10 @@ export const Edit: MessageFns<Edit> = {
     message.createdBy = (object.createdBy !== undefined && object.createdBy !== null)
       ? Actor.fromPartial(object.createdBy)
       : undefined;
-    message.transactionalSet = object.transactionalSet?.map((e) => Identifier.fromPartial(e)) || [];
-    message.obliviousWrite = object.obliviousWrite ?? undefined;
+    message.txn = (object.txn !== undefined && object.txn !== null)
+      ? TransactionDetails.fromPartial(object.txn)
+      : undefined;
+    message.writeNodeSet = object.writeNodeSet?.map((e) => Identifier.fromPartial(e)) || [];
     message.reason = (object.reason !== undefined && object.reason !== null)
       ? Edit_Reason.fromPartial(object.reason)
       : undefined;

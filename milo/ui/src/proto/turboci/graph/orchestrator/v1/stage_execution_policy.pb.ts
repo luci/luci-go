@@ -7,6 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Duration } from "../../../../google/protobuf/duration.pb";
+import { Timestamp } from "../../../../google/protobuf/timestamp.pb";
 import { StageAttemptExecutionPolicy } from "./stage_attempt_execution_policy.pb";
 
 export const protobufPackage = "turboci.graph.orchestrator.v1";
@@ -79,7 +80,21 @@ export interface StageExecutionPolicy {
    * executor may augment the policy by merging the requested policy and what
    * is in the configs.
    */
-  readonly attemptExecutionPolicyTemplate?: StageAttemptExecutionPolicy | undefined;
+  readonly attemptExecutionPolicyTemplate?:
+    | StageAttemptExecutionPolicy
+    | undefined;
+  /**
+   * If set, specifies the earliest time the stage is allowed to run.
+   *
+   * If the stage is unblocked before that time, its first attempt will be
+   * created in THROTTLED state and it won't start running until the given time.
+   * If the stage is unblocked past that time, it will start running its first
+   * attempt right away.
+   *
+   * If unset, the stage will start running its first attempt as soon as it is
+   * unblocked.
+   */
+  readonly throttleFirstAttemptUntil?: string | undefined;
 }
 
 /** Retry describes the policy for retrying a Stage across multiple Attempts. */
@@ -114,6 +129,7 @@ function createBaseStageExecutionPolicy(): StageExecutionPolicy {
     stageTimeout: undefined,
     executeAtLeastOneAttempt: undefined,
     attemptExecutionPolicyTemplate: undefined,
+    throttleFirstAttemptUntil: undefined,
   };
 }
 
@@ -130,6 +146,9 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
     }
     if (message.attemptExecutionPolicyTemplate !== undefined) {
       StageAttemptExecutionPolicy.encode(message.attemptExecutionPolicyTemplate, writer.uint32(34).fork()).join();
+    }
+    if (message.throttleFirstAttemptUntil !== undefined) {
+      Timestamp.encode(toTimestamp(message.throttleFirstAttemptUntil), writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -173,6 +192,14 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
           message.attemptExecutionPolicyTemplate = StageAttemptExecutionPolicy.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.throttleFirstAttemptUntil = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -192,6 +219,9 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
       attemptExecutionPolicyTemplate: isSet(object.attemptExecutionPolicyTemplate)
         ? StageAttemptExecutionPolicy.fromJSON(object.attemptExecutionPolicyTemplate)
         : undefined,
+      throttleFirstAttemptUntil: isSet(object.throttleFirstAttemptUntil)
+        ? globalThis.String(object.throttleFirstAttemptUntil)
+        : undefined,
     };
   },
 
@@ -208,6 +238,9 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
     }
     if (message.attemptExecutionPolicyTemplate !== undefined) {
       obj.attemptExecutionPolicyTemplate = StageAttemptExecutionPolicy.toJSON(message.attemptExecutionPolicyTemplate);
+    }
+    if (message.throttleFirstAttemptUntil !== undefined) {
+      obj.throttleFirstAttemptUntil = message.throttleFirstAttemptUntil;
     }
     return obj;
   },
@@ -228,6 +261,7 @@ export const StageExecutionPolicy: MessageFns<StageExecutionPolicy> = {
       (object.attemptExecutionPolicyTemplate !== undefined && object.attemptExecutionPolicyTemplate !== null)
         ? StageAttemptExecutionPolicy.fromPartial(object.attemptExecutionPolicyTemplate)
         : undefined;
+    message.throttleFirstAttemptUntil = object.throttleFirstAttemptUntil ?? undefined;
     return message;
   },
 };
@@ -297,6 +331,19 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function toTimestamp(dateStr: string): Timestamp {
+  const date = new globalThis.Date(dateStr);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): string {
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis).toISOString();
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

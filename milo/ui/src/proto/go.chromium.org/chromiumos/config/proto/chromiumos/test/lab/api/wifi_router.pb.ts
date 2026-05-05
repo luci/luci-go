@@ -53,6 +53,8 @@ export enum WifiRouterFeature {
    * TODO(astrouski): Remove this feature once the U6+ router is fixed. (b/389945993)
    */
   WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER = 13,
+  /** WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE - Support for both U6+ and U6Lite routers. */
+  WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE = 14,
 }
 
 export function wifiRouterFeatureFromJSON(object: any): WifiRouterFeature {
@@ -99,6 +101,9 @@ export function wifiRouterFeatureFromJSON(object: any): WifiRouterFeature {
     case 13:
     case "WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER":
       return WifiRouterFeature.WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER;
+    case 14:
+    case "WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE":
+      return WifiRouterFeature.WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum WifiRouterFeature");
   }
@@ -134,6 +139,8 @@ export function wifiRouterFeatureToJSON(object: WifiRouterFeature): string {
       return "WIFI_ROUTER_FEATURE_SAE_EXT_KEY";
     case WifiRouterFeature.WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER:
       return "WIFI_ROUTER_FEATURE_NOT_U6PLUS_ROUTER";
+    case WifiRouterFeature.WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE:
+      return "WIFI_ROUTER_FEATURE_U6PLUS_OR_U6LITE";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum WifiRouterFeature");
   }

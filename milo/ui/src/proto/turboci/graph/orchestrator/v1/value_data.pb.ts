@@ -11,6 +11,55 @@ import { Any } from "../../../../google/protobuf/any.pb";
 export const protobufPackage = "turboci.graph.orchestrator.v1";
 
 /**
+ * DataConversionFailure indicates why a ValueData was not successfully
+ * converted to JSON from Binary.
+ */
+export enum DataConversionFailure {
+  /** DATA_CONVERSION_FAILURE_UNKNOWN - The default, unknown, value for the failure. */
+  DATA_CONVERSION_FAILURE_UNKNOWN = 0,
+  /** DATA_CONVERSION_FAILURE_NO_DESCRIPTOR - The data could not be converted because the descriptor was missing. */
+  DATA_CONVERSION_FAILURE_NO_DESCRIPTOR = 1,
+  /**
+   * DATA_CONVERSION_FAILURE_ERROR - The data could not be converted due to an error.
+   *
+   * Usually this indicates that the server had an incompatible descriptor.
+   * This could happen if the protos in question had backwards incompatible
+   * changes made to their proto definitions, but the server and client are
+   * using different versions of the descriptor.
+   */
+  DATA_CONVERSION_FAILURE_ERROR = 2,
+}
+
+export function dataConversionFailureFromJSON(object: any): DataConversionFailure {
+  switch (object) {
+    case 0:
+    case "DATA_CONVERSION_FAILURE_UNKNOWN":
+      return DataConversionFailure.DATA_CONVERSION_FAILURE_UNKNOWN;
+    case 1:
+    case "DATA_CONVERSION_FAILURE_NO_DESCRIPTOR":
+      return DataConversionFailure.DATA_CONVERSION_FAILURE_NO_DESCRIPTOR;
+    case 2:
+    case "DATA_CONVERSION_FAILURE_ERROR":
+      return DataConversionFailure.DATA_CONVERSION_FAILURE_ERROR;
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum DataConversionFailure");
+  }
+}
+
+export function dataConversionFailureToJSON(object: DataConversionFailure): string {
+  switch (object) {
+    case DataConversionFailure.DATA_CONVERSION_FAILURE_UNKNOWN:
+      return "DATA_CONVERSION_FAILURE_UNKNOWN";
+    case DataConversionFailure.DATA_CONVERSION_FAILURE_NO_DESCRIPTOR:
+      return "DATA_CONVERSION_FAILURE_NO_DESCRIPTOR";
+    case DataConversionFailure.DATA_CONVERSION_FAILURE_ERROR:
+      return "DATA_CONVERSION_FAILURE_ERROR";
+    default:
+      throw new globalThis.Error("Unrecognized enum value " + object + " for enum DataConversionFailure");
+  }
+}
+
+/**
  * ValueData holds actual data (via either binary or JSONPB encoded protobuf)
  * embedded inside of a TurboCI node (Checks/Stages) and referenced via
  * [ValueRef].
@@ -30,7 +79,14 @@ export interface ValueData {
     | Any
     | undefined;
   /** JSON encoded data. */
-  readonly json?: ValueData_JsonAny | undefined;
+  readonly json?:
+    | ValueData_JsonAny
+    | undefined;
+  /**
+   * If set, indicates that the ValueData was requested in JSON form, but
+   * could not be converted.
+   */
+  readonly conversionFailure?: DataConversionFailure | undefined;
 }
 
 /** JsonAny is like a `google.protobuf.Any`, except the value is encoded JSON. */
@@ -56,7 +112,7 @@ export interface ValueData_JsonAny {
 }
 
 function createBaseValueData(): ValueData {
-  return { binary: undefined, json: undefined };
+  return { binary: undefined, json: undefined, conversionFailure: undefined };
 }
 
 export const ValueData: MessageFns<ValueData> = {
@@ -66,6 +122,9 @@ export const ValueData: MessageFns<ValueData> = {
     }
     if (message.json !== undefined) {
       ValueData_JsonAny.encode(message.json, writer.uint32(18).fork()).join();
+    }
+    if (message.conversionFailure !== undefined) {
+      writer.uint32(24).int32(message.conversionFailure);
     }
     return writer;
   },
@@ -93,6 +152,14 @@ export const ValueData: MessageFns<ValueData> = {
           message.json = ValueData_JsonAny.decode(reader, reader.uint32());
           continue;
         }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.conversionFailure = reader.int32() as any;
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -106,6 +173,9 @@ export const ValueData: MessageFns<ValueData> = {
     return {
       binary: isSet(object.binary) ? Any.fromJSON(object.binary) : undefined,
       json: isSet(object.json) ? ValueData_JsonAny.fromJSON(object.json) : undefined,
+      conversionFailure: isSet(object.conversionFailure)
+        ? dataConversionFailureFromJSON(object.conversionFailure)
+        : undefined,
     };
   },
 
@@ -116,6 +186,9 @@ export const ValueData: MessageFns<ValueData> = {
     }
     if (message.json !== undefined) {
       obj.json = ValueData_JsonAny.toJSON(message.json);
+    }
+    if (message.conversionFailure !== undefined) {
+      obj.conversionFailure = dataConversionFailureToJSON(message.conversionFailure);
     }
     return obj;
   },
@@ -131,6 +204,7 @@ export const ValueData: MessageFns<ValueData> = {
     message.json = (object.json !== undefined && object.json !== null)
       ? ValueData_JsonAny.fromPartial(object.json)
       : undefined;
+    message.conversionFailure = object.conversionFailure ?? undefined;
     return message;
   },
 };

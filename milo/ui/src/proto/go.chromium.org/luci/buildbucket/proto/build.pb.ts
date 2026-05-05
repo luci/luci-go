@@ -1141,6 +1141,8 @@ export interface BuildInfra_Backend {
 export interface BuildInfra_TurboCI {
   /** Hostname is the hostname for TurboCI. */
   readonly hostname: string;
+  /** TurboCI stage attempt identifier for the build. */
+  readonly stageAttemptId: string;
 }
 
 function createBaseBuild(): Build {
@@ -5717,13 +5719,16 @@ export const BuildInfra_Backend: MessageFns<BuildInfra_Backend> = {
 };
 
 function createBaseBuildInfra_TurboCI(): BuildInfra_TurboCI {
-  return { hostname: "" };
+  return { hostname: "", stageAttemptId: "" };
 }
 
 export const BuildInfra_TurboCI: MessageFns<BuildInfra_TurboCI> = {
   encode(message: BuildInfra_TurboCI, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.hostname !== "") {
       writer.uint32(10).string(message.hostname);
+    }
+    if (message.stageAttemptId !== "") {
+      writer.uint32(18).string(message.stageAttemptId);
     }
     return writer;
   },
@@ -5743,6 +5748,14 @@ export const BuildInfra_TurboCI: MessageFns<BuildInfra_TurboCI> = {
           message.hostname = reader.string();
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.stageAttemptId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5753,13 +5766,19 @@ export const BuildInfra_TurboCI: MessageFns<BuildInfra_TurboCI> = {
   },
 
   fromJSON(object: any): BuildInfra_TurboCI {
-    return { hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "" };
+    return {
+      hostname: isSet(object.hostname) ? globalThis.String(object.hostname) : "",
+      stageAttemptId: isSet(object.stageAttemptId) ? globalThis.String(object.stageAttemptId) : "",
+    };
   },
 
   toJSON(message: BuildInfra_TurboCI): unknown {
     const obj: any = {};
     if (message.hostname !== "") {
       obj.hostname = message.hostname;
+    }
+    if (message.stageAttemptId !== "") {
+      obj.stageAttemptId = message.stageAttemptId;
     }
     return obj;
   },
@@ -5770,6 +5789,7 @@ export const BuildInfra_TurboCI: MessageFns<BuildInfra_TurboCI> = {
   fromPartial(object: DeepPartial<BuildInfra_TurboCI>): BuildInfra_TurboCI {
     const message = createBaseBuildInfra_TurboCI() as any;
     message.hostname = object.hostname ?? "";
+    message.stageAttemptId = object.stageAttemptId ?? "";
     return message;
   },
 };
