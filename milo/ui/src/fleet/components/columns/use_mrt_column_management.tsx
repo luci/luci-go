@@ -18,7 +18,7 @@ import {
   MRT_Updater,
   MRT_RowData,
 } from 'material-react-table';
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { orderMRTColumns } from '@/fleet/utils/columns';
@@ -84,6 +84,11 @@ export function useMRTColumnManagement<
   highlightedColumnIds = [],
   platform,
 }: UseMRTColumnManagementProps<_TData, TColumnDef>) {
+  const defaultColumnIdsRef = useRef(defaultColumnIds);
+  useEffect(() => {
+    defaultColumnIdsRef.current = defaultColumnIds;
+  }, [defaultColumnIds]);
+
   const [visibleColumnIds, setVisibleColumnIds] = useParamsAndLocalStorage(
     COLUMNS_PARAM_KEY,
     localStorageKey,
@@ -228,14 +233,30 @@ export function useMRTColumnManagement<
     platform,
   ]) as TColumnDef[];
 
-  return {
-    columns,
-    columnVisibility,
-    setColumnVisibility,
-    visibleColumnIds,
-    onToggleColumn,
-    selectOnlyColumn,
-    allColumns,
-    resetDefaultColumns: () => setVisibleColumnIds([...defaultColumnIds]),
-  };
+  const resetDefaultColumns = useCallback(() => {
+    setVisibleColumnIds([...defaultColumnIdsRef.current]);
+  }, [setVisibleColumnIds]);
+
+  return useMemo(
+    () => ({
+      columns,
+      columnVisibility,
+      setColumnVisibility,
+      visibleColumnIds,
+      onToggleColumn,
+      selectOnlyColumn,
+      allColumns,
+      resetDefaultColumns,
+    }),
+    [
+      columns,
+      columnVisibility,
+      setColumnVisibility,
+      visibleColumnIds,
+      onToggleColumn,
+      selectOnlyColumn,
+      allColumns,
+      resetDefaultColumns,
+    ],
+  );
 }

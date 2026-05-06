@@ -444,12 +444,14 @@ export const BrowserDevicesPage = () => {
       sorting: fleetMrtState.sorting,
       columnFilters: fleetMrtState.columnFilters,
       rowSelection: fleetMrtState.rowSelection,
+      columnSizing: fleetMrtState.columnSizing,
     },
     onColumnFiltersChange: fleetMrtState.onColumnFiltersChange,
     onColumnVisibilityChange:
       fleetMrtState.mrtColumnManager.setColumnVisibility,
     onSortingChange: fleetMrtState.onSortingChange,
     onRowSelectionChange: fleetMrtState.onRowSelectionChange,
+    onColumnSizingChange: fleetMrtState.onColumnSizingChange,
 
     muiTopToolbarProps: {
       sx: {

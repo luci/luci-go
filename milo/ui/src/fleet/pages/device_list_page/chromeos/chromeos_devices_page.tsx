@@ -457,6 +457,8 @@ export const ChromeOSDevicesPage = () => {
     goToPrevPage,
     goToNextPage,
     onRowsPerPageChange,
+    columnSizing,
+    onColumnSizingChange,
   } = fleetMrtState;
 
   const rows: ChromeOSDevice[] = useMemo(() => {
@@ -534,6 +536,7 @@ export const ChromeOSDevicesPage = () => {
         sorting,
         columnFilters,
         columnVisibility,
+        columnSizing,
         isLoading: devicesQuery.isPending && !devicesQuery.isPlaceholderData,
         showProgressBars: isFiltering || devicesQuery.isFetching,
         columnOrder: [
@@ -549,6 +552,7 @@ export const ChromeOSDevicesPage = () => {
       manualFiltering: true,
       manualPagination: true,
       onColumnVisibilityChange: setColumnVisibility,
+      onColumnSizingChange,
       muiTopToolbarProps: {
         sx: {
           '& [aria-label="Show/Hide filters"]': {
@@ -580,6 +584,8 @@ export const ChromeOSDevicesPage = () => {
       devicesQuery,
       isFiltering,
       setColumnVisibility,
+      columnSizing,
+      onColumnSizingChange,
     ],
   );
 

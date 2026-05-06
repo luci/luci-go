@@ -408,6 +408,8 @@ export const AndroidDevicesPage = () => {
     goToPrevPage,
     goToNextPage,
     onRowsPerPageChange,
+    columnSizing,
+    onColumnSizingChange,
   } = fleetMrtState;
 
   const visibleEnrichedColumns = useMemo(() => {
@@ -475,6 +477,7 @@ export const AndroidDevicesPage = () => {
         sorting,
         columnFilters,
         columnVisibility,
+        columnSizing,
         isLoading: devicesQuery.isPending && !devicesQuery.isPlaceholderData,
         showProgressBars: isFiltering || devicesQuery.isFetching,
         columnOrder: [
@@ -490,6 +493,7 @@ export const AndroidDevicesPage = () => {
       manualFiltering: true,
       manualPagination: true,
       onColumnVisibilityChange: setColumnVisibility,
+      onColumnSizingChange,
       muiTopToolbarProps: {
         sx: {
           '& [aria-label="Show/Hide filters"]': {
@@ -535,6 +539,8 @@ export const AndroidDevicesPage = () => {
       goToPrevPage,
       goToNextPage,
       onRowsPerPageChange,
+      columnSizing,
+      onColumnSizingChange,
     ],
   );
 

@@ -17,8 +17,9 @@ import {
   MRT_ColumnFiltersState,
   MRT_SortingState,
   MRT_RowSelectionState,
+  MRT_ColumnSizingState,
 } from 'material-react-table';
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 
 import {
   emptyPageTokenUpdater,
@@ -27,6 +28,7 @@ import {
   prevPageTokenUpdater,
 } from '@/common/components/params_pager';
 import { PagerContext } from '@/common/components/params_pager/context';
+import { logging } from '@/common/tools/logging';
 import { GetFiltersResult } from '@/fleet/components/filter_dropdown/parser/parser';
 import { filtersUpdater } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { OptionCategory, StringListCategory } from '@/fleet/types/option';
@@ -85,7 +87,58 @@ export const useFleetMRTState = <
   onColumnFiltersChangeOverride,
   isLoadingOptions,
 }: FleetMRTStateProps<TColumnDef>) => {
+  const loadedKeyRef = useRef(localStorageKey);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
+
+  const [columnSizing, setColumnSizing] = useState<MRT_ColumnSizingState>(
+    () => {
+      try {
+        const stored = localStorage.getItem(`${localStorageKey}-sizes`);
+        const parsed = stored ? JSON.parse(stored) : null;
+        return parsed || {};
+      } catch (e) {
+        logging.error('Failed to load column sizing from localStorage', e);
+        return {};
+      }
+    },
+  );
+
+  // Sync columnSizing when localStorageKey changes
+  useEffect(() => {
+    if (loadedKeyRef.current !== localStorageKey) {
+      try {
+        const stored = localStorage.getItem(`${localStorageKey}-sizes`);
+        const parsed = stored ? JSON.parse(stored) : null;
+        setColumnSizing(parsed || {});
+      } catch (e) {
+        logging.error('Failed to load column sizing from localStorage', e);
+        setColumnSizing({});
+      }
+      loadedKeyRef.current = localStorageKey;
+    }
+  }, [localStorageKey]);
+
+  // Save columnSizing to localStorage when it changes (debounced to avoid UI jank during resizing)
+  useEffect(() => {
+    if (loadedKeyRef.current !== localStorageKey) {
+      return;
+    }
+
+    const handler = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          `${localStorageKey}-sizes`,
+          JSON.stringify(columnSizing),
+        );
+      } catch (e) {
+        logging.error('Failed to save column sizing to localStorage', e);
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [columnSizing, localStorageKey]);
 
   const { filterByFieldToId, idToFilterByField } = useMemo(() => {
     const fromFieldId = new Map<string, string>();
@@ -311,20 +364,38 @@ export const useFleetMRTState = <
     [pagerCtx, setSearchParams],
   );
 
-  return {
-    mrtColumnManager,
-    sorting,
-    enrichedColumns,
-    columnFilters,
-    onColumnFiltersChange,
-    onSortingChange,
-    goToNextPage,
-    goToPrevPage,
-    onRowsPerPageChange,
-    visibleColumnIds: mrtColumnManager.visibleColumnIds,
-    columnVisibility: mrtColumnManager.columnVisibility,
-    allColumns: mrtColumnManager.allColumns,
-    rowSelection,
-    onRowSelectionChange: setRowSelection,
-  };
+  return useMemo(
+    () => ({
+      mrtColumnManager,
+      sorting,
+      enrichedColumns,
+      columnFilters,
+      onColumnFiltersChange,
+      onSortingChange,
+      goToNextPage,
+      goToPrevPage,
+      onRowsPerPageChange,
+      visibleColumnIds: mrtColumnManager.visibleColumnIds,
+      columnVisibility: mrtColumnManager.columnVisibility,
+      allColumns: mrtColumnManager.allColumns,
+      rowSelection,
+      onRowSelectionChange: setRowSelection,
+      columnSizing,
+      onColumnSizingChange: setColumnSizing,
+    }),
+    [
+      mrtColumnManager,
+      sorting,
+      enrichedColumns,
+      columnFilters,
+      onColumnFiltersChange,
+      onSortingChange,
+      goToNextPage,
+      goToPrevPage,
+      onRowsPerPageChange,
+      rowSelection,
+      columnSizing,
+      setColumnSizing,
+    ],
+  );
 };
