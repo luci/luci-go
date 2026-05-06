@@ -16,7 +16,6 @@ package internal
 
 import (
 	"bytes"
-	"container/heap"
 	"context"
 	"fmt"
 	"io"
@@ -42,16 +41,6 @@ import (
 )
 
 const (
-	// instanceCacheMaxSize defines how many packages to keep in the cache.
-	//
-	// When this limit is reached, oldest touched packages are purged.
-	//
-	// NOTE: There's a bad failure mode if this is too small. Because the cache is
-	// LRU if a normal "ensure" scenario involves more than this number of
-	// instances, it's possible to have a situation where EVERY ensure operation
-	// causes rolling evictions through the cache. See crbug.com/1003774.
-	instanceCacheMaxSize = 10_000
-
 	// instanceCacheMaxAge defines when to purge a cached package that is not
 	// being used.
 	//
@@ -129,8 +118,6 @@ type InstanceCache struct {
 	fetchRes     chan *InstanceResult // non-nil only if ParallelDownloads > 0
 	fetchWG      sync.WaitGroup
 
-	// Defaults to instanceCacheMaxSize, mocked in tests.
-	maxSize int
 	// Defaults to instanceCacheMaxAge, mocked in tests.
 	maxAge time.Duration
 }
@@ -510,78 +497,28 @@ func (c *InstanceCache) GC(ctx context.Context) {
 	})
 }
 
-type garbageCandidate struct {
-	instanceID     string
-	lastAccessTime time.Time
-}
-
-type garbageHeap []*garbageCandidate
-
-func (h garbageHeap) Len() int           { return len(h) }
-func (h garbageHeap) Less(i, j int) bool { return h[i].lastAccessTime.Before(h[j].lastAccessTime) }
-func (h garbageHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h *garbageHeap) Push(x any) {
-	*h = append(*h, x.(*garbageCandidate))
-}
-func (h *garbageHeap) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	old[n-1] = nil // For GC.
-	*h = old[0 : n-1]
-	return x
-}
-
 // gc cleans up the old instances.
 //
-// There are two cleanup polices acting at the same time:
-//  1. Instances that haven't been touched for too long are removed.
-//  2. If the number of instances in the state is greater than maximum, oldest
-//     instances are removed.
+// This relies purely on a policy which collects instances which haven't been
+// touched for too long.
 func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 	maxAge := c.maxAge
 	if maxAge == 0 {
 		maxAge = instanceCacheMaxAge
 	}
-	maxSize := c.maxSize
-	if maxSize == 0 {
-		maxSize = instanceCacheMaxSize
-	}
 
-	// Kick out entries older than some threshold first.
+	// Kick out entries older than the age threshold.
 	garbage := stringset.New(0)
 	for instanceID, e := range state.Entries {
 		age := c.launchTime.Sub(e.LastAccess.AsTime())
 		if age > maxAge {
 			garbage.Add(instanceID)
-			logging.Debugf(ctx, "Purging cached instance %q (age %s)", instanceID, age)
-		}
-	}
-
-	// If still have too many entries, kick out oldest. Ignore entries already
-	// designated as garbage.
-	moreGarbage := len(state.Entries) - garbage.Len() - maxSize
-	if moreGarbage > 0 {
-		logging.Debugf(ctx, "Still need to purge %d cached instance(s)", moreGarbage)
-		g := make(garbageHeap, 0, len(state.Entries)-garbage.Len())
-		for instanceID, e := range state.Entries {
-			if !garbage.Has(instanceID) {
-				g = append(g, &garbageCandidate{
-					instanceID:     instanceID,
-					lastAccessTime: e.LastAccess.AsTime(),
-				})
-			}
-		}
-		heap.Init(&g)
-		for range moreGarbage {
-			item := heap.Pop(&g).(*garbageCandidate)
-			garbage.Add(item.instanceID)
 			logging.Debugf(ctx, "Purging cached instance %q (age %s as of %s)",
-				item.instanceID, c.launchTime.Sub(item.lastAccessTime), c.launchTime)
+				instanceID, age, c.launchTime)
 		}
 	}
 
-	garbage.Iter(func(instanceID string) bool {
+	for instanceID := range garbage.Iter {
 		path, err := c.FS.RootRelToAbs(instanceID)
 		if err != nil {
 			panic(fmt.Sprintf("failed to convert path %q: %v", instanceID, err))
@@ -590,8 +527,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 		if c.FS.EnsureFileGone(ctx, path) == nil {
 			delete(state.Entries, instanceID)
 		}
-		return true
-	})
+	}
 
 	c.FS.CleanupTrash(ctx)
 }

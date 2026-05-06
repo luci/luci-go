@@ -38,9 +38,6 @@ import (
 	"go.chromium.org/luci/cipd/common"
 )
 
-// No need to create a lot of files in tests.
-const testInstanceCacheMaxSize = 10
-
 func TestInstanceCache(t *testing.T) {
 	t.Parallel()
 
@@ -83,7 +80,6 @@ func TestInstanceCache(t *testing.T) {
 		cache := &InstanceCache{
 			FS:      fs,
 			Fetcher: fetcher,
-			maxSize: testInstanceCacheMaxSize,
 		}
 		defer cache.Close(ctx)
 
@@ -298,26 +294,6 @@ func TestInstanceCache(t *testing.T) {
 				}
 				assert.Loosely(t, errs, should.Equal(errCount))
 			})
-		})
-
-		t.Run("GC respects MaxSize", func(t *ftt.Test) {
-			// Add twice more the limit.
-			for i := range testInstanceCacheMaxSize * 2 {
-				putNew(cache, pin(i))
-				tc.Add(time.Second)
-			}
-
-			// Check the number of actual files.
-			assert.Loosely(t, countTempFiles(), should.Equal(testInstanceCacheMaxSize+1)) // +1 for state.db
-
-			// Only last testInstanceCacheMaxSize instances are still in the cache.
-			for i := testInstanceCacheMaxSize; i < testInstanceCacheMaxSize*2; i++ {
-				testHas(cache, pin(i))
-			}
-			// The rest are missing and can be recreated.
-			for i := range testInstanceCacheMaxSize {
-				putNew(cache, pin(i))
-			}
 		})
 
 		t.Run("GC respects MaxAge vs launchTime", func(t *ftt.Test) {
