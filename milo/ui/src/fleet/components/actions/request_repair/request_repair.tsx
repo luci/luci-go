@@ -26,11 +26,16 @@ import { DutToRepair } from '../shared/types';
 import {
   BrowserDeviceToRepair,
   BrowserRepairConfig,
+  BrowserReinstallConfig,
 } from './request_repair_browser_config';
 import { ChromeOSRepairConfig } from './request_repair_os_config';
 
+/**
+ * Configuration interface for repair/reinstall actions.
+ * @template T The type of device items.
+ */
 export interface RepairConfig<T> {
-  componentId: string;
+  componentId: string | ((items: T[]) => string);
   getTemplateId: (items: T[]) => string;
   generateTitle: (items: T[]) => string;
   generateDescription: (items: T[]) => string;
@@ -46,6 +51,11 @@ export function RequestRepair(props: {
   selectedItems: BrowserDeviceToRepair[];
   platform: Platform.CHROMIUM;
 }): ReactElement;
+/**
+ * Component to render repair and reinstall action buttons.
+ * For Browser devices, it renders both "Request Repair" and "Request Reinstall".
+ * For ChromeOS, it renders a single "Request Repair" button.
+ */
 export function RequestRepair({
   selectedItems,
   platform,
@@ -60,17 +70,18 @@ export function RequestRepair({
     return <></>;
   }
 
-  const fileRepairRequest = () => {
+  const fileRepairRequest = <T,>(config: RepairConfig<T>, items: T[]) => {
     let title = '';
     let description = '';
     let templateId = '';
-    let config;
-
     let hotlistIds = '';
+    let componentId = '';
 
-    if (platform === Platform.CHROMEOS) {
-      const items = selectedItems as DutToRepair[];
-      config = ChromeOSRepairConfig;
+    try {
+      componentId =
+        typeof config.componentId === 'function'
+          ? config.componentId(items)
+          : config.componentId;
       title = config.generateTitle(items);
       description = config.generateDescription(items);
       templateId = config.getTemplateId(items);
@@ -78,27 +89,21 @@ export function RequestRepair({
         typeof config.hotlistIds === 'function'
           ? config.hotlistIds(items)
           : config.hotlistIds || '';
-    } else {
-      const items = selectedItems as BrowserDeviceToRepair[];
-      config = BrowserRepairConfig;
-      title = config.generateTitle(items);
-      description = config.generateDescription(items);
-      templateId = config.getTemplateId(items);
-      hotlistIds =
-        typeof config.hotlistIds === 'function'
-          ? config.hotlistIds(items)
-          : config.hotlistIds || '';
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error((e as Error).message);
+      return;
     }
 
     trackEvent('request_repair', {
       componentName: 'request_repair_button',
-      dutCount: selectedItems.length,
+      dutCount: items.length,
       platform: platformToJSON(platform).toLowerCase(),
     });
 
     const params = new URLSearchParams({
       markdown: 'true',
-      component: config.componentId,
+      component: componentId,
       template: templateId,
       title,
       description,
@@ -110,15 +115,54 @@ export function RequestRepair({
     window.open(url, '_blank');
   };
 
+  if (platform === Platform.CHROMEOS) {
+    return (
+      <Button
+        data-testid="file-repair-bug-button"
+        onClick={() =>
+          fileRepairRequest(
+            ChromeOSRepairConfig,
+            selectedItems as DutToRepair[],
+          )
+        }
+        color="primary"
+        size="small"
+        startIcon={<FeedbackOutlined />}
+      >
+        Request Repair
+      </Button>
+    );
+  }
+
+  const items = selectedItems as BrowserDeviceToRepair[];
+  const actions = [
+    {
+      config: BrowserRepairConfig,
+      label: 'Request Repair',
+      testId: 'file-repair-bug-button',
+    },
+    {
+      config: BrowserReinstallConfig,
+      label: 'Request Reinstall',
+      testId: 'file-reinstall-bug-button',
+    },
+  ];
+
   return (
-    <Button
-      data-testid="file-repair-bug-button"
-      onClick={fileRepairRequest}
-      color="primary"
-      size="small"
-      startIcon={<FeedbackOutlined />}
-    >
-      Request Repair
-    </Button>
+    <>
+      {actions.map((action, index) => (
+        <Button
+          key={action.label}
+          data-testid={action.testId}
+          onClick={() => fileRepairRequest(action.config, items)}
+          color="primary"
+          size="small"
+          startIcon={<FeedbackOutlined />}
+          sx={{ marginRight: index < actions.length - 1 ? 1 : 0 }}
+        >
+          {action.label}
+        </Button>
+      ))}
+    </>
   );
 }

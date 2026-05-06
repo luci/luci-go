@@ -59,11 +59,8 @@ const generateBrowserTitle = (devices: BrowserDeviceToRepair[]): string => {
   return `[${zone}][Browser] [Repair] [${devices.length}] - [Multiple Devices]`;
 };
 
-const generateBrowserIssueDescription = (dev: BrowserDeviceToRepair) => {
-  const hostname = extractHostname(dev);
-  const machineName = dev.id;
-  const url = `https://ci.chromium.org/ui/fleet/p/chromium/devices/${machineName}`;
-
+const generateDeviceDetails = (dev: BrowserDeviceToRepair): string => {
+  const url = `https://ci.chromium.org/ui/fleet/p/chromium/devices/${dev.id}`;
   const poolUrl = dev.pool
     ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."pool" = "${dev.pool}"`)}`
     : '';
@@ -84,7 +81,7 @@ const generateBrowserIssueDescription = (dev: BrowserDeviceToRepair) => {
     : '';
 
   const details = [
-    `    * **Machine:** [${machineName}](${url})`,
+    `    * **Machine:** [${dev.id}](${url})`,
     dev.serialNumber
       ? `    * **Serial Number:** [${dev.serialNumber}](${serialUrl})`
       : '',
@@ -98,13 +95,56 @@ const generateBrowserIssueDescription = (dev: BrowserDeviceToRepair) => {
     .filter(Boolean)
     .join('\n');
 
+  return details;
+};
+
+const generateDetailedDeviceList = (
+  devices: BrowserDeviceToRepair[],
+): string => {
+  return devices
+    .map((dev) => {
+      const hostname = extractHostname(dev);
+      const details = generateDeviceDetails(dev);
+      return `* **Hostname:** ${hostname}\n${details}`;
+    })
+    .join('\n');
+};
+
+/**
+ * Generates the Buganizer issue description for a single device.
+ * @param dev The device to repair/reinstall.
+ * @param actionType The type of action ('repair' | 'reinstall').
+ */
+const generateBrowserIssueDescription = (
+  dev: BrowserDeviceToRepair,
+  actionType: 'repair' | 'reinstall',
+) => {
+  const hostname = extractHostname(dev);
+  const details = generateDeviceDetails(dev);
+
+  let requestText = '';
+  if (actionType === 'reinstall') {
+    // TODO(b/477806570): Add dynamic OS selection or detection.
+    requestText =
+      'Please upgrade the following device to OS <TARGET_OS> (Fill in target OS):';
+  } else {
+    requestText = 'Please repair the following device:';
+  }
+
+  const escalationsLink =
+    actionType === 'reinstall'
+      ? 'go/browser-repair-escalate'
+      : 'go/flops-browser-escalations/';
+
   const description = [
-    '**Instructions on how to create a bug: go/flops-browser-escalations/. ' +
+    `**Instructions on how to create a bug: ${escalationsLink}. ` +
       'Your request will automatically be placed in work queue for repair. ' +
       'Please do not explicitly assign bugs to individuals without prior discussion with said individuals. ' +
       'Reminder to update both title and description.**',
     '',
     '---',
+    '',
+    requestText,
     '',
     `* **Hostname:** ${hostname}`,
     details,
@@ -120,61 +160,70 @@ const generateBrowserIssueDescription = (dev: BrowserDeviceToRepair) => {
   return description;
 };
 
+const generateZonalHostList = (devices: BrowserDeviceToRepair[]): string => {
+  const zoneMap: Record<string, string[]> = {};
+  devices.forEach((d) => {
+    const zone = d.zone?.toUpperCase() || 'UNKNOWN';
+    const hostname = extractHostname(d);
+    if (!zoneMap[zone]) {
+      zoneMap[zone] = [];
+    }
+    zoneMap[zone].push(hostname);
+  });
+
+  return Object.entries(zoneMap)
+    .map(([zone, hosts]) => `* **${zone}**: ${hosts.join(' ')}`)
+    .join('\n');
+};
+
+/**
+ * Generates the Buganizer issue description for multiple devices.
+ * Includes a zonal summary, detailed list, and a link to view devices in FCon.
+ * @param devices The list of devices.
+ * @param actionType The type of action ('repair' | 'reinstall').
+ */
 const generateBrowserBulkIssueDescription = (
   devices: BrowserDeviceToRepair[],
+  actionType: 'repair' | 'reinstall',
 ) => {
-  const linkedDevices = devices
-    .map((dev) => {
-      const hostname = extractHostname(dev);
-      const url = `https://ci.chromium.org/ui/fleet/p/chromium/devices/${dev.id}`;
-      const poolUrl = dev.pool
-        ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."pool" = "${dev.pool}"`)}`
-        : '';
-      const zoneUrl = dev.zone
-        ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`ufs."zone" = "${dev.zone}"`)}`
-        : '';
-      const modelUrl = dev.model
-        ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."model" = "${dev.model}"`)}`
-        : '';
-      const statusUrl = dev.status
-        ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."status" = "${dev.status}"`)}`
-        : '';
-      const typeUrl = dev.type
-        ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."type" = "${dev.type}"`)}`
-        : '';
-      const serialUrl = dev.serialNumber
-        ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`ufs."serialNumber" = "${dev.serialNumber}"`)}`
-        : '';
+  const zonalList = generateZonalHostList(devices);
+  const linkedDevices = generateDetailedDeviceList(devices);
 
-      const details = [
-        `    * **Machine:** [${dev.id}](${url})`,
-        dev.serialNumber
-          ? `    * **Serial Number:** [${dev.serialNumber}](${serialUrl})`
-          : '',
-        dev.type ? `    * **Type:** [${dev.type}](${typeUrl})` : '',
-        dev.model ? `    * **Model:** [${dev.model}](${modelUrl})` : '',
-        dev.status ? `    * **Status:** [${dev.status}](${statusUrl})` : '',
-        dev.pool ? `    * **Pool:** [${dev.pool}](${poolUrl})` : '',
-        dev.zone ? `    * **Zone:** [${dev.zone}](${zoneUrl})` : '',
-        dev.lastSeen ? `    * **Last Seen:** ${dev.lastSeen}` : '',
-      ]
-        .filter(Boolean)
-        .join('\n');
+  // TODO: Add better handling for long URLs if selection is large.
+  const filterString = devices.map((d) => `id = "${d.id}"`).join(' OR ');
+  const fconUrl = `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(filterString)}`;
 
-      return `* **Hostname:** ${hostname}\n${details}`;
-    })
-    .join('\n');
+  let requestText = '';
+  if (actionType === 'reinstall') {
+    // TODO(b/477806570): Add dynamic OS selection or detection.
+    requestText =
+      'Please upgrade the following devices to OS <TARGET_OS> (Fill in target OS):';
+  } else {
+    requestText = 'Please repair the following devices:';
+  }
+
+  const escalationsLink =
+    actionType === 'reinstall'
+      ? 'go/browser-repair-escalate'
+      : 'go/flops-browser-escalations/';
 
   const description = [
-    '**Requester: Instructions on how to create a bug: go/flops-browser-escalations/. ' +
+    `**Requester: Instructions on how to create a bug: ${escalationsLink}. ` +
       'Your request will automatically be placed in work queue for repair. ' +
       'Please do not explicitly assign bugs to individuals without prior discussion with said individuals. ' +
       'Reminder to update both title and description.**',
     '',
     '---',
     '',
-    '**Devices:**',
-    `${linkedDevices}`,
+    requestText,
+    '',
+    '**Devices (Zonal Summary):**',
+    zonalList,
+    '',
+    '**Devices (Detailed):**',
+    linkedDevices,
+    '',
+    `**View all devices in Fleet Console:** [Click here](${fconUrl})`,
     '',
     '**Issue / Request:**',
     '',
@@ -187,15 +236,22 @@ const generateBrowserBulkIssueDescription = (
   return description;
 };
 
+const COMPONENT_SYSTEMS = '1034653';
+const COMPONENT_FLOPS = '1735976';
+
+/**
+ * Configuration for requesting repair for Browser devices.
+ * Routes to FLOPS component by default.
+ */
 export const BrowserRepairConfig: RepairConfig<BrowserDeviceToRepair> = {
-  componentId: '1735976',
+  componentId: COMPONENT_FLOPS,
   getTemplateId: (items) => (items.length === 1 ? '2107381' : '2161122'),
   generateTitle: generateBrowserTitle,
   generateDescription: (items) => {
     if (items.length === 1) {
-      return generateBrowserIssueDescription(items[0]);
+      return generateBrowserIssueDescription(items[0], 'repair');
     }
-    return generateBrowserBulkIssueDescription(items);
+    return generateBrowserBulkIssueDescription(items, 'repair');
   },
   hotlistIds: (items) => {
     const hotlists = new Set<string>();
@@ -213,4 +269,24 @@ export const BrowserRepairConfig: RepairConfig<BrowserDeviceToRepair> = {
 
     return Array.from(hotlists).join(',');
   },
+};
+
+/**
+ * Configuration for requesting reinstall for Browser devices.
+ * Routes to Systems component by default.
+ */
+export const BrowserReinstallConfig: RepairConfig<BrowserDeviceToRepair> = {
+  componentId: COMPONENT_SYSTEMS,
+  getTemplateId: (items) => (items.length === 1 ? '2107381' : '2161122'),
+  generateTitle: (items) => {
+    const title = generateBrowserTitle(items);
+    return title.replace('[Repair]', '[Reinstall]');
+  },
+  generateDescription: (items) => {
+    if (items.length === 1) {
+      return generateBrowserIssueDescription(items[0], 'reinstall');
+    }
+    return generateBrowserBulkIssueDescription(items, 'reinstall');
+  },
+  hotlistIds: BrowserRepairConfig.hotlistIds,
 };

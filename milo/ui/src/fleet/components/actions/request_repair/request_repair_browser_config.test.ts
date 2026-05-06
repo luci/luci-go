@@ -15,6 +15,7 @@
 import {
   BrowserDeviceToRepair,
   BrowserRepairConfig,
+  BrowserReinstallConfig,
 } from './request_repair_browser_config';
 
 describe('BrowserRepairConfig', () => {
@@ -136,6 +137,38 @@ describe('BrowserRepairConfig', () => {
         ) => string
       )(devices);
       expect(hotlists).toBe('6458008,7555487');
+    });
+
+    describe('BrowserReinstallConfig', () => {
+      it('should return SYSTEMS component', () => {
+        expect(BrowserReinstallConfig.componentId).toBe('1034653');
+      });
+
+      it('should generate correct title', () => {
+        const devices = [{ id: 'machine1', hostname: 'host1' }];
+        const title = BrowserReinstallConfig.generateTitle(devices);
+        expect(title).toBe('[Unknown Zone][Browser][Reinstall][host1]');
+      });
+
+      it('should generate correct description for bulk reinstall', () => {
+        const devices = [
+          { id: 'machine1', hostname: 'host1', zone: 'SFO36_BROWSER' },
+          { id: 'machine2', hostname: 'host2', zone: 'SFO36_BROWSER' },
+        ];
+        const desc = BrowserReinstallConfig.generateDescription(devices);
+        expect(desc).toContain(
+          'Please upgrade the following devices to OS <TARGET_OS>',
+        );
+        expect(desc).toContain('* **SFO36_BROWSER**: host1 host2');
+      });
+
+      it('should generate correct description for single reinstall', () => {
+        const devices = [{ id: 'machine1', hostname: 'host1' }];
+        const desc = BrowserReinstallConfig.generateDescription(devices);
+        expect(desc).toContain(
+          'Please upgrade the following device to OS <TARGET_OS>',
+        );
+      });
     });
   });
 });
