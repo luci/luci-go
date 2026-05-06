@@ -248,17 +248,19 @@ func (c *InstanceCache) now(ctx context.Context) time.Time {
 	return c.launchTime.Add(time.Nanosecond)
 }
 
-// Close shuts down goroutines started and cleans up temp files.
+// Close shuts down goroutines started, cleans up temp files and does a garbage
+// collection pass.
 //
 // The caller should ensure there's no pending fetches before making this call.
+//
+// Resets this InstanceCache to its initial state.
 func (c *InstanceCache) Close(ctx context.Context) {
-	if c.launchTime.IsZero() {
-		// no-op if InstanceCache never launched.
-		return
-	}
-
 	if c.HasPendingFetches() {
 		panic("closing an InstanceCache with some fetches still pending")
+	}
+
+	if c.launchTime.IsZero() {
+		return
 	}
 
 	close(c.fetchReq)
@@ -271,7 +273,19 @@ func (c *InstanceCache) Close(ctx context.Context) {
 		if err := os.RemoveAll(c.FS.Root()); err != nil {
 			logging.Warningf(ctx, "Leaking temp directory %s: %s", c.FS.Root(), err)
 		}
+	} else {
+		// Do a garbage collection pass.
+		c.withState(ctx, c.now(ctx), func(state *messages.InstanceCache) (save bool) {
+			c.gc(ctx, state)
+			return true
+		})
 	}
+
+	// Finally, reset state.
+	c.fetchPending.Store(0)
+	c.fetchReq = nil
+	c.fetchRes = nil
+	c.launchTime = time.Time{}
 }
 
 // RequestInstances enqueues requests to fetch instances into the cache.
@@ -404,7 +418,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			logging.Warningf(ctx, "Could not get %s from the cache: %s", pin, err)
 		default:
 			logging.Infof(ctx, "Cache hit for %s", pin)
-			c.touch(ctx, pin.InstanceID, false) // bump its last access time
+			c.touch(ctx, pin.InstanceID) // Bump its last access time.
 			return file, nil
 		}
 
@@ -438,14 +452,13 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			logging.Errorf(ctx, "Failed to open the instance %s: %s", pin, err)
 			return nil, cipderr.IO.Apply(errors.Fmt("opening the cached instance %s: %w", pin, err))
 		default:
-			c.touch(ctx, pin.InstanceID, true) // mark it as accessed, run the GC
+			c.touch(ctx, pin.InstanceID) // Mark it as accessed.
 			return file, nil
 		}
 	}
 }
 
-// touch updates the cache state file (best effort).
-func (c *InstanceCache) touch(ctx context.Context, instanceID string, gc bool) {
+func (c *InstanceCache) touch(ctx context.Context, instanceID string) {
 	now := c.now(ctx)
 	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		// Update LastAccess time.
@@ -458,10 +471,6 @@ func (c *InstanceCache) touch(ctx context.Context, instanceID string, gc bool) {
 			s.Entries[instanceID] = entry
 		}
 		entry.LastAccess = timestamppb.New(now)
-		// Optionally collect old entries.
-		if gc {
-			c.gc(ctx, s)
-		}
 		return true
 	})
 }
@@ -488,15 +497,6 @@ func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
 	return nil
 }
 
-// GC opportunistically purges entries that haven't been touched for too long.
-func (c *InstanceCache) GC(ctx context.Context) {
-	now := c.now(ctx)
-	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
-		c.gc(ctx, s)
-		return true
-	})
-}
-
 // gc cleans up the old instances.
 //
 // This relies purely on a policy which collects instances which haven't been
@@ -505,6 +505,10 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 	maxAge := c.maxAge
 	if maxAge == 0 {
 		maxAge = instanceCacheMaxAge
+	}
+
+	if c.launchTime.IsZero() {
+		panic("cannot GC on never-launched cache.")
 	}
 
 	// Kick out entries older than the age threshold.
@@ -533,9 +537,12 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 }
 
 // readState loads cache state from the state file.
+//
 // If the file does not exist, corrupted or its state was not synchronized
 // with the instance files for a long time, synchronizes it.
-// Newly discovered files are considered last accessed at zero time.
+//
+// Newly discovered files are considered last accessed at `c.launchTime`.
+//
 // If synchronization fails, then the state is considered empty.
 func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceCache, now time.Time) {
 	statePath, err := c.FS.RootRelToAbs(instanceCacheStateFilename)
@@ -574,7 +581,6 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 		if err := c.syncState(ctx, state, now); err != nil {
 			logging.Warningf(ctx, "Failed to sync instance cache: %s", err)
 		}
-		c.gc(ctx, state)
 	}
 }
 

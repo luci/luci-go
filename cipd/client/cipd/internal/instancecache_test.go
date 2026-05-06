@@ -298,15 +298,18 @@ func TestInstanceCache(t *testing.T) {
 
 		t.Run("GC respects MaxAge vs launchTime", func(t *ftt.Test) {
 			cache.maxAge = 2500 * time.Millisecond
+			t0 := clock.Now(ctx)
 			for i := range 8 {
 				if i != 0 {
 					tc.Add(time.Second)
 				}
 				putNew(cache, pin(i))
 			}
+			assert.That(t, cache.launchTime, should.Match(t0))
 
-			// This should remove *nothing*.
-			cache.GC(ctx)
+			// This should remove *nothing* - all instances were added after our
+			// launch time.
+			cache.Close(ctx) // Does a GC pass.
 
 			// We use cache.withState directly to ensure it has all entries, but to
 			// avoid 'touching' files, which testHas() would do.
@@ -315,12 +318,14 @@ func TestInstanceCache(t *testing.T) {
 				return false
 			})
 
-			// Now advance the cache launchTime (as if we opened a new cache
-			// instance 'now').
-			cache.launchTime = tc.Now()
-			cache.GC(ctx)
+			// Relaunch the cache and close it to do another GC pass with launchTime
+			// == clock.Now.
+			cache.RequestInstances(ctx, nil)
+			assert.That(t, cache.launchTime, should.Match(clock.Now(ctx)))
+			cache.Close(ctx)
 
 			// At this point 0..4 have been collected, so 5..7 exist.
+			assert.That(t, countTempFiles(), should.Equal(4)) // +1 for state.db.
 			for i := range 3 {
 				testHas(cache, pin(i+5))
 			}
