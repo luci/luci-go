@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
@@ -52,7 +53,7 @@ func TestInstanceCache(t *testing.T) {
 		fs := fs.NewFileSystem(tempDir, "")
 
 		pin := func(i int) common.Pin {
-			pin := common.Pin{"pkg", fmt.Sprintf("%d", i)}
+			pin := common.Pin{PackageName: "pkg", InstanceID: fmt.Sprintf("%d", i)}
 			pin.InstanceID = strings.Repeat("a", 40-len(pin.InstanceID)) + pin.InstanceID
 			return pin
 		}
@@ -87,6 +88,8 @@ func TestInstanceCache(t *testing.T) {
 		defer cache.Close(ctx)
 
 		access := func(cache *InstanceCache, pin common.Pin) (created bool, src pkg.Source) {
+			t.Helper()
+
 			fetchM.Lock()
 			before := fetchCalls
 			fetchM.Unlock()
@@ -95,7 +98,7 @@ func TestInstanceCache(t *testing.T) {
 				{Context: ctx, Pin: pin},
 			})
 			res := cache.WaitInstance()
-			assert.Loosely(t, res.Err, should.BeNil)
+			assert.NoErr(t, res.Err, truth.LineContext())
 
 			fetchM.Lock()
 			created = fetchCalls > before
@@ -105,22 +108,29 @@ func TestInstanceCache(t *testing.T) {
 		}
 
 		putNew := func(cache *InstanceCache, pin common.Pin) {
+			t.Helper()
+
 			created, src := access(cache, pin)
-			assert.Loosely(t, created, should.BeTrue)
-			assert.Loosely(t, src.Close(ctx, false), should.BeNil)
+			assert.Loosely(t, created, should.BeTrue, truth.LineContext(), truth.Explain(
+				"failed to create %v", pin))
+			assert.NoErr(t, src.Close(ctx, false), truth.LineContext())
 		}
 
 		readSrc := func(src pkg.Source) string {
+			t.Helper()
+
 			buf, err := io.ReadAll(io.NewSectionReader(src, 0, src.Size()))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err, truth.LineContext())
 			return string(buf)
 		}
 
 		testHas := func(cache *InstanceCache, pin common.Pin) {
+			t.Helper()
+
 			created, src := access(cache, pin)
-			assert.Loosely(t, created, should.BeFalse)
-			assert.Loosely(t, readSrc(src), should.Equal(fakeData(pin)))
-			assert.Loosely(t, src.Close(ctx, false), should.BeNil)
+			assert.Loosely(t, created, should.BeFalse, truth.LineContext())
+			assert.Loosely(t, readSrc(src), should.Equal(fakeData(pin)), truth.LineContext())
+			assert.NoErr(t, src.Close(ctx, false), truth.LineContext())
 		}
 
 		accessTime := func(cache *InstanceCache, pin common.Pin) (lastAccess time.Time, ok bool) {
@@ -310,7 +320,7 @@ func TestInstanceCache(t *testing.T) {
 			}
 		})
 
-		t.Run("GC respects MaxAge", func(t *ftt.Test) {
+		t.Run("GC respects MaxAge vs launchTime", func(t *ftt.Test) {
 			cache.maxAge = 2500 * time.Millisecond
 			for i := range 8 {
 				if i != 0 {
@@ -319,15 +329,25 @@ func TestInstanceCache(t *testing.T) {
 				putNew(cache, pin(i))
 			}
 
-			// Age of last added item (i == 7) is 0 => age of i'th item is 7-i.
-			//
-			// Condition for survival: age < cache.maxAge, e.g. 7-i<2.5 => i >= 5.
-			//
-			// Thus we expect {5, 6, 7} to still be in the cache after the GC.
+			// This should remove *nothing*.
 			cache.GC(ctx)
-			testHas(cache, pin(5))
-			testHas(cache, pin(6))
-			testHas(cache, pin(7))
+
+			// We use cache.withState directly to ensure it has all entries, but to
+			// avoid 'touching' files, which testHas() would do.
+			cache.withState(ctx, tc.Now(), func(ic *messages.InstanceCache) (save bool) {
+				assert.Loosely(t, ic.Entries, should.HaveLength(8))
+				return false
+			})
+
+			// Now advance the cache launchTime (as if we opened a new cache
+			// instance 'now').
+			cache.launchTime = tc.Now()
+			cache.GC(ctx)
+
+			// At this point 0..4 have been collected, so 5..7 exist.
+			for i := range 3 {
+				testHas(cache, pin(i+5))
+			}
 
 			// The rest are missing and can be recreated.
 			for i := range 5 {
@@ -382,10 +402,13 @@ func TestInstanceCache(t *testing.T) {
 				for i := range count {
 					lastAccess, ok := accessTime(cache, pin(i))
 					assert.Loosely(t, ok, should.BeTrue)
-					assert.Loosely(t, lastAccess.UnixNano(), should.Equal(clock.Now(ctx).UnixNano()))
+					assert.Loosely(t, lastAccess, should.Match(clock.Now(ctx)))
 				}
 
-				_, ok := accessTime(cache, common.Pin{"nonexistent", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"})
+				_, ok := accessTime(cache, common.Pin{
+					PackageName: "nonexistent",
+					InstanceID:  "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+				})
 				assert.Loosely(t, ok, should.BeFalse)
 			}
 

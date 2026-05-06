@@ -119,8 +119,10 @@ type InstanceCache struct {
 
 	stateLock sync.Mutex // synchronizes access to the state file.
 
-	// true if RequestInstances was called
-	launched bool
+	// launchTime is the time at which RequestInstances was first called; this is
+	// used to evaluate if instances are too old during garbage collection. Zero
+	// if RequestInstances has not been called yet.
+	launchTime time.Time
 
 	fetchPending int32
 	fetchReq     chan *InstanceRequest
@@ -184,10 +186,10 @@ func (c *InstanceCache) maybeLaunch(ctx context.Context) {
 		panic("ParallelDownloads must be non-negative")
 	}
 
-	if c.launched {
+	if !c.launchTime.IsZero() {
 		return
 	}
-	c.launched = true
+	c.launchTime = clock.Now(ctx)
 
 	tmp := ""
 	if c.Tmp {
@@ -243,11 +245,35 @@ func (c *InstanceCache) maybeLaunch(ctx context.Context) {
 	}
 }
 
+// `now` implements a gated version of clock.Now(ctx) which is resistant to
+// shifts in system clock time.
+//
+// Normally `clock.Now()` (a.k.a. `time.Now`) would be resistant to such things
+// when comparing `time.Time` objects. However in the case of the
+// InstanceCache, we round-trip `time.Time` through `google.protobuf.Timestamp`
+// messages, which do not contain the secret monotonic clock bits, and thus are
+// vulnerable to e.g. `ntpd` adjusting the system clock.
+//
+// We want to preserve the property that all instances `touch`'d by this
+// InstanceCache (either by fetching them, or using them off the disk) have a
+// timestamp which is > c.launchTime. This is especially important when the GC
+// maxAge is zero (e.g. ExactGC).
+//
+// This will return `clock.Now(ctx)` except if this would be before
+// c.launchTime, in which case it will return c.launchTime + 1ns.
+func (c *InstanceCache) now(ctx context.Context) time.Time {
+	ret := clock.Now(ctx)
+	if ret.After(c.launchTime) {
+		return ret
+	}
+	return c.launchTime.Add(time.Nanosecond)
+}
+
 // Close shuts down goroutines started and cleans up temp files.
 //
 // The caller should ensure there's no pending fetches before making this call.
 func (c *InstanceCache) Close(ctx context.Context) {
-	if !c.launched {
+	if c.launchTime.IsZero() {
 		// no-op if InstanceCache never launched.
 		return
 	}
@@ -279,7 +305,7 @@ func (c *InstanceCache) RequestInstances(ctx context.Context, reqs []*InstanceRe
 	// Ensure we are launched.
 	c.maybeLaunch(ctx)
 
-	now := clock.Now(ctx)
+	now := c.now(ctx)
 	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		for _, r := range reqs {
 			// Mark any existing instances as used so they
@@ -478,7 +504,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 
 // touch updates the cache state file (best effort).
 func (c *InstanceCache) touch(ctx context.Context, instanceID string, gc bool) {
-	now := clock.Now(ctx)
+	now := c.now(ctx)
 	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
 		// Update LastAccess time.
 		entry := s.Entries[instanceID]
@@ -492,7 +518,7 @@ func (c *InstanceCache) touch(ctx context.Context, instanceID string, gc bool) {
 		entry.LastAccess = timestamppb.New(now)
 		// Optionally collect old entries.
 		if gc {
-			c.gc(ctx, s, now)
+			c.gc(ctx, s)
 		}
 		return true
 	})
@@ -509,7 +535,7 @@ func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
 		return cipderr.IO.Apply(errors.Fmt("deleting the cached instance file: %w", err))
 	}
 
-	c.withState(ctx, clock.Now(ctx), func(s *messages.InstanceCache) (save bool) {
+	c.withState(ctx, c.now(ctx), func(s *messages.InstanceCache) (save bool) {
 		if s.Entries[pin.InstanceID] == nil {
 			return false
 		}
@@ -522,9 +548,9 @@ func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
 
 // GC opportunistically purges entries that haven't been touched for too long.
 func (c *InstanceCache) GC(ctx context.Context) {
-	now := clock.Now(ctx)
+	now := c.now(ctx)
 	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
-		c.gc(ctx, s, now)
+		c.gc(ctx, s)
 		return true
 	})
 }
@@ -557,7 +583,7 @@ func (h *garbageHeap) Pop() any {
 //  1. Instances that haven't been touched for too long are removed.
 //  2. If the number of instances in the state is greater than maximum, oldest
 //     instances are removed.
-func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, now time.Time) {
+func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 	maxAge := c.maxAge
 	if maxAge == 0 {
 		maxAge = instanceCacheMaxAge
@@ -570,7 +596,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 	// Kick out entries older than some threshold first.
 	garbage := stringset.New(0)
 	for instanceID, e := range state.Entries {
-		age := now.Sub(e.LastAccess.AsTime())
+		age := c.launchTime.Sub(e.LastAccess.AsTime())
 		if age > maxAge {
 			garbage.Add(instanceID)
 			logging.Debugf(ctx, "Purging cached instance %q (age %s)", instanceID, age)
@@ -595,7 +621,8 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 		for range moreGarbage {
 			item := heap.Pop(&g).(*garbageCandidate)
 			garbage.Add(item.instanceID)
-			logging.Debugf(ctx, "Purging cached instance %q (age %s)", item.instanceID, now.Sub(item.lastAccessTime))
+			logging.Debugf(ctx, "Purging cached instance %q (age %s as of %s)",
+				item.instanceID, c.launchTime.Sub(item.lastAccessTime), c.launchTime)
 		}
 	}
 
@@ -656,7 +683,7 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 		if err := c.syncState(ctx, state, now); err != nil {
 			logging.Warningf(ctx, "Failed to sync instance cache: %s", err)
 		}
-		c.gc(ctx, state, now)
+		c.gc(ctx, state)
 	}
 }
 
@@ -691,7 +718,7 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 					state.Entries = map[string]*messages.InstanceCache_Entry{}
 				}
 				state.Entries[id] = &messages.InstanceCache_Entry{
-					LastAccess: timestamppb.New(now),
+					LastAccess: timestamppb.New(c.launchTime),
 				}
 			}
 		}
@@ -732,7 +759,7 @@ func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*me
 
 	state := &messages.InstanceCache{}
 
-	start := clock.Now(ctx)
+	start := c.now(ctx)
 	defer func() {
 		totalTime := clock.Since(ctx, start)
 		if totalTime > 5*time.Second {
