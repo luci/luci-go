@@ -277,6 +277,8 @@ export interface GetSmartRepairRequest {
   readonly deviceIds: readonly string[];
   /** If true, forces a retrigger of the smart repair analysis, bypassing any cached results. */
   readonly forceRetrigger: boolean;
+  /** If true, only checks for cached results and does not trigger a new analysis on cache miss. */
+  readonly checkOnly: boolean;
 }
 
 export interface GetSmartRepairResult {
@@ -2735,7 +2737,7 @@ export const ScheduleDeployResponse: MessageFns<ScheduleDeployResponse> = {
 };
 
 function createBaseGetSmartRepairRequest(): GetSmartRepairRequest {
-  return { deviceIds: [], forceRetrigger: false };
+  return { deviceIds: [], forceRetrigger: false, checkOnly: false };
 }
 
 export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
@@ -2745,6 +2747,9 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
     }
     if (message.forceRetrigger !== false) {
       writer.uint32(16).bool(message.forceRetrigger);
+    }
+    if (message.checkOnly !== false) {
+      writer.uint32(24).bool(message.checkOnly);
     }
     return writer;
   },
@@ -2772,6 +2777,14 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
           message.forceRetrigger = reader.bool();
           continue;
         }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.checkOnly = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2787,6 +2800,7 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
         ? object.deviceIds.map((e: any) => globalThis.String(e))
         : [],
       forceRetrigger: isSet(object.forceRetrigger) ? globalThis.Boolean(object.forceRetrigger) : false,
+      checkOnly: isSet(object.checkOnly) ? globalThis.Boolean(object.checkOnly) : false,
     };
   },
 
@@ -2798,6 +2812,9 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
     if (message.forceRetrigger !== false) {
       obj.forceRetrigger = message.forceRetrigger;
     }
+    if (message.checkOnly !== false) {
+      obj.checkOnly = message.checkOnly;
+    }
     return obj;
   },
 
@@ -2808,6 +2825,7 @@ export const GetSmartRepairRequest: MessageFns<GetSmartRepairRequest> = {
     const message = createBaseGetSmartRepairRequest() as any;
     message.deviceIds = object.deviceIds?.map((e) => e) || [];
     message.forceRetrigger = object.forceRetrigger ?? false;
+    message.checkOnly = object.checkOnly ?? false;
     return message;
   },
 };

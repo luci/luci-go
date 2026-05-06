@@ -48,6 +48,7 @@ export const ChromeOSSmartRepair = () => {
       fleetConsoleClient.GetSmartRepair({
         deviceIds: [id],
         forceRetrigger: true,
+        checkOnly: false,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['smart-repair', id] });
@@ -64,6 +65,7 @@ export const ChromeOSSmartRepair = () => {
       const response = await fleetConsoleClient.GetSmartRepair({
         deviceIds: [id],
         forceRetrigger: false,
+        checkOnly: true,
       });
       if (response.results && response.results.length > 0) {
         return response.results[0];
@@ -157,7 +159,7 @@ export const ChromeOSSmartRepair = () => {
 
           {!data.alreadyInProgress && !data.cachedResult && (
             <Alert severity="info" sx={{ mb: 3 }}>
-              No cached analysis found for this device. Click &quot;Refresh
+              No cached analysis found for this device. Click &quot;Retrigger
               Analysis&quot; to trigger a new request.
             </Alert>
           )}
