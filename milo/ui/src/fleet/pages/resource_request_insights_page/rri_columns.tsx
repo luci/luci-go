@@ -151,6 +151,7 @@ export const COLUMNS = {
     header: 'Slippage',
     size: 75,
     filterVariant: 'range',
+    filterRangeMin: -365,
     filterRangeMax: 365,
     muiTableBodyCellProps: {
       align: 'left',

@@ -136,14 +136,14 @@ export const RepairListPage = () => {
           { label: BLANK_VALUE, value: BLANK_VALUE },
           ...(value.values || [])
             .filter((v) => v !== '' && v !== BLANK_VALUE)
-            .map((v) => ({ label: v, value: v })),
+            .map((v) => ({ label: v, value: `"${v}"` })),
         ]);
     }
     return filters;
   }, [repairMetricsFilterValues.data]);
 
   const filterCategoryDatas = useFilters(loadedFilterOptions, {
-    allowExtraKeys: !repairMetricsFilterValues.data,
+    areFilterValuesLoading: !repairMetricsFilterValues.data,
   });
 
   const selectedOptions = useMemo<GetFiltersResult>(() => {
@@ -162,7 +162,9 @@ export const RepairListPage = () => {
   const repairMetricsList = useQuery({
     ...client.ListRepairMetrics.query({
       platform: Platform.ANDROID,
-      filter: filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160,
+      filter: filterCategoryDatas.parseError
+        ? ''
+        : filterCategoryDatas.aip160(),
       pageSize: getPageSize(pagerCtx, searchParams),
       pageToken: getPageToken(pagerCtx, searchParams),
       orderBy: orderByParam,
@@ -288,7 +290,7 @@ export const RepairListPage = () => {
 
       if (!hasChanges) return;
 
-      const currentAIP160 = filterCategoryDatas.getAip160String();
+      const currentAIP160 = filterCategoryDatas.aip160();
 
       setSearchParams((prev) => {
         const prevAIP160 = prev.get(FILTERS_PARAM_KEY) ?? '';
@@ -447,7 +449,7 @@ export const RepairListPage = () => {
     >
       <WarningNotifications warnings={warnings} />
       <Metrics
-        filters={filterCategoryDatas.aip160}
+        filters={filterCategoryDatas.aip160()}
         pagerContext={pagerCtx}
         onColumnFiltersChange={onColumnFiltersChange}
       />

@@ -274,7 +274,7 @@ describe('StringListFilterCategory', () => {
     const category = result.value;
 
     category.setSelectedOptions(['atc:crystalball']);
-    expect(category.toAIP160()).toEqual('host_group = ("atc:crystalball")');
+    expect(category.toAIP160()).toEqual('(host_group = "atc:crystalball")');
   });
 
   it('should quote values containing spaces', () => {
@@ -291,7 +291,7 @@ describe('StringListFilterCategory', () => {
     const category = result.value;
 
     category.setSelectedOptions(['pixel pro']);
-    expect(category.toAIP160()).toEqual('model = ("pixel pro")');
+    expect(category.toAIP160()).toEqual('(model = "pixel pro")');
   });
 
   it('should quote values containing parentheses', () => {
@@ -308,6 +308,6 @@ describe('StringListFilterCategory', () => {
     const category = result.value;
 
     category.setSelectedOptions(['pixel(gen1)']);
-    expect(category.toAIP160()).toEqual('model = ("pixel(gen1)")');
+    expect(category.toAIP160()).toEqual('(model = "pixel(gen1)")');
   });
 });

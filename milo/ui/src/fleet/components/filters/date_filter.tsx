@@ -34,6 +34,11 @@ export class DateFilterCategoryData implements FilterCategory {
 
   public label: string;
   public key: string;
+
+  // if true the date sent to the backend will be in format YYYY-MM-DD which is useful e.g. in RRI
+  // where we don't know the time and timezones.
+  // in the future this may be expanded into 2 separate filters - one with time and the other date only
+  public isDateOnly: boolean;
   private reRender: () => void;
 
   private constructor(
@@ -41,10 +46,12 @@ export class DateFilterCategoryData implements FilterCategory {
     key: string,
     value: DateFilterValue,
     reRender: (newFilter: DateFilterCategoryData) => void,
+    isDateOnly = false,
   ) {
     this.label = label;
     this.key = key;
     this.value = value;
+    this.isDateOnly = isDateOnly;
     this.reRender = () => {
       reRender(this);
     };
@@ -55,8 +62,10 @@ export class DateFilterCategoryData implements FilterCategory {
     key: string,
     reRender: (newFilter: DateFilterCategoryData) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
+    isDateOnly = false,
   ): BuildResult<DateFilterCategoryData> {
     const value: DateFilterValue = {};
+    const warnings: string[] = [];
 
     if (terms !== null) {
       for (const term of terms) {
@@ -69,11 +78,18 @@ export class DateFilterCategoryData implements FilterCategory {
         }
 
         const valStr = term.simple.arg.member.value.value;
-        const date = DateTime.fromISO(valStr, { zone: 'utc' }).toJSDate();
-
-        if (isNaN(date.getTime())) {
+        let dt: DateTime;
+        try {
+          dt = DateTime.fromISO(valStr, { zone: 'utc' });
+          if (!dt.isValid) {
+            warnings.push(`Invalid date "${valStr}" for ${key}`);
+            continue;
+          }
+        } catch (_e) {
+          warnings.push(`Invalid date "${valStr}" for ${key}`);
           continue;
         }
+        const date = dt.toJSDate();
 
         const comparator = term.simple.comparator;
         if (comparator === '>=' || comparator === '>') {
@@ -87,8 +103,14 @@ export class DateFilterCategoryData implements FilterCategory {
       }
     }
 
-    const filter = new DateFilterCategoryData(label, key, value, reRender);
-    return { isError: false, value: filter, warnings: [] };
+    const filter = new DateFilterCategoryData(
+      label,
+      key,
+      value,
+      reRender,
+      isDateOnly,
+    );
+    return { isError: false, value: filter, warnings };
   }
 
   public setReRender(reRender: (newFilter: FilterCategory) => void) {
@@ -101,10 +123,16 @@ export class DateFilterCategoryData implements FilterCategory {
     const parts: string[] = [];
     const safeKey = this.key.trim();
     if (this.value.min) {
-      parts.push(`${safeKey} >= "${this.value.min.toISOString()}"`);
+      const val = this.isDateOnly
+        ? DateTime.fromJSDate(this.value.min).toISODate()
+        : this.value.min.toISOString();
+      parts.push(`${safeKey} >= "${val}"`);
     }
     if (this.value.max) {
-      parts.push(`${safeKey} <= "${this.value.max.toISOString()}"`);
+      const val = this.isDateOnly
+        ? DateTime.fromJSDate(this.value.max).toISODate()
+        : this.value.max.toISOString();
+      parts.push(`${safeKey} <= "${val}"`);
     }
     return parts.join(' AND ');
   }
@@ -141,7 +169,7 @@ export class DateFilterCategoryData implements FilterCategory {
     if (this.value.max) {
       parts.push(`to ${DateTime.fromJSDate(this.value.max).toLocaleString()}`);
     }
-    return `[ ${this.label} ]: ${parts.join(' ')}`;
+    return `1 | ${this.label} ${parts.join(' ')}`;
   }
 
   public isActive() {
@@ -199,11 +227,17 @@ export class DateFilterCategoryDataBuilder
   implements FilterCategoryBuilder<DateFilterCategoryData>
 {
   public label: string | undefined;
+  public isDateOnly = false;
 
   constructor() {}
 
   public setLabel(label: string) {
     this.label = label;
+    return this;
+  }
+
+  public setIsDateOnly(isDateOnly: boolean) {
+    this.isDateOnly = isDateOnly;
     return this;
   }
 
@@ -223,6 +257,12 @@ export class DateFilterCategoryDataBuilder
       };
     }
 
-    return DateFilterCategoryData.create(this.label!, key, reRender, terms);
+    return DateFilterCategoryData.create(
+      this.label!,
+      key,
+      reRender,
+      terms,
+      this.isDateOnly,
+    );
   }
 }

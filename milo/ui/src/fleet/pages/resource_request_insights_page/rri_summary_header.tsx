@@ -19,30 +19,18 @@ import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { ResourceRequest_Status } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { RriFilterKey, RriFilters, useRriFilters } from './use_rri_filters';
+import { useRriFilters } from './use_rri_filters';
 
 export function RriSummaryHeader() {
   const client = useFleetConsoleClient();
 
-  const { filterData, setFilters, aipString } = useRriFilters();
+  const { filterValues, aipString } = useRriFilters();
 
   const { data, isLoading, isError } = useQuery(
     client.CountResourceRequests.query({
       filter: aipString,
     }),
   );
-
-  /**
-   * @param filterName name of the filter, ex. state
-   * @param filterValue array of filter values, ex. DEVICE_STATE_LEASED
-   * @returns will return URL query part with filters and existing parameters, like sorting
-   */
-  // TODO: b/421989100 - share this code with other main metrics panel code.
-  const addFilter =
-    <T extends RriFilterKey>(filterName: T, filterValue: RriFilters[T]) =>
-    () => {
-      setFilters({ ...filterData, [filterName]: filterValue });
-    };
 
   if (isError) {
     return <Typography variant="h4">Error</Typography>; // TODO: b/397421370 improve this
@@ -65,18 +53,22 @@ export function RriSummaryHeader() {
             value={data?.inProgress}
             total={data?.total}
             loading={isLoading}
-            handleClick={addFilter('fulfillment_status', [
-              ResourceRequest_Status[ResourceRequest_Status.IN_PROGRESS],
-            ])}
+            handleClick={() =>
+              filterValues?.['fulfillment_status'].setSelectedOptions([
+                ResourceRequest_Status[ResourceRequest_Status.IN_PROGRESS],
+              ])
+            }
           />
           <SingleMetric
             name="Completed"
             value={data?.completed}
             total={data?.total}
             loading={isLoading}
-            handleClick={addFilter('fulfillment_status', [
-              ResourceRequest_Status[ResourceRequest_Status.COMPLETE],
-            ])}
+            handleClick={() =>
+              filterValues?.['fulfillment_status'].setSelectedOptions([
+                ResourceRequest_Status[ResourceRequest_Status.COMPLETE],
+              ])
+            }
           />
           <SingleMetric
             name="Material Sourcing"

@@ -13,90 +13,21 @@
 // limitations under the License.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { ReactNode } from 'react';
 
+import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { fakeUseSyncedSearchParams } from '@/fleet/testing_tools/mocks/fake_search_params';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { GetResourceRequestsMultiselectFilterValuesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getSortedMultiselectElements, useRriFilters } from './use_rri_filters';
+import { useRriFilters } from './use_rri_filters';
 
 const MOCK_FILTER_VALUES =
   GetResourceRequestsMultiselectFilterValuesResponse.fromPartial({
     rrIds: ['rr-id-1', 'rr-id-2', 'abc-123', 'xyz-123'],
   });
-
-describe('getSortedMultiselectElements', () => {
-  it('should perform fuzzy sort based on search query', () => {
-    const result = getSortedMultiselectElements(
-      MOCK_FILTER_VALUES,
-      'rr_id',
-      '123',
-    );
-    expect(result.map((r) => r.el.value)).toEqual([
-      'abc-123',
-      'xyz-123',
-      'rr-id-1',
-      'rr-id-2',
-    ]);
-    expect(result[0].score).toBeGreaterThan(result[2].score);
-  });
-
-  it('should boost initial selections to the top', () => {
-    const result = getSortedMultiselectElements(
-      MOCK_FILTER_VALUES,
-      'rr_id',
-      '',
-      ['rr-id-2', 'xyz-123'],
-    );
-    expect(result.map((r) => r.el.value)).toEqual([
-      'rr-id-2',
-      'xyz-123',
-      'abc-123',
-      'rr-id-1',
-    ]);
-  });
-
-  it('should boost initial selections to the top with search query', () => {
-    const result = getSortedMultiselectElements(
-      MOCK_FILTER_VALUES,
-      'rr_id',
-      '1',
-      ['rr-id-2', 'xyz-123'],
-    );
-    expect(result.map((r) => r.el.value)).toEqual([
-      'xyz-123',
-      'rr-id-2',
-      'rr-id-1',
-      'abc-123',
-    ]);
-  });
-
-  it('should handle empty search query', () => {
-    const result = getSortedMultiselectElements(
-      MOCK_FILTER_VALUES,
-      'rr_id',
-      '',
-    );
-    expect(result.map((r) => r.el.value)).toEqual([
-      'abc-123',
-      'rr-id-1',
-      'rr-id-2',
-      'xyz-123',
-    ]);
-  });
-
-  it('should return empty array for unknown option', () => {
-    const result = getSortedMultiselectElements(
-      MOCK_FILTER_VALUES,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      'non_existent_key' as any,
-      '',
-    );
-    expect(result).toEqual([]);
-  });
-});
 
 // TODO: b/435182355 - Look into patterns for improving network request mocking.
 jest.mock('@/fleet/hooks/prpc_clients', () => ({
@@ -132,86 +63,142 @@ describe('useRriFilters', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  it('should set and parse filters from search params', () => {
-    const { result: result1 } = renderHook(() => useRriFilters(), {
-      wrapper,
-    });
+  it('should set and parse filters from search params', async () => {
+    const { result: searchParamsResult } = renderHook(
+      () => useSyncedSearchParams(),
+      { wrapper },
+    );
     act(() => {
-      result1.current.setFilters({
-        rr_id: ['rr-id-1', 'rr-id-2'],
-        fulfillment_status: ['IN_PROGRESS'],
-      });
+      const sp = new URLSearchParams();
+      sp.set('filters', 'rr_id="rr-id-1" OR rr_id="rr-id-2"');
+      searchParamsResult.current[1](sp);
     });
 
-    const { result: result2 } = renderHook(() => useRriFilters(), {
-      wrapper,
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+
+    await waitFor(() => {
+      const rrIdFilter = result.current.filterValues
+        ?.rr_id as StringListFilterCategory;
+      expect(rrIdFilter?.getOptions()['"rr-id-1"']?.isSelected).toBe(true);
     });
-    expect(result2.current.filterData).toEqual({
-      rr_id: ['rr-id-1', 'rr-id-2'],
-      fulfillment_status: ['IN_PROGRESS'],
-    });
+
+    const rrIdFilter = result.current.filterValues
+      ?.rr_id as StringListFilterCategory;
+    expect(rrIdFilter.getOptions()['"rr-id-2"'].isSelected).toBe(true);
   });
 
-  it('should generate an AIP string from filters', () => {
-    const { result } = renderHook(() => useRriFilters(), { wrapper });
+  it('should generate an AIP string from filters', async () => {
+    const { result: searchParamsResult } = renderHook(
+      () => useSyncedSearchParams(),
+      { wrapper },
+    );
     act(() => {
-      result.current.setFilters({
-        rr_id: ['rr-id-1', 'rr-id-2'],
-        fulfillment_status: ['IN_PROGRESS'],
-      });
+      const sp = new URLSearchParams();
+      sp.set('filters', 'rr_id="rr-id-1" OR rr_id="rr-id-2"');
+      searchParamsResult.current[1](sp);
     });
-    expect(result.current.aipString).toEqual(
-      '(rr_id = "rr-id-1" OR rr_id = "rr-id-2") AND (fulfillment_status = "IN_PROGRESS")',
+
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    await waitFor(() =>
+      expect(result.current.aipString).toEqual(
+        '(rr_id = "rr-id-1" OR rr_id = "rr-id-2")',
+      ),
     );
   });
 
-  it('should return the correct label for a filter', () => {
-    const { result } = renderHook(() => useRriFilters(), { wrapper });
-    expect(
-      result.current.getSelectedFilterLabel('rr_id', ['rr-id-1', 'rr-id-2']),
-    ).toEqual('RR ID: rr-id-1, rr-id-2');
-  });
-
-  it('should generate an AIP string for range filters like slippage', () => {
-    const { result } = renderHook(() => useRriFilters(), { wrapper });
+  it('should return the correct label for a filter', async () => {
+    const { result: searchParamsResult } = renderHook(
+      () => useSyncedSearchParams(),
+      { wrapper },
+    );
     act(() => {
-      result.current.setFilters({
-        slippage: { min: -5, max: 10 },
-      });
+      const sp = new URLSearchParams();
+      sp.set('filters', 'rr_id="rr-id-1" OR rr_id="rr-id-2"');
+      searchParamsResult.current[1](sp);
     });
-    expect(result.current.aipString).toEqual(
-      'slippage >= -5 AND slippage <= 10',
+
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    await waitFor(() =>
+      expect(result.current.filterValues?.rr_id.getChipLabel()).toEqual(
+        '2 | RR ID IN rr-id-1, rr-id-2',
+      ),
     );
   });
 
-  it('should return the correct label for a range filter like slippage', () => {
+  it('should generate an AIP string for range filters like slippage', async () => {
+    const { result: searchParamsResult } = renderHook(
+      () => useSyncedSearchParams(),
+      { wrapper },
+    );
+    act(() => {
+      const sp = new URLSearchParams();
+      sp.set('filters', 'slippage >= 5 AND slippage <= 10');
+      searchParamsResult.current[1](sp);
+    });
+
     const { result } = renderHook(() => useRriFilters(), { wrapper });
-    expect(
-      result.current.getSelectedFilterLabel('slippage', { min: -5, max: 10 }),
-    ).toEqual('Slippage: -5 - 10');
-    expect(
-      result.current.getSelectedFilterLabel('slippage', { min: -5 }),
-    ).toEqual('Slippage: ≥ -5');
-    expect(
-      result.current.getSelectedFilterLabel('slippage', { max: 10 }),
-    ).toEqual('Slippage: ≤ 10');
-    expect(
-      result.current.getSelectedFilterLabel('slippage', { min: 0 }),
-    ).toEqual('Slippage: ≥ 0');
-    expect(
-      result.current.getSelectedFilterLabel('slippage', { max: 0 }),
-    ).toEqual('Slippage: ≤ 0');
+    await waitFor(() =>
+      expect(result.current.aipString).toEqual(
+        'slippage >= 5 AND slippage <= 10',
+      ),
+    );
   });
 
-  it('should handle undefined boundaries in RangeFilters without generating NaN', () => {
-    const { result } = renderHook(() => useRriFilters(), { wrapper });
+  it('should return the correct label for a range filter like slippage', async () => {
+    const { result: searchParamsResult } = renderHook(
+      () => useSyncedSearchParams(),
+      { wrapper },
+    );
     act(() => {
-      // Simulate a partial range boundary where one side is omitted from the UI
-      result.current.setFilters({
-        slippage: { max: 245 },
-      });
+      const sp = new URLSearchParams();
+      sp.set('filters', 'slippage >= 5 AND slippage <= 10');
+      searchParamsResult.current[1](sp);
     });
-    // This expects to omit min completely (rather than exposing 'slippage >= NaN')
-    expect(result.current.aipString).toEqual('slippage <= 245');
+
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    await waitFor(() =>
+      expect(result.current.filterValues?.slippage.getChipLabel()).toEqual(
+        '[ Slippage ]: from 5 to 10',
+      ),
+    );
+  });
+
+  it('should handle undefined boundaries in RangeFilters without generating NaN', async () => {
+    const { result: searchParamsResult } = renderHook(
+      () => useSyncedSearchParams(),
+      { wrapper },
+    );
+    act(() => {
+      const sp = new URLSearchParams();
+      sp.set('filters', 'slippage <= 245');
+      searchParamsResult.current[1](sp);
+    });
+
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    await waitFor(() =>
+      expect(result.current.aipString).toEqual('slippage <= 245'),
+    );
+  });
+
+  it('should generate an AIP string for date filters with date-only format', async () => {
+    const { result: searchParamsResult } = renderHook(
+      () => useSyncedSearchParams(),
+      { wrapper },
+    );
+    act(() => {
+      const sp = new URLSearchParams();
+      sp.set(
+        'filters',
+        'material_sourcing_actual_delivery_date >= "2022-01-01" AND material_sourcing_actual_delivery_date <= "2022-01-02"',
+      );
+      searchParamsResult.current[1](sp);
+    });
+
+    const { result } = renderHook(() => useRriFilters(), { wrapper });
+    await waitFor(() =>
+      expect(result.current.aipString).toEqual(
+        'material_sourcing_actual_delivery_date >= "2022-01-01" AND material_sourcing_actual_delivery_date <= "2022-01-02"',
+      ),
+    );
   });
 });

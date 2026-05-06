@@ -52,7 +52,7 @@ export type FilterOption =
   | { label: string; value: string }
   | { text: string; value: string };
 
-export interface MRTFilterMenuItemProps<
+export interface MRTFilterMenuItemProps_OLD<
   TData extends MRT_RowData,
   TValue = unknown,
 > extends Omit<MenuItemProps, 'id'> {
@@ -60,10 +60,14 @@ export interface MRTFilterMenuItemProps<
   closeMenu: () => void;
 }
 
-export const MRTFilterMenuItem = forwardRef<
+/**
+ * @deprecated This component is legacy and uses manual filter synchronization.
+ * Use `FCFilterMenuItem` instead for pages that utilize the new `useFilters` hook.
+ */
+export const MRTFilterMenuItem_OLD = forwardRef<
   HTMLLIElement,
-  MRTFilterMenuItemProps<MRT_RowData, unknown>
->(function MRTFilterMenuItem({ column, closeMenu, onClick, ...rest }, ref) {
+  MRTFilterMenuItemProps_OLD<MRT_RowData, unknown>
+>(function MRTFilterMenuItem_OLD({ column, closeMenu, onClick, ...rest }, ref) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const filterSelectOptions = column.columnDef.filterSelectOptions as

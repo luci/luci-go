@@ -60,6 +60,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       function renderChip(option: FilterCategory, i: number) {
         return (
           <SelectedChip
+            data-testid="filter-chip"
             filterCategory={option}
             key={`renderChip-${option.key}`}
             enableSearchInput={option instanceof StringListFilterCategory}

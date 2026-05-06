@@ -271,7 +271,7 @@ export const BrowserDevicesPage = () => {
   }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data, columnsRecord]);
 
   const filterCategoryDatas = useFilters(loadedFilterOptions, {
-    allowExtraKeys: !isDimensionsQueryProperlyLoaded,
+    areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
   });
 
   const selectedOptions = useMemo<GetFiltersResult>(() => {
@@ -304,7 +304,7 @@ export const BrowserDevicesPage = () => {
         syncFilterCategory(key, category, newFilters, prevTableFilterKeys);
       }
 
-      const currentAIP160 = filterCategoryDatas.getAip160String();
+      const currentAIP160 = filterCategoryDatas.aip160();
       setSearchParams((prev) => {
         let newParams = new URLSearchParams(prev);
         newParams.set(FILTERS_PARAM_KEY, currentAIP160);
@@ -325,7 +325,7 @@ export const BrowserDevicesPage = () => {
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
     orderBy: orderByParam,
-    filter: filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160,
+    filter: filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160(),
   });
 
   const devicesQuery = useBrowserDevices(request);

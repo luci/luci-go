@@ -13,39 +13,20 @@
 // limitations under the License.
 
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { OptionComponent } from '@/fleet/components/filter_dropdown/filter_dropdown';
-import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils';
-import { PAGE_TOKEN_PARAM_KEY } from '@/fleet/constants/param_keys';
+import { DateFilterCategoryDataBuilder } from '@/fleet/components/filters/date_filter';
+import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
+import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
+import { useFilters } from '@/fleet/components/filters/use_filters';
+import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import {
-  multiselectFilterToUrlString,
-  parseMultiselectFilter,
-} from '@/fleet/pages/resource_request_insights_page/rri_url_utils';
-import { RriGridRow } from '@/fleet/pages/resource_request_insights_page/rri_utils';
 import { FilterType } from '@/fleet/types';
-import { OptionValue } from '@/fleet/types/option';
-import { toIsoString } from '@/fleet/utils/dates';
-import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import {
-  GetResourceRequestsMultiselectFilterValuesResponse,
-  ResourceRequest_Status,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
-import { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
+import { GetResourceRequestsMultiselectFilterValuesResponse } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import type { DateOnly } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
-import {
-  fulfillmentStatusDisplayValueMap,
-  getFulfillmentStatusScoredOptions,
-} from './fulfillment_status';
-import { FulfillmentStatusFilter } from './fulfillment_status_filter';
-import { MultiSelectFilter } from './multiselect_filter';
-import { ResourceRequestColumnKey, COLUMNS, RriColumnDef } from './rri_columns';
-
-const FILTER_SEPARATOR = '&';
-
-const MAX_SELECTED_CHIP_LABEL_LENGTH = 15;
+import { COLUMNS } from './rri_columns';
 
 export type DateFilterData = {
   min?: DateOnly;
@@ -57,45 +38,127 @@ export type RangeFilterData = {
   max?: number;
 };
 
-export const filterDescriptors = {
-  rr_id: 'multi-select',
-  resource_details: 'multi-select',
-  fulfillment_status: 'multi-select',
-  resource_request_target_delivery_date: 'date-range',
-  resource_request_actual_delivery_date: 'date-range',
-  material_sourcing_actual_delivery_date: 'date-range',
-  build_actual_delivery_date: 'date-range',
-  qa_actual_delivery_date: 'date-range',
-  config_actual_delivery_date: 'date-range',
-  customer: 'multi-select',
-  resource_name: 'multi-select',
-  accepted_quantity: 'range',
-  slippage: 'range',
-  criticality: 'multi-select',
-  request_approval: 'multi-select',
-  resource_pm: 'multi-select',
-  fulfillment_channel: 'multi-select',
-  execution_status: 'multi-select',
-  resource_groups: 'array-field-multi-select',
-  rr_bug_status: 'multi-select',
-} as const satisfies Partial<
-  Record<
-    ResourceRequestColumnKey,
-    'array-field-multi-select' | 'multi-select' | 'date-range' | 'range'
-  >
->;
+const mapToOptions = (elements: readonly string[]) =>
+  Array.from(elements).map((el) => ({
+    label: el === '' ? BLANK_VALUE : el,
+    value: `"${el}"`,
+  }));
 
-export type RriFilterKey = keyof typeof filterDescriptors;
+const makeStringListFilter =
+  (
+    label: string,
+    elements: readonly string[] | undefined,
+    comparator: ':' | '=' = '=',
+  ) =>
+  () =>
+    new StringListFilterCategoryBuilder()
+      .setLabel(label)
+      .setComparator(comparator)
+      .setOptions(mapToOptions(elements ?? []));
 
-type MapDescriptorToType<T extends (typeof filterDescriptors)[RriFilterKey]> = {
-  'array-field-multi-select': string[];
-  'multi-select': string[];
-  'date-range': DateFilterData;
-  range: RangeFilterData;
-}[T];
+const makeDateFilter = (label: string) => () =>
+  new DateFilterCategoryDataBuilder().setLabel(label).setIsDateOnly(true);
+
+const makeRangeFilter = (label: string, min: number, max: number) => () =>
+  new RangeFilterCategoryBuilder().setLabel(label).setMin(min).setMax(max);
+
+export const getFilterBuilders = (
+  data: GetResourceRequestsMultiselectFilterValuesResponse | undefined,
+) => ({
+  rr_id: makeStringListFilter(COLUMNS.rr_id.header, data?.rrIds),
+  resource_details: makeStringListFilter(
+    COLUMNS.resource_details.header,
+    data?.resourceDetails,
+  ),
+  fulfillment_status: () =>
+    new StringListFilterCategoryBuilder()
+      .setLabel(COLUMNS.fulfillment_status.header)
+      .setOptions([
+        { label: 'Not Started', value: '"NOT_STARTED"' },
+        { label: 'In Progress', value: '"IN_PROGRESS"' },
+        { label: 'Complete', value: '"COMPLETE"' },
+      ]),
+  resource_request_target_delivery_date: makeDateFilter(
+    COLUMNS.resource_request_target_delivery_date.header,
+  ),
+  resource_request_actual_delivery_date: makeDateFilter(
+    COLUMNS.resource_request_actual_delivery_date.header,
+  ),
+  material_sourcing_actual_delivery_date: makeDateFilter(
+    COLUMNS.material_sourcing_actual_delivery_date.header,
+  ),
+  build_actual_delivery_date: makeDateFilter(
+    COLUMNS.build_actual_delivery_date.header,
+  ),
+  qa_actual_delivery_date: makeDateFilter(
+    COLUMNS.qa_actual_delivery_date.header,
+  ),
+  config_actual_delivery_date: makeDateFilter(
+    COLUMNS.config_actual_delivery_date.header,
+  ),
+  customer: makeStringListFilter(COLUMNS.customer.header, data?.customer),
+  resource_name: makeStringListFilter(
+    COLUMNS.resource_name.header,
+    data?.resourceName,
+  ),
+  accepted_quantity: makeRangeFilter(
+    COLUMNS.accepted_quantity.header,
+    0,
+    10000,
+  ),
+  slippage: makeRangeFilter(COLUMNS.slippage.header, -365, 365),
+  criticality: makeStringListFilter(
+    COLUMNS.criticality.header,
+    data?.criticality,
+  ),
+  request_approval: makeStringListFilter(
+    COLUMNS.request_approval.header,
+    data?.requestApproval,
+  ),
+  resource_pm: makeStringListFilter(
+    COLUMNS.resource_pm.header,
+    data?.resourcePm,
+  ),
+  fulfillment_channel: makeStringListFilter(
+    COLUMNS.fulfillment_channel.header,
+    data?.fulfillmentChannel,
+  ),
+  execution_status: makeStringListFilter(
+    COLUMNS.execution_status.header,
+    data?.executionStatus,
+  ),
+  resource_groups: makeStringListFilter(
+    COLUMNS.resource_groups.header,
+    data?.resourceGroups,
+    ':',
+  ),
+  rr_bug_status: makeStringListFilter(
+    COLUMNS.rr_bug_status.header,
+    data?.resourceRequestBugStatus,
+  ),
+});
+
+type FilterBuilders = ReturnType<typeof getFilterBuilders>;
+export type RriFilterKey = keyof FilterBuilders;
+
+type InferBuilderType<T> = T extends () => infer B ? B : never;
+
+type RriBuildersInstance = {
+  [K in keyof FilterBuilders]: InferBuilderType<FilterBuilders[K]>;
+};
+
+type MapBuilderToType<B> = B extends StringListFilterCategoryBuilder
+  ? string[]
+  : B extends RangeFilterCategoryBuilder
+    ? RangeFilterData
+    : B extends DateFilterCategoryDataBuilder
+      ? DateFilterData
+      : never;
 
 export type RriFilters = {
-  [K in RriFilterKey]?: MapDescriptorToType<(typeof filterDescriptors)[K]>;
+  [K in RriFilterKey]?: MapBuilderToType<
+    InferBuilderType<ReturnType<typeof getFilterBuilders>[K]>
+  >;
 };
 
 export interface RriFilterOption {
@@ -114,581 +177,37 @@ export interface ResourceRequestInsightsOptionComponentProps {
   onApply: () => void;
 }
 
-const parseDateOnly = (
-  param: string | null | undefined,
-): DateOnly | undefined => {
-  if (!param) {
-    return undefined;
-  }
-
-  return {
-    year: parseInt(param.slice(0, 4)),
-    month: parseInt(param.slice(5, 7)),
-    day: parseInt(param.slice(8, 10)),
-  } as DateOnly;
-};
-
-const parseDateOnlyFromUrl = (
-  filterDict: Record<string, string>,
-  key: RriFilterKey,
-): DateFilterData | undefined => {
-  const min = parseDateOnly(filterDict[`${key}_min`]);
-  const max = parseDateOnly(filterDict[`${key}_max`]);
-
-  if (!min && !max) {
-    return undefined;
-  }
-  return {
-    min: min,
-    max: max,
-  };
-};
-
-const parseRangeFromUrl = (
-  filterDict: Record<string, string>,
-  key: RriFilterKey,
-): RangeFilterData | undefined => {
-  const min = filterDict[`${key}_min`];
-  const max = filterDict[`${key}_max`];
-
-  if (!min && !max) {
-    return undefined;
-  }
-
-  const parsedMin = min ? parseInt(min) : undefined;
-  const parsedMax = max ? parseInt(max) : undefined;
-
-  return {
-    min: parsedMin !== undefined && !isNaN(parsedMin) ? parsedMin : undefined,
-    max: parsedMax !== undefined && !isNaN(parsedMax) ? parsedMax : undefined,
-  };
-};
-
-const formatRangeLabel = (val: RangeFilterData) => {
-  if (val.min !== undefined && val.max !== undefined) {
-    return `${val.min} - ${val.max}`;
-  }
-  if (val.min !== undefined) {
-    return `≥ ${val.min}`;
-  }
-  if (val.max !== undefined) {
-    return `≤ ${val.max}`;
-  }
-  return '';
-};
-
-const createRangeFilterProps = (key: keyof typeof filterDescriptors) => {
-  return {
-    min: (
-      COLUMNS[key as ResourceRequestColumnKey] as RriColumnDef<keyof RriGridRow>
-    ).filterRangeMin,
-    max: (
-      COLUMNS[key as ResourceRequestColumnKey] as RriColumnDef<keyof RriGridRow>
-    ).filterRangeMax,
-    disableSearch: true,
-  };
-};
-
-const getFiltersFromSearchParam = (
-  searchParams: URLSearchParams,
-): RriFilters | undefined => {
-  const paramValue = searchParams.get(FILTERS_PARAM_KEY);
-  if (paramValue === null) {
-    return undefined;
-  }
-  const rec = paramValue.split(FILTER_SEPARATOR).reduce(
-    (acc, part) => {
-      const kv = part
-        .trim()
-        .split('=')
-        .map((v) => v.trim());
-      acc[kv[0]] = kv[1];
-      return acc;
-    },
-    {} as Record<string, string>,
-  );
-
-  return {
-    rr_id: parseMultiselectFilter(rec['rr_id']),
-    resource_details: parseMultiselectFilter(rec['resource_details']),
-    resource_request_target_delivery_date: parseDateOnlyFromUrl(
-      rec,
-      'resource_request_target_delivery_date',
-    ),
-    resource_request_actual_delivery_date: parseDateOnlyFromUrl(
-      rec,
-      'resource_request_actual_delivery_date',
-    ),
-    material_sourcing_actual_delivery_date: parseDateOnlyFromUrl(
-      rec,
-      'material_sourcing_actual_delivery_date',
-    ),
-    build_actual_delivery_date: parseDateOnlyFromUrl(
-      rec,
-      'build_actual_delivery_date',
-    ),
-    qa_actual_delivery_date: parseDateOnlyFromUrl(
-      rec,
-      'qa_actual_delivery_date',
-    ),
-    config_actual_delivery_date: parseDateOnlyFromUrl(
-      rec,
-      'config_actual_delivery_date',
-    ),
-    fulfillment_status: parseMultiselectFilter(rec['fulfillment_status']),
-    customer: parseMultiselectFilter(rec['customer']),
-    resource_name: parseMultiselectFilter(rec['resource_name']),
-    accepted_quantity: parseRangeFromUrl(rec, 'accepted_quantity'),
-    slippage: parseRangeFromUrl(rec, 'slippage'),
-    criticality: parseMultiselectFilter(rec['criticality']),
-    request_approval: parseMultiselectFilter(rec['request_approval']),
-    resource_pm: parseMultiselectFilter(rec['resource_pm']),
-    fulfillment_channel: parseMultiselectFilter(rec['fulfillment_channel']),
-    execution_status: parseMultiselectFilter(rec['execution_status']),
-    resource_groups: parseMultiselectFilter(rec['resource_groups']),
-    rr_bug_status: parseMultiselectFilter(rec['rr_bug_status']),
-  } satisfies Record<RriFilterKey, unknown>;
-};
-
-const filtersToUrlString = (filters: RriFilters): string => {
-  const parts: string[] = [];
-  for (const key of Object.keys(filterDescriptors) as RriFilterKey[]) {
-    if (!(key in filters)) {
-      continue;
-    }
-
-    const type = filterDescriptors[key];
-    if (type === 'date-range') {
-      const filter = filters[key] as DateFilterData | undefined;
-      if (filter?.min) {
-        parts.push(`${key}_min=${toIsoString(filter.min)}`);
-      }
-      if (filter?.max) {
-        parts.push(`${key}_max=${toIsoString(filter.max)}`);
-      }
-    }
-    if (type === 'multi-select') {
-      const values = filters[key] as string[] | undefined;
-      if (values) {
-        parts.push(`${key}=${multiselectFilterToUrlString(values)}`);
-      }
-    }
-    if (type === 'array-field-multi-select') {
-      const values = filters[key] as string[] | undefined;
-      if (values) {
-        parts.push(`${key}=${multiselectFilterToUrlString(values)}`);
-      }
-    }
-    if (type === 'range') {
-      const filter = filters[key] as RangeFilterData | undefined;
-      // We use !== undefined instead of truthiness to prevent valid 0 bounds from being dropped
-      if (filter?.min !== undefined) {
-        parts.push(`${key}_min=${filter.min}`);
-      }
-      if (filter?.max !== undefined) {
-        parts.push(`${key}_max=${filter.max}`);
-      }
-    }
-  }
-  return parts.join(FILTER_SEPARATOR);
-};
-
-const filtersToAip = (filters: RriFilters): string => {
-  const parts: string[] = [];
-  for (const key of Object.keys(filterDescriptors) as RriFilterKey[]) {
-    if (!(key in filters)) {
-      continue;
-    }
-
-    const type = filterDescriptors[key];
-
-    if (type === 'date-range') {
-      const filter = filters[key] as DateFilterData | undefined;
-      if (!filter) {
-        continue;
-      }
-      if (filter.min) {
-        parts.push(`${key} >= ${toIsoString(filter.min)}`);
-      }
-      if (filter.max) {
-        parts.push(`${key} <= ${toIsoString(filter.max)}`);
-      }
-    }
-    if (type === 'range') {
-      const filter = filters[key] as RangeFilterData | undefined;
-      if (!filter) {
-        continue;
-      }
-      if (filter.min !== undefined) {
-        parts.push(`${key} >= ${filter.min}`);
-      }
-      if (filter.max !== undefined) {
-        parts.push(`${key} <= ${filter.max}`);
-      }
-    }
-    if (type === 'multi-select') {
-      const values = filters[key] as string[] | undefined;
-      if (!values || values.length === 0) {
-        continue;
-      }
-      if (values) {
-        parts.push(
-          '(' + values.map((v) => `${key} = "${v}"`).join(' OR ') + ')',
-        );
-      }
-    }
-    if (type === 'array-field-multi-select') {
-      const values = filters[key] as string[] | undefined;
-      if (!values || values.length === 0) {
-        continue;
-      }
-      if (values) {
-        parts.push(
-          '(' + values.map((v) => `${key} : "${v}"`).join(' OR ') + ')',
-        );
-      }
-    }
-  }
-  return parts.join(' AND ');
-};
-
-function filtersUpdater(newFilters: RriFilters | undefined) {
-  return (params: URLSearchParams) => {
-    const searchParams = new URLSearchParams(params);
-    if (
-      !newFilters ||
-      Object.values(newFilters).filter((x) => x).length === 0
-    ) {
-      searchParams.delete(FILTERS_PARAM_KEY);
-    } else {
-      searchParams.set(FILTERS_PARAM_KEY, filtersToUrlString(newFilters));
-    }
-    return searchParams;
-  };
-}
-
-const mapDateFilterToSelectedChipLabel = (
-  dateFilterData: DateFilterData,
-): string => {
-  if (!dateFilterData.min && !dateFilterData.max) {
-    return '';
-  }
-  if (!dateFilterData.min) {
-    return `before ${toIsoString(dateFilterData.max)}`;
-  }
-  if (!dateFilterData.max) {
-    return `after ${toIsoString(dateFilterData.min)}`;
-  }
-  if (dateFilterData.min && dateFilterData.max) {
-    return `${toIsoString(dateFilterData.min)} - ${toIsoString(dateFilterData.max)}`;
-  }
-  return '';
-};
-
-export const getSortedMultiselectElements = (
-  data: GetResourceRequestsMultiselectFilterValuesResponse,
-  option: RriFilterKey,
-  searchQuery: string,
-  initialSelections: string[] = [],
-) => {
-  const elements = getElements(data, option) as string[];
-  const els = elements.map((el): OptionValue => ({ label: el, value: el }));
-  const fuzzySorted = fuzzySort(searchQuery)(els, (x) => x.label);
-  return fuzzySorted.sort((a, b) => {
-    if (
-      initialSelections.includes(a.el.value) &&
-      !initialSelections.includes(b.el.value)
-    ) {
-      return -1;
-    }
-    if (
-      !initialSelections.includes(a.el.value) &&
-      initialSelections.includes(b.el.value)
-    ) {
-      return 1;
-    }
-    const scoreDiff = b.score - a.score;
-    if (scoreDiff !== 0) {
-      return scoreDiff;
-    }
-    return a.el.label > b.el.label ? 1 : -1;
-  });
-};
-
-const getElements = (
-  data: GetResourceRequestsMultiselectFilterValuesResponse,
-  option: RriFilterKey,
-) => {
-  const map: Partial<Record<RriFilterKey, readonly string[]>> = {
-    rr_id: data.rrIds,
-    resource_details: data.resourceDetails,
-    customer: data.customer,
-    resource_name: data.resourceName,
-    criticality: data.criticality,
-    request_approval: data.requestApproval,
-    resource_pm: data.resourcePm,
-    fulfillment_channel: data.fulfillmentChannel,
-    execution_status: data.executionStatus,
-    rr_bug_status: data.resourceRequestBugStatus,
-    resource_groups: data.resourceGroups,
-  } as Record<RriFilterKey, string[]>;
-
-  return map[option] ?? [];
-};
-
 export const useRriFilters = () => {
-  const [searchParams, setSearchParams] = useSyncedSearchParams();
-
   const client = useFleetConsoleClient();
   const query = useQuery(
     client.GetResourceRequestsMultiselectFilterValues.query({}),
   );
 
-  const filterComponents = [
-    {
-      value: 'rr_id',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(query.data, 'rr_id', searchQuery)[0]
-              .score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'resource_details',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(
-              query.data,
-              'resource_details',
-              searchQuery,
-            )[0].score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'rr_bug_status',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(
-              query.data,
-              'rr_bug_status',
-              searchQuery,
-            )[0]?.score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'fulfillment_status',
-      getChildrenSearchScore: (searchQuery: string) =>
-        getFulfillmentStatusScoredOptions(searchQuery)[0].score,
-      optionsComponent: FulfillmentStatusFilter,
-    },
-    {
-      value: 'resource_request_target_delivery_date',
-      type: 'date',
-    },
-    {
-      value: 'resource_request_actual_delivery_date',
-      type: 'date',
-    },
-    {
-      value: 'material_sourcing_actual_delivery_date',
-      type: 'date',
-    },
-    {
-      value: 'build_actual_delivery_date',
-      type: 'date',
-    },
-    {
-      value: 'qa_actual_delivery_date',
-      type: 'date',
-    },
-    {
-      value: 'config_actual_delivery_date',
-      type: 'date',
-    },
-    {
-      value: 'customer',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(query.data, 'customer', searchQuery)[0]
-              ?.score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'resource_name',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(
-              query.data,
-              'resource_name',
-              searchQuery,
-            )[0]?.score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'accepted_quantity',
-      getChildrenSearchScore: () => 0,
-      type: 'range',
-      optionsComponentProps: createRangeFilterProps('accepted_quantity'),
-    },
-    {
-      value: 'slippage',
-      getChildrenSearchScore: () => 0,
-      type: 'range',
-      optionsComponentProps: createRangeFilterProps('slippage'),
-    },
-    {
-      value: 'criticality',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(
-              query.data,
-              'criticality',
-              searchQuery,
-            )[0]?.score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'request_approval',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(
-              query.data,
-              'request_approval',
-              searchQuery,
-            )[0]?.score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'resource_pm',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(
-              query.data,
-              'resource_pm',
-              searchQuery,
-            )[0]?.score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'fulfillment_channel',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(
-              query.data,
-              'fulfillment_channel',
-              searchQuery,
-            )[0]?.score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'execution_status',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(
-              query.data,
-              'execution_status',
-              searchQuery,
-            )[0]?.score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-    {
-      value: 'resource_groups',
-      getChildrenSearchScore: (searchQuery: string) =>
-        query.data
-          ? getSortedMultiselectElements(
-              query.data,
-              'resource_groups',
-              searchQuery,
-            )[0]?.score
-          : 0,
-      optionsComponent: MultiSelectFilter,
-    },
-  ] as RriFilterOption[];
+  const [filterOptions, setFilterOptions] = useState<
+    RriBuildersInstance | undefined
+  >(undefined);
 
-  const filterData = useMemo(
-    () => getFiltersFromSearchParam(searchParams),
-    [searchParams],
-  );
+  const { filterValues, parseError, aip160 } = useFilters(filterOptions, {
+    areFilterValuesLoading: query.isLoading,
+  });
 
-  const setFilters = (newFilters: RriFilters | undefined) => {
-    setSearchParams((prev) => {
-      const next = filtersUpdater(newFilters)(prev);
-      next.delete(PAGE_TOKEN_PARAM_KEY);
-      return next;
-    });
-  };
+  const nextFilterOptions = useMemo(() => {
+    if (!query.data) return undefined;
 
-  const aipString = filterData ? filtersToAip(filterData) : '';
+    const builders = getFilterBuilders(query.data);
+    return Object.fromEntries(
+      Object.entries(builders).map(([key, getter]) => [key, getter()]),
+    ) as RriBuildersInstance;
+  }, [query.data]);
 
-  const selectedFilterLabelMap = {
-    rr_id: (v) => (v as string[]).join(', '),
-    resource_details: (v) => (v as string[]).join(', '),
-    fulfillment_status: (v) => {
-      const values = v as (keyof typeof ResourceRequest_Status)[];
-      return values
-        .map((value) => fulfillmentStatusDisplayValueMap[value])
-        .join(', ');
-    },
-    resource_request_target_delivery_date: (v) =>
-      mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    resource_request_actual_delivery_date: (v) =>
-      mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    material_sourcing_actual_delivery_date: (v) =>
-      mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    build_actual_delivery_date: (v) =>
-      mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    qa_actual_delivery_date: (v) =>
-      mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    config_actual_delivery_date: (v) =>
-      mapDateFilterToSelectedChipLabel(v as DateFilterData),
-    customer: (v) => (v as string[]).join(', '),
-    resource_name: (v) => (v as string[]).join(', '),
-    accepted_quantity: (v) => formatRangeLabel(v as RangeFilterData),
-    slippage: (v) => formatRangeLabel(v as RangeFilterData),
-    criticality: (v) => (v as string[]).join(', '),
-    request_approval: (v) => (v as string[]).join(', '),
-    resource_pm: (v) => (v as string[]).join(', '),
-    fulfillment_channel: (v) => (v as string[]).join(', '),
-    execution_status: (v) => (v as string[]).join(', '),
-    resource_groups: (v) => (v as string[]).join(', '),
-    rr_bug_status: (v) => (v as string[]).join(', '),
-  } as const satisfies Record<
-    RriFilterKey,
-    (filterValue: RriFilters[RriFilterKey]) => string
-  >;
-
-  const getSelectedFilterLabel = (
-    filterKey: RriFilterKey,
-    filterValue: RriFilters[RriFilterKey],
-  ): string => {
-    let label: string = COLUMNS[filterKey].header;
-
-    if (label && label.length > MAX_SELECTED_CHIP_LABEL_LENGTH) {
-      label = label?.slice(0, MAX_SELECTED_CHIP_LABEL_LENGTH);
-      label += '...';
-    }
-
-    return `${label}: ${selectedFilterLabelMap[filterKey](filterValue)}`;
-  };
+  useEffect(() => {
+    setFilterOptions(nextFilterOptions);
+  }, [nextFilterOptions]);
 
   return {
-    filterComponents,
-    filterData,
-    aipString,
-    setFilters,
-    /**
-     * Make sure the value is the correct type given the key
-     */
-    getSelectedFilterLabel,
+    filterValues,
+    aipString: aip160(),
+    isLoading: query.isLoading,
+    parseError,
   };
 };

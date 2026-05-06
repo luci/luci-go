@@ -118,8 +118,8 @@ describe('useFilters', () => {
     ] as StringListFilterCategory;
     category.setSelectedOptions(['v1']);
 
-    const generated = result.current.getAip160String();
-    expect(generated).toEqual('model = ("v1")');
+    const generated = result.current.aip160();
+    expect(generated).toEqual('(model = "v1")');
   });
 
   it('should fallback to getFilters for legacy URLs', async () => {
@@ -153,7 +153,7 @@ describe('useFilters', () => {
     expect(category).toBeInstanceOf(StringListFilterCategory);
 
     expect((category as StringListFilterCategory).getSelectedOptions()).toEqual(
-      ['v1', 'v2'],
+      ['"v1"', '"v2"'],
     );
   });
 
@@ -181,11 +181,11 @@ describe('useFilters', () => {
 
     await waitFor(() => expect(result.current.filterValues).toBeTruthy());
 
-    const initialAip160 = result.current.getAip160String();
+    const initialAip160 = result.current.aip160();
 
-    result.current.getAip160String();
+    result.current.aip160();
 
-    expect(result.current.getAip160String()).toEqual(initialAip160);
+    expect(result.current.aip160()).toEqual(initialAip160);
   });
 
   it('should return stable AIP-160 string with deterministic category order', async () => {
@@ -216,7 +216,7 @@ describe('useFilters', () => {
 
     await waitFor(() => expect(result.current.filterValues).toBeTruthy());
 
-    const generated = result.current.getAip160String();
-    expect(generated).toEqual('host_group = ("v1") AND lab_name = ("v2")');
+    const generated = result.current.aip160();
+    expect(generated).toEqual('(host_group = "v1") AND (lab_name = "v2")');
   });
 });

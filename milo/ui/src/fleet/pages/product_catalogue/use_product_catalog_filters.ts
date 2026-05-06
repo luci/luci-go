@@ -68,11 +68,11 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
     | undefined
   >(undefined);
   const { filterValues, aip160 } = useFilters(filterOptions, {
-    allowExtraKeys: true,
+    areFilterValuesLoading: true,
   });
   const client = useFleetConsoleClient();
   const filterOptionsQuery = useQuery({
-    ...client.GetProductCatalogFilterValues.query({ filter: aip160 }),
+    ...client.GetProductCatalogFilterValues.query({ filter: aip160() }),
     placeholderData: keepPreviousData,
   });
 
@@ -129,7 +129,7 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
 
   return {
     filterValues,
-    aip160,
+    aip160: aip160(),
     onApplyFilter,
     isLoading: filterOptionsQuery.isLoading,
   };

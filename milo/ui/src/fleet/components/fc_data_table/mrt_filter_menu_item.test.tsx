@@ -14,7 +14,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { MRTFilterMenuItem } from './mrt_filter_menu_item';
+import { MRTFilterMenuItem_OLD } from './mrt_filter_menu_item';
 
 // TODO: Update this mock to use the new unified filter bar components once OptionsMenuOld is fully removed.
 jest.mock('@/fleet/components/filter_dropdown/options_menu_old', () => ({
@@ -44,7 +44,7 @@ jest.mock('@/fleet/components/filter_dropdown/options_menu_old', () => ({
   ),
 }));
 
-describe('<MRTFilterMenuItem />', () => {
+describe('<MRTFilterMenuItem_OLD />', () => {
   const mockCloseMenu = jest.fn();
   const mockSetFilterValue = jest.fn();
   const mockGetFilterValue = jest.fn();
@@ -70,7 +70,7 @@ describe('<MRTFilterMenuItem />', () => {
   it('renders disabled when no filter options exist for multi-select', () => {
     const column = createMockColumn(undefined);
     column.columnDef.filterVariant = 'multi-select';
-    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+    render(<MRTFilterMenuItem_OLD column={column} closeMenu={mockCloseMenu} />);
 
     const menuItem = screen.getByText('Filter').closest('li');
     expect(menuItem).toHaveAttribute('aria-disabled', 'true');
@@ -79,7 +79,7 @@ describe('<MRTFilterMenuItem />', () => {
   it('renders enabled when filterVariant is range without options', () => {
     const column = createMockColumn(undefined);
     column.columnDef.filterVariant = 'range';
-    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+    render(<MRTFilterMenuItem_OLD column={column} closeMenu={mockCloseMenu} />);
 
     const menuItem = screen.getByText('Filter').closest('li');
     expect(menuItem).not.toHaveAttribute('aria-disabled', 'true');
@@ -88,7 +88,7 @@ describe('<MRTFilterMenuItem />', () => {
   it('renders enabled when filterVariant is date-range without options', () => {
     const column = createMockColumn(undefined);
     column.columnDef.filterVariant = 'date-range';
-    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+    render(<MRTFilterMenuItem_OLD column={column} closeMenu={mockCloseMenu} />);
 
     const menuItem = screen.getByText('Filter').closest('li');
     expect(menuItem).not.toHaveAttribute('aria-disabled', 'true');
@@ -96,7 +96,7 @@ describe('<MRTFilterMenuItem />', () => {
 
   it('renders enabled when filter options exist', () => {
     const column = createMockColumn(['option1', 'option2']);
-    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+    render(<MRTFilterMenuItem_OLD column={column} closeMenu={mockCloseMenu} />);
 
     const menuItem = screen.getByText('Filter').closest('li');
     expect(menuItem).not.toHaveAttribute('aria-disabled', 'true');
@@ -104,7 +104,7 @@ describe('<MRTFilterMenuItem />', () => {
 
   it('opens dropdown and displays options on click', () => {
     const column = createMockColumn(['option1', 'option2']);
-    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+    render(<MRTFilterMenuItem_OLD column={column} closeMenu={mockCloseMenu} />);
 
     fireEvent.click(screen.getByText('Filter'));
 
@@ -115,7 +115,7 @@ describe('<MRTFilterMenuItem />', () => {
 
   it('applies selected filters and closes menu', () => {
     const column = createMockColumn(['option1', 'option2']);
-    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+    render(<MRTFilterMenuItem_OLD column={column} closeMenu={mockCloseMenu} />);
 
     fireEvent.click(screen.getByText('Filter'));
 
@@ -132,7 +132,7 @@ describe('<MRTFilterMenuItem />', () => {
   it('checks items that are already filtered', () => {
     mockGetFilterValue.mockReturnValue(['option1']);
     const column = createMockColumn(['option1', 'option2']);
-    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+    render(<MRTFilterMenuItem_OLD column={column} closeMenu={mockCloseMenu} />);
 
     fireEvent.click(screen.getByText('Filter'));
 
@@ -148,7 +148,7 @@ describe('<MRTFilterMenuItem />', () => {
     const column = createMockColumn([
       { value: '"DEVICE_STATE_AVAILABLE"', label: 'DEVICE_STATE_AVAILABLE' },
     ]);
-    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+    render(<MRTFilterMenuItem_OLD column={column} closeMenu={mockCloseMenu} />);
 
     fireEvent.click(screen.getByText('Filter'));
 
@@ -162,7 +162,7 @@ describe('<MRTFilterMenuItem />', () => {
   it('resets selected filters back to undefined if none selected', () => {
     mockGetFilterValue.mockReturnValue(['option1']);
     const column = createMockColumn(['option1', 'option2']);
-    render(<MRTFilterMenuItem column={column} closeMenu={mockCloseMenu} />);
+    render(<MRTFilterMenuItem_OLD column={column} closeMenu={mockCloseMenu} />);
 
     fireEvent.click(screen.getByText('Filter'));
 

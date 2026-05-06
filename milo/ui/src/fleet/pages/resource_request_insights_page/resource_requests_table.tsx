@@ -19,10 +19,8 @@ import {
   MaterialReactTable,
   MRT_ColumnDef,
   MRT_PaginationState,
-  MRT_ColumnFiltersState,
-  MRT_Updater,
 } from 'material-react-table';
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 
 import {
   emptyPageTokenUpdater,
@@ -84,7 +82,7 @@ export const ResourceRequestTable = () => {
     pageTokenKey: PAGE_TOKEN_PARAM_KEY,
   });
 
-  const { filterData, setFilters, aipString } = useRriFilters();
+  const { filterValues, aipString } = useRriFilters();
 
   const client = useFleetConsoleClient();
 
@@ -115,36 +113,6 @@ export const ResourceRequestTable = () => {
       } as MRT_ColumnDef<RriGridRow>;
     });
   }, [filterOptionsData]);
-
-  const columnFilters = useMemo<MRT_ColumnFiltersState>(() => {
-    return Object.entries(filterData || {})
-      .filter(([, val]) => {
-        if (Array.isArray(val)) return val.length > 0;
-        if (val && typeof val === 'object') return Object.keys(val).length > 0;
-        return val !== undefined && val !== null && val !== '';
-      })
-      .map(([id, value]) => ({
-        id,
-        value,
-      }));
-  }, [filterData]);
-
-  const onColumnFiltersChange = useCallback(
-    (updater: MRT_Updater<MRT_ColumnFiltersState>) => {
-      const newFiltersState =
-        typeof updater === 'function' ? updater(columnFilters) : updater;
-
-      const newFilters = Object.fromEntries(
-        newFiltersState.map((f: { id: string; value: unknown }) => [
-          f.id,
-          f.value,
-        ]),
-      ) as typeof filterData;
-
-      setFilters(newFilters);
-    },
-    [columnFilters, setFilters],
-  );
 
   const sorting = useMrtSorting();
   const pagination = useMemo<MRT_PaginationState>(
@@ -181,16 +149,12 @@ export const ResourceRequestTable = () => {
 
   const highlightedColumnIds = useMemo(
     () =>
-      filterData === undefined
+      filterValues === undefined
         ? []
-        : Object.keys(filterData).filter((key) => {
-            const val = filterData[key as keyof typeof filterData];
-            if (Array.isArray(val)) return val.length > 0;
-            if (val && typeof val === 'object')
-              return Object.keys(val).length > 0;
-            return val !== undefined && val !== null;
-          }),
-    [filterData],
+        : Object.entries(filterValues)
+            .filter(([_key, filter]) => filter.isActive())
+            .map(([key]) => key),
+    [filterValues],
   );
 
   const mrtColumnManager = useMRTColumnManagement<RriGridRow>({
@@ -204,6 +168,8 @@ export const ResourceRequestTable = () => {
     columns: mrtColumnManager.columns,
     enableColumnActions: true,
     manualFiltering: true,
+    enableColumnFilters: false,
+    filterValues: filterValues,
     positionToolbarAlertBanner: 'none',
     enableRowSelection: false,
     renderTopToolbarCustomActions: ({ table }) => (
@@ -247,14 +213,12 @@ export const ResourceRequestTable = () => {
     getRowId: (row) => row.id,
     state: {
       sorting,
-      columnFilters,
       columnVisibility: mrtColumnManager.columnVisibility,
       showProgressBars: query.isPending || query.isPlaceholderData,
       showAlertBanner: query.isError,
       pagination: pagination,
     },
     onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
-    onColumnFiltersChange,
     muiTopToolbarProps: {
       sx: {
         '& [aria-label="Show/Hide filters"]': {

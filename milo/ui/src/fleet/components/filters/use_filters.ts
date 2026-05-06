@@ -31,13 +31,13 @@ export const useFilters = <
   T extends Record<string, FilterCategoryBuilder<FilterCategory>>,
 >(
   rawBuilders: T | undefined,
-  options: { allowExtraKeys?: boolean } = {},
+  options: { areFilterValuesLoading?: boolean } = {},
 ): {
   filterValues: FilterValuesFromBuilders<T> | undefined;
-  aip160: string;
+  aip160: () => string;
   parseError: string | undefined;
-  getAip160String: () => string;
 } => {
+  const { areFilterValuesLoading = false } = options;
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const filtersAIP160 = searchParams.get(FILTERS_PARAM_KEY);
 
@@ -80,11 +80,11 @@ export const useFilters = <
       builders,
       updateUrl,
       filtersAIP160,
-      options.allowExtraKeys || false,
+      areFilterValuesLoading || false,
     );
 
     return [filters, parseError];
-  }, [builders, filtersAIP160, updateUrl, options.allowExtraKeys]);
+  }, [builders, filtersAIP160, updateUrl, areFilterValuesLoading]);
 
   useEffect(() => {
     if (
@@ -98,20 +98,22 @@ export const useFilters = <
     }
   }, [filterValues, parseError, updateUrl]);
 
-  const getAip160String = useCallback(() => {
-    if (!filterValues) return '';
+  // We return a callback instead of a computed string to workaround "silent updates".
+  // Sometimes values inside filterValues change but the object reference stays same,
+  // we evaluate the most up-to-date values.
+  const aip160 = useCallback(() => {
+    if (!filterValues) return filtersAIP160 || '';
     return Object.values(filterValues)
       .filter((f) => f.isActive())
       .map((f) => f.toAIP160())
       .filter((f) => f !== '')
       .join(' AND ');
-  }, [filterValues]);
+  }, [filterValues, filtersAIP160]);
 
   return {
-    filterValues: filterValues,
-    aip160: filtersAIP160 ?? '',
+    filterValues,
+    aip160,
     parseError,
-    getAip160String,
   };
 };
 
@@ -285,7 +287,7 @@ function buildFilters<
   // onFilterUpdate: (key: string, newFilterValue: FilterCategory) => void,
   onFilterUpdate: (filterValues: Record<string, FilterCategory>) => void,
   filtersAIP160: string | null,
-  allowExtraKeys: boolean,
+  areFilterValuesLoading: boolean,
 ): {
   filters: FilterValuesFromBuilders<T> | undefined;
   parseError: string | undefined;
@@ -337,7 +339,7 @@ function buildFilters<
         return normalizedK === matchKey;
       });
       if (!hasMatch) {
-        if (allowExtraKeys) {
+        if (areFilterValuesLoading) {
           filters[key] = new LoadingFilterCategory(key);
         } else {
           errors.push(`${key} is not a valid filter`);

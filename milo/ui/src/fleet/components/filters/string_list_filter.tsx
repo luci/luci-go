@@ -58,6 +58,7 @@ export class StringListFilterCategory implements FilterCategory {
 
   public label: string;
   public key: string;
+  private comparator: ':' | '=';
   public isExcluded: boolean = false;
   private reRender: () => void;
 
@@ -70,10 +71,12 @@ export class StringListFilterCategory implements FilterCategory {
     key: string,
     options: Record<string, OptionWithSelection>,
     reRender: (newFilter: StringListFilterCategory) => void,
+    comparator: ':' | '=' = '=',
   ) {
     this.label = label;
     this.key = key;
     this.options = options;
+    this.comparator = comparator;
     this.reRender = () => {
       reRender(this);
     };
@@ -86,6 +89,7 @@ export class StringListFilterCategory implements FilterCategory {
     defaultOptions: string[],
     reRender: (newFilter: StringListFilterCategory) => void,
     terms: (ast.Term & { simple: ast.Restriction })[] | null,
+    comparator: ':' | '=' = '=',
   ): BuildResult<StringListFilterCategory> {
     const warnings: string[] = [];
     const optionsMap: Record<string, OptionWithSelection> = Object.fromEntries(
@@ -103,6 +107,7 @@ export class StringListFilterCategory implements FilterCategory {
       key,
       optionsMap,
       reRender,
+      comparator,
     );
 
     if (terms === null) {
@@ -113,6 +118,8 @@ export class StringListFilterCategory implements FilterCategory {
 
     const processTermValue = (value: string, isNegated: boolean) => {
       if (!optionsMap[value] && value !== ANY_VALUE) {
+        warnings.push(`Option ${value} doesn't exist for ${key}`);
+
         optionsMap[value] = {
           optionValue: { label: value, value: value },
           isSelected: false,
@@ -249,8 +256,12 @@ export class StringListFilterCategory implements FilterCategory {
     const regularPart =
       selectedValues.length > 0
         ? this.isExcluded
-          ? selectedValues.map((v) => `${this.key} != ${v}`).join(' AND ')
-          : `${this.key} = (${selectedValues.join(' OR ')})`
+          ? this.comparator === '='
+            ? selectedValues.map((v) => `${this.key} != ${v}`).join(' AND ')
+            : selectedValues
+                .map((v) => `NOT ${this.key} ${this.comparator} ${v}`)
+                .join(' AND ')
+          : `(${selectedValues.map((v) => `${this.key} = ${v}`).join(' OR ')})`
         : '';
 
     if (!regularPart) return blankPart;
@@ -680,6 +691,7 @@ export class StringListFilterCategoryBuilder
   public label: string | undefined;
   public options: OptionValue[] | undefined;
   public defaultOptions: string[] = [];
+  public comparator: ':' | '=' = '=';
 
   constructor() {}
 
@@ -694,6 +706,13 @@ export class StringListFilterCategoryBuilder
 
   public setDefaultOptions(defaultOptions: string[]) {
     this.defaultOptions = defaultOptions;
+    return this;
+  }
+
+  // TODO: Right now in RRI resource_groups filter uses ':' comparator. There's a chance that this distinction is not needed
+  // and we could migrate it to using '=' comparator in the future
+  public setComparator(comparator: ':' | '=') {
+    this.comparator = comparator;
     return this;
   }
 
@@ -720,6 +739,7 @@ export class StringListFilterCategoryBuilder
       this.defaultOptions,
       reRender,
       terms,
+      this.comparator,
     );
   }
 }

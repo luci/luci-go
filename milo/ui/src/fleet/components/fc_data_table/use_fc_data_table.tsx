@@ -38,12 +38,15 @@ import {
 
 import { MRT_INTERNAL_COLUMNS } from '@/fleet/components/columns/use_mrt_column_management';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
+import { FCFilterMenuItem } from '@/fleet/components/fc_data_table/fc_filter_menu_item';
 import { FleetColumnHeader } from '@/fleet/components/fc_data_table/fleet_column_header';
 import {
   fleetTableHeaderSx,
   getDensityPadding,
 } from '@/fleet/components/fc_data_table/fleet_column_header.styles';
-import { MRTFilterMenuItem } from '@/fleet/components/fc_data_table/mrt_filter_menu_item';
+import { MRTFilterMenuItem_OLD } from '@/fleet/components/fc_data_table/mrt_filter_menu_item';
+import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
+import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import {
   mapMRTToMUI,
   mapMUIToMRT,
@@ -64,7 +67,9 @@ export type FC_ColumnDef<
 const SELECT_COL_PADDING = '8px !important';
 
 export const useFCDataTable = <TData extends MRT_RowData>(
-  tableOptions: MRT_TableOptions<TData>,
+  tableOptions: MRT_TableOptions<TData> & {
+    filterValues?: Record<string, FilterCategory>;
+  },
 ): MRT_TableInstance<TData> => {
   const [settings, setSettings] = useSettings();
 
@@ -198,13 +203,27 @@ export const useFCDataTable = <TData extends MRT_RowData>(
         if (items.length > 0) {
           items.push(<Divider key="divider-filter" />);
         }
-        items.push(
-          <MRTFilterMenuItem
-            key="filter"
-            column={column as unknown as MRT_Column<MRT_RowData, unknown>}
-            closeMenu={closeMenu}
-          />,
-        );
+        const filter = filterValues?.[column.id];
+        if (filter) {
+          items.push(
+            <FCFilterMenuItem
+              key="filter"
+              filter={filter}
+              closeMenu={closeMenu}
+              // TODO: infering if searchinput should be here is not ideal. Either the filter value should hold this as a flag or
+              // it should be rendered by the StringListFilterCategory itself
+              enableSearchInput={filter instanceof StringListFilterCategory}
+            />,
+          );
+        } else {
+          items.push(
+            <MRTFilterMenuItem_OLD
+              key="filter"
+              column={column as unknown as MRT_Column<MRT_RowData, unknown>}
+              closeMenu={closeMenu}
+            />,
+          );
+        }
       }
 
       if (column.getCanHide()) {
@@ -335,8 +354,14 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     },
   };
 
-  const { columns, data, muiTableContainerProps, meta, ...restTableOptions } =
-    tableOptions;
+  const {
+    columns,
+    data,
+    muiTableContainerProps,
+    filterValues,
+    meta,
+    ...restTableOptions
+  } = tableOptions;
   const mergedTableOptions = _.merge(
     {},
     defaultOptions,

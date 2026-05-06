@@ -96,7 +96,11 @@ export const DateFilter = forwardRef(function DateFilter(
   };
 
   const getValidDate = (date?: Date) => {
-    if (!date) return null;
+    // since you can create a Date object with invalid fields for example new Date('invalid'),
+    // we need to validate it before using it.
+    // getTime() is not reading time as in hours, minutes and seconds, it's reading time as milliseconds since the epoch.
+    // This function returns NaN for Invalid Date objects.
+    if (!date || isNaN(date.getTime())) return null;
     const dateTime = DateTime.fromJSDate(date);
     return dateTime.isValid ? dateTime : null;
   };

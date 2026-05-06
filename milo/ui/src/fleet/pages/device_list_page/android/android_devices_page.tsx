@@ -138,7 +138,7 @@ export const AndroidDevicesPage = () => {
   }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data]);
 
   const filterCategoryDatas = useFilters(filterOptions, {
-    allowExtraKeys: !isDimensionsQueryProperlyLoaded,
+    areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
   });
 
   const columnFiltersRef = useRef<{ id: string; value: unknown }[]>([]);
@@ -207,7 +207,7 @@ export const AndroidDevicesPage = () => {
         }
       }
 
-      const currentAIP160 = filterCategoryDatas.getAip160String();
+      const currentAIP160 = filterCategoryDatas.aip160();
       const prevAIP160 = searchParams.get(FILTERS_PARAM_KEY) || '';
 
       if (currentAIP160 !== prevAIP160) {
@@ -231,7 +231,7 @@ export const AndroidDevicesPage = () => {
         orderBy: orderByParam,
         filter: filterCategoryDatas.parseError
           ? ''
-          : filterCategoryDatas.aip160,
+          : filterCategoryDatas.aip160(),
         platform: platform,
       }),
     [pagerCtx, searchParams, orderByParam, filterCategoryDatas],
@@ -549,7 +549,7 @@ export const AndroidDevicesPage = () => {
       <WarningNotifications warnings={warnings} />
       <AndroidSummaryHeader
         aip160={
-          filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160
+          filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160()
         }
         filters={filterCategoryDatas.filterValues}
       />

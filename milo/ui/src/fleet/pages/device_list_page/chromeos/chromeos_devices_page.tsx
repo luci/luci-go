@@ -230,7 +230,7 @@ export const ChromeOSDevicesPage = () => {
   }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data]);
 
   const filterCategoryDatas = useFilters(filterOptions, {
-    allowExtraKeys: !isDimensionsQueryProperlyLoaded,
+    areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
   });
 
   const columnFiltersRef = useRef<{ id: string; value: unknown }[]>([]);
@@ -265,7 +265,7 @@ export const ChromeOSDevicesPage = () => {
         syncFilterCategory(key, category, newFilters, prevTableFilterKeys);
       }
 
-      const currentAIP160 = filterCategoryDatas.getAip160String();
+      const currentAIP160 = filterCategoryDatas.aip160();
       const prevAIP160 = searchParams.get(FILTERS_PARAM_KEY) || '';
 
       if (currentAIP160 !== prevAIP160) {
@@ -313,7 +313,7 @@ export const ChromeOSDevicesPage = () => {
       CountDevicesRequest.fromPartial({
         filter: filterCategoryDatas.parseError
           ? ''
-          : filterCategoryDatas.aip160,
+          : filterCategoryDatas.aip160(),
         platform: Platform.CHROMEOS,
       }),
     ),
@@ -327,7 +327,7 @@ export const ChromeOSDevicesPage = () => {
         orderBy: orderByParam,
         filter: filterCategoryDatas.parseError
           ? ''
-          : filterCategoryDatas.aip160,
+          : filterCategoryDatas.aip160(),
         platform: Platform.CHROMEOS,
       }),
     [pagerCtx, searchParams, orderByParam, filterCategoryDatas],
