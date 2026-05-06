@@ -129,13 +129,6 @@ type InstanceCache struct {
 	fetchRes     chan *InstanceResult // non-nil only if ParallelDownloads > 0
 	fetchWG      sync.WaitGroup
 
-	// Fetch tokens implement a semaphore that gradually ramps up the download
-	// concurrency.
-	fetchTokensM    sync.Mutex
-	fetchTokensC    int
-	fetchTokensDone bool
-	fetchTokens     chan struct{}
-
 	// Defaults to instanceCacheMaxSize, mocked in tests.
 	maxSize int
 	// Defaults to instanceCacheMaxAge, mocked in tests.
@@ -214,34 +207,33 @@ func (c *InstanceCache) maybeLaunch(ctx context.Context) {
 		c.fetchRes = make(chan *InstanceResult, 50)
 
 		// Start with 1 allowed concurrent download. It will eventually ramp up to
-		// ParallelDownloads with each finished download, see grabConcurrencySlot.
-		// This is a heuristic to make sure we download the first package ASAP, so
-		// the installer has something to install while more packages are being
-		// downloaded.
-		c.fetchTokens = make(chan struct{}, c.ParallelDownloads)
-		c.fetchTokens <- struct{}{}
-		c.fetchTokensC = 1
+		// ParallelDownloads with each finished download.
+		//
+		// This is a heuristic for `ensure`-type flows to make sure we download the
+		// first package ASAP, so the installer has something to install while more
+		// packages are being downloaded.
+		//
+		// NOTE: workersLeft can become up to c.ParallelDownloads negative, but
+		// workers will only launch a new worker if they observe it as >= 0 after
+		// decrementing it so we should only launch a max of c.ParallelDownloads
+		// workers.
+		var workersLeft atomic.Int32
+		workersLeft.Store(int32(c.ParallelDownloads - 1))
 
-		c.fetchWG.Add(c.ParallelDownloads)
-		for i := 0; i < c.ParallelDownloads; i++ {
-			go func() {
-				defer c.fetchWG.Done()
+		var worker func()
+		worker = func() {
+			for req := range c.fetchReq {
+				c.fetchRes <- c.handleRequest(req)
 
-				handleOne := func() bool {
-					defer c.grabConcurrencySlot()()
-					req, ok := <-c.fetchReq
-					if !ok {
-						return false
+				if workersLeft.Load() > 0 {
+					if workersLeft.Add(-1) >= 0 {
+						c.fetchWG.Go(worker)
 					}
-					c.fetchRes <- c.handleRequest(req)
-					return true
 				}
-
-				for handleOne() {
-					// Keep spinning until c.fetchReq is closed.
-				}
-			}()
+			}
 		}
+
+		c.fetchWG.Go(worker)
 	}
 }
 
@@ -284,7 +276,6 @@ func (c *InstanceCache) Close(ctx context.Context) {
 
 	close(c.fetchReq)
 	if c.ParallelDownloads > 0 {
-		c.unblockAllConcurrencySlots()
 		c.fetchWG.Wait()
 	}
 
@@ -340,42 +331,6 @@ func (c *InstanceCache) WaitInstance() (res *InstanceResult) {
 	}
 	atomic.AddInt32(&c.fetchPending, -1)
 	return
-}
-
-// grabConcurrencySlot is called right before processing a fetch request.
-//
-// It implements the gradual ramp up of download parallelism. It blocks until
-// the request is allowed to run.
-func (c *InstanceCache) grabConcurrencySlot() (done func()) {
-	_, ok := <-c.fetchTokens
-	if !ok {
-		return func() {} // we are exiting
-	}
-
-	return func() {
-		c.fetchTokensM.Lock()
-		defer c.fetchTokensM.Unlock()
-		if c.fetchTokensDone {
-			return
-		}
-
-		// Return the token we grabbed.
-		c.fetchTokens <- struct{}{}
-
-		// If still ramping up, add one more token to increase the concurrency.
-		if c.fetchTokensC < c.ParallelDownloads {
-			c.fetchTokensC++
-			c.fetchTokens <- struct{}{}
-		}
-	}
-}
-
-// unblockAllConcurrencySlots is called when closing.
-func (c *InstanceCache) unblockAllConcurrencySlots() {
-	c.fetchTokensM.Lock()
-	defer c.fetchTokensM.Unlock()
-	c.fetchTokensDone = true
-	close(c.fetchTokens)
 }
 
 // handleRequest handles an *InstanceRequest producing an *InstanceResult.
