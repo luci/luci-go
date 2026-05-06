@@ -27,6 +27,8 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/flagenum"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
 	orchestratorgrpcpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1/grpcpb"
 )
@@ -58,12 +60,43 @@ var retryPolicy = fmt.Sprintf(`{
 	orchestratorgrpcpb.TurboCIOrchestrator_ServiceDesc.ServiceName,
 )
 
+// attachTokenMode is an enum with possible values for attachToken.
+type attachTokenMode string
+
+const (
+	// Attach a token if not already in the request, but do not fail if there's
+	// no token in the LUCI_CONTEXT.
+	// Default value.
+	attachTokenContext attachTokenMode = "context"
+	// Attach a token if not already in the request, failing if there's no token
+	// in the LUCI_CONTEXT.
+	attachTokenAlways attachTokenMode = "always"
+	// Do not do anything related to the token.
+	attachTokenNever attachTokenMode = "never"
+)
+
+func (m *attachTokenMode) String() string {
+	return string(*m)
+}
+
+func (m *attachTokenMode) Set(s string) error {
+	return attachTokenChoices.FlagSet(m, s)
+}
+
+var attachTokenChoices = flagenum.Enum{
+	"context": attachTokenContext,
+	"always":  attachTokenAlways,
+	"never":   attachTokenNever,
+}
+
 // baseCommandRun provides common command run functionality.
 // All turboci subcommands must embed it directly or indirectly.
 type baseCommandRun struct {
 	subcommands.CommandRunBase
 	authFlags   authcli.Flags
 	apiEndpoint string
+
+	attachToken attachTokenMode
 
 	client         orchestratorgrpcpb.TurboCIOrchestratorClient
 	turboCIContext *lucictx.TurboCI
@@ -75,11 +108,21 @@ func (r *baseCommandRun) RegisterGlobalFlags(p Params) {
 		&r.apiEndpoint, "endpoint", p.DefaultTurboCIHost, text.Doc(`
 		Endpoint of the Turbo CI Orchestrator Private API.
 	`))
+	r.Flags.Var(
+		&r.attachToken, "attach-token", text.Doc(`
+		How to attach the TurboCI token from LUCI_CONTEXT to the request.
+
+		Accepted values:
+			* context: Attach a token if not already in the request, but do not fail if there's no token in the LUCI_CONTEXT. Default value.
+			* always: Attach a token if not already in the request, failing if there's no token in the LUCI_CONTEXT.
+			* never: Do not do anything related to the token.
+		`),
+	)
 	r.authFlags.Register(&r.Flags, p.Auth)
 }
 
-// initClient creates the TurboCI client.
-func (r *baseCommandRun) initClient(ctx context.Context) error {
+// init creates the TurboCI client and sets turboCIContext.
+func (r *baseCommandRun) init(ctx context.Context) error {
 	if r.apiEndpoint == "" {
 		return errors.New("missing --endpoint")
 	}
@@ -103,6 +146,8 @@ func (r *baseCommandRun) initClient(ctx context.Context) error {
 		return errors.Fmt("cannot dial to %s: %w", r.apiEndpoint, err)
 	}
 	r.client = orchestratorgrpcpb.NewTurboCIOrchestratorClient(conn)
+
+	r.turboCIContext = lucictx.GetTurboCI(ctx)
 	return nil
 }
 
@@ -112,4 +157,34 @@ func (r *baseCommandRun) done(err error) int {
 		return 1
 	}
 	return 0
+}
+
+type request interface {
+	GetToken() string
+	SetToken(string)
+}
+
+func (r *baseCommandRun) attachTokenIfRequested(ctx context.Context, req request) error {
+	if r.attachToken == attachTokenNever {
+		return nil
+	}
+
+	if req.GetToken() != "" {
+		logging.Infof(ctx,
+			"Request already contains token, skipping attching the token from LUCI_CONTEXT")
+		return nil
+	}
+
+	if r.turboCIContext == nil || r.turboCIContext.Token == "" {
+		if r.attachToken == attachTokenAlways {
+			return errors.New("missing TurboCI token in LUCI_CONTEXT")
+		}
+
+		logging.Infof(ctx,
+			"No TurboCI token in LUCI_CONTEXT, skipping attching the token from LUCI_CONTEXT")
+		return nil
+	}
+
+	req.SetToken(r.turboCIContext.Token)
+	return nil
 }

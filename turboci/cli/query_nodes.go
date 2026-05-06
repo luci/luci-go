@@ -52,7 +52,7 @@ type queryNodesRun struct {
 
 func (r *queryNodesRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-	if err := r.initClient(ctx); err != nil {
+	if err := r.init(ctx); err != nil {
 		return r.done(err)
 	}
 	if err := r.run(ctx); err != nil {
@@ -70,6 +70,11 @@ func (r *queryNodesRun) run(ctx context.Context) error {
 	if err := proto.Unmarshal(in, &req); err != nil {
 		return fmt.Errorf("failed to parse QueryNodesRequest from stdin: %w", err)
 	}
+
+	if err = r.attachTokenIfRequested(ctx, &req); err != nil {
+		return err
+	}
+
 	resp, err := r.client.QueryNodes(ctx, &req)
 	if err != nil {
 		return err

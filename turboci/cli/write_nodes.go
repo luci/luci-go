@@ -53,7 +53,7 @@ type writeNodesRun struct {
 // Run implements subcommands.CommandRun.
 func (r *writeNodesRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	ctx := cli.GetContext(a, r, env)
-	if err := r.initClient(ctx); err != nil {
+	if err := r.init(ctx); err != nil {
 		return r.done(err)
 	}
 	if err := r.run(ctx); err != nil {
@@ -71,6 +71,11 @@ func (r *writeNodesRun) run(ctx context.Context) error {
 	if err := proto.Unmarshal(in, &req); err != nil {
 		return fmt.Errorf("failed to parse WriteNodesRequest from stdin: %w", err)
 	}
+
+	if err = r.attachTokenIfRequested(ctx, &req); err != nil {
+		return err
+	}
+
 	resp, err := r.client.WriteNodes(ctx, &req)
 	if err != nil {
 		return err
