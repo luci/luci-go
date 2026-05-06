@@ -113,7 +113,7 @@ type InstanceCache struct {
 	// if RequestInstances has not been called yet.
 	launchTime time.Time
 
-	fetchPending int32
+	fetchPending atomic.Int32
 	fetchReq     chan *InstanceRequest
 	fetchRes     chan *InstanceResult // non-nil only if ParallelDownloads > 0
 	fetchWG      sync.WaitGroup
@@ -295,7 +295,7 @@ func (c *InstanceCache) RequestInstances(ctx context.Context, reqs []*InstanceRe
 		return true
 	})
 
-	atomic.AddInt32(&c.fetchPending, int32(len(reqs)))
+	c.fetchPending.Add(int32(len(reqs)))
 	for _, r := range reqs {
 		c.fetchReq <- r
 	}
@@ -304,7 +304,7 @@ func (c *InstanceCache) RequestInstances(ctx context.Context, reqs []*InstanceRe
 // HasPendingFetches is true if there's some uncompleted InstanceRequest whose
 // completion notification will (eventually) unblock WaitInstance.
 func (c *InstanceCache) HasPendingFetches() bool {
-	return atomic.LoadInt32(&c.fetchPending) > 0
+	return c.fetchPending.Load() > 0
 }
 
 // WaitInstance blocks until some InstanceRequest is available.
@@ -316,7 +316,7 @@ func (c *InstanceCache) WaitInstance() (res *InstanceResult) {
 		// Otherwise wait for the work pool to finish a request.
 		res = <-c.fetchRes
 	}
-	atomic.AddInt32(&c.fetchPending, -1)
+	c.fetchPending.Add(-1)
 	return
 }
 
