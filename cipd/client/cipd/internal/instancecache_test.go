@@ -83,7 +83,33 @@ func TestInstanceCache(t *testing.T) {
 		}
 		defer cache.Close(ctx)
 
-		access := func(cache *InstanceCache, pin common.Pin) (created bool, src pkg.Source) {
+		// withInstance waits for an instance, and calls the callback with it.
+		//
+		// Closes the source/instance in the result after the callback, using
+		// `corrupted` when calling Close.
+		withInstance := func(cache *InstanceCache, cb func(res *InstanceResult) (corrupted bool)) {
+			res := cache.WaitInstance()
+			corrupted := false
+			defer func() {
+				if res.Source != nil {
+					assert.Loosely(t, res.Source.Close(ctx, corrupted), should.BeNil)
+				}
+				if res.Instance != nil {
+					assert.Loosely(t, res.Instance.Close(ctx, corrupted), should.BeNil)
+				}
+			}()
+			corrupted = cb(res)
+		}
+
+		// access requests the instance, waits for it, asserts that the result has
+		// no error, then calls `cb`.
+		//
+		// If `created` is true, it means the fetcher was called between the
+		// request and the response.
+		//
+		// Closes the source/instance in the result after the callback, using
+		// `corrupted` when calling Close.
+		access := func(cache *InstanceCache, pin common.Pin, cb func(created bool, res *InstanceResult) (corrupted bool)) {
 			t.Helper()
 
 			fetchM.Lock()
@@ -93,23 +119,25 @@ func TestInstanceCache(t *testing.T) {
 			cache.RequestInstances(ctx, []*InstanceRequest{
 				{Context: ctx, Pin: pin},
 			})
-			res := cache.WaitInstance()
-			assert.NoErr(t, res.Err, truth.LineContext())
 
-			fetchM.Lock()
-			created = fetchCalls > before
-			fetchM.Unlock()
+			withInstance(cache, func(res *InstanceResult) (corrupted bool) {
+				fetchM.Lock()
+				created := fetchCalls > before
+				fetchM.Unlock()
 
-			return created, res.Source
+				assert.NoErr(t, res.Err, truth.LineContext())
+				return cb(created, res)
+			})
 		}
 
 		putNew := func(cache *InstanceCache, pin common.Pin) {
 			t.Helper()
 
-			created, src := access(cache, pin)
-			assert.Loosely(t, created, should.BeTrue, truth.LineContext(), truth.Explain(
-				"failed to create %v", pin))
-			assert.NoErr(t, src.Close(ctx, false), truth.LineContext())
+			access(cache, pin, func(created bool, res *InstanceResult) (corrupted bool) {
+				assert.Loosely(t, created, should.BeTrue, truth.LineContext(), truth.Explain(
+					"failed to create %v", pin))
+				return
+			})
 		}
 
 		readSrc := func(src pkg.Source) string {
@@ -123,10 +151,11 @@ func TestInstanceCache(t *testing.T) {
 		testHas := func(cache *InstanceCache, pin common.Pin) {
 			t.Helper()
 
-			created, src := access(cache, pin)
-			assert.Loosely(t, created, should.BeFalse, truth.LineContext())
-			assert.Loosely(t, readSrc(src), should.Equal(fakeData(pin)), truth.LineContext())
-			assert.NoErr(t, src.Close(ctx, false), truth.LineContext())
+			access(cache, pin, func(created bool, res *InstanceResult) (corrupted bool) {
+				assert.Loosely(t, created, should.BeFalse, truth.LineContext())
+				assert.Loosely(t, readSrc(res.Source), should.Equal(fakeData(pin)), truth.LineContext())
+				return
+			})
 		}
 
 		accessTime := func(cache *InstanceCache, pin common.Pin) (lastAccess time.Time, ok bool) {
@@ -169,56 +198,43 @@ func TestInstanceCache(t *testing.T) {
 			}
 			defer cache.Close(ctx)
 
-			assert.Loosely(t, countTempFiles(), should.BeZero)
-
-			cache.RequestInstances(ctx, []*InstanceRequest{
-				{Context: ctx, Pin: pin(0)},
+			assert.That(t, countTempFiles(), should.Equal(0))
+			access(cache, pin(0), func(created bool, res *InstanceResult) (corrupted bool) {
+				assert.That(t, countTempFiles(), should.Equal(1))
+				return
 			})
-			res := cache.WaitInstance()
-			assert.Loosely(t, res.Err, should.BeNil)
-
-			assert.Loosely(t, countTempFiles(), should.Equal(1))
-			assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
-			assert.Loosely(t, countTempFiles(), should.BeZero)
+			assert.That(t, countTempFiles(), should.Equal(0))
 		})
 
 		t.Run("Redownloads corrupted files", func(t *ftt.Test) {
 			assert.Loosely(t, countTempFiles(), should.BeZero)
 
 			// Download the first time.
-			cache.RequestInstances(ctx, []*InstanceRequest{
-				{Context: ctx, Pin: pin(0)},
+			access(cache, pin(0), func(created bool, res *InstanceResult) (corrupted bool) {
+				assert.That(t, created, should.BeTrue)
+				return
 			})
-			res := cache.WaitInstance()
-			assert.Loosely(t, res.Err, should.BeNil)
-			assert.Loosely(t, fetchCalls, should.Equal(1))
-			assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
 
 			// Stored in the cache (plus state.db file).
 			assert.Loosely(t, countTempFiles(), should.Equal(2))
 
 			// The second call grabs it from the cache.
-			cache.RequestInstances(ctx, []*InstanceRequest{
-				{Context: ctx, Pin: pin(0)},
-			})
-			res = cache.WaitInstance()
-			assert.Loosely(t, res.Err, should.BeNil)
-			assert.Loosely(t, fetchCalls, should.Equal(1))
+			access(cache, pin(0), func(created bool, res *InstanceResult) (corrupted bool) {
+				assert.That(t, created, should.BeFalse)
 
-			// Close as corrupted. Should be removed from the cache.
-			assert.Loosely(t, res.Source.Close(ctx, true), should.BeNil)
+				// Close as corrupted. Should be removed from the cache.
+				corrupted = true
+				return
+			})
 
 			// Only state.db file left.
 			assert.Loosely(t, countTempFiles(), should.Equal(1))
 
 			// Download the second time.
-			cache.RequestInstances(ctx, []*InstanceRequest{
-				{Context: ctx, Pin: pin(0)},
+			access(cache, pin(0), func(created bool, res *InstanceResult) (corrupted bool) {
+				assert.Loosely(t, fetchCalls, should.Equal(2))
+				return
 			})
-			res = cache.WaitInstance()
-			assert.Loosely(t, res.Err, should.BeNil)
-			assert.Loosely(t, fetchCalls, should.Equal(2))
-			assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
 		})
 
 		t.Run("Concurrency", func(t *ftt.Test) {
@@ -242,11 +258,12 @@ func TestInstanceCache(t *testing.T) {
 
 				cache.RequestInstances(ctx, reqs)
 				for i := 0; i < len(reqs); i++ {
-					res := cache.WaitInstance()
-					assert.Loosely(t, res.Err, should.BeNil)
-					assert.Loosely(t, res.State.(int), should.Equal(i))
-					assert.Loosely(t, readSrc(res.Source), should.Equal(fakeData(pin(i))))
-					assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
+					withInstance(cache, func(res *InstanceResult) (corrupted bool) {
+						assert.Loosely(t, res.Err, should.BeNil)
+						assert.Loosely(t, res.State.(int), should.Equal(i))
+						assert.Loosely(t, readSrc(res.Source), should.Equal(fakeData(pin(i))))
+						return
+					})
 				}
 			})
 
@@ -257,10 +274,11 @@ func TestInstanceCache(t *testing.T) {
 
 				cache.RequestInstances(ctx, reqs)
 				for i := 0; i < len(reqs); i++ {
-					res := cache.WaitInstance()
-					assert.Loosely(t, res.Err, should.BeNil)
-					assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
-					seen[res.State.(int)] = struct{}{}
+					withInstance(cache, func(res *InstanceResult) (corrupted bool) {
+						assert.Loosely(t, res.Err, should.BeNil)
+						seen[res.State.(int)] = struct{}{}
+						return
+					})
 				}
 
 				assert.Loosely(t, len(seen), should.Equal(len(reqs)))
@@ -284,13 +302,12 @@ func TestInstanceCache(t *testing.T) {
 
 				errs := 0
 				for i := 0; i < len(reqs); i++ {
-					res := cache.WaitInstance()
-					if res.Source != nil {
-						assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
-					}
-					if res.Err != nil {
-						errs++
-					}
+					withInstance(cache, func(res *InstanceResult) (corrupted bool) {
+						if res.Err != nil {
+							errs++
+						}
+						return
+					})
 				}
 				assert.Loosely(t, errs, should.Equal(errCount))
 			})
@@ -358,9 +375,10 @@ func TestInstanceCache(t *testing.T) {
 			cache.RequestInstances(ctx, ir)
 
 			for range 9 {
-				res := cache.WaitInstance()
-				assert.Loosely(t, res.Err, should.BeNil)
-				assert.Loosely(t, res.Source.Close(ctx, false), should.BeNil)
+				withInstance(cache, func(res *InstanceResult) (corrupted bool) {
+					assert.Loosely(t, res.Err, should.BeNil)
+					return
+				})
 			}
 
 			// Only one new fetch should happen, for pin 10.
