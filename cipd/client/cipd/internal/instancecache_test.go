@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -32,9 +33,11 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/cipd/client/cipd/builder"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -47,7 +50,7 @@ func TestInstanceCache(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "instanceche_test")
 		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tempDir)
-		fs := fs.NewFileSystem(tempDir, "")
+		fsInst := fs.NewFileSystem(tempDir, "")
 
 		pin := func(i int) common.Pin {
 			pin := common.Pin{PackageName: "pkg", InstanceID: fmt.Sprintf("%d", i)}
@@ -55,7 +58,28 @@ func TestInstanceCache(t *testing.T) {
 			return pin
 		}
 
+		mkContent := func(data string) (common.Pin, string) {
+			buf := bytes.NewBuffer(nil)
+			pin, err := builder.BuildInstance(ctx, builder.Options{
+				Input:       []fs.File{fs.NewTestFile("file", data, fs.TestFileOpts{})},
+				Output:      buf,
+				PackageName: fmt.Sprintf("pkg/content/%s", data),
+			})
+			assert.NoErr(t, err)
+			return pin, buf.String()
+		}
+
+		contentPin := func(c string) common.Pin {
+			ret, _ := mkContent(c)
+			return ret
+		}
+
 		fakeData := func(p common.Pin) string {
+			if data, ok := strings.CutPrefix(p.PackageName, "pkg/content/"); ok {
+				actualPin, inst := mkContent(data)
+				assert.That(t, p, should.Match(actualPin))
+				return inst
+			}
 			return "data:" + p.InstanceID
 		}
 
@@ -78,7 +102,7 @@ func TestInstanceCache(t *testing.T) {
 		}
 
 		cache := &InstanceCache{
-			FS:      fs,
+			FS:      fsInst,
 			Fetcher: fetcher,
 		}
 		defer cache.Close(ctx)
@@ -179,7 +203,7 @@ func TestInstanceCache(t *testing.T) {
 		}
 
 		t.Run("Works in general", func(t *ftt.Test) {
-			cache2 := &InstanceCache{FS: fs, Fetcher: fetcher}
+			cache2 := &InstanceCache{FS: fsInst, Fetcher: fetcher}
 			defer cache2.Close(ctx)
 
 			// Add new.
@@ -192,7 +216,7 @@ func TestInstanceCache(t *testing.T) {
 
 		t.Run("Temp cache removes files", func(t *ftt.Test) {
 			cache := &InstanceCache{
-				FS:      fs,
+				FS:      fsInst,
 				Tmp:     true,
 				Fetcher: fetcher,
 			}
@@ -239,7 +263,7 @@ func TestInstanceCache(t *testing.T) {
 
 		t.Run("Concurrency", func(t *ftt.Test) {
 			cache := &InstanceCache{
-				FS:      fs,
+				FS:      fsInst,
 				Fetcher: fetcher,
 			}
 			defer cache.Close(ctx)
@@ -486,6 +510,36 @@ func TestInstanceCache(t *testing.T) {
 
 			withInstance(cache, func(res *InstanceResult) (corrupted bool) {
 				assert.ErrIsLike(t, res.Err, ErrNoFetcher)
+				return
+			})
+		})
+
+		t.Run(`VerifyHash`, func(t *ftt.Test) {
+			pin := contentPin("hello")
+
+			putNew(cache, pin)
+			cache.Fetcher = nil
+
+			cache.RequestInstances(ctx, []*InstanceRequest{
+				{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
+			})
+			withInstance(cache, func(res *InstanceResult) (corrupted bool) {
+				assert.NoErr(t, res.Err)
+				return
+			})
+
+			// Now corrupt the file.
+			assert.NoErr(t, cache.FS.EnsureFile(ctx, filepath.Join(cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
+				_, err := fmt.Fprintf(f, "I AM A BANANA")
+				return err
+			}))
+
+			// Now we will see the cache corruption.
+			cache.RequestInstances(ctx, []*InstanceRequest{
+				{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
+			})
+			withInstance(cache, func(res *InstanceResult) (corrupted bool) {
+				assert.ErrIsLike(t, res.Err, reader.ErrHashMismatch)
 				return
 			})
 		})

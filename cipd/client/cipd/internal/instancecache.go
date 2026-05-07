@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/errors/errtag"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
@@ -65,12 +66,39 @@ type Fetcher func(ctx context.Context, pin common.Pin, f io.WriteSeeker) error
 var ErrNoFetcher = cipderr.OfflineClient.Apply(
 	errors.New("no fetcher configured"))
 
+// CorruptFileDeletionFailure indicates that we had a corrupt cache file,
+// attempted to delete it, but this deletion failed.
+//
+// This allows distinguishing 'corrupt file' (which was cleaned) vs 'corrupt
+// file' (which may still be on disk).
+//
+// This will be set on [InstanceResponse].Err if it occurred.
+var CorruptFileDeletionFailure = errtag.Make("failed to remove corrupt file", true)
+
+// InstanceOpenMode describes how an InstanceRequest wants to open the instance.
+type InstanceOpenMode byte
+
+const (
+	// Source (the default) indicates that the cache should just return the
+	// pkg.Source without opening the file.
+	Source InstanceOpenMode = iota
+
+	// Instance indicates that the cache should open the pkg.Source as a
+	// pkg.Instance.
+	Instance
+
+	// VerifiedInstance indicates that the cache should open the pkg.Source as a
+	// pkg.Instance, but only after checking that it's hash matches the
+	// InstanceID
+	VerifiedInstance
+)
+
 // InstanceRequest is passed to RequestInstances.
 type InstanceRequest struct {
 	Context context.Context    // carries the cancellation signal
 	Done    context.CancelFunc // called right before the result is enqueued
 	Pin     common.Pin         // identifies the instance to fetch
-	Open    bool               // true to return it as a pkg.Instance as opposed to pkg.Source
+	OpenAs  InstanceOpenMode   // indicates how the cache should open the instance file.
 	State   any                // passed to the InstanceResult as is
 }
 
@@ -78,8 +106,8 @@ type InstanceRequest struct {
 type InstanceResult struct {
 	Context  context.Context // copied from the InstanceRequest
 	Err      error           // non-nil if failed to obtain the instance
-	Source   pkg.Source      // set only if Open was false, must be closed by the caller
-	Instance pkg.Instance    // set only if Open was true, must be closed by the caller
+	Source   pkg.Source      // set only if OpenAs was Source, must be closed by the caller
+	Instance pkg.Instance    // set only if OpenAs was not Source, must be closed by the caller
 	State    any             // copied from the InstanceRequest
 }
 
@@ -168,6 +196,7 @@ func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
 			if err == nil {
 				err = err2
 			}
+			err = CorruptFileDeletionFailure.Apply(err)
 		}
 	}
 
@@ -371,21 +400,37 @@ func (c *InstanceCache) handleRequest(req *InstanceRequest) *InstanceResult {
 	switch src, err := c.openAsSource(ctx, pin); {
 	case err != nil:
 		res.Err = err
-	case !req.Open:
+	case req.OpenAs == Source:
 		res.Source = src
-	default:
+	case req.OpenAs == Instance, req.OpenAs == VerifiedInstance:
+		// Normally, the Fetcher will verify the hash when fetching from the
+		// network. However, in the case where the on-disk state can't be trusted
+		// (e.g. it is a prepared offline cache which doesn't have a trusted chain
+		// of custody from preparation to usage), the caller may require that we
+		// verify the hash when opening the instance.
+		//
+		// We don't do this by default because on slow systems (e.g. tiny ARM SoC,
+		// like raspberry pi) the hash verification can take significant time.
+		// Modern systems with nvme storage will see a couple GBps here.
+		vm := reader.SkipHashVerification
+		if req.OpenAs == VerifiedInstance {
+			vm = reader.VerifyHash
+		}
 		instance, err := reader.OpenInstance(ctx, src, reader.OpenInstanceOpts{
-			VerificationMode: reader.SkipHashVerification, // the fetcher did it already
+			VerificationMode: vm,
 			InstanceID:       pin.InstanceID,
 		})
+
 		if err != nil {
-			src.Close(ctx, reader.IsCorruptionError(err))
-			res.Err = err
+			// We join the src.Close error so the caller can detect
+			// CorruptFileDeletionFailure, if it occurred.
+			res.Err = errors.Join(err, src.Close(ctx, reader.IsCorruptionError(err)))
 		} else {
 			res.Instance = instance
 		}
+	default:
+		panic(fmt.Sprintf("impossible: InstanceRequest.OpenAs: %x", req.OpenAs))
 	}
-
 	return res
 }
 

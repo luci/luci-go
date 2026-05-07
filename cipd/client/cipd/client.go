@@ -2131,7 +2131,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			Context: fetchCtx,
 			Done:    fetchDone,
 			Pin:     a.pin,
-			Open:    true, // want pkg.Instance, not just pkg.Source
+			OpenAs:  internal.Instance,
 			State: pinActionsState{
 				checkCtx:  checkCtx,
 				checkDone: checkDone,
@@ -2252,7 +2252,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 					Context: refetchCtx,
 					Done:    refetchDone,
 					Pin:     state.pin,
-					Open:    true,
+					OpenAs:  internal.Instance,
 					State: pinActionsState{
 						unzipCtx:  reunzipCtx,
 						unzipDone: reunzipDone,
