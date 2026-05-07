@@ -201,6 +201,15 @@ type InstanceCache struct {
 	// The zero value means to do fetches in a blocking way in WaitInstance.
 	ParallelDownloads int
 
+	// ParallelDownloadsFastStart, if true, will cause the cache to immediately
+	// start with `ParallelDownloads` fetches.
+	//
+	// If false, then the cache will 'ramp up' to `ParallelDownloads` number of
+	// concurrent fetches. If you are using this InstanceCache with downstream
+	// unpacking/installation of instances, then you want this to allow the
+	// unpacking goroutines to start working as early as possible.
+	ParallelDownloadsFastStart bool
+
 	// ExactGC causes the garbage collection to collect all instances which were
 	// not requested by this cache, and disables automatic collection as part of
 	// state synchronization (so: the caller setting ExactGC must explicitly call
@@ -318,12 +327,16 @@ func (c *InstanceCache) maybeLaunch(ctx context.Context) {
 		// first package ASAP, so the installer has something to install while more
 		// packages are being downloaded.
 		//
+		// When 'fast starting', just launch all workers immediately. This
+		// accelerates flows such as cache preparation which do not have any
+		// downstream process like unzipping and just want to fetch as quickly as
+		// possible.
+		//
 		// NOTE: workersLeft can become up to c.ParallelDownloads negative, but
 		// workers will only launch a new worker if they observe it as >= 0 after
 		// decrementing it so we should only launch a max of c.ParallelDownloads
 		// workers.
 		var workersLeft atomic.Int32
-		workersLeft.Store(int32(c.ParallelDownloads - 1))
 
 		var worker func()
 		worker = func() {
@@ -338,7 +351,14 @@ func (c *InstanceCache) maybeLaunch(ctx context.Context) {
 			}
 		}
 
-		c.fetchWG.Go(worker)
+		if c.ParallelDownloadsFastStart {
+			for range c.ParallelDownloads {
+				c.fetchWG.Go(worker)
+			}
+		} else {
+			workersLeft.Store(int32(c.ParallelDownloads - 1))
+			c.fetchWG.Go(worker)
+		}
 	}
 }
 
