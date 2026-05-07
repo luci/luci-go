@@ -76,15 +76,15 @@ export const CUSTOM_COLUMNS: Record<string, BrowserColumnDef> = {
           />
         );
       }
-      return renderCellWithLink<BrowserDevice>(
-        () =>
+      return renderCellWithLink<BrowserDevice>({
+        linkGenerator: () =>
           getFilterQueryString(
             { [`${BROWSER_UFS_SOURCE}.associated_hostname`]: [hostname] },
             undefined,
             undefined,
           ),
-        false,
-      )(params);
+        newTab: false,
+      })(params);
     },
   },
 };
@@ -98,10 +98,10 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
     size: 250,
     minSize: 150,
     accessorFn: (row) => row.id,
-    Cell: renderCellWithLink<BrowserDevice>(
-      (value) => generateBrowserDeviceDetailsURL(value),
-      false,
-    ),
+    Cell: renderCellWithLink<BrowserDevice>({
+      linkGenerator: (value) => generateBrowserDeviceDetailsURL(value),
+      newTab: false,
+    }),
   },
   [`${BROWSER_SWARMING_SOURCE}.current_task`]: {
     Cell: (params) => {
@@ -115,8 +115,8 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
         (params.cell.getValue() as string) !== 'idle' &&
         swarmingHost
       ) {
-        return renderCellWithLink<BrowserDevice>((value) => {
-          return getTaskURL(value, swarmingHost);
+        return renderCellWithLink<BrowserDevice>({
+          linkGenerator: (value) => getTaskURL(value, swarmingHost),
         })(params);
       } else {
         return (
@@ -215,8 +215,8 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
         swarmingInstance && `${swarmingInstance}.appspot.com`;
 
       if ((params.cell.getValue() as string) && swarmingHost) {
-        return renderCellWithLink<BrowserDevice>((value) => {
-          return `https://${swarmingHost}/bot?id=${value}`;
+        return renderCellWithLink<BrowserDevice>({
+          linkGenerator: (value) => `https://${swarmingHost}/bot?id=${value}`,
         })(params);
       } else {
         return (

@@ -26,8 +26,16 @@ import {
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
+export type TaskResult =
+  | 'loading'
+  | undefined
+  | {
+      taskId: string;
+      taskName: string;
+    };
+
 export interface CurrentTasksResult {
-  map: Map<string, string>;
+  map: Map<string, TaskResult>;
   error: Error | null;
   isError: boolean;
   isPending: boolean;
@@ -94,7 +102,7 @@ export const useCurrentTasks = (
 
   // Combine data from all successful queries.
   const map = useMemo(() => {
-    const m = new Map<string, string>();
+    const m = new Map<string, TaskResult>();
     if (!isPending && !isError) {
       for (const query of queries) {
         if (query.data) {
@@ -104,7 +112,10 @@ export const useCurrentTasks = (
                 (dim) => dim.key === 'dut_id',
               );
               if (dutIdDimension?.value?.length) {
-                m.set(dutIdDimension.value[0], bot.taskId);
+                m.set(dutIdDimension.value[0], {
+                  taskId: bot.taskId,
+                  taskName: bot.taskName,
+                });
               }
             }
           }

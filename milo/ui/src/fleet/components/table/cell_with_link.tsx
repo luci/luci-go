@@ -25,17 +25,31 @@ const getPathnameWithParams = () => {
 };
 
 /**
- * Helper that generates a `renderCell` function based on a link generator.
- * @param linkGenerator A function that takes a value and turns it into a URL.
- * @returns A function that renders a <DeviceDataCell /> based on FC_CellProps or GridRenderCellParams
+ * Helper that generates a `renderCell` function based on link generation and optional value extraction configurations.
+ * @param options The options object configuring the link and cell rendering.
+ * @param options.linkGenerator A function that takes a value and turns it into a URL.
+ * @param options.newTab Whether the link should open in a new tab. Defaults to true.
+ * @param options.valueGetter An optional custom function to extract a value as a string from raw row data.
+ * @returns A function that renders a cell with a tooltip and a link based on FC_CellProps.
  */
-export function renderCellWithLink<R extends MRT_RowData>(
-  linkGenerator: (value: string, rowOrProps: R) => string,
-  newTab: boolean = true,
-): (props: FC_CellProps<R>) => React.ReactElement {
+export interface RenderCellWithLinkOptions<R extends MRT_RowData> {
+  linkGenerator: (value: string, rowOrProps: R) => string;
+  newTab?: boolean;
+  valueGetter?: (rowOrProps: R) => string;
+}
+
+export function renderCellWithLink<R extends MRT_RowData>({
+  linkGenerator,
+  newTab = true,
+  valueGetter,
+}: RenderCellWithLinkOptions<R>): (
+  props: FC_CellProps<R>,
+) => React.ReactElement {
   const CellWithLink = (props: FC_CellProps<R>) => {
-    const valueStr = String(props.cell.getValue() ?? '');
     const paramsOrRow = props.row.original;
+    const valueStr = valueGetter
+      ? valueGetter(paramsOrRow)
+      : String(props.cell.getValue() ?? '');
     const url = linkGenerator(valueStr, paramsOrRow);
 
     return (

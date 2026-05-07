@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import { MRT_ColumnDef } from 'material-react-table';
 import React from 'react';
 
+import { TaskResult } from '@/fleet/components/device_table/use_current_tasks';
 import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
 import { CellWithTooltip } from '@/fleet/components/table';
 import {
@@ -28,7 +29,10 @@ import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mappin
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { getStatusColor } from '@/fleet/pages/device_list_page/chromeos/dut_state';
 import { FC_CellProps } from '@/fleet/types/table';
-import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
+import {
+  DEVICE_TASKS_SWARMING_HOST,
+  generateBuildUrl,
+} from '@/fleet/utils/builds';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import {
@@ -58,7 +62,7 @@ export const chromeOSFriendlyNames: Record<string, string> = {
 
 // current_task is populated separated from ListDevices through direct calls to the Swarming
 // API, requiring device data to be merged with task data.
-export type ChromeOSDevice = Device & { current_task?: string };
+export type ChromeOSDevice = Device & { current_task?: TaskResult };
 
 export type ChromeOSColumnDef = MRT_ColumnDef<ChromeOSDevice> & {
   orderByField?: string;
@@ -77,10 +81,10 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<string, ChromeOSColumnOverride> =
     id: {
       header: 'ID',
       accessorFn: (device) => device.id,
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        (value) => generateChromeOsDeviceDetailsURL(value),
-        false,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: (value) => generateChromeOsDeviceDetailsURL(value),
+        newTab: false,
+      }),
       orderByField: 'id',
       filterByField: 'id',
     },
@@ -152,18 +156,17 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<string, ChromeOSColumnOverride> =
       enableColumnFilter: false,
       accessorFn: (row) => row.current_task,
       renderCell: (props: FC_CellProps<ChromeOSDevice>) => {
-        const val = props.cell.getValue();
-        if (val === undefined || val === null) {
+        const val = props.cell.getValue<TaskResult>();
+        if (val === 'loading') {
           return <></>;
         }
-        const value = String(val);
-        if (value === '') {
-          return (
-            <CellWithTooltip
-              column={props.column}
-              value="idle"
-            ></CellWithTooltip>
-          );
+
+        if (
+          val === undefined ||
+          val === null ||
+          (!val.taskName && !val.taskId)
+        ) {
+          return <CellWithTooltip column={props.column} value="idle" />;
         }
         return renderCurrentTaskCell(props);
       },
@@ -188,54 +191,55 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<string, ChromeOSColumnOverride> =
       },
     },
     'label-servo_state': {
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        getSwarmingStateDocLinkForLabel,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: getSwarmingStateDocLinkForLabel,
+      }),
     },
     bluetooth_state: {
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        getSwarmingStateDocLinkForLabel,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: getSwarmingStateDocLinkForLabel,
+      }),
     },
     'label-model': {
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        (value) => `http://go/dlm-model/${value}`,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: (value) => `http://go/dlm-model/${value}`,
+      }),
     },
     'label-board': {
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        (value) => `http://go/dlm-board/${value}`,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: (value) => `http://go/dlm-board/${value}`,
+      }),
     },
     dut_name: {
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        generateDutNameRedirectURL,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: generateDutNameRedirectURL,
+      }),
     },
     'label-associated_hostname': {
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        generateDutNameRedirectURL,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: generateDutNameRedirectURL,
+      }),
     },
     'label-primary_dut': {
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        generateDutNameRedirectURL,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: generateDutNameRedirectURL,
+      }),
     },
     'label-managed_dut': {
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        generateDutNameRedirectURL,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: generateDutNameRedirectURL,
+      }),
     },
     'label-servo_usb_state': {
-      renderCell: renderCellWithLink<ChromeOSDevice>((value) =>
-        getSwarmingStateDocLinkForLabel(`${value}-2`),
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: (value) => getSwarmingStateDocLinkForLabel(`${value}-2`),
+      }),
     },
     bot_id: {
-      renderCell: renderCellWithLink<ChromeOSDevice>(
-        (value) => `https://${DEVICE_TASKS_SWARMING_HOST}/bot?id=${value}`,
-      ),
+      renderCell: renderCellWithLink<ChromeOSDevice>({
+        linkGenerator: (value) =>
+          `https://${DEVICE_TASKS_SWARMING_HOST}/bot?id=${value}`,
+      }),
     },
     realm: {
       header: 'Realm',
@@ -245,9 +249,34 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<string, ChromeOSColumnOverride> =
     },
   };
 
-const renderCurrentTaskCell = renderCellWithLink<ChromeOSDevice>((task_id) =>
-  getTaskURL(task_id),
-);
+const renderCurrentTaskCell = renderCellWithLink<ChromeOSDevice>({
+  linkGenerator: (_task, device) => {
+    const task = device.current_task;
+    if (!task || task === 'loading') {
+      return '';
+    }
+    const buildRegex =
+      /^bb-(?<buildId>\d+)-(?<project>[^/]+)\/(?<bucket>[^/]+)\/(?<builder>[^/]+)$/;
+    const match = task.taskName.match(buildRegex);
+    if (match?.groups) {
+      const { project, bucket, builder, buildId } = match.groups;
+      return generateBuildUrl({
+        project,
+        bucket,
+        builder,
+        buildId: `b${buildId}`,
+      });
+    }
+    return getTaskURL(task.taskId);
+  },
+  valueGetter: (device) => {
+    const task = device.current_task;
+    if (!task || task === 'loading') {
+      return '';
+    }
+    return task.taskName ? `${task.taskName} (${task.taskId})` : task.taskId;
+  },
+});
 
 export const EXTRA_COLUMN_IDS = [
   'id',

@@ -94,7 +94,10 @@ describe('useCurrentTasks', () => {
     await waitFor(() => expect(result.current.isPending).toBe(false));
 
     expect(result.current.map.size).toBe(1);
-    expect(result.current.map.get('dut-1')).toBe('task-123');
+    expect(result.current.map.get('dut-1')).toEqual({
+      taskId: 'task-123',
+      taskName: '',
+    });
     expect(result.current.isError).toBe(false);
   });
 
@@ -181,9 +184,18 @@ describe('useCurrentTasks', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.isError).toBe(false);
     expect(result.current.map.size).toBe(3);
-    expect(result.current.map.get('dut-1')).toBe('task-1');
-    expect(result.current.map.get('dut-2')).toBe('task-2');
-    expect(result.current.map.get('dut-3')).toBe('task-3');
+    expect(result.current.map.get('dut-1')).toEqual({
+      taskId: 'task-1',
+      taskName: '',
+    });
+    expect(result.current.map.get('dut-2')).toEqual({
+      taskId: 'task-2',
+      taskName: '',
+    });
+    expect(result.current.map.get('dut-3')).toEqual({
+      taskId: 'task-3',
+      taskName: '',
+    });
   });
 
   it('should handle API errors gracefully', async () => {

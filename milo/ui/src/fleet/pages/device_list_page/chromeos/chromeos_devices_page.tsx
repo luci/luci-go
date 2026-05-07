@@ -462,17 +462,12 @@ export const ChromeOSDevicesPage = () => {
   } = fleetMrtState;
 
   const rows: ChromeOSDevice[] = useMemo(() => {
-    const baseRows = currentTasks.isPending
-      ? devices.map((d) => ({
-          ...d,
-          current_task: undefined,
-        }))
-      : devices.map((d) => ({
-          ...d,
-          current_task: currentTasks.map.get(extractDutId(d)) || '',
-        }));
-
-    return baseRows;
+    return devices.map((d) => ({
+      ...d,
+      current_task: currentTasks.isPending
+        ? 'loading'
+        : currentTasks.map.get(extractDutId(d)),
+    }));
   }, [devices, currentTasks.map, currentTasks.isPending]);
 
   useEffect(() => {
