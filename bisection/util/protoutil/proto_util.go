@@ -638,11 +638,9 @@ func SuspectToGenAiSuspectPb(s *model.Suspect) *pb.GenAiSuspect {
 			Id:       s.GitilesCommit.Id,
 			Position: uint32(s.GitilesCommit.Position),
 		},
-		ReviewUrl:       s.ReviewUrl,
-		ReviewTitle:     s.ReviewTitle,
-		Verified:        s.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit,
-		Justification:   s.Justification,
-		ConfidenceScore: int32(s.Score),
+		ReviewUrl:   s.ReviewUrl,
+		ReviewTitle: s.ReviewTitle,
+		Verified:    s.VerificationStatus == model.SuspectVerificationStatus_ConfirmedCulprit,
 	}
 }
 
