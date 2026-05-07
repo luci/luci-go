@@ -320,7 +320,7 @@ func (c *InstanceCache) Close(ctx context.Context) {
 		}
 	} else {
 		// Do a garbage collection pass.
-		c.withState(ctx, c.now(ctx), func(state *messages.InstanceCache) (save bool) {
+		c.withState(ctx, c.now(ctx), false, func(state *messages.InstanceCache) (save bool) {
 			c.gc(ctx, state)
 			return true
 		})
@@ -343,7 +343,7 @@ func (c *InstanceCache) RequestInstances(ctx context.Context, reqs []*InstanceRe
 	c.maybeLaunch(ctx)
 
 	now := c.now(ctx)
-	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
+	_ = c.withState(ctx, now, false, func(s *messages.InstanceCache) (save bool) {
 		for _, r := range reqs {
 			// Mark any existing instances as used so they
 			// won't be GCd.
@@ -525,7 +525,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 
 func (c *InstanceCache) touch(ctx context.Context, instanceID string) {
 	now := c.now(ctx)
-	c.withState(ctx, now, func(s *messages.InstanceCache) (save bool) {
+	c.withState(ctx, now, false, func(s *messages.InstanceCache) (save bool) {
 		// Update LastAccess time.
 		entry := s.Entries[instanceID]
 		if entry == nil {
@@ -551,7 +551,7 @@ func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
 		return cipderr.IO.Apply(errors.Fmt("deleting the cached instance file: %w", err))
 	}
 
-	c.withState(ctx, c.now(ctx), func(s *messages.InstanceCache) (save bool) {
+	c.withState(ctx, c.now(ctx), false, func(s *messages.InstanceCache) (save bool) {
 		if s.Entries[pin.InstanceID] == nil {
 			return false
 		}
@@ -609,44 +609,54 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 // Newly discovered files are considered last accessed at `c.launchTime`.
 //
 // If synchronization fails, then the state is considered empty.
-func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceCache, now time.Time) {
-	statePath, err := c.FS.RootRelToAbs(instanceCacheStateFilename)
-	if err != nil {
-		panic(fmt.Sprintf("failed to convert path %q: %v", instanceCacheStateFilename, err))
-	}
+//
+// If forceSync is given, it will force a resync with the state on disc, and
+// any failure to sync will return an error.
+func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceCache, now time.Time, forceSync bool) error {
+	sync := forceSync
+	if !sync {
+		statePath, err := c.FS.RootRelToAbs(instanceCacheStateFilename)
+		if err != nil {
+			panic(fmt.Sprintf("failed to convert path %q: %v", instanceCacheStateFilename, err))
+		}
 
-	stateBytes, err := os.ReadFile(statePath)
-	sync := false
-	switch {
-	case os.IsNotExist(err):
-		sync = true
-
-	case err != nil:
-		logging.Warningf(ctx, "Could not read the instance cache state: %s", err)
-		sync = true
-
-	default:
-		if err := UnmarshalWithSHA256(stateBytes, state); err != nil {
-			if err == ErrUnknownSHA256 {
-				logging.Warningf(ctx, "Need to rebuild instance cache index file")
-			} else {
-				logging.Warningf(ctx, "Instance cache file is corrupted: %s", err)
-			}
-			*state = messages.InstanceCache{}
+		stateBytes, err := os.ReadFile(statePath)
+		switch {
+		case os.IsNotExist(err):
 			sync = true
-		} else {
-			cutOff := now.
-				Add(-instanceCacheSyncInterval).
-				Add(time.Duration(rand.Int63n(int64(5 * time.Minute))))
-			sync = state.LastSynced.AsTime().Before(cutOff)
+
+		case err != nil:
+			logging.Warningf(ctx, "Could not read the instance cache state: %s", err)
+			sync = true
+
+		default:
+			if err := UnmarshalWithSHA256(stateBytes, state); err != nil {
+				if err == ErrUnknownSHA256 {
+					logging.Warningf(ctx, "Need to rebuild instance cache index file")
+				} else {
+					logging.Warningf(ctx, "Instance cache file is corrupted: %s", err)
+				}
+				*state = messages.InstanceCache{}
+				sync = true
+			} else {
+				cutOff := now.
+					Add(-instanceCacheSyncInterval).
+					Add(time.Duration(rand.Int63n(int64(5 * time.Minute))))
+				sync = state.LastSynced.AsTime().Before(cutOff)
+			}
 		}
 	}
 
 	if sync {
 		if err := c.syncState(ctx, state, now); err != nil {
+			if forceSync {
+				return errors.Fmt("syncing instance cache: %w", err)
+			}
 			logging.Warningf(ctx, "Failed to sync instance cache: %s", err)
 		}
 	}
+
+	return nil
 }
 
 // syncState synchronizes the list of instances in the state file with instance
@@ -714,9 +724,11 @@ func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceC
 
 // withState loads cache state from the state file, calls f and saves it back.
 // See also readState.
-func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*messages.InstanceCache) (save bool)) {
+//
+// Only returns an error if forceSync is true.
+func (c *InstanceCache) withState(ctx context.Context, now time.Time, forceSync bool, f func(*messages.InstanceCache) (save bool)) error {
 	if c.Tmp {
-		return // no need to keep state.db for temp caches
+		return nil // no need to keep state.db for temp caches
 	}
 
 	state := &messages.InstanceCache{}
@@ -734,10 +746,13 @@ func (c *InstanceCache) withState(ctx context.Context, now time.Time, f func(*me
 	c.stateLock.Lock()
 	defer c.stateLock.Unlock()
 
-	c.readState(ctx, state, now)
+	if err := c.readState(ctx, state, now, forceSync); err != nil {
+		return err
+	}
 	if f(state) {
 		if err := c.saveState(ctx, state); err != nil {
 			logging.Warningf(ctx, "Could not save instance cache: %s", err)
 		}
 	}
+	return nil
 }

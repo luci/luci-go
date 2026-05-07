@@ -183,7 +183,7 @@ func TestInstanceCache(t *testing.T) {
 		}
 
 		accessTime := func(cache *InstanceCache, pin common.Pin) (lastAccess time.Time, ok bool) {
-			cache.withState(ctx, clock.Now(ctx), func(s *messages.InstanceCache) (save bool) {
+			cache.withState(ctx, clock.Now(ctx), false, func(s *messages.InstanceCache) (save bool) {
 				var entry *messages.InstanceCache_Entry
 				if entry, ok = s.Entries[pin.InstanceID]; ok {
 					lastAccess = entry.LastAccess.AsTime()
@@ -354,7 +354,7 @@ func TestInstanceCache(t *testing.T) {
 
 			// We use cache.withState directly to ensure it has all entries, but to
 			// avoid 'touching' files, which testHas() would do.
-			cache.withState(ctx, tc.Now(), func(ic *messages.InstanceCache) (save bool) {
+			cache.withState(ctx, tc.Now(), false, func(ic *messages.InstanceCache) (save bool) {
 				assert.Loosely(t, ic.Entries, should.HaveLength(8))
 				return false
 			})
@@ -490,7 +490,7 @@ func TestInstanceCache(t *testing.T) {
 			// The only instances left will be the overlapping + new instances.
 			// We use cache.withState directly to ensure it has all entries, but to
 			// avoid 'touching' files, which testHas() would do.
-			cache.withState(ctx, tc.Now(), func(ic *messages.InstanceCache) (save bool) {
+			cache.withState(ctx, tc.Now(), false, func(ic *messages.InstanceCache) (save bool) {
 				assert.Loosely(t, ic.Entries, should.HaveLength(4))
 				got := map[string]struct{}{}
 				for iid := range ic.Entries {
