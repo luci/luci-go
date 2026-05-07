@@ -107,6 +107,7 @@ type InstanceRequest struct {
 // InstanceResult is a result of a completed InstanceRequest.
 type InstanceResult struct {
 	Context  context.Context // copied from the InstanceRequest
+	Pin      common.Pin      // the original pin from the InstanceRequest.
 	Err      error           // non-nil if failed to obtain the instance
 	Source   pkg.Source      // set only if OpenAs was Source, must be closed by the caller
 	Instance pkg.Instance    // set only if OpenAs was not Source, must be closed by the caller
@@ -480,6 +481,7 @@ func (c *InstanceCache) handleRequest(req *InstanceRequest) *InstanceResult {
 
 	res := &InstanceResult{
 		Context: req.Context,
+		Pin:     req.Pin,
 		Err:     req.Context.Err(),
 		State:   req.State,
 	}

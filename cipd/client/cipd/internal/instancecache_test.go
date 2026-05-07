@@ -152,6 +152,7 @@ func TestInstanceCache(t *testing.T) {
 				fetchM.Unlock()
 
 				assert.NoErr(t, res.Err, truth.LineContext())
+				assert.That(t, res.Pin, should.Match(pin))
 				return cb(created, res)
 			})
 		}

@@ -2106,7 +2106,6 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 		checkDone context.CancelFunc // called once the admission check is done
 		unzipCtx  context.Context    // the installation activity context
 		unzipDone context.CancelFunc // called once the unzipping is done
-		pin       common.Pin         // the pin we are fetching
 		updates   []pinAction        // what to do with it when we get it
 		attempts  int                // incremented on a retry after detecting a corruption
 	}
@@ -2137,7 +2136,6 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 				checkDone: checkDone,
 				unzipCtx:  unzipCtx,
 				unzipDone: unzipDone,
-				pin:       a.pin,
 				updates:   a.updates,
 			},
 		}
@@ -2187,7 +2185,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 		// on a retry.
 		if checkCtx != nil {
 			logging.Infof(checkCtx, "Checking if the package is admitted for installation")
-			admErr := c.pluginAdmission.CheckAdmission(state.pin).Wait(checkCtx)
+			admErr := c.pluginAdmission.CheckAdmission(res.Pin).Wait(checkCtx)
 			if admErr != nil {
 				if status, ok := status.FromError(admErr); ok && status.Code() == codes.FailedPrecondition {
 					deployErr = cipderr.NotAdmitted.Apply(errors.Fmt("not admitted: %s", status.Message()))
@@ -2209,7 +2207,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			case ActionInstall:
 				_, deployErr = c.deployer.DeployInstance(unzipCtx, a.subdir, res.Instance, realOpts.OverrideInstallMode, c.MaxThreads)
 			case ActionRepair:
-				deployErr = c.deployer.RepairDeployed(unzipCtx, a.subdir, state.pin, realOpts.OverrideInstallMode, c.MaxThreads, deployer.RepairParams{
+				deployErr = c.deployer.RepairDeployed(unzipCtx, a.subdir, res.Pin, realOpts.OverrideInstallMode, c.MaxThreads, deployer.RepairParams{
 					Instance:   res.Instance,
 					ToRedeploy: a.repairPlan.ToRedeploy,
 					ToRelink:   a.repairPlan.ToRelink,
@@ -2237,7 +2235,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 		//
 		// Do it no more than once.
 		if corruption && state.attempts < 1 {
-			logging.Errorf(unzipCtx, "Failed to unzip %s, will refetch: %s", state.pin.PackageName, deployErr)
+			logging.Errorf(unzipCtx, "Failed to unzip %s, will refetch: %s", res.Pin.PackageName, deployErr)
 			unzipDone()
 
 			refetchCtx, refetchDone := ui.NewActivity(ctx, activities, "refetch")
@@ -2251,12 +2249,11 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 				{
 					Context: refetchCtx,
 					Done:    refetchDone,
-					Pin:     state.pin,
+					Pin:     res.Pin,
 					OpenAs:  internal.Instance,
 					State: pinActionsState{
 						unzipCtx:  reunzipCtx,
 						unzipDone: reunzipDone,
-						pin:       state.pin,
 						updates:   state.updates[actionIdx:],
 						attempts:  state.attempts + 1,
 					},
