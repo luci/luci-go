@@ -27,6 +27,10 @@ describe('normalizeFilterKey', () => {
     expect(normalizeFilterKey('labels."dut_state"')).toEqual('dut_state');
   });
 
+  it('should remove internal quotes', () => {
+    expect(normalizeFilterKey('ufs."model"')).toEqual('ufs.model');
+  });
+
   it('should leave other keys unchanged', () => {
     expect(normalizeFilterKey('dut_state')).toEqual('dut_state');
   });

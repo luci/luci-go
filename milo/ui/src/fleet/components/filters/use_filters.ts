@@ -46,6 +46,7 @@ export const useFilters = <
   filterValues: FilterValuesFromBuilders<T> | undefined;
   aip160: () => string;
   parseError: string | undefined;
+  warnings?: string | undefined;
   setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
   const { areFilterValuesLoading = false } = options;
@@ -81,20 +82,21 @@ export const useFilters = <
     [setSearchParams],
   );
 
-  const [filterValues, parseError]: [
+  const [filterValues, parseError, warnings]: [
     FilterValuesFromBuilders<T> | undefined,
     string | undefined,
+    string | undefined,
   ] = useMemo(() => {
-    if (builders === undefined) return [undefined, undefined];
+    if (builders === undefined) return [undefined, undefined, undefined];
 
-    const { filters, parseError } = buildFilters(
+    const { filters, parseError, warnings } = buildFilters(
       builders,
       updateUrl,
       filtersAIP160,
       areFilterValuesLoading || false,
     );
 
-    return [filters, parseError];
+    return [filters, parseError, warnings];
   }, [builders, filtersAIP160, updateUrl, areFilterValuesLoading]);
 
   useEffect(() => {
@@ -146,6 +148,7 @@ export const useFilters = <
     filterValues,
     aip160,
     parseError,
+    warnings,
     setFiltersBatch,
   };
 };
@@ -324,6 +327,7 @@ function buildFilters<
 ): {
   filters: FilterValuesFromBuilders<T> | undefined;
   parseError: string | undefined;
+  warnings?: string | undefined;
 } {
   const parseResult =
     filtersAIP160 === null ? null : constructFiltersFromAIP160(filtersAIP160);
@@ -385,11 +389,10 @@ function buildFilters<
     filter.setReRender((newF) => onFilterUpdate({ ...filters, [key]: newF }));
   }
 
-  const allErrors = [...errors, ...warnings];
-
   return {
-    parseError: allErrors.length === 0 ? undefined : allErrors.join(', '),
+    parseError: errors.length === 0 ? undefined : errors.join(', '),
     filters: filters as FilterValuesFromBuilders<T>,
+    warnings: warnings.length === 0 ? undefined : warnings.join(', '),
   };
 }
 

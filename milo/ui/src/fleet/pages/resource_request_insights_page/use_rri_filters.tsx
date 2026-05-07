@@ -41,7 +41,7 @@ export type RangeFilterData = {
 const mapToOptions = (elements: readonly string[]) =>
   Array.from(elements).map((el) => ({
     label: el === '' ? BLANK_VALUE : el,
-    value: `"${el}"`,
+    value: el,
   }));
 
 const makeStringListFilter =
@@ -74,9 +74,9 @@ export const getFilterBuilders = (
     new StringListFilterCategoryBuilder()
       .setLabel(COLUMNS.fulfillment_status.header)
       .setOptions([
-        { label: 'Not Started', value: '"NOT_STARTED"' },
-        { label: 'In Progress', value: '"IN_PROGRESS"' },
-        { label: 'Complete', value: '"COMPLETE"' },
+        { label: 'Not Started', value: 'NOT_STARTED' },
+        { label: 'In Progress', value: 'IN_PROGRESS' },
+        { label: 'Complete', value: 'COMPLETE' },
       ]),
   resource_request_target_delivery_date: makeDateFilter(
     COLUMNS.resource_request_target_delivery_date.header,

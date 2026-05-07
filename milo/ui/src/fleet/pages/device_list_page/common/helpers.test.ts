@@ -44,16 +44,16 @@ describe('dimensionsToFilterOptions', () => {
         .setLabel('testDim')
         .setOptions([
           { label: BLANK_VALUE, value: BLANK_VALUE },
-          { label: 'one', value: '"one"' },
-          { label: 'two', value: '"two"' },
+          { label: 'one', value: 'one' },
+          { label: 'two', value: 'two' },
         ]),
       'labels."testLabel"': new StringListFilterCategoryBuilder()
         .setLabel('testLabel')
         .setOptions([
           { label: BLANK_VALUE, value: BLANK_VALUE },
-          { label: 'a', value: '"a"' },
-          { label: 'b', value: '"b"' },
-          { label: 'c', value: '"c"' },
+          { label: 'a', value: 'a' },
+          { label: 'b', value: 'b' },
+          { label: 'c', value: 'c' },
         ]),
     });
   });

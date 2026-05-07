@@ -24,4 +24,4 @@ export const unquote = (val: string) => stripQuotes(val);
  * E.g., 'labels."build"' -> 'build'
  */
 export const normalizeFilterKey = (key: string) =>
-  stripQuotes(key.replace(/^labels\./, ''));
+  key.replace(/^labels\./, '').replace(/"/g, '');

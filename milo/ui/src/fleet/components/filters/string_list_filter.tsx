@@ -163,7 +163,10 @@ export class StringListFilterCategory implements FilterCategory {
       }
       switch (arg.kind) {
         case 'Comparable':
-          const err = processTermValue(memberToKey(arg.member), isNegated);
+          const err = processTermValue(
+            stripQuotes(memberToKey(arg.member)),
+            isNegated,
+          );
           if (err) {
             return { isError: true, error: err };
           }

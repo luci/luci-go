@@ -252,7 +252,7 @@ export const BrowserDevicesPage = () => {
             { label: BLANK_VALUE, value: BLANK_VALUE },
             ...(filterValues.values || [])
               .filter((v) => v !== '' && v !== BLANK_VALUE)
-              .map((v) => ({ label: v, value: v })),
+              .map((v) => ({ label: v, value: `"${v}"` })),
           ]);
       }
     };

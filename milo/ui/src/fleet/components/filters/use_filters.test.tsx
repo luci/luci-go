@@ -153,7 +153,7 @@ describe('useFilters', () => {
     expect(category).toBeInstanceOf(StringListFilterCategory);
 
     expect((category as StringListFilterCategory).getSelectedOptions()).toEqual(
-      ['"v1"', '"v2"'],
+      ['v1', 'v2'],
     );
   });
 
@@ -218,5 +218,67 @@ describe('useFilters', () => {
 
     const generated = result.current.aip160();
     expect(generated).toEqual('(host_group = "v1") AND (lab_name = "v2")');
+  });
+
+  it('should handle unquoted keys in URL matching quoted builder keys', async () => {
+    const builder = new StringListFilterCategoryBuilder()
+      .setLabel('Model')
+      .setOptions([{ label: 'v1', value: 'v1' }]);
+
+    const builders = {
+      'ufs."model"': builder,
+    };
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/?filters=ufs.model%3D%22v1%22']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders), { wrapper });
+
+    await waitFor(() => expect(result.current.filterValues).toBeTruthy());
+    expect(result.current.parseError).toBeUndefined();
+  });
+  it('should parse both quoted and unquoted values from URL correctly', async () => {
+    const builder = new StringListFilterCategoryBuilder()
+      .setLabel('Model')
+      .setOptions([{ label: 'v1', value: 'v1' }]);
+
+    const builders = {
+      model: builder,
+    };
+
+    const wrapperQuoted = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/?filters=model%3D%22v1%22']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result: resultQuoted } = renderHook(() => useFilters(builders), {
+      wrapper: wrapperQuoted,
+    });
+    await waitFor(() => expect(resultQuoted.current.filterValues).toBeTruthy());
+    const categoryQuoted = resultQuoted.current.filterValues?.[
+      'model'
+    ] as StringListFilterCategory;
+    expect(categoryQuoted.getSelectedOptions()).toEqual(['v1']);
+
+    const wrapperUnquoted = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/?filters=model%3Dv1']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result: resultUnquoted } = renderHook(() => useFilters(builders), {
+      wrapper: wrapperUnquoted,
+    });
+    await waitFor(() =>
+      expect(resultUnquoted.current.filterValues).toBeTruthy(),
+    );
+    const categoryUnquoted = resultUnquoted.current.filterValues?.[
+      'model'
+    ] as StringListFilterCategory;
+    expect(categoryUnquoted.getSelectedOptions()).toEqual(['v1']);
   });
 });

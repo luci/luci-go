@@ -52,7 +52,7 @@ export const dimensionsToFilterOptions = (
       .setOptions([
         { label: BLANK_VALUE, value: BLANK_VALUE },
         ...value.values.map((value) => {
-          return { label: value, value: `"${value}"` };
+          return { label: value, value: value };
         }),
       ]);
   }
@@ -67,7 +67,7 @@ export const dimensionsToFilterOptions = (
       .setOptions([
         { label: BLANK_VALUE, value: BLANK_VALUE },
         ...value.values.map((value) => {
-          return { label: value, value: `"${value}"` };
+          return { label: value, value: value };
         }),
       ]);
   }

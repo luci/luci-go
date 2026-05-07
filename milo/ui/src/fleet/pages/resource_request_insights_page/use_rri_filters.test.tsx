@@ -79,12 +79,12 @@ describe('useRriFilters', () => {
     await waitFor(() => {
       const rrIdFilter = result.current.filterValues
         ?.rr_id as StringListFilterCategory;
-      expect(rrIdFilter?.getOptions()['"rr-id-1"']?.isSelected).toBe(true);
+      expect(rrIdFilter?.getOptions()['rr-id-1']?.isSelected).toBe(true);
     });
 
     const rrIdFilter = result.current.filterValues
       ?.rr_id as StringListFilterCategory;
-    expect(rrIdFilter.getOptions()['"rr-id-2"'].isSelected).toBe(true);
+    expect(rrIdFilter.getOptions()['rr-id-2'].isSelected).toBe(true);
   });
 
   it('should generate an AIP string from filters', async () => {
