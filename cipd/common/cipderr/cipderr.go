@@ -50,6 +50,8 @@ const (
 	NotAdmitted Code = "not_admitted_error"
 	// A timeout of some sort.
 	Timeout Code = "timeout_error"
+	// An error due to no online client.
+	OfflineClient Code = "offline_client_error"
 	// Unrecognized (possibly transient) error.
 	Unknown Code = "unknown_error"
 )

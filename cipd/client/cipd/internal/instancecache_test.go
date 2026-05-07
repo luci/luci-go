@@ -42,7 +42,7 @@ func TestInstanceCache(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("InstanceCache", t, func(t *ftt.Test) {
-		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+		ctx, tc := testclock.UseTime(t.Context(), testclock.TestTimeLocal)
 
 		tempDir, err := os.MkdirTemp("", "instanceche_test")
 		assert.Loosely(t, err, should.BeNil)
@@ -474,6 +474,19 @@ func TestInstanceCache(t *testing.T) {
 				}
 				assert.That(t, got, should.Match(want))
 				return false
+			})
+		})
+
+		t.Run(`nil Fetcher`, func(t *ftt.Test) {
+			cache.Fetcher = nil
+
+			cache.RequestInstances(ctx, []*InstanceRequest{
+				{Context: ctx, Pin: pin(0)},
+			})
+
+			withInstance(cache, func(res *InstanceResult) (corrupted bool) {
+				assert.ErrIsLike(t, res.Err, ErrNoFetcher)
+				return
 			})
 		})
 	})

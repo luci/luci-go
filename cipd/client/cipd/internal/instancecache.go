@@ -60,6 +60,11 @@ const (
 // It must check the hash of the downloaded package matches the pin.
 type Fetcher func(ctx context.Context, pin common.Pin, f io.WriteSeeker) error
 
+// ErrNoFetcher is the error returned when an InstanceCache is configured with
+// a nil Fetcher but is missing data.
+var ErrNoFetcher = cipderr.OfflineClient.Apply(
+	errors.New("no fetcher configured"))
+
 // InstanceRequest is passed to RequestInstances.
 type InstanceRequest struct {
 	Context context.Context    // carries the cancellation signal
@@ -99,6 +104,10 @@ type InstanceCache struct {
 	// Fetcher is used to fetch files into the cache on cache misses.
 	//
 	// It must check the hash of the downloaded package matches the pin.
+	//
+	// If this is `nil`, then any attempts to fetch missing instances will
+	// fail with an error wrapping [ErrNoFetcher] (accessing cached instances
+	// still works).
 	Fetcher Fetcher
 
 	// ParallelDownloads limits how many parallel fetches can happen at once.
@@ -427,6 +436,10 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			logging.Infof(ctx, "Cache hit for %s", pin)
 			c.touch(ctx, pin.InstanceID) // Bump its last access time.
 			return file, nil
+		}
+
+		if c.Fetcher == nil {
+			return nil, errors.Fmt("missing %s: %w", pin, ErrNoFetcher)
 		}
 
 		// No such cached instance, download it.
