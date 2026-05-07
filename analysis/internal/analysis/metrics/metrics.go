@@ -174,22 +174,19 @@ var (
 		CountSQL: `f.ingested_invocation_id`,
 	}.Build()
 
-	// The number of gardened builds that had failing test runs.
+	// The number of gardened builds that had failing or flaky tests.
 	MonitoredBuildsWithTestRunFailures = metricBuilder{
 		ID:                "monitored-builds-with-test-run-failures",
 		HumanReadableName: "Monitored Builds with Test Run Failures",
-		Description:       "The number of gardened builds that had failing test runs.",
+		Description:       "The number of gardened builds that had test failures or flakes.",
 		DefaultConfig: Configuration{
 			SortPriority:          600,
 			ShowInMetricsSelector: false,
 		},
 		// Criteria:
-		// - A test run fails in a gardened builder
-		// - It is also necessary to ignore test failures from tasks where more than 6 tests failed,
-		//   because they likely all have the same underlying cause and should not be considered
-		//   separate flakes. This can be done by checking for the flake_analysis_ignore tag.
+		// - A test run has unexpected failures in a gardened builder (even if retried and passed)
 		// - Bugs should also only be filed for top level tests: check for the is_top_level_test tag.
-		FilterSQL: `f.is_test_run_blocked AND ARRAY_LENGTH(f.sources.changelists) = 0 AND NOT f.sources.is_dirty AND ARRAY_LENGTH(f.build_gardener_rotations) > 0 AND NOT EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'flake_analysis_ignore') AND EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'is_top_level_test')`,
+		FilterSQL: `ARRAY_LENGTH(f.sources.changelists) = 0 AND NOT f.sources.is_dirty AND ARRAY_LENGTH(f.build_gardener_rotations) > 0 AND NOT EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'flake_analysis_ignore') AND EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'is_top_level_test')`,
 		// Count distinct builds.
 		CountSQL: `f.ingested_invocation_id`,
 	}.Build()
