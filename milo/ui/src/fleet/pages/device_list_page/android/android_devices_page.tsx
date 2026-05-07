@@ -561,7 +561,7 @@ export const AndroidDevicesPage = () => {
         aip160={
           filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160()
         }
-        filters={filterCategoryDatas.filterValues}
+        setFiltersBatch={filterCategoryDatas.setFiltersBatch}
       />
       <AdminTasksAlert />
       <div
@@ -584,7 +584,7 @@ export const AndroidDevicesPage = () => {
             dimensionsQuery.isPending ||
             filterCategoryDatas.filterValues === undefined
           }
-          searchPlaceholder='Add a filter (e.g. "state:ready", "pool:default", or "device_id:123")'
+          searchPlaceholder='Add a filter (e.g. "state:idle", "pool:default", or "device_id:123")'
         />
       </div>
       <div

@@ -21,6 +21,9 @@ import React, { useRef, useState } from 'react';
  * Renders an interactive hovercard.
  * Uses a timer-based delay to allow the user's mouse to travel from the
  * trigger icon to the popover content without it closing prematurely.
+ *
+ * TODO(b/503171080): Refactor to use MUI Tooltip with interactive prop
+ * to avoid custom timer logic and handle pointer events more robustly.
  */
 export function InfoTooltip({
   children,

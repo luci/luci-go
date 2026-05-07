@@ -27,6 +27,16 @@ type FilterValuesFromBuilders<T> = {
   [Key in keyof T]: T[Key] extends FilterCategoryBuilder<infer FC> ? FC : never;
 };
 
+interface SupportsBatchUpdate {
+  setSelectedOptions(values: string[], silent: boolean): void;
+}
+
+function supportsBatchUpdate(
+  f: FilterCategory,
+): f is FilterCategory & SupportsBatchUpdate {
+  return 'setSelectedOptions' in f;
+}
+
 export const useFilters = <
   T extends Record<string, FilterCategoryBuilder<FilterCategory>>,
 >(
@@ -36,6 +46,7 @@ export const useFilters = <
   filterValues: FilterValuesFromBuilders<T> | undefined;
   aip160: () => string;
   parseError: string | undefined;
+  setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
   const { areFilterValuesLoading = false } = options;
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -110,10 +121,32 @@ export const useFilters = <
       .join(' AND ');
   }, [filterValues, filtersAIP160]);
 
+  const setFiltersBatch = useCallback(
+    (updates: Record<string, string[]>) => {
+      if (!filterValues) return;
+
+      const newFilters = { ...filterValues } as unknown as Record<
+        string,
+        FilterCategory
+      >;
+
+      for (const [key, values] of Object.entries(updates)) {
+        const f = newFilters[key];
+        if (f && supportsBatchUpdate(f)) {
+          f.setSelectedOptions(values, true);
+        }
+      }
+
+      updateUrl(newFilters);
+    },
+    [filterValues, updateUrl],
+  );
+
   return {
     filterValues,
     aip160,
     parseError,
+    setFiltersBatch,
   };
 };
 

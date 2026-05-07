@@ -17,7 +17,9 @@ import { colors, unknownStateColor } from '@/fleet/theme/colors';
 
 export enum androidState {
   BUSY = 'BUSY',
+  DIRTY = 'DIRTY',
   DYING = 'DYING',
+  FAILED = 'FAILED',
   IDLE = 'IDLE',
   INIT = 'INIT',
   LAB_MISSING = 'LAB_MISSING',
@@ -32,9 +34,11 @@ export const getAndroidStatusColor = (status: StateUnion) => {
     case androidState.DYING:
     case androidState.LAB_RUNNING:
     case androidState.MISSING:
+    case androidState.FAILED:
       return colors.red[100];
     case androidState.PREPPING:
     case androidState.INIT:
+    case androidState.DIRTY:
       return colors.yellow[100];
     case androidState.IDLE:
     case androidState.BUSY:

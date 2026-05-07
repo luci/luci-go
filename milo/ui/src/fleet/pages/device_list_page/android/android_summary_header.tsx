@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,45 +12,171 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { type CSSObject } from '@emotion/styled';
+import CheckIcon from '@mui/icons-material/Check';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Alert, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Grid,
+  Typography,
+  Divider,
+  Link,
+  Skeleton,
+  ButtonBase,
+} from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 
-import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
-import { FilterCategory } from '@/fleet/components/filters/use_filters';
+import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
-  borderRight: `1px solid ${colors.grey[300]}`,
-  marginRight: 16,
-  paddingRight: 8,
-};
-
-const METRIC_CONTAINER_STYLES: CSSObject = {
-  display: 'flex',
-  justifyContent: 'flex-start',
-  marginTop: 4,
-  flexWrap: 'wrap',
-  gap: 8,
-};
+import { androidState } from './android_state';
 
 export interface AndroidSummaryHeaderProps {
-  filters: Record<string, FilterCategory> | undefined;
   aip160: string;
+  setFiltersBatch: (updates: Record<string, string[]>) => void;
+}
+
+const COLUMN_STYLE = {
+  height: '100%',
+  padding: '2px 4px',
+};
+
+// Centralized filter keys to avoid hardcoding quotes everywhere
+const FILTER_KEYS = {
+  STATE: '"state"',
+  MACHINE_TYPE: '"fc_machine_type"',
+} as const;
+
+interface SmallMetricItemProps {
+  label: string | React.ReactNode;
+  value: number;
+  total?: number;
+  onClick?: () => void;
+  dotColor?: string;
+  loading?: boolean;
+}
+
+// Moved outside to avoid remounting anti-pattern
+// Uses ButtonBase for better accessibility and native keyboard support
+function SmallMetricItem({
+  label,
+  value,
+  total,
+  onClick,
+  dotColor,
+  loading,
+}: SmallMetricItemProps) {
+  const theme = useTheme();
+  const percentage =
+    total && total > 0 ? ((value / total) * 100).toFixed(1) : undefined;
+
+  return (
+    <ButtonBase
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        cursor: onClick ? 'pointer' : 'default',
+        width: '100%',
+        justifyContent: 'flex-start',
+        textAlign: 'left',
+        '&:hover': {
+          backgroundColor: theme.palette.action.hover,
+          borderRadius: '4px',
+        },
+        // Target specific class to avoid over-broad styling
+        '&:hover .small-metric-label': onClick
+          ? { textDecoration: 'underline' }
+          : {},
+        p: '1px 4px',
+        minHeight: '1rem',
+      }}
+    >
+      {dotColor && (
+        <Box
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            backgroundColor: dotColor,
+            flexShrink: 0,
+            mr: 0.5,
+          }}
+        />
+      )}
+      <Typography
+        component="div"
+        variant="body2"
+        className="small-metric-label"
+        sx={{
+          color: 'text.secondary',
+          fontSize: '0.85rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.5,
+        }}
+      >
+        {label}
+      </Typography>
+      {loading ? (
+        <Skeleton width={30} height={16} sx={{ ml: 0.5 }} />
+      ) : (
+        <Typography
+          variant="body2"
+          sx={{
+            color: 'text.primary',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            ml: 0.5,
+          }}
+        >
+          {value.toLocaleString()}
+        </Typography>
+      )}
+      {percentage !== undefined && !loading && (
+        <Typography
+          variant="caption"
+          sx={{
+            color: 'text.secondary',
+            fontWeight: 300,
+            fontSize: '0.75rem',
+            opacity: 0.7,
+            ml: 0.5,
+          }}
+        >
+          ({percentage}%)
+        </Typography>
+      )}
+    </ButtonBase>
+  );
 }
 
 export function AndroidSummaryHeader({
   aip160,
-  filters,
+  setFiltersBatch,
 }: AndroidSummaryHeaderProps) {
   const client = useFleetConsoleClient();
+  const theme = useTheme();
+
+  const BORDER_STYLE = `1px solid ${theme.palette.divider}`;
+
+  const colors = {
+    emerald: theme.palette.success.main,
+    rose: theme.palette.error.main,
+    amber: theme.palette.warning.main,
+    slate: theme.palette.text.secondary,
+    grey: theme.palette.grey[400],
+    dark: theme.palette.text.primary,
+  };
 
   const countQuery = useQuery(
     client.CountDevices.query({
@@ -58,6 +184,47 @@ export function AndroidSummaryHeader({
       platform: Platform.ANDROID,
     }),
   );
+
+  const data = countQuery.data?.androidCount;
+  const totalDevices = data?.totalDevices || 0;
+  const totalHosts = data?.totalHosts || 0;
+
+  // Guard against flashing 0 counts by checking data availability
+  const isLoading = countQuery.isPending || !data;
+
+  const recoveringCount = isLoading
+    ? undefined
+    : (data?.initDevices || 0) +
+      (data?.dirtyDevices || 0) +
+      (data?.preppingDevices || 0) +
+      (data?.lameduckDevices || 0);
+
+  const totalHealthyDevices = isLoading
+    ? undefined
+    : (data?.idleDevices || 0) +
+      (data?.busyDevices || 0) +
+      (recoveringCount || 0);
+
+  const totalUnhealthyDevices = isLoading
+    ? undefined
+    : (data?.missingDevices || 0) +
+      (data?.failedDevices || 0) +
+      (data?.dyingDevices || 0);
+
+  // Enforce lower boundary to avoid negative rendering during sync delays
+  const totalOtherDevices = isLoading
+    ? undefined
+    : Math.max(
+        0,
+        totalDevices -
+          (totalHealthyDevices || 0) -
+          (totalUnhealthyDevices || 0),
+      );
+
+  const unclassifiedDevices = totalOtherDevices;
+
+  // TODO(b/503171080): CountDevices API returns 0 for (Blank) state searches.
+  // Investigate why backend aggregation fails for blank states.
 
   const getContent = () => {
     if (countQuery.isError) {
@@ -69,205 +236,444 @@ export function AndroidSummaryHeader({
     }
 
     return (
-      <div
-        css={{
-          display: 'flex',
-          maxWidth: 1400,
-          alignItems: 'stretch', // Ensure children stretch to fill height
-          minHeight: 100,
-        }}
-      >
-        <div
-          css={{
-            ...HAS_RIGHT_SIBLING_STYLES,
-            flexGrow: 2, // Give more space to Device state (more metrics)
-          }}
-        >
-          <Typography variant="subhead1">Device state</Typography>
-          <div css={METRIC_CONTAINER_STYLES}>
-            <SingleMetric
-              name="Total"
-              value={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-            />
-            <SingleMetric
-              name="Ready"
-              value={countQuery.data?.androidCount?.idleDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              handleClick={() => {
-                const f = filters?.['"state"'];
-                if (f instanceof StringListFilterCategory)
-                  f.setOptions({
-                    ['"IDLE"']: true,
-                  });
-              }}
-            />
-            <SingleMetric
-              name="Busy"
-              value={countQuery.data?.androidCount?.busyDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              handleClick={() => {
-                const f = filters?.['"state"'];
-                if (f instanceof StringListFilterCategory)
-                  f.setOptions({
-                    ['"BUSY"']: true,
-                  });
-              }}
-            />
-            <SingleMetric
-              name="Prepping"
-              value={countQuery.data?.androidCount?.preppingDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              handleClick={() => {
-                const f = filters?.['"state"'];
-                if (f instanceof StringListFilterCategory)
-                  f.setOptions({
-                    ['"MISSING"']: true,
-                  });
-              }}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-            />
-            <SingleMetric
-              name="Dying"
-              value={countQuery.data?.androidCount?.dyingDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              handleClick={() => {
-                const f = filters?.['"state"'];
-                if (f instanceof StringListFilterCategory)
-                  f.setOptions({
-                    ['"DYING"']: true,
-                  });
-              }}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-            />
-            <SingleMetric
-              name="Init"
-              value={countQuery.data?.androidCount?.initDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              handleClick={() => {
-                const f = filters?.['"state"'];
-
-                if (f instanceof StringListFilterCategory)
-                  f.setOptions({
-                    ['"INIT"']: true,
-                  });
-              }}
-              Icon={
-                <WarningIcon
-                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
-                />
-              }
-            />
-            <SingleMetric
-              name="Lameduck"
-              value={countQuery.data?.androidCount?.lameduckDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              handleClick={() => {
-                const f = filters?.['"state"'];
-                if (f instanceof StringListFilterCategory)
-                  f.setOptions({
-                    ['"LAMEDUCK"']: true,
-                  });
-              }}
-            />
-            <SingleMetric
-              name="Failed"
-              value={countQuery.data?.androidCount?.failedDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              handleClick={() => {
-                const f = filters?.['"state"'];
-                if (f instanceof StringListFilterCategory)
-                  f.setOptions({
-                    ['"FAILED"']: true,
-                  });
-              }}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-            />
-            <SingleMetric
-              name="Dirty"
-              value={countQuery.data?.androidCount?.dirtyDevices}
-              total={countQuery.data?.androidCount?.totalDevices}
-              loading={countQuery.isPending}
-              handleClick={() => {
-                const f = filters?.['"state"'];
-                if (f instanceof StringListFilterCategory)
-                  f.setOptions({
-                    ['"DIRTY"']: true,
-                  });
-              }}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-            />
-          </div>
-        </div>
-
-        <div css={{ flexGrow: 1, paddingLeft: 16 }}>
-          <Typography variant="subhead1">Host state</Typography>
-          <div css={METRIC_CONTAINER_STYLES}>
+      <Box sx={{ p: 1 }}>
+        {/* Top Row: Hosts Health */}
+        <Grid container spacing={0} alignItems="stretch">
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            sx={{
+              ...COLUMN_STYLE,
+              borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
+              borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
+            }}
+          >
             <SingleMetric
               name="Total Hosts"
-              value={countQuery.data?.androidCount?.totalHosts}
-              loading={countQuery.isPending}
+              value={totalHosts}
+              loading={isLoading}
+              handleClick={() =>
+                setFiltersBatch({
+                  [FILTER_KEYS.MACHINE_TYPE]: ['host'],
+                  [FILTER_KEYS.STATE]: [],
+                })
+              }
             />
+          </Grid>
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            sx={{
+              ...COLUMN_STYLE,
+              borderRight: { md: BORDER_STYLE },
+              borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
+            }}
+          >
             <SingleMetric
               name="Hosts Running"
-              value={countQuery.data?.androidCount?.labRunningHosts}
-              total={countQuery.data?.androidCount?.totalHosts}
-              loading={countQuery.isPending}
-              handleClick={() => {
-                const state = filters?.['"state"'];
-                if (state instanceof StringListFilterCategory) {
-                  state.setOptions({
-                    ['"LAB_RUNNING']: true,
-                  });
-                }
-
-                const machineType = filters?.['"fc_machine_type"'];
-                if (machineType instanceof StringListFilterCategory) {
-                  machineType.setOptions({
-                    ['"host']: true,
-                  });
-                }
-              }}
+              value={data?.labRunningHosts || 0}
+              total={totalHosts}
+              loading={isLoading}
+              Icon={<CheckIcon sx={{ color: colors.emerald }} />}
+              handleClick={() =>
+                setFiltersBatch({
+                  [FILTER_KEYS.STATE]: [androidState.LAB_RUNNING],
+                  [FILTER_KEYS.MACHINE_TYPE]: ['host'],
+                })
+              }
             />
+          </Grid>
+          <Divider
+            sx={{
+              display: { xs: 'block', md: 'none' },
+              width: '100%',
+              my: 0.5,
+              borderColor: 'rgba(0, 0, 0, 0.05)',
+            }}
+          />
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            sx={{
+              ...COLUMN_STYLE,
+              borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
+              borderBottom: { xs: BORDER_STYLE, md: 'none' },
+            }}
+          >
             <SingleMetric
               name="Hosts Missing"
-              value={countQuery.data?.androidCount?.labMissingHosts}
-              total={countQuery.data?.androidCount?.totalHosts}
-              loading={countQuery.isPending}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-              handleClick={() => {
-                const state = filters?.['"state"'];
-                if (state instanceof StringListFilterCategory) {
-                  state.setOptions({
-                    ['"LAB_MISSING"']: true,
-                  });
-                }
-
-                const machineType = filters?.['"fc_machine_type"'];
-                if (machineType instanceof StringListFilterCategory) {
-                  machineType.setOptions({
-                    ['"host']: true,
-                  });
-                }
-              }}
+              value={data?.labMissingHosts || 0}
+              total={totalHosts}
+              loading={isLoading}
+              Icon={<ErrorIcon sx={{ color: colors.rose }} />}
+              handleClick={() =>
+                setFiltersBatch({
+                  [FILTER_KEYS.STATE]: [androidState.LAB_MISSING],
+                  [FILTER_KEYS.MACHINE_TYPE]: ['host'],
+                })
+              }
             />
-          </div>
-        </div>
-      </div>
+          </Grid>
+          {/* Spacer visible on sm (2 columns) to maintain grid lines */}
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            sx={{
+              ...COLUMN_STYLE,
+              display: { xs: 'none', sm: 'block', md: 'block' },
+            }}
+          />
+        </Grid>
+
+        <Divider sx={{ my: 0.5, borderColor: 'rgba(0, 0, 0, 0.05)' }} />
+
+        {/* Bottom Row: Devices Health */}
+        <Grid container spacing={0} alignItems="stretch">
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            sx={{
+              ...COLUMN_STYLE,
+              borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
+              borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
+            }}
+          >
+            <SingleMetric
+              name="Total Devices"
+              value={totalDevices}
+              loading={isLoading}
+              handleClick={() =>
+                setFiltersBatch({
+                  [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  [FILTER_KEYS.STATE]: [],
+                })
+              }
+            />
+          </Grid>
+
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            aria-label="Healthy Devices"
+            sx={{
+              ...COLUMN_STYLE,
+              borderRight: { md: BORDER_STYLE },
+              borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
+            }}
+          >
+            <SingleMetric
+              name="Total Healthy"
+              value={totalHealthyDevices}
+              total={totalDevices}
+              loading={isLoading}
+              Icon={<CheckIcon sx={{ color: colors.emerald }} />}
+              handleClick={() =>
+                setFiltersBatch({
+                  [FILTER_KEYS.STATE]: [
+                    androidState.IDLE,
+                    androidState.BUSY,
+                    androidState.INIT,
+                    androidState.DIRTY,
+                    androidState.PREPPING,
+                    androidState.LAMEDUCK,
+                  ],
+                  [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                })
+              }
+            />
+            <Box
+              sx={{
+                mt: 0.5,
+                px: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0,
+              }}
+            >
+              <SmallMetricItem
+                label="Idle:"
+                value={data?.idleDevices || 0}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: [androidState.IDLE],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.emerald}
+                loading={isLoading}
+              />
+              <SmallMetricItem
+                label="Busy:"
+                value={data?.busyDevices || 0}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: [androidState.BUSY],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.emerald}
+                loading={isLoading}
+              />
+              <SmallMetricItem
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Recovering:
+                    <InfoTooltip>
+                      <Box sx={{ p: 0.5 }}>
+                        <Typography variant="body2">
+                          Counted as healthy because these devices are expected
+                          to recover automatically (Init, Dirty, Prepping,
+                          Lameduck).
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 2 }}>
+                          <Link
+                            href="https://go/android-labtechs#device-terminology"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="documentation (opens in a new tab)"
+                          >
+                            See documentation for details.
+                          </Link>
+                        </Typography>
+                      </Box>
+                    </InfoTooltip>
+                  </Box>
+                }
+                value={recoveringCount || 0}
+                total={totalDevices}
+                dotColor={colors.grey}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: [
+                      androidState.INIT,
+                      androidState.DIRTY,
+                      androidState.PREPPING,
+                      androidState.LAMEDUCK,
+                    ],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                loading={isLoading}
+              />
+              <Box sx={{ ml: 2 }}>
+                <SmallMetricItem
+                  label="Init:"
+                  value={data?.initDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.INIT],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  label="Dirty:"
+                  value={data?.dirtyDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.DIRTY],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  label="Prepping:"
+                  value={data?.preppingDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.PREPPING],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  label="Lameduck:"
+                  value={data?.lameduckDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.LAMEDUCK],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                />
+              </Box>
+            </Box>
+          </Grid>
+
+          <Divider
+            sx={{
+              display: { xs: 'block', md: 'none' },
+              width: '100%',
+              my: 0.5,
+              borderColor: 'rgba(0, 0, 0, 0.05)',
+            }}
+          />
+
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            aria-label="Unhealthy Devices"
+            sx={{
+              ...COLUMN_STYLE,
+              borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
+              borderBottom: { xs: BORDER_STYLE, md: 'none' },
+            }}
+          >
+            <SingleMetric
+              name="Total Unhealthy"
+              value={totalUnhealthyDevices}
+              total={totalDevices}
+              loading={isLoading}
+              Icon={<ErrorIcon sx={{ color: colors.rose }} />}
+              handleClick={() =>
+                setFiltersBatch({
+                  [FILTER_KEYS.STATE]: [
+                    androidState.MISSING,
+                    androidState.FAILED,
+                    androidState.DYING,
+                  ],
+                  [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                })
+              }
+            />
+            <Box
+              sx={{
+                mt: 0.5,
+                px: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0,
+              }}
+            >
+              <SmallMetricItem
+                label="Missing:"
+                value={data?.missingDevices || 0}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: [androidState.MISSING],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.rose}
+                loading={isLoading}
+              />
+              <SmallMetricItem
+                label="Failed:"
+                value={data?.failedDevices || 0}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: [androidState.FAILED],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.rose}
+                loading={isLoading}
+              />
+              <SmallMetricItem
+                label="Dying:"
+                value={data?.dyingDevices || 0}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: [androidState.DYING],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.rose}
+                loading={isLoading}
+              />
+            </Box>
+          </Grid>
+
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            aria-label="Other Devices"
+            sx={{
+              ...COLUMN_STYLE,
+              borderBottom: { xs: BORDER_STYLE, sm: 'none', md: 'none' },
+            }}
+          >
+            <SingleMetric
+              name="Total Other"
+              value={totalOtherDevices}
+              total={totalDevices}
+              loading={isLoading}
+              Icon={<WarningIcon sx={{ color: colors.amber }} />}
+              handleClick={() =>
+                setFiltersBatch({
+                  [FILTER_KEYS.STATE]: ['(Blank)'],
+                  [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                })
+              }
+            />
+            <Box
+              sx={{
+                mt: 0.5,
+                px: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0,
+              }}
+            >
+              <SmallMetricItem
+                label="Unclassified:"
+                value={unclassifiedDevices || 0}
+                total={totalDevices}
+                onClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.STATE]: ['(Blank)'],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+                dotColor={colors.amber}
+                loading={isLoading}
+              />
+            </Box>
+          </Grid>
+        </Grid>
+      </Box>
     );
   };
 
   return (
     <MetricsContainer>
-      <Typography variant="h4">Main metrics</Typography>
-      <div css={{ marginTop: 24 }}>{getContent()}</div>
+      <Typography variant="h6" sx={{ mb: 2, color: colors.dark }}>
+        Device Health Metrics
+      </Typography>
+      {getContent()}
     </MetricsContainer>
   );
 }
