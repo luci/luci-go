@@ -106,6 +106,13 @@ type InstanceCache struct {
 	// The zero value means to do fetches in a blocking way in WaitInstance.
 	ParallelDownloads int
 
+	// ExactGC causes the garbage collection to collect all instances which were
+	// not requested by this cache, and disables automatic collection as part of
+	// state synchronization (so: the caller setting ExactGC must explicitly call
+	// GC() when all done with this cache). This is internally modeled as setting
+	// the maxAge to zero.
+	ExactGC bool
+
 	stateLock sync.Mutex // synchronizes access to the state file.
 
 	// launchTime is the time at which RequestInstances was first called; this is
@@ -503,7 +510,7 @@ func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
 // touched for too long.
 func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 	maxAge := c.maxAge
-	if maxAge == 0 {
+	if maxAge == 0 && !c.ExactGC {
 		maxAge = instanceCacheMaxAge
 	}
 
@@ -515,7 +522,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
 	garbage := stringset.New(0)
 	for instanceID, e := range state.Entries {
 		age := c.launchTime.Sub(e.LastAccess.AsTime())
-		if age > maxAge {
+		if age >= maxAge {
 			garbage.Add(instanceID)
 			logging.Debugf(ctx, "Purging cached instance %q (age %s as of %s)",
 				instanceID, age, c.launchTime)

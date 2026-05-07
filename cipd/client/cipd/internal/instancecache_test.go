@@ -427,5 +427,54 @@ func TestInstanceCache(t *testing.T) {
 				})
 			})
 		})
+
+		t.Run(`ExactGC`, func(t *ftt.Test) {
+			cache.ExactGC = true
+
+			// Ensure the cache is launched.
+			cache.RequestInstances(ctx, nil)
+
+			// Advance time a bit so all these pins initially start with a time >
+			// launchTime.
+			tc.Add(time.Minute)
+
+			// Add a bunch of instances.
+			putNew(cache, pin(0))
+			putNew(cache, pin(1))
+			putNew(cache, pin(2))
+			putNew(cache, pin(3))
+
+			// Delete the state file to force resync. All these instances should now
+			// be marked as === launchTime.
+			assert.NoErr(t, os.Remove(filepath.Join(tempDir, instanceCacheStateFilename)))
+
+			// Access some overlapping instances and add some new instances.
+			testHas(cache, pin(2))
+			testHas(cache, pin(3))
+			putNew(cache, pin(4))
+			putNew(cache, pin(5))
+
+			// Our explicit Close() should remove 0 and 1 because they were ==
+			// launchTime, and we didn't actually touch them after the sync.
+			cache.Close(ctx)
+
+			want := map[string]struct{}{}
+			for pinNum := 2; pinNum < 6; pinNum++ {
+				want[pin(pinNum).InstanceID] = struct{}{}
+			}
+
+			// The only instances left will be the overlapping + new instances.
+			// We use cache.withState directly to ensure it has all entries, but to
+			// avoid 'touching' files, which testHas() would do.
+			cache.withState(ctx, tc.Now(), func(ic *messages.InstanceCache) (save bool) {
+				assert.Loosely(t, ic.Entries, should.HaveLength(4))
+				got := map[string]struct{}{}
+				for iid := range ic.Entries {
+					got[iid] = struct{}{}
+				}
+				assert.That(t, got, should.Match(want))
+				return false
+			})
+		})
 	})
 }
