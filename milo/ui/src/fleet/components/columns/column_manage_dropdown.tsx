@@ -22,11 +22,12 @@ import { MenuSkeleton } from '../filter_dropdown/menu_skeleton';
 import { OptionsMenu } from '../filter_dropdown/options_menu';
 import { OptionsDropdown } from '../options_dropdown';
 
-interface ColumnsButtonProps {
+interface ColumnsManageDropDownProps {
   isLoading?: boolean;
   anchorEl: HTMLElement | null;
-  setAnchorEL: (newAnchorEl: HTMLElement | null) => void;
+  setAnchorEl: (newAnchorEl: HTMLElement | null) => void;
   onReset?: () => void;
+  onResetWidths?: () => void;
   temporaryColumns?: string[];
   addUserVisibleColumn?: (column: string) => void;
   allColumns: { id: string; label: string }[];
@@ -41,15 +42,16 @@ interface ColumnsButtonProps {
 export function ColumnsManageDropDown({
   isLoading,
   anchorEl,
-  setAnchorEL,
+  setAnchorEl,
   onReset,
+  onResetWidths,
   temporaryColumns,
   addUserVisibleColumn,
   allColumns,
   visibleColumns,
   onToggleColumn,
   selectOnlyColumn,
-}: ColumnsButtonProps) {
+}: ColumnsManageDropDownProps) {
   const toggleColumn = (field: string) => {
     if (temporaryColumns?.includes(field)) {
       // Toggling a temporary column makes it permanent.
@@ -83,7 +85,7 @@ export function ColumnsManageDropDown({
   return (
     <OptionsDropdown
       sx={{ width: '500px' }}
-      onClose={() => setAnchorEL(null)}
+      onClose={() => setAnchorEl(null)}
       anchorEl={anchorEl}
       open={!!anchorEl}
       anchorOrigin={{
@@ -93,7 +95,8 @@ export function ColumnsManageDropDown({
       enableSearchInput={true}
       maxHeight={500}
       onResetClick={onReset}
-      footerButtons={['reset']}
+      onResetWidthsClick={onResetWidths}
+      footerButtons={['reset', 'reset-widths']}
       onApply={() => {}}
       renderChild={(searchQuery) => {
         if (isLoading) {

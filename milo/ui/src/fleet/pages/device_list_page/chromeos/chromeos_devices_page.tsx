@@ -459,6 +459,7 @@ export const ChromeOSDevicesPage = () => {
     onRowsPerPageChange,
     columnSizing,
     onColumnSizingChange,
+    resetColumnWidths,
   } = fleetMrtState;
 
   const rows: ChromeOSDevice[] = useMemo(() => {
@@ -480,6 +481,7 @@ export const ChromeOSDevicesPage = () => {
       visibleColumnIds,
       onToggleColumn,
       resetDefaultColumns,
+      resetColumnWidths,
       devicesQuery,
       nextPageToken,
       devices,
@@ -496,6 +498,7 @@ export const ChromeOSDevicesPage = () => {
       visibleColumnIds,
       onToggleColumn,
       resetDefaultColumns,
+      resetColumnWidths,
       devicesQuery,
       nextPageToken,
       devices,

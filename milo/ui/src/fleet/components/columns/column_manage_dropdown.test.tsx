@@ -40,7 +40,7 @@ describe('<ColumnsManageDropDown />', () => {
     // and col1 to be at the bottom since it's hidden.
     const visibleColumns = ['col2', 'col3'];
 
-    const setAnchorEL = jest.fn();
+    const setAnchorEl = jest.fn();
     const onToggleColumn = jest.fn();
 
     // Render with a fake anchor element to force it open
@@ -49,7 +49,7 @@ describe('<ColumnsManageDropDown />', () => {
     render(
       <ColumnsManageDropDown
         anchorEl={anchorEl}
-        setAnchorEL={setAnchorEL}
+        setAnchorEl={setAnchorEl}
         allColumns={allColumns}
         visibleColumns={visibleColumns}
         onToggleColumn={onToggleColumn}

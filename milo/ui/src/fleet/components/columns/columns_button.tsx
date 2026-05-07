@@ -23,6 +23,7 @@ import { ColumnsManageDropDown } from './column_manage_dropdown';
 interface ColumnsButtonProps {
   isLoading?: boolean;
   resetDefaultColumns?: () => void;
+  resetColumnWidths?: () => void;
   temporaryColumns?: string[];
   addUserVisibleColumn?: (column: string) => void;
   allColumns: { id: string; label: string }[];
@@ -43,6 +44,7 @@ interface ColumnsButtonProps {
 export function ColumnsButton({
   isLoading,
   resetDefaultColumns,
+  resetColumnWidths,
   temporaryColumns,
   addUserVisibleColumn,
   allColumns,
@@ -51,11 +53,11 @@ export function ColumnsButton({
   selectOnlyColumn,
   renderTrigger,
 }: ColumnsButtonProps) {
-  const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   useShortcut('Open column picker', 'c', () => {
-    setAnchorEL(buttonRef.current);
+    setAnchorEl(buttonRef.current);
   });
 
   return (
@@ -64,7 +66,7 @@ export function ColumnsButton({
         renderTrigger(
           {
             onClick: (e) => {
-              setAnchorEL(anchorEl ? null : e.currentTarget);
+              setAnchorEl(anchorEl ? null : e.currentTarget);
             },
           },
           buttonRef,
@@ -73,7 +75,7 @@ export function ColumnsButton({
         <Button
           ref={buttonRef}
           onClick={() => {
-            setAnchorEL(anchorEl ? null : buttonRef.current);
+            setAnchorEl(anchorEl ? null : buttonRef.current);
           }}
           startIcon={<ViewColumnIcon />}
           color="primary"
@@ -85,8 +87,9 @@ export function ColumnsButton({
       <ColumnsManageDropDown
         isLoading={isLoading}
         anchorEl={anchorEl}
-        setAnchorEL={setAnchorEL}
+        setAnchorEl={setAnchorEl}
         onReset={resetDefaultColumns}
+        onResetWidths={resetColumnWidths}
         temporaryColumns={temporaryColumns}
         addUserVisibleColumn={addUserVisibleColumn}
         allColumns={allColumns}

@@ -39,6 +39,7 @@ export function FleetTopToolbar<TData extends MRT_RowData>({
     onToggleColumn = () => {},
     selectOnlyColumn = () => {},
     resetDefaultColumns = () => {},
+    resetColumnWidths,
   } = meta;
 
   return (
@@ -62,6 +63,7 @@ export function FleetTopToolbar<TData extends MRT_RowData>({
           onToggleColumn={onToggleColumn}
           selectOnlyColumn={selectOnlyColumn}
           resetDefaultColumns={resetDefaultColumns}
+          resetColumnWidths={resetColumnWidths}
           renderTrigger={({ onClick }, ref) => (
             <Button
               ref={ref}

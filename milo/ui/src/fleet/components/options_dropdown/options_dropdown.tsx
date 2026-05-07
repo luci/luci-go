@@ -52,7 +52,8 @@ type OptionsDropdownProps = Omit<MenuProps, 'open' | 'maxHeight'> & {
   enableSearchInput?: boolean;
   maxHeight?: CSSProperties['maxHeight'];
   onResetClick?: MouseEventHandler<HTMLButtonElement>;
-  footerButtons?: ('reset' | 'cancel' | 'apply')[];
+  onResetWidthsClick?: MouseEventHandler<HTMLButtonElement>;
+  footerButtons?: ('reset' | 'cancel' | 'apply' | 'reset-widths')[];
   disablePortal?: boolean;
   disableEnforceFocus?: boolean;
   disableRestoreFocus?: boolean;
@@ -105,6 +106,7 @@ export function OptionsDropdown({
   enableSearchInput = false,
   maxHeight = 'auto',
   onResetClick,
+  onResetWidthsClick,
   footerButtons = ['apply', 'cancel'],
   disablePortal,
   sx,
@@ -320,6 +322,7 @@ export function OptionsDropdown({
               }}
               onApplyClick={onApply}
               onResetClick={onResetClick}
+              onResetWidthsClick={onResetWidthsClick}
               key="options-menu-footer"
             />
           )}

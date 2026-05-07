@@ -410,6 +410,7 @@ export const AndroidDevicesPage = () => {
     onRowsPerPageChange,
     columnSizing,
     onColumnSizingChange,
+    resetColumnWidths,
   } = fleetMrtState;
 
   const visibleEnrichedColumns = useMemo(() => {
@@ -431,6 +432,7 @@ export const AndroidDevicesPage = () => {
       onToggleColumn,
       selectOnlyColumn,
       resetDefaultColumns,
+      resetColumnWidths,
       pagerCtx,
       searchParams,
       goToPrevPage,
@@ -445,6 +447,7 @@ export const AndroidDevicesPage = () => {
       onToggleColumn,
       selectOnlyColumn,
       resetDefaultColumns,
+      resetColumnWidths,
       pagerCtx,
       searchParams,
       goToPrevPage,
@@ -530,6 +533,7 @@ export const AndroidDevicesPage = () => {
       allDimensionColumns,
       onToggleColumn,
       resetDefaultColumns,
+      resetColumnWidths,
       selectOnlyColumn,
       devicesQuery.data?.totalSize,
       devicesQuery.data?.nextPageToken,

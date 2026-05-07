@@ -140,6 +140,15 @@ export const useFleetMRTState = <
     };
   }, [columnSizing, localStorageKey]);
 
+  const resetColumnWidths = useCallback(() => {
+    try {
+      localStorage.removeItem(`${localStorageKey}-sizes`);
+    } catch (e) {
+      logging.error('Failed to remove column sizing from localStorage', e);
+    }
+    setColumnSizing({});
+  }, [localStorageKey, setColumnSizing]);
+
   const { filterByFieldToId, idToFilterByField } = useMemo(() => {
     const fromFieldId = new Map<string, string>();
     const toFieldId = new Map<string, string>();
@@ -382,6 +391,7 @@ export const useFleetMRTState = <
       onRowSelectionChange: setRowSelection,
       columnSizing,
       onColumnSizingChange: setColumnSizing,
+      resetColumnWidths,
     }),
     [
       mrtColumnManager,
@@ -396,6 +406,7 @@ export const useFleetMRTState = <
       rowSelection,
       columnSizing,
       setColumnSizing,
+      resetColumnWidths,
     ],
   );
 };

@@ -15,10 +15,11 @@
 import { Button, Divider, Tooltip } from '@mui/material';
 
 export type FooterProps = {
-  footerButtons?: ('cancel' | 'apply' | 'reset')[];
+  footerButtons?: ('cancel' | 'apply' | 'reset' | 'reset-widths')[];
   onCancelClick?: React.MouseEventHandler<HTMLButtonElement>;
   onApplyClick?: React.MouseEventHandler<HTMLButtonElement>;
   onResetClick?: React.MouseEventHandler<HTMLButtonElement>;
+  onResetWidthsClick?: React.MouseEventHandler<HTMLButtonElement>;
   applyDisabled?: boolean;
   applyTooltip?: string;
 };
@@ -26,6 +27,7 @@ export type FooterProps = {
 export function Footer({
   footerButtons = ['apply', 'cancel'],
   onResetClick,
+  onResetWidthsClick,
   onCancelClick,
   onApplyClick,
   applyDisabled,
@@ -63,6 +65,11 @@ export function Footer({
         {footerButtons.includes('reset') && (
           <Button disableElevation onClick={onResetClick}>
             Reset to default
+          </Button>
+        )}
+        {footerButtons.includes('reset-widths') && (
+          <Button disableElevation onClick={onResetWidthsClick}>
+            Reset widths to default
           </Button>
         )}
         {footerButtons.includes('cancel') && (

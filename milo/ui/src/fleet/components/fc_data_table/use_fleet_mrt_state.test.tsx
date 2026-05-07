@@ -303,4 +303,36 @@ describe('useFleetMRTState', () => {
       JSON.stringify({ col1: 150 }),
     );
   });
+
+  it('should clear localStorage and reset columnSizing state on resetColumnWidths callback', () => {
+    const storedSizes = { col1: 150, col2: 300 };
+    localStorage.setItem(
+      `${localStorageKey}-sizes`,
+      JSON.stringify(storedSizes),
+    );
+
+    const { result } = renderHook(
+      () =>
+        useFleetMRTState({
+          setSearchParams: mockSetSearchParams,
+          pagerCtx: mockPagerCtx,
+          selectedOptions: mockSelectedOptions,
+          filterOptionsConfig: mockFilterOptionsConfig,
+          columnsList,
+          localStorageKey,
+          defaultColumnIds,
+          platform: Platform.CHROMEOS,
+        }),
+      { wrapper },
+    );
+
+    expect(result.current.columnSizing).toEqual(storedSizes);
+
+    act(() => {
+      result.current.resetColumnWidths();
+    });
+
+    expect(result.current.columnSizing).toEqual({});
+    expect(localStorage.getItem(`${localStorageKey}-sizes`)).toBeNull();
+  });
 });

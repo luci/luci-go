@@ -33,6 +33,7 @@ export interface FleetTableMeta<TData extends MRT_RowData> {
   onToggleColumn?: (id: string) => void;
   selectOnlyColumn?: (id: string) => void;
   resetDefaultColumns?: () => void;
+  resetColumnWidths?: () => void;
   handleCopy?: (table: MRT_TableInstance<TData>) => void;
 }
 

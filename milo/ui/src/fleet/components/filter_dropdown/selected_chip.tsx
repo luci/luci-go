@@ -41,7 +41,7 @@ export const SelectedChip = forwardRef<
   },
   ref,
 ) {
-  const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   return (
     <>
@@ -50,10 +50,10 @@ export const SelectedChip = forwardRef<
         onClick={(event) => {
           event.stopPropagation();
           if (anchorEl) {
-            setAnchorEL(null);
+            setAnchorEl(null);
             return;
           }
-          setAnchorEL(event.currentTarget);
+          setAnchorEl(event.currentTarget);
         }}
         onMouseDown={(e) => {
           if (e.button === 1) {
@@ -88,7 +88,7 @@ export const SelectedChip = forwardRef<
         onKeyDown={(e) => {
           e.stopPropagation();
           keyboardListNavigationHandler(e, () => {
-            setAnchorEL(e.currentTarget);
+            setAnchorEl(e.currentTarget);
             e.preventDefault();
             e.stopPropagation();
           });
@@ -98,7 +98,7 @@ export const SelectedChip = forwardRef<
       />
       <ClickAwayListener
         onClickAway={() => {
-          setAnchorEL(null);
+          setAnchorEl(null);
         }}
       >
         <OptionsDropdown
@@ -130,23 +130,23 @@ export const SelectedChip = forwardRef<
               onNavigateUp,
               () => {
                 onApply();
-                setAnchorEL(null);
+                setAnchorEl(null);
               },
               () => {
-                setAnchorEL(null);
+                setAnchorEl(null);
               },
             )
           }
           onApply={() => {
             anchorEl?.focus();
-            setAnchorEL(null);
+            setAnchorEl(null);
             onApply();
           }}
           onClose={(_, reason) => {
             if (reason === 'escapeKeyDown') {
               anchorEl?.focus();
             }
-            setAnchorEL(null);
+            setAnchorEl(null);
           }}
         />
       </ClickAwayListener>

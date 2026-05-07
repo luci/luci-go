@@ -41,7 +41,7 @@ export function SelectedChip_OLD({
   onKeyDown,
   ...chipProps
 }: ChipProps & SelectedChipProps_OLD) {
-  const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   return (
     <>
@@ -49,10 +49,10 @@ export function SelectedChip_OLD({
         onClick={(event) => {
           event.stopPropagation();
           if (anchorEl) {
-            setAnchorEL(null);
+            setAnchorEl(null);
             return;
           }
-          setAnchorEL(event.currentTarget);
+          setAnchorEl(event.currentTarget);
         }}
         onMouseDown={(e) => {
           if (e.button === 1) {
@@ -87,7 +87,7 @@ export function SelectedChip_OLD({
         onKeyDown={(e) => {
           e.stopPropagation();
           keyboardListNavigationHandler(e, () => {
-            setAnchorEL(e.currentTarget);
+            setAnchorEl(e.currentTarget);
             e.preventDefault();
             e.stopPropagation();
           });
@@ -97,7 +97,7 @@ export function SelectedChip_OLD({
       />
       <ClickAwayListener
         onClickAway={() => {
-          setAnchorEL(null);
+          setAnchorEl(null);
         }}
       >
         <OptionsDropdown
@@ -125,14 +125,14 @@ export function SelectedChip_OLD({
           renderChild={dropdownContent}
           onApply={() => {
             anchorEl?.focus();
-            setAnchorEL(null);
+            setAnchorEl(null);
             onApply();
           }}
           onClose={(_, reason) => {
             if (reason === 'escapeKeyDown') {
               anchorEl?.focus();
             }
-            setAnchorEL(null);
+            setAnchorEl(null);
           }}
         />
       </ClickAwayListener>
