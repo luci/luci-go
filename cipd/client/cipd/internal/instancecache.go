@@ -16,11 +16,13 @@ package internal
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"io"
 	"math/rand"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -42,11 +44,11 @@ import (
 )
 
 const (
-	// instanceCacheMaxAge defines when to purge a cached package that is not
-	// being used.
+	// DefaultInstanceCacheMaxAge defines when to purge a cached package that is
+	// not being used.
 	//
 	// Works in parallel with 'instanceCacheMaxSize' limit.
-	instanceCacheMaxAge = 48 * time.Hour
+	DefaultInstanceCacheMaxAge = 48 * time.Hour
 
 	// instanceCacheSyncInterval determines the frequency of synchronization of
 	// state.db with instance files in the cache dir.
@@ -111,6 +113,62 @@ type InstanceResult struct {
 	State    any             // copied from the InstanceRequest
 }
 
+// PassiveWritePolicy describes how this InstanceCache can passively write to
+// disk. By default, reading from the instance cache is allowed to write
+// under certain circumstances.
+type PassiveWritePolicy int
+
+const (
+	// DisableGC causes the InstanceCache to never do garbage collection.
+	DisableGC PassiveWritePolicy = 1 << iota
+
+	// DisableCorruptDeletion causes the InstanceCache to never delete corrupted
+	// instance files.
+	DisableCorruptDeletion
+
+	// DisableStateWrite causes the InstanceCache to never write the state.db
+	// file (even after sync'ing state)
+	DisableStateWrite
+
+	// DisablePassiveWrites disables all passive writing capabilities of the
+	// InstanceCache.
+	DisablePassiveWrites = DisableGC | DisableCorruptDeletion | DisableStateWrite
+)
+
+func (p PassiveWritePolicy) has(item PassiveWritePolicy) bool {
+	return p&item == item
+}
+
+func (p PassiveWritePolicy) String() string {
+	if p == 0 {
+		return ""
+	}
+
+	toks := make([]string, 0, 3)
+	if p.has(DisableGC) {
+		toks = append(toks, "no-gc")
+	}
+	if p.has(DisableCorruptDeletion) {
+		toks = append(toks, "no-corrupt-cleanup")
+	}
+	if p.has(DisableStateWrite) {
+		toks = append(toks, "no-state-write")
+	}
+	if leftover := p &^ DisablePassiveWrites; leftover != 0 {
+		toks = append(toks, fmt.Sprintf("UNKNOWN[%b]", leftover))
+	}
+	return strings.Join(toks, "|")
+}
+
+// GCOlderThanLaunch indicates that the InstanceCache should garbage
+// collect all instances which were older than the time that this InstanceCache
+// was Launch'd.
+//
+// Typically this is used when the InstanceCache is the only one open for a
+// given FS, and thus this has the effect of removing all instances which are
+// not requested from this cache.
+const GCOlderThanLaunch time.Duration = -1
+
 // InstanceCache is a file-system-based, thread-safe, LRU cache of instances.
 //
 // It also knows how to populate the cache using the given Fetcher callback,
@@ -150,6 +208,20 @@ type InstanceCache struct {
 	// the maxAge to zero.
 	ExactGC bool
 
+	// GCMaxAge causes the garbage collection to collect all instances which were
+	// not requested from this cache within this time period.
+	//
+	// If this is exactly zero, it defaults to [DefaultInstanceCacheMaxAge].
+	//
+	// If this is [GCOlderThanLaunch], the GC will remove all instances
+	// added before this cache was Launch'd.
+	GCMaxAge time.Duration
+
+	// PassiveWritePolicy adjusts how this InstanceCache is allowed to write
+	// passively to disk. If omitted, the InstanceCache assumes full ability to
+	// write passively.
+	PassiveWritePolicy PassiveWritePolicy
+
 	stateLock sync.Mutex // synchronizes access to the state file.
 
 	// launchTime is the time at which RequestInstances was first called; this is
@@ -161,9 +233,6 @@ type InstanceCache struct {
 	fetchReq     chan *InstanceRequest
 	fetchRes     chan *InstanceResult // non-nil only if ParallelDownloads > 0
 	fetchWG      sync.WaitGroup
-
-	// Defaults to instanceCacheMaxAge, mocked in tests.
-	maxAge time.Duration
 }
 
 // cacheFile is a downloaded instance file, implements pkg.Source.
@@ -220,7 +289,11 @@ func (c *InstanceCache) maybeLaunch(ctx context.Context) {
 	if c.Tmp {
 		tmp = " temporary"
 	}
-	logging.Infof(ctx, "Using%s instance cache at %s", tmp, c.FS.Root())
+	policy := ""
+	if c.PassiveWritePolicy != 0 {
+		policy = fmt.Sprintf(" (%s)", c.PassiveWritePolicy.String())
+	}
+	logging.Infof(ctx, "Using%s%s instance cache at %s", tmp, policy, c.FS.Root())
 
 	// This is an effectively an unlimited buffer. At very least it should be
 	// large enough to hold all requests submitted by RequestInstances(...) before
@@ -542,6 +615,13 @@ func (c *InstanceCache) touch(ctx context.Context, instanceID string) {
 
 // delete deletes an instance from the cache if it was there.
 func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
+	// If the cache is configured to skip corrupt cleanup, do so here.
+	//
+	// If the cache is temporary, then ignore this.
+	if !c.Tmp && c.PassiveWritePolicy.has(DisableCorruptDeletion) {
+		return nil
+	}
+
 	path, err := c.FS.RootRelToAbs(pin.InstanceID)
 	if err != nil {
 		return cipderr.BadArgument.Apply(errors.Fmt("invalid instance ID %q", pin.InstanceID))
@@ -567,9 +647,14 @@ func (c *InstanceCache) delete(ctx context.Context, pin common.Pin) error {
 // This relies purely on a policy which collects instances which haven't been
 // touched for too long.
 func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache) {
-	maxAge := c.maxAge
-	if maxAge == 0 && !c.ExactGC {
-		maxAge = instanceCacheMaxAge
+	if c.PassiveWritePolicy.has(DisableGC) {
+		return
+	}
+
+	// Values less than 0, including GCOlderThanLaunch, become 0.
+	var maxAge time.Duration
+	if !c.ExactGC {
+		maxAge = max(cmp.Or(c.GCMaxAge, DefaultInstanceCacheMaxAge), 0)
 	}
 
 	if c.launchTime.IsZero() {
@@ -709,6 +794,10 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 
 // saveState persists the cache state.
 func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceCache) error {
+	if c.PassiveWritePolicy.has(DisableStateWrite) {
+		return nil
+	}
+
 	stateBytes, err := MarshalWithSHA256(state)
 	if err != nil {
 		return err

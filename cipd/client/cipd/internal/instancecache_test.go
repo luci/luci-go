@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cipd/client/cipd/builder"
@@ -338,7 +340,7 @@ func TestInstanceCache(t *testing.T) {
 		})
 
 		t.Run("GC respects MaxAge vs launchTime", func(t *ftt.Test) {
-			cache.maxAge = 2500 * time.Millisecond
+			cache.GCMaxAge = 2500 * time.Millisecond
 			t0 := clock.Now(ctx)
 			for i := range 8 {
 				if i != 0 {
@@ -378,7 +380,7 @@ func TestInstanceCache(t *testing.T) {
 		})
 
 		t.Run("RequestInstancesDoesNotEvictEntriesToBeFetched", func(t *ftt.Test) {
-			cache.maxAge = 2 * time.Second
+			cache.GCMaxAge = 2 * time.Second
 			for i := range 8 {
 				putNew(cache, pin(i))
 			}
@@ -542,6 +544,146 @@ func TestInstanceCache(t *testing.T) {
 				assert.ErrIsLike(t, res.Err, reader.ErrHashMismatch)
 				return
 			})
+
+			// And the file has been deleted.
+			assert.That(t, countTempFiles(), should.Equal(1)) // +1 for state.db.
+		})
+
+		t.Run(`DisableGC`, func(t *ftt.Test) {
+			cache.ExactGC = true
+
+			// Launch the cache.
+			cache.RequestInstances(ctx, nil)
+			tc.Add(time.Millisecond)
+
+			putNew(cache, pin(0))
+			putNew(cache, pin(1))
+			putNew(cache, pin(2))
+
+			cache.Close(ctx)
+
+			assert.That(t, countTempFiles(), should.Equal(4)) // 1+ for state.db.
+
+			cache.PassiveWritePolicy = DisableGC
+
+			tc.Add(time.Minute)
+
+			// Relaunch + Close/GC again.
+			cache.RequestInstances(ctx, nil) // Relaunch cache at `now`.
+			cache.Close(ctx)
+
+			// We still have all GC'able instances.
+			assert.That(t, countTempFiles(), should.Equal(4)) // 1+ for state.db.
+
+			cache.PassiveWritePolicy = 0
+
+			// Relaunch + Close/GC again.
+			cache.RequestInstances(ctx, nil) // Relaunch cache at `now`.
+			cache.Close(ctx)
+
+			assert.That(t, countTempFiles(), should.Equal(1)) // Everything is gone.
+		})
+
+		t.Run(`DisableCorruptDeletion`, func(t *ftt.Test) {
+			cache.PassiveWritePolicy = DisableCorruptDeletion
+			pin := contentPin("hello")
+
+			putNew(cache, pin)
+			cache.Fetcher = nil
+
+			// Now corrupt the file.
+			assert.NoErr(t, cache.FS.EnsureFile(ctx, filepath.Join(cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
+				_, err := fmt.Fprintf(f, "I AM A BANANA")
+				return err
+			}))
+
+			// Now we will see the cache corruption.
+			cache.RequestInstances(ctx, []*InstanceRequest{
+				{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
+			})
+			withInstance(cache, func(res *InstanceResult) (corrupted bool) {
+				assert.ErrIsLike(t, res.Err, reader.ErrHashMismatch)
+				return
+			})
+
+			// But the file is still there!
+			assert.That(t, countTempFiles(), should.Equal(2)) // +1 for state.db.
+		})
+
+		t.Run(`DisableStateWrite`, func(t *ftt.Test) {
+			putNew(cache, pin(0))
+
+			assert.That(t, countTempFiles(), should.Equal(2)) // +1 for state.db.
+
+			assert.NoErr(t, os.Remove(filepath.Join(tempDir, instanceCacheStateFilename)))
+
+			assert.That(t, countTempFiles(), should.Equal(1)) // Just the instance.
+
+			// Now disable writing state.
+			cache.PassiveWritePolicy = DisableStateWrite
+
+			// We still have the instance.
+			testHas(cache, pin(0))
+
+			// But we didn't write the state.db as a side effect.
+			assert.That(t, countTempFiles(), should.Equal(1))
 		})
 	})
+}
+
+func TestPassiveWritePolicyMisc(t *testing.T) {
+	t.Parallel()
+
+	all := []PassiveWritePolicy{DisableGC, DisableCorruptDeletion, DisableStateWrite}
+
+	cases := []struct {
+		name    string
+		policy  PassiveWritePolicy
+		wantStr string
+		has     []PassiveWritePolicy
+	}{
+		{
+			name: "empty",
+		},
+		{
+			name:    "DisableGC",
+			policy:  DisableGC,
+			wantStr: "no-gc",
+			has:     []PassiveWritePolicy{DisableGC},
+		},
+		{
+			name:    "DisableCorruptDeletion",
+			policy:  DisableCorruptDeletion,
+			wantStr: "no-corrupt-cleanup",
+			has:     []PassiveWritePolicy{DisableCorruptDeletion},
+		},
+		{
+			name:    "DisableStateWrite",
+			policy:  DisableStateWrite,
+			wantStr: "no-state-write",
+			has:     []PassiveWritePolicy{DisableStateWrite},
+		},
+		{
+			name:    "all",
+			policy:  DisablePassiveWrites,
+			wantStr: "no-gc|no-corrupt-cleanup|no-state-write",
+			has:     all,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			check.That(t, tc.policy.String(), should.Equal(tc.wantStr))
+			for _, has := range tc.has {
+				check.That(t, tc.policy.has(has), should.BeTrue, truth.Explain("missing %q", has))
+			}
+			for _, notHas := range all {
+				if !slices.Contains(tc.has, notHas) {
+					check.That(t, tc.policy.has(notHas), should.BeFalse, truth.Explain("has extra %q", notHas))
+				}
+			}
+		})
+	}
 }
