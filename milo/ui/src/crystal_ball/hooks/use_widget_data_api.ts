@@ -12,17 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UseQueryResult } from '@tanstack/react-query';
+import { UseQueryResult, QueryKey } from '@tanstack/react-query';
 
 import { useGapiQuery } from '@/common/hooks/gapi_query/gapi_query';
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
 import { API_V1_BASE_PATH as BASE_PATH } from '@/crystal_ball/constants';
+import { normalizeRequestFilters } from '@/crystal_ball/utils';
 import {
   FetchDashboardWidgetDataRequest,
   FetchDashboardWidgetDataResponse,
   FetchWidgetRawSamplesRequest,
   FetchWidgetRawSamplesResponse,
+  PerfDashboardContent,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+function hasDashboardContent(
+  obj: unknown,
+): obj is { dashboardContent?: PerfDashboardContent } {
+  return typeof obj === 'object' && obj !== null && 'dashboardContent' in obj;
+}
+
+const defaultQueryKeyHashFn = (queryKey: QueryKey) => {
+  const prefix = queryKey[0];
+  const method = queryKey[1];
+  const path = queryKey[2];
+  const params = queryKey[3];
+  const body = queryKey[4];
+
+  if (hasDashboardContent(body)) {
+    const normalizedBody = normalizeRequestFilters(body);
+    return JSON.stringify([prefix, method, path, params, normalizedBody]);
+  }
+  return JSON.stringify(queryKey);
+};
 
 /**
  * Hook for FetchDashboardWidgetData.
@@ -47,7 +69,10 @@ export const useFetchDashboardWidgetData = (
       method: 'POST',
       body,
     },
-    options,
+    {
+      ...options,
+      queryKeyHashFn: options?.queryKeyHashFn ?? defaultQueryKeyHashFn,
+    },
   );
 };
 
@@ -73,6 +98,9 @@ export const useFetchWidgetRawSamples = (
       method: 'POST',
       body,
     },
-    options,
+    {
+      ...options,
+      queryKeyHashFn: options?.queryKeyHashFn ?? defaultQueryKeyHashFn,
+    },
   );
 };

@@ -60,7 +60,9 @@ describe('use_widget_data_api', () => {
             widgetId: 'w1',
           },
         },
-        /* options= */ undefined,
+        {
+          queryKeyHashFn: expect.any(Function),
+        },
       );
     });
 
@@ -74,10 +76,10 @@ describe('use_widget_data_api', () => {
         wrapper: FakeContextProvider,
       });
 
-      expect(mockedUseGapiQuery).toHaveBeenCalledWith(
-        expect.any(Object),
-        options,
-      );
+      expect(mockedUseGapiQuery).toHaveBeenCalledWith(expect.any(Object), {
+        staleTime: 10000,
+        queryKeyHashFn: expect.any(Function),
+      });
     });
 
     it('should return the mocked FetchDashboardWidgetDataResponse', async () => {

@@ -17,6 +17,8 @@ import {
   PerfChartWidget,
   PerfChartWidget_ChartType,
   perfChartWidget_ChartTypeFromJSON,
+  PerfDashboardContent,
+  PerfFilter,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 /**
@@ -116,4 +118,51 @@ export function dataPointsToData(
 
     return { x, y, count, point: pt };
   });
+}
+
+/**
+ * Sorts filters by ID to provide a stable order for query keys.
+ */
+function sortFilters(
+  filters?: readonly PerfFilter[],
+): PerfFilter[] | undefined {
+  if (!filters) return undefined;
+  return [...filters].sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
+ * Normalizes filters in a widget (both widget-level and series-level)
+ * to avoid refetches when only the order changes.
+ */
+function normalizeWidgetFilters(widget: PerfChartWidget): PerfChartWidget {
+  return PerfChartWidget.fromPartial({
+    ...widget,
+    filters: sortFilters(widget.filters),
+    series: widget.series?.map((s) => ({
+      ...s,
+      filters: sortFilters(s.filters),
+    })),
+  });
+}
+
+/**
+ * Normalizes filters in a request object to provide a stable order for query keys.
+ * Supports FetchDashboardWidgetDataRequest and FetchWidgetRawSamplesRequest.
+ */
+export function normalizeRequestFilters<
+  T extends { dashboardContent?: PerfDashboardContent },
+>(request: T): T {
+  if (!request.dashboardContent) return request;
+
+  return {
+    ...request,
+    dashboardContent: {
+      ...request.dashboardContent,
+      globalFilters: sortFilters(request.dashboardContent.globalFilters) ?? [],
+      widgets: request.dashboardContent.widgets?.map((w) => ({
+        ...w,
+        chart: w.chart ? normalizeWidgetFilters(w.chart) : undefined,
+      })),
+    },
+  };
 }
