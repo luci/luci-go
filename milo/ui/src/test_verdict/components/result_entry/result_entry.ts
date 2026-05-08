@@ -41,6 +41,7 @@ import { Cluster } from '@/common/services/luci_analysis';
 import {
   Artifact,
   FailureReason_Kind,
+  FailureReason_Error,
   ListArtifactsResponse,
   SkippedReason_Kind,
   TestResult,
@@ -212,28 +213,95 @@ export class ResultEntryElement extends MobxLitElement {
     makeObservable(this);
   }
 
+  private renderError(error: FailureReason_Error, isPrimary = false) {
+    const hasTrace = Boolean(error.trace);
+    return html`
+      <div class="error-container">
+        <pre class="info-block">${error.message}</pre>
+        ${hasTrace
+          ? html`
+              <details ?open=${isPrimary} class="trace-details">
+                <summary class="trace-summary">Stack Trace</summary>
+                <pre class="info-block trace-pre">${error.trace}</pre>
+              </details>
+            `
+          : ''}
+      </div>
+    `;
+  }
+
   private renderFailureReason() {
-    const errMsg = this.testResult.failureReason?.primaryErrorMessage;
-    if (!errMsg) {
+    const failureReason = this.testResult.failureReason;
+    if (!failureReason) {
       return html``;
     }
 
+    const errors = failureReason.errors || [];
+    const primaryError = errors[0];
+    const additionalErrors = errors.slice(1);
+    const truncatedCount = failureReason.truncatedErrorsCount || 0;
+    const hasAdditionalErrors =
+      additionalErrors.length > 0 || truncatedCount > 0;
+    const totalAdditionalCount = additionalErrors.length + truncatedCount;
+
+    const headerSpan = html`
+      <span slot="header">
+        Failure
+        Reason${this.clusterLink
+          ? html` (<a
+                href=${this.clusterLink}
+                target="_blank"
+                @click=${(e: Event) => e.stopImmediatePropagation()}
+                >similar failures</a
+              >)`
+          : ''}:
+      </span>
+    `;
+
     return html`
       <milo-expandable-entry .contentRuler="none" .expanded=${true}>
-        <span slot="header"
-          >Failure
-          Reason${this.clusterLink
-            ? html` (<a
-                  href=${this.clusterLink}
-                  target="_blank"
-                  @click=${(e: Event) => e.stopImmediatePropagation()}
-                  >similar failures</a
-                >)`
-            : ''}:
-        </span>
-        <pre id="failure-reason" class="info-block" slot="content">
-${errMsg}</pre
-        >
+        ${headerSpan}
+        <div slot="content">
+          ${primaryError
+            ? this.renderError(primaryError, true)
+            : html`
+                <pre id="failure-reason" class="info-block">
+${failureReason.primaryErrorMessage}</pre
+                >
+              `}
+          ${hasAdditionalErrors
+            ? html`
+                <div class="additional-errors-container">
+                  <milo-expandable-entry
+                    .contentRuler="none"
+                    .expanded=${false}
+                  >
+                    <span slot="header"
+                      >Additional Errors (${totalAdditionalCount} more)</span
+                    >
+                    <div slot="content">
+                      ${additionalErrors.map(
+                        (err, idx) => html`
+                          <div class="additional-error-item">
+                            <div class="error-label">Error ${idx + 2}</div>
+                            ${this.renderError(err, false)}
+                          </div>
+                        `,
+                      )}
+                      ${truncatedCount > 0
+                        ? html`
+                            <div class="truncation-warning">
+                              ⚠️ ${truncatedCount} errors were truncated due to
+                              size limits. View full logs for details.
+                            </div>
+                          `
+                        : ''}
+                    </div>
+                  </milo-expandable-entry>
+                </div>
+              `
+            : ''}
+        </div>
       </milo-expandable-entry>
     `;
   }
@@ -570,6 +638,56 @@ ${reasonMsg}</pre
 
       #inv-artifacts-header {
         margin-top: 12px;
+      }
+
+      .error-container {
+        margin-bottom: 8px;
+      }
+
+      .trace-details {
+        margin-top: 4px;
+      }
+
+      .trace-summary {
+        cursor: pointer;
+        color: var(--active-text-color, #1a73e8);
+        font-size: 12px;
+        user-select: none;
+        outline: none;
+      }
+
+      .trace-pre {
+        margin-top: 4px;
+        color: var(--greyed-out-text-color, #666);
+        font-size: 11px;
+        border-left: 2px solid var(--divider-color, #ccc);
+        padding-left: 8px;
+      }
+
+      .additional-errors-container {
+        margin-top: 12px;
+      }
+
+      .additional-error-item {
+        margin-top: 8px;
+        border-left: 2px solid var(--divider-color, #ccc);
+        padding-left: 8px;
+      }
+
+      .error-label {
+        color: var(--error-text-color, #d32f2f);
+        font-weight: bold;
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      .truncation-warning {
+        margin-top: 8px;
+        color: var(--warning-text-color, #f57c00);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
       }
 
       milo-associated-bugs-badge {

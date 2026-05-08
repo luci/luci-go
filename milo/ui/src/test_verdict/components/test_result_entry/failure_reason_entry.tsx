@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
 
 import {
@@ -19,31 +20,165 @@ import {
   ExpandableEntryBody,
   ExpandableEntryHeader,
 } from '@/generic_libs/components/expandable_entry';
-import { FailureReason } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
+import {
+  FailureReason,
+  FailureReason_Error,
+} from '@/proto/go.chromium.org/luci/resultdb/proto/v1/failure_reason.pb';
 
 export interface FailureReasonEntryProps {
   readonly failureReason: FailureReason;
+  readonly inline?: boolean;
 }
 
-export function FailureReasonEntry({ failureReason }: FailureReasonEntryProps) {
+interface ErrorDisplayProps {
+  readonly error: FailureReason_Error;
+  readonly isPrimary?: boolean;
+}
+
+function ErrorDisplay({ error, isPrimary = false }: ErrorDisplayProps) {
+  const [showTrace, setShowTrace] = useState(isPrimary);
+  const hasTrace = Boolean(error.trace);
+
+  return (
+    <Box sx={{ mb: 1 }}>
+      <pre
+        css={{
+          backgroundColor: 'var(--block-background-color)',
+          padding: '5px',
+          margin: 0,
+          whiteSpace: 'pre-wrap',
+          overflowWrap: 'break-word',
+        }}
+      >
+        {error.message}
+      </pre>
+      {hasTrace && (
+        <Box sx={{ mt: 0.5 }}>
+          <ExpandableEntry expanded={showTrace}>
+            <ExpandableEntryHeader
+              onToggle={(expanded) => setShowTrace(expanded)}
+            >
+              Stack Trace
+            </ExpandableEntryHeader>
+            <ExpandableEntryBody>
+              <pre
+                css={{
+                  backgroundColor: 'var(--block-background-color)',
+                  padding: '5px',
+                  margin: '4px 0 0 0',
+                  color: 'var(--greyed-out-text-color, #666)',
+                  fontSize: '11px',
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'break-word',
+                  borderLeft: '2px solid var(--divider-color, #ccc)',
+                  paddingLeft: '8px',
+                }}
+              >
+                {error.trace}
+              </pre>
+            </ExpandableEntryBody>
+          </ExpandableEntry>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+export function FailureReasonEntry({
+  failureReason,
+  inline = false,
+}: FailureReasonEntryProps) {
   const [expanded, setExpanded] = useState(true);
+  const [additionalExpanded, setAdditionalExpanded] = useState(false);
+
+  const errors = failureReason.errors || [];
+  const primaryError = errors[0];
+  const additionalErrors = errors.slice(1);
+  const truncatedCount = failureReason.truncatedErrorsCount || 0;
+  const hasAdditionalErrors = additionalErrors.length > 0 || truncatedCount > 0;
+  const totalAdditionalCount = additionalErrors.length + truncatedCount;
+
+  const body = (
+    <>
+      {/* Primary Error */}
+      {primaryError ? (
+        <ErrorDisplay error={primaryError} isPrimary={true} />
+      ) : (
+        // Fallback for older clients
+        <pre
+          css={{
+            backgroundColor: 'var(--block-background-color)',
+            padding: '5px',
+            margin: 0,
+            whiteSpace: 'pre-wrap',
+            overflowWrap: 'break-word',
+          }}
+        >
+          {failureReason.primaryErrorMessage}
+        </pre>
+      )}
+
+      {/* Additional Errors */}
+      {hasAdditionalErrors && (
+        <Box sx={{ mt: 1.5 }}>
+          <ExpandableEntry expanded={additionalExpanded}>
+            <ExpandableEntryHeader
+              onToggle={(expanded) => setAdditionalExpanded(expanded)}
+            >
+              Additional Errors ({totalAdditionalCount} more)
+            </ExpandableEntryHeader>
+            <ExpandableEntryBody>
+              {additionalErrors.map((err, idx) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    mt: 1,
+                    pl: 1,
+                    borderLeft: '2px solid var(--divider-color, #ccc)',
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    color="error"
+                    sx={{ mb: 0.5 }}
+                  >
+                    Error {idx + 2}
+                  </Typography>
+                  <ErrorDisplay error={err} />
+                </Box>
+              ))}
+              {truncatedCount > 0 && (
+                <Box
+                  sx={{
+                    mt: 1,
+                    color: 'warning.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    fontSize: '12px',
+                  }}
+                >
+                  ⚠️ {truncatedCount} errors were truncated due to size limits.
+                  View full logs for details.
+                </Box>
+              )}
+            </ExpandableEntryBody>
+          </ExpandableEntry>
+        </Box>
+      )}
+    </>
+  );
+
+  if (inline) {
+    return body;
+  }
 
   return (
     <ExpandableEntry expanded={expanded}>
       <ExpandableEntryHeader onToggle={(expanded) => setExpanded(expanded)}>
         Failure Reason:
       </ExpandableEntryHeader>
-      <ExpandableEntryBody>
-        <pre
-          css={{
-            backgroundColor: 'var(--block-background-color)',
-            padding: '5px',
-            margin: 0,
-          }}
-        >
-          {failureReason.primaryErrorMessage}
-        </pre>
-      </ExpandableEntryBody>
+      <ExpandableEntryBody>{body}</ExpandableEntryBody>
     </ExpandableEntry>
   );
 }

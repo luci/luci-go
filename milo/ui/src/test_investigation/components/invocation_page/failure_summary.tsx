@@ -40,6 +40,7 @@ import { NodeLabelPrefix } from '@/test_investigation/components/node_label_pref
 import { TestNavigationTreeNode } from '@/test_investigation/components/test_navigation_drawer/types';
 import { StructuredTreeLevel } from '@/test_investigation/utils/drawer_tree_utils';
 import { getTestVariantURL } from '@/test_investigation/utils/test_info_utils';
+import { FailureReasonEntry } from '@/test_verdict/components/test_result_entry/failure_reason_entry';
 
 export interface FailureSummaryProps {
   testVariant: TestVariant;
@@ -93,9 +94,17 @@ export function FailureSummary({
   }, [testVariant]);
   const IconComponent = styles.icon;
 
+  const hasMultipleErrors =
+    (resultToDisplay.failureReason?.errors?.length || 0) > 1;
+  const firstErrorHasTrace = Boolean(
+    resultToDisplay.failureReason?.errors?.[0]?.trace,
+  );
   const isLongFailureSummary = failureSummaryText.length > 250;
   const hasDetails = Boolean(
-    resultToDisplay.summaryHtml || isLongFailureSummary,
+    resultToDisplay.summaryHtml ||
+      isLongFailureSummary ||
+      hasMultipleErrors ||
+      firstErrorHasTrace,
   );
 
   return (
@@ -199,29 +208,28 @@ export function FailureSummary({
         <AccordionDetails sx={{ p: 0 }}>
           {resultToDisplay.summaryHtml ? (
             <TestResultSummary testResult={resultToDisplay} />
-          ) : (
+          ) : resultToDisplay.failureReason ? (
+            <FailureReasonEntry
+              failureReason={resultToDisplay.failureReason}
+              inline={true}
+            />
+          ) : resultToDisplay.skippedReason ? (
             <Box sx={{ maxWidth: '82vw' }}>
-              {(resultToDisplay.failureReason?.primaryErrorMessage ||
-                resultToDisplay.failureReason?.errors?.[0]?.message ||
-                resultToDisplay?.skippedReason?.reasonMessage) && (
-                <Typography
-                  sx={{
-                    p: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: '6',
-                    WebkitBoxOrient: 'vertical',
-                  }}
-                  variant="caption"
-                >
-                  {resultToDisplay.failureReason?.primaryErrorMessage ||
-                    resultToDisplay.failureReason?.errors?.[0]?.message ||
-                    resultToDisplay?.skippedReason?.reasonMessage}
-                </Typography>
-              )}
+              <Typography
+                sx={{
+                  p: 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: '6',
+                  WebkitBoxOrient: 'vertical',
+                }}
+                variant="caption"
+              >
+                {resultToDisplay.skippedReason.reasonMessage}
+              </Typography>
             </Box>
-          )}
+          ) : null}
         </AccordionDetails>
       )}
     </Accordion>

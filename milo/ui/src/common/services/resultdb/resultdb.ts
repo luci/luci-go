@@ -160,9 +160,16 @@ export interface Variant {
   readonly def: TestVariantDef;
 }
 
+export interface FailureReason_Error {
+  readonly message: string;
+  readonly trace: string;
+}
+
 export interface FailureReason {
   readonly kind?: FailureReason_Kind;
   readonly primaryErrorMessage: string;
+  readonly errors?: readonly FailureReason_Error[];
+  readonly truncatedErrorsCount?: number;
 }
 
 export interface GetInvocationRequest {
