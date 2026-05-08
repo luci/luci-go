@@ -76,15 +76,9 @@ const generateDeviceDetails = (dev: BrowserDeviceToRepair): string => {
   const typeUrl = dev.type
     ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."type" = "${dev.type}"`)}`
     : '';
-  const serialUrl = dev.serialNumber
-    ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`ufs."serialNumber" = "${dev.serialNumber}"`)}`
-    : '';
-
   const details = [
     `    * **Machine:** [${dev.id}](${url})`,
-    dev.serialNumber
-      ? `    * **Serial Number:** [${dev.serialNumber}](${serialUrl})`
-      : '',
+    dev.serialNumber ? `    * **Serial Number:** ${dev.serialNumber}` : '',
     dev.type ? `    * **Type:** [${dev.type}](${typeUrl})` : '',
     dev.model ? `    * **Model:** [${dev.model}](${modelUrl})` : '',
     dev.status ? `    * **Status:** [${dev.status}](${statusUrl})` : '',
@@ -98,16 +92,38 @@ const generateDeviceDetails = (dev: BrowserDeviceToRepair): string => {
   return details;
 };
 
-const generateDetailedDeviceList = (
+const generateBrowserTable = (
   devices: BrowserDeviceToRepair[],
+  includeLinks = false,
 ): string => {
-  return devices
-    .map((dev) => {
-      const hostname = extractHostname(dev);
-      const details = generateDeviceDetails(dev);
-      return `* **Hostname:** ${hostname}\n${details}`;
-    })
-    .join('\n');
+  const headers = ['Hostname', 'Machine', 'Serial', 'Pool', 'Zone', 'Status'];
+  const headerRow = `| ${headers.join(' | ')} |`;
+  const alignRow = `| ${headers.map(() => '---').join(' | ')} |`;
+
+  const rows = devices.map((dev) => {
+    const hostname = extractHostname(dev);
+
+    if (!includeLinks) {
+      return `| ${hostname} | ${dev.id} | ${dev.serialNumber || ''} | ${dev.pool || ''} | ${dev.zone || ''} | ${dev.status || ''} |`;
+    }
+
+    const url = `https://ci.chromium.org/ui/fleet/p/chromium/devices/${dev.id}`;
+    const poolUrl = dev.pool
+      ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."pool" = "${dev.pool}"`)}`
+      : '';
+    const zoneUrl = dev.zone
+      ? `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`ufs."zone" = "${dev.zone}"`)}`
+      : '';
+
+    const machineCell = `[${dev.id}](${url})`;
+    const serialCell = dev.serialNumber || '';
+    const poolCell = dev.pool ? `[${dev.pool}](${poolUrl})` : '';
+    const zoneCell = dev.zone ? `[${dev.zone}](${zoneUrl})` : '';
+
+    return `| ${hostname} | ${machineCell} | ${serialCell} | ${poolCell} | ${zoneCell} | ${dev.status || ''} |`;
+  });
+
+  return [headerRow, alignRow, ...rows].join('\n');
 };
 
 /**
@@ -187,52 +203,84 @@ const generateBrowserBulkIssueDescription = (
   actionType: 'repair' | 'reinstall',
 ) => {
   const zonalList = generateZonalHostList(devices);
-  const linkedDevices = generateDetailedDeviceList(devices);
 
-  // TODO: Add better handling for long URLs if selection is large.
   const filterString = devices.map((d) => `id = "${d.id}"`).join(' OR ');
-  const fconUrl = `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(filterString)}`;
+  const encodedFilters = encodeURIComponent(filterString);
+  const isTooLong = encodedFilters.length > 1000;
 
-  let requestText = '';
-  if (actionType === 'reinstall') {
-    // TODO(b/477806570): Add dynamic OS selection or detection.
-    requestText =
-      'Please upgrade the following devices to OS <TARGET_OS> (Fill in target OS):';
-  } else {
-    requestText = 'Please repair the following devices:';
+  const fallbackUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}${window.location.search}`
+      : 'https://ci.chromium.org/ui/fleet/p/chromium/devices';
+
+  const fconUrl = isTooLong
+    ? fallbackUrl
+    : `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodedFilters}`;
+
+  const createDescription = (mode: 'full' | 'compact' | 'minimal') => {
+    const table =
+      mode === 'minimal' ? '' : generateBrowserTable(devices, mode === 'full');
+
+    let requestText = '';
+    if (actionType === 'reinstall') {
+      // TODO(b/477806570): Add dynamic OS selection or detection.
+      requestText =
+        'Please upgrade the following devices to OS <TARGET_OS> (Fill in target OS):';
+    } else {
+      requestText = 'Please repair the following devices:';
+    }
+
+    const escalationsLink =
+      actionType === 'reinstall'
+        ? 'go/browser-repair-escalate'
+        : 'go/flops-browser-escalations/';
+
+    const descriptionArray = [
+      `**Requester: Instructions on how to create a bug: ${escalationsLink}. ` +
+        'Your request will automatically be placed in work queue for repair. ' +
+        'Please do not explicitly assign bugs to individuals without prior discussion with said individuals. ' +
+        'Reminder to update both title and description.**',
+      '',
+      '---',
+      '',
+      requestText,
+      '',
+      '**Devices (Zonal Summary):**',
+      zonalList,
+      '',
+    ];
+
+    if (mode !== 'minimal') {
+      descriptionArray.push('**Devices:**', '', table, '');
+    }
+
+    descriptionArray.push(
+      isTooLong
+        ? `[View all](${fconUrl}) (Specific devices omitted due to URL length limit)`
+        : `[View all](${fconUrl})`,
+      '',
+      '**Issue / Request:**',
+      '',
+      '**Logs & Swarming link:**',
+      '',
+      '---------------------',
+      '',
+      '**Additional Info (Optional):**',
+    );
+
+    return descriptionArray.join('\n');
+  };
+
+  let description = createDescription('full');
+  // Fallback to compact table (no links) if description is too long.
+  if (description.length > 4000) {
+    description = createDescription('compact');
+  }
+  // Fallback to omitting table if still too long.
+  if (description.length > 4000) {
+    description = createDescription('minimal');
   }
 
-  const escalationsLink =
-    actionType === 'reinstall'
-      ? 'go/browser-repair-escalate'
-      : 'go/flops-browser-escalations/';
-
-  const description = [
-    `**Requester: Instructions on how to create a bug: ${escalationsLink}. ` +
-      'Your request will automatically be placed in work queue for repair. ' +
-      'Please do not explicitly assign bugs to individuals without prior discussion with said individuals. ' +
-      'Reminder to update both title and description.**',
-    '',
-    '---',
-    '',
-    requestText,
-    '',
-    '**Devices (Zonal Summary):**',
-    zonalList,
-    '',
-    '**Devices (Detailed):**',
-    linkedDevices,
-    '',
-    `**View all devices in Fleet Console:** [Click here](${fconUrl})`,
-    '',
-    '**Issue / Request:**',
-    '',
-    '**Logs & Swarming link:**',
-    '',
-    '---------------------',
-    '',
-    '**Additional Info (Optional):**',
-  ].join('\n');
   return description;
 };
 

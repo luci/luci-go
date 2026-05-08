@@ -81,12 +81,46 @@ describe('BrowserRepairConfig', () => {
         { id: 'machine2', hostname: 'host2', pool: 'pool2' },
       ];
       const desc = BrowserRepairConfig.generateDescription(devices);
-      const poolUrl = `https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=${encodeURIComponent(`sw."pool" = "pool1"`)}`;
-      expect(desc).toContain('* **Hostname:** host1');
       expect(desc).toContain(
-        `    * **Machine:** [machine1](https://ci.chromium.org/ui/fleet/p/chromium/devices/machine1)`,
+        '| Hostname | Machine | Serial | Pool | Zone | Status |',
       );
-      expect(desc).toContain(`    * **Pool:** [pool1](${poolUrl})`);
+      expect(desc).toContain(
+        '| host1 | [machine1](https://ci.chromium.org/ui/fleet/p/chromium/devices/machine1) |  | [pool1](https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=sw.%22pool%22%20%3D%20%22pool1%22) |  |  |',
+      );
+      expect(desc).toContain(
+        '| host2 | [machine2](https://ci.chromium.org/ui/fleet/p/chromium/devices/machine2) |  | [pool2](https://ci.chromium.org/ui/fleet/p/chromium/devices?filters=sw.%22pool%22%20%3D%20%22pool2%22) |  |  |',
+      );
+    });
+
+    it('should omit table and filters when description is too long', () => {
+      const devices = Array.from({ length: 150 }, (_, i) => ({
+        id: `machine${i}`,
+        hostname: `host${i}`,
+      }));
+      const desc = BrowserRepairConfig.generateDescription(devices);
+      expect(desc).toContain(
+        'Specific devices omitted due to URL length limit',
+      );
+      expect(desc).toContain('http://localhost/');
+      expect(desc).not.toContain('?filters=');
+      expect(desc).not.toContain(
+        '| Hostname | Machine | Serial | Pool | Zone | Status |',
+      );
+    });
+
+    it('should fallback to compact table when description is too long with links', () => {
+      const devices = Array.from({ length: 50 }, (_, i) => ({
+        id: `machine${i}`,
+        hostname: `host${i}`,
+      }));
+      const desc = BrowserRepairConfig.generateDescription(devices);
+      expect(desc).toContain(
+        '| Hostname | Machine | Serial | Pool | Zone | Status |',
+      );
+      expect(desc).toContain('| host0 | machine0 |  |  |  |  |');
+      expect(desc).not.toContain(
+        'https://ci.chromium.org/ui/fleet/p/chromium/devices/machine0',
+      );
     });
   });
 
