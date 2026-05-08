@@ -67,6 +67,7 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
             <AnyDetails
               key={`check-option-${index}`}
               typeUrl={value_ref.typeUrl}
+              omitReason={value_ref.omitReason}
               json={
                 value_ref.digest
                   ? valueDataMap.get(value_ref.digest)?.json?.value
@@ -89,7 +90,12 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
               <AnyDetails
                 key={`result-${resIdx}-${dataIdx}`}
                 typeUrl={value_ref.typeUrl}
-                json={valueDataMap.get(value_ref.digest!)!.json!.value}
+                omitReason={value_ref.omitReason}
+                json={
+                  value_ref.digest
+                    ? valueDataMap.get(value_ref.digest)?.json?.value
+                    : undefined
+                }
               />
             ));
           })}

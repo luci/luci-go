@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Alert } from '@mui/material';
 import { ComponentType, useMemo } from 'react';
+
+import { OmitReason } from '@/proto/turboci/graph/orchestrator/v1/omit_reason.pb';
 
 import {
   BuildCheckOptionsDetails,
@@ -63,23 +65,53 @@ export interface AnyDetailsProps {
   json?: string;
   /** An optional label to show above the field. */
   label?: string;
+  /** The reason why this value was omitted, if any. */
+  omitReason?: OmitReason;
 }
 
 /**
  * Renders details for a given JSON data blob, using a specialized component if available for the type,
  * otherwise falling back to a generic JSON view.
+ *
+ * If the data was omitted, renders a clear notice explaining why.
  */
-export function AnyDetails({ typeUrl, json, label }: AnyDetailsProps) {
+export function AnyDetails({
+  typeUrl,
+  json,
+  label,
+  omitReason,
+}: AnyDetailsProps) {
   const data = useMemo(() => {
+    if (
+      omitReason !== undefined &&
+      omitReason !== OmitReason.OMIT_REASON_UNKNOWN
+    ) {
+      return (
+        <OmittedValueNotice
+          reason={omitReason}
+          typeUrl={typeUrl}
+          label={label}
+        />
+      );
+    }
+
     if (!json) return <ParseError />;
+
     try {
       return JSON.parse(json);
     } catch {
       return <ParseError />;
     }
-  }, [json]);
+  }, [json, label, omitReason, typeUrl]);
 
   if (!data) return <ParseError />;
+
+  if (
+    omitReason !== undefined &&
+    omitReason !== OmitReason.OMIT_REASON_UNKNOWN
+  ) {
+    return data;
+  }
 
   const Renderer = typeUrl ? KNOWN_TYPE_RENDERERS[typeUrl] : undefined;
   if (Renderer && data) {
@@ -99,6 +131,49 @@ export function AnyDetails({ typeUrl, json, label }: AnyDetailsProps) {
   }
 
   return <GenericJsonDetails label={label} typeUrl={typeUrl} json={json} />;
+}
+
+function OmittedValueNotice({
+  reason,
+  typeUrl,
+  label,
+}: {
+  reason: OmitReason;
+  typeUrl?: string;
+  label?: string;
+}) {
+  let text = 'Data omitted';
+  let severity: 'error' | 'warning' | 'info' = 'info';
+
+  switch (reason) {
+    case OmitReason.OMIT_REASON_NO_ACCESS:
+      text = 'Access Denied: You do not have permission to view this data.';
+      severity = 'error';
+      break;
+    case OmitReason.OMIT_REASON_MISSING:
+      text =
+        'Data Missing: This data is no longer available in the storage backend (it may have expired).';
+      severity = 'warning';
+      break;
+    case OmitReason.OMIT_REASON_UNWANTED:
+      text = 'Omitted: This data was excluded by the UI query filter.';
+      severity = 'info';
+      break;
+  }
+
+  return (
+    <Box sx={{ mt: 1 }}>
+      {typeUrl && (
+        <Typography variant="caption" color="text.secondary">
+          {label ? `${label}: ` : ''}
+          {typeUrl}
+        </Typography>
+      )}
+      <Alert severity={severity} sx={{ mt: 0.5 }}>
+        {text}
+      </Alert>
+    </Box>
+  );
 }
 
 function ParseError() {

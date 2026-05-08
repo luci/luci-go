@@ -75,6 +75,7 @@ import {
 } from '../proto/turboci/graph/orchestrator/v1/dependencies.pb';
 import { Edge } from '../proto/turboci/graph/orchestrator/v1/edge.pb';
 import { Edit } from '../proto/turboci/graph/orchestrator/v1/edit.pb';
+import { OmitReason } from '../proto/turboci/graph/orchestrator/v1/omit_reason.pb';
 import { Revision } from '../proto/turboci/graph/orchestrator/v1/revision.pb';
 import {
   Stage,
@@ -331,6 +332,18 @@ export class FakeGraphGenerator {
       }
       this.createPlanningStage(testPlanningStage, testsForThisBuild);
     }
+
+    // Add two special omitted nodes for manual visual verification of OmitReason display
+    this.createOmittedCheckPair(
+      'Omitted_No_Access',
+      OmitReason.OMIT_REASON_NO_ACCESS,
+      sourceId,
+    );
+    this.createOmittedCheckPair(
+      'Omitted_Expired_Data',
+      OmitReason.OMIT_REASON_MISSING,
+      sourceId,
+    );
   }
 
   private generateBrowser() {
@@ -1420,6 +1433,57 @@ export class FakeGraphGenerator {
       },
       valueData: { json: { value: JSON.stringify(jsonPayload) } },
     };
+  }
+
+  private createOmittedCheckPair(
+    idStr: string,
+    reason: OmitReason,
+    dependsOn?: CheckId,
+  ): CheckId {
+    const checkId = this.createCheckId(`C_${idStr}`);
+    const realm = `${idStr}-realm`;
+    const finalRev = this.nextRevision();
+    const deps = dependsOn ? [{ check: dependsOn }] : [];
+
+    // Options with omitReason
+    const optionsRef: ValueRef = {
+      typeUrl: 'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions',
+      realm: realm,
+      omitReason: reason,
+    };
+
+    const resId: CheckResultId = { check: checkId, idx: 1 };
+    const resultRef: Check_Result = {
+      identifier: resId,
+      owner: { stageAttempt: { stage: this.createStageId(`S_${idStr}`) } },
+      createdAt: finalRev,
+      finalizedAt: finalRev,
+      data: [
+        {
+          typeUrl: 'type.googleapis.com/turboci.data.build.v1.BuildCheckResult',
+          realm: realm,
+          omitReason: reason,
+        },
+      ],
+    };
+
+    const check: Check = {
+      identifier: checkId,
+      kind: CheckKind.CHECK_KIND_BUILD,
+      realm: realm,
+      version: finalRev,
+      dependencies: buildDependencies(deps, finalRev),
+      options: [optionsRef],
+      results: [resultRef],
+      state: CheckState.CHECK_STATE_FINAL,
+      stateHistory: [],
+      edits: [],
+    };
+
+    if (!checkId.id) throw new Error('Check ID required');
+    this.checkViews[checkId.id] = check;
+
+    return checkId;
   }
 }
 
