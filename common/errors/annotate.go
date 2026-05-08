@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/runtime/debugstack"
 )
 
-
 // ErrorWrapper describes a method which can accept an error and return an
 // optionally wrapped version of that error.
 //

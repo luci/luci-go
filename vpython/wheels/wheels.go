@@ -137,7 +137,6 @@ func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string)
 	return nil
 }
 
-
 func ensureFileFromVPythonSpec(s *vpython.Spec, tags []*vpython.PEP425Tag) (*ensure.File, error) {
 	s = proto.Clone(s).(*vpython.Spec)
 

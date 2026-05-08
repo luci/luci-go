@@ -37,10 +37,10 @@ import (
 	"go.chromium.org/luci/bisection/testfailureanalysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/chromium"
+	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/fuchsia"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/genai"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/nthsection"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/projectbisector"
-	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/fuchsia"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
 

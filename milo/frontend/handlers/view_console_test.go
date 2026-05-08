@@ -196,4 +196,3 @@ func TestConsoleHeader(t *testing.T) {
 		})
 	})
 }
-

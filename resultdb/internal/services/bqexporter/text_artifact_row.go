@@ -67,8 +67,6 @@ const (
 	// Number of workers to download artifact content.
 	artifactWorkers = 10
 
-
-
 	// softTimeoutLimit is the time limit after which the export task will
 	// stop processing new artifacts and schedule a continuation task.
 	softTimeoutLimit = 150 * time.Second

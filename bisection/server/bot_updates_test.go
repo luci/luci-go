@@ -64,7 +64,6 @@ func TestUpdateAnalysisProgress(t *testing.T) {
 	cancelanalysis.RegisterTaskClass()
 	culpritverification.RegisterTaskClass()
 	ftt.Run("UpdateAnalysisProgress Culprit Verification", t, func(t *ftt.Test) {
-
 		// Setup the models
 		// Set up suspects
 		analysis := &model.CompileFailureAnalysis{
