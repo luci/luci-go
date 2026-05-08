@@ -150,6 +150,9 @@ func TestTestIDLimits(t *testing.T) {
 				{
 					FineName: "any_module_coarse",
 				},
+				{
+					CaseNamePattern: regexp.MustCompile(`^tradefed\.vts\..*$`),
+				},
 			},
 		}
 
@@ -195,6 +198,21 @@ func TestTestIDLimits(t *testing.T) {
 				ModuleName: "something",
 				CoarseName: "else",
 				FineName:   "any_module_coarse",
+			}
+			assert.Loosely(t, callback(id), should.Match(pbutil.HigherTestIDValidationLimits))
+		})
+
+		t.Run(`Case name pattern does not match`, func(t *ftt.Test) {
+			id := pbutil.BaseTestIdentifier{
+				CaseName: "something_other",
+			}
+			assert.Loosely(t, callback(id), should.Match(pbutil.DefaultTestIDValidationLimits))
+		})
+
+		t.Run(`Case name pattern matches`, func(t *ftt.Test) {
+			id := pbutil.BaseTestIdentifier{
+				ModuleName: pbutil.LegacyModuleName,
+				CaseName:   "tradefed.vts.VtsSomething",
 			}
 			assert.Loosely(t, callback(id), should.Match(pbutil.HigherTestIDValidationLimits))
 		})

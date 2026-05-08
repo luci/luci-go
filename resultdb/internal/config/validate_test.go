@@ -544,12 +544,18 @@ func TestServiceConfigValidator(t *testing.T) {
 			cfg.TestIdsWithHigherLimit[0].ModuleNamePattern = "Cts.*" // Invalid, no ^/$
 			assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+` / module_name_pattern): pattern must start and end with ^ and $`))
 		})
+		t.Run("Invalid case_name_pattern", func(t *ftt.Test) {
+			cfg.TestIdsWithHigherLimit[0].ModuleName = ""
+			cfg.TestIdsWithHigherLimit[0].CaseNamePattern = "Dynamics.*" // Invalid, no ^/$
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+` / case_name_pattern): pattern must start and end with ^ and $`))
+		})
 		t.Run("All fields empty", func(t *ftt.Test) {
 			cfg.TestIdsWithHigherLimit[0].ModuleName = ""
 			cfg.TestIdsWithHigherLimit[0].ModuleNamePattern = ""
 			cfg.TestIdsWithHigherLimit[0].CoarseName = ""
 			cfg.TestIdsWithHigherLimit[0].FineName = ""
-			assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): at least one of module_name, module_name_pattern, coarse_name, or fine_name must be set`))
+			cfg.TestIdsWithHigherLimit[0].CaseNamePattern = ""
+			assert.Loosely(t, validate(cfg), should.ErrLike(`(`+path+`): at least one of module_name, module_name_pattern, coarse_name, fine_name, or case_name_pattern must be set`))
 		})
 	})
 }

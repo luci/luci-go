@@ -37,6 +37,7 @@ type CompiledTestIdEntry struct {
 	CoarseName        string
 	FineName          string
 	ModuleNamePattern *regexp.Regexp
+	CaseNamePattern   *regexp.Regexp
 }
 
 // CompiledServiceConfig is a copy of service configuration with
@@ -99,6 +100,14 @@ func NewCompiledServiceConfig(cfg *configpb.Config, revision string) (*CompiledS
 			if err != nil {
 				// This should never happen as the configuration has been validated.
 				return nil, errors.Fmt("could not compile module name pattern %q: %w", entry.ModuleNamePattern, err)
+			}
+		}
+		if entry.CaseNamePattern != "" {
+			var err error
+			compiledEntry.CaseNamePattern, err = regexp.Compile(entry.CaseNamePattern)
+			if err != nil {
+				// This should never happen as the configuration has been validated.
+				return nil, errors.Fmt("could not compile case name pattern %q: %w", entry.CaseNamePattern, err)
 			}
 		}
 		compiledTestIds = append(compiledTestIds, compiledEntry)
@@ -209,6 +218,9 @@ func (c *CompiledServiceConfig) TestIDLimits(id pbutil.BaseTestIdentifier) pbuti
 			matched = false
 		}
 		if matched && entry.FineName != "" && entry.FineName != id.FineName {
+			matched = false
+		}
+		if matched && entry.CaseNamePattern != nil && !entry.CaseNamePattern.MatchString(id.CaseName) {
 			matched = false
 		}
 

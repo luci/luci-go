@@ -376,8 +376,8 @@ func validateTestIdEntry(ctx *validation.Context, name string, entry *configpb.T
 	ctx.Enter("%s", name)
 	defer ctx.Exit()
 
-	if entry.ModuleName == "" && entry.ModuleNamePattern == "" && entry.CoarseName == "" && entry.FineName == "" {
-		ctx.Errorf("at least one of module_name, module_name_pattern, coarse_name, or fine_name must be set")
+	if entry.ModuleName == "" && entry.ModuleNamePattern == "" && entry.CoarseName == "" && entry.FineName == "" && entry.CaseNamePattern == "" {
+		ctx.Errorf("at least one of module_name, module_name_pattern, coarse_name, fine_name, or case_name_pattern must be set")
 	}
 
 	if entry.ModuleName != "" && entry.ModuleNamePattern != "" {
@@ -386,5 +386,9 @@ func validateTestIdEntry(ctx *validation.Context, name string, entry *configpb.T
 
 	if entry.ModuleNamePattern != "" {
 		validatePattern(ctx, "module_name_pattern", entry.ModuleNamePattern)
+	}
+
+	if entry.CaseNamePattern != "" {
+		validatePattern(ctx, "case_name_pattern", entry.CaseNamePattern)
 	}
 }

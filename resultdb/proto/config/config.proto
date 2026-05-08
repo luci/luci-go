@@ -165,4 +165,8 @@ message TestIdEntry {
   // The name of the module. Match by regex.
   // E.g. "^Cts.*TestCases$".
   string module_name_pattern = 4;
+
+  // The case name. Match by regex.
+  // E.g. "^DynamicsProcessingTest/DynamicsProcessingTestEngineArchitecture#.*$".
+  string case_name_pattern = 5;
 }
