@@ -24,89 +24,14 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/workunits"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
-
-func validateTestExoneration(ex *pb.TestExoneration, cfg *config.CompiledServiceConfig, strictValidation bool) error {
-	if ex == nil {
-		return errors.New("unspecified")
-	}
-	if ex.TestIdStructured == nil && ex.TestId != "" {
-		// For backwards compatibility, we still accept legacy uploaders setting
-		// the test_id and variant or variant_hash fields (even though they are
-		// officially OUTPUT_ONLY now).
-		testID, err := pbutil.ParseAndValidateTestID(ex.TestId, cfg.TestIDLimits)
-		if err != nil {
-			return errors.Fmt("test_id: %w", err)
-		}
-		// Legacy clients may not set Variant, or use nil to represent
-		// the empty variant. As this is ambiguous, we rely on the absence
-		// of VariantHash being set to determine if Variant was deliberately
-		// set to nil or if the Variant is simply not set.
-		//
-		// In strict validation: the variant is always required.
-		if ex.Variant != nil || strictValidation {
-			if err := pbutil.ValidateVariant(ex.GetVariant()); err != nil {
-				return errors.Fmt("variant: %w", err)
-			}
-		}
-
-		// Some legacy clients do not set variant and only set variant_hash.
-		// Some set both. If both are set, check they are consistent.
-		hasVariant := len(ex.Variant.GetDef()) != 0 || strictValidation
-		hasVariantHash := ex.VariantHash != ""
-		if hasVariant && hasVariantHash {
-			computedHash := pbutil.VariantHash(ex.GetVariant())
-			if computedHash != ex.VariantHash {
-				return errors.New("computed and supplied variant hash don't match")
-			}
-		}
-		if hasVariantHash {
-			if err := pbutil.ValidateVariantHash(ex.VariantHash); err != nil {
-				return errors.Fmt("variant_hash: %w", err)
-			}
-		}
-
-		// Validate the test identifier meets the requirements of the scheme.
-		// This is enforced only at upload time.
-		if err := validateTestIDToScheme(cfg, testID); err != nil {
-			return errors.Fmt("test_id: %w", err)
-		}
-	} else {
-		// Not a legacy uploader.
-		// The TestId, Variant, VariantHash fields are treated as output only as per
-		// the API spec and should be ignored. Instead read from the TestIdStructured field.
-		// Note that TestIdStructured.ModuleVariantHash is also output only and should
-		// also be ignored.
-
-		getLimits := cfg.TestIDLimits
-		if err := pbutil.ValidateStructuredTestIdentifierForStorage(ex.TestIdStructured, getLimits); err != nil {
-			return errors.Fmt("test_id_structured: %w", err)
-		}
-
-		// Validate the test identifier meets the requirements of the scheme.
-		// This is enforced only at upload time.
-		if err := validateTestIDToScheme(cfg, pbutil.ExtractBaseTestIdentifier(ex.TestIdStructured)); err != nil {
-			return errors.Fmt("test_id_structured: %w", err)
-		}
-	}
-
-	if ex.ExplanationHtml == "" {
-		return errors.New("explanation_html: unspecified")
-	}
-	if ex.Reason == pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED {
-		return errors.New("reason: unspecified")
-	}
-	return nil
-}
 
 // CreateTestExoneration implements pb.RecorderServer.
 func (s *recorderServer) CreateTestExoneration(ctx context.Context, in *pb.CreateTestExonerationRequest) (*pb.TestExoneration, error) {

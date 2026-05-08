@@ -44,137 +44,6 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-func TestValidateTestExoneration(t *testing.T) {
-	t.Parallel()
-	ftt.Run(`TestValidateTestExoneration`, t, func(t *ftt.Test) {
-		cfg, err := config.NewCompiledServiceConfig(config.CreatePlaceholderServiceConfig(), "revision")
-		assert.NoErr(t, err)
-
-		t.Run(`Unspecified`, func(t *ftt.Test) {
-			err := validateTestExoneration(nil, cfg, true)
-			assert.Loosely(t, err, should.ErrLike(`unspecified`))
-		})
-
-		ex := &pb.TestExoneration{
-			TestIdStructured: &pb.TestIdentifier{
-				ModuleName:   "//infra/junit_tests",
-				ModuleScheme: "junit",
-				ModuleVariant: pbutil.Variant(
-					"key", "value",
-				),
-				CoarseName: "org.chromium.go.luci",
-				FineName:   "ValidationTests",
-				CaseName:   "FooBar",
-			},
-			ExplanationHtml: "Unexpected pass.",
-			Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
-		}
-		t.Run(`Valid`, func(t *ftt.Test) {
-			err := validateTestExoneration(ex, cfg, true)
-			assert.Loosely(t, err, should.BeNil)
-		})
-		t.Run("Structured test identifier", func(t *ftt.Test) {
-			t.Run("Structure", func(t *ftt.Test) {
-				// ParseAndValidateTestID has its own extensive test cases, these do not need to be repeated here.
-				t.Run(`Invalid case name`, func(t *ftt.Test) {
-					ex.TestIdStructured.CaseName = "case name \x00"
-					assert.Loosely(t, validateTestExoneration(ex, cfg, true), should.ErrLike("test_id_structured: case_name: non-printable rune '\\x00' at byte index 10"))
-				})
-				t.Run(`Invalid module variant`, func(t *ftt.Test) {
-					ex.TestIdStructured.ModuleVariant = pbutil.Variant("key\x00", "value")
-					assert.Loosely(t, validateTestExoneration(ex, cfg, true), should.ErrLike("test_id_structured: module_variant: \"key\\x00\":\"value\": key: does not match pattern"))
-				})
-			})
-			t.Run("Scheme", func(t *ftt.Test) {
-				// Only test a couple of cases to make sure ValidateTestIDToScheme is correctly invoked.
-				// That method has its own extensive test cases, which don't need to be repeated here.
-				t.Run("Scheme not defined", func(t *ftt.Test) {
-					ex.TestIdStructured.ModuleScheme = "undefined"
-					assert.Loosely(t, validateTestExoneration(ex, cfg, true), should.ErrLike("test_id_structured: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
-				})
-				t.Run(`Coarse name missing`, func(t *ftt.Test) {
-					ex.TestIdStructured = nil
-					ex.TestId = ":myModule!junit::Class#Method"
-					ex.Variant = pbutil.Variant("a", "1", "b", "2")
-					assert.Loosely(t, validateTestExoneration(ex, cfg, true), should.ErrLike("test_id: coarse_name: required, please set a Package (scheme \"junit\")"))
-				})
-			})
-		})
-		t.Run("Legacy", func(t *ftt.Test) {
-			t.Run("Legacy fields are ignored unless structured test identifier cleared", func(t *ftt.Test) {
-				ex.TestId = "something\x00"
-				ex.Variant = pbutil.Variant("", "")
-				err := validateTestExoneration(ex, cfg, true)
-				assert.Loosely(t, err, should.BeNil)
-			})
-
-			ex.TestIdStructured = nil
-			ex.TestId = "something"
-			ex.Variant = pbutil.Variant("a", "1", "b", "2")
-
-			t.Run(`Valid`, func(t *ftt.Test) {
-				err := validateTestExoneration(ex, cfg, true)
-				assert.Loosely(t, err, should.BeNil)
-			})
-			t.Run("Test ID", func(t *ftt.Test) {
-				t.Run(`Bad scheme`, func(t *ftt.Test) {
-					ex.TestId = ":MyModule!undefined:Package:Class#Method"
-					err := validateTestExoneration(ex, cfg, true)
-					assert.Loosely(t, err, should.ErrLike("test_id: module_scheme: scheme \"undefined\" is not a known scheme by the ResultDB deployment"))
-				})
-				t.Run(`Non-printable runes`, func(t *ftt.Test) {
-					ex.TestId = "\x01"
-					err := validateTestExoneration(ex, cfg, true)
-					assert.Loosely(t, err, should.ErrLike("test_id: non-printable rune"))
-				})
-			})
-			t.Run("Variant/VariantHash", func(t *ftt.Test) {
-				t.Run(`Mismatching variant hashes`, func(t *ftt.Test) {
-					ex.VariantHash = "doesn't match"
-					err := validateTestExoneration(ex, cfg, true)
-					assert.Loosely(t, err, should.ErrLike(`computed and supplied variant hash don't match`))
-				})
-				t.Run(`Matching variant hashes`, func(t *ftt.Test) {
-					ex.Variant = pbutil.Variant("a", "b")
-					ex.VariantHash = "c467ccce5a16dc72"
-					err := validateTestExoneration(ex, cfg, true)
-					assert.Loosely(t, err, should.BeNil)
-				})
-				t.Run(`Variant hash only`, func(t *ftt.Test) {
-					// Unfortunately we have to support this case for legacy clients, even though
-					// it means we are unable to capture a Variant.
-					ex.Variant = nil
-					ex.VariantHash = "c467ccce5a16dc72"
-
-					t.Run(`Allowed in unstrict mode`, func(t *ftt.Test) {
-						err := validateTestExoneration(ex, cfg, false)
-						assert.Loosely(t, err, should.BeNil)
-					})
-					t.Run(`Disallowed in strict mode`, func(t *ftt.Test) {
-						err := validateTestExoneration(ex, cfg, true)
-						assert.Loosely(t, err, should.ErrLike(`variant: unspecified`))
-					})
-				})
-				t.Run(`Invalid variant`, func(t *ftt.Test) {
-					ex.Variant = pbutil.Variant("", "")
-					err := validateTestExoneration(ex, cfg, true)
-					assert.Loosely(t, err, should.ErrLike(`variant: "":"": key: unspecified`))
-				})
-			})
-		})
-		t.Run(`Reason is not specified`, func(t *ftt.Test) {
-			ex.Reason = pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED
-			err := validateTestExoneration(ex, cfg, true)
-			assert.Loosely(t, err, should.ErrLike(`reason: unspecified`))
-		})
-		t.Run(`Explanation HTML not specified`, func(t *ftt.Test) {
-			ex.ExplanationHtml = ""
-			err := validateTestExoneration(ex, cfg, true)
-			assert.Loosely(t, err, should.ErrLike(`explanation_html: unspecified`))
-		})
-	})
-}
-
 func TestCreateTestExoneration(t *testing.T) {
 	ftt.Run(`CreateTestExoneration`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
@@ -260,6 +129,15 @@ func TestCreateTestExoneration(t *testing.T) {
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 					assert.Loosely(t, err, should.ErrLike("bad request: test_exoneration: test_id_structured: module_scheme: scheme \"undefined\" is not a known scheme"))
 				})
+				t.Run("legacy test ID using invalid scheme", func(t *ftt.Test) {
+					req.TestExoneration.TestIdStructured = nil
+					req.TestExoneration.TestId = ":MyModule!undefined:Package:Class#Method"
+					req.TestExoneration.Variant = pbutil.Variant("a", "1", "b", "2")
+					_, err := recorder.CreateTestExoneration(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("bad request: test_exoneration: test_id: module_scheme: scheme \"undefined\" is not a known scheme"))
+				})
+
 				t.Run("invalid test_exoneration", func(t *ftt.Test) {
 					req.TestExoneration.TestIdStructured = nil
 					_, err := recorder.CreateTestExoneration(ctx, req)

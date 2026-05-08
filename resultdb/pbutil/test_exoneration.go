@@ -21,6 +21,8 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/validate"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 var testExonerationNameRe = regexpf(`^rootInvocations/(%s)/workUnits/(%s)/tests/([^/]+)/exonerations/(.+)$`, rootInvocationIDPattern, workUnitIDPattern)
@@ -125,4 +127,80 @@ func ValidateLegacyTestExonerationName(name string) error {
 // If the name is not valid, this method may return any value.
 func IsLegacyTestExonerationName(name string) bool {
 	return strings.HasPrefix(name, "invocations/")
+}
+
+// ValidateTestExoneration validates the given test exoneration is suitable for upload.
+func ValidateTestExoneration(ex *pb.TestExoneration, validateToScheme ValidateToScheme, getLimits TestIDValidationLimitsCallback, strictValidation bool) error {
+	if ex == nil {
+		return errors.New("unspecified")
+	}
+	if validateToScheme == nil {
+		panic("validateToScheme is required")
+	}
+	if ex.TestIdStructured == nil && ex.TestId != "" {
+		// For backwards compatibility, we still accept legacy uploaders setting
+		// the test_id and variant or variant_hash fields (even though they are
+		// officially OUTPUT_ONLY now).
+		testID, err := ParseAndValidateTestID(ex.TestId, getLimits)
+		if err != nil {
+			return errors.Fmt("test_id: %w", err)
+		}
+		// Legacy clients may not set Variant, or use nil to represent
+		// the empty variant. As this is ambiguous, we rely on the absence
+		// of VariantHash being set to determine if Variant was deliberately
+		// set to nil or if the Variant is simply not set.
+		//
+		// In strict validation: the variant is always required.
+		if ex.Variant != nil || strictValidation {
+			if err := ValidateVariant(ex.GetVariant()); err != nil {
+				return errors.Fmt("variant: %w", err)
+			}
+		}
+
+		// Some legacy clients do not set variant and only set variant_hash.
+		// Some set both. If both are set, check they are consistent.
+		hasVariant := len(ex.Variant.GetDef()) != 0 || strictValidation
+		hasVariantHash := ex.VariantHash != ""
+		if hasVariant && hasVariantHash {
+			computedHash := VariantHash(ex.GetVariant())
+			if computedHash != ex.VariantHash {
+				return errors.New("computed and supplied variant hash don't match")
+			}
+		}
+		if hasVariantHash {
+			if err := ValidateVariantHash(ex.VariantHash); err != nil {
+				return errors.Fmt("variant_hash: %w", err)
+			}
+		}
+
+		// Validate the test identifier meets the requirements of the scheme.
+		// This is enforced only at upload time.
+		if err := validateToScheme(testID); err != nil {
+			return errors.Fmt("test_id: %w", err)
+		}
+	} else {
+		// Not a legacy uploader.
+		// The TestId, Variant, VariantHash fields are treated as output only as per
+		// the API spec and should be ignored. Instead read from the TestIdStructured field.
+		// Note that TestIdStructured.ModuleVariantHash is also output only and should
+		// also be ignored.
+
+		if err := ValidateStructuredTestIdentifierForStorage(ex.TestIdStructured, getLimits); err != nil {
+			return errors.Fmt("test_id_structured: %w", err)
+		}
+
+		// Validate the test identifier meets the requirements of the scheme.
+		// This is enforced only at upload time.
+		if err := validateToScheme(ExtractBaseTestIdentifier(ex.TestIdStructured)); err != nil {
+			return errors.Fmt("test_id_structured: %w", err)
+		}
+	}
+
+	if ex.ExplanationHtml == "" {
+		return errors.New("explanation_html: unspecified")
+	}
+	if ex.Reason == pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED {
+		return errors.New("reason: unspecified")
+	}
+	return nil
 }

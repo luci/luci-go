@@ -158,11 +158,15 @@ func validateBatchCreateTestExonerationsRequest(req *pb.BatchCreateTestExonerati
 		return errors.Fmt("request_id: %w", err)
 	}
 
+	validateToScheme := func(testID pbutil.BaseTestIdentifier) error {
+		return validateTestIDToScheme(cfg, testID)
+	}
+
 	for i, r := range req.Requests {
 		if err := emptyOrEqual("request_id", r.RequestId, req.RequestId); err != nil {
 			return errors.Fmt("requests[%d]: %w", i, err)
 		}
-		if err := validateTestExoneration(r.TestExoneration, cfg, strictValidation); err != nil {
+		if err := pbutil.ValidateTestExoneration(r.TestExoneration, validateToScheme, cfg.TestIDLimits, strictValidation); err != nil {
 			return errors.Fmt("requests[%d]: test_exoneration: %w", i, err)
 		}
 	}
