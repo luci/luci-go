@@ -160,15 +160,21 @@ You are a highly experienced code reviewer specializing in Git patches. Your tas
 - **Avoid type casting unless strictly necessary.** Try to rely on TypeScript's type inference and narrowing instead of using `as Type`.
 
 ## Architectural Principles & Design Documentation
- We maintain documentation of key architectural principles and design tradeoffs in `decisions/` directories.
- - Frontend-specific and cross-cutting docs live in `./decisions/`
- - Backend-specific docs live in `../../../../../../infra/fleetconsole/decisions/`
- When documenting new major changes or design decisions, you should:
- 1. Focus on the **current architecture** and the **tradeoffs** considered.
- 2. Avoid logging historical events, dates, or individual names unless crucial for context.
- 3. Use the standard template: Context, Current Architecture, Design Tradeoffs Considered (Options, Pros/Cons, Decision).
- 4. Cross-link between frontend and backend docs as needed using relative paths.
- 5. **Keep migration status current:** As you make progress on migrations (like the AIP-160 transition), please update the relevant decision documents to reflect the current technical status quo and future intent to avoid confusion / regressions when migrations are in transition states.
+We maintain documentation of key architectural principles and design tradeoffs in `decisions/` directories.
+- Frontend-specific and cross-cutting docs live in `./docs/decisions/`
+- Backend-specific docs live in `../../../../../../infra/fleetconsole/decisions/`
+When documenting new major changes or design decisions, you should:
+1. Focus on the **current architecture** and the **tradeoffs** considered.
+2. Avoid logging historical events, dates, or individual names unless crucial for context.
+3. Use the standard template: Context, Current Architecture, Design Tradeoffs Considered (Options, Pros/Cons, Decision).
+4. Cross-link between frontend and backend docs as needed using relative paths.
+5. **Keep migration status current:** As you make progress on migrations (like the AIP-160 transition), please update the relevant decision documents to reflect the current technical status quo and future intent to avoid confusion / regressions when migrations are in transition states.
+
+## Critical User Journeys (CUJs)
+We maintain records of Critical User Journeys to guide UX design and implementation.
+- CUJ documents live in `./docs/cuj/`
+- For guidance on how to write new CUJs, see [README.md](./docs/cuj/README.md).
+When designing new features or views, consult these journeys to understand user needs and ensure compliance with the UX principles defined in `./docs/decisions/ux-cognitive-load-principles.md`.
 
 ### Confidentiality Guidelines
 This project is open source. When writing code, documentation, or commit messages:

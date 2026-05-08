@@ -8,7 +8,7 @@ While the parser provides a massive step forward, the overall migration path inv
 ## Our Approach to AIP-160
 
 ### 1. Ported Parser Architecture
-The new parser in [parser.ts](../utils/aip160/parser/parser.ts) was ported directly from our Go backend implementation to ensure exact parity between what the UI sees and what the backend expects.
+The new parser in [parser.ts](../../utils/aip160/parser/parser.ts) was ported directly from our Go backend implementation to ensure exact parity between what the UI sees and what the backend expects.
 *   It follows the strict EBNF grammar for AIP-160 (omitting custom function call support for simplicity in this initial version).
 *   It operates on full Abstract Syntax Tree (AST) representations, breaking strings like `key = v1 OR key = v2` into nodes rather than handling strings via fragile regexes.
 

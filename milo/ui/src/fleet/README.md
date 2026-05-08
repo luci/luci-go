@@ -4,7 +4,7 @@ This is the folder for the client side code for the Fleet Console.
 
 For overall docs on the Fleet Console, see: [go/fleet-console](http://go/fleet-console)
 
-For architectural decisions regarding Material-React-Table usage, see: [mrt-table-architecture.md](./decisions/mrt-table-architecture.md)
+For architectural decisions regarding Material-React-Table usage, see: [mrt-table-architecture.md](./docs/decisions/mrt-table-architecture.md)
 
 ## To run
 
