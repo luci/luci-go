@@ -85,6 +85,7 @@ export function ChronicleContextProvider({
       valueFilter: {
         typeInfo: {
           wanted: { typeUrls: ['*'] },
+          unknownJsonpb: true,
           known: { typeUrls: [] },
         },
         checkOptions: ValueMask.VALUE_MASK_VALUE_TYPE,
