@@ -29,6 +29,7 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics/track_leaf_route_page_view';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -47,7 +48,7 @@ export const ProductCataloguePage = () => {
 
   const client = useFleetConsoleClient();
 
-  const { filterValues, aip160, onApplyFilter, isLoading } =
+  const { filterValues, aip160, onApplyFilter, isLoading, warnings } =
     useProductCatalogFilters(() => {
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
     });
@@ -125,6 +126,7 @@ export const ProductCataloguePage = () => {
 
   return (
     <Container>
+      <WarningNotifications warnings={warnings} />
       <div
         css={{
           marginBottom: 24,

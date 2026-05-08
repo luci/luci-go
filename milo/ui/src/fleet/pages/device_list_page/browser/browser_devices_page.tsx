@@ -252,7 +252,7 @@ export const BrowserDevicesPage = () => {
             { label: BLANK_VALUE, value: BLANK_VALUE },
             ...(filterValues.values || [])
               .filter((v) => v !== '' && v !== BLANK_VALUE)
-              .map((v) => ({ label: v, value: `"${v}"` })),
+              .map((v) => ({ label: v, value: v })),
           ]);
       }
     };
@@ -274,18 +274,21 @@ export const BrowserDevicesPage = () => {
     areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
   });
 
+  const aip160Str = filterCategoryDatas.aip160();
+  const warningsStr = filterCategoryDatas.warnings.join(', ');
   const selectedOptions = useMemo<GetFiltersResult>(() => {
-    if (filterCategoryDatas.parseError) {
+    if (filterCategoryDatas.warnings.length > 0) {
       return {
         filters: undefined,
-        error: new Error(filterCategoryDatas.parseError),
+        error: new Error(warningsStr),
       };
     }
     return {
       filters: computeSelectedOptions(filterCategoryDatas.filterValues),
       error: undefined,
     };
-  }, [filterCategoryDatas.filterValues, filterCategoryDatas.parseError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aip160Str, warningsStr]);
 
   const onColumnFiltersChangeOverride = useCallback(
     (newFilters: Record<string, string[]>) => {
@@ -325,7 +328,10 @@ export const BrowserDevicesPage = () => {
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
     orderBy: orderByParam,
-    filter: filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160(),
+    filter:
+      filterCategoryDatas.warnings.length > 0
+        ? ''
+        : filterCategoryDatas.aip160(),
   });
 
   const devicesQuery = useBrowserDevices(request);

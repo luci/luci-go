@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router';
 
@@ -115,7 +115,9 @@ describe('useFilters', () => {
     const category = result.current.filterValues?.[
       'model'
     ] as StringListFilterCategory;
-    category.setSelectedOptions(['v1']);
+    act(() => {
+      category.setSelectedOptions(['v1']);
+    });
 
     const generated = result.current.aip160();
     expect(generated).toEqual('(model = "v1")');
@@ -219,6 +221,22 @@ describe('useFilters', () => {
     expect(generated).toEqual('(host_group = "v1") AND (lab_name = "v2")');
   });
 
+  it('should return syntax error as warning', () => {
+    const builders = {};
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MemoryRouter initialEntries={['/?filters=invalid%20aip160']}>
+        <SyncedSearchParamsProvider>{children}</SyncedSearchParamsProvider>
+      </MemoryRouter>
+    );
+
+    const { result } = renderHook(() => useFilters(builders), { wrapper });
+
+    expect(result.current).toBeTruthy();
+    expect(result.current?.warnings).toBeTruthy();
+    expect(result.current?.warnings.length).toBeGreaterThan(0);
+  });
+
   it('should handle unquoted keys in URL matching quoted builder keys', async () => {
     const builder = new StringListFilterCategoryBuilder()
       .setLabel('Model')
@@ -237,7 +255,6 @@ describe('useFilters', () => {
     const { result } = renderHook(() => useFilters(builders), { wrapper });
 
     await waitFor(() => expect(result.current.filterValues).toBeTruthy());
-    expect(result.current.parseError).toBeUndefined();
 
     const category = result.current.filterValues?.['ufs."model"'];
     expect(category).toBeInstanceOf(StringListFilterCategory);

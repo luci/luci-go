@@ -13,13 +13,12 @@
 // limitations under the License.
 
 import styled from '@emotion/styled';
-import { useEffect } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
+import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import { ResourceRequestTable } from './resource_requests_table';
@@ -32,14 +31,7 @@ const Container = styled.div`
 `;
 
 export const ResourceRequestListPage = () => {
-  const { filterValues, isLoading, parseError } = useRriFilters();
-  const [warnings, addWarning] = useWarnings();
-
-  useEffect(() => {
-    if (parseError) {
-      addWarning(`There was an error parsing your filters: ${parseError}`);
-    }
-  }, [parseError, addWarning]);
+  const { filterValues, isLoading, warnings } = useRriFilters();
 
   return (
     <Container>

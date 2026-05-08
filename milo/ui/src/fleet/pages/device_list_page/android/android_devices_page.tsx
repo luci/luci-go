@@ -229,9 +229,7 @@ export const AndroidDevicesPage = () => {
         pageSize: getPageSize(pagerCtx, searchParams),
         pageToken: getPageToken(pagerCtx, searchParams),
         orderBy: orderByParam,
-        filter: filterCategoryDatas.parseError
-          ? ''
-          : filterCategoryDatas.aip160(),
+        filter: filterCategoryDatas.aip160(),
         platform: platform,
       }),
     [pagerCtx, searchParams, orderByParam, filterCategoryDatas],
@@ -359,20 +357,6 @@ export const AndroidDevicesPage = () => {
     devicesQuery.isPending,
     searchParams,
     setSearchParams,
-  ]);
-
-  useEffect(() => {
-    if (!isDimensionsQueryProperlyLoaded) return;
-    if (!filterCategoryDatas.parseError) return;
-
-    addWarning(
-      `There was an error parsing your filters: ${filterCategoryDatas.parseError}`,
-    );
-  }, [
-    addWarning,
-    filterCategoryDatas,
-    isDimensionsQueryProperlyLoaded,
-    warnings,
   ]);
 
   const fleetMrtState = useFleetMRTState({
@@ -556,11 +540,14 @@ export const AndroidDevicesPage = () => {
         margin: '24px',
       }}
     >
-      <WarningNotifications warnings={warnings} />
+      <WarningNotifications
+        warnings={[
+          ...(filterCategoryDatas.warnings || []),
+          ...(warnings || []),
+        ]}
+      />
       <AndroidSummaryHeader
-        aip160={
-          filterCategoryDatas.parseError ? '' : filterCategoryDatas.aip160()
-        }
+        aip160={filterCategoryDatas.aip160()}
         setFiltersBatch={filterCategoryDatas.setFiltersBatch}
       />
       <AdminTasksAlert />

@@ -27,7 +27,6 @@ import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { colors } from '@/fleet/theme/colors';
 import { OptionValue } from '@/fleet/types/option';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
-import { stripQuotes } from '@/fleet/utils/filters';
 import { fuzzySort, fuzzyMaxScore } from '@/fleet/utils/fuzzy_sort';
 
 import {
@@ -119,11 +118,7 @@ export class StringListFilterCategory implements FilterCategory {
     const processTermValue = (value: string, isNegated: boolean) => {
       if (!optionsMap[value] && value !== ANY_VALUE) {
         warnings.push(`Option ${value} doesn't exist for ${key}`);
-
-        optionsMap[value] = {
-          optionValue: { label: value, value: value },
-          isSelected: false,
-        };
+        return undefined;
       }
 
       const isBlank = value === ANY_VALUE;
@@ -164,7 +159,7 @@ export class StringListFilterCategory implements FilterCategory {
       switch (arg.kind) {
         case 'Comparable':
           const err = processTermValue(
-            stripQuotes(memberToKey(arg.member)),
+            unquote(memberToKey(arg.member)),
             isNegated,
           );
           if (err) {
@@ -201,11 +196,9 @@ export class StringListFilterCategory implements FilterCategory {
               };
             }
 
-            const innerValue = stripQuotes(
-              memberToKey(innerTerm.simple.comparable.member),
-            );
+            const innerValue = memberToKey(innerTerm.simple.comparable.member);
             const err = processTermValue(
-              innerValue,
+              unquote(innerValue),
               isNegated ? !innerTerm.negated : innerTerm.negated,
             );
             if (err) {
@@ -381,12 +374,7 @@ export class StringListFilterCategory implements FilterCategory {
     for (let i = 0; i < unquotedLowerSelectedKeys.length; i++) {
       const key = unquotedLowerSelectedKeys[i];
       if (!foundKeys.has(key)) {
-        const originalValue = selectedKeys[i];
-        this.options[originalValue] = {
-          optionValue: { label: originalValue, value: originalValue },
-          isSelected: true,
-        };
-        foundKeys.add(key);
+        return `Invalid option: ${key}`;
       }
     }
 

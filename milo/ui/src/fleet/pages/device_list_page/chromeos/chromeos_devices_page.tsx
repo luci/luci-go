@@ -311,9 +311,7 @@ export const ChromeOSDevicesPage = () => {
   const countQuery = useQuery({
     ...client.CountDevices.query(
       CountDevicesRequest.fromPartial({
-        filter: filterCategoryDatas.parseError
-          ? ''
-          : filterCategoryDatas.aip160(),
+        filter: filterCategoryDatas.aip160(),
         platform: Platform.CHROMEOS,
       }),
     ),
@@ -325,9 +323,7 @@ export const ChromeOSDevicesPage = () => {
         pageSize: getPageSize(pagerCtx, searchParams),
         pageToken: getPageToken(pagerCtx, searchParams),
         orderBy: orderByParam,
-        filter: filterCategoryDatas.parseError
-          ? ''
-          : filterCategoryDatas.aip160(),
+        filter: filterCategoryDatas.aip160(),
         platform: Platform.CHROMEOS,
       }),
     [pagerCtx, searchParams, orderByParam, filterCategoryDatas],
@@ -401,26 +397,6 @@ export const ChromeOSDevicesPage = () => {
     devicesQuery.isPending,
     searchParams,
     setSearchParams,
-  ]);
-
-  useEffect(() => {
-    if (!isDimensionsQueryProperlyLoaded) return;
-    if (!filterCategoryDatas.parseError) return;
-    if (
-      warnings.some((w) =>
-        w.startsWith('There was an error parsing your filters:'),
-      )
-    )
-      return;
-
-    addWarning(
-      `There was an error parsing your filters: ${filterCategoryDatas.parseError}`,
-    );
-  }, [
-    addWarning,
-    filterCategoryDatas,
-    isDimensionsQueryProperlyLoaded,
-    warnings,
   ]);
 
   const currentTasks = useCurrentTasks(devices);
@@ -596,7 +572,12 @@ export const ChromeOSDevicesPage = () => {
         paddingBottom: '40px',
       }}
     >
-      <WarningNotifications warnings={warnings} />
+      <WarningNotifications
+        warnings={[
+          ...(filterCategoryDatas.warnings || []),
+          ...(warnings || []),
+        ]}
+      />
       <ChromeOSSummaryHeader
         selectedOptions={selectedOptions.filters || {}}
         pagerContext={pagerCtx}

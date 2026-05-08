@@ -310,4 +310,54 @@ describe('StringListFilterCategory', () => {
     category.setSelectedOptions(['pixel(gen1)']);
     expect(category.toAIP160()).toEqual('(model = "pixel(gen1)")');
   });
+
+  it('should ignore unknown values', () => {
+    const mockTerm = {
+      kind: 'Term',
+      negated: false,
+      simple: {
+        kind: 'Restriction',
+        comparator: '=',
+        arg: {
+          kind: 'Comparable',
+          member: {
+            value: { value: 'unknown', quoted: false },
+            fields: [],
+          },
+        },
+      },
+    } as unknown as ast.Term & { simple: ast.Restriction };
+
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [{ value: 'pixel', label: 'Pixel' }],
+      [],
+      () => {},
+      [mockTerm],
+      '=',
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+    expect(category.getOptions()['unknown']).toBeUndefined();
+    expect(category.getSelectedOptions()).toEqual([]);
+  });
+
+  it('should return error in setSelectedOptions for unknown values', () => {
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [{ value: 'pixel', label: 'Pixel' }],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    const error = category.setSelectedOptions(['unknown']);
+    expect(error).toEqual('Invalid option: unknown');
+  });
 });

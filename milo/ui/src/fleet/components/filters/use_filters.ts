@@ -16,6 +16,7 @@ import { useCallback, useMemo, useEffect } from 'react';
 
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { parseFilter } from '@/fleet/utils/aip160/parser/parser';
+import { useWarnings } from '@/fleet/utils/use_warnings';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { FILTERS_PARAM_KEY } from '../filter_dropdown/search_param_utils';
@@ -45,12 +46,12 @@ export const useFilters = <
 ): {
   filterValues: FilterValuesFromBuilders<T> | undefined;
   aip160: () => string;
-  parseError: string | undefined;
-  warnings?: string | undefined;
+  warnings: string[];
   setFiltersBatch: (updates: Record<string, string[]>) => void;
 } => {
   const { areFilterValuesLoading = false } = options;
   const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const [warnings, addWarning] = useWarnings();
   const filtersAIP160 = searchParams.get(FILTERS_PARAM_KEY);
 
   // Stabilize builders to prevent infinite loops if the parent passes a new object every render.
@@ -82,34 +83,36 @@ export const useFilters = <
     [setSearchParams],
   );
 
-  const [filterValues, parseError, warnings]: [
+  const [filterValues, warningsFromBuilder]: [
     FilterValuesFromBuilders<T> | undefined,
-    string | undefined,
-    string | undefined,
+    string[],
   ] = useMemo(() => {
-    if (builders === undefined) return [undefined, undefined, undefined];
+    if (builders === undefined) return [undefined, []];
 
-    const { filters, parseError, warnings } = buildFilters(
+    const { filters, warnings } = buildFilters(
       builders,
       updateUrl,
       filtersAIP160,
       areFilterValuesLoading || false,
     );
 
-    return [filters, parseError, warnings];
+    return [filters, warnings];
   }, [builders, filtersAIP160, updateUrl, areFilterValuesLoading]);
 
   useEffect(() => {
     if (
       filterValues !== undefined &&
-      parseError === undefined &&
       !Object.values(filterValues).some(
         (o) => o instanceof LoadingFilterCategory,
       )
     ) {
       updateUrl(filterValues, true);
     }
-  }, [filterValues, parseError, updateUrl]);
+  }, [filterValues, updateUrl]);
+
+  useEffect(() => {
+    warningsFromBuilder.forEach((w) => addWarning(w));
+  }, [warningsFromBuilder, addWarning]);
 
   // We return a callback instead of a computed string to workaround "silent updates".
   // Sometimes values inside filterValues change but the object reference stays same,
@@ -147,7 +150,6 @@ export const useFilters = <
   return {
     filterValues,
     aip160,
-    parseError,
     warnings,
     setFiltersBatch,
   };
@@ -326,18 +328,16 @@ function buildFilters<
   areFilterValuesLoading: boolean,
 ): {
   filters: FilterValuesFromBuilders<T> | undefined;
-  parseError: string | undefined;
-  warnings?: string | undefined;
+  warnings: string[];
 } {
   const parseResult =
     filtersAIP160 === null ? null : constructFiltersFromAIP160(filtersAIP160);
 
   if (parseResult?.isError) {
-    return { filters: undefined, parseError: parseResult.error };
+    return { filters: undefined, warnings: [parseResult.error] };
   }
 
   const filters: Record<string, FilterCategory> = {};
-  const errors: string[] = [];
   const warnings: string[] = [];
 
   for (const [key, bob] of Object.entries(builders)) {
@@ -355,12 +355,14 @@ function buildFilters<
     }
     const result = bob.build(key, () => {}, terms);
     if (result.isError) {
-      errors.push(`Error with ${key}: ${result.error}`);
+      if (!areFilterValuesLoading) {
+        warnings.push(`Error with ${key}: ${result.error}`);
+      }
     } else {
       const category = result.value;
 
       filters[key] = category;
-      if (result.warnings.length > 0) {
+      if (result.warnings.length > 0 && !areFilterValuesLoading) {
         warnings.push(
           ...result.warnings.map((w) => `Warning with ${key}: ${w}`),
         );
@@ -379,7 +381,7 @@ function buildFilters<
         if (areFilterValuesLoading) {
           filters[key] = new LoadingFilterCategory(key);
         } else {
-          errors.push(`${key} is not a valid filter`);
+          warnings.push(`${key} is not a valid filter`);
         }
       }
     }
@@ -390,9 +392,8 @@ function buildFilters<
   }
 
   return {
-    parseError: errors.length === 0 ? undefined : errors.join(', '),
     filters: filters as FilterValuesFromBuilders<T>,
-    warnings: warnings.length === 0 ? undefined : warnings.join(', '),
+    warnings,
   };
 }
 

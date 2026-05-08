@@ -147,24 +147,25 @@ export const RepairListPage = () => {
   });
 
   const selectedOptions = useMemo<GetFiltersResult>(() => {
-    if (filterCategoryDatas.parseError) {
+    if (filterCategoryDatas.warnings.length > 0) {
       return {
         filters: undefined,
-        error: new Error(filterCategoryDatas.parseError),
+        error: new Error(filterCategoryDatas.warnings.join(', ')),
       };
     }
     return {
       filters: computeSelectedOptions(filterCategoryDatas.filterValues),
       error: undefined,
     };
-  }, [filterCategoryDatas.filterValues, filterCategoryDatas.parseError]);
+  }, [filterCategoryDatas.filterValues, filterCategoryDatas.warnings]);
 
   const repairMetricsList = useQuery({
     ...client.ListRepairMetrics.query({
       platform: Platform.ANDROID,
-      filter: filterCategoryDatas.parseError
-        ? ''
-        : filterCategoryDatas.aip160(),
+      filter:
+        filterCategoryDatas.warnings.length > 0
+          ? ''
+          : filterCategoryDatas.aip160(),
       pageSize: getPageSize(pagerCtx, searchParams),
       pageToken: getPageToken(pagerCtx, searchParams),
       orderBy: orderByParam,
@@ -190,6 +191,7 @@ export const RepairListPage = () => {
     setSearchParams(filtersUpdater(selectedOptions.filters));
   }, [addWarning, selectedOptions, setSearchParams]);
 
+  // TODO: b/502484964 - Remove this, as it is a fallback to avoid showing an empty page when filters are invalid.
   useEffect(() => {
     if (!selectedOptions.error) return;
 

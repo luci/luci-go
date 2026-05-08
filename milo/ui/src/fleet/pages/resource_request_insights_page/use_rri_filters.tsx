@@ -187,7 +187,7 @@ export const useRriFilters = () => {
     RriBuildersInstance | undefined
   >(undefined);
 
-  const { filterValues, parseError, aip160 } = useFilters(filterOptions, {
+  const { filterValues, aip160, warnings } = useFilters(filterOptions, {
     areFilterValuesLoading: query.isLoading,
   });
 
@@ -208,6 +208,6 @@ export const useRriFilters = () => {
     filterValues,
     aipString: aip160(),
     isLoading: query.isLoading,
-    parseError,
+    warnings,
   };
 };

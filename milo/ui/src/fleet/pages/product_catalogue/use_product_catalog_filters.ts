@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
@@ -67,14 +67,25 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
       >
     | undefined
   >(undefined);
-  const { filterValues, aip160 } = useFilters(filterOptions, {
-    areFilterValuesLoading: true,
+
+  // We use a ref to break the circular dependency between useFilters and useQuery.
+  // useFilters needs to know if we are loading options to decide if missing keys are errors.
+  // useQuery needs the clean filter string from useFilters to fetch options.
+  // Since useQuery naturally triggers a re-render when it finishes loading,
+  // useFilters will see the updated ref value on the next render.
+  const queryIsLoadingRef = useRef(true);
+
+  const { filterValues, aip160, warnings } = useFilters(filterOptions, {
+    areFilterValuesLoading: queryIsLoadingRef.current,
   });
+
   const client = useFleetConsoleClient();
   const filterOptionsQuery = useQuery({
     ...client.GetProductCatalogFilterValues.query({ filter: aip160() }),
     placeholderData: keepPreviousData,
   });
+
+  queryIsLoadingRef.current = filterOptionsQuery.isLoading;
 
   const nextFilterOptions = useMemo(() => {
     if (!filterOptionsQuery.data) return undefined;
@@ -132,5 +143,6 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
     aip160: aip160(),
     onApplyFilter,
     isLoading: filterOptionsQuery.isLoading,
+    warnings,
   };
 };
