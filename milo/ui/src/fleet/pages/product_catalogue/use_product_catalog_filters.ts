@@ -114,11 +114,11 @@ export const useProductCatalogFilters = (onApply?: () => void) => {
           .setOptions(
             scopedData?.map((v) => ({
               label: v.value === '' ? BLANK_VALUE : v.value,
-              value: `"${v.value}"`,
+              value: v.value,
               inScope: v.inScope,
             })) ?? [],
           )
-          .setDefaultOptions(defaultOptions.map((val) => `"${val}"`));
+          .setDefaultOptions([...defaultOptions]);
       } else if (config.type === 'range') {
         const range = data as Int32Range;
         options[filterKey] = new RangeFilterCategoryBuilder()
