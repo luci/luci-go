@@ -180,4 +180,20 @@ message Settings {
     HaTSConfig hats_cuj = 3;
   }
   TestInvestigate test_investigate = 18;
+
+  message Firebase {
+    // apiKey is the Firebase API key.
+    string api_key = 1;
+    // messagingSenderId is the Firebase messaging sender ID.
+    string messaging_sender_id = 2;
+    // appId is the Firebase app ID.
+    string app_id = 3;
+    // projectId is the Firebase project ID.
+    string project_id = 4;
+    // authDomain is the Firebase auth domain.
+    string auth_domain = 5;
+    // storageBucket is the Firebase storage bucket.
+    string storage_bucket = 6;
+  }
+  Firebase firebase = 19;
 }

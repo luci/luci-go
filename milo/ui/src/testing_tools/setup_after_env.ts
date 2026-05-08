@@ -149,6 +149,16 @@ serverInjectedVars.SETTINGS = Object.freeze({
       ),
     },
   },
+  firebase: {
+    apiKey: assertNonNullable(process.env['VITE_FIREBASE_API_KEY']),
+    messagingSenderId: assertNonNullable(
+      process.env['VITE_FIREBASE_MESSAGING_SENDER_ID'],
+    ),
+    appId: assertNonNullable(process.env['VITE_FIREBASE_APP_ID']),
+    projectId: process.env['VITE_FIREBASE_PROJECT_ID'] || '',
+    authDomain: process.env['VITE_FIREBASE_AUTH_DOMAIN'] || '',
+    storageBucket: process.env['VITE_FIREBASE_STORAGE_BUCKET'] || '',
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by

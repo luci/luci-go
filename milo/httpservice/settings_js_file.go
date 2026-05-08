@@ -86,6 +86,7 @@ func (s *HTTPService) settingsJSHandler(c *router.Context) error {
 		FleetConsole:    settings.FleetConsole,
 		Ufs:             settings.Ufs,
 		TestInvestigate: settings.TestInvestigate,
+		Firebase:        settings.Firebase,
 	}
 
 	header := c.Writer.Header()

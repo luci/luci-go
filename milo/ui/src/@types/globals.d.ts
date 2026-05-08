@@ -103,6 +103,14 @@ declare const SETTINGS: {
     readonly hatsNegativeRecs: HaTSConfig;
     readonly hatsCuj: HaTSConfig;
   };
+  readonly firebase: {
+    readonly apiKey: string;
+    readonly messagingSenderId: string;
+    readonly appId: string;
+    readonly projectId: string;
+    readonly authDomain: string;
+    readonly storageBucket: string;
+  };
 };
 
 /**

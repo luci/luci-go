@@ -134,6 +134,16 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
         ),
       },
     },
+    firebase: {
+      apiKey: assertNonNullable(env['VITE_FIREBASE_API_KEY']),
+      messagingSenderId: assertNonNullable(
+        env['VITE_FIREBASE_MESSAGING_SENDER_ID'],
+      ),
+      appId: assertNonNullable(env['VITE_FIREBASE_APP_ID']),
+      projectId: env['VITE_FIREBASE_PROJECT_ID'] || '',
+      authDomain: env['VITE_FIREBASE_AUTH_DOMAIN'] || '',
+      storageBucket: env['VITE_FIREBASE_STORAGE_BUCKET'] || '',
+    },
   };
 
   const localDevSettingsJs = `self.SETTINGS = Object.freeze(${JSON.stringify(
