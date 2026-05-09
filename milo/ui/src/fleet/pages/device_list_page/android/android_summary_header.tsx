@@ -43,7 +43,6 @@ export interface AndroidSummaryHeaderProps {
 }
 
 const COLUMN_STYLE = {
-  height: '100%',
   padding: '2px 4px',
 };
 
