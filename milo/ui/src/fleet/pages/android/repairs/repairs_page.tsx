@@ -15,7 +15,7 @@
 import DoneIcon from '@mui/icons-material/Done';
 import ErrorIcon from '@mui/icons-material/Error';
 import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
-import { Alert, Button, Chip, Typography } from '@mui/material';
+import { Alert, Button, Typography } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import {
@@ -23,9 +23,8 @@ import {
   MRT_ColumnDef,
   MRT_PaginationState,
   MRT_ColumnFiltersState,
-  MRT_Updater,
 } from 'material-react-table';
-import { useEffect, useMemo, useRef, useCallback } from 'react';
+import { useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -48,11 +47,6 @@ import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { GetFiltersResult } from '@/fleet/components/filter_dropdown/parser/parser';
-import {
-  filtersUpdater,
-  FILTERS_PARAM_KEY,
-} from '@/fleet/components/filter_dropdown/search_param_utils';
-import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 import {
   StringListFilterCategory,
   StringListFilterCategoryBuilder,
@@ -83,7 +77,7 @@ import {
   getFilterQueryString,
   parseOrderByParam,
 } from '@/fleet/utils/search_param';
-import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
+import { WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
   TrackLeafRoutePageView,
   useGoogleAnalytics,
@@ -136,7 +130,7 @@ export const RepairListPage = () => {
           { label: BLANK_VALUE, value: BLANK_VALUE },
           ...(value.values || [])
             .filter((v) => v !== '' && v !== BLANK_VALUE)
-            .map((v) => ({ label: v, value: `"${v}"` })),
+            .map((v) => ({ label: v, value: v })),
         ]);
     }
     return filters;
@@ -172,32 +166,6 @@ export const RepairListPage = () => {
     }),
     placeholderData: keepPreviousData,
   });
-
-  const [warnings, addWarning] = useWarnings();
-  useEffect(() => {
-    if (selectedOptions.error) return;
-
-    const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
-      (filterKey) => !DEFAULT_COLUMNS.includes(_.snakeCase(filterKey)),
-    );
-    if (missingParamsFilters.length === 0) return;
-    addWarning(
-      'The following filters are not available: ' +
-        missingParamsFilters?.join(', '),
-    );
-    for (const key of missingParamsFilters) {
-      delete selectedOptions.filters[key];
-    }
-    setSearchParams(filtersUpdater(selectedOptions.filters));
-  }, [addWarning, selectedOptions, setSearchParams]);
-
-  // TODO: b/502484964 - Remove this, as it is a fallback to avoid showing an empty page when filters are invalid.
-  useEffect(() => {
-    if (!selectedOptions.error) return;
-
-    addWarning('Invalid filters');
-    setSearchParams(filtersUpdater({}));
-  }, [addWarning, selectedOptions.error, setSearchParams]);
 
   const sorting = (searchParams.get(ORDER_BY_PARAM_KEY) ?? '')
     .split(', ')
@@ -242,71 +210,6 @@ export const RepairListPage = () => {
     );
   }, [selectedOptions.filters]);
 
-  const columnFiltersRef = useRef<MRT_ColumnFiltersState>([]);
-  useEffect(() => {
-    columnFiltersRef.current = columnFilters;
-  }, [columnFilters]);
-
-  const onColumnFiltersChange = useCallback(
-    (updater: MRT_Updater<MRT_ColumnFiltersState>) => {
-      const newFilters =
-        typeof updater === 'function' ? updater(columnFilters) : updater;
-
-      if (!filterCategoryDatas.filterValues) return;
-
-      const prevTableFilterKeys = columnFiltersRef.current.map((f) =>
-        normalizeFilterKey(f.id),
-      );
-
-      let hasChanges = false;
-      for (const [key, category] of Object.entries(
-        filterCategoryDatas.filterValues as Record<string, FilterCategory>,
-      )) {
-        const matchKey = normalizeFilterKey(key);
-        const isInNewFilters = newFilters.some(
-          (f) => normalizeFilterKey(f.id) === matchKey,
-        );
-        const wasInTable = prevTableFilterKeys.includes(matchKey);
-
-        if (!isInNewFilters && !wasInTable) {
-          continue;
-        }
-
-        const filterObj = newFilters.find(
-          (f) => normalizeFilterKey(f.id) === matchKey,
-        );
-        const newValues = filterObj
-          ? typeof filterObj.value === 'string'
-            ? [filterObj.value]
-            : (filterObj.value as string[])
-          : [];
-
-        if (category instanceof StringListFilterCategory) {
-          const currentValues = category.getSelectedOptions();
-          if (!_.isEqual([...newValues].sort(), [...currentValues].sort())) {
-            hasChanges = true;
-            category.setSelectedOptions(newValues, true);
-          }
-        }
-      }
-
-      if (!hasChanges) return;
-
-      const currentAIP160 = filterCategoryDatas.aip160();
-
-      setSearchParams((prev) => {
-        const prevAIP160 = prev.get(FILTERS_PARAM_KEY) ?? '';
-        if (currentAIP160 === prevAIP160) return prev;
-
-        let newParams = new URLSearchParams(prev);
-        newParams.set(FILTERS_PARAM_KEY, currentAIP160);
-        newParams = emptyPageTokenUpdater(pagerCtx)(newParams);
-        return newParams;
-      });
-    },
-    [filterCategoryDatas, pagerCtx, setSearchParams, columnFilters],
-  );
-
   const defaultColumnIds = useMemo(
     () => columns.map((c) => getColumnId(c as MRT_ColumnDef<Row>)),
     [columns],
@@ -329,6 +232,7 @@ export const RepairListPage = () => {
     enableColumnActions: true,
     enableColumnFilters: false,
     manualFiltering: true,
+    filterValues: filterCategoryDatas.filterValues,
     positionToolbarAlertBanner: 'none',
     enableRowSelection: true,
     renderTopToolbarCustomActions: ({ table }) => (
@@ -374,7 +278,6 @@ export const RepairListPage = () => {
       pagination: pagination,
     },
     onColumnVisibilityChange: mrtColumnManager.setColumnVisibility,
-    onColumnFiltersChange,
     muiPaginationProps: {
       rowsPerPageOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     },
@@ -449,11 +352,11 @@ export const RepairListPage = () => {
         margin: '24px',
       }}
     >
-      <WarningNotifications warnings={warnings} />
+      <WarningNotifications warnings={filterCategoryDatas.warnings} />
       <Metrics
         filters={filterCategoryDatas.aip160()}
         pagerContext={pagerCtx}
-        onColumnFiltersChange={onColumnFiltersChange}
+        filterValues={filterCategoryDatas.filterValues}
       />
       <div
         css={{
@@ -466,30 +369,21 @@ export const RepairListPage = () => {
           borderRadius: 4,
         }}
       >
-        {selectedOptions.error ? (
-          <Chip
-            variant="outlined"
-            onDelete={() => setSearchParams(filtersUpdater({}))}
-            label="Invalid filters"
-            color="error"
-          />
-        ) : (
-          <FilterBar
-            filterCategoryDatas={Object.values(
-              filterCategoryDatas.filterValues || {},
-            )}
-            onApply={() => {
-              trackEvent('filter_changed', {
-                componentName: 'device_list_filter',
-              });
-            }}
-            isLoading={
-              repairMetricsFilterValues.isPending ||
-              filterCategoryDatas.filterValues === undefined
-            }
-            searchPlaceholder='Add a filter (e.g. "state:ready" or "priority:high")'
-          />
-        )}
+        <FilterBar
+          filterCategoryDatas={Object.values(
+            filterCategoryDatas.filterValues || {},
+          )}
+          onApply={() => {
+            trackEvent('filter_changed', {
+              componentName: 'device_list_filter',
+            });
+          }}
+          isLoading={
+            repairMetricsFilterValues.isPending ||
+            filterCategoryDatas.filterValues === undefined
+          }
+          searchPlaceholder='Add a filter (e.g. "state:ready" or "priority:high")'
+        />
       </div>
       <div
         css={{
@@ -506,11 +400,11 @@ export const RepairListPage = () => {
 function Metrics({
   filters,
   pagerContext,
-  onColumnFiltersChange,
+  filterValues,
 }: {
   filters: string;
   pagerContext: PagerContext;
-  onColumnFiltersChange: (updater: MRT_Updater<MRT_ColumnFiltersState>) => void;
+  filterValues: Record<string, FilterCategory> | undefined;
 }) {
   const client = useFleetConsoleClient();
   const [searchParams, _] = useSyncedSearchParams();
@@ -707,9 +601,10 @@ function Metrics({
               Icon={getPriorityIcon(RepairMetric_Priority.BREACHED)}
               loading={countQuery.isPending}
               handleClick={() => {
-                onColumnFiltersChange([
-                  { id: 'priority', value: ['BREACHED'] },
-                ]);
+                const filter = filterValues?.['priority'];
+                if (filter instanceof StringListFilterCategory) {
+                  filter.setSelectedOptions(['BREACHED']);
+                }
               }}
             />
             <SingleMetric
@@ -719,7 +614,10 @@ function Metrics({
               Icon={getPriorityIcon(RepairMetric_Priority.WATCH)}
               loading={countQuery.isPending}
               handleClick={() => {
-                onColumnFiltersChange([{ id: 'priority', value: ['WATCH'] }]);
+                const filter = filterValues?.['priority'];
+                if (filter instanceof StringListFilterCategory) {
+                  filter.setSelectedOptions(['WATCH']);
+                }
               }}
             />
             <SingleMetric
@@ -729,7 +627,10 @@ function Metrics({
               Icon={getPriorityIcon(RepairMetric_Priority.NICE)}
               loading={countQuery.isPending}
               handleClick={() => {
-                onColumnFiltersChange([{ id: 'priority', value: ['NICE'] }]);
+                const filter = filterValues?.['priority'];
+                if (filter instanceof StringListFilterCategory) {
+                  filter.setSelectedOptions(['NICE']);
+                }
               }}
             />
           </div>
