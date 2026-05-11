@@ -142,98 +142,101 @@ func TestView(t *testing.T) {
 				})
 			})
 		}
+	})
+
+	ftt.Run(`An unlimited View`, t, func(t *ftt.Test) {
+		b := Buffer{}
+		br := b.View()
+
+		t.Run(`Has chunksRemaining() value of 0.`, func(t *ftt.Test) {
+			assert.Loosely(t, br.chunkRemaining(), should.BeZero)
+		})
+	})
+
+	ftt.Run(`With chunks [{0x01, 0x02, 0x00}, {0x00, 0x03}, {0x00}, {0x00, 0x00}, {0x04}]`, t, func(t *ftt.Test) {
+		b := Buffer{}
+		for _, c := range []Chunk{tc(1, 2, 0), tc(0, 3), tc(0), tc(0, 0), tc(4)} {
+			b.Append(c)
+		}
 
 		t.Run(`An unlimited View`, func(t *ftt.Test) {
 			br := b.View()
 
-			t.Run(`Has chunksRemaining() value of 0.`, func(t *ftt.Test) {
-				assert.Loosely(t, br.chunkRemaining(), should.BeZero)
-			})
-		})
-
-		t.Run(`With chunks [{0x01, 0x02, 0x00}, {0x00, 0x03}, {0x00}, {0x00, 0x00}, {0x04}]`, func(t *ftt.Test) {
-			for _, c := range []Chunk{tc(1, 2, 0), tc(0, 3), tc(0), tc(0, 0), tc(4)} {
-				b.Append(c)
-			}
-
-			t.Run(`An unlimited View`, func(t *ftt.Test) {
-				br := b.View()
-
-				t.Run(`Should have Remaining() value of 9.`, func(t *ftt.Test) {
-					assert.Loosely(t, br.Remaining(), should.Equal(9))
-				})
-
-				t.Run(`Can spawn a limited clone.`, func(t *ftt.Test) {
-					buf := bytes.Buffer{}
-					_, err := buf.ReadFrom(br.CloneLimit(7))
-					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, buf.Bytes(), should.Match([]byte{0x01, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00}))
-				})
-
-				for _, s := range []struct {
-					needle []byte
-					index  int64
-				}{
-					{[]byte(nil), 0},
-					{[]byte{0x01}, 0},
-					{[]byte{0x01, 0x02}, 0},
-					{[]byte{0x02, 0x00}, 1},
-					{[]byte{0x00}, 2},
-					{[]byte{0x00, 0x00}, 2},
-					{[]byte{0x00, 0x00, 0x00}, 5},
-					{[]byte{0x03, 0x00, 0x00}, 4},
-				} {
-					t.Run(fmt.Sprintf(`Has Index %v for needle %v`, s.index, s.needle), func(t *ftt.Test) {
-						assert.Loosely(t, br.Index(s.needle), should.Equal(s.index))
-					})
-				}
+			t.Run(`Should have Remaining() value of 9.`, func(t *ftt.Test) {
+				assert.Loosely(t, br.Remaining(), should.Equal(9))
 			})
 
-			t.Run(`A View with a limit of 6`, func(t *ftt.Test) {
-				br := b.ViewLimit(6)
-
-				t.Run(`Should have Remaining() value of 6.`, func(t *ftt.Test) {
-					assert.Loosely(t, br.Remaining(), should.Equal(6))
-				})
-
-				t.Run(`Has index of -1 for needle [0x00, 0x04]`, func(t *ftt.Test) {
-					assert.Loosely(t, br.Index([]byte{0x00, 0x04}), should.Equal(-1))
-				})
-			})
-
-			t.Run(`A View with a limit of 20`, func(t *ftt.Test) {
-				br := b.ViewLimit(20)
-
-				t.Run(`Should have Remaining() value of 9.`, func(t *ftt.Test) {
-					assert.Loosely(t, br.Remaining(), should.Equal(9))
-				})
-			})
-		})
-
-		t.Run(`With chunks [{0x0F}..{0x00}]`, func(t *ftt.Test) {
-			for i := 0x0F; i >= 0x00; i-- {
-				b.Append(tc(byte(i)))
-			}
-			br := b.View()
-
-			t.Run(`Has index of -1 for needle [0x0f, 0x10]`, func(t *ftt.Test) {
-				assert.Loosely(t, br.Index([]byte{0x0f, 0x10}), should.Equal(-1))
+			t.Run(`Can spawn a limited clone.`, func(t *ftt.Test) {
+				buf := bytes.Buffer{}
+				_, err := buf.ReadFrom(br.CloneLimit(7))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, buf.Bytes(), should.Match([]byte{0x01, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00}))
 			})
 
 			for _, s := range []struct {
 				needle []byte
 				index  int64
 			}{
-				{[]byte{0x0F}, 0},
-				{[]byte{0x04, 0x03, 0x02}, 11},
-				{[]byte{0x01, 0x00}, 14},
-				{[]byte{0x00}, 15},
-				{[]byte{0x00, 0xFF}, -1},
+				{[]byte(nil), 0},
+				{[]byte{0x01}, 0},
+				{[]byte{0x01, 0x02}, 0},
+				{[]byte{0x02, 0x00}, 1},
+				{[]byte{0x00}, 2},
+				{[]byte{0x00, 0x00}, 2},
+				{[]byte{0x00, 0x00, 0x00}, 5},
+				{[]byte{0x03, 0x00, 0x00}, 4},
 			} {
 				t.Run(fmt.Sprintf(`Has Index %v for needle %v`, s.index, s.needle), func(t *ftt.Test) {
 					assert.Loosely(t, br.Index(s.needle), should.Equal(s.index))
 				})
 			}
 		})
+
+		t.Run(`A View with a limit of 6`, func(t *ftt.Test) {
+			br := b.ViewLimit(6)
+
+			t.Run(`Should have Remaining() value of 6.`, func(t *ftt.Test) {
+				assert.Loosely(t, br.Remaining(), should.Equal(6))
+			})
+
+			t.Run(`Has index of -1 for needle [0x00, 0x04]`, func(t *ftt.Test) {
+				assert.Loosely(t, br.Index([]byte{0x00, 0x04}), should.Equal(-1))
+			})
+		})
+
+		t.Run(`A View with a limit of 20`, func(t *ftt.Test) {
+			br := b.ViewLimit(20)
+
+			t.Run(`Should have Remaining() value of 9.`, func(t *ftt.Test) {
+				assert.Loosely(t, br.Remaining(), should.Equal(9))
+			})
+		})
+	})
+
+	ftt.Run(`With chunks [{0x0F}..{0x00}]`, t, func(t *ftt.Test) {
+		b := Buffer{}
+		for i := 0x0F; i >= 0x00; i-- {
+			b.Append(tc(byte(i)))
+		}
+		br := b.View()
+
+		t.Run(`Has index of -1 for needle [0x0f, 0x10]`, func(t *ftt.Test) {
+			assert.Loosely(t, br.Index([]byte{0x0f, 0x10}), should.Equal(-1))
+		})
+
+		for _, s := range []struct {
+			needle []byte
+			index  int64
+		}{
+			{[]byte{0x0F}, 0},
+			{[]byte{0x04, 0x03, 0x02}, 11},
+			{[]byte{0x01, 0x00}, 14},
+			{[]byte{0x00}, 15},
+			{[]byte{0x00, 0xFF}, -1},
+		} {
+			t.Run(fmt.Sprintf(`Has Index %v for needle %v`, s.index, s.needle), func(t *ftt.Test) {
+				assert.Loosely(t, br.Index(s.needle), should.Equal(s.index))
+			})
+		}
 	})
 }

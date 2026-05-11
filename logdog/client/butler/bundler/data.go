@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/luci/common/data/chunkstream"
+	"go.chromium.org/luci/logdog/client/butler/internal/chunkstream"
 )
 
 type dataPoolRegistry struct {

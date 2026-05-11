@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/common/data/chunkstream"
+	"go.chromium.org/luci/logdog/client/butler/internal/chunkstream"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"

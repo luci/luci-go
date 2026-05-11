@@ -20,7 +20,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"go.chromium.org/luci/common/data/chunkstream"
+	"go.chromium.org/luci/logdog/client/butler/internal/chunkstream"
 
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
