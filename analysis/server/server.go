@@ -62,7 +62,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/workunitingester"
 	"go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testrealms"
-	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/ui"
 	"go.chromium.org/luci/analysis/internal/views"
@@ -122,11 +121,6 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 		return errors.Fmt("creating test search client: %w", err)
 	}
 
-	trc, err := testresults.NewReadClient(srv.Context, srv.Options.CloudProject)
-	if err != nil {
-		return errors.Fmt("creating test results read client: %w", err)
-	}
-
 	sc, err := sorbet.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
 		return errors.Fmt("creating sorbet client: %w", err)
@@ -154,7 +148,7 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 	analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
 	analysispb.RegisterTestHistoryServer(srv, testhistory.NewTestHistoryServer(tsc))
 	analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
-	analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc, trc, sc))
+	analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc, sc))
 	analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))
 	return nil
 }
