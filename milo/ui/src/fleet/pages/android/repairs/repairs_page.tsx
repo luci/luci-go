@@ -18,12 +18,7 @@ import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
 import { Alert, Button, Typography } from '@mui/material';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
-import {
-  MaterialReactTable,
-  MRT_ColumnDef,
-  MRT_PaginationState,
-  MRT_ColumnFiltersState,
-} from 'material-react-table';
+import { MaterialReactTable, MRT_PaginationState } from 'material-react-table';
 import { useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -39,10 +34,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { ColumnsButton } from '@/fleet/components/columns/columns_button';
-import {
-  getColumnId,
-  useMRTColumnManagement,
-} from '@/fleet/components/columns/use_mrt_column_management';
+import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_column_management';
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
@@ -88,8 +80,8 @@ import {
   RepairMetric_Priority,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getRepairsColumns, DEFAULT_COLUMNS } from './repairs_columns';
-import { getPriorityIcon, getRow, type Row } from './repairs_columns.utils';
+import { COLUMNS } from './repairs_columns';
+import { getPriorityIcon, getRow } from './repairs_columns.utils';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_PAGE_SIZE = 100;
@@ -183,46 +175,14 @@ export const RepairListPage = () => {
     [pagerCtx, searchParams],
   );
 
-  const columns = useMemo(() => {
-    return getRepairsColumns(DEFAULT_COLUMNS).map((c) => {
-      const id = getColumnId(c as MRT_ColumnDef<Row>);
-      const builder = loadedFilterOptions[id];
-      return {
-        ...c,
-        filterVariant: 'multi-select',
-        filterSelectOptions:
-          builder && builder.options
-            ? builder.options.map((opt) => ({
-                text: opt.label,
-                value: String(opt.value),
-              }))
-            : [],
-      };
-    }) as MRT_ColumnDef<Row>[];
-  }, [loadedFilterOptions]);
-
-  const columnFilters = useMemo<MRT_ColumnFiltersState>(() => {
-    return Object.entries(selectedOptions?.filters || {}).map(
-      ([id, value]) => ({
-        id,
-        value,
-      }),
-    );
-  }, [selectedOptions.filters]);
-
-  const defaultColumnIds = useMemo(
-    () => columns.map((c) => getColumnId(c as MRT_ColumnDef<Row>)),
-    [columns],
-  );
-
   const highlightedColumnIds = useMemo(
     () => Object.keys(selectedOptions.filters || {}),
     [selectedOptions.filters],
   );
 
   const mrtColumnManager = useMRTColumnManagement({
-    columns,
-    defaultColumnIds,
+    columns: Object.values(COLUMNS),
+    defaultColumnIds: Object.keys(COLUMNS),
     localStorageKey: 'fleet-console-repairs-columns',
     highlightedColumnIds,
   });
@@ -270,7 +230,6 @@ export const RepairListPage = () => {
     getRowId: (row) => row.lab_name + row.host_group + row.run_target,
     state: {
       sorting,
-      columnFilters,
       columnVisibility: mrtColumnManager.columnVisibility,
       showProgressBars:
         repairMetricsList.isPending || repairMetricsList.isPlaceholderData,
