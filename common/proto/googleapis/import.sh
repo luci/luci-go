@@ -36,6 +36,7 @@ PROTOS_TO_IMPORT=(
   google/type/date.proto
   google/type/dayofweek.proto
   google/type/expr.proto
+  google/type/interval.proto
   google/type/latlng.proto
   google/type/money.proto
   google/type/postal_address.proto
