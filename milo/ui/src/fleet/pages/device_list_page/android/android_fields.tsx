@@ -22,6 +22,7 @@ import React from 'react';
 import { Link } from 'react-router';
 
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
+import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import {
   renderChipCell,
   StateUnion,
@@ -85,18 +86,19 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
       }
 
       return (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Link to={internalLink} style={{ marginRight: '8px' }}>
-            {d.id}
-          </Link>
-          <a
-            href={mhLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center' }}
-          >
-            <OpenInNewIcon fontSize="small" />
-          </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Link to={internalLink}>{d.id}</Link>
+          <Tooltip title="Open in Mobile Harness">
+            <a
+              href={mhLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center' }}
+            >
+              <OpenInNewIcon fontSize="small" />
+            </a>
+          </Tooltip>
+          <BuganizerLink name={d.id} project="android" />
         </div>
       );
     },

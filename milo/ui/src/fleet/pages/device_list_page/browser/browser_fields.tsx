@@ -19,6 +19,7 @@ import { MRT_ColumnDef } from 'material-react-table';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { CellWithTooltip } from '@/fleet/components/table';
+import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import {
   renderChipCell,
   StateUnion,
@@ -33,6 +34,7 @@ import {
   BROWSER_UFS_SOURCE,
 } from '@/fleet/constants/browser';
 import { generateBrowserDeviceDetailsURL } from '@/fleet/constants/paths';
+import { FC_CellProps } from '@/fleet/types/table';
 import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { getTaskURL } from '@/fleet/utils/swarming';
 import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -98,10 +100,22 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
     size: 250,
     minSize: 150,
     accessorFn: (row) => row.id,
-    Cell: renderCellWithLink<BrowserDevice>({
-      linkGenerator: (value) => generateBrowserDeviceDetailsURL(value),
-      newTab: false,
-    }),
+    Cell: (props: FC_CellProps<BrowserDevice>) => {
+      const id = String(props.cell.getValue() ?? '');
+      const hostname = props.row.original.ufsLabels?.['hostname']?.values?.[0];
+      const names = hostname ? [id, hostname] : id;
+
+      const CellWithLink = renderCellWithLink<BrowserDevice>({
+        linkGenerator: (value) => generateBrowserDeviceDetailsURL(value),
+        newTab: false,
+      });
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <CellWithLink {...props} />
+          <BuganizerLink name={names} project="chromium" />
+        </div>
+      );
+    },
   },
   [`${BROWSER_SWARMING_SOURCE}.current_task`]: {
     Cell: (params) => {

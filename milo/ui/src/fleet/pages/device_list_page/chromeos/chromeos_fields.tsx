@@ -19,6 +19,7 @@ import React from 'react';
 import { TaskResult } from '@/fleet/components/device_table/use_current_tasks';
 import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
 import { CellWithTooltip } from '@/fleet/components/table';
+import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
 import {
   renderChipCell,
   StateUnion,
@@ -81,10 +82,23 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<string, ChromeOSColumnOverride> =
     id: {
       header: 'ID',
       accessorFn: (device) => device.id,
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: (value) => generateChromeOsDeviceDetailsURL(value),
-        newTab: false,
-      }),
+      renderCell: (props: FC_CellProps<ChromeOSDevice>) => {
+        const id = String(props.cell.getValue() ?? '');
+        const dutId = props.row.original.dutId;
+        const names = dutId ? [id, dutId] : id;
+
+        const CellWithLink = renderCellWithLink<ChromeOSDevice>({
+          linkGenerator: (value) => generateChromeOsDeviceDetailsURL(value),
+          newTab: false,
+        });
+
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <CellWithLink {...props} />
+            <BuganizerLink name={names} project="chromeos" />
+          </div>
+        );
+      },
       orderByField: 'id',
       filterByField: 'id',
     },
