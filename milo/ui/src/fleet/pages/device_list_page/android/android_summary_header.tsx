@@ -440,7 +440,7 @@ export function AndroidSummaryHeader({
                         </Typography>
                         <Typography variant="body2" sx={{ mt: 2 }}>
                           <Link
-                            href="https://go/android-labtechs#device-terminology"
+                            href="http://go/android-labtechs#device-terminology"
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="documentation (opens in a new tab)"

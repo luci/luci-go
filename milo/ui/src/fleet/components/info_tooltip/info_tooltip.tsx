@@ -14,55 +14,57 @@
 
 import { CSSObject } from '@emotion/react';
 import { InfoOutlined } from '@mui/icons-material';
-import { Popover, Typography } from '@mui/material';
-import React, { useRef, useState } from 'react';
+import { Tooltip, Typography } from '@mui/material';
+import React from 'react';
 
 /**
  * Renders an interactive hovercard.
- * Uses a timer-based delay to allow the user's mouse to travel from the
- * trigger icon to the popover content without it closing prematurely.
- *
- * TODO(b/503171080): Refactor to use MUI Tooltip with interactive prop
- * to avoid custom timer logic and handle pointer events more robustly.
+ * Uses MUI Tooltip with interactive prop to handle hover delays
+ * and enter/leave behavior out of the box.
  */
 export function InfoTooltip({
   children,
   infoCss = {},
   paperCss = {},
 }: React.PropsWithChildren<{ infoCss?: CSSObject; paperCss?: CSSObject }>) {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const open = Boolean(anchorEl);
-  const popoverId = open ? 'info-tooltip-state-popover' : undefined;
-  const timerRef = useRef<number | null>(null);
-
-  const handlePopoverOpen = (event: React.MouseEvent<HTMLElement>) => {
-    if (timerRef.current !== null) {
-      // Clear any pending 'close' timer.
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    if (anchorEl === null) {
-      setAnchorEl(event.currentTarget);
-    }
-  };
-
-  const handlePopoverClose = () => {
-    if (timerRef.current !== null) {
-      window.clearTimeout(timerRef.current);
-    }
-    // Schedules the popover to close after a short delay.
-    // This gives the user time to move their mouse from the info icon into the popover.
-    timerRef.current = window.setTimeout(() => setAnchorEl(null), 200);
-  };
-
   return (
-    <>
+    <Tooltip
+      title={
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          role="presentation"
+        >
+          {typeof children === 'string' ? (
+            <Typography variant="body2">{children}</Typography>
+          ) : (
+            children
+          )}
+        </div>
+      }
+      leaveDelay={200}
+      placement="bottom-start"
+      slotProps={{
+        tooltip: {
+          sx: [
+            {
+              bgcolor: 'background.paper',
+              color: 'text.primary',
+              p: 2,
+              border: (theme) => `1px solid ${theme.palette.divider}`,
+              boxShadow: 3,
+              maxWidth: 450,
+              pointerEvents: 'auto',
+              fontSize: '0.875rem',
+            },
+            paperCss,
+          ],
+        },
+      }}
+    >
       <span
         className="fleet-info-icon"
-        aria-owns={popoverId}
-        aria-haspopup="true"
-        onMouseEnter={handlePopoverOpen}
-        onMouseLeave={handlePopoverClose}
         css={[
           {
             cursor: 'pointer',
@@ -74,47 +76,6 @@ export function InfoTooltip({
       >
         <InfoOutlined sx={{ fontSize: '1rem', color: 'action.active' }} />
       </span>
-      <Popover
-        id={popoverId}
-        sx={{
-          pointerEvents: 'none',
-        }}
-        open={open}
-        anchorEl={anchorEl}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-        // Prevents the popover from grabbing focus, which is important for
-        // hover-activated elements and fixes accessibility warnings.
-        disableAutoFocus
-        slotProps={{
-          paper: {
-            onMouseEnter: handlePopoverOpen,
-            onMouseLeave: handlePopoverClose,
-            sx: [
-              {
-                pointerEvents: 'auto',
-                p: 2,
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                boxShadow: 3,
-                maxWidth: 450,
-              },
-              paperCss,
-            ],
-          },
-        }}
-      >
-        {typeof children === 'string' ? (
-          <Typography variant="body2">{children}</Typography>
-        ) : (
-          children
-        )}
-      </Popover>
-    </>
+    </Tooltip>
   );
 }
