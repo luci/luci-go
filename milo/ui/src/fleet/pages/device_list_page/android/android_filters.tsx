@@ -26,7 +26,7 @@ export const ANDROID_EXTRA_FILTERS = {
       { label: '(Blank)', value: '(Blank)' },
       ...Object.values(androidState).map((val) => ({
         label: val,
-        value: '"' + val + '"',
+        value: val,
       })),
     ]),
 };
