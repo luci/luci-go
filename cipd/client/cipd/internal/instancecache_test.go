@@ -115,7 +115,7 @@ func fakeData(ctx context.Context, p common.Pin) (string, error) {
 	return "data:" + p.InstanceID, nil
 }
 
-func withInstance(t testing.TB, cache *ManagedInstanceCache, cb func(res *InstanceResult) (corrupted bool)) {
+func waitInstance(t testing.TB, cache *ManagedInstanceCache, cb func(res *InstanceResult) (corrupted bool)) {
 	t.Helper()
 
 	res := cache.WaitInstance()
@@ -131,40 +131,42 @@ func withInstance(t testing.TB, cache *ManagedInstanceCache, cb func(res *Instan
 	corrupted = cb(res)
 }
 
-// access does a RequestInstances(pin) followed by a withInstance.
+// access does a OpenAsSource(), checks that it does not return an error, then
+// calls the callback.
+//
+// Once the callback ends, it closes the source.
 //
 // Asserts that InstanceResult does not have an error, and passes to the
 // callback a boolean indicated if this instance was created as a result of
 // this `access` or not.
-func access(t testing.TB, ctx context.Context, cache *ManagedInstanceCache, pin common.Pin, cb func(created bool, res *InstanceResult) (corrupted bool)) {
+func access(t testing.TB, ctx context.Context, cache *InstanceCache, pin common.Pin, cb func(created bool, src pkg.Source) (corrupted bool)) {
 	t.Helper()
 
-	_, existed := accessTime(ctx, cache.Cache, pin)
+	_, existed := accessTime(ctx, cache, pin)
 
-	cache.RequestInstances(ctx, []*InstanceRequest{
-		{Context: ctx, Pin: pin},
-	})
+	src, err := cache.OpenAsSource(ctx, pin)
+	assert.NoErr(t, err)
+	var corrupted bool
+	defer func() {
+		src.Close(ctx, corrupted)
+	}()
 
-	withInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
-		t.Helper()
-
-		assert.NoErr(t, res.Err, truth.LineContext())
-		assert.That(t, res.Pin, should.Match(pin), truth.LineContext())
-		return cb(!existed, res)
-	})
+	corrupted = cb(!existed, src)
 }
 
-// putNew is an `access` plus an assertion that `pin` was created.
-func putNew(t testing.TB, ctx context.Context, cache *ManagedInstanceCache, pin common.Pin) {
+// putNew ensures that `pin` is not in `cache`, then accesses it via
+// OpenAsSource.
+func putNew(t testing.TB, ctx context.Context, cache *InstanceCache, pin common.Pin) {
 	t.Helper()
 
-	access(t, ctx, cache, pin, func(created bool, res *InstanceResult) (corrupted bool) {
-		t.Helper()
+	_, existed := accessTime(ctx, cache, pin)
+	assert.That(t, existed, should.BeFalse, truth.LineContext(), truth.Explain(
+		"putNew: cannot create new instance %q: instance already exists", pin,
+	))
 
-		assert.Loosely(t, created, should.BeTrue, truth.Explain(
-			"failed to create %v", pin), truth.LineContext())
-		return
-	})
+	src, err := cache.OpenAsSource(ctx, pin)
+	assert.NoErr(t, err, truth.LineContext())
+	assert.NoErr(t, src.Close(ctx, false))
 }
 
 // readSrc reads the content of `src`
@@ -176,28 +178,21 @@ func readSrc(t testing.TB, src pkg.Source) string {
 	return string(buf)
 }
 
-// testHas is an `access` plus an assertion that this pin was NOT created.
-//
-// Note that this *modifies* the underlying cache.
-func testHas(t testing.TB, ctx context.Context, cache *ManagedInstanceCache, pin common.Pin) {
+// testHas checks that the pin exists in this cache.
+func testHas(t testing.TB, ctx context.Context, cache *InstanceCache, pin common.Pin) {
 	t.Helper()
 
-	access(t, ctx, cache, pin, func(created bool, res *InstanceResult) (corrupted bool) {
-		t.Helper()
-
-		assert.Loosely(t, created, should.BeFalse, truth.LineContext())
-		data, err := fakeData(ctx, pin)
-		assert.NoErr(t, err, truth.LineContext())
-		assert.Loosely(t, readSrc(t, res.Source), should.Equal(data), truth.LineContext())
-		return
-	})
+	_, existed := accessTime(ctx, cache, pin)
+	assert.That(t, existed, should.BeTrue, truth.LineContext(), truth.Explain(
+		"testHas: cache does not contain %q", pin,
+	))
 }
 
 // accessTime returns the last access time of `pin` in the cache.
 //
 // If the cache does not contain `pin`, returns ok == false.
 func accessTime(ctx context.Context, cache *InstanceCache, pin common.Pin) (lastAccess time.Time, ok bool) {
-	cache.withState(ctx, clock.Now(ctx), false, func(s *messages.InstanceCache) (save bool) {
+	cache.withState(ctx, clock.Now(ctx), true, func(s *messages.InstanceCache) (save bool) {
 		var entry *messages.InstanceCache_Entry
 		if entry, ok = s.Entries[pin.InstanceID]; ok {
 			lastAccess = entry.LastAccess.AsTime()
@@ -256,17 +251,17 @@ func TestManagedInstanceCache(t *testing.T) {
 		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 
-		cache2 := &ManagedInstanceCache{Cache: &InstanceCache{
+		cache2 := &InstanceCache{
 			FS:      fs.NewFileSystem(env.tempDir, ""),
 			Fetcher: (&trackingFetcher{}).fetch,
-		}}
+		}
 		defer cache2.Close(ctx)
 
 		// Add new.
-		putNew(t, ctx, cache, pin(0))
+		putNew(t, ctx, cache.Cache, pin(0))
 
-		// Check it can be seen even through another ManagedInstanceCache object.
-		testHas(t, ctx, cache, pin(0))
+		// Check it can be seen even through another InstanceCache object.
+		testHas(t, ctx, cache.Cache, pin(0))
 		testHas(t, ctx, cache2, pin(0))
 	})
 
@@ -276,7 +271,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache.Cache.Tmp = true
 
 		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(0))
-		access(t, ctx, cache, pin(0), func(created bool, res *InstanceResult) (corrupted bool) {
+		access(t, ctx, cache.Cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
 			assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1))
 			return
 		})
@@ -289,7 +284,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		assert.Loosely(t, countTempFiles(t, cache.Cache), should.BeZero)
 
 		// Download the first time.
-		access(t, ctx, cache, pin(0), func(created bool, res *InstanceResult) (corrupted bool) {
+		access(t, ctx, cache.Cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
 			assert.That(t, created, should.BeTrue)
 			return
 		})
@@ -298,7 +293,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		assert.Loosely(t, countTempFiles(t, cache.Cache), should.Equal(2))
 
 		// The second call grabs it from the cache.
-		access(t, ctx, cache, pin(0), func(created bool, res *InstanceResult) (corrupted bool) {
+		access(t, ctx, cache.Cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
 			assert.That(t, created, should.BeFalse)
 
 			// Close as corrupted. Should be removed from the cache.
@@ -310,7 +305,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		assert.Loosely(t, countTempFiles(t, cache.Cache), should.Equal(1))
 
 		// Download the second time.
-		access(t, ctx, cache, pin(0), func(created bool, res *InstanceResult) (corrupted bool) {
+		access(t, ctx, cache.Cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
 			assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(2))
 			return
 		})
@@ -337,7 +332,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 		cache.RequestInstances(ctx, reqs)
 		for i := 0; i < len(reqs); i++ {
-			withInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
 				assert.Loosely(t, res.Err, should.BeNil)
 				assert.Loosely(t, res.State.(int), should.Equal(i))
 
@@ -360,7 +355,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 		cache.RequestInstances(ctx, reqs)
 		for i := 0; i < len(reqs); i++ {
-			withInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
 				assert.Loosely(t, res.Err, should.BeNil)
 				seen[res.State.(int)] = struct{}{}
 				return
@@ -390,7 +385,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 		errs := 0
 		for i := 0; i < len(reqs); i++ {
-			withInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
 				if res.Err != nil {
 					errs++
 				}
@@ -409,7 +404,7 @@ func TestManagedInstanceCache(t *testing.T) {
 			if i != 0 {
 				env.tc.Add(time.Second)
 			}
-			putNew(t, ctx, cache, pin(i))
+			putNew(t, ctx, cache.Cache, pin(i))
 		}
 		assert.That(t, cache.Cache.launchTime, should.Match(t0))
 
@@ -417,12 +412,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		// launch time.
 		cache.Close(ctx) // Does a GC pass.
 
-		// We use withState directly to ensure it has all entries, but to avoid
-		// 'touching' files, which testHas() would do.
-		cache.Cache.withState(ctx, env.tc.Now(), false, func(ic *messages.InstanceCache) (save bool) {
-			assert.Loosely(t, ic.Entries, should.HaveLength(8))
-			return false
-		})
+		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(9))
 
 		// Relaunch the cache and close it to do another GC pass with launchTime
 		// == clock.Now.
@@ -433,12 +423,12 @@ func TestManagedInstanceCache(t *testing.T) {
 		// At this point 0..4 have been collected, so 5..7 exist.
 		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(4)) // +1 for state.db.
 		for i := range 3 {
-			testHas(t, ctx, cache, pin(i+5))
+			testHas(t, ctx, cache.Cache, pin(i+5))
 		}
 
 		// The rest are missing and can be recreated.
 		for i := range 5 {
-			putNew(t, ctx, cache, pin(i))
+			putNew(t, ctx, cache.Cache, pin(i))
 		}
 	})
 
@@ -447,7 +437,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache, env, ctx := instanceCacheTestSetup(t)
 		cache.Cache.GCMaxAge = 2 * time.Second
 		for i := range 8 {
-			putNew(t, ctx, cache, pin(i))
+			putNew(t, ctx, cache.Cache, pin(i))
 		}
 		// At this point, 8 fetches have been done.
 		assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(8))
@@ -466,7 +456,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache.RequestInstances(ctx, ir)
 
 		for range 9 {
-			withInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
 				assert.Loosely(t, res.Err, should.BeNil)
 				return
 			})
@@ -482,7 +472,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 		// Add instances.
 		for i := range count {
-			putNew(t, ctx, cache, pin(i))
+			putNew(t, ctx, cache.Cache, pin(i))
 		}
 
 		causeResync(filepath.Join(env.tempDir, instanceCacheStateFilename))
@@ -532,42 +522,34 @@ func TestManagedInstanceCache(t *testing.T) {
 		env.tc.Add(time.Minute)
 
 		// Add a bunch of instances.
-		putNew(t, ctx, cache, pin(0))
-		putNew(t, ctx, cache, pin(1))
-		putNew(t, ctx, cache, pin(2))
-		putNew(t, ctx, cache, pin(3))
+		putNew(t, ctx, cache.Cache, pin(0))
+		putNew(t, ctx, cache.Cache, pin(1))
+		putNew(t, ctx, cache.Cache, pin(2))
+		putNew(t, ctx, cache.Cache, pin(3))
 
 		// Delete the state file to force resync. All these instances should now
 		// be marked as === launchTime.
 		assert.NoErr(t, os.Remove(filepath.Join(env.tempDir, instanceCacheStateFilename)))
 
-		// Access some overlapping instances and add some new instances.
-		testHas(t, ctx, cache, pin(2))
-		testHas(t, ctx, cache, pin(3))
-		putNew(t, ctx, cache, pin(4))
-		putNew(t, ctx, cache, pin(5))
+		// Touch some overlapping instances and add some new instances.
+		cache.Cache.Touch(ctx, pin(2).InstanceID, pin(3).InstanceID)
+		putNew(t, ctx, cache.Cache, pin(4))
+		putNew(t, ctx, cache.Cache, pin(5))
 
 		// Our explicit Close() should remove 0 and 1 because they were ==
 		// launchTime, and we didn't actually touch them after the sync.
 		cache.Close(ctx)
 
-		want := map[string]struct{}{}
+		want := make([]string, 0, 4)
 		for pinNum := 2; pinNum < 6; pinNum++ {
-			want[pin(pinNum).InstanceID] = struct{}{}
+			want = append(want, pin(pinNum).InstanceID)
 		}
+		slices.Sort(want)
 
-		// The only instances left will be the overlapping + new instances. We
-		// use withState directly to ensure it has all entries, but to avoid
-		// 'touching' files, which testHas() would do.
-		cache.Cache.withState(ctx, env.tc.Now(), false, func(ic *messages.InstanceCache) (save bool) {
-			assert.Loosely(t, ic.Entries, should.HaveLength(4))
-			got := map[string]struct{}{}
-			for iid := range ic.Entries {
-				got[iid] = struct{}{}
-			}
-			assert.That(t, got, should.Match(want))
-			return false
-		})
+		// `true` forces resync to actual on-disk state.
+		got, err := cache.Cache.AllInstanceIDs(ctx, true)
+		assert.NoErr(t, err)
+		assert.That(t, got, should.Match(want))
 	})
 
 	t.Run(`nil Fetcher`, func(t *testing.T) {
@@ -579,7 +561,7 @@ func TestManagedInstanceCache(t *testing.T) {
 			{Context: ctx, Pin: pin(0)},
 		})
 
-		withInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
 			assert.ErrIsLike(t, res.Err, ErrNoFetcher)
 			return
 		})
@@ -591,13 +573,13 @@ func TestManagedInstanceCache(t *testing.T) {
 		pin, _, err := mkContentPin(ctx, "hello")
 		assert.NoErr(t, err)
 
-		putNew(t, ctx, cache, pin)
+		putNew(t, ctx, cache.Cache, pin)
 		cache.Cache.Fetcher = nil
 
 		cache.RequestInstances(ctx, []*InstanceRequest{
 			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
 		})
-		withInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
 			assert.NoErr(t, res.Err)
 			return
 		})
@@ -612,7 +594,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache.RequestInstances(ctx, []*InstanceRequest{
 			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
 		})
-		withInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
 			assert.ErrIsLike(t, res.Err, reader.ErrHashMismatch)
 			return
 		})
@@ -630,9 +612,9 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache.RequestInstances(ctx, nil)
 		env.tc.Add(time.Millisecond)
 
-		putNew(t, ctx, cache, pin(0))
-		putNew(t, ctx, cache, pin(1))
-		putNew(t, ctx, cache, pin(2))
+		putNew(t, ctx, cache.Cache, pin(0))
+		putNew(t, ctx, cache.Cache, pin(1))
+		putNew(t, ctx, cache.Cache, pin(2))
 
 		cache.Close(ctx)
 
@@ -665,7 +647,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		pin, _, err := mkContentPin(ctx, "hello")
 		assert.NoErr(t, err)
 
-		putNew(t, ctx, cache, pin)
+		putNew(t, ctx, cache.Cache, pin)
 		cache.Cache.Fetcher = nil
 
 		// Now corrupt the file.
@@ -678,7 +660,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache.RequestInstances(ctx, []*InstanceRequest{
 			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
 		})
-		withInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
 			assert.ErrIsLike(t, res.Err, reader.ErrHashMismatch)
 			return
 		})
@@ -690,7 +672,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	t.Run(`DisableStateWrite`, func(t *testing.T) {
 		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
-		putNew(t, ctx, cache, pin(0))
+		putNew(t, ctx, cache.Cache, pin(0))
 
 		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(2)) // +1 for state.db.
 
@@ -702,7 +684,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache.Cache.PassiveWritePolicy = DisableStateWrite
 
 		// We still have the instance.
-		testHas(t, ctx, cache, pin(0))
+		testHas(t, ctx, cache.Cache, pin(0))
 
 		// But we didn't write the state.db as a side effect.
 		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1))
@@ -713,7 +695,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache, _, ctx := instanceCacheTestSetup(t)
 		want := make([]string, 8)
 		for i := range 8 {
-			putNew(t, ctx, cache, pin(i))
+			putNew(t, ctx, cache.Cache, pin(i))
 			want[i] = pin(i).InstanceID
 		}
 		slices.Sort(want)
@@ -728,7 +710,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache, _, ctx := instanceCacheTestSetup(t)
 		want := make([]string, 8)
 		for i := range 4 {
-			putNew(t, ctx, cache, pin(i))
+			putNew(t, ctx, cache.Cache, pin(i))
 			want[i] = pin(i).InstanceID
 		}
 
