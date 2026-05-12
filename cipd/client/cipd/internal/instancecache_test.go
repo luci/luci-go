@@ -233,20 +233,17 @@ type instCacheTestEnv struct {
 func instanceCacheTestSetup(t testing.TB) (*ManagedInstanceCache, *instCacheTestEnv, context.Context) {
 	ctx, tc := testclock.UseTime(t.Context(), testclock.TestTimeLocal)
 
-	tempDir, err := os.MkdirTemp("", "instancecache_test")
-	assert.Loosely(t, err, should.BeNil)
-	fsInst := fs.NewFileSystem(tempDir, "")
+	tempDir := t.TempDir()
 
 	fetcher := &trackingFetcher{}
 	cache := &ManagedInstanceCache{
 		Cache: &InstanceCache{
-			FS:      fsInst,
+			FS:      fs.NewFileSystem(tempDir, ""),
 			Fetcher: fetcher.fetch,
 		},
 	}
 	t.Cleanup(func() {
 		cache.Close(ctx)
-		os.RemoveAll(tempDir)
 	})
 
 	return cache, &instCacheTestEnv{cache, tempDir, fetcher, tc}, ctx

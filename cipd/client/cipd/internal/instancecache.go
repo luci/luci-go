@@ -603,6 +603,8 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 		return err
 
 	default:
+		defer root.Close()
+
 		instanceIDs, err := root.Readdirnames(0)
 		if err != nil {
 			return err
