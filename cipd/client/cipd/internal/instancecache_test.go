@@ -253,6 +253,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Works in general", func(t *testing.T) {
+		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 
 		cache2 := &ManagedInstanceCache{Cache: &InstanceCache{
@@ -270,6 +271,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run("Temp cache removes files", func(t *testing.T) {
+		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
 		cache.Cache.Tmp = true
 
@@ -282,6 +284,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run("Redownloads corrupted files", func(t *testing.T) {
+		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 		assert.Loosely(t, countTempFiles(t, cache.Cache), should.BeZero)
 
@@ -326,6 +329,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	}
 
 	t.Run("Preserves the order when using single stream", func(t *testing.T) {
+		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
 		cache.ParallelDownloads = 1
 
@@ -346,6 +350,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run("Doesn't deadlock", func(t *testing.T) {
+		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
 		cache.ParallelDownloads = 4
 
@@ -366,6 +371,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run("Handles errors", func(t *testing.T) {
+		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 		cache.ParallelDownloads = 4
 
@@ -395,6 +401,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run("GC respects MaxAge vs launchTime", func(t *testing.T) {
+		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 		cache.Cache.GCMaxAge = 2500 * time.Millisecond
 		t0 := clock.Now(ctx)
@@ -436,6 +443,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run("RequestInstancesDoesNotEvictEntriesToBeFetched", func(t *testing.T) {
+		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 		cache.Cache.GCMaxAge = 2 * time.Second
 		for i := range 8 {
@@ -494,6 +502,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	}
 
 	t.Run("state.db disappeared", func(t *testing.T) {
+		t.Parallel()
 		testSync(t, func(stateDbPath string) {
 			err := os.Remove(stateDbPath)
 			assert.Loosely(t, err, should.BeNil)
@@ -501,6 +510,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run("state.db corrupted", func(t *testing.T) {
+		t.Parallel()
 		testSync(t, func(stateDbPath string) {
 			f, err := os.Create(stateDbPath)
 			assert.Loosely(t, err, should.BeNil)
@@ -510,6 +520,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run(`ExactGC`, func(t *testing.T) {
+		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 		cache.Cache.ExactGC = true
 
@@ -560,6 +571,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run(`nil Fetcher`, func(t *testing.T) {
+		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
 		cache.Cache.Fetcher = nil
 
@@ -574,6 +586,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run(`VerifyHash`, func(t *testing.T) {
+		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
 		pin, _, err := mkContentPin(ctx, "hello")
 		assert.NoErr(t, err)
@@ -609,6 +622,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run(`DisableGC`, func(t *testing.T) {
+		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 		cache.Cache.ExactGC = true
 
@@ -645,6 +659,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run(`DisableCorruptDeletion`, func(t *testing.T) {
+		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
 		cache.Cache.PassiveWritePolicy = DisableCorruptDeletion
 		pin, _, err := mkContentPin(ctx, "hello")
@@ -673,6 +688,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run(`DisableStateWrite`, func(t *testing.T) {
+		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 		putNew(t, ctx, cache, pin(0))
 
@@ -693,6 +709,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run(`AllInstanceIDs`, func(t *testing.T) {
+		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
 		want := make([]string, 8)
 		for i := range 8 {
@@ -707,6 +724,7 @@ func TestManagedInstanceCache(t *testing.T) {
 	})
 
 	t.Run(`AllInstanceIDs (sync)`, func(t *testing.T) {
+		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
 		want := make([]string, 8)
 		for i := range 4 {
