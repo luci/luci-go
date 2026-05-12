@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { render, screen } from '@testing-library/react';
+
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 
 import { StringListFilterCategory } from './string_list_filter';
@@ -359,5 +361,32 @@ describe('StringListFilterCategory', () => {
 
     const error = category.setSelectedOptions(['unknown']);
     expect(error).toEqual('Invalid option: unknown');
+  });
+
+  it('should display "Select matches (count)" when filtered', () => {
+    const result = StringListFilterCategory.create(
+      'Model',
+      'model',
+      [
+        { value: 'pixel', label: 'Pixel' },
+        { value: 'nexus', label: 'Nexus' },
+      ],
+      [],
+      () => {},
+      [],
+    );
+    expect(result.isError).toBe(false);
+    if (result.isError) return;
+    const category = result.value;
+
+    const element = category.render(
+      'pix',
+      () => {},
+      () => {},
+      () => {},
+    );
+    render(element);
+
+    expect(screen.getByText('Select matches (1)')).toBeInTheDocument();
   });
 });

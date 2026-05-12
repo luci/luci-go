@@ -613,7 +613,11 @@ const OptionComponent = function OptionComponent({
             disableElevation
             onClick={handleSelectClearAll}
           >
-            {areAllSelectableOptionsSelected ? 'Clear All' : 'Select All'}
+            {areAllSelectableOptionsSelected
+              ? 'Clear All'
+              : deferredSearchQuery
+                ? `Select matches (${selectableOptions.length})`
+                : 'Select All'}
           </Button>
         </div>
         <Divider
