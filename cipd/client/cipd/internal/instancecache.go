@@ -20,8 +20,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"math/rand"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -333,6 +335,27 @@ func (c *InstanceCache) OpenAsSource(ctx context.Context, pin common.Pin) (pkg.S
 		file:  f,
 		size:  stat.Size(),
 	}, nil
+}
+
+// AllInstanceIDs returns all instance IDs currently present in the cache.
+//
+// If `forceSync` is true, this will recompute the actual cache state from the
+// instance files on disk.
+//
+// Only returns an error if `forceSync` was true and there was an issue reading
+// from the disk.
+func (c *InstanceCache) AllInstanceIDs(ctx context.Context, forceSync bool) ([]string, error) {
+	var ret []string
+	err := c.withState(ctx, c.now(ctx), forceSync, func(ic *messages.InstanceCache) (save bool) {
+		ret = make([]string, 0, len(ic.Entries))
+		ret = slices.AppendSeq(ret, maps.Keys(ic.Entries))
+		return false
+	})
+	if err != nil {
+		return nil, errors.Fmt("syncing instance state: %w", err)
+	}
+	slices.Sort(ret)
+	return ret, nil
 }
 
 // openOrFetch either opens an existing instance file or writes a new one.

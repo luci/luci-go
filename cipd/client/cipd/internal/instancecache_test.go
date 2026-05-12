@@ -620,6 +620,46 @@ func TestManagedInstanceCache(t *testing.T) {
 			// But we didn't write the state.db as a side effect.
 			assert.That(t, countTempFiles(), should.Equal(1))
 		})
+
+		t.Run(`AllInstanceIDs`, func(t *ftt.Test) {
+			want := make([]string, 8)
+			for i := range 8 {
+				putNew(cache, pin(i))
+				want[i] = pin(i).InstanceID
+			}
+			slices.Sort(want)
+
+			allIDs, err := cache.Cache.AllInstanceIDs(ctx, false)
+			assert.NoErr(t, err)
+			assert.That(t, allIDs, should.Match(want))
+		})
+
+		t.Run(`AllInstanceIDs (sync)`, func(t *ftt.Test) {
+			want := make([]string, 8)
+			for i := range 4 {
+				putNew(cache, pin(i))
+				want[i] = pin(i).InstanceID
+			}
+
+			// Add some 'extra' instance IDs.
+			for i := 4; i < 8; i++ {
+				iid := pin(i).InstanceID
+				want[i] = iid
+				cache.Cache.FS.EnsureFile(ctx, filepath.Join(cache.Cache.FS.Root(), iid), func(f *os.File) error {
+					return nil
+				})
+			}
+			slices.Sort(want)
+
+			allIDs, err := cache.Cache.AllInstanceIDs(ctx, false)
+			assert.NoErr(t, err)
+			assert.That(t, allIDs, should.Match(want[:4]))
+
+			// Forcing a re-sync sees the extra IDs.
+			allIDs, err = cache.Cache.AllInstanceIDs(ctx, true)
+			assert.NoErr(t, err)
+			assert.That(t, allIDs, should.Match(want))
+		})
 	})
 }
 
