@@ -224,28 +224,47 @@ func countTempFiles(t testing.TB, cache *InstanceCache) int {
 	return len(files)
 }
 
+type instCacheTestEnv struct {
+	cache   *ManagedInstanceCache
+	tempDir string
+	fetcher *trackingFetcher
+	tc      testclock.TestClock
+}
+
+func instanceCacheTestSetup(t testing.TB) (*ManagedInstanceCache, *instCacheTestEnv, context.Context) {
+	ctx, tc := testclock.UseTime(t.Context(), testclock.TestTimeLocal)
+
+	tempDir, err := os.MkdirTemp("", "instancecache_test")
+	assert.Loosely(t, err, should.BeNil)
+	fsInst := fs.NewFileSystem(tempDir, "")
+
+	fetcher := &trackingFetcher{}
+	cache := &ManagedInstanceCache{
+		Cache: &InstanceCache{
+			FS:      fsInst,
+			Fetcher: fetcher.fetch,
+		},
+	}
+	t.Cleanup(func() {
+		cache.Close(ctx)
+		os.RemoveAll(tempDir)
+	})
+
+	return cache, &instCacheTestEnv{cache, tempDir, fetcher, tc}, ctx
+}
+
 func TestManagedInstanceCache(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("ManagedInstanceCache", t, func(t *ftt.Test) {
-		ctx, tc := testclock.UseTime(t.Context(), testclock.TestTimeLocal)
-
-		tempDir, err := os.MkdirTemp("", "instanceche_test")
-		assert.Loosely(t, err, should.BeNil)
-		defer os.RemoveAll(tempDir)
-		fsInst := fs.NewFileSystem(tempDir, "")
-
-		fetcher := &trackingFetcher{}
-		cache := &ManagedInstanceCache{
-			Cache: &InstanceCache{
-				FS:      fsInst,
-				Fetcher: fetcher.fetch,
-			},
-		}
-		defer cache.Close(ctx)
+		cache, env, ctx := instanceCacheTestSetup(t)
+		tc := env.tc
 
 		t.Run("Works in general", func(t *ftt.Test) {
-			cache2 := &ManagedInstanceCache{Cache: &InstanceCache{FS: fsInst, Fetcher: fetcher.fetch}}
+			cache2 := &ManagedInstanceCache{Cache: &InstanceCache{
+				FS:      fs.NewFileSystem(env.tempDir, ""),
+				Fetcher: (&trackingFetcher{}).fetch,
+			}}
 			defer cache2.Close(ctx)
 
 			// Add new.
@@ -293,7 +312,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 			// Download the second time.
 			access(t, ctx, cache, pin(0), func(created bool, res *InstanceResult) (corrupted bool) {
-				assert.Loosely(t, fetcher.calls.Load(), should.Equal(2))
+				assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(2))
 				return
 			})
 		})
@@ -347,7 +366,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 				// Make errCount fetches fail and rest succeed.
 				const errCount = 10
-				fetcher.errFn = func(fetchID int32) error {
+				env.fetcher.errFn = func(fetchID int32) error {
 					if fetchID <= errCount {
 						return fmt.Errorf("boom %d", fetchID)
 					}
@@ -415,7 +434,7 @@ func TestManagedInstanceCache(t *testing.T) {
 				putNew(t, ctx, cache, pin(i))
 			}
 			// At this point, 8 fetches have been done.
-			assert.Loosely(t, fetcher.calls.Load(), should.Equal(8))
+			assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(8))
 
 			tc.Add(3 * time.Second)
 
@@ -438,11 +457,11 @@ func TestManagedInstanceCache(t *testing.T) {
 			}
 
 			// Only one new fetch should happen, for pin 10.
-			assert.Loosely(t, fetcher.calls.Load(), should.Equal(9))
+			assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(9))
 		})
 
 		t.Run("Sync", func(t *ftt.Test) {
-			stateDbPath := filepath.Join(tempDir, instanceCacheStateFilename)
+			stateDbPath := filepath.Join(env.tempDir, instanceCacheStateFilename)
 			const count = 10
 
 			testSync := func(causeResync func()) {
@@ -502,7 +521,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 			// Delete the state file to force resync. All these instances should now
 			// be marked as === launchTime.
-			assert.NoErr(t, os.Remove(filepath.Join(tempDir, instanceCacheStateFilename)))
+			assert.NoErr(t, os.Remove(filepath.Join(env.tempDir, instanceCacheStateFilename)))
 
 			// Access some overlapping instances and add some new instances.
 			testHas(t, ctx, cache, pin(2))
@@ -647,7 +666,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 			assert.That(t, countTempFiles(t, cache.Cache), should.Equal(2)) // +1 for state.db.
 
-			assert.NoErr(t, os.Remove(filepath.Join(tempDir, instanceCacheStateFilename)))
+			assert.NoErr(t, os.Remove(filepath.Join(env.tempDir, instanceCacheStateFilename)))
 
 			assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1)) // Just the instance.
 
