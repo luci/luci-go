@@ -16,6 +16,8 @@ export interface AndroidDevice {
   readonly runTarget: string;
   readonly realm: string;
   readonly fcOfflineSince: string | undefined;
+  readonly average7d: number;
+  readonly average30d: number;
 }
 
 export interface ListAndroidDevicesRequest {
@@ -45,12 +47,20 @@ export interface AndroidCount {
   readonly totalHosts: number;
   readonly labMissingHosts: number;
   readonly labRunningHosts: number;
+  readonly average7d: number;
+  readonly average30d: number;
 }
 
 export interface RepopulateAndroidCacheRequest {
 }
 
 export interface RepopulateAndroidCacheResponse {
+}
+
+export interface RepopulateAndroidDeviceUtilizationRequest {
+}
+
+export interface RepopulateAndroidDeviceUtilizationResponse {
 }
 
 export interface UpdateAndroidMetricsRequest {
@@ -73,7 +83,15 @@ export interface CleanupAndroidDevicesResponse {
 }
 
 function createBaseAndroidDevice(): AndroidDevice {
-  return { id: "", omnilabSpec: undefined, runTarget: "", realm: "", fcOfflineSince: undefined };
+  return {
+    id: "",
+    omnilabSpec: undefined,
+    runTarget: "",
+    realm: "",
+    fcOfflineSince: undefined,
+    average7d: 0,
+    average30d: 0,
+  };
 }
 
 export const AndroidDevice: MessageFns<AndroidDevice> = {
@@ -92,6 +110,12 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     }
     if (message.fcOfflineSince !== undefined) {
       Timestamp.encode(toTimestamp(message.fcOfflineSince), writer.uint32(42).fork()).join();
+    }
+    if (message.average7d !== 0) {
+      writer.uint32(49).double(message.average7d);
+    }
+    if (message.average30d !== 0) {
+      writer.uint32(57).double(message.average30d);
     }
     return writer;
   },
@@ -143,6 +167,22 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
           message.fcOfflineSince = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
+        case 6: {
+          if (tag !== 49) {
+            break;
+          }
+
+          message.average7d = reader.double();
+          continue;
+        }
+        case 7: {
+          if (tag !== 57) {
+            break;
+          }
+
+          message.average30d = reader.double();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -159,6 +199,8 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
       runTarget: isSet(object.runTarget) ? globalThis.String(object.runTarget) : "",
       realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
       fcOfflineSince: isSet(object.fcOfflineSince) ? globalThis.String(object.fcOfflineSince) : undefined,
+      average7d: isSet(object.average7d) ? globalThis.Number(object.average7d) : 0,
+      average30d: isSet(object.average30d) ? globalThis.Number(object.average30d) : 0,
     };
   },
 
@@ -179,6 +221,12 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     if (message.fcOfflineSince !== undefined) {
       obj.fcOfflineSince = message.fcOfflineSince;
     }
+    if (message.average7d !== 0) {
+      obj.average7d = message.average7d;
+    }
+    if (message.average30d !== 0) {
+      obj.average30d = message.average30d;
+    }
     return obj;
   },
 
@@ -194,6 +242,8 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     message.runTarget = object.runTarget ?? "";
     message.realm = object.realm ?? "";
     message.fcOfflineSince = object.fcOfflineSince ?? undefined;
+    message.average7d = object.average7d ?? 0;
+    message.average30d = object.average30d ?? 0;
     return message;
   },
 };
@@ -415,6 +465,8 @@ function createBaseAndroidCount(): AndroidCount {
     totalHosts: 0,
     labMissingHosts: 0,
     labRunningHosts: 0,
+    average7d: 0,
+    average30d: 0,
   };
 }
 
@@ -458,6 +510,12 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     }
     if (message.labRunningHosts !== 0) {
       writer.uint32(104).int32(message.labRunningHosts);
+    }
+    if (message.average7d !== 0) {
+      writer.uint32(113).double(message.average7d);
+    }
+    if (message.average30d !== 0) {
+      writer.uint32(121).double(message.average30d);
     }
     return writer;
   },
@@ -573,6 +631,22 @@ export const AndroidCount: MessageFns<AndroidCount> = {
           message.labRunningHosts = reader.int32();
           continue;
         }
+        case 14: {
+          if (tag !== 113) {
+            break;
+          }
+
+          message.average7d = reader.double();
+          continue;
+        }
+        case 15: {
+          if (tag !== 121) {
+            break;
+          }
+
+          message.average30d = reader.double();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -597,6 +671,8 @@ export const AndroidCount: MessageFns<AndroidCount> = {
       totalHosts: isSet(object.totalHosts) ? globalThis.Number(object.totalHosts) : 0,
       labMissingHosts: isSet(object.labMissingHosts) ? globalThis.Number(object.labMissingHosts) : 0,
       labRunningHosts: isSet(object.labRunningHosts) ? globalThis.Number(object.labRunningHosts) : 0,
+      average7d: isSet(object.average7d) ? globalThis.Number(object.average7d) : 0,
+      average30d: isSet(object.average30d) ? globalThis.Number(object.average30d) : 0,
     };
   },
 
@@ -641,6 +717,12 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     if (message.labRunningHosts !== 0) {
       obj.labRunningHosts = Math.round(message.labRunningHosts);
     }
+    if (message.average7d !== 0) {
+      obj.average7d = message.average7d;
+    }
+    if (message.average30d !== 0) {
+      obj.average30d = message.average30d;
+    }
     return obj;
   },
 
@@ -662,6 +744,8 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     message.totalHosts = object.totalHosts ?? 0;
     message.labMissingHosts = object.labMissingHosts ?? 0;
     message.labRunningHosts = object.labRunningHosts ?? 0;
+    message.average7d = object.average7d ?? 0;
+    message.average30d = object.average30d ?? 0;
     return message;
   },
 };
@@ -748,6 +832,92 @@ export const RepopulateAndroidCacheResponse: MessageFns<RepopulateAndroidCacheRe
   },
   fromPartial(_: DeepPartial<RepopulateAndroidCacheResponse>): RepopulateAndroidCacheResponse {
     const message = createBaseRepopulateAndroidCacheResponse() as any;
+    return message;
+  },
+};
+
+function createBaseRepopulateAndroidDeviceUtilizationRequest(): RepopulateAndroidDeviceUtilizationRequest {
+  return {};
+}
+
+export const RepopulateAndroidDeviceUtilizationRequest: MessageFns<RepopulateAndroidDeviceUtilizationRequest> = {
+  encode(_: RepopulateAndroidDeviceUtilizationRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RepopulateAndroidDeviceUtilizationRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRepopulateAndroidDeviceUtilizationRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): RepopulateAndroidDeviceUtilizationRequest {
+    return {};
+  },
+
+  toJSON(_: RepopulateAndroidDeviceUtilizationRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<RepopulateAndroidDeviceUtilizationRequest>): RepopulateAndroidDeviceUtilizationRequest {
+    return RepopulateAndroidDeviceUtilizationRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<RepopulateAndroidDeviceUtilizationRequest>): RepopulateAndroidDeviceUtilizationRequest {
+    const message = createBaseRepopulateAndroidDeviceUtilizationRequest() as any;
+    return message;
+  },
+};
+
+function createBaseRepopulateAndroidDeviceUtilizationResponse(): RepopulateAndroidDeviceUtilizationResponse {
+  return {};
+}
+
+export const RepopulateAndroidDeviceUtilizationResponse: MessageFns<RepopulateAndroidDeviceUtilizationResponse> = {
+  encode(_: RepopulateAndroidDeviceUtilizationResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): RepopulateAndroidDeviceUtilizationResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRepopulateAndroidDeviceUtilizationResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): RepopulateAndroidDeviceUtilizationResponse {
+    return {};
+  },
+
+  toJSON(_: RepopulateAndroidDeviceUtilizationResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<RepopulateAndroidDeviceUtilizationResponse>): RepopulateAndroidDeviceUtilizationResponse {
+    return RepopulateAndroidDeviceUtilizationResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<RepopulateAndroidDeviceUtilizationResponse>): RepopulateAndroidDeviceUtilizationResponse {
+    const message = createBaseRepopulateAndroidDeviceUtilizationResponse() as any;
     return message;
   },
 };

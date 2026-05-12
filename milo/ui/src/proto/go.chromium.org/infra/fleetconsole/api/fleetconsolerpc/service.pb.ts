@@ -19,6 +19,8 @@ import {
   ListAndroidDevicesResponse,
   RepopulateAndroidCacheRequest,
   RepopulateAndroidCacheResponse,
+  RepopulateAndroidDeviceUtilizationRequest,
+  RepopulateAndroidDeviceUtilizationResponse,
   UpdateAndroidDevicesRequest,
   UpdateAndroidDevicesResponse,
   UpdateAndroidMetricsRequest,
@@ -299,6 +301,9 @@ export interface FleetConsole {
   RepopulateCache(request: RepopulateCacheRequest): Promise<RepopulateCacheResponse>;
   RepopulateBrowserCache(request: RepopulateBrowserCacheRequest): Promise<RepopulateBrowserCacheResponse>;
   RepopulateAndroidCache(request: RepopulateAndroidCacheRequest): Promise<RepopulateAndroidCacheResponse>;
+  RepopulateAndroidDeviceUtilization(
+    request: RepopulateAndroidDeviceUtilizationRequest,
+  ): Promise<RepopulateAndroidDeviceUtilizationResponse>;
   PingDB(request: PingDBRequest): Promise<PingDBResponse>;
   CleanExit(request: CleanExitRequest): Promise<CleanExitResponse>;
   ExportDevicesToCSV(request: ExportDevicesToCSVRequest): Promise<ExportDevicesToCSVResponse>;
@@ -348,6 +353,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.RepopulateCache = this.RepopulateCache.bind(this);
     this.RepopulateBrowserCache = this.RepopulateBrowserCache.bind(this);
     this.RepopulateAndroidCache = this.RepopulateAndroidCache.bind(this);
+    this.RepopulateAndroidDeviceUtilization = this.RepopulateAndroidDeviceUtilization.bind(this);
     this.PingDB = this.PingDB.bind(this);
     this.CleanExit = this.CleanExit.bind(this);
     this.ExportDevicesToCSV = this.ExportDevicesToCSV.bind(this);
@@ -457,6 +463,14 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = RepopulateAndroidCacheRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "RepopulateAndroidCache", data);
     return promise.then((data) => RepopulateAndroidCacheResponse.fromJSON(data));
+  }
+
+  RepopulateAndroidDeviceUtilization(
+    request: RepopulateAndroidDeviceUtilizationRequest,
+  ): Promise<RepopulateAndroidDeviceUtilizationResponse> {
+    const data = RepopulateAndroidDeviceUtilizationRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "RepopulateAndroidDeviceUtilization", data);
+    return promise.then((data) => RepopulateAndroidDeviceUtilizationResponse.fromJSON(data));
   }
 
   PingDB(request: PingDBRequest): Promise<PingDBResponse> {

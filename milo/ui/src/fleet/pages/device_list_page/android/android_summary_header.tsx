@@ -40,6 +40,7 @@ import { androidState } from './android_state';
 export interface AndroidSummaryHeaderProps {
   aip160: string;
   setFiltersBatch: (updates: Record<string, string[]>) => void;
+  showAvgUtilization?: boolean;
 }
 
 const COLUMN_STYLE = {
@@ -59,6 +60,7 @@ interface SmallMetricItemProps {
   onClick?: () => void;
   dotColor?: string;
   loading?: boolean;
+  formatValue?: (val: number) => string;
 }
 
 // Moved outside to avoid remounting anti-pattern
@@ -70,10 +72,13 @@ function SmallMetricItem({
   onClick,
   dotColor,
   loading,
+  formatValue,
 }: SmallMetricItemProps) {
   const theme = useTheme();
   const percentage =
-    total && total > 0 ? ((value / total) * 100).toFixed(1) : undefined;
+    total && total > 0 && value !== undefined
+      ? ((value / total) * 100).toFixed(1)
+      : undefined;
 
   return (
     <ButtonBase
@@ -88,14 +93,14 @@ function SmallMetricItem({
         width: '100%',
         justifyContent: 'flex-start',
         textAlign: 'left',
-        '&:hover': {
-          backgroundColor: theme.palette.action.hover,
-          borderRadius: '4px',
-        },
-        // Target specific class to avoid over-broad styling
-        '&:hover .small-metric-label': onClick
-          ? { textDecoration: 'underline' }
-          : {},
+        ...(onClick && {
+          '&:hover': {
+            backgroundColor: theme.palette.action.hover,
+            borderRadius: '4px',
+          },
+          // Target specific class to avoid over-broad styling
+          '&:hover .small-metric-label': { textDecoration: 'underline' },
+        }),
         p: '1px 4px',
         minHeight: '1rem',
       }}
@@ -138,7 +143,7 @@ function SmallMetricItem({
             ml: 0.5,
           }}
         >
-          {value.toLocaleString()}
+          {formatValue ? formatValue(value) : value.toLocaleString()}
         </Typography>
       )}
       {percentage !== undefined && !loading && (
@@ -162,6 +167,7 @@ function SmallMetricItem({
 export function AndroidSummaryHeader({
   aip160,
   setFiltersBatch,
+  showAvgUtilization,
 }: AndroidSummaryHeaderProps) {
   const client = useFleetConsoleClient();
   const theme = useTheme();
@@ -364,7 +370,7 @@ export function AndroidSummaryHeader({
             item
             xs={12}
             sm={6}
-            md={3}
+            md
             aria-label="Healthy Devices"
             sx={{
               ...COLUMN_STYLE,
@@ -538,12 +544,16 @@ export function AndroidSummaryHeader({
             item
             xs={12}
             sm={6}
-            md={3}
+            md
             aria-label="Unhealthy Devices"
             sx={{
               ...COLUMN_STYLE,
               borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
-              borderBottom: { xs: BORDER_STYLE, md: 'none' },
+              borderBottom: {
+                xs: BORDER_STYLE,
+                sm: showAvgUtilization ? BORDER_STYLE : 'none',
+                md: 'none',
+              },
             }}
           >
             <SingleMetric
@@ -618,11 +628,19 @@ export function AndroidSummaryHeader({
             item
             xs={12}
             sm={6}
-            md={3}
+            md
             aria-label="Other Devices"
             sx={{
               ...COLUMN_STYLE,
-              borderBottom: { xs: BORDER_STYLE, sm: 'none', md: 'none' },
+              borderRight: {
+                sm: 'none',
+                md: showAvgUtilization ? BORDER_STYLE : 'none',
+              },
+              borderBottom: {
+                xs: showAvgUtilization ? BORDER_STYLE : 'none',
+                sm: showAvgUtilization ? BORDER_STYLE : 'none',
+                md: 'none',
+              },
             }}
           >
             <SingleMetric
@@ -662,6 +680,60 @@ export function AndroidSummaryHeader({
               />
             </Box>
           </Grid>
+
+          {showAvgUtilization && (
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md
+              sx={{
+                ...COLUMN_STYLE,
+                borderRight: 'none',
+                borderBottom: 'none',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                  p: 1,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'text.secondary',
+                    fontWeight: 500,
+                  }}
+                >
+                  Utilization
+                </Typography>
+                <Box
+                  sx={{
+                    mt: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.5,
+                  }}
+                >
+                  <SmallMetricItem
+                    label="7 days avg:"
+                    value={data?.average7d ?? 0}
+                    loading={isLoading}
+                    formatValue={(val) => `${val.toFixed(2)}%`}
+                  />
+                  <SmallMetricItem
+                    label="30 days avg:"
+                    value={data?.average30d ?? 0}
+                    loading={isLoading}
+                    formatValue={(val) => `${val.toFixed(2)}%`}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+          )}
         </Grid>
       </Box>
     );

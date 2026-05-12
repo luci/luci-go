@@ -53,6 +53,6 @@ protoc \
   --ts_proto_opt=useDate=string,useReadonlyTypes=true \
   --ts_proto_opt=exportCommonSymbols=false \
   \
-  ./go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.proto
+  ./go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/service.proto || die 'Failed to generate fleetconsole TS protos.'
 
 echo "Successfully generated fleetconsole TS protos."

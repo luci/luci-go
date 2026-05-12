@@ -249,6 +249,7 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
     },
   },
   fc_offline_since: {
+    //TODO (b/502485099): this will be filterable after is resolved
     header: 'Offline since',
     meta: {
       infoTooltip: 'Last seen online (±10 min), per the fc_is_offline',
@@ -268,6 +269,36 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
       } catch (_) {
         return <>{value as string}</>;
       }
+    },
+  },
+  average_7d: {
+    //TODO (b/502485099): this will be filterable after is resolved
+    header: '7 Day Average',
+    orderByField: '"average_utilization_7d"',
+    filterVariant: 'range-slider',
+    muiFilterSliderProps: {
+      min: 0,
+      max: 100,
+    },
+    renderCell: ({ value, device }) => {
+      const val = value ?? device?.average7d ?? null;
+      if (typeof val !== 'number') return null;
+      return <>{val.toFixed(2)}%</>;
+    },
+  },
+  average_30d: {
+    //TODO (b/502485099): this will be filterable after is resolved
+    header: '30 Day Average',
+    orderByField: '"average_utilization_30d"',
+    filterVariant: 'range-slider',
+    muiFilterSliderProps: {
+      min: 0,
+      max: 100,
+    },
+    renderCell: ({ value, device }) => {
+      const val = value ?? device?.average30d ?? null;
+      if (typeof val !== 'number') return null;
+      return <>{val.toFixed(2)}%</>;
     },
   },
 };

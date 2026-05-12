@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import '@emotion/react';
+
 import _ from 'lodash';
 import {
   MaterialReactTable,
@@ -27,6 +27,7 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { createFeatureFlag, useFeatureFlag } from '@/common/feature_flags';
 import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_bottom_toolbar';
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
@@ -38,10 +39,12 @@ import {
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
+import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
 import { FilterState } from '@/fleet/components/filters/types';
 import {
   FilterCategory,
+  FilterCategoryBuilder,
   useFilters,
 } from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
@@ -51,6 +54,18 @@ import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { getAndroidColumns } from '@/fleet/pages/device_list_page/android/android_columns';
+import {
+  ANDROID_COLUMN_OVERRIDES,
+  AndroidColumnDef,
+} from '@/fleet/pages/device_list_page/android/android_fields';
+import { ANDROID_EXTRA_FILTERS } from '@/fleet/pages/device_list_page/android/android_filters';
+import { androidState } from '@/fleet/pages/device_list_page/android/android_state';
+import { AndroidSummaryHeader } from '@/fleet/pages/device_list_page/android/android_summary_header';
+import { dimensionsToFilterOptions as dimensionsToFilterOptionsAndroid } from '@/fleet/pages/device_list_page/android/dimensions_to_filter_options';
+import { AdminTasksAlert } from '@/fleet/pages/device_list_page/common/admin_tasks_alert';
+import { dimensionsToFilterOptions } from '@/fleet/pages/device_list_page/common/helpers';
+import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
@@ -64,29 +79,19 @@ import {
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { AdminTasksAlert } from '../common/admin_tasks_alert';
-import { dimensionsToFilterOptions } from '../common/helpers';
-import { useDeviceDimensions } from '../common/use_device_dimensions';
-
-import { getAndroidColumns } from './android_columns';
-import { ANDROID_COLUMN_OVERRIDES, AndroidColumnDef } from './android_fields';
-import { ANDROID_EXTRA_FILTERS } from './android_filters';
-import { androidState } from './android_state';
-import { AndroidSummaryHeader } from './android_summary_header';
-import { dimensionsToFilterOptions as dimensionsToFilterOptionsAndroid } from './dimensions_to_filter_options';
-
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500, 1000];
 const DEFAULT_PAGE_SIZE = 100;
 
-const platform = Platform.ANDROID;
+const AVG_UTILIZATION_FEATURE = createFeatureFlag({
+  name: 'avg-utilization-metrics',
+  namespace: 'fleet-console-android',
+  description:
+    'Displays average device utilization metrics, columns, and filters.',
+  percentage: 0,
+  trackingBug: '',
+});
 
-const EXTRA_COLUMN_IDS = [
-  'label-id',
-  'label-run_target',
-  'label-hostname',
-  'fc_offline_since',
-  'realm',
-] satisfies (keyof typeof ANDROID_COLUMN_OVERRIDES)[];
+const platform = Platform.ANDROID;
 
 const computeSelectedOptions = (
   filterValues: Record<string, FilterCategory> | undefined,
@@ -110,7 +115,9 @@ const computeSelectedOptions = (
   }
   return { filters, error: undefined };
 };
+
 export const AndroidDevicesPage = () => {
+  const showAvgUtilization = useFeatureFlag(AVG_UTILIZATION_FEATURE);
   const { trackEvent } = useGoogleAnalytics();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
@@ -127,15 +134,35 @@ export const AndroidDevicesPage = () => {
     dimensionsQuery.data.labels;
 
   const filterOptions = useMemo(() => {
-    if (!isDimensionsQueryProperlyLoaded) return ANDROID_EXTRA_FILTERS;
+    const extraFilters: Record<
+      string,
+      FilterCategoryBuilder<FilterCategory>
+    > = {
+      ...ANDROID_EXTRA_FILTERS,
+    };
+    if (showAvgUtilization) {
+      extraFilters['"average_7d"'] = new RangeFilterCategoryBuilder()
+        .setLabel('7 Day Average')
+        .setMin(0)
+        .setMax(100);
+      extraFilters['"average_30d"'] = new RangeFilterCategoryBuilder()
+        .setLabel('30 Day Average')
+        .setMin(0)
+        .setMax(100);
+    }
+    if (!isDimensionsQueryProperlyLoaded) return extraFilters;
     return {
       ...dimensionsToFilterOptions(
         dimensionsQuery.data!,
         ANDROID_COLUMN_OVERRIDES,
       ),
-      ...ANDROID_EXTRA_FILTERS,
+      ...extraFilters,
     };
-  }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data]);
+  }, [
+    isDimensionsQueryProperlyLoaded,
+    dimensionsQuery.data,
+    showAvgUtilization,
+  ]);
 
   const filterCategoryDatas = useFilters(filterOptions, {
     areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
@@ -245,13 +272,26 @@ export const AndroidDevicesPage = () => {
 
   const { devices = [] } = devicesQuery.data || {};
 
+  const extraColumnIds = useMemo(() => {
+    const ids = [
+      'label-id',
+      'label-run_target',
+      'label-hostname',
+      'fc_offline_since',
+      'realm',
+    ];
+    if (showAvgUtilization) {
+      ids.push('average_7d', 'average_30d');
+    }
+    return ids as (keyof typeof ANDROID_COLUMN_OVERRIDES)[];
+  }, [showAvgUtilization]);
   const columnIds = useMemo(() => {
     const columnsParamStr = searchParams.getAll(COLUMNS_PARAM_KEY).join(',');
     const urlCols = columnsParamStr ? columnsParamStr.split(',') : [];
     const requiredCols = urlCols.length > 0 ? urlCols : ANDROID_DEFAULT_COLUMNS;
 
-    return _.uniq([...requiredCols, ...EXTRA_COLUMN_IDS]);
-  }, [searchParams]);
+    return _.uniq([...requiredCols, ...extraColumnIds]);
+  }, [searchParams, extraColumnIds]);
 
   const columnsList = useMemo(() => {
     const list = getAndroidColumns(columnIds);
@@ -280,18 +320,15 @@ export const AndroidDevicesPage = () => {
     const list: { id: string; label: string }[] = [];
 
     ANDROID_DEFAULT_COLUMNS.forEach((id) => list.push({ id, label: id }));
-    EXTRA_COLUMN_IDS.forEach((id) => list.push({ id, label: id }));
+    extraColumnIds.forEach((id) => {
+      let label = id;
+      if (id === 'average_7d') label = '7 Day Average';
+      if (id === 'average_30d') label = '30 Day Average';
+      list.push({ id, label });
+    });
 
-    if (dimensionsQuery.data) {
-      Object.keys(dimensionsQuery.data.baseDimensions).forEach((id) =>
-        list.push({ id, label: id }),
-      );
-      Object.keys(dimensionsQuery.data.labels).forEach((id) =>
-        list.push({ id, label: id }),
-      );
-    }
     return _.uniqBy(list, 'id');
-  }, [dimensionsQuery.data]);
+  }, [extraColumnIds]);
 
   const filterOptionsConfig = useMemo(() => {
     if (!isDimensionsQueryProperlyLoaded) return [];
@@ -312,8 +349,8 @@ export const AndroidDevicesPage = () => {
       columnsRecord,
     );
 
-    return [
-      ...options,
+    const allOptions = [
+      ...options.filter((o) => o.value !== 'state'),
       {
         label: 'State',
         type: 'string_list' as const,
@@ -327,6 +364,7 @@ export const AndroidDevicesPage = () => {
         ],
       },
     ];
+    return allOptions;
   }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data, columnsList]);
 
   const [warnings, addWarning] = useWarnings();
@@ -549,6 +587,7 @@ export const AndroidDevicesPage = () => {
       <AndroidSummaryHeader
         aip160={filterCategoryDatas.aip160()}
         setFiltersBatch={filterCategoryDatas.setFiltersBatch}
+        showAvgUtilization={showAvgUtilization}
       />
       <AdminTasksAlert />
       <div
