@@ -203,23 +203,21 @@ func countTempFiles(t testing.TB, cache *InstanceCache) int {
 }
 
 type instCacheTestEnv struct {
-	cache   *ManagedInstanceCache
+	cache   *InstanceCache
 	tempDir string
 	fetcher *trackingFetcher
 	tc      testclock.TestClock
 }
 
-func instanceCacheTestSetup(t testing.TB) (*ManagedInstanceCache, *instCacheTestEnv, context.Context) {
+func instanceCacheTestSetup(t testing.TB) (*InstanceCache, *instCacheTestEnv, context.Context) {
 	ctx, tc := testclock.UseTime(t.Context(), testclock.TestTimeLocal)
 
 	tempDir := t.TempDir()
 
 	fetcher := &trackingFetcher{}
-	cache := &ManagedInstanceCache{
-		Cache: &InstanceCache{
-			FS:      fs.NewFileSystem(tempDir, ""),
-			Fetcher: fetcher.fetch,
-		},
+	cache := &InstanceCache{
+		FS:      fs.NewFileSystem(tempDir, ""),
+		Fetcher: fetcher.fetch,
 	}
 	t.Cleanup(func() {
 		cache.Close(ctx)
@@ -242,42 +240,42 @@ func TestInstanceCache(t *testing.T) {
 		defer cache2.Close(ctx)
 
 		// Add new.
-		putNew(t, ctx, cache.Cache, pin(0))
+		putNew(t, ctx, cache, pin(0))
 
 		// Check it can be seen even through another InstanceCache object.
-		testHas(t, ctx, cache.Cache, pin(0))
+		testHas(t, ctx, cache, pin(0))
 		testHas(t, ctx, cache2, pin(0))
 	})
 
 	t.Run("Temp cache removes files", func(t *testing.T) {
 		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
-		cache.Cache.Tmp = true
+		cache.Tmp = true
 
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(0))
-		access(t, ctx, cache.Cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
-			assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1))
+		assert.That(t, countTempFiles(t, cache), should.Equal(0))
+		access(t, ctx, cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
+			assert.That(t, countTempFiles(t, cache), should.Equal(1))
 			return
 		})
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(0))
+		assert.That(t, countTempFiles(t, cache), should.Equal(0))
 	})
 
 	t.Run("Redownloads corrupted files", func(t *testing.T) {
 		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
-		assert.Loosely(t, countTempFiles(t, cache.Cache), should.BeZero)
+		assert.Loosely(t, countTempFiles(t, cache), should.BeZero)
 
 		// Download the first time.
-		access(t, ctx, cache.Cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
+		access(t, ctx, cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
 			assert.That(t, created, should.BeTrue)
 			return
 		})
 
 		// Stored in the cache (plus state.db file).
-		assert.Loosely(t, countTempFiles(t, cache.Cache), should.Equal(2))
+		assert.Loosely(t, countTempFiles(t, cache), should.Equal(2))
 
 		// The second call grabs it from the cache.
-		access(t, ctx, cache.Cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
+		access(t, ctx, cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
 			assert.That(t, created, should.BeFalse)
 
 			// Close as corrupted. Should be removed from the cache.
@@ -286,10 +284,10 @@ func TestInstanceCache(t *testing.T) {
 		})
 
 		// Only state.db file left.
-		assert.Loosely(t, countTempFiles(t, cache.Cache), should.Equal(1))
+		assert.Loosely(t, countTempFiles(t, cache), should.Equal(1))
 
 		// Download the second time.
-		access(t, ctx, cache.Cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
+		access(t, ctx, cache, pin(0), func(created bool, src pkg.Source) (corrupted bool) {
 			assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(2))
 			return
 		})
@@ -298,66 +296,66 @@ func TestInstanceCache(t *testing.T) {
 	t.Run("GC respects MaxAge vs launchTime", func(t *testing.T) {
 		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
-		cache.Cache.GCMaxAge = 2500 * time.Millisecond
+		cache.GCMaxAge = 2500 * time.Millisecond
 		t0 := clock.Now(ctx)
 		for i := range 8 {
 			if i != 0 {
 				env.tc.Add(time.Second)
 			}
-			putNew(t, ctx, cache.Cache, pin(i))
+			putNew(t, ctx, cache, pin(i))
 		}
-		assert.That(t, cache.Cache.launchTime, should.Match(t0))
+		assert.That(t, cache.launchTime, should.Match(t0))
 
 		// This should remove *nothing* - all instances were added after our
 		// launch time.
 		cache.Close(ctx) // Does a GC pass.
 
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(9))
+		assert.That(t, countTempFiles(t, cache), should.Equal(9))
 
 		// Relaunch the cache and close it to do another GC pass with launchTime
 		// == clock.Now.
-		cache.Cache.OpenAsSource(ctx, common.Pin{})
-		assert.That(t, cache.Cache.launchTime, should.Match(clock.Now(ctx)))
+		cache.OpenAsSource(ctx, common.Pin{})
+		assert.That(t, cache.launchTime, should.Match(clock.Now(ctx)))
 		cache.Close(ctx)
 
 		// At this point 0..4 have been collected, so 5..7 exist.
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(4)) // +1 for state.db.
+		assert.That(t, countTempFiles(t, cache), should.Equal(4)) // +1 for state.db.
 		for i := range 3 {
-			testHas(t, ctx, cache.Cache, pin(i+5))
+			testHas(t, ctx, cache, pin(i+5))
 		}
 
 		// The rest are missing and can be recreated.
 		for i := range 5 {
-			putNew(t, ctx, cache.Cache, pin(i))
+			putNew(t, ctx, cache, pin(i))
 		}
 	})
 
 	t.Run(`ExactGC`, func(t *testing.T) {
 		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
-		cache.Cache.ExactGC = true
+		cache.ExactGC = true
 
 		// Ensure the cache is launched.
-		cache.Cache.OpenAsSource(ctx, common.Pin{})
+		cache.OpenAsSource(ctx, common.Pin{})
 
 		// Advance time a bit so all these pins initially start with a time >
 		// launchTime.
 		env.tc.Add(time.Minute)
 
 		// Add a bunch of instances.
-		putNew(t, ctx, cache.Cache, pin(0))
-		putNew(t, ctx, cache.Cache, pin(1))
-		putNew(t, ctx, cache.Cache, pin(2))
-		putNew(t, ctx, cache.Cache, pin(3))
+		putNew(t, ctx, cache, pin(0))
+		putNew(t, ctx, cache, pin(1))
+		putNew(t, ctx, cache, pin(2))
+		putNew(t, ctx, cache, pin(3))
 
 		// Delete the state file to force resync. All these instances should now
 		// be marked as === launchTime.
 		assert.NoErr(t, os.Remove(filepath.Join(env.tempDir, instanceCacheStateFilename)))
 
 		// Touch some overlapping instances and add some new instances.
-		cache.Cache.Touch(ctx, pin(2).InstanceID, pin(3).InstanceID)
-		putNew(t, ctx, cache.Cache, pin(4))
-		putNew(t, ctx, cache.Cache, pin(5))
+		cache.Touch(ctx, pin(2).InstanceID, pin(3).InstanceID)
+		putNew(t, ctx, cache, pin(4))
+		putNew(t, ctx, cache, pin(5))
 
 		// Our explicit Close() should remove 0 and 1 because they were ==
 		// launchTime, and we didn't actually touch them after the sync.
@@ -370,7 +368,7 @@ func TestInstanceCache(t *testing.T) {
 		slices.Sort(want)
 
 		// `true` forces resync to actual on-disk state.
-		got, err := cache.Cache.AllInstanceIDs(ctx, true)
+		got, err := cache.AllInstanceIDs(ctx, true)
 		assert.NoErr(t, err)
 		assert.That(t, got, should.Match(want))
 	})
@@ -378,68 +376,68 @@ func TestInstanceCache(t *testing.T) {
 	t.Run(`nil Fetcher`, func(t *testing.T) {
 		t.Parallel()
 		cache, _, ctx := instanceCacheTestSetup(t)
-		cache.Cache.Fetcher = nil
+		cache.Fetcher = nil
 
-		_, err := cache.Cache.OpenAsSource(ctx, pin(0))
+		_, err := cache.OpenAsSource(ctx, pin(0))
 		assert.ErrIsLike(t, err, ErrNoFetcher)
 	})
 
 	t.Run(`DisableGC`, func(t *testing.T) {
 		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
-		cache.Cache.ExactGC = true
+		cache.ExactGC = true
 
 		// Launch the cache.
-		cache.Cache.OpenAsSource(ctx, common.Pin{})
+		cache.OpenAsSource(ctx, common.Pin{})
 		env.tc.Add(time.Millisecond)
 
-		putNew(t, ctx, cache.Cache, pin(0))
-		putNew(t, ctx, cache.Cache, pin(1))
-		putNew(t, ctx, cache.Cache, pin(2))
+		putNew(t, ctx, cache, pin(0))
+		putNew(t, ctx, cache, pin(1))
+		putNew(t, ctx, cache, pin(2))
 
 		cache.Close(ctx)
 
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(4)) // 1+ for state.db.
+		assert.That(t, countTempFiles(t, cache), should.Equal(4)) // 1+ for state.db.
 
-		cache.Cache.PassiveWritePolicy = DisableGC
+		cache.PassiveWritePolicy = DisableGC
 
 		env.tc.Add(time.Minute)
 
 		// Relaunch + Close/GC again.
-		cache.Cache.OpenAsSource(ctx, common.Pin{})
+		cache.OpenAsSource(ctx, common.Pin{})
 		cache.Close(ctx)
 
 		// We still have all GC'able instances.
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(4)) // 1+ for state.db.
+		assert.That(t, countTempFiles(t, cache), should.Equal(4)) // 1+ for state.db.
 
-		cache.Cache.PassiveWritePolicy = 0
+		cache.PassiveWritePolicy = 0
 
 		// Relaunch + Close/GC again.
-		cache.Cache.OpenAsSource(ctx, common.Pin{})
+		cache.OpenAsSource(ctx, common.Pin{})
 		cache.Close(ctx)
 
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1)) // Everything is gone.
+		assert.That(t, countTempFiles(t, cache), should.Equal(1)) // Everything is gone.
 	})
 
 	t.Run(`DisableStateWrite`, func(t *testing.T) {
 		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
-		putNew(t, ctx, cache.Cache, pin(0))
+		putNew(t, ctx, cache, pin(0))
 
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(2)) // +1 for state.db.
+		assert.That(t, countTempFiles(t, cache), should.Equal(2)) // +1 for state.db.
 
 		assert.NoErr(t, os.Remove(filepath.Join(env.tempDir, instanceCacheStateFilename)))
 
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1)) // Just the instance.
+		assert.That(t, countTempFiles(t, cache), should.Equal(1)) // Just the instance.
 
 		// Now disable writing state.
-		cache.Cache.PassiveWritePolicy = DisableStateWrite
+		cache.PassiveWritePolicy = DisableStateWrite
 
 		// We still have the instance.
-		testHas(t, ctx, cache.Cache, pin(0))
+		testHas(t, ctx, cache, pin(0))
 
 		// But we didn't write the state.db as a side effect.
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1))
+		assert.That(t, countTempFiles(t, cache), should.Equal(1))
 	})
 
 	t.Run(`AllInstanceIDs`, func(t *testing.T) {
@@ -447,12 +445,12 @@ func TestInstanceCache(t *testing.T) {
 		cache, _, ctx := instanceCacheTestSetup(t)
 		want := make([]string, 8)
 		for i := range 8 {
-			putNew(t, ctx, cache.Cache, pin(i))
+			putNew(t, ctx, cache, pin(i))
 			want[i] = pin(i).InstanceID
 		}
 		slices.Sort(want)
 
-		allIDs, err := cache.Cache.AllInstanceIDs(ctx, false)
+		allIDs, err := cache.AllInstanceIDs(ctx, false)
 		assert.NoErr(t, err)
 		assert.That(t, allIDs, should.Match(want))
 	})
@@ -462,7 +460,7 @@ func TestInstanceCache(t *testing.T) {
 		cache, _, ctx := instanceCacheTestSetup(t)
 		want := make([]string, 8)
 		for i := range 4 {
-			putNew(t, ctx, cache.Cache, pin(i))
+			putNew(t, ctx, cache, pin(i))
 			want[i] = pin(i).InstanceID
 		}
 
@@ -470,18 +468,18 @@ func TestInstanceCache(t *testing.T) {
 		for i := 4; i < 8; i++ {
 			iid := pin(i).InstanceID
 			want[i] = iid
-			cache.Cache.FS.EnsureFile(ctx, filepath.Join(cache.Cache.FS.Root(), iid), func(f *os.File) error {
+			cache.FS.EnsureFile(ctx, filepath.Join(cache.FS.Root(), iid), func(f *os.File) error {
 				return nil
 			})
 		}
 		slices.Sort(want)
 
-		allIDs, err := cache.Cache.AllInstanceIDs(ctx, false)
+		allIDs, err := cache.AllInstanceIDs(ctx, false)
 		assert.NoErr(t, err)
 		assert.That(t, allIDs, should.Match(want[:4]))
 
 		// Forcing a re-sync sees the extra IDs.
-		allIDs, err = cache.Cache.AllInstanceIDs(ctx, true)
+		allIDs, err = cache.AllInstanceIDs(ctx, true)
 		assert.NoErr(t, err)
 		assert.That(t, allIDs, should.Match(want))
 	})
@@ -518,9 +516,18 @@ func TestManagedInstanceCache(t *testing.T) {
 		return reqs
 	}
 
+	managedTestEnv := func(t *testing.T) (*ManagedInstanceCache, *instCacheTestEnv, context.Context) {
+		cache, env, ctx := instanceCacheTestSetup(t)
+		ret := &ManagedInstanceCache{Cache: cache}
+		t.Cleanup(func() {
+			ret.Close(ctx)
+		})
+		return ret, env, ctx
+	}
+
 	t.Run("Preserves the order when using single stream", func(t *testing.T) {
 		t.Parallel()
-		cache, _, ctx := instanceCacheTestSetup(t)
+		cache, _, ctx := managedTestEnv(t)
 		cache.ParallelDownloads = 1
 
 		reqs := mkReqs(ctx, 100)
@@ -541,7 +548,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 	t.Run("Doesn't deadlock", func(t *testing.T) {
 		t.Parallel()
-		cache, _, ctx := instanceCacheTestSetup(t)
+		cache, _, ctx := managedTestEnv(t)
 		cache.ParallelDownloads = 4
 
 		reqs := mkReqs(ctx, 100)
@@ -562,7 +569,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 	t.Run("Handles errors", func(t *testing.T) {
 		t.Parallel()
-		cache, env, ctx := instanceCacheTestSetup(t)
+		cache, env, ctx := managedTestEnv(t)
 		cache.ParallelDownloads = 4
 
 		reqs := mkReqs(ctx, 100)
@@ -592,10 +599,10 @@ func TestManagedInstanceCache(t *testing.T) {
 
 	t.Run("RequestInstancesDoesNotEvictEntriesToBeFetched", func(t *testing.T) {
 		t.Parallel()
-		cache, env, ctx := instanceCacheTestSetup(t)
-		cache.Cache.GCMaxAge = 2 * time.Second
+		cache, env, ctx := managedTestEnv(t)
+		env.cache.GCMaxAge = 2 * time.Second
 		for i := range 8 {
-			putNew(t, ctx, cache.Cache, pin(i))
+			putNew(t, ctx, env.cache, pin(i))
 		}
 		// At this point, 8 fetches have been done.
 		assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(8))
@@ -626,12 +633,12 @@ func TestManagedInstanceCache(t *testing.T) {
 
 	t.Run(`VerifyHash`, func(t *testing.T) {
 		t.Parallel()
-		cache, _, ctx := instanceCacheTestSetup(t)
+		cache, env, ctx := managedTestEnv(t)
 		pin, _, err := mkContentPin(ctx, "hello")
 		assert.NoErr(t, err)
 
-		putNew(t, ctx, cache.Cache, pin)
-		cache.Cache.Fetcher = nil
+		putNew(t, ctx, env.cache, pin)
+		env.cache.Fetcher = nil
 
 		cache.RequestInstances(ctx, []*InstanceRequest{
 			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
@@ -642,7 +649,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		})
 
 		// Now corrupt the file.
-		assert.NoErr(t, cache.Cache.FS.EnsureFile(ctx, filepath.Join(cache.Cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
+		assert.NoErr(t, env.cache.FS.EnsureFile(ctx, filepath.Join(env.cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
 			_, err := fmt.Fprintf(f, "I AM A BANANA")
 			return err
 		}))
@@ -657,21 +664,21 @@ func TestManagedInstanceCache(t *testing.T) {
 		})
 
 		// And the file has been deleted.
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1)) // +1 for state.db.
+		assert.That(t, countTempFiles(t, env.cache), should.Equal(1)) // +1 for state.db.
 	})
 
 	t.Run(`DisableCorruptDeletion`, func(t *testing.T) {
 		t.Parallel()
-		cache, _, ctx := instanceCacheTestSetup(t)
-		cache.Cache.PassiveWritePolicy = DisableCorruptDeletion
+		cache, env, ctx := managedTestEnv(t)
+		env.cache.PassiveWritePolicy = DisableCorruptDeletion
 		pin, _, err := mkContentPin(ctx, "hello")
 		assert.NoErr(t, err)
 
-		putNew(t, ctx, cache.Cache, pin)
-		cache.Cache.Fetcher = nil
+		putNew(t, ctx, env.cache, pin)
+		env.cache.Fetcher = nil
 
 		// Now corrupt the file.
-		assert.NoErr(t, cache.Cache.FS.EnsureFile(ctx, filepath.Join(cache.Cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
+		assert.NoErr(t, env.cache.FS.EnsureFile(ctx, filepath.Join(env.cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
 			_, err := fmt.Fprintf(f, "I AM A BANANA")
 			return err
 		}))
@@ -686,7 +693,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		})
 
 		// But the file is still there!
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(2)) // +1 for state.db.
+		assert.That(t, countTempFiles(t, env.cache), should.Equal(2)) // +1 for state.db.
 	})
 }
 
@@ -699,19 +706,19 @@ func TestInstanceCacheSync(t *testing.T) {
 
 		// Add instances.
 		for i := range count {
-			putNew(t, ctx, cache.Cache, pin(i))
+			putNew(t, ctx, cache, pin(i))
 		}
 
 		causeResync(filepath.Join(env.tempDir, instanceCacheStateFilename))
 
 		// state.db must be restored.
 		for i := range count {
-			lastAccess, ok := accessTime(ctx, cache.Cache, pin(i))
+			lastAccess, ok := accessTime(ctx, cache, pin(i))
 			assert.Loosely(t, ok, should.BeTrue)
 			assert.Loosely(t, lastAccess, should.Match(clock.Now(ctx)))
 		}
 
-		_, ok := accessTime(ctx, cache.Cache, common.Pin{
+		_, ok := accessTime(ctx, cache, common.Pin{
 			PackageName: "nonexistent",
 			InstanceID:  "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 		})
