@@ -86,8 +86,26 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
       }
 
       return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Link to={internalLink}>{d.id}</Link>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            maxWidth: '100%',
+          }}
+        >
+          <BuganizerLink name={d.id} project="android" />
+          <Link
+            to={internalLink}
+            style={{
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              minWidth: 0,
+            }}
+          >
+            {d.id}
+          </Link>
           <Tooltip title="Open in Mobile Harness">
             <a
               href={mhLink}
@@ -98,7 +116,6 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
               <OpenInNewIcon fontSize="small" />
             </a>
           </Tooltip>
-          <BuganizerLink name={d.id} project="android" />
         </div>
       );
     },

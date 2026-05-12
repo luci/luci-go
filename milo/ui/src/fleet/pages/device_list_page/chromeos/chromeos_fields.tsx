@@ -93,9 +93,17 @@ export const CHROMEOS_COLUMN_OVERRIDES: Record<string, ChromeOSColumnOverride> =
         });
 
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <CellWithLink {...props} />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              maxWidth: '100%',
+              textOverflow: 'ellipsis',
+            }}
+          >
             <BuganizerLink name={names} project="chromeos" />
+            <CellWithLink {...props} />
           </div>
         );
       },

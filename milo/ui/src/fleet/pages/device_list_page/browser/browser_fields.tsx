@@ -110,9 +110,17 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
         newTab: false,
       });
       return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <CellWithLink {...props} />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            maxWidth: '100%',
+            textOverflow: 'ellipsis',
+          }}
+        >
           <BuganizerLink name={names} project="chromium" />
+          <CellWithLink {...props} />
         </div>
       );
     },
