@@ -47,7 +47,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/builder"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
-	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
@@ -1016,121 +1015,145 @@ func TestDescribeClient(t *testing.T) {
 func TestResolveVersion(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("With mocks", t, func(c *ftt.Test) {
-		ctx := context.Background()
-		client, _, repo, _ := mockedCipdClient(c)
+	expectedPin := common.Pin{
+		PackageName: "a/b",
+		InstanceID:  fakeIID("0"),
+	}
+	resolvedInst := &repopb.Instance{
+		Package:  "a/b",
+		Instance: fakeObjectRef("0"),
+	}
 
-		expectedPin := common.Pin{
-			PackageName: "a/b",
-			InstanceID:  fakeIID("0"),
-		}
-		resolvedInst := &repopb.Instance{
-			Package:  "a/b",
-			Instance: fakeObjectRef("0"),
-		}
+	t.Run("Resolves ref (no ref cache)", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		opts, _, repo, _ := mockedClientOpts(t)
+		opts.Root = "" // Disable default cache initialization
+		client, err := NewClient(opts)
+		assert.Loosely(t, err, should.BeNil)
+		defer client.Close(ctx)
 
-		c.Run("Resolves ref (no ref cache)", func(c *ftt.Test) {
-			repo.expect(rpcCall{
-				method: "ResolveVersion",
-				in: &repopb.ResolveVersionRequest{
-					Package: "a/b",
-					Version: "latest",
-				},
-				out: resolvedInst,
-			})
-			pin, err := client.ResolveVersion(ctx, "a/b", "latest")
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Match(expectedPin))
+		repo.expect(rpcCall{
+			method: "ResolveVersion",
+			in: &repopb.ResolveVersionRequest{
+				Package: "a/b",
+				Version: "latest",
+			},
+			out: resolvedInst,
+		})
+		pin, err := client.ResolveVersion(ctx, "a/b", "latest")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Match(expectedPin))
+	})
+
+	t.Run("Resolves ref (with ref cache)", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		client, _, repo, _ := mockedCipdClient(t)
+
+		// Only one RPC, even though we did two ResolveVersion calls.
+		repo.expect(rpcCall{
+			method: "ResolveVersion",
+			in: &repopb.ResolveVersionRequest{
+				Package: "a/b",
+				Version: "latest",
+			},
+			out: resolvedInst,
 		})
 
-		c.Run("Resolves ref (with ref cache)", func(c *ftt.Test) {
-			setupVersionCache(client, c)
+		pin, err := client.ResolveVersion(ctx, "a/b", "latest")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Match(expectedPin))
 
-			// Only one RPC, even though we did two ResolveVersion calls.
-			repo.expect(rpcCall{
-				method: "ResolveVersion",
-				in: &repopb.ResolveVersionRequest{
-					Package: "a/b",
-					Version: "latest",
-				},
-				out: resolvedInst,
-			})
+		pin, err = client.ResolveVersion(ctx, "a/b", "latest")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Match(expectedPin))
+	})
 
-			pin, err := client.ResolveVersion(ctx, "a/b", "latest")
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Match(expectedPin))
+	t.Run("Skips resolving instance ID", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		client, _, _, _ := mockedCipdClient(t)
 
-			pin, err = client.ResolveVersion(ctx, "a/b", "latest")
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Match(expectedPin))
+		pin, err := client.ResolveVersion(ctx, "a/b", expectedPin.InstanceID)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Match(expectedPin))
+	})
+
+	t.Run("Resolves tag (no tag cache)", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		opts, _, repo, _ := mockedClientOpts(t)
+
+		opts.Root = "" // Disable default cache initialization
+		client, err := NewClient(opts)
+		assert.Loosely(t, err, should.BeNil)
+		defer client.Close(ctx)
+
+		repo.expect(rpcCall{
+			method: "ResolveVersion",
+			in: &repopb.ResolveVersionRequest{
+				Package: "a/b",
+				Version: "k:v",
+			},
+			out: resolvedInst,
+		})
+		pin, err := client.ResolveVersion(ctx, "a/b", "k:v")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Match(expectedPin))
+	})
+
+	t.Run("Resolves tag (with tag cache)", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		client, _, repo, _ := mockedCipdClient(t)
+
+		// Only one RPC, even though we did two ResolveVersion calls.
+		repo.expect(rpcCall{
+			method: "ResolveVersion",
+			in: &repopb.ResolveVersionRequest{
+				Package: "a/b",
+				Version: "k:v",
+			},
+			out: resolvedInst,
 		})
 
-		c.Run("Skips resolving instance ID", func(c *ftt.Test) {
-			pin, err := client.ResolveVersion(ctx, "a/b", expectedPin.InstanceID)
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Match(expectedPin))
+		// Cache miss.
+		pin, err := client.ResolveVersion(ctx, "a/b", "k:v")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Match(expectedPin))
+
+		// Cache hit.
+		pin, err = client.ResolveVersion(ctx, "a/b", "k:v")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pin, should.Match(expectedPin))
+	})
+
+	t.Run("Bad package name", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		client, _, _, _ := mockedCipdClient(t)
+
+		_, err := client.ResolveVersion(ctx, "a/b////", "latest")
+		assert.Loosely(t, err, should.ErrLike("invalid package name"))
+	})
+
+	t.Run("Bad version identifier", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		client, _, _, _ := mockedCipdClient(t)
+
+		_, err := client.ResolveVersion(ctx, "a/b", "???")
+		assert.Loosely(t, err, should.ErrLike("bad version"))
+	})
+
+	t.Run("Error response", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		client, _, repo, _ := mockedCipdClient(t)
+
+		repo.expect(rpcCall{
+			method: "ResolveVersion",
+			in: &repopb.ResolveVersionRequest{
+				Package: "a/b",
+				Version: "k:v",
+			},
+			err: status.Errorf(codes.FailedPrecondition, "conflict"),
 		})
-
-		c.Run("Resolves tag (no tag cache)", func(c *ftt.Test) {
-			repo.expect(rpcCall{
-				method: "ResolveVersion",
-				in: &repopb.ResolveVersionRequest{
-					Package: "a/b",
-					Version: "k:v",
-				},
-				out: resolvedInst,
-			})
-			pin, err := client.ResolveVersion(ctx, "a/b", "k:v")
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Match(expectedPin))
-		})
-
-		c.Run("Resolves tag (with tag cache)", func(c *ftt.Test) {
-			setupVersionCache(client, c)
-
-			// Only one RPC, even though we did two ResolveVersion calls.
-			repo.expect(rpcCall{
-				method: "ResolveVersion",
-				in: &repopb.ResolveVersionRequest{
-					Package: "a/b",
-					Version: "k:v",
-				},
-				out: resolvedInst,
-			})
-
-			// Cache miss.
-			pin, err := client.ResolveVersion(ctx, "a/b", "k:v")
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Match(expectedPin))
-
-			// Cache hit.
-			pin, err = client.ResolveVersion(ctx, "a/b", "k:v")
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, pin, should.Match(expectedPin))
-		})
-
-		c.Run("Bad package name", func(c *ftt.Test) {
-			_, err := client.ResolveVersion(ctx, "a/b////", "latest")
-			assert.Loosely(c, err, should.ErrLike("invalid package name"))
-		})
-
-		c.Run("Bad version identifier", func(c *ftt.Test) {
-			_, err := client.ResolveVersion(ctx, "a/b", "???")
-			assert.Loosely(c, err, should.ErrLike("bad version"))
-		})
-
-		c.Run("Error response", func(c *ftt.Test) {
-			repo.expect(rpcCall{
-				method: "ResolveVersion",
-				in: &repopb.ResolveVersionRequest{
-					Package: "a/b",
-					Version: "k:v",
-				},
-				err: status.Errorf(codes.FailedPrecondition, "conflict"),
-			})
-			_, err := client.ResolveVersion(ctx, "a/b", "k:v")
-			assert.Loosely(c, err, should.ErrLike("conflict"))
-		})
+		_, err := client.ResolveVersion(ctx, "a/b", "k:v")
+		assert.Loosely(t, err, should.ErrLike("conflict"))
 	})
 }
 
@@ -1140,114 +1163,134 @@ func TestResolveVersion(t *testing.T) {
 func TestEnsurePackage(t *testing.T) {
 	t.Parallel()
 
-	// Generate a pretty big and random file to be put into the test package, so
-	// we have enough bytes to corrupt to trigger flate errors later in the test.
-	buf := strings.Builder{}
-	src := rand.NewSource(42)
-	for range 1000 {
-		fmt.Fprintf(&buf, "%d\n", src.Int63())
-	}
-	testFileBody := buf.String()
-
-	ftt.Run("With mocks", t, func(t *ftt.Test) {
-		ctx := makeTestContext()
-		client, _, repo, storage := mockedCipdClient(t)
+	mkInst := func() ([]byte, string, common.Pin) {
+		// Generate a pretty big and random file to be put into the test package, so
+		// we have enough bytes to corrupt to trigger flate errors later in the test.
+		buf := strings.Builder{}
+		src := rand.NewSource(42)
+		for range 1000 {
+			fmt.Fprintf(&buf, "%d\n", src.Int63())
+		}
+		testFileBody := buf.String()
 
 		body, pin := buildTestInstance("pkg", map[string]string{"test_name": testFileBody})
+		return body, testFileBody, pin
+	}
 
-		ensurePackages := func(ps common.PinSliceBySubdir) (ActionMap, error) {
-			return client.EnsurePackages(ctx, ps, nil)
-		}
+	t.Run("EnsurePackages works", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		client, _, repo, storage := mockedCipdClient(t)
+		body, testFileBody, pin := mkInst()
 
-		t.Run("EnsurePackages works", func(t *ftt.Test) {
-			setupRemoteInstance(body, pin, repo, storage)
+		setupRemoteInstance(body, pin, repo, storage)
 
-			_, err := ensurePackages(common.PinSliceBySubdir{"": {pin}})
-			assert.Loosely(t, err, should.BeNil)
+		_, err := client.EnsurePackages(ctx, common.PinSliceBySubdir{"": {pin}}, nil)
+		assert.Loosely(t, err, should.BeNil)
 
-			body, err = os.ReadFile(filepath.Join(client.Root, "test_name"))
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, string(body), should.Equal(testFileBody))
-		})
-
-		// on windows the ONLY install mode is copy, so this is pointless.
-		if platform.CurrentOS() != "windows" {
-			t.Run("EnsurePackages works with OverrideInstallMode", func(t *ftt.Test) {
-				setupRemoteInstance(body, pin, repo, storage)
-				pins := common.PinSliceBySubdir{"": {pin}}
-				eo := &EnsureOptions{
-					Paranoia:            CheckPresence,
-					OverrideInstallMode: pkg.InstallModeCopy,
-				}
-				_, err := client.EnsurePackages(ctx, pins, eo)
-				assert.Loosely(t, err, should.BeNil)
-
-				testFile := filepath.Join(client.Root, "test_name")
-				fi, err := os.Lstat(testFile)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fi.Mode().IsRegular(), should.BeTrue) // it's a file
-
-				// and can reverse the override
-				// setupRemoteInstance adds another mock call to GetInstanceURL
-				setupRemoteInstance(body, pin, repo, storage)
-				eo.OverrideInstallMode = ""
-				_, err = client.EnsurePackages(ctx, pins, eo)
-				assert.Loosely(t, err, should.BeNil)
-
-				fi, err = os.Lstat(testFile)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fi.Mode().IsRegular(), should.BeFalse) // it's a symlink
-			})
-		}
-
-		t.Run("EnsurePackages uses instance cache", func(t *ftt.Test) {
-			setupRemoteInstance(body, pin, repo, storage)
-			cacheDir := setupInstanceCache(client, t)
-
-			// The initial fetch.
-			_, err := ensurePackages(common.PinSliceBySubdir{"1": {pin}})
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, storage.downloads(), should.Equal(1))
-
-			// The file is in the cache now.
-			_, err = os.Stat(filepath.Join(cacheDir, "instances", pin.InstanceID))
-			assert.Loosely(t, err, should.BeNil)
-
-			// The second fetch should use the instance cache (and thus make no
-			// additional RPCs).
-			_, err = ensurePackages(common.PinSliceBySubdir{"1": {pin}, "2": {pin}})
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, storage.downloads(), should.Equal(1))
-		})
-
-		t.Run("EnsurePackages handles cache corruption", func(t *ftt.Test) {
-			setupRemoteInstance(body, pin, repo, storage)
-			cacheDir := setupInstanceCache(client, t)
-
-			// The initial fetch.
-			_, err := ensurePackages(common.PinSliceBySubdir{"1": {pin}})
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, storage.downloads(), should.Equal(1))
-
-			// The file is in the cache now. Corrupt it by writing a bunch of zeros
-			// in the middle.
-			f, err := os.OpenFile(filepath.Join(cacheDir, "instances", pin.InstanceID), os.O_RDWR, 0644)
-			assert.Loosely(t, err, should.BeNil)
-			off, _ := f.Seek(1000, 0)
-			assert.Loosely(t, off, should.Equal(1000))
-			_, err = f.Write(bytes.Repeat([]byte{0}, 100))
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, f.Close(), should.BeNil)
-
-			// The second fetch should discard the cache and redownload the package.
-			setupRemoteInstance(body, pin, repo, storage)
-			_, err = ensurePackages(common.PinSliceBySubdir{"1": {pin}, "2": {pin}})
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, storage.downloads(), should.Equal(2))
-		})
-
-		// TODO: Add more tests.
+		body, err = os.ReadFile(filepath.Join(client.Root, "test_name"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(body), should.Equal(testFileBody))
 	})
+
+	// on windows the ONLY install mode is copy, so this is pointless.
+	if platform.CurrentOS() != "windows" {
+		t.Run("EnsurePackages works with OverrideInstallMode", func(t *testing.T) {
+			ctx := makeTestContext(t)
+			client, _, repo, storage := mockedCipdClient(t)
+			body, _, pin := mkInst()
+
+			setupRemoteInstance(body, pin, repo, storage)
+			pins := common.PinSliceBySubdir{"": {pin}}
+			eo := &EnsureOptions{
+				Paranoia:            CheckPresence,
+				OverrideInstallMode: pkg.InstallModeCopy,
+			}
+			_, err := client.EnsurePackages(ctx, pins, eo)
+			assert.Loosely(t, err, should.BeNil)
+
+			testFile := filepath.Join(client.Root, "test_name")
+			fi, err := os.Lstat(testFile)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fi.Mode().IsRegular(), should.BeTrue) // it's a file
+
+			// and can reverse the override
+			// setupRemoteInstance adds another mock call to GetInstanceURL
+			setupRemoteInstance(body, pin, repo, storage)
+			eo.OverrideInstallMode = ""
+			_, err = client.EnsurePackages(ctx, pins, eo)
+			assert.Loosely(t, err, should.BeNil)
+
+			fi, err = os.Lstat(testFile)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fi.Mode().IsRegular(), should.BeFalse) // it's a symlink
+		})
+	}
+
+	t.Run("EnsurePackages uses instance cache", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		opts, _, repo, storage := mockedClientOpts(t)
+		body, _, pin := mkInst()
+
+		cacheDir := t.TempDir()
+		opts.CacheDir = cacheDir
+		client, err := NewClient(opts)
+		assert.Loosely(t, err, should.BeNil)
+		t.Cleanup(func() { client.Close(ctx) })
+
+		setupRemoteInstance(body, pin, repo, storage)
+
+		// The initial fetch.
+		_, err = client.EnsurePackages(ctx, common.PinSliceBySubdir{"1": {pin}}, nil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, storage.downloads(), should.Equal(1))
+
+		// The file is in the cache now.
+		_, err = os.Stat(filepath.Join(cacheDir, "instances", pin.InstanceID))
+		assert.Loosely(t, err, should.BeNil)
+
+		// The second fetch should use the instance cache (and thus make no
+		// additional RPCs).
+		_, err = client.EnsurePackages(ctx, common.PinSliceBySubdir{"1": {pin}, "2": {pin}}, nil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, storage.downloads(), should.Equal(1))
+	})
+
+	t.Run("EnsurePackages handles cache corruption", func(t *testing.T) {
+		ctx := makeTestContext(t)
+		opts, _, repo, storage := mockedClientOpts(t)
+		body, _, pin := mkInst()
+
+		cacheDir := t.TempDir()
+		opts.CacheDir = cacheDir
+		client, err := NewClient(opts)
+		assert.Loosely(t, err, should.BeNil)
+		t.Cleanup(func() { client.Close(ctx) })
+
+		setupRemoteInstance(body, pin, repo, storage)
+
+		// The initial fetch.
+		_, err = client.EnsurePackages(ctx, common.PinSliceBySubdir{"1": {pin}}, nil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, storage.downloads(), should.Equal(1))
+
+		// The file is in the cache now. Corrupt it by writing a bunch of zeros
+		// in the middle.
+		f, err := os.OpenFile(filepath.Join(cacheDir, "instances", pin.InstanceID), os.O_RDWR, 0644)
+		assert.Loosely(t, err, should.BeNil)
+		off, _ := f.Seek(1000, 0)
+		assert.Loosely(t, off, should.Equal(1000))
+		_, err = f.Write(bytes.Repeat([]byte{0}, 100))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, f.Close(), should.BeNil)
+
+		// The second fetch should discard the cache and redownload the package.
+		setupRemoteInstance(body, pin, repo, storage)
+		_, err = client.EnsurePackages(ctx, common.PinSliceBySubdir{"1": {pin}, "2": {pin}}, nil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, storage.downloads(), should.Equal(2))
+	})
+
+	// TODO: Add more tests.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1697,23 +1740,6 @@ func mockedCipdClient(t testing.TB) (*clientImpl, *mockedStorageClient, *mockedR
 	t.Cleanup(func() { client.Close(context.Background()) })
 	impl := client.(*clientImpl)
 	return impl, cas, repo, storage
-}
-
-func setupVersionCache(cl *clientImpl, t testing.TB) string {
-	assert.Loosely(t, cl.versionCache, should.BeNil)
-	tempDir := t.TempDir()
-	cl.versionCache = &internal.VersionCache{
-		FS:       fs.NewFileSystem(tempDir, ""),
-		SaveName: internal.UseLegacyVCName,
-		Refs:     internal.Disabled,
-	}
-	cl.versionCacheService = "service.example.com"
-	return tempDir
-}
-
-func setupInstanceCache(cl *clientImpl, t testing.TB) string {
-	cl.CacheDir = t.TempDir()
-	return cl.CacheDir
 }
 
 func setupRemoteInstance(body []byte, pin common.Pin, repo *mockedRepoClient, storage *mockedStorage) {

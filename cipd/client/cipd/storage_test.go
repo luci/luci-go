@@ -30,7 +30,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
@@ -38,108 +37,104 @@ import (
 )
 
 func TestUpload(t *testing.T) {
-	ctx := makeTestContext()
+	ctx := makeTestContext(t)
 
-	ftt.Run("Upload full flow", t, func(c *ftt.Test) {
-		storage := mockStorageImpl(c, []expectedHTTPCall{
-			{
-				Method:  "PUT",
-				Path:    "/upl",
-				Body:    "01234",
-				Headers: http.Header{"Content-Range": []string{"bytes 0-4/13"}},
-			},
-			{
-				Method:  "PUT",
-				Path:    "/upl",
-				Body:    "56789",
-				Headers: http.Header{"Content-Range": []string{"bytes 5-9/13"}},
-			},
-			// Insert a error.
-			{
-				Method:  "PUT",
-				Path:    "/upl",
-				Body:    "abc",
-				Headers: http.Header{"Content-Range": []string{"bytes 10-12/13"}},
-				Status:  500,
-			},
-			// Request for uploaded offset #1: failed itself.
-			{
-				Method:  "PUT",
-				Path:    "/upl",
-				Body:    "",
-				Headers: http.Header{"Content-Range": []string{"bytes */13"}},
-				Status:  500,
-			},
-			// Request for uploaded offset #2: indicates part of data uploaded.
-			{
-				Method:          "PUT",
-				Path:            "/upl",
-				Body:            "",
-				Headers:         http.Header{"Content-Range": []string{"bytes */13"}},
-				Status:          308,
-				ResponseHeaders: http.Header{"Range": []string{"bytes=0-7"}},
-			},
-			// Resume of the upload from returned offset.
-			{
-				Method:  "PUT",
-				Path:    "/upl",
-				Body:    "89abc",
-				Headers: http.Header{"Content-Range": []string{"bytes 8-12/13"}},
-			},
-		})
-		err := storage.upload(ctx, "http://localhost/upl", bytes.NewReader([]byte("0123456789abc")))
-		assert.Loosely(c, err, should.BeNil)
+	storage := mockStorageImpl(t, []expectedHTTPCall{
+		{
+			Method:  "PUT",
+			Path:    "/upl",
+			Body:    "01234",
+			Headers: http.Header{"Content-Range": []string{"bytes 0-4/13"}},
+		},
+		{
+			Method:  "PUT",
+			Path:    "/upl",
+			Body:    "56789",
+			Headers: http.Header{"Content-Range": []string{"bytes 5-9/13"}},
+		},
+		// Insert a error.
+		{
+			Method:  "PUT",
+			Path:    "/upl",
+			Body:    "abc",
+			Headers: http.Header{"Content-Range": []string{"bytes 10-12/13"}},
+			Status:  500,
+		},
+		// Request for uploaded offset #1: failed itself.
+		{
+			Method:  "PUT",
+			Path:    "/upl",
+			Body:    "",
+			Headers: http.Header{"Content-Range": []string{"bytes */13"}},
+			Status:  500,
+		},
+		// Request for uploaded offset #2: indicates part of data uploaded.
+		{
+			Method:          "PUT",
+			Path:            "/upl",
+			Body:            "",
+			Headers:         http.Header{"Content-Range": []string{"bytes */13"}},
+			Status:          308,
+			ResponseHeaders: http.Header{"Range": []string{"bytes=0-7"}},
+		},
+		// Resume of the upload from returned offset.
+		{
+			Method:  "PUT",
+			Path:    "/upl",
+			Body:    "89abc",
+			Headers: http.Header{"Content-Range": []string{"bytes 8-12/13"}},
+		},
 	})
+	err := storage.upload(ctx, "http://localhost/upl", bytes.NewReader([]byte("0123456789abc")))
+	assert.Loosely(t, err, should.BeNil)
 }
 
 func TestDownload(t *testing.T) {
-	ctx := makeTestContext()
+	ctx := makeTestContext(t)
 
-	ftt.Run("With temp directory", t, func(t *ftt.Test) {
-		tempDir := t.TempDir()
-		tempFile := filepath.Join(tempDir, "pkg")
+	tempDir := t.TempDir()
+	tempFile := filepath.Join(tempDir, "pkg")
 
-		t.Run("Download full flow", func(c *ftt.Test) {
-			out, err := os.OpenFile(tempFile, os.O_RDWR|os.O_CREATE, 0666)
-			assert.Loosely(c, err, should.BeNil)
-			defer out.Close()
+	t.Run("Download full flow", func(t *testing.T) {
+		out, err := os.OpenFile(tempFile, os.O_RDWR|os.O_CREATE, 0666)
+		assert.Loosely(t, err, should.BeNil)
+		defer out.Close()
 
-			storage := mockStorageImpl(c, []expectedHTTPCall{
-				// Simulate a transient error.
-				{
-					Method: "GET",
-					Path:   "/dwn",
-					Status: 500,
-					Reply:  "error",
-				},
-				{
-					Method: "GET",
-					Path:   "/dwn",
-					Status: 200,
-					Reply:  "file data",
-				},
-			})
-			h := sha256.New()
-			err = storage.download(ctx, "http://localhost/dwn", out, h)
-			assert.Loosely(c, err, should.BeNil)
-
-			_, _ = out.Seek(0, io.SeekStart)
-			fetched, err := io.ReadAll(out)
-			assert.Loosely(c, err, should.BeNil)
-			assert.Loosely(c, string(fetched), should.Equal("file data"))
-			assert.Loosely(c, common.HexDigest(h), should.Equal("86f3c70fb6673cf303d2206db5f23c237b665d5df9d3e44efef5114845fc9f59"))
+		storage := mockStorageImpl(t, []expectedHTTPCall{
+			// Simulate a transient error.
+			{
+				Method: "GET",
+				Path:   "/dwn",
+				Status: 500,
+				Reply:  "error",
+			},
+			{
+				Method: "GET",
+				Path:   "/dwn",
+				Status: 200,
+				Reply:  "file data",
+			},
 		})
+		h := sha256.New()
+		err = storage.download(ctx, "http://localhost/dwn", out, h)
+		assert.Loosely(t, err, should.BeNil)
+
+		_, _ = out.Seek(0, io.SeekStart)
+		fetched, err := io.ReadAll(out)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(fetched), should.Equal("file data"))
+		assert.Loosely(t, common.HexDigest(h), should.Equal("86f3c70fb6673cf303d2206db5f23c237b665d5df9d3e44efef5114845fc9f59"))
 	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func makeTestContext() context.Context {
-	ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+func makeTestContext(t testing.TB) context.Context {
+	ctx, tc := testclock.UseTime(t.Context(), testclock.TestTimeLocal)
 	tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 		tc.Add(d)
 	})
-	return gologger.StdConfig.Use(ctx)
+	return (&gologger.LoggerConfig{Out: t.Output()}).Use(ctx)
 }
 
 func mockStorageImpl(t testing.TB, expectations []expectedHTTPCall) *storageImpl {

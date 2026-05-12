@@ -43,6 +43,7 @@ package cipd
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -776,6 +777,20 @@ func NewClient(opts ClientOptions) (Client, error) {
 		pluginHost:     pluginHost,
 	}
 
+	// Initialize version cache.
+	if opts.CacheDir != "" || opts.Root != "" {
+		client.versionCache = &internal.VersionCache{
+			FS: fs.NewFileSystem(cmp.Or(
+				opts.CacheDir,
+				filepath.Join(opts.Root, fs.SiteServiceDir),
+			), ""),
+			SaveName: internal.UseLegacyVCName,
+			Refs:     internal.Disabled,
+			// TODO: Hook up ReadOnlyCacheDir
+		}
+		client.versionCacheService = parsed.Host
+	}
+
 	if len(opts.AdmissionPlugin) != 0 && client.pluginHost != nil {
 		client.pluginAdmission, err = client.pluginHost.NewAdmissionPlugin(opts.AdmissionPlugin)
 		if err != nil {
@@ -846,8 +861,8 @@ type clientImpl struct {
 	proxyTransport *proxyclient.ProxyTransport
 
 	// versionCache is a file-system based cache of resolved tags.
-	versionCache     *internal.VersionCache
-	versionCacheInit sync.Once
+	versionCache *internal.VersionCache
+
 	// This is the 'service' (i.e. ServiceURL.host) that we always use when
 	// interacting with the version cache. We cache it here because it requires
 	// handling an error from [url.Parse].
@@ -894,35 +909,6 @@ func (c *clientImpl) clearAdmissionCache(ctx context.Context) {
 	}
 }
 
-// getVersionCache lazy-initializes versionCache and returns it.
-//
-// May return nil if tag cache is disabled.
-func (c *clientImpl) getVersionCache() *internal.VersionCache {
-	c.versionCacheInit.Do(func() {
-		var dir string
-		switch {
-		case c.CacheDir != "":
-			dir = c.CacheDir
-		case c.Root != "":
-			dir = filepath.Join(c.Root, fs.SiteServiceDir)
-		default:
-			return
-		}
-		parsed, err := url.Parse(c.ServiceURL)
-		if err != nil {
-			panic(err) // the URL has been validated in NewClient already
-		}
-		c.versionCache = &internal.VersionCache{
-			FS:       fs.NewFileSystem(dir, ""),
-			SaveName: internal.UseLegacyVCName,
-			Refs:     internal.Disabled,
-			// TODO: Hook up ReadOnlyCacheDir
-		}
-		c.versionCacheService = parsed.Host
-	})
-	return c.versionCache
-}
-
 // instanceCache returns a managed instance cache to download packages into.
 //
 // Returns a new object each time. Multiple InstanceCache objects may perhaps
@@ -931,6 +917,21 @@ func (c *clientImpl) getVersionCache() *internal.VersionCache {
 //
 // This is a heavy object that may spawn multiple goroutines inside. Must be
 // closed with Close() when done working with it.
+//
+// NOTE: This is intentionally not producing a single cache which lives for
+// the life of the client:
+//   - The ManagedInstanceCache RequestInstances/WaitInstance are 'paired'.
+//     Returning the same cache for multiple calls into the client (e.g.
+//     parallel EnsurePackages calls) would result in the two calls inadvertently
+//     seeing each other's requests/responses.
+//   - InstanceCaches with `Tmp = true` would race with each other if multiple
+//     goroutines asked them to fetch the same instance, because in temp mode,
+//     each instance file self-destructs on close.
+//
+// Both of these are fixable with effort, but on the balance it's not worth it;
+// 99.9% of cipd Client usages will call e.g. EnsurePackages once and discard
+// the client. The main reason to share an instance cache is to coordinate the
+// garbage collection processes so multiple processes don't stomp on each other.
 func (c *clientImpl) instanceCache(ctx context.Context) (*internal.ManagedInstanceCache, error) {
 	var cacheDir string
 	var tmp bool
@@ -1201,12 +1202,12 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 	// Use a local cache when resolving tags to avoid round trips to the backend
 	// when calling same 'cipd ensure' command again and again.
 	if common.ValidateInstanceTag(version) == nil {
-		if cache := c.getVersionCache(); cache != nil {
+		if cache := c.versionCache; cache != nil {
 			cacheResolver = cache.ResolveTag
 			cacheAdder = cache.AddTag
 		}
 	} else if common.ValidatePackageRef(version) == nil {
-		if cache := c.getVersionCache(); cache != nil {
+		if cache := c.versionCache; cache != nil {
 			cacheResolver = cache.ResolveRef
 			cacheAdder = cache.AddRef
 		}
@@ -1324,7 +1325,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 
 	// rememberClientRef populates the extracted refs cache.
 	rememberClientRef := func(pin common.Pin, ref *caspb.ObjectRef) {
-		if cache := c.getVersionCache(); cache != nil {
+		if cache := c.versionCache; cache != nil {
 			cache.AddExtractedObjectRef(ctx, c.versionCacheService, pin, clientFileName, ref)
 			c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
 		}
@@ -1336,7 +1337,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	// allows skipping RPCs to the backend on a "happy path", when the client is
 	// already up-to-date.
 	var clientRef *caspb.ObjectRef
-	if cache := c.getVersionCache(); cache != nil {
+	if cache := c.versionCache; cache != nil {
 		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, c.versionCacheService, pin, clientFileName); err != nil {
 			return common.Pin{}, err
 		}
