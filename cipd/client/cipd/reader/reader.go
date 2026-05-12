@@ -116,7 +116,7 @@ type OpenInstanceOpts struct {
 // the caller to close it in this case.
 func OpenInstance(ctx context.Context, r pkg.Source, opts OpenInstanceOpts) (pkg.Instance, error) {
 	out := &packageInstance{data: r}
-	if err := out.open(opts); err != nil {
+	if err := out.open(ctx, opts); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -442,7 +442,7 @@ type packageInstance struct {
 // open reads the package data, verifies the hash and reads manifest.
 //
 // It doesn't check for corruption, but the caller must do so.
-func (inst *packageInstance) open(opts OpenInstanceOpts) error {
+func (inst *packageInstance) open(ctx context.Context, opts OpenInstanceOpts) error {
 	// Enforce consistency of opts, to avoid situations when caller thinks that
 	// InstanceID is used, while in fact it is not.
 	switch opts.VerificationMode {
@@ -480,7 +480,7 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 		if err != nil {
 			return err
 		}
-		if err := calculateHash(inst.data, h); err != nil {
+		if err := calculateHash(ctx, inst.data, h); err != nil {
 			return err
 		}
 		inst.instanceID = common.ObjectRefToInstanceID(&caspb.ObjectRef{
@@ -491,12 +491,17 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 	case VerifyHash:
 		obj := common.InstanceIDToObjectRef(opts.InstanceID)
 		h := common.MustNewHash(obj.HashAlgo)
-		if err := calculateHash(inst.data, h); err != nil {
+		if err := calculateHash(ctx, inst.data, h); err != nil {
+			logging.Errorf(ctx, "%s Hashing FAILED", opts.InstanceID)
 			return err
 		}
 		if common.HexDigest(h) != obj.HexDigest {
+			gotObj := common.ObjectRefFromHash(h)
+			logging.Errorf(ctx, "%s BAD HASH (got %s)", opts.InstanceID,
+				common.ObjectRefToInstanceID(gotObj))
 			return ErrHashMismatch
 		}
+		logging.Infof(ctx, "%s OK", opts.InstanceID)
 		inst.instanceID = opts.InstanceID // validated to match the data!
 
 	case SkipHashVerification:
@@ -591,8 +596,10 @@ func IsCorruptionError(err error) bool {
 // Utilities.
 
 // calculateHash reads the entire file, passing it through the digester.
-func calculateHash(r pkg.Source, h hash.Hash) error {
-	_, err := io.Copy(h, io.NewSectionReader(r, 0, r.Size()))
+func calculateHash(ctx context.Context, src pkg.Source, h hash.Hash) error {
+	r, cancel := ui.MonitorReader(ctx, io.NewSectionReader(src, 0, src.Size()), "Hashing", src.Size())
+	defer cancel()
+	_, err := io.Copy(h, r)
 	if err != nil {
 		return cipderr.IO.Apply(errors.Fmt("calculating instance file hash: %w", err))
 	}
