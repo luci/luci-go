@@ -768,13 +768,14 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 
 	client := &clientImpl{
-		ClientOptions:  opts,
-		cas:            cas,
-		repo:           repo,
-		storage:        s,
-		deployer:       deployer.New(opts.Root),
-		proxyTransport: proxyTransport,
-		pluginHost:     pluginHost,
+		ClientOptions:    opts,
+		cas:              cas,
+		repo:             repo,
+		storage:          s,
+		deployer:         deployer.New(opts.Root),
+		proxyTransport:   proxyTransport,
+		pluginHost:       pluginHost,
+		clientLaunchTime: time.Now(),
 	}
 
 	// Initialize version cache.
@@ -868,6 +869,10 @@ type clientImpl struct {
 	// handling an error from [url.Parse].
 	versionCacheService string
 
+	// clientLaunchTime is the time at which this client was created with
+	// [NewClient], and is used to set [internal.InstanceCache].GCLaunchTime.
+	clientLaunchTime time.Time
+
 	// Plugin system.
 	pluginHost      plugin.Host            // nil if disabled
 	pluginAdmission plugin.AdmissionPlugin // nil if disabled
@@ -931,7 +936,9 @@ func (c *clientImpl) clearAdmissionCache(ctx context.Context) {
 // Both of these are fixable with effort, but on the balance it's not worth it;
 // 99.9% of cipd Client usages will call e.g. EnsurePackages once and discard
 // the client. The main reason to share an instance cache is to coordinate the
-// garbage collection processes so multiple processes don't stomp on each other.
+// garbage collection processes so multiple processes don't stomp on each
+// other. We use `InstanceCache.GCLaunchTime = c.clientLaunchTime` as a
+// mitigation for this.
 func (c *clientImpl) instanceCache(ctx context.Context) (*internal.ManagedInstanceCache, error) {
 	var cacheDir string
 	var tmp bool
@@ -967,9 +974,10 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.ManagedInstan
 
 	return &internal.ManagedInstanceCache{
 		Cache: &internal.InstanceCache{
-			FS:      fs.NewFileSystem(cacheDir, ""),
-			Tmp:     tmp,
-			Fetcher: c.remoteFetchInstance,
+			FS:           fs.NewFileSystem(cacheDir, ""),
+			Tmp:          tmp,
+			Fetcher:      c.remoteFetchInstance,
+			GCLaunchTime: c.clientLaunchTime,
 		},
 		ParallelDownloads: max(0, c.Options().ParallelDownloads),
 	}, nil

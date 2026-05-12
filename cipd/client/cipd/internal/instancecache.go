@@ -171,6 +171,13 @@ type InstanceCache struct {
 	// added before this cache was Launch'd.
 	GCMaxAge time.Duration
 
+	// GCLaunchTime, if set, will override the launch time for this
+	// InstanceCache.
+	//
+	// This will have the effect of only GC'ing instances before this timestamp
+	// (which may be substantially before the cache is actually launched).
+	GCLaunchTime time.Time
+
 	// PassiveWritePolicy adjusts how this InstanceCache is allowed to write
 	// passively to disk. If omitted, the InstanceCache assumes full ability to
 	// write passively.
@@ -181,6 +188,8 @@ type InstanceCache struct {
 	// launchTime is the time at which OpenAsSource or Touch was first called;
 	// this is used to evaluate if instances are too old during garbage
 	// collection.
+	//
+	// If GCLaunchTime is set, this will be a copy of GCLaunchTime.
 	launchTime time.Time
 }
 
@@ -228,7 +237,11 @@ func (c *InstanceCache) maybeLaunch(ctx context.Context) {
 	if !c.launchTime.IsZero() {
 		return
 	}
-	c.launchTime = clock.Now(ctx)
+	if c.GCLaunchTime.IsZero() {
+		c.launchTime = clock.Now(ctx)
+	} else {
+		c.launchTime = c.GCLaunchTime
+	}
 
 	tmp := ""
 	if c.Tmp {
