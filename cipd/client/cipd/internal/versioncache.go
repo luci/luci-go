@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
@@ -311,6 +312,26 @@ func (c *VersionCache) AddRef(ctx context.Context, service string, pin common.Pi
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.added.addRef(refKey{service, pin.PackageName, ref}, pin.InstanceID, clock.Now(ctx))
+	return nil
+}
+
+// AddVersion adds a version depending on the syntax of `vers`.
+//
+// If `vers` is an InstanceID, nothing happens.
+func (c *VersionCache) AddVersion(ctx context.Context, service string, pin common.Pin, vers string) error {
+	switch {
+	case common.ValidateInstanceTag(vers) == nil:
+		return c.AddTag(ctx, service, pin, vers)
+
+	case common.ValidatePackageRef(vers) == nil:
+		return c.AddRef(ctx, service, pin, vers)
+
+	case common.ValidateInstanceID(vers, common.AnyHash) == nil:
+		// Skip.
+
+	default:
+		return errors.Fmt("VersionCache.AddVersion: unable to parse version %q", vers)
+	}
 	return nil
 }
 

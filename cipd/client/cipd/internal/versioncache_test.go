@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/common"
 )
 
 func TestVersionCacheWorks(t *testing.T) {
@@ -469,6 +470,33 @@ func TestVersionCacheLimits(t *testing.T) {
 		assert.That(t, tc2, shouldNotHaveRef(ctx, "service.example.com", "pkg", "ref000"))
 		assert.That(t, tc2, shouldHaveRef(ctx, "service.example.com", "pkg", "ref001", IID1("b")))
 		assert.That(t, tc2, shouldHaveRef(ctx, "service.example.com", "pkg", "ref002", IID1("c")))
+	})
+
+	t.Run("add any version", func(t *testing.T) {
+		ctx := t.Context()
+
+		fsInst := fs.NewFileSystem(t.TempDir(), "")
+		tc := &VersionCache{FS: fsInst}
+
+		tc.AddVersion(ctx, "service.example.com", common.Pin{
+			PackageName: "pkg",
+			InstanceID:  IID2("hello"),
+		}, "tag:1.2.3")
+
+		tc.AddVersion(ctx, "service.example.com", common.Pin{
+			PackageName: "pkg",
+			InstanceID:  IID2("nerp"),
+		}, "latest")
+
+		tc.AddVersion(ctx, "service.example.com", common.Pin{
+			PackageName: "pkg",
+			InstanceID:  IID2("noop"),
+		}, IID2("noop"))
+
+		assert.That(t, tc, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:1.2.3", IID2("hello")))
+		assert.That(t, tc, shouldHaveRef(ctx, "service.example.com", "pkg", "latest", IID2("nerp")))
+		// InstanceID was ignored.
+		assert.That(t, tc.added.count(), should.Equal(2))
 	})
 }
 
