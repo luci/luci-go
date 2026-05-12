@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // InstanceOpenMode describes how an InstanceRequest wants to open the instance.
@@ -64,8 +65,8 @@ type InstanceResult struct {
 	State    any             // copied from the InstanceRequest
 }
 
-// ManagedInstanceCache is a wrapper around an InstanceCache which allows
-// background fetching.
+// ManagedInstanceCache is a wrapper around one or more InstanceCaches which
+// allows background fetching.
 //
 // NOTE: The methods on ManagedInstanceCache are not thread safe, in the
 // sense that you cannot call e.g. RequestInstances, WaitInstance, and/or Close
@@ -77,7 +78,17 @@ type InstanceResult struct {
 // It satisfies instance requests in an arbitrary order, possibly fetching
 // multiple instances in parallel.
 type ManagedInstanceCache struct {
-	Cache *InstanceCache
+	// Caches are the caches to use.
+	//
+	// On a per-request basis, each cache will be queried in order, and each can
+	// produce three outcomes:
+	//   - Hit: Opened source with no error. WaitInstance will return this
+	//     response.
+	//   - Miss: ErrNoFetcher or cipderr.InvalidVersion, will try next
+	//     cache (unless this was the last cache).
+	//   - Err: All other errors are returned immediately, even if some other
+	//     deeper cache *could* have satisfied the request.
+	Caches []*InstanceCache
 
 	// ParallelDownloads limits how many parallel fetches can happen at once.
 	//
@@ -193,7 +204,9 @@ func (c *ManagedInstanceCache) RequestInstances(ctx context.Context, reqs []*Ins
 	}
 	// Pre-mark any existing instances as used so they won't be GC'd by another
 	// process before we actually get around to calling OpenAsSource for them.
-	c.Cache.Touch(ctx, iids...)
+	for _, cache := range c.Caches {
+		cache.Touch(ctx, iids...)
+	}
 
 	c.fetchPending.Add(int32(len(reqs)))
 	for _, r := range reqs {
@@ -220,7 +233,7 @@ func (c *ManagedInstanceCache) WaitInstance() (res *InstanceResult) {
 	return <-c.fetchRes
 }
 
-// Close shuts down goroutines started, then closes the managed cache.
+// Close shuts down goroutines started, then closes all of the managed caches.
 //
 // The caller MUST ensure there are no pending fetches before making this call,
 // or this will panic.
@@ -241,7 +254,9 @@ func (c *ManagedInstanceCache) Close(ctx context.Context) {
 		c.fetchRes = nil
 	}
 
-	c.Cache.Close(ctx)
+	for _, cache := range c.Caches {
+		cache.Close(ctx)
+	}
 }
 
 // handleRequest handles an *InstanceRequest producing an *InstanceResult.
@@ -263,39 +278,57 @@ func (c *ManagedInstanceCache) handleRequest(req *InstanceRequest) *InstanceResu
 	ctx := req.Context
 	pin := req.Pin
 
-	switch src, err := c.Cache.OpenAsSource(ctx, pin); {
-	case err != nil:
-		res.Err = err
-	case req.OpenAs == Source:
-		res.Source = src
-	case req.OpenAs == Instance, req.OpenAs == VerifiedInstance:
-		// Normally, the Fetcher will verify the hash when fetching from the
-		// network. However, in the case where the on-disk state can't be trusted
-		// (e.g. it is a prepared offline cache which doesn't have a trusted chain
-		// of custody from preparation to usage), the caller may require that we
-		// verify the hash when opening the instance.
-		//
-		// We don't do this by default because on slow systems (e.g. tiny ARM SoC,
-		// like raspberry pi) the hash verification can take significant time.
-		// Modern systems with nvme storage will see a couple GBps here.
-		vm := reader.SkipHashVerification
-		if req.OpenAs == VerifiedInstance {
-			vm = reader.VerifyHash
-		}
-		instance, err := reader.OpenInstance(ctx, src, reader.OpenInstanceOpts{
-			VerificationMode: vm,
-			InstanceID:       pin.InstanceID,
-		})
-
-		if err != nil {
-			// We join the src.Close error so the caller can detect
-			// CorruptFileDeletionFailure, if it occurred.
-			res.Err = errors.Join(err, src.Close(ctx, reader.IsCorruptionError(err)))
-		} else {
-			res.Instance = instance
-		}
-	default:
-		panic(fmt.Sprintf("impossible: InstanceRequest.OpenAs: %x", req.OpenAs))
+	if len(c.Caches) == 0 {
+		res.Err = errors.Fmt("no caches configured: %w", ErrNoFetcher)
+		return res
 	}
-	return res
+
+	for i, cache := range c.Caches {
+		switch src, err := cache.OpenAsSource(ctx, pin); {
+		case err != nil:
+			last := i == len(c.Caches)-1
+			if !last && (errors.Is(err, ErrNoFetcher) || cipderr.ToCode(err) == cipderr.InvalidVersion) {
+				continue
+			}
+			res.Err = err
+			return res
+
+		case req.OpenAs == Source:
+			res.Source = src
+			return res
+
+		case req.OpenAs == Instance, req.OpenAs == VerifiedInstance:
+			// Normally, the Fetcher will verify the hash when fetching from the
+			// network. However, in the case where the on-disk state can't be trusted
+			// (e.g. it is a prepared offline cache which doesn't have a trusted
+			// chain of custody from preparation to usage), the caller may require
+			// that we verify the hash when opening the instance.
+			//
+			// We don't do this by default because on slow systems (e.g. tiny ARM
+			// SoC, like raspberry pi) the hash verification can take significant
+			// time. Modern systems with NVMe storage will see a couple GBps here.
+			vm := reader.SkipHashVerification
+			if req.OpenAs == VerifiedInstance {
+				vm = reader.VerifyHash
+			}
+			instance, err := reader.OpenInstance(ctx, src, reader.OpenInstanceOpts{
+				VerificationMode: vm,
+				InstanceID:       pin.InstanceID,
+			})
+
+			if err != nil {
+				// We join the src.Close error so the caller can detect
+				// CorruptFileDeletionFailure, if it occurred.
+				res.Err = errors.Join(err, src.Close(ctx, reader.IsCorruptionError(err)))
+			} else {
+				res.Instance = instance
+			}
+			return res
+
+		default:
+			panic(fmt.Sprintf("impossible: InstanceRequest.OpenAs: %x", req.OpenAs))
+		}
+	}
+
+	panic("impossible: the loop above must return")
 }

@@ -973,12 +973,12 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.ManagedInstan
 	}
 
 	return &internal.ManagedInstanceCache{
-		Cache: &internal.InstanceCache{
+		Caches: []*internal.InstanceCache{{
 			FS:           fs.NewFileSystem(cacheDir, ""),
 			Tmp:          tmp,
 			Fetcher:      c.remoteFetchInstance,
 			GCLaunchTime: c.clientLaunchTime,
-		},
+		}},
 		ParallelDownloads: max(0, c.Options().ParallelDownloads),
 	}, nil
 }

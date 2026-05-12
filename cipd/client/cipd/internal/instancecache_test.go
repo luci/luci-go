@@ -518,7 +518,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 	managedTestEnv := func(t *testing.T) (*ManagedInstanceCache, *instCacheTestEnv, context.Context) {
 		cache, env, ctx := instanceCacheTestSetup(t)
-		ret := &ManagedInstanceCache{Cache: cache}
+		ret := &ManagedInstanceCache{Caches: []*InstanceCache{cache}}
 		t.Cleanup(func() {
 			ret.Close(ctx)
 		})
@@ -694,6 +694,63 @@ func TestManagedInstanceCache(t *testing.T) {
 
 		// But the file is still there!
 		assert.That(t, countTempFiles(t, env.cache), should.Equal(2)) // +1 for state.db.
+	})
+
+	t.Run(`Chained`, func(t *testing.T) {
+		t.Parallel()
+
+		cache, env, ctx := managedTestEnv(t)
+
+		readOnlyCache := &InstanceCache{
+			FS:      fs.NewFileSystem(t.TempDir(), ""),
+			Fetcher: (&trackingFetcher{}).fetch,
+		}
+
+		putNew(t, ctx, readOnlyCache, pin(0))
+		putNew(t, ctx, readOnlyCache, pin(3))
+		readOnlyCache.Fetcher = nil
+		readOnlyCache.PassiveWritePolicy = DisablePassiveWrites
+
+		cache.Caches = []*InstanceCache{readOnlyCache, env.cache}
+
+		// For now, also disable fetches in the default read/write cache.
+		env.cache.Fetcher = nil
+
+		cache.RequestInstances(ctx, []*InstanceRequest{
+			{Context: ctx, Pin: pin(0)},
+			{Context: ctx, Pin: pin(1)},
+			{Context: ctx, Pin: pin(2)},
+			{Context: ctx, Pin: pin(3)},
+		})
+		for range 4 {
+			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+				if res.Pin == pin(0) || res.Pin == pin(3) {
+					assert.NoErr(t, res.Err)
+				} else {
+					assert.ErrIsLike(t, res.Err, ErrNoFetcher)
+				}
+				return
+			})
+		}
+
+		// Re-enable the fetcher, and request something not in the chained cache.
+		env.cache.Fetcher = env.fetcher.fetch
+
+		// We see it!
+		cache.RequestInstances(ctx, []*InstanceRequest{
+			{Context: ctx, Pin: pin(8)},
+		})
+		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+			assert.NoErr(t, res.Err)
+			assert.That(t, res.Pin, should.Match(pin(8)))
+			return
+		})
+
+		// But it is in `cache`, not `readOnlyCache`.
+		testHas(t, ctx, env.cache, pin(8))
+
+		_, exists := accessTime(ctx, readOnlyCache, pin(8))
+		assert.That(t, exists, should.BeFalse, truth.Explain("pin %q exists in readOnlyCache", pin(8)))
 	})
 }
 
