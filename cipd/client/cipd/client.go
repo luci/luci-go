@@ -923,15 +923,15 @@ func (c *clientImpl) getVersionCache() *internal.VersionCache {
 	return c.versionCache
 }
 
-// instanceCache returns an instance cache to download packages into.
+// instanceCache returns a managed instance cache to download packages into.
 //
 // Returns a new object each time. Multiple InstanceCache objects may perhaps
-// share the same underlying cache directory if used concurrently (just like two
-// different CIPD processes share it).
+// share the same underlying cache directory if used concurrently (just like
+// two different CIPD processes share it).
 //
 // This is a heavy object that may spawn multiple goroutines inside. Must be
 // closed with Close() when done working with it.
-func (c *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache, error) {
+func (c *clientImpl) instanceCache(ctx context.Context) (*internal.ManagedInstanceCache, error) {
 	var cacheDir string
 	var tmp bool
 
@@ -964,10 +964,12 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.InstanceCache
 		}
 	}
 
-	return &internal.InstanceCache{
-		FS:                fs.NewFileSystem(cacheDir, ""),
-		Tmp:               tmp,
-		Fetcher:           c.remoteFetchInstance,
+	return &internal.ManagedInstanceCache{
+		Cache: &internal.InstanceCache{
+			FS:      fs.NewFileSystem(cacheDir, ""),
+			Tmp:     tmp,
+			Fetcher: c.remoteFetchInstance,
+		},
 		ParallelDownloads: max(0, c.Options().ParallelDownloads),
 	}, nil
 }

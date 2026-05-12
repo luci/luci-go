@@ -24,7 +24,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -38,7 +37,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
-	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipderr"
 )
@@ -76,43 +74,6 @@ var ErrNoFetcher = cipderr.OfflineClient.Apply(
 //
 // This will be set on [InstanceResponse].Err if it occurred.
 var CorruptFileDeletionFailure = errtag.Make("failed to remove corrupt file", true)
-
-// InstanceOpenMode describes how an InstanceRequest wants to open the instance.
-type InstanceOpenMode byte
-
-const (
-	// Source (the default) indicates that the cache should just return the
-	// pkg.Source without opening the file.
-	Source InstanceOpenMode = iota
-
-	// Instance indicates that the cache should open the pkg.Source as a
-	// pkg.Instance.
-	Instance
-
-	// VerifiedInstance indicates that the cache should open the pkg.Source as a
-	// pkg.Instance, but only after checking that it's hash matches the
-	// InstanceID
-	VerifiedInstance
-)
-
-// InstanceRequest is passed to RequestInstances.
-type InstanceRequest struct {
-	Context context.Context    // carries the cancellation signal
-	Done    context.CancelFunc // called right before the result is enqueued
-	Pin     common.Pin         // identifies the instance to fetch
-	OpenAs  InstanceOpenMode   // indicates how the cache should open the instance file.
-	State   any                // passed to the InstanceResult as is
-}
-
-// InstanceResult is a result of a completed InstanceRequest.
-type InstanceResult struct {
-	Context  context.Context // copied from the InstanceRequest
-	Pin      common.Pin      // the original pin from the InstanceRequest.
-	Err      error           // non-nil if failed to obtain the instance
-	Source   pkg.Source      // set only if OpenAs was Source, must be closed by the caller
-	Instance pkg.Instance    // set only if OpenAs was not Source, must be closed by the caller
-	State    any             // copied from the InstanceRequest
-}
 
 // PassiveWritePolicy describes how this InstanceCache can passively write to
 // disk. By default, reading from the instance cache is allowed to write
@@ -170,13 +131,10 @@ func (p PassiveWritePolicy) String() string {
 // not requested from this cache.
 const GCOlderThanLaunch time.Duration = -1
 
-// InstanceCache is a file-system-based, thread-safe, LRU cache of instances.
+// InstanceCache is a file-system-based cache of instances.
 //
-// It also knows how to populate the cache using the given Fetcher callback,
-// fetching multiple instances concurrently.
-//
-// Does not validate instance hashes; it is the responsibility of the supplied
-// Fetcher callback.
+// It optionally knows how to populate the cache using the given Fetcher
+// callback.
 type InstanceCache struct {
 	// FS is a root of the cache directory.
 	FS fs.FileSystem
@@ -196,20 +154,6 @@ type InstanceCache struct {
 	// fail with an error wrapping [ErrNoFetcher] (accessing cached instances
 	// still works).
 	Fetcher Fetcher
-
-	// ParallelDownloads limits how many parallel fetches can happen at once.
-	//
-	// The zero value means to do fetches in a blocking way in WaitInstance.
-	ParallelDownloads int
-
-	// ParallelDownloadsFastStart, if true, will cause the cache to immediately
-	// start with `ParallelDownloads` fetches.
-	//
-	// If false, then the cache will 'ramp up' to `ParallelDownloads` number of
-	// concurrent fetches. If you are using this InstanceCache with downstream
-	// unpacking/installation of instances, then you want this to allow the
-	// unpacking goroutines to start working as early as possible.
-	ParallelDownloadsFastStart bool
 
 	// ExactGC causes the garbage collection to collect all instances which were
 	// not requested by this cache, and disables automatic collection as part of
@@ -234,15 +178,10 @@ type InstanceCache struct {
 
 	stateLock sync.Mutex // synchronizes access to the state file.
 
-	// launchTime is the time at which RequestInstances was first called; this is
-	// used to evaluate if instances are too old during garbage collection. Zero
-	// if RequestInstances has not been called yet.
+	// launchTime is the time at which OpenAsSource or Touch was first called;
+	// this is used to evaluate if instances are too old during garbage
+	// collection.
 	launchTime time.Time
-
-	fetchPending atomic.Int32
-	fetchReq     chan *InstanceRequest
-	fetchRes     chan *InstanceResult // non-nil only if ParallelDownloads > 0
-	fetchWG      sync.WaitGroup
 }
 
 // cacheFile is a downloaded instance file, implements pkg.Source.
@@ -286,10 +225,6 @@ func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
 //
 // called implicitly by RequestInstances.
 func (c *InstanceCache) maybeLaunch(ctx context.Context) {
-	if c.ParallelDownloads < 0 {
-		panic("ParallelDownloads must be non-negative")
-	}
-
 	if !c.launchTime.IsZero() {
 		return
 	}
@@ -304,63 +239,6 @@ func (c *InstanceCache) maybeLaunch(ctx context.Context) {
 		policy = fmt.Sprintf(" (%s)", c.PassiveWritePolicy.String())
 	}
 	logging.Infof(ctx, "Using%s%s instance cache at %s", tmp, policy, c.FS.Root())
-
-	// This is an effectively an unlimited buffer. At very least it should be
-	// large enough to hold all requests submitted by RequestInstances(...) before
-	// the first WaitInstance() call when ParallelDownloads == 0 and the channel
-	// is drained only in WaitInstance(). When ParallelDownloads > 0 the buffer
-	// size doesn't matter much.
-	c.fetchReq = make(chan *InstanceRequest, 1000000)
-
-	// If allowed to fetch in parallel, run the work pool that does the job.
-	if c.ParallelDownloads > 0 {
-		// The buffer size here controls how many packages are allowed to sit in the
-		// "downloaded, but not yet installed" queue before the pipeline starts
-		// blocking new downloads. Each such pending file takes some resources (at
-		// least an open file descriptor and some memory), so it's better to limit
-		// the buffer size by some reasonable number.
-		c.fetchRes = make(chan *InstanceResult, 50)
-
-		// Start with 1 allowed concurrent download. It will eventually ramp up to
-		// ParallelDownloads with each finished download.
-		//
-		// This is a heuristic for `ensure`-type flows to make sure we download the
-		// first package ASAP, so the installer has something to install while more
-		// packages are being downloaded.
-		//
-		// When 'fast starting', just launch all workers immediately. This
-		// accelerates flows such as cache preparation which do not have any
-		// downstream process like unzipping and just want to fetch as quickly as
-		// possible.
-		//
-		// NOTE: workersLeft can become up to c.ParallelDownloads negative, but
-		// workers will only launch a new worker if they observe it as >= 0 after
-		// decrementing it so we should only launch a max of c.ParallelDownloads
-		// workers.
-		var workersLeft atomic.Int32
-
-		var worker func()
-		worker = func() {
-			for req := range c.fetchReq {
-				c.fetchRes <- c.handleRequest(req)
-
-				if workersLeft.Load() > 0 {
-					if workersLeft.Add(-1) >= 0 {
-						c.fetchWG.Go(worker)
-					}
-				}
-			}
-		}
-
-		if c.ParallelDownloadsFastStart {
-			for range c.ParallelDownloads {
-				c.fetchWG.Go(worker)
-			}
-		} else {
-			workersLeft.Store(int32(c.ParallelDownloads - 1))
-			c.fetchWG.Go(worker)
-		}
-	}
 }
 
 // `now` implements a gated version of clock.Now(ctx) which is resistant to
@@ -387,24 +265,12 @@ func (c *InstanceCache) now(ctx context.Context) time.Time {
 	return c.launchTime.Add(time.Nanosecond)
 }
 
-// Close shuts down goroutines started, cleans up temp files and does a garbage
-// collection pass.
-//
-// The caller should ensure there's no pending fetches before making this call.
+// Close cleans up temp files and does a garbage collection pass.
 //
 // Resets this InstanceCache to its initial state.
 func (c *InstanceCache) Close(ctx context.Context) {
-	if c.HasPendingFetches() {
-		panic("closing an InstanceCache with some fetches still pending")
-	}
-
 	if c.launchTime.IsZero() {
 		return
-	}
-
-	close(c.fetchReq)
-	if c.ParallelDownloads > 0 {
-		c.fetchWG.Wait()
 	}
 
 	// Self-destruct if the cache was temporary.
@@ -421,116 +287,22 @@ func (c *InstanceCache) Close(ctx context.Context) {
 	}
 
 	// Finally, reset state.
-	c.fetchPending.Store(0)
-	c.fetchReq = nil
-	c.fetchRes = nil
 	c.launchTime = time.Time{}
 }
 
-// RequestInstances enqueues requests to fetch instances into the cache.
+// OpenAsSource returns the instance file as a pkg.Source.
 //
-// The results can be waited upon using WaitInstance() method. Each enqueued
-// InstanceRequest will get an exactly one InstanceResponse (perhaps with an
-// error inside). The order of responses may not match the order of requests.
-func (c *InstanceCache) RequestInstances(ctx context.Context, reqs []*InstanceRequest) {
-	// Ensure we are launched.
+// If the on-disk cache does not contain this instance, it will be fetched with
+// Fetcher.
+//
+// This is fully synchronous - fetching (if needed) will happen inline with
+// this call.
+//
+// If you need to access multiple instances concurrently, see
+// [ManagedInstanceCache].
+func (c *InstanceCache) OpenAsSource(ctx context.Context, pin common.Pin) (pkg.Source, error) {
 	c.maybeLaunch(ctx)
 
-	now := c.now(ctx)
-	_ = c.withState(ctx, now, false, func(s *messages.InstanceCache) (save bool) {
-		for _, r := range reqs {
-			// Mark any existing instances as used so they
-			// won't be GCd.
-			if e, ok := s.Entries[r.Pin.InstanceID]; ok {
-				e.LastAccess = timestamppb.New(now)
-			}
-		}
-		return true
-	})
-
-	c.fetchPending.Add(int32(len(reqs)))
-	for _, r := range reqs {
-		c.fetchReq <- r
-	}
-}
-
-// HasPendingFetches is true if there's some uncompleted InstanceRequest whose
-// completion notification will (eventually) unblock WaitInstance.
-func (c *InstanceCache) HasPendingFetches() bool {
-	return c.fetchPending.Load() > 0
-}
-
-// WaitInstance blocks until some InstanceRequest is available.
-func (c *InstanceCache) WaitInstance() (res *InstanceResult) {
-	if c.ParallelDownloads == 0 {
-		// No parallelism allowed, fetch inline.
-		res = c.handleRequest(<-c.fetchReq)
-	} else {
-		// Otherwise wait for the work pool to finish a request.
-		res = <-c.fetchRes
-	}
-	c.fetchPending.Add(-1)
-	return
-}
-
-// handleRequest handles an *InstanceRequest producing an *InstanceResult.
-func (c *InstanceCache) handleRequest(req *InstanceRequest) *InstanceResult {
-	if req.Done != nil {
-		defer req.Done()
-	}
-
-	res := &InstanceResult{
-		Context: req.Context,
-		Pin:     req.Pin,
-		Err:     req.Context.Err(),
-		State:   req.State,
-	}
-	if res.Err != nil {
-		return res
-	}
-
-	ctx := req.Context
-	pin := req.Pin
-
-	switch src, err := c.openAsSource(ctx, pin); {
-	case err != nil:
-		res.Err = err
-	case req.OpenAs == Source:
-		res.Source = src
-	case req.OpenAs == Instance, req.OpenAs == VerifiedInstance:
-		// Normally, the Fetcher will verify the hash when fetching from the
-		// network. However, in the case where the on-disk state can't be trusted
-		// (e.g. it is a prepared offline cache which doesn't have a trusted chain
-		// of custody from preparation to usage), the caller may require that we
-		// verify the hash when opening the instance.
-		//
-		// We don't do this by default because on slow systems (e.g. tiny ARM SoC,
-		// like raspberry pi) the hash verification can take significant time.
-		// Modern systems with nvme storage will see a couple GBps here.
-		vm := reader.SkipHashVerification
-		if req.OpenAs == VerifiedInstance {
-			vm = reader.VerifyHash
-		}
-		instance, err := reader.OpenInstance(ctx, src, reader.OpenInstanceOpts{
-			VerificationMode: vm,
-			InstanceID:       pin.InstanceID,
-		})
-
-		if err != nil {
-			// We join the src.Close error so the caller can detect
-			// CorruptFileDeletionFailure, if it occurred.
-			res.Err = errors.Join(err, src.Close(ctx, reader.IsCorruptionError(err)))
-		} else {
-			res.Instance = instance
-		}
-	default:
-		panic(fmt.Sprintf("impossible: InstanceRequest.OpenAs: %x", req.OpenAs))
-	}
-	return res
-}
-
-// openAsSource fetches the instance file and returns it as pkg.Source.
-func (c *InstanceCache) openAsSource(ctx context.Context, pin common.Pin) (pkg.Source, error) {
 	f, err := c.openOrFetch(ctx, pin)
 	if err != nil {
 		return nil, err
@@ -574,7 +346,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			logging.Warningf(ctx, "Could not get %s from the cache: %s", pin, err)
 		default:
 			logging.Infof(ctx, "Cache hit for %s", pin)
-			c.touch(ctx, pin.InstanceID) // Bump its last access time.
+			c.Touch(ctx, pin.InstanceID) // Bump its last access time.
 			return file, nil
 		}
 
@@ -612,25 +384,35 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 			logging.Errorf(ctx, "Failed to open the instance %s: %s", pin, err)
 			return nil, cipderr.IO.Apply(errors.Fmt("opening the cached instance %s: %w", pin, err))
 		default:
-			c.touch(ctx, pin.InstanceID) // Mark it as accessed.
+			c.Touch(ctx, pin.InstanceID) // Mark it as accessed.
 			return file, nil
 		}
 	}
 }
 
-func (c *InstanceCache) touch(ctx context.Context, instanceID string) {
+// Touch resets the LastAccess time of `instanceIDs` to `now`.
+//
+// This will touch instances regardless of the existence of the instanceID in
+// the cache. This can be used prior to [InstanceCache.OpenAsSource] to
+// speculatively reset the access time before checking to see if the instance
+// is actually present on disk.
+func (c *InstanceCache) Touch(ctx context.Context, instanceIDs ...string) {
+	c.maybeLaunch(ctx)
+
 	now := c.now(ctx)
 	c.withState(ctx, now, false, func(s *messages.InstanceCache) (save bool) {
-		// Update LastAccess time.
-		entry := s.Entries[instanceID]
-		if entry == nil {
-			entry = &messages.InstanceCache_Entry{}
-			if s.Entries == nil {
-				s.Entries = map[string]*messages.InstanceCache_Entry{}
+		for _, iid := range instanceIDs {
+			// Update LastAccess time.
+			entry := s.Entries[iid]
+			if entry == nil {
+				entry = &messages.InstanceCache_Entry{}
+				if s.Entries == nil {
+					s.Entries = map[string]*messages.InstanceCache_Entry{}
+				}
+				s.Entries[iid] = entry
 			}
-			s.Entries[instanceID] = entry
+			entry.LastAccess = timestamppb.New(now)
 		}
-		entry.LastAccess = timestamppb.New(now)
 		return true
 	})
 }
