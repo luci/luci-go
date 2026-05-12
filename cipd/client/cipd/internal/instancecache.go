@@ -410,6 +410,10 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 // speculatively reset the access time before checking to see if the instance
 // is actually present on disk.
 func (c *InstanceCache) Touch(ctx context.Context, instanceIDs ...string) {
+	if c.PassiveWritePolicy.has(DisableStateWrite) {
+		return
+	}
+
 	c.maybeLaunch(ctx)
 
 	now := c.now(ctx)
