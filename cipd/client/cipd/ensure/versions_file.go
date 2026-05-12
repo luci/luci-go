@@ -112,12 +112,10 @@ func (v VersionsFile) ResolveVersion(pkg, ver string) (common.Pin, error) {
 		cipderr.InvalidVersion.WithDetails(cipderr.Details{
 			Package: pkg,
 			Version: ver,
-		}).Apply(errors.
-
-			// Equal returns true if version files have same entries.
-			New("not in the versions file"))
+		}).Apply(errors.New("not in the versions file"))
 }
 
+// Equal returns true if version files have same entries.
 func (v VersionsFile) Equal(a VersionsFile) bool {
 	if len(v) != len(a) {
 		return false

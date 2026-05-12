@@ -118,6 +118,10 @@ const (
 	//
 	// See ParallelDownloads client option.
 	DefaultParallelDownloads = 4
+
+	// instancesSubdir is the subdirectory in the cipd cache directory for
+	// the instance cache.
+	instancesSubdir = "instances"
 )
 
 // Environment variable definitions
@@ -510,6 +514,8 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 			} else {
 				opts.ParallelDownloads = val
 			}
+		} else {
+			opts.ParallelDownloads = DefaultParallelDownloads
 		}
 	}
 	if opts.UserAgent == "" {
@@ -687,6 +693,26 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	if opts.ParallelDownloads == 0 {
 		opts.ParallelDownloads = DefaultParallelDownloads
+	}
+
+	// Ensure all of our paths are absolute.
+	toAbs := []struct {
+		name string
+		path *string
+	}{
+		{"Root", &opts.Root},
+		{"CacheDir", &opts.CacheDir},
+		//{"ReadOnlyCacheDir", &opts.ReadOnlyCacheDir},
+	}
+	for _, entry := range toAbs {
+		if *entry.path != "" {
+			var err error
+			*entry.path, err = filepath.Abs(*entry.path)
+			if err != nil {
+				return nil, cipderr.BadArgument.Apply(
+					errors.Fmt("Converting %s (%q) to absolute: %w", entry.name, opts.Root, err))
+			}
+		}
 	}
 
 	// Validate and normalize service URL.
@@ -969,7 +995,7 @@ func (c *clientImpl) instanceCache(ctx context.Context) (*internal.ManagedInstan
 
 	if c.CacheDir != "" {
 		// This is a persistent global cache (not a temp one).
-		cacheDir = filepath.Join(c.CacheDir, "instances")
+		cacheDir = filepath.Join(c.CacheDir, instancesSubdir)
 	} else {
 		// This is going to be a temporary cache that self-destructs.
 		tmp = true
