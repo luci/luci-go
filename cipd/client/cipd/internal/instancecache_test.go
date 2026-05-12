@@ -115,22 +115,6 @@ func fakeData(ctx context.Context, p common.Pin) (string, error) {
 	return "data:" + p.InstanceID, nil
 }
 
-func waitInstance(t testing.TB, cache *ManagedInstanceCache, cb func(res *InstanceResult) (corrupted bool)) {
-	t.Helper()
-
-	res := cache.WaitInstance()
-	corrupted := false
-	defer func() {
-		if res.Source != nil {
-			assert.Loosely(t, res.Source.Close(t.Context(), corrupted), should.BeNil, truth.LineContext())
-		}
-		if res.Instance != nil {
-			assert.Loosely(t, res.Instance.Close(t.Context(), corrupted), should.BeNil, truth.LineContext())
-		}
-	}()
-	corrupted = cb(res)
-}
-
 // access does a OpenAsSource(), checks that it does not return an error, then
 // calls the callback.
 //
@@ -244,7 +228,7 @@ func instanceCacheTestSetup(t testing.TB) (*ManagedInstanceCache, *instCacheTest
 	return cache, &instCacheTestEnv{cache, tempDir, fetcher, tc}, ctx
 }
 
-func TestManagedInstanceCache(t *testing.T) {
+func TestInstanceCache(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Works in general", func(t *testing.T) {
@@ -311,90 +295,6 @@ func TestManagedInstanceCache(t *testing.T) {
 		})
 	})
 
-	mkReqs := func(ctx context.Context, N int) []*InstanceRequest {
-		var reqs []*InstanceRequest
-		for i := range N {
-			reqs = append(reqs, &InstanceRequest{
-				Context: ctx,
-				Pin:     pin(i),
-				State:   i,
-			})
-		}
-		return reqs
-	}
-
-	t.Run("Preserves the order when using single stream", func(t *testing.T) {
-		t.Parallel()
-		cache, _, ctx := instanceCacheTestSetup(t)
-		cache.ParallelDownloads = 1
-
-		reqs := mkReqs(ctx, 100)
-
-		cache.RequestInstances(ctx, reqs)
-		for i := 0; i < len(reqs); i++ {
-			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
-				assert.Loosely(t, res.Err, should.BeNil)
-				assert.Loosely(t, res.State.(int), should.Equal(i))
-
-				data, err := fakeData(ctx, pin(i))
-				assert.NoErr(t, err)
-				assert.Loosely(t, readSrc(t, res.Source), should.Equal(data))
-				return
-			})
-		}
-	})
-
-	t.Run("Doesn't deadlock", func(t *testing.T) {
-		t.Parallel()
-		cache, _, ctx := instanceCacheTestSetup(t)
-		cache.ParallelDownloads = 4
-
-		reqs := mkReqs(ctx, 100)
-
-		seen := map[int]struct{}{}
-
-		cache.RequestInstances(ctx, reqs)
-		for i := 0; i < len(reqs); i++ {
-			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
-				assert.Loosely(t, res.Err, should.BeNil)
-				seen[res.State.(int)] = struct{}{}
-				return
-			})
-		}
-
-		assert.Loosely(t, len(seen), should.Equal(len(reqs)))
-	})
-
-	t.Run("Handles errors", func(t *testing.T) {
-		t.Parallel()
-		cache, env, ctx := instanceCacheTestSetup(t)
-		cache.ParallelDownloads = 4
-
-		reqs := mkReqs(ctx, 100)
-
-		// Make errCount fetches fail and rest succeed.
-		const errCount = 10
-		env.fetcher.errFn = func(fetchID int32) error {
-			if fetchID <= errCount {
-				return fmt.Errorf("boom %d", fetchID)
-			}
-			return nil
-		}
-
-		cache.RequestInstances(ctx, reqs)
-
-		errs := 0
-		for i := 0; i < len(reqs); i++ {
-			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
-				if res.Err != nil {
-					errs++
-				}
-				return
-			})
-		}
-		assert.Loosely(t, errs, should.Equal(errCount))
-	})
-
 	t.Run("GC respects MaxAge vs launchTime", func(t *testing.T) {
 		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
@@ -416,7 +316,7 @@ func TestManagedInstanceCache(t *testing.T) {
 
 		// Relaunch the cache and close it to do another GC pass with launchTime
 		// == clock.Now.
-		cache.RequestInstances(ctx, nil)
+		cache.Cache.OpenAsSource(ctx, common.Pin{})
 		assert.That(t, cache.Cache.launchTime, should.Match(clock.Now(ctx)))
 		cache.Close(ctx)
 
@@ -432,90 +332,13 @@ func TestManagedInstanceCache(t *testing.T) {
 		}
 	})
 
-	t.Run("RequestInstancesDoesNotEvictEntriesToBeFetched", func(t *testing.T) {
-		t.Parallel()
-		cache, env, ctx := instanceCacheTestSetup(t)
-		cache.Cache.GCMaxAge = 2 * time.Second
-		for i := range 8 {
-			putNew(t, ctx, cache.Cache, pin(i))
-		}
-		// At this point, 8 fetches have been done.
-		assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(8))
-
-		env.tc.Add(3 * time.Second)
-
-		// All of the cache entries are now older than cache.maxAge,
-		// but we are fetching them again, so they should not be
-		// evicted.
-		var ir []*InstanceRequest
-		// A new download will trigger gc
-		ir = append(ir, &InstanceRequest{Context: ctx, Pin: pin(10)})
-		for i := range 8 {
-			ir = append(ir, &InstanceRequest{Context: ctx, Pin: pin(i)})
-		}
-		cache.RequestInstances(ctx, ir)
-
-		for range 9 {
-			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
-				assert.Loosely(t, res.Err, should.BeNil)
-				return
-			})
-		}
-
-		// Only one new fetch should happen, for pin 10.
-		assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(9))
-	})
-
-	testSync := func(t testing.TB, causeResync func(stateDbPath string)) {
-		cache, env, ctx := instanceCacheTestSetup(t)
-		const count = 10
-
-		// Add instances.
-		for i := range count {
-			putNew(t, ctx, cache.Cache, pin(i))
-		}
-
-		causeResync(filepath.Join(env.tempDir, instanceCacheStateFilename))
-
-		// state.db must be restored.
-		for i := range count {
-			lastAccess, ok := accessTime(ctx, cache.Cache, pin(i))
-			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, lastAccess, should.Match(clock.Now(ctx)))
-		}
-
-		_, ok := accessTime(ctx, cache.Cache, common.Pin{
-			PackageName: "nonexistent",
-			InstanceID:  "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-		})
-		assert.Loosely(t, ok, should.BeFalse)
-	}
-
-	t.Run("state.db disappeared", func(t *testing.T) {
-		t.Parallel()
-		testSync(t, func(stateDbPath string) {
-			err := os.Remove(stateDbPath)
-			assert.Loosely(t, err, should.BeNil)
-		})
-	})
-
-	t.Run("state.db corrupted", func(t *testing.T) {
-		t.Parallel()
-		testSync(t, func(stateDbPath string) {
-			f, err := os.Create(stateDbPath)
-			assert.Loosely(t, err, should.BeNil)
-			f.WriteString("blah")
-			defer f.Close()
-		})
-	})
-
 	t.Run(`ExactGC`, func(t *testing.T) {
 		t.Parallel()
 		cache, env, ctx := instanceCacheTestSetup(t)
 		cache.Cache.ExactGC = true
 
 		// Ensure the cache is launched.
-		cache.RequestInstances(ctx, nil)
+		cache.Cache.OpenAsSource(ctx, common.Pin{})
 
 		// Advance time a bit so all these pins initially start with a time >
 		// launchTime.
@@ -557,50 +380,8 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache, _, ctx := instanceCacheTestSetup(t)
 		cache.Cache.Fetcher = nil
 
-		cache.RequestInstances(ctx, []*InstanceRequest{
-			{Context: ctx, Pin: pin(0)},
-		})
-
-		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
-			assert.ErrIsLike(t, res.Err, ErrNoFetcher)
-			return
-		})
-	})
-
-	t.Run(`VerifyHash`, func(t *testing.T) {
-		t.Parallel()
-		cache, _, ctx := instanceCacheTestSetup(t)
-		pin, _, err := mkContentPin(ctx, "hello")
-		assert.NoErr(t, err)
-
-		putNew(t, ctx, cache.Cache, pin)
-		cache.Cache.Fetcher = nil
-
-		cache.RequestInstances(ctx, []*InstanceRequest{
-			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
-		})
-		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
-			assert.NoErr(t, res.Err)
-			return
-		})
-
-		// Now corrupt the file.
-		assert.NoErr(t, cache.Cache.FS.EnsureFile(ctx, filepath.Join(cache.Cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
-			_, err := fmt.Fprintf(f, "I AM A BANANA")
-			return err
-		}))
-
-		// Now we will see the cache corruption.
-		cache.RequestInstances(ctx, []*InstanceRequest{
-			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
-		})
-		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
-			assert.ErrIsLike(t, res.Err, reader.ErrHashMismatch)
-			return
-		})
-
-		// And the file has been deleted.
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1)) // +1 for state.db.
+		_, err := cache.Cache.OpenAsSource(ctx, pin(0))
+		assert.ErrIsLike(t, err, ErrNoFetcher)
 	})
 
 	t.Run(`DisableGC`, func(t *testing.T) {
@@ -609,7 +390,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache.Cache.ExactGC = true
 
 		// Launch the cache.
-		cache.RequestInstances(ctx, nil)
+		cache.Cache.OpenAsSource(ctx, common.Pin{})
 		env.tc.Add(time.Millisecond)
 
 		putNew(t, ctx, cache.Cache, pin(0))
@@ -625,7 +406,7 @@ func TestManagedInstanceCache(t *testing.T) {
 		env.tc.Add(time.Minute)
 
 		// Relaunch + Close/GC again.
-		cache.RequestInstances(ctx, nil) // Relaunch cache at `now`.
+		cache.Cache.OpenAsSource(ctx, common.Pin{})
 		cache.Close(ctx)
 
 		// We still have all GC'able instances.
@@ -634,39 +415,10 @@ func TestManagedInstanceCache(t *testing.T) {
 		cache.Cache.PassiveWritePolicy = 0
 
 		// Relaunch + Close/GC again.
-		cache.RequestInstances(ctx, nil) // Relaunch cache at `now`.
+		cache.Cache.OpenAsSource(ctx, common.Pin{})
 		cache.Close(ctx)
 
 		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1)) // Everything is gone.
-	})
-
-	t.Run(`DisableCorruptDeletion`, func(t *testing.T) {
-		t.Parallel()
-		cache, _, ctx := instanceCacheTestSetup(t)
-		cache.Cache.PassiveWritePolicy = DisableCorruptDeletion
-		pin, _, err := mkContentPin(ctx, "hello")
-		assert.NoErr(t, err)
-
-		putNew(t, ctx, cache.Cache, pin)
-		cache.Cache.Fetcher = nil
-
-		// Now corrupt the file.
-		assert.NoErr(t, cache.Cache.FS.EnsureFile(ctx, filepath.Join(cache.Cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
-			_, err := fmt.Fprintf(f, "I AM A BANANA")
-			return err
-		}))
-
-		// Now we will see the cache corruption.
-		cache.RequestInstances(ctx, []*InstanceRequest{
-			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
-		})
-		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
-			assert.ErrIsLike(t, res.Err, reader.ErrHashMismatch)
-			return
-		})
-
-		// But the file is still there!
-		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(2)) // +1 for state.db.
 	})
 
 	t.Run(`DisableStateWrite`, func(t *testing.T) {
@@ -732,6 +484,256 @@ func TestManagedInstanceCache(t *testing.T) {
 		allIDs, err = cache.Cache.AllInstanceIDs(ctx, true)
 		assert.NoErr(t, err)
 		assert.That(t, allIDs, should.Match(want))
+	})
+}
+
+func TestManagedInstanceCache(t *testing.T) {
+	t.Parallel()
+
+	waitInstance := func(t testing.TB, cache *ManagedInstanceCache, cb func(res *InstanceResult) (corrupted bool)) {
+		t.Helper()
+
+		res := cache.WaitInstance()
+		corrupted := false
+		defer func() {
+			if res.Source != nil {
+				assert.Loosely(t, res.Source.Close(t.Context(), corrupted), should.BeNil, truth.LineContext())
+			}
+			if res.Instance != nil {
+				assert.Loosely(t, res.Instance.Close(t.Context(), corrupted), should.BeNil, truth.LineContext())
+			}
+		}()
+		corrupted = cb(res)
+	}
+
+	mkReqs := func(ctx context.Context, N int) []*InstanceRequest {
+		var reqs []*InstanceRequest
+		for i := range N {
+			reqs = append(reqs, &InstanceRequest{
+				Context: ctx,
+				Pin:     pin(i),
+				State:   i,
+			})
+		}
+		return reqs
+	}
+
+	t.Run("Preserves the order when using single stream", func(t *testing.T) {
+		t.Parallel()
+		cache, _, ctx := instanceCacheTestSetup(t)
+		cache.ParallelDownloads = 1
+
+		reqs := mkReqs(ctx, 100)
+
+		cache.RequestInstances(ctx, reqs)
+		for i := range reqs {
+			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+				assert.Loosely(t, res.Err, should.BeNil)
+				assert.Loosely(t, res.State.(int), should.Equal(i))
+
+				data, err := fakeData(ctx, pin(i))
+				assert.NoErr(t, err)
+				assert.Loosely(t, readSrc(t, res.Source), should.Equal(data))
+				return
+			})
+		}
+	})
+
+	t.Run("Doesn't deadlock", func(t *testing.T) {
+		t.Parallel()
+		cache, _, ctx := instanceCacheTestSetup(t)
+		cache.ParallelDownloads = 4
+
+		reqs := mkReqs(ctx, 100)
+
+		seen := map[int]struct{}{}
+
+		cache.RequestInstances(ctx, reqs)
+		for range reqs {
+			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+				assert.Loosely(t, res.Err, should.BeNil)
+				seen[res.State.(int)] = struct{}{}
+				return
+			})
+		}
+
+		assert.Loosely(t, len(seen), should.Equal(len(reqs)))
+	})
+
+	t.Run("Handles errors", func(t *testing.T) {
+		t.Parallel()
+		cache, env, ctx := instanceCacheTestSetup(t)
+		cache.ParallelDownloads = 4
+
+		reqs := mkReqs(ctx, 100)
+
+		// Make errCount fetches fail and rest succeed.
+		const errCount = 10
+		env.fetcher.errFn = func(fetchID int32) error {
+			if fetchID <= errCount {
+				return fmt.Errorf("boom %d", fetchID)
+			}
+			return nil
+		}
+
+		cache.RequestInstances(ctx, reqs)
+
+		errs := 0
+		for range reqs {
+			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+				if res.Err != nil {
+					errs++
+				}
+				return
+			})
+		}
+		assert.Loosely(t, errs, should.Equal(errCount))
+	})
+
+	t.Run("RequestInstancesDoesNotEvictEntriesToBeFetched", func(t *testing.T) {
+		t.Parallel()
+		cache, env, ctx := instanceCacheTestSetup(t)
+		cache.Cache.GCMaxAge = 2 * time.Second
+		for i := range 8 {
+			putNew(t, ctx, cache.Cache, pin(i))
+		}
+		// At this point, 8 fetches have been done.
+		assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(8))
+
+		env.tc.Add(3 * time.Second)
+
+		// All of the cache entries are now older than cache.maxAge,
+		// but we are fetching them again, so they should not be
+		// evicted.
+		var ir []*InstanceRequest
+		// A new download will trigger gc
+		ir = append(ir, &InstanceRequest{Context: ctx, Pin: pin(10)})
+		for i := range 8 {
+			ir = append(ir, &InstanceRequest{Context: ctx, Pin: pin(i)})
+		}
+		cache.RequestInstances(ctx, ir)
+
+		for range 9 {
+			waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+				assert.Loosely(t, res.Err, should.BeNil)
+				return
+			})
+		}
+
+		// Only one new fetch should happen, for pin 10.
+		assert.Loosely(t, env.fetcher.calls.Load(), should.Equal(9))
+	})
+
+	t.Run(`VerifyHash`, func(t *testing.T) {
+		t.Parallel()
+		cache, _, ctx := instanceCacheTestSetup(t)
+		pin, _, err := mkContentPin(ctx, "hello")
+		assert.NoErr(t, err)
+
+		putNew(t, ctx, cache.Cache, pin)
+		cache.Cache.Fetcher = nil
+
+		cache.RequestInstances(ctx, []*InstanceRequest{
+			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
+		})
+		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+			assert.NoErr(t, res.Err)
+			return
+		})
+
+		// Now corrupt the file.
+		assert.NoErr(t, cache.Cache.FS.EnsureFile(ctx, filepath.Join(cache.Cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
+			_, err := fmt.Fprintf(f, "I AM A BANANA")
+			return err
+		}))
+
+		// Now we will see the cache corruption.
+		cache.RequestInstances(ctx, []*InstanceRequest{
+			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
+		})
+		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+			assert.ErrIsLike(t, res.Err, reader.ErrHashMismatch)
+			return
+		})
+
+		// And the file has been deleted.
+		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(1)) // +1 for state.db.
+	})
+
+	t.Run(`DisableCorruptDeletion`, func(t *testing.T) {
+		t.Parallel()
+		cache, _, ctx := instanceCacheTestSetup(t)
+		cache.Cache.PassiveWritePolicy = DisableCorruptDeletion
+		pin, _, err := mkContentPin(ctx, "hello")
+		assert.NoErr(t, err)
+
+		putNew(t, ctx, cache.Cache, pin)
+		cache.Cache.Fetcher = nil
+
+		// Now corrupt the file.
+		assert.NoErr(t, cache.Cache.FS.EnsureFile(ctx, filepath.Join(cache.Cache.FS.Root(), pin.InstanceID), func(f *os.File) error {
+			_, err := fmt.Fprintf(f, "I AM A BANANA")
+			return err
+		}))
+
+		// Now we will see the cache corruption.
+		cache.RequestInstances(ctx, []*InstanceRequest{
+			{Context: ctx, Pin: pin, OpenAs: VerifiedInstance},
+		})
+		waitInstance(t, cache, func(res *InstanceResult) (corrupted bool) {
+			assert.ErrIsLike(t, res.Err, reader.ErrHashMismatch)
+			return
+		})
+
+		// But the file is still there!
+		assert.That(t, countTempFiles(t, cache.Cache), should.Equal(2)) // +1 for state.db.
+	})
+}
+
+func TestInstanceCacheSync(t *testing.T) {
+	t.Parallel()
+
+	testSync := func(t testing.TB, causeResync func(stateDbPath string)) {
+		cache, env, ctx := instanceCacheTestSetup(t)
+		const count = 10
+
+		// Add instances.
+		for i := range count {
+			putNew(t, ctx, cache.Cache, pin(i))
+		}
+
+		causeResync(filepath.Join(env.tempDir, instanceCacheStateFilename))
+
+		// state.db must be restored.
+		for i := range count {
+			lastAccess, ok := accessTime(ctx, cache.Cache, pin(i))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, lastAccess, should.Match(clock.Now(ctx)))
+		}
+
+		_, ok := accessTime(ctx, cache.Cache, common.Pin{
+			PackageName: "nonexistent",
+			InstanceID:  "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		})
+		assert.Loosely(t, ok, should.BeFalse)
+	}
+
+	t.Run("state.db disappeared", func(t *testing.T) {
+		t.Parallel()
+		testSync(t, func(stateDbPath string) {
+			err := os.Remove(stateDbPath)
+			assert.Loosely(t, err, should.BeNil)
+		})
+	})
+
+	t.Run("state.db corrupted", func(t *testing.T) {
+		t.Parallel()
+		testSync(t, func(stateDbPath string) {
+			f, err := os.Create(stateDbPath)
+			assert.Loosely(t, err, should.BeNil)
+			f.WriteString("blah")
+			defer f.Close()
+		})
 	})
 }
 
