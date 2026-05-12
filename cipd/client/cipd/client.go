@@ -59,6 +59,7 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
@@ -129,6 +130,7 @@ const (
 	EnvAdmissionPlugin     = "CIPD_ADMISSION_PLUGIN"
 	EnvCIPDServiceURL      = "CIPD_SERVICE_URL"
 	EnvCIPDProxyURL        = "CIPD_PROXY_URL"
+	EnvCIPDDisableNetwork  = "CIPD_DISABLE_NETWORK"
 )
 
 var (
@@ -452,6 +454,10 @@ type ClientOptions struct {
 	// a proxy over a Unix domain socket at the given path).
 	ProxyURL string
 
+	// If true, this disables ALL network communication for the client,
+	// overriding AnonymousClient, AuthenticatedClient and ProxyURL.
+	DisableNetwork bool
+
 	// Mocks used by tests.
 	casMock          casgrpcpb.StorageClient
 	repoMock         repogrpcpb.RepositoryClient
@@ -525,6 +531,9 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 	}
 	if v := env.Get(EnvCIPDProxyURL); v != "" {
 		opts.ProxyURL = v
+	}
+	if v := env.Get(EnvCIPDDisableNetwork); v == "true" || v == "1" {
+		opts.DisableNetwork = true
 	}
 
 	// Load the config from CIPD_CONFIG_FILE if given, falling back to some
@@ -628,7 +637,7 @@ func NewClientFromEnv(ctx context.Context, opts ClientOptions) (Client, error) {
 	if err := opts.LoadFromEnv(ctx); err != nil {
 		return nil, err
 	}
-	if opts.AuthenticatedClient == nil {
+	if !opts.DisableNetwork && opts.AuthenticatedClient == nil {
 		// When using a proxy, the proxy does authenticated requests to the backend
 		// and the client just hits it anonymously (see ClientOptions.ProxyURL).
 		if opts.ProxyURL != "" {
@@ -699,9 +708,9 @@ func NewClient(opts ClientOptions) (Client, error) {
 	anonClient := opts.AnonymousClient
 	authClient := opts.AuthenticatedClient
 	prpcInsecure := parsed.Scheme == "http" // for testing with local dev server
-	var proxyTransport *proxyclient.ProxyTransport
-	if opts.ProxyURL != "" {
-		proxyTransport, err = proxyclient.NewProxyTransport(opts.ProxyURL)
+	var proxyTransportClose func() error
+	if !opts.DisableNetwork && opts.ProxyURL != "" {
+		proxyTransport, err := proxyclient.NewProxyTransport(opts.ProxyURL)
 		if err != nil {
 			return nil, cipderr.BadArgument.Apply(errors.Fmt("bad %s %q: %w", EnvCIPDProxyURL, opts.ProxyURL, err))
 		}
@@ -709,39 +718,54 @@ func NewClient(opts ClientOptions) (Client, error) {
 		authClient = anonClient
 		prpcInsecure = true // no TLS when talking to the proxy
 		opts.LoginInstructions = "check the CIPD proxy configuration"
+		proxyTransportClose = proxyTransport.Close
 	}
 
-	prpcC := &prpc.Client{
-		C:    authClient,
-		Host: parsed.Host,
-		Options: &prpc.Options{
-			UserAgent: opts.UserAgent,
-			Insecure:  prpcInsecure,
-			Retry: func() retry.Iterator {
-				return &retry.ExponentialBackoff{
-					Limited: retry.Limited{
-						Delay:   time.Second,
-						Retries: 10,
-					},
-				}
+	var mkConn func(service string) grpc.ClientConnInterface
+	if opts.DisableNetwork {
+		mkConn = func(service string) grpc.ClientConnInterface {
+			return devNullConn(service)
+		}
+	} else {
+		prpcC := &prpc.Client{
+			C:    authClient,
+			Host: parsed.Host,
+			Options: &prpc.Options{
+				UserAgent: opts.UserAgent,
+				Insecure:  prpcInsecure,
+				Retry: func() retry.Iterator {
+					return &retry.ExponentialBackoff{
+						Limited: retry.Limited{
+							Delay:   time.Second,
+							Retries: 10,
+						},
+					}
+				},
 			},
-		},
+		}
+		mkConn = func(service string) grpc.ClientConnInterface {
+			return prpcC
+		}
 	}
 
 	cas := opts.casMock
 	if cas == nil {
-		cas = casgrpcpb.NewStorageClient(prpcC)
+		cas = casgrpcpb.NewStorageClient(mkConn("cipd.Storage"))
 	}
 	repo := opts.repoMock
 	if repo == nil {
-		repo = repogrpcpb.NewRepositoryClient(prpcC)
+		repo = repogrpcpb.NewRepositoryClient(mkConn("cipd.Repository"))
 	}
 	s := opts.storageMock
 	if s == nil {
-		s = &storageImpl{
-			chunkSize: uploadChunkSize,
-			userAgent: opts.UserAgent,
-			client:    anonClient,
+		if opts.DisableNetwork {
+			s = storageDevNull{}
+		} else {
+			s = &storageImpl{
+				chunkSize: uploadChunkSize,
+				userAgent: opts.UserAgent,
+				client:    anonClient,
+			}
 		}
 	}
 
@@ -768,14 +792,14 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 
 	client := &clientImpl{
-		ClientOptions:    opts,
-		cas:              cas,
-		repo:             repo,
-		storage:          s,
-		deployer:         deployer.New(opts.Root),
-		proxyTransport:   proxyTransport,
-		pluginHost:       pluginHost,
-		clientLaunchTime: time.Now(),
+		ClientOptions:       opts,
+		cas:                 cas,
+		repo:                repo,
+		storage:             s,
+		deployer:            deployer.New(opts.Root),
+		proxyTransportClose: proxyTransportClose,
+		pluginHost:          pluginHost,
+		clientLaunchTime:    time.Now(),
 	}
 
 	// Initialize version cache.
@@ -858,8 +882,8 @@ type clientImpl struct {
 	storage storage
 	// deployer knows how to install packages to local file system. Thread safe.
 	deployer deployer.Deployer
-	// proxyTransport is used to communicate with the CIPD proxy, if any.
-	proxyTransport *proxyclient.ProxyTransport
+	// proxyTransportClose is used to close the CIPD proxy connection, if any.
+	proxyTransportClose func() error
 
 	// versionCache is a file-system based cache of resolved tags.
 	versionCache *internal.VersionCache
@@ -994,8 +1018,8 @@ func (c *clientImpl) Close(ctx context.Context) {
 	if c.pluginHost != nil {
 		c.pluginHost.Close(ctx)
 	}
-	if c.proxyTransport != nil {
-		if err := c.proxyTransport.Close(); err != nil {
+	if c.proxyTransportClose != nil {
+		if err := c.proxyTransportClose(); err != nil {
 			logging.Warningf(ctx, "Error closing the proxy transport: %s", err)
 		}
 	}

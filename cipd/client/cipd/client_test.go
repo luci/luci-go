@@ -1643,6 +1643,26 @@ func TestNewClientFromEnv(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Network disablement.
+
+func TestDisableNetwork(t *testing.T) {
+	t.Parallel()
+
+	env := environ.New(nil)
+	env.Set(EnvCIPDDisableNetwork, "1")
+	ctx := env.SetInCtx(t.Context())
+
+	cli, err := NewClientFromEnv(ctx, ClientOptions{})
+	assert.NoErr(t, err)
+
+	_, err = cli.ResolveVersion(ctx, "some/pkg", "tag:123")
+	assert.ErrIsLike(t, err, ErrNetworkDisabled)
+
+	_, err = cli.FetchRoles(ctx, "some/pkg")
+	assert.ErrIsLike(t, err, ErrNetworkDisabled)
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 type bytesInstanceFile struct {
 	*bytes.Reader

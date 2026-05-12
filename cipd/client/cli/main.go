@@ -101,8 +101,14 @@ func GetApplication(params Parameters) *cli.Application {
 				ShortDesc: "Override CIPD service URL.",
 			},
 			cipd.EnvCIPDProxyURL: {
-				Advanced:  true,
-				ShortDesc: "If set, send requests here instead of the remote backend. Only unix://<path> is supported currently.",
+				Advanced: true,
+				ShortDesc: "If set, send requests here instead of the remote backend. Only unix://<path> is supported " +
+					"currently. Superseded by $" + cipd.EnvCIPDDisableNetwork + ".",
+			},
+			cipd.EnvCIPDDisableNetwork: {
+				Advanced: true,
+				ShortDesc: "If set to true/1, disable all network requests from the client (including $" +
+					cipd.EnvCIPDProxyURL + ").",
 			},
 			envSimpleTerminalUI: {
 				Advanced:  true,

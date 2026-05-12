@@ -53,10 +53,11 @@ const (
 type clientOptions struct {
 	hardcoded Parameters // whatever was passed to registerFlags(...)
 
-	cliServiceURL string
-	cacheDir      string
-	maxThreads    maxThreadsOption
-	rootDir       string // used only if registerFlags got withRootDir arg
+	cliServiceURL  string
+	cacheDir       string
+	maxThreads     maxThreadsOption
+	rootDir        string // used only if registerFlags got withRootDir arg
+	disableNetwork bool
 
 	authFlags authcli.Flags
 }
@@ -82,6 +83,7 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 			`(default %s)`, params.ServiceURL))
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
 		fmt.Sprintf("Directory for the shared cache (can also be set by %s env var).", cipd.EnvCacheDir))
+	f.BoolVar(&opts.disableNetwork, "disable-network", false, "If provided, client will make no network requests.")
 
 	if rootDir {
 		f.StringVar(&opts.rootDir, "root", "<path>", "Path to an installation site root directory.")
@@ -107,6 +109,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context, ensureFileURL s
 		Versions:          versions,
 		MaxThreads:        opts.maxThreads.maxThreads,
 		AnonymousClient:   http.DefaultClient,
+		DisableNetwork:    opts.disableNetwork,
 		PluginsContext:    ctx,
 		LoginInstructions: "run `cipd auth-login` to login or relogin",
 	}
@@ -120,11 +123,13 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context, ensureFileURL s
 	// loading credentials.
 	if realOpts.ProxyURL != "" {
 		logging.Debugf(ctx, "Using %s=%s", cipd.EnvCIPDProxyURL, realOpts.ProxyURL)
-	} else {
+	} else if !realOpts.DisableNetwork {
 		realOpts.AuthenticatedClient, err = auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 		if err != nil {
 			return cipd.ClientOptions{}, cipderr.Auth.Apply(errors.Fmt("initializing auth client: %w", err))
 		}
+	} else {
+		logging.Debugf(ctx, "Working offline (-disable-network or $%s=1 was given).", cipd.EnvCIPDDisableNetwork)
 	}
 
 	return realOpts, nil
