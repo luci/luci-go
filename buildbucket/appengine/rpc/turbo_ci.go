@@ -116,18 +116,6 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	}
 	logging.Infof(ctx, "turbo-ci: workplan %s", id.ToString(plan.GetIdentifier()))
 
-	// Field masks make no sense inside Turbo CI stage args.
-	req.Mask = nil
-	req.Fields = nil
-
-	// Extract timeouts (if any) into Turbo CI stage attempt execution policy,
-	// since we want them to be enforced and visible via Turbo CI, not just
-	// Buildbucket.
-	timeouts := scheduleBuildRequestToPolicyTimeout(req)
-	req.SchedulingTimeout = nil
-	req.ExecutionTimeout = nil
-	req.GracePeriod = nil
-
 	// The initial stage has a predefined ID.
 	rootStageID := idspb.Stage_builder{
 		WorkPlan:   plan.GetIdentifier(),
@@ -135,14 +123,19 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 		IsWorknode: proto.Bool(false),
 	}.Build()
 
+	stages := []turboci.ScheduleBuildRequestStage{
+		scheduleBuildRequestToStage(req, build, rootStageID),
+	}
+
 	// Submit the build stage as an end user (to attribute it to whoever triggers
 	// the build). Use a well-known ID. If this is a retry, then this will
 	// silently succeed without creating a duplicate.
-	err = (&turboci.Client{
+	mErr := (&turboci.Client{
 		Creds: callerCreds,
 		Plan:  plan.GetIdentifier(),
 		Token: plan.GetCreatorToken(),
-	}).WriteStage(ctx, rootStageID, req, build.Realm(), timeouts)
+	}).WriteStages(ctx, stages)
+	err = mErr.First()
 	if err != nil {
 		logging.Errorf(ctx, "turbo-ci: failed to submit the stage: %s", err)
 		return appstatus.FromStatusErr(err)
@@ -177,6 +170,27 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 	return slices.Repeat(errors.MultiError{
 		appstatus.Errorf(codes.Unimplemented, "Turbo CI child builds are not implemented yet"),
 	}, len(reqs))
+}
+
+func scheduleBuildRequestToStage(req *pb.ScheduleBuildRequest, build *model.Build, stageID *idspb.Stage) turboci.ScheduleBuildRequestStage {
+	// Field masks make no sense inside Turbo CI stage args.
+	req.Mask = nil
+	req.Fields = nil
+
+	// Extract timeouts (if any) into Turbo CI stage attempt execution policy,
+	// since we want them to be enforced and visible via Turbo CI, not just
+	// Buildbucket.
+	timeouts := scheduleBuildRequestToPolicyTimeout(req)
+	req.SchedulingTimeout = nil
+	req.ExecutionTimeout = nil
+	req.GracePeriod = nil
+
+	return turboci.ScheduleBuildRequestStage{
+		ID:       stageID,
+		Req:      req,
+		Realm:    build.Realm(),
+		Timeouts: timeouts,
+	}
 }
 
 // turboCICallerCreds returns credentials to use to make Turbo CI calls in

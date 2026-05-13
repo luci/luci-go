@@ -17,6 +17,7 @@ package turboci
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
@@ -26,6 +27,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/auth/scopes"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/turboci/id"
@@ -102,24 +104,48 @@ func (c *Client) stageID(sid *idspb.Stage) *idspb.Stage {
 	return sid
 }
 
-// WriteStage submits the ScheduleBuildRequest stage under the given ID.
-//
-// This succeeds if the stage was submitted or it already exists.
-func (c *Client) WriteStage(ctx context.Context, stageID *idspb.Stage, req *pb.ScheduleBuildRequest, realm string, timeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout) error {
-	writeReq := write.NewRequest()
-	stg := writeReq.AddNewStage(c.stageID(stageID), req)
-	writeReq.SetReason("Submitting stage via Buildbucket")
-	stg.Msg.SetRealm(realm)
-	if timeouts != nil {
-		stg.Msg.SetRequestedStageExecutionPolicy(orchestratorpb.StageExecutionPolicy_builder{
-			AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
-				Timeout: timeouts,
-			}.Build(),
-		}.Build())
-	}
+// ScheduleBuildRequestStage contains info to create a ScheduleBuildRequest stage.
+type ScheduleBuildRequestStage struct {
+	ID       *idspb.Stage
+	Req      *pb.ScheduleBuildRequest
+	Realm    string
+	Timeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout
+}
 
+// WriteStages submits the ScheduleBuildRequest stages.
+//
+// This succeeds if the stages were submitted or already exist.
+//
+// Returns exactly len(stages) grpc errors, but currently they all have the same
+// errors.
+// TODO: b/512993859 - Extract per stage error from the structured details of
+// the responded error.
+func (c *Client) WriteStages(ctx context.Context, stages []ScheduleBuildRequestStage) errors.MultiError {
+	if len(stages) == 0 {
+		panic("WriteStages: no stages to submit")
+	}
+	writeReq := write.NewRequest()
+	writeReq.SetReason("Submitting stage(s) via Buildbucket")
+	for _, stage := range stages {
+		stg := writeReq.AddNewStage(c.stageID(stage.ID), stage.Req)
+		stg.Msg.SetRealm(stage.Realm)
+		if stage.Timeouts != nil {
+			stg.Msg.SetRequestedStageExecutionPolicy(orchestratorpb.StageExecutionPolicy_builder{
+				AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
+					Timeout: stage.Timeouts,
+				}.Build(),
+			}.Build())
+		}
+	}
 	_, err := c.WriteNodes(ctx, writeReq)
-	return err
+	return convertToMultiError(err, len(stages))
+}
+
+func convertToMultiError(err error, n int) errors.MultiError {
+	if err == nil {
+		return nil
+	}
+	return slices.Repeat(errors.MultiError{err}, n)
 }
 
 // buildStageDetailsTypeSet is a TypeSet composed of just BuildStageDetails.

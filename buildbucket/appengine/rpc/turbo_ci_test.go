@@ -114,7 +114,7 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 		assert.That(t, orch.LastWriteNodesCall, should.Match(orchestratorpb.WriteNodesRequest_builder{
 			Token: proto.String(orch.Token),
 			Reason: orchestratorpb.WriteNodesRequest_Reason_builder{
-				Message: proto.String("Submitting stage via Buildbucket"),
+				Message: proto.String("Submitting stage(s) via Buildbucket"),
 			}.Build(),
 			Stages: []*orchestratorpb.WriteNodesRequest_StageWrite{
 				orchestratorpb.WriteNodesRequest_StageWrite_builder{
