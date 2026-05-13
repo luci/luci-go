@@ -88,5 +88,5 @@ func (client *RotationProxyClient) sendRequest(ctx context.Context, rotationProx
 	}
 
 	// Get the on-call rotation (timeout of 30s)
-	return util.SendHTTPRequest(ctx, req, 30*time.Second)
+	return util.SendHTTPRequest(ctx, req, 30*time.Second, false)
 }

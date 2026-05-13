@@ -18,6 +18,7 @@ package logdog
 import (
 	"context"
 	"net/http"
+	"regexp"
 	"time"
 
 	"go.chromium.org/luci/common/logging"
@@ -26,6 +27,8 @@ import (
 )
 
 var MockedLogdogClientKey = "mocked logdog client"
+
+var logdogPathRegex = regexp.MustCompile(`^/logs/([^/]+)/`)
 
 // GetLogFromViewUrl gets the log from the log's viewURL
 func GetLogFromViewUrl(c context.Context, viewUrl string) (string, error) {
@@ -46,7 +49,16 @@ func (cl *LogdogClient) GetLog(c context.Context, viewUrl string) (string, error
 	req.URL.RawQuery = q.Encode()
 
 	logging.Infof(c, "Sending request to logdog %s", req.URL.String())
-	return util.SendHTTPRequest(c, req, 30*time.Second)
+
+	// Extract project from path /logs/<project>/...
+	useAuth := false
+	if matches := logdogPathRegex.FindStringSubmatch(req.URL.Path); len(matches) > 1 {
+		if matches[1] == "chrome" {
+			useAuth = true
+		}
+	}
+
+	return util.SendHTTPRequest(c, req, 30*time.Second, useAuth)
 }
 
 // We need the interface for testing purpose

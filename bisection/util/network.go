@@ -22,16 +22,24 @@ import (
 	"net/http"
 	"time"
 
+	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 )
 
-func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration) (string, error) {
+func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration, useAuth bool) (string, error) {
 	c, cancel := context.WithTimeout(c, timeout)
 	defer cancel()
 
-	transport, err := auth.GetRPCTransport(c, auth.NoAuth)
+	var transport http.RoundTripper
+	var err error
+	if useAuth {
+		transport, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(scopes.DefaultScopeSet()...))
+	} else {
+		transport, err = auth.GetRPCTransport(c, auth.NoAuth)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -47,6 +55,14 @@ func SendHTTPRequest(c context.Context, req *http.Request, timeout time.Duration
 	defer resp.Body.Close()
 	status := resp.StatusCode
 	if status != http.StatusOK {
+		// Read error body to log it
+		body, _ := io.ReadAll(resp.Body)
+		bodyStr := string(body)
+		if len(bodyStr) > 500 {
+			bodyStr = bodyStr[:500] + "..."
+		}
+		logging.Errorf(c, "HTTP request failed for URL %s with status %d. Body: %s", req.URL.String(), status, bodyStr)
+
 		if status >= 500 || status == http.StatusTooManyRequests {
 			return "", transient.Tag.Apply(errors.Reason("Bad response code: %v", status))
 		}
