@@ -182,9 +182,9 @@ type entry interface {
 	GetService() string
 }
 
-// findEntry finds an entry by key (e.g. tagKey/fileKey) in a VersionCache,
-// possibly loading the VersionCache's on-disk representation if it's not
-// already present in memory.
+// findEntry finds an entry by key (e.g. tagKey/fileKey/refKey) in a
+// VersionCache, possibly loading the VersionCache's on-disk representation if
+// it's not already present in memory.
 func findEntry[K comparable, E entry](
 	ctx context.Context,
 	c *VersionCache,
@@ -196,7 +196,7 @@ func findEntry[K comparable, E entry](
 
 	var eZero E
 
-	// Already added with AddTag recently?
+	// Already added with AddXXX recently?
 	if e := lookup(&c.added, key); e != eZero {
 		return e, nil
 	}

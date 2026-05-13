@@ -571,4 +571,16 @@ func TestVersionCacheToggles(t *testing.T) {
 		// Existing entries should be preserved.
 		assert.That(t, tcCheck, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:1", IID1("a")))
 	})
+
+	t.Run(`in-memory`, func(t *testing.T) {
+		ctx := t.Context()
+		tc := &VersionCache{}
+		init(t, tc)
+
+		// We still have stuff in memory.
+		assert.That(t, tc, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:1", IID1("a")))
+
+		// We immediately get empty results for missing things.
+		assert.That(t, tc, shouldNotHaveTag(ctx, "service.example.com", "pkg", "tag:2"))
+	})
 }

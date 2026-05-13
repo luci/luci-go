@@ -157,6 +157,13 @@ func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 	if c.cacheLoaded {
 		return nil
 	}
+	noTags := c.Tags.has(DisableRead)
+	noFileObjectRefs := c.FileObjectRefs.has(DisableRead)
+	noRefs := c.Refs.has(DisableRead)
+	if c.FS == nil || (noTags && noFileObjectRefs && noRefs) {
+		c.cacheLoaded = true
+		return nil
+	}
 
 	rawCache, err := ReadVersionCache(ctx, c.FS)
 	if err != nil {
@@ -349,7 +356,7 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 
 	// Nothing to store? Just clean the state, so that ResolveTag can fetch the
 	// up-to-date cache from disk later if needed.
-	if c.added.count() == 0 || (noTags && noFileObjectRefs && noRefs) {
+	if c.added.count() == 0 || c.FS == nil || (noTags && noFileObjectRefs && noRefs) {
 		c.cacheLoaded = false
 		return nil
 	}
