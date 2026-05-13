@@ -58,10 +58,9 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
         />
       )}
 
-      {check.options.length > 0 && <Divider />}
-
-      {check.options.length > 0 && (
+      {check.options?.length > 0 && (
         <>
+          <Divider />
           <Typography variant="subtitle2">Options</Typography>
           {check.options.map((value_ref, index) => (
             <AnyDetails
@@ -78,13 +77,12 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
         </>
       )}
 
-      {check.results.length > 0 && <Divider />}
-
-      {check.results.length > 0 && (
+      {check.results?.length > 0 && (
         <>
+          <Divider />
           <Typography variant="subtitle2">Results</Typography>
           {check.results.map((result, resIdx) => {
-            if (result.data.length === 0) return null;
+            if (!result.data?.length) return null;
 
             return result.data.map((value_ref, dataIdx) => (
               <AnyDetails

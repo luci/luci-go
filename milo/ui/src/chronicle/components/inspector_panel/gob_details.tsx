@@ -36,7 +36,7 @@ export function GobSourceCheckOptionsDetails({
 }) {
   return (
     <Box>
-      {data.gerritChanges.length > 0 && (
+      {data.gerritChanges?.length > 0 && (
         <Box sx={{ mb: 2 }}>
           <Typography variant="caption">Gerrit Changes</Typography>
           {data.gerritChanges.map((change, idx) => (
@@ -52,7 +52,7 @@ export function GobSourceCheckOptionsDetails({
               <DetailRow label="Host" value={change.hostname} />
               <DetailRow label="Change" value={change.changeNumber} />
               <DetailRow label="Patchset" value={change.patchset} />
-              {change.mountsToApply.length > 0 && (
+              {change.mountsToApply?.length > 0 && (
                 <DetailRow
                   label="Mounts"
                   value={change.mountsToApply.join(', ')}
@@ -92,7 +92,7 @@ export function GobSourceCheckOptionsDetails({
                 </Box>
               </Box>
             )}
-            {data.basePinnedRepos.mountOverrides.length > 0 && (
+            {data.basePinnedRepos?.mountOverrides?.length > 0 && (
               <Box>
                 <Typography variant="caption">Mount Overrides</Typography>
                 {data.basePinnedRepos.mountOverrides.map((override, idx) => (
@@ -203,10 +203,10 @@ function GerritChangeInfoDetails({ data }: { data: GerritChangeInfo }) {
           typeUrl="Revisions"
         />
       </Box>
-      {data.messages.length > 0 && (
+      {data.messages?.length > 0 && (
         <Box sx={{ mt: 2 }}>
           <Typography variant="caption">
-            Messages ({data.messages.length})
+            Messages ({data.messages?.length})
           </Typography>
           <Box sx={{ maxHeight: 200, overflowY: 'auto', mt: 0.5 }}>
             {data.messages.map((msg, idx) => (

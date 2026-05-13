@@ -26,7 +26,7 @@ export function PiperSourceCheckOptionsDetails({
   return (
     <Box>
       <DetailRow label="CL Number" value={data.clNumber || 'HEAD'} />
-      {data.files.length > 0 && (
+      {data.files?.length > 0 && (
         <DetailRow
           label="Files"
           value={
@@ -38,7 +38,7 @@ export function PiperSourceCheckOptionsDetails({
           }
         />
       )}
-      {data.targets.length > 0 && (
+      {data.targets?.length > 0 && (
         <DetailRow
           label="Targets"
           value={

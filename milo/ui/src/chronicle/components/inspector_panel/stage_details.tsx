@@ -33,7 +33,7 @@ export interface StageDetailsProps {
 export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
   const stage = view;
 
-  const assignmentIds = stage.assignments
+  const assignmentIds = (stage.assignments || [])
     .map((a) => a.target?.id)
     .filter((id): id is string => !!id)
     .sort();
@@ -43,13 +43,13 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
     .filter((id): id is string => !!id)
     .sort();
 
-  const createTs = stage.stateHistory.find(
+  const createTs = stage.stateHistory?.find(
     (s) => s.state === StageState.STAGE_STATE_PLANNED,
   )?.version;
 
   // Attempts are in ascending order by created time.
   // Reverse that so we show the latest attempt first.
-  const attempts = [...stage.attempts].reverse();
+  const attempts = stage.attempts?.slice().reverse() || [];
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

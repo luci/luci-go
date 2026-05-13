@@ -105,7 +105,7 @@ export function BuildCheckResultDetails({ data }: { data: BuildCheckResult }) {
           </Box>
         </Box>
       )}
-      {Object.keys(data.gcsArtifacts).length > 0 && (
+      {Object.keys(data.gcsArtifacts ?? {}).length > 0 && (
         <GcsArtifactsDetails artifacts={data.gcsArtifacts} />
       )}
     </Box>
