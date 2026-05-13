@@ -11,6 +11,7 @@ import "google/longrunning/operations.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+import "google/type/interval.proto";
 
 option java_multiple_files = true;
 option java_outer_classname = "PerfServiceProto";
@@ -30,14 +31,6 @@ option (google.api.resource_definition) = {
 
 // Service for Android performance-related data.
 service PerfService {
-  // RPC for getting CrystalBall measurements.
-  rpc SearchMeasurements(SearchMeasurementsRequest)
-      returns (SearchMeasurementsResponse) {
-    option (google.api.http) = {
-      get: "/v1/measurements:search"
-    };
-  }
-
   // RPC to discover filterable columns for measurements.
   rpc ListMeasurementFilterColumns(ListMeasurementFilterColumnsRequest)
       returns (ListMeasurementFilterColumnsResponse) {
@@ -61,13 +54,6 @@ service PerfService {
       returns (SearchMetricDefinitionsResponse) {
     option (google.api.http) = {
       get: "/v1/metricDefinitions:search"
-    };
-  }
-
-  // Sample RPC for testing the service via a ping.
-  rpc TestConnection(TestConnectionRequest) returns (TestConnectionResponse) {
-    option (google.api.http) = {
-      get: "/v1/perf:testConnection"
     };
   }
 
@@ -287,90 +273,6 @@ service PerfService {
   }
 }
 
-// Request message for testing the connection to the service.
-message TestConnectionRequest {}
-
-// Response message for testing the connection to the service.
-message TestConnectionResponse {}
-
-// Request message for getting CrystalBall measurements.
-message SearchMeasurementsRequest {
-  // Filter for test_name using SQL LIKE operator.
-  // Callers should include wildcards (%) as needed in the filter string.
-  // Examples:
-  //   "foo%" - starts with foo
-  //   "%foo" - ends with foo
-  //   "%foo%" - contains foo
-  //   "foo" - exact match
-  optional string test_name_filter = 1 [(google.api.field_behavior) = OPTIONAL];
-  // Build creation timestamp start filter.
-  optional google.protobuf.Timestamp build_create_start_time = 2
-      [(google.api.field_behavior) = OPTIONAL];
-  // Build creation timestamp end filter.
-  optional google.protobuf.Timestamp build_create_end_time = 3
-      [(google.api.field_behavior) = OPTIONAL];
-  // Mutually exclusive with start/end timestamps
-  optional int32 last_n_days = 4 [(google.api.field_behavior) = OPTIONAL];
-  // Branch filter.
-  optional string build_branch = 5 [(google.api.field_behavior) = OPTIONAL];
-  // Build target filter.
-  optional string build_target = 6 [(google.api.field_behavior) = OPTIONAL];
-  // Filter for atp_test_name using SQL LIKE operator.
-  // Callers should include wildcards (%) as needed in the filter string.
-  // Examples:
-  //   "foo%" - starts with foo
-  //   "%foo" - ends with foo
-  //   "%foo%" - contains foo
-  //   "foo" - exact match
-  optional string atp_test_name_filter = 7
-      [(google.api.field_behavior) = OPTIONAL];
-  // If specified, only metrics with these keys will be returned.
-  repeated string metric_keys = 8 [(google.api.field_behavior) = OPTIONAL];
-  // If specified, these columns will be returned in the response.
-  // Valid column names can be found in the schema for the base table
-  // napa.android_crystalball_cbdw.cbdw.Measurements, which is queried
-  // by the cbdw_measurements_full() function.
-  // Schema can be viewed in DataNexus:
-  // http://go/data/details/napa.android_crystalball_cbdw.cbdw.Measurements
-  repeated string extra_columns = 9 [(google.api.field_behavior) = OPTIONAL];
-  // Page size for pagination.
-  optional int32 page_size = 10 [(google.api.field_behavior) = OPTIONAL];
-  // Page token for pagination.
-  optional string page_token = 11 [(google.api.field_behavior) = OPTIONAL];
-}
-
-// Response message for getting CrystalBall measurements.
-message SearchMeasurementsResponse {
-  // Define a structure to hold the query results
-  repeated MeasurementRow rows = 1;
-  // Page token for pagination.
-  optional string next_page_token = 2;
-}
-
-// Row message for holding the query results.
-message MeasurementRow {
-  // Test name.
-  optional string test = 1;
-  // Build creation timestamp.
-  optional google.protobuf.Timestamp build_create_time = 2;
-  // Build branch.
-  optional string build_branch = 3;
-  // Build target.
-  optional string build_target = 4;
-  // ATP test name.
-  optional string atp_test = 5;
-  // Metric key.
-  optional string metric_key = 6;
-  // Metric value.
-  optional double value = 7;
-  // Build ID.
-  optional string build_id = 8;
-  // Ants invocation ID.
-  optional string ants_invocation_id = 9;
-  // Additional columns
-  map<string, google.protobuf.Value> extra_columns = 10;
-}
-
 // Request message for getting filter columns.
 message ListMeasurementFilterColumnsRequest {
   // The parent PerfDataSpec resource name.
@@ -490,6 +392,10 @@ message SuggestMeasurementFilterValuesRequest {
   // See [AIP-160](https://google.aip.dev/160) for syntax.
   // Example: "atp_test_name = \"my_test\" AND metric_key = \"my_metric\""
   string filter = 5 [(google.api.field_behavior) = OPTIONAL];
+
+  // If set to true, the server will bypass any caches and fetch the latest
+  // data. This may result in higher latency.
+  bool skip_cache = 6 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Response message for getting filter values.
@@ -867,6 +773,10 @@ message FetchDashboardWidgetDataResponse {
 
     // Data specifically prepared for an InvocationDistribution widget
     InvocationDistributionData invocation_distribution_data = 6;
+
+    // Data specifically prepared for a PeriodComparison widget
+    PeriodComparisonData period_comparison_data = 7
+        [(google.api.field_behavior) = OPTIONAL];
   }
 }
 
@@ -947,6 +857,68 @@ message BreakdownSection {
   repeated google.protobuf.Struct rows = 2;
 }
 
+// Data structured and transformed for the PeriodComparison widget.
+message PeriodComparisonData {
+  // The list of period comparison series.
+  repeated PeriodComparisonSeries series = 1
+      [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Represents a single series in a PeriodComparison widget.
+message PeriodComparisonSeries {
+  // The unique ID of the series.
+  string series_id = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Label for the legend.
+  string legend_label = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Metric field identifier.
+  string metric_field = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Data broken down by aggregation.
+  repeated PeriodComparisonAggregationData aggregation_data = 4
+      [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Holds comparison data for a specific aggregation.
+message PeriodComparisonAggregationData {
+  // The aggregation type applied.
+  PerfChartSeries.PerfAggregationFunction aggregation_type = 1
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // Baseline period statistics.
+  PeriodStats baseline_stats = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Comparison period statistics.
+  PeriodStats comparison_stats = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // The net change between the baseline and comparison values.
+  optional double net_change = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // The percentage change from baseline to comparison.
+  optional double percentage_change = 5
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // The volatility of the data over the period.
+  optional double volatility = 6 [(google.api.field_behavior) = OPTIONAL];
+  // The standard deviation of the data.
+  optional double standard_deviation = 7
+      [(google.api.field_behavior) = OPTIONAL];
+  // The cumulative impact (sum) of the data.
+  optional double cumulative_impact = 8
+      [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Holds the aggregated statistics for a single period.
+message PeriodStats {
+  // Aggregated value for the period.
+  double value = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Sparkline data points for the period.
+  repeated google.protobuf.Struct sparkline_points = 2
+      [(google.api.field_behavior) = OPTIONAL];
+}
+
 // Represents the content of a dashboard state. The structure is inspired by
 // concepts in Plx dashboards (like filters and data sources) but is defined
 // independently within this API.
@@ -1014,6 +986,8 @@ message PerfChartWidget {
     BREAKDOWN_TABLE = 3;
     // Distribution of individual invocation values for a metric.
     INVOCATION_DISTRIBUTION = 4;
+    // Period comparison chart.
+    PERIOD_COMPARISON = 5;
   }
 
   // The type of this chart.
@@ -1062,6 +1036,10 @@ message PerfChartWidget {
     // Configuration for the BREAKDOWN_TABLE chart type.
     BreakdownTableConfig breakdown_table_widget_chart_config = 13
         [(google.api.field_behavior) = OPTIONAL];
+
+    // Configuration for the PERIOD_COMPARISON chart type.
+    PeriodComparisonConfig period_comparison_chart_config = 14
+        [(google.api.field_behavior) = OPTIONAL];
   }
 }
 
@@ -1102,6 +1080,12 @@ message PerfChartSeries {
     MAX = 7;
     // Count.
     COUNT = 8;
+    // Standard deviation.
+    STANDARD_DEVIATION = 9;
+    // Volatility.
+    VOLATILITY = 10;
+    // Cumulative impact (sum).
+    CUMULATIVE_IMPACT = 11;
   }
 
   // The aggregation function to apply to this series (for TIME_SERIES, etc.).
@@ -1149,6 +1133,10 @@ message PerfChartSeries {
   // The ID of the PerfChartSeries from which this series was split.
   // Empty if this is not a split series.
   string parent_series_id = 12 [(google.api.field_behavior) = OPTIONAL];
+
+  // Whether this series is hidden in the chart.
+  // Defaults to false (visible) if not specified.
+  bool hidden = 13 [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Configuration for the X axis.
@@ -1257,6 +1245,21 @@ message BreakdownTableConfig {
 
   // The default dimension to display first in the UI.
   string default_dimension = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Configuration for a Period Comparison chart.
+message PeriodComparisonConfig {
+  // The baseline time range for comparison.
+  google.type.Interval baseline_time_range = 1
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // The comparison time range.
+  google.type.Interval comparison_time_range = 2
+      [(google.api.field_behavior) = OPTIONAL];
+
+  // The aggregation functions to apply to the metrics in the chart.
+  repeated PerfChartSeries.PerfAggregationFunction aggregations = 3
+      [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Defines a data specification, similar to concepts in Plx DataSpec.
@@ -1707,12 +1710,4 @@ message FetchWidgetRawSamplesResponse {
 message RawSampleRow {
   // Known or requested standard columns.
   map<string, google.protobuf.Value> values = 1;
-}
-
-// Test enum for testing.
-enum TestEnum {
-  // Unspecified test enum.
-  TEST_ENUM_UNSPECIFIED = 0;
-  // Test enum value 1.
-  TEST_ENUM_MOCK = 1;
 }

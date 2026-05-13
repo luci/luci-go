@@ -18,5 +18,4 @@ export * from './date_time';
 export * from './errors';
 export * from './filter_utils';
 export * from './string';
-export * from './validate_search';
 export * from './widget_utils';

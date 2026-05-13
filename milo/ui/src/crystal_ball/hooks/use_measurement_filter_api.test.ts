@@ -123,6 +123,7 @@ describe('use_measurement_filter_api', () => {
       query: 'test',
       maxResultCount: 25,
       filter: '',
+      skipCache: true,
     };
 
     it('should call useGapiQuery with correct arguments', () => {

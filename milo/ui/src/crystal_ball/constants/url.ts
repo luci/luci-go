@@ -13,12 +13,6 @@
 // limitations under the License.
 
 /**
- * URL Search Parameter that corresponds to the serialized
- * SearchMeasurementsRequest.
- */
-export const URL_SEARCH_QUERY_PARAM = 'q';
-
-/**
  * Base URL for ATP (Android Test Platform).
  */
 export const ATP_BASE_URL = 'https://atp.corp.google.com';

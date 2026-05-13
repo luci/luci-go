@@ -10,168 +10,9 @@ import { Operation } from "../../../../google/longrunning/operations.pb";
 import { FieldMask } from "../../../../google/protobuf/field_mask.pb";
 import { Struct, Value } from "../../../../google/protobuf/struct.pb";
 import { Timestamp } from "../../../../google/protobuf/timestamp.pb";
+import { Interval } from "../../../../google/type/interval.pb";
 
 export const protobufPackage = "google.android.perf.v1";
-
-/** Test enum for testing. */
-export enum TestEnum {
-  /** TEST_ENUM_UNSPECIFIED - Unspecified test enum. */
-  TEST_ENUM_UNSPECIFIED = 0,
-  /** TEST_ENUM_MOCK - Test enum value 1. */
-  TEST_ENUM_MOCK = 1,
-}
-
-export function testEnumFromJSON(object: any): TestEnum {
-  switch (object) {
-    case 0:
-    case "TEST_ENUM_UNSPECIFIED":
-      return TestEnum.TEST_ENUM_UNSPECIFIED;
-    case 1:
-    case "TEST_ENUM_MOCK":
-      return TestEnum.TEST_ENUM_MOCK;
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestEnum");
-  }
-}
-
-export function testEnumToJSON(object: TestEnum): string {
-  switch (object) {
-    case TestEnum.TEST_ENUM_UNSPECIFIED:
-      return "TEST_ENUM_UNSPECIFIED";
-    case TestEnum.TEST_ENUM_MOCK:
-      return "TEST_ENUM_MOCK";
-    default:
-      throw new globalThis.Error("Unrecognized enum value " + object + " for enum TestEnum");
-  }
-}
-
-/** Request message for testing the connection to the service. */
-export interface TestConnectionRequest {
-}
-
-/** Response message for testing the connection to the service. */
-export interface TestConnectionResponse {
-}
-
-/** Request message for getting CrystalBall measurements. */
-export interface SearchMeasurementsRequest {
-  /**
-   * Filter for test_name using SQL LIKE operator.
-   * Callers should include wildcards (%) as needed in the filter string.
-   * Examples:
-   *   "foo%" - starts with foo
-   *   "%foo" - ends with foo
-   *   "%foo%" - contains foo
-   *   "foo" - exact match
-   */
-  readonly testNameFilter?:
-    | string
-    | undefined;
-  /** Build creation timestamp start filter. */
-  readonly buildCreateStartTime?:
-    | string
-    | undefined;
-  /** Build creation timestamp end filter. */
-  readonly buildCreateEndTime?:
-    | string
-    | undefined;
-  /** Mutually exclusive with start/end timestamps */
-  readonly lastNDays?:
-    | number
-    | undefined;
-  /** Branch filter. */
-  readonly buildBranch?:
-    | string
-    | undefined;
-  /** Build target filter. */
-  readonly buildTarget?:
-    | string
-    | undefined;
-  /**
-   * Filter for atp_test_name using SQL LIKE operator.
-   * Callers should include wildcards (%) as needed in the filter string.
-   * Examples:
-   *   "foo%" - starts with foo
-   *   "%foo" - ends with foo
-   *   "%foo%" - contains foo
-   *   "foo" - exact match
-   */
-  readonly atpTestNameFilter?:
-    | string
-    | undefined;
-  /** If specified, only metrics with these keys will be returned. */
-  readonly metricKeys: readonly string[];
-  /**
-   * If specified, these columns will be returned in the response.
-   * Valid column names can be found in the schema for the base table
-   * napa.android_crystalball_cbdw.cbdw.Measurements, which is queried
-   * by the cbdw_measurements_full() function.
-   * Schema can be viewed in DataNexus:
-   * http://go/data/details/napa.android_crystalball_cbdw.cbdw.Measurements
-   */
-  readonly extraColumns: readonly string[];
-  /** Page size for pagination. */
-  readonly pageSize?:
-    | number
-    | undefined;
-  /** Page token for pagination. */
-  readonly pageToken?: string | undefined;
-}
-
-/** Response message for getting CrystalBall measurements. */
-export interface SearchMeasurementsResponse {
-  /** Define a structure to hold the query results */
-  readonly rows: readonly MeasurementRow[];
-  /** Page token for pagination. */
-  readonly nextPageToken?: string | undefined;
-}
-
-/** Row message for holding the query results. */
-export interface MeasurementRow {
-  /** Test name. */
-  readonly test?:
-    | string
-    | undefined;
-  /** Build creation timestamp. */
-  readonly buildCreateTime?:
-    | string
-    | undefined;
-  /** Build branch. */
-  readonly buildBranch?:
-    | string
-    | undefined;
-  /** Build target. */
-  readonly buildTarget?:
-    | string
-    | undefined;
-  /** ATP test name. */
-  readonly atpTest?:
-    | string
-    | undefined;
-  /** Metric key. */
-  readonly metricKey?:
-    | string
-    | undefined;
-  /** Metric value. */
-  readonly value?:
-    | number
-    | undefined;
-  /** Build ID. */
-  readonly buildId?:
-    | string
-    | undefined;
-  /** Ants invocation ID. */
-  readonly antsInvocationId?:
-    | string
-    | undefined;
-  /** Additional columns */
-  readonly extraColumns: { [key: string]: any | undefined };
-}
-
-export interface MeasurementRow_ExtraColumnsEntry {
-  readonly key: string;
-  readonly value: any | undefined;
-}
 
 /** Request message for getting filter columns. */
 export interface ListMeasurementFilterColumnsRequest {
@@ -378,6 +219,11 @@ export interface SuggestMeasurementFilterValuesRequest {
    * Example: "atp_test_name = \"my_test\" AND metric_key = \"my_metric\""
    */
   readonly filter: string;
+  /**
+   * If set to true, the server will bypass any caches and fetch the latest
+   * data. This may result in higher latency.
+   */
+  readonly skipCache: boolean;
 }
 
 /** Response message for getting filter values. */
@@ -761,7 +607,11 @@ export interface FetchDashboardWidgetDataResponse {
     | BreakdownTableData
     | undefined;
   /** Data specifically prepared for an InvocationDistribution widget */
-  readonly invocationDistributionData?: InvocationDistributionData | undefined;
+  readonly invocationDistributionData?:
+    | InvocationDistributionData
+    | undefined;
+  /** Data specifically prepared for a PeriodComparison widget */
+  readonly periodComparisonData?: PeriodComparisonData | undefined;
 }
 
 /** Data structured and transformed for the MultiMetricChart component. */
@@ -834,6 +684,64 @@ export interface BreakdownSection {
    * (e.g., 1000).
    */
   readonly rows: readonly { readonly [key: string]: any }[];
+}
+
+/** Data structured and transformed for the PeriodComparison widget. */
+export interface PeriodComparisonData {
+  /** The list of period comparison series. */
+  readonly series: readonly PeriodComparisonSeries[];
+}
+
+/** Represents a single series in a PeriodComparison widget. */
+export interface PeriodComparisonSeries {
+  /** The unique ID of the series. */
+  readonly seriesId: string;
+  /** Label for the legend. */
+  readonly legendLabel: string;
+  /** Metric field identifier. */
+  readonly metricField: string;
+  /** Data broken down by aggregation. */
+  readonly aggregationData: readonly PeriodComparisonAggregationData[];
+}
+
+/** Holds comparison data for a specific aggregation. */
+export interface PeriodComparisonAggregationData {
+  /** The aggregation type applied. */
+  readonly aggregationType: PerfChartSeries_PerfAggregationFunction;
+  /** Baseline period statistics. */
+  readonly baselineStats:
+    | PeriodStats
+    | undefined;
+  /** Comparison period statistics. */
+  readonly comparisonStats:
+    | PeriodStats
+    | undefined;
+  /** The net change between the baseline and comparison values. */
+  readonly netChange?:
+    | number
+    | undefined;
+  /** The percentage change from baseline to comparison. */
+  readonly percentageChange?:
+    | number
+    | undefined;
+  /** The volatility of the data over the period. */
+  readonly volatility?:
+    | number
+    | undefined;
+  /** The standard deviation of the data. */
+  readonly standardDeviation?:
+    | number
+    | undefined;
+  /** The cumulative impact (sum) of the data. */
+  readonly cumulativeImpact?: number | undefined;
+}
+
+/** Holds the aggregated statistics for a single period. */
+export interface PeriodStats {
+  /** Aggregated value for the period. */
+  readonly value: number;
+  /** Sparkline data points for the period. */
+  readonly sparklinePoints: readonly { readonly [key: string]: any }[];
 }
 
 /**
@@ -943,7 +851,11 @@ export interface PerfChartWidget {
     | InvocationDistributionConfig
     | undefined;
   /** Configuration for the BREAKDOWN_TABLE chart type. */
-  readonly breakdownTableWidgetChartConfig?: BreakdownTableConfig | undefined;
+  readonly breakdownTableWidgetChartConfig?:
+    | BreakdownTableConfig
+    | undefined;
+  /** Configuration for the PERIOD_COMPARISON chart type. */
+  readonly periodComparisonChartConfig?: PeriodComparisonConfig | undefined;
 }
 
 /**
@@ -961,6 +873,8 @@ export enum PerfChartWidget_ChartType {
   BREAKDOWN_TABLE = 3,
   /** INVOCATION_DISTRIBUTION - Distribution of individual invocation values for a metric. */
   INVOCATION_DISTRIBUTION = 4,
+  /** PERIOD_COMPARISON - Period comparison chart. */
+  PERIOD_COMPARISON = 5,
 }
 
 export function perfChartWidget_ChartTypeFromJSON(object: any): PerfChartWidget_ChartType {
@@ -980,6 +894,9 @@ export function perfChartWidget_ChartTypeFromJSON(object: any): PerfChartWidget_
     case 4:
     case "INVOCATION_DISTRIBUTION":
       return PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION;
+    case 5:
+    case "PERIOD_COMPARISON":
+      return PerfChartWidget_ChartType.PERIOD_COMPARISON;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfChartWidget_ChartType");
   }
@@ -997,6 +914,8 @@ export function perfChartWidget_ChartTypeToJSON(object: PerfChartWidget_ChartTyp
       return "BREAKDOWN_TABLE";
     case PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION:
       return "INVOCATION_DISTRIBUTION";
+    case PerfChartWidget_ChartType.PERIOD_COMPARISON:
+      return "PERIOD_COMPARISON";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum PerfChartWidget_ChartType");
   }
@@ -1050,6 +969,11 @@ export interface PerfChartSeries {
    * Empty if this is not a split series.
    */
   readonly parentSeriesId: string;
+  /**
+   * Whether this series is hidden in the chart.
+   * Defaults to false (visible) if not specified.
+   */
+  readonly hidden: boolean;
 }
 
 /**
@@ -1075,6 +999,12 @@ export enum PerfChartSeries_PerfAggregationFunction {
   MAX = 7,
   /** COUNT - Count. */
   COUNT = 8,
+  /** STANDARD_DEVIATION - Standard deviation. */
+  STANDARD_DEVIATION = 9,
+  /** VOLATILITY - Volatility. */
+  VOLATILITY = 10,
+  /** CUMULATIVE_IMPACT - Cumulative impact (sum). */
+  CUMULATIVE_IMPACT = 11,
 }
 
 export function perfChartSeries_PerfAggregationFunctionFromJSON(object: any): PerfChartSeries_PerfAggregationFunction {
@@ -1106,6 +1036,15 @@ export function perfChartSeries_PerfAggregationFunctionFromJSON(object: any): Pe
     case 8:
     case "COUNT":
       return PerfChartSeries_PerfAggregationFunction.COUNT;
+    case 9:
+    case "STANDARD_DEVIATION":
+      return PerfChartSeries_PerfAggregationFunction.STANDARD_DEVIATION;
+    case 10:
+    case "VOLATILITY":
+      return PerfChartSeries_PerfAggregationFunction.VOLATILITY;
+    case 11:
+    case "CUMULATIVE_IMPACT":
+      return PerfChartSeries_PerfAggregationFunction.CUMULATIVE_IMPACT;
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum PerfChartSeries_PerfAggregationFunction",
@@ -1133,6 +1072,12 @@ export function perfChartSeries_PerfAggregationFunctionToJSON(object: PerfChartS
       return "MAX";
     case PerfChartSeries_PerfAggregationFunction.COUNT:
       return "COUNT";
+    case PerfChartSeries_PerfAggregationFunction.STANDARD_DEVIATION:
+      return "STANDARD_DEVIATION";
+    case PerfChartSeries_PerfAggregationFunction.VOLATILITY:
+      return "VOLATILITY";
+    case PerfChartSeries_PerfAggregationFunction.CUMULATIVE_IMPACT:
+      return "CUMULATIVE_IMPACT";
     default:
       throw new globalThis.Error(
         "Unrecognized enum value " + object + " for enum PerfChartSeries_PerfAggregationFunction",
@@ -1398,6 +1343,20 @@ export function breakdownTableConfig_BreakdownAggregationToJSON(
         "Unrecognized enum value " + object + " for enum BreakdownTableConfig_BreakdownAggregation",
       );
   }
+}
+
+/** Configuration for a Period Comparison chart. */
+export interface PeriodComparisonConfig {
+  /** The baseline time range for comparison. */
+  readonly baselineTimeRange:
+    | Interval
+    | undefined;
+  /** The comparison time range. */
+  readonly comparisonTimeRange:
+    | Interval
+    | undefined;
+  /** The aggregation functions to apply to the metrics in the chart. */
+  readonly aggregations: readonly PerfChartSeries_PerfAggregationFunction[];
 }
 
 /** Defines a data specification, similar to concepts in Plx DataSpec. */
@@ -2051,721 +2010,6 @@ export interface RawSampleRow_ValuesEntry {
   readonly value: any | undefined;
 }
 
-function createBaseTestConnectionRequest(): TestConnectionRequest {
-  return {};
-}
-
-export const TestConnectionRequest: MessageFns<TestConnectionRequest> = {
-  encode(_: TestConnectionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): TestConnectionRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTestConnectionRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): TestConnectionRequest {
-    return {};
-  },
-
-  toJSON(_: TestConnectionRequest): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create(base?: DeepPartial<TestConnectionRequest>): TestConnectionRequest {
-    return TestConnectionRequest.fromPartial(base ?? {});
-  },
-  fromPartial(_: DeepPartial<TestConnectionRequest>): TestConnectionRequest {
-    const message = createBaseTestConnectionRequest() as any;
-    return message;
-  },
-};
-
-function createBaseTestConnectionResponse(): TestConnectionResponse {
-  return {};
-}
-
-export const TestConnectionResponse: MessageFns<TestConnectionResponse> = {
-  encode(_: TestConnectionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): TestConnectionResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTestConnectionResponse() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): TestConnectionResponse {
-    return {};
-  },
-
-  toJSON(_: TestConnectionResponse): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create(base?: DeepPartial<TestConnectionResponse>): TestConnectionResponse {
-    return TestConnectionResponse.fromPartial(base ?? {});
-  },
-  fromPartial(_: DeepPartial<TestConnectionResponse>): TestConnectionResponse {
-    const message = createBaseTestConnectionResponse() as any;
-    return message;
-  },
-};
-
-function createBaseSearchMeasurementsRequest(): SearchMeasurementsRequest {
-  return {
-    testNameFilter: undefined,
-    buildCreateStartTime: undefined,
-    buildCreateEndTime: undefined,
-    lastNDays: undefined,
-    buildBranch: undefined,
-    buildTarget: undefined,
-    atpTestNameFilter: undefined,
-    metricKeys: [],
-    extraColumns: [],
-    pageSize: undefined,
-    pageToken: undefined,
-  };
-}
-
-export const SearchMeasurementsRequest: MessageFns<SearchMeasurementsRequest> = {
-  encode(message: SearchMeasurementsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.testNameFilter !== undefined) {
-      writer.uint32(10).string(message.testNameFilter);
-    }
-    if (message.buildCreateStartTime !== undefined) {
-      Timestamp.encode(toTimestamp(message.buildCreateStartTime), writer.uint32(18).fork()).join();
-    }
-    if (message.buildCreateEndTime !== undefined) {
-      Timestamp.encode(toTimestamp(message.buildCreateEndTime), writer.uint32(26).fork()).join();
-    }
-    if (message.lastNDays !== undefined) {
-      writer.uint32(32).int32(message.lastNDays);
-    }
-    if (message.buildBranch !== undefined) {
-      writer.uint32(42).string(message.buildBranch);
-    }
-    if (message.buildTarget !== undefined) {
-      writer.uint32(50).string(message.buildTarget);
-    }
-    if (message.atpTestNameFilter !== undefined) {
-      writer.uint32(58).string(message.atpTestNameFilter);
-    }
-    for (const v of message.metricKeys) {
-      writer.uint32(66).string(v!);
-    }
-    for (const v of message.extraColumns) {
-      writer.uint32(74).string(v!);
-    }
-    if (message.pageSize !== undefined) {
-      writer.uint32(80).int32(message.pageSize);
-    }
-    if (message.pageToken !== undefined) {
-      writer.uint32(90).string(message.pageToken);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): SearchMeasurementsRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseSearchMeasurementsRequest() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.testNameFilter = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.buildCreateStartTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.buildCreateEndTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 4: {
-          if (tag !== 32) {
-            break;
-          }
-
-          message.lastNDays = reader.int32();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.buildBranch = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.buildTarget = reader.string();
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.atpTestNameFilter = reader.string();
-          continue;
-        }
-        case 8: {
-          if (tag !== 66) {
-            break;
-          }
-
-          message.metricKeys.push(reader.string());
-          continue;
-        }
-        case 9: {
-          if (tag !== 74) {
-            break;
-          }
-
-          message.extraColumns.push(reader.string());
-          continue;
-        }
-        case 10: {
-          if (tag !== 80) {
-            break;
-          }
-
-          message.pageSize = reader.int32();
-          continue;
-        }
-        case 11: {
-          if (tag !== 90) {
-            break;
-          }
-
-          message.pageToken = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): SearchMeasurementsRequest {
-    return {
-      testNameFilter: isSet(object.testNameFilter) ? globalThis.String(object.testNameFilter) : undefined,
-      buildCreateStartTime: isSet(object.buildCreateStartTime)
-        ? globalThis.String(object.buildCreateStartTime)
-        : undefined,
-      buildCreateEndTime: isSet(object.buildCreateEndTime) ? globalThis.String(object.buildCreateEndTime) : undefined,
-      lastNDays: isSet(object.lastNDays) ? globalThis.Number(object.lastNDays) : undefined,
-      buildBranch: isSet(object.buildBranch) ? globalThis.String(object.buildBranch) : undefined,
-      buildTarget: isSet(object.buildTarget) ? globalThis.String(object.buildTarget) : undefined,
-      atpTestNameFilter: isSet(object.atpTestNameFilter) ? globalThis.String(object.atpTestNameFilter) : undefined,
-      metricKeys: globalThis.Array.isArray(object?.metricKeys)
-        ? object.metricKeys.map((e: any) => globalThis.String(e))
-        : [],
-      extraColumns: globalThis.Array.isArray(object?.extraColumns)
-        ? object.extraColumns.map((e: any) => globalThis.String(e))
-        : [],
-      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : undefined,
-      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : undefined,
-    };
-  },
-
-  toJSON(message: SearchMeasurementsRequest): unknown {
-    const obj: any = {};
-    if (message.testNameFilter !== undefined) {
-      obj.testNameFilter = message.testNameFilter;
-    }
-    if (message.buildCreateStartTime !== undefined) {
-      obj.buildCreateStartTime = message.buildCreateStartTime;
-    }
-    if (message.buildCreateEndTime !== undefined) {
-      obj.buildCreateEndTime = message.buildCreateEndTime;
-    }
-    if (message.lastNDays !== undefined) {
-      obj.lastNDays = Math.round(message.lastNDays);
-    }
-    if (message.buildBranch !== undefined) {
-      obj.buildBranch = message.buildBranch;
-    }
-    if (message.buildTarget !== undefined) {
-      obj.buildTarget = message.buildTarget;
-    }
-    if (message.atpTestNameFilter !== undefined) {
-      obj.atpTestNameFilter = message.atpTestNameFilter;
-    }
-    if (message.metricKeys?.length) {
-      obj.metricKeys = message.metricKeys;
-    }
-    if (message.extraColumns?.length) {
-      obj.extraColumns = message.extraColumns;
-    }
-    if (message.pageSize !== undefined) {
-      obj.pageSize = Math.round(message.pageSize);
-    }
-    if (message.pageToken !== undefined) {
-      obj.pageToken = message.pageToken;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<SearchMeasurementsRequest>): SearchMeasurementsRequest {
-    return SearchMeasurementsRequest.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<SearchMeasurementsRequest>): SearchMeasurementsRequest {
-    const message = createBaseSearchMeasurementsRequest() as any;
-    message.testNameFilter = object.testNameFilter ?? undefined;
-    message.buildCreateStartTime = object.buildCreateStartTime ?? undefined;
-    message.buildCreateEndTime = object.buildCreateEndTime ?? undefined;
-    message.lastNDays = object.lastNDays ?? undefined;
-    message.buildBranch = object.buildBranch ?? undefined;
-    message.buildTarget = object.buildTarget ?? undefined;
-    message.atpTestNameFilter = object.atpTestNameFilter ?? undefined;
-    message.metricKeys = object.metricKeys?.map((e) => e) || [];
-    message.extraColumns = object.extraColumns?.map((e) => e) || [];
-    message.pageSize = object.pageSize ?? undefined;
-    message.pageToken = object.pageToken ?? undefined;
-    return message;
-  },
-};
-
-function createBaseSearchMeasurementsResponse(): SearchMeasurementsResponse {
-  return { rows: [], nextPageToken: undefined };
-}
-
-export const SearchMeasurementsResponse: MessageFns<SearchMeasurementsResponse> = {
-  encode(message: SearchMeasurementsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.rows) {
-      MeasurementRow.encode(v!, writer.uint32(10).fork()).join();
-    }
-    if (message.nextPageToken !== undefined) {
-      writer.uint32(18).string(message.nextPageToken);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): SearchMeasurementsResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseSearchMeasurementsResponse() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.rows.push(MeasurementRow.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.nextPageToken = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): SearchMeasurementsResponse {
-    return {
-      rows: globalThis.Array.isArray(object?.rows) ? object.rows.map((e: any) => MeasurementRow.fromJSON(e)) : [],
-      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : undefined,
-    };
-  },
-
-  toJSON(message: SearchMeasurementsResponse): unknown {
-    const obj: any = {};
-    if (message.rows?.length) {
-      obj.rows = message.rows.map((e) => MeasurementRow.toJSON(e));
-    }
-    if (message.nextPageToken !== undefined) {
-      obj.nextPageToken = message.nextPageToken;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<SearchMeasurementsResponse>): SearchMeasurementsResponse {
-    return SearchMeasurementsResponse.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<SearchMeasurementsResponse>): SearchMeasurementsResponse {
-    const message = createBaseSearchMeasurementsResponse() as any;
-    message.rows = object.rows?.map((e) => MeasurementRow.fromPartial(e)) || [];
-    message.nextPageToken = object.nextPageToken ?? undefined;
-    return message;
-  },
-};
-
-function createBaseMeasurementRow(): MeasurementRow {
-  return {
-    test: undefined,
-    buildCreateTime: undefined,
-    buildBranch: undefined,
-    buildTarget: undefined,
-    atpTest: undefined,
-    metricKey: undefined,
-    value: undefined,
-    buildId: undefined,
-    antsInvocationId: undefined,
-    extraColumns: {},
-  };
-}
-
-export const MeasurementRow: MessageFns<MeasurementRow> = {
-  encode(message: MeasurementRow, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.test !== undefined) {
-      writer.uint32(10).string(message.test);
-    }
-    if (message.buildCreateTime !== undefined) {
-      Timestamp.encode(toTimestamp(message.buildCreateTime), writer.uint32(18).fork()).join();
-    }
-    if (message.buildBranch !== undefined) {
-      writer.uint32(26).string(message.buildBranch);
-    }
-    if (message.buildTarget !== undefined) {
-      writer.uint32(34).string(message.buildTarget);
-    }
-    if (message.atpTest !== undefined) {
-      writer.uint32(42).string(message.atpTest);
-    }
-    if (message.metricKey !== undefined) {
-      writer.uint32(50).string(message.metricKey);
-    }
-    if (message.value !== undefined) {
-      writer.uint32(57).double(message.value);
-    }
-    if (message.buildId !== undefined) {
-      writer.uint32(66).string(message.buildId);
-    }
-    if (message.antsInvocationId !== undefined) {
-      writer.uint32(74).string(message.antsInvocationId);
-    }
-    Object.entries(message.extraColumns).forEach(([key, value]) => {
-      if (value !== undefined) {
-        MeasurementRow_ExtraColumnsEntry.encode({ key: key as any, value }, writer.uint32(82).fork()).join();
-      }
-    });
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): MeasurementRow {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMeasurementRow() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.test = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.buildCreateTime = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.buildBranch = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.buildTarget = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.atpTest = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.metricKey = reader.string();
-          continue;
-        }
-        case 7: {
-          if (tag !== 57) {
-            break;
-          }
-
-          message.value = reader.double();
-          continue;
-        }
-        case 8: {
-          if (tag !== 66) {
-            break;
-          }
-
-          message.buildId = reader.string();
-          continue;
-        }
-        case 9: {
-          if (tag !== 74) {
-            break;
-          }
-
-          message.antsInvocationId = reader.string();
-          continue;
-        }
-        case 10: {
-          if (tag !== 82) {
-            break;
-          }
-
-          const entry10 = MeasurementRow_ExtraColumnsEntry.decode(reader, reader.uint32());
-          if (entry10.value !== undefined) {
-            message.extraColumns[entry10.key] = entry10.value;
-          }
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): MeasurementRow {
-    return {
-      test: isSet(object.test) ? globalThis.String(object.test) : undefined,
-      buildCreateTime: isSet(object.buildCreateTime) ? globalThis.String(object.buildCreateTime) : undefined,
-      buildBranch: isSet(object.buildBranch) ? globalThis.String(object.buildBranch) : undefined,
-      buildTarget: isSet(object.buildTarget) ? globalThis.String(object.buildTarget) : undefined,
-      atpTest: isSet(object.atpTest) ? globalThis.String(object.atpTest) : undefined,
-      metricKey: isSet(object.metricKey) ? globalThis.String(object.metricKey) : undefined,
-      value: isSet(object.value) ? globalThis.Number(object.value) : undefined,
-      buildId: isSet(object.buildId) ? globalThis.String(object.buildId) : undefined,
-      antsInvocationId: isSet(object.antsInvocationId) ? globalThis.String(object.antsInvocationId) : undefined,
-      extraColumns: isObject(object.extraColumns)
-        ? Object.entries(object.extraColumns).reduce<{ [key: string]: any | undefined }>((acc, [key, value]) => {
-          acc[key] = value as any | undefined;
-          return acc;
-        }, {})
-        : {},
-    };
-  },
-
-  toJSON(message: MeasurementRow): unknown {
-    const obj: any = {};
-    if (message.test !== undefined) {
-      obj.test = message.test;
-    }
-    if (message.buildCreateTime !== undefined) {
-      obj.buildCreateTime = message.buildCreateTime;
-    }
-    if (message.buildBranch !== undefined) {
-      obj.buildBranch = message.buildBranch;
-    }
-    if (message.buildTarget !== undefined) {
-      obj.buildTarget = message.buildTarget;
-    }
-    if (message.atpTest !== undefined) {
-      obj.atpTest = message.atpTest;
-    }
-    if (message.metricKey !== undefined) {
-      obj.metricKey = message.metricKey;
-    }
-    if (message.value !== undefined) {
-      obj.value = message.value;
-    }
-    if (message.buildId !== undefined) {
-      obj.buildId = message.buildId;
-    }
-    if (message.antsInvocationId !== undefined) {
-      obj.antsInvocationId = message.antsInvocationId;
-    }
-    if (message.extraColumns) {
-      const entries = Object.entries(message.extraColumns);
-      if (entries.length > 0) {
-        obj.extraColumns = {};
-        entries.forEach(([k, v]) => {
-          obj.extraColumns[k] = v;
-        });
-      }
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<MeasurementRow>): MeasurementRow {
-    return MeasurementRow.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<MeasurementRow>): MeasurementRow {
-    const message = createBaseMeasurementRow() as any;
-    message.test = object.test ?? undefined;
-    message.buildCreateTime = object.buildCreateTime ?? undefined;
-    message.buildBranch = object.buildBranch ?? undefined;
-    message.buildTarget = object.buildTarget ?? undefined;
-    message.atpTest = object.atpTest ?? undefined;
-    message.metricKey = object.metricKey ?? undefined;
-    message.value = object.value ?? undefined;
-    message.buildId = object.buildId ?? undefined;
-    message.antsInvocationId = object.antsInvocationId ?? undefined;
-    message.extraColumns = Object.entries(object.extraColumns ?? {}).reduce<{ [key: string]: any | undefined }>(
-      (acc, [key, value]) => {
-        if (value !== undefined) {
-          acc[key] = value;
-        }
-        return acc;
-      },
-      {},
-    );
-    return message;
-  },
-};
-
-function createBaseMeasurementRow_ExtraColumnsEntry(): MeasurementRow_ExtraColumnsEntry {
-  return { key: "", value: undefined };
-}
-
-export const MeasurementRow_ExtraColumnsEntry: MessageFns<MeasurementRow_ExtraColumnsEntry> = {
-  encode(message: MeasurementRow_ExtraColumnsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.key !== "") {
-      writer.uint32(10).string(message.key);
-    }
-    if (message.value !== undefined) {
-      Value.encode(Value.wrap(message.value), writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): MeasurementRow_ExtraColumnsEntry {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMeasurementRow_ExtraColumnsEntry() as any;
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.key = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.value = Value.unwrap(Value.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): MeasurementRow_ExtraColumnsEntry {
-    return {
-      key: isSet(object.key) ? globalThis.String(object.key) : "",
-      value: isSet(object?.value) ? object.value : undefined,
-    };
-  },
-
-  toJSON(message: MeasurementRow_ExtraColumnsEntry): unknown {
-    const obj: any = {};
-    if (message.key !== "") {
-      obj.key = message.key;
-    }
-    if (message.value !== undefined) {
-      obj.value = message.value;
-    }
-    return obj;
-  },
-
-  create(base?: DeepPartial<MeasurementRow_ExtraColumnsEntry>): MeasurementRow_ExtraColumnsEntry {
-    return MeasurementRow_ExtraColumnsEntry.fromPartial(base ?? {});
-  },
-  fromPartial(object: DeepPartial<MeasurementRow_ExtraColumnsEntry>): MeasurementRow_ExtraColumnsEntry {
-    const message = createBaseMeasurementRow_ExtraColumnsEntry() as any;
-    message.key = object.key ?? "";
-    message.value = object.value ?? undefined;
-    return message;
-  },
-};
-
 function createBaseListMeasurementFilterColumnsRequest(): ListMeasurementFilterColumnsRequest {
   return { parent: "", pageSize: 0, pageToken: "" };
 }
@@ -3092,7 +2336,7 @@ export const MeasurementFilterColumn: MessageFns<MeasurementFilterColumn> = {
 };
 
 function createBaseSuggestMeasurementFilterValuesRequest(): SuggestMeasurementFilterValuesRequest {
-  return { parent: "", column: "", query: "", maxResultCount: 0, filter: "" };
+  return { parent: "", column: "", query: "", maxResultCount: 0, filter: "", skipCache: false };
 }
 
 export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasurementFilterValuesRequest> = {
@@ -3111,6 +2355,9 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
     }
     if (message.filter !== "") {
       writer.uint32(42).string(message.filter);
+    }
+    if (message.skipCache !== false) {
+      writer.uint32(48).bool(message.skipCache);
     }
     return writer;
   },
@@ -3162,6 +2409,14 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
           message.filter = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.skipCache = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3178,6 +2433,7 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
       query: isSet(object.query) ? globalThis.String(object.query) : "",
       maxResultCount: isSet(object.maxResultCount) ? globalThis.Number(object.maxResultCount) : 0,
       filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+      skipCache: isSet(object.skipCache) ? globalThis.Boolean(object.skipCache) : false,
     };
   },
 
@@ -3198,6 +2454,9 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
     if (message.filter !== "") {
       obj.filter = message.filter;
     }
+    if (message.skipCache !== false) {
+      obj.skipCache = message.skipCache;
+    }
     return obj;
   },
 
@@ -3211,6 +2470,7 @@ export const SuggestMeasurementFilterValuesRequest: MessageFns<SuggestMeasuremen
     message.query = object.query ?? "";
     message.maxResultCount = object.maxResultCount ?? 0;
     message.filter = object.filter ?? "";
+    message.skipCache = object.skipCache ?? false;
     return message;
   },
 };
@@ -5044,6 +4304,7 @@ function createBaseFetchDashboardWidgetDataResponse(): FetchDashboardWidgetDataR
     markdownWidget: undefined,
     breakdownTableData: undefined,
     invocationDistributionData: undefined,
+    periodComparisonData: undefined,
   };
 }
 
@@ -5063,6 +4324,9 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
     }
     if (message.invocationDistributionData !== undefined) {
       InvocationDistributionData.encode(message.invocationDistributionData, writer.uint32(50).fork()).join();
+    }
+    if (message.periodComparisonData !== undefined) {
+      PeriodComparisonData.encode(message.periodComparisonData, writer.uint32(58).fork()).join();
     }
     return writer;
   },
@@ -5114,6 +4378,14 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
           message.invocationDistributionData = InvocationDistributionData.decode(reader, reader.uint32());
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.periodComparisonData = PeriodComparisonData.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5136,6 +4408,9 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
       invocationDistributionData: isSet(object.invocationDistributionData)
         ? InvocationDistributionData.fromJSON(object.invocationDistributionData)
         : undefined,
+      periodComparisonData: isSet(object.periodComparisonData)
+        ? PeriodComparisonData.fromJSON(object.periodComparisonData)
+        : undefined,
     };
   },
 
@@ -5155,6 +4430,9 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
     }
     if (message.invocationDistributionData !== undefined) {
       obj.invocationDistributionData = InvocationDistributionData.toJSON(message.invocationDistributionData);
+    }
+    if (message.periodComparisonData !== undefined) {
+      obj.periodComparisonData = PeriodComparisonData.toJSON(message.periodComparisonData);
     }
     return obj;
   },
@@ -5178,6 +4456,9 @@ export const FetchDashboardWidgetDataResponse: MessageFns<FetchDashboardWidgetDa
       (object.invocationDistributionData !== undefined && object.invocationDistributionData !== null)
         ? InvocationDistributionData.fromPartial(object.invocationDistributionData)
         : undefined;
+    message.periodComparisonData = (object.periodComparisonData !== undefined && object.periodComparisonData !== null)
+      ? PeriodComparisonData.fromPartial(object.periodComparisonData)
+      : undefined;
     return message;
   },
 };
@@ -5722,6 +5003,441 @@ export const BreakdownSection: MessageFns<BreakdownSection> = {
   },
 };
 
+function createBasePeriodComparisonData(): PeriodComparisonData {
+  return { series: [] };
+}
+
+export const PeriodComparisonData: MessageFns<PeriodComparisonData> = {
+  encode(message: PeriodComparisonData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.series) {
+      PeriodComparisonSeries.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PeriodComparisonData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePeriodComparisonData() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.series.push(PeriodComparisonSeries.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PeriodComparisonData {
+    return {
+      series: globalThis.Array.isArray(object?.series)
+        ? object.series.map((e: any) => PeriodComparisonSeries.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PeriodComparisonData): unknown {
+    const obj: any = {};
+    if (message.series?.length) {
+      obj.series = message.series.map((e) => PeriodComparisonSeries.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PeriodComparisonData>): PeriodComparisonData {
+    return PeriodComparisonData.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PeriodComparisonData>): PeriodComparisonData {
+    const message = createBasePeriodComparisonData() as any;
+    message.series = object.series?.map((e) => PeriodComparisonSeries.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBasePeriodComparisonSeries(): PeriodComparisonSeries {
+  return { seriesId: "", legendLabel: "", metricField: "", aggregationData: [] };
+}
+
+export const PeriodComparisonSeries: MessageFns<PeriodComparisonSeries> = {
+  encode(message: PeriodComparisonSeries, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.seriesId !== "") {
+      writer.uint32(10).string(message.seriesId);
+    }
+    if (message.legendLabel !== "") {
+      writer.uint32(18).string(message.legendLabel);
+    }
+    if (message.metricField !== "") {
+      writer.uint32(26).string(message.metricField);
+    }
+    for (const v of message.aggregationData) {
+      PeriodComparisonAggregationData.encode(v!, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PeriodComparisonSeries {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePeriodComparisonSeries() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.seriesId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.legendLabel = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.metricField = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.aggregationData.push(PeriodComparisonAggregationData.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PeriodComparisonSeries {
+    return {
+      seriesId: isSet(object.seriesId) ? globalThis.String(object.seriesId) : "",
+      legendLabel: isSet(object.legendLabel) ? globalThis.String(object.legendLabel) : "",
+      metricField: isSet(object.metricField) ? globalThis.String(object.metricField) : "",
+      aggregationData: globalThis.Array.isArray(object?.aggregationData)
+        ? object.aggregationData.map((e: any) => PeriodComparisonAggregationData.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PeriodComparisonSeries): unknown {
+    const obj: any = {};
+    if (message.seriesId !== "") {
+      obj.seriesId = message.seriesId;
+    }
+    if (message.legendLabel !== "") {
+      obj.legendLabel = message.legendLabel;
+    }
+    if (message.metricField !== "") {
+      obj.metricField = message.metricField;
+    }
+    if (message.aggregationData?.length) {
+      obj.aggregationData = message.aggregationData.map((e) => PeriodComparisonAggregationData.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PeriodComparisonSeries>): PeriodComparisonSeries {
+    return PeriodComparisonSeries.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PeriodComparisonSeries>): PeriodComparisonSeries {
+    const message = createBasePeriodComparisonSeries() as any;
+    message.seriesId = object.seriesId ?? "";
+    message.legendLabel = object.legendLabel ?? "";
+    message.metricField = object.metricField ?? "";
+    message.aggregationData = object.aggregationData?.map((e) => PeriodComparisonAggregationData.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBasePeriodComparisonAggregationData(): PeriodComparisonAggregationData {
+  return {
+    aggregationType: 0,
+    baselineStats: undefined,
+    comparisonStats: undefined,
+    netChange: undefined,
+    percentageChange: undefined,
+    volatility: undefined,
+    standardDeviation: undefined,
+    cumulativeImpact: undefined,
+  };
+}
+
+export const PeriodComparisonAggregationData: MessageFns<PeriodComparisonAggregationData> = {
+  encode(message: PeriodComparisonAggregationData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.aggregationType !== 0) {
+      writer.uint32(8).int32(message.aggregationType);
+    }
+    if (message.baselineStats !== undefined) {
+      PeriodStats.encode(message.baselineStats, writer.uint32(18).fork()).join();
+    }
+    if (message.comparisonStats !== undefined) {
+      PeriodStats.encode(message.comparisonStats, writer.uint32(26).fork()).join();
+    }
+    if (message.netChange !== undefined) {
+      writer.uint32(33).double(message.netChange);
+    }
+    if (message.percentageChange !== undefined) {
+      writer.uint32(41).double(message.percentageChange);
+    }
+    if (message.volatility !== undefined) {
+      writer.uint32(49).double(message.volatility);
+    }
+    if (message.standardDeviation !== undefined) {
+      writer.uint32(57).double(message.standardDeviation);
+    }
+    if (message.cumulativeImpact !== undefined) {
+      writer.uint32(65).double(message.cumulativeImpact);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PeriodComparisonAggregationData {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePeriodComparisonAggregationData() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.aggregationType = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.baselineStats = PeriodStats.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.comparisonStats = PeriodStats.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 33) {
+            break;
+          }
+
+          message.netChange = reader.double();
+          continue;
+        }
+        case 5: {
+          if (tag !== 41) {
+            break;
+          }
+
+          message.percentageChange = reader.double();
+          continue;
+        }
+        case 6: {
+          if (tag !== 49) {
+            break;
+          }
+
+          message.volatility = reader.double();
+          continue;
+        }
+        case 7: {
+          if (tag !== 57) {
+            break;
+          }
+
+          message.standardDeviation = reader.double();
+          continue;
+        }
+        case 8: {
+          if (tag !== 65) {
+            break;
+          }
+
+          message.cumulativeImpact = reader.double();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PeriodComparisonAggregationData {
+    return {
+      aggregationType: isSet(object.aggregationType)
+        ? perfChartSeries_PerfAggregationFunctionFromJSON(object.aggregationType)
+        : 0,
+      baselineStats: isSet(object.baselineStats) ? PeriodStats.fromJSON(object.baselineStats) : undefined,
+      comparisonStats: isSet(object.comparisonStats) ? PeriodStats.fromJSON(object.comparisonStats) : undefined,
+      netChange: isSet(object.netChange) ? globalThis.Number(object.netChange) : undefined,
+      percentageChange: isSet(object.percentageChange) ? globalThis.Number(object.percentageChange) : undefined,
+      volatility: isSet(object.volatility) ? globalThis.Number(object.volatility) : undefined,
+      standardDeviation: isSet(object.standardDeviation) ? globalThis.Number(object.standardDeviation) : undefined,
+      cumulativeImpact: isSet(object.cumulativeImpact) ? globalThis.Number(object.cumulativeImpact) : undefined,
+    };
+  },
+
+  toJSON(message: PeriodComparisonAggregationData): unknown {
+    const obj: any = {};
+    if (message.aggregationType !== 0) {
+      obj.aggregationType = perfChartSeries_PerfAggregationFunctionToJSON(message.aggregationType);
+    }
+    if (message.baselineStats !== undefined) {
+      obj.baselineStats = PeriodStats.toJSON(message.baselineStats);
+    }
+    if (message.comparisonStats !== undefined) {
+      obj.comparisonStats = PeriodStats.toJSON(message.comparisonStats);
+    }
+    if (message.netChange !== undefined) {
+      obj.netChange = message.netChange;
+    }
+    if (message.percentageChange !== undefined) {
+      obj.percentageChange = message.percentageChange;
+    }
+    if (message.volatility !== undefined) {
+      obj.volatility = message.volatility;
+    }
+    if (message.standardDeviation !== undefined) {
+      obj.standardDeviation = message.standardDeviation;
+    }
+    if (message.cumulativeImpact !== undefined) {
+      obj.cumulativeImpact = message.cumulativeImpact;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PeriodComparisonAggregationData>): PeriodComparisonAggregationData {
+    return PeriodComparisonAggregationData.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PeriodComparisonAggregationData>): PeriodComparisonAggregationData {
+    const message = createBasePeriodComparisonAggregationData() as any;
+    message.aggregationType = object.aggregationType ?? 0;
+    message.baselineStats = (object.baselineStats !== undefined && object.baselineStats !== null)
+      ? PeriodStats.fromPartial(object.baselineStats)
+      : undefined;
+    message.comparisonStats = (object.comparisonStats !== undefined && object.comparisonStats !== null)
+      ? PeriodStats.fromPartial(object.comparisonStats)
+      : undefined;
+    message.netChange = object.netChange ?? undefined;
+    message.percentageChange = object.percentageChange ?? undefined;
+    message.volatility = object.volatility ?? undefined;
+    message.standardDeviation = object.standardDeviation ?? undefined;
+    message.cumulativeImpact = object.cumulativeImpact ?? undefined;
+    return message;
+  },
+};
+
+function createBasePeriodStats(): PeriodStats {
+  return { value: 0, sparklinePoints: [] };
+}
+
+export const PeriodStats: MessageFns<PeriodStats> = {
+  encode(message: PeriodStats, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.value !== 0) {
+      writer.uint32(9).double(message.value);
+    }
+    for (const v of message.sparklinePoints) {
+      Struct.encode(Struct.wrap(v!), writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PeriodStats {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePeriodStats() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 9) {
+            break;
+          }
+
+          message.value = reader.double();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.sparklinePoints.push(Struct.unwrap(Struct.decode(reader, reader.uint32())));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PeriodStats {
+    return {
+      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+      sparklinePoints: globalThis.Array.isArray(object?.sparklinePoints) ? [...object.sparklinePoints] : [],
+    };
+  },
+
+  toJSON(message: PeriodStats): unknown {
+    const obj: any = {};
+    if (message.value !== 0) {
+      obj.value = message.value;
+    }
+    if (message.sparklinePoints?.length) {
+      obj.sparklinePoints = message.sparklinePoints;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PeriodStats>): PeriodStats {
+    return PeriodStats.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PeriodStats>): PeriodStats {
+    const message = createBasePeriodStats() as any;
+    message.value = object.value ?? 0;
+    message.sparklinePoints = object.sparklinePoints?.map((e) => e) || [];
+    return message;
+  },
+};
+
 function createBasePerfDashboardContent(): PerfDashboardContent {
   return { dataSpecs: {}, globalFilters: [], widgets: [] };
 }
@@ -6101,6 +5817,7 @@ function createBasePerfChartWidget(): PerfChartWidget {
     invocationDistributionConfig: undefined,
     invocationDistributionChartConfig: undefined,
     breakdownTableWidgetChartConfig: undefined,
+    periodComparisonChartConfig: undefined,
   };
 }
 
@@ -6144,6 +5861,9 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
     }
     if (message.breakdownTableWidgetChartConfig !== undefined) {
       BreakdownTableConfig.encode(message.breakdownTableWidgetChartConfig, writer.uint32(106).fork()).join();
+    }
+    if (message.periodComparisonChartConfig !== undefined) {
+      PeriodComparisonConfig.encode(message.periodComparisonChartConfig, writer.uint32(114).fork()).join();
     }
     return writer;
   },
@@ -6259,6 +5979,14 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
           message.breakdownTableWidgetChartConfig = BreakdownTableConfig.decode(reader, reader.uint32());
           continue;
         }
+        case 14: {
+          if (tag !== 114) {
+            break;
+          }
+
+          message.periodComparisonChartConfig = PeriodComparisonConfig.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6292,6 +6020,9 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
         : undefined,
       breakdownTableWidgetChartConfig: isSet(object.breakdownTableWidgetChartConfig)
         ? BreakdownTableConfig.fromJSON(object.breakdownTableWidgetChartConfig)
+        : undefined,
+      periodComparisonChartConfig: isSet(object.periodComparisonChartConfig)
+        ? PeriodComparisonConfig.fromJSON(object.periodComparisonChartConfig)
         : undefined,
     };
   },
@@ -6339,6 +6070,9 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
     if (message.breakdownTableWidgetChartConfig !== undefined) {
       obj.breakdownTableWidgetChartConfig = BreakdownTableConfig.toJSON(message.breakdownTableWidgetChartConfig);
     }
+    if (message.periodComparisonChartConfig !== undefined) {
+      obj.periodComparisonChartConfig = PeriodComparisonConfig.toJSON(message.periodComparisonChartConfig);
+    }
     return obj;
   },
 
@@ -6377,6 +6111,10 @@ export const PerfChartWidget: MessageFns<PerfChartWidget> = {
       (object.breakdownTableWidgetChartConfig !== undefined && object.breakdownTableWidgetChartConfig !== null)
         ? BreakdownTableConfig.fromPartial(object.breakdownTableWidgetChartConfig)
         : undefined;
+    message.periodComparisonChartConfig =
+      (object.periodComparisonChartConfig !== undefined && object.periodComparisonChartConfig !== null)
+        ? PeriodComparisonConfig.fromPartial(object.periodComparisonChartConfig)
+        : undefined;
     return message;
   },
 };
@@ -6395,6 +6133,7 @@ function createBasePerfChartSeries(): PerfChartSeries {
     color: "",
     id: "",
     parentSeriesId: "",
+    hidden: false,
   };
 }
 
@@ -6435,6 +6174,9 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     }
     if (message.parentSeriesId !== "") {
       writer.uint32(98).string(message.parentSeriesId);
+    }
+    if (message.hidden !== false) {
+      writer.uint32(104).bool(message.hidden);
     }
     return writer;
   },
@@ -6542,6 +6284,14 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
           message.parentSeriesId = reader.string();
           continue;
         }
+        case 13: {
+          if (tag !== 104) {
+            break;
+          }
+
+          message.hidden = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6571,6 +6321,7 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
       color: isSet(object.color) ? globalThis.String(object.color) : "",
       id: isSet(object.id) ? globalThis.String(object.id) : "",
       parentSeriesId: isSet(object.parentSeriesId) ? globalThis.String(object.parentSeriesId) : "",
+      hidden: isSet(object.hidden) ? globalThis.Boolean(object.hidden) : false,
     };
   },
 
@@ -6612,6 +6363,9 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     if (message.parentSeriesId !== "") {
       obj.parentSeriesId = message.parentSeriesId;
     }
+    if (message.hidden !== false) {
+      obj.hidden = message.hidden;
+    }
     return obj;
   },
 
@@ -6632,6 +6386,7 @@ export const PerfChartSeries: MessageFns<PerfChartSeries> = {
     message.color = object.color ?? "";
     message.id = object.id ?? "";
     message.parentSeriesId = object.parentSeriesId ?? "";
+    message.hidden = object.hidden ?? false;
     return message;
   },
 };
@@ -7147,6 +6902,116 @@ export const BreakdownTableConfig: MessageFns<BreakdownTableConfig> = {
     const message = createBaseBreakdownTableConfig() as any;
     message.aggregations = object.aggregations?.map((e) => e) || [];
     message.defaultDimension = object.defaultDimension ?? "";
+    return message;
+  },
+};
+
+function createBasePeriodComparisonConfig(): PeriodComparisonConfig {
+  return { baselineTimeRange: undefined, comparisonTimeRange: undefined, aggregations: [] };
+}
+
+export const PeriodComparisonConfig: MessageFns<PeriodComparisonConfig> = {
+  encode(message: PeriodComparisonConfig, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.baselineTimeRange !== undefined) {
+      Interval.encode(message.baselineTimeRange, writer.uint32(10).fork()).join();
+    }
+    if (message.comparisonTimeRange !== undefined) {
+      Interval.encode(message.comparisonTimeRange, writer.uint32(18).fork()).join();
+    }
+    for (const v of message.aggregations) {
+      writer.uint32(24).int32(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PeriodComparisonConfig {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePeriodComparisonConfig() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.baselineTimeRange = Interval.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.comparisonTimeRange = Interval.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag === 24) {
+            message.aggregations.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 26) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.aggregations.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PeriodComparisonConfig {
+    return {
+      baselineTimeRange: isSet(object.baselineTimeRange) ? Interval.fromJSON(object.baselineTimeRange) : undefined,
+      comparisonTimeRange: isSet(object.comparisonTimeRange)
+        ? Interval.fromJSON(object.comparisonTimeRange)
+        : undefined,
+      aggregations: globalThis.Array.isArray(object?.aggregations)
+        ? object.aggregations.map((e: any) => perfChartSeries_PerfAggregationFunctionFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PeriodComparisonConfig): unknown {
+    const obj: any = {};
+    if (message.baselineTimeRange !== undefined) {
+      obj.baselineTimeRange = Interval.toJSON(message.baselineTimeRange);
+    }
+    if (message.comparisonTimeRange !== undefined) {
+      obj.comparisonTimeRange = Interval.toJSON(message.comparisonTimeRange);
+    }
+    if (message.aggregations?.length) {
+      obj.aggregations = message.aggregations.map((e) => perfChartSeries_PerfAggregationFunctionToJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PeriodComparisonConfig>): PeriodComparisonConfig {
+    return PeriodComparisonConfig.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PeriodComparisonConfig>): PeriodComparisonConfig {
+    const message = createBasePeriodComparisonConfig() as any;
+    message.baselineTimeRange = (object.baselineTimeRange !== undefined && object.baselineTimeRange !== null)
+      ? Interval.fromPartial(object.baselineTimeRange)
+      : undefined;
+    message.comparisonTimeRange = (object.comparisonTimeRange !== undefined && object.comparisonTimeRange !== null)
+      ? Interval.fromPartial(object.comparisonTimeRange)
+      : undefined;
+    message.aggregations = object.aggregations?.map((e) => e) || [];
     return message;
   },
 };
@@ -9398,8 +9263,6 @@ export const RawSampleRow_ValuesEntry: MessageFns<RawSampleRow_ValuesEntry> = {
 
 /** Service for Android performance-related data. */
 export interface PerfService {
-  /** RPC for getting CrystalBall measurements. */
-  SearchMeasurements(request: SearchMeasurementsRequest): Promise<SearchMeasurementsResponse>;
   /** RPC to discover filterable columns for measurements. */
   ListMeasurementFilterColumns(
     request: ListMeasurementFilterColumnsRequest,
@@ -9413,8 +9276,6 @@ export interface PerfService {
   ): Promise<SuggestMeasurementFilterValuesResponse>;
   /** RPC to search for metric definitions. */
   SearchMetricDefinitions(request: SearchMetricDefinitionsRequest): Promise<SearchMetricDefinitionsResponse>;
-  /** Sample RPC for testing the service via a ping. */
-  TestConnection(request: TestConnectionRequest): Promise<TestConnectionResponse>;
   /**
    * Creates a new DashboardState. A client-provided ID can be used,
    * otherwise the server will assign a unique ID.
@@ -9521,11 +9382,9 @@ export class PerfServiceClientImpl implements PerfService {
   constructor(rpc: Rpc, opts?: { service?: string }) {
     this.service = opts?.service || PerfServiceServiceName;
     this.rpc = rpc;
-    this.SearchMeasurements = this.SearchMeasurements.bind(this);
     this.ListMeasurementFilterColumns = this.ListMeasurementFilterColumns.bind(this);
     this.SuggestMeasurementFilterValues = this.SuggestMeasurementFilterValues.bind(this);
     this.SearchMetricDefinitions = this.SearchMetricDefinitions.bind(this);
-    this.TestConnection = this.TestConnection.bind(this);
     this.CreateDashboardState = this.CreateDashboardState.bind(this);
     this.UpdateDashboardState = this.UpdateDashboardState.bind(this);
     this.GetDashboardState = this.GetDashboardState.bind(this);
@@ -9543,12 +9402,6 @@ export class PerfServiceClientImpl implements PerfService {
     this.RemoveStarredDashboard = this.RemoveStarredDashboard.bind(this);
     this.GenerateDashboardState = this.GenerateDashboardState.bind(this);
   }
-  SearchMeasurements(request: SearchMeasurementsRequest): Promise<SearchMeasurementsResponse> {
-    const data = SearchMeasurementsRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "SearchMeasurements", data);
-    return promise.then((data) => SearchMeasurementsResponse.fromJSON(data));
-  }
-
   ListMeasurementFilterColumns(
     request: ListMeasurementFilterColumnsRequest,
   ): Promise<ListMeasurementFilterColumnsResponse> {
@@ -9569,12 +9422,6 @@ export class PerfServiceClientImpl implements PerfService {
     const data = SearchMetricDefinitionsRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "SearchMetricDefinitions", data);
     return promise.then((data) => SearchMetricDefinitionsResponse.fromJSON(data));
-  }
-
-  TestConnection(request: TestConnectionRequest): Promise<TestConnectionResponse> {
-    const data = TestConnectionRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "TestConnection", data);
-    return promise.then((data) => TestConnectionResponse.fromJSON(data));
   }
 
   CreateDashboardState(request: CreateDashboardStateRequest): Promise<Operation> {

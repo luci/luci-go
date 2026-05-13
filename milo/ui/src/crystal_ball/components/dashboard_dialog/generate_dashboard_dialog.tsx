@@ -85,6 +85,7 @@ export function GenerateDashboardDialog({
       query: debouncedQuery,
       maxResultCount: MAX_SUGGEST_RESULTS,
       filter: '',
+      skipCache: false,
     },
     {
       enabled: open && debouncedQuery.length > 0 && isFocused,

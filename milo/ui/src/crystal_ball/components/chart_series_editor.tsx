@@ -557,6 +557,7 @@ export function ChartSeriesItem({
         query: debouncedQuery,
         maxResultCount: MAX_SUGGEST_RESULTS,
         filter: filterString,
+        skipCache: false,
       },
       {
         enabled: !!parent && debouncedQuery.length > 0 && isFocused,

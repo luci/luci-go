@@ -97,6 +97,11 @@ export const AGGREGATION_FUNCTION_LABELS: Record<
   [PerfChartSeries_PerfAggregationFunction.MIN]: 'Min',
   [PerfChartSeries_PerfAggregationFunction.MAX]: 'Max',
   [PerfChartSeries_PerfAggregationFunction.COUNT]: 'Count',
+  [PerfChartSeries_PerfAggregationFunction.STANDARD_DEVIATION]:
+    'Standard Deviation',
+  [PerfChartSeries_PerfAggregationFunction.VOLATILITY]: 'Volatility',
+  [PerfChartSeries_PerfAggregationFunction.CUMULATIVE_IMPACT]:
+    'Cumulative Impact (Sum)',
 };
 
 /**

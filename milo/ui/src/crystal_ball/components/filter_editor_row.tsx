@@ -158,6 +158,7 @@ export function FilterEditorRow({
       query: isCheckboxFilter ? '' : debouncedQuery,
       maxResultCount: MAX_SUGGEST_RESULTS,
       filter: isCheckboxFilter ? '' : filterString,
+      skipCache: false,
     },
     {
       enabled:
