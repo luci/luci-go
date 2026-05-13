@@ -308,25 +308,25 @@ func (c *InstanceCache) Close(ctx context.Context) {
 // OpenAsSource returns the instance file as a pkg.Source.
 //
 // If the on-disk cache does not contain this instance, it will be fetched with
-// Fetcher.
+// Fetcher (and `fetched` will be true).
 //
 // This is fully synchronous - fetching (if needed) will happen inline with
 // this call.
 //
 // If you need to access multiple instances concurrently, see
 // [ManagedInstanceCache].
-func (c *InstanceCache) OpenAsSource(ctx context.Context, service string, pin common.Pin) (pkg.Source, error) {
+func (c *InstanceCache) OpenAsSource(ctx context.Context, service string, pin common.Pin) (src pkg.Source, fetched bool, err error) {
 	c.maybeLaunch(ctx)
 
-	f, err := c.openOrFetch(ctx, service, pin)
+	f, fetched, err := c.openOrFetch(ctx, service, pin)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	stat, err := f.Stat()
 	if err != nil {
 		_ = f.Close()
-		return nil, cipderr.IO.Apply(errors.Fmt("checking size: %w", err))
+		return nil, false, cipderr.IO.Apply(errors.Fmt("checking size: %w", err))
 	}
 
 	return &cacheFile{
@@ -334,7 +334,7 @@ func (c *InstanceCache) OpenAsSource(ctx context.Context, service string, pin co
 		pin:   pin,
 		file:  f,
 		size:  stat.Size(),
-	}, nil
+	}, fetched, nil
 }
 
 // AllInstanceIDs returns all instance IDs currently present in the cache.
@@ -359,14 +359,14 @@ func (c *InstanceCache) AllInstanceIDs(ctx context.Context, forceSync bool) ([]s
 }
 
 // openOrFetch either opens an existing instance file or writes a new one.
-func (c *InstanceCache) openOrFetch(ctx context.Context, service string, pin common.Pin) (*os.File, error) {
+func (c *InstanceCache) openOrFetch(ctx context.Context, service string, pin common.Pin) (*os.File, bool, error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	path, err := c.FS.RootRelToAbs(pin.InstanceID)
 	if err != nil {
-		return nil, cipderr.BadArgument.Apply(errors.Fmt("invalid instance ID %q", pin.InstanceID))
+		return nil, false, cipderr.BadArgument.Apply(errors.Fmt("invalid instance ID %q", pin.InstanceID))
 	}
 
 	attempt := 0
@@ -383,11 +383,11 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, service string, pin com
 		default:
 			logging.Infof(ctx, "Cache hit for %s", pin)
 			c.Touch(ctx, pin.InstanceID) // Bump its last access time.
-			return file, nil
+			return file, false, nil
 		}
 
 		if c.Fetcher == nil {
-			return nil, errors.Fmt("missing %s: %w", pin, ErrNoFetcher)
+			return nil, false, errors.Fmt("missing %s: %w", pin, ErrNoFetcher)
 		}
 
 		// No such cached instance, download it.
@@ -398,7 +398,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, service string, pin com
 			if cipderr.ToCode(err) == cipderr.Unknown {
 				err = cipderr.IO.Apply(errors.Fmt("writing to instance cache: %w", err))
 			}
-			return nil, err
+			return nil, false, err
 		}
 
 		// Try to open it now. There's a (very) small chance that it has been
@@ -415,13 +415,13 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, service string, pin com
 			logging.Infof(ctx, "Pin %s is still not in the cache, retrying...", pin)
 		case os.IsNotExist(err) && attempt > 1:
 			logging.Errorf(ctx, "Pin %s is unexpectedly missing from the cache", pin)
-			return nil, cipderr.IO.Apply(errors.Fmt("pin %s is unexpectedly missing from the cache: %w", pin, err))
+			return nil, false, cipderr.IO.Apply(errors.Fmt("pin %s is unexpectedly missing from the cache: %w", pin, err))
 		case err != nil:
 			logging.Errorf(ctx, "Failed to open the instance %s: %s", pin, err)
-			return nil, cipderr.IO.Apply(errors.Fmt("opening the cached instance %s: %w", pin, err))
+			return nil, false, cipderr.IO.Apply(errors.Fmt("opening the cached instance %s: %w", pin, err))
 		default:
 			c.Touch(ctx, pin.InstanceID) // Mark it as accessed.
-			return file, nil
+			return file, true, nil
 		}
 	}
 }

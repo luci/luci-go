@@ -126,16 +126,14 @@ func fakeData(ctx context.Context, p common.Pin) (string, error) {
 func access(t testing.TB, ctx context.Context, cache *InstanceCache, pin common.Pin, cb func(created bool, src pkg.Source) (corrupted bool)) {
 	t.Helper()
 
-	_, existed := accessTime(ctx, cache, pin)
-
-	src, err := cache.OpenAsSource(ctx, "", pin)
+	src, fetched, err := cache.OpenAsSource(ctx, "", pin)
 	assert.NoErr(t, err)
 	var corrupted bool
 	defer func() {
 		src.Close(ctx, corrupted)
 	}()
 
-	corrupted = cb(!existed, src)
+	corrupted = cb(fetched, src)
 }
 
 // putNew ensures that `pin` is not in `cache`, then accesses it via
@@ -148,9 +146,12 @@ func putNew(t testing.TB, ctx context.Context, cache *InstanceCache, pin common.
 		"putNew: cannot create new instance %q: instance already exists", pin,
 	))
 
-	src, err := cache.OpenAsSource(ctx, "", pin)
+	src, fetched, err := cache.OpenAsSource(ctx, "", pin)
 	assert.NoErr(t, err, truth.LineContext())
-	assert.NoErr(t, src.Close(ctx, false))
+	assert.That(t, fetched, should.BeTrue, truth.LineContext(), truth.Explain(
+		"putNew: unexpectedly did not fetch",
+	))
+	assert.NoErr(t, src.Close(ctx, false), truth.LineContext())
 }
 
 // readSrc reads the content of `src`
@@ -378,7 +379,7 @@ func TestInstanceCache(t *testing.T) {
 		cache, _, ctx := instanceCacheTestSetup(t)
 		cache.Fetcher = nil
 
-		_, err := cache.OpenAsSource(ctx, "", pin(0))
+		_, _, err := cache.OpenAsSource(ctx, "", pin(0))
 		assert.ErrIsLike(t, err, ErrNoFetcher)
 	})
 

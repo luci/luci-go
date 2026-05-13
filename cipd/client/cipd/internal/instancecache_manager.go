@@ -42,7 +42,10 @@ const (
 
 	// VerifiedInstance indicates that the cache should open the pkg.Source as a
 	// pkg.Instance, but only after checking that it's hash matches the
-	// InstanceID
+	// InstanceID.
+	//
+	// If the instance was fetched by our process (via Fetcher), the hash is not
+	// checked a second time (since it Fetcher's responsibility to do this).
 	VerifiedInstance
 )
 
@@ -287,7 +290,7 @@ func (c *ManagedInstanceCache) handleRequest(req *InstanceRequest) *InstanceResu
 	}
 
 	for i, cache := range c.Caches {
-		switch src, err := cache.OpenAsSource(ctx, req.Service, pin); {
+		switch src, fetched, err := cache.OpenAsSource(ctx, req.Service, pin); {
 		case err != nil:
 			last := i == len(c.Caches)-1
 			if !last && (errors.Is(err, ErrNoFetcher) || cipderr.ToCode(err) == cipderr.InvalidVersion) {
@@ -311,7 +314,7 @@ func (c *ManagedInstanceCache) handleRequest(req *InstanceRequest) *InstanceResu
 			// SoC, like raspberry pi) the hash verification can take significant
 			// time. Modern systems with NVMe storage will see a couple GBps here.
 			vm := reader.SkipHashVerification
-			if req.OpenAs == VerifiedInstance {
+			if !fetched && req.OpenAs == VerifiedInstance {
 				vm = reader.VerifyHash
 			}
 			instance, err := reader.OpenInstance(ctx, src, reader.OpenInstanceOpts{
