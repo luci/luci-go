@@ -52,7 +52,7 @@ type trackingFetcher struct {
 }
 
 // fetch can be used as InstanceCache.Fetcher.
-func (f *trackingFetcher) fetch(ctx context.Context, pin common.Pin, w io.WriteSeeker) error {
+func (f *trackingFetcher) fetch(ctx context.Context, service string, pin common.Pin, w io.WriteSeeker) error {
 	fetchID := f.calls.Add(1)
 	if f.errFn != nil {
 		if err := f.errFn(fetchID); err != nil {
@@ -128,7 +128,7 @@ func access(t testing.TB, ctx context.Context, cache *InstanceCache, pin common.
 
 	_, existed := accessTime(ctx, cache, pin)
 
-	src, err := cache.OpenAsSource(ctx, pin)
+	src, err := cache.OpenAsSource(ctx, "", pin)
 	assert.NoErr(t, err)
 	var corrupted bool
 	defer func() {
@@ -148,7 +148,7 @@ func putNew(t testing.TB, ctx context.Context, cache *InstanceCache, pin common.
 		"putNew: cannot create new instance %q: instance already exists", pin,
 	))
 
-	src, err := cache.OpenAsSource(ctx, pin)
+	src, err := cache.OpenAsSource(ctx, "", pin)
 	assert.NoErr(t, err, truth.LineContext())
 	assert.NoErr(t, src.Close(ctx, false))
 }
@@ -314,7 +314,7 @@ func TestInstanceCache(t *testing.T) {
 
 		// Relaunch the cache and close it to do another GC pass with launchTime
 		// == clock.Now.
-		cache.OpenAsSource(ctx, common.Pin{})
+		cache.OpenAsSource(ctx, "", common.Pin{})
 		assert.That(t, cache.launchTime, should.Match(clock.Now(ctx)))
 		cache.Close(ctx)
 
@@ -336,7 +336,7 @@ func TestInstanceCache(t *testing.T) {
 		cache.ExactGC = true
 
 		// Ensure the cache is launched.
-		cache.OpenAsSource(ctx, common.Pin{})
+		cache.OpenAsSource(ctx, "", common.Pin{})
 
 		// Advance time a bit so all these pins initially start with a time >
 		// launchTime.
@@ -378,7 +378,7 @@ func TestInstanceCache(t *testing.T) {
 		cache, _, ctx := instanceCacheTestSetup(t)
 		cache.Fetcher = nil
 
-		_, err := cache.OpenAsSource(ctx, pin(0))
+		_, err := cache.OpenAsSource(ctx, "", pin(0))
 		assert.ErrIsLike(t, err, ErrNoFetcher)
 	})
 
@@ -388,7 +388,7 @@ func TestInstanceCache(t *testing.T) {
 		cache.ExactGC = true
 
 		// Launch the cache.
-		cache.OpenAsSource(ctx, common.Pin{})
+		cache.OpenAsSource(ctx, "", common.Pin{})
 		env.tc.Add(time.Millisecond)
 
 		putNew(t, ctx, cache, pin(0))
@@ -404,7 +404,7 @@ func TestInstanceCache(t *testing.T) {
 		env.tc.Add(time.Minute)
 
 		// Relaunch + Close/GC again.
-		cache.OpenAsSource(ctx, common.Pin{})
+		cache.OpenAsSource(ctx, "", common.Pin{})
 		cache.Close(ctx)
 
 		// We still have all GC'able instances.
@@ -413,7 +413,7 @@ func TestInstanceCache(t *testing.T) {
 		cache.PassiveWritePolicy = 0
 
 		// Relaunch + Close/GC again.
-		cache.OpenAsSource(ctx, common.Pin{})
+		cache.OpenAsSource(ctx, "", common.Pin{})
 		cache.Close(ctx)
 
 		assert.That(t, countTempFiles(t, cache), should.Equal(1)) // Everything is gone.

@@ -61,7 +61,7 @@ const (
 // Fetcher knows how to populate a file in the cache given its pin.
 //
 // It must check the hash of the downloaded package matches the pin.
-type Fetcher func(ctx context.Context, pin common.Pin, f io.WriteSeeker) error
+type Fetcher func(ctx context.Context, service string, pin common.Pin, f io.WriteSeeker) error
 
 // ErrNoFetcher is the error returned when an InstanceCache is configured with
 // a nil Fetcher but is missing data.
@@ -315,10 +315,10 @@ func (c *InstanceCache) Close(ctx context.Context) {
 //
 // If you need to access multiple instances concurrently, see
 // [ManagedInstanceCache].
-func (c *InstanceCache) OpenAsSource(ctx context.Context, pin common.Pin) (pkg.Source, error) {
+func (c *InstanceCache) OpenAsSource(ctx context.Context, service string, pin common.Pin) (pkg.Source, error) {
 	c.maybeLaunch(ctx)
 
-	f, err := c.openOrFetch(ctx, pin)
+	f, err := c.openOrFetch(ctx, service, pin)
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +359,7 @@ func (c *InstanceCache) AllInstanceIDs(ctx context.Context, forceSync bool) ([]s
 }
 
 // openOrFetch either opens an existing instance file or writes a new one.
-func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.File, error) {
+func (c *InstanceCache) openOrFetch(ctx context.Context, service string, pin common.Pin) (*os.File, error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
@@ -392,7 +392,7 @@ func (c *InstanceCache) openOrFetch(ctx context.Context, pin common.Pin) (*os.Fi
 
 		// No such cached instance, download it.
 		err := c.FS.EnsureFile(ctx, path, func(f *os.File) error {
-			return c.Fetcher(ctx, pin, f)
+			return c.Fetcher(ctx, service, pin, f)
 		})
 		if err != nil {
 			if cipderr.ToCode(err) == cipderr.Unknown {

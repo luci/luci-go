@@ -826,6 +826,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 		proxyTransportClose: proxyTransportClose,
 		pluginHost:          pluginHost,
 		clientLaunchTime:    time.Now(),
+		cacheServiceHost:    parsed.Host,
 	}
 
 	// Initialize version cache.
@@ -839,7 +840,6 @@ func NewClient(opts ClientOptions) (Client, error) {
 			Refs:     internal.Disabled,
 			// TODO: Hook up ReadOnlyCacheDir
 		}
-		client.versionCacheService = parsed.Host
 	}
 
 	if len(opts.AdmissionPlugin) != 0 && client.pluginHost != nil {
@@ -915,9 +915,9 @@ type clientImpl struct {
 	versionCache *internal.VersionCache
 
 	// This is the 'service' (i.e. ServiceURL.host) that we always use when
-	// interacting with the version cache. We cache it here because it requires
-	// handling an error from [url.Parse].
-	versionCacheService string
+	// interacting with the version and instance caches. We cache it here because
+	// it requires handling an error from [url.Parse].
+	cacheServiceHost string
 
 	// clientLaunchTime is the time at which this client was created with
 	// [NewClient], and is used to set [internal.InstanceCache].GCLaunchTime.
@@ -1271,7 +1271,7 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 		}
 	}
 	if cacheResolver != nil {
-		cached, err := cacheResolver(ctx, c.versionCacheService, packageName, version)
+		cached, err := cacheResolver(ctx, c.cacheServiceHost, packageName, version)
 		if err != nil {
 			logging.Warningf(ctx, "Could not query version cache for %q@%q: %s", packageName, version, err)
 		}
@@ -1298,7 +1298,7 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 	}
 
 	if cacheAdder != nil {
-		if err := cacheAdder(ctx, c.versionCacheService, pin, version); err != nil {
+		if err := cacheAdder(ctx, c.cacheServiceHost, pin, version); err != nil {
 			logging.Warningf(ctx, "Could not add version %q@%q - %s to the cache: %s", packageName, version, pin.InstanceID, err)
 		}
 		c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
@@ -1384,7 +1384,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	// rememberClientRef populates the extracted refs cache.
 	rememberClientRef := func(pin common.Pin, ref *caspb.ObjectRef) {
 		if cache := c.versionCache; cache != nil {
-			cache.AddExtractedObjectRef(ctx, c.versionCacheService, pin, clientFileName, ref)
+			cache.AddExtractedObjectRef(ctx, c.cacheServiceHost, pin, clientFileName, ref)
 			c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
 		}
 	}
@@ -1396,7 +1396,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	// already up-to-date.
 	var clientRef *caspb.ObjectRef
 	if cache := c.versionCache; cache != nil {
-		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, c.versionCacheService, pin, clientFileName); err != nil {
+		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, c.cacheServiceHost, pin, clientFileName); err != nil {
 			return common.Pin{}, err
 		}
 	}
@@ -1956,7 +1956,7 @@ func (c *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (src pkg
 	defer cache.Close(ctx)
 
 	cache.RequestInstances(ctx, []*internal.InstanceRequest{
-		{Context: ctx, Pin: pin},
+		{Context: ctx, Pin: pin, Service: c.cacheServiceHost},
 	})
 	res := cache.WaitInstance()
 
@@ -1984,7 +1984,7 @@ func (c *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output
 	// Deal with no-cache situation first, it is simple - just fetch the instance
 	// into the 'output'.
 	if c.CacheDir == "" {
-		return c.remoteFetchInstance(ctx, pin, output)
+		return c.remoteFetchInstance(ctx, c.cacheServiceHost, pin, output)
 	}
 
 	// If using the cache, always fetch into the cache first, and then copy data
@@ -2010,7 +2010,11 @@ func (c *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output
 
 // remoteFetchInstance fetches the package file into 'output' and verifies its
 // hash along the way. Assumes 'pin' is already validated.
-func (c *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) (err error) {
+func (c *clientImpl) remoteFetchInstance(ctx context.Context, service string, pin common.Pin, output io.WriteSeeker) (err error) {
+	if service != c.cacheServiceHost {
+		return fmt.Errorf("invalid remoteFetchInstance: bad service: %q != %q", service, c.cacheServiceHost)
+	}
+
 	startTS := clock.Now(ctx)
 	defer func() {
 		if err != nil {
@@ -2191,6 +2195,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 			Context: fetchCtx,
 			Done:    fetchDone,
 			Pin:     a.pin,
+			Service: c.cacheServiceHost,
 			OpenAs:  internal.Instance,
 			State: pinActionsState{
 				checkCtx:  checkCtx,
@@ -2311,6 +2316,7 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 					Context: refetchCtx,
 					Done:    refetchDone,
 					Pin:     res.Pin,
+					Service: c.cacheServiceHost,
 					OpenAs:  internal.Instance,
 					State: pinActionsState{
 						unzipCtx:  reunzipCtx,

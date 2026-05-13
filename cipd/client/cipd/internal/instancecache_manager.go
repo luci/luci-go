@@ -50,15 +50,17 @@ const (
 type InstanceRequest struct {
 	Context context.Context    // carries the cancellation signal
 	Done    context.CancelFunc // called right before the result is enqueued
+	Service string             // the service to fetch from
 	Pin     common.Pin         // identifies the instance to fetch
-	OpenAs  InstanceOpenMode   // indicates how the cache should open the instance file.
+	OpenAs  InstanceOpenMode   // indicates how the cache should open the instance file
 	State   any                // passed to the InstanceResult as is
 }
 
 // InstanceResult is a result of a completed InstanceRequest.
 type InstanceResult struct {
 	Context  context.Context // copied from the InstanceRequest
-	Pin      common.Pin      // the original pin from the InstanceRequest.
+	Service  string          // the original service from the InstanceRequest
+	Pin      common.Pin      // the original pin from the InstanceRequest
 	Err      error           // non-nil if failed to obtain the instance
 	Source   pkg.Source      // set only if OpenAs was Source, must be closed by the caller
 	Instance pkg.Instance    // set only if OpenAs was not Source, must be closed by the caller
@@ -267,6 +269,7 @@ func (c *ManagedInstanceCache) handleRequest(req *InstanceRequest) *InstanceResu
 
 	res := &InstanceResult{
 		Context: req.Context,
+		Service: req.Service,
 		Pin:     req.Pin,
 		Err:     req.Context.Err(),
 		State:   req.State,
@@ -284,7 +287,7 @@ func (c *ManagedInstanceCache) handleRequest(req *InstanceRequest) *InstanceResu
 	}
 
 	for i, cache := range c.Caches {
-		switch src, err := cache.OpenAsSource(ctx, pin); {
+		switch src, err := cache.OpenAsSource(ctx, req.Service, pin); {
 		case err != nil:
 			last := i == len(c.Caches)-1
 			if !last && (errors.Is(err, ErrNoFetcher) || cipderr.ToCode(err) == cipderr.InvalidVersion) {
