@@ -157,36 +157,37 @@ func (opts *ensureFileOptions) allEnsureFiles(ctx context.Context, verifying ver
 
 	return func(yield func(*loadedEnsureFile, error) bool) {
 		for efPath := range opts.ensureFiles.Data.Iter {
-			parsedFile, err := ensure.LoadEnsureFile(efPath)
+			lef := &loadedEnsureFile{path: efPath}
+
+			var err error
+			lef.ef, err = ensure.LoadEnsureFile(efPath)
 			if err != nil {
-				yield(nil, err)
+				yield(lef, err)
 				return
 			}
 
-			ret := &loadedEnsureFile{path: efPath, ef: parsedFile}
-
-			if verifying && len(parsedFile.VerifyPlatforms) == 0 {
+			if verifying && len(lef.ef.VerifyPlatforms) == 0 {
 				defaultVerifiedPlatform := template.DefaultTemplate()
-				parsedFile.VerifyPlatforms = append(parsedFile.VerifyPlatforms, defaultVerifiedPlatform)
+				lef.ef.VerifyPlatforms = append(lef.ef.VerifyPlatforms, defaultVerifiedPlatform)
 
 				logging.Infof(ctx, "$VerifiedPlatform directive required but not included in"+
 					" ensure file, using '$VerifiedPlatform %s' as default.", defaultVerifiedPlatform)
 			}
 
-			if parseVers && parsedFile.ResolvedVersions != "" {
-				if cur, ok := versionFiles[parsedFile.ResolvedVersions]; ok {
-					ret.vf = cur
+			if parseVers && lef.ef.ResolvedVersions != "" {
+				if cur, ok := versionFiles[lef.ef.ResolvedVersions]; ok {
+					lef.vf = cur
 				} else {
-					ret.vf, err = loadVersionsFile(parsedFile.ResolvedVersions, efPath)
+					lef.vf, err = loadVersionsFile(lef.ef.ResolvedVersions, efPath)
 					if err != nil {
-						yield(nil, err)
+						yield(lef, err)
 						return
 					}
-					versionFiles[parsedFile.ResolvedVersions] = ret.vf
+					versionFiles[lef.ef.ResolvedVersions] = lef.vf
 				}
 			}
 
-			if !yield(ret, nil) {
+			if !yield(lef, nil) {
 				return
 			}
 		}

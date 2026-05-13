@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/client/cipd/ui"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // PackageVersion describes a possibly-unresolved version of a package, and the
@@ -157,7 +158,7 @@ func OfflineResolve(ef *ensure.File, vf ensure.VersionsFile) (PackageVersionSet,
 	if ef.ServiceURL != "" {
 		parsed, err := url.Parse(ef.ServiceURL)
 		if err != nil {
-			return nil, fmt.Errorf("parsing ensurefile URL: %w", err)
+			return nil, cipderr.BadArgument.Apply(fmt.Errorf("parsing ensurefile URL: %w", err))
 		}
 		service = parsed.Host
 	}
@@ -178,7 +179,7 @@ func OfflineResolve(ef *ensure.File, vf ensure.VersionsFile) (PackageVersionSet,
 			return common.Pin{PackageName: pkg, InstanceID: fakeHash}, nil
 		}, plat.Expander())
 		if err != nil {
-			return nil, errors.Fmt("resolving platform %q: %w", plat, err)
+			return nil, cipderr.Unknown.Apply(errors.Fmt("resolving platform %q: %w", plat, err))
 		}
 	}
 
