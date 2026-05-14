@@ -62,6 +62,7 @@ export type FC_ColumnDef<
 > = MRT_ColumnDef<TData, TValue> & {
   filterRangeMin?: number;
   filterRangeMax?: number;
+  filterByField?: string;
 };
 
 const SELECT_COL_PADDING = '8px !important';
@@ -203,7 +204,11 @@ export const useFCDataTable = <TData extends MRT_RowData>(
         if (items.length > 0) {
           items.push(<Divider key="divider-filter" />);
         }
-        const filter = filterValues?.[column.id];
+        const filterByField = (column.columnDef as FC_ColumnDef<TData>)
+          .filterByField;
+        const filter =
+          (filterByField && filterValues?.[filterByField]) ||
+          filterValues?.[column.id];
         if (filter) {
           items.push(
             <FCFilterMenuItem

@@ -18,7 +18,7 @@ import {
   MRT_ColumnDef,
   MRT_TableOptions,
 } from 'material-react-table';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -37,7 +37,6 @@ import {
   useFleetMRTState,
 } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
@@ -55,14 +54,9 @@ import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { getAndroidColumns } from '@/fleet/pages/device_list_page/android/android_columns';
-import {
-  ANDROID_COLUMN_OVERRIDES,
-  AndroidColumnDef,
-} from '@/fleet/pages/device_list_page/android/android_fields';
+import { ANDROID_COLUMN_OVERRIDES } from '@/fleet/pages/device_list_page/android/android_fields';
 import { ANDROID_EXTRA_FILTERS } from '@/fleet/pages/device_list_page/android/android_filters';
-import { androidState } from '@/fleet/pages/device_list_page/android/android_state';
 import { AndroidSummaryHeader } from '@/fleet/pages/device_list_page/android/android_summary_header';
-import { dimensionsToFilterOptions as dimensionsToFilterOptionsAndroid } from '@/fleet/pages/device_list_page/android/dimensions_to_filter_options';
 import { AdminTasksAlert } from '@/fleet/pages/device_list_page/common/admin_tasks_alert';
 import { dimensionsToFilterOptions } from '@/fleet/pages/device_list_page/common/helpers';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
@@ -168,7 +162,6 @@ export const AndroidDevicesPage = () => {
     areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
   });
 
-  const columnFiltersRef = useRef<{ id: string; value: unknown }[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
 
   const selectedOptions = useMemo<FilterState>(
@@ -182,73 +175,6 @@ export const AndroidDevicesPage = () => {
     });
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   }, [pagerCtx, setSearchParams, trackEvent]);
-
-  const onColumnFiltersChangeOverride = useCallback(
-    (newFilters: Record<string, string[]>) => {
-      trackEvent('filter_changed', {
-        componentName: 'device_list_filter',
-      });
-      if (!filterCategoryDatas.filterValues) return;
-
-      const prevTableFilterKeys = columnFiltersRef.current.map((f) =>
-        normalizeFilterKey(f.id),
-      );
-
-      for (const [key, category] of Object.entries(
-        filterCategoryDatas.filterValues as Record<string, FilterCategory>,
-      )) {
-        const matchKey = normalizeFilterKey(key);
-
-        const isInNewFilters =
-          newFilters[matchKey] !== undefined || newFilters[key] !== undefined;
-        const wasInTable =
-          prevTableFilterKeys.includes(matchKey) ||
-          prevTableFilterKeys.includes(key);
-
-        if (!isInNewFilters && !wasInTable) {
-          continue; // Leave FilterBar filters alone if not touched in table
-        }
-
-        const newValues = newFilters[matchKey] || newFilters[key] || [];
-
-        let currentSelected: string[] = [];
-        if (category instanceof StringListFilterCategory) {
-          currentSelected = category.getSelectedOptions();
-        }
-
-        let isChanged = false;
-        if (currentSelected.length !== newValues.length) {
-          isChanged = true;
-        } else {
-          for (const k of currentSelected) {
-            if (!newValues.includes(k) && !newValues.includes(`"${k}"`)) {
-              isChanged = true;
-            }
-          }
-        }
-
-        if (isChanged) {
-          if (category instanceof StringListFilterCategory) {
-            category.setSelectedOptions(newValues, true);
-          }
-        }
-      }
-
-      const currentAIP160 = filterCategoryDatas.aip160();
-      const prevAIP160 = searchParams.get(FILTERS_PARAM_KEY) || '';
-
-      if (currentAIP160 !== prevAIP160) {
-        setIsFiltering(true);
-        setSearchParams((prev) => {
-          let newParams = new URLSearchParams(prev);
-          newParams.set(FILTERS_PARAM_KEY, currentAIP160);
-          newParams = emptyPageTokenUpdater(pagerCtx)(newParams);
-          return newParams;
-        });
-      }
-    },
-    [filterCategoryDatas, pagerCtx, searchParams, setSearchParams, trackEvent],
-  );
 
   const request = useMemo(
     () =>
@@ -294,27 +220,8 @@ export const AndroidDevicesPage = () => {
   }, [searchParams, extraColumnIds]);
 
   const columnsList = useMemo(() => {
-    const list = getAndroidColumns(columnIds);
-    const filterValues = filterCategoryDatas.filterValues;
-    if (!filterValues) return list;
-    return list.map((col) => {
-      const field = col.filterByField ?? col.orderByField ?? col.id ?? '';
-      if (!field) return col;
-      const category = (filterValues as Record<string, FilterCategory>)[field];
-      if (category instanceof StringListFilterCategory) {
-        return {
-          ...col,
-          filterSelectOptions: Object.values(category.getOptions()).map(
-            (o) => ({
-              label: o.optionValue.label,
-              value: o.optionValue.value,
-            }),
-          ),
-        };
-      }
-      return col;
-    });
-  }, [columnIds, filterCategoryDatas.filterValues]);
+    return getAndroidColumns(columnIds);
+  }, [columnIds]);
 
   const allDimensionColumns = useMemo(() => {
     const list: { id: string; label: string }[] = [];
@@ -329,43 +236,6 @@ export const AndroidDevicesPage = () => {
 
     return _.uniqBy(list, 'id');
   }, [extraColumnIds]);
-
-  const filterOptionsConfig = useMemo(() => {
-    if (!isDimensionsQueryProperlyLoaded) return [];
-
-    const columnsRecord = columnsList.reduce(
-      (acc, col) => {
-        const id = (col.accessorKey || col.id) as string;
-        if (id) {
-          acc[id] = col;
-        }
-        return acc;
-      },
-      {} as Record<string, AndroidColumnDef>,
-    );
-
-    const options = dimensionsToFilterOptionsAndroid(
-      dimensionsQuery.data!,
-      columnsRecord,
-    );
-
-    const allOptions = [
-      ...options.filter((o) => o.value !== 'state'),
-      {
-        label: 'State',
-        type: 'string_list' as const,
-        value: 'state',
-        options: [
-          { label: '(Blank)', value: '(Blank)' },
-          ...Object.values(androidState).map((val) => ({
-            label: val,
-            value: val,
-          })),
-        ],
-      },
-    ];
-    return allOptions;
-  }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data, columnsList]);
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
@@ -401,12 +271,10 @@ export const AndroidDevicesPage = () => {
     setSearchParams,
     pagerCtx,
     selectedOptions,
-    filterOptionsConfig,
     columnsList: columnsList as unknown as FleetColumnDefExt[],
     orderByParam,
     localStorageKey: ANDROID_DEVICES_LOCAL_STORAGE_KEY,
     defaultColumnIds: ANDROID_DEFAULT_COLUMNS,
-    onColumnFiltersChangeOverride,
     platform,
     isLoadingOptions: !isDimensionsQueryProperlyLoaded,
   });
@@ -415,10 +283,8 @@ export const AndroidDevicesPage = () => {
     enrichedColumns,
     onRowSelectionChange,
     onSortingChange,
-    onColumnFiltersChange,
     rowSelection,
     sorting,
-    columnFilters,
     columnVisibility,
     mrtColumnManager: {
       setColumnVisibility,
@@ -441,11 +307,6 @@ export const AndroidDevicesPage = () => {
       return visibleColumnIds.includes(id);
     });
   }, [enrichedColumns, visibleColumnIds]);
-
-  // Sync ref to break circular dependency
-  useEffect(() => {
-    columnFiltersRef.current = columnFilters;
-  }, [columnFilters]);
 
   const meta = useMemo<FleetTableMeta<AndroidDevice>>(
     () => ({
@@ -480,7 +341,9 @@ export const AndroidDevicesPage = () => {
     ],
   );
 
-  const tableOptions: MRT_TableOptions<AndroidDevice> = useMemo(
+  const tableOptions: MRT_TableOptions<AndroidDevice> & {
+    filterValues?: Record<string, FilterCategory>;
+  } = useMemo(
     () => ({
       columns: visibleEnrichedColumns as MRT_ColumnDef<AndroidDevice>[],
       data: devices as AndroidDevice[],
@@ -494,13 +357,12 @@ export const AndroidDevicesPage = () => {
       getRowId: (row: AndroidDevice) => row.id,
       onRowSelectionChange,
       onSortingChange,
-      onColumnFiltersChange,
       enablePagination: false,
+      filterValues: filterCategoryDatas.filterValues,
       meta,
       state: {
         rowSelection,
         sorting,
-        columnFilters,
         columnVisibility,
         columnSizing,
         isLoading: devicesQuery.isPending && !devicesQuery.isPlaceholderData,
@@ -541,10 +403,8 @@ export const AndroidDevicesPage = () => {
       devices,
       onRowSelectionChange,
       onSortingChange,
-      onColumnFiltersChange,
       rowSelection,
       sorting,
-      columnFilters,
       columnVisibility,
       devicesQuery.isPending,
       devicesQuery.isPlaceholderData,
@@ -567,6 +427,7 @@ export const AndroidDevicesPage = () => {
       onRowsPerPageChange,
       columnSizing,
       onColumnSizingChange,
+      filterCategoryDatas.filterValues,
     ],
   );
 

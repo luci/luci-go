@@ -17,7 +17,7 @@ import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/stri
 import { androidState } from './android_state';
 
 export const ANDROID_EXTRA_FILTERS = {
-  fc_offline_since: new DateFilterCategoryDataBuilder().setLabel(
+  ['"fc_offline_since"']: new DateFilterCategoryDataBuilder().setLabel(
     `Offline Since`,
   ),
   ['"state"']: new StringListFilterCategoryBuilder()

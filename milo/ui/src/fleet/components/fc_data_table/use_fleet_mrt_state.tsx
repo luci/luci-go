@@ -58,7 +58,7 @@ export interface FleetMRTStateProps<
   selectedOptions: GetFiltersResult;
 
   /** Configuration for available filter options, typically mapped from backend Dimensions queries */
-  filterOptionsConfig: OptionCategory[];
+  filterOptionsConfig?: OptionCategory[];
   columnsList: TColumnDef[];
   localStorageKey: string;
 
@@ -77,7 +77,7 @@ export const useFleetMRTState = <
   setSearchParams,
   pagerCtx,
   selectedOptions,
-  filterOptionsConfig,
+  filterOptionsConfig = [],
   columnsList,
 
   orderByParam,
