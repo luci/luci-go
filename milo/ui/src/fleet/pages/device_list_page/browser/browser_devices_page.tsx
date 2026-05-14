@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Chip } from '@mui/material';
 import _ from 'lodash';
 import {
   MaterialReactTable,
@@ -46,10 +45,7 @@ import {
   GetFiltersResult,
   stringifyFilters,
 } from '@/fleet/components/filter_dropdown/parser/parser';
-import {
-  filtersUpdater,
-  getFilters,
-} from '@/fleet/components/filter_dropdown/search_param_utils';
+import { getFilters } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { useFilters } from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
@@ -397,55 +393,15 @@ export const BrowserDevicesPage = () => {
     ),
   });
 
-  const validFilterByFields = useMemo(
-    () =>
-      new Set(
-        Object.values(columnsRecord).map(
-          (col) => col.filterByField || col.accessorKey || (col.id as string),
-        ),
-      ),
-    [columnsRecord],
-  );
-
-  useEffect(() => {
-    if (selectedOptions.error) return;
-    if (!dimensionsQuery.isSuccess) return;
-
-    const missingParamsFilters = Object.keys(selectedOptions.filters).filter(
-      (filterKey) =>
-        isDimensionsQueryProperlyLoaded && !validFilterByFields.has(filterKey),
-    );
-    if (missingParamsFilters.length === 0) return;
-    addWarning(
-      'The following filters are not available: ' +
-        missingParamsFilters?.join(', '),
-    );
-    for (const key of missingParamsFilters) {
-      delete selectedOptions.filters[key];
-    }
-    setSearchParams(filtersUpdater(selectedOptions.filters));
-  }, [
-    addWarning,
-    dimensionsQuery,
-    selectedOptions,
-    setSearchParams,
-    validFilterByFields,
-    isDimensionsQueryProperlyLoaded,
-  ]);
-
-  useEffect(() => {
-    if (!selectedOptions.error) return;
-    addWarning('Invalid filters');
-    setSearchParams(filtersUpdater({}));
-  }, [addWarning, selectedOptions.error, setSearchParams]);
-
   return (
     <div
       css={{
         margin: '24px',
       }}
     >
-      <WarningNotifications warnings={warnings} />
+      <WarningNotifications
+        warnings={[...filterCategoryDatas.warnings, ...warnings]}
+      />
       <BrowserSummaryHeader
         selectedOptions={selectedOptions.filters || {}}
         pagerContext={pagerCtx}
@@ -462,30 +418,21 @@ export const BrowserDevicesPage = () => {
           borderRadius: 4,
         }}
       >
-        {selectedOptions.error ? (
-          <Chip
-            variant="outlined"
-            onDelete={() => setSearchParams(filtersUpdater({}))}
-            label="Invalid filters"
-            color="error"
-          />
-        ) : (
-          <FilterBar
-            filterCategoryDatas={Object.values(
-              filterCategoryDatas.filterValues || {},
-            )}
-            onApply={() => {
-              trackEvent('filter_changed', {
-                componentName: 'device_list_filter',
-              });
-            }}
-            isLoading={
-              dimensionsQuery.isPending ||
-              filterCategoryDatas.filterValues === undefined
-            }
-            searchPlaceholder='Add a filter (e.g. "os:Linux" or "sw.pool:default")'
-          />
-        )}
+        <FilterBar
+          filterCategoryDatas={Object.values(
+            filterCategoryDatas.filterValues || {},
+          )}
+          onApply={() => {
+            trackEvent('filter_changed', {
+              componentName: 'device_list_filter',
+            });
+          }}
+          isLoading={
+            dimensionsQuery.isPending ||
+            filterCategoryDatas.filterValues === undefined
+          }
+          searchPlaceholder='Add a filter (e.g. "os:Linux" or "sw.pool:default")'
+        />
       </div>
       <div
         css={{
