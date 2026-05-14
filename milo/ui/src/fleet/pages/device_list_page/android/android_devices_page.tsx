@@ -142,11 +142,11 @@ export const AndroidDevicesPage = () => {
     };
     if (showAvgUtilization) {
       extraFilters['"average_7d"'] = new RangeFilterCategoryBuilder()
-        .setLabel('7 Day Average')
+        .setLabel('7 Day Average Utilization')
         .setMin(0)
         .setMax(100);
       extraFilters['"average_30d"'] = new RangeFilterCategoryBuilder()
-        .setLabel('30 Day Average')
+        .setLabel('30 Day Average Utilization')
         .setMin(0)
         .setMax(100);
     }
@@ -322,8 +322,8 @@ export const AndroidDevicesPage = () => {
     ANDROID_DEFAULT_COLUMNS.forEach((id) => list.push({ id, label: id }));
     extraColumnIds.forEach((id) => {
       let label = id;
-      if (id === 'average_7d') label = '7 Day Average';
-      if (id === 'average_30d') label = '30 Day Average';
+      if (id === 'average_7d') label = '7 Day Average Utilization';
+      if (id === 'average_30d') label = '30 Day Average Utilization';
       list.push({ id, label });
     });
 
