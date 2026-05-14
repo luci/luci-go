@@ -15,11 +15,14 @@
 package rpc
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
+	"sync"
 	"testing"
 
 	"golang.org/x/oauth2"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -156,6 +159,99 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 	})
 }
 
+func TestLaunchTurboCIChildren(t *testing.T) {
+	t.Parallel()
+
+	ctx := memory.Use(t.Context())
+	ctx = auth.WithState(ctx, &authtest.FakeState{
+		Identity: "user:caller@example.com",
+		UserExtra: &auth.GoogleOAuth2Info{
+			Scopes: scopes.BuildbucketScopeSet(),
+		},
+		UserCredentialsOverride: &oauth2.Token{
+			AccessToken: "some-token",
+		},
+	})
+
+	// Ensures deterministic randomized staggering timeouts for parallel RPCs
+	ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
+
+	parentBuilder := &pb.BuilderID{Project: "p", Bucket: "b", Builder: "parent"}
+	childBuilder1 := &pb.BuilderID{Project: "p", Bucket: "b", Builder: "child-1"}
+	childBuilder2 := &pb.BuilderID{Project: "p", Bucket: "b", Builder: "child-2"}
+
+	planID := idspb.WorkPlan_builder{Id: proto.String("1234")}.Build()
+	parentStageAttemptID := idspb.StageAttempt_builder{
+		Stage: idspb.Stage_builder{
+			WorkPlan: planID,
+			Id:       proto.String("parent-stage"),
+		}.Build(),
+		Idx: proto.Int32(1),
+	}.Build()
+
+	parent := &model.Build{
+		ID:                11111,
+		Proto:             &pb.Build{Builder: parentBuilder},
+		StageAttemptID:    id.ToString(parentStageAttemptID),
+		StageAttemptToken: "token",
+	}
+
+	const childBuildID1 = 22222
+	const childBuildID2 = 33333
+
+	assert.NoErr(t, datastore.Put(ctx, []*model.Build{
+		{
+			ID:    childBuildID1,
+			Proto: &pb.Build{Builder: childBuilder1},
+			Tags:  []string{"child:real:1"},
+		},
+		{
+			ID:    childBuildID2,
+			Proto: &pb.Build{Builder: childBuilder2},
+			Tags:  []string{"child:real:2"},
+		},
+	}))
+
+	t.Run("ok", func(t *testing.T) {
+		reqs := []*pb.ScheduleBuildRequest{
+			{Builder: childBuilder1, RequestId: "child-req-1"},
+			{Builder: childBuilder2, RequestId: "child-req-2"},
+		}
+
+		builds := []*model.Build{
+			{Proto: &pb.Build{Builder: childBuilder1}},
+			{Proto: &pb.Build{Builder: childBuilder2}},
+		}
+
+		orch := &dynamicChildOrch{
+			FakeOrchestratorClient: &turboci.FakeOrchestratorClient{
+				Plan:  planID,
+				Token: parent.StageAttemptToken,
+			},
+			buildIDSequence: []int64{childBuildID1, childBuildID2},
+		}
+
+		ctx = turboci.WithTurboCIOrchestratorClient(ctx, orch)
+
+		mErr := launchTurboCIChildren(ctx, parent, reqs, builds)
+		assert.NoErr(t, mErr.First())
+
+		// Assert standard WriteNodes integrity
+		actualWriteNodes := orch.LastWriteNodesCall
+		assert.That(t, actualWriteNodes.GetToken(), should.Equal(orch.Token))
+		assert.That(t, actualWriteNodes.GetReason().GetMessage(), should.Equal("Submitting stage(s) via Buildbucket"))
+		assert.That(t, len(actualWriteNodes.GetStages()), should.Equal(2))
+		assert.That(t, actualWriteNodes.GetStages()[0].GetIdentifier().GetId(), should.Equal(generateStageID("child-req-1")))
+		assert.That(t, actualWriteNodes.GetStages()[1].GetIdentifier().GetId(), should.Equal(generateStageID("child-req-2")))
+
+		// Ensure models were correctly extracted from QueryNodes and loaded from datastore
+		assert.That(t, builds[0].ID, should.Equal(int64(childBuildID1)))
+		assert.That(t, builds[1].ID, should.Equal(int64(childBuildID2)))
+		assert.That(t, builds[0].Tags, should.Match([]string{"child:real:1"}))
+		assert.That(t, builds[1].Tags, should.Match([]string{"child:real:2"}))
+	})
+}
+
 func TestPollingSchedule(t *testing.T) {
 	t.Parallel()
 
@@ -239,4 +335,61 @@ func buildStageDetails(buildID int64, buildErr error) *orchestratorpb.ValueRef {
 		}
 	}
 	return value.MustInline(msg, "project:bucket")
+}
+
+type dynamicChildOrch struct {
+	*turboci.FakeOrchestratorClient
+	buildIDSequence []int64
+	stageToBuildID  map[string]int64
+	mu              sync.Mutex
+}
+
+func (d *dynamicChildOrch) WriteNodes(ctx context.Context, in *orchestratorpb.WriteNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.WriteNodesResponse, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.FakeOrchestratorClient.LastWriteNodesCall = proto.CloneOf(in)
+
+	d.stageToBuildID = make(map[string]int64)
+	for i, stageWrite := range in.GetStages() {
+		idStr := stageWrite.GetIdentifier().GetId()
+		if i < len(d.buildIDSequence) {
+			d.stageToBuildID[idStr] = d.buildIDSequence[i]
+		}
+	}
+	return &orchestratorpb.WriteNodesResponse{}, d.FakeOrchestratorClient.Err
+}
+
+func (d *dynamicChildOrch) QueryNodes(ctx context.Context, in *orchestratorpb.QueryNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.QueryNodesResponse, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.FakeOrchestratorClient.LastQueryNodesRequest = proto.CloneOf(in)
+
+	wp := orchestratorpb.WorkPlan_builder{
+		Identifier: d.FakeOrchestratorClient.Plan,
+	}.Build()
+
+	var stages []*orchestratorpb.Stage
+	for _, query := range in.GetQuery() {
+		for _, node := range query.GetNodesById().GetNodes() {
+			stageID := node.GetStage()
+			bID := d.stageToBuildID[stageID.GetId()]
+
+			stages = append(stages, orchestratorpb.Stage_builder{
+				Identifier: stageID,
+				State:      orchestratorpb.StageState_STAGE_STATE_ATTEMPTING.Enum(),
+				Attempts: []*orchestratorpb.Stage_Attempt{
+					orchestratorpb.Stage_Attempt_builder{
+						State: orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_PENDING.Enum(),
+						Details: []*orchestratorpb.ValueRef{
+							buildStageDetails(bID, nil), // Helper pre-existing in turbo_ci_test.go
+						},
+					}.Build(),
+				},
+			}.Build())
+		}
+	}
+	wp.SetStages(stages)
+	return orchestratorpb.QueryNodesResponse_builder{
+		Workplans: []*orchestratorpb.WorkPlan{wp},
+	}.Build(), d.FakeOrchestratorClient.Err
 }

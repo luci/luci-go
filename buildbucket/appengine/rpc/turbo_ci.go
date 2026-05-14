@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -189,9 +190,109 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 //
 // Updates `builds` in-place, returns exactly len(builds) appstatus errors.
 func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.ScheduleBuildRequest, builds []*model.Build) errors.MultiError {
-	return slices.Repeat(errors.MultiError{
-		appstatus.Errorf(codes.Unimplemented, "Turbo CI child builds are not implemented yet"),
-	}, len(reqs))
+	commonErr := func(err error) errors.MultiError {
+		return slices.Repeat(errors.MultiError{err}, len(builds))
+	}
+
+	toAppstatusErrs := func(origErrs errors.MultiError) errors.MultiError {
+		var errs errors.MultiError
+		for _, err := range origErrs {
+			errs = append(errs, appstatus.FromStatusErr(err))
+		}
+		return errs
+	}
+
+	if parent.StageAttemptID == "" {
+		// Should never happen.
+		return commonErr(appstatus.Errorf(codes.FailedPrecondition, "parent %d has no stage attempt ID", parent.ID))
+	}
+	aID, err := id.FromString(parent.StageAttemptID)
+	if err != nil {
+		return commonErr(appstatus.Errorf(codes.FailedPrecondition, "parent %d has invalid stage attempt ID %q: %s", parent.ID, parent.StageAttemptID, err))
+	}
+	plan := aID.GetStageAttempt().GetStage().GetWorkPlan()
+
+	callerCreds, err := turboCICallerCreds(ctx)
+	if err != nil {
+		return commonErr(appstatus.Errorf(codes.Internal, "caller credentials: %s", err))
+	}
+	cl := &turboci.Client{
+		Creds: callerCreds,
+		Plan:  plan,
+		Token: parent.StageAttemptToken,
+	}
+
+	stages := make([]turboci.ScheduleBuildRequestStage, len(builds))
+	stageIDs := make([]*idspb.Stage, len(builds))
+	for i, req := range reqs {
+		stageID := idspb.Stage_builder{
+			WorkPlan:   plan,
+			Id:         proto.String(generateStageID(req.GetRequestId())),
+			IsWorknode: proto.Bool(false),
+		}.Build()
+		stages[i] = scheduleBuildRequestToStage(req, builds[i], stageID)
+		stageIDs[i] = stageID
+	}
+
+	mErr := cl.WriteStages(ctx, stages)
+	if mErr.First() != nil {
+		return toAppstatusErrs(mErr)
+	}
+
+	// Wait for the stages to run and get build ids back.
+	//
+	// Reuse the client with callerCreds to poll the stages. The call should have
+	// permissions to both write and read the stages.
+	//
+	// Note that this is different from the root build scenario where we use
+	// project scoped account to poll the submitted stage. The reason is that the
+	// caller there doesn't necessary have permission to query Turbo CI workplan (
+	// the caller is role/buildbucket.triggerer, it doesn't grant permission to
+	// interact directly with Turbo CI). We do it this way, so that all existing
+	// role/buildbucket.triggerer can automagically be able to submit
+	// Turbo CI-enable builds.
+	buildIDs, mErr := pollStages(ctx, cl, stageIDs)
+	if mErr.First() != nil {
+		return toAppstatusErrs(mErr)
+	}
+
+	// Update `builds` in-place with the state of the builds right now.
+	toGet := make([]any, len(builds))
+	for i, buildID := range buildIDs {
+		toGet[i] = &model.Build{ID: buildID}
+	}
+	if err := datastore.Get(ctx, toGet...); err != nil {
+		merr, ok := err.(errors.MultiError)
+		if !ok {
+			return commonErr(appstatus.Errorf(codes.Internal, "failed to get a build associated with the submitted stage: %s", err))
+		}
+		mErr := make(errors.MultiError, len(builds))
+		for i, err := range merr {
+			if err == nil {
+				continue
+			}
+			mErr[i] = appstatus.Errorf(codes.Internal, "failed to get a build associated with the submitted stage: %s", err)
+		}
+		return mErr
+	}
+	for i := range builds {
+		builds[i] = toGet[i].(*model.Build)
+	}
+	return nil
+}
+
+func generateStageID(reqID string) string {
+	var bytes []byte
+
+	if reqID != "" {
+		h := sha256.Sum256([]byte(reqID))
+		bytes = h[:16]
+	} else {
+		u := uuid.New()
+		bytes = u[:]
+	}
+
+	return base64.StdEncoding.EncodeToString(bytes)
 }
 
 func scheduleBuildRequestToStage(req *pb.ScheduleBuildRequest, build *model.Build, stageID *idspb.Stage) turboci.ScheduleBuildRequestStage {
@@ -428,6 +529,41 @@ func pollStage(ctx context.Context, cl *turboci.Client, stageID *idspb.Stage) (i
 			}
 		}
 	}
+}
+
+// pollStages periodically queries the stages until all of them get assigned a build ID.
+//
+// Returns a slice of build IDs and a slice of gRPC status errors, both of the
+// same length as stageIDs.
+func pollStages(ctx context.Context, cl *turboci.Client, stageIDs []*idspb.Stage) ([]int64, errors.MultiError) {
+	buildIDs := make([]int64, len(stageIDs))
+	mErr := make(errors.MultiError, len(stageIDs))
+
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.SetLimit(64)
+	baseTime := clock.Now(ctx)
+	for i, stageID := range stageIDs {
+		// Pre-calculate each task's minimal allowed start time in the outer loop
+		// (staggered by i * 10ms) to avoid the initial QPS spike and avoid useless
+		// sleeps on the queued ones.
+		allowedStartTime := baseTime.Add(time.Duration(i) * 10 * time.Millisecond)
+		eg.Go(func() error {
+			if sleep := allowedStartTime.Sub(clock.Now(ctx)); sleep > 0 {
+				clock.Sleep(ctx, sleep)
+				if ctx.Err() != nil {
+					// The context was canceled while we slept.
+					mErr[i] = ctx.Err()
+					return nil
+				}
+			}
+
+			buildIDs[i], mErr[i] = pollStage(ctx, cl, stageID)
+			return nil
+		})
+	}
+	_ = eg.Wait() // pollStage errors are captured in mErr.
+
+	return buildIDs, mErr
 }
 
 // updateStageAttemptToScheduled sets the current stage attempt (conveyed by
