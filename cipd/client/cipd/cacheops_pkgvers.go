@@ -52,6 +52,7 @@ func (s PackageVersionSet) Add(service, pkg, version string) {
 }
 
 type resolver func(ctx context.Context, service, pkg, version string) (common.Pin, error)
+type instanceChecker func(ctx context.Context, service, pkg, version string) error
 
 // resolve will attempt to resolve ALL pins, filling them into `vc`.
 //
@@ -59,7 +60,11 @@ type resolver func(ctx context.Context, service, pkg, version string) (common.Pi
 // PackageVersionSet where all `versions` are instance IDs. This resolved map
 // will be deduplicated (if multiple tags/refs point to the same instance, they
 // will be merged into a single entry).
-func (m PackageVersionSet) resolve(ctx context.Context, vc *internal.VersionCache, resolveFn resolver) (ret PackageVersionSet, err error) {
+//
+// If `checkInstance` is not nil, it will be called for versions that are
+// already instance IDs to verify their existence; Otherwise instance IDs are
+// passed through without checking.
+func (m PackageVersionSet) resolve(ctx context.Context, vc *internal.VersionCache, resolveFn resolver, checkInstance instanceChecker) (ret PackageVersionSet, err error) {
 	now := clock.Now(ctx)
 
 	total := int64(len(m))
@@ -101,7 +106,15 @@ func (m PackageVersionSet) resolve(ctx context.Context, vc *internal.VersionCach
 		pin := common.Pin{PackageName: vers.PackageName}
 		if common.ValidateInstanceID(vers.Version, common.AnyHash) == nil {
 			pin.InstanceID = vers.Version
-			report(vers.Service, pin, nil)
+			if checkInstance != nil {
+				eg.Go(func() error {
+					err := checkInstance(ctx, vers.Service, vers.PackageName, vers.Version)
+					report(vers.Service, pin, err)
+					return nil
+				})
+			} else {
+				report(vers.Service, pin, nil)
+			}
 			continue
 		}
 

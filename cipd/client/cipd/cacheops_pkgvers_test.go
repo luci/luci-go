@@ -64,7 +64,7 @@ func TestPackageVersionSet(t *testing.T) {
 	// We have a tag and ref in here; we should get an error.
 	_, err := m.resolve(t.Context(), vc, func(ctx context.Context, service, pkg, version string) (common.Pin, error) {
 		return common.Pin{}, errors.New("no resolution")
-	})
+	}, nil)
 	assert.ErrIsLike(t, err, "no resolution")
 
 	bIID := strings.Repeat("b", 40)
@@ -75,7 +75,7 @@ func TestPackageVersionSet(t *testing.T) {
 			PackageName: pkg,
 			InstanceID:  bIID,
 		}, nil
-	})
+	}, nil)
 	assert.NoErr(t, err)
 	assert.That(t, pins, should.Match(PackageVersionSet{
 		{srv1, "some/pkg", strings.Repeat("a", 40)}: {},

@@ -75,7 +75,7 @@ func CachePrepare(ctx context.Context, opts ClientOptions, cacheDir string, trim
 		targetVerCache.FileObjectRefs = internal.DisableRead
 		targetVerCache.Refs = internal.DisableRead
 	}
-	pins, err := versions.resolve(ctx, targetVerCache, clients.resolve)
+	pins, err := versions.resolve(ctx, targetVerCache, clients.resolve, nil)
 	if err != nil {
 		return err
 	}

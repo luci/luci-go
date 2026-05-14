@@ -120,6 +120,17 @@ func (c *clientPool) resolve(ctx context.Context, service, pkg, version string) 
 	return
 }
 
+// checkInstance picks the appropriate client and checks if the instance exists.
+func (c *clientPool) checkInstance(ctx context.Context, service, pkg, version string) error {
+	pin := common.Pin{PackageName: pkg, InstanceID: version}
+	cli, err := c.client(ctx, service)
+	if err != nil {
+		return err
+	}
+	_, err = cli.DescribeInstance(ctx, pin, nil)
+	return err
+}
+
 // close closes all of the clients in the pool.
 //
 // Resets the clientPool to its initial state.
