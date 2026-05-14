@@ -837,7 +837,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 				filepath.Join(opts.Root, fs.SiteServiceDir),
 			), ""),
 			SaveName: internal.UseLegacyVCName,
-			Refs:     internal.Disabled,
+			Refs:     internal.Passthrough,
 			// TODO: Hook up ReadOnlyCacheDir
 		}
 	}

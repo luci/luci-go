@@ -56,9 +56,9 @@ func TestPackageVersionSet(t *testing.T) {
 	}))
 
 	vc := &internal.VersionCache{
-		Tags:           internal.Disabled,
-		FileObjectRefs: internal.Disabled,
-		Refs:           internal.Disabled,
+		Tags:           internal.Passthrough,
+		FileObjectRefs: internal.Passthrough,
+		Refs:           internal.Passthrough,
 	}
 
 	// We have a tag and ref in here; we should get an error.

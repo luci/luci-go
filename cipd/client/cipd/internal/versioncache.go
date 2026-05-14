@@ -49,17 +49,21 @@ const (
 	ReadWrite CacheToggle = 0
 
 	// DisableRead means that the VersionCache should not attempt to load the
-	// current values form disk on a cache miss.
+	// current values from disk on a cache miss.
 	DisableRead CacheToggle = 1 << iota
+
+	// DisableMerge means that the VersionCache should not attempt to load the
+	// current values from disk while writing.
+	DisableMerge
 
 	// DisableWrite means that the VersionCache should not flush added values
 	// to disk. If the on-disk cache contains this type of entry, it will be
 	// passed through.
 	DisableWrite
 
-	// Disabled means that the VersionCache will neither read nor write this
-	// entry type from/to disk.
-	Disabled CacheToggle = DisableRead | DisableWrite
+	// Passthrough means that the VersionCache will neither read nor write this
+	// entry type from/to disk, but will pass them through when Flushing.
+	Passthrough CacheToggle = DisableRead | DisableWrite
 )
 
 // VersionCache caches several types of version information:
@@ -350,23 +354,45 @@ func (c *VersionCache) Flush(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	noTags := c.Tags.has(DisableWrite)
-	noFileObjectRefs := c.FileObjectRefs.has(DisableWrite)
-	noRefs := c.Refs.has(DisableWrite)
+	noWriteTags := c.Tags.has(DisableWrite)
+	noWriteFileObjectRefs := c.FileObjectRefs.has(DisableWrite)
+	noWriteRefs := c.Refs.has(DisableWrite)
 
 	// Nothing to store? Just clean the state, so that ResolveTag can fetch the
 	// up-to-date cache from disk later if needed.
-	if c.added.count() == 0 || c.FS == nil || (noTags && noFileObjectRefs && noRefs) {
+	if c.added.count() == 0 || c.FS == nil || (noWriteTags && noWriteFileObjectRefs && noWriteRefs) {
 		c.cacheLoaded = false
 		return nil
 	}
 
-	// Load the most recent data to avoid overwriting it. Load ALL entries, even
-	// if they belong to different service: we have one global cache file and
-	// should preserve all entries there.
-	recent, err := ReadVersionCache(ctx, c.FS)
-	if err != nil {
-		return err
+	noMergeTags := c.Tags.has(DisableMerge)
+	noMergeFileObjectRefs := c.FileObjectRefs.has(DisableMerge)
+	noMergeRefs := c.Refs.has(DisableMerge)
+
+	var recent *messages.VersionCache
+	if !(noMergeTags && noMergeFileObjectRefs && noMergeRefs) {
+		// Load the most recent data to avoid overwriting it. We must load the
+		// whole thing and then selectively redact the bits we have disabled merges
+		// for.
+
+		var err error
+		recent, err = ReadVersionCache(ctx, c.FS)
+		if err != nil {
+			return err
+		}
+
+		// NOTE: `recent` may still be nil if there is no actual file on disk.
+		if recent != nil {
+			if noMergeTags {
+				recent.Entries = nil
+			}
+			if noMergeFileObjectRefs {
+				recent.FileEntries = nil
+			}
+			if noMergeRefs {
+				recent.RefEntries = nil
+			}
+		}
 	}
 
 	// Serialize and write to disk. We still can accidentally replace someone

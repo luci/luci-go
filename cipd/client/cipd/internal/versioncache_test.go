@@ -242,7 +242,7 @@ func TestVersionCacheOfflineRefs(t *testing.T) {
 	assert.That(t, tc, shouldHaveRef(ctx, "service.example.com", "pkg", "latest", IID1("a")))
 
 	// Verify that we can stop loading/saving refs, but still pass them through.
-	tc = &VersionCache{FS: fs, Refs: Disabled}
+	tc = &VersionCache{FS: fs, Refs: Passthrough}
 	assert.That(t, tc, shouldNotHaveRef(ctx, "service.example.com", "pkg", "latest"))
 	assert.That(t, tc, shouldAddTag(ctx, "service.example.com", "pkg", "version:123", IID1("b")))
 	assert.NoErr(t, tc.Flush(ctx))
@@ -269,7 +269,7 @@ func TestVersionCacheDisabledTags(t *testing.T) {
 	assert.That(t, tc, shouldHaveTag(ctx, "service.example.com", "pkg", "version:1", IID1("a")))
 
 	// Verify that we can stop loading/saving tags, but still pass them through.
-	tc = &VersionCache{FS: fsInst, Tags: Disabled}
+	tc = &VersionCache{FS: fsInst, Tags: Passthrough}
 	assert.That(t, tc, shouldNotHaveTag(ctx, "service.example.com", "pkg", "version:1"))
 	assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "latest", IID1("b")))
 	assert.NoErr(t, tc.Flush(ctx))
@@ -296,7 +296,7 @@ func TestVersionCacheDisabledFileObjectRefs(t *testing.T) {
 	assert.That(t, tc, shouldHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "filename", IID1("1")))
 
 	// Verify that we can stop loading/saving file object refs, but still pass them through.
-	tc = &VersionCache{FS: fsInst, FileObjectRefs: Disabled}
+	tc = &VersionCache{FS: fsInst, FileObjectRefs: Passthrough}
 	assert.That(t, tc, shouldNotHaveFile(ctx, "service.example.com", "pkg", IID1("a"), "filename"))
 	assert.That(t, tc, shouldAddRef(ctx, "service.example.com", "pkg", "latest", IID1("b")))
 	assert.NoErr(t, tc.Flush(ctx))
@@ -570,6 +570,35 @@ func TestVersionCacheToggles(t *testing.T) {
 
 		// Existing entries should be preserved.
 		assert.That(t, tcCheck, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:1", IID1("a")))
+	})
+
+	t.Run("DisableMerge", func(t *testing.T) {
+		ctx := t.Context()
+		fsInst := fs.NewFileSystem(t.TempDir(), "")
+		tc := &VersionCache{FS: fsInst}
+		init(t, tc)
+
+		// With DisableMerge, the cache loads but ignores disk on flush.
+		tcNoMerge := &VersionCache{
+			FS:   fsInst,
+			Tags: DisableMerge,
+		}
+
+		// It should still be able to read existing entries from disk if not DisableRead!
+		assert.That(t, tcNoMerge, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:1", IID1("a")))
+
+		// Now we add a NEW tag.
+		assert.That(t, tcNoMerge, shouldAddTag(ctx, "service.example.com", "pkg", "tag:2", IID1("b")))
+
+		// Now we Flush.
+		assert.NoErr(t, tcNoMerge.Flush(ctx))
+
+		// Verify that the OLD tag was NOT merged (dropped) because DisableMerge was set for Tags!
+		tcCheck := &VersionCache{FS: fsInst}
+		assert.That(t, tcCheck, shouldNotHaveTag(ctx, "service.example.com", "pkg", "tag:1"))
+
+		// And the NEW tag was saved.
+		assert.That(t, tcCheck, shouldHaveTag(ctx, "service.example.com", "pkg", "tag:2", IID1("b")))
 	})
 
 	t.Run(`in-memory`, func(t *testing.T) {
