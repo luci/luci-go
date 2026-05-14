@@ -234,8 +234,17 @@ export const AndroidDevicesPage = () => {
       list.push({ id, label });
     });
 
+    if (dimensionsQuery.data) {
+      Object.keys(dimensionsQuery.data.baseDimensions).forEach((id) =>
+        list.push({ id, label: id }),
+      );
+      Object.keys(dimensionsQuery.data.labels).forEach((id) =>
+        list.push({ id, label: id }),
+      );
+    }
+
     return _.uniqBy(list, 'id');
-  }, [extraColumnIds]);
+  }, [extraColumnIds, dimensionsQuery.data]);
 
   const [warnings, addWarning] = useWarnings();
   useEffect(() => {
