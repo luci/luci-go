@@ -84,18 +84,20 @@ func TestAuthMethod(t *testing.T) {
 		}
 
 		t.Run("Success", func(t *ftt.Test) {
-			user, err := call(prepareJWT(gerritJWT{
+			token := prepareJWT(gerritJWT{
 				Iss:            "trusted-issuer",
 				Aud:            expectedAudience,
 				Exp:            now.Add(5 * time.Minute).Unix(),
 				AssertedUser:   assertedUser,
 				AssertedChange: assertedChange,
-			}))
+			})
+			user, err := call(token)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, user, should.Match(&auth.User{
 				Identity: "user:abc@example.com",
 				Email:    "abc@example.com",
 				Extra: &AssertedInfo{
+					JWT:    token,
 					User:   assertedUser,
 					Change: assertedChange,
 				},
@@ -103,7 +105,7 @@ func TestAuthMethod(t *testing.T) {
 		})
 
 		t.Run("Success, but no preferred email", func(t *ftt.Test) {
-			user, err := call(prepareJWT(gerritJWT{
+			token := prepareJWT(gerritJWT{
 				Iss: "trusted-issuer",
 				Aud: expectedAudience,
 				Exp: now.Add(5 * time.Minute).Unix(),
@@ -111,12 +113,14 @@ func TestAuthMethod(t *testing.T) {
 					Emails: []string{"xyz@example.com", "abc@example.com"},
 				},
 				AssertedChange: assertedChange,
-			}))
+			})
+			user, err := call(token)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, user, should.Match(&auth.User{
 				Identity: "user:xyz@example.com",
 				Email:    "xyz@example.com",
 				Extra: &AssertedInfo{
+					JWT: token,
 					User: AssertedUser{
 						Emails: []string{"xyz@example.com", "abc@example.com"},
 					},

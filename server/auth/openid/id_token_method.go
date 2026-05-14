@@ -29,6 +29,27 @@ import (
 	"go.chromium.org/luci/server/auth/internal"
 )
 
+// OpenIDTokenInfo is information extracted from the OpenID token.
+//
+// Use GetOpenIDTokenInfo(ctx) to grab OpenIDTokenInfo from within a request
+// handler.
+type OpenIDTokenInfo struct {
+	// JWT is the original OpenID JWT token in the request.
+	JWT string
+	// Verified is deserialized and validated ID token.
+	Verified *IDToken
+}
+
+// GetOpenIDTokenInfo returns information extracted from the OpenID token.
+//
+// Works only from within a request handler and only if the call was
+// authenticated via GoogleIDTokenAuthMethod. In all other cases (anonymous
+// calls, calls authenticated via some other mechanism, etc.) returns nil.
+func GetOpenIDTokenInfo(ctx context.Context) *OpenIDTokenInfo {
+	info, _ := auth.CurrentUser(ctx).Extra.(*OpenIDTokenInfo)
+	return info
+}
+
 // GoogleIDTokenAuthMethod implements auth.Method by checking `Authorization`
 // header which is expected to have an OpenID Connect ID token signed by Google.
 //
@@ -141,6 +162,10 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r auth.Reque
 			return nil, nil, nil
 		}
 		return nil, nil, err
+	}
+	user.Extra = &OpenIDTokenInfo{
+		JWT:      token,
+		Verified: tok,
 	}
 
 	// For tokens identifying end users, populate user.ClientID to let the LUCI

@@ -26,7 +26,9 @@ import (
 
 // UserFromIDToken validates the ID token and extracts user information from it.
 //
-// Returns the partially validated token and auth.User extracted from it.
+// Returns the partially validated token and auth.User extracted from it
+// (with Extra set to nil, since its exact type may depend on what calls
+// UserFromIDToken, the caller should populate it).
 //
 // The caller is still responsible to verify token's Audience field.
 func UserFromIDToken(ctx context.Context, token string, discovery *DiscoveryDoc) (*IDToken, *auth.User, error) {

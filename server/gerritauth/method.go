@@ -42,7 +42,11 @@ var Method AuthMethod
 //
 // Use GetAssertedInfo(ctx) to grab AssertedInfo from within a request handler.
 type AssertedInfo struct {
-	User   AssertedUser
+	// JWT is the original JWT token in the request.
+	JWT string
+	// User identifies the Gerrit user that made the call.
+	User AssertedUser
+	// Change identifies the Gerrit CL the user was working with.
 	Change AssertedChange
 }
 
@@ -185,6 +189,7 @@ func (m *AuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (
 		Identity: ident,
 		Email:    preferredEmail,
 		Extra: &AssertedInfo{
+			JWT:    encodedJWT,
 			User:   tok.AssertedUser,
 			Change: tok.AssertedChange,
 		},

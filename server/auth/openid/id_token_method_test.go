@@ -120,7 +120,7 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 
 	ftt.Run("Regular user", t, func(t *ftt.Test) {
 		t.Run("Happy path", func(t *ftt.Test) {
-			user, err := call(fakeHost, "Bearer "+provider.mintIDToken(ctx, IDToken{
+			original := IDToken{
 				Iss:           provider.Issuer,
 				EmailVerified: true,
 				Sub:           "some-sub",
@@ -130,7 +130,9 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 				Aud:           "some-client-id",
 				Iat:           clock.Now(ctx).Unix(),
 				Exp:           clock.Now(ctx).Add(time.Hour).Unix(),
-			}))
+			}
+			token := provider.mintIDToken(ctx, original)
+			user, err := call(fakeHost, "Bearer "+token)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, user, should.Resemble(&auth.User{
 				Identity: "user:user@example.com",
@@ -138,6 +140,10 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 				Name:     "Some Dude",
 				Picture:  "https://picture/url/s64/photo.jpg",
 				ClientID: "some-client-id",
+				Extra: &OpenIDTokenInfo{
+					JWT:      token,
+					Verified: &original,
+				},
 			}))
 		})
 
@@ -183,6 +189,7 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 			assert.Loosely(t, user, should.Resemble(&auth.User{
 				Identity: "user:example@example.gserviceaccount.com",
 				Email:    "example@example.gserviceaccount.com",
+				Extra:    user.Extra,
 			}))
 		})
 
@@ -215,6 +222,7 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 				assert.Loosely(t, user, should.Resemble(&auth.User{
 					Identity: "user:example@example.gserviceaccount.com",
 					Email:    "example@example.gserviceaccount.com",
+					Extra:    user.Extra,
 				}))
 			}
 		})
@@ -263,6 +271,7 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 				Identity: "user:example@example.gserviceaccount.com",
 				Email:    "example@example.gserviceaccount.com",
 				ClientID: "blah.apps.googleusercontent.com",
+				Extra:    user.Extra,
 			}))
 		})
 
