@@ -113,3 +113,15 @@ func WriteVersionCache(ctx context.Context, cacheDir fs.FileSystem, msg *message
 
 	return nil
 }
+
+// EnsureVersionCacheGone ensures that `fs` does not contain any version cache.
+func EnsureVersionCacheGone(ctx context.Context, cacheDir fs.FileSystem) error {
+	curPath, legacyPath, err := mkVersionCachePaths(cacheDir)
+	if err != nil {
+		return err
+	}
+	return errors.Join(
+		cacheDir.EnsureFileGone(ctx, curPath),
+		cacheDir.EnsureFileGone(ctx, legacyPath),
+	)
+}

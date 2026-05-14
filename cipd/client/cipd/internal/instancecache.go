@@ -600,14 +600,14 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 		state.Entries = nil
 
 	case err != nil:
-		return err
+		return cipderr.IO.Apply(err)
 
 	default:
 		defer root.Close()
 
 		instanceIDs, err := root.Readdirnames(0)
 		if err != nil {
-			return err
+			return cipderr.IO.Apply(err)
 		}
 		existingIDs := stringset.New(len(instanceIDs))
 		for _, id := range instanceIDs {

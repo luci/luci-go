@@ -162,6 +162,7 @@ func GetApplication(params Parameters) *cli.Application {
 			// Cache preparation commands.
 			{Advanced: true},
 			cmdCachePrepare(params),
+			cmdCacheVerify(params),
 
 			// User friendly subcommands that operates within a site root. Implemented
 			// in friendly.go. These are advanced because they're half-baked.
