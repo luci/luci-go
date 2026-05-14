@@ -58,7 +58,13 @@ func (cl *LogdogClient) GetLog(c context.Context, viewUrl string) (string, error
 		}
 	}
 
-	return util.SendHTTPRequest(c, req, 30*time.Second, useAuth)
+	res, err := util.SendHTTPRequest(c, req, 30*time.Second, useAuth)
+	if err != nil {
+		logging.Errorf(c, "Failed to get log from logdog for URL %s: %v", viewUrl, err)
+		return "", err
+	}
+	logging.Infof(c, "Successfully got log from logdog for URL %s, size: %d", viewUrl, len(res))
+	return res, nil
 }
 
 // We need the interface for testing purpose

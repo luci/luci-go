@@ -74,6 +74,7 @@ func Analyze(c context.Context, client llm.Client, cfa *model.CompileFailureAnal
 		compileLogs, err = compilelog.GetCompileLogs(c, cfa.FirstFailedBuildId)
 		if err != nil {
 			setStatusError(c, genaiAnalysis)
+			logging.Errorf(c, "GenAI analysis failed getting compile log for build %d: %v", cfa.FirstFailedBuildId, err)
 			return genaiAnalysis, errors.Fmt("failed getting compile log: %w", err)
 		}
 	}
