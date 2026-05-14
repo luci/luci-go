@@ -104,6 +104,10 @@ export function ChronicleContextProvider({
     },
   );
 
+  if (!useFakeData && result.error) {
+    throw result.error;
+  }
+
   const workplanValueMap = useMemo(() => {
     if (useFakeData) {
       const generator = new FakeGraphGenerator({

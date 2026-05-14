@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
+import { GrpcError, RpcCode } from '@chopsui/prpc-client';
 import {
   UseQueryOptions,
   UseQueryResult,
@@ -40,6 +41,44 @@ export interface GrpcWebQueryArgs<Req, Res> {
   request: Req;
   requestMsg: MessageFns<Req>;
   responseMsg: MessageFns<Res>;
+}
+
+function createGrpcErrorFromResponse(
+  status: number,
+  resText: string,
+): GrpcError {
+  switch (status) {
+    case 400:
+      return new GrpcError(
+        RpcCode.INVALID_ARGUMENT,
+        resText || 'invalid argument',
+      );
+    case 401:
+      return new GrpcError(
+        RpcCode.UNAUTHENTICATED,
+        resText || 'unauthenticated',
+      );
+    case 403:
+      return new GrpcError(
+        RpcCode.PERMISSION_DENIED,
+        resText || 'permission denied',
+      );
+    case 404:
+      return new GrpcError(RpcCode.NOT_FOUND, resText || 'not found');
+    case 429:
+      return new GrpcError(
+        RpcCode.RESOURCE_EXHAUSTED,
+        resText || 'resource exhausted',
+      );
+    case 502:
+    case 503:
+      return new GrpcError(
+        RpcCode.UNAVAILABLE,
+        resText || 'service unavailable',
+      );
+    default:
+      return new GrpcError(RpcCode.INTERNAL, resText || 'internal error');
+  }
 }
 
 export const useGrpcWebQuery = <Req, Res>(
@@ -70,7 +109,8 @@ export const useGrpcWebQuery = <Req, Res>(
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const resText = await response.text();
+        throw createGrpcErrorFromResponse(response.status, resText);
       }
 
       const responseBuffer = await response.arrayBuffer();

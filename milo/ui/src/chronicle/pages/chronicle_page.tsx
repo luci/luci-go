@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import { ChronicleContextProvider } from '../components/provider';
 
@@ -31,5 +33,11 @@ export function ChroniclePage() {
 }
 
 export function Component() {
-  return <ChroniclePage />;
+  return (
+    <TrackLeafRoutePageView contentGroup="chronicle">
+      <RecoverableErrorBoundary key="chronicle">
+        <ChroniclePage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
 }
