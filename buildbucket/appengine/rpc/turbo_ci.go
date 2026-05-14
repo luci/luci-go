@@ -18,6 +18,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
+	"maps"
 	"math"
 	"slices"
 	"time"
@@ -39,6 +41,8 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/turboci/id"
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/value"
@@ -55,21 +59,39 @@ import (
 // rootBuildStageID is used as a stage ID of a root build Turbo CI stage.
 const rootBuildStageID = "$init"
 
-// checkTurboCIOAuthScope logs a warning if the call doesn't have an OAuth
-// scope necessary to call Turbo CI APIs.
+// checkTurboCIOAuthScope logs a warning if the call doesn't have credentials
+// necessary to call Turbo CI APIs.
+//
+// See also turboCICallerCreds(...) where these credentials are actually
+// converted into Turbo CI RPC credentials if the call ends up using Turbo CI.
 func checkTurboCIOAuthScope(ctx context.Context) {
+	// Acting as project is allowed, we'll use project-scoped accounts.
 	if auth.CurrentIdentity(ctx).Kind() == identity.Project {
 		logging.Infof(ctx, "turbo-ci: acting as project: %s", auth.CurrentIdentity(ctx))
 		return
 	}
-	switch info := auth.GetGoogleOAuth2Info(ctx); {
-	case info == nil:
-		logging.Warningf(ctx, "turbo-ci: no OAuth token: %s", auth.CurrentIdentity(ctx))
-	case !slices.Contains(info.Scopes, scopes.AndroidBuild):
-		logging.Warningf(ctx, "turbo-ci: no OAuth scope: %s", auth.CurrentIdentity(ctx))
-	default:
-		logging.Infof(ctx, "turbo-ci: good OAuth token: %s", auth.CurrentIdentity(ctx))
+
+	// If got an OAuth2 token, check it has the necessary scope.
+	if info := auth.GetGoogleOAuth2Info(ctx); info != nil {
+		if !slices.Contains(info.Scopes, scopes.AndroidBuild) {
+			logging.Warningf(ctx, "turbo-ci: no OAuth scope: %s", auth.CurrentIdentity(ctx))
+		} else {
+			logging.Infof(ctx, "turbo-ci: good OAuth token: %s", auth.CurrentIdentity(ctx))
+		}
+		return
 	}
+
+	// JWT-based credentials are allowed (as impersonation tokens).
+	if openid.GetOpenIDTokenInfo(ctx) != nil {
+		logging.Infof(ctx, "turbo-ci: good OIDC JWT: %s", auth.CurrentIdentity(ctx))
+		return
+	}
+	if gerritauth.GetAssertedInfo(ctx) != nil {
+		logging.Infof(ctx, "turbo-ci: good Gerrit JWT: %s", auth.CurrentIdentity(ctx))
+		return
+	}
+
+	logging.Warningf(ctx, "turbo-ci: unsupported credentials: %s", auth.CurrentIdentity(ctx))
 }
 
 // launchTurboCIRoot launches a root build via a new Turbo CI workplan.
@@ -196,12 +218,18 @@ func scheduleBuildRequestToStage(req *pb.ScheduleBuildRequest, build *model.Buil
 // turboCICallerCreds returns credentials to use to make Turbo CI calls in
 // context of a calling user.
 //
-// If the call comes from a regular user, just forward their credentials
-// (verifying they are sufficient first).
+// If the call comes from a regular user that sent OAuth access token, just
+// forward their credentials (verifying they are sufficient first).
+//
+// If the call comes from a regular user that sent an OpenID Identity token or
+// a Gerrit JWT token, use Buildbucket's own credentials, but attach the end
+// user token as "x-turboci-impersonation-token" metadata. The impersonator
+// credential will be used for OnePlatform API billing/quotas, and the end-user
+// token will be used to actually authorize the request.
 //
 // If the call comes from "project:XXX" identity, use the corresponding
-// project-scoped service account (since we need a real OAuth token to call
-// Turbo CI). This account will be converted back into "project:XXX" identity
+// project-scoped service account (since Turbo CI is not aware of "project:XXX"
+// identities). This account will be converted back into "project:XXX" identity
 // in the RunStage implementation.
 //
 // Returns appstatus errors.
@@ -222,35 +250,69 @@ func turboCICallerCreds(ctx context.Context) (credentials.PerRPCCredentials, err
 	// if the token expires too soon (e.g. by returning some transient error to
 	// trigger a retry with a fresher token).
 
-	// Verify we've got an OAuth2 access token we can forward to Turbo CI.
-	switch info := auth.GetGoogleOAuth2Info(ctx); {
-	case info == nil:
-		return nil, appstatus.Errorf(
-			codes.Unauthenticated,
-			"Calls that schedule builds that run via Turbo CI must use OAuth2 access tokens "+
-				"for authentication (OpenID Connect ID tokens and Gerrit ID tokens are not supported). "+
-				"The OAuth2 access token must have at least %q and %q scopes. This is required because "+
-				"Buildbucket service calls Turbo CI APIs on behalf of clients and Turbo CI APIs "+
-				"require OAuth access tokens (b/454194663).",
-			scopes.AndroidBuild, scopes.Email,
-		)
-	case !slices.Contains(info.Scopes, scopes.AndroidBuild):
-		return nil, appstatus.Errorf(
-			codes.Unauthenticated,
-			"Calls that schedule builds that run via Turbo CI must use OAuth2 access tokens "+
-				"that have at least %q and %q scopes, but the token used by this call has following scopes: %v. "+
-				"Make sure you are using the most recent version of the Buildbucket client. "+
-				"This is required because Buildbucket service calls Turbo CI APIs on behalf "+
-				"of clients and Turbo CI APIs require OAuth access tokens (b/454194663).",
-			scopes.AndroidBuild, scopes.Email, info.Scopes,
-		)
-	default:
+	// If we've got an OAuth2 access token, check it has the necessary scope and
+	// then just forward it to the Turbo CI.
+	if info := auth.GetGoogleOAuth2Info(ctx); info != nil {
+		if !slices.Contains(info.Scopes, scopes.AndroidBuild) {
+			return nil, appstatus.Errorf(
+				codes.Unauthenticated,
+				"Calls that schedule builds that run via Turbo CI must use OAuth2 access tokens "+
+					"that have at least %q and %q scopes, but the token used by this call has following scopes: %v. "+
+					"Make sure you are using the most recent version of the Buildbucket client. "+
+					"This is required because Buildbucket service calls Turbo CI APIs on behalf "+
+					"of clients by forwarding their OAuth2 access token (b/454194663).",
+				scopes.AndroidBuild, scopes.Email, info.Scopes,
+			)
+		}
 		creds, err := auth.GetPerRPCCredentials(ctx, auth.AsCredentialsForwarder)
 		if err != nil {
 			return nil, appstatus.Errorf(codes.Internal, "error setting up credentials forwarding: %s", err)
 		}
 		return creds, nil
 	}
+
+	// Recognize authentication methods that use tokens that Turbo CI understands
+	// as impersonation tokens.
+	var method, token string
+	if info := openid.GetOpenIDTokenInfo(ctx); info != nil {
+		method = "OIDC"
+		token = info.JWT
+	} else if info := gerritauth.GetAssertedInfo(ctx); info != nil {
+		method = "Gerrit"
+		token = info.JWT
+	} else {
+		return nil, appstatus.Errorf(codes.Unauthenticated, "call credentials are not compatible with Turbo CI API")
+	}
+
+	impersonator, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(scopes.Email, scopes.AndroidBuild))
+	if err != nil {
+		return nil, appstatus.Errorf(codes.Internal, "failed to get Buildbucket own credentials: %s", err)
+	}
+
+	return &impersonatingCreds{
+		impersonator: impersonator,
+		header:       fmt.Sprintf("%s %s", method, token),
+	}, nil
+}
+
+// impersonatingCreds implements credentials.PerRPCCredentials.
+type impersonatingCreds struct {
+	impersonator credentials.PerRPCCredentials
+	header       string
+}
+
+func (ic *impersonatingCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	md, err := ic.impersonator.GetRequestMetadata(ctx, uri...)
+	if err != nil {
+		return nil, err
+	}
+	md = maps.Clone(md)
+	md["x-turboci-impersonation-token"] = ic.header
+	return md, nil
+}
+
+func (ic *impersonatingCreds) RequireTransportSecurity() bool {
+	return ic.impersonator.RequireTransportSecurity()
 }
 
 // pollingSchedule defines how long to sleep between polling attempts.
