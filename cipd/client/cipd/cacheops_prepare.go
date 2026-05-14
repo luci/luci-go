@@ -126,7 +126,7 @@ func CachePrepare(ctx context.Context, opts ClientOptions, cacheDir string, trim
 		res := targetInstCache.WaitInstance()
 		if res.Err != nil {
 			if reader.IsCorruptionError(res.Err) && res.State == nil {
-				refetchCtx, refetchDone := ui.NewActivity(res.Context, activities, "refetch")
+				refetchCtx, refetchDone := ui.NewActivity(ctx, activities, "refetch")
 				req := &internal.InstanceRequest{
 					Context: refetchCtx,
 					Done:    refetchDone,
