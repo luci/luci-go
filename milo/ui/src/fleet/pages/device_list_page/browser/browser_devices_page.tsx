@@ -19,7 +19,7 @@ import {
   MRT_ColumnDef,
   MRT_TableInstance,
 } from 'material-react-table';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -27,7 +27,6 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
-import { emptyPageTokenUpdater } from '@/common/components/params_pager';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import { BrowserDeviceToRepair } from '@/fleet/components/actions/request_repair/request_repair_browser_config';
 import {
@@ -51,13 +50,8 @@ import {
   filtersUpdater,
   getFilters,
 } from '@/fleet/components/filter_dropdown/search_param_utils';
-import { FILTERS_PARAM_KEY } from '@/fleet/components/filter_dropdown/search_param_utils';
-import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
-import {
-  FilterCategory,
-  useFilters,
-} from '@/fleet/components/filters/use_filters';
+import { useFilters } from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { BROWSER_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
@@ -72,10 +66,7 @@ import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import {
-  computeSelectedOptions,
-  syncFilterCategory,
-} from '@/fleet/utils/filters';
+import { computeSelectedOptions } from '@/fleet/utils/filters';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
@@ -260,11 +251,11 @@ export const BrowserDevicesPage = () => {
     addDimensions(dimensionsQuery.data.baseDimensions, (k) => k);
     addDimensions(
       dimensionsQuery.data.swarmingLabels,
-      (k) => `${BROWSER_SWARMING_SOURCE}."${k}"`,
+      (k) => `${BROWSER_SWARMING_SOURCE}.${k}`,
     );
     addDimensions(
       dimensionsQuery.data.ufsLabels,
-      (k) => `${BROWSER_UFS_SOURCE}."${k}"`,
+      (k) => `${BROWSER_UFS_SOURCE}.${k}`,
     );
 
     return filters;
@@ -290,40 +281,6 @@ export const BrowserDevicesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aip160Str, warningsStr]);
 
-  const onColumnFiltersChangeOverride = useCallback(
-    (newFilters: Record<string, string[]>) => {
-      trackEvent('filter_changed', {
-        componentName: 'device_list_filter',
-      });
-      if (!filterCategoryDatas.filterValues) return;
-
-      const prevTableFilterKeys = Object.keys(
-        selectedOptions.filters || {},
-      ).map((id) => normalizeFilterKey(id));
-
-      for (const [key, category] of Object.entries(
-        filterCategoryDatas.filterValues as Record<string, FilterCategory>,
-      )) {
-        syncFilterCategory(key, category, newFilters, prevTableFilterKeys);
-      }
-
-      const currentAIP160 = filterCategoryDatas.aip160();
-      setSearchParams((prev) => {
-        let newParams = new URLSearchParams(prev);
-        newParams.set(FILTERS_PARAM_KEY, currentAIP160);
-        newParams = emptyPageTokenUpdater(pagerCtx)(newParams);
-        return newParams;
-      });
-    },
-    [
-      filterCategoryDatas,
-      pagerCtx,
-      setSearchParams,
-      trackEvent,
-      selectedOptions.filters,
-    ],
-  );
-
   const request = ListBrowserDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
@@ -342,47 +299,10 @@ export const BrowserDevicesPage = () => {
     totalSize = 0,
   } = devicesQuery.data || {};
 
-  const fallbackRealms = useMemo(() => {
-    const realms = new Set<string>();
-    devices.forEach((dev: BrowserDevice) => {
-      if (dev.realm) realms.add(dev.realm);
-    });
-    return Array.from(realms).map((r) => ({ label: r, value: r }));
-  }, [devices]);
-
-  const filterOptionsConfig = useMemo(() => {
-    if (!isDimensionsQueryProperlyLoaded) return [];
-
-    const options = Object.entries(loadedFilterOptions).map(
-      ([key, builder]) => {
-        const b = builder as StringListFilterCategoryBuilder;
-        return {
-          label: b.label || key,
-          type: 'string_list' as const,
-          value: key,
-          options: b.options || [],
-        };
-      },
-    );
-
-    if (!options.some((o) => o.value === 'realm')) {
-      options.push({
-        label: 'Realm',
-        type: 'string_list' as const,
-        value: 'realm',
-        options: fallbackRealms,
-      });
-    }
-
-    return options;
-  }, [isDimensionsQueryProperlyLoaded, loadedFilterOptions, fallbackRealms]);
-
   const fleetMrtState = useFleetMRTState({
     setSearchParams,
     pagerCtx,
     selectedOptions,
-    filterOptionsConfig,
-    onColumnFiltersChangeOverride,
     columnsList: columnsList as unknown as FleetColumnDefExt[],
 
     orderByParam,
@@ -428,6 +348,7 @@ export const BrowserDevicesPage = () => {
     columns: fleetMrtState.enrichedColumns as MRT_ColumnDef<BrowserDevice>[],
     data: devices as BrowserDevice[],
     meta,
+    filterValues: filterCategoryDatas.filterValues,
     displayColumnDefOptions: {
       'mrt-row-select': {
         size: 40,
@@ -450,11 +371,9 @@ export const BrowserDevicesPage = () => {
       isLoading: devicesQuery.isPending || devicesQuery.isPlaceholderData,
       columnVisibility: fleetMrtState.columnVisibility,
       sorting: fleetMrtState.sorting,
-      columnFilters: fleetMrtState.columnFilters,
       rowSelection: fleetMrtState.rowSelection,
       columnSizing: fleetMrtState.columnSizing,
     },
-    onColumnFiltersChange: fleetMrtState.onColumnFiltersChange,
     onColumnVisibilityChange:
       fleetMrtState.mrtColumnManager.setColumnVisibility,
     onSortingChange: fleetMrtState.onSortingChange,
