@@ -204,7 +204,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
     () =>
       filterCategoryDatas
         .map((option) => {
-          const { parentSearchQuery, childrenSearchQuery } =
+          const { isCategoryScoped, parentSearchQuery, childrenSearchQuery } =
             splitSearchQuery(deferredSearchQuery);
 
           const childrenScore = option.getChildrenSearchScore(
@@ -215,12 +215,15 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
 
           return {
             el: option,
-            score: Math.max(
-              // will prioritize parent matches when children have similar scores
-              // (e.g. "id" search will prioritize "dut id" category over "label-xyz" category with value "someid")
-              parentScore[0] * PARENT_SEARCH_SCORE_MULTIPLIER,
-              childrenScore,
-            ),
+            score:
+              isCategoryScoped && parentScore[0] === -1
+                ? -1
+                : Math.max(
+                    // will prioritize parent matches when children have similar scores
+                    // (e.g. "id" search will prioritize "dut id" category over "label-xyz" category with value "someid")
+                    parentScore[0] * PARENT_SEARCH_SCORE_MULTIPLIER,
+                    childrenScore,
+                  ),
             matches: parentScore[1],
           };
         })
