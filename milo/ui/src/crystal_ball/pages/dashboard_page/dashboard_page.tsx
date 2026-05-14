@@ -54,6 +54,7 @@ import {
   DeleteDashboardDialog,
   FilterEditor,
   MarkdownWidget,
+  PeriodComparisonWidget,
   RequireLogin,
   ShareDashboardDialog,
   WidgetContainer,
@@ -90,6 +91,7 @@ import {
   DeleteDashboardStateRequest,
   MeasurementFilterColumn,
   MeasurementFilterColumn_FilterScope,
+  PerfChartSeries_PerfAggregationFunction,
   PerfChartWidget,
   PerfChartWidget_ChartType,
   perfChartWidget_ChartTypeFromJSON,
@@ -217,6 +219,8 @@ function getWidgetType(widget: PerfWidget): WidgetType {
         return WidgetType.CHART_BREAKDOWN_TABLE;
       case PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION:
         return WidgetType.CHART_INVOCATION_DISTRIBUTION;
+      case PerfChartWidget_ChartType.PERIOD_COMPARISON:
+        return WidgetType.CHART_PERIOD_COMPARISON;
       default:
         return WidgetType.CHART_MULTI_METRIC;
     }
@@ -279,6 +283,8 @@ const WIDGET_RENDERERS: Record<
   [WidgetType.CHART_REGRESSION_METRIC]: () => null,
   [WidgetType.CHART_INVOCATION_DISTRIBUTION]: (widget, context, onUpdate) =>
     renderChartWidget(ChartWidget, widget, context, onUpdate),
+  [WidgetType.CHART_PERIOD_COMPARISON]: (widget, context, onUpdate) =>
+    renderChartWidget(PeriodComparisonWidget, widget, context, onUpdate),
 };
 
 const WIDGET_CREATORS: Record<WidgetType, () => Partial<PerfWidget>> = {
@@ -347,6 +353,27 @@ const WIDGET_CREATORS: Record<WidgetType, () => Partial<PerfWidget>> = {
       rightYAxis: undefined,
       seriesSplit: undefined,
       invocationDistributionConfig: undefined,
+    },
+  }),
+  [WidgetType.CHART_PERIOD_COMPARISON]: () => ({
+    displayName: 'New Period Comparison',
+    chart: {
+      dataSpecId: DATA_SPEC_ID,
+      displayName: 'New Period Comparison',
+      chartType: PerfChartWidget_ChartType.PERIOD_COMPARISON,
+      effectiveChartType: PerfChartWidget_ChartType.PERIOD_COMPARISON,
+      series: [],
+      filters: [],
+      xAxis: undefined,
+      leftYAxis: undefined,
+      rightYAxis: undefined,
+      seriesSplit: undefined,
+      invocationDistributionConfig: undefined,
+      periodComparisonChartConfig: {
+        aggregations: [PerfChartSeries_PerfAggregationFunction.MEAN],
+        baselineTimeRange: undefined,
+        comparisonTimeRange: undefined,
+      },
     },
   }),
 };

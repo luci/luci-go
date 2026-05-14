@@ -47,6 +47,9 @@ describe('AddWidgetModal', () => {
     expect(handleAdd).toHaveBeenCalledWith(
       WidgetType.CHART_INVOCATION_DISTRIBUTION,
     );
+
+    fireEvent.click(screen.getByText('Period Comparison Chart'));
+    expect(handleAdd).toHaveBeenCalledWith(WidgetType.CHART_PERIOD_COMPARISON);
   });
 
   it('calls onClose when Cancel is clicked', () => {

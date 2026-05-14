@@ -83,9 +83,9 @@ import {
 interface ChartSeriesEditorProps {
   series: readonly PerfChartSeries[];
   onUpdateSeries: (updatedSeries: PerfChartSeries[]) => void;
-  hiddenSeriesNames?: Set<string>;
-  onToggleVisibility?: (name: string) => void;
-  onShowOnly?: (name: string) => void;
+  hiddenSeriesIds?: Set<string>;
+  onToggleVisibility?: (id: string) => void;
+  onShowOnly?: (id: string) => void;
   onShowAll?: () => void;
   onHideAll?: () => void;
   dataSpecId: string;
@@ -98,7 +98,7 @@ interface ChartSeriesEditorProps {
 export function ChartSeriesEditor({
   series,
   onUpdateSeries,
-  hiddenSeriesNames,
+  hiddenSeriesIds,
   onToggleVisibility,
   onShowOnly,
   onShowAll,
@@ -301,9 +301,9 @@ export function ChartSeriesEditor({
             widgetFilters={widgetFilters}
             metricFilterColumns={metricFilterColumns}
             isLoadingColumns={isLoadingFilterColumns}
-            isVisible={!hiddenSeriesNames?.has(s.displayName)}
-            onToggleVisibility={() => onToggleVisibility?.(s.displayName)}
-            onShowOnly={() => onShowOnly?.(s.displayName)}
+            isVisible={!hiddenSeriesIds?.has(s.id)}
+            onToggleVisibility={() => onToggleVisibility?.(s.id)}
+            onShowOnly={() => onShowOnly?.(s.id)}
             hasChildren={hasChildren}
             childrenExpanded={childrenExpanded}
             onToggleChildren={() => toggleChildrenExpanded(s.id)}

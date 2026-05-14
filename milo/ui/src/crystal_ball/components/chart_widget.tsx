@@ -108,7 +108,7 @@ function getChartSeries(
   chartType: PerfChartWidget_ChartType,
   widgetResponse: FetchDashboardWidgetDataResponse | undefined,
   widgetSeries: readonly PerfChartSeries[] | undefined,
-  hiddenSeriesNames: Set<string>,
+  hiddenSeriesIds: Set<string>,
 ) {
   switch (chartType) {
     case PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION: {
@@ -119,7 +119,8 @@ function getChartSeries(
       return widgetResponse.invocationDistributionData.points
         .map((group, index) => {
           const seriesIndex = widgetSeries?.findIndex(
-            (s) => s.displayName === group.legendLabel,
+            (s) =>
+              s.id === group.seriesId || s.displayName === group.legendLabel,
           );
           const seriesConfig =
             seriesIndex !== undefined && seriesIndex >= 0
@@ -127,6 +128,7 @@ function getChartSeries(
               : undefined;
           return {
             name: group.legendLabel,
+            seriesId: group.seriesId,
             data: (group.points ?? []).map(
               (
                 point,
@@ -178,7 +180,16 @@ function getChartSeries(
             stroke: seriesConfig?.color ?? generateColor(index),
           };
         })
-        .filter((series) => !hiddenSeriesNames.has(series.name));
+        .filter((series) => {
+          const seriesIndex = widgetSeries?.findIndex(
+            (s) => s.id === series.seriesId || s.displayName === series.name,
+          );
+          const configuredSeries =
+            seriesIndex !== undefined && seriesIndex >= 0
+              ? widgetSeries?.[seriesIndex]
+              : undefined;
+          return !hiddenSeriesIds.has(configuredSeries?.id ?? series.seriesId);
+        });
     }
     default: {
       if (!widgetResponse?.multiMetricChartData?.lines) return [];
@@ -189,7 +200,7 @@ function getChartSeries(
       return widgetResponse.multiMetricChartData.lines
         .map((line, index) => {
           const seriesIndex = widgetSeries?.findIndex(
-            (s) => s.displayName === line.legendLabel,
+            (s) => s.id === line.seriesId || s.displayName === line.legendLabel,
           );
           const seriesConfig =
             seriesIndex !== undefined && seriesIndex >= 0
@@ -197,6 +208,7 @@ function getChartSeries(
               : undefined;
           return {
             name: line.legendLabel,
+            seriesId: line.seriesId,
             data: isDataPointsValid(line.dataPoints, xAxisKey, yAxisKey)
               ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey).map(
                   (pt) => ({
@@ -212,7 +224,16 @@ function getChartSeries(
             stroke: seriesConfig?.color ?? generateColor(index),
           };
         })
-        .filter((series) => !hiddenSeriesNames.has(series.name));
+        .filter((series) => {
+          const seriesIndex = widgetSeries?.findIndex(
+            (s) => s.id === series.seriesId || s.displayName === series.name,
+          );
+          const configuredSeries =
+            seriesIndex !== undefined && seriesIndex >= 0
+              ? widgetSeries?.[seriesIndex]
+              : undefined;
+          return !hiddenSeriesIds.has(configuredSeries?.id ?? series.seriesId);
+        });
     }
   }
 }
@@ -249,7 +270,7 @@ export function ChartWidget({
     [widget.chartType],
   );
 
-  const [hiddenSeriesNames, setHiddenSeriesNames] = useState<Set<string>>(
+  const [hiddenSeriesIds, setHiddenSeriesIds] = useState<Set<string>>(
     new Set(),
   );
   const [selectedPoint, setSelectedPoint] = useState<SelectedPointInfo | null>(
@@ -290,35 +311,33 @@ export function ChartWidget({
     [portalContext],
   );
 
-  const handleToggleVisibility = useCallback((seriesName: string) => {
-    setHiddenSeriesNames((prev) => {
+  const handleToggleVisibility = useCallback((seriesId: string) => {
+    setHiddenSeriesIds((prev) => {
       const next = new Set(prev);
-      if (next.has(seriesName)) {
-        next.delete(seriesName);
+      if (next.has(seriesId)) {
+        next.delete(seriesId);
       } else {
-        next.add(seriesName);
+        next.add(seriesId);
       }
       return next;
     });
   }, []);
 
   const handleShowOnly = useCallback(
-    (seriesName: string) => {
-      const allNames = widget.series?.map((s) => s.displayName) ?? [];
-      setHiddenSeriesNames(
-        new Set(allNames.filter((name) => name !== seriesName)),
-      );
+    (seriesId: string) => {
+      const allIds = widget.series?.map((s) => s.id) ?? [];
+      setHiddenSeriesIds(new Set(allIds.filter((id) => id !== seriesId)));
     },
     [widget.series],
   );
 
   const handleShowAll = useCallback(() => {
-    setHiddenSeriesNames(new Set());
+    setHiddenSeriesIds(new Set());
   }, []);
 
   const handleHideAll = useCallback(() => {
-    const allNames = widget.series?.map((s) => s.displayName) ?? [];
-    setHiddenSeriesNames(new Set(allNames));
+    const allIds = widget.series?.map((s) => s.id) ?? [];
+    setHiddenSeriesIds(new Set(allIds));
   }, [widget.series]);
 
   const handleFiltersUpdate = (updatedFilters: PerfFilter[]) => {
@@ -491,9 +510,9 @@ export function ChartWidget({
         getSafeChartType(widget.chartType),
         widgetResponse,
         widget.series,
-        hiddenSeriesNames,
+        hiddenSeriesIds,
       ),
-    [widget.chartType, widgetResponse, widget.series, hiddenSeriesNames],
+    [widget.chartType, widgetResponse, widget.series, hiddenSeriesIds],
   );
 
   const xAxisBounds = useMemo(() => {
@@ -768,7 +787,7 @@ export function ChartWidget({
       <ChartSeriesEditor
         series={[...(widget.series ?? [])]}
         onUpdateSeries={handleSeriesUpdate}
-        hiddenSeriesNames={hiddenSeriesNames}
+        hiddenSeriesIds={hiddenSeriesIds}
         onToggleVisibility={handleToggleVisibility}
         onShowOnly={handleShowOnly}
         onShowAll={handleShowAll}

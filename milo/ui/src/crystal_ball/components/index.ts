@@ -24,6 +24,7 @@ export * from './dashboard_time_range_selector';
 export * from './filter_editor';
 export * from './layout';
 export * from './markdown_widget';
+export * from './period_comparison_widget';
 export * from './raw_sample_list';
 export * from './require_login';
 export * from './sample_details_content';

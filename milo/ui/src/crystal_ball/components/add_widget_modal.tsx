@@ -14,6 +14,7 @@
 
 import {
   Article as ArticleIcon,
+  CompareArrows as CompareArrowsIcon,
   ScatterPlot as ScatterPlotIcon,
   ShowChart as ShowChartIcon,
   TableChart as TableChartIcon,
@@ -75,6 +76,13 @@ export function AddWidgetModal({ open, onClose, onAdd }: AddWidgetModalProps) {
       primary: 'Breakdown Table',
       secondary:
         'Deep dive into specific dimensions with a sortable, paginated table',
+    },
+    {
+      type: WidgetType.CHART_PERIOD_COMPARISON,
+      icon: CompareArrowsIcon,
+      primary: 'Period Comparison Chart',
+      secondary:
+        'Compare performance metrics between baseline and comparison intervals',
     },
   ];
 
