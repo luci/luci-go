@@ -93,7 +93,7 @@ export function GenerateDashboardDialog({
     },
   );
 
-  const options = suggestionData?.values ?? [];
+  const options = suggestionData?.suggestions?.map((s) => s.value) ?? [];
 
   const handleSubmit = async () => {
     await onSubmit({ prompt, metricKeys: selectedMetrics });

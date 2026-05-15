@@ -158,7 +158,10 @@ describe('FilterEditorRow', () => {
     mockSuggest.mockReturnValue(
       createMockQueryResult({
         values: ['Postsubmit', 'Presubmit'],
-        suggestions: [],
+        suggestions: [
+          { value: 'Postsubmit', count: '1' },
+          { value: 'Presubmit', count: '1' },
+        ],
       }),
     );
 
@@ -237,7 +240,11 @@ describe('FilterEditorRow', () => {
     mockSuggest.mockReturnValue(
       createMockQueryResult({
         values: ['Postsubmit', 'Postsubmit', 'Presubmit'],
-        suggestions: [],
+        suggestions: [
+          { value: 'Postsubmit', count: '1' },
+          { value: 'Postsubmit', count: '1' },
+          { value: 'Presubmit', count: '1' },
+        ],
       }),
     );
 

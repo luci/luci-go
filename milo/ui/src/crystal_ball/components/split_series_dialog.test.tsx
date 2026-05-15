@@ -82,7 +82,10 @@ describe('SplitSeriesDialog', () => {
     mockedSuggestValues.mockReturnValue({
       data: {
         values: ['value1', 'value2'],
-        suggestions: [],
+        suggestions: [
+          { value: 'value1', count: '1' },
+          { value: 'value2', count: '1' },
+        ],
       },
       isLoading: false,
     } as unknown as UseQueryResult<SuggestMeasurementFilterValuesResponse>);

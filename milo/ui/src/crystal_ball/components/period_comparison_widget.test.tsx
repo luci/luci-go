@@ -51,7 +51,7 @@ jest.mock('@/crystal_ball/hooks/use_measurement_filter_api', () => ({
     isLoading: false,
   })),
   useSuggestMeasurementFilterValues: jest.fn(() => ({
-    data: { values: [] },
+    data: { values: [], suggestions: [] },
     isLoading: false,
   })),
 }));

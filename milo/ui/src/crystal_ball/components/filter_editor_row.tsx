@@ -173,12 +173,12 @@ export function FilterEditorRow({
     () =>
       Array.from(
         new Set(
-          (suggestionData?.values ?? []).filter(
-            (v): v is string => typeof v === 'string',
-          ),
+          (suggestionData?.suggestions ?? [])
+            .map((s) => s.value)
+            .filter((v): v is string => typeof v === 'string'),
         ),
       ),
-    [suggestionData?.values],
+    [suggestionData?.suggestions],
   );
 
   const sortedOptions = useMemo(() => {

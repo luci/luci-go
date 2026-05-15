@@ -187,7 +187,10 @@ describe('use_measurement_filter_api', () => {
     it('should return mocked response', async () => {
       const mockResponse: SuggestMeasurementFilterValuesResponse = {
         values: ['test-target1', 'test-target2'],
-        suggestions: [],
+        suggestions: [
+          { value: 'test-target1', count: '1' },
+          { value: 'test-target2', count: '1' },
+        ],
       };
       mockedUseGapiQuery.mockReturnValue({
         data: mockResponse,

@@ -565,7 +565,7 @@ export function ChartSeriesItem({
       },
     );
 
-  const options = suggestionData?.values || [];
+  const options = suggestionData?.suggestions?.map((s) => s.value) ?? [];
 
   const handleBlurDisplayName = () => {
     if (displayName !== series.displayName) {

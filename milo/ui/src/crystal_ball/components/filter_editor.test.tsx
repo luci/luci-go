@@ -158,7 +158,13 @@ describe('FilterEditor', () => {
     mockedSuggestValues.mockClear();
     localStorage.clear();
     mockedSuggestValues.mockReturnValue({
-      data: { values: ['suggest1', 'suggest2'] },
+      data: {
+        values: ['suggest1', 'suggest2'],
+        suggestions: [
+          { value: 'suggest1', count: '1' },
+          { value: 'suggest2', count: '1' },
+        ],
+      },
       isLoading: false,
       isError: false,
     } as unknown as ReturnType<

@@ -100,7 +100,7 @@ export function SplitSeriesDialog({
       { enabled: !!parent && !!selectedColumn && open },
     );
 
-  const options = suggestionData?.values ?? [];
+  const options = suggestionData?.suggestions?.map((s) => s.value) ?? [];
 
   const handleSplit = () => {
     if (selectedColumn && selectedValues.length > 0) {
