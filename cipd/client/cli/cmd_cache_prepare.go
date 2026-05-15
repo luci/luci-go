@@ -78,7 +78,7 @@ func (c *cachePrepareRun) Run(a subcommands.Application, args []string, env subc
 		if err != nil {
 			return c.done(nil, errors.Fmt("parsing %q: %w", lef.path, err))
 		}
-		vmap, err := cipd.OfflineResolve(lef.ef, lef.vf)
+		vmap, err := cipd.OfflineResolve(opts, lef.ef, lef.vf)
 		if err != nil {
 			return c.done(nil, errors.Fmt("processing %q: %w", lef.path, err))
 		}

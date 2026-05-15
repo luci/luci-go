@@ -107,9 +107,9 @@ func CachePrepare(ctx context.Context, opts ClientOptions, cacheDir string, trim
 	for pin := range pins {
 		fetchCtx, done := ui.NewActivity(ctx, activities, "fetch")
 		req := &internal.InstanceRequest{
-			Context: fetchCtx,
-			Done:    done,
-			Service: pin.Service,
+			Context:    fetchCtx,
+			Done:       done,
+			ServiceURL: pin.ServiceURL,
 			Pin: common.Pin{
 				PackageName: pin.PackageName,
 				InstanceID:  pin.Version,
@@ -128,12 +128,12 @@ func CachePrepare(ctx context.Context, opts ClientOptions, cacheDir string, trim
 			if reader.IsCorruptionError(res.Err) && res.State == nil {
 				refetchCtx, refetchDone := ui.NewActivity(ctx, activities, "refetch")
 				req := &internal.InstanceRequest{
-					Context: refetchCtx,
-					Done:    refetchDone,
-					Service: res.Service,
-					Pin:     res.Pin,
-					OpenAs:  internal.VerifiedInstance,
-					State:   struct{}{}, // Just enough to make it not-nil.
+					Context:    refetchCtx,
+					Done:       refetchDone,
+					ServiceURL: res.ServiceURL,
+					Pin:        res.Pin,
+					OpenAs:     internal.VerifiedInstance,
+					State:      struct{}{}, // Just enough to make it not-nil.
 				}
 				targetInstCache.RequestInstances(ctx, []*internal.InstanceRequest{req})
 				continue

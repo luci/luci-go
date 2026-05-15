@@ -130,7 +130,7 @@ func validateVersionCache(ctx context.Context, opts ClientOptions, cacheDir stri
 	//
 	// If they are good, add them to actualVersions.
 	for _, ref := range claimedVersions.RefEntries {
-		key := PackageVersion{Service: ref.Service, PackageName: ref.Package, Version: ref.InstanceId}
+		key := PackageVersion{ServiceURL: ref.Service, PackageName: ref.Package, Version: ref.InstanceId}
 		if _, ok := resolvedPins[key]; ok {
 			actualVersions.AddRef(ctx, ref.Service, common.Pin{PackageName: ref.Package, InstanceID: ref.InstanceId}, ref.Ref)
 		} else {

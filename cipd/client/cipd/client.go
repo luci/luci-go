@@ -476,6 +476,70 @@ type ClientOptions struct {
 	mockedConfigFile string
 }
 
+// Normalize validates and normalizes the ClientOptions.
+//
+// This is called implicitly by [NewClient].
+func (opts *ClientOptions) Normalize() error {
+	if opts.AnonymousClient == nil {
+		opts.AnonymousClient = http.DefaultClient
+	}
+	if opts.AuthenticatedClient == nil {
+		opts.AuthenticatedClient = opts.AnonymousClient
+	}
+	if opts.UserAgent == "" {
+		opts.UserAgent = UserAgent
+	}
+	if opts.MaxThreads <= 0 {
+		opts.MaxThreads = runtime.NumCPU()
+	}
+	if opts.ParallelDownloads == 0 {
+		opts.ParallelDownloads = DefaultParallelDownloads
+	}
+
+	// Ensure all of our paths are absolute.
+	toAbs := []struct {
+		name string
+		path *string
+	}{
+		{"Root", &opts.Root},
+		{"CacheDir", &opts.CacheDir},
+		{"ReadOnlyCacheDir", &opts.ReadOnlyCacheDir},
+	}
+	for _, entry := range toAbs {
+		if *entry.path != "" {
+			var err error
+			*entry.path, err = filepath.Abs(*entry.path)
+			if err != nil {
+				return cipderr.BadArgument.Apply(
+					errors.Fmt("Converting %s (%q) to absolute: %w", entry.name, *entry.path, err))
+			}
+		}
+	}
+
+	if opts.ReadOnlyCacheDir != "" && opts.ReadOnlyCacheDir == opts.CacheDir {
+		return cipderr.BadArgument.Apply(errors.Fmt("ReadOnlyCacheDir and CacheDir are the same: %q", opts.CacheDir))
+	}
+
+	// Validate and normalize service URL.
+	if opts.ServiceURL == "" {
+		return cipderr.BadArgument.Apply(errors.New("ServiceURL is required"))
+	}
+	parsed, err := url.Parse(opts.ServiceURL)
+	if err != nil {
+		return cipderr.BadArgument.Apply(errors.Fmt("not a valid URL %q: %w", opts.ServiceURL, err))
+	}
+	if parsed.Path != "" && parsed.Path != "/" {
+		return cipderr.BadArgument.Apply(errors.Fmt("expecting a root URL, not %q", opts.ServiceURL))
+	}
+	opts.ServiceURL = fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
+
+	if !opts.DisableNetwork && opts.ProxyURL != "" {
+		opts.LoginInstructions = "check the CIPD proxy configuration"
+	}
+
+	return nil
+}
+
 // LoadFromEnv loads supplied default values from an environment into opts.
 //
 // Uses the environment in the context via luci/common/system/environ library,
@@ -694,58 +758,14 @@ func NewClientFromEnv(ctx context.Context, opts ClientOptions) (Client, error) {
 //
 // The client must be shutdown with Close when no longer needed.
 func NewClient(opts ClientOptions) (Client, error) {
-	if opts.AnonymousClient == nil {
-		opts.AnonymousClient = http.DefaultClient
-	}
-	if opts.AuthenticatedClient == nil {
-		opts.AuthenticatedClient = opts.AnonymousClient
-	}
-	if opts.UserAgent == "" {
-		opts.UserAgent = UserAgent
-	}
-	if opts.MaxThreads <= 0 {
-		opts.MaxThreads = runtime.NumCPU()
-	}
-	if opts.ParallelDownloads == 0 {
-		opts.ParallelDownloads = DefaultParallelDownloads
+	if err := opts.Normalize(); err != nil {
+		return nil, err
 	}
 
-	// Ensure all of our paths are absolute.
-	toAbs := []struct {
-		name string
-		path *string
-	}{
-		{"Root", &opts.Root},
-		{"CacheDir", &opts.CacheDir},
-		{"ReadOnlyCacheDir", &opts.ReadOnlyCacheDir},
-	}
-	for _, entry := range toAbs {
-		if *entry.path != "" {
-			var err error
-			*entry.path, err = filepath.Abs(*entry.path)
-			if err != nil {
-				return nil, cipderr.BadArgument.Apply(
-					errors.Fmt("Converting %s (%q) to absolute: %w", entry.name, opts.Root, err))
-			}
-		}
-	}
-
-	if opts.ReadOnlyCacheDir != "" && opts.ReadOnlyCacheDir == opts.CacheDir {
-		return nil, cipderr.BadArgument.Apply(errors.Fmt("ReadOnlyCacheDir and CacheDir are the same: %q", opts.CacheDir))
-	}
-
-	// Validate and normalize service URL.
-	if opts.ServiceURL == "" {
-		return nil, cipderr.BadArgument.Apply(errors.New("ServiceURL is required"))
-	}
 	parsed, err := url.Parse(opts.ServiceURL)
 	if err != nil {
-		return nil, cipderr.BadArgument.Apply(errors.Fmt("not a valid URL %q: %w", opts.ServiceURL, err))
+		panic(errors.Fmt("impossible: opts.ServiceURL (%q) invalid: %s", opts.ServiceURL, err))
 	}
-	if parsed.Path != "" && parsed.Path != "/" {
-		return nil, cipderr.BadArgument.Apply(errors.Fmt("expecting a root URL, not %q", opts.ServiceURL))
-	}
-	opts.ServiceURL = fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
 
 	// Setup an http.Client to talk to the proxy. We can't use the default one
 	// since it doesn't work over domain sockets. We also always want to connect
@@ -762,7 +782,6 @@ func NewClient(opts ClientOptions) (Client, error) {
 		anonClient = &http.Client{Transport: proxyTransport.RoundTripper}
 		authClient = anonClient
 		prpcInsecure = true // no TLS when talking to the proxy
-		opts.LoginInstructions = "check the CIPD proxy configuration"
 		proxyTransportClose = proxyTransport.Close
 	}
 
@@ -845,7 +864,6 @@ func NewClient(opts ClientOptions) (Client, error) {
 		proxyTransportClose: proxyTransportClose,
 		pluginHost:          pluginHost,
 		clientLaunchTime:    time.Now(),
-		cacheServiceHost:    parsed.Host,
 	}
 
 	// Initialize version cache.
@@ -946,11 +964,6 @@ type clientImpl struct {
 	// versionCache is a file-system based cache of resolved tags.
 	versionCache *internal.VersionCache
 
-	// This is the 'service' (i.e. ServiceURL.host) that we always use when
-	// interacting with the version and instance caches. We cache it here because
-	// it requires handling an error from [url.Parse].
-	cacheServiceHost string
-
 	// clientLaunchTime is the time at which this client was created with
 	// [NewClient], and is used to set [internal.InstanceCache].GCLaunchTime.
 	clientLaunchTime time.Time
@@ -1009,8 +1022,8 @@ func (c *clientImpl) clearAdmissionCache(ctx context.Context) {
 // the life of the client:
 //   - The ManagedInstanceCache RequestInstances/WaitInstance are 'paired'.
 //     Returning the same cache for multiple calls into the client (e.g.
-//     parallel EnsurePackages calls) would result in the two calls inadvertently
-//     seeing each other's requests/responses.
+//     parallel EnsurePackages calls) would result in the two calls
+//     inadvertently seeing each other's requests/responses.
 //   - InstanceCaches with `Tmp = true` would race with each other if multiple
 //     goroutines asked them to fetch the same instance, because in temp mode,
 //     each instance file self-destructs on close.
@@ -1301,8 +1314,8 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 	// VersionCache.ResolveRef.
 	//
 	// cacheAdder will be nil, VersionCache.AddTag or VersionCache.AddRef.
-	var cacheResolver func(ctx context.Context, server, pkg string, vers string) (common.Pin, error)
-	var cacheAdder func(ctx context.Context, server string, pin common.Pin, vers string) error
+	var cacheResolver func(ctx context.Context, serviceURL, pkg string, vers string) (common.Pin, error)
+	var cacheAdder func(ctx context.Context, serviceURL string, pin common.Pin, vers string) error
 
 	// Use a local cache when resolving tags to avoid round trips to the backend
 	// when calling same 'cipd ensure' command again and again.
@@ -1318,7 +1331,7 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 		}
 	}
 	if cacheResolver != nil {
-		cached, err := cacheResolver(ctx, c.cacheServiceHost, packageName, version)
+		cached, err := cacheResolver(ctx, c.ServiceURL, packageName, version)
 		if err != nil {
 			logging.Warningf(ctx, "Could not query version cache for %q@%q: %s", packageName, version, err)
 		}
@@ -1345,7 +1358,7 @@ func (c *clientImpl) ResolveVersion(ctx context.Context, packageName, version st
 	}
 
 	if cacheAdder != nil {
-		if err := cacheAdder(ctx, c.cacheServiceHost, pin, version); err != nil {
+		if err := cacheAdder(ctx, c.ServiceURL, pin, version); err != nil {
 			logging.Warningf(ctx, "Could not add version %q@%q - %s to the cache: %s", packageName, version, pin.InstanceID, err)
 		}
 		c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
@@ -1431,7 +1444,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	// rememberClientRef populates the extracted refs cache.
 	rememberClientRef := func(pin common.Pin, ref *caspb.ObjectRef) {
 		if cache := c.versionCache; cache != nil {
-			cache.AddExtractedObjectRef(ctx, c.cacheServiceHost, pin, clientFileName, ref)
+			cache.AddExtractedObjectRef(ctx, c.ServiceURL, pin, clientFileName, ref)
 			c.doBatchAwareOp(ctx, batchAwareOpSaveVersionCache)
 		}
 	}
@@ -1443,7 +1456,7 @@ func (c *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	// already up-to-date.
 	var clientRef *caspb.ObjectRef
 	if cache := c.versionCache; cache != nil {
-		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, c.cacheServiceHost, pin, clientFileName); err != nil {
+		if clientRef, err = cache.ResolveExtractedObjectRef(ctx, c.ServiceURL, pin, clientFileName); err != nil {
 			return common.Pin{}, err
 		}
 	}
@@ -2003,7 +2016,7 @@ func (c *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (src pkg
 	defer cache.Close(ctx)
 
 	cache.RequestInstances(ctx, []*internal.InstanceRequest{
-		{Context: ctx, Pin: pin, Service: c.cacheServiceHost},
+		{Context: ctx, Pin: pin, ServiceURL: c.ServiceURL},
 	})
 	res := cache.WaitInstance()
 
@@ -2031,7 +2044,7 @@ func (c *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output
 	// Deal with no-cache situation first, it is simple - just fetch the instance
 	// into the 'output'.
 	if c.CacheDir == "" {
-		return c.remoteFetchInstance(ctx, c.cacheServiceHost, pin, output)
+		return c.remoteFetchInstance(ctx, c.ServiceURL, pin, output)
 	}
 
 	// If using the cache, always fetch into the cache first, and then copy data
@@ -2057,9 +2070,9 @@ func (c *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output
 
 // remoteFetchInstance fetches the package file into 'output' and verifies its
 // hash along the way. Assumes 'pin' is already validated.
-func (c *clientImpl) remoteFetchInstance(ctx context.Context, service string, pin common.Pin, output io.WriteSeeker) (err error) {
-	if service != c.cacheServiceHost {
-		return fmt.Errorf("invalid remoteFetchInstance: bad service: %q != %q", service, c.cacheServiceHost)
+func (c *clientImpl) remoteFetchInstance(ctx context.Context, serviceURL string, pin common.Pin, output io.WriteSeeker) (err error) {
+	if serviceURL != c.ServiceURL {
+		return errors.Fmt("invalid remoteFetchInstance: bad service url: %q != %q", serviceURL, c.ServiceURL)
 	}
 
 	startTS := clock.Now(ctx)
@@ -2239,11 +2252,11 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 		}
 
 		reqs[i] = &internal.InstanceRequest{
-			Context: fetchCtx,
-			Done:    fetchDone,
-			Pin:     a.pin,
-			Service: c.cacheServiceHost,
-			OpenAs:  internal.Instance,
+			Context:    fetchCtx,
+			Done:       fetchDone,
+			Pin:        a.pin,
+			ServiceURL: c.ServiceURL,
+			OpenAs:     internal.Instance,
 			State: pinActionsState{
 				checkCtx:  checkCtx,
 				checkDone: checkDone,
@@ -2360,11 +2373,11 @@ func (c *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSlice
 
 			cache.RequestInstances(ctx, []*internal.InstanceRequest{
 				{
-					Context: refetchCtx,
-					Done:    refetchDone,
-					Pin:     res.Pin,
-					Service: c.cacheServiceHost,
-					OpenAs:  internal.Instance,
+					Context:    refetchCtx,
+					Done:       refetchDone,
+					Pin:        res.Pin,
+					ServiceURL: c.ServiceURL,
+					OpenAs:     internal.Instance,
 					State: pinActionsState{
 						unzipCtx:  reunzipCtx,
 						unzipDone: reunzipDone,

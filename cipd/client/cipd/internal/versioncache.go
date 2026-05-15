@@ -67,11 +67,11 @@ const (
 )
 
 // VersionCache caches several types of version information:
-//   - 'immutable' tags in the form (service, package, tag) -> instance ID.
-//   - mutable refs in the form (service, package, ref) -> (instance ID,
+//   - 'immutable' tags in the form (serviceURL, package, tag) -> instance ID.
+//   - mutable refs in the form (serviceURL, package, ref) -> (instance ID,
 //     capture time)
-//   - hashes of files-in-instaance in the form (service, package, instance ID)
-//     -> file name -> file hash.
+//   - hashes of files-in-instaance in the form (serviceURL, package,
+//     instance ID) -> file name -> file hash.
 //
 // Instance tags should not be detached, so the client keeps them indefinitely.
 // Service admins can detach them, but they are aware of the fact that the
@@ -182,12 +182,12 @@ func (c *VersionCache) lazyLoadLocked(ctx context.Context) error {
 // ResolveTag returns cached tag or empty Pin{} if such tag is not in the cache.
 //
 // Returns error if the cache can't be read.
-func (c *VersionCache) ResolveTag(ctx context.Context, service, pkg, tag string) (pin common.Pin, err error) {
+func (c *VersionCache) ResolveTag(ctx context.Context, serviceURL, pkg, tag string) (pin common.Pin, err error) {
 	if c.ChainTo != nil {
 		// NOTE: ResolveTag is calling into another instance of this method, which
 		// means the very bottom of the chain will do the validate calls (so we
 		// don't have to do them for every link in the chain).
-		pin, err = c.ChainTo.ResolveTag(ctx, service, pkg, tag)
+		pin, err = c.ChainTo.ResolveTag(ctx, serviceURL, pkg, tag)
 		if err != nil || pin.InstanceID != "" {
 			return pin, err
 		}
@@ -200,7 +200,7 @@ func (c *VersionCache) ResolveTag(ctx context.Context, service, pkg, tag string)
 		}
 	}
 
-	key := tagKey{service, pkg, tag}
+	key := tagKey{serviceURL, pkg, tag}
 	entry, err := findEntry(ctx, c, key, (*memoryVersionCache).getTag)
 	if entry != nil && err == nil {
 		pin.PackageName = entry.Package
@@ -213,12 +213,12 @@ func (c *VersionCache) ResolveTag(ctx context.Context, service, pkg, tag string)
 // cache.
 //
 // Returns error if the cache can't be read.
-func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, service string, pin common.Pin, fileName string) (ref *caspb.ObjectRef, err error) {
+func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, serviceURL string, pin common.Pin, fileName string) (ref *caspb.ObjectRef, err error) {
 	if c.ChainTo != nil {
 		// NOTE: ResolveExtractedObjectRef is calling into another instance of this
 		// method, which means the very bottom of the chain will do the validate
 		// calls (so we don't have to do them for every link in the chain).
-		ref, err = c.ChainTo.ResolveExtractedObjectRef(ctx, service, pin, fileName)
+		ref, err = c.ChainTo.ResolveExtractedObjectRef(ctx, serviceURL, pin, fileName)
 		if err != nil || ref != nil {
 			return ref, err
 		}
@@ -228,7 +228,7 @@ func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, service st
 		}
 	}
 
-	key := fileKey{service, pin.PackageName, pin.InstanceID, fileName}
+	key := fileKey{serviceURL, pin.PackageName, pin.InstanceID, fileName}
 	entry, err := findEntry(ctx, c, key, (*memoryVersionCache).getFile)
 	if entry != nil && err == nil {
 		ref = common.InstanceIDToObjectRef(entry.ObjectRef)
@@ -239,12 +239,12 @@ func (c *VersionCache) ResolveExtractedObjectRef(ctx context.Context, service st
 // ResolveRef returns cached ref or empty Pin{} if such ref is not in the cache.
 //
 // Returns error if the cache can't be read.
-func (c *VersionCache) ResolveRef(ctx context.Context, service, pkg, ref string) (pin common.Pin, err error) {
+func (c *VersionCache) ResolveRef(ctx context.Context, serviceURL, pkg, ref string) (pin common.Pin, err error) {
 	if c.ChainTo != nil {
 		// NOTE: ResolveRef is calling into another instance of this method, which
 		// means the very bottom of the chain will do the validate calls (so we
 		// don't have to do them for every link in the chain).
-		pin, err = c.ChainTo.ResolveRef(ctx, service, pkg, ref)
+		pin, err = c.ChainTo.ResolveRef(ctx, serviceURL, pkg, ref)
 		if err != nil || pin.InstanceID != "" {
 			return pin, err
 		}
@@ -257,7 +257,7 @@ func (c *VersionCache) ResolveRef(ctx context.Context, service, pkg, ref string)
 		}
 	}
 
-	key := refKey{service, pkg, ref}
+	key := refKey{serviceURL, pkg, ref}
 	entry, err := findEntry(ctx, c, key, (*memoryVersionCache).getRef)
 	if entry != nil && err == nil {
 		pin.PackageName = entry.Package
@@ -270,7 +270,7 @@ func (c *VersionCache) ResolveRef(ctx context.Context, service, pkg, ref string)
 //
 // Call [VersionCache.Flush] later to persist these changes to the cache file
 // on disk.
-func (c *VersionCache) AddTag(ctx context.Context, service string, pin common.Pin, tag string) error {
+func (c *VersionCache) AddTag(ctx context.Context, serviceURL string, pin common.Pin, tag string) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -280,7 +280,7 @@ func (c *VersionCache) AddTag(ctx context.Context, service string, pin common.Pi
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.added.addTag(tagKey{service, pin.PackageName, tag}, pin.InstanceID)
+	c.added.addTag(tagKey{serviceURL, pin.PackageName, tag}, pin.InstanceID)
 	return nil
 }
 
@@ -292,7 +292,7 @@ func (c *VersionCache) AddTag(ctx context.Context, service string, pin common.Pi
 //
 // Call [VersionCache.Flush] later to persist these changes to the cache file
 // on disk.
-func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, service string, pin common.Pin, fileName string, ref *caspb.ObjectRef) error {
+func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, serviceURL string, pin common.Pin, fileName string, ref *caspb.ObjectRef) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, service string
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.added.addFile(fileKey{service, pin.PackageName, pin.InstanceID, fileName}, ref)
+	c.added.addFile(fileKey{serviceURL, pin.PackageName, pin.InstanceID, fileName}, ref)
 	return nil
 }
 
@@ -312,7 +312,7 @@ func (c *VersionCache) AddExtractedObjectRef(ctx context.Context, service string
 //
 // Call [VersionCache.Flush] later to persist these changes to the cache file
 // on disk.
-func (c *VersionCache) AddRef(ctx context.Context, service string, pin common.Pin, ref string) error {
+func (c *VersionCache) AddRef(ctx context.Context, serviceURL string, pin common.Pin, ref string) error {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
@@ -322,20 +322,20 @@ func (c *VersionCache) AddRef(ctx context.Context, service string, pin common.Pi
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.added.addRef(refKey{service, pin.PackageName, ref}, pin.InstanceID, clock.Now(ctx))
+	c.added.addRef(refKey{serviceURL, pin.PackageName, ref}, pin.InstanceID, clock.Now(ctx))
 	return nil
 }
 
 // AddVersion adds a version depending on the syntax of `vers`.
 //
 // If `vers` is an InstanceID, nothing happens.
-func (c *VersionCache) AddVersion(ctx context.Context, service string, pin common.Pin, vers string) error {
+func (c *VersionCache) AddVersion(ctx context.Context, serviceURL string, pin common.Pin, vers string) error {
 	switch {
 	case common.ValidateInstanceTag(vers) == nil:
-		return c.AddTag(ctx, service, pin, vers)
+		return c.AddTag(ctx, serviceURL, pin, vers)
 
 	case common.ValidatePackageRef(vers) == nil:
-		return c.AddRef(ctx, service, pin, vers)
+		return c.AddRef(ctx, serviceURL, pin, vers)
 
 	case common.ValidateInstanceID(vers, common.AnyHash) == nil:
 		// Skip.

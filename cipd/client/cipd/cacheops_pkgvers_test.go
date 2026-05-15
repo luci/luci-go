@@ -103,27 +103,47 @@ func TestPackageVersionSet(t *testing.T) {
 func TestOfflineResolve(t *testing.T) {
 	t.Parallel()
 
-	ef, err := ensure.ParseFile(strings.NewReader(`
+	t.Run(`ok`, func(t *testing.T) {
+		t.Parallel()
+
+		ef, err := ensure.ParseFile(strings.NewReader(`
 $ServiceURL https://server.example.com/
 $VerifiedPlatform linux-amd64 linux-arm64 macos-arm64
 
 some/package/${platform} tag:123
 some/other/package latest
 `))
-	assert.NoErr(t, err)
+		assert.NoErr(t, err)
 
-	// Prepare a version file with only two resolved versions.
-	vf := ensure.VersionsFile{}
-	vf.AddVersion("some/package/linux-amd64", "tag:123", strings.Repeat("a", 40))
-	vf.AddVersion("some/other/package", "latest", strings.Repeat("b", 40))
+		// Prepare a version file with only two resolved versions.
+		vf := ensure.VersionsFile{}
+		vf.AddVersion("some/package/linux-amd64", "tag:123", strings.Repeat("a", 40))
+		vf.AddVersion("some/other/package", "latest", strings.Repeat("b", 40))
 
-	m, err := OfflineResolve(ef, vf)
-	assert.NoErr(t, err)
+		m, err := OfflineResolve(ClientOptions{}, ef, vf)
+		assert.NoErr(t, err)
 
-	assert.That(t, m, should.Match(PackageVersionSet{
-		{"server.example.com", "some/other/package", strings.Repeat("b", 40)}:       {},
-		{"server.example.com", "some/package/linux-amd64", strings.Repeat("a", 40)}: {},
-		{"server.example.com", "some/package/linux-arm64", "tag:123"}:               {},
-		{"server.example.com", "some/package/macos-arm64", "tag:123"}:               {},
-	}))
+		assert.That(t, m, should.Match(PackageVersionSet{
+			{"https://server.example.com", "some/other/package", strings.Repeat("b", 40)}:       {},
+			{"https://server.example.com", "some/package/linux-amd64", strings.Repeat("a", 40)}: {},
+			{"https://server.example.com", "some/package/linux-arm64", "tag:123"}:               {},
+			{"https://server.example.com", "some/package/macos-arm64", "tag:123"}:               {},
+		}))
+	})
+
+	t.Run(`defaultServiceURL`, func(t *testing.T) {
+		ef, err := ensure.ParseFile(strings.NewReader(`
+some/package/linux-amd64 tag:123
+`))
+		assert.NoErr(t, err)
+
+		m, err := OfflineResolve(ClientOptions{
+			ServiceURL: "http://localhost:1234",
+		}, ef, nil)
+		assert.NoErr(t, err)
+
+		assert.That(t, m, should.Match(PackageVersionSet{
+			{"http://localhost:1234", "some/package/linux-amd64", "tag:123"}: {},
+		}))
+	})
 }

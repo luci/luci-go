@@ -16,8 +16,6 @@ package cipd
 
 import (
 	"context"
-	"fmt"
-	"net/url"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -37,8 +35,7 @@ import (
 // PackageVersion describes a possibly-unresolved version of a package, and the
 // Service which is supposed to have it.
 type PackageVersion struct {
-	// Service is JUST the hostname of the service.
-	Service     string
+	ServiceURL  string
 	PackageName string
 	Version     string
 }
@@ -108,26 +105,26 @@ func (m PackageVersionSet) resolve(ctx context.Context, vc *internal.VersionCach
 			pin.InstanceID = vers.Version
 			if checkInstance != nil {
 				eg.Go(func() error {
-					err := checkInstance(ctx, vers.Service, vers.PackageName, vers.Version)
-					report(vers.Service, pin, err)
+					err := checkInstance(ctx, vers.ServiceURL, vers.PackageName, vers.Version)
+					report(vers.ServiceURL, pin, err)
 					return nil
 				})
 			} else {
-				report(vers.Service, pin, nil)
+				report(vers.ServiceURL, pin, nil)
 			}
 			continue
 		}
 
 		eg.Go(func() error {
-			rslv, err := resolveFn(ctx, vers.Service, vers.PackageName, vers.Version)
+			rslv, err := resolveFn(ctx, vers.ServiceURL, vers.PackageName, vers.Version)
 			if err != nil {
-				report(vers.Service, pin, err)
+				report(vers.ServiceURL, pin, err)
 				return nil
 			}
 
 			pin.InstanceID = rslv.InstanceID
-			vc.AddVersion(ctx, vers.Service, pin, vers.Version)
-			report(vers.Service, pin, nil)
+			vc.AddVersion(ctx, vers.ServiceURL, pin, vers.Version)
+			report(vers.ServiceURL, pin, nil)
 			return nil
 		})
 	}
@@ -158,7 +155,11 @@ func init() {
 // This does not make any network access, but instead resolves as much as
 // possible with `vf` (typically parsed from the ensure.File itself), but
 // leaving all other versions unresolved.
-func OfflineResolve(ef *ensure.File, vf ensure.VersionsFile) (PackageVersionSet, error) {
+//
+// `opts.ServiceURL` will be used if `ef.ServiceURL` is unset. One of these two
+// must be provided and valid to ensure that the returned PackageVersionSet is
+// well-formed.
+func OfflineResolve(opts ClientOptions, ef *ensure.File, vf ensure.VersionsFile) (PackageVersionSet, error) {
 	var mu sync.Mutex
 	ret := PackageVersionSet{}
 
@@ -167,14 +168,15 @@ func OfflineResolve(ef *ensure.File, vf ensure.VersionsFile) (PackageVersionSet,
 		platforms = []template.Platform{template.DefaultTemplate()}
 	}
 
-	var service string
 	if ef.ServiceURL != "" {
-		parsed, err := url.Parse(ef.ServiceURL)
-		if err != nil {
-			return nil, cipderr.BadArgument.Apply(fmt.Errorf("parsing ensurefile URL: %w", err))
-		}
-		service = parsed.Host
+		opts.ServiceURL = ef.ServiceURL
 	}
+	if err := opts.Normalize(); err != nil {
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("OfflineResolve: %w", err))
+	}
+	// serviceURL will now always be <scheme>://<host> with all slashes, etc.
+	// normalized away.
+	serviceURL := opts.ServiceURL
 
 	for _, plat := range platforms {
 		_, err := ef.Resolve(func(pkg, vers string) (common.Pin, error) {
@@ -182,9 +184,9 @@ func OfflineResolve(ef *ensure.File, vf ensure.VersionsFile) (PackageVersionSet,
 			defer mu.Unlock()
 
 			if pin, err := vf.ResolveVersion(pkg, vers); err == nil {
-				ret.Add(service, pkg, pin.InstanceID)
+				ret.Add(serviceURL, pkg, pin.InstanceID)
 			} else {
-				ret.Add(service, pkg, vers)
+				ret.Add(serviceURL, pkg, vers)
 			}
 
 			// We don't care about the resolved pins from file.Resolve - they just

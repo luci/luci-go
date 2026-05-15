@@ -118,7 +118,7 @@ func (m *memoryVersionCache) mergeFrom(o *memoryVersionCache) {
 // addTag inserts/overwrites any existing mapping of `tagKey` -> `iid`.
 func (m *memoryVersionCache) addTag(key tagKey, iid string) {
 	m.getTags(1)[key] = &messages.VersionCache_Entry{
-		Service:    key.service,
+		Service:    key.serviceURL,
 		Package:    key.pkg,
 		Tag:        key.tag,
 		InstanceId: iid,
@@ -134,7 +134,7 @@ func (m *memoryVersionCache) getTag(key tagKey) *messages.VersionCache_Entry {
 // InstanceID(`ref`).
 func (m *memoryVersionCache) addFile(key fileKey, ref *caspb.ObjectRef) {
 	m.getFiles(1)[key] = &messages.VersionCache_FileEntry{
-		Service:    key.service,
+		Service:    key.serviceURL,
 		Package:    key.pkg,
 		InstanceId: key.instance,
 		FileName:   key.file,
@@ -149,7 +149,7 @@ func (m *memoryVersionCache) getFile(key fileKey) *messages.VersionCache_FileEnt
 
 func (m *memoryVersionCache) addRef(key refKey, iid string, now time.Time) {
 	m.getRefs(1)[key] = &messages.VersionCache_RefEntry{
-		Service:    key.service,
+		Service:    key.serviceURL,
 		Package:    key.pkg,
 		Ref:        key.ref,
 		InstanceId: iid,

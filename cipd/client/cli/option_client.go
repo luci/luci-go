@@ -136,7 +136,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context, ensureFileURL s
 		logging.Debugf(ctx, "Working offline (-disable-network or $%s=1 was given).", cipd.EnvCIPDDisableNetwork)
 	}
 
-	return realOpts, nil
+	return realOpts, realOpts.Normalize()
 }
 
 func (opts *clientOptions) makeCIPDClient(ctx context.Context, ensureFileURL string, versions ensure.VersionsFile) (cipd.Client, error) {

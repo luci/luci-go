@@ -19,7 +19,10 @@ import (
 	"io"
 	"sync"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // clientPoolEntry is either a Client or the error generated when constructing
@@ -32,7 +35,6 @@ type clientPoolEntry struct {
 // clientPool acts as a factory for clients which vary by ServiceURL.
 type clientPool struct {
 	// The base options to use; ServiceURL will be overridden when
-	// [clientPool.client] is called with a non-empty `service`.
 	opts ClientOptions
 
 	mu sync.Mutex
@@ -54,19 +56,19 @@ type clientPool struct {
 // client returns the client or error for the given ServiceURL, constructing it
 // if necessary.
 //
-// If `service` is empty, this inherits the ServiceURL from c.opts.
-func (c *clientPool) client(ctx context.Context, service string) (Client, error) {
+// `serviceURL` must not be empty.
+func (c *clientPool) client(ctx context.Context, serviceURL string) (Client, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if service == "" {
-		service = c.opts.ServiceURL
+	if serviceURL == "" {
+		return nil, cipderr.BadArgument.Apply(errors.New("clientPool: serviceURL is required"))
 	}
 
-	cur, ok := c.clients[service]
+	cur, ok := c.clients[serviceURL]
 	if !ok {
 		mopt := c.opts
-		mopt.ServiceURL = service
+		mopt.ServiceURL = serviceURL
 		cur.c, cur.err = NewClient(mopt)
 		if cur.err != nil {
 			// Ignore; this will be logged later.
@@ -78,7 +80,7 @@ func (c *clientPool) client(ctx context.Context, service string) (Client, error)
 		if c.clients == nil {
 			c.clients = map[string]clientPoolEntry{}
 		}
-		c.clients[service] = cur
+		c.clients[serviceURL] = cur
 	}
 	return cur.c, cur.err
 }
@@ -112,8 +114,8 @@ func (c *clientPool) endBatch(ctx context.Context) {
 }
 
 // resolves pick the appropriate client and resolves the version.
-func (c *clientPool) resolve(ctx context.Context, service, pkg, version string) (pin common.Pin, err error) {
-	cli, err := c.client(ctx, service)
+func (c *clientPool) resolve(ctx context.Context, serviceURL, pkg, version string) (pin common.Pin, err error) {
+	cli, err := c.client(ctx, serviceURL)
 	if err == nil {
 		pin, err = cli.ResolveVersion(ctx, pkg, version)
 	}
@@ -121,9 +123,9 @@ func (c *clientPool) resolve(ctx context.Context, service, pkg, version string) 
 }
 
 // checkInstance picks the appropriate client and checks if the instance exists.
-func (c *clientPool) checkInstance(ctx context.Context, service, pkg, version string) error {
+func (c *clientPool) checkInstance(ctx context.Context, serviceURL, pkg, version string) error {
 	pin := common.Pin{PackageName: pkg, InstanceID: version}
-	cli, err := c.client(ctx, service)
+	cli, err := c.client(ctx, serviceURL)
 	if err != nil {
 		return err
 	}
@@ -146,9 +148,9 @@ func (c *clientPool) close(ctx context.Context) {
 }
 
 // fetchInstanceTo forwards to [Client.FetchInstanceTo] for the correct client
-// based on `service`.
-func (c *clientPool) fetchInstanceTo(ctx context.Context, service string, pin common.Pin, f io.WriteSeeker) error {
-	cli, err := c.client(ctx, service)
+// based on `serviceURL`.
+func (c *clientPool) fetchInstanceTo(ctx context.Context, serviceURL string, pin common.Pin, f io.WriteSeeker) error {
+	cli, err := c.client(ctx, serviceURL)
 	if err != nil {
 		return err
 	}

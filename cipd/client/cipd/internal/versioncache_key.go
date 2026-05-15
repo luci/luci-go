@@ -23,9 +23,9 @@ import (
 )
 
 type tagKey struct {
-	service string
-	pkg     string
-	tag     string
+	serviceURL string
+	pkg        string
+	tag        string
 }
 
 func mkTagKey(e *messages.VersionCache_Entry) tagKey {
@@ -54,10 +54,10 @@ func (t tagMap) sorted(yield func(tagKey, *messages.VersionCache_Entry) bool) {
 }
 
 type fileKey struct {
-	service  string
-	pkg      string
-	instance string
-	file     string
+	serviceURL string
+	pkg        string
+	instance   string
+	file       string
 }
 
 func mkFileKey(e *messages.VersionCache_FileEntry) fileKey {
@@ -87,9 +87,9 @@ func (f fileMap) sorted(yield func(fileKey, *messages.VersionCache_FileEntry) bo
 }
 
 type refKey struct {
-	service string
-	pkg     string
-	ref     string
+	serviceURL string
+	pkg        string
+	ref        string
 }
 
 func mkRefKey(e *messages.VersionCache_RefEntry) refKey {
