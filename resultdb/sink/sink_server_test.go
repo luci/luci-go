@@ -938,6 +938,236 @@ func TestUpdateInvocation(t *testing.T) {
 	})
 }
 
+func TestReportTestExoneration(t *testing.T) {
+	t.Parallel()
+
+	ctx := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
+
+	ftt.Run("ReportTestExoneration", t, func(t *ftt.Test) {
+		// close and drain the server to enforce all the requests processed.
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+
+		cfg := testServerConfig("", "secret")
+		te := validTestExoneration(t)
+
+		var sentExoReq *pb.BatchCreateTestExonerationsRequest
+		cfg.Recorder.(*mockRecorder).batchCreateTestExonerations = func(ctx context.Context, in *pb.BatchCreateTestExonerationsRequest) (*pb.BatchCreateTestExonerationsResponse, error) {
+			sentExoReq = in
+			return nil, nil
+		}
+
+		expectedExo := proto.Clone(&pb.TestExoneration{
+			TestIdStructured: &pb.TestIdentifier{
+				ModuleName:    "module_name",
+				ModuleScheme:  "scheme",
+				ModuleVariant: proto.Clone(cfg.Variant).(*pb.Variant),
+				CoarseName:    "coarse_name",
+				FineName:      "fine_name",
+				CaseName:      "component1:component2",
+			},
+			ExplanationHtml: te.ExplanationHtml,
+			Reason:          te.Reason,
+		}).(*pb.TestExoneration)
+
+		checkResults := func() {
+			sink, err := newSinkServer(ctx, cfg, nil)
+			assert.Loosely(t, err, should.BeNil)
+			defer closeSinkServer(ctx, sink)
+
+			req := &sinkpb.ReportTestExonerationsRequest{
+				TestExonerations: []*sinkpb.TestExoneration{te},
+			}
+			// Clone because the RPC impl mutates the request objects.
+			req = proto.Clone(req).(*sinkpb.ReportTestExonerationsRequest)
+			_, err = sink.ReportTestExonerations(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+
+			closeSinkServer(ctx, sink)
+			assert.Loosely(t, sentExoReq, should.NotBeNil)
+			assert.Loosely(t, sentExoReq.Requests, should.HaveLength(1))
+			assert.Loosely(t, sentExoReq.Requests[0].TestExoneration, should.Match(expectedExo))
+		}
+
+		t.Run("structured test ID", func(t *ftt.Test) {
+			cfg.TestIDPrefix = ""
+			cfg.ModuleName = "mymodule"
+			cfg.ModuleScheme = testScheme("myscheme")
+			assert.Loosely(t, cfg.Validate(), should.BeNil)
+
+			expectedExo.TestId = ""
+			expectedExo.TestIdStructured = &pb.TestIdentifier{
+				ModuleName:    "mymodule",
+				ModuleScheme:  "myscheme",
+				ModuleVariant: proto.Clone(cfg.Variant).(*pb.Variant),
+				CoarseName:    "coarse_name",
+				FineName:      "fine_name",
+				CaseName:      "component1:component2",
+			}
+
+			t.Run("base scenario", func(t *ftt.Test) {
+				checkResults()
+			})
+
+			t.Run("missing TestIdStructured", func(t *ftt.Test) {
+				te.TestIdStructured = nil
+				sink, err := newSinkServer(ctx, cfg, nil)
+				assert.Loosely(t, err, should.BeNil)
+				_, err = sink.ReportTestExonerations(ctx, &sinkpb.ReportTestExonerationsRequest{TestExonerations: []*sinkpb.TestExoneration{te}})
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("test_id_structured: unspecified"))
+			})
+
+			t.Run("with shortening enabled", func(t *ftt.Test) {
+				cfg.ShortenIDs = true
+				assert.Loosely(t, cfg.Validate(), should.BeNil)
+
+				t.Run("short ID", func(t *ftt.Test) {
+					checkResults()
+				})
+				t.Run("long ID", func(t *ftt.Test) {
+					te.TestIdStructured.CoarseName = strings.Repeat("a", 400)
+					te.TestIdStructured.FineName = strings.Repeat("b", 400)
+					te.TestIdStructured.CaseNameComponents = []string{strings.Repeat("c", 400)}
+					expectedExo.TestIdStructured.CoarseName = strings.Repeat("a", 157) + "~abd5e54be3f59d8e"
+					expectedExo.TestIdStructured.FineName = strings.Repeat("b", 70) + "~bc38c1c9ebc1d0b2"
+					expectedExo.TestIdStructured.CaseName = strings.Repeat("c", 70) + "~cb11f55cb6f1cc7d"
+					checkResults()
+				})
+			})
+			t.Run("with empty ServerConfig.variant", func(t *ftt.Test) {
+				cfg.Variant = &pb.Variant{}
+				expectedExo.TestIdStructured.ModuleVariant = &pb.Variant{}
+				checkResults()
+			})
+			t.Run("with ServerConfig.variant", func(t *ftt.Test) {
+				base := []string{"bucket", "try", "builder", "linux-rel"}
+				cfg.Variant = pbutil.Variant(base...)
+				expectedExo.TestIdStructured.ModuleVariant = pbutil.Variant(base...)
+				checkResults()
+			})
+			t.Run("with legacy test ID uploaded in addition to structured ID", func(t *ftt.Test) {
+				te.TestId = "HelloWorld.TestA"
+				te.Variant = pbutil.Variant("arch", "x64")
+
+				// Legacy fields are ignored.
+				checkResults()
+			})
+		})
+
+		t.Run("legacy test ID and variant", func(t *ftt.Test) {
+			cfg.ModuleName = ""
+			cfg.ModuleScheme = legacyScheme()
+
+			expectedExo.TestId = "this is testID"
+			expectedExo.Variant = proto.Clone(cfg.Variant).(*pb.Variant)
+			expectedExo.TestIdStructured = nil
+
+			t.Run("with shortening enabled", func(t *ftt.Test) {
+				cfg.ShortenIDs = true
+				assert.Loosely(t, cfg.Validate(), should.BeNil)
+
+				t.Run("short ID", func(t *ftt.Test) {
+					te.TestId = strings.Repeat("a", 100)
+					expectedExo.TestId = strings.Repeat("a", 100)
+					checkResults()
+				})
+				t.Run("long ID, no prefix", func(t *ftt.Test) {
+					te.TestId = strings.Repeat("a", 400)
+					expectedExo.TestId = strings.Repeat("a", 333) + "~abd5e54be3f59d8e"
+					checkResults()
+				})
+				t.Run("long ID, with prefix", func(t *ftt.Test) {
+					cfg.TestIDPrefix = "myprefix:"
+					te.TestId = strings.Repeat("a", 400)
+					expectedExo.TestId = "myprefix:" + strings.Repeat("a", 333) + "~abd5e54be3f59d8e"
+					checkResults()
+				})
+			})
+			t.Run("without test ID prefix", func(t *ftt.Test) {
+				cfg.TestIDPrefix = ""
+				assert.Loosely(t, cfg.Validate(), should.BeNil)
+
+				t.Run("with legacy-style test ID", func(t *ftt.Test) {
+					te.TestId = "HelloWorld.TestA"
+					te.TestIdStructured = nil
+					expectedExo.TestId = "HelloWorld.TestA"
+					expectedExo.TestIdStructured = nil
+					checkResults()
+				})
+				t.Run("attempt to upload structured test ID via test_id field", func(t *ftt.Test) {
+					te.TestId = ":module!myscheme:coarse:fine#method"
+
+					sink, err := newSinkServer(ctx, cfg, nil)
+					assert.Loosely(t, err, should.BeNil)
+					req := &sinkpb.ReportTestExonerationsRequest{TestExonerations: []*sinkpb.TestExoneration{te}}
+					_, err = sink.ReportTestExonerations(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`test_id: module_scheme: expected test scheme "legacy" but got scheme "myscheme"`))
+				})
+			})
+			t.Run("with Test ID Prefix", func(t *ftt.Test) {
+				cfg.TestIDPrefix = "ninja://foo/bar/"
+				assert.Loosely(t, cfg.Validate(), should.BeNil)
+
+				te.TestId = "HelloWorld.TestA"
+				expectedExo.TestId = "ninja://foo/bar/HelloWorld.TestA"
+				expectedExo.TestIdStructured = nil
+
+				t.Run("with empty test ID", func(t *ftt.Test) {
+					te.TestId = ""
+					expectedExo.TestId = "ninja://foo/bar/"
+					expectedExo.TestIdStructured = nil
+
+					checkResults()
+				})
+				t.Run("with structured test ID uploaded in addition to legacy ID", func(t *ftt.Test) {
+					te.TestIdStructured = &sinkpb.TestIdentifier{
+						CoarseName:         "coarse_name",
+						FineName:           "fine_name",
+						CaseNameComponents: []string{"component1", "component2"},
+					}
+					checkResults()
+				})
+				t.Run("without structured test ID uploaded in addition to legacy ID", func(t *ftt.Test) {
+					te.TestIdStructured = nil
+					checkResults()
+				})
+
+				t.Run("with ServerConfig.Variant and/or test result variant", func(t *ftt.Test) {
+					v1, v2 := pbutil.Variant("bucket", "try"), pbutil.Variant("builder", "linux-rel")
+					// (nil, nil)
+					cfg.Variant, te.Variant, expectedExo.Variant = nil, nil, nil
+					checkResults()
+
+					// (variant, nil)
+					cfg.Variant, te.Variant, expectedExo.Variant = v1, nil, v1
+					checkResults()
+
+					// (nil, variant)
+					cfg.Variant, te.Variant, expectedExo.Variant = nil, v1, v1
+					checkResults()
+
+					// (variant1, variant2)
+					cfg.Variant, te.Variant, expectedExo.Variant = v1, v2, pbutil.CombineVariant(v1, v2)
+					checkResults()
+				})
+			})
+		})
+
+		t.Run("missing ExplanationHtml", func(t *ftt.Test) {
+			te.ExplanationHtml = ""
+			sink, err := newSinkServer(ctx, cfg, nil)
+			assert.Loosely(t, err, should.BeNil)
+			_, err = sink.ReportTestExonerations(ctx, &sinkpb.ReportTestExonerationsRequest{TestExonerations: []*sinkpb.TestExoneration{te}})
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("explanation_html: unspecified"))
+		})
+	})
+}
+
 // legacyScheme returns the 'legacy' Scheme for testing.
 func legacyScheme() *schemes.Scheme {
 	legacyScheme, err := schemes.FromProto(&pb.Scheme{

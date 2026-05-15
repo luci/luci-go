@@ -96,6 +96,50 @@ func TestValidateTestResult(t *testing.T) {
 	})
 }
 
+func TestValidateTestExoneration(t *testing.T) {
+	t.Parallel()
+	ftt.Run(`ValidateTestExoneration`, t, func(t *ftt.Test) {
+		te := validTestExoneration(t)
+		usingStructuredID := true
+
+		t.Run(`Valid`, func(t *ftt.Test) {
+			err := validateTestExoneration(te, usingStructuredID)
+			assert.Loosely(t, err, should.BeNil)
+		})
+
+		t.Run(`TestId`, func(t *ftt.Test) {
+			te.TestId = "\xff\xff"
+			err := validateTestExoneration(te, usingStructuredID)
+			assert.Loosely(t, err, should.ErrLike("test_id: not a valid utf8 string"))
+		})
+
+		t.Run(`TestIdStructured`, func(t *ftt.Test) {
+			t.Run(`missing`, func(t *ftt.Test) {
+				te.TestIdStructured = nil
+				err := validateTestExoneration(te, usingStructuredID)
+				assert.Loosely(t, err, should.ErrLike("test_id_structured: unspecified"))
+			})
+			t.Run(`case name components missing`, func(t *ftt.Test) {
+				te.TestIdStructured.CaseNameComponents = nil
+				err := validateTestExoneration(te, usingStructuredID)
+				assert.Loosely(t, err, should.ErrLike("test_id_structured: case_name_components: unspecified"))
+			})
+		})
+
+		t.Run(`ExplanationHtml`, func(t *ftt.Test) {
+			te.ExplanationHtml = ""
+			err := validateTestExoneration(te, usingStructuredID)
+			assert.Loosely(t, err, should.ErrLike("explanation_html: unspecified"))
+		})
+
+		t.Run(`Reason`, func(t *ftt.Test) {
+			te.Reason = pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED
+			err := validateTestExoneration(te, usingStructuredID)
+			assert.Loosely(t, err, should.ErrLike("reason: unspecified"))
+		})
+	})
+}
+
 func TestValidateArtifacts(t *testing.T) {
 	t.Parallel()
 	// valid artifacts

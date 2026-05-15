@@ -74,12 +74,9 @@ func newSinkServer(ctx context.Context, cfg ServerConfig, uploadErrCb func(error
 		cfg:                   cfg,
 		ac:                    newArtifactChannel(ctx, &cfg),
 		tc:                    newTestResultChannel(ctx, &cfg, uploadErrCb),
+		ec:                    newTestExonerationChannel(ctx, &cfg),
 		resultIDBase:          hex.EncodeToString(bytes),
 		invocationArtifactIDs: stringset.New(0),
-	}
-
-	if cfg.ExonerateUnexpectedPass {
-		ss.ec = newTestExonerationChannel(ctx, &cfg)
 	}
 
 	return &sinkpb.DecoratedSink{
@@ -101,11 +98,9 @@ func closeSinkServer(ctx context.Context, s sinkpb.SinkServer) {
 	ss.ac.closeAndDrain(ctx)
 	logging.Infof(ctx, "SinkServer: draining Artifact channel ended")
 
-	if ss.ec != nil {
-		logging.Infof(ctx, "SinkServer: draining TestExoneration channel started")
-		ss.ec.closeAndDrain(ctx)
-		logging.Infof(ctx, "SinkServer: draining TestExoneration channel ended")
-	}
+	logging.Infof(ctx, "SinkServer: draining TestExoneration channel started")
+	ss.ec.closeAndDrain(ctx)
+	logging.Infof(ctx, "SinkServer: draining TestExoneration channel ended")
 }
 
 // authTokenValue returns the value of the Authorization HTTP header that all requests must
@@ -138,7 +133,7 @@ func authTokenPrelude(authToken string) func(context.Context, string, proto.Mess
 	}
 }
 
-// ReportTestResults implement sinkpb.SinkServer.
+// ReportTestResults implements sinkpb.SinkServer.
 func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
 	now := clock.Now(ctx).UTC()
 
@@ -163,13 +158,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			}
 		}
 
-		// clientTestID is a partial test ID uploaded by the client, for use in error messages.
-		var clientTestID string
-		if tr.TestIdStructured != nil {
-			clientTestID = fmt.Sprintf("%s:%s#%s", tr.TestIdStructured.CoarseName, tr.TestIdStructured.FineName, strings.Join(tr.TestIdStructured.CaseNameComponents, ":"))
-		} else {
-			clientTestID = tr.TestId
-		}
+		clientTestID := partialTestIDForLogging(tr.TestIdStructured, tr.TestId)
 
 		// The system-clock of GCE machines may get updated by ntp while a test is running.
 		// It can possibly cause a negative duration produced, because most test harnesses
@@ -184,30 +173,18 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		}
 
 		if s.cfg.ShortenIDs {
-			// Target 350 bytes for shortened IDs. This leaves ~150 bytes for the
-			// module name + scheme or test ID prefix.
-			if tr.TestIdStructured != nil {
-				shortenedID, err := shortenStructuredID(tr.TestIdStructured, 350)
-				if err != nil {
-					logging.Warningf(ctx, "Test result for %q is invalid (shortening ID): %s", clientTestID, err)
-					return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: test_id_structured: %s", i, err)
-				}
-				tr.TestIdStructured = shortenedID
+			shortenedStructured, shortenedFlat, err := shortenID(tr.TestIdStructured, tr.TestId)
+			if err != nil {
+				logging.Warningf(ctx, "Test result for %q is invalid (shortening ID): %s", clientTestID, err)
+				return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: %s", i, err)
 			}
-			if tr.TestId != "" {
-				shortenedID, err := shortenTestID(tr.TestId, 350)
-				if err != nil {
-					logging.Warningf(ctx, "Test result for %q is invalid (shortening ID): %s", clientTestID, err)
-					return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: test_id: %s", i, err)
-				}
-				tr.TestId = shortenedID
-			}
+			tr.TestIdStructured = shortenedStructured
+			tr.TestId = shortenedFlat
 		}
 
 		// Validation pass 1: test result before merging with prefixes/variant keys/
 		// tags provided for by server configuration.
-		usingStructuredID := s.cfg.ModuleName != ""
-		if err := validateTestResult(now, tr, usingStructuredID); err != nil {
+		if err := validateTestResult(now, tr, s.cfg.ModuleName != "" /* usingStructuredID */); err != nil {
 			logging.Warningf(ctx, "Test result for %q is invalid: %s", clientTestID, err)
 			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: %s", i, err)
 		}
@@ -223,10 +200,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 		// (at least based on local system time). This gives the best assurance
 		// the result will not be rejected by ResultDB backend when we upload
 		// it later. If it will, push back now to surface the error.
-		validateToScheme := func(b pbutil.BaseTestIdentifier) error {
-			return s.cfg.ModuleScheme.Validate(b)
-		}
-		if err := pbutil.ValidateTestResult(now, validateToScheme, pbutil.QuerySideTestIDLimitCallback, rdbtr); err != nil {
+		if err := pbutil.ValidateTestResult(now, s.validateToScheme, pbutil.QuerySideTestIDLimitCallback, rdbtr); err != nil {
 			logging.Warningf(ctx, "Test result for %q is invalid (after applying resultsink config): %s", clientTestID, err)
 			return nil, status.Errorf(codes.InvalidArgument, "test_results[%d]: validate after applying ResultSink config: %s", i, err)
 		}
@@ -268,7 +242,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 
 		trsForUpload = append(trsForUpload, rdbtr)
 
-		if s.ec != nil && isUnexpectedlyPassed(tr) {
+		if s.cfg.ExonerateUnexpectedPass && isUnexpectedlyPassed(tr) {
 			trsForExo = append(trsForExo, &pb.TestExoneration{
 				// Note: either TestIdStructured or (TestId and Variant) will actually
 				// be set, not all at the same time.
@@ -290,7 +264,7 @@ func (s *sinkServer) ReportTestResults(ctx context.Context, in *sinkpb.ReportTes
 			s.tc.schedule(trsForUpload...)
 			return nil
 		}
-		if s.ec != nil {
+		if s.cfg.ExonerateUnexpectedPass {
 			work <- func() error {
 				s.ec.schedule(trsForExo...)
 				return nil
@@ -314,7 +288,7 @@ func isUnexpectedlyPassed(tr *sinkpb.TestResult) bool {
 	return false
 }
 
-// ReportInvocationLevelArtifacts implement sinkpb.SinkServer.
+// ReportInvocationLevelArtifacts implements sinkpb.SinkServer.
 func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sinkpb.ReportInvocationLevelArtifactsRequest) (*emptypb.Empty, error) {
 	uts := make([]*uploadTask, 0, len(in.Artifacts))
 	for id, a := range in.Artifacts {
@@ -342,7 +316,7 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 	return &emptypb.Empty{}, nil
 }
 
-// UpdateInvocation implement sinkpb.SinkServer
+// UpdateInvocation implements sinkpb.SinkServer.
 func (s *sinkServer) UpdateInvocation(ctx context.Context, sinkin *sinkpb.UpdateInvocationRequest) (*sinkpb.Invocation, error) {
 	// We are running this method (but ignoring its result) to validate the
 	// mask only refers to fields in the sinkpb.Invocation proto.
@@ -366,9 +340,122 @@ func (s *sinkServer) UpdateInvocation(ctx context.Context, sinkin *sinkpb.Update
 	return ret, nil
 }
 
-// ReportTestExonerations implement sinkpb.SinkServer
-func (s *sinkServer) ReportTestExonerations(ctx context.Context, sinkin *sinkpb.ReportTestExonerationsRequest) (*sinkpb.ReportTestExonerationsResponse, error) {
-	return nil, errors.ErrUnsupported
+// ReportTestExonerations implements sinkpb.SinkServer.
+func (s *sinkServer) ReportTestExonerations(ctx context.Context, in *sinkpb.ReportTestExonerationsRequest) (*sinkpb.ReportTestExonerationsResponse, error) {
+	tesForExo := make([]*pb.TestExoneration, 0, len(in.TestExonerations))
+
+	for i, te := range in.TestExonerations {
+		clientTestID := partialTestIDForLogging(te.TestIdStructured, te.TestId)
+
+		if s.cfg.ShortenIDs {
+			shortenedStructured, shortenedFlat, err := shortenID(te.TestIdStructured, te.TestId)
+			if err != nil {
+				logging.Warningf(ctx, "Test exoneration for %q is invalid (shortening ID): %s", clientTestID, err)
+				return nil, status.Errorf(codes.InvalidArgument, "test_exonerations[%d]: %s", i, err)
+			}
+			te.TestIdStructured = shortenedStructured
+			te.TestId = shortenedFlat
+		}
+
+		if err := validateTestExoneration(te, s.cfg.ModuleName != "" /* usingStructuredID */); err != nil {
+			logging.Warningf(ctx, "Test exoneration for %q is invalid: %s", clientTestID, err)
+			return nil, status.Errorf(codes.InvalidArgument, "test_exonerations[%d]: %s", i, err)
+		}
+
+		rdbte, err := prepareRDBTestExoneration(te, &s.cfg)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "test_exonerations[%d]: %s", i, err)
+		}
+
+		if err := pbutil.ValidateTestExoneration(rdbte, s.validateToScheme, pbutil.QuerySideTestIDLimitCallback, false); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "test_exonerations[%d]: %s", i, err)
+		}
+
+		tesForExo = append(tesForExo, rdbte)
+	}
+
+	s.ec.schedule(tesForExo...)
+
+	return &sinkpb.ReportTestExonerationsResponse{}, nil
+}
+
+// validateToScheme validates a given base test identifier matches the configured module scheme.
+func (s *sinkServer) validateToScheme(b pbutil.BaseTestIdentifier) error {
+	return s.cfg.ModuleScheme.Validate(b)
+}
+
+// partialTestIDForLogging produces a partial test ID uploaded by the client, for use in error messages.
+func partialTestIDForLogging(structuredID *sinkpb.TestIdentifier, flatID string) string {
+	if structuredID != nil {
+		return fmt.Sprintf("%s:%s#%s", structuredID.CoarseName, structuredID.FineName, strings.Join(structuredID.CaseNameComponents, ":"))
+	}
+	return flatID
+}
+
+func shortenID(structuredID *sinkpb.TestIdentifier, flatID string) (*sinkpb.TestIdentifier, string, error) {
+	// Target 350 bytes for shortened IDs. This leaves ~150 bytes for the
+	// module name + scheme or test ID prefix.
+	if structuredID != nil {
+		shortenedID, err := shortenStructuredID(structuredID, 350)
+		if err != nil {
+			return nil, "", errors.Fmt("test_id_structured: %w", err)
+		}
+		structuredID = shortenedID
+	}
+	if flatID != "" {
+		shortenedID, err := shortenTestID(flatID, 350)
+		if err != nil {
+			return nil, "", errors.Fmt("test_id: %w", err)
+		}
+		flatID = shortenedID
+	}
+	return structuredID, flatID, nil
+}
+
+func prepareRDBTestID(cfg *ServerConfig, sinkTestIDStructured *sinkpb.TestIdentifier, sinkTestIDFlat string, sinkVariant *pb.Variant) (testIDStructured *pb.TestIdentifier, testIDFlat string, variant *pb.Variant, err error) {
+	if cfg.ModuleName != "" {
+		if sinkTestIDStructured == nil {
+			return nil, "", nil, errors.New("test_id_structured: must be specified as resultsink is configured to upload structured test IDs")
+		}
+
+		// Structured test ID.
+		testIDStructured = &pb.TestIdentifier{
+			ModuleName:    cfg.ModuleName,
+			ModuleScheme:  cfg.ModuleScheme.ID,
+			ModuleVariant: cfg.Variant,
+			CoarseName:    sinkTestIDStructured.GetCoarseName(),
+			FineName:      sinkTestIDStructured.GetFineName(),
+			CaseName:      pbutil.EncodeCaseName(sinkTestIDStructured.GetCaseNameComponents()...),
+		}
+		return testIDStructured, "", nil, nil
+	}
+
+	if sinkTestIDFlat == "" && cfg.TestIDPrefix == "" {
+		return nil, "", nil, errors.New("test_id: must be specified as resultsink is not configured to upload structured test IDs and no test ID prefix specified")
+	}
+
+	// Upload legacy test ID.
+	testIDFlat = cfg.TestIDPrefix + sinkTestIDFlat
+	// The test result or exoneration variant will overwrite the value for the
+	// duplicate key in the base variant.
+	variant = pbutil.CombineVariant(cfg.Variant, sinkVariant)
+	return nil, testIDFlat, variant, nil
+}
+
+func prepareRDBTestExoneration(te *sinkpb.TestExoneration, cfg *ServerConfig) (*pb.TestExoneration, error) {
+	rdbte := &pb.TestExoneration{
+		ExplanationHtml: te.ExplanationHtml,
+		Reason:          te.Reason,
+	}
+	testIDStruct, flatID, variant, err := prepareRDBTestID(cfg, te.TestIdStructured, te.TestId, te.Variant)
+	if err != nil {
+		return nil, err
+	}
+	rdbte.TestIdStructured = testIDStruct
+	rdbte.TestId = flatID
+	rdbte.Variant = variant
+
+	return rdbte, nil
 }
 
 func prepareRDBTestResult(tr *sinkpb.TestResult, cfg *ServerConfig) (*pb.TestResult, error) {
@@ -392,35 +479,13 @@ func prepareRDBTestResult(tr *sinkpb.TestResult, cfg *ServerConfig) (*pb.TestRes
 		SkippedReason:       tr.SkippedReason,
 		FrameworkExtensions: tr.FrameworkExtensions,
 	}
-	if cfg.ModuleName != "" {
-		if tr.TestIdStructured == nil {
-			return nil, errors.New("test_id_structured: must be specified as resultsink is configured to upload structured test IDs")
-		}
-
-		// Structured test ID.
-		testID := &pb.TestIdentifier{
-			ModuleName:    cfg.ModuleName,
-			ModuleScheme:  cfg.ModuleScheme.ID,
-			ModuleVariant: cfg.Variant,
-			CoarseName:    tr.TestIdStructured.CoarseName,
-			FineName:      tr.TestIdStructured.FineName,
-			CaseName:      pbutil.EncodeCaseName(tr.TestIdStructured.CaseNameComponents...),
-		}
-		rdbtr.TestIdStructured = testID
-	} else {
-		if tr.TestId == "" && cfg.TestIDPrefix == "" {
-			return nil, errors.New("test_id: must be specified as resultsink is not configured to upload structured test IDs and no test ID prefix specified")
-		}
-		// tr.TestId may be blank for some uploaders relying on the cfg.TestIDPrefix being set.
-
-		// Upload legacy test ID.
-		rdbtr.TestId = cfg.TestIDPrefix + tr.TestId
-
-		// The test result variant will overwrite the value for the
-		// duplicate key in the base variant.
-		variant := pbutil.CombineVariant(cfg.Variant, tr.Variant)
-		rdbtr.Variant = variant
+	testIDStruct, flatID, variant, err := prepareRDBTestID(cfg, tr.TestIdStructured, tr.TestId, tr.Variant)
+	if err != nil {
+		return nil, err
 	}
+	rdbtr.TestIdStructured = testIDStruct
+	rdbtr.TestId = flatID
+	rdbtr.Variant = variant
 
 	if tr.TestMetadata != nil {
 		// Clear any value set by the client. Clients changing test ID suffix

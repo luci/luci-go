@@ -50,6 +50,9 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 			return errors.Fmt("test_id: %w", err)
 		}
 	}
+
+	// TODO: Should we also validate Variants here?
+
 	// If structured test ID is present, validate it.
 	if msg.TestIdStructured != nil || usingStructuredID {
 		if msg.TestIdStructured == nil {
@@ -126,6 +129,56 @@ func validateTestResult(now time.Time, msg *sinkpb.TestResult, usingStructuredID
 			return errors.Fmt("framework_extensions: %w", err)
 		}
 	}
+	return nil
+}
+
+// validateTestExoneration returns a non-nil error if the test exoneration message is invalid.
+// This performs basic validation agnostic of the resultsink server configuration.
+func validateTestExoneration(msg *sinkpb.TestExoneration, usingStructuredID bool) error {
+	if msg == nil {
+		return errors.New("unspecified")
+	}
+
+	if msg.TestId != "" {
+		if err := pbutil.ValidateTestID(msg.TestId, pbutil.QuerySideTestIDLimitCallback); err != nil {
+			return errors.Fmt("test_id: %w", err)
+		}
+	}
+
+	if msg.Variant != nil {
+		if err := pbutil.ValidateVariant(msg.Variant); err != nil {
+			return errors.Fmt("variant: %w", err)
+		}
+	}
+
+	if msg.TestIdStructured != nil || usingStructuredID {
+		if msg.TestIdStructured == nil {
+			return errors.New("test_id_structured: unspecified")
+		}
+		if len(msg.TestIdStructured.CaseNameComponents) == 0 {
+			return errors.New("test_id_structured: case_name_components: unspecified")
+		}
+		baseID := pbutil.BaseTestIdentifier{
+			ModuleName:   "placeholder",
+			ModuleScheme: "scheme",
+			CoarseName:   msg.TestIdStructured.CoarseName,
+			FineName:     msg.TestIdStructured.FineName,
+			CaseName:     pbutil.EncodeCaseName(msg.TestIdStructured.CaseNameComponents...),
+		}
+
+		if err := pbutil.ValidateBaseTestIdentifier(baseID, pbutil.QuerySideTestIDLimitCallback); err != nil {
+			return errors.Fmt("test_id_structured: %w", err)
+		}
+	}
+
+	if msg.ExplanationHtml == "" {
+		return errors.New("explanation_html: unspecified")
+	}
+
+	if msg.Reason == resultpb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED {
+		return errors.New("reason: unspecified")
+	}
+
 	return nil
 }
 

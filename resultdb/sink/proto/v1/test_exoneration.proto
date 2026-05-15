@@ -18,6 +18,7 @@ package luci.resultsink.v1;
 
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_exoneration.proto";
+import "go.chromium.org/luci/resultdb/sink/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 
@@ -25,7 +26,7 @@ option go_package = "go.chromium.org/luci/resultdb/sink/proto/v1;sinkpb";
 // in ../../v1/test_exoneration.proto.
 message TestExoneration {
   // The structured identifier of the test that is being exonerated.
-  luci.resultdb.v1.TestIdentifier test_id_structured = 1;
+  TestIdentifier test_id_structured = 1;
   // The flat test id of the test that is being exonerated.
   // DEPRECATED: set test_id_structured instead.
   string test_id = 2;

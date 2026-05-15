@@ -143,6 +143,22 @@ func validTestResult(t testing.TB) *sinkpb.TestResult {
 	}
 }
 
+// validTestExoneration returns a valid sinkpb.TestExoneration sample message.
+func validTestExoneration(t testing.TB) *sinkpb.TestExoneration {
+	t.Helper()
+
+	return &sinkpb.TestExoneration{
+		TestId: "this is testID",
+		TestIdStructured: &sinkpb.TestIdentifier{
+			CoarseName:         "coarse_name",
+			FineName:           "fine_name",
+			CaseNameComponents: []string{"component1", "component2"},
+		},
+		ExplanationHtml: "HTML explanation",
+		Reason:          pb.ExonerationReason_NOT_CRITICAL,
+	}
+}
+
 type mockRecorder struct {
 	pb.RecorderClient
 	batchCreateTestResults      func(ctx context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error)
