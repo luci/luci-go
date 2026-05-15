@@ -52,7 +52,7 @@ export const getChromeOSColumns = (
         const labels = device.deviceSpec?.labels?.[id]?.values;
         if (!labels) return undefined;
 
-        return labelValuesToString(labels);
+        return labels;
       },
       ...(override.renderCell
         ? {
@@ -60,9 +60,13 @@ export const getChromeOSColumns = (
               override.renderCell!(props),
           }
         : {
-            Cell: ({ cell }: FC_CellProps<ChromeOSDevice>) => (
-              <EllipsisTooltip>{String(cell.getValue() ?? '')}</EllipsisTooltip>
-            ),
+            Cell: ({ cell }: FC_CellProps<ChromeOSDevice>) => {
+              const val = cell.getValue();
+              const strVal = Array.isArray(val)
+                ? labelValuesToString(val)
+                : String(val ?? '');
+              return <EllipsisTooltip>{strVal}</EllipsisTooltip>;
+            },
           }),
       ...(() => {
         const { renderCell: _, ...rest } = override;

@@ -14,9 +14,15 @@
 
 import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
 
+export const sortLabelValues = (labels: readonly string[]): string[] => {
+  return labels.concat().sort((a, b) => {
+    if (b.length !== a.length) {
+      return b.length - a.length;
+    }
+    return a.localeCompare(b);
+  });
+};
+
 export const labelValuesToString = (labels: readonly string[]): string => {
-  return labels
-    .concat()
-    .sort((a, b) => (a.length < b.length ? 1 : -1))
-    .join(DIMENSION_SEPARATOR);
+  return sortLabelValues(labels).join(DIMENSION_SEPARATOR);
 };

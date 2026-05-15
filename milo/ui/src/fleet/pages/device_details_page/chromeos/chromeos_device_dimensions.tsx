@@ -56,13 +56,15 @@ export const ChromeOSDeviceDimensions = ({
       .filter((key) => !customIds.includes(key))
       .map((label) => ({
         id: label,
-        value: labelValuesToString(device.deviceSpec!.labels[label].values),
+        value: device.deviceSpec!.labels[label].values,
       }));
 
     return [...custom, ...labelRows];
   }, [device]);
 
-  const columns = useMemo<MRT_ColumnDef<{ id: string; value: string }>[]>(
+  const columns = useMemo<
+    MRT_ColumnDef<{ id: string; value: string | readonly string[] }>[]
+  >(
     () => [
       {
         accessorKey: 'id',
@@ -78,12 +80,18 @@ export const ChromeOSDeviceDimensions = ({
           row,
           column,
         }: {
-          cell: MRT_Cell<{ id: string; value: string }, unknown>;
-          row: { original: { id: string; value: string } };
-          column: MRT_Column<{ id: string; value: string }, unknown>;
+          cell: MRT_Cell<
+            { id: string; value: string | readonly string[] },
+            unknown
+          >;
+          row: { original: { id: string; value: string | readonly string[] } };
+          column: MRT_Column<
+            { id: string; value: string | readonly string[] },
+            unknown
+          >;
         }): React.ReactNode => {
           const fieldKey = row.original.id;
-          const value = cell.getValue() as string;
+          const value = cell.getValue();
 
           const override = CHROMEOS_COLUMN_OVERRIDES[fieldKey];
           if (override?.renderCell && device) {
@@ -103,7 +111,10 @@ export const ChromeOSDeviceDimensions = ({
             });
           }
 
-          return <CellWithTooltip column={column} value={value} />;
+          const strValue = Array.isArray(value)
+            ? labelValuesToString(value)
+            : String(value ?? '');
+          return <CellWithTooltip column={column} value={strValue} />;
         },
       },
     ],

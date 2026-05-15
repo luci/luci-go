@@ -16,6 +16,8 @@ import { MRT_RowData } from 'material-react-table';
 import React from 'react';
 import { Link } from 'react-router';
 
+import { sortLabelValues } from '@/fleet/components/device_table/dimensions';
+import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
 import { FC_CellProps } from '@/fleet/types/table';
 
 import { CellWithTooltip } from './cell_with_tooltip';
@@ -47,27 +49,37 @@ export function renderCellWithLink<R extends MRT_RowData>({
 ) => React.ReactElement {
   const CellWithLink = (props: FC_CellProps<R>) => {
     const paramsOrRow = props.row.original;
-    const valueStr = valueGetter
-      ? valueGetter(paramsOrRow)
-      : String(props.cell.getValue() ?? '');
-    const url = linkGenerator(valueStr, paramsOrRow);
+    const rawValue = props.cell.getValue();
+    const values = valueGetter
+      ? [valueGetter(paramsOrRow)]
+      : Array.isArray(rawValue)
+        ? (rawValue as readonly string[])
+        : [String(rawValue ?? '')];
+
+    const sortedValues = sortLabelValues(values);
+    const displayString = sortedValues.join(DIMENSION_SEPARATOR);
 
     return (
       <CellWithTooltip
         column={props.column}
-        value={
-          <Link
-            key={valueStr}
-            to={url}
-            state={{
-              navigatedFromLink: getPathnameWithParams(),
-            }}
-            target={newTab ? '_blank' : '_self'}
-          >
-            {valueStr}
-          </Link>
-        }
-        tooltipTitle={valueStr}
+        value={sortedValues.map((item, index) => {
+          const url = linkGenerator(item, paramsOrRow);
+          return (
+            <React.Fragment key={`${item}-${index}`}>
+              {index > 0 && DIMENSION_SEPARATOR}
+              <Link
+                to={url}
+                state={{
+                  navigatedFromLink: getPathnameWithParams(),
+                }}
+                target={newTab ? '_blank' : '_self'}
+              >
+                {item}
+              </Link>
+            </React.Fragment>
+          );
+        })}
+        tooltipTitle={displayString}
       />
     );
   };

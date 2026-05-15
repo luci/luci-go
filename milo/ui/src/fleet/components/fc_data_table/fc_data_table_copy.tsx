@@ -17,11 +17,16 @@ import { Button } from '@mui/material';
 import { MRT_RowData, MRT_TableInstance } from 'material-react-table';
 import { useState } from 'react';
 
+import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
+
 import { CopySnackbar } from '../actions/copy/copy_snackbar';
 import { useShortcut } from '../shortcut_provider';
 
 const sanitizeValue = (value: unknown): string => {
   if (value === null || value === undefined) return '';
+  if (Array.isArray(value)) {
+    return labelValuesToString(value as readonly string[]);
+  }
   const str = typeof value === 'object' ? JSON.stringify(value) : String(value);
   // Replace tabs and newlines with spaces to preserve TSV integrity
   return str.replace(/[\t\n\r]/g, ' ');
