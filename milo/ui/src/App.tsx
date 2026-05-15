@@ -119,6 +119,7 @@ export function App() {
       // to 'ui' so the URLs work the same whether they are consumed by a
       // component/function imported from 'react-router' or from other modules.
       path: 'ui',
+      handle: { appId: 'milo' },
       loader: async () => obtainAuthState(),
       element: (
         <SyncedSearchParamsProvider>

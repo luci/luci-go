@@ -20,6 +20,7 @@ import { useIsDevBuild } from '@/generic_libs/hooks/is_dev_build';
 
 import { useContentGroup } from '../content_group';
 import { useTrackedSearchParamKeys } from '../track_search_param_keys';
+import { useActiveAppId } from '../use_active_app_id';
 
 import { IsTrackedProvider, useIsTracked } from './context';
 
@@ -59,6 +60,7 @@ export function PageViewTracker({ children }: PageViewTrackerProps) {
 
   const contentGroup = useContentGroup();
   const paramKeys = useTrackedSearchParamKeys();
+  const appId = useActiveAppId();
 
   // Obtain a normalized URL (i.e. with untracked keys removed from the search
   // string.
@@ -90,10 +92,12 @@ export function PageViewTracker({ children }: PageViewTrackerProps) {
       // See http://go/ooga-config.
       page_location: normalizedLocation,
       content_group: contentGroup,
+      appId: appId,
     });
   }, [
     isTracked,
     contentGroup,
+    appId,
     // Only fire an event when the URL updates after removing untracked search
     // param keys.
     //

@@ -317,36 +317,48 @@ export const routes: RouteObject[] = [
       },
     ],
   },
+  // Top-level micro apps.
+  // We attach `appId` to the route handle so that Google Analytics can
+  // automatically track which micro app an event originated from.
+  // See `useGoogleAnalytics` in `@/generic_libs/components/google_analytics/hooks.ts`.
   {
     path: 'chronicle',
+    handle: { appId: 'chronicle' },
     children: chronicleRoutes,
   },
   {
     path: 'test-investigate',
+    handle: { appId: 'test-investigate' },
     children: testInvestigationRoutes,
   },
   {
     path: 'fleet',
+    handle: { appId: 'fleet' },
     children: fleetRoutes,
   },
   {
     path: 'swarming',
+    handle: { appId: 'swarming' },
     children: swarmingRoutes,
   },
   {
     path: 'tree-status',
+    handle: { appId: 'tree-status' },
     children: treeStatusRoutes,
   },
   {
     path: 'tests',
+    handle: { appId: 'tests' },
     children: clustersRoutes,
   },
   {
     path: 'auth',
+    handle: { appId: 'auth' },
     children: authRoutes,
   },
   {
     path: 'crystal-ball',
+    handle: { appId: 'crystal-ball' },
     children: crystalBallRoutes,
   },
 ];

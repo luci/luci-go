@@ -17,6 +17,7 @@ import { useCallback } from 'react';
 import { useAuthState } from '@/common/components/auth_state_provider';
 
 import { useContentGroup } from './content_group';
+import { useActiveAppId } from './use_active_app_id';
 
 declare global {
   interface Window {
@@ -80,9 +81,12 @@ export interface EventPayload {
  * const trackEvent = useGoogleAnalytics();
  * useEffect(() => trackEvent({action: 'my_event', property1: value1}), [trackEvent, value1]);
  */
-export function useGoogleAnalytics() {
+export function useGoogleAnalytics(): {
+  trackEvent: (eventName: string, payload: EventPayload) => void;
+} {
   const contentGroup = useContentGroup();
   const { email } = useAuthState();
+  const appId = useActiveAppId();
 
   const trackEvent = useCallback(
     (eventName: string, payload: EventPayload) => {
@@ -109,12 +113,13 @@ export function useGoogleAnalytics() {
       } = {
         ...payload,
         category: contentGroup,
+        appId: appId,
         isGoogler: email?.endsWith('@google.com'),
       };
 
       window.gtag('event', eventName, eventParams);
     },
-    [contentGroup, email],
+    [contentGroup, email, appId],
   );
 
   return { trackEvent };

@@ -19,6 +19,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { ContentGroup } from '../content_group';
 import { TrackSearchParamKeys } from '../track_search_param_keys';
+import * as useActiveAppIdModule from '../use_active_app_id';
 
 import { TrackLeafRoutePageView } from './track_leaf_route_page_view';
 
@@ -250,5 +251,27 @@ describe('TrackLeafRoutePageView', () => {
     fireEvent.click(screen.getByRole('link'));
 
     expect(gtagSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('includes appId from route handle', async () => {
+    const useActiveAppIdSpy = jest
+      .spyOn(useActiveAppIdModule, 'useActiveAppId')
+      .mockReturnValue('fleet');
+
+    render(
+      <FakeContextProvider>
+        <TrackLeafRoutePageView contentGroup="self">
+          <div>content</div>
+        </TrackLeafRoutePageView>
+      </FakeContextProvider>,
+    );
+
+    expect(gtagSpy).toHaveBeenLastCalledWith(
+      'event',
+      'page_view',
+      expect.objectContaining({ appId: 'fleet' }),
+    );
+
+    useActiveAppIdSpy.mockRestore();
   });
 });
