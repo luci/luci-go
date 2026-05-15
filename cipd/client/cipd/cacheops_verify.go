@@ -187,7 +187,7 @@ func CacheVerify(ctx context.Context, opts ClientOptions, cacheDir string, clean
 
 	// We do not want to consult *any* caches in the client when resolving refs.
 	opts.CacheDir = ""
-	//opts.ReadOnlyCacheDir = ""
+	opts.ReadOnlyCacheDir = ""
 
 	targetInstCache := &internal.ManagedInstanceCache{
 		Caches: []*internal.InstanceCache{

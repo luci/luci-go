@@ -53,11 +53,12 @@ const (
 type clientOptions struct {
 	hardcoded Parameters // whatever was passed to registerFlags(...)
 
-	cliServiceURL  string
-	cacheDir       string
-	maxThreads     maxThreadsOption
-	rootDir        string // used only if registerFlags got withRootDir arg
-	disableNetwork bool
+	cliServiceURL    string
+	cacheDir         string
+	readOnlyCacheDir string
+	maxThreads       maxThreadsOption
+	rootDir          string // used only if registerFlags got withRootDir arg
+	disableNetwork   bool
 
 	authFlags authcli.Flags
 }
@@ -83,6 +84,8 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 			`(default %s)`, params.ServiceURL))
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
 		fmt.Sprintf("Directory for the shared cache (can also be set by %s env var).", cipd.EnvCacheDir))
+	f.StringVar(&opts.readOnlyCacheDir, "read-only-cache-dir", "",
+		fmt.Sprintf("Directory for a shared read-only cache (can also be set by %s env var). Prepared with `cipd cache-prepare`.", cipd.EnvReadOnlyCacheDir))
 	f.BoolVar(&opts.disableNetwork, "disable-network", false, "If provided, client will make no network requests.")
 
 	if rootDir {
@@ -106,6 +109,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context, ensureFileURL s
 	realOpts := cipd.ClientOptions{
 		Root:              opts.rootDir,
 		CacheDir:          opts.cacheDir,
+		ReadOnlyCacheDir:  opts.readOnlyCacheDir,
 		Versions:          versions,
 		MaxThreads:        opts.maxThreads.maxThreads,
 		AnonymousClient:   http.DefaultClient,

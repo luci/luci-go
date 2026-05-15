@@ -128,6 +128,7 @@ const (
 const (
 	EnvConfigFile          = "CIPD_CONFIG_FILE"
 	EnvCacheDir            = "CIPD_CACHE_DIR"
+	EnvReadOnlyCacheDir    = "CIPD_READ_ONLY_CACHE_DIR"
 	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
 	EnvMaxThreads          = "CIPD_MAX_THREADS"
 	EnvParallelDownloads   = "CIPD_PARALLEL_DOWNLOADS"
@@ -141,7 +142,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.7.20"
+	UserAgent = "cipd 2.8.0"
 )
 
 func init() {
@@ -369,6 +370,12 @@ type ClientOptions struct {
 	// root. If both Root and CacheDir are empty, tag cache is disabled.
 	CacheDir string
 
+	// ReadOnlyCacheDir is a directory for a read-only shared cache prepared with
+	// `cipd cache-prepare`.
+	//
+	// If set, tags, refs and instances are used from this cache before CacheDir.
+	ReadOnlyCacheDir string
+
 	// Versions is optional database of (pkg, version) => instance ID resolutions.
 	//
 	// If set, it will be used for all version resolutions done by the client.
@@ -489,6 +496,14 @@ func (opts *ClientOptions) LoadFromEnv(ctx context.Context) error {
 				return cipderr.BadArgument.Apply(errors.Fmt("bad %s %q: not an absolute path", EnvCacheDir, v))
 			}
 			opts.CacheDir = v
+		}
+	}
+	if opts.ReadOnlyCacheDir == "" {
+		if v := env.Get(EnvReadOnlyCacheDir); v != "" {
+			if !filepath.IsAbs(v) {
+				return cipderr.BadArgument.Apply(errors.Fmt("bad %s %q: not an absolute path", EnvReadOnlyCacheDir, v))
+			}
+			opts.ReadOnlyCacheDir = v
 		}
 	}
 	if opts.MaxThreads == 0 {
@@ -702,7 +717,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}{
 		{"Root", &opts.Root},
 		{"CacheDir", &opts.CacheDir},
-		//{"ReadOnlyCacheDir", &opts.ReadOnlyCacheDir},
+		{"ReadOnlyCacheDir", &opts.ReadOnlyCacheDir},
 	}
 	for _, entry := range toAbs {
 		if *entry.path != "" {
@@ -713,6 +728,10 @@ func NewClient(opts ClientOptions) (Client, error) {
 					errors.Fmt("Converting %s (%q) to absolute: %w", entry.name, opts.Root, err))
 			}
 		}
+	}
+
+	if opts.ReadOnlyCacheDir != "" && opts.ReadOnlyCacheDir == opts.CacheDir {
+		return nil, cipderr.BadArgument.Apply(errors.Fmt("ReadOnlyCacheDir and CacheDir are the same: %q", opts.CacheDir))
 	}
 
 	// Validate and normalize service URL.
@@ -838,7 +857,20 @@ func NewClient(opts ClientOptions) (Client, error) {
 			), ""),
 			SaveName: internal.UseLegacyVCName,
 			Refs:     internal.Passthrough,
-			// TODO: Hook up ReadOnlyCacheDir
+		}
+	}
+
+	if opts.ReadOnlyCacheDir != "" {
+		roCache := &internal.VersionCache{
+			FS:             fs.NewFileSystem(opts.ReadOnlyCacheDir, ""),
+			Tags:           internal.DisableWrite,
+			FileObjectRefs: internal.DisableWrite,
+			Refs:           internal.DisableWrite,
+		}
+		if client.versionCache != nil {
+			client.versionCache.ChainTo = roCache
+		} else {
+			client.versionCache = roCache
 		}
 	}
 
@@ -990,45 +1022,60 @@ func (c *clientImpl) clearAdmissionCache(ctx context.Context) {
 // other. We use `InstanceCache.GCLaunchTime = c.clientLaunchTime` as a
 // mitigation for this.
 func (c *clientImpl) instanceCache(ctx context.Context) (*internal.ManagedInstanceCache, error) {
-	var cacheDir string
-	var tmp bool
+	caches := make([]*internal.InstanceCache, 0, 2)
+	if c.ReadOnlyCacheDir != "" {
+		caches = append(caches, &internal.InstanceCache{
+			FS:                 fs.NewFileSystem(filepath.Join(c.ReadOnlyCacheDir, instancesSubdir), ""),
+			PassiveWritePolicy: internal.DisablePassiveWrites,
+		})
+	}
 
 	if c.CacheDir != "" {
-		// This is a persistent global cache (not a temp one).
-		cacheDir = filepath.Join(c.CacheDir, instancesSubdir)
+		// This is a persistent global cache.
+		caches = append(caches, &internal.InstanceCache{
+			FS:           fs.NewFileSystem(filepath.Join(c.CacheDir, instancesSubdir), ""),
+			Fetcher:      c.remoteFetchInstance,
+			GCLaunchTime: c.clientLaunchTime,
+		})
 	} else {
 		// This is going to be a temporary cache that self-destructs.
-		tmp = true
 
+		// By default tmpDir is blank, which will make MkdirTemp use the system's
+		// /tmp as the root, and cipd_dl_XXXXXX as the temp dir template.
+		var tmpDir string
+		tmpPrefix := "cipd_dl_"
 		if c.Root != "" {
+			// But, if we have a root dir (e.g. `cipd xxx -root dir ...`), we can put
+			// the temp cache inside that. It's still important to pick a tempdir
+			// under this prefix so that multiple cipd processes all using the same
+			// root (for whatever reason) will not create overlapping temporary
+			// instance caches. If they did, they would interfere because temporary
+			// instance cache entries self-destruct on close, and the entire cache
+			// will be deleted when the cache closes.
+			var err error
 			// Create the root tmp directory in the site root guts.
-			tmpDir, err := c.deployer.FS().EnsureDirectory(ctx, filepath.Join(c.Root, fs.SiteServiceDir, "tmp"))
+			tmpDir, err = c.deployer.FS().EnsureDirectory(ctx, filepath.Join(c.Root, fs.SiteServiceDir, "tmp"))
 			if err != nil {
 				return nil, cipderr.IO.Apply(errors.Fmt("creating site root temp dir: %w", err))
 			}
-			// An inside it create a unique directory for the new InstanceCache.
-			// Multiple temp caches must not reuse the same directory or they'll
-			// interfere with one another when deleting instances or cleaning them up
-			// when closing.
-			if cacheDir, err = os.MkdirTemp(tmpDir, "dl_"); err != nil {
-				return nil, cipderr.IO.Apply(errors.Fmt("creating temp instance cache dir: %w", err))
-			}
-		} else {
-			// When not using a site root, just create the directory in /tmp.
-			var err error
-			if cacheDir, err = os.MkdirTemp("", "cipd_dl_"); err != nil {
-				return nil, cipderr.IO.Apply(errors.Fmt("creating temp instance cache dir: %w", err))
-			}
+			// We don't need the `cipd_` because this root directory is already
+			// clearly cipd related.
+			tmpPrefix = "dl_"
 		}
+		cacheDir, err := os.MkdirTemp(tmpDir, tmpPrefix)
+		if err != nil {
+			return nil, cipderr.IO.Apply(errors.Fmt("creating temp instance cache dir: %w", err))
+		}
+
+		caches = append(caches, &internal.InstanceCache{
+			FS:      fs.NewFileSystem(cacheDir, ""),
+			Fetcher: c.remoteFetchInstance,
+			Tmp:     true,
+		})
 	}
 
 	return &internal.ManagedInstanceCache{
-		Caches: []*internal.InstanceCache{{
-			FS:           fs.NewFileSystem(cacheDir, ""),
-			Tmp:          tmp,
-			Fetcher:      c.remoteFetchInstance,
-			GCLaunchTime: c.clientLaunchTime,
-		}},
+		Caches:            caches,
 		ParallelDownloads: max(0, c.Options().ParallelDownloads),
 	}, nil
 }

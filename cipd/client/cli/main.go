@@ -82,6 +82,11 @@ func GetApplication(params Parameters) *cli.Application {
 				ShortDesc: "Directory with shared instance and tags cache " +
 					"(-cache-dir, if given, takes precedence).",
 			},
+			cipd.EnvReadOnlyCacheDir: {
+				ShortDesc: fmt.Sprintf(`Directory with shared read-only instance, tags and refs cache `+
+					`(-read-only-cache-dir, if given, takes precedence). Pairs well with $%s.`,
+					cipd.EnvCIPDDisableNetwork),
+			},
 			cipd.EnvMaxThreads: {
 				Advanced: true,
 				ShortDesc: "Number of worker threads for extracting packages. " +

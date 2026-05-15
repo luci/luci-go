@@ -51,7 +51,7 @@ func CachePrepare(ctx context.Context, opts ClientOptions, cacheDir string, trim
 
 	// We can use `cacheDir` as a read-only cache dir for the client when doing
 	// prepwork.
-	// opts.ReadOnlyCacheDir = cacheDir
+	opts.ReadOnlyCacheDir = cacheDir
 
 	versions = maps.Clone(versions)
 	clients := &clientPool{opts: opts}
