@@ -110,7 +110,7 @@ func (r *Resolver) ResolvePackage(ctx context.Context, pkg, ver string) (pin com
 func (r *Resolver) Resolve(ctx context.Context, file *ensure.File, expander template.Expander) (*ensure.ResolvedFile, error) {
 	return file.Resolve(func(pkg, ver string) (common.Pin, error) {
 		return r.ResolvePackage(ctx, pkg, ver)
-	}, expander)
+	}, nil, expander)
 }
 
 // ResolveAllPlatforms resolves the ensure file for all platform it is verified

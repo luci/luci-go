@@ -49,6 +49,7 @@ func p(pkg, ver string) common.Pin {
 var goodEnsureFiles = []struct {
 	name   string
 	file   string
+	opts   *ResolveOptions
 	expect any // either *File or *ResolvedFile depending on what is tested
 }{
 	{
@@ -60,6 +61,7 @@ var goodEnsureFiles = []struct {
 			"path/to/other_package some_tag:version",
 			"path/to/yet_another a_ref",
 		),
+		nil,
 		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("path/to/package", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"),
@@ -75,6 +77,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os}-${arch} latest",
 			"path/to/other/${platform} latest",
 		),
+		nil,
 		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("path/to/package/test_os-test_arch", "latest"),
@@ -89,6 +92,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os}-${arch=neep,test_arch} latest",
 			"path/to/other/${platform=test_os-test_arch} latest",
 		),
+		nil,
 		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("path/to/package/test_os-test_arch", "latest"),
@@ -103,6 +107,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os=spaz}-${arch=neep,test_arch} latest",
 			"path/to/package/${platform=neep-foo} latest",
 		),
+		nil,
 		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{}},
 	},
 
@@ -128,6 +133,7 @@ var goodEnsureFiles = []struct {
 			"@Subdir something/${os=test_os,other}",
 			"some/os_specific/package canary",
 		),
+		nil,
 		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("some/package", "latest"),
@@ -150,12 +156,28 @@ var goodEnsureFiles = []struct {
 	},
 
 	{
+		"Allowed duplicates",
+		f(
+			"some/package tag:value1",
+			"some/package tag:value2",
+		),
+		&ResolveOptions{AllowDuplicates: true},
+		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
+			"": {
+				p("some/package", "tag:value1"),
+				p("some/package", "tag:value2"),
+			},
+		}},
+	},
+
+	{
 		"ServiceURL setting",
 		f(
 			"$ServiceURL https://cipd.example.com/path/to/thing",
 			"",
 			"some/package version",
 		),
+		nil,
 		&ResolvedFile{"https://cipd.example.com/path/to/thing", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("some/package", "version"),
@@ -172,6 +194,7 @@ var goodEnsureFiles = []struct {
 			"",
 			"some/package version",
 		),
+		nil,
 		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("some/package", "version"),
@@ -186,6 +209,7 @@ var goodEnsureFiles = []struct {
 			"",
 			"some/package version",
 		),
+		nil,
 		&ResolvedFile{"", deployer.CheckPresence, "", common.PinSliceBySubdir{
 			"": {
 				p("some/package", "version"),
@@ -198,6 +222,7 @@ var goodEnsureFiles = []struct {
 		f(
 			"$ResolvedVersions resolved.versions",
 		),
+		nil,
 		&File{
 			ResolvedVersions: "resolved.versions",
 			PackagesBySubdir: map[string]PackageSlice{},
@@ -211,6 +236,7 @@ var goodEnsureFiles = []struct {
 			"",
 			"some/package version",
 		),
+		nil,
 		&ResolvedFile{"", deployer.NotParanoid, pkg.InstallModeCopy, common.PinSliceBySubdir{
 			"": {
 				p("some/package", "version"),
@@ -221,6 +247,7 @@ var goodEnsureFiles = []struct {
 	{
 		"empty",
 		"",
+		nil,
 		&ResolvedFile{"", deployer.NotParanoid, "", nil},
 	},
 
@@ -231,6 +258,7 @@ var goodEnsureFiles = []struct {
 			"tabs/to/package\t\t\t\tlatest",
 			"\ttabs/and/spaces  \t  \t  \tlatest   \t",
 		),
+		nil,
 		&ResolvedFile{"", deployer.NotParanoid, "", common.PinSliceBySubdir{
 			"": {
 				p("path/to/package", "latest"),
@@ -262,11 +290,12 @@ func TestGoodEnsureFiles(t *testing.T) {
 				case *File:
 					assert.Loosely(t, f, should.Match(expect))
 				case *ResolvedFile:
-					rf, err := f.Resolve(testResolver, template.Expander{
-						"os":       "test_os",
-						"arch":     "test_arch",
-						"platform": "test_os-test_arch",
-					})
+					rf, err := f.Resolve(testResolver,
+						tc.opts, template.Expander{
+							"os":       "test_os",
+							"arch":     "test_arch",
+							"platform": "test_os-test_arch",
+						})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, rf, should.Match(expect))
 				default:

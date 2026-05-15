@@ -185,7 +185,18 @@ func (f *ResolvedFile) Serialize(w io.Writer) error {
 // Returns either a single error (if something is wrong with the ensure file),
 // or a multi-error with all resolution errors, sorted by definition line
 // numbers.
-func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*ResolvedFile, error) {
+type ResolveOptions struct {
+	// If true, allows Resolve to produce a resolved file with multiple pins
+	// for the same package in the same subdir.
+	//
+	// Otherwise Resolve will return an error in this case.
+	AllowDuplicates bool
+}
+
+func (f *File) Resolve(rslv VersionResolver, opts *ResolveOptions, expander template.Expander) (*ResolvedFile, error) {
+	if opts == nil {
+		opts = &ResolveOptions{}
+	}
 	ret := &ResolvedFile{OverrideInstallMode: f.OverrideInstallMode}
 
 	if f.ServiceURL != "" {
@@ -295,18 +306,20 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 			continue
 		}
 
-		if origLineNo, ok := resolvedPkgDupList[p.subdir][p.pkg]; ok {
-			merr = append(merr,
+		if !opts.AllowDuplicates {
+			if origLineNo, ok := resolvedPkgDupList[p.subdir][p.pkg]; ok {
+				merr = append(merr,
 
-				cipderr.BadArgument.Apply(errors.Fmt("duplicate package in subdir %q: %q: defined on line %d and %d",
-					p.subdir, p.pkg, origLineNo, p.def.LineNo)))
-			continue
-		}
+					cipderr.BadArgument.Apply(errors.Fmt("duplicate package in subdir %q: %q: defined on line %d and %d",
+						p.subdir, p.pkg, origLineNo, p.def.LineNo)))
+				continue
+			}
 
-		if resolvedPkgDupList[p.subdir] == nil {
-			resolvedPkgDupList[p.subdir] = map[string]int{}
+			if resolvedPkgDupList[p.subdir] == nil {
+				resolvedPkgDupList[p.subdir] = map[string]int{}
+			}
+			resolvedPkgDupList[p.subdir][p.pkg] = p.def.LineNo
 		}
-		resolvedPkgDupList[p.subdir][p.pkg] = p.def.LineNo
 
 		ret.PackagesBySubdir[p.subdir] = append(ret.PackagesBySubdir[p.subdir], p.pin)
 	}

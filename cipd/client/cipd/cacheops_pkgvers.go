@@ -190,7 +190,10 @@ func OfflineResolve(ef *ensure.File, vf ensure.VersionsFile) (PackageVersionSet,
 			// We don't care about the resolved pins from file.Resolve - they just
 			// need to validate.
 			return common.Pin{PackageName: pkg, InstanceID: fakeHash}, nil
-		}, plat.Expander())
+			// We allow duplicates because we are just trying to capture all
+			// pins in the file, but do not need to be able to install the
+			// extracted instances to disk.
+		}, &ensure.ResolveOptions{AllowDuplicates: true}, plat.Expander())
 		if err != nil {
 			return nil, cipderr.Unknown.Apply(errors.Fmt("resolving platform %q: %w", plat, err))
 		}
