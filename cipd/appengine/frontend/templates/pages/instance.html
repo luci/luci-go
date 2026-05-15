@@ -47,8 +47,8 @@
     <div class="col-sm-12">
       <h4 class="text-center mb-3">Attached metadata</h4>
       <table class="table table-sm table-bordered">
-      {{range $md := .Metadata}}
-      <tr>
+      {{range $index, $md := .Metadata}}
+      <tr{{if ge $index 3}} class="d-none md-extra-row"{{end}}>
         <td class="age-td">{{.Age}}</td>
         <td class="md-table-key" title="Attached by {{.User}}">
           <a href="#"
@@ -73,6 +73,13 @@
         {{else}}
         <td><i>{{.Size}}, {{.ContentType}}</i></td>
         {{end}}
+      </tr>
+      {{end}}
+      {{if gt (len .Metadata) 3}}
+      <tr id="md-show-all-row">
+        <td colspan="3" class="text-center">
+          <a href="javascript:void(0)" id="md-show-all-btn" title="Show all metadata">...</a>
+        </td>
       </tr>
       {{end}}
       </table>
@@ -185,6 +192,14 @@
     }
     this.querySelector("#md-alert-copied").classList.add("d-none");
   });
+
+  let showMoreBtn = document.getElementById("md-show-all-btn");
+  if (showMoreBtn) {
+    showMoreBtn.addEventListener("click", function() {
+      document.querySelectorAll(".md-extra-row").forEach(row => row.classList.remove("d-none"));
+      document.getElementById("md-show-all-row").classList.add("d-none");
+    });
+  }
 
   document.getElementById("md-button-copy").addEventListener("click", function(event) {
     let text = modal.querySelector("#md-prop-text-value").innerText;
