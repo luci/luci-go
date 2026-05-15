@@ -54,4 +54,5 @@ func AbsorbInline(src DataSource, ref *orchestratorpb.ValueRef) {
 		Binary: bin,
 	}.Build())
 	ref.SetDigest(string(dgst))
+	ref.ClearInline()
 }
