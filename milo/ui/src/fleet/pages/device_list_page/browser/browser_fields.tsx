@@ -16,6 +16,7 @@ import _ from 'lodash';
 import { DateTime } from 'luxon';
 import { MRT_ColumnDef } from 'material-react-table';
 
+import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { SmartRelativeTimestamp } from '@/fleet/components/smart_relative_timestamp';
 import { CellWithTooltip } from '@/fleet/components/table';
@@ -41,6 +42,7 @@ import { BrowserDevice } from '@/proto/go.chromium.org/infra/fleetconsole/api/fl
 
 import { getStatusColor } from '../chromeos/dut_state';
 
+import { getDisplayName } from './alias';
 import {
   getBrowserSwarmingStateColor,
   sortSwarmingStates,
@@ -170,6 +172,40 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
         true,
         stateValue.toUpperCase() as StateUnion,
       )(params);
+    },
+  },
+  [`${BROWSER_SWARMING_SOURCE}.device`]: {
+    accessorFn: (device) => {
+      const values = device.swarmingLabels?.['device']?.values;
+      return values
+        ? labelValuesToString(values.map((v) => getDisplayName(v, 'device')))
+        : undefined;
+    },
+  },
+  [`${BROWSER_SWARMING_SOURCE}.device_type`]: {
+    accessorFn: (device) => {
+      const values = device.swarmingLabels?.['device_type']?.values;
+      return values
+        ? labelValuesToString(
+            values.map((v) => getDisplayName(v, 'device_type')),
+          )
+        : undefined;
+    },
+  },
+  [`${BROWSER_SWARMING_SOURCE}.gpu`]: {
+    accessorFn: (device) => {
+      const values = device.swarmingLabels?.['gpu']?.values;
+      return values
+        ? labelValuesToString(values.map((v) => getDisplayName(v, 'gpu')))
+        : undefined;
+    },
+  },
+  [`${BROWSER_SWARMING_SOURCE}.os`]: {
+    accessorFn: (device) => {
+      const values = device.swarmingLabels?.['os']?.values;
+      return values
+        ? labelValuesToString(values.map((v) => getDisplayName(v, 'os')))
+        : undefined;
     },
   },
   [`${BROWSER_SWARMING_SOURCE}.last_seen`]: {

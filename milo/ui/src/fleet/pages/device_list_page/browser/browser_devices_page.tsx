@@ -78,6 +78,7 @@ import {
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
 
+import { getDisplayName } from './alias';
 import { getBrowserColumn, getBrowserColumnIds } from './browser_columns';
 import { BrowserSummaryHeader } from './browser_summary_header';
 import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
@@ -239,7 +240,10 @@ export const BrowserDevicesPage = () => {
             { label: BLANK_VALUE, value: BLANK_VALUE },
             ...(filterValues.values || [])
               .filter((v) => v !== '' && v !== BLANK_VALUE)
-              .map((v) => ({ label: v, value: v })),
+              .map((v) => ({
+                label: getDisplayName(v, filterKey),
+                value: v,
+              })),
           ]);
       }
     };
