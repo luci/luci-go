@@ -85,54 +85,6 @@ func (b *batchToLaunch) launch(ctx context.Context, bldrsMCB stringset.Set) erro
 // needs should already be prefetched). It thus can't fail and returns no
 // errors.
 func splitByLaunchStrategy(op *scheduleBuildOp) []*batchToLaunch {
-	// TODO(b/454194663): Launching child Turbo CI builds is not actually
-	// supported yet, so for now demote such builds to be launched natively
-	// instead. This is a temporary filter.
-	return demoteTurboCIChildrenToNative(splitByLaunchStrategyImpl(op))
-}
-
-// demoteTurboCIChildrenToNative moves builds from batchKindTurboCIChildren
-// batches into batchKindNative batch.
-func demoteTurboCIChildrenToNative(batches []*batchToLaunch) []*batchToLaunch {
-	// Find the batch with native builds or instantiate it.
-	var native *batchToLaunch
-	for _, b := range batches {
-		if b.kind == batchKindNative {
-			native = b
-			break
-		}
-	}
-	if native == nil {
-		native = &batchToLaunch{kind: batchKindNative}
-	}
-
-	// Move requests from Turbo CI child batches into the native batch.
-	for _, b := range batches {
-		if b.kind == batchKindTurboCIChildren {
-			native.reqs = append(native.reqs, b.reqs...)
-			native.builds = append(native.builds, b.builds...)
-		}
-	}
-
-	// The filtered list of batches is just the native batch (if any) and all
-	// batchKindTurboCIRoot batches.
-	out := make([]*batchToLaunch, 0, len(batches))
-	if len(native.reqs) != 0 {
-		out = append(out, native)
-	}
-	for _, b := range batches {
-		if b.kind == batchKindTurboCIRoot {
-			out = append(out, b)
-		}
-	}
-	return out
-}
-
-// splitByLaunchStrategyImpl is the actual implementation.
-//
-// This indirection exists temporary and only for testing. Will be removed once
-// demoteTurboCIChildrenToNative is gone.
-func splitByLaunchStrategyImpl(op *scheduleBuildOp) []*batchToLaunch {
 	var batches []*batchToLaunch
 	var native *batchToLaunch
 	var perParent map[*model.Build]*batchToLaunch

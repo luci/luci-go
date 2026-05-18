@@ -37,77 +37,6 @@ func init() {
 	registry.RegisterCmpOption(cmp.AllowUnexported(model.Build{}))
 }
 
-func TestDemoteTurboCIChildrenToNative(t *testing.T) {
-	t.Parallel()
-
-	batch := func(kind batchToLaunchKind, ids ...string) *batchToLaunch {
-		reqs := make([]*pb.ScheduleBuildRequest, len(ids))
-		builds := make([]*model.Build, len(ids))
-		for i, id := range ids {
-			reqs[i] = &pb.ScheduleBuildRequest{RequestId: id}
-			builds[i] = &model.Build{BuilderID: id}
-		}
-		return &batchToLaunch{
-			kind:   kind,
-			reqs:   reqs,
-			builds: builds,
-		}
-	}
-
-	t.Run("with native", func(t *testing.T) {
-		got := demoteTurboCIChildrenToNative([]*batchToLaunch{
-			batch(batchKindTurboCIRoot, "root1"),
-			batch(batchKindNative, "native1", "native2"),
-			batch(batchKindTurboCIRoot, "root2"),
-			batch(batchKindTurboCIChildren, "child1", "child2"),
-			batch(batchKindTurboCIChildren, "child3", "child4"),
-		})
-
-		assert.That(t, got, should.Match([]*batchToLaunch{
-			batch(batchKindNative, "native1", "native2", "child1", "child2", "child3", "child4"),
-			batch(batchKindTurboCIRoot, "root1"),
-			batch(batchKindTurboCIRoot, "root2"),
-		}))
-	})
-
-	t.Run("without native", func(t *testing.T) {
-		got := demoteTurboCIChildrenToNative([]*batchToLaunch{
-			batch(batchKindTurboCIRoot, "root1"),
-			batch(batchKindTurboCIRoot, "root2"),
-			batch(batchKindTurboCIChildren, "child1", "child2"),
-			batch(batchKindTurboCIChildren, "child3", "child4"),
-		})
-
-		assert.That(t, got, should.Match([]*batchToLaunch{
-			batch(batchKindNative, "child1", "child2", "child3", "child4"),
-			batch(batchKindTurboCIRoot, "root1"),
-			batch(batchKindTurboCIRoot, "root2"),
-		}))
-	})
-
-	t.Run("native only", func(t *testing.T) {
-		got := demoteTurboCIChildrenToNative([]*batchToLaunch{
-			batch(batchKindNative, "native1", "native2"),
-		})
-
-		assert.That(t, got, should.Match([]*batchToLaunch{
-			batch(batchKindNative, "native1", "native2"),
-		}))
-	})
-
-	t.Run("roots only", func(t *testing.T) {
-		got := demoteTurboCIChildrenToNative([]*batchToLaunch{
-			batch(batchKindTurboCIRoot, "root1"),
-			batch(batchKindTurboCIRoot, "root2"),
-		})
-
-		assert.That(t, got, should.Match([]*batchToLaunch{
-			batch(batchKindTurboCIRoot, "root1"),
-			batch(batchKindTurboCIRoot, "root2"),
-		}))
-	})
-}
-
 func TestSplitByLaunchStrategy(t *testing.T) {
 	t.Parallel()
 
@@ -344,7 +273,7 @@ func TestSplitByLaunchStrategy(t *testing.T) {
 
 	for _, cs := range cases {
 		t.Run(cs.name, func(t *testing.T) {
-			batches := splitByLaunchStrategyImpl(prepOp(cs.reqs))
+			batches := splitByLaunchStrategy(prepOp(cs.reqs))
 			assert.That(t, batchesToStr(t, batches), should.Match(cs.want))
 		})
 	}
