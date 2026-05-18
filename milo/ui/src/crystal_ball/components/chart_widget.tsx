@@ -43,6 +43,7 @@ import {
   COMMON_MESSAGES,
   DEFAULT_X_AXIS_CONFIG,
   getGroupByFromGranularity,
+  GLOBAL_TIME_RANGE_COLUMN,
   GROUP_BY_CONFIG,
   NUM_AGGREGATED_ROWS,
 } from '@/crystal_ball/constants';
@@ -521,7 +522,7 @@ export function ChartWidget({
 
     const timeFilters =
       globalFilters?.flatMap((f) => {
-        if (f.column !== 'TIMESTAMP') return [];
+        if (f.column !== GLOBAL_TIME_RANGE_COLUMN) return [];
         return parseSingleFilter(f);
       }) ?? [];
 
@@ -549,7 +550,7 @@ export function ChartWidget({
             )
           : undefined;
       return (
-        f.column === 'TIMESTAMP' &&
+        f.column === GLOBAL_TIME_RANGE_COLUMN &&
         rangeOp === PerfFilterDefault_FilterOperator.IN_PAST
       );
     });

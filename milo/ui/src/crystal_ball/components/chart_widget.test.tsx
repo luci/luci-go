@@ -16,8 +16,11 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { FilterEditor, TimeSeriesChart } from '@/crystal_ball/components';
-import { Column } from '@/crystal_ball/constants';
-import { COMMON_MESSAGES } from '@/crystal_ball/constants/messages';
+import {
+  Column,
+  COMMON_MESSAGES,
+  GLOBAL_TIME_RANGE_COLUMN,
+} from '@/crystal_ball/constants';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
 import {
   createMockErrorResult,
@@ -758,7 +761,7 @@ describe('ChartWidget', () => {
   it('should calculate xAxisBounds correctly from global filters and data', () => {
     const mockFilters = [
       PerfFilter.fromPartial({
-        column: 'TIMESTAMP',
+        column: GLOBAL_TIME_RANGE_COLUMN,
         range: {
           defaultValue: {
             filterOperator: PerfFilterDefault_FilterOperator.BETWEEN,
