@@ -157,6 +157,8 @@ export function SampleDetailsContent({
         Column.TEST_NAME,
         Column.ANTS_INVOCATION_ID,
         Column.ANTS_TEST_RESULT_ID,
+        Column.SERIAL,
+        Column.DEVICE_VARIANT,
       ],
     });
   }, [
