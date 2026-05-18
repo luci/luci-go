@@ -73,7 +73,7 @@ export interface FleetMRTStateProps<
 }
 
 export const useFleetMRTState = <
-  TColumnDef extends FleetColumnDefExt = FleetColumnDefExt,
+  TColumnDef extends Omit<FleetColumnDefExt, 'meta'> = FleetColumnDefExt,
 >({
   setSearchParams,
   pagerCtx,

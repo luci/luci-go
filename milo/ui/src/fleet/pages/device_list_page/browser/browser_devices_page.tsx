@@ -36,10 +36,7 @@ import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_botto
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
-import {
-  FleetColumnDefExt,
-  useFleetMRTState,
-} from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
+import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
 import {
   GetFiltersResult,
@@ -303,8 +300,7 @@ export const BrowserDevicesPage = () => {
     setSearchParams,
     pagerCtx,
     filterValues: filterCategoryDatas.filterValues,
-    visibleColumns: visibleColumns as unknown as FleetColumnDefExt[],
-
+    visibleColumns: visibleColumns,
     orderByParam,
     localStorageKey: BROWSER_DEVICES_LOCAL_STORAGE_KEY,
     defaultColumnIds: BROWSER_DEFAULT_COLUMNS,

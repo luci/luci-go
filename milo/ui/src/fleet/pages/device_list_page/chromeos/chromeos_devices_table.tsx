@@ -34,10 +34,7 @@ import { FleetBottomToolbar } from '@/fleet/components/fc_data_table/fleet_botto
 import { FleetTopToolbar } from '@/fleet/components/fc_data_table/fleet_top_toolbar';
 import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
-import {
-  FleetColumnDefExt,
-  useFleetMRTState,
-} from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
+import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { CHROMEOS_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { CHROMEOS_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
@@ -152,7 +149,7 @@ export const ChromeOSTable = ({
     pagerCtx,
     filterValues: filterCategoryDatas.filterValues,
     filterOptionsConfig: [],
-    visibleColumns: visibleColumns as FleetColumnDefExt[],
+    visibleColumns: visibleColumns,
     orderByParam,
     localStorageKey: CHROMEOS_DEVICES_LOCAL_STORAGE_KEY,
     defaultColumnIds: CHROMEOS_DEFAULT_COLUMNS,
