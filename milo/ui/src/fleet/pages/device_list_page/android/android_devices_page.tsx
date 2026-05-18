@@ -13,11 +13,7 @@
 // limitations under the License.
 
 import _ from 'lodash';
-import {
-  MaterialReactTable,
-  MRT_ColumnDef,
-  MRT_TableOptions,
-} from 'material-react-table';
+import { MaterialReactTable, MRT_TableOptions } from 'material-react-table';
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -337,7 +333,7 @@ export const AndroidDevicesPage = () => {
     filterValues?: Record<string, FilterCategory>;
   } = useMemo(
     () => ({
-      columns: visibleEnrichedColumns as MRT_ColumnDef<AndroidDevice>[],
+      columns: visibleEnrichedColumns,
       data: devices as AndroidDevice[],
       displayColumnDefOptions: {
         'mrt-row-select': {
