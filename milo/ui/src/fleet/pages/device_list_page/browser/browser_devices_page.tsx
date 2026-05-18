@@ -38,10 +38,7 @@ import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import {
-  GetFiltersResult,
-  stringifyFilters,
-} from '@/fleet/components/filter_dropdown/parser/parser';
+import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { getFilters } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import { useFilters } from '@/fleet/components/filters/use_filters';
@@ -59,7 +56,6 @@ import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { computeSelectedOptions } from '@/fleet/utils/filters';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
 import {
@@ -262,22 +258,6 @@ export const BrowserDevicesPage = () => {
     areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
   });
 
-  const aip160Str = filterCategoryDatas.aip160();
-  const warningsStr = filterCategoryDatas.warnings.join(', ');
-  const selectedOptions = useMemo<GetFiltersResult>(() => {
-    if (filterCategoryDatas.warnings.length > 0) {
-      return {
-        filters: undefined,
-        error: new Error(warningsStr),
-      };
-    }
-    return {
-      filters: computeSelectedOptions(filterCategoryDatas.filterValues),
-      error: undefined,
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aip160Str, warningsStr]);
-
   const request = ListBrowserDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
@@ -403,7 +383,7 @@ export const BrowserDevicesPage = () => {
         warnings={[...filterCategoryDatas.warnings, ...warnings]}
       />
       <BrowserSummaryHeader
-        selectedOptions={selectedOptions.filters || {}}
+        filter={filterCategoryDatas.aip160()}
         pagerContext={pagerCtx}
       />
       <AdminTasksAlert />

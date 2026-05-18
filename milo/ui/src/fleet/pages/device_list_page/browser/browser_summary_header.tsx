@@ -19,13 +19,11 @@ import { Alert, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import { PagerContext } from '@/common/components/params_pager';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
-import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -45,12 +43,12 @@ const METRIC_CONTAINER_STYLES: CSSObject = {
 };
 
 export interface BrowserSummaryHeaderProps {
-  selectedOptions: SelectedOptions;
+  filter: string;
   pagerContext: PagerContext;
 }
 
 export function BrowserSummaryHeader({
-  selectedOptions,
+  filter,
   pagerContext,
 }: BrowserSummaryHeaderProps) {
   const client = useFleetConsoleClient();
@@ -58,7 +56,7 @@ export function BrowserSummaryHeader({
 
   const countQuery = useQuery(
     client.CountBrowserDevices.query({
-      filter: stringifyFilters(selectedOptions),
+      filter,
     }),
   );
 
