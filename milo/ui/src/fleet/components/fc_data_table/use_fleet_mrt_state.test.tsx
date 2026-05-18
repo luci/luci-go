@@ -16,7 +16,6 @@ import { act, renderHook } from '@testing-library/react';
 import React from 'react';
 
 import { PagerContext } from '@/common/components/params_pager/context';
-import { OptionCategory } from '@/fleet/types/option';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -33,7 +32,6 @@ describe('useFleetMRTState', () => {
   const mockSetSearchParams = jest.fn();
   const mockPagerCtx = {} as PagerContext;
   const mockFilterValues = {};
-  const mockFilterOptionsConfig: OptionCategory[] = [];
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <FakeContextProvider
@@ -63,7 +61,7 @@ describe('useFleetMRTState', () => {
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
           filterValues: mockFilterValues,
-          filterOptionsConfig: mockFilterOptionsConfig,
+
           visibleColumns,
           localStorageKey,
           defaultColumnIds,
@@ -88,7 +86,7 @@ describe('useFleetMRTState', () => {
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
           filterValues: mockFilterValues,
-          filterOptionsConfig: mockFilterOptionsConfig,
+
           visibleColumns,
           localStorageKey,
           defaultColumnIds,
@@ -107,7 +105,7 @@ describe('useFleetMRTState', () => {
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
           filterValues: mockFilterValues,
-          filterOptionsConfig: mockFilterOptionsConfig,
+
           visibleColumns,
           localStorageKey,
           defaultColumnIds,
@@ -147,7 +145,7 @@ describe('useFleetMRTState', () => {
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
           filterValues: mockFilterValues,
-          filterOptionsConfig: mockFilterOptionsConfig,
+
           visibleColumns,
           localStorageKey,
           defaultColumnIds,
@@ -193,7 +191,7 @@ describe('useFleetMRTState', () => {
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
           filterValues: mockFilterValues,
-          filterOptionsConfig: mockFilterOptionsConfig,
+
           visibleColumns,
           localStorageKey: currentKey,
           defaultColumnIds,
@@ -227,7 +225,7 @@ describe('useFleetMRTState', () => {
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
           filterValues: mockFilterValues,
-          filterOptionsConfig: mockFilterOptionsConfig,
+
           visibleColumns,
           localStorageKey: currentKey,
           defaultColumnIds,
@@ -261,7 +259,7 @@ describe('useFleetMRTState', () => {
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
           filterValues: mockFilterValues,
-          filterOptionsConfig: mockFilterOptionsConfig,
+
           visibleColumns,
           localStorageKey,
           defaultColumnIds,
@@ -316,7 +314,7 @@ describe('useFleetMRTState', () => {
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
           filterValues: mockFilterValues,
-          filterOptionsConfig: mockFilterOptionsConfig,
+
           visibleColumns,
           localStorageKey,
           defaultColumnIds,

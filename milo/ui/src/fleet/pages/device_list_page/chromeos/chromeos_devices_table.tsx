@@ -148,7 +148,6 @@ export const ChromeOSTable = ({
     setSearchParams,
     pagerCtx,
     filterValues: filterCategoryDatas.filterValues,
-    filterOptionsConfig: [],
     visibleColumns: visibleColumns,
     orderByParam,
     localStorageKey: CHROMEOS_DEVICES_LOCAL_STORAGE_KEY,

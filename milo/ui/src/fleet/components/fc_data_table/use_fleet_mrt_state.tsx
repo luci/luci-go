@@ -32,7 +32,6 @@ import { logging } from '@/common/tools/logging';
 import { filtersUpdater } from '@/fleet/components/filter_dropdown/search_param_utils';
 import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
 import { FilterCategory } from '@/fleet/components/filters/use_filters';
-import { OptionCategory, StringListCategory } from '@/fleet/types/option';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useMRTColumnManagement } from '../columns/use_mrt_column_management';
@@ -56,13 +55,9 @@ export interface FleetMRTStateProps<
     options?: { replace?: boolean },
   ) => void;
   pagerCtx: PagerContext;
-  filterValues?: Record<string, FilterCategory>;
-
-  /** Configuration for available filter options, typically mapped from backend Dimensions queries */
-  filterOptionsConfig?: OptionCategory[];
+  filterValues: Record<string, FilterCategory> | undefined;
   visibleColumns: TColumnDef[];
   localStorageKey: string;
-
   defaultColumnIds: string[];
   platform?: Platform;
   isLoadingOptions?: boolean;
@@ -78,9 +73,7 @@ export const useFleetMRTState = <
   setSearchParams,
   pagerCtx,
   filterValues,
-  filterOptionsConfig = [],
   visibleColumns,
-
   orderByParam,
   localStorageKey,
   defaultColumnIds,
@@ -217,57 +210,17 @@ export const useFleetMRTState = <
     });
   }, [orderByParam, mrtColumnManager.columns]);
 
-  // Optimization: Create a lookup map for filter options Using Normalized Keys
-  const filterOptionsMap = useMemo(() => {
-    const map = new Map<string, OptionCategory>();
-    filterOptionsConfig.forEach((opt) => {
-      if (opt.value) {
-        const normalizedKey = normalizeFilterKey(String(opt.value));
-        map.set(normalizedKey, opt);
-      }
-    });
-    return map;
-  }, [filterOptionsConfig]);
-
   const enrichedColumns = useMemo(() => {
     return mrtColumnManager.columns.map((col) => {
-      const filterKey =
-        (col as FleetColumnDefExt).filterKey || col.accessorKey || col.id;
-      if (!filterKey) return col;
-
-      const colWithMeta = {
+      return {
         ...col,
         meta: {
           ...(col as FleetColumnDefExt).meta,
           isLoadingOptions,
         },
       };
-
-      const normalizedFilterKey = normalizeFilterKey(String(filterKey));
-      const option = filterOptionsMap.get(normalizedFilterKey);
-
-      const isOptionCategory = (
-        opt: OptionCategory,
-      ): opt is StringListCategory => 'options' in opt;
-
-      if (
-        option &&
-        isOptionCategory(option) &&
-        option.options &&
-        option.options.length > 0
-      ) {
-        return {
-          ...colWithMeta,
-          filterVariant: 'multi-select' as const,
-          filterSelectOptions: option.options.map((opt) => ({
-            text: opt.label,
-            value: String(opt.value),
-          })),
-        };
-      }
-      return colWithMeta;
     });
-  }, [mrtColumnManager.columns, filterOptionsMap, isLoadingOptions]);
+  }, [mrtColumnManager.columns, isLoadingOptions]);
 
   const columnFilters = useMemo(() => {
     return Object.entries(activeFilters).map(([id, value]) => {
