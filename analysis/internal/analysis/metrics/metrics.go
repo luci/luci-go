@@ -165,11 +165,11 @@ var (
 		},
 		// Criteria:
 		// - A test fails and then passes upon retry in the same invocation
-		// - It is also necessary to ignore test failures from tasks where more than 6 tests failed,
-		//   because they likely all have the same underlying cause and should not be considered
-		//   separate flakes. This can be done by checking for the flake_analysis_ignore tag.
-		// - Bugs should also only be filed for top level tests: check for the is_top_level_test tag.
-		FilterSQL: `NOT f.is_ingested_invocation_blocked AND f.presubmit_run_id.id IS NOT NULL AND NOT EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'flake_analysis_ignore') AND EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'is_top_level_test')`,
+		// - The source code under test had unsubmitted CLs (i.e. was in presubmit)
+		// - The builder is gardened.
+		FilterSQL: `NOT f.is_ingested_invocation_blocked ` +
+			`AND (ARRAY_LENGTH(f.sources.changelists) > 0 OR f.sources.is_dirty) ` +
+			`AND ARRAY_LENGTH(f.build_gardener_rotations) > 0`,
 		// Count distinct builds.
 		CountSQL: `f.ingested_invocation_id`,
 	}.Build()
@@ -184,9 +184,10 @@ var (
 			ShowInMetricsSelector: false,
 		},
 		// Criteria:
+		// - The source code under test had no unsubmitted CLs.
 		// - A test run has unexpected failures in a gardened builder (even if retried and passed)
-		// - Bugs should also only be filed for top level tests: check for the is_top_level_test tag.
-		FilterSQL: `ARRAY_LENGTH(f.sources.changelists) = 0 AND NOT f.sources.is_dirty AND ARRAY_LENGTH(f.build_gardener_rotations) > 0 AND NOT EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'flake_analysis_ignore') AND EXISTS(SELECT key, value FROM UNNEST(f.tags) WHERE key = 'is_top_level_test')`,
+		FilterSQL: `ARRAY_LENGTH(f.sources.changelists) = 0 AND NOT f.sources.is_dirty ` +
+			`AND ARRAY_LENGTH(f.build_gardener_rotations) > 0`,
 		// Count distinct builds.
 		CountSQL: `f.ingested_invocation_id`,
 	}.Build()
