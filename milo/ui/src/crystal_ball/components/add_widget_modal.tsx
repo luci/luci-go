@@ -33,7 +33,7 @@ import {
   ListItemIcon,
 } from '@mui/material';
 
-import { WidgetType } from '@/crystal_ball/types';
+import { WidgetType } from '@/crystal_ball/constants';
 
 export interface AddWidgetModalProps {
   open: boolean;

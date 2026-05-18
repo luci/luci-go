@@ -66,6 +66,7 @@ import {
   GLOBAL_TIME_RANGE_COLUMN,
   GLOBAL_TIME_RANGE_FILTER_ID,
   MAX_PAGE_SIZE,
+  WidgetType,
 } from '@/crystal_ball/constants';
 import { EditorUiKeyPrefix, useToast } from '@/crystal_ball/hooks';
 import {
@@ -77,7 +78,6 @@ import {
 } from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
-import { WidgetType } from '@/crystal_ball/types';
 import {
   extractIdFromName,
   formatApiError,

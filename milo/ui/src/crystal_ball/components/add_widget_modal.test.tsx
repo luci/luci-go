@@ -14,7 +14,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { WidgetType } from '@/crystal_ball/types';
+import { WidgetType } from '@/crystal_ball/constants';
 
 import { AddWidgetModal } from './add_widget_modal';
 

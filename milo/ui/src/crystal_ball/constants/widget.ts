@@ -108,3 +108,15 @@ export const AGGREGATION_FUNCTION_LABELS: Record<
  * The columns that are filtered using checkbox filters.
  */
 export const CHECKBOX_FILTERS: string[] = [Column.BUILD_TYPE];
+
+/**
+ * The type of widget to display.
+ */
+export enum WidgetType {
+  CHART_BREAKDOWN_TABLE = 'chart_breakdown_table',
+  CHART_INVOCATION_DISTRIBUTION = 'chart_invocation_distribution',
+  CHART_MULTI_METRIC = 'chart_multi_metric',
+  CHART_PERIOD_COMPARISON = 'chart_period_comparison',
+  CHART_REGRESSION_METRIC = 'chart_regression_metric',
+  MARKDOWN = 'markdown',
+}
