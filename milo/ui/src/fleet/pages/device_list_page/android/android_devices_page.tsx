@@ -18,7 +18,7 @@ import {
   MRT_ColumnDef,
   MRT_TableOptions,
 } from 'material-react-table';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -161,8 +161,6 @@ export const AndroidDevicesPage = () => {
     areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
   });
 
-  const [isFiltering, setIsFiltering] = useState(false);
-
   const onApplyFilter = useCallback(() => {
     trackEvent('filter_changed', {
       componentName: 'device_list_filter',
@@ -183,12 +181,6 @@ export const AndroidDevicesPage = () => {
   );
 
   const devicesQuery = useAndroidDevices(request);
-
-  useEffect(() => {
-    if (!devicesQuery.isFetching) {
-      setIsFiltering(false);
-    }
-  }, [devicesQuery.isFetching]);
 
   const { devices = [] } = devicesQuery.data || {};
 
@@ -369,7 +361,7 @@ export const AndroidDevicesPage = () => {
         columnVisibility,
         columnSizing,
         isLoading: devicesQuery.isPending && !devicesQuery.isPlaceholderData,
-        showProgressBars: isFiltering || devicesQuery.isFetching,
+        showProgressBars: devicesQuery.isFetching,
         columnOrder: [
           'mrt-row-select',
           ...enrichedColumns
@@ -412,7 +404,6 @@ export const AndroidDevicesPage = () => {
       devicesQuery.isPending,
       devicesQuery.isPlaceholderData,
       devicesQuery.isFetching,
-      isFiltering,
       setColumnVisibility,
       visibleColumnIds,
       availableColumns,
