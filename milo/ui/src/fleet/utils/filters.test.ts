@@ -16,45 +16,10 @@ import {
   StringListFilterCategory,
   StringListFilterCategoryBuilder,
 } from '@/fleet/components/filters/string_list_filter';
-import { FilterCategory } from '@/fleet/components/filters/use_filters';
 
-import { computeSelectedOptions, syncFilterCategory } from './filters';
+import { syncFilterCategory } from './filters';
 
 describe('filters utility', () => {
-  describe('computeSelectedOptions', () => {
-    it('should return empty object when filterValues is undefined', () => {
-      expect(computeSelectedOptions(undefined)).toEqual({});
-    });
-
-    it('should return empty object when no filters are active', () => {
-      const mockCategory = {
-        isActive: () => false,
-      } as unknown as FilterCategory;
-
-      expect(computeSelectedOptions({ testKey: mockCategory })).toEqual({});
-    });
-
-    it('should extract selected options from StringListFilterCategory', () => {
-      const builder = new StringListFilterCategoryBuilder()
-        .setLabel('Label')
-        .setOptions([
-          { label: 'value1', value: 'value1' },
-          { label: 'value2', value: 'value2' },
-        ]);
-
-      const buildResult = builder.build('testKey', () => {}, null);
-      if (buildResult.isError) throw new Error(buildResult.error);
-      const category = buildResult.value;
-      category.setSelectedOptions(['value1', 'value2']);
-
-      const result = computeSelectedOptions({ testKey: category });
-
-      expect(result).toEqual({
-        testKey: ['value1', 'value2'],
-      });
-    });
-  });
-
   describe('syncFilterCategory', () => {
     it('should do nothing if filter is not in new filters and was not in table', () => {
       const mockCategory = {

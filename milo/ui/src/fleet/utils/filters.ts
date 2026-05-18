@@ -25,34 +25,6 @@ export const stripQuotes = (val: string): string =>
   val.startsWith('"') && val.endsWith('"') ? val.slice(1, -1) : val;
 
 /**
- * Computes the selected options from the filter values provided by useFilters.
- * Maps the complex FilterCategory objects back to a simpler Record<string, string[]>
- * that useFleetMRTState expects for column highlighting.
- */
-export const computeSelectedOptions = (
-  filterValues: Record<string, FilterCategory> | undefined,
-): Record<string, string[]> => {
-  const filters: Record<string, string[]> = {};
-  if (filterValues) {
-    for (const [key, category] of Object.entries(filterValues)) {
-      if (!category.isActive()) continue;
-      let selected: string[] = [];
-      if (category instanceof StringListFilterCategory) {
-        selected = category.getSelectedOptions();
-      }
-      if (selected.length > 0) {
-        const matchKey = key;
-        const unquotedSelected = selected.map((k) =>
-          typeof k === 'string' ? stripQuotes(k) : k,
-        );
-        filters[matchKey] = unquotedSelected;
-      }
-    }
-  }
-  return filters;
-};
-
-/**
  * Synchronizes a single filter category with the new filters received from MRT column filters.
  */
 export const syncFilterCategory = (

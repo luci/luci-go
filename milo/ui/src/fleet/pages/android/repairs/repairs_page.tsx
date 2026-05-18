@@ -38,7 +38,6 @@ import { useMRTColumnManagement } from '@/fleet/components/columns/use_mrt_colum
 import { FCDataTableCopy } from '@/fleet/components/fc_data_table/fc_data_table_copy';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import { GetFiltersResult } from '@/fleet/components/filter_dropdown/parser/parser';
 import {
   StringListFilterCategory,
   StringListFilterCategoryBuilder,
@@ -64,7 +63,6 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { computeSelectedOptions } from '@/fleet/utils/filters';
 import {
   getFilterQueryString,
   parseOrderByParam,
@@ -132,19 +130,6 @@ export const RepairListPage = () => {
     areFilterValuesLoading: !repairMetricsFilterValues.data,
   });
 
-  const selectedOptions = useMemo<GetFiltersResult>(() => {
-    if (filterCategoryDatas.warnings.length > 0) {
-      return {
-        filters: undefined,
-        error: new Error(filterCategoryDatas.warnings.join(', ')),
-      };
-    }
-    return {
-      filters: computeSelectedOptions(filterCategoryDatas.filterValues),
-      error: undefined,
-    };
-  }, [filterCategoryDatas.filterValues, filterCategoryDatas.warnings]);
-
   const repairMetricsList = useQuery({
     ...client.ListRepairMetrics.query({
       platform: Platform.ANDROID,
@@ -176,8 +161,11 @@ export const RepairListPage = () => {
   );
 
   const highlightedColumnIds = useMemo(
-    () => Object.keys(selectedOptions.filters || {}),
-    [selectedOptions.filters],
+    () =>
+      Object.entries(filterCategoryDatas.filterValues ?? {})
+        .filter(([_key, filter]) => filter.isActive())
+        .map(([key, _filter]) => key),
+    [filterCategoryDatas.filterValues],
   );
 
   const mrtColumnManager = useMRTColumnManagement({
