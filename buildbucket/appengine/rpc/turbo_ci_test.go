@@ -223,6 +223,10 @@ func TestLaunchTurboCIChildren(t *testing.T) {
 			{Proto: &pb.Build{Builder: childBuilder2}},
 		}
 
+		// Keep track of the original pointers to ensure they are not replaced.
+		originalPointers := make([]*model.Build, len(builds))
+		copy(originalPointers, builds)
+
 		orch := &dynamicChildOrch{
 			FakeOrchestratorClient: &turboci.FakeOrchestratorClient{
 				Plan:  planID,
@@ -249,6 +253,8 @@ func TestLaunchTurboCIChildren(t *testing.T) {
 		assert.That(t, builds[1].ID, should.Equal(int64(childBuildID2)))
 		assert.That(t, builds[0].Tags, should.Match([]string{"child:real:1"}))
 		assert.That(t, builds[1].Tags, should.Match([]string{"child:real:2"}))
+		assert.That(t, builds[0], should.Equal(originalPointers[0]))
+		assert.That(t, builds[1], should.Equal(originalPointers[1]))
 	})
 }
 

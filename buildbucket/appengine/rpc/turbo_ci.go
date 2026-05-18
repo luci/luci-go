@@ -257,11 +257,10 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 	}
 
 	// Update `builds` in-place with the state of the builds right now.
-	toGet := make([]any, len(builds))
 	for i, buildID := range buildIDs {
-		toGet[i] = &model.Build{ID: buildID}
+		builds[i].ID = buildID
 	}
-	if err := datastore.Get(ctx, toGet...); err != nil {
+	if err := datastore.Get(ctx, builds); err != nil {
 		merr, ok := err.(errors.MultiError)
 		if !ok {
 			return commonErr(appstatus.Errorf(codes.Internal, "failed to get a build associated with the submitted stage: %s", err))
@@ -274,9 +273,6 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 			mErr[i] = appstatus.Errorf(codes.Internal, "failed to get a build associated with the submitted stage: %s", err)
 		}
 		return mErr
-	}
-	for i := range builds {
-		builds[i] = toGet[i].(*model.Build)
 	}
 	return nil
 }
