@@ -18,7 +18,6 @@ import {
   MRT_ColumnDef,
   MRT_TableInstance,
   MRT_TableOptions,
-  MRT_VisibilityState,
 } from 'material-react-table';
 import { useEffect, useMemo, useRef } from 'react';
 
@@ -95,13 +94,9 @@ const ChromeOSActions = ({
 
 interface ChromeOSTableProps {
   availableColumns: ChromeOSColumnDef[];
-  visibleColumns: ChromeOSColumnDef[];
 }
 
-export const ChromeOSTable = ({
-  availableColumns,
-  visibleColumns,
-}: ChromeOSTableProps) => {
+export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
   const { trackEvent } = useGoogleAnalytics();
@@ -148,7 +143,7 @@ export const ChromeOSTable = ({
     setSearchParams,
     pagerCtx,
     filterValues: filterCategoryDatas.filterValues,
-    visibleColumns: visibleColumns,
+    visibleColumns: availableColumns,
     orderByParam,
     localStorageKey: CHROMEOS_DEVICES_LOCAL_STORAGE_KEY,
     defaultColumnIds: CHROMEOS_DEFAULT_COLUMNS,
@@ -193,28 +188,12 @@ export const ChromeOSTable = ({
 
   const meta = useMemo<FleetTableMeta<ChromeOSDevice>>(
     () => ({
-      availableColumns: availableColumns.map((col) => ({
-        id: col.accessorKey as string,
-        label: col.header,
-      })),
-      visibleColumnIds: enrichedColumns
-        .filter(
-          (col) => columnVisibility[col.id || (col.accessorKey as string)],
-        )
-        .map((col) => (col.id || col.accessorKey) as string),
-      onToggleColumn: (id) => {
-        setColumnVisibility((prev: MRT_VisibilityState) => ({
-          ...prev,
-          [id]: !prev[id],
-        }));
-      },
-      resetDefaultColumns: () => {
-        const nextVisibility = { ...columnVisibility };
-        CHROMEOS_DEFAULT_COLUMNS.forEach((id) => {
-          nextVisibility[id] = true;
-        });
-        setColumnVisibility(nextVisibility);
-      },
+      availableColumns: fleetMrtState.allColumns,
+      visibleColumnIds: fleetMrtState.visibleColumnIds,
+      onToggleColumn: fleetMrtState.mrtColumnManager.onToggleColumn,
+      selectOnlyColumn: fleetMrtState.mrtColumnManager.selectOnlyColumn,
+      resetDefaultColumns: fleetMrtState.mrtColumnManager.resetDefaultColumns,
+      resetColumnWidths: fleetMrtState.resetColumnWidths,
       devicesQuery,
       nextPageToken,
       devices,
@@ -227,10 +206,10 @@ export const ChromeOSTable = ({
       totalSize: countQuery?.data?.total,
     }),
     [
-      availableColumns,
-      enrichedColumns,
-      columnVisibility,
-      setColumnVisibility,
+      fleetMrtState.allColumns,
+      fleetMrtState.visibleColumnIds,
+      fleetMrtState.mrtColumnManager,
+      fleetMrtState.resetColumnWidths,
       devicesQuery,
       nextPageToken,
       devices,

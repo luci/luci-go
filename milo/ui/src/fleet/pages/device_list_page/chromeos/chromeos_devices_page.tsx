@@ -50,11 +50,10 @@ export const ChromeOSDevicesPage = () => {
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
   });
 
-  const {
-    availableColumns,
-    visibleColumns,
-    warnings: columnWarnings,
-  } = useChromeOSColumns(isLoading || filterValues === undefined, false);
+  const { availableColumns, warnings: columnWarnings } = useChromeOSColumns(
+    isLoading || filterValues === undefined,
+    false,
+  );
 
   const allWarnings = [...(filterWarnings || []), ...(columnWarnings || [])];
 
@@ -86,10 +85,7 @@ export const ChromeOSDevicesPage = () => {
           marginTop: 24,
         }}
       >
-        <ChromeOSTable
-          availableColumns={availableColumns}
-          visibleColumns={visibleColumns}
-        />
+        <ChromeOSTable availableColumns={availableColumns} />
       </div>
     </div>
   );

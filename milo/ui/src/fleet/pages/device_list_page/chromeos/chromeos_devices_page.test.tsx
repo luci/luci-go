@@ -85,4 +85,33 @@ describe('<ChromeOSDevicesPage />', () => {
     // Click it
     fireEvent.click(autorepairButton);
   });
+  it('should allow customizing columns', async () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/test/:platform"
+        routerOptions={{
+          initialEntries: ['/test/chromeos'],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <ChromeOSDevicesPage />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    // Find and click "Columns" button
+    const columnsButton = await screen.findByText('Columns');
+    expect(columnsButton).toBeVisible();
+    fireEvent.click(columnsButton);
+
+    // Wait for the dropdown to appear
+    const searchInput = screen.getByPlaceholderText(/search/i);
+    expect(searchInput).toBeVisible();
+
+    // Verify that there are checkboxes in the dropdown
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThan(1);
+  });
 });
