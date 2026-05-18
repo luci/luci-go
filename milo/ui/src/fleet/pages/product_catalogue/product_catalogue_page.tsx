@@ -34,7 +34,10 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { COLUMNS } from './product_catalogue_columns';
-import { useProductCatalogFilters } from './use_product_catalog_filters';
+import {
+  useProductCatalogFilters,
+  FILTERS,
+} from './use_product_catalog_filters';
 
 const Container = styled.div`
   margin: 24px;
@@ -97,9 +100,19 @@ export const ProductCataloguePage = () => {
     [query.data, setSearchParams],
   );
 
+  const mappedFilterValues = Object.fromEntries(
+    Object.entries(filterValues || {}).map(([key, value]) => {
+      const entry = Object.entries(FILTERS).find(
+        ([_, config]) => `"${config.filterKey}"` === key,
+      );
+      return [entry ? entry[0] : key, value];
+    }),
+  );
+
   const table = useFCDataTable({
     columns: COLUMNS,
     data: [...(query.data?.entries ?? [])],
+    filterValues: mappedFilterValues,
     enablePagination: true,
     manualPagination: false,
     manualFiltering: false,
