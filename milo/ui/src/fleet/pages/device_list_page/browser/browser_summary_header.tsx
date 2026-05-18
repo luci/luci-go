@@ -18,15 +18,15 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
-import { PagerContext } from '@/common/components/params_pager';
+import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { getFilterQueryString } from '@/fleet/utils/search_param';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+
+import { useBrowserFilters } from './use_browser_filters';
 
 const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
   borderRight: `1px solid ${colors.grey[300]}`,
@@ -42,23 +42,22 @@ const METRIC_CONTAINER_STYLES: CSSObject = {
   gap: 8,
 };
 
-export interface BrowserSummaryHeaderProps {
-  filter: string;
-  pagerContext: PagerContext;
-}
-
-export function BrowserSummaryHeader({
-  filter,
-  pagerContext,
-}: BrowserSummaryHeaderProps) {
+export function BrowserSummaryHeader() {
   const client = useFleetConsoleClient();
-  const [searchParams] = useSyncedSearchParams();
+  const { filterValues, aip160 } = useBrowserFilters();
 
   const countQuery = useQuery(
     client.CountBrowserDevices.query({
-      filter,
+      filter: aip160(),
     }),
   );
+
+  const setFilterOptions = (key: string, options: string[]) => {
+    const filter = filterValues?.[key];
+    if (filter instanceof StringListFilterCategory) {
+      filter.setSelectedOptions(options);
+    }
+  };
 
   const getContent = () => {
     if (countQuery.isError) {
@@ -98,13 +97,11 @@ export function BrowserSummaryHeader({
               value={countQuery.data?.swarmingState?.alive}
               total={countQuery.data?.swarmingState?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  [`${BROWSER_SWARMING_SOURCE}."state"`]: ['alive'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions(`${BROWSER_SWARMING_SOURCE}."state"`, [
+                  'alive',
+                ])
+              }
             />
             <SingleMetric
               name="Dead"
@@ -112,13 +109,9 @@ export function BrowserSummaryHeader({
               total={countQuery.data?.swarmingState?.total}
               loading={countQuery.isPending}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-              filterUrl={getFilterQueryString(
-                {
-                  [`${BROWSER_SWARMING_SOURCE}."state"`]: ['dead'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions(`${BROWSER_SWARMING_SOURCE}."state"`, ['dead'])
+              }
             />
             <SingleMetric
               name="Quarantined"
@@ -130,13 +123,11 @@ export function BrowserSummaryHeader({
                   sx={{ color: colors.yellow[900], marginTop: '-2px' }}
                 />
               }
-              filterUrl={getFilterQueryString(
-                {
-                  [`${BROWSER_SWARMING_SOURCE}."state"`]: ['quarantined'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions(`${BROWSER_SWARMING_SOURCE}."state"`, [
+                  'quarantined',
+                ])
+              }
             />
             <SingleMetric
               name="Maintenance"
@@ -148,13 +139,11 @@ export function BrowserSummaryHeader({
                   sx={{ color: colors.yellow[900], marginTop: '-2px' }}
                 />
               }
-              filterUrl={getFilterQueryString(
-                {
-                  [`${BROWSER_SWARMING_SOURCE}."state"`]: ['maintenance'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions(`${BROWSER_SWARMING_SOURCE}."state"`, [
+                  'maintenance',
+                ])
+              }
             />
           </div>
         </div>

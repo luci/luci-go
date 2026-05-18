@@ -22,6 +22,7 @@ import { useEffect, useMemo } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
+  emptyPageTokenUpdater,
   getPageSize,
   getPageToken,
   usePagerContext,
@@ -38,19 +39,10 @@ import { FleetTableMeta } from '@/fleet/components/fc_data_table/types';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { useFleetMRTState } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
-import { getFilters } from '@/fleet/components/filter_dropdown/search_param_utils';
-import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
-import { useFilters } from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { BROWSER_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
 import { getFeatureFlag } from '@/fleet/config/features';
-import {
-  BROWSER_SWARMING_SOURCE,
-  BROWSER_UFS_SOURCE,
-} from '@/fleet/constants/browser';
-import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { BROWSER_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
@@ -58,10 +50,7 @@ import { useBrowserDevices } from '@/fleet/hooks/use_browser_devices';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
-import {
-  TrackLeafRoutePageView,
-  useGoogleAnalytics,
-} from '@/generic_libs/components/google_analytics';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   BrowserDevice,
@@ -71,10 +60,10 @@ import {
 
 import { AdminTasksAlert } from '../common/admin_tasks_alert';
 
-import { getDisplayName } from './alias';
 import { getBrowserColumn, getBrowserColumnIds } from './browser_columns';
 import { BrowserSummaryHeader } from './browser_summary_header';
 import { useBrowserDeviceDimensions } from './use_browser_device_dimensions';
+import { useBrowserFilters } from './use_browser_filters';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 500, 1000];
 const DEFAULT_PAGE_SIZE = 100;
@@ -111,7 +100,6 @@ const BrowserActions = ({
 };
 
 export const BrowserDevicesPage = () => {
-  const { trackEvent } = useGoogleAnalytics();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [orderByParam] = useOrderByParam();
   const pagerCtx = usePagerContext({
@@ -144,13 +132,12 @@ export const BrowserDevicesPage = () => {
       const newSearchParams = new URLSearchParams(searchParams);
 
       if (needsRewrite) {
-        const selectedOptions = getFilters(searchParams);
-        if (!selectedOptions.error) {
-          newSearchParams.set(
-            'filters',
-            stringifyFilters(selectedOptions.filters),
-          );
-        }
+        newSearchParams.set(
+          'filters',
+          filters
+            .replace(/swarming_labels\./g, 'sw.')
+            .replace(/ufs_labels\./g, 'ufs.'),
+        );
       }
 
       if (columnsNeedRewrite) {
@@ -207,65 +194,21 @@ export const BrowserDevicesPage = () => {
     [columnsRecord],
   );
 
-  const isDimensionsQueryProperlyLoaded =
-    dimensionsQuery.data &&
-    dimensionsQuery.data.baseDimensions &&
-    dimensionsQuery.data.swarmingLabels &&
-    dimensionsQuery.data.ufsLabels;
-
-  const loadedFilterOptions = useMemo(() => {
-    if (!isDimensionsQueryProperlyLoaded) return {};
-
-    const filters: Record<string, StringListFilterCategoryBuilder> = {};
-
-    const addDimensions = (
-      dimensions: Record<string, { values: readonly string[] }>,
-      getColumnId: (k: string) => string,
-    ) => {
-      for (const [filterKey, filterValues] of Object.entries(dimensions)) {
-        const key = getColumnId(filterKey);
-        const label = (columnsRecord[key]?.header || key) as string;
-        const value = columnsRecord[key]?.filterKey || key;
-
-        filters[value] = new StringListFilterCategoryBuilder()
-          .setLabel(label)
-          .setOptions([
-            { label: BLANK_VALUE, value: BLANK_VALUE },
-            ...(filterValues.values || [])
-              .filter((v) => v !== '' && v !== BLANK_VALUE)
-              .map((v) => ({
-                label: getDisplayName(v, filterKey),
-                value: v,
-              })),
-          ]);
-      }
-    };
-
-    addDimensions(dimensionsQuery.data.baseDimensions, (k) => k);
-    addDimensions(
-      dimensionsQuery.data.swarmingLabels,
-      (k) => `${BROWSER_SWARMING_SOURCE}.${k}`,
-    );
-    addDimensions(
-      dimensionsQuery.data.ufsLabels,
-      (k) => `${BROWSER_UFS_SOURCE}.${k}`,
-    );
-
-    return filters;
-  }, [isDimensionsQueryProperlyLoaded, dimensionsQuery.data, columnsRecord]);
-
-  const filterCategoryDatas = useFilters(loadedFilterOptions, {
-    areFilterValuesLoading: !isDimensionsQueryProperlyLoaded,
+  const {
+    filterValues,
+    aip160,
+    warnings: filterWarnings,
+    isLoading,
+    onApplyFilter,
+  } = useBrowserFilters(() => {
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
   });
 
   const request = ListBrowserDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
     orderBy: orderByParam,
-    filter:
-      filterCategoryDatas.warnings.length > 0
-        ? ''
-        : filterCategoryDatas.aip160(),
+    filter: filterWarnings.length > 0 ? '' : aip160(),
   });
 
   const devicesQuery = useBrowserDevices(request);
@@ -279,7 +222,7 @@ export const BrowserDevicesPage = () => {
   const fleetMrtState = useFleetMRTState({
     setSearchParams,
     pagerCtx,
-    filterValues: filterCategoryDatas.filterValues,
+    filterValues: filterValues,
     visibleColumns: visibleColumns,
     orderByParam,
     localStorageKey: BROWSER_DEVICES_LOCAL_STORAGE_KEY,
@@ -324,7 +267,7 @@ export const BrowserDevicesPage = () => {
     columns: fleetMrtState.enrichedColumns as MRT_ColumnDef<BrowserDevice>[],
     data: devices as BrowserDevice[],
     meta,
-    filterValues: filterCategoryDatas.filterValues,
+    filterValues: filterValues,
     displayColumnDefOptions: {
       'mrt-row-select': {
         size: 40,
@@ -379,13 +322,8 @@ export const BrowserDevicesPage = () => {
         margin: '24px',
       }}
     >
-      <WarningNotifications
-        warnings={[...filterCategoryDatas.warnings, ...warnings]}
-      />
-      <BrowserSummaryHeader
-        filter={filterCategoryDatas.aip160()}
-        pagerContext={pagerCtx}
-      />
+      <WarningNotifications warnings={[...filterWarnings, ...warnings]} />
+      <BrowserSummaryHeader />
       <AdminTasksAlert />
       <div
         css={{
@@ -399,18 +337,9 @@ export const BrowserDevicesPage = () => {
         }}
       >
         <FilterBar
-          filterCategoryDatas={Object.values(
-            filterCategoryDatas.filterValues || {},
-          )}
-          onApply={() => {
-            trackEvent('filter_changed', {
-              componentName: 'device_list_filter',
-            });
-          }}
-          isLoading={
-            dimensionsQuery.isPending ||
-            filterCategoryDatas.filterValues === undefined
-          }
+          filterCategoryDatas={Object.values(filterValues || {})}
+          onApply={onApplyFilter}
+          isLoading={isLoading}
           searchPlaceholder='Add a filter (e.g. "os:Linux" or "sw.pool:default")'
         />
       </div>
