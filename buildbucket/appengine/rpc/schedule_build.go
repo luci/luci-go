@@ -1559,6 +1559,9 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest, params
 	for _, batch := range batches {
 		eg.Go(func() error {
 			merr := batch.launch(ctx, bldrsMCB)
+			if merr.First() == nil {
+				return nil
+			}
 			for idx, req := range batch.reqs {
 				if merr[idx] != nil {
 					op.Fail(req, merr[idx])
