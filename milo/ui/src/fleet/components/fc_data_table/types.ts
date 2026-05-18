@@ -28,7 +28,7 @@ export interface FleetTableMeta<TData extends MRT_RowData> {
   searchParams: URLSearchParams;
 
   // For TopToolbar (optional)
-  allDimensionColumns?: { id: string; label: string }[];
+  availableColumns?: { id: string; label: string }[];
   visibleColumnIds?: string[];
   onToggleColumn?: (id: string) => void;
   selectOnlyColumn?: (id: string) => void;

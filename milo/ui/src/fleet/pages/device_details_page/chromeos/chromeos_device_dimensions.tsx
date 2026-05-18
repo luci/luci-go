@@ -17,7 +17,6 @@ import {
   MRT_ColumnDef,
   MRT_Column,
   MRT_Cell,
-  MRT_Row,
 } from 'material-react-table';
 import { useMemo } from 'react';
 
@@ -26,16 +25,17 @@ import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_tab
 import { CellWithTooltip } from '@/fleet/components/table/cell_with_tooltip';
 import { BotInformation } from '@/fleet/pages/device_details_page/common/bot_information';
 import { BotState } from '@/fleet/pages/device_details_page/common/bot_state';
+import { FC_CellProps } from '@/fleet/types/table';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
-import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
-  CHROMEOS_COLUMN_OVERRIDES,
+  getFieldDefinition,
   ChromeOSDevice,
+  KnownChromeOSColumnId,
 } from '../../device_list_page/chromeos/chromeos_fields';
 
 interface ChromeOSDeviceDimensionsProps {
-  device?: Device;
+  device?: ChromeOSDevice;
 }
 
 export const ChromeOSDeviceDimensions = ({
@@ -44,16 +44,21 @@ export const ChromeOSDeviceDimensions = ({
   const dimensionRows = useMemo(() => {
     if (!device) return [];
 
-    const customIds = ['dut_id', 'realm', 'state', 'dut_state'];
+    const customIds: KnownChromeOSColumnId[] = [
+      'dut_id',
+      'realm',
+      'state',
+      'dut_state',
+    ];
     const custom = customIds.map((id) => ({
       id,
-      value: String(CHROMEOS_COLUMN_OVERRIDES[id]?.accessorFn?.(device) ?? ''),
+      value: String(getFieldDefinition(id).accessorFn(device) ?? ''),
     }));
 
     if (!device.deviceSpec) return custom;
 
     const labelRows = Object.keys(device.deviceSpec.labels)
-      .filter((key) => !customIds.includes(key))
+      .filter((key) => !(customIds as string[]).includes(key))
       .map((label) => ({
         id: label,
         value: device.deviceSpec!.labels[label].values,
@@ -93,22 +98,22 @@ export const ChromeOSDeviceDimensions = ({
           const fieldKey = row.original.id;
           const value = cell.getValue();
 
-          const override = CHROMEOS_COLUMN_OVERRIDES[fieldKey];
-          if (override?.renderCell && device) {
+          const def = getFieldDefinition(fieldKey);
+          if (def.renderCell && device) {
             // Mock MRT objects for the dimensions view since we are rendering
             // Device properties as rows in a key-value table.
-            return override.renderCell({
+            return def.renderCell({
               cell: {
                 getValue: () => value,
-              } as unknown as MRT_Cell<ChromeOSDevice, unknown>,
+              },
               row: {
                 original: device,
-              } as unknown as MRT_Row<ChromeOSDevice>,
+              },
               column: {
                 ...column,
                 id: fieldKey,
-              } as unknown as MRT_Column<ChromeOSDevice, unknown>,
-            });
+              },
+            } as unknown as FC_CellProps<ChromeOSDevice>);
           }
 
           const strValue = Array.isArray(value)

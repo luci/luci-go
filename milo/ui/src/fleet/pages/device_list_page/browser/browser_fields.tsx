@@ -50,7 +50,7 @@ import {
 
 export type BrowserColumnDef = MRT_ColumnDef<BrowserDevice> & {
   orderByField?: string;
-  filterByField?: string;
+  filterKey?: string;
 };
 
 export const CUSTOM_COLUMNS: Record<string, BrowserColumnDef> = {
@@ -303,6 +303,6 @@ export const BROWSER_COLUMN_OVERRIDES: Record<
     header: 'Realm',
     accessorFn: (row) => row.realm || '',
     orderByField: 'realm',
-    filterByField: 'realm',
+    filterKey: 'realm',
   },
 };

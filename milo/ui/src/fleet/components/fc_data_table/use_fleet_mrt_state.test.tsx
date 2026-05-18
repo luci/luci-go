@@ -16,7 +16,6 @@ import { act, renderHook } from '@testing-library/react';
 import React from 'react';
 
 import { PagerContext } from '@/common/components/params_pager/context';
-import { GetFiltersResult } from '@/fleet/components/filter_dropdown/parser/parser';
 import { OptionCategory } from '@/fleet/types/option';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -26,14 +25,14 @@ import { useFleetMRTState, FleetColumnDefExt } from './use_fleet_mrt_state';
 describe('useFleetMRTState', () => {
   const localStorageKey = 'test-table-columns';
   const defaultColumnIds = ['col1', 'col2'];
-  const columnsList: FleetColumnDefExt[] = [
+  const visibleColumns: FleetColumnDefExt[] = [
     { id: 'col1', accessorKey: 'col1' },
     { id: 'col2', accessorKey: 'col2' },
   ];
 
   const mockSetSearchParams = jest.fn();
   const mockPagerCtx = {} as PagerContext;
-  const mockSelectedOptions = { filters: {} } as GetFiltersResult;
+  const mockFilterValues = {};
   const mockFilterOptionsConfig: OptionCategory[] = [];
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -63,9 +62,9 @@ describe('useFleetMRTState', () => {
         useFleetMRTState({
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
-          selectedOptions: mockSelectedOptions,
+          filterValues: mockFilterValues,
           filterOptionsConfig: mockFilterOptionsConfig,
-          columnsList,
+          visibleColumns,
           localStorageKey,
           defaultColumnIds,
           platform: Platform.CHROMEOS,
@@ -88,9 +87,9 @@ describe('useFleetMRTState', () => {
         useFleetMRTState({
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
-          selectedOptions: mockSelectedOptions,
+          filterValues: mockFilterValues,
           filterOptionsConfig: mockFilterOptionsConfig,
-          columnsList,
+          visibleColumns,
           localStorageKey,
           defaultColumnIds,
           platform: Platform.CHROMEOS,
@@ -107,9 +106,9 @@ describe('useFleetMRTState', () => {
         useFleetMRTState({
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
-          selectedOptions: mockSelectedOptions,
+          filterValues: mockFilterValues,
           filterOptionsConfig: mockFilterOptionsConfig,
-          columnsList,
+          visibleColumns,
           localStorageKey,
           defaultColumnIds,
           platform: Platform.CHROMEOS,
@@ -147,9 +146,9 @@ describe('useFleetMRTState', () => {
         useFleetMRTState({
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
-          selectedOptions: mockSelectedOptions,
+          filterValues: mockFilterValues,
           filterOptionsConfig: mockFilterOptionsConfig,
-          columnsList,
+          visibleColumns,
           localStorageKey,
           defaultColumnIds,
           platform: Platform.CHROMEOS,
@@ -193,9 +192,9 @@ describe('useFleetMRTState', () => {
         useFleetMRTState({
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
-          selectedOptions: mockSelectedOptions,
+          filterValues: mockFilterValues,
           filterOptionsConfig: mockFilterOptionsConfig,
-          columnsList,
+          visibleColumns,
           localStorageKey: currentKey,
           defaultColumnIds,
           platform: Platform.CHROMEOS,
@@ -227,9 +226,9 @@ describe('useFleetMRTState', () => {
         useFleetMRTState({
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
-          selectedOptions: mockSelectedOptions,
+          filterValues: mockFilterValues,
           filterOptionsConfig: mockFilterOptionsConfig,
-          columnsList,
+          visibleColumns,
           localStorageKey: currentKey,
           defaultColumnIds,
           platform: Platform.CHROMEOS,
@@ -261,9 +260,9 @@ describe('useFleetMRTState', () => {
         useFleetMRTState({
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
-          selectedOptions: mockSelectedOptions,
+          filterValues: mockFilterValues,
           filterOptionsConfig: mockFilterOptionsConfig,
-          columnsList,
+          visibleColumns,
           localStorageKey,
           defaultColumnIds,
           platform: Platform.CHROMEOS,
@@ -316,9 +315,9 @@ describe('useFleetMRTState', () => {
         useFleetMRTState({
           setSearchParams: mockSetSearchParams,
           pagerCtx: mockPagerCtx,
-          selectedOptions: mockSelectedOptions,
+          filterValues: mockFilterValues,
           filterOptionsConfig: mockFilterOptionsConfig,
-          columnsList,
+          visibleColumns,
           localStorageKey,
           defaultColumnIds,
           platform: Platform.CHROMEOS,

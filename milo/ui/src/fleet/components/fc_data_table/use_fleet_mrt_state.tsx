@@ -29,8 +29,9 @@ import {
 } from '@/common/components/params_pager';
 import { PagerContext } from '@/common/components/params_pager/context';
 import { logging } from '@/common/tools/logging';
-import { GetFiltersResult } from '@/fleet/components/filter_dropdown/parser/parser';
 import { filtersUpdater } from '@/fleet/components/filter_dropdown/search_param_utils';
+import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
+import { FilterCategory } from '@/fleet/components/filters/use_filters';
 import { OptionCategory, StringListCategory } from '@/fleet/types/option';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -40,7 +41,7 @@ import { normalizeFilterKey } from '../filters/normalize_filter_key';
 export type FleetColumnDefExt = {
   id?: string;
   accessorKey?: string | number | symbol;
-  filterByField?: string;
+  filterKey?: string;
   orderByField?: string;
   meta?: {
     isLoadingOptions?: boolean;
@@ -55,11 +56,11 @@ export interface FleetMRTStateProps<
     options?: { replace?: boolean },
   ) => void;
   pagerCtx: PagerContext;
-  selectedOptions: GetFiltersResult;
+  filterValues?: Record<string, FilterCategory>;
 
   /** Configuration for available filter options, typically mapped from backend Dimensions queries */
   filterOptionsConfig?: OptionCategory[];
-  columnsList: TColumnDef[];
+  visibleColumns: TColumnDef[];
   localStorageKey: string;
 
   defaultColumnIds: string[];
@@ -76,9 +77,9 @@ export const useFleetMRTState = <
 >({
   setSearchParams,
   pagerCtx,
-  selectedOptions,
+  filterValues,
   filterOptionsConfig = [],
-  columnsList,
+  visibleColumns,
 
   orderByParam,
   localStorageKey,
@@ -89,6 +90,20 @@ export const useFleetMRTState = <
 }: FleetMRTStateProps<TColumnDef>) => {
   const loadedKeyRef = useRef(localStorageKey);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
+
+  const activeFilters = useMemo(() => {
+    const filters: Record<string, string[]> = {};
+    if (filterValues) {
+      for (const [key, category] of Object.entries(filterValues)) {
+        if (category.isActive()) {
+          if (category instanceof StringListFilterCategory) {
+            filters[key] = category.getSelectedOptions();
+          }
+        }
+      }
+    }
+    return filters;
+  }, [filterValues]);
 
   const [columnSizing, setColumnSizing] = useState<MRT_ColumnSizingState>(
     () => {
@@ -152,9 +167,9 @@ export const useFleetMRTState = <
   const { filterByFieldToId, idToFilterByField } = useMemo(() => {
     const fromFieldId = new Map<string, string>();
     const toFieldId = new Map<string, string>();
-    columnsList.forEach((c) => {
+    visibleColumns.forEach((c) => {
       const cId = (c.id || c.accessorKey) as string;
-      const filterKey = c.filterByField || cId;
+      const filterKey = c.filterKey || cId;
       if (filterKey && cId) {
         fromFieldId.set(filterKey, cId);
         toFieldId.set(cId, filterKey);
@@ -162,21 +177,23 @@ export const useFleetMRTState = <
     });
 
     return { filterByFieldToId: fromFieldId, idToFilterByField: toFieldId };
-  }, [columnsList]);
+  }, [visibleColumns]);
 
   const highlightedColumnIds = useMemo(() => {
-    if (!selectedOptions?.filters) return [];
+    if (!filterValues) return [];
 
-    return Object.keys(selectedOptions.filters).map((key) => {
-      const filterKey = normalizeFilterKey(key);
-      return filterByFieldToId.get(filterKey) || filterKey;
-    });
-  }, [selectedOptions?.filters, filterByFieldToId]);
+    return Object.entries(filterValues)
+      .filter(([, category]) => category.isActive())
+      .map(([key]) => {
+        const filterKey = normalizeFilterKey(key);
+        return filterByFieldToId.get(filterKey) || filterKey;
+      });
+  }, [filterValues, filterByFieldToId]);
 
   const mrtColumnManager = useMRTColumnManagement({
     localStorageKey,
     defaultColumnIds,
-    columns: columnsList,
+    columns: visibleColumns,
     highlightedColumnIds,
     platform,
   });
@@ -215,7 +232,7 @@ export const useFleetMRTState = <
   const enrichedColumns = useMemo(() => {
     return mrtColumnManager.columns.map((col) => {
       const filterKey =
-        (col as FleetColumnDefExt).filterByField || col.accessorKey || col.id;
+        (col as FleetColumnDefExt).filterKey || col.accessorKey || col.id;
       if (!filterKey) return col;
 
       const colWithMeta = {
@@ -253,14 +270,14 @@ export const useFleetMRTState = <
   }, [mrtColumnManager.columns, filterOptionsMap, isLoadingOptions]);
 
   const columnFilters = useMemo(() => {
-    return Object.entries(selectedOptions?.filters || {}).map(([id, value]) => {
+    return Object.entries(activeFilters).map(([id, value]) => {
       const colId = filterByFieldToId.get(normalizeFilterKey(id)) || id;
       return {
         id: colId,
         value,
       };
     });
-  }, [selectedOptions?.filters, filterByFieldToId]);
+  }, [activeFilters, filterByFieldToId]);
 
   // Reset row selection when filters change
   useEffect(() => {
@@ -291,10 +308,7 @@ export const useFleetMRTState = <
         {},
       );
 
-      const isChanged = !_.isEqual(
-        newFilterOptions,
-        selectedOptions?.filters || {},
-      );
+      const isChanged = !_.isEqual(newFilterOptions, activeFilters);
 
       if (isChanged) {
         if (onColumnFiltersChangeOverride) {
@@ -311,7 +325,7 @@ export const useFleetMRTState = <
       columnFilters,
       setSearchParams,
       idToFilterByField,
-      selectedOptions?.filters,
+      activeFilters,
       pagerCtx,
       onColumnFiltersChangeOverride,
     ],

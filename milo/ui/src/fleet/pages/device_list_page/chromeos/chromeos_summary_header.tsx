@@ -18,18 +18,17 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
-import { PagerContext } from '@/common/components/params_pager';
-import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
+import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
 import { LeaseStateInfo } from '@/fleet/components/lease_state_info/lease_state_info';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
-import { SelectedOptions } from '@/fleet/types';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { getFilterQueryString } from '@/fleet/utils/search_param';
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import { getFilterKey } from './chromeos_fields';
+import { useChromeOSFilters } from './use_chromeos_filters';
 
 const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
   borderRight: `1px solid ${colors.grey[300]}`,
@@ -45,44 +44,36 @@ const METRIC_CONTAINER_STYLES: CSSObject = {
   gap: 8,
 };
 
-// Recommended filters for finding all CrOS labstations. See: b/398911822#comment4
-const LABSTATION_FILTERS: SelectedOptions = {
-  'labels.label-pool': [
-    'labstation_tryjob',
-    'labstation_main',
-    'labstation_canary',
-  ],
-};
+const LABSTATION_FILTER_STR =
+  'labels."label-pool" = ("labstation_tryjob" OR "labstation_main" OR "labstation_canary")';
 
-export interface ChromeOSSummaryHeaderProps {
-  selectedOptions: SelectedOptions;
-  pagerContext: PagerContext;
-}
-
-/**
- * MainMetrics is the presentational component for the main metrics section.
- * It is responsible for displaying the metrics, but not for fetching the data.
- */
-export function ChromeOSSummaryHeader({
-  selectedOptions,
-  pagerContext,
-}: ChromeOSSummaryHeaderProps) {
+export function ChromeOSSummaryHeader() {
   const client = useFleetConsoleClient();
+  const { filterValues, aip160 } = useChromeOSFilters(() => {});
 
   const countQuery = useQuery(
     client.CountDevices.query({
-      filter: stringifyFilters(selectedOptions),
+      filter: aip160(),
       platform: Platform.CHROMEOS,
     }),
   );
 
   const labstationsQuery = useQuery({
     ...client.CountDevices.query({
-      filter: stringifyFilters({ ...selectedOptions, ...LABSTATION_FILTERS }),
+      filter: aip160()
+        ? `${aip160()} AND ${LABSTATION_FILTER_STR}`
+        : LABSTATION_FILTER_STR,
       platform: Platform.CHROMEOS,
     }),
   });
-  const [searchParams, _] = useSyncedSearchParams();
+
+  const setFilterOptions = (key: string, options: string[]) => {
+    const filterKey = getFilterKey(key);
+    const filter = filterValues?.[filterKey];
+    if (filter instanceof StringListFilterCategory) {
+      filter.setSelectedOptions(options);
+    }
+  };
 
   const getContent = () => {
     if (countQuery.isError || labstationsQuery.isError) {
@@ -134,26 +125,18 @@ export function ChromeOSSummaryHeader({
               value={countQuery.data?.taskState?.busy}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  state: ['DEVICE_STATE_LEASED'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions('state', ['DEVICE_STATE_LEASED'])
+              }
             />
             <SingleMetric
               name="Available"
               value={countQuery.data?.taskState?.idle}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  state: ['DEVICE_STATE_AVAILABLE'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions('state', ['DEVICE_STATE_AVAILABLE'])
+              }
             />
           </div>
         </div>
@@ -165,39 +148,25 @@ export function ChromeOSSummaryHeader({
               value={countQuery.data?.deviceState?.ready}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  'labels."dut_state"': ['ready'], // TODO: Hotfix for b/449956551, needs further investigation on quote handling
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() => setFilterOptions('dut_state', ['ready'])}
             />
             <SingleMetric
               name="Need repair"
               value={countQuery.data?.deviceState?.needRepair}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  'labels."dut_state"': ['needs_repair'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions('dut_state', ['needs_repair'])
+              }
             />
             <SingleMetric
               name="Repair failed"
               value={countQuery.data?.deviceState?.repairFailed}
               total={countQuery.data?.total}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  'labels."dut_state"': ['repair_failed'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions('dut_state', ['repair_failed'])
+              }
             />
             <SingleMetric
               name="Needs deploy"
@@ -209,13 +178,9 @@ export function ChromeOSSummaryHeader({
                 />
               }
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  'labels."dut_state"': ['needs_deploy'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions('dut_state', ['needs_deploy'])
+              }
             />
             <SingleMetric
               name="Needs replacement"
@@ -227,13 +192,9 @@ export function ChromeOSSummaryHeader({
                 />
               }
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  'labels."dut_state"': ['needs_replacement'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions('dut_state', ['needs_replacement'])
+              }
             />
             <SingleMetric
               name="Need manual repair"
@@ -241,13 +202,9 @@ export function ChromeOSSummaryHeader({
               total={countQuery.data?.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  'labels."dut_state"': ['needs_manual_repair'],
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() =>
+                setFilterOptions('dut_state', ['needs_manual_repair'])
+              }
             />
           </div>
         </div>
@@ -259,28 +216,28 @@ export function ChromeOSSummaryHeader({
               value={labstationsQuery.data?.deviceState?.ready}
               total={countQuery.data?.total}
               loading={labstationsQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  'labels."dut_state"': ['ready'],
-                  ...LABSTATION_FILTERS,
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() => {
+                setFilterOptions('dut_state', ['ready']);
+                setFilterOptions('label-pool', [
+                  'labstation_tryjob',
+                  'labstation_main',
+                  'labstation_canary',
+                ]);
+              }}
             />
             <SingleMetric
               name="Repair failed"
               value={labstationsQuery.data?.deviceState?.repairFailed}
               total={countQuery.data?.total}
               loading={labstationsQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  'labels."dut_state"': ['repair_failed'],
-                  ...LABSTATION_FILTERS,
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() => {
+                setFilterOptions('dut_state', ['repair_failed']);
+                setFilterOptions('label-pool', [
+                  'labstation_tryjob',
+                  'labstation_main',
+                  'labstation_canary',
+                ]);
+              }}
             />
             <SingleMetric
               name="Needs deploy"
@@ -292,14 +249,14 @@ export function ChromeOSSummaryHeader({
                 />
               }
               loading={labstationsQuery.isPending}
-              filterUrl={getFilterQueryString(
-                {
-                  'labels."dut_state"': ['needs_deploy'],
-                  ...LABSTATION_FILTERS,
-                },
-                searchParams,
-                pagerContext,
-              )}
+              handleClick={() => {
+                setFilterOptions('dut_state', ['needs_deploy']);
+                setFilterOptions('label-pool', [
+                  'labstation_tryjob',
+                  'labstation_main',
+                  'labstation_canary',
+                ]);
+              }}
             />
           </div>
         </div>

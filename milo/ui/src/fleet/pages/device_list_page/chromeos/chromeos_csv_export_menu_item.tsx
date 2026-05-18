@@ -25,9 +25,9 @@ import { exportAs } from '@/fleet/utils/export';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { Column } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { useExportData } from './use_export_data';
+import { useChromeOSExportData } from './use_chromeos_export_data';
 
-export type CSVExportMenuItemProps = {
+export type ChromeOSCSVExportMenuItemProps = {
   displayText: string;
   columnsToExport: Column[];
   idsToExport?: string[];
@@ -36,16 +36,19 @@ export type CSVExportMenuItemProps = {
   showNotification: (message: string, severity: AlertColor) => void;
 };
 
-export function CSVExportMenuItem({
+export function ChromeOSCSVExportMenuItem({
   displayText,
   columnsToExport,
   idsToExport,
   onExportComplete,
   fileName,
   showNotification,
-}: CSVExportMenuItemProps) {
+}: ChromeOSCSVExportMenuItemProps) {
   const { trackEvent } = useGoogleAnalytics();
-  const { isFetching, refetch } = useExportData(columnsToExport, idsToExport);
+  const { isFetching, refetch } = useChromeOSExportData(
+    columnsToExport,
+    idsToExport,
+  );
 
   return (
     <MenuItem

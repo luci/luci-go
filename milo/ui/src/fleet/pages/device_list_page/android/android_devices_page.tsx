@@ -37,10 +37,8 @@ import {
   useFleetMRTState,
 } from '@/fleet/components/fc_data_table/use_fleet_mrt_state';
 import { FilterBar } from '@/fleet/components/filter_dropdown/filter_bar';
-import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
-import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
-import { FilterState } from '@/fleet/components/filters/types';
+import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
   FilterCategory,
   FilterCategoryBuilder,
@@ -48,6 +46,7 @@ import {
 } from '@/fleet/components/filters/use_filters';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { ANDROID_DEFAULT_COLUMNS } from '@/fleet/config/device_config';
+import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { ANDROID_DEVICES_LOCAL_STORAGE_KEY } from '@/fleet/constants/local_storage_keys';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useOrderByParam } from '@/fleet/hooks/order_by';
@@ -58,7 +57,6 @@ import { ANDROID_COLUMN_OVERRIDES } from '@/fleet/pages/device_list_page/android
 import { ANDROID_EXTRA_FILTERS } from '@/fleet/pages/device_list_page/android/android_filters';
 import { AndroidSummaryHeader } from '@/fleet/pages/device_list_page/android/android_summary_header';
 import { AdminTasksAlert } from '@/fleet/pages/device_list_page/common/admin_tasks_alert';
-import { dimensionsToFilterOptions } from '@/fleet/pages/device_list_page/common/helpers';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { getWrongColumnsFromParams } from '@/fleet/utils/get_wrong_columns_from_params';
 import { useWarnings, WarningNotifications } from '@/fleet/utils/use_warnings';
@@ -86,29 +84,6 @@ const AVG_UTILIZATION_FEATURE = createFeatureFlag({
 });
 
 const platform = Platform.ANDROID;
-
-const computeSelectedOptions = (
-  filterValues: Record<string, FilterCategory> | undefined,
-): FilterState => {
-  const filters: Record<string, string[]> = {};
-  if (filterValues) {
-    for (const [key, category] of Object.entries(filterValues)) {
-      if (!category.isActive()) continue;
-      let selected: string[] = [];
-      if (category instanceof StringListFilterCategory) {
-        selected = category.getSelectedOptions();
-      }
-      if (selected.length > 0) {
-        const matchKey = normalizeFilterKey(key);
-        const unquotedSelected = selected.map((k) =>
-          typeof k === 'string' ? normalizeFilterKey(k) : k,
-        );
-        filters[matchKey] = unquotedSelected;
-      }
-    }
-  }
-  return { filters, error: undefined };
-};
 
 export const AndroidDevicesPage = () => {
   const showAvgUtilization = useFeatureFlag(AVG_UTILIZATION_FEATURE);
@@ -145,13 +120,37 @@ export const AndroidDevicesPage = () => {
         .setMax(100);
     }
     if (!isDimensionsQueryProperlyLoaded) return extraFilters;
-    return {
-      ...dimensionsToFilterOptions(
-        dimensionsQuery.data!,
-        ANDROID_COLUMN_OVERRIDES,
-      ),
-      ...extraFilters,
-    };
+
+    const filters = extraFilters as Record<
+      string,
+      FilterCategoryBuilder<FilterCategory>
+    >;
+    const data = dimensionsQuery.data!;
+    const baseKeys = Object.keys(data.baseDimensions);
+
+    for (const [key, value] of [
+      ...Object.entries(data.baseDimensions),
+      ...Object.entries(data.labels),
+    ]) {
+      if (value.values.length === 0) continue;
+
+      const isBase = baseKeys.includes(key);
+      const filterKey = isBase ? `"${key}"` : `labels."${key}"`;
+
+      if (filters[filterKey]) continue;
+
+      const override = ANDROID_COLUMN_OVERRIDES[key];
+      const label = override?.header || key;
+
+      filters[filterKey] = new StringListFilterCategoryBuilder()
+        .setLabel(label)
+        .setOptions([
+          { label: BLANK_VALUE, value: BLANK_VALUE },
+          ...value.values.map((v) => ({ label: v, value: v })),
+        ]);
+    }
+
+    return filters;
   }, [
     isDimensionsQueryProperlyLoaded,
     dimensionsQuery.data,
@@ -163,11 +162,6 @@ export const AndroidDevicesPage = () => {
   });
 
   const [isFiltering, setIsFiltering] = useState(false);
-
-  const selectedOptions = useMemo<FilterState>(
-    () => computeSelectedOptions(filterCategoryDatas.filterValues),
-    [filterCategoryDatas.filterValues],
-  );
 
   const onApplyFilter = useCallback(() => {
     trackEvent('filter_changed', {
@@ -219,11 +213,11 @@ export const AndroidDevicesPage = () => {
     return _.uniq([...requiredCols, ...extraColumnIds]);
   }, [searchParams, extraColumnIds]);
 
-  const columnsList = useMemo(() => {
+  const visibleColumns = useMemo(() => {
     return getAndroidColumns(columnIds);
   }, [columnIds]);
 
-  const allDimensionColumns = useMemo(() => {
+  const availableColumns = useMemo(() => {
     const list: { id: string; label: string }[] = [];
 
     ANDROID_DEFAULT_COLUMNS.forEach((id) => list.push({ id, label: id }));
@@ -279,8 +273,8 @@ export const AndroidDevicesPage = () => {
   const fleetMrtState = useFleetMRTState({
     setSearchParams,
     pagerCtx,
-    selectedOptions,
-    columnsList: columnsList as unknown as FleetColumnDefExt[],
+    filterValues: filterCategoryDatas.filterValues,
+    visibleColumns: visibleColumns as unknown as FleetColumnDefExt[],
     orderByParam,
     localStorageKey: ANDROID_DEVICES_LOCAL_STORAGE_KEY,
     defaultColumnIds: ANDROID_DEFAULT_COLUMNS,
@@ -319,7 +313,7 @@ export const AndroidDevicesPage = () => {
 
   const meta = useMemo<FleetTableMeta<AndroidDevice>>(
     () => ({
-      allDimensionColumns,
+      availableColumns,
       visibleColumnIds,
       onToggleColumn,
       selectOnlyColumn,
@@ -334,7 +328,7 @@ export const AndroidDevicesPage = () => {
       nextPageToken: devicesQuery.data?.nextPageToken,
     }),
     [
-      allDimensionColumns,
+      availableColumns,
       visibleColumnIds,
       onToggleColumn,
       selectOnlyColumn,
@@ -421,7 +415,7 @@ export const AndroidDevicesPage = () => {
       isFiltering,
       setColumnVisibility,
       visibleColumnIds,
-      allDimensionColumns,
+      availableColumns,
       onToggleColumn,
       resetDefaultColumns,
       resetColumnWidths,

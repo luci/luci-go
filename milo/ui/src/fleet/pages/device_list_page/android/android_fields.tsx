@@ -38,7 +38,7 @@ import { getAndroidStatusColor } from './android_state';
 
 export type AndroidColumnDef = MRT_ColumnDef<AndroidDevice> & {
   orderByField?: string;
-  filterByField?: string;
+  filterKey?: string;
 };
 
 export interface DeviceDisplayProps {

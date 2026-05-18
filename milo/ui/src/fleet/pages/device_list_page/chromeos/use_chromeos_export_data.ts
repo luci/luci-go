@@ -26,7 +26,7 @@ import {
   ExportDevicesToCSVResponse,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-export const useExportData = (
+export const useChromeOSExportData = (
   columnsToExport: Column[],
   idsToExport?: string[],
 ) => {

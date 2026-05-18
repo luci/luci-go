@@ -34,7 +34,7 @@ export function FleetTopToolbar<TData extends MRT_RowData>({
   const meta = useFleetTableMeta(table);
 
   const {
-    allDimensionColumns = [],
+    availableColumns = [],
     visibleColumnIds = [],
     onToggleColumn = () => {},
     selectOnlyColumn = () => {},
@@ -58,7 +58,7 @@ export function FleetTopToolbar<TData extends MRT_RowData>({
       </Stack>
       <Stack direction="row" spacing={1} alignItems="center">
         <ColumnsButton
-          allColumns={allDimensionColumns}
+          allColumns={availableColumns}
           visibleColumns={visibleColumnIds}
           onToggleColumn={onToggleColumn}
           selectOnlyColumn={selectOnlyColumn}

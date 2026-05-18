@@ -209,7 +209,7 @@ export const BrowserDevicesPage = () => {
     [columnIds],
   );
 
-  const columnsList = useMemo(
+  const visibleColumns = useMemo(
     () => Object.values(columnsRecord),
     [columnsRecord],
   );
@@ -232,7 +232,7 @@ export const BrowserDevicesPage = () => {
       for (const [filterKey, filterValues] of Object.entries(dimensions)) {
         const key = getColumnId(filterKey);
         const label = (columnsRecord[key]?.header || key) as string;
-        const value = columnsRecord[key]?.filterByField || key;
+        const value = columnsRecord[key]?.filterKey || key;
 
         filters[value] = new StringListFilterCategoryBuilder()
           .setLabel(label)
@@ -302,8 +302,8 @@ export const BrowserDevicesPage = () => {
   const fleetMrtState = useFleetMRTState({
     setSearchParams,
     pagerCtx,
-    selectedOptions,
-    columnsList: columnsList as unknown as FleetColumnDefExt[],
+    filterValues: filterCategoryDatas.filterValues,
+    visibleColumns: visibleColumns as unknown as FleetColumnDefExt[],
 
     orderByParam,
     localStorageKey: BROWSER_DEVICES_LOCAL_STORAGE_KEY,
@@ -313,7 +313,7 @@ export const BrowserDevicesPage = () => {
 
   const meta = useMemo<FleetTableMeta<BrowserDevice>>(
     () => ({
-      allDimensionColumns: fleetMrtState.allColumns,
+      availableColumns: fleetMrtState.allColumns,
       visibleColumnIds: fleetMrtState.visibleColumnIds,
       onToggleColumn: fleetMrtState.mrtColumnManager.onToggleColumn,
       selectOnlyColumn: fleetMrtState.mrtColumnManager.selectOnlyColumn,

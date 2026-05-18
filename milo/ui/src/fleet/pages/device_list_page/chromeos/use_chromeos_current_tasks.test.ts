@@ -28,7 +28,7 @@ import {
 } from '@/testing_tools/jest_utils';
 import { mockFetchAuthState } from '@/testing_tools/mocks/authstate_mock';
 
-import { useCurrentTasks } from './use_current_tasks';
+import { useChromeOSCurrentTasks } from './use_chromeos_current_tasks';
 
 const LIST_BOTS_ENDPOINT = `https://${DEVICE_TASKS_SWARMING_HOST}/prpc/swarming.v2.Bots/ListBots`;
 
@@ -52,7 +52,7 @@ function mockSwarmingListBotsError(errorMessage: string) {
   });
 }
 
-describe('useCurrentTasks', () => {
+describe('useChromeOSCurrentTasks', () => {
   beforeEach(() => {
     mockFetchAuthState();
   });
@@ -62,7 +62,7 @@ describe('useCurrentTasks', () => {
   });
 
   it('should return an empty map and no error for no devices', async () => {
-    const { result } = renderHook(() => useCurrentTasks([]), {
+    const { result } = renderHook(() => useChromeOSCurrentTasks([]), {
       wrapper: FakeContextProvider,
     });
 
@@ -87,7 +87,7 @@ describe('useCurrentTasks', () => {
       }),
     ]);
 
-    const { result } = renderHook(() => useCurrentTasks(devices), {
+    const { result } = renderHook(() => useChromeOSCurrentTasks(devices), {
       wrapper: FakeContextProvider,
     });
 
@@ -168,7 +168,7 @@ describe('useCurrentTasks', () => {
     );
 
     const { result } = renderHook(
-      () => useCurrentTasks(devices, { chunkSize }),
+      () => useChromeOSCurrentTasks(devices, { chunkSize }),
       {
         wrapper: FakeContextProvider,
       },
@@ -202,7 +202,7 @@ describe('useCurrentTasks', () => {
     const devices = [createDevice('dut-error')];
     mockSwarmingListBotsError('Swarming API error: Timeout');
 
-    const { result } = renderHook(() => useCurrentTasks(devices), {
+    const { result } = renderHook(() => useChromeOSCurrentTasks(devices), {
       wrapper: FakeContextProvider,
     });
 

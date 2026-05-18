@@ -62,7 +62,7 @@ export type FC_ColumnDef<
 > = MRT_ColumnDef<TData, TValue> & {
   filterRangeMin?: number;
   filterRangeMax?: number;
-  filterByField?: string;
+  filterKey?: string;
 };
 
 const SELECT_COL_PADDING = '8px !important';
@@ -201,16 +201,13 @@ export const useFCDataTable = <TData extends MRT_RowData>(
 
       // Add the filter dropdown item if the column supports filtering
       if (isFilterable) {
-        if (items.length > 0) {
-          items.push(<Divider key="divider-filter" />);
-        }
-        const filterByField = (column.columnDef as FC_ColumnDef<TData>)
-          .filterByField;
-        const filter =
-          (filterByField && filterValues?.[filterByField]) ||
-          filterValues?.[column.id];
+        const colDef = column.columnDef as FC_ColumnDef<TData>;
+        const filterKey = colDef.filterKey || column.id;
+        const filter = filterValues?.[filterKey];
+        let filterItem = null;
+
         if (filter) {
-          items.push(
+          filterItem = (
             <FCFilterMenuItem
               key="filter"
               filter={filter}
@@ -218,16 +215,23 @@ export const useFCDataTable = <TData extends MRT_RowData>(
               // TODO: infering if searchinput should be here is not ideal. Either the filter value should hold this as a flag or
               // it should be rendered by the StringListFilterCategory itself
               enableSearchInput={filter instanceof StringListFilterCategory}
-            />,
+            />
           );
-        } else {
-          items.push(
+        } else if (column.columnDef.filterSelectOptions || !filterValues) {
+          filterItem = (
             <MRTFilterMenuItem_OLD
               key="filter"
               column={column as unknown as MRT_Column<MRT_RowData, unknown>}
               closeMenu={closeMenu}
-            />,
+            />
           );
+        }
+
+        if (filterItem) {
+          if (items.length > 0) {
+            items.push(<Divider key="divider-filter" />);
+          }
+          items.push(filterItem);
         }
       }
 

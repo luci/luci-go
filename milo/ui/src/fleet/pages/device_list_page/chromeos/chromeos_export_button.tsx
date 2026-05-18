@@ -17,13 +17,13 @@ import { Button, Menu, Snackbar, Alert, AlertColor } from '@mui/material';
 import { MRT_TableInstance, MRT_RowData } from 'material-react-table';
 import { useState, SyntheticEvent, useMemo } from 'react';
 
-import { chromeOSFriendlyNames } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
+import { getFieldDefinition } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
 
-import { CSVExportMenuItem } from './csv_export_menu_item';
+import { ChromeOSCSVExportMenuItem } from './chromeos_csv_export_menu_item';
 
 const FILE_NAME = 'fleet_console_devices';
 
-interface ExportButtonMrtProps<TData extends MRT_RowData> {
+interface ChromeOSExportButtonProps<TData extends MRT_RowData> {
   table: MRT_TableInstance<TData>;
   selectedRowIds: string[];
 }
@@ -34,10 +34,10 @@ interface NotificationState {
   severity: AlertColor;
 }
 
-export function ExportButton_MRT<TData extends MRT_RowData>({
+export function ChromeOSExportButton<TData extends MRT_RowData>({
   table,
   selectedRowIds,
-}: ExportButtonMrtProps<TData>) {
+}: ChromeOSExportButtonProps<TData>) {
   const columnsToExport = useMemo(
     () =>
       table
@@ -48,11 +48,7 @@ export function ExportButton_MRT<TData extends MRT_RowData>({
         )
         .map((column) => ({
           name: column.id,
-          displayName:
-            chromeOSFriendlyNames[column.id] ||
-            (typeof column.columnDef.header === 'string'
-              ? column.columnDef.header
-              : column.id),
+          displayName: getFieldDefinition(column.id).header,
         })),
     [table],
   );
@@ -93,14 +89,14 @@ export function ExportButton_MRT<TData extends MRT_RowData>({
         Export
       </Button>
       <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={handleClose}>
-        <CSVExportMenuItem
+        <ChromeOSCSVExportMenuItem
           displayText="Export all (CSV)"
           columnsToExport={columnsToExport}
           onExportComplete={handleClose}
           fileName={FILE_NAME}
           showNotification={showNotification}
         />
-        <CSVExportMenuItem
+        <ChromeOSCSVExportMenuItem
           displayText={
             exportSelected
               ? 'Export selected (CSV)'

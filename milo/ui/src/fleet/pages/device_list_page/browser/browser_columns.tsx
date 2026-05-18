@@ -94,7 +94,7 @@ export const getBrowserColumn = (id: string): BrowserColumnDef => {
     accessorKey: id,
     header: getColumnHeader(labelKey, source),
     orderByField: id,
-    filterByField: source ? `${source}."${labelKey}"` : id,
+    filterKey: source ? `${source}."${labelKey}"` : id,
     enableEditing: false,
     minSize: 70,
     maxSize: 700,

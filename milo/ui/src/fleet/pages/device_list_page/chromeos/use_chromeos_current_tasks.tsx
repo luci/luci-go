@@ -50,7 +50,7 @@ export interface CurrentTasksResult {
  * maximum number of values supported for a IN operation in datastore.
  * @returns An object containing the mapping of DUT ID to Task ID, pending state, and error state.
  */
-export const useCurrentTasks = (
+export const useChromeOSCurrentTasks = (
   devices: readonly Device[],
   options?: {
     chunkSize?: number;

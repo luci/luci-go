@@ -39,7 +39,7 @@ export const getAndroidColumns = (columnIds: string[]): AndroidColumnDef[] => {
       accessorKey: id,
       header: id,
       orderByField: 'labels.' + id,
-      filterByField: isTopLevelProtoField ? `"${id}"` : `labels."${id}"`,
+      filterKey: isTopLevelProtoField ? `"${id}"` : `labels."${id}"`,
       enableEditing: false,
       minSize: 70,
       maxSize: 700,

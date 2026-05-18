@@ -12,297 +12,140 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Typography from '@mui/material/Typography';
-import { MRT_ColumnDef } from 'material-react-table';
-import React from 'react';
-
-import { TaskResult } from '@/fleet/components/device_table/use_current_tasks';
-import { FCHtmlTooltip } from '@/fleet/components/fc_html_tooltip';
-import { CellWithTooltip } from '@/fleet/components/table';
-import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
-import {
-  renderChipCell,
-  StateUnion,
-} from '@/fleet/components/table/cell_with_chip';
-import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
-import { generateDutNameRedirectURL } from '@/fleet/config/device_config';
-import { getSwarmingStateDocLinkForLabel } from '@/fleet/config/flops_doc_mapping';
-import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
-import { getStatusColor } from '@/fleet/pages/device_list_page/chromeos/dut_state';
+import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
+import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { FC_CellProps } from '@/fleet/types/table';
-import {
-  DEVICE_TASKS_SWARMING_HOST,
-  generateBuildUrl,
-} from '@/fleet/utils/builds';
-import { getDeviceStateString } from '@/fleet/utils/devices';
-import { getTaskURL } from '@/fleet/utils/swarming';
-import {
-  Device,
-  DeviceState,
-  DeviceType,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-export const chromeOSFriendlyNames: Record<string, string> = {
-  id: 'ID',
-  dut_id: 'Dut ID',
-  type: 'Type',
-  state: 'Lease state',
-  host: 'Address',
-  port: 'Port',
-  current_task: 'Current Task',
-  // TODO: Address underlying mapping issue to use friendly name.
-  // User explicitly requested to keep 'dut_state' raw to avoid mapping issues.
-  dut_state: 'dut_state',
-  'label-servo_state': 'Servo State',
-  bluetooth_state: 'Bluetooth State',
-  'label-model': 'Model',
-  'label-board': 'Board',
-  dut_name: 'Dut Name',
-  'label-associated_hostname': 'Associated Hostname',
+import {
+  CHROMEOS_FIELD_DEFINITIONS,
+  getLabelValues,
+  KnownChromeOSColumnId,
+} from './chromeos_fields_config';
+import {
+  ChromeOSColumnDef,
+  ChromeOSDevice,
+  FieldDefinition,
+} from './chromeos_types';
+
+export type {
+  ChromeOSDevice,
+  FieldDefinition,
+  ChromeOSColumnDef,
+  KnownChromeOSColumnId,
 };
 
-// current_task is populated separated from ListDevices through direct calls to the Swarming
-// API, requiring device data to be merged with task data.
-export type ChromeOSDevice = Device & { current_task?: TaskResult };
-
-export type ChromeOSColumnDef = MRT_ColumnDef<ChromeOSDevice> & {
-  orderByField?: string;
-  filterByField?: string;
+export const getChromeOSColumns = (
+  columnIds: string[],
+): ChromeOSColumnDef[] => {
+  return columnIds.map((id) => getFieldDefinition(id).columnDef);
 };
 
-export type ChromeOSColumnOverride = Omit<
-  Partial<ChromeOSColumnDef>,
-  'Cell'
-> & {
+export type CompleteFieldDefinition = FieldDefinition & {
+  id: string;
+  header: string;
+  accessorFn: (device: ChromeOSDevice) => unknown;
   renderCell?: (props: FC_CellProps<ChromeOSDevice>) => React.ReactNode;
+  columnDef: ChromeOSColumnDef;
+  filterKey: ChromeOSFilterKey;
 };
 
-export const CHROMEOS_COLUMN_OVERRIDES: Record<string, ChromeOSColumnOverride> =
-  {
-    id: {
-      header: 'ID',
-      accessorFn: (device) => device.id,
-      renderCell: (props: FC_CellProps<ChromeOSDevice>) => {
-        const id = String(props.cell.getValue() ?? '');
-        const dutId = props.row.original.dutId;
-        const names = dutId ? [id, dutId] : id;
-
-        const CellWithLink = renderCellWithLink<ChromeOSDevice>({
-          linkGenerator: (value) => generateChromeOsDeviceDetailsURL(value),
-          newTab: false,
-        });
-
-        return (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              maxWidth: '100%',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            <BuganizerLink name={names} project="chromeos" />
-            <CellWithLink {...props} />
-          </div>
-        );
-      },
-      orderByField: 'id',
-      filterByField: 'id',
-    },
-    dut_id: {
-      header: 'Dut ID',
-      accessorFn: (device) => device.dutId,
-      orderByField: 'dut_id',
-      filterByField: 'dut_id',
-    },
-    type: {
-      header: 'Type',
-      accessorFn: (device) => DeviceType[device.type],
-      orderByField: 'type',
-      filterByField: 'type',
-    },
-    state: {
-      header: 'Lease state',
-      accessorFn: (device) => getDeviceStateString(device),
-      orderByField: 'state',
-      filterByField: 'state',
-      renderCell: (params: FC_CellProps<ChromeOSDevice>) => {
-        const stateValue = String(params.cell.getValue() ?? '');
-
-        if (stateValue === '') return null;
-
-        const stateToTooltip: Record<string, string> = {
-          [DeviceState.DEVICE_STATE_UNSPECIFIED]:
-            'This device is not available for lease.',
-        };
-
-        const device = params.row.original;
-        if (stateToTooltip[device.state] !== undefined) {
-          return (
-            <FCHtmlTooltip
-              title={
-                <Typography color="inherit" variant="body2">
-                  {stateToTooltip[device.state]}
-                </Typography>
-              }
-            >
-              <span>{stateValue}</span>
-            </FCHtmlTooltip>
-          );
-        } else {
-          return (
-            <CellWithTooltip
-              column={params.column}
-              value={stateValue}
-            ></CellWithTooltip>
-          );
+const createColumnDef = (
+  id: string,
+  def: FieldDefinition | undefined,
+  header: string,
+  accessorFn: (device: ChromeOSDevice) => unknown,
+  filterKey: ChromeOSFilterKey,
+): ChromeOSColumnDef => {
+  return {
+    id: id,
+    header: header,
+    orderByField:
+      def?.orderByField ?? (def?.type === 'label' ? `labels.${id}` : id),
+    filterKey: filterKey,
+    enableEditing: false,
+    minSize: 70,
+    maxSize: 700,
+    enableSorting: true,
+    accessorFn: accessorFn,
+    ...(def?.renderCell
+      ? {
+          Cell: (props: FC_CellProps<ChromeOSDevice>) => def.renderCell!(props),
         }
-      },
-    },
-    host: {
-      header: 'Address',
-      accessorFn: (device) => device.address?.host || '',
-      orderByField: 'host',
-      filterByField: 'host',
-    },
-    port: {
-      header: 'Port',
-      accessorFn: (device) => device.address?.port?.toString() ?? '',
-      orderByField: 'port',
-      filterByField: 'port',
-    },
-    current_task: {
-      header: 'Current Task',
-      enableSorting: false,
-      enableColumnFilter: false,
-      accessorFn: (row) => row.current_task,
-      renderCell: (props: FC_CellProps<ChromeOSDevice>) => {
-        const val = props.cell.getValue<TaskResult>();
-        if (val === 'loading') {
-          return <></>;
-        }
-
-        if (
-          val === undefined ||
-          val === null ||
-          (!val.taskName && !val.taskId)
-        ) {
-          return <CellWithTooltip column={props.column} value="idle" />;
-        }
-        return renderCurrentTaskCell(props);
-      },
-    },
-    dut_state: {
-      header: 'dut_state',
-      accessorFn: (device) =>
-        device.deviceSpec?.labels['dut_state']?.values?.[0]?.toUpperCase() ??
-        '',
-      renderCell: (params: FC_CellProps<ChromeOSDevice>) => {
-        const stateValue = String(params.cell.getValue() ?? '');
-
-        if (stateValue === '') return <></>;
-
-        return renderChipCell<ChromeOSDevice>(
-          getSwarmingStateDocLinkForLabel,
-          getStatusColor,
-          undefined,
-          true,
-          stateValue.toUpperCase() as StateUnion,
-        )(params);
-      },
-    },
-    'label-servo_state': {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: getSwarmingStateDocLinkForLabel,
-      }),
-    },
-    bluetooth_state: {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: getSwarmingStateDocLinkForLabel,
-      }),
-    },
-    'label-model': {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: (value) => `http://go/dlm-model/${value}`,
-      }),
-    },
-    'label-board': {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: (value) => `http://go/dlm-board/${value}`,
-      }),
-    },
-    dut_name: {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: generateDutNameRedirectURL,
-      }),
-    },
-    'label-associated_hostname': {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: generateDutNameRedirectURL,
-      }),
-    },
-    'label-primary_dut': {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: generateDutNameRedirectURL,
-      }),
-    },
-    'label-managed_dut': {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: generateDutNameRedirectURL,
-      }),
-    },
-    'label-servo_usb_state': {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: (value) => getSwarmingStateDocLinkForLabel(`${value}-2`),
-      }),
-    },
-    bot_id: {
-      renderCell: renderCellWithLink<ChromeOSDevice>({
-        linkGenerator: (value) =>
-          `https://${DEVICE_TASKS_SWARMING_HOST}/bot?id=${value}`,
-      }),
-    },
-    realm: {
-      header: 'Realm',
-      accessorFn: (device) => device.realm || '',
-      orderByField: 'realm',
-      filterByField: 'realm',
-    },
+      : {
+          Cell: ({ cell }: FC_CellProps<ChromeOSDevice>) => {
+            const val = cell.getValue();
+            const strVal = Array.isArray(val)
+              ? labelValuesToString(val as string[])
+              : String(val ?? '');
+            return <EllipsisTooltip>{strVal}</EllipsisTooltip>;
+          },
+        }),
   };
+};
 
-const renderCurrentTaskCell = renderCellWithLink<ChromeOSDevice>({
-  linkGenerator: (_task, device) => {
-    const task = device.current_task;
-    if (!task || task === 'loading') {
-      return '';
-    }
-    const buildRegex =
-      /^bb-(?<buildId>\d+)-(?<project>[^/]+)\/(?<bucket>[^/]+)\/(?<builder>[^/]+)$/;
-    const match = task.taskName.match(buildRegex);
-    if (match?.groups) {
-      const { project, bucket, builder, buildId } = match.groups;
-      return generateBuildUrl({
-        project,
-        bucket,
-        builder,
-        buildId: `b${buildId}`,
-      });
-    }
-    return getTaskURL(task.taskId);
-  },
-  valueGetter: (device) => {
-    const task = device.current_task;
-    if (!task || task === 'loading') {
-      return '';
-    }
-    return task.taskName ? `${task.taskName} (${task.taskId})` : task.taskId;
-  },
-});
+/**
+ * Factory function to get the complete definition for a field.
+ * If the field is not in CHROMEOS_FIELD_DEFINITIONS, it generates a fallback
+ * definition assuming it is a dynamically discovered label.
+ */
+export const getFieldDefinition = (
+  id: KnownChromeOSColumnId | (string & {}),
+): CompleteFieldDefinition => {
+  const def = CHROMEOS_FIELD_DEFINITIONS[
+    id as keyof typeof CHROMEOS_FIELD_DEFINITIONS
+  ] as FieldDefinition | undefined;
+
+  const header = def?.header || id;
+  const accessorFn =
+    def?.accessorFn || ((device: ChromeOSDevice) => getLabelValues(device, id));
+  const filterKey = (def?.filterKey || getFilterKey(id)) as ChromeOSFilterKey;
+
+  const columnDef = createColumnDef(id, def, header, accessorFn, filterKey);
+
+  if (def) {
+    return {
+      ...def,
+      id,
+      header,
+      accessorFn,
+      columnDef,
+      filterKey,
+    };
+  }
+  return {
+    type: 'label',
+    id,
+    header,
+    accessorFn,
+    columnDef,
+    filterKey,
+  };
+};
+
+type ExtractFilterKey<T> = T extends { filterKey: infer K } ? K : never;
+export type ConfigFilterKeys = ExtractFilterKey<
+  (typeof CHROMEOS_FIELD_DEFINITIONS)[keyof typeof CHROMEOS_FIELD_DEFINITIONS]
+>;
+
+export type ChromeOSFilterKey =
+  | KnownChromeOSColumnId
+  | `labels."${string}"`
+  | ConfigFilterKeys;
+
+export const getFilterKey = (
+  id: KnownChromeOSColumnId | (string & {}),
+): ChromeOSFilterKey => {
+  const def = CHROMEOS_FIELD_DEFINITIONS[
+    id as keyof typeof CHROMEOS_FIELD_DEFINITIONS
+  ] as FieldDefinition | undefined;
+  if (def?.filterKey) return def.filterKey;
+  if (def?.type === 'base') return id as ChromeOSFilterKey;
+  return `labels."${id}"` as ChromeOSFilterKey;
+};
 
 export const EXTRA_COLUMN_IDS = [
   'id',
   'dut_id',
   'current_task',
   'realm',
-] satisfies (keyof typeof CHROMEOS_COLUMN_OVERRIDES)[];
+] satisfies (keyof typeof CHROMEOS_FIELD_DEFINITIONS)[];
