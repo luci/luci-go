@@ -42,7 +42,7 @@ import {
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { DateTime } from 'luxon';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { ChartSeriesEditor } from '@/crystal_ball/components';
 import { Column } from '@/crystal_ball/constants';
@@ -141,39 +141,6 @@ export function PeriodComparisonWidget({
   dataSpecs,
   onUpdate,
 }: PeriodComparisonWidgetProps): React.ReactElement {
-  const [hiddenSeriesIds, setHiddenSeriesIds] = useState<Set<string>>(
-    new Set(),
-  );
-
-  const handleToggleVisibility = useCallback((seriesId: string) => {
-    setHiddenSeriesIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(seriesId)) {
-        next.delete(seriesId);
-      } else {
-        next.add(seriesId);
-      }
-      return next;
-    });
-  }, []);
-
-  const handleShowOnly = useCallback(
-    (seriesId: string) => {
-      const allIds = widget.series?.map((s) => s.id) ?? [];
-      setHiddenSeriesIds(new Set(allIds.filter((id) => id !== seriesId)));
-    },
-    [widget.series],
-  );
-
-  const handleShowAll = useCallback(() => {
-    setHiddenSeriesIds(new Set());
-  }, []);
-
-  const handleHideAll = useCallback(() => {
-    const allIds = widget.series?.map((s) => s.id) ?? [];
-    setHiddenSeriesIds(new Set(allIds));
-  }, [widget.series]);
-
   const handleSeriesUpdate = (updatedSeries: PerfChartSeries[]) => {
     onUpdate(
       PerfChartWidget.fromPartial({
@@ -604,9 +571,7 @@ export function PeriodComparisonWidget({
                       s.displayName === series.legendLabel ||
                       s.metricField === series.metricField,
                   );
-                  return !hiddenSeriesIds.has(
-                    configuredSeries?.id ?? series.seriesId,
-                  );
+                  return !(configuredSeries?.hidden ?? false);
                 })
                 .map((series, seriesIdx) => {
                   const configuredSeries = widget.series?.find(
@@ -751,11 +716,6 @@ export function PeriodComparisonWidget({
       <ChartSeriesEditor
         series={[...(widget.series ?? [])]}
         onUpdateSeries={handleSeriesUpdate}
-        hiddenSeriesIds={hiddenSeriesIds}
-        onToggleVisibility={handleToggleVisibility}
-        onShowOnly={handleShowOnly}
-        onShowAll={handleShowAll}
-        onHideAll={handleHideAll}
         dataSpecId={widget.dataSpecId}
         globalFilters={globalFilters}
         widgetFilters={widget.filters}

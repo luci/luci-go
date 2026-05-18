@@ -433,26 +433,58 @@ describe('ChartSeriesEditor', () => {
     expect(updatedSeries[2].parentSeriesId).toBe('series-1');
   });
 
-  it('calls onShowAll when "Show All" is clicked', async () => {
-    const onShowAll = jest.fn();
-    render(<ChartSeriesEditor {...defaultProps} onShowAll={onShowAll} />);
+  it('updates all series to unhidden when "Show All" is clicked', async () => {
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        id: 's1',
+        displayName: 'S1',
+        metricField: 'm1',
+        hidden: true,
+      }),
+      PerfChartSeries.fromPartial({
+        id: 's2',
+        displayName: 'S2',
+        metricField: 'm2',
+        hidden: true,
+      }),
+    ];
+    render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
 
     const showAllButton = screen.getByText('Show All');
     expect(showAllButton).toBeInTheDocument();
 
     fireEvent.click(showAllButton);
-    expect(onShowAll).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
+    const updatedSeries = defaultProps.onUpdateSeries.mock.lastCall[0];
+    expect(updatedSeries[0].hidden).toBe(false);
+    expect(updatedSeries[1].hidden).toBe(false);
   });
 
-  it('calls onHideAll when "Hide All" is clicked', async () => {
-    const onHideAll = jest.fn();
-    render(<ChartSeriesEditor {...defaultProps} onHideAll={onHideAll} />);
+  it('updates all series to hidden when "Hide All" is clicked', async () => {
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        id: 's1',
+        displayName: 'S1',
+        metricField: 'm1',
+        hidden: false,
+      }),
+      PerfChartSeries.fromPartial({
+        id: 's2',
+        displayName: 'S2',
+        metricField: 'm2',
+        hidden: false,
+      }),
+    ];
+    render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
 
     const hideAllButton = screen.getByText('Hide All');
     expect(hideAllButton).toBeInTheDocument();
 
     fireEvent.click(hideAllButton);
-    expect(onHideAll).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
+    const updatedSeries = defaultProps.onUpdateSeries.mock.lastCall[0];
+    expect(updatedSeries[0].hidden).toBe(true);
+    expect(updatedSeries[1].hidden).toBe(true);
   });
 });
 

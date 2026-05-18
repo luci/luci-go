@@ -83,11 +83,6 @@ import {
 interface ChartSeriesEditorProps {
   series: readonly PerfChartSeries[];
   onUpdateSeries: (updatedSeries: PerfChartSeries[]) => void;
-  hiddenSeriesIds?: Set<string>;
-  onToggleVisibility?: (id: string) => void;
-  onShowOnly?: (id: string) => void;
-  onShowAll?: () => void;
-  onHideAll?: () => void;
   dataSpecId: string;
   globalFilters?: readonly PerfFilter[];
   widgetFilters?: readonly PerfFilter[];
@@ -98,11 +93,6 @@ interface ChartSeriesEditorProps {
 export function ChartSeriesEditor({
   series,
   onUpdateSeries,
-  hiddenSeriesIds,
-  onToggleVisibility,
-  onShowOnly,
-  onShowAll,
-  onHideAll,
   dataSpecId,
   globalFilters,
   widgetFilters,
@@ -188,6 +178,52 @@ export function ChartSeriesEditor({
     },
     [series, onUpdateSeries],
   );
+
+  const handleToggleVisibility = useCallback(
+    (index: number) => {
+      const updatedSeries = [...series];
+      const s = updatedSeries[index];
+      updatedSeries[index] = PerfChartSeries.fromPartial({
+        ...s,
+        hidden: !(s.hidden ?? false),
+      });
+      onUpdateSeries(updatedSeries);
+    },
+    [series, onUpdateSeries],
+  );
+
+  const handleShowOnly = useCallback(
+    (index: number) => {
+      const updatedSeries = series.map((s, i) =>
+        PerfChartSeries.fromPartial({
+          ...s,
+          hidden: i !== index,
+        }),
+      );
+      onUpdateSeries(updatedSeries);
+    },
+    [series, onUpdateSeries],
+  );
+
+  const handleShowAll = useCallback(() => {
+    const updatedSeries = series.map((s) =>
+      PerfChartSeries.fromPartial({
+        ...s,
+        hidden: false,
+      }),
+    );
+    onUpdateSeries(updatedSeries);
+  }, [series, onUpdateSeries]);
+
+  const handleHideAll = useCallback(() => {
+    const updatedSeries = series.map((s) =>
+      PerfChartSeries.fromPartial({
+        ...s,
+        hidden: true,
+      }),
+    );
+    onUpdateSeries(updatedSeries);
+  }, [series, onUpdateSeries]);
 
   const [splitDialogOpen, setSplitDialogOpen] = useState(false);
   const [seriesToSplit, setSeriesToSplit] = useState<PerfChartSeries | null>(
@@ -301,9 +337,9 @@ export function ChartSeriesEditor({
             widgetFilters={widgetFilters}
             metricFilterColumns={metricFilterColumns}
             isLoadingColumns={isLoadingFilterColumns}
-            isVisible={!hiddenSeriesIds?.has(s.id)}
-            onToggleVisibility={() => onToggleVisibility?.(s.id)}
-            onShowOnly={() => onShowOnly?.(s.id)}
+            isVisible={!(s.hidden ?? false)}
+            onToggleVisibility={() => handleToggleVisibility(originalIndex)}
+            onShowOnly={() => handleShowOnly(originalIndex)}
             hasChildren={hasChildren}
             childrenExpanded={childrenExpanded}
             onToggleChildren={() => toggleChildrenExpanded(s.id)}
@@ -396,7 +432,7 @@ export function ChartSeriesEditor({
               component="span"
               onClick={(e) => {
                 e.stopPropagation();
-                onShowAll?.();
+                handleShowAll();
               }}
               sx={{
                 color: 'primary.main',
@@ -417,7 +453,7 @@ export function ChartSeriesEditor({
               component="span"
               onClick={(e) => {
                 e.stopPropagation();
-                onHideAll?.();
+                handleHideAll();
               }}
               sx={{
                 color: 'primary.main',

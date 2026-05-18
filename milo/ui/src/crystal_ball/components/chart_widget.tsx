@@ -109,7 +109,6 @@ function getChartSeries(
   chartType: PerfChartWidget_ChartType,
   widgetResponse: FetchDashboardWidgetDataResponse | undefined,
   widgetSeries: readonly PerfChartSeries[] | undefined,
-  hiddenSeriesIds: Set<string>,
 ) {
   switch (chartType) {
     case PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION: {
@@ -189,7 +188,7 @@ function getChartSeries(
             seriesIndex !== undefined && seriesIndex >= 0
               ? widgetSeries?.[seriesIndex]
               : undefined;
-          return !hiddenSeriesIds.has(configuredSeries?.id ?? series.seriesId);
+          return !(configuredSeries?.hidden ?? false);
         });
     }
     default: {
@@ -233,7 +232,7 @@ function getChartSeries(
             seriesIndex !== undefined && seriesIndex >= 0
               ? widgetSeries?.[seriesIndex]
               : undefined;
-          return !hiddenSeriesIds.has(configuredSeries?.id ?? series.seriesId);
+          return !(configuredSeries?.hidden ?? false);
         });
     }
   }
@@ -271,9 +270,6 @@ export function ChartWidget({
     [widget.chartType],
   );
 
-  const [hiddenSeriesIds, setHiddenSeriesIds] = useState<Set<string>>(
-    new Set(),
-  );
   const [selectedPoint, setSelectedPoint] = useState<SelectedPointInfo | null>(
     null,
   );
@@ -311,35 +307,6 @@ export function ChartWidget({
     },
     [portalContext],
   );
-
-  const handleToggleVisibility = useCallback((seriesId: string) => {
-    setHiddenSeriesIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(seriesId)) {
-        next.delete(seriesId);
-      } else {
-        next.add(seriesId);
-      }
-      return next;
-    });
-  }, []);
-
-  const handleShowOnly = useCallback(
-    (seriesId: string) => {
-      const allIds = widget.series?.map((s) => s.id) ?? [];
-      setHiddenSeriesIds(new Set(allIds.filter((id) => id !== seriesId)));
-    },
-    [widget.series],
-  );
-
-  const handleShowAll = useCallback(() => {
-    setHiddenSeriesIds(new Set());
-  }, []);
-
-  const handleHideAll = useCallback(() => {
-    const allIds = widget.series?.map((s) => s.id) ?? [];
-    setHiddenSeriesIds(new Set(allIds));
-  }, [widget.series]);
 
   const handleFiltersUpdate = (updatedFilters: PerfFilter[]) => {
     onUpdate(
@@ -511,9 +478,8 @@ export function ChartWidget({
         getSafeChartType(widget.chartType),
         widgetResponse,
         widget.series,
-        hiddenSeriesIds,
       ),
-    [widget.chartType, widgetResponse, widget.series, hiddenSeriesIds],
+    [widget.chartType, widgetResponse, widget.series],
   );
 
   const xAxisBounds = useMemo(() => {
@@ -788,11 +754,6 @@ export function ChartWidget({
       <ChartSeriesEditor
         series={[...(widget.series ?? [])]}
         onUpdateSeries={handleSeriesUpdate}
-        hiddenSeriesIds={hiddenSeriesIds}
-        onToggleVisibility={handleToggleVisibility}
-        onShowOnly={handleShowOnly}
-        onShowAll={handleShowAll}
-        onHideAll={handleHideAll}
         dataSpecId={widget.dataSpecId}
         globalFilters={globalFilters}
         widgetFilters={widget.filters}
