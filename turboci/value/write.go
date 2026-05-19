@@ -71,7 +71,8 @@ func Write(msg proto.Message, realm ...string) (*orchestratorpb.ValueWrite, erro
 		return nil, fmt.Errorf("value.Write: cannot handle google.protobuf.Any as `msg`.")
 	}
 
-	apb, err := anypb.New(msg)
+	apb = &anypb.Any{}
+	err := anypb.MarshalFrom(apb, msg, proto.MarshalOptions{Deterministic: true})
 	if err != nil {
 		return nil, err
 	}
