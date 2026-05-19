@@ -50,6 +50,26 @@ AIP-160 allows choices to be written as either `key = v1 OR key = v2` or `key = 
 ### Deep Loop Trap in React Hooks
 MRT state hooks and `useFilters` hook both try to synchronize URL search states. Because of the sensitive shape difference between a raw array of string filters and custom types, standard equality checks like `_.isEqual` can sometimes throw false-positive update states, which may lead to infinite React depth loops.
 
+## Filter Architecture in Child Components
+
+When building components that need to interact with filters (like metrics headers or custom filter bars), follow these guidelines to ensure consistency and avoid bugs:
+
+### 1. Centralized State in Parent
+The parent page (e.g., `AndroidDevicesPage`, `ChromeOSDevicesPage`) should be the single source of truth for the filter state. It should call the `useFilters` hook (or a wrapper like `useChromeOSFilters`) to manage the state and synchronize with the URL.
+
+### 2. Pass Props to Child Components
+Child components that display metrics or need to apply filters should NOT read from the URL directly (via `useSyncedSearchParams` or `getFilters`). Instead, they should receive the following props from the parent:
+- `aip160: string` - The current filter string in AIP-160 format, ready to be used in RPC queries.
+- `setFiltersBatch: (updates: Record<string, string[]>) => void` - A function to apply batch updates to the filters.
+
+### 3. Fetching Data
+Child components should use the `aip160` prop directly in their query hooks (like `client.CountDevices.query`) to ensure they are always in sync with the filter bar.
+
+### 4. Applying Filters on Click
+When a user clicks a metric or action that applies a filter, call `setFiltersBatch` with the desired updates. This will update the hook state in the parent, which will in turn update the URL and trigger a refetch of all queries using the `aip160` prop.
+
+To clear a filter, pass an empty array: `setFiltersBatch({ 'labels."dut_state"': [] })`.
+
 ***
 
 **This document represents the active design guidelines for our AIP-160 migration stack. Please refer to this file when writing or debugging filter interactions.**

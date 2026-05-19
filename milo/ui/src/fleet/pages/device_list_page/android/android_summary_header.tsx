@@ -15,22 +15,18 @@
 import CheckIcon from '@mui/icons-material/Check';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
-import {
-  Alert,
-  Box,
-  Grid,
-  Typography,
-  Divider,
-  Link,
-  Skeleton,
-  ButtonBase,
-} from '@mui/material';
+import { Alert, Box, Grid, Typography, Divider, Link } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
+import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
+import {
+  METRICS_COLUMN_STYLE,
+  getMetricsGridStyles,
+} from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -43,126 +39,11 @@ export interface AndroidSummaryHeaderProps {
   showAvgUtilization?: boolean;
 }
 
-const COLUMN_STYLE = {
-  padding: '2px 4px',
-};
-
 // Centralized filter keys to avoid hardcoding quotes everywhere
 const FILTER_KEYS = {
   STATE: '"state"',
   MACHINE_TYPE: '"fc_machine_type"',
 } as const;
-
-interface SmallMetricItemProps {
-  label: string | React.ReactNode;
-  value: number;
-  total?: number;
-  onClick?: () => void;
-  dotColor?: string;
-  loading?: boolean;
-  formatValue?: (val: number) => string;
-}
-
-// Moved outside to avoid remounting anti-pattern
-// Uses ButtonBase for better accessibility and native keyboard support
-function SmallMetricItem({
-  label,
-  value,
-  total,
-  onClick,
-  dotColor,
-  loading,
-  formatValue,
-}: SmallMetricItemProps) {
-  const theme = useTheme();
-  const percentage =
-    total && total > 0 && value !== undefined
-      ? ((value / total) * 100).toFixed(1)
-      : undefined;
-
-  return (
-    <ButtonBase
-      onClick={onClick}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 0.5,
-        cursor: onClick ? 'pointer' : 'default',
-        width: '100%',
-        justifyContent: 'flex-start',
-        textAlign: 'left',
-        ...(onClick && {
-          '&:hover': {
-            backgroundColor: theme.palette.action.hover,
-            borderRadius: '4px',
-          },
-          // Target specific class to avoid over-broad styling
-          '&:hover .small-metric-label': { textDecoration: 'underline' },
-        }),
-        p: '1px 4px',
-        minHeight: '1rem',
-      }}
-    >
-      {dotColor && (
-        <Box
-          sx={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            backgroundColor: dotColor,
-            flexShrink: 0,
-            mr: 0.5,
-          }}
-        />
-      )}
-      <Typography
-        component="div"
-        variant="body2"
-        className="small-metric-label"
-        sx={{
-          color: 'text.secondary',
-          fontSize: '0.85rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-        }}
-      >
-        {label}
-      </Typography>
-      {loading ? (
-        <Skeleton width={30} height={16} sx={{ ml: 0.5 }} />
-      ) : (
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'text.primary',
-            fontWeight: 700,
-            fontSize: '0.85rem',
-            ml: 0.5,
-          }}
-        >
-          {formatValue ? formatValue(value) : value.toLocaleString()}
-        </Typography>
-      )}
-      {percentage !== undefined && !loading && (
-        <Typography
-          variant="caption"
-          sx={{
-            color: 'text.secondary',
-            fontWeight: 300,
-            fontSize: '0.75rem',
-            opacity: 0.7,
-            ml: 0.5,
-          }}
-        >
-          ({percentage}%)
-        </Typography>
-      )}
-    </ButtonBase>
-  );
-}
 
 export function AndroidSummaryHeader({
   aip160,
@@ -173,6 +54,7 @@ export function AndroidSummaryHeader({
   const theme = useTheme();
 
   const BORDER_STYLE = `1px solid ${theme.palette.divider}`;
+  const gridStyles = getMetricsGridStyles(theme);
 
   const colors = {
     emerald: theme.palette.success.main,
@@ -244,17 +126,7 @@ export function AndroidSummaryHeader({
       <Box sx={{ p: 1 }}>
         {/* Top Row: Hosts Health */}
         <Grid container spacing={0} alignItems="stretch">
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md={3}
-            sx={{
-              ...COLUMN_STYLE,
-              borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
-              borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
-            }}
-          >
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col1}>
             <SingleMetric
               name="Total Hosts"
               value={totalHosts}
@@ -267,17 +139,7 @@ export function AndroidSummaryHeader({
               }
             />
           </Grid>
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md={3}
-            sx={{
-              ...COLUMN_STYLE,
-              borderRight: { md: BORDER_STYLE },
-              borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
-            }}
-          >
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col2}>
             <SingleMetric
               name="Hosts Running"
               value={data?.labRunningHosts || 0}
@@ -292,25 +154,8 @@ export function AndroidSummaryHeader({
               }
             />
           </Grid>
-          <Divider
-            sx={{
-              display: { xs: 'block', md: 'none' },
-              width: '100%',
-              my: 0.5,
-              borderColor: 'rgba(0, 0, 0, 0.05)',
-            }}
-          />
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md={3}
-            sx={{
-              ...COLUMN_STYLE,
-              borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
-              borderBottom: { xs: BORDER_STYLE, md: 'none' },
-            }}
-          >
+
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col3}>
             <SingleMetric
               name="Hosts Missing"
               value={data?.labMissingHosts || 0}
@@ -332,7 +177,7 @@ export function AndroidSummaryHeader({
             sm={6}
             md={3}
             sx={{
-              ...COLUMN_STYLE,
+              ...METRICS_COLUMN_STYLE,
               display: { xs: 'none', sm: 'block', md: 'block' },
             }}
           />
@@ -348,7 +193,7 @@ export function AndroidSummaryHeader({
             sm={6}
             md={3}
             sx={{
-              ...COLUMN_STYLE,
+              ...METRICS_COLUMN_STYLE,
               borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
               borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
             }}
@@ -373,7 +218,7 @@ export function AndroidSummaryHeader({
             md
             aria-label="Healthy Devices"
             sx={{
-              ...COLUMN_STYLE,
+              ...METRICS_COLUMN_STYLE,
               borderRight: { md: BORDER_STYLE },
               borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
             }}
@@ -531,15 +376,6 @@ export function AndroidSummaryHeader({
             </Box>
           </Grid>
 
-          <Divider
-            sx={{
-              display: { xs: 'block', md: 'none' },
-              width: '100%',
-              my: 0.5,
-              borderColor: 'rgba(0, 0, 0, 0.05)',
-            }}
-          />
-
           <Grid
             item
             xs={12}
@@ -547,7 +383,7 @@ export function AndroidSummaryHeader({
             md
             aria-label="Unhealthy Devices"
             sx={{
-              ...COLUMN_STYLE,
+              ...METRICS_COLUMN_STYLE,
               borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
               borderBottom: {
                 xs: BORDER_STYLE,
@@ -631,7 +467,7 @@ export function AndroidSummaryHeader({
             md
             aria-label="Other Devices"
             sx={{
-              ...COLUMN_STYLE,
+              ...METRICS_COLUMN_STYLE,
               borderRight: {
                 sm: 'none',
                 md: showAvgUtilization ? BORDER_STYLE : 'none',
@@ -688,7 +524,7 @@ export function AndroidSummaryHeader({
               sm={6}
               md
               sx={{
-                ...COLUMN_STYLE,
+                ...METRICS_COLUMN_STYLE,
                 borderRight: 'none',
                 borderBottom: 'none',
               }}

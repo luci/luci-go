@@ -12,67 +12,121 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { type CSSObject } from '@emotion/styled';
+import CheckIcon from '@mui/icons-material/Check';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Alert, Typography } from '@mui/material';
+import { Alert, Box, Divider, Grid, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 
-import { StringListFilterCategory } from '@/fleet/components/filters/string_list_filter';
-import { LeaseStateInfo } from '@/fleet/components/lease_state_info/lease_state_info';
+import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
+import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
+import { BLANK_VALUE } from '@/fleet/constants/filters';
+import { getMetricsGridStyles } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { colors } from '@/fleet/theme/colors';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getFilterKey } from './chromeos_fields';
-import { useChromeOSFilters } from './use_chromeos_filters';
+interface DeviceStateData {
+  deviceState?: {
+    ready?: number;
+    needRepair?: number;
+    repairFailed?: number;
+    needManualRepair?: number;
+    needsDeploy?: number;
+    needsReplacement?: number;
+  };
+}
 
-const HAS_RIGHT_SIBLING_STYLES: CSSObject = {
-  borderRight: `1px solid ${colors.grey[300]}`,
-  marginRight: 16,
-  paddingRight: 8,
+function parseDeviceMetrics(data: DeviceStateData | undefined, total: number) {
+  const ready = data?.deviceState?.ready || 0;
+  const needRepair = data?.deviceState?.needRepair || 0;
+  const repairFailed = data?.deviceState?.repairFailed || 0;
+  const recovering = needRepair + repairFailed;
+  const healthy = ready + recovering;
+  const needManualRepair = data?.deviceState?.needManualRepair || 0;
+  const unhealthy = needManualRepair;
+  const needsDeploy = data?.deviceState?.needsDeploy || 0;
+  const needsReplacement = data?.deviceState?.needsReplacement || 0;
+
+  const other = Math.max(0, total - healthy - unhealthy);
+  const otherStates = Math.max(0, other - needsDeploy - needsReplacement);
+
+  return {
+    total,
+    ready,
+    needRepair,
+    repairFailed,
+    recovering,
+    healthy,
+    needManualRepair,
+    unhealthy,
+    needsDeploy,
+    needsReplacement,
+    other,
+    otherStates,
+  };
+}
+
+// Recommended filters for finding all CrOS labstations. See: b/398911822#comment4
+const LABSTATION_FILTERS: Record<string, string[]> = {
+  'labels."label-pool"': [
+    'labstation_tryjob',
+    'labstation_main',
+    'labstation_canary',
+  ],
 };
 
-const METRIC_CONTAINER_STYLES: CSSObject = {
-  display: 'flex',
-  justifyContent: 'flex-start',
-  marginTop: 4,
-  flexWrap: 'wrap',
-  gap: 8,
-};
+const OTHER_DUT_STATES = [
+  'needs_deploy',
+  'needs_replacement',
+  'registered',
+  'reserved',
+  'unknown',
+  BLANK_VALUE,
+];
 
-const LABSTATION_FILTER_STR =
-  'labels."label-pool" = ("labstation_tryjob" OR "labstation_main" OR "labstation_canary")';
+export interface ChromeOSSummaryHeaderProps {
+  aip160: string;
+  setFiltersBatch: (updates: Record<string, string[]>) => void;
+}
 
-export function ChromeOSSummaryHeader() {
+/**
+ * ChromeOSSummaryHeader displays the main metrics section for ChromeOS devices.
+ */
+export function ChromeOSSummaryHeader({
+  aip160,
+  setFiltersBatch,
+}: ChromeOSSummaryHeaderProps) {
   const client = useFleetConsoleClient();
-  const { filterValues, aip160 } = useChromeOSFilters(() => {});
+  const theme = useTheme();
 
   const countQuery = useQuery(
     client.CountDevices.query({
-      filter: aip160(),
+      filter: aip160,
       platform: Platform.CHROMEOS,
     }),
   );
 
+  const labstationsFilter = aip160
+    ? `${aip160} AND ${stringifyFilters(LABSTATION_FILTERS)}`
+    : stringifyFilters(LABSTATION_FILTERS);
+
   const labstationsQuery = useQuery({
     ...client.CountDevices.query({
-      filter: aip160()
-        ? `${aip160()} AND ${LABSTATION_FILTER_STR}`
-        : LABSTATION_FILTER_STR,
+      filter: labstationsFilter,
       platform: Platform.CHROMEOS,
     }),
   });
 
-  const setFilterOptions = (key: string, options: string[]) => {
-    const filterKey = getFilterKey(key);
-    const filter = filterValues?.[filterKey];
-    if (filter instanceof StringListFilterCategory) {
-      filter.setSelectedOptions(options);
-    }
+  const colors = {
+    success: theme.palette.success.main,
+    error: theme.palette.error.main,
+    warning: theme.palette.warning.main,
+    grey: theme.palette.grey[400],
+    dark: theme.palette.text.primary,
   };
 
   const getContent = () => {
@@ -87,187 +141,413 @@ export function ChromeOSSummaryHeader() {
       );
     }
 
+    const {
+      total: totalLabstations,
+      ready: labstationsReady,
+      needRepair: labstationsNeedRepair,
+      repairFailed: labstationsRepairFailed,
+      recovering: labstationsRecovering,
+      healthy: labstationsHealthy,
+      needManualRepair: labstationsNeedManualRepair,
+      unhealthy: labstationsUnhealthy,
+      needsDeploy: labstationsNeedsDeploy,
+      needsReplacement: labstationsNeedsReplacement,
+      other: labstationsOther,
+      otherStates: labstationsOtherStates,
+    } = parseDeviceMetrics(
+      labstationsQuery.data,
+      labstationsQuery.data?.total || 0,
+    );
+
+    const {
+      total: totalDevices,
+      ready: devicesReady,
+      needRepair: devicesNeedRepair,
+      repairFailed: devicesRepairFailed,
+      recovering: devicesRecovering,
+      healthy: devicesHealthy,
+      needManualRepair: devicesNeedManualRepair,
+      unhealthy: devicesUnhealthy,
+      needsDeploy: devicesNeedsDeploy,
+      needsReplacement: devicesNeedsReplacement,
+      other: devicesOther,
+      otherStates: devicesOtherStates,
+    } = parseDeviceMetrics(countQuery.data, countQuery.data?.total || 0);
+
+    const isLoading = countQuery.isPending || labstationsQuery.isPending;
+    const gridStyles = getMetricsGridStyles(theme);
+
+    const handleMetricClick = (newFilters: Record<string, string[]>) => {
+      setFiltersBatch(newFilters);
+    };
+
     return (
-      <div
-        css={{
-          display: 'flex',
-          maxWidth: 1400,
-        }}
-      >
-        <div
-          css={{
-            ...HAS_RIGHT_SIBLING_STYLES,
-            flexGrow: 0.2,
-          }}
-        >
-          <Typography variant="subhead1">Total</Typography>
-          <div css={METRIC_CONTAINER_STYLES}>
+      <Box sx={{ p: 1 }}>
+        {/* Labstations Row */}
+        <Grid container spacing={0} alignItems="stretch">
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col1}>
             <SingleMetric
-              name="Devices"
-              value={countQuery.data?.total}
-              loading={countQuery.isPending}
-            />
-          </div>
-        </div>
-        <div
-          css={{
-            ...HAS_RIGHT_SIBLING_STYLES,
-            flexGrow: 0.3,
-          }}
-        >
-          <div css={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Typography variant="subhead1">Lease state</Typography>
-            <LeaseStateInfo />
-          </div>
-          <div css={METRIC_CONTAINER_STYLES}>
-            <SingleMetric
-              name="Leased"
-              value={countQuery.data?.taskState?.busy}
-              total={countQuery.data?.total}
-              loading={countQuery.isPending}
+              name="Total Labstations"
+              value={totalLabstations}
+              loading={isLoading}
               handleClick={() =>
-                setFilterOptions('state', ['DEVICE_STATE_LEASED'])
+                handleMetricClick({
+                  ...LABSTATION_FILTERS,
+                  'labels."dut_state"': [],
+                })
               }
             />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col2}>
             <SingleMetric
-              name="Available"
-              value={countQuery.data?.taskState?.idle}
-              total={countQuery.data?.total}
-              loading={countQuery.isPending}
+              name="Healthy"
+              value={labstationsHealthy}
+              total={totalLabstations}
+              loading={isLoading}
+              Icon={<CheckIcon sx={{ color: colors.success }} />}
               handleClick={() =>
-                setFilterOptions('state', ['DEVICE_STATE_AVAILABLE'])
+                handleMetricClick({
+                  ...LABSTATION_FILTERS,
+                  'labels."dut_state"': [
+                    'ready',
+                    'needs_repair',
+                    'repair_failed',
+                  ],
+                })
               }
             />
-          </div>
-        </div>
-        <div css={{ ...HAS_RIGHT_SIBLING_STYLES, flexGrow: 2 }}>
-          <Typography variant="subhead1">Device state</Typography>
-          <div css={METRIC_CONTAINER_STYLES}>
-            <SingleMetric
-              name="Ready"
-              value={countQuery.data?.deviceState?.ready}
-              total={countQuery.data?.total}
-              loading={countQuery.isPending}
-              handleClick={() => setFilterOptions('dut_state', ['ready'])}
-            />
-            <SingleMetric
-              name="Need repair"
-              value={countQuery.data?.deviceState?.needRepair}
-              total={countQuery.data?.total}
-              loading={countQuery.isPending}
-              handleClick={() =>
-                setFilterOptions('dut_state', ['needs_repair'])
-              }
-            />
-            <SingleMetric
-              name="Repair failed"
-              value={countQuery.data?.deviceState?.repairFailed}
-              total={countQuery.data?.total}
-              loading={countQuery.isPending}
-              handleClick={() =>
-                setFilterOptions('dut_state', ['repair_failed'])
-              }
-            />
-            <SingleMetric
-              name="Needs deploy"
-              value={countQuery.data?.deviceState?.needsDeploy}
-              total={countQuery.data?.total}
-              Icon={
-                <WarningIcon
-                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
+            <Box
+              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
+            >
+              <SmallMetricItem
+                label="Ready:"
+                value={labstationsReady}
+                total={totalLabstations}
+                dotColor={colors.success}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    ...LABSTATION_FILTERS,
+                    'labels."dut_state"': ['ready'],
+                  })
+                }
+              />
+              <SmallMetricItem
+                label="Recovering:"
+                value={labstationsRecovering}
+                total={totalLabstations}
+                dotColor={colors.grey}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    ...LABSTATION_FILTERS,
+                    'labels."dut_state"': ['needs_repair', 'repair_failed'],
+                  })
+                }
+              />
+              <Box sx={{ ml: 2 }}>
+                <SmallMetricItem
+                  label="Need repair:"
+                  value={labstationsNeedRepair}
+                  total={totalLabstations}
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                  onClick={() =>
+                    handleMetricClick({
+                      ...LABSTATION_FILTERS,
+                      'labels."dut_state"': ['needs_repair'],
+                    })
+                  }
                 />
-              }
-              loading={countQuery.isPending}
-              handleClick={() =>
-                setFilterOptions('dut_state', ['needs_deploy'])
-              }
-            />
-            <SingleMetric
-              name="Needs replacement"
-              value={countQuery.data?.deviceState?.needsReplacement}
-              total={countQuery.data?.total}
-              Icon={
-                <WarningIcon
-                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
+                <SmallMetricItem
+                  label="Repair failed:"
+                  value={labstationsRepairFailed}
+                  total={totalLabstations}
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                  onClick={() =>
+                    handleMetricClick({
+                      ...LABSTATION_FILTERS,
+                      'labels."dut_state"': ['repair_failed'],
+                    })
+                  }
                 />
-              }
-              loading={countQuery.isPending}
+              </Box>
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col3}>
+            <SingleMetric
+              name="Unhealthy"
+              value={labstationsUnhealthy}
+              total={totalLabstations}
+              loading={isLoading}
+              Icon={<ErrorIcon sx={{ color: colors.error }} />}
               handleClick={() =>
-                setFilterOptions('dut_state', ['needs_replacement'])
+                handleMetricClick({
+                  ...LABSTATION_FILTERS,
+                  'labels."dut_state"': ['needs_manual_repair'],
+                })
               }
             />
+            <Box
+              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
+            >
+              <SmallMetricItem
+                label="Need manual repair:"
+                value={labstationsNeedManualRepair}
+                total={totalLabstations}
+                dotColor={colors.error}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    ...LABSTATION_FILTERS,
+                    'labels."dut_state"': ['needs_manual_repair'],
+                  })
+                }
+              />
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col4}>
             <SingleMetric
-              name="Need manual repair"
-              value={countQuery.data?.deviceState?.needManualRepair}
-              total={countQuery.data?.total}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-              loading={countQuery.isPending}
+              name="Other"
+              value={labstationsOther}
+              total={totalLabstations}
+              loading={isLoading}
+              Icon={<WarningIcon sx={{ color: colors.warning }} />}
               handleClick={() =>
-                setFilterOptions('dut_state', ['needs_manual_repair'])
+                handleMetricClick({
+                  ...LABSTATION_FILTERS,
+                  'labels."dut_state"': OTHER_DUT_STATES,
+                })
               }
             />
-          </div>
-        </div>
-        <div css={{ flexGrow: 1.5 }}>
-          <Typography variant="subhead1">Labstation state</Typography>
-          <div css={METRIC_CONTAINER_STYLES}>
+            <Box
+              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
+            >
+              <SmallMetricItem
+                label="Needs deploy:"
+                value={labstationsNeedsDeploy}
+                total={totalLabstations}
+                dotColor={colors.warning}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    ...LABSTATION_FILTERS,
+                    'labels."dut_state"': ['needs_deploy'],
+                  })
+                }
+              />
+              <SmallMetricItem
+                label="Needs replacement:"
+                value={labstationsNeedsReplacement}
+                total={totalLabstations}
+                dotColor={colors.warning}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    ...LABSTATION_FILTERS,
+                    'labels."dut_state"': ['needs_replacement'],
+                  })
+                }
+              />
+              <SmallMetricItem
+                label="Other states:"
+                value={labstationsOtherStates}
+                total={totalLabstations}
+                dotColor={colors.grey}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    ...LABSTATION_FILTERS,
+                    'labels."dut_state"': ['unknown', 'registered', 'reserved'],
+                  })
+                }
+              />
+            </Box>
+          </Grid>
+        </Grid>
+
+        <Divider sx={{ my: 2, borderColor: 'rgba(0, 0, 0, 0.05)' }} />
+
+        {/* Devices Row */}
+        <Grid container spacing={0} alignItems="stretch">
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col1}>
             <SingleMetric
-              name="Ready"
-              value={labstationsQuery.data?.deviceState?.ready}
-              total={countQuery.data?.total}
-              loading={labstationsQuery.isPending}
-              handleClick={() => {
-                setFilterOptions('dut_state', ['ready']);
-                setFilterOptions('label-pool', [
-                  'labstation_tryjob',
-                  'labstation_main',
-                  'labstation_canary',
-                ]);
-              }}
+              name="Total Devices"
+              value={totalDevices}
+              loading={isLoading}
+              handleClick={() =>
+                handleMetricClick({
+                  'labels."dut_state"': [],
+                  'labels."label-pool"': [],
+                })
+              }
             />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col2}>
             <SingleMetric
-              name="Repair failed"
-              value={labstationsQuery.data?.deviceState?.repairFailed}
-              total={countQuery.data?.total}
-              loading={labstationsQuery.isPending}
-              handleClick={() => {
-                setFilterOptions('dut_state', ['repair_failed']);
-                setFilterOptions('label-pool', [
-                  'labstation_tryjob',
-                  'labstation_main',
-                  'labstation_canary',
-                ]);
-              }}
+              name="Total Healthy"
+              value={devicesHealthy}
+              total={totalDevices}
+              loading={isLoading}
+              Icon={<CheckIcon sx={{ color: colors.success }} />}
+              handleClick={() =>
+                handleMetricClick({
+                  'labels."dut_state"': [
+                    'ready',
+                    'needs_repair',
+                    'repair_failed',
+                  ],
+                })
+              }
             />
-            <SingleMetric
-              name="Needs deploy"
-              value={labstationsQuery.data?.deviceState?.needsDeploy}
-              total={countQuery.data?.total}
-              Icon={
-                <WarningIcon
-                  sx={{ color: colors.yellow[900], marginTop: '-2px' }}
+            <Box
+              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
+            >
+              <SmallMetricItem
+                label="Ready:"
+                value={devicesReady}
+                total={totalDevices}
+                dotColor={colors.success}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({ 'labels."dut_state"': ['ready'] })
+                }
+              />
+              <SmallMetricItem
+                label="Recovering:"
+                value={devicesRecovering}
+                total={totalDevices}
+                dotColor={colors.grey}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    'labels."dut_state"': ['needs_repair', 'repair_failed'],
+                  })
+                }
+              />
+              <Box sx={{ ml: 2 }}>
+                <SmallMetricItem
+                  label="Need repair:"
+                  value={devicesNeedRepair}
+                  total={totalDevices}
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                  onClick={() =>
+                    handleMetricClick({
+                      'labels."dut_state"': ['needs_repair'],
+                    })
+                  }
                 />
+                <SmallMetricItem
+                  label="Repair failed:"
+                  value={devicesRepairFailed}
+                  total={totalDevices}
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                  onClick={() =>
+                    handleMetricClick({
+                      'labels."dut_state"': ['repair_failed'],
+                    })
+                  }
+                />
+              </Box>
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col3}>
+            <SingleMetric
+              name="Total Unhealthy"
+              value={devicesUnhealthy}
+              total={totalDevices}
+              loading={isLoading}
+              Icon={<ErrorIcon sx={{ color: colors.error }} />}
+              handleClick={() =>
+                handleMetricClick({
+                  'labels."dut_state"': ['needs_manual_repair'],
+                })
               }
-              loading={labstationsQuery.isPending}
-              handleClick={() => {
-                setFilterOptions('dut_state', ['needs_deploy']);
-                setFilterOptions('label-pool', [
-                  'labstation_tryjob',
-                  'labstation_main',
-                  'labstation_canary',
-                ]);
-              }}
             />
-          </div>
-        </div>
-      </div>
+            <Box
+              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
+            >
+              <SmallMetricItem
+                label="Need manual repair:"
+                value={devicesNeedManualRepair}
+                total={totalDevices}
+                dotColor={colors.error}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    'labels."dut_state"': ['needs_manual_repair'],
+                  })
+                }
+              />
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col4}>
+            <SingleMetric
+              name="Total Other"
+              value={devicesOther}
+              total={totalDevices}
+              loading={isLoading}
+              Icon={<WarningIcon sx={{ color: colors.warning }} />}
+              handleClick={() =>
+                handleMetricClick({
+                  'labels."dut_state"': OTHER_DUT_STATES,
+                })
+              }
+            />
+            <Box
+              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
+            >
+              <SmallMetricItem
+                label="Needs deploy:"
+                value={devicesNeedsDeploy}
+                total={totalDevices}
+                dotColor={colors.warning}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({ 'labels."dut_state"': ['needs_deploy'] })
+                }
+              />
+              <SmallMetricItem
+                label="Needs replacement:"
+                value={devicesNeedsReplacement}
+                total={totalDevices}
+                dotColor={colors.warning}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    'labels."dut_state"': ['needs_replacement'],
+                  })
+                }
+              />
+              <SmallMetricItem
+                label="Other states:"
+                value={devicesOtherStates}
+                total={totalDevices}
+                dotColor={colors.grey}
+                loading={isLoading}
+                onClick={() =>
+                  handleMetricClick({
+                    'labels."dut_state"': ['unknown', 'registered', 'reserved'],
+                  })
+                }
+              />
+            </Box>
+          </Grid>
+        </Grid>
+      </Box>
     );
   };
 
   return (
     <MetricsContainer>
-      <Typography variant="h4">Main metrics</Typography>
-      <div css={{ marginTop: 24 }}>{getContent()}</div>
+      <Typography variant="h6" sx={{ mb: 2, color: colors.dark }}>
+        Device Health Metrics
+      </Typography>
+      {getContent()}
     </MetricsContainer>
   );
 }

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useCallback, useMemo } from 'react';
+
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
@@ -41,26 +43,41 @@ export const ChromeOSDevicesPage = () => {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
+  const handleFilterChange = useCallback(() => {
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
+  }, [pagerCtx, setSearchParams]);
+
   const {
     filterValues,
     isLoading,
     warnings: filterWarnings,
     onApplyFilter,
-  } = useChromeOSFilters(() => {
-    setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  });
+    setFiltersBatch,
+    aip160,
+  } = useChromeOSFilters(handleFilterChange);
 
   const { availableColumns, warnings: columnWarnings } = useChromeOSColumns(
     isLoading || filterValues === undefined,
     false,
   );
 
-  const allWarnings = [...(filterWarnings || []), ...(columnWarnings || [])];
+  const combinedWarnings = useMemo(
+    () => [...(filterWarnings || []), ...(columnWarnings || [])],
+    [filterWarnings, columnWarnings],
+  );
 
   return (
-    <div css={{ margin: '24px', paddingBottom: '40px' }}>
-      <WarningNotifications warnings={allWarnings} />
-      <ChromeOSSummaryHeader />
+    <div
+      css={{
+        margin: '24px',
+        paddingBottom: '40px',
+      }}
+    >
+      <WarningNotifications warnings={combinedWarnings} />
+      <ChromeOSSummaryHeader
+        aip160={aip160()}
+        setFiltersBatch={setFiltersBatch}
+      />
       <AdminTasksAlert />
       <div
         css={{

@@ -50,7 +50,7 @@ describe('<ChromeOSDevicesPage />', () => {
       </FakeContextProvider>,
     );
 
-    expect(screen.getByText('Main metrics')).toBeVisible();
+    expect(screen.getByText('Device Health Metrics')).toBeVisible();
   });
 
   it('should allow clicking action buttons when rows are selected', async () => {

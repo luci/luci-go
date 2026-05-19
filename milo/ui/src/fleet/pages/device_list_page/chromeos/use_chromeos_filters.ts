@@ -33,7 +33,7 @@ export const useChromeOSFilters = (
   aip160: () => string;
   isLoading: boolean;
   warnings: string[];
-
+  setFiltersBatch: (updates: Record<string, string[]>) => void;
   onApplyFilter: () => void;
 } => {
   const { availableFields, getValues, isLoading } = useChromeOSFields();
@@ -67,9 +67,12 @@ export const useChromeOSFilters = (
     return filters;
   }, [availableFields, getValues]);
 
-  const { filterValues, aip160, warnings } = useFilters(filterOptions, {
-    areFilterValuesLoading: isLoading,
-  });
+  const { filterValues, aip160, warnings, setFiltersBatch } = useFilters(
+    filterOptions,
+    {
+      areFilterValuesLoading: isLoading,
+    },
+  );
 
   return {
     filterValues: filterValues as
@@ -78,7 +81,7 @@ export const useChromeOSFilters = (
     aip160,
     isLoading: isLoading,
     warnings,
-
+    setFiltersBatch,
     onApplyFilter,
   };
 };

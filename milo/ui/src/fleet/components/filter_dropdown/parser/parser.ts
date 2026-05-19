@@ -287,6 +287,8 @@ export const parseFilters = (
  * E.g.: "fleet_labels.pool = (default OR test)"
  * It also encloses values in quotes, as values can contain whitespaces,
  * and AIP-160 treats them as a whole.
+ * NOTE on Backend Compatibility (b/503171080):
+ * The backend supports shorthand OR syntax `key = ("v1" OR "v2")` for multi-value filters.
  * More information: see the STRING description:
  * https://google.aip.dev/assets/misc/ebnf-filtering.txt
  * TODO: Consider moving this to a shared location
