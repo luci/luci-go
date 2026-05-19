@@ -254,7 +254,7 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 
 		switch existingRevert.Status {
 		case gerritpb.ChangeStatus_MERGED:
-			// There is a merged revert - no further action required.
+			// There is a merged revert - no further gerrit action required.
 
 			// Update the inaction reason based on whether the revert was created by
 			// LUCI Bisection.
@@ -271,6 +271,17 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 					reason = pb.CulpritInactionReason_REVERTED_BY_BISECTION
 				}
 				saveInactionReason(ctx, culpritModel, reason)
+			}
+
+			// The tree may still be closed (e.g. an in-flight build failed on
+			// pre-revert code, or a prior analysis reverted the culprit but did
+			// not notify). Notify LUCI Notify so its tree-status cron can
+			// reopen the tree.
+			revertURL := util.ConstructGerritCodeReviewURL(ctx, gerritClient, existingRevert)
+			err = NotifyRevertLanded(ctx, treeName, culpritModel, revertURL)
+			if err != nil {
+				// Non-critical error - log but don't fail the entire revert flow
+				logging.Errorf(ctx, "Failed to notify LUCI Notify about revert: %v", err)
 			}
 
 			return nil
@@ -386,6 +397,15 @@ func TakeCulpritAction(ctx context.Context, culpritModel *model.Suspect) error {
 			// TODO (nqmtuan): Automatically abandon the revert created by
 			// LUCI Bisection if this merged revert is different. Currently, the
 			// created revert will be left open until manually abandoned.
+
+			// Notify LUCI Notify about the externally-merged revert so the
+			// tree-status cron can reopen the tree if the culprit is a tree closer.
+			revertURL := util.ConstructGerritCodeReviewURL(ctx, gerritClient, existingRevert)
+			err := NotifyRevertLanded(ctx, treeName, culpritModel, revertURL)
+			if err != nil {
+				// Non-critical error - log but don't fail the entire revert flow
+				logging.Errorf(ctx, "Failed to notify LUCI Notify about revert: %v", err)
+			}
 
 			return nil
 		}

@@ -23,6 +23,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -36,9 +37,11 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	lnpb "go.chromium.org/luci/luci_notify/api/service/v1"
 
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/lucinotify"
 	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
@@ -337,6 +340,108 @@ func TestRevertCulprit(t *testing.T) {
 			assert.Loosely(t, suspect, should.NotBeNil)
 			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
 				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/876549",
+				IsRevertCreated:         false,
+				IsRevertCommitted:       false,
+				HasSupportRevertComment: false,
+				HasCulpritComment:       false,
+				InactionReason:          pb.CulpritInactionReason_REVERTED_MANUALLY,
+			}))
+		})
+
+		t.Run("tree closer already reverted - triggers LUCI Notify RPC", func(t *ftt.Test) {
+			// Initialize analysis chain and suspect record for tree closer scenario.
+			_, _, tcAnalysis := testutil.CreateCompileFailureAnalysisAnalysisChain(
+				ctx, t, 88128398585001, "chromium", 557)
+			tcAnalysis.IsTreeCloser = true
+			assert.Loosely(t, datastore.Put(ctx, tcAnalysis), should.BeNil)
+
+			tcGenAI := &model.CompileGenAIAnalysis{
+				ParentAnalysis: datastore.KeyForObj(ctx, tcAnalysis),
+			}
+			assert.Loosely(t, datastore.Put(ctx, tcGenAI), should.BeNil)
+
+			tcSuspect := &model.Suspect{
+				Id:             105,
+				Type:           model.SuspectType_GenAI,
+				Score:          10,
+				ParentAnalysis: datastore.KeyForObj(ctx, tcGenAI),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "test.googlesource.com",
+					Project: "chromium/src",
+					Id:      "commit_hash_tc_12345",
+				},
+				ReviewUrl:          "https://test-review.googlesource.com/c/chromium/test/+/998877",
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				AnalysisType:       pb.AnalysisType_COMPILE_FAILURE_ANALYSIS,
+			}
+			assert.Loosely(t, datastore.Put(ctx, tcSuspect), should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			// Configure Gerrit API mock responses for culprit and associated reverts.
+			mockGerritListChanges := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{{
+					Number:          998877,
+					Project:         "chromium/src",
+					Status:          gerritpb.ChangeStatus_MERGED,
+					Submitted:       timestamppb.New(clock.Now(ctx).Add(-time.Hour * 4)),
+					CurrentRevision: "rev_abc123",
+					Revisions: map[string]*gerritpb.RevisionInfo{
+						"rev_abc123": {
+							Commit: &gerritpb.CommitInfo{
+								Message: "Fix bug in feature X.\n\nChange-Id: I999deadbeef",
+								Author: &gerritpb.GitPersonInfo{
+									Name:  "Jane Smith",
+									Email: "jsmith@example.org",
+								},
+							},
+						},
+					},
+				}},
+			}
+			mockRevertListChanges := &gerritpb.ListChangesResponse{
+				Changes: []*gerritpb.ChangeInfo{
+					{
+						Number:  998878,
+						Project: "chromium/src",
+						Status:  gerritpb.ChangeStatus_ABANDONED,
+					},
+					{
+						Number:  998879,
+						Project: "chromium/src",
+						Status:  gerritpb.ChangeStatus_MERGED,
+					},
+				},
+			}
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(mockGerritListChanges, nil).Times(1)
+			mockClient.Client.EXPECT().ListChanges(gomock.Any(), gomock.Any()).
+				Return(mockRevertListChanges, nil).Times(1)
+
+			// Set up LUCI Notify client mock to verify the notification call.
+			ctrlNotify := gomock.NewController(t)
+			defer ctrlNotify.Finish()
+			notifyClientMock := lucinotify.NewMockedClient(ctx, ctrlNotify)
+
+			notifyClientMock.Client.EXPECT().
+				NotifyCulpritRevert(gomock.Any(), gomock.Any(), gomock.Any()).
+				DoAndReturn(func(ctx context.Context, req *lnpb.NotifyCulpritRevertRequest, opts ...interface{}) (*emptypb.Empty, error) {
+					assert.Loosely(t, req.TreeName, should.Equal("chromium"))
+					assert.Loosely(t, req.CulpritReviewUrl, should.Equal(tcSuspect.ReviewUrl))
+					assert.Loosely(t, req.RevertReviewUrl, should.Equal("https://test-review.googlesource.com/c/chromium/src/+/998879"))
+					assert.Loosely(t, req.RevertLandTime, should.NotBeNil)
+					return &emptypb.Empty{}, nil
+				})
+
+			err := TakeCulpritAction(notifyClientMock.Ctx, tcSuspect)
+			assert.Loosely(t, err, should.BeNil)
+
+			datastore.GetTestable(ctx).CatchupIndexes()
+			suspect, err := datastoreutil.GetSuspect(ctx,
+				tcSuspect.Id, tcSuspect.ParentAnalysis)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, suspect, should.NotBeNil)
+			assert.Loosely(t, suspect.ActionDetails, should.Match(model.ActionDetails{
+				RevertURL:               "https://test-review.googlesource.com/c/chromium/src/+/998879",
 				IsRevertCreated:         false,
 				IsRevertCommitted:       false,
 				HasSupportRevertComment: false,
