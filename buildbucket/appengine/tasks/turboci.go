@@ -27,7 +27,9 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/turboci/id"
+	"go.chromium.org/luci/turboci/rpc"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
+	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -111,7 +113,8 @@ func cancelBuildStageAttempt(ctx context.Context, cl *turboci.Client, bp *pb.Bui
 		details = PopulateBuildDetails(bp)
 	}
 
-	return cl.AbortCurrentAttempt(ctx, attemptID, details...)
+	return handleStageAttemptStatusConflict(ctx,
+		cl.AbortCurrentAttempt(ctx, attemptID, details...))
 }
 
 // failBuildStageAttemptWithDetails marks the attempt into INCOMPLETE, reporting
@@ -146,7 +149,11 @@ func failBuildStageAttemptWithDetails(ctx context.Context, cl *turboci.Client, b
 		details = PopulateBuildDetails(bp)
 	}
 
-	return cl.FailCurrentAttempt(ctx, aID.GetStageAttempt(), &turboci.AttemptFailure{Err: errors.New(errMsg), Details: bp.GetStatusDetails()}, details...)
+	return handleStageAttemptStatusConflict(ctx,
+		cl.FailCurrentAttempt(ctx, aID.GetStageAttempt(),
+			&turboci.AttemptFailure{
+				Err:     errors.New(errMsg),
+				Details: bp.GetStatusDetails()}, details...))
 }
 
 // PopulateBuildDetails populates details about a build in a WriteNodes request.
@@ -171,4 +178,29 @@ func PopulateBuildDetails(bld *pb.Build) []proto.Message {
 		},
 	}.Build()
 	return []proto.Message{bldDetails, commonDetails}
+}
+
+func handleStageAttemptStatusConflict(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	sacs, sErr := rpc.StageAttemptCurrentState(err)
+	if sErr != nil {
+		return err
+	}
+
+	if sacs == nil {
+		return err
+	}
+
+	curState := sacs.GetState()
+	// The stage attempt is no longer active, nothing more need to do.
+	if curState == orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_COMPLETE ||
+		curState == orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE {
+		logging.Infof(ctx, "The stage attempt is no longer active.")
+		return nil
+	}
+
+	return err
 }

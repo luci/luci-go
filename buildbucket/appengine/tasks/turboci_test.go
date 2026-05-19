@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/turboci/value"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
+	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -114,6 +115,12 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 			progress := cw.GetProgress()
 			assert.That(t, len(progress), should.Equal(1))
 			assert.That(t, progress[0].GetMessage(), should.Equal("Cancelled via Buildbucket"))
+		})
+
+		t.Run("attempt already final", func(t *ftt.Test) {
+			bld := buildToUpdate(5, pb.Status_CANCELED)
+			mockOrch.Err = turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE.Enum(), t)
+			assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID, pb.Status_STARTED))
 		})
 
 		t.Run("infra failure", func(t *ftt.Test) {
