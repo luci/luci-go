@@ -34,7 +34,7 @@ import {
   useListMeasurementFilterColumns,
   useSuggestMeasurementFilterValues,
 } from '@/crystal_ball/hooks/use_measurement_filter_api';
-import { buildFilterString } from '@/crystal_ball/utils';
+import { buildFilterString, getFilterableColumns } from '@/crystal_ball/utils';
 import { PerfChartSeries } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
@@ -78,10 +78,9 @@ export function SplitSeriesDialog({
       { enabled: !!parent && open },
     );
 
-  const columns = useMemo(
-    () => columnsData?.measurementFilterColumns ?? [],
-    [columnsData],
-  );
+  const columns = useMemo(() => {
+    return getFilterableColumns(columnsData?.measurementFilterColumns ?? []);
+  }, [columnsData]);
 
   const filterString = useMemo(() => {
     return series ? buildFilterString(series.filters ?? []) : '';

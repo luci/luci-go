@@ -19,8 +19,9 @@ import { useParams } from 'react-router';
 
 import * as filterApiHooks from '@/crystal_ball/hooks/use_measurement_filter_api';
 import {
-  PerfChartSeries,
   ListMeasurementFilterColumnsResponse,
+  MeasurementFilterColumn_FilterScope,
+  PerfChartSeries,
   SuggestMeasurementFilterValuesResponse,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -63,7 +64,7 @@ describe('SplitSeriesDialog', () => {
             sampleValues: [],
             primary: true,
             isMetricKey: false,
-            applicableScopes: [],
+            applicableScopes: [MeasurementFilterColumn_FilterScope.WIDGET],
           },
           {
             column: 'atp_test_name',
@@ -71,7 +72,7 @@ describe('SplitSeriesDialog', () => {
             sampleValues: [],
             primary: true,
             isMetricKey: false,
-            applicableScopes: [],
+            applicableScopes: [MeasurementFilterColumn_FilterScope.WIDGET],
           },
         ],
         nextPageToken: '',

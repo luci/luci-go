@@ -14,11 +14,49 @@
 
 import { DateTime } from 'luxon';
 
+import { GLOBAL_TIME_RANGE_COLUMN } from '@/crystal_ball/constants';
 import {
+  MeasurementFilterColumn,
+  MeasurementFilterColumn_FilterScope,
   PerfFilter,
   PerfFilterDefault_FilterOperator,
   perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+/**
+ * Helper function to widen dynamic scope types for safe TypeScript comparison without unsafe 'as' casting.
+ */
+const widenScopeType = (val: unknown): string | number => {
+  return typeof val === 'string' || typeof val === 'number' ? val : '';
+};
+
+/**
+ * Filters measurement filter columns to only those suitable as filter dimensions or breakdown table dimensions.
+ * Excludes metric keys, the global time range column, and columns with no valid filter scopes.
+ */
+export const getFilterableColumns = (
+  columns: readonly MeasurementFilterColumn[],
+): MeasurementFilterColumn[] => {
+  return columns.filter((c) => {
+    if (c.isMetricKey) {
+      return false;
+    }
+    if (c.column === GLOBAL_TIME_RANGE_COLUMN) {
+      return false;
+    }
+    return c.applicableScopes?.some((scope) => {
+      const s = widenScopeType(scope);
+      return (
+        s === MeasurementFilterColumn_FilterScope.GLOBAL ||
+        s === MeasurementFilterColumn_FilterScope.WIDGET ||
+        s === MeasurementFilterColumn_FilterScope.METRIC ||
+        s === 'GLOBAL' ||
+        s === 'WIDGET' ||
+        s === 'METRIC'
+      );
+    });
+  });
+};
 
 /**
  * Internal representation of a parsed filter.
