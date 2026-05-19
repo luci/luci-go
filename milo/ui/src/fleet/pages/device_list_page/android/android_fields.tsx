@@ -274,7 +274,8 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
   average_7d: {
     //TODO (b/502485099): this will be filterable after is resolved
     header: '7 Day Average Utilization',
-    orderByField: '"average_utilization_7d"',
+    orderByField: 'average_7d',
+    accessorFn: (device) => device.average7d,
     filterVariant: 'range-slider',
     muiFilterSliderProps: {
       min: 0,
@@ -289,7 +290,8 @@ export const ANDROID_COLUMN_OVERRIDES: Record<string, AndroidColumnOverride> = {
   average_30d: {
     //TODO (b/502485099): this will be filterable after is resolved
     header: '30 Day Average Utilization',
-    orderByField: '"average_utilization_30d"',
+    orderByField: 'average_30d',
+    accessorFn: (device) => device.average30d,
     filterVariant: 'range-slider',
     muiFilterSliderProps: {
       min: 0,

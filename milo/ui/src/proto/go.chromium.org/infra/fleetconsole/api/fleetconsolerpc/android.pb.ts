@@ -16,8 +16,8 @@ export interface AndroidDevice {
   readonly runTarget: string;
   readonly realm: string;
   readonly fcOfflineSince: string | undefined;
-  readonly average7d: number;
-  readonly average30d: number;
+  readonly average7d?: number | undefined;
+  readonly average30d?: number | undefined;
 }
 
 export interface ListAndroidDevicesRequest {
@@ -47,8 +47,8 @@ export interface AndroidCount {
   readonly totalHosts: number;
   readonly labMissingHosts: number;
   readonly labRunningHosts: number;
-  readonly average7d: number;
-  readonly average30d: number;
+  readonly average7d?: number | undefined;
+  readonly average30d?: number | undefined;
 }
 
 export interface RepopulateAndroidCacheRequest {
@@ -89,8 +89,8 @@ function createBaseAndroidDevice(): AndroidDevice {
     runTarget: "",
     realm: "",
     fcOfflineSince: undefined,
-    average7d: 0,
-    average30d: 0,
+    average7d: undefined,
+    average30d: undefined,
   };
 }
 
@@ -111,10 +111,10 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     if (message.fcOfflineSince !== undefined) {
       Timestamp.encode(toTimestamp(message.fcOfflineSince), writer.uint32(42).fork()).join();
     }
-    if (message.average7d !== 0) {
+    if (message.average7d !== undefined) {
       writer.uint32(49).double(message.average7d);
     }
-    if (message.average30d !== 0) {
+    if (message.average30d !== undefined) {
       writer.uint32(57).double(message.average30d);
     }
     return writer;
@@ -199,8 +199,8 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
       runTarget: isSet(object.runTarget) ? globalThis.String(object.runTarget) : "",
       realm: isSet(object.realm) ? globalThis.String(object.realm) : "",
       fcOfflineSince: isSet(object.fcOfflineSince) ? globalThis.String(object.fcOfflineSince) : undefined,
-      average7d: isSet(object.average7d) ? globalThis.Number(object.average7d) : 0,
-      average30d: isSet(object.average30d) ? globalThis.Number(object.average30d) : 0,
+      average7d: isSet(object.average7d) ? globalThis.Number(object.average7d) : undefined,
+      average30d: isSet(object.average30d) ? globalThis.Number(object.average30d) : undefined,
     };
   },
 
@@ -221,10 +221,10 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     if (message.fcOfflineSince !== undefined) {
       obj.fcOfflineSince = message.fcOfflineSince;
     }
-    if (message.average7d !== 0) {
+    if (message.average7d !== undefined) {
       obj.average7d = message.average7d;
     }
-    if (message.average30d !== 0) {
+    if (message.average30d !== undefined) {
       obj.average30d = message.average30d;
     }
     return obj;
@@ -242,8 +242,8 @@ export const AndroidDevice: MessageFns<AndroidDevice> = {
     message.runTarget = object.runTarget ?? "";
     message.realm = object.realm ?? "";
     message.fcOfflineSince = object.fcOfflineSince ?? undefined;
-    message.average7d = object.average7d ?? 0;
-    message.average30d = object.average30d ?? 0;
+    message.average7d = object.average7d ?? undefined;
+    message.average30d = object.average30d ?? undefined;
     return message;
   },
 };
@@ -465,8 +465,8 @@ function createBaseAndroidCount(): AndroidCount {
     totalHosts: 0,
     labMissingHosts: 0,
     labRunningHosts: 0,
-    average7d: 0,
-    average30d: 0,
+    average7d: undefined,
+    average30d: undefined,
   };
 }
 
@@ -511,10 +511,10 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     if (message.labRunningHosts !== 0) {
       writer.uint32(104).int32(message.labRunningHosts);
     }
-    if (message.average7d !== 0) {
+    if (message.average7d !== undefined) {
       writer.uint32(113).double(message.average7d);
     }
-    if (message.average30d !== 0) {
+    if (message.average30d !== undefined) {
       writer.uint32(121).double(message.average30d);
     }
     return writer;
@@ -671,8 +671,8 @@ export const AndroidCount: MessageFns<AndroidCount> = {
       totalHosts: isSet(object.totalHosts) ? globalThis.Number(object.totalHosts) : 0,
       labMissingHosts: isSet(object.labMissingHosts) ? globalThis.Number(object.labMissingHosts) : 0,
       labRunningHosts: isSet(object.labRunningHosts) ? globalThis.Number(object.labRunningHosts) : 0,
-      average7d: isSet(object.average7d) ? globalThis.Number(object.average7d) : 0,
-      average30d: isSet(object.average30d) ? globalThis.Number(object.average30d) : 0,
+      average7d: isSet(object.average7d) ? globalThis.Number(object.average7d) : undefined,
+      average30d: isSet(object.average30d) ? globalThis.Number(object.average30d) : undefined,
     };
   },
 
@@ -717,10 +717,10 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     if (message.labRunningHosts !== 0) {
       obj.labRunningHosts = Math.round(message.labRunningHosts);
     }
-    if (message.average7d !== 0) {
+    if (message.average7d !== undefined) {
       obj.average7d = message.average7d;
     }
-    if (message.average30d !== 0) {
+    if (message.average30d !== undefined) {
       obj.average30d = message.average30d;
     }
     return obj;
@@ -744,8 +744,8 @@ export const AndroidCount: MessageFns<AndroidCount> = {
     message.totalHosts = object.totalHosts ?? 0;
     message.labMissingHosts = object.labMissingHosts ?? 0;
     message.labRunningHosts = object.labRunningHosts ?? 0;
-    message.average7d = object.average7d ?? 0;
-    message.average30d = object.average30d ?? 0;
+    message.average7d = object.average7d ?? undefined;
+    message.average30d = object.average30d ?? undefined;
     return message;
   },
 };

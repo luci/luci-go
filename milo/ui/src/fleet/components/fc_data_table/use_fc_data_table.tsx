@@ -82,6 +82,7 @@ export const useFCDataTable = <TData extends MRT_RowData>(
     enableColumnResizing: true,
     enableColumnActions: true,
     layoutMode: 'grid',
+    manualSorting: true,
     enableRowVirtualization: process.env.NODE_ENV !== 'test',
 
     displayColumnDefOptions: {
