@@ -14,6 +14,7 @@
 
 import { Box, Chip, Divider, Typography } from '@mui/material';
 
+import { toString } from '@/chronicle/utils/id';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { checkKindToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { checkStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
@@ -29,14 +30,17 @@ export interface CheckDetailsProps {
 
 export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
   const dependencyIds = (check.dependencies?.edges || [])
-    .map((edge) => edge.check?.identifier?.id || edge.stage?.identifier?.id)
-    .filter((id): id is string => !!id)
+    .map((edge) => {
+      const idObj = edge.check?.identifier || edge.stage?.identifier;
+      return idObj ? toString(idObj) : '';
+    })
+    .filter((id) => !!id)
     .sort();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <DetailRow label="ID" value={check.identifier?.id} />
+        <DetailRow label="ID" value={toString(check.identifier)} />
         <DetailRow
           label="Kind"
           value={check.kind ? checkKindToJSON(check.kind) : 'UNKNOWN'}

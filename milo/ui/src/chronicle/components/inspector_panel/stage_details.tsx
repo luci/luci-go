@@ -14,6 +14,7 @@
 
 import { Box, Chip, Divider, Typography } from '@mui/material';
 
+import { toString } from '@/chronicle/utils/id';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { stageAttemptStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
 import {
@@ -34,13 +35,16 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
   const stage = view;
 
   const assignmentIds = (stage.assignments || [])
-    .map((a) => a.target?.id)
-    .filter((id): id is string => !!id)
+    .map((a) => (a.target ? toString(a.target) : ''))
+    .filter((id) => !!id)
     .sort();
 
   const dependencyIds = (stage.dependencies?.edges || [])
-    .map((edge) => edge.check?.identifier?.id || edge.stage?.identifier?.id)
-    .filter((id): id is string => !!id)
+    .map((edge) => {
+      const idObj = edge.check?.identifier || edge.stage?.identifier;
+      return idObj ? toString(idObj) : '';
+    })
+    .filter((id) => !!id)
     .sort();
 
   const createTs = stage.stateHistory?.find(
@@ -54,7 +58,7 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <DetailRow label="ID" value={stage.identifier?.id} />
+        <DetailRow label="ID" value={toString(stage.identifier)} />
         <DetailRow
           label="State"
           value={stage.state ? stageStateToJSON(stage.state) : 'UNKNOWN'}
@@ -118,6 +122,7 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
                 <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
                   Attempt {stage.attempts.length - index}
                 </Typography>
+                <DetailRow label="ID" value={toString(attempt.identifier)} />
                 <DetailRow
                   label="State"
                   value={
