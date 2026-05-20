@@ -648,7 +648,10 @@ func TestCompileGenAIAnalysisToPb(t *testing.T) {
 				EndTime:   time.Unix(120, 0).UTC(),
 			}
 			suspect := &model.Suspect{
-				ReviewTitle: "review_title",
+				ReviewTitle:        "review_title",
+				Justification:      "justification",
+				Score:              8,
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
 			}
 			result := CompileGenAIAnalysisToPb(ga, suspect)
 			assert.Loosely(t, result, should.Match(
@@ -657,9 +660,14 @@ func TestCompileGenAIAnalysisToPb(t *testing.T) {
 					StartTime: timestamppb.New(time.Unix(100, 0).UTC()),
 					EndTime:   timestamppb.New(time.Unix(120, 0).UTC()),
 					Suspect: &pb.GenAiSuspect{
-						ReviewTitle: "review_title",
-						Commit:      &buildbucketpb.GitilesCommit{},
-						Verified:    false,
+						ReviewTitle:     "review_title",
+						Commit:          &buildbucketpb.GitilesCommit{},
+						Verified:        true,
+						Justification:   "justification",
+						ConfidenceScore: 8,
+						VerificationDetails: &pb.SuspectVerificationDetails{
+							Status: "CONFIRMED_CULPRIT",
+						},
 					},
 				},
 			))
