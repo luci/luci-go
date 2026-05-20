@@ -494,6 +494,8 @@ export function ChartSeriesEditor({
         series={seriesToSplit}
         onSplit={handleCompleteSplit}
         dataSpecId={dataSpecId}
+        globalFilters={globalFilters}
+        widgetFilters={widgetFilters}
       />
     </Box>
   );

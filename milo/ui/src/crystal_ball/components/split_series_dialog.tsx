@@ -29,16 +29,23 @@ import {
 import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router';
 
-import { MAX_SUGGEST_RESULTS } from '@/crystal_ball/constants';
 import {
   useListMeasurementFilterColumns,
   useSuggestMeasurementFilterValues,
 } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { buildFilterString, getFilterableColumns } from '@/crystal_ball/utils';
-import { PerfChartSeries } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+import {
+  PerfChartSeries,
+  PerfFilter,
+} from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
+
+/**
+ * The maximum number of measurement filter suggestions to request when splitting series.
+ */
+export const MAX_SPLIT_SUGGEST_RESULTS = 20;
 
 interface SplitSeriesDialogProps {
   open: boolean;
@@ -46,6 +53,8 @@ interface SplitSeriesDialogProps {
   series: PerfChartSeries | null;
   onSplit: (selectedValues: string[], column: string) => void;
   dataSpecId: string;
+  globalFilters?: readonly PerfFilter[];
+  widgetFilters?: readonly PerfFilter[];
 }
 
 export function SplitSeriesDialog({
@@ -54,6 +63,8 @@ export function SplitSeriesDialog({
   series,
   onSplit,
   dataSpecId,
+  globalFilters,
+  widgetFilters,
 }: SplitSeriesDialogProps) {
   const { dashboardId } = useParams<{ dashboardId: string }>();
   const parent = dashboardId
@@ -83,8 +94,12 @@ export function SplitSeriesDialog({
   }, [columnsData]);
 
   const filterString = useMemo(() => {
-    return series ? buildFilterString(series.filters ?? []) : '';
-  }, [series]);
+    return buildFilterString([
+      ...(globalFilters ?? []),
+      ...(widgetFilters ?? []),
+      ...(series?.filters ?? []),
+    ]);
+  }, [globalFilters, widgetFilters, series]);
 
   const { data: suggestionData, isLoading: isLoadingSuggestions } =
     useSuggestMeasurementFilterValues(
@@ -92,9 +107,9 @@ export function SplitSeriesDialog({
         parent,
         column: selectedColumn ?? '',
         query: inputValue,
-        maxResultCount: MAX_SUGGEST_RESULTS,
+        maxResultCount: MAX_SPLIT_SUGGEST_RESULTS,
         filter: filterString,
-        skipCache: false,
+        skipCache: true,
       },
       { enabled: !!parent && !!selectedColumn && open },
     );

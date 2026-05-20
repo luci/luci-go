@@ -66,6 +66,7 @@ export const useSuggestMeasurementFilterValues = (
         query: request.query,
         maxResultCount: request.maxResultCount,
         filter: request.filter,
+        skipCache: request.skipCache,
       },
     },
     options,

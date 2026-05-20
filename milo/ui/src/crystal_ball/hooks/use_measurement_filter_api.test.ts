@@ -142,6 +142,7 @@ describe('use_measurement_filter_api', () => {
             query: request.query,
             maxResultCount: request.maxResultCount,
             filter: request.filter,
+            skipCache: request.skipCache,
           },
         },
         undefined,

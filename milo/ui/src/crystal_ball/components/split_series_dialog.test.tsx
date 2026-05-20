@@ -22,10 +22,15 @@ import {
   ListMeasurementFilterColumnsResponse,
   MeasurementFilterColumn_FilterScope,
   PerfChartSeries,
+  PerfFilter,
+  PerfFilterDefault_FilterOperator,
   SuggestMeasurementFilterValuesResponse,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
-import { SplitSeriesDialog } from './split_series_dialog';
+import {
+  MAX_SPLIT_SUGGEST_RESULTS,
+  SplitSeriesDialog,
+} from './split_series_dialog';
 
 jest.mock('react-router', () => ({
   ...jest.requireActual('react-router'),
@@ -141,13 +146,62 @@ describe('SplitSeriesDialog', () => {
   });
 
   it('fetches values when column is selected', async () => {
+    const globalFilters: PerfFilter[] = [
+      {
+        id: 'g1',
+        column: 'build_branch',
+        displayName: 'Global 1',
+        dataSpecId: 'test-spec',
+        textInput: {
+          defaultValue: {
+            values: ['main'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    const widgetFilters: PerfFilter[] = [
+      {
+        id: 'w1',
+        column: 'builder',
+        displayName: 'Widget 1',
+        dataSpecId: 'test-spec',
+        textInput: {
+          defaultValue: {
+            values: ['linux-rel'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    const seriesFilters: PerfFilter[] = [
+      {
+        id: 's1',
+        column: 'build_target',
+        displayName: 'Series 1',
+        dataSpecId: 'test-spec',
+        textInput: {
+          defaultValue: {
+            values: ['chrome'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    const series = PerfChartSeries.fromPartial({
+      ...sampleSeries,
+      filters: seriesFilters,
+    });
+
     render(
       <SplitSeriesDialog
         open={true}
         onClose={mockOnClose}
-        series={sampleSeries}
+        series={series}
         onSplit={mockOnSplit}
         dataSpecId="test-spec"
+        globalFilters={globalFilters}
+        widgetFilters={widgetFilters}
       />,
     );
 
@@ -166,7 +220,13 @@ describe('SplitSeriesDialog', () => {
     });
 
     expect(mockedSuggestValues).toHaveBeenCalledWith(
-      expect.objectContaining({ column: 'build_branch' }),
+      expect.objectContaining({
+        column: 'build_branch',
+        maxResultCount: MAX_SPLIT_SUGGEST_RESULTS,
+        skipCache: true,
+        filter:
+          'build_branch = "main" AND builder = "linux-rel" AND build_target = "chrome"',
+      }),
       expect.any(Object),
     );
   });
