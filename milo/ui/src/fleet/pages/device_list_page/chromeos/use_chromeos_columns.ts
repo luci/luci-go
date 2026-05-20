@@ -20,7 +20,7 @@ import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useWarnings } from '@/fleet/utils/use_warnings';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-import { EXTRA_COLUMN_IDS } from './chromeos_fields';
+import { EXTRA_COLUMN_IDS, getFieldDefinition } from './chromeos_fields';
 import { useChromeOSFields } from './use_chromeos_available_columns';
 
 export const useChromeOSColumns = (
@@ -29,20 +29,32 @@ export const useChromeOSColumns = (
 ) => {
   const { availableFields } = useChromeOSFields();
 
-  const availableColumns = useMemo(() => {
-    return availableFields.map((def) => def.columnDef);
-  }, [availableFields]);
-
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
-  const visibleColumnIds = useMemo(() => {
+  const urlCols = useMemo(() => {
     const columnsParamStr = searchParams.getAll(COLUMNS_PARAM_KEY).join(',');
-    const urlCols = columnsParamStr ? columnsParamStr.split(',') : [];
+    return columnsParamStr ? columnsParamStr.split(',') : [];
+  }, [searchParams]);
+
+  const visibleColumnIds = useMemo(() => {
     const requiredCols =
       urlCols.length > 0 ? urlCols : CHROMEOS_DEFAULT_COLUMNS;
 
     return _.uniq([...requiredCols, ...EXTRA_COLUMN_IDS]);
-  }, [searchParams]);
+  }, [urlCols]);
+
+  const availableColumns = useMemo(() => {
+    const baseCols = availableFields.map((def) => def.columnDef);
+    const baseColIds = new Set(baseCols.map((col) => col.id));
+
+    const missingCols = urlCols.flatMap((id) => {
+      if (baseColIds.has(id)) return [];
+      const def = getFieldDefinition(id);
+      return def?.columnDef ? [def.columnDef] : [];
+    });
+
+    return [...baseCols, ...missingCols];
+  }, [availableFields, urlCols]);
 
   const visibleColumns = useMemo(() => {
     return availableColumns.filter((col) => visibleColumnIds.includes(col.id));
@@ -52,6 +64,10 @@ export const useChromeOSColumns = (
   useEffect(() => {
     if (isLoadingFilters || isLoadingDevices) return;
 
+    // Note: Since availableColumns (and thus visibleColumns) now includes
+    // missing columns from visibleColumnIds as fallbacks, invalid columns will
+    // be filtered out on the first render, executing setSearchParams exactly once
+    // and avoiding infinite loops.
     const invalidCols = visibleColumnIds.filter(
       (id) => !visibleColumns.some((col) => col.id === id),
     );
