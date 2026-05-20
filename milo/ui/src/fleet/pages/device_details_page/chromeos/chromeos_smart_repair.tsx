@@ -27,21 +27,76 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  Divider,
   Grid,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  DocumentSnapshot,
+  FirestoreError,
+  doc,
+  onSnapshot,
+} from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
+import { db } from '@/firebase';
 import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { GetSmartRepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import {
+  convertGsToHttp,
+  formatLogTimestamp,
+  getConclusionIcon,
+  getConclusionSeverity,
+  getHeaderStatusLabel,
+  getNormalizedResult,
+  SmartRepairRealtimeData,
+} from './chromeos_smart_repair_utils';
+
+const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export const ChromeOSSmartRepair = () => {
   const { id = '' } = useParams();
   const hasAdminTaskPermission = useAdminTaskPermission();
   const fleetConsoleClient = useFleetConsoleClient();
   const queryClient = useQueryClient();
+
+  const [realtimeData, setRealtimeData] =
+    useState<SmartRepairRealtimeData | null>(null);
+  const [realtimeError, setRealtimeError] = useState<string | null>(null);
+
+  const {
+    data,
+    isLoading: isInitialLoading,
+    isError: isInitialError,
+    error: initialError,
+    refetch,
+    isFetching: isInitialFetching,
+  } = useQuery({
+    queryKey: ['smart-repair', id],
+    queryFn: async () => {
+      const response = await fleetConsoleClient.GetSmartRepair({
+        deviceIds: [id],
+        forceRetrigger: false,
+        checkOnly: true,
+      });
+      if (response.results && response.results.length > 0) {
+        return response.results[0] as GetSmartRepairResult;
+      }
+      return null;
+    },
+    enabled: hasAdminTaskPermission === true && id !== '',
+    refetchInterval: (query) => {
+      const resData = query.state.data;
+      if (resData && resData.alreadyInProgress && !resData.cachedResult) {
+        return 3000;
+      }
+      return false;
+    },
+    refetchOnWindowFocus: false,
+  });
 
   const retriggerMutation = useMutation({
     mutationFn: () =>
@@ -52,29 +107,69 @@ export const ChromeOSSmartRepair = () => {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['smart-repair', id] });
+      setRealtimeData(null);
+      setRealtimeError(null);
+      refetch();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       // eslint-disable-next-line no-console
       console.error('Failed to force retrigger:', error);
     },
   });
 
-  const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['smart-repair', id],
-    queryFn: async () => {
-      const response = await fleetConsoleClient.GetSmartRepair({
-        deviceIds: [id],
-        forceRetrigger: false,
-        checkOnly: true,
-      });
-      if (response.results && response.results.length > 0) {
-        return response.results[0];
-      }
-      return null;
-    },
-    enabled: hasAdminTaskPermission === true && id !== '',
-    refetchOnWindowFocus: false,
-  });
+  const eventId = data?.eventId;
+  const hasCachedResult = !!data?.cachedResult;
+  const alreadyInProgress = data?.alreadyInProgress;
+
+  useEffect(() => {
+    if (!eventId) {
+      setRealtimeData(null);
+      setRealtimeError(null);
+      return;
+    }
+
+    // If we already have a cached result, we don't need a Firestore listener.
+    // We can also clear the realtimeData since displayData will fall back to data.cachedResult.
+    if (hasCachedResult) {
+      setRealtimeData(null);
+      setRealtimeError(null);
+      return;
+    }
+
+    if (alreadyInProgress) {
+      setRealtimeData({ status: 'processing' });
+    } else {
+      setRealtimeData(null);
+    }
+    setRealtimeError(null);
+
+    const docRef = doc(db, 'aiRepairResults', eventId);
+
+    const unsubscribe = onSnapshot(
+      docRef,
+      (docSnap: DocumentSnapshot) => {
+        if (docSnap.exists()) {
+          const docData = docSnap.data() as SmartRepairRealtimeData;
+          setRealtimeData(docData);
+          if (docData.status === 'completed' || docData.status === 'error') {
+            queryClient.invalidateQueries({ queryKey: ['smart-repair', id] });
+          }
+          setRealtimeError(null);
+        } else {
+          if (!alreadyInProgress) {
+            setRealtimeError(`Analysis record (ID: ${eventId}) not found.`);
+          }
+        }
+      },
+      (err: FirestoreError) => {
+        // eslint-disable-next-line no-console
+        console.error('Firestore listener error:', err);
+        setRealtimeError('Error fetching real-time updates.');
+      },
+    );
+
+    return () => unsubscribe();
+  }, [eventId, id, queryClient, hasCachedResult, alreadyInProgress]);
 
   if (hasAdminTaskPermission === false) {
     return (
@@ -98,7 +193,46 @@ export const ChromeOSSmartRepair = () => {
     return <Typography>Checking permissions...</Typography>;
   }
 
-  const loading = isLoading || isFetching;
+  const isLoading = isInitialLoading || (isInitialFetching && !data);
+  const displayData =
+    realtimeData ||
+    (data?.cachedResult
+      ? { status: 'completed', result: data.cachedResult }
+      : null);
+  const currentStatus =
+    realtimeData?.status ||
+    (data?.cachedResult
+      ? 'completed'
+      : data?.alreadyInProgress
+        ? 'processing'
+        : 'idle');
+  const normalizedResult = getNormalizedResult(displayData?.result);
+  const logTimestamp = formatLogTimestamp(normalizedResult.logsPath);
+
+  const getTriggeredAndExpiredTimes = () => {
+    const ts = realtimeData?.requestTimestamp;
+    if (!ts) return null;
+
+    let date: Date;
+    if (typeof ts.toDate === 'function') {
+      date = ts.toDate();
+    } else if (ts.seconds) {
+      date = new Date(ts.seconds * 1000);
+    } else {
+      date = new Date(ts as unknown as string | number | Date);
+    }
+
+    if (isNaN(date.getTime())) return null;
+
+    const triggeredStr = date.toLocaleString();
+
+    const expireDate = new Date(date.getTime() + CACHE_EXPIRATION_MS);
+    const expiredStr = expireDate.toLocaleString();
+
+    return { triggeredStr, expiredStr };
+  };
+
+  const timeInfo = getTriggeredAndExpiredTimes();
 
   return (
     <Box sx={{ mt: 3 }}>
@@ -116,6 +250,15 @@ export const ChromeOSSmartRepair = () => {
         >
           <AutoFixHighIcon color="primary" />
           AI Analysis Results
+          {(currentStatus === 'pending' || currentStatus === 'processing') && (
+            <Chip
+              label="IN PROGRESS"
+              size="small"
+              color="warning"
+              variant="outlined"
+              sx={{ ml: 1 }}
+            />
+          )}
         </Typography>
         <Button
           variant="outlined"
@@ -127,7 +270,7 @@ export const ChromeOSSmartRepair = () => {
             )
           }
           onClick={() => retriggerMutation.mutate()}
-          disabled={loading || retriggerMutation.isPending}
+          disabled={isLoading || retriggerMutation.isPending}
         >
           {retriggerMutation.isPending
             ? 'Retriggering...'
@@ -135,244 +278,321 @@ export const ChromeOSSmartRepair = () => {
         </Button>
       </Box>
 
-      {isError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to fetch Smart Repair data:{' '}
-          {error instanceof Error ? error.message : String(error)}
-        </Alert>
-      )}
-
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-          <CircularProgress />
+      {timeInfo && (
+        <Box sx={{ display: 'flex', gap: 3, mb: 3, mt: -1 }}>
+          <Typography variant="caption" color="text.secondary">
+            <strong>Triggered:</strong> {timeInfo.triggeredStr}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            <strong>Expires:</strong> {timeInfo.expiredStr}
+          </Typography>
         </Box>
       )}
 
-      {!loading && !isError && data && (
+      {isInitialError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Failed to fetch Smart Repair data:{' '}
+          {initialError instanceof Error
+            ? initialError.message
+            : String(initialError)}
+        </Alert>
+      )}
+      {realtimeError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Real-time Update Error: {realtimeError}
+        </Alert>
+      )}
+
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <CircularProgress />
+          <Typography sx={{ ml: 2 }}>
+            Loading analysis data... This will take a few minutes.
+          </Typography>
+        </Box>
+      )}
+
+      {!isLoading && !isInitialError && (
         <>
-          {data.alreadyInProgress && !data.cachedResult && (
+          {currentStatus === 'idle' && !displayData && (
             <Alert severity="info" sx={{ mb: 3 }}>
-              An analysis is currently in progress. Please wait and refresh
-              later.
+              No active or cached analysis found for this device. Click
+              &quot;Trigger/Refresh Analysis&quot; to start.
             </Alert>
           )}
 
-          {!data.alreadyInProgress && !data.cachedResult && (
-            <Alert severity="info" sx={{ mb: 3 }}>
-              No cached analysis found for this device. Click &quot;Retrigger
-              Analysis&quot; to trigger a new request.
-            </Alert>
-          )}
+          {(currentStatus === 'pending' || currentStatus === 'processing') &&
+            !displayData?.result && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Analysis is currently {currentStatus}.
+                <CircularProgress size={16} sx={{ ml: 2 }} />
+              </Alert>
+            )}
 
-          {data.cachedResult && (
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={5}>
-                <Card
-                  variant="outlined"
-                  sx={{ mb: 3, backgroundColor: '#f9f9f9' }}
-                >
-                  <CardContent>
-                    <Typography
-                      variant="subtitle2"
-                      color="text.secondary"
-                      gutterBottom
-                    >
-                      Conclusion
-                    </Typography>
-                    {data.cachedResult.conclusions &&
-                    data.cachedResult.conclusions.length > 0 ? (
-                      data.cachedResult.conclusions.map((conclusion, index) => (
-                        <Accordion
-                          key={index}
-                          disableGutters
-                          elevation={0}
-                          sx={{
-                            '&:before': { display: 'none' },
-                            border: '1px solid #e0e0e0',
-                            mb: -1,
-                            '&:first-of-type': { mt: 1 },
-                          }}
-                        >
-                          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                width: '100%',
-                              }}
-                            >
-                              <Typography
-                                sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1,
-                                }}
-                              >
-                                {conclusion.status
-                                  .toLowerCase()
-                                  .includes('fail') ||
-                                conclusion.status
-                                  .toLowerCase()
-                                  .includes('broken') ? (
-                                  <Alert
-                                    icon={false}
-                                    severity="error"
-                                    sx={{
-                                      p: 0,
-                                      '& .MuiAlert-message': {
-                                        p: 0,
-                                        minWidth: 20,
-                                        textAlign: 'center',
-                                      },
-                                    }}
-                                  >
-                                    !
-                                  </Alert>
-                                ) : (
-                                  <Alert
-                                    icon={false}
-                                    severity="success"
-                                    sx={{
-                                      p: 0,
-                                      '& .MuiAlert-message': {
-                                        p: 0,
-                                        minWidth: 20,
-                                        textAlign: 'center',
-                                      },
-                                    }}
-                                  >
-                                    ✓
-                                  </Alert>
-                                )}
-                                {conclusion.target}
-                              </Typography>
-                              <Chip
-                                label={conclusion.status}
-                                size="small"
-                                color={
-                                  conclusion.status
-                                    .toLowerCase()
-                                    .includes('fail') ||
-                                  conclusion.status
-                                    .toLowerCase()
-                                    .includes('broken')
-                                    ? 'error'
-                                    : 'success'
-                                }
-                                variant="outlined"
-                              />
-                            </Box>
-                          </AccordionSummary>
-                          <AccordionDetails>
-                            <Typography variant="body2">
-                              {conclusion.summary}
-                            </Typography>
-                            {conclusion.recoveries &&
-                              conclusion.recoveries.length > 0 && (
-                                <Box sx={{ mt: 1 }}>
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                  >
-                                    Recoveries attempted:
-                                  </Typography>
-                                  <ul>
-                                    {conclusion.recoveries.map((rec, i) => (
-                                      <li key={i}>
-                                        <Typography variant="body2">
-                                          {rec}
-                                        </Typography>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </Box>
-                              )}
-                          </AccordionDetails>
-                        </Accordion>
-                      ))
-                    ) : (
-                      <Typography variant="body2">
-                        No conclusions available.
-                      </Typography>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              <Grid item xs={12} md={7}>
-                <Card
-                  variant="outlined"
+          {displayData?.result && (
+            <Box>
+              {/* Summary banner right under the title */}
+              {normalizedResult.summary && (
+                <Box
                   sx={{
-                    borderColor: 'primary.main',
-                    backgroundColor: '#f0f7ff',
+                    p: 2.5,
+                    mb: 3,
+                    borderRadius: 2,
+                    backgroundColor: '#eef6fc',
+                    borderLeft: '5px solid #1976d2',
                   }}
                 >
-                  <CardContent>
-                    <Typography
-                      variant="h6"
-                      color="primary"
+                  <Typography
+                    variant="subtitle2"
+                    color="primary"
+                    sx={{ fontWeight: 'bold', mb: 0.5 }}
+                  >
+                    Analysis Summary
+                  </Typography>
+                  <Typography variant="body1" color="text.primary">
+                    {normalizedResult.summary}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Split Layout Grid */}
+              <Grid container spacing={3}>
+                {/* Left Side Column (Logs + Conclusions) */}
+                <Grid item xs={12} md={6}>
+                  {/* Task Log Link Div */}
+                  {normalizedResult.logsPath && (
+                    <Box
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        mb: 2,
+                        p: 2,
+                        mb: 3,
+                        borderRadius: 1,
+                        backgroundColor: '#f5f5f5',
+                        border: '1px solid #e0e0e0',
                       }}
                     >
-                      <BuildIcon fontSize="small" />
-                      Suggested Repair Steps
-                    </Typography>
-
-                    {data.cachedResult.summary && (
                       <Typography
-                        variant="body2"
-                        sx={{ mb: 2, fontStyle: 'italic' }}
+                        variant="subtitle2"
+                        color="text.secondary"
+                        gutterBottom
                       >
-                        {data.cachedResult.summary}
+                        Latest Task Log
                       </Typography>
-                    )}
-
-                    {data.cachedResult.manualRepairActions &&
-                    data.cachedResult.manualRepairActions.length > 0 ? (
-                      <Box component="ol" sx={{ pl: 2, m: 0 }}>
-                        {data.cachedResult.manualRepairActions.map(
-                          (action, index) => (
-                            <Typography
-                              component="li"
-                              variant="body1"
-                              key={index}
-                              sx={{ mb: 1 }}
-                            >
-                              {action.replace(/^\d+\.\s*/, '')}
-                            </Typography>
-                          ),
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 0.5,
+                        }}
+                      >
+                        <a
+                          href={convertGsToHttp(normalizedResult.logsPath)}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            wordBreak: 'break-all',
+                            textDecoration: 'none',
+                            color: '#1976d2',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {normalizedResult.logsPath}
+                        </a>
+                        {logTimestamp && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mt: 0.5 }}
+                          >
+                            Log Date: {logTimestamp}
+                          </Typography>
                         )}
                       </Box>
-                    ) : (
-                      <Typography variant="body1">
-                        No manual repair actions suggested.
-                      </Typography>
-                    )}
+                    </Box>
+                  )}
 
-                    {data.cachedResult.logsPath && (
-                      <>
-                        <Divider sx={{ my: 2 }} />
+                  {/* Conclusions Card */}
+                  <Card variant="outlined" sx={{ backgroundColor: '#f9f9f9' }}>
+                    <CardContent>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        Conclusion
+                      </Typography>
+                      {normalizedResult.conclusions &&
+                      normalizedResult.conclusions.length > 0 ? (
+                        normalizedResult.conclusions.map(
+                          (conclusion, index) => (
+                            <Accordion
+                              key={index}
+                              disableGutters
+                              elevation={0}
+                              sx={{
+                                '&:before': { display: 'none' },
+                                border: '1px solid #e0e0e0',
+                                mb:
+                                  index ===
+                                  normalizedResult.conclusions.length - 1
+                                    ? 0
+                                    : 1,
+                                '&:first-of-type': { mt: 1 },
+                              }}
+                            >
+                              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    width: '100%',
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 1,
+                                    }}
+                                  >
+                                    <Alert
+                                      icon={false}
+                                      severity={getConclusionSeverity(
+                                        conclusion.status,
+                                      )}
+                                      sx={{
+                                        p: 0,
+                                        '& .MuiAlert-message': {
+                                          p: 0,
+                                          minWidth: 20,
+                                          textAlign: 'center',
+                                        },
+                                      }}
+                                    >
+                                      {getConclusionIcon(
+                                        getConclusionSeverity(
+                                          conclusion.status,
+                                        ),
+                                      )}
+                                    </Alert>
+                                    {conclusion.target}
+                                  </Box>
+                                  <Chip
+                                    label={getHeaderStatusLabel(
+                                      conclusion.status,
+                                    )}
+                                    size="small"
+                                    color={getConclusionSeverity(
+                                      conclusion.status,
+                                    )}
+                                    variant="outlined"
+                                  />
+                                </Box>
+                              </AccordionSummary>
+                              <AccordionDetails>
+                                {conclusion.status && (
+                                  <Typography
+                                    variant="subtitle2"
+                                    color="text.secondary"
+                                    component="div"
+                                    sx={{ mb: 0.5, fontWeight: 'bold' }}
+                                  >
+                                    Status: {conclusion.status}
+                                  </Typography>
+                                )}
+                                <Typography variant="body2">
+                                  {conclusion.summary}
+                                </Typography>
+                                {conclusion.recoveries &&
+                                  conclusion.recoveries.length > 0 && (
+                                    <Box sx={{ mt: 1 }}>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                      >
+                                        Recoveries attempted:
+                                      </Typography>
+                                      <ul>
+                                        {conclusion.recoveries.map((rec, i) => (
+                                          <li key={i}>
+                                            <Typography variant="body2">
+                                              {rec}
+                                            </Typography>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </Box>
+                                  )}
+                              </AccordionDetails>
+                            </Accordion>
+                          ),
+                        )
+                      ) : (
                         <Typography variant="body2">
-                          <strong>Logs Path:</strong>{' '}
-                          <a
-                            href={data.cachedResult.logsPath}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {data.cachedResult.logsPath}
-                          </a>
+                          No conclusions available.
                         </Typography>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                {/* Right Side Column (Repair Steps) */}
+                <Grid item xs={12} md={6}>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      borderColor: 'primary.main',
+                      backgroundColor: '#f0f7ff',
+                      height: '100%',
+                    }}
+                  >
+                    <CardContent>
+                      <Typography
+                        variant="h6"
+                        color="primary"
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          mb: 2,
+                        }}
+                      >
+                        <BuildIcon fontSize="small" />
+                        Suggested Repair Steps
+                      </Typography>
+
+                      {normalizedResult.manualRepairActions &&
+                      normalizedResult.manualRepairActions.length > 0 ? (
+                        <Box component="ol" sx={{ pl: 2, m: 0 }}>
+                          {normalizedResult.manualRepairActions.map(
+                            (action, index) => (
+                              <Typography
+                                component="li"
+                                variant="body1"
+                                key={index}
+                                sx={{ mb: 1 }}
+                              >
+                                {action.replace(/^\d+\.\s*/, '')}
+                              </Typography>
+                            ),
+                          )}
+                        </Box>
+                      ) : (
+                        <Typography variant="body1">
+                          No manual repair actions suggested.
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
               </Grid>
-            </Grid>
+            </Box>
+          )}
+
+          {currentStatus === 'error' && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              Analysis Failed: {realtimeData?.error?.message || 'Unknown error'}
+            </Alert>
           )}
         </>
       )}
