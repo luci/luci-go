@@ -37,6 +37,8 @@ import {
 
 import { BreakdownTableChart } from './breakdown_table_chart';
 
+const ENABLE_EXPORT_TO_SHEETS = false;
+
 /**
  * A widget that displays performance breakdown data.
  */
@@ -241,8 +243,8 @@ export function BreakdownTableWidget({
             }),
           );
         }}
-        onExport={handleExport}
-        isExporting={isExporting}
+        onExport={ENABLE_EXPORT_TO_SHEETS ? handleExport : undefined}
+        isExporting={ENABLE_EXPORT_TO_SHEETS ? isExporting : undefined}
       />
     </Box>
   );
