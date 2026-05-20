@@ -15,11 +15,12 @@
 import CheckIcon from '@mui/icons-material/Check';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Alert, Box, Divider, Grid, Typography } from '@mui/material';
+import { Alert, Box, Divider, Grid, Link, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
+import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
@@ -88,6 +89,33 @@ const OTHER_DUT_STATES = [
   BLANK_VALUE,
 ];
 
+const AVAILABLE_READY_FILTERS: Record<string, string[]> = {
+  state: ['DEVICE_STATE_AVAILABLE'],
+  'labels."dut_state"': ['ready'],
+};
+
+const NOT_READY_DUT_STATES = [
+  'needs_repair',
+  'repair_failed',
+  'needs_manual_repair',
+  'needs_deploy',
+  'needs_replacement',
+  'registered',
+  'reserved',
+  'unknown',
+];
+
+// Static filter objects extracted to avoid re-renders.
+const AVAILABLE_FILTERS: Record<string, string[]> = {
+  state: ['DEVICE_STATE_AVAILABLE'],
+  'labels."dut_state"': [],
+};
+
+const LEASED_FILTERS: Record<string, string[]> = {
+  state: ['DEVICE_STATE_LEASED'],
+  'labels."dut_state"': [],
+};
+
 export interface ChromeOSSummaryHeaderProps {
   aip160: string;
   setFiltersBatch: (updates: Record<string, string[]>) => void;
@@ -121,6 +149,15 @@ export function ChromeOSSummaryHeader({
     }),
   });
 
+  const availableReadyFilter = stringifyFilters(AVAILABLE_READY_FILTERS);
+
+  const availableReadyQuery = useQuery({
+    ...client.CountDevices.query({
+      filter: [aip160, availableReadyFilter].filter(Boolean).join(' AND '),
+      platform: Platform.CHROMEOS,
+    }),
+  });
+
   const colors = {
     success: theme.palette.success.main,
     error: theme.palette.error.main,
@@ -130,11 +167,17 @@ export function ChromeOSSummaryHeader({
   };
 
   const getContent = () => {
-    if (countQuery.isError || labstationsQuery.isError) {
+    if (
+      countQuery.isError ||
+      labstationsQuery.isError ||
+      availableReadyQuery.isError
+    ) {
       return (
         <Alert severity="error">
           {getErrorMessage(
-            countQuery.error || labstationsQuery.error,
+            countQuery.error ||
+              labstationsQuery.error ||
+              availableReadyQuery.error,
             'get the main metrics',
           )}
         </Alert>
@@ -174,12 +217,27 @@ export function ChromeOSSummaryHeader({
       otherStates: devicesOtherStates,
     } = parseDeviceMetrics(countQuery.data, countQuery.data?.total || 0);
 
-    const isLoading = countQuery.isPending || labstationsQuery.isPending;
+    const isLoading =
+      countQuery.isPending ||
+      labstationsQuery.isPending ||
+      availableReadyQuery.isPending;
     const gridStyles = getMetricsGridStyles(theme);
 
     const handleMetricClick = (newFilters: Record<string, string[]>) => {
       setFiltersBatch(newFilters);
     };
+
+    const availableIdle = countQuery.data?.taskState?.idle || 0;
+    const availableReady = availableReadyQuery.data?.total || 0;
+    // Note: These queries execute independently and may reflect slightly different
+    // timestamps (race condition), causing availableReady to occasionally exceed availableIdle.
+    const notReadyValue = availableIdle - availableReady;
+    if (notReadyValue < 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `Data anomaly: availableReady (${availableReady}) is greater than availableIdle (${availableIdle})`,
+      );
+    }
 
     return (
       <Box sx={{ p: 1 }}>
@@ -381,9 +439,87 @@ export function ChromeOSSummaryHeader({
                 handleMetricClick({
                   'labels."dut_state"': [],
                   'labels."label-pool"': [],
+                  state: [],
                 })
               }
             />
+            <Box
+              sx={{ mt: 0.5, px: 1, display: 'flex', flexDirection: 'column' }}
+            >
+              <SmallMetricItem
+                label="Available:"
+                value={countQuery.data?.taskState?.idle || 0}
+                total={totalDevices}
+                dotColor={colors.success}
+                loading={isLoading}
+                onClick={() => handleMetricClick(AVAILABLE_FILTERS)}
+              />
+              <Box sx={{ ml: 2 }}>
+                <SmallMetricItem
+                  label={
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                    >
+                      Ready:
+                      <InfoTooltip>
+                        <Box sx={{ p: 0.5 }}>
+                          <Typography variant="body2">
+                            Devices that are <strong>Ready</strong> and{' '}
+                            <strong>Available</strong> can immediately take on
+                            new tests. Both states are required to understand
+                            lab capacity as <strong>Ready</strong> devices are
+                            healthy but might be leased, while{' '}
+                            <strong>Available</strong> devices could be able to
+                            run tasks (i.e., repair tasks) but are broken.
+                          </Typography>
+                        </Box>
+                      </InfoTooltip>
+                    </Box>
+                  }
+                  value={availableReady}
+                  total={totalDevices}
+                  dotColor={colors.success}
+                  loading={isLoading}
+                  onClick={() => handleMetricClick(AVAILABLE_READY_FILTERS)}
+                />
+                <SmallMetricItem
+                  label={
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                    >
+                      Not ready:
+                      <InfoTooltip>
+                        <Box sx={{ p: 0.5 }}>
+                          <Typography variant="body2">
+                            Devices that are <strong>Available</strong> but{' '}
+                            <strong>Not ready</strong> might be broken but able
+                            to run repair jobs or similar.
+                          </Typography>
+                        </Box>
+                      </InfoTooltip>
+                    </Box>
+                  }
+                  value={Math.max(0, notReadyValue)}
+                  total={totalDevices}
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                  onClick={() =>
+                    handleMetricClick({
+                      state: ['DEVICE_STATE_AVAILABLE'],
+                      'labels."dut_state"': NOT_READY_DUT_STATES,
+                    })
+                  }
+                />
+              </Box>
+              <SmallMetricItem
+                label="Leased:"
+                value={countQuery.data?.taskState?.busy || 0}
+                total={totalDevices}
+                dotColor={colors.grey}
+                loading={isLoading}
+                onClick={() => handleMetricClick(LEASED_FILTERS)}
+              />
+            </Box>
           </Grid>
           <Grid item xs={12} sm={6} md={3} sx={gridStyles.col2}>
             <SingleMetric
@@ -416,7 +552,29 @@ export function ChromeOSSummaryHeader({
                 }
               />
               <SmallMetricItem
-                label="Recovering:"
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Recovering:
+                    <InfoTooltip>
+                      <Box sx={{ p: 0.5 }}>
+                        <Typography variant="body2">
+                          Devices in recovering state are expected to be fixed
+                          by automated repair jobs.
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 2 }}>
+                          <Link
+                            href="http://go/flops-swarming#dut-states"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="documentation (opens in a new tab)"
+                          >
+                            See documentation for details.
+                          </Link>
+                        </Typography>
+                      </Box>
+                    </InfoTooltip>
+                  </Box>
+                }
                 value={devicesRecovering}
                 total={totalDevices}
                 dotColor={colors.grey}
