@@ -85,7 +85,7 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, roo
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
 		fmt.Sprintf("Directory for the shared cache (can also be set by %s env var).", cipd.EnvCacheDir))
 	f.StringVar(&opts.readOnlyCacheDir, "read-only-cache-dir", "",
-		fmt.Sprintf("Directory for a shared read-only cache (can also be set by %s env var). Prepared with `cipd cache-prepare`.", cipd.EnvReadOnlyCacheDir))
+		fmt.Sprintf(`Directory for a shared read-only cache (can also be set by %s env var). Prepared with "cipd cache-prepare".`, cipd.EnvReadOnlyCacheDir))
 	f.BoolVar(&opts.disableNetwork, "disable-network", false, "If provided, client will make no network requests.")
 
 	if rootDir {
