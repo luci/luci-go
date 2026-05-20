@@ -70,11 +70,16 @@ export function ChronicleContextProvider({
     throw new Error('Invalid URL: Missing workplanId parameter.');
   }
 
-  const useFakeData = workplanId === DEMO_WORKPLAN_ID;
+  const normalizedWorkplanId =
+    workplanId.startsWith('L') && workplanId.length > 1
+      ? workplanId.substring(1)
+      : workplanId;
+
+  const useFakeData = normalizedWorkplanId === DEMO_WORKPLAN_ID;
 
   const result = useReadWorkPlan(
     {
-      workplanId: { id: workplanId },
+      workplanId: { id: normalizedWorkplanId },
       includedNodeTypes: [
         IdentifierKind.IDENTIFIER_KIND_CHECK,
         IdentifierKind.IDENTIFIER_KIND_CHECK_EDIT,
@@ -111,7 +116,7 @@ export function ChronicleContextProvider({
   const workplanValueMap = useMemo(() => {
     if (useFakeData) {
       const generator = new FakeGraphGenerator({
-        workPlanIdStr: workplanId,
+        workPlanIdStr: normalizedWorkplanId,
         workflowType: workflowType,
       });
       return generator.generate();
@@ -126,11 +131,11 @@ export function ChronicleContextProvider({
       workplan: response?.workplan,
       valueDataMap: valueDataMap,
     };
-  }, [workplanId, workflowType, useFakeData, result]);
+  }, [normalizedWorkplanId, workflowType, useFakeData, result]);
 
   const value = useMemo(
     () => ({
-      workplanId,
+      workplanId: normalizedWorkplanId,
       graph: workplanValueMap.workplan,
       valueDataMap: workplanValueMap.valueDataMap,
       workflowType,
@@ -139,7 +144,7 @@ export function ChronicleContextProvider({
       setSelectedNodeId,
     }),
     [
-      workplanId,
+      normalizedWorkplanId,
       workplanValueMap.workplan,
       workplanValueMap.valueDataMap,
       workflowType,
