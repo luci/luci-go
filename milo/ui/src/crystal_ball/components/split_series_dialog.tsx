@@ -13,27 +13,34 @@
 // limitations under the License.
 
 import {
+  CallSplit as SplitIcon,
   CheckBox as CheckBoxIcon,
   CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import {
+  alpha,
   Autocomplete,
+  Box,
   Button,
   Checkbox,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+  Drawer,
+  IconButton,
   TextField,
+  Typography,
 } from '@mui/material';
-import { useState, useMemo, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 
 import {
   useListMeasurementFilterColumns,
   useSuggestMeasurementFilterValues,
 } from '@/crystal_ball/hooks/use_measurement_filter_api';
-import { buildFilterString, getFilterableColumns } from '@/crystal_ball/utils';
+import {
+  buildFilterString,
+  generateColor,
+  getFilterableColumns,
+} from '@/crystal_ball/utils';
 import {
   PerfChartSeries,
   PerfFilter,
@@ -124,73 +131,351 @@ export function SplitSeriesDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Split Series</DialogTitle>
-      <DialogContent>
-        <Autocomplete
-          options={columns.map((c) => c.column)}
-          getOptionLabel={(option) => option}
-          value={selectedColumn}
-          onChange={(_event, newValue) => {
-            setSelectedColumn(newValue);
-            setSelectedValues([]);
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
+      disableScrollLock
+      sx={{
+        zIndex: (theme) => theme.zIndex.drawer + 10,
+      }}
+      PaperProps={{
+        sx: {
+          width: { xs: '100%', sm: 480 },
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          boxShadow: (theme) => theme.shadows[24],
+        },
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          p: 2.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+              borderRadius: '12px',
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+              color: 'primary.main',
+            }}
+          >
+            <SplitIcon />
+          </Box>
+          <Box>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 700, lineHeight: 1.2 }}
+            >
+              Split Series
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', mt: 0.25 }}
+            >
+              Break down a series by dimension values
+            </Typography>
+          </Box>
+        </Box>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          edge="end"
+          aria-label="close"
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      {/* Scrollable Content */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+        }}
+      >
+        {/* Instructions Alert */}
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            bgcolor: (theme) => alpha(theme.palette.info.main, 0.06),
+            border: '1px solid',
+            borderColor: (theme) => alpha(theme.palette.info.main, 0.15),
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.5,
           }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Select Dimension to Split On"
-              margin="normal"
-            />
-          )}
-          loading={isLoadingColumns}
-        />
-        {selectedColumn && (
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 700,
+              color: 'info.main',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}
+          >
+            💡 How Splitting Works
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontSize: '0.8rem', lineHeight: 1.4 }}
+          >
+            Select a dimension to split this series by. The values you pick will
+            create separate, filtered child series.
+          </Typography>
+        </Box>
+
+        {/* Step 1: Select Dimension */}
+        <Box>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 700,
+              color: 'text.secondary',
+              textTransform: 'uppercase',
+              letterSpacing: 1,
+              mb: 1,
+              display: 'block',
+            }}
+          >
+            Step 1: Choose Dimension
+          </Typography>
           <Autocomplete
-            multiple
-            options={options}
-            disableCloseOnSelect
+            options={columns.map((c) => c.column)}
             getOptionLabel={(option) => option}
-            value={selectedValues}
+            value={selectedColumn}
             onChange={(_event, newValue) => {
-              setSelectedValues(newValue);
+              setSelectedColumn(newValue);
+              setSelectedValues([]);
             }}
-            inputValue={inputValue}
-            onInputChange={(_event, newInputValue) => {
-              setInputValue(newInputValue);
-            }}
-            renderOption={(props, option, { selected }) => (
-              <li {...props}>
-                <Checkbox
-                  icon={icon}
-                  checkedIcon={checkedIcon}
-                  style={{ marginRight: 8 }}
-                  checked={selected}
-                />
-                {option}
-              </li>
-            )}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Select Values"
-                placeholder="Search values..."
-                margin="normal"
+                label="Select Dimension to Split On"
+                placeholder="Search dimensions..."
+                size="small"
               />
             )}
-            loading={isLoadingSuggestions}
+            loading={isLoadingColumns}
           />
+        </Box>
+
+        {/* Step 2: Select Values */}
+        {selectedColumn && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 1,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1,
+                  }}
+                >
+                  Step 2: Select Values
+                </Typography>
+                {options.length > 0 && (
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      if (selectedValues.length === options.length) {
+                        setSelectedValues([]);
+                      } else {
+                        setSelectedValues([...options]);
+                      }
+                    }}
+                    sx={{ textTransform: 'none', py: 0, minWidth: 0 }}
+                  >
+                    {selectedValues.length === options.length
+                      ? 'Deselect All'
+                      : 'Select All'}
+                  </Button>
+                )}
+              </Box>
+              <Autocomplete
+                multiple
+                options={options}
+                disableCloseOnSelect
+                getOptionLabel={(option) => option}
+                value={selectedValues}
+                onChange={(_event, newValue) => {
+                  setSelectedValues(newValue);
+                }}
+                inputValue={inputValue}
+                onInputChange={(_event, newInputValue) => {
+                  setInputValue(newInputValue);
+                }}
+                renderOption={(props, option, { selected }) => {
+                  // eslint-disable-next-line react/prop-types
+                  const { key, ...otherProps } = props;
+                  return (
+                    <li key={key} {...otherProps}>
+                      <Checkbox
+                        icon={icon}
+                        checkedIcon={checkedIcon}
+                        style={{ marginRight: 8 }}
+                        checked={selected}
+                      />
+                      {option}
+                    </li>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select Values"
+                    placeholder={
+                      selectedValues.length > 0 ? '' : 'Search values...'
+                    }
+                    size="small"
+                  />
+                )}
+                loading={isLoadingSuggestions}
+              />
+            </Box>
+
+            {/* Step 3: Live Preview */}
+            {selectedValues.length > 0 && (
+              <Box
+                sx={{
+                  mt: 1,
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px dashed',
+                  borderColor: 'divider',
+                  bgcolor: (theme) => alpha(theme.palette.action.hover, 0.3),
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Preview of new series to be created ({selectedValues.length})
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.75,
+                    maxHeight: 180,
+                    overflowY: 'auto',
+                  }}
+                >
+                  {selectedValues.map((val, i) => (
+                    <Box
+                      key={val}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        p: 0.75,
+                        borderRadius: 1,
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          bgcolor: generateColor(
+                            series ? series.id.length + i : i,
+                          ),
+                        }}
+                      />
+                      <Typography
+                        variant="body2"
+                        noWrap
+                        sx={{ fontSize: '0.8rem', fontWeight: 500 }}
+                      >
+                        {series?.displayName || 'Series'} - {val}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
+          </Box>
         )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+      </Box>
+
+      {/* Sticky Actions Footer */}
+      <Box
+        sx={{
+          p: 2.5,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 1.5,
+        }}
+      >
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          color="inherit"
+          sx={{ px: 3 }}
+        >
+          Cancel
+        </Button>
         <Button
           onClick={handleSplit}
           variant="contained"
           disabled={!selectedColumn || selectedValues.length === 0}
+          sx={{
+            px: 4,
+            boxShadow: (theme) =>
+              `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
+            '&:hover': {
+              boxShadow: (theme) =>
+                `0 6px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
+            },
+          }}
         >
-          Split
+          Split Series
         </Button>
-      </DialogActions>
-    </Dialog>
+      </Box>
+    </Drawer>
   );
 }

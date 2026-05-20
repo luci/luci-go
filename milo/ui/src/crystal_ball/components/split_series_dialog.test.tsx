@@ -108,12 +108,16 @@ describe('SplitSeriesDialog', () => {
       />,
     );
 
-    expect(screen.getByText('Split Series')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Split Series' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByLabelText('Select Dimension to Split On'),
     ).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
-    expect(screen.getByText('Split')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Split Series' }),
+    ).toBeInTheDocument();
   });
 
   it('does not render when closed', () => {
@@ -127,7 +131,9 @@ describe('SplitSeriesDialog', () => {
       />,
     );
 
-    expect(screen.queryByText('Split Series')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Split Series' }),
+    ).not.toBeInTheDocument();
   });
 
   it('calls onClose when Cancel is clicked', () => {
@@ -266,7 +272,7 @@ describe('SplitSeriesDialog', () => {
     fireEvent.click(screen.getByRole('option', { name: 'value1' }));
 
     // Click Split
-    fireEvent.click(screen.getByText('Split'));
+    fireEvent.click(screen.getByRole('button', { name: 'Split Series' }));
 
     expect(mockOnSplit).toHaveBeenCalledWith(['value1'], 'build_branch');
     expect(mockOnClose).toHaveBeenCalledTimes(1);
