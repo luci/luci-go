@@ -147,7 +147,7 @@ describe('<LookupPage />', () => {
         <LookupPageWrapper />
       </FakeContextProvider>,
     );
-    expect(document.title).toBe('Lookup user');
+    expect(document.title).toBe('User lookup | LUCI');
 
     const textfield = screen
       .getByTestId('lookup-textfield')
@@ -157,6 +157,6 @@ describe('<LookupPage />', () => {
     act(() => searchButton.click());
 
     await screen.findByTestId('lookup-table');
-    expect(document.title).toBe('Lookup: requestedGroup');
+    expect(document.title).toBe('requestedGroup | LUCI');
   });
 });

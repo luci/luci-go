@@ -201,7 +201,7 @@ export function Component() {
   useDeclarePageId(UiPage.AuthServiceLookup);
   const [searchParams] = useSyncedSearchParams();
   const principal = searchParams.get(PRINCIPAL_PARAM_KEY);
-  const title = principal ? `Lookup: ${principal}` : 'Lookup user';
+  const title = principal ? `${principal} | LUCI` : 'User lookup | LUCI';
 
   return (
     <TrackLeafRoutePageView contentGroup="authdb-lookup">

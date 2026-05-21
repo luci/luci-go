@@ -120,10 +120,17 @@ export function GroupsPage() {
 
 export function Component() {
   useDeclarePageId(UiPage.AuthServiceGroups);
+  const { ['*']: groupName } = useParams();
+  const title =
+    groupName && groupName !== 'new!'
+      ? `${groupName} | LUCI`
+      : groupName === 'new!'
+        ? 'Create new group | LUCI'
+        : 'Groups | LUCI';
 
   return (
     <TrackLeafRoutePageView contentGroup="authdb-group">
-      <title>Groups</title>
+      <title>{title}</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.
