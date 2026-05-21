@@ -18,13 +18,15 @@ For every task that involves code changes, the agent MUST explicitly add tasks t
 - **Testing:** Run tests related to your changes using `npm test -- <path_to_test_file>`. To run all Fleet tests, use `npm test -- ./src/fleet`.
 - **Type Checking:** Run `npm run type-check` to ensure no typing regressions were introduced.
 
-## 2. Definition of Done
-A task is NOT complete if:
-- There are remaining lint/style errors in the changed files.
-- Type checking (`npm run type-check`) fails.
-- Tests related to the changes are failing.
+## 2. Definition of Done (Standard Workflow)
+A task or frontend CL is not considered complete until:
+- **Self-Review**: The `senior_reviewer` workflow has been run and no critical feedback remains.
+- **Verification**: All tests, lints (`npm run lint`), and type-checks (`npm run type-check`) pass successfully.
+- **UI Demo**: A demo has been uploaded (required for any change that adds, removes, or structurally alters visual components, pages, or user flows) and testing steps are included in the commit message.
+- **Commit Message**: The commit message clearly explains the change. If the change fixes a bug, it should reference it in the proper format (see `prepare_cl` skill for details).
+- **Direct Upload**: The agent should attempt to directly upload the CL and handle presubmits when possible (respecting sandbox limits as detailed in the `prepare_cl` skill documentation).
 
-**Failure to run these checks results in unnecessary round trips. Verification is part of the task.**
+**Failure to follow this workflow results in unnecessary round trips. Following this process is part of the task.**
 
 ## 3. Mandatory Self-Review via Subagent
 For every task that involves code changes, the agent MUST use the `senior_reviewer` skill to perform a self-review of the diff and address all feedback before declaring the task complete or uploading a CL.

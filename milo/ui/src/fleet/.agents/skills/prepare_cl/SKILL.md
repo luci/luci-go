@@ -30,7 +30,7 @@ Progress:
      - **Commit Message Guidelines**:
        - Title: Short, descriptive summary.
        - Body: Explain what changed and why. If it fixes a bug, explain the fix.
-       - Footer: Include bug reference in the format `Bug: b/XXXXXXX` (note the `b/` prefix).
+       - Footer: If the change fixes a bug, include reference in the format `Bug: b/XXXXXXX` (note the `b/` prefix).
      - Example: `git commit -m "[fleet] Fix CSV export missing columns by preserving URL columns\n\n... details ...\n\nBug: b/515102813"`
 
 3. **Upload UI Demo**:
@@ -45,4 +45,16 @@ Progress:
    - Attempt to run `git cl upload`.
    - *Note*: If this fails with an error like `chmod ~/.sso: operation not permitted` or a path-specific permission error, it is due to sandbox restrictions preventing the agent from modifying home directory files. In this case, do not block the task; notify the developer and ask them to run `git cl upload` on your behalf. (Alternatively, the developer may choose to disable the sandbox to allow direct uploads).
 
-
+5. **Rebasing and Handling Merge Conflicts**:
+   - Ensure there are no merge conflicts with the upstream branch before considering a CL done.
+   - **Safety Check**: Run `git status` first to ensure a clean working directory before attempting a rebase.
+   - Run `git pull --rebase origin main` (or the configured upstream branch) to sync with upstream.
+   - **Handling Conflicts**:
+     - If conflicts occur, do not simply remove conflict markers.
+     - Analyze both versions of the conflicting code blocks (`<<<<<<<` and `>>>>>>>`).
+     - Choose the logically correct implementation or combine them if needed.
+     - Ensure syntax validity after resolution.
+     - Run a lint check (`npm run lint`) on the file before staging!
+     - After resolving, stage the files: `git add <files>`.
+     - Continue the rebase: `git rebase --continue`.
+     - Re-run tests after rebasing to ensure no regressions.
