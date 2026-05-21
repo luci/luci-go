@@ -37,6 +37,11 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   IconButton,
   TextField,
@@ -105,6 +110,21 @@ export function ChartSeriesEditor({
     prefix: EditorUiKeyPrefix.CHART_SERIES,
   });
 
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [seriesIndexToDelete, setSeriesIndexToDelete] = useState<number | null>(
+    null,
+  );
+
+  const openDeleteConfirm = (index: number) => {
+    setSeriesIndexToDelete(index);
+    setDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setDeleteConfirmOpen(false);
+    setSeriesIndexToDelete(null);
+  };
+
   const context = useContext(EditorUiContext);
   const uiStates = context?.uiStates ?? {};
   const setUiState = context?.setUiState;
@@ -143,24 +163,57 @@ export function ChartSeriesEditor({
   );
 
   const handleRemoveSeries = useCallback(
-    (index: number) => {
-      const sourceSeries = series[index];
-      const getIdsToRemove = (parentId: string): string[] => {
-        if (!parentId) return [];
-        const childIds = series
-          .filter((s) => s.parentSeriesId === parentId && s.id !== parentId)
-          .flatMap((s) => [s.id, ...getIdsToRemove(s.id)]);
-        return childIds;
-      };
+    (index: number, deleteChildren: boolean) => {
+      const seriesToDelete = series[index];
+      const seriesIdToDelete = seriesToDelete.id;
 
-      const idsToRemove = new Set([
-        sourceSeries.id,
-        ...getIdsToRemove(sourceSeries.id),
-      ]);
-      const updatedSeries = series.filter((s) => !idsToRemove.has(s.id));
-      onUpdateSeries(updatedSeries);
+      if (deleteChildren) {
+        const getIdsToRemove = (parentId: string): string[] => {
+          if (!parentId) return [];
+          const childIds = series
+            .filter((s) => s.parentSeriesId === parentId && s.id !== parentId)
+            .flatMap((s) => [s.id, ...getIdsToRemove(s.id)]);
+          return childIds;
+        };
+
+        const idsToRemove = new Set([
+          seriesIdToDelete,
+          ...getIdsToRemove(seriesIdToDelete),
+        ]);
+        const updatedSeries = series.filter((s) => !idsToRemove.has(s.id));
+        onUpdateSeries(updatedSeries);
+      } else {
+        const newParentId = seriesToDelete.parentSeriesId;
+        let updatedSeries = series.map((s) => {
+          if (s.parentSeriesId === seriesIdToDelete) {
+            return PerfChartSeries.fromPartial({
+              ...s,
+              parentSeriesId: newParentId,
+            });
+          }
+          return s;
+        });
+        updatedSeries = updatedSeries.filter((s) => s.id !== seriesIdToDelete);
+        onUpdateSeries(updatedSeries);
+      }
+      closeDeleteConfirm();
     },
     [series, onUpdateSeries],
+  );
+
+  const handleItemRemove = useCallback(
+    (index: number) => {
+      const seriesItem = series[index];
+      const hasChildren = series.some(
+        (s) => s.parentSeriesId === seriesItem.id && s.id !== seriesItem.id,
+      );
+      if (hasChildren) {
+        openDeleteConfirm(index);
+      } else {
+        handleRemoveSeries(index, true);
+      }
+    },
+    [series, handleRemoveSeries],
   );
 
   const handleDuplicateSeries = useCallback(
@@ -329,7 +382,7 @@ export function ChartSeriesEditor({
             onUpdate={(updatedItem) =>
               handleUpdateSeriesItem(originalIndex, updatedItem)
             }
-            onRemove={() => handleRemoveSeries(originalIndex)}
+            onRemove={() => handleItemRemove(originalIndex)}
             onDuplicate={() => handleDuplicateSeries(originalIndex)}
             onSplit={() => handleSplitSeries(originalIndex)}
             dataSpecId={dataSpecId}
@@ -497,6 +550,34 @@ export function ChartSeriesEditor({
         globalFilters={globalFilters}
         widgetFilters={widgetFilters}
       />
+      <Dialog open={deleteConfirmOpen} onClose={closeDeleteConfirm}>
+        <DialogTitle>Delete Series</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This series has sub-series. How would you like to proceed?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteConfirm}>Cancel</Button>
+          <Button
+            onClick={() =>
+              seriesIndexToDelete !== null &&
+              handleRemoveSeries(seriesIndexToDelete, false)
+            }
+          >
+            Delete Series Only
+          </Button>
+          <Button
+            onClick={() =>
+              seriesIndexToDelete !== null &&
+              handleRemoveSeries(seriesIndexToDelete, true)
+            }
+            color="warning"
+          >
+            Delete Series and Sub-series
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

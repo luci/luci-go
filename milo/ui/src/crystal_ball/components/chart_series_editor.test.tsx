@@ -486,6 +486,92 @@ describe('ChartSeriesEditor', () => {
     expect(updatedSeries[0].hidden).toBe(true);
     expect(updatedSeries[1].hidden).toBe(true);
   });
+
+  it("shows confirmation dialog and cascades deletion when 'Delete Series and Sub-series' is clicked", async () => {
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        id: 'parent-1',
+        displayName: 'Parent 1',
+        metricField: 'metric1',
+        dataSpecId: 'test-spec-id',
+      }),
+      PerfChartSeries.fromPartial({
+        id: 'child-1',
+        displayName: 'Child 1',
+        metricField: 'metric1',
+        parentSeriesId: 'parent-1',
+        dataSpecId: 'test-spec-id',
+      }),
+    ];
+
+    render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
+
+    // Expand the Parent accordion
+    fireEvent.click(screen.getByText('Parent 1'));
+
+    // Click remove series on the parent (first button)
+    const removeButtons = await screen.findAllByRole('button', {
+      name: /Remove series/i,
+    });
+    fireEvent.click(removeButtons[0]);
+
+    // Confirmation dialog should be open
+    expect(
+      screen.getByText(
+        'This series has sub-series. How would you like to proceed?',
+      ),
+    ).toBeInTheDocument();
+
+    // Click 'Delete Series and Sub-series'
+    fireEvent.click(
+      screen.getByRole('button', { name: /Delete Series and Sub-series/i }),
+    );
+
+    // It should call onUpdateSeries with empty array (cascading delete)
+    expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onUpdateSeries).toHaveBeenCalledWith([]);
+  });
+
+  it("shows confirmation dialog and reparents sub-series when 'Delete Series Only' is clicked", async () => {
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        id: 'parent-1',
+        displayName: 'Parent 1',
+        metricField: 'metric1',
+        dataSpecId: 'test-spec-id',
+      }),
+      PerfChartSeries.fromPartial({
+        id: 'child-1',
+        displayName: 'Child 1',
+        metricField: 'metric1',
+        parentSeriesId: 'parent-1',
+        dataSpecId: 'test-spec-id',
+      }),
+    ];
+
+    render(<ChartSeriesEditor {...defaultProps} series={initialSeries} />);
+
+    // Expand the Parent accordion
+    fireEvent.click(screen.getByText('Parent 1'));
+
+    // Click remove series on the parent (first button)
+    const removeButtons = await screen.findAllByRole('button', {
+      name: /Remove series/i,
+    });
+    fireEvent.click(removeButtons[0]);
+
+    // Click 'Delete Series Only'
+    fireEvent.click(
+      screen.getByRole('button', { name: /Delete Series Only/i }),
+    );
+
+    // It should call onUpdateSeries keeping child-1 but with parentSeriesId falsy (empty string)
+    expect(defaultProps.onUpdateSeries).toHaveBeenCalledTimes(1);
+    const updatedSeries = defaultProps.onUpdateSeries.mock.lastCall[0];
+    expect(updatedSeries.length).toBe(1);
+    expect(updatedSeries[0].id).toBe('child-1');
+    expect(updatedSeries[0].parentSeriesId).toBeFalsy();
+  });
 });
 
 describe('ChartSeriesItem', () => {
