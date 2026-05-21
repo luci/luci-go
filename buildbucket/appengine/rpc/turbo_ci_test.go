@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
@@ -153,6 +154,9 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 			},
 		}.Build()))
 
+		// Validate that all ValueRef have a digest (except for NO_ACCESS case).
+		assertValueRefsHaveDigests(t, orch.QueryNodesResponse)
+
 		// Updated `build` in-place.
 		assert.That(t, build.ID, should.Equal(int64(buildID)))
 		assert.That(t, build.Tags, should.Match([]string{"fetched:for:real"}))
@@ -248,6 +252,9 @@ func TestLaunchTurboCIChildren(t *testing.T) {
 		assert.That(t, actualWriteNodes.GetStages()[0].GetIdentifier().GetId(), should.Equal(generateStageID("child-req-1")))
 		assert.That(t, actualWriteNodes.GetStages()[1].GetIdentifier().GetId(), should.Equal(generateStageID("child-req-2")))
 
+		// Validate that all ValueRef have a digest (except for NO_ACCESS case).
+		assertValueRefsHaveDigests(t, orch.lastQueryNodesResponse)
+
 		// Ensure models were correctly extracted from QueryNodes and loaded from datastore
 		assert.That(t, builds[0].ID, should.Equal(int64(childBuildID1)))
 		assert.That(t, builds[1].ID, should.Equal(int64(childBuildID2)))
@@ -298,6 +305,8 @@ func mockQueryNodesResponse(planID *idspb.WorkPlan, stageID *idspb.Stage, state 
 		if buildID != 0 || buildErr != nil {
 			details = append(details, buildStageDetails(buildID, buildErr))
 		}
+		// To validate empty inline and empty digest, add a NO_ACCESS ValueRef.
+		details = append(details, buildNoAccessStageDetails())
 		attempts = append(attempts,
 			// Ignored previous attempt.
 			orchestratorpb.Stage_Attempt_builder{
@@ -343,11 +352,34 @@ func buildStageDetails(buildID int64, buildErr error) *orchestratorpb.ValueRef {
 	return value.MustInline(msg, "project:bucket")
 }
 
+func buildNoAccessStageDetails() *orchestratorpb.ValueRef {
+	return orchestratorpb.ValueRef_builder{
+		TypeUrl:    proto.String(value.URL[*pb.BuildStageDetails]()),
+		OmitReason: orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS.Enum(),
+	}.Build()
+}
+
+// assertValueRefsHaveDigests asserts that all ValueRefs in the given response's
+// workplans have a digest, except for those omitted due to NO_ACCESS.
+func assertValueRefsHaveDigests(t *testing.T, resp *orchestratorpb.QueryNodesResponse) {
+	t.Helper()
+
+	assert.Loosely(t, resp, should.NotBeNil, truth.LineContext())
+	for _, wp := range resp.GetWorkplans() {
+		for _, ref := range value.RefsInWorkplan(wp) {
+			if ref.GetOmitReason() != orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS {
+				assert.Loosely(t, ref.GetDigest(), should.NotBeEmpty)
+			}
+		}
+	}
+}
+
 type dynamicChildOrch struct {
 	*turboci.FakeOrchestratorClient
-	buildIDSequence []int64
-	stageToBuildID  map[string]int64
-	mu              sync.Mutex
+	buildIDSequence        []int64
+	stageToBuildID         map[string]int64
+	lastQueryNodesResponse *orchestratorpb.QueryNodesResponse
+	mu                     sync.Mutex
 }
 
 func (d *dynamicChildOrch) WriteNodes(ctx context.Context, in *orchestratorpb.WriteNodesRequest, opts ...grpc.CallOption) (*orchestratorpb.WriteNodesResponse, error) {
@@ -380,22 +412,28 @@ func (d *dynamicChildOrch) QueryNodes(ctx context.Context, in *orchestratorpb.Qu
 			stageID := node.GetStage()
 			bID := d.stageToBuildID[stageID.GetId()]
 
+			details := []*orchestratorpb.ValueRef{
+				buildStageDetails(bID, nil),
+				// To validate empty inline and empty digest, add a NO_ACCESS ValueRef.
+				buildNoAccessStageDetails(),
+			}
+
 			stages = append(stages, orchestratorpb.Stage_builder{
 				Identifier: stageID,
 				State:      orchestratorpb.StageState_STAGE_STATE_ATTEMPTING.Enum(),
 				Attempts: []*orchestratorpb.Stage_Attempt{
 					orchestratorpb.Stage_Attempt_builder{
-						State: orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_PENDING.Enum(),
-						Details: []*orchestratorpb.ValueRef{
-							buildStageDetails(bID, nil), // Helper pre-existing in turbo_ci_test.go
-						},
+						State:   orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_PENDING.Enum(),
+						Details: details,
 					}.Build(),
 				},
 			}.Build())
 		}
 	}
 	wp.SetStages(stages)
-	return orchestratorpb.QueryNodesResponse_builder{
+	resp := orchestratorpb.QueryNodesResponse_builder{
 		Workplans: []*orchestratorpb.WorkPlan{wp},
-	}.Build(), d.FakeOrchestratorClient.Err
+	}.Build()
+	d.lastQueryNodesResponse = resp
+	return resp, d.FakeOrchestratorClient.Err
 }

@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 )
 
@@ -40,6 +41,8 @@ func TestInline(t *testing.T) {
 		t.Parallel()
 
 		sval := structpb.NewStringValue("hello")
+		svalAny, err := anypb.New(sval)
+		assert.NoErr(t, err)
 		svalBytes, err := proto.Marshal(sval)
 		assert.NoErr(t, err)
 
@@ -50,6 +53,7 @@ func TestInline(t *testing.T) {
 				TypeUrl: URL[*structpb.Value](),
 				Value:   svalBytes,
 			},
+			Digest:  proto.String(string(ComputeDigest(svalAny))),
 		}.Build()))
 	})
 
@@ -64,6 +68,7 @@ func TestInline(t *testing.T) {
 			TypeUrl: proto.String(URL[*structpb.Value]()),
 			Realm:   proto.String("proj:realm"),
 			Inline:  svalAny,
+			Digest:  proto.String(string(ComputeDigest(svalAny))),
 		}.Build()))
 	})
 }

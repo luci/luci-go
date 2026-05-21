@@ -26,10 +26,12 @@ import (
 // except that this is a purely mechanical proto message assembly which cannot
 // error.
 func InlineRef(vw *orchestratorpb.ValueWrite) *orchestratorpb.ValueRef {
+	dgst := ComputeDigest(vw.GetData())
 	return orchestratorpb.ValueRef_builder{
 		TypeUrl: proto.String(vw.GetData().GetTypeUrl()),
 		Realm:   proto.String(vw.GetRealm()),
 		Inline:  vw.GetData(),
+		Digest:  proto.String(string(dgst)),
 		// TODO: copy tag data when added to ValueWrite/ValueRef.
 	}.Build()
 }
