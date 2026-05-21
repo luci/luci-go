@@ -30,14 +30,38 @@ export interface RestUser {
 
 export const RestUser = {
   toProto(rest: RestUser): Commit_User {
+    let parsedTime: DateTime | undefined;
+    if (rest.time) {
+      // Gitiles date strings can be like "Wed May 20 16:10:55 2026 -0700" or "Thu Apr 04 17:40:47 2024".
+      // We try to parse with timezone offset (HH:mm:ss yyyy ZZZ) and without timezone offset (HH:mm:ss yyyy).
+      const formats = [
+        'ccc LLL dd HH:mm:ss yyyy',
+        'ccc LLL dd HH:mm:ss yyyy ZZZ',
+      ];
+      for (const format of formats) {
+        try {
+          const dt = DateTime.fromFormat(rest.time, format, {
+            zone: 'UTC',
+          });
+          if (dt.isValid) {
+            parsedTime = dt;
+            break;
+          }
+        } catch {
+          // Try the next format
+        }
+      }
+      if (!parsedTime) {
+        throw new Error(
+          `Failed to parse Gitiles rest.time "${rest.time}": expected format 'ccc LLL dd HH:mm:ss yyyy[ ZZZ]'.`,
+        );
+      }
+    }
+
     return {
       name: rest.name || '',
       email: rest.email || '',
-      time: rest.time
-        ? DateTime.fromFormat(rest.time, 'ccc LLL dd hh:mm:ss yyyy', {
-            zone: 'UTC',
-          }).toISO()
-        : undefined,
+      time: parsedTime ? parsedTime.toISO() : undefined,
     };
   },
 };

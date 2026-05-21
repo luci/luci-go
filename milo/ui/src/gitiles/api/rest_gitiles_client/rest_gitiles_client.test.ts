@@ -16,7 +16,7 @@ import { PrpcClient } from '@/generic_libs/tools/prpc_client';
 import { LogRequest } from '@/proto/go.chromium.org/luci/common/proto/gitiles/gitiles.pb';
 
 import { RestGitilesClientImpl } from './rest_gitiles_client';
-import { RestLogResponse } from './types';
+import { RestLogResponse, RestUser } from './types';
 
 const mockLogResponse: RestLogResponse = {
   log: [
@@ -310,6 +310,41 @@ describe('RestGitilesClientImpl', () => {
       expect(fetchSpy).toHaveBeenNthCalledWith(
         1,
         'https://internal.googlesource.com/internal/+log/myothercommithash..mycommithash?n=2&format=JSON',
+      );
+    });
+  });
+});
+
+describe('RestUser', () => {
+  describe('toProto', () => {
+    it('should parse time without timezone offset', () => {
+      const user = RestUser.toProto({
+        name: 'Author 0',
+        email: 'author@chromium.org',
+        time: 'Thu Apr 04 17:40:47 2024',
+      });
+      expect(user.time).toBe('2024-04-04T17:40:47.000Z');
+    });
+
+    it('should parse time with timezone offset', () => {
+      const user = RestUser.toProto({
+        name: 'Author 1',
+        email: 'author@chromium.org',
+        time: 'Wed May 20 16:10:55 2026 -0700',
+      });
+      expect(user.time).toBe('2026-05-20T23:10:55.000Z');
+    });
+
+    it('should throw an error for unparsable formats', () => {
+      expect(() =>
+        RestUser.toProto({
+          name: 'Author 2',
+          email: 'author@chromium.org',
+          time: 'Wed May 20 2026 16:10:55',
+        }),
+      ).toThrow(
+        'Failed to parse Gitiles rest.time "Wed May 20 2026 16:10:55": ' +
+          "expected format 'ccc LLL dd HH:mm:ss yyyy[ ZZZ]'.",
       );
     });
   });
