@@ -199,10 +199,13 @@ export function LookupPage() {
 
 export function Component() {
   useDeclarePageId(UiPage.AuthServiceLookup);
+  const [searchParams] = useSyncedSearchParams();
+  const principal = searchParams.get(PRINCIPAL_PARAM_KEY);
+  const title = principal ? `Lookup: ${principal}` : 'Lookup user';
 
   return (
     <TrackLeafRoutePageView contentGroup="authdb-lookup">
-      <title>Lookup user</title>
+      <title>{title}</title>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

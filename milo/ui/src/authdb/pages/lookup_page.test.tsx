@@ -15,7 +15,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { act } from 'react';
 
-import { LookupPage } from '@/authdb/pages/lookup_page';
+import {
+  LookupPage,
+  Component as LookupPageWrapper,
+} from '@/authdb/pages/lookup_page';
 import {
   createMockPrincipalPermissions,
   mockFetchGetPrincipalPermissions,
@@ -133,5 +136,27 @@ describe('<LookupPage />', () => {
         expect(screen.getByText(permission)).toBeInTheDocument();
       }
     }
+  });
+
+  test('Updates document title based on search query', async () => {
+    const mockSubgraph = createMockSubgraph('requestedGroup');
+    mockFetchGetSubgraph(mockSubgraph);
+
+    render(
+      <FakeContextProvider>
+        <LookupPageWrapper />
+      </FakeContextProvider>,
+    );
+    expect(document.title).toBe('Lookup user');
+
+    const textfield = screen
+      .getByTestId('lookup-textfield')
+      .querySelector('input');
+    fireEvent.change(textfield!, { target: { value: 'requestedGroup' } });
+    const searchButton = screen.getByTestId('search-button');
+    act(() => searchButton.click());
+
+    await screen.findByTestId('lookup-table');
+    expect(document.title).toBe('Lookup: requestedGroup');
   });
 });
