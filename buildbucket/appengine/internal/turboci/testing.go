@@ -40,6 +40,8 @@ type FakeOrchestratorClient struct {
 	LastQueryNodesRequest *orchestratorpb.QueryNodesRequest
 	// LastReadWorkPlanRequest is the last QueryNodesRequest.
 	LastReadWorkPlanRequest *orchestratorpb.ReadWorkPlanRequest
+	// LastCancelWorkPlanCall is the last CancelWorkPlanRequest.
+	LastCancelWorkPlanCall *orchestratorpb.CancelWorkPlanRequest
 
 	// Plan is the ID of the workplan to create.
 	Plan *idspb.WorkPlan
@@ -83,6 +85,12 @@ func (o *FakeOrchestratorClient) ReadWorkPlan(ctx context.Context, in *orchestra
 // AllocateWorkNodeIDs implements TurboCIOrchestratorClient.
 func (o *FakeOrchestratorClient) AllocateWorkNodeIDs(ctx context.Context, in *orchestratorpb.AllocateWorkNodeIDsRequest, opts ...grpc.CallOption) (*orchestratorpb.AllocateWorkNodeIDsResponse, error) {
 	panic("unimplemented")
+}
+
+// CancelWorkPlan implements TurboCIOrchestratorClient.
+func (o *FakeOrchestratorClient) CancelWorkPlan(ctx context.Context, in *orchestratorpb.CancelWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.CancelWorkPlanResponse, error) {
+	o.LastCancelWorkPlanCall = proto.CloneOf(in)
+	return &orchestratorpb.CancelWorkPlanResponse{}, o.Err
 }
 
 func ErrorWithStageAttemptCurrentState(state *orchestratorpb.StageAttemptState, t *ftt.Test) error {

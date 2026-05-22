@@ -131,6 +131,15 @@ func ReadWorkPlan(ctx context.Context, in *orchestratorpb.ReadWorkPlanRequest, o
 	return resp, err
 }
 
+// CancelWorkPlan is a helper function to get the installed orchestrator client
+// and call CancelWorkPlan with it.
+func CancelWorkPlan(ctx context.Context, in *orchestratorpb.CancelWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.CancelWorkPlanResponse, error) {
+	LogRequest(ctx, "CancelWorkPlan", in)
+	resp, err := TurboCIOrchestratorClient(ctx).CancelWorkPlan(ctx, in, opts...)
+	LogResponse(ctx, "CancelWorkPlan", resp, err)
+	return resp, err
+}
+
 type clientPool []grpc.ClientConnInterface
 
 // CreateWorkPlan implements TurboCIOrchestratorClient.
@@ -156,6 +165,11 @@ func (cp clientPool) ReadWorkPlan(ctx context.Context, in *orchestratorpb.ReadWo
 // AllocateWorkNodeIDs implements TurboCIOrchestratorClient.
 func (cp clientPool) AllocateWorkNodeIDs(ctx context.Context, in *orchestratorpb.AllocateWorkNodeIDsRequest, opts ...grpc.CallOption) (*orchestratorpb.AllocateWorkNodeIDsResponse, error) {
 	return cp.pickRandom().AllocateWorkNodeIDs(ctx, in, opts...)
+}
+
+// CancelWorkPlan implements TurboCIOrchestratorClient.
+func (cp clientPool) CancelWorkPlan(ctx context.Context, in *orchestratorpb.CancelWorkPlanRequest, opts ...grpc.CallOption) (*orchestratorpb.CancelWorkPlanResponse, error) {
+	return cp.pickRandom().CancelWorkPlan(ctx, in, opts...)
 }
 
 // pickRandom returns a random connection from the pool.
@@ -192,6 +206,8 @@ func turboCIMsgToText(msg any) string {
 	case *orchestratorpb.QueryNodesRequest:
 		defer redactToken(v.HasToken, v.GetToken, v.SetToken)()
 	case *orchestratorpb.ReadWorkPlanRequest:
+		defer redactToken(v.HasToken, v.GetToken, v.SetToken)()
+	case *orchestratorpb.CancelWorkPlanRequest:
 		defer redactToken(v.HasToken, v.GetToken, v.SetToken)()
 	case *orchestratorpb.CreateWorkPlanResponse:
 		defer redactToken(v.HasCreatorToken, v.GetCreatorToken, v.SetCreatorToken)()
