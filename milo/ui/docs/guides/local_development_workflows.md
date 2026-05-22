@@ -1,89 +1,150 @@
-
 # Local Development Workflows
+
+This guide describes how to run and develop the LUCI (Layered Universal Continuous Integration) Milo UI locally.
 
 ## Prerequisites
 
-You need to run the following commands to setup the environment.
+To set up your environment, run the following commands.
+
+### 1. Get the source
+
+You may need [depot_tools](https://chromium.googlesource.com/chromium/tools/depot_tools/+/HEAD/README.md) ([instructions here](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up)), and from there follow (this documentation)[https://chromium.googlesource.com/infra/infra/+/HEAD/doc/source.md] to get the `infra` repo (or a repo that contains the infra repo):
+
+If you `cd` into the repo directory, you should see a structure like in the following diagran, where only the relevant bits
+for this guide are expanded.
 
 ```sh
-# Activate the infra env (via the infra.git checkout):
-cd /path/to/infra/checkout
-eval infra/go/env.py
-
-# Install the dependencies.
-cd /path/to/this/directory
-npm ci
+<your_repo_dir>
+├── build (…)
+├── build_internal
+├── chromium_infra (…)
+├── data (…)
+├── gcloud (…)
+├── infra
+│   └── go                      ← (we will call this $GO_DIR)
+│       └── src
+│           └── go.chromium.org
+│               └──luci
+│                  └── milo     ← (we will call this $MILO_DIR)
+│                      └── ui   ← (we will call this $UI_DIR)
+│   └── (…)
+├── infra_internal (…)
+├── puppet (…)
+├── recipes-py (…)
+├── release_scripts (…)
+└── systems (…)
 ```
 
-## Start a local AppEngine server
+By convention we refer to `<your_repo_dir>` as `infra`.
 
-TODO: add instructions
-
-For the simple case of testing an rpc using `/rpcexplorer`:
+If you cd into `<your_repo_dir>`, copy and paste this into your terminal so that you can
+copy and paste the rest of the commands in this guide:
 
 ```sh
-go run main.go -cloud-project luci-milo-dev -auth-service-host chrome-infra-auth-dev.appspot.com -milo-host localhost:8080
+$ export GO_DIR="$(PWD)/infra/go"
+$ export MILO_DIR="$(PWD)/infra/go/src/go.chromium.org/luci/milo"
+$ export UI_DIR="$(PWD)/infra/go/src/go.chromium.org/luci/milo/ui"
 ```
 
-## Start a local UI server
+### 1. Activate the Infra Environment
+
+The `infra` repository uses a custom bootstrap environment. To activate it:
+
+```sh
+# Navigate to the go directory in your infra checkout:
+$ cd "${GO_DIR}"
+
+# Run the environment script:
+$ eval `./env.py`
+```
+
+### 2. Install Node.js Dependencies
+Go to the Milo UI directory and install the package dependencies:
+
+```sh
+# Clean install dependencies:
+$ cd "${UI_DIR}"
+$ npm ci
+```
+
+---
+
+## Start a Local AppEngine Server
+
+If you need to test a Local GAE (Google App Engine) server, or use `/rpcexplorer`
+for testing RPCs (Remote Procedure Calls):
+
+WARNING: For most UI development you don't need to run the app engine server
+locally. You only need to run the app engine server if you are making changes to the server, which is extremely rare
+
+```sh
+# Run the local AppEngine frontend server:
+$ cd "${MILO_DIR}"
+$ go run frontend/main.go \
+  -cloud-project luci-milo-dev \
+  -auth-service-host chrome-infra-auth-dev.appspot.com \
+  -milo-host localhost:8080
+```
+
+---
+
+## Start a Local UI Server
 
 To start a [Vite](https://vitejs.dev) local dev server, run
 
 ```sh
-npm run dev
+$ cd "${UI_DIR}"
+$ npm run dev
 ```
 
-The local dev server only serves the SPA assets. It sends pRPC and HTTP REST
-requests to staging servers (typically hosted on GCP). Check
-[.env.development](../../.env.development) for instructions to configure the target
-servers and other local development settings.
+The local development server only serves the SPA (Single Page Application)
+assets. It sends pRPC and HTTP REST requests to staging servers hosted on GCP
+(Google Cloud Platform).
+
+Check the [.env.development](../../.env.development) file for instructions to
+configure the target servers and other local development settings.
 
 ### Login on a local UI server
 
 When developing with a local UI server, the login flow is different from a
-deployed version. Click the login button and you should see the instruction.
+deployed version. Click the **Login** button in your local browser interface
+(top right corner), and follow the on-screen instructions.
 
-## Deploy a demo to GAE dev instance
+---
 
-This deploys your local code to GAE as a dev instance that uses real auth
-and can be accessed by other people.
+## Deploy a demo to a GAE dev instance
 
-```sh
-cd luci/milo/ui # or `cd luci/milo`.
-make up-dev
-```
-
-Alternatively, you can deploy the demo using the following commands.
+### Option A: Build and Deploy Everything (Recommended for pRPC changes)
+Use `make up-dev` if your changes include Go/pRPC backend updates:
 
 ```sh
-cd luci/milo/ui
-npm ci # if you haven't installed/updated the dependencies.
-make deploy-ui-demo
+# Run the up-dev command:
+infra_dir/infra/go/src/go.chromium.org.luci/milo/ui$ make up-dev
 ```
 
-`make deploy-ui-demo` is faster than `make up-dev`. However,
-
-1. it does not install npm dependencies. You need to ensure they are installed
-   and up-to-date yourselves. And,
-2. the deployed UI demo will always send pRPC requests to
-   `staging.milo.api.luci.app`. If your demo includes pRPC changes, use
-   `make up-dev` instead.
-
-If you use `gae.py` to deploy, you need to deploy all services at least once.
-Otherwise, the browser code will try to call a dev API that doesn't exist.
+### Option B: Deploy the UI Demo (Fastest)
+If you have only modified frontend code, you can deploy just the UI:
 
 ```sh
-cd luci/milo/ui
-npm run build
-# Upload all services. In particular, the `api` service should be uploaded at
-# least once.
-gae.py upload -p ../ -A luci-milo-dev
-# After that, you can deploy `ui-new` only for shorter deployment time, if
-# there's no code changes to other services.
-gae.py upload -p ../ -A luci-milo-dev ui-new
+$ cd "${UI_DIR}"
+# If you haven't installed/updated the dependencies.
+$ npm ci
+# Deploy the UI-only demo:
+$ make deploy-ui-demo
 ```
+
+> [!NOTE]
+> `make deploy-ui-demo` is faster than `make up-dev`, but:
+> 1. It does not automatically run `npm ci`. Ensure your local dependencies are
+>    installed and up-to-date.
+> 2. The deployed UI demo will always send pRPC requests to
+>    `staging.milo.api.luci.app`.
+
+---
 
 ## Others
 
-Check the [Makefile](Makefile), the [parent Makefile](../Makefile), and the
-`"scripts"` section in [package.json](package.json) for more available commands.
+Check the following files for other utility and helper scripts:
+* [Makefile](Makefile) (Milo UI tasks)
+* [Parent Makefile](../Makefile) (Milo service-level tasks)
+* [package.json](package.json) (available NPM scripts)
