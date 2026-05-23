@@ -274,6 +274,10 @@ export function ChartWidget({
     null,
   );
   const [isStale, setIsStale] = useState(false);
+  const [isZoomActive, setIsZoomActive] = useState(false);
+  const [fitY, setFitY] = useState(false);
+  const [restoreZoomTrigger, setRestoreZoomTrigger] = useState(0);
+  const [downloadTrigger, setDownloadTrigger] = useState(0);
   const portalContext = useContext(WidgetPortalContext);
 
   const handlePointClick = useCallback(
@@ -644,6 +648,12 @@ export function ChartWidget({
           onGroupByChange={handleWidgetGroupByUpdate}
           currentAggregation={currentAggregation}
           onAggregationChange={handleWidgetAggregationUpdate}
+          isZoomActive={isZoomActive}
+          onZoomActiveToggle={() => setIsZoomActive((prev) => !prev)}
+          fitY={fitY}
+          onFitYToggle={() => setFitY((prev) => !prev)}
+          onRestoreZoom={() => setRestoreZoomTrigger((prev) => prev + 1)}
+          onDownload={() => setDownloadTrigger((prev) => prev + 1)}
         />
         <Divider light />
       </Box>
@@ -722,6 +732,10 @@ export function ChartWidget({
             xAxisMin={xAxisBounds.min}
             xAxisMax={xAxisBounds.max}
             onPointClick={handlePointClick}
+            isZoomActive={isZoomActive}
+            fitY={fitY}
+            restoreZoomTrigger={restoreZoomTrigger}
+            downloadTrigger={downloadTrigger}
           />
         )}
         {selectedPoint && (

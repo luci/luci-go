@@ -13,20 +13,26 @@
 // limitations under the License.
 
 import {
+  Download as DownloadIcon,
   Functions as FunctionsIcon,
   GroupWork as GroupWorkIcon,
+  Height as HeightIcon,
   ScatterPlot as ScatterPlotIcon,
   ShowChart as ShowChartIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOutMap as ZoomOutMapIcon,
 } from '@mui/icons-material';
 import {
   Box,
   Divider,
   FormControl,
+  IconButton,
   MenuItem,
   Select,
   SelectChangeEvent,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material';
 
@@ -50,6 +56,12 @@ interface ChartWidgetToolbarProps {
   onAggregationChange: (
     aggregation: PerfChartSeries_PerfAggregationFunction,
   ) => void;
+  isZoomActive: boolean;
+  onZoomActiveToggle: () => void;
+  fitY: boolean;
+  onFitYToggle: () => void;
+  onRestoreZoom: () => void;
+  onDownload: () => void;
 }
 
 export function ChartWidgetToolbar({
@@ -59,9 +71,34 @@ export function ChartWidgetToolbar({
   onGroupByChange,
   currentAggregation,
   onAggregationChange,
+  isZoomActive,
+  onZoomActiveToggle,
+  fitY,
+  onFitYToggle,
+  onRestoreZoom,
+  onDownload,
 }: ChartWidgetToolbarProps) {
   const isDistribution =
     chartType === PerfChartWidget_ChartType.INVOCATION_DISTRIBUTION;
+
+  const zoomTooltipTitle = isZoomActive ? (
+    <Box sx={{ p: 0.5 }}>
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 'bold', display: 'block', mb: 0.25 }}
+      >
+        Zoom Mode Active
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{ color: 'background.paper', opacity: 0.85, lineHeight: 1.2 }}
+      >
+        Click and drag horizontally on the chart to zoom in on a section.
+      </Typography>
+    </Box>
+  ) : (
+    'Horizontal Zoom'
+  );
 
   return (
     <Box
@@ -171,6 +208,89 @@ export function ChartWidgetToolbar({
           </FormControl>
         </>
       )}
+
+      <Box sx={{ flexGrow: 1 }} />
+      <Divider orientation="vertical" flexItem light />
+      <Tooltip title="Autoscale Y-Axis" arrow>
+        <IconButton
+          onClick={onFitYToggle}
+          color={fitY ? 'primary' : 'default'}
+          size="small"
+          sx={{
+            bgcolor: fitY ? 'action.selected' : 'transparent',
+            borderRadius: 1,
+            '&:hover': {
+              bgcolor: fitY ? 'action.selected' : 'action.hover',
+            },
+          }}
+          aria-label="Autoscale Y-Axis"
+        >
+          <HeightIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      {isZoomActive ? (
+        <Tooltip
+          key="active-zoom-tooltip"
+          title={zoomTooltipTitle}
+          open={true}
+          placement="bottom"
+          arrow
+        >
+          <IconButton
+            onClick={onZoomActiveToggle}
+            color="primary"
+            size="small"
+            sx={{
+              bgcolor: 'action.selected',
+              borderRadius: 1,
+              '&:hover': {
+                bgcolor: 'action.selected',
+              },
+            }}
+            aria-label="Horizontal Zoom"
+          >
+            <ZoomInIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <Tooltip key="inactive-zoom-tooltip" title="Horizontal Zoom" arrow>
+          <IconButton
+            onClick={onZoomActiveToggle}
+            color="default"
+            size="small"
+            sx={{
+              bgcolor: 'transparent',
+              borderRadius: 1,
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+            }}
+            aria-label="Horizontal Zoom"
+          >
+            <ZoomInIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+      <Tooltip title="Restore Zoom" arrow>
+        <IconButton
+          onClick={onRestoreZoom}
+          size="small"
+          sx={{ borderRadius: 1 }}
+          aria-label="Restore Zoom"
+        >
+          <ZoomOutMapIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Download Chart" arrow>
+        <IconButton
+          onClick={onDownload}
+          size="small"
+          sx={{ borderRadius: 1 }}
+          aria-label="Download Chart"
+        >
+          <DownloadIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
     </Box>
   );
 }

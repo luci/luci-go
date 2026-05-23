@@ -15,15 +15,49 @@
 import { jest } from '@jest/globals';
 import { render, screen } from '@testing-library/react';
 import ReactECharts from 'echarts-for-react';
-import { ComponentProps, type CSSProperties } from 'react';
+import { ComponentProps, type CSSProperties, type Ref } from 'react';
 
 import { TimeSeriesChart, TimeSeriesDataSet } from '@/crystal_ball/components';
 
-jest.mock('echarts-for-react', () =>
-  jest.fn((props: MockEChartsProps) => (
-    <canvas data-testid="echarts-canvas" style={props.style} />
-  )),
-);
+const mockDispatchAction = jest.fn();
+const mockGetOption = jest.fn(() => ({
+  dataZoom: [{ startValue: 10, endValue: 20 }],
+}));
+const mockGetDataURL = jest.fn(() => 'data:image/png;base64,mock-data-url');
+const mockOn = jest.fn();
+const mockOff = jest.fn();
+const mockSetCursorStyle = jest.fn();
+const mockGetZr = jest.fn(() => ({
+  setCursorStyle: mockSetCursorStyle,
+}));
+
+const mockEchartsInstance = {
+  dispatchAction: mockDispatchAction,
+  getOption: mockGetOption,
+  getDataURL: mockGetDataURL,
+  on: mockOn,
+  off: mockOff,
+  getZr: mockGetZr,
+};
+
+const mockGetEchartsInstance = jest.fn(() => mockEchartsInstance);
+
+jest.mock('echarts-for-react', () => {
+  const ReactActual: typeof import('react') = jest.requireActual('react');
+  const MockReactEChartsComponent = (props: MockEChartsProps) => {
+    ReactActual.useImperativeHandle(
+      props.ref,
+      () => ({
+        getEchartsInstance: mockGetEchartsInstance,
+      }),
+      [props.ref],
+    );
+
+    return <canvas data-testid="echarts-canvas" style={props.style} />;
+  };
+  MockReactEChartsComponent.displayName = 'MockReactEChartsComponent';
+  return jest.fn(MockReactEChartsComponent);
+});
 
 // We override 'option' to match the specific shape used in our tests.
 interface MockEChartsProps
@@ -52,11 +86,21 @@ interface MockEChartsProps
     }[];
   };
   style?: CSSProperties;
+  ref?: Ref<unknown>;
 }
 
 const MockECharts = jest.mocked(ReactECharts);
 
 describe('TimeSeriesChart', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDispatchAction.mockClear();
+    mockGetOption.mockClear();
+    mockGetDataURL.mockClear();
+    mockGetZr.mockClear();
+    mockSetCursorStyle.mockClear();
+  });
+
   const mockMetricNameA = 'Mock Metric Name A';
   const mockMetricNameB = 'Mock Metric Name B';
 
@@ -278,5 +322,214 @@ describe('TimeSeriesChart', () => {
       's1',
       0,
     ]);
+  });
+
+  test('respects fitY prop', () => {
+    const { rerender } = render(
+      <TimeSeriesChart series={mockSeries} fitY={true} />,
+    );
+
+    let lastCallProps = MockECharts.mock.lastCall![0];
+    expect(lastCallProps.option.yAxis).toBeDefined();
+    expect(lastCallProps.option.yAxis?.scale).toBe(true);
+    expect(lastCallProps.option.yAxis?.min).toBeUndefined();
+
+    rerender(<TimeSeriesChart series={mockSeries} fitY={false} />);
+
+    lastCallProps = MockECharts.mock.lastCall![0];
+    expect(lastCallProps.option.yAxis?.scale).toBe(false);
+    expect(lastCallProps.option.yAxis?.min).toBe(0);
+  });
+
+  test('dispatches takeGlobalCursor action when isZoomActive is toggled', () => {
+    const { rerender } = render(
+      <TimeSeriesChart series={mockSeries} isZoomActive={true} />,
+    );
+
+    expect(mockDispatchAction).toHaveBeenCalledWith({
+      type: 'takeGlobalCursor',
+      key: 'brush',
+      brushOption: {
+        brushType: 'lineX',
+        brushMode: 'single',
+      },
+    });
+
+    mockDispatchAction.mockClear();
+    mockSetCursorStyle.mockClear();
+
+    rerender(<TimeSeriesChart series={mockSeries} isZoomActive={false} />);
+
+    expect(mockDispatchAction).toHaveBeenCalledWith({
+      type: 'takeGlobalCursor',
+      key: 'brush',
+      brushOption: {
+        brushType: 'none',
+        brushMode: 'single',
+      },
+    });
+    expect(mockDispatchAction).toHaveBeenCalledWith({
+      type: 'brush',
+      areas: [],
+    });
+    expect(mockGetZr).toHaveBeenCalledTimes(1);
+    expect(mockSetCursorStyle).toHaveBeenCalledWith('default');
+  });
+
+  test('dispatches dataZoom range reset when restoreZoomTrigger changes', () => {
+    const { rerender } = render(
+      <TimeSeriesChart series={mockSeries} restoreZoomTrigger={0} />,
+    );
+
+    expect(mockDispatchAction).not.toHaveBeenCalledWith({
+      type: 'dataZoom',
+      dataZoomIndex: 0,
+      start: 0,
+      end: 100,
+    });
+
+    rerender(<TimeSeriesChart series={mockSeries} restoreZoomTrigger={1} />);
+
+    expect(mockDispatchAction).toHaveBeenCalledWith({
+      type: 'dataZoom',
+      dataZoomIndex: 0,
+      start: 0,
+      end: 100,
+    });
+    expect(mockDispatchAction).toHaveBeenCalledWith({
+      type: 'dataZoom',
+      dataZoomIndex: 1,
+      start: 0,
+      end: 100,
+    });
+  });
+
+  test('triggers chart download when downloadTrigger changes', () => {
+    const clickSpy = jest
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+
+    const { rerender } = render(
+      <TimeSeriesChart
+        series={mockSeries}
+        downloadTrigger={0}
+        chartTitle="Test Title"
+      />,
+    );
+
+    expect(mockGetDataURL).not.toHaveBeenCalled();
+    expect(clickSpy).not.toHaveBeenCalled();
+
+    rerender(
+      <TimeSeriesChart
+        series={mockSeries}
+        downloadTrigger={1}
+        chartTitle="Test Title"
+      />,
+    );
+
+    expect(mockGetDataURL).toHaveBeenCalledWith({
+      type: 'png',
+      pixelRatio: 2,
+      backgroundColor: expect.any(String),
+    });
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+
+    clickSpy.mockRestore();
+  });
+
+  test('updates zoom range and dispatches actions on brushEnd with flat areas', () => {
+    render(<TimeSeriesChart series={mockSeries} />);
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const onEvents = lastCallProps.onEvents;
+
+    expect(onEvents).toBeDefined();
+    expect(onEvents!.brushEnd).toBeDefined();
+
+    const mockBrushParams = {
+      areas: [
+        {
+          coordRange: [1000, 2000],
+        },
+      ],
+    };
+
+    onEvents!.brushEnd(mockBrushParams);
+
+    expect(mockDispatchAction).toHaveBeenCalledWith({
+      type: 'dataZoom',
+      dataZoomIndex: 0,
+      startValue: 1000,
+      endValue: 2000,
+    });
+
+    expect(mockDispatchAction).toHaveBeenCalledWith({
+      type: 'brush',
+      areas: [],
+    });
+  });
+
+  test('updates zoom range and dispatches actions on brushEnd with batch-nested areas', () => {
+    render(<TimeSeriesChart series={mockSeries} />);
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const onEvents = lastCallProps.onEvents;
+
+    expect(onEvents).toBeDefined();
+    expect(onEvents!.brushEnd).toBeDefined();
+
+    const mockBrushParams = {
+      batch: [
+        {
+          areas: [
+            {
+              coordRange: [1500, 2500],
+            },
+          ],
+        },
+      ],
+    };
+
+    onEvents!.brushEnd(mockBrushParams);
+
+    expect(mockDispatchAction).toHaveBeenCalledWith({
+      type: 'dataZoom',
+      dataZoomIndex: 0,
+      startValue: 1500,
+      endValue: 2500,
+    });
+
+    expect(mockDispatchAction).toHaveBeenCalledWith({
+      type: 'brush',
+      areas: [],
+    });
+  });
+
+  test('persists zoom range on next render', () => {
+    const { rerender } = render(<TimeSeriesChart series={mockSeries} />);
+
+    const lastCallProps = MockECharts.mock.lastCall![0];
+    const onEvents = lastCallProps.onEvents;
+
+    // Trigger datazoom to update the silent persistence ref
+    mockGetOption.mockReturnValueOnce({
+      dataZoom: [{ startValue: 1200, endValue: 1800 }],
+    });
+    onEvents!.datazoom();
+
+    // Rerender the chart (e.g. state change)
+    rerender(<TimeSeriesChart series={mockSeries} fitY={true} />);
+
+    // Verify that the new options include the persisted startValue and endValue!
+    const newCallProps = MockECharts.mock.lastCall![0];
+    expect(newCallProps.option.dataZoom?.[0]).toMatchObject({
+      startValue: 1200,
+      endValue: 1800,
+    });
+    expect(newCallProps.option.dataZoom?.[1]).toMatchObject({
+      startValue: 1200,
+      endValue: 1800,
+    });
   });
 });

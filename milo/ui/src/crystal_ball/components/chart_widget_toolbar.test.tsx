@@ -33,6 +33,12 @@ describe('ChartWidgetToolbar', () => {
     onGroupByChange: jest.fn(),
     currentAggregation: PerfChartSeries_PerfAggregationFunction.P50,
     onAggregationChange: jest.fn(),
+    isZoomActive: false,
+    onZoomActiveToggle: jest.fn(),
+    fitY: false,
+    onFitYToggle: jest.fn(),
+    onRestoreZoom: jest.fn(),
+    onDownload: jest.fn(),
   };
 
   beforeEach(() => {
@@ -46,6 +52,10 @@ describe('ChartWidgetToolbar', () => {
     expect(screen.getByTitle('Scatter Plot')).toBeInTheDocument();
     expect(screen.getByLabelText('Widget Group By')).toBeInTheDocument();
     expect(screen.getByLabelText('Widget Aggregation')).toBeInTheDocument();
+    expect(screen.getByLabelText('Autoscale Y-Axis')).toBeInTheDocument();
+    expect(screen.getByLabelText('Horizontal Zoom')).toBeInTheDocument();
+    expect(screen.getByLabelText('Restore Zoom')).toBeInTheDocument();
+    expect(screen.getByLabelText('Download Chart')).toBeInTheDocument();
   });
 
   it('should call onChartTypeChange when toggle button is clicked', () => {
@@ -111,5 +121,45 @@ describe('ChartWidgetToolbar', () => {
     expect(
       screen.queryByLabelText('Widget Aggregation'),
     ).not.toBeInTheDocument();
+  });
+
+  it('should trigger custom event handlers when custom buttons are clicked', () => {
+    render(<ChartWidgetToolbar {...mockProps} />);
+
+    fireEvent.click(screen.getByLabelText('Autoscale Y-Axis'));
+    expect(mockProps.onFitYToggle).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByLabelText('Horizontal Zoom'));
+    expect(mockProps.onZoomActiveToggle).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByLabelText('Restore Zoom'));
+    expect(mockProps.onRestoreZoom).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByLabelText('Download Chart'));
+    expect(mockProps.onDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it('should reflect active zoom and fitY state in style/props', () => {
+    const { rerender } = render(
+      <ChartWidgetToolbar {...mockProps} isZoomActive={true} fitY={true} />,
+    );
+
+    const fitYBtn = screen.getByLabelText('Autoscale Y-Axis');
+    const zoomBtn = screen.getByLabelText('Horizontal Zoom');
+
+    // Mui-primary indicates that the toggle is active
+    expect(fitYBtn).toHaveClass('MuiIconButton-colorPrimary');
+    expect(zoomBtn).toHaveClass('MuiIconButton-colorPrimary');
+
+    rerender(
+      <ChartWidgetToolbar {...mockProps} isZoomActive={false} fitY={false} />,
+    );
+
+    expect(screen.getByLabelText('Autoscale Y-Axis')).not.toHaveClass(
+      'MuiIconButton-colorPrimary',
+    );
+    expect(screen.getByLabelText('Horizontal Zoom')).not.toHaveClass(
+      'MuiIconButton-colorPrimary',
+    );
   });
 });

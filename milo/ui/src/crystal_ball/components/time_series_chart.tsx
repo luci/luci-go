@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import { Box, useTheme } from '@mui/material';
-import { EChartsOption } from 'echarts';
+import { ECharts, EChartsOption } from 'echarts';
 import ReactECharts from 'echarts-for-react';
-import { CSSProperties, useMemo } from 'react';
+import { CSSProperties, useEffect, useMemo, useRef } from 'react';
 
 /**
  * Represents a single series to be plotted on the time series chart.
@@ -141,6 +141,22 @@ interface TimeSeriesChartProps {
    * Optional callback when a data point is clicked.
    */
   onPointClick?: (params: PointClickParams) => void;
+  /**
+   * Whether horizontal drag-to-zoom mode is active.
+   */
+  isZoomActive?: boolean;
+  /**
+   * Controls Y-axis scaling.
+   */
+  fitY?: boolean;
+  /**
+   * Counter used to trigger zoom restoration.
+   */
+  restoreZoomTrigger?: number;
+  /**
+   * Counter used to trigger chart download.
+   */
+  downloadTrigger?: number;
 }
 
 /**
@@ -201,19 +217,14 @@ const BASE_OPTION: Partial<EChartsOption> = {
     containLabel: true,
   },
   toolbox: {
-    right: 20,
-    top: 0,
-    feature: {
-      restore: {},
-      saveAsImage: {},
-      dataZoom: {
-        yAxisIndex: 'none',
-        title: {
-          zoom: 'Horizontal Zoom',
-          back: 'Restore Zoom',
-        },
-      },
-    },
+    show: false,
+  },
+  brush: {
+    xAxisIndex: 0,
+    brushType: 'lineX',
+    brushMode: 'single',
+    throttleType: 'debounce',
+    throttleDelay: 300,
   },
   dataZoom: [
     {
@@ -284,8 +295,37 @@ export function TimeSeriesChart({
   xAxisMin,
   xAxisMax,
   onPointClick,
+  isZoomActive = false,
+  fitY = false,
+  restoreZoomTrigger = 0,
+  downloadTrigger = 0,
 }: TimeSeriesChartProps) {
   const theme = useTheme();
+
+  const echartsRef = useRef<ReactECharts>(null);
+  const currentZoomRangeRef = useRef<{
+    startValue?: number;
+    endValue?: number;
+  }>({});
+
+  const lastRestoreTriggerRef = useRef(restoreZoomTrigger);
+  if (lastRestoreTriggerRef.current !== restoreZoomTrigger) {
+    currentZoomRangeRef.current = {};
+    lastRestoreTriggerRef.current = restoreZoomTrigger;
+  }
+
+  const getEchartsInstance = (): ECharts | undefined => {
+    const instance = echartsRef.current?.getEchartsInstance();
+    if (
+      instance &&
+      typeof instance.dispatchAction === 'function' &&
+      typeof instance.getOption === 'function' &&
+      typeof instance.getDataURL === 'function'
+    ) {
+      return instance;
+    }
+    return undefined;
+  };
 
   const option: EChartsOption = useMemo(() => {
     const showDataZoom =
@@ -322,26 +362,33 @@ export function TimeSeriesChart({
       ? BASE_OPTION.dataZoom
       : [];
 
+    const currentZoomRange = currentZoomRangeRef.current;
+
     return {
       ...BASE_OPTION,
       dataZoom: [
-        { ...(dataZoomArray[0] ?? {}), show: showDataZoom, filterMode },
-        { ...(dataZoomArray[1] ?? {}), disabled: !showDataZoom, filterMode },
+        {
+          ...(dataZoomArray[0] ?? {}),
+          show: showDataZoom,
+          filterMode,
+          ...currentZoomRange,
+        },
+        {
+          ...(dataZoomArray[1] ?? {}),
+          disabled: !showDataZoom,
+          filterMode,
+          ...currentZoomRange,
+        },
         { ...(dataZoomArray[2] ?? {}), show: showYDataZoom, filterMode },
         { ...(dataZoomArray[3] ?? {}), disabled: !showYDataZoom, filterMode },
       ],
       title: {
         ...BASE_OPTION.title,
         text: chartTitle,
-        subtext:
-          'To Zoom: Click "Horizontal Zoom" in the toolbar, then click and drag to zoom in on a section.',
         textStyle: {
           fontSize: theme.typography.subtitle1.fontSize,
           fontWeight: 'bold',
           color: theme.palette.text.primary,
-        },
-        subtextStyle: {
-          color: theme.palette.text.secondary,
         },
       },
       tooltip: {
@@ -385,6 +432,8 @@ export function TimeSeriesChart({
       yAxis: {
         ...BASE_OPTION.yAxis,
         name: yAxisLabel,
+        scale: fitY ? true : false,
+        min: fitY ? undefined : 0,
       },
       series: series.map((s) => {
         const common = {
@@ -421,6 +470,7 @@ export function TimeSeriesChart({
     tooltipFormatter,
     xAxisMin,
     xAxisMax,
+    fitY,
   ]);
 
   const onEvents = useMemo(
@@ -430,9 +480,161 @@ export function TimeSeriesChart({
           onPointClick(params);
         }
       },
+      datazoom: () => {
+        const instance = getEchartsInstance();
+        if (instance) {
+          const opt = instance.getOption();
+          const dataZoom = opt.dataZoom;
+          if (Array.isArray(dataZoom) && dataZoom.length > 0) {
+            const dz = dataZoom[0];
+            if (
+              dz &&
+              typeof dz === 'object' &&
+              'startValue' in dz &&
+              'endValue' in dz
+            ) {
+              const startVal = dz.startValue;
+              const endVal = dz.endValue;
+              currentZoomRangeRef.current = {
+                startValue: typeof startVal === 'number' ? startVal : undefined,
+                endValue: typeof endVal === 'number' ? endVal : undefined,
+              };
+            }
+          }
+        }
+      },
+      brushEnd: (params: unknown) => {
+        const instance = getEchartsInstance();
+        if (instance) {
+          let areas: unknown = undefined;
+
+          if (typeof params === 'object' && params !== null) {
+            if ('areas' in params) {
+              areas = params.areas;
+            } else if (
+              'batch' in params &&
+              Array.isArray(params.batch) &&
+              params.batch.length > 0
+            ) {
+              const firstBatch = params.batch[0];
+              if (
+                typeof firstBatch === 'object' &&
+                firstBatch !== null &&
+                'areas' in firstBatch
+              ) {
+                areas = firstBatch.areas;
+              }
+            }
+          }
+
+          if (Array.isArray(areas) && areas.length > 0) {
+            const firstArea = areas[0];
+            if (
+              typeof firstArea === 'object' &&
+              firstArea !== null &&
+              'coordRange' in firstArea &&
+              Array.isArray(firstArea.coordRange) &&
+              firstArea.coordRange.length >= 2
+            ) {
+              const startVal = firstArea.coordRange[0];
+              const endVal = firstArea.coordRange[1];
+              if (typeof startVal === 'number' && typeof endVal === 'number') {
+                currentZoomRangeRef.current = {
+                  startValue: startVal,
+                  endValue: endVal,
+                };
+
+                instance.dispatchAction({
+                  type: 'dataZoom',
+                  dataZoomIndex: 0,
+                  startValue: startVal,
+                  endValue: endVal,
+                });
+
+                instance.dispatchAction({
+                  type: 'brush',
+                  areas: [],
+                });
+              }
+            }
+          }
+        }
+      },
     }),
     [onPointClick],
   );
+
+  useEffect(() => {
+    const instance = getEchartsInstance();
+    if (!instance) return;
+
+    if (isZoomActive) {
+      instance.dispatchAction({
+        type: 'takeGlobalCursor',
+        key: 'brush',
+        brushOption: {
+          brushType: 'lineX',
+          brushMode: 'single',
+        },
+      });
+    } else {
+      instance.dispatchAction({
+        type: 'takeGlobalCursor',
+        key: 'brush',
+        brushOption: {
+          brushType: 'none',
+          brushMode: 'single',
+        },
+      });
+      instance.dispatchAction({
+        type: 'brush',
+        areas: [],
+      });
+      if (typeof instance.getZr === 'function') {
+        instance.getZr().setCursorStyle('default');
+      }
+    }
+  }, [isZoomActive, option]);
+
+  useEffect(() => {
+    if (restoreZoomTrigger === undefined || restoreZoomTrigger <= 0) return;
+
+    const instance = getEchartsInstance();
+    if (!instance) return;
+
+    instance.dispatchAction({
+      type: 'dataZoom',
+      dataZoomIndex: 0,
+      start: 0,
+      end: 100,
+    });
+    instance.dispatchAction({
+      type: 'dataZoom',
+      dataZoomIndex: 1,
+      start: 0,
+      end: 100,
+    });
+  }, [restoreZoomTrigger]);
+
+  useEffect(() => {
+    if (downloadTrigger === undefined || downloadTrigger <= 0) return;
+
+    const instance = getEchartsInstance();
+    if (!instance) return;
+
+    const dataUrl = instance.getDataURL({
+      type: 'png',
+      pixelRatio: 2,
+      backgroundColor: theme.palette.background.paper,
+    });
+
+    const link = document.createElement('a');
+    link.download = `${chartTitle || 'chart'}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [downloadTrigger, theme, chartTitle]);
 
   return (
     <Box
@@ -446,6 +648,7 @@ export function TimeSeriesChart({
       }}
     >
       <ReactECharts
+        ref={echartsRef}
         option={option}
         style={CHART_STYLE}
         notMerge={true}
