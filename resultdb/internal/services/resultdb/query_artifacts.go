@@ -107,12 +107,6 @@ func (s *resultDBServer) QueryArtifacts(ctx context.Context, in *pb.QueryArtifac
 		return nil, err
 	}
 
-	// Eliminate any invocations that do not have artifacts for Spanner query performance.
-	reachableInvIDs, err = reachableInvs.WithArtifactsIDSet()
-	if err != nil {
-		return nil, err
-	}
-
 	// Query artifacts.
 	q := &artifacts.Query{
 		InvocationIDs:       reachableInvIDs,
@@ -219,11 +213,7 @@ func resolveRootInvocation(ctx context.Context, in *pb.QueryArtifactsRequest) (i
 
 	// Traverse the graph to find all reachable invocations from the root.
 	invs := invocations.NewIDSet(rootInvID.LegacyInvocationID())
-	reachableInvs, err := graph.Reachable(ctx, invs)
-	if err != nil {
-		return nil, graph.ReachableInvocations{}, err
-	}
-	reachableInvIDs, err := reachableInvs.IDSet()
+	reachableInvIDs, reachableInvs, err := graph.ReachableWithArtifacts(ctx, invs)
 	if err != nil {
 		return nil, graph.ReachableInvocations{}, err
 	}
@@ -235,12 +225,7 @@ func resolveRootInvocation(ctx context.Context, in *pb.QueryArtifactsRequest) (i
 // It always traverses the inclusion graph to find all reachable invocations.
 func resolveLegacyInvocations(ctx context.Context, in *pb.QueryArtifactsRequest) (invocations.IDSet, graph.ReachableInvocations, error) {
 	invs := invocations.MustParseNames(in.Invocations)
-	reachableInvs, err := graph.Reachable(ctx, invs)
-	if err != nil {
-		return nil, graph.ReachableInvocations{}, err
-	}
-
-	reachableInvIDs, err := reachableInvs.IDSet()
+	reachableInvIDs, reachableInvs, err := graph.ReachableWithArtifacts(ctx, invs)
 	if err != nil {
 		return nil, graph.ReachableInvocations{}, err
 	}

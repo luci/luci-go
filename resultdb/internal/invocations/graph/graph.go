@@ -77,6 +77,21 @@ func ReachableSkipRootCache(ctx context.Context, roots invocations.IDSet) (Reach
 	return invs, nil
 }
 
+// ReachableWithArtifacts returns the set of invocation IDs that are reachable
+// from roots and contain artifacts. If the size of the invocation graph exceeds
+// MaxNodes, this returns an error.
+func ReachableWithArtifacts(ctx context.Context, roots invocations.IDSet) (invocations.IDSet, ReachableInvocations, error) {
+	reachableInvs, err := Reachable(ctx, roots)
+	if err != nil {
+		return nil, ReachableInvocations{}, err
+	}
+	ids, err := reachableInvs.WithArtifactsIDSet()
+	if err != nil {
+		return nil, reachableInvs, err
+	}
+	return ids, reachableInvs, nil
+}
+
 func reachable(ctx context.Context, roots invocations.IDSet, useRootCache bool) (reachable ReachableInvocations, err error) {
 	reachable = NewReachableInvocations()
 	uncachedRoots := invocations.NewIDSet()
