@@ -38,11 +38,11 @@ func ParsePyProject(path string) (*ProjectSpec, error) {
 	if err != nil {
 		return nil, errors.Fmt("failed to read pyproject.toml at: %s: %w", path, err)
 	}
-	return parsePyProjectContent(string(content))
+	return parsePyProjectContent(content)
 }
 
-// parsePyProjectContent parses the string content of a pyproject.toml file with the heuristic check.
-func parsePyProjectContent(content string) (*ProjectSpec, error) {
+// parsePyProjectContent parses the byte slice content of a pyproject.toml file with the heuristic check.
+func parsePyProjectContent(content []byte) (*ProjectSpec, error) {
 	// Decode into standard structured schema using a pointer for single-pass heuristic checks.
 	var schema struct {
 		Project *struct {
@@ -51,7 +51,7 @@ func parsePyProjectContent(content string) (*ProjectSpec, error) {
 			Dependencies   []string `toml:"dependencies"`
 		} `toml:"project"`
 	}
-	if err := toml.Unmarshal([]byte(content), &schema); err != nil {
+	if err := toml.Unmarshal(content, &schema); err != nil {
 		return nil, errors.Fmt("failed to parse TOML structured schema: %w", err)
 	}
 

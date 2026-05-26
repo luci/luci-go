@@ -39,7 +39,7 @@ dependencies = [
     "numpy>=1.24.0",
 ]
 `
-			spec, err := parsePyProjectContent(validTOML)
+			spec, err := parsePyProjectContent([]byte(validTOML))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
 			assert.Loosely(t, spec.Name, should.Equal("my-chrome-tool"))
@@ -60,7 +60,7 @@ include = '\.py$'
 select = ["E", "F"]
 ignore = ["E501"]
 `
-			spec, err := parsePyProjectContent(linterTOML)
+			spec, err := parsePyProjectContent([]byte(linterTOML))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.BeNil) // Silently skipped!
 		})
@@ -69,7 +69,7 @@ ignore = ["E501"]
 			emptyTOML := `
 # Just comments and empty space
 `
-			spec, err := parsePyProjectContent(emptyTOML)
+			spec, err := parsePyProjectContent([]byte(emptyTOML))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.BeNil)
 		})
@@ -81,7 +81,7 @@ name = "broken"
 dependencies = [
     "requests",  # Missing closing quote
 `
-			_, err := parsePyProjectContent(invalidTOML)
+			_, err := parsePyProjectContent([]byte(invalidTOML))
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 
@@ -103,7 +103,8 @@ requires-python = ">=3.11"
 		})
 
 		t.Run("Returns error when physical file does not exist", func(t *ftt.Test) {
-			_, err := ParsePyProject("/tmp/non_existent_file_path_xyz_123.toml")
+			nonExistentPath := filepath.Join(tT.TempDir(), "non_existent_file_path_xyz_123.toml")
+			_, err := ParsePyProject(nonExistentPath)
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 
@@ -113,7 +114,7 @@ requires-python = ">=3.11"
 name = "type-mismatch"
 dependencies = "this-should-be-a-list-but-is-a-string"
 `
-			_, err := parsePyProjectContent(typeMismatchTOML)
+			_, err := parsePyProjectContent([]byte(typeMismatchTOML))
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
