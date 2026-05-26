@@ -37,6 +37,7 @@ export const BUILD_FIELD_MASK = Object.freeze([
   'infra.swarming',
   'infra.resultdb',
   'infra.backend',
+  'infra.turboci',
   'tags',
   'exe',
   'schedulingTimeout',

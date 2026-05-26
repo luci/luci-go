@@ -25,6 +25,7 @@ import { InvocationRow } from './invocation_row';
 import { RecipeRow } from './recipe_row';
 import { ServiceAccountRow } from './service_account_row';
 import { SwarmingTaskRow } from './swarming_task_row';
+import { WorkPlanRow } from './work_plan_row';
 
 export function InfraSection() {
   const build = useBuild();
@@ -63,6 +64,7 @@ export function InfraSection() {
           )}
           {recipeLink && <RecipeRow recipeLink={recipeLink} />}
           <InvocationRow resultdb={build.infra?.resultdb} />
+          <WorkPlanRow turboci={build.infra?.turboci} />
         </tbody>
       </table>
     </>
