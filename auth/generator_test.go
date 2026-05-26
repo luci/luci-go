@@ -20,82 +20,87 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth/internal"
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func TestTokenGenerator(t *testing.T) {
-	t.Parallel()
+func newTokenGeneratorForTest(ctx context.Context) (*fakeTokenProvider, *TokenGenerator) {
+	provider := &fakeTokenProvider{
+		interactive: false,
+	}
 
-	ftt.Run("With TokenGenerator", t, func(t *ftt.Test) {
-		ctx := context.Background()
-		provider := &fakeTokenProvider{
-			interactive: false,
-		}
-
-		gen := NewTokenGenerator(ctx, Options{
-			Method:                   ServiceAccountMethod, // to allow arbitrary scopes and audience
-			testingCache:             &internal.MemoryTokenCache{},
-			testingBaseTokenProvider: provider,
-		})
-
-		t.Run("GenerateOAuthToken", func(t *ftt.Test) {
-			tok, err := gen.GenerateOAuthToken(ctx, []string{"b", "a"}, time.Minute)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.NotBeNil)
-			assert.Loosely(t, tok.AccessToken, should.Equal("some minted access token"))
-
-			tok, err = gen.GenerateOAuthToken(ctx, []string{"a", "b"}, time.Minute)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.NotBeNil)
-
-			email, err := gen.GetEmail()
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, email, should.Equal("some-email-minttoken@example.com"))
-
-			// Created only one authenticator.
-			assert.Loosely(t, gen.authenticators, should.HaveLength(1))
-
-			tok, err = gen.GenerateOAuthToken(ctx, []string{"a"}, time.Minute)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.NotBeNil)
-
-			// Created one more.
-			assert.Loosely(t, gen.authenticators, should.HaveLength(2))
-		})
-
-		t.Run("GenerateIDToken", func(t *ftt.Test) {
-			provider.useIDTokens = true
-
-			tok, err := gen.GenerateIDToken(ctx, "aud_1", time.Minute)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.NotBeNil)
-			assert.Loosely(t, tok.AccessToken, should.Equal("some minted ID token"))
-
-			tok, err = gen.GenerateIDToken(ctx, "aud_1", time.Minute)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.NotBeNil)
-
-			email, err := gen.GetEmail()
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, email, should.Equal("some-email-minttoken@example.com"))
-
-			// Created only one authenticator.
-			assert.Loosely(t, gen.authenticators, should.HaveLength(1))
-
-			tok, err = gen.GenerateIDToken(ctx, "aud_2", time.Minute)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.NotBeNil)
-
-			// Created one more.
-			assert.Loosely(t, gen.authenticators, should.HaveLength(2))
-		})
-
-		t.Run("GetEmail", func(t *ftt.Test) {
-			email, err := gen.GetEmail()
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, email, should.Equal("some-email-minttoken@example.com"))
-		})
+	gen := NewTokenGenerator(ctx, Options{
+		Method:                   ServiceAccountMethod, // to allow arbitrary scopes and audience
+		testingCache:             &internal.MemoryTokenCache{},
+		testingBaseTokenProvider: provider,
 	})
+	return provider, gen
+}
+
+func TestTokenGenerator_GenerateOAuthToken(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	_, gen := newTokenGeneratorForTest(ctx)
+
+	tok, err := gen.GenerateOAuthToken(ctx, []string{"b", "a"}, time.Minute)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.NotBeNil)
+	assert.Loosely(t, tok.AccessToken, should.Equal("some minted access token"))
+
+	tok, err = gen.GenerateOAuthToken(ctx, []string{"a", "b"}, time.Minute)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.NotBeNil)
+
+	email, err := gen.GetEmail()
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, email, should.Equal("some-email-minttoken@example.com"))
+
+	// Created only one authenticator.
+	assert.Loosely(t, gen.authenticators, should.HaveLength(1))
+
+	tok, err = gen.GenerateOAuthToken(ctx, []string{"a"}, time.Minute)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.NotBeNil)
+
+	// Created one more.
+	assert.Loosely(t, gen.authenticators, should.HaveLength(2))
+}
+
+func TestTokenGenerator_GenerateIDToken(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	provider, gen := newTokenGeneratorForTest(ctx)
+	provider.useIDTokens = true
+
+	tok, err := gen.GenerateIDToken(ctx, "aud_1", time.Minute)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.NotBeNil)
+	assert.Loosely(t, tok.AccessToken, should.Equal("some minted ID token"))
+
+	tok, err = gen.GenerateIDToken(ctx, "aud_1", time.Minute)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.NotBeNil)
+
+	email, err := gen.GetEmail()
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, email, should.Equal("some-email-minttoken@example.com"))
+
+	// Created only one authenticator.
+	assert.Loosely(t, gen.authenticators, should.HaveLength(1))
+
+	tok, err = gen.GenerateIDToken(ctx, "aud_2", time.Minute)
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, tok, should.NotBeNil)
+
+	// Created one more.
+	assert.Loosely(t, gen.authenticators, should.HaveLength(2))
+}
+
+func TestTokenGenerator_GetEmail(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	_, gen := newTokenGeneratorForTest(ctx)
+	email, err := gen.GetEmail()
+	assert.Loosely(t, err, should.BeNil)
+	assert.Loosely(t, email, should.Equal("some-email-minttoken@example.com"))
 }
