@@ -47,12 +47,6 @@ func (e *VerdictExporter) Ingest(ctx context.Context, input Inputs) (err error) 
 	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/services/verdictingester.VerdictExporter.Ingest")
 	defer func() { tracing.End(s, err) }()
 
-	if input.Invocation == nil {
-		// Ingestion is for a root invocation.
-		// Verdict export for root invocation is not supported.
-		return nil
-	}
-
 	// Exit early if no verdict needs to be ingested.
 	if len(input.Verdicts) == 0 {
 		return nil
@@ -68,10 +62,16 @@ func (e *VerdictExporter) Ingest(ctx context.Context, input Inputs) (err error) 
 	}
 
 	payload := input.Payload
+	var resourceID string
+	if payload.Invocation != nil {
+		resourceID = fmt.Sprintf("%s/%s", payload.Invocation.ResultdbHost, payload.Invocation.InvocationId)
+	} else {
+		resourceID = fmt.Sprintf("rootInvocation/%s/%s", payload.RootInvocation.ResultdbHost, payload.RootInvocation.RootInvocationId)
+	}
 	key := checkpoints.Key{
 		Project:    input.Payload.Project,
-		ResourceID: fmt.Sprintf("%s/%s", payload.Invocation.ResultdbHost, payload.Invocation.InvocationId),
-		ProcessID:  fmt.Sprintf("verdict-ingestion/export-test-verdicts"),
+		ResourceID: resourceID,
+		ProcessID:  "verdict-ingestion/export-test-verdicts",
 		Uniquifier: fmt.Sprintf("%v", payload.TaskIndex),
 	}
 	exists, err := checkpoints.Exists(span.Single(ctx), key)
@@ -86,9 +86,10 @@ func (e *VerdictExporter) Ingest(ctx context.Context, input Inputs) (err error) 
 
 	// Export test verdicts.
 	exportOptions := testverdicts.ExportOptions{
-		Payload:     payload,
-		Invocation:  input.Invocation,
-		SourcesByID: input.SourcesByID,
+		Payload:        payload,
+		Invocation:     input.Invocation,
+		RootInvocation: input.RootInvocation,
+		SourcesByID:    input.SourcesByID,
 	}
 	err = e.exporter.Export(ctx, input.Verdicts, exportOptions)
 	if err != nil {

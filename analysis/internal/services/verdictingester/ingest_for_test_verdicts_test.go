@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -169,20 +170,79 @@ func TestExportTestVerdicts(t *testing.T) {
 			},
 		}}
 
+		defaultInvocation := &bqpb.TestVerdictRow_InvocationRecord{
+			Id:         "build-87654321",
+			Realm:      "project:ci",
+			Properties: "{}",
+		}
 		t.Run("without build", func(t *ftt.Test) {
 			payload.Build = nil
 			payload.PresubmitRun = nil
 
 			err := ingester.Ingest(ctx, input)
 			assert.NoErr(t, err)
-			verifyTestVerdicts(t, testVerdicts, partitionTime, false)
+			verifyTestVerdicts(t, testVerdicts, partitionTime, false, defaultInvocation)
 			verifyCheckpoints(ctx, t, expectedChangepoint)
 		})
 		t.Run("with build", func(t *ftt.Test) {
 			err := ingester.Ingest(ctx, input)
 			assert.NoErr(t, err)
-			verifyTestVerdicts(t, testVerdicts, partitionTime, true)
+			verifyTestVerdicts(t, testVerdicts, partitionTime, true, defaultInvocation)
 			verifyCheckpoints(ctx, t, expectedChangepoint)
+		})
+		t.Run("with root invocation", func(t *ftt.Test) {
+			payload.Invocation = nil
+			payload.RootInvocation = &ctrlpb.RootInvocationResult{
+				ResultdbHost:     "rdb-host",
+				RootInvocationId: "root-invocation-id",
+				CreationTime:     timestamppb.New(invocationCreationTime),
+			}
+			input.Invocation = nil
+			input.RootInvocation = &rdbpb.RootInvocation{
+				Name:             "rootInvocations/root-invocation-id",
+				RootInvocationId: "root-invocation-id",
+				Realm:            testRealm,
+				CreateTime:       timestamppb.New(invocationCreationTime),
+				FinalizeTime:     timestamppb.New(time.Date(2025, 4, 8, 0, 0, 0, 0, time.UTC)),
+			}
+			payload.Build = nil
+			payload.PresubmitRun = nil
+
+			// Update test result names to match root invocation pattern.
+			var newVerdicts []*rdbpb.TestVariant
+			for _, tv := range input.Verdicts {
+				newTv := proto.Clone(tv).(*rdbpb.TestVariant)
+				for _, r := range newTv.Results {
+					// Extract encoded test ID from old name.
+					// Old name: invocations/.../tests/[encodedTestID]/results/[resID]
+					parts := strings.Split(r.Result.Name, "/")
+					encodedTestID := parts[3]
+					r.Result.Name = fmt.Sprintf("rootInvocations/root-invocation-id/workUnits/work-unit-id/tests/%s/results/%s", encodedTestID, r.Result.ResultId)
+				}
+				newVerdicts = append(newVerdicts, newTv)
+			}
+			input.Verdicts = newVerdicts
+
+			err := ingester.Ingest(ctx, input)
+			assert.NoErr(t, err)
+
+			expectedInvocation := &bqpb.TestVerdictRow_InvocationRecord{
+				Id:               "root-invocation-id",
+				Realm:            testRealm,
+				Properties:       "{}",
+				IsRootInvocation: true,
+			}
+			verifyTestVerdicts(t, testVerdicts, partitionTime, false, expectedInvocation)
+
+			expectedRootChangepoint := []checkpoints.Checkpoint{{
+				Key: checkpoints.Key{
+					Project:    "project",
+					ResourceID: "rootInvocation/rdb-host/root-invocation-id",
+					ProcessID:  "verdict-ingestion/export-test-verdicts",
+					Uniquifier: "1",
+				},
+			}}
+			verifyCheckpoints(ctx, t, expectedRootChangepoint)
 		})
 		t.Run("disabled in config", func(t *ftt.Test) {
 			cfg.TestVerdictExport = &configpb.TestVerdictExport{
@@ -199,15 +259,21 @@ func TestExportTestVerdicts(t *testing.T) {
 	})
 }
 
-func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedPartitionTime time.Time, expectBuild bool) {
+func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedPartitionTime time.Time, expectBuild bool, invocation *bqpb.TestVerdictRow_InvocationRecord) {
 	t.Helper()
-	actualRows := client.Insertions
-
-	invocation := &bqpb.TestVerdictRow_InvocationRecord{
-		Id:         "build-87654321",
-		Realm:      "project:ci",
-		Properties: "{}",
+	getName := func(invID, testID, resID string) string {
+		if invocation.Id == "root-invocation-id" {
+			return fmt.Sprintf("rootInvocations/root-invocation-id/workUnits/work-unit-id/tests/%s/results/%s", testID, resID)
+		}
+		return fmt.Sprintf("invocations/%s/tests/%s/results/%s", invID, testID, resID)
 	}
+	getParentID := func(defaultID string) string {
+		if invocation.Id == "root-invocation-id" {
+			return "work-unit-id"
+		}
+		return defaultID
+	}
+	actualRows := client.Insertions
 
 	// Proto marshalling may not be the same on all platforms,
 	// so find what we should expect on this platform.
@@ -297,9 +363,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "build-1234",
+						Id: getParentID("build-1234"),
 					},
-					Name:        "invocations/build-1234/tests/:module%21junit:package:class%23test_consistent_failure/results/one",
+					Name:        getName("build-1234", ":module%21junit:package:class%23test_consistent_failure", "one"),
 					ResultId:    "one",
 					Expected:    false,
 					Status:      pb.TestResultStatus_FAIL,
@@ -387,9 +453,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "build-1234",
+						Id: getParentID("build-1234"),
 					},
-					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_expected/results/one",
+					Name:       getName("build-1234", ":module%21junit:package:class%23test_expected", "one"),
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.May, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -435,9 +501,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "build-1234",
+						Id: getParentID("build-1234"),
 					},
-					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_filtering_event/results/one",
+					Name:       getName("build-1234", ":module%21junit:package:class%23test_filtering_event", "one"),
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_SKIP,
@@ -484,9 +550,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "build-1234",
+						Id: getParentID("build-1234"),
 					},
-					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_from_luci_bisection/results/one",
+					Name:       getName("build-1234", ":module%21junit:package:class%23test_from_luci_bisection", "one"),
 					ResultId:   "one",
 					Status:     pb.TestResultStatus_PASS,
 					StatusV2:   pb.TestResult_FAILED,
@@ -534,9 +600,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "invocation-0b",
+						Id: getParentID("invocation-0b"),
 					},
-					Name:       "invocations/invocation-0b/tests/:module%21junit:package:class%23test_has_unexpected/results/one",
+					Name:       getName("invocation-0b", ":module%21junit:package:class%23test_has_unexpected", "one"),
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 10, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -546,9 +612,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				},
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "invocation-0a",
+						Id: getParentID("invocation-0a"),
 					},
-					Name:       "invocations/invocation-0a/tests/:module%21junit:package:class%23test_has_unexpected/results/two",
+					Name:       getName("invocation-0a", ":module%21junit:package:class%23test_has_unexpected", "two"),
 					ResultId:   "two",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 20, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -592,9 +658,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "build-1234",
+						Id: getParentID("build-1234"),
 					},
-					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_known_flake/results/one",
+					Name:       getName("build-1234", ":module%21junit:package:class%23test_known_flake", "one"),
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -639,9 +705,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "build-1234",
+						Id: getParentID("build-1234"),
 					},
-					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_new_failure/results/one",
+					Name:       getName("build-1234", ":module%21junit:package:class%23test_new_failure", "one"),
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -685,9 +751,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "invocation-1234",
+						Id: getParentID("invocation-1234"),
 					},
-					Name:       "invocations/invocation-1234/tests/:module%21junit:package:class%23test_new_flake/results/two",
+					Name:       getName("invocation-1234", ":module%21junit:package:class%23test_new_flake", "two"),
 					ResultId:   "two",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 20, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -698,9 +764,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				},
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "invocation-1234",
+						Id: getParentID("invocation-1234"),
 					},
-					Name:       "invocations/invocation-1234/tests/:module%21junit:package:class%23test_new_flake/results/one",
+					Name:       getName("invocation-1234", ":module%21junit:package:class%23test_new_flake", "one"),
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 10, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -711,9 +777,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 				},
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "invocation-4567",
+						Id: getParentID("invocation-4567"),
 					},
-					Name:       "invocations/invocation-4567/tests/:module%21junit:package:class%23test_new_flake/results/three",
+					Name:       getName("invocation-4567", ":module%21junit:package:class%23test_new_flake", "three"),
 					ResultId:   "three",
 					StartTime:  timestamppb.New(time.Date(2010, time.January, 1, 0, 0, 15, 0, time.UTC)),
 					Status:     pb.TestResultStatus_PASS,
@@ -757,9 +823,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "build-1234",
+						Id: getParentID("build-1234"),
 					},
-					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_no_new_results/results/one",
+					Name:       getName("build-1234", ":module%21junit:package:class%23test_no_new_results", "one"),
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.April, 1, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_FAIL,
@@ -802,9 +868,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "build-1234",
+						Id: getParentID("build-1234"),
 					},
-					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_skip/results/one",
+					Name:       getName("build-1234", ":module%21junit:package:class%23test_skip", "one"),
 					ResultId:   "one",
 					StartTime:  timestamppb.New(time.Date(2010, time.February, 2, 0, 0, 0, 0, time.UTC)),
 					Status:     pb.TestResultStatus_SKIP,
@@ -846,9 +912,9 @@ func verifyTestVerdicts(t testing.TB, client *testverdicts.FakeClient, expectedP
 			Results: []*bqpb.TestVerdictRow_TestResult{
 				{
 					Parent: &bqpb.TestVerdictRow_ParentInvocationRecord{
-						Id: "build-1234",
+						Id: getParentID("build-1234"),
 					},
-					Name:       "invocations/build-1234/tests/:module%21junit:package:class%23test_unexpected_pass/results/one",
+					Name:       getName("build-1234", ":module%21junit:package:class%23test_unexpected_pass", "one"),
 					ResultId:   "one",
 					Status:     pb.TestResultStatus_PASS,
 					StatusV2:   pb.TestResult_FAILED,

@@ -97,6 +97,9 @@ message TestVerdictRow {
     // buffer type that maps to the JSON BigQuery type:
     // https://cloud.google.com/bigquery/docs/write-api#data_type_conversions
     string properties = 4 [(bqschema.options).bq_type = "JSON"];
+
+    // Whether the invocation is a root invocation.
+    bool is_root_invocation = 5;
   }
 
   // Invocation is the ResultDB invocation.

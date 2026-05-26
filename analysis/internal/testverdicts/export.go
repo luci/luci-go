@@ -58,9 +58,10 @@ func NewExporter(client InsertClient) *Exporter {
 // ExportOptions captures context which will be exported
 // alongside the test verdicts.
 type ExportOptions struct {
-	Payload     *taskspb.IngestTestVerdicts
-	Invocation  *rdbpb.Invocation
-	SourcesByID map[string]*pb.Sources
+	Payload        *taskspb.IngestTestVerdicts
+	Invocation     *rdbpb.Invocation
+	RootInvocation *rdbpb.RootInvocation
+	SourcesByID    map[string]*pb.Sources
 }
 
 // Export exports the given test verdicts to BigQuery.
@@ -88,7 +89,15 @@ func (e *Exporter) Export(ctx context.Context, testVariants []*rdbpb.TestVariant
 // prepareExportRow prepares a BigQuery export row for a
 // ResultDB test verdict.
 func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time.Time) (*bqpb.TestVerdictRow, error) {
-	project, _, err := perms.SplitRealm(opts.Invocation.Realm)
+	var project string
+	var err error
+	if opts.Invocation != nil {
+		project, _, err = perms.SplitRealm(opts.Invocation.Realm)
+	} else if opts.RootInvocation != nil {
+		project, _, err = perms.SplitRealm(opts.RootInvocation.Realm)
+	} else {
+		return nil, errors.New("logic error: neither Invocation nor RootInvocation is set")
+	}
 	if err != nil {
 		return nil, errors.Fmt("invalid realm: %w", err)
 	}
@@ -98,6 +107,13 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 		resultEntry, err := result(r.Result)
 		if err != nil {
 			return nil, errors.Fmt("result entry: %w", err)
+		}
+		if opts.RootInvocation != nil {
+			parts, err := rdbpbutil.ParseTestResultName(r.Result.Name)
+			if err != nil {
+				return nil, errors.Fmt("parse test result name: %w", err)
+			}
+			resultEntry.Parent.Id = parts.WorkUnitID
 		}
 		results = append(results, resultEntry)
 	}
@@ -128,9 +144,18 @@ func prepareExportRow(tv *rdbpb.TestVariant, opts ExportOptions, insertTime time
 		build = buildbucketBuild(opts.Payload.Build)
 	}
 
-	inv, err := invocation(opts.Invocation)
-	if err != nil {
-		return nil, errors.Fmt("invocation: %w", err)
+	var inv *bqpb.TestVerdictRow_InvocationRecord
+	if opts.Invocation != nil {
+		inv, err = invocation(opts.Invocation)
+		if err != nil {
+			return nil, errors.Fmt("invocation: %w", err)
+		}
+	} else if opts.RootInvocation != nil {
+		propertiesJSON, err := bqutil.MarshalStructPB(opts.RootInvocation.Properties)
+		if err != nil {
+			return nil, errors.Fmt("root invocation: marshal properties: %w", err)
+		}
+		inv = rootInvocation(opts.RootInvocation, propertiesJSON)
 	}
 
 	testIDStructured, err := bqutil.StructuredTestIdentifierRDB(tv.TestId, tv.Variant)
@@ -189,6 +214,16 @@ func invocation(invocation *rdbpb.Invocation) (*bqpb.TestVerdictRow_InvocationRe
 		Realm:      invocation.Realm,
 		Properties: propertiesJSON,
 	}, nil
+}
+
+func rootInvocation(rootInv *rdbpb.RootInvocation, propertiesJSON string) *bqpb.TestVerdictRow_InvocationRecord {
+	return &bqpb.TestVerdictRow_InvocationRecord{
+		Id:               rootInv.RootInvocationId,
+		Tags:             pbutil.StringPairFromResultDB(rootInv.Tags),
+		Realm:            rootInv.Realm,
+		Properties:       propertiesJSON,
+		IsRootInvocation: true,
+	}
 }
 
 func exoneration(exoneration *rdbpb.TestExoneration) *bqpb.TestVerdictRow_Exoneration {

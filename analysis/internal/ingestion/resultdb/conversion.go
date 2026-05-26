@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 
+	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -63,6 +64,14 @@ func GroupAndOrderTestResults(input []*rdbpb.TestResultBundle) [][]*rdbpb.TestRe
 // InvocationFromTestResultName extracts the invocation that the
 // test result is immediately included inside.
 func InvocationFromTestResultName(name string) (string, error) {
+	if strings.HasPrefix(name, "rootInvocations/") {
+		parts, err := pbutil.ParseTestResultName(name)
+		if err != nil {
+			return "", err
+		}
+		return parts.RootInvocationID, nil
+	}
+
 	// Using a regexp here was consuming 5% of all CPU cycles
 	// related to test verdict ingestion, so do the extracting
 	// manually using indexes.
