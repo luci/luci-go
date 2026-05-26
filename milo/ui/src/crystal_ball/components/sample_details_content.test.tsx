@@ -36,6 +36,11 @@ import {
 jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
   useFetchWidgetRawSamples: jest.fn(),
+  useUserSettings: () => ({
+    timeZone: 'UTC',
+    isLocal: false,
+    updateTimeZone: jest.fn(),
+  }),
 }));
 
 const mockUseFetchWidgetRawSamples = jest.mocked(useFetchWidgetRawSamples);

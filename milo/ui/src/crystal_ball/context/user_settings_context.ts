@@ -1,4 +1,4 @@
-// Copyright 2025 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './use_dashboard_state_api';
-export * from './use_dashboard_workflows';
-export * from './use_editor_ui_state';
-export * from './use_export_to_sheets';
-export * from './use_filters_clipboard';
-export * from './use_measurement_filter_api';
-export * from './use_toast';
-export * from './use_user_settings';
-export * from './use_user_settings_api';
-export * from './use_widget_data_api';
+import { createContext } from 'react';
+
+import { UserSettings } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+export interface UserSettingsContextType {
+  timeZone: string;
+  isLocal: boolean;
+  updateTimeZone: (mode: 'UTC' | 'Local') => Promise<void>;
+  isLoading: boolean;
+  userSettings: UserSettings | undefined;
+}
+
+export const UserSettingsContext = createContext<
+  UserSettingsContextType | undefined
+>(undefined);

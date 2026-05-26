@@ -48,3 +48,55 @@ export function formatRelativeTime(val?: string | Timestamp): string {
     return 'Invalid date';
   }
 }
+
+/**
+ * Formats a date-time value (string, number epoch, or Date object) in a specified timezone.
+ * Returns standard YYYY-MM-DD HH:mm:ss format.
+ */
+export function formatTimestampWithZone(
+  ts: string | number | Date | undefined | null,
+  timeZone: string,
+): string {
+  if (ts === undefined || ts === null || ts === '') return '';
+  const date = ts instanceof Date ? ts : new Date(ts);
+  if (isNaN(date.getTime())) return String(ts);
+
+  try {
+    const formatter = new Intl.DateTimeFormat('sv-SE', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZone,
+    });
+    return formatter.format(date);
+  } catch {
+    return date.toLocaleString();
+  }
+}
+
+/**
+ * Returns date and time formatting instances configured for a specific timezone.
+ * Useful for bulk formatting operations where construction overhead must be minimized.
+ */
+export function getTimeFormatters(timeZone: string) {
+  try {
+    const dateFmt = new Intl.DateTimeFormat('sv-SE', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      timeZone,
+    });
+    const timeFmt = new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone,
+    });
+    return { dateFmt, timeFmt };
+  } catch {
+    return null;
+  }
+}

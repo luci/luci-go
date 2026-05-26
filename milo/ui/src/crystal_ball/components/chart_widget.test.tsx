@@ -58,12 +58,17 @@ jest.mock('@mui/material', () => ({
 
 jest.mock('@/crystal_ball/hooks', () => ({
   ...jest.requireActual('@/crystal_ball/hooks'),
+  useFetchDashboardWidgetData: jest.fn(),
   useToast: () => ({
     showSuccessToast: jest.fn(),
     showWarningToast: jest.fn(),
     showErrorToast: jest.fn(),
   }),
-  useFetchDashboardWidgetData: jest.fn(),
+  useUserSettings: () => ({
+    timeZone: 'UTC',
+    isLocal: false,
+    updateTimeZone: jest.fn(),
+  }),
 }));
 const mockUseFetchDashboardWidgetData = jest.mocked(
   useFetchDashboardWidgetData,

@@ -17,6 +17,8 @@ import { ECharts, EChartsOption } from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import { CSSProperties, useEffect, useMemo, useRef } from 'react';
 
+import { getTimeFormatters } from '@/crystal_ball/utils';
+
 /**
  * Represents a single series to be plotted on the time series chart.
  */
@@ -157,6 +159,10 @@ interface TimeSeriesChartProps {
    * Counter used to trigger chart download.
    */
   downloadTrigger?: number;
+  /**
+   * Optional IANA timezone string to format the X-axis timestamps.
+   */
+  timeZone?: string;
 }
 
 /**
@@ -174,20 +180,6 @@ function formatLargeNumber(num: number): string {
   const value = Math.abs(num) / Math.pow(1000, order);
 
   return `${Math.sign(num) * parseFloat(value.toFixed(1))}${name}`;
-}
-
-/**
- * Formats a number for the X-axis time display.
- */
-function xAxisFormatter(val: number) {
-  const date = new Date(val);
-  return `${date.toLocaleDateString()}\n${date.toLocaleTimeString(
-    /* locales= */ undefined,
-    {
-      hour: '2-digit',
-      minute: '2-digit',
-    },
-  )}`;
 }
 
 const BASE_OPTION: Partial<EChartsOption> = {
@@ -260,9 +252,6 @@ const BASE_OPTION: Partial<EChartsOption> = {
   xAxis: {
     type: 'time',
     splitLine: { show: true, lineStyle: { type: 'dashed' } },
-    axisLabel: {
-      formatter: xAxisFormatter,
-    },
   },
   yAxis: {
     type: 'value',
@@ -299,6 +288,7 @@ export function TimeSeriesChart({
   fitY = false,
   restoreZoomTrigger = 0,
   downloadTrigger = 0,
+  timeZone = 'UTC',
 }: TimeSeriesChartProps) {
   const theme = useTheme();
 
@@ -326,6 +316,26 @@ export function TimeSeriesChart({
     }
     return undefined;
   };
+
+  const formatters = useMemo(() => {
+    return getTimeFormatters(timeZone);
+  }, [timeZone]);
+
+  const xAxisFormatter = useMemo(() => {
+    return (val: number) => {
+      const date = new Date(val);
+      if (formatters) {
+        return `${formatters.dateFmt.format(date)}\n${formatters.timeFmt.format(date)}`;
+      }
+      return `${date.toLocaleDateString()}\n${date.toLocaleTimeString(
+        undefined,
+        {
+          hour: '2-digit',
+          minute: '2-digit',
+        },
+      )}`;
+    };
+  }, [formatters]);
 
   const option: EChartsOption = useMemo(() => {
     const showDataZoom =
@@ -471,6 +481,7 @@ export function TimeSeriesChart({
     xAxisMin,
     xAxisMax,
     fitY,
+    xAxisFormatter,
   ]);
 
   const onEvents = useMemo(

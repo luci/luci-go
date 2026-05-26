@@ -20,6 +20,15 @@ import { RawSampleRow } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf
 
 import { RawSampleList } from './raw_sample_list';
 
+jest.mock('@/crystal_ball/hooks', () => ({
+  ...jest.requireActual('@/crystal_ball/hooks'),
+  useUserSettings: () => ({
+    timeZone: 'UTC',
+    isLocal: false,
+    updateTimeZone: jest.fn(),
+  }),
+}));
+
 describe('RawSampleList', () => {
   const currentYear = new Date().getFullYear();
   const mockRows: RawSampleRow[] = [

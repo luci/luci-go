@@ -30,6 +30,17 @@ jest.mock('@/common/components/auth_state_provider', () => ({
   }),
 }));
 
+jest.mock('@/crystal_ball/hooks', () => ({
+  ...jest.requireActual('@/crystal_ball/hooks'),
+  useGetUserSettings: () => ({
+    data: { timeZone: 'UTC' },
+    isLoading: false,
+  }),
+  useUpdateUserSettings: () => ({
+    mutateAsync: jest.fn(),
+  }),
+}));
+
 describe('Layout', () => {
   const renderWithStickyContext = (ui: React.ReactNode) => {
     return render(<QueuedStickyScrollingBase>{ui}</QueuedStickyScrollingBase>);

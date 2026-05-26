@@ -20,6 +20,15 @@ import { DashboardState } from '@/proto/go.chromium.org/luci/crystal_ball/api/pe
 
 import { DashboardTimeRangeSelector } from './dashboard_time_range_selector';
 
+jest.mock('@/crystal_ball/hooks', () => ({
+  ...jest.requireActual('@/crystal_ball/hooks'),
+  useUserSettings: () => ({
+    timeZone: 'UTC',
+    isLocal: false,
+    updateTimeZone: jest.fn(),
+  }),
+}));
+
 interface MockDateTimePickerProps {
   label: string;
   onChange: (value: DateTime | null) => void;
@@ -87,7 +96,7 @@ describe('DashboardTimeRangeSelector', () => {
     renderComponent();
     fireEvent.click(screen.getByTestId('time-button'));
     expect(screen.getByText('Relative Range')).toBeInTheDocument();
-    expect(screen.getByText('Custom Range (UTC)')).toBeInTheDocument();
+    expect(screen.getByText('Custom Range')).toBeInTheDocument();
   });
 
   it('shows errors when custom range is applied with missing dates', () => {
@@ -112,8 +121,8 @@ describe('DashboardTimeRangeSelector', () => {
     renderComponent();
     fireEvent.click(screen.getByTestId('time-button'));
 
-    const fromInput = screen.getByLabelText('From (UTC)');
-    const toInput = screen.getByLabelText('To (UTC)');
+    const fromInput = screen.getByLabelText('From');
+    const toInput = screen.getByLabelText('To');
 
     // Use valid ISO strings that Luxon can parse
     fireEvent.change(fromInput, { target: { value: '2026-04-16T12:00:00Z' } });
@@ -135,8 +144,8 @@ describe('DashboardTimeRangeSelector', () => {
     renderComponent();
     fireEvent.click(screen.getByTestId('time-button'));
 
-    const fromInput = screen.getByLabelText('From (UTC)');
-    const toInput = screen.getByLabelText('To (UTC)');
+    const fromInput = screen.getByLabelText('From');
+    const toInput = screen.getByLabelText('To');
 
     fireEvent.change(fromInput, { target: { value: '2026-04-15T12:00:00Z' } });
     fireEvent.change(toInput, { target: { value: '2026-04-16T12:00:00Z' } });

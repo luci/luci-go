@@ -31,23 +31,9 @@ import {
   COMMON_MESSAGES,
   INVOCATION_BASE_URL,
 } from '@/crystal_ball/constants';
+import { useUserSettings } from '@/crystal_ball/hooks';
+import { formatTimestampWithZone } from '@/crystal_ball/utils';
 import type { RawSampleRow } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
-
-const formatMtvTimestamp = (ts: unknown) => {
-  if (typeof ts !== 'string') return '';
-  const date = new Date(ts);
-  const formatter = new Intl.DateTimeFormat('sv-SE', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-    timeZone: 'America/Los_Angeles',
-  });
-  return `${formatter.format(date)} MTV`;
-};
 
 function constructAtiUrl(row: RawSampleRow): string {
   const invocationId = row.values?.[Column.ANTS_INVOCATION_ID];
@@ -69,6 +55,8 @@ interface RawSampleItemProps {
 }
 
 function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
+  const { timeZone } = useUserSettings();
+
   // Safe URL construction using URL and URLSearchParams
   const atpTestName = String(row.values?.[Column.ATP_TEST_NAME] ?? '');
   const buildBranch = String(row.values?.[Column.BUILD_BRANCH] ?? '');
@@ -249,7 +237,7 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
             variant="caption"
             sx={{ fontFamily: 'monospace', color: 'text.primary' }}
           >
-            {formatMtvTimestamp(buildCreationTs)}
+            {formatTimestampWithZone(buildCreationTs, timeZone)}
           </Typography>
 
           <Typography
@@ -263,7 +251,7 @@ function RawSampleItem({ row, expanded, onChange }: RawSampleItemProps) {
             variant="caption"
             sx={{ fontFamily: 'monospace', color: 'text.primary' }}
           >
-            {formatMtvTimestamp(testFinishedTs)}
+            {formatTimestampWithZone(testFinishedTs, timeZone)}
           </Typography>
 
           <Typography

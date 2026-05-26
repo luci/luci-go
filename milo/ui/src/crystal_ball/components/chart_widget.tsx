@@ -49,11 +49,13 @@ import {
 } from '@/crystal_ball/constants';
 import { WidgetPortalContext } from '@/crystal_ball/context';
 import {
-  useFetchDashboardWidgetData,
   EditorUiKeyPrefix,
+  useFetchDashboardWidgetData,
+  useUserSettings,
 } from '@/crystal_ball/hooks';
 import {
   dataPointsToData,
+  formatTimestampWithZone,
   generateColor,
   getSafeChartType,
   isDataPointsValid,
@@ -263,6 +265,8 @@ export function ChartWidget({
   dataSpecs,
   dashboardName,
 }: ChartWidgetProps) {
+  const { timeZone } = useUserSettings();
+
   const isDistribution = useMemo(
     () =>
       getSafeChartType(widget.chartType) ===
@@ -568,8 +572,7 @@ export function ChartWidget({
 
       const xAxisType = xAxisDataKey === Column.BUILD_ID ? 'value' : 'time';
       if (xAxisType === 'time' && typeof xVal === 'number') {
-        const date = new Date(xVal);
-        xDisplay = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+        xDisplay = formatTimestampWithZone(xVal, timeZone);
       }
 
       let result = `<strong>${xDisplay}</strong><br/>`;
@@ -589,7 +592,7 @@ export function ChartWidget({
       });
       return result;
     };
-  }, [isDistribution, widgetResponse]);
+  }, [isDistribution, widgetResponse, timeZone]);
 
   const hasData = useMemo(
     () => chartSeries.some((series) => series.data.length > 0),
@@ -736,6 +739,7 @@ export function ChartWidget({
             fitY={fitY}
             restoreZoomTrigger={restoreZoomTrigger}
             downloadTrigger={downloadTrigger}
+            timeZone={timeZone}
           />
         )}
         {selectedPoint && (

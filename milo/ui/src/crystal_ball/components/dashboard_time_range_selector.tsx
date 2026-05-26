@@ -22,6 +22,8 @@ import {
   Select,
   SelectChangeEvent,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -36,6 +38,7 @@ import {
   GLOBAL_TIME_RANGE_FILTER_ID,
   GLOBAL_TIME_RANGE_OPTION_DEFAULT,
 } from '@/crystal_ball/constants';
+import { useUserSettings } from '@/crystal_ball/hooks';
 import { COMPACT_SELECT_SX, COMPACT_TEXTFIELD_SX } from '@/crystal_ball/styles';
 import {
   DashboardState,
@@ -43,6 +46,19 @@ import {
   PerfFilterDefault_FilterOperator,
   perfFilterDefault_FilterOperatorFromJSON,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+const getLocalTimezoneLabel = () => {
+  try {
+    const formatter = new Intl.DateTimeFormat(undefined, {
+      timeZoneName: 'short',
+    });
+    const parts = formatter.formatToParts(new Date());
+    const tzPart = parts.find((p) => p.type === 'timeZoneName');
+    return tzPart ? `Local (${tzPart.value})` : 'Local';
+  } catch {
+    return 'Local';
+  }
+};
 
 interface DashboardTimeRangeSelectorProps {
   onApply: (state: DashboardState) => void;
@@ -53,6 +69,8 @@ export function DashboardTimeRangeSelector({
   dashboardState,
   onApply,
 }: DashboardTimeRangeSelectorProps) {
+  const { timeZone, isLocal, updateTimeZone } = useUserSettings();
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const timeFilter = dashboardState.dashboardContent?.globalFilters?.find(
     (f) => f.id === GLOBAL_TIME_RANGE_FILTER_ID,
@@ -116,15 +134,15 @@ export function DashboardTimeRangeSelector({
     return {
       startTime:
         values[0] && values[0] !== ''
-          ? DateTime.fromISO(values[0]).toUTC()
+          ? DateTime.fromISO(values[0]).setZone(timeZone)
           : null,
       endTime:
         values[1] && values[1] !== ''
-          ? DateTime.fromISO(values[1]).toUTC()
+          ? DateTime.fromISO(values[1]).setZone(timeZone)
           : null,
       timeOption: opt,
     };
-  }, [timeFilter]);
+  }, [timeFilter, timeZone]);
 
   const updateTimeRange = (
     newStartTime: DateTime | null,
@@ -267,10 +285,44 @@ export function DashboardTimeRangeSelector({
             p: 2,
             display: 'flex',
             flexDirection: 'column',
-            gap: 2,
+            gap: 1.5,
             maxWidth: '350px',
           }}
         >
+          <Typography variant="subtitle2">Display Timezone</Typography>
+          <ToggleButtonGroup
+            size="small"
+            value={isLocal ? 'Local' : 'UTC'}
+            exclusive
+            onChange={(_e, newMode) => {
+              if (newMode !== null) {
+                updateTimeZone(newMode);
+              }
+            }}
+            fullWidth
+            sx={{
+              height: 32,
+              '& .MuiToggleButton-root': {
+                textTransform: 'none',
+                fontWeight: 'bold',
+                color: 'text.secondary',
+                borderColor: 'divider',
+                '&.Mui-selected': {
+                  color: 'primary.main',
+                  bgcolor: 'primary.lighter',
+                  '&:hover': {
+                    bgcolor: 'primary.lighter',
+                  },
+                },
+              },
+            }}
+          >
+            <ToggleButton value="UTC">UTC</ToggleButton>
+            <ToggleButton value="Local">{getLocalTimezoneLabel()}</ToggleButton>
+          </ToggleButtonGroup>
+
+          <Divider sx={{ my: 0.5 }} />
+
           <Typography variant="subtitle2">
             {COMMON_MESSAGES.RELATIVE_RANGE}
           </Typography>
@@ -304,13 +356,11 @@ export function DashboardTimeRangeSelector({
 
           <Divider />
 
-          <Typography variant="subtitle2">
-            {COMMON_MESSAGES.CUSTOM_RANGE_UTC}
-          </Typography>
+          <Typography variant="subtitle2">Custom Range</Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <DateTimePicker
-              label={COMMON_MESSAGES.FROM_UTC}
-              timezone="UTC"
+              label="From"
+              timezone={timeZone}
               value={localStartTime}
               onChange={(newValue) => {
                 setLocalStartTime(newValue);
@@ -325,8 +375,8 @@ export function DashboardTimeRangeSelector({
               }}
             />
             <DateTimePicker
-              label={COMMON_MESSAGES.TO_UTC}
-              timezone="UTC"
+              label="To"
+              timezone={timeZone}
               value={localEndTime}
               onChange={(newValue) => {
                 setLocalEndTime(newValue);
