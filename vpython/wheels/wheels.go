@@ -22,9 +22,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
-	"unicode"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -41,6 +38,7 @@ import (
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/common"
 	"go.chromium.org/luci/vpython/spec"
+	"go.chromium.org/luci/vpython/standard/legacy/pipname"
 )
 
 type vpythonSpecGenerator struct {
@@ -182,120 +180,6 @@ func ensureFileFromVPythonSpec(s *vpython.Spec, tags []*vpython.PEP425Tag) (*ens
 	}, nil
 }
 
-var nameNormalizationRE = regexp.MustCompile(`[-_.]+`)
-
-// CIPD package names for wheels are usually:
-// infra/python/wheels/<name>/${vpython_platform}
-// or similar variants like:
-// infra/python/wheels/<name>-py2_py3
-func pipNameFromPackageName(name string) string {
-	res := name
-	const prefix = "infra/python/wheels/"
-	// Drop common CIPD prefix and get the package name that comes
-	// right after it:
-	// infra/python/wheels/six-py3/${vpython_platform}
-	if after, ok := strings.CutPrefix(name, prefix); ok {
-		res = after
-		parts := strings.Split(res, "/")
-		res = parts[0]
-	} else {
-		// In an off chance that the prefix is not what we expect,
-		// get the package name that is either the last / block or
-		// just before the ${vpython_platform}.
-		// For instance infra/tools/python/six-py3/${vpython_platform}
-		parts := strings.Split(name, "/")
-		for i := len(parts) - 1; i >= 0; i-- {
-			p := parts[i]
-			if !strings.Contains(p, "${") && p != "" {
-				res = p
-				break
-			}
-		}
-	}
-
-	// Strip common suffixes for universal wheels.
-	for _, suffix := range []string{"-py2_py3", "_py2_py3", "-py3", "_py3", "-py2", "_py2"} {
-		if strings.HasSuffix(res, suffix) {
-			res = res[:len(res)-len(suffix)]
-			break
-		}
-	}
-
-	// PEP 503 normalization: lowercase and replace runs of [._-] with a single hyphen.
-	return nameNormalizationRE.ReplaceAllString(strings.ToLower(res), "-")
-}
-
-func pipVersionFromPackageVersion(version string) string {
-	v := version
-	if strings.HasPrefix(v, "version:2@") {
-		v = v[10:]
-	} else if strings.HasPrefix(v, "version:") {
-		v = v[8:]
-	}
-
-	// Check if version starts with a digit (or v followed by digit)
-	if len(v) == 0 {
-		return v
-	}
-	if !unicode.IsDigit(rune(v[0])) && !(v[0] == 'v' && len(v) > 1 && unicode.IsDigit(rune(v[1]))) {
-		return v // Not a standard version, skip normalization
-	}
-
-	// Split by ., - and +
-	segments := strings.FieldsFunc(v, func(r rune) bool {
-		return r == '.' || r == '-' || r == '+'
-	})
-
-	for _, seg := range segments {
-		if len(seg) == 0 {
-			continue
-		}
-		allDigits := true
-		for _, r := range seg {
-			if !unicode.IsDigit(r) {
-				allDigits = false
-				break
-			}
-		}
-		if !allDigits {
-			// Check if it's a valid pre-release segment
-			isPre := false
-			for _, pre := range []string{"a", "b", "rc", "alpha", "beta", "pre", "preview", "c", "post", "rev", "r", "dev"} {
-				if strings.HasPrefix(strings.ToLower(seg), pre) {
-					// Check if the rest of the segment is numeric
-					rest := seg[len(pre):]
-					isNumeric := true
-					for _, r := range rest {
-						if !unicode.IsDigit(r) {
-							isNumeric = false
-							break
-						}
-					}
-					if isNumeric {
-						isPre = true
-						break
-					}
-				}
-			}
-			if !isPre {
-				// Found a non-pre-release segment starting with a letter.
-				// This is the start of the local version.
-				// We want to replace the separator BEFORE this segment with +.
-				idx := strings.Index(v, seg)
-				if idx > 0 {
-					sep := v[idx-1]
-					if sep == '.' || sep == '-' {
-						// Replace the separator with +
-						return v[:idx-1] + "+" + v[idx:]
-					}
-				}
-			}
-		}
-	}
-
-	return v
-}
-
 func writeRequirementsFromSpec(path string, s *vpython.Spec, tags []*vpython.PEP425Tag) (err error) {
 	// Use ensureFileFromVPythonSpec to filter and expand template names.
 	ef, err := ensureFileFromVPythonSpec(s, tags)
@@ -318,8 +202,8 @@ func writeRequirementsFromSpec(path string, s *vpython.Spec, tags []*vpython.PEP
 		if pkg.PackageTemplate == "" {
 			continue // package was skipped
 		}
-		name := pipNameFromPackageName(pkg.PackageTemplate)
-		version := pipVersionFromPackageVersion(pkg.UnresolvedVersion)
+		name := pipname.PipNameFromPackageName(pkg.PackageTemplate)
+		version := pipname.PipVersionFromPackageVersion(pkg.UnresolvedVersion)
 		line := fmt.Sprintf("%s==%s", name, version)
 		if _, ok := seen[line]; ok {
 			continue

@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/standard/legacy/pipname"
 )
 
 func TestGeneratingEnsureFile(t *testing.T) {
@@ -110,11 +111,11 @@ func TestPipHelpers(t *testing.T) {
 				{"infra/python/wheels/complex---name", "complex-name"},
 			}
 			for _, c := range cases {
-				assert.Loosely(t, pipNameFromPackageName(c.in), should.Equal(c.out))
+				assert.Loosely(t, pipname.PipNameFromPackageName(c.in), should.Equal(c.out))
 			}
 		})
 
-		t.Run("pipVersionFromPackageVersion", func(t *ftt.Test) {
+		t.Run("PipVersionFromPackageVersion", func(t *ftt.Test) {
 			cases := []struct {
 				in, out string
 			}{
@@ -133,7 +134,7 @@ func TestPipHelpers(t *testing.T) {
 				{"version:2.5.6-0a1b2c3d", "2.5.6+0a1b2c3d"},
 			}
 			for _, c := range cases {
-				assert.Loosely(t, pipVersionFromPackageVersion(c.in), should.Equal(c.out))
+				assert.Loosely(t, pipname.PipVersionFromPackageVersion(c.in), should.Equal(c.out))
 			}
 		})
 	})

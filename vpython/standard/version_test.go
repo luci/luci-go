@@ -27,33 +27,33 @@ func TestVersionParsingAndMatching(tT *testing.T) {
 
 	ftt.Run("Version Parsing", tT, func(t *ftt.Test) {
 		t.Run("Parses exact single, double, and triple versions", func(t *ftt.Test) {
-			v, err := parseVersion("3")
+			v, err := ParseVersion("3")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, v, should.Match(version{Major: 3, Minor: 0, Patch: 0, Segments: 1, Raw: "3"}))
+			assert.Loosely(t, v, should.Match(Version{Major: 3, Minor: 0, Patch: 0, Segments: 1, Raw: "3"}))
 
-			v, err = parseVersion("3.11")
+			v, err = ParseVersion("3.11")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, v, should.Match(version{Major: 3, Minor: 11, Patch: 0, Segments: 2, Raw: "3.11"}))
+			assert.Loosely(t, v, should.Match(Version{Major: 3, Minor: 11, Patch: 0, Segments: 2, Raw: "3.11"}))
 
-			v, err = parseVersion("v3.8.10")
+			v, err = ParseVersion("v3.8.10")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, v, should.Match(version{Major: 3, Minor: 8, Patch: 10, Segments: 3, Raw: "3.8.10"}))
+			assert.Loosely(t, v, should.Match(Version{Major: 3, Minor: 8, Patch: 10, Segments: 3, Raw: "3.8.10"}))
 
 			// Verify trailing build/prerelease suffixes are safely allowed and stripped
-			v, err = parseVersion("3.8.10.chromium.31")
+			v, err = ParseVersion("3.8.10.chromium.31")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, v, should.Match(version{Major: 3, Minor: 8, Patch: 10, Segments: 3, Raw: "3.8.10.chromium.31"}))
+			assert.Loosely(t, v, should.Match(Version{Major: 3, Minor: 8, Patch: 10, Segments: 3, Raw: "3.8.10.chromium.31"}))
 
-			v, err = parseVersion("3.11-rc")
+			v, err = ParseVersion("3.11-rc")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, v, should.Match(version{Major: 3, Minor: 11, Patch: 0, Segments: 2, Raw: "3.11-rc"}))
+			assert.Loosely(t, v, should.Match(Version{Major: 3, Minor: 11, Patch: 0, Segments: 2, Raw: "3.11-rc"}))
 		})
 
 		t.Run("Fails on invalid formats", func(t *ftt.Test) {
-			_, err := parseVersion("abc")
+			_, err := ParseVersion("abc")
 			assert.Loosely(t, err, should.NotBeNil)
 
-			_, err = parseVersion("3..5")
+			_, err = ParseVersion("3..5")
 			assert.Loosely(t, err, should.NotBeNil) // Double dots are blocked!
 		})
 	})
@@ -174,9 +174,9 @@ func TestVersionParsingAndMatching(tT *testing.T) {
 			// Manually construct a private subConstraint with an invalid operator
 			invalidSub := subConstraint{
 				op:  "invalid_op",
-				ver: version{Major: 3, Minor: 11, Patch: 0, Segments: 2},
+				ver: Version{Major: 3, Minor: 11, Patch: 0, Segments: 2},
 			}
-			satisfied := invalidSub.isSatisfied(version{Major: 3, Minor: 11, Patch: 0, Segments: 2})
+			satisfied := invalidSub.isSatisfied(Version{Major: 3, Minor: 11, Patch: 0, Segments: 2})
 			assert.Loosely(t, satisfied, should.BeFalse)
 		})
 	})

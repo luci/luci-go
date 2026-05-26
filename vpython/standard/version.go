@@ -30,8 +30,8 @@ var pep440Regex = regexp.MustCompile(`^([1-9]\d*!)?(0|[1-9]\d*)(\.(0|[1-9]\d*))*
 // baseReleaseRegex extracts the leading major.minor.patch release digits blocks sequence.
 var baseReleaseRegex = regexp.MustCompile(`^v?(\d+(?:\.\d+)*)`)
 
-// version represents a MAJOR.MINOR.PATCH version segment sequence.
-type version struct {
+// Version represents a MAJOR.MINOR.PATCH version segment sequence.
+type Version struct {
 	Major    int
 	Minor    int
 	Patch    int
@@ -39,11 +39,11 @@ type version struct {
 	Raw      string // The normalized raw string representation (without "v" prefix)
 }
 
-// parseVersion extracts and parses the MAJOR.MINOR.PATCH integers from a version string.
-func parseVersion(v string) (version, error) {
+// ParseVersion extracts and parses the MAJOR.MINOR.PATCH integers from a version string.
+func ParseVersion(v string) (Version, error) {
 	v = strings.TrimSpace(v)
 	if strings.Contains(v, "..") {
-		return version{}, fmt.Errorf("invalid version format: contains double dots %q", v)
+		return Version{}, fmt.Errorf("invalid version format: contains double dots %q", v)
 	}
 
 	// Remove leading "v" prefix before matching the PEP 440 template layout
@@ -51,27 +51,27 @@ func parseVersion(v string) (version, error) {
 
 	// 1. Validate strict compliance using our safe prefix PEP 440 regular expression!
 	if !pep440Regex.MatchString(cleanStr) {
-		return version{}, fmt.Errorf("invalid version format (non-PEP440 compliant): %q", v)
+		return Version{}, fmt.Errorf("invalid version format (non-PEP440 compliant): %q", v)
 	}
 
 	// 2. Extract Major, Minor, and Patch by manual string splitting on the base release digits part!
 	releaseMatch := baseReleaseRegex.FindStringSubmatch(cleanStr)
 	if releaseMatch == nil {
-		return version{}, fmt.Errorf("failed to parse release segments: %q", v)
+		return Version{}, fmt.Errorf("failed to parse release segments: %q", v)
 	}
 	releaseStr := releaseMatch[1]
 	parts := strings.Split(releaseStr, ".")
 
 	major, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return version{}, fmt.Errorf("failed to parse major version %q: %w", parts[0], err)
+		return Version{}, fmt.Errorf("failed to parse major version %q: %w", parts[0], err)
 	}
 
 	minor := 0
 	if len(parts) > 1 {
 		minor, err = strconv.Atoi(parts[1])
 		if err != nil {
-			return version{}, fmt.Errorf("failed to parse minor version %q: %w", parts[1], err)
+			return Version{}, fmt.Errorf("failed to parse minor version %q: %w", parts[1], err)
 		}
 	}
 
@@ -79,11 +79,11 @@ func parseVersion(v string) (version, error) {
 	if len(parts) > 2 {
 		patch, err = strconv.Atoi(parts[2])
 		if err != nil {
-			return version{}, fmt.Errorf("failed to parse patch version %q: %w", parts[2], err)
+			return Version{}, fmt.Errorf("failed to parse patch version %q: %w", parts[2], err)
 		}
 	}
 
-	return version{
+	return Version{
 		Major:    major,
 		Minor:    minor,
 		Patch:    patch,
@@ -92,8 +92,8 @@ func parseVersion(v string) (version, error) {
 	}, nil
 }
 
-// lessThan returns true if this version is older than the other.
-func (v version) lessThan(other version) bool {
+// LessThan returns true if this version is older than the other.
+func (v Version) LessThan(other Version) bool {
 	if v.Major != other.Major {
 		return v.Major < other.Major
 	}
@@ -103,8 +103,8 @@ func (v version) lessThan(other version) bool {
 	return v.Patch < other.Patch
 }
 
-// equal returns true if the versions are identical at the MAJOR.MINOR (and optional PATCH) level.
-func (v version) equal(other version, checkPatch bool) bool {
+// Equal returns true if the versions are identical at the MAJOR.MINOR (and optional PATCH) level.
+func (v Version) Equal(other Version, checkPatch bool) bool {
 	if v.Major != other.Major || v.Minor != other.Minor {
 		return false
 	}
@@ -129,27 +129,27 @@ const (
 
 type subConstraint struct {
 	op  constraintOp
-	ver version
+	ver Version
 }
 
-func (sc subConstraint) isSatisfied(v version) bool {
+func (sc subConstraint) isSatisfied(v Version) bool {
 	switch sc.op {
 	case opEq:
-		return v.equal(sc.ver, sc.ver.Segments == 3)
+		return v.Equal(sc.ver, sc.ver.Segments == 3)
 	case opArbitrary:
 		return v.Raw == sc.ver.Raw
 	case opNe:
-		return !v.equal(sc.ver, sc.ver.Segments == 3)
+		return !v.Equal(sc.ver, sc.ver.Segments == 3)
 	case opGe:
-		return v.equal(sc.ver, true) || sc.ver.lessThan(v)
+		return v.Equal(sc.ver, true) || sc.ver.LessThan(v)
 	case opLe:
-		return v.equal(sc.ver, true) || v.lessThan(sc.ver)
+		return v.Equal(sc.ver, true) || v.LessThan(sc.ver)
 	case opGt:
-		return sc.ver.lessThan(v)
+		return sc.ver.LessThan(v)
 	case opLt:
-		return v.lessThan(sc.ver)
+		return v.LessThan(sc.ver)
 	case opCompatible:
-		if !(v.equal(sc.ver, true) || sc.ver.lessThan(v)) {
+		if !(v.Equal(sc.ver, true) || sc.ver.LessThan(v)) {
 			return false
 		}
 		if sc.ver.Segments == 2 {
@@ -197,7 +197,7 @@ func parseConstraint(c string) (constraint, error) {
 			verStr = p
 		}
 
-		ver, err := parseVersion(verStr)
+		ver, err := ParseVersion(verStr)
 		if err != nil {
 			return constraint{}, err
 		}
@@ -207,7 +207,7 @@ func parseConstraint(c string) (constraint, error) {
 }
 
 // isSatisfied returns true if the version satisfies all sub-constraints.
-func (c constraint) isSatisfied(v version) bool {
+func (c constraint) isSatisfied(v Version) bool {
 	for _, sub := range c.subs {
 		if !sub.isSatisfied(v) {
 			return false
@@ -231,14 +231,14 @@ func MatchInterpreter(constraintStr string, available []string) (string, error) 
 	}
 
 	var bestTarget string
-	var bestVer version
+	var bestVer Version
 	for _, av := range available {
-		v, err := parseVersion(av)
+		v, err := ParseVersion(av)
 		if err != nil {
 			continue
 		}
 		if c.isSatisfied(v) {
-			if bestTarget == "" || bestVer.lessThan(v) {
+			if bestTarget == "" || bestVer.LessThan(v) {
 				bestTarget = av
 				bestVer = v
 			}

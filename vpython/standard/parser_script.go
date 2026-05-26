@@ -135,7 +135,7 @@ func preValidateSentinels(content []byte) error {
 				}
 				continue
 			}
-			// Any non-empty, non-comment line before the block is executable code or docstrings!
+			// Any non-empty, non-comment line before the block is executable code or docstrings
 			hasCodeBefore = true
 		} else {
 			if bytes.Equal(trimmed, []byte("# ///")) {
