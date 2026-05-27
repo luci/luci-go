@@ -48,7 +48,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
 	"go.chromium.org/luci/analysis/internal/failureattributes"
-	"go.chromium.org/luci/analysis/internal/hosts"
 	"go.chromium.org/luci/analysis/internal/metrics"
 	"go.chromium.org/luci/analysis/internal/scopedauth"
 	"go.chromium.org/luci/analysis/internal/services/artifactingester"
@@ -83,7 +82,6 @@ func Main(init func(srv *luciserver.Server) error) {
 		cron.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
 		gaeemulation.NewModuleFromFlags(),     // Needed by cfgmodule.
-		hosts.NewModuleFromFlags(),
 		pubsub.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(), // Needed by encryptedcookies.
 		spanmodule.NewModuleFromFlags(nil),

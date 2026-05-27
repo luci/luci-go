@@ -44,7 +44,6 @@ luci_gae_vars:
     AUTH_SERVICE_HOST: chrome-infra-auth-dev.appspot.com
     CONFIG_SERVICE_HOST: config.luci.app
     CRON_AUTHORIZED_CALLER: cloud-scheduler-jobs@luci-analysis-dev.iam.gserviceaccount.com
-    LUCI_ANALYSIS_HOST: VERSION.staging.analysis.api.luci.app
     PUBSUB_AUTHORIZED_CALLER: cloud-pubsub-pusher@luci-analysis-dev.iam.gserviceaccount.com
     TQ_PUSH_AS: cloud-tasks-pusher@luci-analysis-dev.iam.gserviceaccount.com
     TQ_TARGET_HOST: staging.analysis.api.luci.app
@@ -90,7 +89,6 @@ entrypoint: >
   -tq-default-target-host ${TQ_TARGET_HOST}
   -tq-push-as ${TQ_PUSH_AS}
   -tq-sweep-initiation-launcher ${CRON_AUTHORIZED_CALLER}
-  -luci-analysis-host ${LUCI_ANALYSIS_HOST}
   -pubsub-authorized-caller ${PUBSUB_AUTHORIZED_CALLER}
   -ts-mon-account ${TS_MON_ACCOUNT}
   -encrypted-cookies-client-id ${OAUTH_CLIENT_ID}
