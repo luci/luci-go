@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	luciserver "go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/pubsub"
@@ -80,7 +79,6 @@ func Main(init func(srv *luciserver.Server) error) {
 		ui.NewModuleFromFlags(),
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
-		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
 		gaeemulation.NewModuleFromFlags(),     // Needed by cfgmodule.
 		pubsub.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(), // Needed by encryptedcookies.
