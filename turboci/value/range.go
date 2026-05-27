@@ -14,6 +14,8 @@
 
 package value
 
+//go:generate stringer -type RefSlot
+
 import (
 	"iter"
 
