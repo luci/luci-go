@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,33 +15,25 @@
 package main
 
 import (
-	"net/http"
-
 	"go.chromium.org/luci/common/errors"
 	luciserver "go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/analysis/server"
 
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
-// main implements the entrypoint for the api service, for GAE instances.
-// This is the only service accessible from analysis.api.luci.app.
+// Entrypoint for the task service (formerly "result-ingestion" service).
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
-		if err := server.RegisterPRPCHandlers(srv); err != nil {
-			return errors.Fmt("register rpc handlers: %w", err)
+		if err := server.RegisterTaskQueueHandlers(srv); err != nil {
+			return errors.Fmt("register task queue handlers: %w", err)
 		}
+		// Pub/sub handlers are split between the task and api services,
+		// according to complexity of the handlers.
 		if err := server.RegisterPubSubHandlers(srv); err != nil {
 			return errors.Fmt("register pubsub handlers: %w", err)
 		}
-		server.RegisterCrons(srv)
-
-		// Redirect the frontend to RPC explorer.
-		srv.Routes.GET("/", nil, func(ctx *router.Context) {
-			http.Redirect(ctx.Writer, ctx.Request, "/rpcexplorer/", http.StatusFound)
-		})
 		return nil
 	})
 }

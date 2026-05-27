@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2026 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import (
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
-// main implements the entrypoint for the api service, for GAE instances.
+// main implements the entrypoint for the api service, for Cloud Run instances.
 // This is the only service accessible from analysis.api.luci.app.
 func main() {
 	server.Main(func(srv *luciserver.Server) error {
