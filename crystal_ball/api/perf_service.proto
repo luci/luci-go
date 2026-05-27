@@ -241,23 +241,24 @@ service PerfService {
     option (google.api.method_signature) = "user_settings,update_mask";
   }
 
-  // Adds a dashboard to the user's starred list.
-  rpc AddStarredDashboard(AddStarredDashboardRequest) returns (UserSettings) {
+  // Stars a dashboard for the authenticated user.
+  // (Imperative only.)
+  rpc StarDashboard(StarDashboardRequest) returns (DashboardState) {
     option (google.api.http) = {
-      post: "/v1/{name=users/*/settings}:addStarredDashboard"
+      post: "/v1/{name=dashboardStates/*}:star"
       body: "*"
     };
-    option (google.api.method_signature) = "name,dashboard";
+    option (google.api.method_signature) = "name";
   }
 
-  // Removes a dashboard from the user's starred list.
-  rpc RemoveStarredDashboard(RemoveStarredDashboardRequest)
-      returns (UserSettings) {
+  // Unstars a dashboard for the authenticated user.
+  // (Imperative only.)
+  rpc UnstarDashboard(UnstarDashboardRequest) returns (DashboardState) {
     option (google.api.http) = {
-      post: "/v1/{name=users/*/settings}:removeStarredDashboard"
+      post: "/v1/{name=dashboardStates/*}:unstar"
       body: "*"
     };
-    option (google.api.method_signature) = "name,dashboard";
+    option (google.api.method_signature) = "name";
   }
 
   // Generates a dashboard state based on a natural language prompt.
@@ -269,6 +270,23 @@ service PerfService {
     option (google.api.http) = {
       post: "/v1:generateDashboardState"
       body: "*"
+    };
+  }
+
+  // Summarizes an existing dashboard state, including its structure and data.
+  // This method uses an LLM to generate a natural language summary of the
+  // dashboard, covering the configurations of widgets and the performance data
+  // they display. (Imperative only.)
+  // (-- api-linter: core::0136::http-uri-suffix=disabled
+  //     aip.dev/not-precedent: The noun "DashboardState" is clear from the URI
+  //     path, so we omit it from the suffix for cleanliness, as per AIP-136
+  //     recommendations. --)
+  rpc SummarizeDashboardState(SummarizeDashboardStateRequest)
+      returns (SummarizeDashboardStateResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=dashboardStates/*}:summarize"
+      body: "*"
+      additional_bindings { post: "/v1:summarizeDashboardState" body: "*" }
     };
   }
 }
@@ -552,6 +570,9 @@ message DashboardState {
 
   // Indicates if the dashboard is publicly viewable by any authenticated user.
   bool is_public = 15 [(google.api.field_behavior) = OPTIONAL];
+
+  // Indicates if the dashboard is starred by the current user.
+  bool starred = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // Metadata for DashboardState Long Running Operations.
@@ -1568,21 +1589,17 @@ message UpdateUserSettingsRequest {
   bool allow_missing = 3 [(google.api.field_behavior) = OPTIONAL];
 }
 
-// Request message for AddStarredDashboard.
-message AddStarredDashboardRequest {
-  // The name of the UserSettings resource.
-  // Format: users/{user}/settings
-  // Use "users/me/settings" for the authenticated user.
-  string name = 1 [
-    (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {
-      type: "crystalballperf.googleapis.com/UserSettings"
-    }
-  ];
-
+// Request message for StarDashboard.
+// (-- api-linter: core::0154::declarative-friendly-required=disabled
+//     aip.dev/not-precedent: This is an imperative custom method, not a
+//     standard update, so etag is not applicable. --)
+// (-- api-linter: core::0163::declarative-friendly-required=disabled
+//     aip.dev/not-precedent: This is an imperative custom method, validate_only
+//     is not needed. --)
+message StarDashboardRequest {
   // The resource name of the dashboard to star.
   // Format: dashboardStates/{dashboard_state}
-  string dashboard = 2 [
+  string name = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {
       type: "crystalballperf.googleapis.com/DashboardState"
@@ -1590,21 +1607,17 @@ message AddStarredDashboardRequest {
   ];
 }
 
-// Request message for RemoveStarredDashboard.
-message RemoveStarredDashboardRequest {
-  // The name of the UserSettings resource.
-  // Format: users/{user}/settings
-  // Use "users/me/settings" for the authenticated user.
-  string name = 1 [
-    (google.api.field_behavior) = REQUIRED,
-    (google.api.resource_reference) = {
-      type: "crystalballperf.googleapis.com/UserSettings"
-    }
-  ];
-
+// Request message for UnstarDashboard.
+// (-- api-linter: core::0154::declarative-friendly-required=disabled
+//     aip.dev/not-precedent: This is an imperative custom method, not a
+//     standard update, so etag is not applicable. --)
+// (-- api-linter: core::0163::declarative-friendly-required=disabled
+//     aip.dev/not-precedent: This is an imperative custom method, validate_only
+//     is not needed. --)
+message UnstarDashboardRequest {
   // The resource name of the dashboard to unstar.
   // Format: dashboardStates/{dashboard_state}
-  string dashboard = 2 [
+  string name = 1 [
     (google.api.field_behavior) = REQUIRED,
     (google.api.resource_reference) = {
       type: "crystalballperf.googleapis.com/DashboardState"
@@ -1626,12 +1639,58 @@ message GenerateDashboardStateRequest {
 
   // If set to true, the request is validated but not actually executed.
   bool validate_only = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Primary AnTS invocation ID to source data and metadata from.
+  string ants_invocation_id = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. AnTS invocation ID for comparison (e.g., for A/B dashboards).
+  string comparison_ants_invocation_id = 5
+      [(google.api.field_behavior) = OPTIONAL];
 }
 
 // Represents the response for generating a dashboard state.
 message GenerateDashboardStateResponse {
   // The generated dashboard state.
   DashboardState dashboard_state = 1;
+}
+
+// Request message for summarizing a dashboard state.
+// (-- api-linter: core::0154::declarative-friendly-required=disabled
+//     aip.dev/not-precedent: This is a summarization method, not an update to
+//     an existing resource, so etag is not applicable. --)
+message SummarizeDashboardStateRequest {
+  // The source of the dashboard definition to summarize. Exactly one must be
+  // provided.
+  oneof source {
+    // The resource name of the DashboardState to summarize.
+    // Format: dashboardStates/{dashboard_state}
+    string name = 1 [
+      (google.api.field_behavior) = OPTIONAL,
+      (google.api.resource_reference) = {
+        type: "crystalballperf.googleapis.com/DashboardState"
+      }
+    ];
+
+    // The core content of the dashboard to summarize.
+    // Useful for summarizing unsaved changes.
+    PerfDashboardContent dashboard_content = 2
+        [(google.api.field_behavior) = OPTIONAL];
+  }
+
+  // Optional. A natural language prompt to guide the summary.
+  // For example, "Focus on regressions" or "Summarize only the first two
+  // charts".
+  string prompt = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. If set to true, the request is validated but not actually
+  // executed.
+  bool validate_only = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response message for summarizing a dashboard state.
+message SummarizeDashboardStateResponse {
+  // The natural language summary of the dashboard state and its data.
+  string summary = 1;
 }
 
 // Request message for fetching raw samples for a specific widget.

@@ -123,6 +123,18 @@ export function LandingPage() {
 
   useTopBarConfig(null, actions);
 
+  const getTabName = (index: number): 'active' | 'starred' | 'deleted' => {
+    switch (index) {
+      case 1:
+        return 'starred';
+      case 2:
+        return 'deleted';
+      case 0:
+      default:
+        return 'active';
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
@@ -132,7 +144,8 @@ export function LandingPage() {
           aria-label="dashboard list tabs"
         >
           <Tab label="Active Dashboards" {...a11yProps(0)} />
-          <Tab label="Deleted Dashboards" {...a11yProps(1)} />
+          <Tab label="Starred Dashboards" {...a11yProps(1)} />
+          <Tab label="Deleted Dashboards" {...a11yProps(2)} />
         </Tabs>
       </Box>
       <Box
@@ -142,7 +155,7 @@ export function LandingPage() {
       >
         <DashboardListTable
           onDashboardClick={handleDashboardClick}
-          showDeleted={currentTab === 1}
+          tab={getTabName(currentTab)}
         />
       </Box>
       <DashboardDialog

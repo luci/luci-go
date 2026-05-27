@@ -19,13 +19,9 @@ import { API_V1_BASE_PATH as BASE_PATH } from '@/crystal_ball/constants';
 import {
   useGetUserSettings,
   useUpdateUserSettings,
-  useAddStarredDashboard,
-  useRemoveStarredDashboard,
 } from '@/crystal_ball/hooks';
 import {
-  AddStarredDashboardRequest,
   GetUserSettingsRequest,
-  RemoveStarredDashboardRequest,
   UpdateUserSettingsRequest,
   UserSettings,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
@@ -105,70 +101,6 @@ describe('use_user_settings_api', () => {
         params: {
           updateMask: 'timeZone',
         },
-      });
-    });
-  });
-
-  describe('useAddStarredDashboard', () => {
-    const request = AddStarredDashboardRequest.fromPartial({
-      name: 'users/me/settings',
-      dashboard: 'dashboardStates/test-id',
-    });
-
-    it('should call useGapiMutation with correct arguments', () => {
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleUserSettings),
-        isPending: false,
-      });
-
-      renderHook(() => useAddStarredDashboard(), {
-        wrapper: FakeContextProvider,
-      });
-
-      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
-
-      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
-      const builtRequest = requestBuilder(request);
-
-      expect(builtRequest).toEqual({
-        path: `${BASE_PATH}/${request.name}:addStarredDashboard`,
-        method: 'POST',
-        body: {
-          dashboard: request.dashboard,
-        },
-        params: {},
-      });
-    });
-  });
-
-  describe('useRemoveStarredDashboard', () => {
-    const request = RemoveStarredDashboardRequest.fromPartial({
-      name: 'users/me/settings',
-      dashboard: 'dashboardStates/test-id',
-    });
-
-    it('should call useGapiMutation with correct arguments', () => {
-      mockedUseGapiMutation.mockReturnValue({
-        mutateAsync: jest.fn().mockResolvedValue(sampleUserSettings),
-        isPending: false,
-      });
-
-      renderHook(() => useRemoveStarredDashboard(), {
-        wrapper: FakeContextProvider,
-      });
-
-      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
-
-      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
-      const builtRequest = requestBuilder(request);
-
-      expect(builtRequest).toEqual({
-        path: `${BASE_PATH}/${request.name}:removeStarredDashboard`,
-        method: 'POST',
-        body: {
-          dashboard: request.dashboard,
-        },
-        params: {},
       });
     });
   });

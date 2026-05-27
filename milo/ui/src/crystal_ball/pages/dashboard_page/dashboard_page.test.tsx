@@ -53,6 +53,14 @@ jest.mock('@/crystal_ball/hooks/use_dashboard_state_api', () => ({
     mutateAsync: jest.fn(),
     isPending: false,
   })),
+  useStarDashboardState: jest.fn(() => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  })),
+  useUnstarDashboardState: jest.fn(() => ({
+    mutateAsync: jest.fn(),
+    isPending: false,
+  })),
 }));
 
 const mockUseListMeasurementFilterColumns = jest.fn(() => ({
@@ -242,10 +250,10 @@ describe('<DashboardPage />', () => {
 
     const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
     const { unmount } = render(
-      <>
+      <ToastProvider>
         {lastCall[0]}
         {lastCall[1]}
-      </>,
+      </ToastProvider>,
     );
 
     fireEvent.click(
@@ -264,10 +272,10 @@ describe('<DashboardPage />', () => {
 
     const newCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
     render(
-      <>
+      <ToastProvider>
         {newCall[0]}
         {newCall[1]}
-      </>,
+      </ToastProvider>,
     );
 
     const saveButton = screen.getByRole('button', { name: 'Save' });
@@ -429,10 +437,10 @@ describe('<DashboardPage />', () => {
 
     const lastCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
     const { unmount } = render(
-      <>
+      <ToastProvider>
         {lastCall[0]}
         {lastCall[1]}
-      </>,
+      </ToastProvider>,
     );
 
     fireEvent.click(
@@ -452,10 +460,10 @@ describe('<DashboardPage />', () => {
 
     const newCall = jest.mocked(useTopBarConfig).mock.calls.slice(-1)[0];
     render(
-      <>
+      <ToastProvider>
         {newCall[0]}
         {newCall[1]}
-      </>,
+      </ToastProvider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -554,10 +562,10 @@ describe('<DashboardPage />', () => {
       throw new Error('useTopBarConfig was not called');
     }
     render(
-      <>
+      <ToastProvider>
         {lastCall[0]}
         {lastCall[1]}
-      </>,
+      </ToastProvider>,
     );
 
     const saveButton = screen.getByRole('button', { name: 'Save' });

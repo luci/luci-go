@@ -383,6 +383,8 @@ export interface DashboardState {
     | undefined;
   /** Indicates if the dashboard is publicly viewable by any authenticated user. */
   readonly isPublic: boolean;
+  /** Indicates if the dashboard is starred by the current user. */
+  readonly starred: boolean;
 }
 
 export interface DashboardState_AnnotationsEntry {
@@ -1861,34 +1863,38 @@ export interface UpdateUserSettingsRequest {
   readonly allowMissing: boolean;
 }
 
-/** Request message for AddStarredDashboard. */
-export interface AddStarredDashboardRequest {
-  /**
-   * The name of the UserSettings resource.
-   * Format: users/{user}/settings
-   * Use "users/me/settings" for the authenticated user.
-   */
-  readonly name: string;
+/**
+ * Request message for StarDashboard.
+ * (-- api-linter: core::0154::declarative-friendly-required=disabled
+ *     aip.dev/not-precedent: This is an imperative custom method, not a
+ *     standard update, so etag is not applicable. --)
+ * (-- api-linter: core::0163::declarative-friendly-required=disabled
+ *     aip.dev/not-precedent: This is an imperative custom method, validate_only
+ *     is not needed. --)
+ */
+export interface StarDashboardRequest {
   /**
    * The resource name of the dashboard to star.
    * Format: dashboardStates/{dashboard_state}
    */
-  readonly dashboard: string;
+  readonly name: string;
 }
 
-/** Request message for RemoveStarredDashboard. */
-export interface RemoveStarredDashboardRequest {
-  /**
-   * The name of the UserSettings resource.
-   * Format: users/{user}/settings
-   * Use "users/me/settings" for the authenticated user.
-   */
-  readonly name: string;
+/**
+ * Request message for UnstarDashboard.
+ * (-- api-linter: core::0154::declarative-friendly-required=disabled
+ *     aip.dev/not-precedent: This is an imperative custom method, not a
+ *     standard update, so etag is not applicable. --)
+ * (-- api-linter: core::0163::declarative-friendly-required=disabled
+ *     aip.dev/not-precedent: This is an imperative custom method, validate_only
+ *     is not needed. --)
+ */
+export interface UnstarDashboardRequest {
   /**
    * The resource name of the dashboard to unstar.
    * Format: dashboardStates/{dashboard_state}
    */
-  readonly dashboard: string;
+  readonly name: string;
 }
 
 /**
@@ -1907,12 +1913,56 @@ export interface GenerateDashboardStateRequest {
   readonly metricKeys: readonly string[];
   /** If set to true, the request is validated but not actually executed. */
   readonly validateOnly: boolean;
+  /** Optional. Primary AnTS invocation ID to source data and metadata from. */
+  readonly antsInvocationId: string;
+  /** Optional. AnTS invocation ID for comparison (e.g., for A/B dashboards). */
+  readonly comparisonAntsInvocationId: string;
 }
 
 /** Represents the response for generating a dashboard state. */
 export interface GenerateDashboardStateResponse {
   /** The generated dashboard state. */
   readonly dashboardState: DashboardState | undefined;
+}
+
+/**
+ * Request message for summarizing a dashboard state.
+ * (-- api-linter: core::0154::declarative-friendly-required=disabled
+ *     aip.dev/not-precedent: This is a summarization method, not an update to
+ *     an existing resource, so etag is not applicable. --)
+ */
+export interface SummarizeDashboardStateRequest {
+  /**
+   * The resource name of the DashboardState to summarize.
+   * Format: dashboardStates/{dashboard_state}
+   */
+  readonly name?:
+    | string
+    | undefined;
+  /**
+   * The core content of the dashboard to summarize.
+   * Useful for summarizing unsaved changes.
+   */
+  readonly dashboardContent?:
+    | PerfDashboardContent
+    | undefined;
+  /**
+   * Optional. A natural language prompt to guide the summary.
+   * For example, "Focus on regressions" or "Summarize only the first two
+   * charts".
+   */
+  readonly prompt: string;
+  /**
+   * Optional. If set to true, the request is validated but not actually
+   * executed.
+   */
+  readonly validateOnly: boolean;
+}
+
+/** Response message for summarizing a dashboard state. */
+export interface SummarizeDashboardStateResponse {
+  /** The natural language summary of the dashboard state and its data. */
+  readonly summary: string;
 }
 
 /**
@@ -2996,6 +3046,7 @@ function createBaseDashboardState(): DashboardState {
     revisionId: "",
     revisionCreateTime: undefined,
     isPublic: false,
+    starred: false,
   };
 }
 
@@ -3045,6 +3096,9 @@ export const DashboardState: MessageFns<DashboardState> = {
     }
     if (message.isPublic !== false) {
       writer.uint32(120).bool(message.isPublic);
+    }
+    if (message.starred !== false) {
+      writer.uint32(128).bool(message.starred);
     }
     return writer;
   },
@@ -3179,6 +3233,14 @@ export const DashboardState: MessageFns<DashboardState> = {
           message.isPublic = reader.bool();
           continue;
         }
+        case 16: {
+          if (tag !== 128) {
+            break;
+          }
+
+          message.starred = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3212,6 +3274,7 @@ export const DashboardState: MessageFns<DashboardState> = {
       revisionId: isSet(object.revisionId) ? globalThis.String(object.revisionId) : "",
       revisionCreateTime: isSet(object.revisionCreateTime) ? globalThis.String(object.revisionCreateTime) : undefined,
       isPublic: isSet(object.isPublic) ? globalThis.Boolean(object.isPublic) : false,
+      starred: isSet(object.starred) ? globalThis.Boolean(object.starred) : false,
     };
   },
 
@@ -3268,6 +3331,9 @@ export const DashboardState: MessageFns<DashboardState> = {
     if (message.isPublic !== false) {
       obj.isPublic = message.isPublic;
     }
+    if (message.starred !== false) {
+      obj.starred = message.starred;
+    }
     return obj;
   },
 
@@ -3301,6 +3367,7 @@ export const DashboardState: MessageFns<DashboardState> = {
     message.revisionId = object.revisionId ?? "";
     message.revisionCreateTime = object.revisionCreateTime ?? undefined;
     message.isPublic = object.isPublic ?? false;
+    message.starred = object.starred ?? false;
     return message;
   },
 };
@@ -8388,25 +8455,22 @@ export const UpdateUserSettingsRequest: MessageFns<UpdateUserSettingsRequest> = 
   },
 };
 
-function createBaseAddStarredDashboardRequest(): AddStarredDashboardRequest {
-  return { name: "", dashboard: "" };
+function createBaseStarDashboardRequest(): StarDashboardRequest {
+  return { name: "" };
 }
 
-export const AddStarredDashboardRequest: MessageFns<AddStarredDashboardRequest> = {
-  encode(message: AddStarredDashboardRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const StarDashboardRequest: MessageFns<StarDashboardRequest> = {
+  encode(message: StarDashboardRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.name !== "") {
       writer.uint32(10).string(message.name);
-    }
-    if (message.dashboard !== "") {
-      writer.uint32(18).string(message.dashboard);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): AddStarredDashboardRequest {
+  decode(input: BinaryReader | Uint8Array, length?: number): StarDashboardRequest {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseAddStarredDashboardRequest() as any;
+    const message = createBaseStarDashboardRequest() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -8418,14 +8482,6 @@ export const AddStarredDashboardRequest: MessageFns<AddStarredDashboardRequest> 
           message.name = reader.string();
           continue;
         }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.dashboard = reader.string();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -8435,54 +8491,44 @@ export const AddStarredDashboardRequest: MessageFns<AddStarredDashboardRequest> 
     return message;
   },
 
-  fromJSON(object: any): AddStarredDashboardRequest {
-    return {
-      name: isSet(object.name) ? globalThis.String(object.name) : "",
-      dashboard: isSet(object.dashboard) ? globalThis.String(object.dashboard) : "",
-    };
+  fromJSON(object: any): StarDashboardRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
   },
 
-  toJSON(message: AddStarredDashboardRequest): unknown {
+  toJSON(message: StarDashboardRequest): unknown {
     const obj: any = {};
     if (message.name !== "") {
       obj.name = message.name;
     }
-    if (message.dashboard !== "") {
-      obj.dashboard = message.dashboard;
-    }
     return obj;
   },
 
-  create(base?: DeepPartial<AddStarredDashboardRequest>): AddStarredDashboardRequest {
-    return AddStarredDashboardRequest.fromPartial(base ?? {});
+  create(base?: DeepPartial<StarDashboardRequest>): StarDashboardRequest {
+    return StarDashboardRequest.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<AddStarredDashboardRequest>): AddStarredDashboardRequest {
-    const message = createBaseAddStarredDashboardRequest() as any;
+  fromPartial(object: DeepPartial<StarDashboardRequest>): StarDashboardRequest {
+    const message = createBaseStarDashboardRequest() as any;
     message.name = object.name ?? "";
-    message.dashboard = object.dashboard ?? "";
     return message;
   },
 };
 
-function createBaseRemoveStarredDashboardRequest(): RemoveStarredDashboardRequest {
-  return { name: "", dashboard: "" };
+function createBaseUnstarDashboardRequest(): UnstarDashboardRequest {
+  return { name: "" };
 }
 
-export const RemoveStarredDashboardRequest: MessageFns<RemoveStarredDashboardRequest> = {
-  encode(message: RemoveStarredDashboardRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+export const UnstarDashboardRequest: MessageFns<UnstarDashboardRequest> = {
+  encode(message: UnstarDashboardRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.name !== "") {
       writer.uint32(10).string(message.name);
-    }
-    if (message.dashboard !== "") {
-      writer.uint32(18).string(message.dashboard);
     }
     return writer;
   },
 
-  decode(input: BinaryReader | Uint8Array, length?: number): RemoveStarredDashboardRequest {
+  decode(input: BinaryReader | Uint8Array, length?: number): UnstarDashboardRequest {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseRemoveStarredDashboardRequest() as any;
+    const message = createBaseUnstarDashboardRequest() as any;
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -8494,14 +8540,6 @@ export const RemoveStarredDashboardRequest: MessageFns<RemoveStarredDashboardReq
           message.name = reader.string();
           continue;
         }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.dashboard = reader.string();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -8511,37 +8549,30 @@ export const RemoveStarredDashboardRequest: MessageFns<RemoveStarredDashboardReq
     return message;
   },
 
-  fromJSON(object: any): RemoveStarredDashboardRequest {
-    return {
-      name: isSet(object.name) ? globalThis.String(object.name) : "",
-      dashboard: isSet(object.dashboard) ? globalThis.String(object.dashboard) : "",
-    };
+  fromJSON(object: any): UnstarDashboardRequest {
+    return { name: isSet(object.name) ? globalThis.String(object.name) : "" };
   },
 
-  toJSON(message: RemoveStarredDashboardRequest): unknown {
+  toJSON(message: UnstarDashboardRequest): unknown {
     const obj: any = {};
     if (message.name !== "") {
       obj.name = message.name;
     }
-    if (message.dashboard !== "") {
-      obj.dashboard = message.dashboard;
-    }
     return obj;
   },
 
-  create(base?: DeepPartial<RemoveStarredDashboardRequest>): RemoveStarredDashboardRequest {
-    return RemoveStarredDashboardRequest.fromPartial(base ?? {});
+  create(base?: DeepPartial<UnstarDashboardRequest>): UnstarDashboardRequest {
+    return UnstarDashboardRequest.fromPartial(base ?? {});
   },
-  fromPartial(object: DeepPartial<RemoveStarredDashboardRequest>): RemoveStarredDashboardRequest {
-    const message = createBaseRemoveStarredDashboardRequest() as any;
+  fromPartial(object: DeepPartial<UnstarDashboardRequest>): UnstarDashboardRequest {
+    const message = createBaseUnstarDashboardRequest() as any;
     message.name = object.name ?? "";
-    message.dashboard = object.dashboard ?? "";
     return message;
   },
 };
 
 function createBaseGenerateDashboardStateRequest(): GenerateDashboardStateRequest {
-  return { prompt: "", metricKeys: [], validateOnly: false };
+  return { prompt: "", metricKeys: [], validateOnly: false, antsInvocationId: "", comparisonAntsInvocationId: "" };
 }
 
 export const GenerateDashboardStateRequest: MessageFns<GenerateDashboardStateRequest> = {
@@ -8554,6 +8585,12 @@ export const GenerateDashboardStateRequest: MessageFns<GenerateDashboardStateReq
     }
     if (message.validateOnly !== false) {
       writer.uint32(24).bool(message.validateOnly);
+    }
+    if (message.antsInvocationId !== "") {
+      writer.uint32(34).string(message.antsInvocationId);
+    }
+    if (message.comparisonAntsInvocationId !== "") {
+      writer.uint32(42).string(message.comparisonAntsInvocationId);
     }
     return writer;
   },
@@ -8589,6 +8626,22 @@ export const GenerateDashboardStateRequest: MessageFns<GenerateDashboardStateReq
           message.validateOnly = reader.bool();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.antsInvocationId = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.comparisonAntsInvocationId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -8605,6 +8658,10 @@ export const GenerateDashboardStateRequest: MessageFns<GenerateDashboardStateReq
         ? object.metricKeys.map((e: any) => globalThis.String(e))
         : [],
       validateOnly: isSet(object.validateOnly) ? globalThis.Boolean(object.validateOnly) : false,
+      antsInvocationId: isSet(object.antsInvocationId) ? globalThis.String(object.antsInvocationId) : "",
+      comparisonAntsInvocationId: isSet(object.comparisonAntsInvocationId)
+        ? globalThis.String(object.comparisonAntsInvocationId)
+        : "",
     };
   },
 
@@ -8619,6 +8676,12 @@ export const GenerateDashboardStateRequest: MessageFns<GenerateDashboardStateReq
     if (message.validateOnly !== false) {
       obj.validateOnly = message.validateOnly;
     }
+    if (message.antsInvocationId !== "") {
+      obj.antsInvocationId = message.antsInvocationId;
+    }
+    if (message.comparisonAntsInvocationId !== "") {
+      obj.comparisonAntsInvocationId = message.comparisonAntsInvocationId;
+    }
     return obj;
   },
 
@@ -8630,6 +8693,8 @@ export const GenerateDashboardStateRequest: MessageFns<GenerateDashboardStateReq
     message.prompt = object.prompt ?? "";
     message.metricKeys = object.metricKeys?.map((e) => e) || [];
     message.validateOnly = object.validateOnly ?? false;
+    message.antsInvocationId = object.antsInvocationId ?? "";
+    message.comparisonAntsInvocationId = object.comparisonAntsInvocationId ?? "";
     return message;
   },
 };
@@ -8692,6 +8757,176 @@ export const GenerateDashboardStateResponse: MessageFns<GenerateDashboardStateRe
     message.dashboardState = (object.dashboardState !== undefined && object.dashboardState !== null)
       ? DashboardState.fromPartial(object.dashboardState)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseSummarizeDashboardStateRequest(): SummarizeDashboardStateRequest {
+  return { name: undefined, dashboardContent: undefined, prompt: "", validateOnly: false };
+}
+
+export const SummarizeDashboardStateRequest: MessageFns<SummarizeDashboardStateRequest> = {
+  encode(message: SummarizeDashboardStateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== undefined) {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.dashboardContent !== undefined) {
+      PerfDashboardContent.encode(message.dashboardContent, writer.uint32(18).fork()).join();
+    }
+    if (message.prompt !== "") {
+      writer.uint32(26).string(message.prompt);
+    }
+    if (message.validateOnly !== false) {
+      writer.uint32(32).bool(message.validateOnly);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SummarizeDashboardStateRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSummarizeDashboardStateRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dashboardContent = PerfDashboardContent.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.prompt = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.validateOnly = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SummarizeDashboardStateRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : undefined,
+      dashboardContent: isSet(object.dashboardContent)
+        ? PerfDashboardContent.fromJSON(object.dashboardContent)
+        : undefined,
+      prompt: isSet(object.prompt) ? globalThis.String(object.prompt) : "",
+      validateOnly: isSet(object.validateOnly) ? globalThis.Boolean(object.validateOnly) : false,
+    };
+  },
+
+  toJSON(message: SummarizeDashboardStateRequest): unknown {
+    const obj: any = {};
+    if (message.name !== undefined) {
+      obj.name = message.name;
+    }
+    if (message.dashboardContent !== undefined) {
+      obj.dashboardContent = PerfDashboardContent.toJSON(message.dashboardContent);
+    }
+    if (message.prompt !== "") {
+      obj.prompt = message.prompt;
+    }
+    if (message.validateOnly !== false) {
+      obj.validateOnly = message.validateOnly;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SummarizeDashboardStateRequest>): SummarizeDashboardStateRequest {
+    return SummarizeDashboardStateRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SummarizeDashboardStateRequest>): SummarizeDashboardStateRequest {
+    const message = createBaseSummarizeDashboardStateRequest() as any;
+    message.name = object.name ?? undefined;
+    message.dashboardContent = (object.dashboardContent !== undefined && object.dashboardContent !== null)
+      ? PerfDashboardContent.fromPartial(object.dashboardContent)
+      : undefined;
+    message.prompt = object.prompt ?? "";
+    message.validateOnly = object.validateOnly ?? false;
+    return message;
+  },
+};
+
+function createBaseSummarizeDashboardStateResponse(): SummarizeDashboardStateResponse {
+  return { summary: "" };
+}
+
+export const SummarizeDashboardStateResponse: MessageFns<SummarizeDashboardStateResponse> = {
+  encode(message: SummarizeDashboardStateResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.summary !== "") {
+      writer.uint32(10).string(message.summary);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SummarizeDashboardStateResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSummarizeDashboardStateResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.summary = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SummarizeDashboardStateResponse {
+    return { summary: isSet(object.summary) ? globalThis.String(object.summary) : "" };
+  },
+
+  toJSON(message: SummarizeDashboardStateResponse): unknown {
+    const obj: any = {};
+    if (message.summary !== "") {
+      obj.summary = message.summary;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<SummarizeDashboardStateResponse>): SummarizeDashboardStateResponse {
+    return SummarizeDashboardStateResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<SummarizeDashboardStateResponse>): SummarizeDashboardStateResponse {
+    const message = createBaseSummarizeDashboardStateResponse() as any;
+    message.summary = object.summary ?? "";
     return message;
   },
 };
@@ -9361,10 +9596,16 @@ export interface PerfService {
   GetUserSettings(request: GetUserSettingsRequest): Promise<UserSettings>;
   /** Updates the UserSettings for the authenticated user. */
   UpdateUserSettings(request: UpdateUserSettingsRequest): Promise<UserSettings>;
-  /** Adds a dashboard to the user's starred list. */
-  AddStarredDashboard(request: AddStarredDashboardRequest): Promise<UserSettings>;
-  /** Removes a dashboard from the user's starred list. */
-  RemoveStarredDashboard(request: RemoveStarredDashboardRequest): Promise<UserSettings>;
+  /**
+   * Stars a dashboard for the authenticated user.
+   * (Imperative only.)
+   */
+  StarDashboard(request: StarDashboardRequest): Promise<DashboardState>;
+  /**
+   * Unstars a dashboard for the authenticated user.
+   * (Imperative only.)
+   */
+  UnstarDashboard(request: UnstarDashboardRequest): Promise<DashboardState>;
   /**
    * Generates a dashboard state based on a natural language prompt.
    * This method uses an LLM to generate the dashboard structure
@@ -9372,6 +9613,17 @@ export interface PerfService {
    * (Imperative only.)
    */
   GenerateDashboardState(request: GenerateDashboardStateRequest): Promise<GenerateDashboardStateResponse>;
+  /**
+   * Summarizes an existing dashboard state, including its structure and data.
+   * This method uses an LLM to generate a natural language summary of the
+   * dashboard, covering the configurations of widgets and the performance data
+   * they display. (Imperative only.)
+   * (-- api-linter: core::0136::http-uri-suffix=disabled
+   *     aip.dev/not-precedent: The noun "DashboardState" is clear from the URI
+   *     path, so we omit it from the suffix for cleanliness, as per AIP-136
+   *     recommendations. --)
+   */
+  SummarizeDashboardState(request: SummarizeDashboardStateRequest): Promise<SummarizeDashboardStateResponse>;
 }
 
 export const PerfServiceServiceName = "google.android.perf.v1.PerfService";
@@ -9398,9 +9650,10 @@ export class PerfServiceClientImpl implements PerfService {
     this.RollbackDashboardState = this.RollbackDashboardState.bind(this);
     this.GetUserSettings = this.GetUserSettings.bind(this);
     this.UpdateUserSettings = this.UpdateUserSettings.bind(this);
-    this.AddStarredDashboard = this.AddStarredDashboard.bind(this);
-    this.RemoveStarredDashboard = this.RemoveStarredDashboard.bind(this);
+    this.StarDashboard = this.StarDashboard.bind(this);
+    this.UnstarDashboard = this.UnstarDashboard.bind(this);
     this.GenerateDashboardState = this.GenerateDashboardState.bind(this);
+    this.SummarizeDashboardState = this.SummarizeDashboardState.bind(this);
   }
   ListMeasurementFilterColumns(
     request: ListMeasurementFilterColumnsRequest,
@@ -9504,22 +9757,28 @@ export class PerfServiceClientImpl implements PerfService {
     return promise.then((data) => UserSettings.fromJSON(data));
   }
 
-  AddStarredDashboard(request: AddStarredDashboardRequest): Promise<UserSettings> {
-    const data = AddStarredDashboardRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "AddStarredDashboard", data);
-    return promise.then((data) => UserSettings.fromJSON(data));
+  StarDashboard(request: StarDashboardRequest): Promise<DashboardState> {
+    const data = StarDashboardRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "StarDashboard", data);
+    return promise.then((data) => DashboardState.fromJSON(data));
   }
 
-  RemoveStarredDashboard(request: RemoveStarredDashboardRequest): Promise<UserSettings> {
-    const data = RemoveStarredDashboardRequest.toJSON(request);
-    const promise = this.rpc.request(this.service, "RemoveStarredDashboard", data);
-    return promise.then((data) => UserSettings.fromJSON(data));
+  UnstarDashboard(request: UnstarDashboardRequest): Promise<DashboardState> {
+    const data = UnstarDashboardRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "UnstarDashboard", data);
+    return promise.then((data) => DashboardState.fromJSON(data));
   }
 
   GenerateDashboardState(request: GenerateDashboardStateRequest): Promise<GenerateDashboardStateResponse> {
     const data = GenerateDashboardStateRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "GenerateDashboardState", data);
     return promise.then((data) => GenerateDashboardStateResponse.fromJSON(data));
+  }
+
+  SummarizeDashboardState(request: SummarizeDashboardStateRequest): Promise<SummarizeDashboardStateResponse> {
+    const data = SummarizeDashboardStateRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "SummarizeDashboardState", data);
+    return promise.then((data) => SummarizeDashboardStateResponse.fromJSON(data));
   }
 }
 

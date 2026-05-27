@@ -27,6 +27,8 @@ jest.mock('@/crystal_ball/hooks', () => ({
   useListDashboardStatesInfinite: jest.fn(),
   useDeleteDashboardState: jest.fn(),
   useUndeleteDashboardState: jest.fn(),
+  useStarDashboardState: jest.fn(),
+  useUnstarDashboardState: jest.fn(),
 }));
 
 const mockInvalidateQueries = jest.fn();
@@ -76,6 +78,14 @@ describe('<DashboardListTable />', () => {
       isPending: false,
     });
     (hooks.useUndeleteDashboardState as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    });
+    (hooks.useStarDashboardState as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    });
+    (hooks.useUnstarDashboardState as jest.Mock).mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
     });
@@ -418,10 +428,10 @@ describe('<DashboardListTable />', () => {
 
     render(<DashboardListTable showDeleted />);
 
-    // Verify it passes showDeleted to the API
+    // Verify it passes filter: "deleted = true" to the API
     expect(hooks.useListDashboardStatesInfinite).toHaveBeenCalledWith(
       expect.objectContaining({
-        showDeleted: true,
+        filter: 'deleted = true',
       }),
     );
 

@@ -23,6 +23,8 @@ import {
   useListDashboardStatesInfinite,
   useSuggestMeasurementFilterValues,
   useUndeleteDashboardState,
+  useStarDashboardState,
+  useUnstarDashboardState,
 } from '@/crystal_ball/hooks';
 import { LandingPage } from '@/crystal_ball/pages/landing_page';
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
@@ -42,6 +44,8 @@ jest.mock('@/crystal_ball/hooks', () => ({
   useListDashboardStatesInfinite: jest.fn(),
   useSuggestMeasurementFilterValues: jest.fn(),
   useUndeleteDashboardState: jest.fn(),
+  useStarDashboardState: jest.fn(),
+  useUnstarDashboardState: jest.fn(),
 }));
 
 const mockNavigate = jest.fn();
@@ -108,6 +112,16 @@ describe('<LandingPage />', () => {
       }),
     );
     jest.mocked(useUndeleteDashboardState).mockReturnValue(
+      createMockMutationResult({
+        mutateAsync: jest.fn(),
+      }),
+    );
+    jest.mocked(useStarDashboardState).mockReturnValue(
+      createMockMutationResult({
+        mutateAsync: jest.fn(),
+      }),
+    );
+    jest.mocked(useUnstarDashboardState).mockReturnValue(
       createMockMutationResult({
         mutateAsync: jest.fn(),
       }),
@@ -322,7 +336,7 @@ describe('<LandingPage />', () => {
     });
   });
 
-  test('switches to Deleted Dashboards tab and loads deleted dashboards', async () => {
+  test('switches to Starred and Deleted Dashboards tabs and loads correct filtered dashboards', async () => {
     render(
       <FakeContextProvider
         routerOptions={{
@@ -337,19 +351,30 @@ describe('<LandingPage />', () => {
       </FakeContextProvider>,
     );
 
-    // Initial render should call with showDeleted: false (or undefined)
+    // Initial render should call with active tab (filter is empty string)
     expect(useListDashboardStatesInfinite).toHaveBeenCalledWith(
-      expect.not.objectContaining({ showDeleted: true }),
+      expect.objectContaining({ filter: '' }),
     );
+
+    // Click the Starred Dashboards tab
+    const starredTab = screen.getByRole('tab', { name: /Starred Dashboards/i });
+    fireEvent.click(starredTab);
+
+    // Should call useListDashboardStatesInfinite again with filter: "starred = true"
+    await waitFor(() => {
+      expect(useListDashboardStatesInfinite).toHaveBeenLastCalledWith(
+        expect.objectContaining({ filter: 'starred = true' }),
+      );
+    });
 
     // Click the Deleted Dashboards tab
     const deletedTab = screen.getByRole('tab', { name: /Deleted Dashboards/i });
     fireEvent.click(deletedTab);
 
-    // Should call useListDashboardStatesInfinite again with showDeleted: true
+    // Should call useListDashboardStatesInfinite again with filter: "deleted = true"
     await waitFor(() => {
-      expect(useListDashboardStatesInfinite).toHaveBeenCalledWith(
-        expect.objectContaining({ showDeleted: true }),
+      expect(useListDashboardStatesInfinite).toHaveBeenLastCalledWith(
+        expect.objectContaining({ filter: 'deleted = true' }),
       );
     });
   });

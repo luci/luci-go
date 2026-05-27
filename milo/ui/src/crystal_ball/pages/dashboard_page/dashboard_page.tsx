@@ -16,6 +16,8 @@ import {
   Edit as EditIcon,
   InfoOutlined as InfoOutlinedIcon,
   Share as ShareIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -75,6 +77,8 @@ import {
   useDeleteDashboardState,
   useGetDashboardState,
   useUpdateDashboardState,
+  useStarDashboardState,
+  useUnstarDashboardState,
 } from '@/crystal_ball/hooks/use_dashboard_state_api';
 import { useListMeasurementFilterColumns } from '@/crystal_ball/hooks/use_measurement_filter_api';
 import { CRYSTAL_BALL_ROUTES } from '@/crystal_ball/routes';
@@ -116,6 +120,32 @@ function DashboardTitleBar({
   const [isEditing, setIsEditing] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
+  const { mutateAsync: starDashboard } = useStarDashboardState();
+  const { mutateAsync: unstarDashboard } = useUnstarDashboardState();
+  const { showSuccessToast, showErrorToast } = useToast();
+  const queryClient = useQueryClient();
+
+  const handleStarClick = async () => {
+    if (!dashboardState.name) return;
+    try {
+      if (dashboardState.starred) {
+        await unstarDashboard({ name: dashboardState.name });
+        showSuccessToast('Dashboard unstarred');
+      } else {
+        await starDashboard({ name: dashboardState.name });
+        showSuccessToast('Dashboard starred');
+      }
+      queryClient.invalidateQueries({
+        queryKey: getDashboardStateQueryKey(dashboardState.name),
+      });
+    } catch (e) {
+      showErrorToast(
+        e,
+        `Failed to ${dashboardState.starred ? 'unstar' : 'star'} dashboard`,
+      );
+    }
+  };
+
   const handleInfoClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -145,6 +175,22 @@ function DashboardTitleBar({
           },
         }}
       >
+        <IconButton
+          size="small"
+          onClick={handleStarClick}
+          aria-label={
+            dashboardState.starred ? 'Unstar dashboard' : 'Star dashboard'
+          }
+          sx={{
+            color: dashboardState.starred ? 'warning.main' : 'action.active',
+          }}
+        >
+          {dashboardState.starred ? (
+            <StarIcon fontSize="small" />
+          ) : (
+            <StarBorderIcon fontSize="small" />
+          )}
+        </IconButton>
         <Typography variant="h6">{dashboardState.displayName}</Typography>
         {dashboardState.description && (
           <>

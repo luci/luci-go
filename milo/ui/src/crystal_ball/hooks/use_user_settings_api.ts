@@ -25,9 +25,7 @@ import {
 import { WrapperQueryOptions } from '@/common/types/query_wrapper_options';
 import { API_V1_BASE_PATH as BASE_PATH } from '@/crystal_ball/constants';
 import {
-  AddStarredDashboardRequest,
   GetUserSettingsRequest,
-  RemoveStarredDashboardRequest,
   UpdateUserSettingsRequest,
   UserSettings,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
@@ -77,52 +75,6 @@ export const useUpdateUserSettings = (
       params: {
         updateMask: request.updateMask?.join(','),
       },
-    }),
-    options,
-  );
-};
-
-/**
- * Hook for AddStarredDashboard.
- * @param options - Optional mutation options.
- * @returns A mutation result for adding a starred dashboard.
- */
-export const useAddStarredDashboard = (
-  options?: UseMutationOptions<UserSettings, Error, AddStarredDashboardRequest>,
-): UseMutationResult<UserSettings, Error, AddStarredDashboardRequest> => {
-  return useGapiMutation<AddStarredDashboardRequest, UserSettings>(
-    (request) => ({
-      path: `${BASE_PATH}/${request.name}:addStarredDashboard`,
-      method: 'POST',
-      body: {
-        dashboard: request.dashboard,
-      },
-      params: {},
-    }),
-    options,
-  );
-};
-
-/**
- * Hook for RemoveStarredDashboard.
- * @param options - Optional mutation options.
- * @returns A mutation result for removing a starred dashboard.
- */
-export const useRemoveStarredDashboard = (
-  options?: UseMutationOptions<
-    UserSettings,
-    Error,
-    RemoveStarredDashboardRequest
-  >,
-): UseMutationResult<UserSettings, Error, RemoveStarredDashboardRequest> => {
-  return useGapiMutation<RemoveStarredDashboardRequest, UserSettings>(
-    (request) => ({
-      path: `${BASE_PATH}/${request.name}:removeStarredDashboard`,
-      method: 'POST',
-      body: {
-        dashboard: request.dashboard,
-      },
-      params: {},
     }),
     options,
   );

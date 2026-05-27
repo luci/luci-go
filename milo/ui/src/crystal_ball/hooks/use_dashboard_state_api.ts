@@ -44,6 +44,8 @@ import {
   RollbackDashboardStateRequest,
   UndeleteDashboardStateRequest,
   UpdateDashboardStateRequest,
+  StarDashboardRequest,
+  UnstarDashboardRequest,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 import { Operation } from '@/proto/google/longrunning/operations.pb';
 
@@ -360,6 +362,42 @@ export const useGenerateDashboardState = (
       path: `${BASE_PATH}:generateDashboardState`,
       method: 'POST',
       body: request,
+    }),
+    options,
+  );
+};
+
+/**
+ * Hook for StarDashboard.
+ * @param options - Optional mutation options.
+ * @returns A mutation hook to star a dashboard state.
+ */
+export const useStarDashboardState = (
+  options?: UseMutationOptions<DashboardState, Error, StarDashboardRequest>,
+): UseMutationResult<DashboardState, Error, StarDashboardRequest> => {
+  return useGapiMutation<StarDashboardRequest, DashboardState>(
+    (request) => ({
+      path: `${BASE_PATH}/${request.name}:star`,
+      method: 'POST',
+      body: {},
+    }),
+    options,
+  );
+};
+
+/**
+ * Hook for UnstarDashboard.
+ * @param options - Optional mutation options.
+ * @returns A mutation hook to unstar a dashboard state.
+ */
+export const useUnstarDashboardState = (
+  options?: UseMutationOptions<DashboardState, Error, UnstarDashboardRequest>,
+): UseMutationResult<DashboardState, Error, UnstarDashboardRequest> => {
+  return useGapiMutation<UnstarDashboardRequest, DashboardState>(
+    (request) => ({
+      path: `${BASE_PATH}/${request.name}:unstar`,
+      method: 'POST',
+      body: {},
     }),
     options,
   );

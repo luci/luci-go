@@ -13,9 +13,14 @@
 // limitations under the License.
 
 import {
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
+} from '@mui/icons-material';
+import {
   Alert,
   Box,
   Button,
+  IconButton,
   MenuItem,
   Snackbar,
   Typography,
@@ -28,7 +33,7 @@ import {
   type MRT_ColumnDef,
   type MRT_Row,
 } from 'material-react-table';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { DeleteDashboardDialog } from '@/crystal_ball/components/dashboard_dialog/delete_dashboard_dialog';
 import {
@@ -36,6 +41,8 @@ import {
   useDeleteDashboardState,
   useListDashboardStatesInfinite,
   useUndeleteDashboardState,
+  useStarDashboardState,
+  useUnstarDashboardState,
 } from '@/crystal_ball/hooks';
 import {
   escapeRegExp,
@@ -55,7 +62,12 @@ interface DashboardListTableProps {
    */
   onDashboardClick?: (dashboard: DashboardState) => void;
   /**
+   * The tab filter to apply to list dashboards.
+   */
+  tab?: 'active' | 'starred' | 'deleted';
+  /**
    * Whether to show deleted dashboards.
+   * @deprecated Use `tab="deleted"` instead.
    */
   showDeleted?: boolean;
 }
@@ -65,17 +77,35 @@ const getDisplayName = (dashboard: DashboardState) =>
   dashboard.name?.split('/').pop() ||
   'Unnamed Dashboard';
 
-function useLoadMoreDashboards(showDeleted?: boolean) {
+function useLoadMoreDashboards(
+  tab: 'active' | 'starred' | 'deleted' = 'active',
+) {
   const [globalFilter, setGlobalFilter] = useState('');
 
-  const requestParams = useMemo(
-    () => ({
+  const requestParams = useMemo(() => {
+    const filterParts: string[] = [];
+
+    if (tab === 'starred') {
+      filterParts.push('starred = true');
+    } else if (tab === 'deleted') {
+      filterParts.push('deleted = true');
+    }
+
+    if (globalFilter) {
+      const escaped = escapeRegExp(globalFilter);
+      if (tab === 'starred' || tab === 'deleted') {
+        filterParts.push(`display_name : "*${escaped}*"`);
+      } else {
+        filterParts.push(escaped);
+      }
+    }
+
+    return {
       pageSize: 20,
-      filter: globalFilter ? escapeRegExp(globalFilter) : '',
-      showDeleted: !!showDeleted,
-    }),
-    [globalFilter, showDeleted],
-  );
+      filter: filterParts.join(' AND '),
+      showDeleted: tab === 'deleted',
+    };
+  }, [globalFilter, tab]);
 
   const queryParams = useListDashboardStatesInfinite(requestParams);
 
@@ -103,8 +133,11 @@ function useLoadMoreDashboards(showDeleted?: boolean) {
  */
 export function DashboardListTable({
   onDashboardClick,
+  tab: initialTab = 'active',
   showDeleted,
 }: DashboardListTableProps) {
+  const tab = showDeleted ? 'deleted' : initialTab;
+
   const {
     dashboards,
     isLoading,
@@ -115,7 +148,7 @@ export function DashboardListTable({
     setGlobalFilter,
     handleLoadMore,
     hasNextPage,
-  } = useLoadMoreDashboards(showDeleted);
+  } = useLoadMoreDashboards(tab);
 
   const [dashboardToDelete, setDashboardToDelete] =
     useState<DashboardState | null>(null);
@@ -126,6 +159,8 @@ export function DashboardListTable({
     useDeleteDashboardState();
   const { mutateAsync: undeleteDashboard, isPending: isUndeleting } =
     useUndeleteDashboardState();
+  const { mutateAsync: starDashboard } = useStarDashboardState();
+  const { mutateAsync: unstarDashboard } = useUnstarDashboardState();
 
   const handleRecover = async (dashboard: DashboardState) => {
     if (!dashboard.name) return;
@@ -161,6 +196,33 @@ export function DashboardListTable({
     }
   };
 
+  const handleStarClick = useCallback(
+    async (e: React.MouseEvent, dashboard: DashboardState) => {
+      e.stopPropagation();
+      if (!dashboard.name) return;
+      try {
+        if (dashboard.starred) {
+          await unstarDashboard({ name: dashboard.name });
+          setToastMessage('Dashboard unstarred');
+        } else {
+          await starDashboard({ name: dashboard.name });
+          setToastMessage('Dashboard starred');
+        }
+        queryClient.invalidateQueries({
+          queryKey: listDashboardStatesQueryKey(),
+        });
+      } catch (err) {
+        setToastMessage(
+          formatApiError(
+            err,
+            `Failed to ${dashboard.starred ? 'unstar' : 'star'} dashboard`,
+          ),
+        );
+      }
+    },
+    [queryClient, starDashboard, unstarDashboard],
+  );
+
   const columns = useMemo<MRT_ColumnDef<DashboardState>[]>(
     () => [
       {
@@ -169,21 +231,46 @@ export function DashboardListTable({
         muiTableHeadCellProps: { sx: { width: '100%' } },
         muiTableBodyCellProps: { sx: { width: '100%' } },
         Cell: (args: { row: MRT_Row<DashboardState> }) => (
-          <Box>
-            <Typography variant="subtitle1" fontWeight="bold">
-              {getDisplayName(args.row.original)}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {args.row.original.description}
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {tab !== 'deleted' && (
+              <IconButton
+                size="small"
+                onClick={(e) => handleStarClick(e, args.row.original)}
+                sx={{
+                  color: args.row.original.starred
+                    ? 'warning.main'
+                    : 'action.active',
+                  mr: 1,
+                }}
+                aria-label={
+                  args.row.original.starred
+                    ? 'Unstar dashboard'
+                    : 'Star dashboard'
+                }
+              >
+                {args.row.original.starred ? (
+                  <StarIcon fontSize="small" />
+                ) : (
+                  <StarBorderIcon fontSize="small" />
+                )}
+              </IconButton>
+            )}
+            <Box>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {getDisplayName(args.row.original)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {args.row.original.description}
+              </Typography>
+            </Box>
           </Box>
         ),
       },
       {
         id: 'timestamp',
         accessorFn: (row: DashboardState) =>
-          showDeleted ? row.deleteTime : row.updateTime,
-        header: showDeleted ? 'Deleted' : 'Last Modified',
+          tab === 'deleted' ? row.deleteTime : row.updateTime,
+        header: tab === 'deleted' ? 'Deleted' : 'Last Modified',
         muiTableHeadCellProps: { sx: { whiteSpace: 'nowrap', width: 'auto' } },
         muiTableBodyCellProps: { sx: { whiteSpace: 'nowrap', width: 'auto' } },
         Cell: (args: { cell: MRT_Cell<DashboardState> }) => (
@@ -193,7 +280,7 @@ export function DashboardListTable({
         ),
       },
     ],
-    [showDeleted],
+    [tab, handleStarClick],
   );
 
   const table = useMaterialReactTable({
