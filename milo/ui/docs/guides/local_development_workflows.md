@@ -1,6 +1,7 @@
 # Local Development Workflows
 
-This guide describes how to run and develop the LUCI (Layered Universal Continuous Integration) Milo UI locally.
+This guide describes how to run and develop the LUCI (Layered Universal
+Continuous Integration) Milo UI locally.
 
 ## Prerequisites
 
@@ -8,9 +9,15 @@ To set up your environment, run the following commands.
 
 ### 1. Get the source
 
-You may need [depot_tools](https://chromium.googlesource.com/chromium/tools/depot_tools/+/HEAD/README.md) ([instructions here](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up)), and from there follow (this documentation)[https://chromium.googlesource.com/infra/infra/+/HEAD/doc/source.md] to get the `infra` repo (or a repo that contains the infra repo):
+You may need
+[depot_tools](https://chromium.googlesource.com/chromium/tools/depot_tools/+/HEAD/README.md)
+([instructions here](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up)),
+and from there follow 
+[this documentation](https://chromium.googlesource.com/infra/infra/+/HEAD/doc/source.md)
+to get the `infra` repo (or a repo that contains the `infra` repo):
 
-If you `cd` into the repo directory, you should see a structure like in the following diagran, where only the relevant bits
+If you `cd` into the repo directory, you should see a structure like in the
+following diagram, where only the relevant bits
 for this guide are expanded.
 
 ```sh
@@ -37,8 +44,8 @@ for this guide are expanded.
 
 By convention we refer to `<your_repo_dir>` as `infra`.
 
-If you cd into `<your_repo_dir>`, copy and paste this into your terminal so that you can
-copy and paste the rest of the commands in this guide:
+If you cd into `<your_repo_dir>`, copy and paste this into your terminal so
+that you can copy and paste the rest of the commands in this guide:
 
 ```sh
 $ export GO_DIR="$(PWD)/infra/go"
@@ -71,11 +78,12 @@ $ npm ci
 
 ## Start a Local AppEngine Server
 
-If you need to test a Local GAE (Google App Engine) server, or use `/rpcexplorer`
-for testing RPCs (Remote Procedure Calls):
+If you need to test a Local GAE (Google App Engine) server, or use
+`/rpcexplorer` for testing RPCs (Remote Procedure Calls):
 
 WARNING: For most UI development you don't need to run the app engine server
-locally. You only need to run the app engine server if you are making changes to the server, which is extremely rare
+locally. You only need to run the app engine server if you are making changes
+to the server, which is extremely rare
 
 ```sh
 # Run the local AppEngine frontend server:
@@ -104,11 +112,35 @@ assets. It sends pRPC and HTTP REST requests to staging servers hosted on GCP
 Check the [.env.development](../../.env.development) file for instructions to
 configure the target servers and other local development settings.
 
+If you need to tweak the values within `.env.development` do so within
+`.env.development.local` (which you many need to create and place in the same
+directory as `.env.development`); The `.local` one will override the values
+from the non-`.local` one.
+
+This will prevent from accidentally submitting pointers to unintended endpoints.
+
 ### Login on a local UI server
 
 When developing with a local UI server, the login flow is different from a
 deployed version. Click the **Login** button in your local browser interface
 (top right corner), and follow the on-screen instructions.
+
+---
+
+## Serving remotely
+
+If your code is on a different computer, you can see it on your local computer
+by creating an ssh tunnel that forwards the port you are serving on.
+
+From your local computer (i.e. laptop), run:
+
+```sh
+$ ssh [your-username]@[your-remote] -L 8080:localhost:8080
+```
+
+Leave this command running in the background for as long as you want. While
+the ssh connection remains stablished, you'll be able to see the UI at:
+http://localhost:8080/ui/ from your local browser.
 
 ---
 
