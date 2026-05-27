@@ -23,7 +23,23 @@ cd -- "$(dirname "$0")" || die 'cannot chdir'
 cd ../
 
 # Run the preview server in the background.
-vite preview & pid_preview_server=($!)
+PORT=${CYPRESS_PORT:-8001}
+npx vite preview --port $PORT --host 127.0.0.1 & pid_preview_server=($!)
+echo "Starting E2E tests on port: $PORT (Override using CYPRESS_PORT if conflicted)"
 trap "kill $pid_preview_server" INT TERM EXIT
 
-cypress run
+# Wait for the server to be ready
+echo "Waiting for server to be ready on port $PORT..."
+for i in {1..30}; do
+  if curl -s http://127.0.0.1:$PORT > /dev/null; then
+    echo "Server is ready!"
+    break
+  fi
+  if [ $i -eq 30 ]; then
+    echo "Server failed to start on port $PORT"
+    exit 1
+  fi
+  sleep 1
+done
+
+CYPRESS_BASE_URL=http://localhost:$PORT npx cypress run

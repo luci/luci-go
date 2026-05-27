@@ -14,6 +14,8 @@
 
 /// <reference types="cypress" />
 
+import { mockPrpc } from './common/utils';
+
 describe('Android Devices Page', () => {
   beforeEach(() => {
     cy.intercept('**', (req) => {
@@ -30,15 +32,52 @@ describe('Android Devices Page', () => {
       });
     });
 
-    // Intercept the dimensions query so we can explicitly wait for it
-    cy.intercept(
-      'POST',
+    const dimensionsData = {
+      baseDimensions: {
+        run_target: { values: ['a04e'] },
+        state: { values: ['LAMEDUCK'] },
+      },
+      labels: {},
+    };
+    mockPrpc(
       '**/prpc/fleetconsole.FleetConsole/GetDeviceDimensions',
-    ).as('getDimensions');
+      dimensionsData,
+      'getDimensions',
+    );
+
+    mockPrpc(
+      '**/prpc/fleetconsole.FleetConsole/ListAndroidDevices',
+      {
+        devices: [{ id: '1', runTarget: 'a04e', state: 'LAMEDUCK' }],
+        totalSize: 1,
+      },
+      'listDevices',
+    );
+
+    mockPrpc(
+      '**/prpc/fleetconsole.FleetConsole/CountDevices',
+      {
+        androidCount: {
+          totalDevices: 1,
+          totalHosts: 1,
+          idleDevices: 0,
+          busyDevices: 0,
+          missingDevices: 0,
+          failedDevices: 0,
+          dirtyDevices: 0,
+          preppingDevices: 0,
+          dyingDevices: 0,
+          initDevices: 0,
+          lameduckDevices: 1,
+          labRunningHosts: 1,
+          labMissingHosts: 0,
+        },
+      },
+      'countDevices',
+    );
   });
 
-  // Currently broken in ci for some unknown reason. Skipping it to unblock push on green
-  it.skip('should not infinite loop or crash when loading with multiple filters', () => {
+  it('should not infinite loop or crash when loading with multiple filters', () => {
     // The bug was triggered when reloading the page with more than 2 filters in the URL.
     // We use the example from the commit message to reproduce the exact scenario.
     const filters = encodeURIComponent(
@@ -49,23 +88,20 @@ describe('Android Devices Page', () => {
     // Navigate to the page with the filters pre-applied in the URL
     cy.visit(targetUrl);
 
-    // The bug ONLY triggered AFTER dimensions loaded and the actual filter builders were used.
-    cy.wait('@getDimensions', { timeout: 60_000 });
+    // Wait for network requests to settle
+    cy.wait(['@getDimensions', '@listDevices', '@countDevices']);
 
-    // 3. Verify the URL remains stable and contains our filters (not infinitely rewritten)
+    // Verify the URL remains stable and contains our filters (not infinitely rewritten)
     cy.url().should('include', 'filters');
 
     // 4. Verify the page didn't crash and the filter chips rendered their full values.
-    // Once dimensions load, StringListFilterCategory takes over from LoadingFilterCategory
-    // and correctly resolves the labels for the values.
-    cy.contains('run_target').should('be.visible');
-    cy.contains('a04e').should('be.visible');
-    cy.contains('state').should('be.visible');
-    // Using a regex for LAMEDUCK to be permissive of any label formatting it receives
-    cy.contains(/LAMEDUCK/i).should('be.visible');
+    cy.get('.MuiChip-root').contains('run_target').should('be.visible');
+    cy.get('.MuiChip-root').contains('a04e').should('be.visible');
+    cy.get('.MuiChip-root').contains('State').should('be.visible');
+    cy.get('.MuiChip-root').contains('LAMEDUCK').should('be.visible');
 
-    // 5. Ensure the main UI table is still present.
-    // If the page crashed from an infinite loop, this would unmount.
-    cy.get('[role="grid"]').should('exist');
+    // 5. Ensure the main UI table is still present and contains data.
+    cy.get('table').should('be.visible');
+    cy.get('table').find('td').contains('1').should('be.visible');
   });
 });
