@@ -26,6 +26,8 @@ const COMMON_COLUMNS: Record<Platform, string[]> = {
     'ufs.hostname',
     'ufs.serial_number',
     'sw.state',
+    'sw.quarantined_message',
+    'sw.maintenance_message',
     'sw.dut_state',
     'sw.device_state',
   ],
