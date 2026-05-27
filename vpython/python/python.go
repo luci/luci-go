@@ -145,7 +145,7 @@ func (e *Environment) WithWheels(wheels generators.Generator) generators.Generat
 func CPythonFromPath(dir, cipdName string) (generators.Generator, error) {
 	cpythonDir := dir
 	if !filepath.IsAbs(dir) {
-		execDir, err := FindExecutableDir(nil)
+		execDir, err := FindExecutableDir()
 		if err != nil {
 			return nil, err
 		}
@@ -169,13 +169,8 @@ func CPythonFromPath(dir, cipdName string) (generators.Generator, error) {
 
 // FindExecutableDir returns the absolute directory path of the current running executable,
 // resolving any symlinks under POSIX platforms (non-Windows) for path safety.
-// It supports dependency injection by accepting a custom executable lookup callback,
-// falling back to the standard os.Executable if nil.
-func FindExecutableDir(lookupExe func() (string, error)) (string, error) {
-	if lookupExe == nil {
-		lookupExe = os.Executable
-	}
-	path, err := lookupExe()
+func FindExecutableDir() (string, error) {
+	path, err := os.Executable()
 	if err != nil {
 		return "", errors.Fmt("failed to get current executable path: %w", err)
 	}
@@ -190,7 +185,7 @@ func FindExecutableDir(lookupExe func() (string, error)) (string, error) {
 // UVFromPath imports the pre-packaged uv directory next to the binary as a standard cipkg Generator.
 func UVFromPath(dir string) (generators.Generator, error) {
 	if !filepath.IsAbs(dir) {
-		execDir, err := FindExecutableDir(nil)
+		execDir, err := FindExecutableDir()
 		if err != nil {
 			return nil, err
 		}
