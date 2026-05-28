@@ -137,7 +137,7 @@ export function GobSourceCheckResultsDetails({
 }) {
   return (
     <Box>
-      {data.changes.map((change, idx) => (
+      {data.changes?.map((change, idx) => (
         <Box
           key={change.changeId || idx}
           sx={{
