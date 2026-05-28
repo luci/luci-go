@@ -94,6 +94,9 @@ type Application struct {
 	// bootstrapping and execute with the local system interpreter.
 	Bypass bool
 
+	// LocalVenv, if true, instructs vpython to create a local .venv symlink in the project directory.
+	LocalVenv bool
+
 	// Loglevel is used to configure the default logger set in the context.
 	LogLevel logging.Level
 
@@ -233,6 +236,9 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 	fs.Var(&a.LogLevel, "vpython-log-level",
 		"The logging level. Valid options are: debug, info, warning, error.")
 
+	fs.BoolVar(&a.LocalVenv, "vpython-local-venv", a.LocalVenv,
+		"Create a local .venv symlink in the project directory (does nothing on Windows).")
+
 	vpythonArgs, pythonArgs, err := extractFlagsForSet("vpython-", a.Arguments, &fs)
 	if err != nil {
 		return errors.Fmt("failed to extract flags: %w", err)
@@ -345,10 +351,10 @@ func (a *Application) LoadSpec(ctx context.Context) error {
 
 // BuildVENV builds the derivation for the venv and updates applications'
 // PythonExecutable to the python binary in the venv.
-func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor, venv generators.Generator) error {
+func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor, venv generators.Generator) (actions.Package, error) {
 	pm, err := workflow.NewLocalPackageManager(filepath.Join(a.VpythonRoot, "store"))
 	if err != nil {
-		return errors.Fmt("failed to load storage: %w", err)
+		return actions.Package{}, errors.Fmt("failed to load storage: %w", err)
 	}
 
 	// Generate derivations
@@ -376,7 +382,7 @@ func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor
 	pe := workflow.NewPackageExecutor("", nil, nil, postExecFn, nil)
 	pkg, err := b.Build(ctx, pe, venv)
 	if err != nil {
-		return errors.Fmt("failed to generate venv derivation: %w", err)
+		return actions.Package{}, errors.Fmt("failed to generate venv derivation: %w", err)
 	}
 	workflow.MustIncRefRecursiveRuntime(pkg)
 	a.close = func() {
@@ -389,7 +395,7 @@ func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor
 	}
 
 	a.PythonExecutable = common.PythonVENV(pkg.Handler.OutputDirectory(), a.PythonExecutable)
-	return nil
+	return pkg, nil
 }
 
 // ExecutePython executes the python with arguments. It uses execve on linux and

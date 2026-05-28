@@ -84,7 +84,8 @@ func setupApp(ctx context.Context, t testing.TB, app *Application) context.Conte
 func buildVENV(ctx context.Context, t testing.TB, app *Application, venv generators.Generator) {
 	ap := actions.NewActionProcessor()
 	wheels.MustSetTransformer(app.CIPDCacheDir, ap)
-	assert.Loosely(t, app.BuildVENV(ctx, ap, venv), should.BeNil, truth.LineContext())
+	_, err := app.BuildVENV(ctx, ap, venv)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	// Release all the resources so the temporary vpython root directory can be
 	// removed on Windows.
