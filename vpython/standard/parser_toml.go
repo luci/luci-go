@@ -22,26 +22,28 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// ProjectSpec represents the standard environment metadata extracted from a vpython.toml file.
+// ProjectSpec represents the standard environment metadata extracted from a pyproject.toml file.
 type ProjectSpec struct {
 	Name           string
 	RequiresPython string
 	Dependencies   []string
 }
 
-// ParseVPythonTOML loads and parses a standard vpython.toml spec file.
-// It returns an error if the file has a missing or invalid [project] table.
-func ParseVPythonTOML(path string) (*ProjectSpec, error) {
+// ParsePyProject loads and parses a standard pyproject.toml file.
+// It applies a strict heuristic filter: it returns (nil, nil) if the file is a generic/non-environment
+// configuration file (such as tool-only/linter configurations like those in depot_tools).
+// It returns an error if the file has a valid [project] table but is syntactically invalid or fails to parse.
+func ParsePyProject(path string) (*ProjectSpec, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, errors.Fmt("failed to read vpython.toml at: %s: %w", path, err)
+		return nil, errors.Fmt("failed to read pyproject.toml at: %s: %w", path, err)
 	}
-	return parseVPythonTOMLContent(content)
+	return parsePyProjectContent(content)
 }
 
-// parseVPythonTOMLContent parses the byte slice content of a vpython.toml spec file.
-func parseVPythonTOMLContent(content []byte) (*ProjectSpec, error) {
-	// Decode into standard structured schema.
+// parsePyProjectContent parses the byte slice content of a pyproject.toml file with the heuristic check.
+func parsePyProjectContent(content []byte) (*ProjectSpec, error) {
+	// Decode into standard structured schema using a pointer for single-pass heuristic checks.
 	var schema struct {
 		Project *struct {
 			Name           string   `toml:"name"`
@@ -53,8 +55,9 @@ func parseVPythonTOMLContent(content []byte) (*ProjectSpec, error) {
 		return nil, errors.Fmt("failed to parse TOML structured schema: %w", err)
 	}
 
+	// Heuristic Check: If the [project] table is completely missing, ignore silently (non-environment config like Ruff/Black).
 	if schema.Project == nil {
-		return nil, errors.New("missing [project] table")
+		return nil, nil
 	}
 
 	spec := &ProjectSpec{
@@ -65,7 +68,7 @@ func parseVPythonTOMLContent(content []byte) (*ProjectSpec, error) {
 
 	// Double check: if the [project] table was present but is completely empty/invalid
 	if spec.Name == "" && spec.RequiresPython == "" && len(spec.Dependencies) == 0 {
-		return nil, errors.New("empty [project] table")
+		return nil, nil
 	}
 
 	return spec, nil

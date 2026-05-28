@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	cproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/common/system/filesystem"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 )
@@ -182,7 +183,7 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 	// 4. Common specification file from the real file
 
 	// Partner File: Try loading the spec from an adjacent file.
-	specPath, err := l.FindForScript(path, isModule)
+	specPath, err := l.findForScript(path, isModule)
 	if err != nil {
 		return nil, "", errors.Fmt("failed to scan for filesystem spec: %w", err)
 	}
@@ -194,7 +195,7 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 		if path, err = filepath.EvalSymlinks(path); err != nil {
 			return nil, "", errors.Fmt("failed to get real path for script: %s: %w", path, err)
 		}
-		specPath, err = l.FindForScript(path, isModule)
+		specPath, err = l.findForScript(path, isModule)
 		if err != nil {
 			return nil, "", errors.Fmt("failed to scan for filesystem spec: %w", err)
 		}
@@ -225,7 +226,7 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 	}
 
 	if !info.IsDir() {
-		switch spec, err := l.ParseFrom(currPath); {
+		switch spec, err := l.parseFrom(currPath); {
 		case err != nil:
 			return nil, "", errors.Fmt("failed to parse inline spec from: %s: %w", currPath, err)
 
@@ -239,7 +240,7 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 	}
 
 	// Common: Try and identify a common specification file.
-	switch path, err := l.FindCommonWalkingFrom(currPath); {
+	switch path, err := l.findCommonWalkingFrom(currPath); {
 	case err != nil:
 		return nil, "", err
 
@@ -257,7 +258,7 @@ func (l *Loader) LoadForScript(c context.Context, path string, isModule bool) (*
 	return nil, "", nil
 }
 
-func (l *Loader) FindForScript(path string, isModule bool) (string, error) {
+func (l *Loader) findForScript(path string, isModule bool) (string, error) {
 	if l.PartnerSuffix == "" {
 		l.PartnerSuffix = DefaultPartnerSuffix
 	}
@@ -279,7 +280,7 @@ func (l *Loader) FindForScript(path string, isModule bool) (string, error) {
 		// Directory must be a Python module.
 		initPath := filepath.Join(path, "__init__.py")
 		if _, err := os.Stat(initPath); err != nil {
-			if errors.Is(err, os.ErrNotExist) {
+			if os.IsNotExist(err) {
 				// Not a Python module, so we're done our search.
 				return "", nil
 			}
@@ -293,7 +294,7 @@ func (l *Loader) FindForScript(path string, isModule bool) (string, error) {
 			// Found the file.
 			return specPath, nil
 
-		case errors.Is(err, os.ErrNotExist):
+		case os.IsNotExist(err):
 			// Recurse to parent.
 			path = filepath.Dir(path)
 			if path == prev {
@@ -307,7 +308,7 @@ func (l *Loader) FindForScript(path string, isModule bool) (string, error) {
 	}
 }
 
-func (l *Loader) ParseFrom(path string) (*vpython.Spec, error) {
+func (l *Loader) parseFrom(path string) (*vpython.Spec, error) {
 	fd, err := os.Open(path)
 	if err != nil {
 		return nil, errors.Fmt("failed to open file: %w", err)
@@ -386,7 +387,7 @@ func (l *Loader) ParseFrom(path string) (*vpython.Spec, error) {
 	return &spec, nil
 }
 
-func (l *Loader) FindCommonWalkingFrom(startDir string) (string, error) {
+func (l *Loader) findCommonWalkingFrom(startDir string) (string, error) {
 	names := l.CommonSpecNames
 	if len(names) == 0 {
 		names = DefaultCommonSpecNames
@@ -402,7 +403,7 @@ func (l *Loader) FindCommonWalkingFrom(startDir string) (string, error) {
 			case err == nil && !st.IsDir():
 				return checkPath, nil
 
-			case errors.Is(err, os.ErrNotExist):
+			case filesystem.IsNotExist(err):
 				// Not in this directory.
 
 			default:

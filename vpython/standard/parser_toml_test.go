@@ -24,10 +24,10 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func TestTOMLParser(tT *testing.T) {
+func TestTOMLParserAndHeuristics(tT *testing.T) {
 	tT.Parallel()
 
-	ftt.Run("Standard vpython.toml Parsing", tT, func(t *ftt.Test) {
+	ftt.Run("Standard pyproject.toml Parsing", tT, func(t *ftt.Test) {
 		t.Run("Successfully parses valid dependency-active projects", func(t *ftt.Test) {
 			validTOML := `
 [project]
@@ -39,7 +39,7 @@ dependencies = [
     "numpy>=1.24.0",
 ]
 `
-			spec, err := parseVPythonTOMLContent([]byte(validTOML))
+			spec, err := parsePyProjectContent([]byte(validTOML))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
 			assert.Loosely(t, spec.Name, should.Equal("my-chrome-tool"))
@@ -50,7 +50,7 @@ dependencies = [
 			}))
 		})
 
-		t.Run("Fails strictly for linter-only / tool-only files", func(t *ftt.Test) {
+		t.Run("Silently ignores linter-only / tool-only files (Heuristic Check)", func(t *ftt.Test) {
 			linterTOML := `
 [tool.black]
 line-length = 80
@@ -60,18 +60,18 @@ include = '\.py$'
 select = ["E", "F"]
 ignore = ["E501"]
 `
-			_, err := parseVPythonTOMLContent([]byte(linterTOML))
-			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err.Error(), should.ContainSubstring("missing [project] table"))
+			spec, err := parsePyProjectContent([]byte(linterTOML))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.BeNil) // Silently skipped!
 		})
 
-		t.Run("Fails strictly for empty or zeroed tables", func(t *ftt.Test) {
+		t.Run("Silently ignores empty or zeroed tables", func(t *ftt.Test) {
 			emptyTOML := `
 # Just comments and empty space
 `
-			_, err := parseVPythonTOMLContent([]byte(emptyTOML))
-			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err.Error(), should.ContainSubstring("missing [project] table"))
+			spec, err := parsePyProjectContent([]byte(emptyTOML))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.BeNil)
 		})
 
 		t.Run("Returns error on invalid TOML syntax inside project block", func(t *ftt.Test) {
@@ -81,12 +81,12 @@ name = "broken"
 dependencies = [
     "requests",  # Missing closing quote
 `
-			_, err := parseVPythonTOMLContent([]byte(invalidTOML))
+			_, err := parsePyProjectContent([]byte(invalidTOML))
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 
 		t.Run("Successfully loads and parses from a physical disk file path", func(t *ftt.Test) {
-			tmpPath := filepath.Join(tT.TempDir(), "vpython.toml")
+			tmpPath := filepath.Join(tT.TempDir(), "pyproject.toml")
 			content := `
 [project]
 name = "file-test"
@@ -95,7 +95,7 @@ requires-python = ">=3.11"
 			err := os.WriteFile(tmpPath, []byte(content), 0644)
 			assert.Loosely(t, err, should.BeNil)
 
-			spec, err := ParseVPythonTOML(tmpPath)
+			spec, err := ParsePyProject(tmpPath)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
 			assert.Loosely(t, spec.Name, should.Equal("file-test"))
@@ -104,7 +104,7 @@ requires-python = ">=3.11"
 
 		t.Run("Returns error when physical file does not exist", func(t *ftt.Test) {
 			nonExistentPath := filepath.Join(tT.TempDir(), "non_existent_file_path_xyz_123.toml")
-			_, err := ParseVPythonTOML(nonExistentPath)
+			_, err := ParsePyProject(nonExistentPath)
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 
@@ -114,7 +114,7 @@ requires-python = ">=3.11"
 name = "type-mismatch"
 dependencies = "this-should-be-a-list-but-is-a-string"
 `
-			_, err := parseVPythonTOMLContent([]byte(typeMismatchTOML))
+			_, err := parsePyProjectContent([]byte(typeMismatchTOML))
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
