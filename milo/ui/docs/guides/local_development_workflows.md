@@ -12,7 +12,7 @@ To set up your environment, run the following commands.
 You may need
 [depot_tools](https://chromium.googlesource.com/chromium/tools/depot_tools/+/HEAD/README.md)
 ([instructions here](https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up)),
-and from there follow 
+and from there follow
 [this documentation](https://chromium.googlesource.com/infra/infra/+/HEAD/doc/source.md)
 to get the `infra` repo (or a repo that contains the `infra` repo):
 
