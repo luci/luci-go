@@ -17,7 +17,11 @@ import { ECharts, EChartsOption } from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import { CSSProperties, useEffect, useMemo, useRef } from 'react';
 
-import { getTimeFormatters } from '@/crystal_ball/utils';
+import {
+  calculateTooltipPosition,
+  getTimeFormatters,
+  TooltipSizeInfo,
+} from '@/crystal_ball/utils';
 
 /**
  * Represents a single series to be plotted on the time series chart.
@@ -45,6 +49,14 @@ export interface TimeSeriesDataSet {
    * CSS color for the line.
    */
   stroke: string;
+  /**
+   * The metric field of the series.
+   */
+  metricField?: string;
+  /**
+   * The series unique identifier.
+   */
+  seriesId?: string;
 }
 
 /**
@@ -54,7 +66,7 @@ export interface ChartTooltipParam {
   axisValue: string | number;
   marker: string;
   seriesName: string;
-  data: [number, number, number?];
+  data: [number, number, number, string?, string?, number?];
 }
 
 /**
@@ -130,7 +142,7 @@ interface TimeSeriesChartProps {
    */
   tooltipFormatter?: (
     params: ChartTooltipParam | ChartTooltipParam[],
-  ) => string;
+  ) => string | HTMLElement;
   /**
    * Optional explicit min value for X-axis.
    */
@@ -261,6 +273,12 @@ const BASE_OPTION: Partial<EChartsOption> = {
     splitLine: { show: true, lineStyle: { type: 'dashed' } },
   },
 };
+
+/**
+ * Spacing offset in pixels to shift the tooltip popover box relative to the mouse cursor coordinates.
+ * This prevents the tooltip box from overlapping and obscuring the exact data point under the cursor.
+ */
+const TOOLTIP_OFFSET_PX = 5;
 
 const CHART_STYLE: CSSProperties = {
   position: 'absolute',
@@ -405,7 +423,14 @@ export function TimeSeriesChart({
         ...BASE_OPTION.tooltip,
         enterable: true,
         confine: true,
-        extraCssText: 'max-height: 400px; overflow-y: auto;',
+        extraCssText: 'max-height: 300px; overflow-y: scroll;',
+        position: (
+          point: [number, number],
+          _params: unknown,
+          _dom: unknown,
+          _rect: unknown,
+          size?: TooltipSizeInfo,
+        ) => calculateTooltipPosition(point, size, TOOLTIP_OFFSET_PX),
         formatter: tooltipFormatter
           ? (params: unknown) => {
               // ECharts passes dynamic data at runtime (e.g. data can be string, number, Date).
@@ -467,7 +492,10 @@ export function TimeSeriesChart({
             return val;
           },
         };
-        return { ...common, type: chartType };
+        if (chartType === 'scatter') {
+          return { ...common, type: 'scatter' as const };
+        }
+        return { ...common, type: 'line' as const };
       }),
     };
   }, [

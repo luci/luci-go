@@ -166,3 +166,137 @@ export function normalizeRequestFilters<
     },
   };
 }
+
+/**
+ * Returns whether lower values are better for the given metric field name.
+ */
+export function isLowerIsBetter(metricField: string | undefined): boolean {
+  if (!metricField) return false;
+
+  const lowerIsBetterKeywords = [
+    'duration',
+    'latency',
+    'time',
+    'bytes',
+    'size',
+    'memory',
+    'pss',
+    'rss',
+    'alloc',
+  ];
+
+  return lowerIsBetterKeywords.some((keyword) => {
+    return metricField.toLowerCase().includes(keyword);
+  });
+}
+
+/**
+ * Determines polarity and returns trend state and MUI palette color tokens.
+ */
+export function getTrendInfo(
+  netChange: number,
+  metricField: string | undefined,
+): {
+  trend: 'up' | 'down' | 'flat';
+  color: 'success.main' | 'error.main' | 'text.secondary';
+  isRegression: boolean;
+} {
+  if (Math.abs(netChange) < 0.0001) {
+    return {
+      trend: 'flat',
+      color: 'text.secondary',
+      isRegression: false,
+    };
+  }
+
+  const lowerIsBetter = isLowerIsBetter(metricField);
+  const isPositive = netChange > 0;
+
+  if (lowerIsBetter) {
+    const isRegression = isPositive; // For latency, increase is bad (regression)
+    return {
+      trend: isPositive ? 'up' : 'down',
+      color: isRegression ? 'error.main' : 'success.main',
+      isRegression,
+    };
+  }
+
+  const isRegression = !isPositive; // For score, decrease is bad (regression)
+  return {
+    trend: isPositive ? 'up' : 'down',
+    color: isRegression ? 'error.main' : 'success.main',
+    isRegression,
+  };
+}
+
+export interface RegressionStats {
+  diff: number;
+  pctChange: number;
+}
+
+/**
+ * Calculates absolute difference and percentage change between a baseline and a target value.
+ */
+export function calculateChange(
+  baseline: number,
+  target: number,
+): RegressionStats {
+  const diff = target - baseline;
+  let pctChange = 0;
+  if (baseline !== 0) {
+    pctChange = (diff / baseline) * 100;
+  }
+  return { diff, pctChange };
+}
+
+/**
+ * Formats absolute and percentage change into a clean standard string: "+1,234 (+12.3%)" or "-123 (-5.4%)".
+ */
+export function formatChange(diff: number, pctChange: number): string {
+  let formattedDiff = diff.toLocaleString();
+  if (diff > 0) {
+    formattedDiff = `+${formattedDiff}`;
+  }
+  let formattedPct = `${pctChange.toFixed(1)}%`;
+  if (pctChange > 0) {
+    formattedPct = `+${formattedPct}`;
+  }
+  return `${formattedDiff} (${formattedPct})`;
+}
+
+export interface TooltipSizeInfo {
+  contentSize: [number, number];
+  viewSize: [number, number];
+}
+
+/**
+ * Calculates the optimal absolute coordinates for the ECharts tooltip box.
+ * If the tooltip would overflow the right or bottom chart boundaries, it flips
+ * horizontally and/or shifts vertically to prevent clipping and cursor blockage.
+ *
+ * @param point - Bounding coordinate of the cursor relative to the container: [x, y]
+ * @param size - Bounding box sizes of the tooltip content and chart viewport container
+ * @param offsetPx - Horizontal/vertical spacing offset from the cursor
+ * @returns Calculated coordinates [posX, posY]
+ */
+export function calculateTooltipPosition(
+  point: [number, number],
+  size: TooltipSizeInfo | undefined,
+  offsetPx: number,
+): [number, number] {
+  const [x, y] = point;
+  if (!size) {
+    return [x + offsetPx, y + offsetPx];
+  }
+
+  const [tooltipW, tooltipH] = size.contentSize;
+  const [chartW, chartH] = size.viewSize;
+
+  const posX =
+    x + tooltipW + offsetPx > chartW ? x - tooltipW - offsetPx : x + offsetPx;
+
+  const posY =
+    y + tooltipH + offsetPx > chartH ? y - tooltipH - offsetPx : y + offsetPx;
+
+  return [posX, posY];
+}

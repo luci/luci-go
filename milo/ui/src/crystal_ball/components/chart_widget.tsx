@@ -26,9 +26,11 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 
 import {
   ChartSeriesEditor,
+  ChartTooltip,
   ChartTooltipParam,
   ChartWidgetToolbar,
   FilterEditor,
@@ -55,7 +57,6 @@ import {
 } from '@/crystal_ball/hooks';
 import {
   dataPointsToData,
-  formatTimestampWithZone,
   generateColor,
   getSafeChartType,
   isDataPointsValid,
@@ -131,6 +132,7 @@ function getChartSeries(
           return {
             name: group.legendLabel,
             seriesId: group.seriesId,
+            metricField: group.metricField,
             data: (group.points ?? []).map(
               (
                 point,
@@ -211,6 +213,7 @@ function getChartSeries(
           return {
             name: line.legendLabel,
             seriesId: line.seriesId,
+            metricField: line.metricField,
             data: isDataPointsValid(line.dataPoints, xAxisKey, yAxisKey)
               ? dataPointsToData(line.dataPoints, xAxisKey, yAxisKey).map(
                   (pt) => ({
@@ -282,6 +285,13 @@ export function ChartWidget({
   const [fitY, setFitY] = useState(false);
   const [restoreZoomTrigger, setRestoreZoomTrigger] = useState(0);
   const [downloadTrigger, setDownloadTrigger] = useState(0);
+  const tooltipContainerRef = useRef<HTMLDivElement | null>(null);
+  if (!tooltipContainerRef.current) {
+    tooltipContainerRef.current = document.createElement('div');
+  }
+  const [tooltipItems, setTooltipItems] = useState<
+    readonly ChartTooltipParam[]
+  >([]);
   const portalContext = useContext(WidgetPortalContext);
 
   const handlePointClick = useCallback(
@@ -557,42 +567,14 @@ export function ChartWidget({
     return { min: minVal, max: maxVal };
   }, [globalFilters, chartSeries]);
 
-  const tooltipFormatter = useMemo(() => {
-    return (params: ChartTooltipParam | ChartTooltipParam[]) => {
+  const tooltipFormatter = useCallback(
+    (params: ChartTooltipParam | ChartTooltipParam[]) => {
       const items = Array.isArray(params) ? params : [params];
-      if (items.length === 0) return '';
-
-      const firstItem = items[0];
-      const xVal = firstItem.axisValue;
-      let xDisplay = xVal;
-
-      const xAxisDataKey = isDistribution
-        ? widgetResponse?.invocationDistributionData?.xAxisDataKey
-        : widgetResponse?.multiMetricChartData?.xAxisDataKey;
-
-      const xAxisType = xAxisDataKey === Column.BUILD_ID ? 'value' : 'time';
-      if (xAxisType === 'time' && typeof xVal === 'number') {
-        xDisplay = formatTimestampWithZone(xVal, timeZone);
-      }
-
-      let result = `<strong>${xDisplay}</strong><br/>`;
-      result += `<div style="font-size: 12px; color: rgba(0, 0, 0, 0.6); margin-bottom: 4px;">`;
-      result += `${COMMON_MESSAGES.CLICK_POINT_TO_VIEW_SAMPLES}</div>`;
-
-      items.forEach((item) => {
-        const val = item.data[1];
-        const count = item.data[2];
-
-        result += `${item.marker}${item.seriesName}: ${val.toLocaleString()}`;
-        if (count !== undefined && count !== 0) {
-          const unit = count === 1 ? 'sample' : 'samples';
-          result += ` (${count} ${unit}${isDistribution ? '' : ' aggregated'})`;
-        }
-        result += '<br/>';
-      });
-      return result;
-    };
-  }, [isDistribution, widgetResponse, timeZone]);
+      setTooltipItems(items);
+      return tooltipContainerRef.current!;
+    },
+    [],
+  );
 
   const hasData = useMemo(
     () => chartSeries.some((series) => series.data.length > 0),
@@ -768,6 +750,29 @@ export function ChartWidget({
             )}
           </WidgetSidePanel>
         )}
+        {tooltipContainerRef.current &&
+          tooltipItems.length > 0 &&
+          createPortal(
+            <ChartTooltip
+              items={tooltipItems}
+              chartSeries={chartSeries}
+              isDistribution={isDistribution}
+              timeZone={timeZone}
+              xAxisDataKey={
+                isDistribution
+                  ? widgetResponse?.invocationDistributionData?.xAxisDataKey
+                  : widgetResponse?.multiMetricChartData?.xAxisDataKey
+              }
+              onRowClick={(item) =>
+                handlePointClick({
+                  componentType: 'series',
+                  seriesName: item.seriesName,
+                  data: item.data,
+                })
+              }
+            />,
+            tooltipContainerRef.current,
+          )}
       </Box>
       <ChartSeriesEditor
         series={[...(widget.series ?? [])]}
@@ -777,6 +782,8 @@ export function ChartWidget({
         widgetFilters={widget.filters}
         filterColumns={filterColumns}
         isLoadingFilterColumns={isLoadingFilterColumns}
+        chartData={chartSeries}
+        disableRegression={isDistribution}
       />
     </Box>
   );

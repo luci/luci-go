@@ -47,7 +47,7 @@ import { useMemo } from 'react';
 import { ChartSeriesEditor } from '@/crystal_ball/components';
 import { Column } from '@/crystal_ball/constants';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
-import { generateColor } from '@/crystal_ball/utils';
+import { generateColor, getTrendInfo } from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
   PerfChartSeries,
@@ -82,50 +82,21 @@ function getDiffColor(
   netChange: number,
   metricField: string,
 ): { color: string; icon: React.ReactNode } {
-  if (Math.abs(netChange) < 0.0001) {
+  const trendInfo = getTrendInfo(netChange, metricField);
+  if (trendInfo.trend === 'flat') {
     return {
       color: 'text.secondary',
       icon: <TrendingFlatIcon color="action" fontSize="small" />,
     };
   }
 
-  // Lower is better polarity detector (default for time, latency, size, bytes, etc.)
-  const lowerIsBetterKeywords = [
-    'duration',
-    'latency',
-    'time',
-    'bytes',
-    'size',
-    'memory',
-    'pss',
-    'rss',
-    'alloc',
-  ];
-  const lowerIsBetter = lowerIsBetterKeywords.some((keyword) =>
-    metricField.toLowerCase().includes(keyword),
-  );
+  const iconColor = trendInfo.color === 'error.main' ? 'error' : 'success';
+  const IconComponent =
+    trendInfo.trend === 'up' ? TrendingUpIcon : TrendingDownIcon;
 
-  const isPositive = netChange > 0;
-
-  if (lowerIsBetter) {
-    return {
-      color: isPositive ? 'error.main' : 'success.main',
-      icon: isPositive ? (
-        <TrendingUpIcon color="error" fontSize="small" />
-      ) : (
-        <TrendingDownIcon color="success" fontSize="small" />
-      ),
-    };
-  }
-
-  // Higher is better polarity detector (default for score, fps, throughput, efficiency)
   return {
-    color: isPositive ? 'success.main' : 'error.main',
-    icon: isPositive ? (
-      <TrendingUpIcon color="success" fontSize="small" />
-    ) : (
-      <TrendingDownIcon color="error" fontSize="small" />
-    ),
+    color: trendInfo.color,
+    icon: <IconComponent color={iconColor} fontSize="small" />,
   };
 }
 

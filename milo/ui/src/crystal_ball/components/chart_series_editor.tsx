@@ -24,15 +24,18 @@ import {
   IndeterminateCheckBox as IndeterminateCheckBoxIcon,
   LibraryAdd as LibraryAddIcon,
   Palette as PaletteIcon,
+  TrendingDown as TrendingDownIcon,
+  TrendingFlat as TrendingFlatIcon,
+  TrendingUp as TrendingUpIcon,
   UnfoldMore as UnfoldMoreIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import {
-  alpha,
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  alpha,
   Autocomplete,
   Box,
   Button,
@@ -52,7 +55,11 @@ import { useCallback, useContext, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { useDebounce } from 'react-use';
 
-import { FilterEditor, SplitSeriesDialog } from '@/crystal_ball/components';
+import {
+  FilterEditor,
+  SplitSeriesDialog,
+  TimeSeriesDataSet,
+} from '@/crystal_ball/components';
 import {
   AUTOCOMPLETE_DEBOUNCE_DELAY_MS,
   COMMON_MESSAGES,
@@ -73,9 +80,12 @@ import {
 } from '@/crystal_ball/styles';
 import {
   buildFilterString,
-  isStringArray,
+  calculateChange,
+  formatChange,
   generateColor,
   getFilterLabel,
+  getTrendInfo,
+  isStringArray,
 } from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
@@ -93,6 +103,8 @@ interface ChartSeriesEditorProps {
   widgetFilters?: readonly PerfFilter[];
   filterColumns: readonly MeasurementFilterColumn[];
   isLoadingFilterColumns?: boolean;
+  chartData?: TimeSeriesDataSet[];
+  disableRegression?: boolean;
 }
 
 export function ChartSeriesEditor({
@@ -103,12 +115,34 @@ export function ChartSeriesEditor({
   widgetFilters,
   filterColumns,
   isLoadingFilterColumns,
+  chartData,
+  disableRegression,
 }: ChartSeriesEditorProps) {
   const [listExpanded, setListExpanded] = useEditorUiState({
     initialValue: true,
     key: 'chart_series_list',
     prefix: EditorUiKeyPrefix.CHART_SERIES,
   });
+
+  const getRegressionInfo = (s: PerfChartSeries) => {
+    if (disableRegression || !chartData) return undefined;
+    const currentData = chartData.find((d) => {
+      return d.seriesId === s.id || d.name === s.displayName;
+    });
+    if (!currentData || currentData.data.length === 0) return undefined;
+
+    const latestPt = currentData.data[currentData.data.length - 1];
+    const { diff, pctChange } = calculateChange(
+      currentData.data[0].y,
+      latestPt.y,
+    );
+
+    return {
+      diff,
+      pctChange,
+      latestVal: latestPt.y,
+    };
+  };
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [seriesIndexToDelete, setSeriesIndexToDelete] = useState<number | null>(
@@ -396,6 +430,7 @@ export function ChartSeriesEditor({
             hasChildren={hasChildren}
             childrenExpanded={childrenExpanded}
             onToggleChildren={() => toggleChildrenExpanded(s.id)}
+            regressionInfo={getRegressionInfo(s)}
           />
         </Box>,
         ...(hasChildren && childrenExpanded && s.id
@@ -607,6 +642,11 @@ export interface ChartSeriesItemProps {
   hasChildren?: boolean;
   childrenExpanded?: boolean;
   onToggleChildren?: (e: React.MouseEvent) => void;
+  regressionInfo?: {
+    diff: number;
+    pctChange: number;
+    latestVal: number;
+  };
 }
 
 export function ChartSeriesItem({
@@ -631,7 +671,22 @@ export function ChartSeriesItem({
   hasChildren = false,
   childrenExpanded = false,
   onToggleChildren,
+  regressionInfo,
 }: ChartSeriesItemProps) {
+  const trendInfo = useMemo(() => {
+    if (!regressionInfo) return null;
+    return getTrendInfo(regressionInfo.diff, series.metricField);
+  }, [regressionInfo, series.metricField]);
+
+  const iconColor = trendInfo
+    ? trendInfo.color === 'error.main'
+      ? 'error'
+      : 'success'
+    : 'inherit';
+
+  const tooltipTitle =
+    'Shows the overall change from the first point (beginning of period) to the latest point of the period.';
+
   const [expanded, setExpanded] = useEditorUiState({
     initialValue: false,
     prefix: EditorUiKeyPrefix.CHART_SERIES,
@@ -834,6 +889,58 @@ export function ChartSeriesItem({
         <Box
           sx={{ display: 'flex', gap: 0.5, ml: 'auto', alignItems: 'center' }}
         >
+          {regressionInfo && trendInfo && (
+            <Tooltip title={tooltipTitle} arrow>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  mr: 1,
+                  px: 0.8,
+                  py: 0.15,
+                  borderRadius: 10,
+                  bgcolor: (theme) =>
+                    trendInfo.color === 'error.main'
+                      ? alpha(theme.palette.error.main, 0.08)
+                      : trendInfo.color === 'success.main'
+                        ? alpha(theme.palette.success.main, 0.08)
+                        : 'action.hover',
+                  border: '1px solid',
+                  borderColor:
+                    trendInfo.color === 'error.main'
+                      ? 'error.light'
+                      : trendInfo.color === 'success.main'
+                        ? 'success.light'
+                        : 'divider',
+                  cursor: 'help',
+                }}
+              >
+                {trendInfo.trend === 'up' && (
+                  <TrendingUpIcon color={iconColor} fontSize="small" />
+                )}
+                {trendInfo.trend === 'down' && (
+                  <TrendingDownIcon color={iconColor} fontSize="small" />
+                )}
+                {trendInfo.trend === 'flat' && (
+                  <TrendingFlatIcon color="action" fontSize="small" />
+                )}
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 'bold',
+                    color: trendInfo.color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.25,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {formatChange(regressionInfo.diff, regressionInfo.pctChange)}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
           {!hideVisibility && (
             <Typography
               className="only-button"

@@ -16,6 +16,7 @@ export * from './add_widget_modal';
 export * from './breakdown_table_chart';
 export * from './breakdown_table_widget';
 export * from './chart_series_editor';
+export * from './chart_tooltip';
 export * from './chart_widget';
 export * from './chart_widget_toolbar';
 export * from './dashboard_dialog';
