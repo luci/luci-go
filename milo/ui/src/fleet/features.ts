@@ -19,5 +19,5 @@ export const enableSmartRepairTab = createFeatureFlag({
   namespace: 'fleet-console',
   name: 'smart-repair-tab',
   percentage: 0,
-  trackingBug: '496238858',
+  trackingBug: '503170410',
 });
