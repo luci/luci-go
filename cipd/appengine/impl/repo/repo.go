@@ -138,16 +138,6 @@ func (impl *repoImpl) registerTasks() {
 			return impl.runProcessorsTask(ctx, m.(*tasks.RunProcessors))
 		},
 	})
-	// See queue.yaml for "vsa-requests" task queue definition.
-	impl.tq.RegisterTaskClass(tq.TaskClass{
-		ID:        "vsa-requests",
-		Prototype: &tasks.CallVerifySoftwareArtifact{},
-		Kind:      tq.NonTransactional,
-		Queue:     "vsa-requests",
-		Handler: func(ctx context.Context, m proto.Message) error {
-			return impl.callVerifySoftwareArtifact(ctx, m.(*tasks.CallVerifySoftwareArtifact))
-		},
-	})
 }
 
 // registerProcessor adds a new processor.
@@ -1432,8 +1422,8 @@ func (impl *repoImpl) ListMetadata(ctx context.Context, r *repopb.ListMetadataRe
 	return resp, nil
 }
 
-// ensureVSA check whether the instance has a vsa. If not, it will create a
-// asynchronously task using VerifySoftwareArtifact to attach the vsa.
+// ensureVSA check whether the instance has a vsa and cache the result.
+// Return error if no vas found in metadata.
 func (impl *repoImpl) ensureVSA(ctx context.Context, instpb *repopb.Instance) error {
 	inst := (&model.Instance{}).FromProto(ctx, instpb)
 	switch s, err := impl.vsa.GetStatus(ctx, inst); {
@@ -1456,32 +1446,8 @@ func (impl *repoImpl) ensureVSA(ctx context.Context, instpb *repopb.Instance) er
 		return impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusCompleted)
 	}
 
-	ms, err := model.ListMetadataWithKeys(ctx, inst, []string{vsaAttestationsKey})
-	if err != nil {
-		return err
-	}
+	return fmt.Errorf("a valid vsa is required for the instance")
 
-	var bundle string
-	if len(ms) > 0 {
-		bundle = string(ms[0].Value)
-	}
-
-	t := impl.vsa.NewVerifySoftwareArtifactTask(ctx, inst, bundle)
-	return impl.tq.AddTask(ctx, &tq.Task{
-		Title:            inst.InstanceID,
-		Payload:          t,
-		DeduplicationKey: inst.InstanceID,
-	})
-}
-
-func (impl *repoImpl) callVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) error {
-	resp, err := impl.vsa.CallVerifySoftwareArtifact(ctx, t)
-	if err != nil {
-		return nil
-	}
-
-	inst := (&model.Instance{}).FromProto(ctx, t.Instance)
-	return impl.setVerificationSummary(ctx, inst, resp)
 }
 
 func (impl *repoImpl) setVerificationSummary(ctx context.Context, inst *model.Instance, resp *api.VerifySoftwareArtifactResponse) error {

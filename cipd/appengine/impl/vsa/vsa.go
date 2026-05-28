@@ -39,7 +39,6 @@ import (
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
-	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/vsa/api"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -70,18 +69,7 @@ type Client interface {
 	// VerifySoftwareArtifact calls vsa VerifySoftwareArtifact API with the bundle
 	// provided. It returns the Verification Summary Attestation (VSA) if succeeded.
 	// Errors and detailed logs will be recorded in BigQuery Table.
-	// This is equivalent to use NewVerifySoftwareArtifactTask create a task then
-	// invoke CallVerifySoftwareArtifact immediately.
 	VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (*api.VerifySoftwareArtifactResponse, error)
-
-	// NewVerifySoftwareArtifactTask creates a task for VerifySoftwareArtifact
-	// which could be processed by CallVerifySoftwareArtifact.
-	NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.Instance, bundle string) *tasks.CallVerifySoftwareArtifact
-
-	// CallVerifySoftwareArtifact calls vsa VerifySoftwareArtifact API with the
-	// task created by NewVerifySoftwareArtifactTask. Errors and detailed logs
-	// will be recorded in BigQuery Table.
-	CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) (*api.VerifySoftwareArtifactResponse, error)
 
 	// Get the vsa status (Unknown, Pending, Completed) for the instance.
 	GetStatus(ctx context.Context, inst *model.Instance) (CacheStatus, error)
@@ -180,19 +168,8 @@ func (c *client) Init(ctx context.Context) error {
 //
 // Errors and detailed logs will be recorded in BigQuery Table.
 func (c *client) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (*api.VerifySoftwareArtifactResponse, error) {
-	t := c.NewVerifySoftwareArtifactTask(ctx, inst, bundle)
-	if t == nil {
-		return &api.VerifySoftwareArtifactResponse{Allowed: true}, nil
-	}
-	return c.CallVerifySoftwareArtifact(ctx, t)
-}
-
-// NewVerifySoftwareArtifactTask creates a task for VerifySoftwareArtifact
-// with the bundle provided, see:
-// https://github.com/in-toto/attestation/blob/main/spec/v1/bundle.md
-func (c *client) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.Instance, bundle string) *tasks.CallVerifySoftwareArtifact {
 	if c.softwareVerifierHost == "" {
-		return nil
+		return &api.VerifySoftwareArtifactResponse{Allowed: true}, nil
 	}
 
 	uri := c.resourcePrefix + inst.Package.StringID()
@@ -202,6 +179,7 @@ func (c *client) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.
 		ResourceUri: uri,
 		Timestamp:   clock.Now(ctx).UnixMicro(),
 	}
+	defer c.bqlog(ctx, logEntry)
 
 	digests := make(map[string]string)
 	switch obj := common.InstanceIDToObjectRef(inst.InstanceID); obj.HashAlgo {
@@ -225,28 +203,13 @@ func (c *client) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.
 		},
 	}
 
-	return &tasks.CallVerifySoftwareArtifact{
-		Instance: inst.Proto(),
-		Request:  req,
-		Log:      logEntry,
-	}
-}
-
-// CallVerifySoftwareArtifact calls vsa VerifySoftwareArtifact API with the
-// task created by NewVerifySoftwareArtifactTask.
-// It returns the Verification Summary Attestation (VSA) if succeeded, see:
-// https://slsa.dev/spec/v0.1/verification_summary
-//
-// Errors and detailed logs will be recorded in BigQuery Table.
-func (c *client) CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) (*api.VerifySoftwareArtifactResponse, error) {
-	defer c.bqlog(ctx, t.Log)
-	resp, err := c.callVerifySoftwareArtifact(ctx, t.Request)
+	resp, err := c.callVerifySoftwareArtifact(ctx, req)
 	if err != nil {
-		t.Log.ErrorMessage = err.Error()
+		logEntry.ErrorMessage = err.Error()
 		return nil, err
 	}
-	t.Log.Allowed = resp.Allowed
-	t.Log.RejectionMessage = resp.RejectionMessage
+	logEntry.Allowed = resp.Allowed
+	logEntry.RejectionMessage = resp.RejectionMessage
 
 	return resp, nil
 }

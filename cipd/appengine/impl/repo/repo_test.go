@@ -3771,19 +3771,6 @@ func (m *MockVSA) Init(ctx context.Context) error { return nil }
 func (m *MockVSA) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (*vsapb.VerifySoftwareArtifactResponse, error) {
 	return m.resp, m.err
 }
-func (m *MockVSA) NewVerifySoftwareArtifactTask(ctx context.Context, inst *model.Instance, bundle string) *tasks.CallVerifySoftwareArtifact {
-	return &tasks.CallVerifySoftwareArtifact{
-		Instance: inst.Proto(),
-		Request: &vsapb.VerifySoftwareArtifactRequest{
-			ArtifactInfo: &vsapb.ArtifactInfo{
-				Attestations: []string{bundle},
-			},
-		},
-	}
-}
-func (m *MockVSA) CallVerifySoftwareArtifact(ctx context.Context, t *tasks.CallVerifySoftwareArtifact) (*vsapb.VerifySoftwareArtifactResponse, error) {
-	return m.resp, m.err
-}
 func (m *MockVSA) GetStatus(ctx context.Context, inst *model.Instance) (vsa.CacheStatus, error) {
 	if m.status == "" {
 		return vsa.CacheStatusUnknown, nil
@@ -3924,23 +3911,12 @@ func TestVSA(t *testing.T) {
 					})
 					assert.NoErr(t, err)
 					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusPending))
-					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
-					assert.Loosely(t, sched.Tasks()[0].Payload, should.Match(&tasks.CallVerifySoftwareArtifact{
-						Instance: inst.Proto(),
-						Request: &vsapb.VerifySoftwareArtifactRequest{
-							ArtifactInfo: &vsapb.ArtifactInfo{
-								Attestations: []string{"attestation bundle"},
-							},
-						},
-					}))
-					runTasks()
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 
 					m, err := model.ListMetadata(ctx, inst)
 					assert.NoErr(t, err)
-					assert.Loosely(t, m, should.HaveLength(2))
-					assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
-					assert.Loosely(t, m[0].Value, should.Match([]uint8("vsa content")))
-					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusCompleted))
+					assert.Loosely(t, m, should.HaveLength(1))
+					assert.Loosely(t, m[0].Key, should.Equal("policy-attestations"))
 				})
 
 				t.Run("Without Attestation", func(t *ftt.Test) {
@@ -3951,24 +3927,11 @@ func TestVSA(t *testing.T) {
 					})
 					assert.NoErr(t, err)
 					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusPending))
-
-					assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
-					assert.Loosely(t, sched.Tasks()[0].Payload, should.Match(&tasks.CallVerifySoftwareArtifact{
-						Instance: inst.Proto(),
-						Request: &vsapb.VerifySoftwareArtifactRequest{
-							ArtifactInfo: &vsapb.ArtifactInfo{
-								Attestations: []string{""},
-							},
-						},
-					}))
-					runTasks()
+					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 
 					m, err := model.ListMetadata(ctx, inst)
 					assert.NoErr(t, err)
-					assert.Loosely(t, m, should.HaveLength(1))
-					assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
-					assert.Loosely(t, m[0].Value, should.Match([]uint8("vsa content")))
-					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusCompleted))
+					assert.Loosely(t, m, should.HaveLength(0))
 				})
 			})
 
@@ -4021,7 +3984,7 @@ func TestVSA(t *testing.T) {
 					Instance: inst.Proto().Instance,
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 			})
 		})
 
