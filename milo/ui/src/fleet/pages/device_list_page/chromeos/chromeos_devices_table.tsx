@@ -166,6 +166,8 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
     columnFilters,
     columnVisibility,
     mrtColumnManager: { setColumnVisibility },
+    columnSizing,
+    onColumnSizingChange,
   } = fleetMrtState;
 
   const rows = useMemo(() => {
@@ -254,6 +256,7 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
         sorting,
         columnFilters,
         columnVisibility,
+        columnSizing,
         isLoading: devicesQuery.isPending && !devicesQuery.isPlaceholderData,
         showProgressBars: devicesQuery.isFetching,
         columnOrder: [
@@ -269,6 +272,7 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
       manualFiltering: true,
       manualPagination: true,
       onColumnVisibilityChange: setColumnVisibility,
+      onColumnSizingChange,
     }),
     [
       enrichedColumns,
@@ -284,6 +288,8 @@ export const ChromeOSTable = ({ availableColumns }: ChromeOSTableProps) => {
       columnVisibility,
       devicesQuery,
       setColumnVisibility,
+      columnSizing,
+      onColumnSizingChange,
     ],
   );
 
