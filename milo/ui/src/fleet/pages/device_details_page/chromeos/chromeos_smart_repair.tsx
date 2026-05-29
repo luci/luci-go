@@ -40,8 +40,10 @@ import {
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
+import { genFeedbackUrl } from '@/common/tools/utils';
 import { db } from '@/firebase';
 import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
+import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { GetSmartRepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -66,6 +68,13 @@ export const ChromeOSSmartRepair = () => {
   const [realtimeData, setRealtimeData] =
     useState<SmartRepairRealtimeData | null>(null);
   const [realtimeError, setRealtimeError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<{ message: string } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    setSessionError(null);
+  }, [id]);
 
   const {
     data,
@@ -109,6 +118,7 @@ export const ChromeOSSmartRepair = () => {
       queryClient.invalidateQueries({ queryKey: ['smart-repair', id] });
       setRealtimeData(null);
       setRealtimeError(null);
+      setSessionError(null);
       refetch();
     },
     onError: (error: Error) => {
@@ -153,6 +163,13 @@ export const ChromeOSSmartRepair = () => {
           setRealtimeData(docData);
           if (docData.status === 'completed' || docData.status === 'error') {
             queryClient.invalidateQueries({ queryKey: ['smart-repair', id] });
+          }
+          if (docData.status === 'error') {
+            setSessionError({
+              message: docData.error?.message || 'Unknown error',
+            });
+          } else if (docData.status === 'completed') {
+            setSessionError(null);
           }
           setRealtimeError(null);
         } else {
@@ -269,7 +286,10 @@ export const ChromeOSSmartRepair = () => {
               <RefreshIcon />
             )
           }
-          onClick={() => retriggerMutation.mutate()}
+          onClick={() => {
+            setSessionError(null);
+            retriggerMutation.mutate();
+          }}
           disabled={
             isLoading ||
             retriggerMutation.isPending ||
@@ -319,10 +339,27 @@ export const ChromeOSSmartRepair = () => {
 
       {!isLoading && !isInitialError && (
         <>
-          {currentStatus === 'idle' && !displayData && (
+          {currentStatus === 'idle' && !displayData && !sessionError && (
             <Alert severity="info" sx={{ mb: 3 }}>
               No active or cached analysis found for this device. Click
               &quot;Trigger/Refresh Analysis&quot; to start.
+            </Alert>
+          )}
+
+          {sessionError && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              Analysis resulted in error. {sessionError.message}. Please
+              retrigger a new test. If this behavior is persistent, please{' '}
+              <a
+                href={genFeedbackUrl({
+                  bugComponent: FEEDBACK_BUGANIZER_BUG_ID,
+                })}
+                target="_blank"
+                rel="noreferrer"
+              >
+                file a bug
+              </a>
+              .
             </Alert>
           )}
 
@@ -592,12 +629,6 @@ export const ChromeOSSmartRepair = () => {
                 </Grid>
               </Grid>
             </Box>
-          )}
-
-          {currentStatus === 'error' && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              Analysis Failed: {realtimeData?.error?.message || 'Unknown error'}
-            </Alert>
           )}
         </>
       )}
