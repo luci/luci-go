@@ -270,7 +270,12 @@ export const ChromeOSSmartRepair = () => {
             )
           }
           onClick={() => retriggerMutation.mutate()}
-          disabled={isLoading || retriggerMutation.isPending}
+          disabled={
+            isLoading ||
+            retriggerMutation.isPending ||
+            currentStatus === 'pending' ||
+            currentStatus === 'processing'
+          }
         >
           {retriggerMutation.isPending
             ? 'Retriggering...'
