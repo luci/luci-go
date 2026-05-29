@@ -44,6 +44,7 @@ Progress:
 4. **Optional Upload**:
    - Attempt to run `git cl upload`.
    - *Note*: If this fails with an error like `chmod ~/.sso: operation not permitted` or a path-specific permission error, it is due to sandbox restrictions preventing the agent from modifying home directory files. In this case, do not block the task; notify the developer and ask them to run `git cl upload` on your behalf. (Alternatively, the developer may choose to disable the sandbox to allow direct uploads).
+   - *Note*: If the command gets stuck on interactive prompts (e.g., asking for patchset title or to fetch remote changes) in background tasks, use the pattern `yes y | EDITOR=true git cl upload` to automatically answer "yes" to prompts and bypass the text editor.
 
 5. **Rebasing and Handling Merge Conflicts**:
    - Ensure there are no merge conflicts with the upstream branch before considering a CL done.
