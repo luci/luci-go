@@ -35,6 +35,7 @@ func cleanupDatabase(ctx context.Context, client *spanner.Client) error {
 	_, err := client.Apply(ctx, []*spanner.Mutation{
 		// No need to explicitly delete interleaved tables.
 		spanner.Delete("Alerts", spanner.AllKeys()),
+		spanner.Delete("BuilderStatuses", spanner.AllKeys()),
 	})
 	return err
 }

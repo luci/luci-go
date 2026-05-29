@@ -62,3 +62,29 @@ CREATE TABLE AlertGroups (
   UpdatedBy STRING(256),
 ) PRIMARY KEY (Rotation, AlertGroupId),
 ROW DELETION POLICY (OLDER_THAN(UpdateTime, INTERVAL 30 DAY));
+
+-- BuilderStatuses tracks the latest status of all builders.
+CREATE TABLE BuilderStatuses (
+  -- Canonical builder ID: {project}/{bucket}/{builder}
+  BuilderKey STRING(512) NOT NULL,
+  -- Project ID, e.g. "chromium". Unique within a LUCI deployment.
+  Project STRING(256) NOT NULL,
+  -- Bucket name, e.g. "try". Unique within the project.
+  -- Together with project, defines an ACL.
+  Bucket STRING(256) NOT NULL,
+  -- Builder name, e.g. "linux-rel". Unique within the bucket.
+  Builder STRING(256) NOT NULL,
+  -- The security realm the builder belongs to, e.g. "project:bucket".
+  Realm STRING(512) NOT NULL,
+  -- Status of the latest build (e.g. "SUCCESS", "FAILURE").
+  Status STRING(50) NOT NULL,
+  -- When the builder's status was most recently updated in this table.
+  UpdateTime TIMESTAMP NOT NULL OPTIONS (allow_commit_timestamp=true),
+  -- Identifier of the latest build that updated this status.
+  -- IDs are monotonically decreasing.
+  BuildId INT64 NOT NULL,
+  -- On-call rotations extracted from the build properties.
+  OnCallRotations ARRAY<STRING(256)>,
+) PRIMARY KEY (BuilderKey),
+ROW DELETION POLICY (OLDER_THAN(UpdateTime, INTERVAL 5 DAY));
+

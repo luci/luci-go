@@ -32,6 +32,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
+	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/auth/scopes"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	buildbucketgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
@@ -48,6 +49,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/pubsub"
+	"go.chromium.org/luci/server/span"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
@@ -190,7 +192,8 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 	// error getting the checkout (mostly because there is no source manifest)
 	// we should not throw 500, but just log the error, and inform the builder
 	// owner that they are missing source manifest in their builds
-	logdogContext, _ := context.WithTimeout(c, LOGDOG_REQUEST_TIMEOUT)
+	logdogContext, cancel := context.WithTimeout(c, LOGDOG_REQUEST_TIMEOUT)
+	defer cancel()
 	checkout, err := getCheckout(logdogContext, build)
 	if err != nil {
 		// TODO (crbug.com/1058190): log the error and let the owner know
@@ -429,6 +432,14 @@ func BuildbucketPubSubHandler(ctx context.Context, message pubsub.Message, build
 	if err != nil {
 		return errors.Fmt("failed to extract build: %w", err)
 	}
+	if build == nil {
+		return nil
+	}
+
+	if err := trackBuilderStatus(ctx, build); err != nil {
+		return errors.Fmt("failed to track builder status: %w", err)
+	}
+
 	return handleBuild(ctx, build, srcmanCheckout, gitilesHistory)
 }
 
@@ -543,3 +554,76 @@ func zlibDecompress(compressed []byte) ([]byte, error) {
 	}
 	return originalData, nil
 }
+
+// trackBuilderStatus tracks the latest status of a builder in Spanner.
+func trackBuilderStatus(ctx context.Context, build *Build) error {
+	if (build.Status & buildbucketpb.Status_ENDED_MASK) != buildbucketpb.Status_ENDED_MASK {
+		return nil
+	}
+
+	builderKey := fmt.Sprintf("%s/%s/%s", build.Builder.Project, build.Builder.Bucket, build.Builder.Builder)
+	rotations := extractOnCallRotations(build.Build)
+
+	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		var storedBuildId int64
+		row, err := span.ReadRow(ctx, "BuilderStatuses", spanner.Key{builderKey}, []string{"BuildId"})
+		if err != nil {
+			if spanner.ErrCode(err) == codes.NotFound {
+				// Row not found, proceed with insert.
+			} else {
+				return err
+			}
+		} else {
+			if err := row.Column(0, &storedBuildId); err != nil {
+				return err
+			}
+			if build.Id >= storedBuildId {
+				// Stored build is newer or same (since smaller ID is newer).
+				// Do nothing.
+				return nil
+			}
+		}
+
+		mValues := map[string]any{
+			"BuilderKey":      builderKey,
+			"Project":         build.Builder.Project,
+			"Bucket":          build.Builder.Bucket,
+			"Builder":         build.Builder.Builder,
+			"Realm":           fmt.Sprintf("%s:%s", build.Builder.Project, build.Builder.Bucket),
+			"Status":          build.Status.String(),
+			"UpdateTime":      spanner.CommitTimestamp,
+			"BuildId":         build.Id,
+			"OnCallRotations": rotations,
+		}
+		span.BufferWrite(ctx, spanner.InsertOrUpdateMap("BuilderStatuses", mValues))
+		return nil
+	})
+	return err
+}
+
+// extractOnCallRotations extracts on-call rotations from build input properties.
+func extractOnCallRotations(build *buildbucketpb.Build) []string {
+	props := build.GetInput().GetProperties().GetFields()
+	if props == nil {
+		return nil
+	}
+
+	extract := func(key string) []string {
+		if v, ok := props[key]; ok {
+			var res []string
+			for _, val := range v.GetListValue().GetValues() {
+				if s := val.GetStringValue(); s != "" {
+					res = append(res, s)
+				}
+			}
+			return res
+		}
+		return nil
+	}
+
+	if rotations := extract("gardener_rotations"); len(rotations) > 0 {
+		return rotations
+	}
+	return extract("sheriff_rotations")
+}
+

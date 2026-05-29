@@ -1,0 +1,88 @@
+// Copyright 2026 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.notify.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go.chromium.org/luci/luci_notify/api/service/v1;lucinotifypb";
+
+// Service Builders exposes status of builders used in on-call monitoring tools.
+service Builders {
+  // List returns a list of builders and their latest status.
+  rpc List(ListBuildersRequest) returns (ListBuildersResponse) {};
+}
+
+message ListBuildersRequest {
+  // The maximum number of builders to return. The service may return fewer
+  // than this value.
+  // If unspecified, at most 100 builders will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `List` call.
+  // Provide this to retrieve the subsequent page.
+  string page_token = 2;
+
+  // Filter expression to restrict the builders returned.
+  // Filterable attributes: project, bucket, builder, status, on_call_rotations.
+  // Example: `project = "chromium" AND status = "FAILURE"`
+  string filter = 3;
+}
+
+message ListBuildersResponse {
+  // The list of builders.
+  repeated BuilderStatus builders = 1;
+
+  // A token to retrieve the next page of results, or empty if there are no
+  // more results.
+  string next_page_token = 2;
+}
+
+// The current status of a builder as tracked by LUCI Notify.
+message BuilderStatus {
+  // The canonical resource name of the builder status.
+  // Format: {project}/{bucket}/{builder}
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // Project ID, e.g. "chromium".
+  string project = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Bucket name, e.g. "try".
+  string bucket = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Builder name, e.g. "linux-rel".
+  string builder = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Status of the latest build.
+  // See buildbucket.v2.Status for possible values (e.g. "SUCCESS", "FAILURE").
+  string status = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the builder's status was most recently updated in this table.
+  google.protobuf.Timestamp update_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Identifier of the latest build that updated this status.
+  // IDs are monotonically decreasing.
+  int64 build_id = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // On-call rotations (e.g. gardener_rotations or sheriff_rotations)
+  // extracted from the build properties.
+  repeated string on_call_rotations = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
