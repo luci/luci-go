@@ -96,6 +96,17 @@ export const useFCDataTable = <TData extends MRT_RowData>(
       Cell: (c) => <EllipsisTooltip>{c.renderedCellValue}</EllipsisTooltip>,
       Header: FleetColumnHeader,
     },
+    // Override MRT default sort tooltips to include info about multi-sort.
+    localization: {
+      sortByColumnAsc:
+        'Sort by {column} ascending (Shift + Click to multi-sort)',
+      sortByColumnDesc:
+        'Sort by {column} descending (Shift + Click to multi-sort)',
+      sortedByColumnAsc:
+        'Sorted by {column} ascending (Shift + Click to multi-sort)',
+      sortedByColumnDesc:
+        'Sorted by {column} descending (Shift + Click to multi-sort)',
+    },
     onDensityChange: (updater) => {
       const newDensity =
         typeof updater === 'function'

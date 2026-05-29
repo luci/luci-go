@@ -559,4 +559,27 @@ describe('<MaterialReactTable />', () => {
       `--cell-padding-vertical: ${vertical}px`,
     );
   });
+
+  it('should render correct default localization values with multi-sort hints on sort labels', async () => {
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ShortcutProvider>
+            <TestComponent />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    const sortLabelButtons = screen.getAllByRole('button', {
+      name: /Sort by ID/i,
+    });
+    expect(sortLabelButtons.length).toBeGreaterThan(0);
+    expect(sortLabelButtons[0]).toHaveAttribute(
+      'aria-label',
+      'Sort by ID ascending (Shift + Click to multi-sort)',
+    );
+  });
 });
