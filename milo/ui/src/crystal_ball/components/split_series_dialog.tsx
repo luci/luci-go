@@ -137,7 +137,7 @@ export function SplitSeriesDialog({
       onClose={onClose}
       disableScrollLock
       sx={{
-        zIndex: (theme) => theme.zIndex.drawer + 10,
+        zIndex: (theme) => theme.zIndex.modal + 10,
       }}
       PaperProps={{
         sx: {

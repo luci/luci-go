@@ -328,8 +328,10 @@ describe('<LandingPage />', () => {
     await waitFor(() => {
       expect(mockGenerateDashboard).toHaveBeenCalledWith(
         {
-          prompt: 'Cold startup times',
+          antsInvocationId: undefined,
+          comparisonAntsInvocationId: undefined,
           metricKeys: [],
+          prompt: 'Cold startup times',
         },
         expect.any(Function),
       );

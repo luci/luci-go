@@ -62,15 +62,22 @@ export function useGenerateDashboardWorkflow() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const generateDashboard = async (
-    data: { prompt: string; metricKeys: string[] },
+    data: {
+      antsInvocationId?: string;
+      comparisonAntsInvocationId?: string;
+      metricKeys: string[];
+      prompt: string;
+    },
     onSuccess?: () => void,
   ) => {
     setErrorMsg('');
     try {
       const response = await generateMutation.mutateAsync(
         GenerateDashboardStateRequest.fromPartial({
-          prompt: data.prompt,
+          antsInvocationId: data.antsInvocationId,
+          comparisonAntsInvocationId: data.comparisonAntsInvocationId,
           metricKeys: data.metricKeys,
+          prompt: data.prompt,
         }),
       );
 

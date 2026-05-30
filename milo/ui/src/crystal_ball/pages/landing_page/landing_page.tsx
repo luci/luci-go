@@ -166,13 +166,13 @@ export function LandingPage() {
         errorMsg={createErrorMsg}
       />
       <GenerateDashboardDialog
-        open={isGenerateDialogOpen}
+        errorMsg={generateErrorMsg}
+        isPending={isGenerating}
         onClose={handleCloseGenerateDialog}
         onSubmit={async (data) => {
           await generateDashboard(data, handleCloseGenerateDialog);
         }}
-        isPending={isGenerating}
-        errorMsg={generateErrorMsg}
+        open={isGenerateDialogOpen}
       />
     </Box>
   );

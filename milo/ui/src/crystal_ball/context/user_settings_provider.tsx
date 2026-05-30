@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
+import { useAuthState } from '@/common/components/auth_state_provider';
 import {
   useGetUserSettings,
   useUpdateUserSettings,
@@ -29,10 +31,14 @@ export function UserSettingsProvider({
 }: {
   children: React.ReactNode;
 }) {
-  // Fetch settings from server
-  const { data: settings, isLoading } = useGetUserSettings({
-    name: USER_SETTINGS_NAME,
-  });
+  const authState = useAuthState();
+  const isAnonymous = authState.identity === ANONYMOUS_IDENTITY;
+
+  // Fetch settings from server only if user is logged in (not anonymous)
+  const { data: settings, isLoading } = useGetUserSettings(
+    { name: USER_SETTINGS_NAME },
+    { enabled: !isAnonymous },
+  );
 
   const updateSettingsMutation = useUpdateUserSettings();
 
@@ -80,7 +86,7 @@ export function UserSettingsProvider({
         timeZone: activeTimeZone,
         isLocal,
         updateTimeZone,
-        isLoading,
+        isLoading: !isAnonymous && isLoading,
         userSettings: settings,
       }}
     >
