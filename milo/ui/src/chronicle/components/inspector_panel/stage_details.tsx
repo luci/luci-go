@@ -96,6 +96,11 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
                 ? valueDataMap.get(stage.args.digest)?.json?.value
                 : undefined
             }
+            valueData={
+              stage.args.digest
+                ? valueDataMap.get(stage.args.digest)
+                : undefined
+            }
             typeUrl={stage.args.typeUrl!}
             omitReason={stage.args.omitReason}
           />
@@ -137,6 +142,11 @@ export function StageDetails({ view, valueDataMap }: StageDetailsProps) {
                     key={dIndex}
                     typeUrl={detail.typeUrl}
                     omitReason={detail.omitReason}
+                    valueData={
+                      detail.digest
+                        ? valueDataMap.get(detail.digest)
+                        : undefined
+                    }
                     json={
                       detail.digest
                         ? valueDataMap.get(detail.digest)?.json?.value

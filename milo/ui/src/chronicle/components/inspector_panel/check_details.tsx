@@ -71,6 +71,11 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
               key={`check-option-${index}`}
               typeUrl={value_ref.typeUrl}
               omitReason={value_ref.omitReason}
+              valueData={
+                value_ref.digest
+                  ? valueDataMap.get(value_ref.digest)
+                  : undefined
+              }
               json={
                 value_ref.digest
                   ? valueDataMap.get(value_ref.digest)?.json?.value
@@ -93,6 +98,11 @@ export function CheckDetails({ check, valueDataMap }: CheckDetailsProps) {
                 key={`result-${resIdx}-${dataIdx}`}
                 typeUrl={value_ref.typeUrl}
                 omitReason={value_ref.omitReason}
+                valueData={
+                  value_ref.digest
+                    ? valueDataMap.get(value_ref.digest)
+                    : undefined
+                }
                 json={
                   value_ref.digest
                     ? valueDataMap.get(value_ref.digest)?.json?.value

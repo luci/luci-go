@@ -24,7 +24,10 @@
 
 import { faker } from '@faker-js/faker';
 
-import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+import {
+  DataConversionFailure,
+  ValueData,
+} from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 import { Duration } from '../proto/google/protobuf/duration.pb';
 import {
@@ -342,6 +345,18 @@ export class FakeGraphGenerator {
     this.createOmittedCheckPair(
       'Omitted_Expired_Data',
       OmitReason.OMIT_REASON_MISSING,
+      sourceId,
+    );
+
+    // Add two special checks for manual verification of handling of conversion failures
+    this.createConversionFailureCheckPair(
+      'Failure_No_Descriptor',
+      DataConversionFailure.DATA_CONVERSION_FAILURE_NO_DESCRIPTOR,
+      sourceId,
+    );
+    this.createConversionFailureCheckPair(
+      'Failure_Generic_Error',
+      DataConversionFailure.DATA_CONVERSION_FAILURE_ERROR,
       sourceId,
     );
   }
@@ -1479,6 +1494,72 @@ export class FakeGraphGenerator {
       stateHistory: [],
       edits: [],
     };
+
+    if (!checkId.id) throw new Error('Check ID required');
+    this.checkViews[checkId.id] = check;
+
+    return checkId;
+  }
+
+  private createConversionFailureCheckPair(
+    idStr: string,
+    failure: DataConversionFailure,
+    dependsOn?: CheckId,
+  ): CheckId {
+    const checkId = this.createCheckId(`C_${idStr}`);
+    const realm = `${idStr}-realm`;
+    const finalRev = this.nextRevision();
+    const deps = dependsOn ? [{ check: dependsOn }] : [];
+
+    const optionsRef: ValueRef = {
+      typeUrl: 'type.googleapis.com/turboci.data.build.v1.BuildCheckOptions',
+      realm: realm,
+      digest: `digest-opts-fail-${idStr}`,
+    };
+
+    const resultRefDataRef: ValueRef = {
+      typeUrl: 'type.googleapis.com/turboci.data.build.v1.BuildCheckResult',
+      realm: realm,
+      digest: `digest-res-fail-${idStr}`,
+    };
+
+    const resId: CheckResultId = { check: checkId, idx: 1 };
+    const resultRef: Check_Result = {
+      identifier: resId,
+      owner: { stageAttempt: { stage: this.createStageId(`S_${idStr}`) } },
+      createdAt: finalRev,
+      finalizedAt: finalRev,
+      data: [resultRefDataRef],
+    };
+
+    const check: Check = {
+      identifier: checkId,
+      kind: CheckKind.CHECK_KIND_BUILD,
+      realm: realm,
+      version: finalRev,
+      dependencies: buildDependencies(deps, finalRev),
+      options: [optionsRef],
+      results: [resultRef],
+      state: CheckState.CHECK_STATE_FINAL,
+      stateHistory: [],
+      edits: [],
+    };
+
+    this.valueDataMap.set(optionsRef.digest!, {
+      binary: {
+        typeUrl: optionsRef.typeUrl!,
+        value: new Uint8Array([1, 2, 3]),
+      },
+      conversionFailure: failure,
+    });
+
+    this.valueDataMap.set(resultRefDataRef.digest!, {
+      binary: {
+        typeUrl: resultRefDataRef.typeUrl!,
+        value: new Uint8Array([4, 5, 6]),
+      },
+      conversionFailure: failure,
+    });
 
     if (!checkId.id) throw new Error('Check ID required');
     this.checkViews[checkId.id] = check;

@@ -13,9 +13,14 @@
 // limitations under the License.
 
 import { Box, Typography, Alert } from '@mui/material';
-import { ComponentType, useMemo } from 'react';
+import { ComponentType, ReactNode, useMemo } from 'react';
 
 import { OmitReason } from '@/proto/turboci/graph/orchestrator/v1/omit_reason.pb';
+import {
+  DataConversionFailure,
+  ValueData,
+  dataConversionFailureToJSON,
+} from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 import {
   BuildCheckOptionsDetails,
@@ -67,6 +72,8 @@ export interface AnyDetailsProps {
   label?: string;
   /** The reason why this value was omitted, if any. */
   omitReason?: OmitReason;
+  /** The actual ValueData object containing JSON or binary or conversionFailure. */
+  valueData?: ValueData;
 }
 
 /**
@@ -80,41 +87,49 @@ export function AnyDetails({
   json,
   label,
   omitReason,
+  valueData,
 }: AnyDetailsProps) {
-  const data = useMemo(() => {
-    if (
-      omitReason !== undefined &&
-      omitReason !== OmitReason.OMIT_REASON_UNKNOWN
-    ) {
-      return (
-        <OmittedValueNotice
-          reason={omitReason}
-          typeUrl={typeUrl}
-          label={label}
-        />
-      );
-    }
-
-    if (!json) return <ParseError />;
-
+  const parsedData = useMemo(() => {
+    if (!json) return null;
     try {
       return JSON.parse(json);
     } catch {
-      return <ParseError />;
+      return null;
     }
-  }, [json, label, omitReason, typeUrl]);
-
-  if (!data) return <ParseError />;
+  }, [json]);
 
   if (
     omitReason !== undefined &&
     omitReason !== OmitReason.OMIT_REASON_UNKNOWN
   ) {
-    return data;
+    return (
+      <OmittedValueNotice reason={omitReason} typeUrl={typeUrl} label={label} />
+    );
+  }
+
+  if (
+    valueData?.conversionFailure ===
+    DataConversionFailure.DATA_CONVERSION_FAILURE_NO_DESCRIPTOR
+  ) {
+    return <NoDescriptorNotice typeUrl={typeUrl} label={label} />;
+  }
+
+  if (valueData?.conversionFailure) {
+    return (
+      <ConversionErrorNotice
+        typeUrl={typeUrl}
+        label={label}
+        conversionFailure={valueData.conversionFailure}
+      />
+    );
+  }
+
+  if (parsedData === null) {
+    return <ParseError />;
   }
 
   const Renderer = typeUrl ? KNOWN_TYPE_RENDERERS[typeUrl] : undefined;
-  if (Renderer && data) {
+  if (Renderer) {
     return (
       <Box sx={{ mt: 1 }}>
         {typeUrl && (
@@ -124,13 +139,36 @@ export function AnyDetails({
           </Typography>
         )}
         <Box sx={{ p: 1, border: '1px solid #eee', borderRadius: 1, mt: 0.5 }}>
-          <Renderer data={data} />
+          <Renderer data={parsedData} />
         </Box>
       </Box>
     );
   }
 
   return <GenericJsonDetails label={label} typeUrl={typeUrl} json={json} />;
+}
+
+interface AlertNoticeProps {
+  severity: 'error' | 'warning' | 'info' | 'success';
+  typeUrl?: string;
+  label?: string;
+  children: ReactNode;
+}
+
+function AlertNotice({ severity, typeUrl, label, children }: AlertNoticeProps) {
+  return (
+    <Box sx={{ mt: 1 }}>
+      {typeUrl && (
+        <Typography variant="caption" color="text.secondary">
+          {label ? `${label}: ` : ''}
+          {typeUrl}
+        </Typography>
+      )}
+      <Alert severity={severity} sx={{ mt: 0.5 }}>
+        {children}
+      </Alert>
+    </Box>
+  );
 }
 
 function OmittedValueNotice({
@@ -162,17 +200,46 @@ function OmittedValueNotice({
   }
 
   return (
-    <Box sx={{ mt: 1 }}>
-      {typeUrl && (
-        <Typography variant="caption" color="text.secondary">
-          {label ? `${label}: ` : ''}
-          {typeUrl}
-        </Typography>
-      )}
-      <Alert severity={severity} sx={{ mt: 0.5 }}>
-        {text}
-      </Alert>
-    </Box>
+    <AlertNotice severity={severity} typeUrl={typeUrl} label={label}>
+      {text}
+    </AlertNotice>
+  );
+}
+
+function NoDescriptorNotice({
+  typeUrl,
+  label,
+}: {
+  typeUrl?: string;
+  label?: string;
+}) {
+  return (
+    <AlertNotice severity="warning" typeUrl={typeUrl} label={label}>
+      JSON content could not be retrieved, because the Turbo CI orchestrator did
+      not have a descriptor for type{' '}
+      {typeUrl ? <code>{typeUrl}</code> : 'unknown type'}. You may need to
+      register the proto with a stage executor.
+    </AlertNotice>
+  );
+}
+
+function ConversionErrorNotice({
+  typeUrl,
+  label,
+  conversionFailure,
+}: {
+  typeUrl?: string;
+  label?: string;
+  conversionFailure: DataConversionFailure;
+}) {
+  const failureText = dataConversionFailureToJSON(conversionFailure);
+
+  return (
+    <AlertNotice severity="error" typeUrl={typeUrl} label={label}>
+      The Turbo CI orchestrator failed to convert binary content to JSON for
+      type {typeUrl ? <code>{typeUrl}</code> : 'unknown type'} due to{' '}
+      <code>{failureText}</code>.
+    </AlertNotice>
   );
 }
 
