@@ -96,6 +96,7 @@ func main() {
 		})
 		pb.RegisterAlertsServer(srv, rpc.NewAlertsServer())
 		pb.RegisterAlertGroupsServer(srv, rpc.NewAlertGroupsServer())
+		pb.RegisterBuildersServer(srv, rpc.NewBuildersServer())
 		mailer_pb.RegisterMailerServer(srv, rpc.NewMailerServer())
 
 		// Redirect the frontend to rpcexplorer.
