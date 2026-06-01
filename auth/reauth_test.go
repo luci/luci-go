@@ -24,115 +24,113 @@ import (
 
 	"go.chromium.org/luci/auth/internal"
 	"go.chromium.org/luci/auth/reauth"
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func TestRAPT(t *testing.T) {
+func TestRAPT_RefreshAndGet(t *testing.T) {
 	t.Parallel()
-
-	ftt.Run("Test refresh and get", t, func(t *ftt.Test) {
-		tokenProvider := &fakeTokenProvider{
-			interactive: false,
-		}
-		auth, ctx := newAuth(InteractiveLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &internal.Token{
-			Token: oauth2.Token{
-				AccessToken: "cached",
-				Expiry:      future,
-			},
-		})
-		raptProvider := &stubRAPTProvider{
-			rapt: &reauth.RAPT{
-				Token:  "nahinahi",
-				Expiry: future,
-			},
-		}
-		ra := ReAuthenticator{
-			Authenticator: auth,
-			provider:      raptProvider.Get,
-		}
-
-		_, err := ra.GetRAPT(ctx)
-		assert.Loosely(t, err, should.NotBeNil)
-
-		err = ra.RenewRAPT(ctx)
-		assert.Loosely(t, err, should.BeNil)
-
-		got, err := ra.GetRAPT(ctx)
-		assert.Loosely(t, err, should.BeNil)
-		assert.That(t, got, should.Equal("nahinahi"))
+	tokenProvider := &fakeTokenProvider{
+		interactive: false,
+	}
+	auth, ctx := newAuth(InteractiveLogin, tokenProvider, nil, "")
+	cacheToken(auth, tokenProvider, &internal.Token{
+		Token: oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      future,
+		},
 	})
+	raptProvider := &stubRAPTProvider{
+		rapt: &reauth.RAPT{
+			Token:  "nahinahi",
+			Expiry: future,
+		},
+	}
+	ra := ReAuthenticator{
+		Authenticator: auth,
+		provider:      raptProvider.Get,
+	}
 
-	ftt.Run("Test get expired", t, func(t *ftt.Test) {
-		tokenProvider := &fakeTokenProvider{
-			interactive: false,
-		}
-		auth, ctx := newAuth(InteractiveLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &internal.Token{
-			Token: oauth2.Token{
-				AccessToken: "cached",
-				Expiry:      future,
-			},
-		})
-		raptProvider := &stubRAPTProvider{
-			rapt: &reauth.RAPT{
-				Token:  "nahinahi",
-				Expiry: past,
-			},
-		}
-		ra := ReAuthenticator{
-			Authenticator: auth,
-			provider:      raptProvider.Get,
-		}
+	_, err := ra.GetRAPT(ctx)
+	assert.Loosely(t, err, should.NotBeNil)
 
-		_, err := ra.GetRAPT(ctx)
-		assert.Loosely(t, err, should.NotBeNil)
+	err = ra.RenewRAPT(ctx)
+	assert.Loosely(t, err, should.BeNil)
 
-		err = ra.RenewRAPT(ctx)
-		assert.Loosely(t, err, should.BeNil)
+	got, err := ra.GetRAPT(ctx)
+	assert.Loosely(t, err, should.BeNil)
+	assert.That(t, got, should.Equal("nahinahi"))
+}
 
-		_, err = ra.GetRAPT(ctx)
-		assert.Loosely(t, err, should.NotBeNil)
+func TestRAPT_GetExpired(t *testing.T) {
+	t.Parallel()
+	tokenProvider := &fakeTokenProvider{
+		interactive: false,
+	}
+	auth, ctx := newAuth(InteractiveLogin, tokenProvider, nil, "")
+	cacheToken(auth, tokenProvider, &internal.Token{
+		Token: oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      future,
+		},
 	})
+	raptProvider := &stubRAPTProvider{
+		rapt: &reauth.RAPT{
+			Token:  "nahinahi",
+			Expiry: past,
+		},
+	}
+	ra := ReAuthenticator{
+		Authenticator: auth,
+		provider:      raptProvider.Get,
+	}
 
-	ftt.Run("Test client has rapt cookie", t, func(t *ftt.Test) {
-		tokenProvider := &fakeTokenProvider{
-			interactive: false,
-		}
-		auth, ctx := newAuth(InteractiveLogin, tokenProvider, nil, "")
-		cacheToken(auth, tokenProvider, &internal.Token{
-			Token: oauth2.Token{
-				AccessToken: "cached",
-				Expiry:      future,
-			},
-		})
-		raptProvider := &stubRAPTProvider{
-			rapt: &reauth.RAPT{
-				Token:  "nahinahi",
-				Expiry: future,
-			},
-		}
-		ra := ReAuthenticator{
-			Authenticator: auth,
-			provider:      raptProvider.Get,
-		}
-		err := ra.RenewRAPT(ctx)
-		assert.Loosely(t, err, should.BeNil)
+	_, err := ra.GetRAPT(ctx)
+	assert.Loosely(t, err, should.NotBeNil)
 
-		c, err := ra.Client(ctx)
-		assert.Loosely(t, err, should.BeNil)
+	err = ra.RenewRAPT(ctx)
+	assert.Loosely(t, err, should.BeNil)
 
-		u, err := url.Parse("https://gerrit.googlesource.com")
-		assert.Loosely(t, err, should.BeNil)
+	_, err = ra.GetRAPT(ctx)
+	assert.Loosely(t, err, should.NotBeNil)
+}
 
-		got := c.Jar.Cookies(u)
-		assert.That(t, got, should.Match([]*http.Cookie{{
-			Name:  "RAPT",
-			Value: "nahinahi",
-		}}))
+func TestRAPT_ClientHasRAPTCookie(t *testing.T) {
+	t.Parallel()
+	tokenProvider := &fakeTokenProvider{
+		interactive: false,
+	}
+	auth, ctx := newAuth(InteractiveLogin, tokenProvider, nil, "")
+	cacheToken(auth, tokenProvider, &internal.Token{
+		Token: oauth2.Token{
+			AccessToken: "cached",
+			Expiry:      future,
+		},
 	})
+	raptProvider := &stubRAPTProvider{
+		rapt: &reauth.RAPT{
+			Token:  "nahinahi",
+			Expiry: future,
+		},
+	}
+	ra := ReAuthenticator{
+		Authenticator: auth,
+		provider:      raptProvider.Get,
+	}
+	err := ra.RenewRAPT(ctx)
+	assert.Loosely(t, err, should.BeNil)
+
+	c, err := ra.Client(ctx)
+	assert.Loosely(t, err, should.BeNil)
+
+	u, err := url.Parse("https://gerrit.googlesource.com")
+	assert.Loosely(t, err, should.BeNil)
+
+	got := c.Jar.Cookies(u)
+	assert.That(t, got, should.Match([]*http.Cookie{{
+		Name:  "RAPT",
+		Value: "nahinahi",
+	}}))
 }
 
 type stubRAPTProvider struct {
