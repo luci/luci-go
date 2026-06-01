@@ -14,6 +14,7 @@
 
 import { MoreVert } from '@mui/icons-material';
 import DescriptionIcon from '@mui/icons-material/Description';
+import LaunchIcon from '@mui/icons-material/Launch';
 import {
   IconButton,
   ListItemIcon,
@@ -91,6 +92,33 @@ export function SettingsMenu() {
             <VersionControlIcon />
           </ListItemIcon>
           <ListItemText>Switch to {isNewUI ? 'old' : 'new'} UI</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          component="a"
+          href="https://luci-scheduler.appspot.com/jobs/infra-internal/luci-ui-promoter"
+          target="_blank"
+          rel="noopener"
+          onClick={handleCloseMenu}
+          sx={{ color: 'inherit', textDecoration: 'none' }}
+        >
+          <ListItemIcon>
+            <LaunchIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Frontend Promoter</ListItemText>
+        </MenuItem>
+        <MenuItem
+          component="a"
+          href="https://luci-scheduler.appspot.com/jobs/infra-internal/fleet-console-backend-promoter"
+          target="_blank"
+          rel="noopener"
+          onClick={handleCloseMenu}
+          sx={{ color: 'inherit', textDecoration: 'none' }}
+        >
+          <ListItemIcon>
+            <LaunchIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Backend Promoter</ListItemText>
         </MenuItem>
         <Divider />
         <VersionInfo />

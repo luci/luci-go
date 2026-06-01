@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import DescriptionIcon from '@mui/icons-material/Description';
+import LaunchIcon from '@mui/icons-material/Launch';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Divider } from '@mui/material';
@@ -22,7 +23,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useState, MouseEvent } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 import { useSetShowPageConfig } from '@/common/components/page_config_state_provider';
 import {
@@ -36,6 +37,8 @@ import { ReleaseNotesTooltip } from '@/core/components/release_notes';
 const isNewUI = UI_VERSION_TYPE === 'new-ui';
 
 export function AppMenu() {
+  const location = useLocation();
+  const isFleetConsole = location.pathname.startsWith('/ui/fleet');
   const setShowPageConfig = useSetShowPageConfig();
   const switchVersion = useSwitchVersion();
   const switchVersionTitle = isNewUI
@@ -105,6 +108,35 @@ export function AppMenu() {
           </ListItemIcon>
           <ListItemText>Page Settings</ListItemText>
         </MenuItem>
+        <Divider />
+        <MenuItem
+          component="a"
+          href="https://luci-scheduler.appspot.com/jobs/infra-internal/luci-ui-promoter"
+          target="_blank"
+          rel="noopener"
+          onClick={handleCloseMenu}
+          sx={{ color: 'inherit', textDecoration: 'none' }}
+        >
+          <ListItemIcon>
+            <LaunchIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Frontend Promoter</ListItemText>
+        </MenuItem>
+        {isFleetConsole && (
+          <MenuItem
+            component="a"
+            href="https://luci-scheduler.appspot.com/jobs/infra-internal/fleet-console-backend-promoter"
+            target="_blank"
+            rel="noopener"
+            onClick={handleCloseMenu}
+            sx={{ color: 'inherit', textDecoration: 'none' }}
+          >
+            <ListItemIcon>
+              <LaunchIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Backend Promoter</ListItemText>
+          </MenuItem>
+        )}
         <Divider />
         <VersionInfo />
       </Menu>

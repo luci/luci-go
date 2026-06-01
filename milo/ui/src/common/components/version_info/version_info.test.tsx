@@ -13,19 +13,28 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 
 import { VersionInfo } from './version_info';
 
 describe('VersionInfo', () => {
   it('should render the version', () => {
-    render(<VersionInfo version="12345-abcdef" />);
+    render(
+      <MemoryRouter>
+        <VersionInfo version="12345-abcdef" />
+      </MemoryRouter>,
+    );
     expect(screen.getByText(/Version:/)).toBeInTheDocument();
     expect(screen.getByText('12345-abcdef')).toBeInTheDocument();
   });
 
   it('should have a link to the commit log', () => {
-    render(<VersionInfo version="12345-abcdef" />);
-    const link = screen.getByRole('link');
+    render(
+      <MemoryRouter>
+        <VersionInfo version="12345-abcdef" />
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole('link', { name: '12345-abcdef' });
     expect(link).toHaveAttribute(
       'href',
       'https://chromium.googlesource.com/infra/luci/luci-go/+log/abcdef',

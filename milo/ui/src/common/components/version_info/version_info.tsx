@@ -21,6 +21,7 @@ export interface VersionInfoProps {
   version?: string;
 }
 
+// TODO(username): Add link to current backend build when feasible.
 export function VersionInfo({ version = UI_VERSION }: VersionInfoProps) {
   const versionRepoUrl = getGitilesRepoURL({
     host: 'chromium.googlesource.com',
