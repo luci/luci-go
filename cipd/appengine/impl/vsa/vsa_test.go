@@ -151,31 +151,49 @@ func TestVSAClient(t *testing.T) {
 		check.That(t, s, should.Equal(CacheStatusUnknown))
 		check.NoErr(t, err)
 
-		err = clt.SetStatus(ctx, inst, CacheStatusPending)
+		// Test CacheStatusRejected (TTL 5m)
+		err = clt.SetStatus(ctx, inst, CacheStatusRejected)
 		check.NoErr(t, err)
 
 		s, err = clt.GetStatus(ctx, inst)
-		check.That(t, s, should.Equal(CacheStatusPending))
+		check.That(t, s, should.Equal(CacheStatusRejected))
 		check.NoErr(t, err)
 
 		clk.Add(time.Minute)
+		s, err = clt.GetStatus(ctx, inst)
+		check.That(t, s, should.Equal(CacheStatusRejected))
+		check.NoErr(t, err)
+
+		clk.Add(time.Minute * 5)
 		s, err = clt.GetStatus(ctx, inst)
 		check.That(t, s, should.Equal(CacheStatusUnknown))
 		check.NoErr(t, err)
 
-		err = clt.SetStatus(ctx, inst, CacheStatusCompleted)
+		// Test CacheStatusApproved (TTL 5m)
+		err = clt.SetStatus(ctx, inst, CacheStatusApproved)
 		check.NoErr(t, err)
 
 		s, err = clt.GetStatus(ctx, inst)
-		check.That(t, s, should.Equal(CacheStatusCompleted))
+		check.That(t, s, should.Equal(CacheStatusApproved))
 		check.NoErr(t, err)
 
 		clk.Add(time.Minute)
 		s, err = clt.GetStatus(ctx, inst)
-		check.That(t, s, should.Equal(CacheStatusCompleted))
+		check.That(t, s, should.Equal(CacheStatusApproved))
 		check.NoErr(t, err)
 
-		clk.Add(time.Minute * 10)
+		clk.Add(time.Minute * 5)
+		s, err = clt.GetStatus(ctx, inst)
+		check.That(t, s, should.Equal(CacheStatusUnknown))
+		check.NoErr(t, err)
+
+		// Test clearing status
+		err = clt.SetStatus(ctx, inst, CacheStatusApproved)
+		check.NoErr(t, err)
+
+		err = clt.SetStatus(ctx, inst, CacheStatusUnknown)
+		check.NoErr(t, err)
+
 		s, err = clt.GetStatus(ctx, inst)
 		check.That(t, s, should.Equal(CacheStatusUnknown))
 		check.NoErr(t, err)

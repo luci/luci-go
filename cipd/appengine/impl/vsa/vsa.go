@@ -53,9 +53,9 @@ func init() {
 type CacheStatus string
 
 const (
-	CacheStatusUnknown   CacheStatus = "Unknown"
-	CacheStatusPending   CacheStatus = "Pending"
-	CacheStatusCompleted CacheStatus = "Completed"
+	CacheStatusUnknown  CacheStatus = "Unknown"
+	CacheStatusRejected CacheStatus = "Rejected"
+	CacheStatusApproved CacheStatus = "Approved"
 )
 
 type Client interface {
@@ -263,8 +263,8 @@ func (c *client) GetStatus(ctx context.Context, inst *model.Instance) (CacheStat
 	status := CacheStatus(b)
 	switch status {
 	case CacheStatusUnknown:
-	case CacheStatusPending:
-	case CacheStatusCompleted:
+	case CacheStatusRejected:
+	case CacheStatusApproved:
 	default:
 		return CacheStatusUnknown, fmt.Errorf("VerifySoftwareArtifact: get cache: unknown cache status: %s", status)
 	}
@@ -280,9 +280,7 @@ func (c *client) SetStatus(ctx context.Context, inst *model.Instance, status Cac
 	switch status {
 	case CacheStatusUnknown:
 		ttl = time.Second // Clear existing status
-	case CacheStatusPending:
-		ttl = time.Second * 30
-	case CacheStatusCompleted:
+	case CacheStatusRejected, CacheStatusApproved:
 		ttl = time.Minute * 5
 	default:
 		return fmt.Errorf("VerifySoftwareArtifact: set cache: unknown cache status: %s", status)

@@ -3910,7 +3910,7 @@ func TestVSA(t *testing.T) {
 						Instance: inst.Proto().Instance,
 					})
 					assert.NoErr(t, err)
-					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusPending))
+					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusRejected))
 					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 
 					m, err := model.ListMetadata(ctx, inst)
@@ -3926,7 +3926,7 @@ func TestVSA(t *testing.T) {
 						Instance: inst.Proto().Instance,
 					})
 					assert.NoErr(t, err)
-					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusPending))
+					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusRejected))
 					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 
 					m, err := model.ListMetadata(ctx, inst)
@@ -3956,12 +3956,12 @@ func TestVSA(t *testing.T) {
 				assert.Loosely(t, m, should.HaveLength(1))
 				assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
 				assert.Loosely(t, m[0].Value, should.Match([]uint8("something")))
-				assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusCompleted))
+				assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusApproved))
 			})
 
 			t.Run("With Cached Status", func(t *ftt.Test) {
 				mvsa.err = fmt.Errorf("not possible")
-				mvsa.status = vsa.CacheStatusPending
+				mvsa.status = vsa.CacheStatusRejected
 
 				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
@@ -3970,7 +3970,7 @@ func TestVSA(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 
-				mvsa.status = vsa.CacheStatusCompleted
+				mvsa.status = vsa.CacheStatusApproved
 				_, err = impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,

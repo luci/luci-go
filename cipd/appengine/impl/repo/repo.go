@@ -1429,12 +1429,10 @@ func (impl *repoImpl) ensureVSA(ctx context.Context, instpb *repopb.Instance) er
 	switch s, err := impl.vsa.GetStatus(ctx, inst); {
 	case err != nil:
 		return err
-	case s != vsa.CacheStatusUnknown:
-		// We already have a vsa or we have a pending vsa request.
+	case s == vsa.CacheStatusApproved:
 		return nil
-	}
-	if err := impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusPending); err != nil {
-		return err
+	case s == vsa.CacheStatusRejected:
+		return fmt.Errorf("a valid vsa is required for the instance")
 	}
 
 	vsas, err := model.ListMetadataWithKeys(ctx, inst, []string{slsaVSAKey})
@@ -1443,7 +1441,11 @@ func (impl *repoImpl) ensureVSA(ctx context.Context, instpb *repopb.Instance) er
 	}
 
 	if len(vsas) != 0 {
-		return impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusCompleted)
+		return impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusApproved)
+	}
+
+	if err := impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusRejected); err != nil {
+		return err
 	}
 
 	return fmt.Errorf("a valid vsa is required for the instance")
@@ -1460,12 +1462,12 @@ func (impl *repoImpl) setVerificationSummary(ctx context.Context, inst *model.In
 		Value:       []byte(resp.VerificationSummary),
 		ContentType: vsaAttestationsContentType,
 	}}); err != nil {
-		logging.WithError(err).Errorf(ctx, "Failed to attach VSA metadata to %s", inst.InstanceID)
+		logging.WithError(err).Errorf(ctx, "Failed to attach VSA metadata to %s:%s", inst.Package, inst.InstanceID)
 		return nil // log and ignore
 	}
 
-	if err := impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusCompleted); err != nil {
-		logging.WithError(err).Warningf(ctx, "Cache VSA Status: %s", inst.Package)
+	if err := impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusApproved); err != nil {
+		logging.WithError(err).Warningf(ctx, "Cache VSA Status: %s:%s", inst.Package, inst.InstanceID)
 	}
 	return nil
 }
@@ -1534,7 +1536,7 @@ func (impl *repoImpl) GetSignedURL(ctx context.Context, inst *repopb.Instance, f
 
 	if !prefix.ExemptFromVerifySoftwareArtifacts {
 		if err := impl.ensureVSA(ctx, inst); err != nil {
-			logging.WithError(err).Warningf(ctx, "ensuring VSA: %s", inst.Package)
+			logging.WithError(err).Warningf(ctx, "ensuring VSA: %s:%s", inst.Package, inst.Instance)
 		}
 	}
 
