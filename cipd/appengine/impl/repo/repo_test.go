@@ -3763,23 +3763,12 @@ func TestParseDownloadPath(t *testing.T) {
 type MockVSA struct {
 	resp   *vsapb.VerifySoftwareArtifactResponse
 	err    error
-	status vsa.CacheStatus
 }
 
 func (m *MockVSA) Register(f *flag.FlagSet)       {}
 func (m *MockVSA) Init(ctx context.Context) error { return nil }
 func (m *MockVSA) VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (*vsapb.VerifySoftwareArtifactResponse, error) {
 	return m.resp, m.err
-}
-func (m *MockVSA) GetStatus(ctx context.Context, inst *model.Instance) (vsa.CacheStatus, error) {
-	if m.status == "" {
-		return vsa.CacheStatusUnknown, nil
-	}
-	return m.status, nil
-}
-func (m *MockVSA) SetStatus(ctx context.Context, inst *model.Instance, status vsa.CacheStatus) error {
-	m.status = status
-	return nil
 }
 
 func TestVSA(t *testing.T) {
@@ -3800,8 +3789,7 @@ func TestVSA(t *testing.T) {
 		})
 
 		mvsa := &MockVSA{
-			resp:   &vsapb.VerifySoftwareArtifactResponse{Allowed: true, VerificationSummary: "vsa content"},
-			status: vsa.CacheStatusUnknown,
+			resp: &vsapb.VerifySoftwareArtifactResponse{Allowed: true, VerificationSummary: "vsa content"},
 		}
 		cas := testutil.MockCAS{}
 
@@ -3809,12 +3797,7 @@ func TestVSA(t *testing.T) {
 		impl.vsa = mvsa
 		impl.registerTasks()
 
-		ctx, sched := tq.TestingContext(ctx, impl.tq)
-		runTasks := func() {
-			for _, t := range sched.Tasks() {
-				sched.Executor.Execute(ctx, t, func(retry bool) {})
-			}
-		}
+		ctx, _ = tq.TestingContext(ctx, impl.tq)
 
 		inst := &model.Instance{
 			InstanceID: strings.Repeat("1", 40),
@@ -3864,14 +3847,6 @@ func TestVSA(t *testing.T) {
 				assert.Loosely(t, m[1].Value, should.Match([]uint8("attestation bundle")))
 				assert.Loosely(t, m[1].ContentType, should.Equal("application/vnd.in-toto.bundle"))
 
-				// Should not be called again when package is requested.
-				mvsa.err = fmt.Errorf("not possible")
-				_, err = impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
-					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
-				})
-				runTasks()
-				assert.NoErr(t, err)
 			})
 
 			t.Run("Failed", func(t *ftt.Test) {
@@ -3895,98 +3870,6 @@ func TestVSA(t *testing.T) {
 			})
 		})
 
-		t.Run("GetInstanceURL", func(t *ftt.Test) {
-			t.Run("Without VSA", func(t *ftt.Test) {
-				t.Run("With Attestation", func(t *ftt.Test) {
-					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusUnknown))
-					model.AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{{
-						Key:         "policy-attestations",
-						Value:       []uint8("attestation bundle"),
-						ContentType: "application/vnd.in-toto.bundle"},
-					})
-
-					_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
-						Package:  inst.Package.StringID(),
-						Instance: inst.Proto().Instance,
-					})
-					assert.NoErr(t, err)
-					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusRejected))
-					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
-
-					m, err := model.ListMetadata(ctx, inst)
-					assert.NoErr(t, err)
-					assert.Loosely(t, m, should.HaveLength(1))
-					assert.Loosely(t, m[0].Key, should.Equal("policy-attestations"))
-				})
-
-				t.Run("Without Attestation", func(t *ftt.Test) {
-					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusUnknown))
-					_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
-						Package:  inst.Package.StringID(),
-						Instance: inst.Proto().Instance,
-					})
-					assert.NoErr(t, err)
-					assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusRejected))
-					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
-
-					m, err := model.ListMetadata(ctx, inst)
-					assert.NoErr(t, err)
-					assert.Loosely(t, m, should.HaveLength(0))
-				})
-			})
-
-			t.Run("With VSA", func(t *ftt.Test) {
-				mvsa.err = fmt.Errorf("not possible")
-				err := model.AttachMetadata(ctx, inst, []*repopb.InstanceMetadata{
-					{Key: slsaVSAKey, Value: []uint8("something")},
-				})
-				assert.NoErr(t, err)
-
-				resp, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
-					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
-				})
-				assert.NoErr(t, err)
-				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
-					SignedUrl: "http://example.com/1111111111111111111111111111111111111111?d=",
-				}))
-
-				m, err := model.ListMetadata(ctx, inst)
-				assert.NoErr(t, err)
-				assert.Loosely(t, m, should.HaveLength(1))
-				assert.Loosely(t, m[0].Key, should.Equal(slsaVSAKey))
-				assert.Loosely(t, m[0].Value, should.Match([]uint8("something")))
-				assert.Loosely(t, mvsa.status, should.Equal(vsa.CacheStatusApproved))
-			})
-
-			t.Run("With Cached Status", func(t *ftt.Test) {
-				mvsa.err = fmt.Errorf("not possible")
-				mvsa.status = vsa.CacheStatusRejected
-
-				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
-					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
-				})
-				assert.NoErr(t, err)
-				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
-
-				mvsa.status = vsa.CacheStatusApproved
-				_, err = impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
-					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
-				})
-				assert.NoErr(t, err)
-				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
-
-				mvsa.status = vsa.CacheStatusUnknown
-				_, err = impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
-					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
-				})
-				assert.NoErr(t, err)
-				assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
-			})
-		})
 
 		t.Run("RegisterInstance", func(t *ftt.Test) {
 			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {
@@ -4094,14 +3977,6 @@ func TestVSA(t *testing.T) {
 				assert.Loosely(t, resp.Status, should.Equal(repopb.RegistrationStatus_REGISTERED))
 			})
 
-			t.Run("GetInstanceURL", func(t *ftt.Test) {
-				mvsa.err = status.Errorf(codes.Internal, "should not be called")
-				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
-					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
-				})
-				assert.NoErr(t, err)
-			})
 		})
 	})
 }

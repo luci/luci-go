@@ -19,14 +19,12 @@ package vsa
 import (
 	"bytes"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -35,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/bqlog"
-	"go.chromium.org/luci/server/caching"
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
@@ -50,13 +47,6 @@ func init() {
 	})
 }
 
-type CacheStatus string
-
-const (
-	CacheStatusUnknown  CacheStatus = "Unknown"
-	CacheStatusRejected CacheStatus = "Rejected"
-	CacheStatusApproved CacheStatus = "Approved"
-)
 
 type Client interface {
 	// Register registers vsa client configs as CLI flags.
@@ -70,13 +60,6 @@ type Client interface {
 	// provided. It returns the Verification Summary Attestation (VSA) if succeeded.
 	// Errors and detailed logs will be recorded in BigQuery Table.
 	VerifySoftwareArtifact(ctx context.Context, inst *model.Instance, bundle string) (*api.VerifySoftwareArtifactResponse, error)
-
-	// Get the vsa status (Unknown, Pending, Completed) for the instance.
-	GetStatus(ctx context.Context, inst *model.Instance) (CacheStatus, error)
-
-	// Set the vsa status (Unknown, Pending, Completed) for the instance.
-	// Depending on the status they will be cached for a period of time.
-	SetStatus(ctx context.Context, inst *model.Instance, status CacheStatus) error
 }
 
 // NewClient creates a vsa.Client for invoking verifier API. It needs to
@@ -93,7 +76,6 @@ type client struct {
 	softwareVerifierUrl *url.URL
 
 	client *http.Client
-	cache  caching.BlobCache
 	bqlog  func(ctx context.Context, m proto.Message)
 }
 
@@ -150,9 +132,6 @@ func (c *client) Init(ctx context.Context) error {
 		c.client = &http.Client{Transport: tr}
 	}
 
-	if c.cache == nil {
-		c.cache = caching.GlobalCache(ctx, "vsa")
-	}
 
 	if c.bqlog == nil {
 		c.bqlog = bqlog.Log
@@ -245,48 +224,3 @@ func (c *client) callVerifySoftwareArtifact(ctx context.Context, r *api.VerifySo
 	return &ret, nil
 }
 
-func cacheKey(inst *model.Instance) string { return inst.InstanceID + ":vsa_status" }
-
-func (c *client) GetStatus(ctx context.Context, inst *model.Instance) (CacheStatus, error) {
-	if c.cache == nil {
-		return CacheStatusUnknown, nil
-	}
-
-	b, err := c.cache.Get(ctx, cacheKey(inst))
-	if err != nil {
-		if errors.Is(err, caching.ErrCacheMiss) {
-			return CacheStatusUnknown, nil
-		}
-		return CacheStatusUnknown, err
-	}
-
-	status := CacheStatus(b)
-	switch status {
-	case CacheStatusUnknown:
-	case CacheStatusRejected:
-	case CacheStatusApproved:
-	default:
-		return CacheStatusUnknown, fmt.Errorf("VerifySoftwareArtifact: get cache: unknown cache status: %s", status)
-	}
-	return status, nil
-}
-
-func (c *client) SetStatus(ctx context.Context, inst *model.Instance, status CacheStatus) error {
-	if c.cache == nil {
-		return nil
-	}
-
-	var ttl time.Duration
-	switch status {
-	case CacheStatusUnknown:
-		ttl = time.Second // Clear existing status
-	case CacheStatusRejected, CacheStatusApproved:
-		ttl = time.Minute * 5
-	default:
-		return fmt.Errorf("VerifySoftwareArtifact: set cache: unknown cache status: %s", status)
-	}
-	if err := c.cache.Set(ctx, cacheKey(inst), []byte(status), ttl); err != nil {
-		return fmt.Errorf("VerifySoftwareArtifact: set cache: failed to set: %w", err)
-	}
-	return nil
-}

@@ -1422,36 +1422,6 @@ func (impl *repoImpl) ListMetadata(ctx context.Context, r *repopb.ListMetadataRe
 	return resp, nil
 }
 
-// ensureVSA check whether the instance has a vsa and cache the result.
-// Return error if no vas found in metadata.
-func (impl *repoImpl) ensureVSA(ctx context.Context, instpb *repopb.Instance) error {
-	inst := (&model.Instance{}).FromProto(ctx, instpb)
-	switch s, err := impl.vsa.GetStatus(ctx, inst); {
-	case err != nil:
-		return err
-	case s == vsa.CacheStatusApproved:
-		return nil
-	case s == vsa.CacheStatusRejected:
-		return fmt.Errorf("a valid vsa is required for the instance")
-	}
-
-	vsas, err := model.ListMetadataWithKeys(ctx, inst, []string{slsaVSAKey})
-	if err != nil {
-		return err
-	}
-
-	if len(vsas) != 0 {
-		return impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusApproved)
-	}
-
-	if err := impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusRejected); err != nil {
-		return err
-	}
-
-	return fmt.Errorf("a valid vsa is required for the instance")
-
-}
-
 func (impl *repoImpl) setVerificationSummary(ctx context.Context, inst *model.Instance, resp *api.VerifySoftwareArtifactResponse) error {
 	if !resp.Allowed || resp.VerificationSummary == "" {
 		return nil
@@ -1464,10 +1434,6 @@ func (impl *repoImpl) setVerificationSummary(ctx context.Context, inst *model.In
 	}}); err != nil {
 		logging.WithError(err).Errorf(ctx, "Failed to attach VSA metadata to %s:%s", inst.Package, inst.InstanceID)
 		return nil // log and ignore
-	}
-
-	if err := impl.vsa.SetStatus(ctx, inst, vsa.CacheStatusApproved); err != nil {
-		logging.WithError(err).Warningf(ctx, "Cache VSA Status: %s:%s", inst.Package, inst.InstanceID)
 	}
 	return nil
 }
@@ -1530,16 +1496,8 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *repopb.GetInstanceU
 	return impl.GetSignedURL(ctx, inst.Proto(), "")
 }
 
-// GetSignedURL returns a signed URL for a CAS object, enforcing VSA on the package instance.
+// GetSignedURL returns a signed URL for a CAS object.
 func (impl *repoImpl) GetSignedURL(ctx context.Context, inst *repopb.Instance, filename string) (*caspb.ObjectURL, error) {
-	prefix := impl.lookupPrefixCfg(inst.Package).PrefixConfig
-
-	if !prefix.ExemptFromVerifySoftwareArtifacts {
-		if err := impl.ensureVSA(ctx, inst); err != nil {
-			logging.WithError(err).Warningf(ctx, "ensuring VSA: %s:%s", inst.Package, inst.Instance)
-		}
-	}
-
 	userProject, err := impl.StorageUserProject(ctx, inst.Package)
 	if err != nil {
 		return nil, err
