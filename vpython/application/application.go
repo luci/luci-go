@@ -97,6 +97,9 @@ type Application struct {
 	// LocalVenv, if true, instructs vpython to create a local .venv symlink in the project directory.
 	LocalVenv bool
 
+	// KeepLegacySpec, if true, preserves legacy spec files (.vpython / .vpython3) after successful upgrade conversion.
+	KeepLegacySpec bool
+
 	// Loglevel is used to configure the default logger set in the context.
 	LogLevel logging.Level
 
@@ -231,13 +234,17 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 	fs.StringVar(&a.ToolMode, "vpython-tool", a.ToolMode,
 		"Tools for vpython command:\n"+
 			"install: installs the configured virtual environment.\n"+
-			"verify: verifies that a spec and its wheels are valid.")
+			"verify: verifies that a spec and its wheels are valid.\n"+
+			"upgrade: converts legacy specs to standard vpython.toml / PEP 723 shebangs.")
 
 	fs.Var(&a.LogLevel, "vpython-log-level",
 		"The logging level. Valid options are: debug, info, warning, error.")
 
 	fs.BoolVar(&a.LocalVenv, "vpython-local-venv", a.LocalVenv,
 		"Create a local .venv symlink in the project directory (does nothing on Windows).")
+
+	fs.BoolVar(&a.KeepLegacySpec, "vpython-keep-legacy", a.KeepLegacySpec,
+		"Keep legacy spec files (.vpython / .vpython3) after successful upgrade conversion.")
 
 	vpythonArgs, pythonArgs, err := extractFlagsForSet("vpython-", a.Arguments, &fs)
 	if err != nil {
