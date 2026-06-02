@@ -12,12 +12,17 @@ Use this skill when you have completed a task and need to prepare the changes fo
 ## Workflow
 
 Progress:
+- [ ] Step 0: Branch Safety Check
 - [ ] Step 1: Verification
 - [ ] Step 2: Commit Changes
 - [ ] Step 3: Upload UI Demo (Optional/Conditional)
 - [ ] Step 4: Optional Upload
 
 ## Procedures
+
+0. **Branch Safety Check**:
+   - **New Task Branching**: Generally start a new branch when starting a new task.
+   - **Check for Unrelated Changes**: Double check that the branch you're currently on doesn't have unrelated changes before you upload a CL. Run `git log origin/main..HEAD` to see the commits on your branch relative to main, and ensure they are all related to the current task.
 
 1. **Verification**:
    - Run the `project_verification` skill (lint, test, type-check) to ensure no regressions.
@@ -29,27 +34,76 @@ Progress:
    - Commit changes with a descriptive message.
      - **Commit Message Guidelines**:
        - Title: Short, descriptive summary.
-       - Body: Explain what changed and why. If it fixes a bug, explain the fix.
+       - Body: Explain what changed and why. Include business or design context (e.g., "This is needed to support the new Android health layout..."). If it fixes a bug, explain the fix.
        - Footer: If the change fixes a bug, include reference in the format `Bug: b/XXXXXXX` (note the `b/` prefix).
      - Example: `git commit -m "[fleet] Fix CSV export missing columns by preserving URL columns\n\n... details ...\n\nBug: b/515102813"`
 
 3. **Upload UI Demo**:
    - For UI changes, consider uploading a demo to a dev environment.
-   - **Judgment Call**: Upload a demo if the change is non-trivial and would benefit from visual verification by a human reviewer.
+   - **Demo Link Requirement**: You **MUST** include a demo link in the CL for non-trivial frontend changes with user facing impact, unless deployment fails and cannot be resolved immediately.
    - Run `make deploy-ui-demo` in the UI directory.
    - *Note*: If this fails with auth errors (e.g., `Login first using 'gcloud auth login'`), notify the developer and ask them to run it on your behalf. Do not block the task on this failure. (Alternatively, the developer may choose to disable the sandbox to allow direct uploads).
-   - If successful, include the demo link in the CL description.
+   - If successful, include the demo link in the CL description (typically printed in the output of the deploy command). **The demo link should ALWAYS be at the top of the commit message (right after the title line).** **Make sure the demo link goes directly to the affected pages for convenience.**
    - Include testing instructions for the reviewer in the CL description, encouraging them to also test edge cases or related functionality that might break.
 
 4. **Optional Upload**:
    - Attempt to run `git cl upload`.
    - *Note*: If this fails with an error like `chmod ~/.sso: operation not permitted` or a path-specific permission error, it is due to sandbox restrictions preventing the agent from modifying home directory files. In this case, do not block the task; notify the developer and ask them to run `git cl upload` on your behalf. (Alternatively, the developer may choose to disable the sandbox to allow direct uploads).
-   - *Note*: If the command gets stuck on interactive prompts (e.g., asking for patchset title or to fetch remote changes) in background tasks, use the pattern `yes y | EDITOR=true git cl upload` to automatically answer "yes" to prompts and bypass the text editor.
+   > [!IMPORTANT]
+    > When uploading updates from background tasks, you can bypass all interactive patchset title prompts cleanly by specifying a title directly from the CLI:
+    > `git cl upload -t "My patchset title"`
+    >
+    > (If you are doing a first-time upload or encountering other interactive confirmation/editor prompts, you can fallback to: `yes y | EDITOR=true git cl upload`)
 
-5. **Rebasing and Handling Merge Conflicts**:
+5. **Advanced Git Operations for Agents**:
+
+   ### Handling Multiple CLs
+   If a task involves independent changes (e.g., tests vs documentation, or core logic vs skill updates), consider splitting them into separate CLs to make review easier and safer.
+   - **Workflow**:
+     1. Create a new branch from `origin/main` for the independent changes.
+     2. Cherry-pick or manually apply the relevant changes to that branch.
+     3. Upload as a new CL using `git cl upload`.
+     4. Ensure the branches do not depend on each other unless strictly necessary.
+
+   ### Updating CL Description Non-Interactively
+   Agents cannot use interactive editors (like `vim`) that `git cl upload` or `git cl description` might open.
+   - **Workflow**:
+     1. Write the new description to a temporary file: `desc.txt`.
+     2. Set the description using standard input: `git cl description -n - < desc.txt`.
+     3. Remove the temporary file: `rm desc.txt`.
+
+   ### Avoiding Dirty Tree Traps
+   Do not use `git add -A` or `git add .` blindly. If you created temporary directories or output files (like `spool/` for `led` or `builder.json`) that are not ignored in `.gitignore`, they will be staged and committed!
+   - **Rule**: Always check `git status` before staging, and prefer staging files explicitly by name instead of using catch-all commands. Ensure temporary files are added to `.gitignore` if they are part of a recurring workflow.
+
+   ### Splitting a Single Commit
+   If you accidentally combined unrelated changes into a single commit and want to split it:
+   - **Workflow**:
+     1. Undo the last commit but keep modifications: `git reset --mixed HEAD~1`.
+     2. Stage a subset of changes: `git add <specific_files>`.
+     3. Commit the subset: `git commit -m "Part 1..."`.
+     4. Repeat for remaining changes.
+
+   ### Building on Other Ongoing Reviews
+   If you need to build on top of another developer's in-flight CL:
+   - **Workflow**:
+     1. Create a new branch: `git checkout -b dependent_branch`.
+     2. Pull the CL: `git cl patch -f <issue_number>`.
+     3. Apply your changes on top.
+
+   ### Conflict Resolution Helpers
+   To make resolving merge conflicts easier, you can enable these repository-local git settings (never modify global configs without explicit permission):
+   - **Diff3 Style**: `git config --local merge.conflictstyle diff3` (Shows base version in conflict markers).
+   - **Git Rerere**: `git config --local rerere.enabled true` (Remembers how you resolved conflicts before).
+
+6. **Rebasing and Handling Merge Conflicts**:
    - Ensure there are no merge conflicts with the upstream branch before considering a CL done.
    - **Safety Check**: Run `git status` first to ensure a clean working directory before attempting a rebase.
    - Run `git pull --rebase origin main` (or the configured upstream branch) to sync with upstream.
+   - **Avoiding Conflicts**:
+     - **Keep CLs Small**: Focus on a single task per CL to reduce the chance of overlapping edits.
+     - **Rebase Frequently**: Sync with upstream often to catch and resolve conflicts early.
+     - **Coordinate Edits**: If you plan to make sweeping changes or edit a highly active file, coordinate with other developers by asking the user (your pair programmer) to coordinate on your behalf, or by checking for active CLs touching the same files.
    - **Handling Conflicts**:
      - If conflicts occur, do not simply remove conflict markers.
      - Analyze both versions of the conflicting code blocks (`<<<<<<<` and `>>>>>>>`).
