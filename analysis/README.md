@@ -21,7 +21,7 @@ gcloud auth application-default login
 
 Authenticate in LUCI and in CIPD:
 
-1. In LUCI Analysis's `service-api` directory run:
+1. In LUCI Analysis's `cmd/api_server` directory run:
    ```
    luci-auth login -scopes "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email"
    ```
@@ -30,18 +30,16 @@ Authenticate in LUCI and in CIPD:
    cipd auth-login
    ```
 
-To run the server, in another terminal use:
+To run the API server, in another terminal use:
 ```
-cd service-api
+cd cmd/api_server
 go run main.go \
  -cloud-project luci-analysis-dev \
  -spanner-database projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev \
  -auth-service-host chrome-infra-auth-dev.appspot.com \
- -luci-analysis-host 127.0.0.1:8800 \
  -default-request-timeout 10m0s \
  -buganizer-mode disable \
- -config-local-dir ../configs \
- -encrypted-cookies-expose-state-endpoint
+ -config-local-dir ../../configs
 ```
 
 `-default-request-timeout` is needed if exercising cron jobs through the admin
@@ -103,25 +101,29 @@ go test go.chromium.org/luci/analysis/...
 
 ### Developer Testing {#test-deployment}
 
-LUCI Analysis uses `gae.py` for deployment of the GAE instances for developer
-testing (e.g. of local changes).
-
-First, enter the infra env (via the infra.git checkout):
-```
-eval infra/go/env.py
-```
-
-Then use the following commands to deploy:
-```
-gae.py upload -A luci-analysis-dev --host-scheme VERSION.staging.analysis.api.luci.app default api
-```
+LUCI Analysis APIs (except those which are related to Buganizer) are now served from
+Cloud Run. Nobody has looked into deploying a developer test instance at
+YOUR_REVISION.staging.analysis.api.luci.app yet! Update this section if you figure it out.
 
 ### Dev and Prod Instances
 
-The dev and prod instances are managed via
-[LUCI GAE Automatic Deployment (Googlers-only)](http://go/luci/how_to_deploy.md).
+The dev and prod instances are managed via LUCI Continuous Deployment.
 
 #### Make a production release
+
+#### Cloud Run
+
+1. Make sure that you have an `infra_internal` checkout.
+2. Navigate to `data/cloud-run` directory under your base checkout directory, should be `~/infra`.
+3. Pull the latest with `git rebase-update` or `git checkout main && git pull`.
+4. Create a new branch `git new-branch <NAME>` or `git -b <NAME>`.
+5. run `./scripts/promote.py luci-analysis --canary --stable --commit`.
+6. Upload the CL `git cl upload`.
+7. Request approval from space: LUCI Test War Room.
+
+#### Google App Engine
+
+Only parts of the application that interact with Buganizer run on GAE. They are deployed as follows:
 
 1. Make sure that you have an `infra_internal` checkout.
 2. Navigate to `data/gae` directory under your base checkout directory, should be `~/infra`.
