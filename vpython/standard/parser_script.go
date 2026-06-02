@@ -20,7 +20,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/BurntSushi/toml"
+	"github.com/pelletier/go-toml/v2"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -87,18 +87,9 @@ func parseScriptMetadataContent(content []byte) (*ProjectSpec, error) {
 	rawContent := content[contentStart:contentEnd]
 	tomlBytes := stripCommentPrefixes(rawContent)
 
-	var rawSpec struct {
-		RequiresPython string   `toml:"requires-python"`
-		Dependencies   []string `toml:"dependencies"`
-	}
-	if err := toml.Unmarshal(tomlBytes, &rawSpec); err != nil {
+	var spec ProjectSpec
+	if err := toml.Unmarshal(tomlBytes, &spec); err != nil {
 		return nil, errors.Fmt("failed to decode PEP 723 TOML schema: %w", err)
-	}
-
-	spec := &ProjectSpec{
-		Name:           "",
-		RequiresPython: rawSpec.RequiresPython,
-		Dependencies:   rawSpec.Dependencies,
 	}
 
 	// If a block was present but has no valid keys, treat as empty
@@ -106,7 +97,7 @@ func parseScriptMetadataContent(content []byte) (*ProjectSpec, error) {
 		return nil, nil
 	}
 
-	return spec, nil
+	return &spec, nil
 }
 
 // preValidateSentinels parses and pre-validates block sentinels positions to throw exact diagnostic errors.

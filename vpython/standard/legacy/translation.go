@@ -63,7 +63,6 @@ func TranslateLegacySpec(s *vpython.Spec) (*standard.ProjectSpec, error) {
 	reqPython := translatePythonVersion(s.PythonVersion)
 
 	return &standard.ProjectSpec{
-		Name:           "", // Legacy specs don't declare project name fields
 		RequiresPython: reqPython,
 		Dependencies:   reqs,
 	}, nil

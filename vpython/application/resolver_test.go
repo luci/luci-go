@@ -109,8 +109,6 @@ func TestResolveFlow_Climbing(t *testing.T) {
 			// Place vpython.toml at root
 			tomlPath := filepath.Join(root, "vpython.toml")
 			tomlContent := `
-[project]
-name = "test-project"
 requires-python = ">=3.8"
 dependencies = ["numpy"]
 `
@@ -120,7 +118,6 @@ dependencies = ["numpy"]
 			res, err := ResolveFlow(ctx, python.ScriptTarget{Path: scriptPath}, "", "", ".vpython3", filepath.Dir(scriptPath))
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.Flow, should.Equal(FlowUV))
-			assert.Loosely(t, res.StandardSpec.Name, should.Equal("test-project"))
 			assert.Loosely(t, res.StandardSpec.RequiresPython, should.Equal(">=3.8"))
 			assert.Loosely(t, res.ProjectRoot, should.Equal(root))
 			assert.Loosely(t, res.FromVPythonTOML, should.BeTrue)
@@ -135,8 +132,6 @@ dependencies = ["numpy"]
 			// Place valid vpython.toml at root (above stop barrier)
 			tomlPath := filepath.Join(root, "vpython.toml")
 			tomlContent := `
-[project]
-name = "above-project"
 requires-python = ">=3.8"
 `
 			err = os.WriteFile(tomlPath, []byte(strings.TrimSpace(tomlContent)), 0644)
@@ -171,7 +166,7 @@ key = "value"
 
 			_, err = ResolveFlow(ctx, python.NoTarget{}, tomlPath, "", ".vpython3", tempDir)
 			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err.Error(), should.ContainSubstring("is invalid: missing [project] table"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("is invalid: empty spec file"))
 		})
 	})
 }

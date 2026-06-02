@@ -17,20 +17,18 @@ package standard
 import (
 	"os"
 
-	"github.com/BurntSushi/toml"
+	"github.com/pelletier/go-toml/v2"
 
 	"go.chromium.org/luci/common/errors"
 )
 
 // ProjectSpec represents the standard environment metadata extracted from a vpython.toml file.
 type ProjectSpec struct {
-	Name           string
-	RequiresPython string
-	Dependencies   []string
+	RequiresPython string   `toml:"requires-python,omitempty"`
+	Dependencies   []string `toml:"dependencies,omitempty" multiline:"true"`
 }
 
 // ParseVPythonTOML loads and parses a standard vpython.toml spec file.
-// It returns an error if the file has a missing or invalid [project] table.
 func ParseVPythonTOML(path string) (*ProjectSpec, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -39,34 +37,17 @@ func ParseVPythonTOML(path string) (*ProjectSpec, error) {
 	return parseVPythonTOMLContent(content)
 }
 
-// parseVPythonTOMLContent parses the byte slice content of a vpython.toml spec file.
+// parseVPythonTOMLContent parses the byte slice content of a flat vpython.toml spec file.
 func parseVPythonTOMLContent(content []byte) (*ProjectSpec, error) {
-	// Decode into standard structured schema.
-	var schema struct {
-		Project *struct {
-			Name           string   `toml:"name"`
-			RequiresPython string   `toml:"requires-python"`
-			Dependencies   []string `toml:"dependencies"`
-		} `toml:"project"`
-	}
-	if err := toml.Unmarshal(content, &schema); err != nil {
-		return nil, errors.Fmt("failed to parse TOML structured schema: %w", err)
+	var spec ProjectSpec
+	if err := toml.Unmarshal(content, &spec); err != nil {
+		return nil, errors.Fmt("failed to parse TOML: %w", err)
 	}
 
-	if schema.Project == nil {
-		return nil, errors.New("missing [project] table")
+	// Double check: if the spec was present but is completely empty/invalid
+	if spec.RequiresPython == "" && len(spec.Dependencies) == 0 {
+		return nil, errors.New("empty spec file")
 	}
 
-	spec := &ProjectSpec{
-		Name:           schema.Project.Name,
-		RequiresPython: schema.Project.RequiresPython,
-		Dependencies:   schema.Project.Dependencies,
-	}
-
-	// Double check: if the [project] table was present but is completely empty/invalid
-	if spec.Name == "" && spec.RequiresPython == "" && len(spec.Dependencies) == 0 {
-		return nil, errors.New("empty [project] table")
-	}
-
-	return spec, nil
+	return &spec, nil
 }

@@ -45,7 +45,6 @@ print("Running standalone script!")
 			spec, err := parseScriptMetadataContent([]byte(scriptContent))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
-			assert.Loosely(t, spec.Name, should.BeEmpty) // Name remains empty for standalone scripts
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11"))
 			assert.Loosely(t, spec.Dependencies, should.Match([]string{
 				"requests>=2.31.0",

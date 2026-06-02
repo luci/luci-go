@@ -30,9 +30,6 @@ func TestTOMLParser(tT *testing.T) {
 	ftt.Run("Standard vpython.toml Parsing", tT, func(t *ftt.Test) {
 		t.Run("Successfully parses valid dependency-active projects", func(t *ftt.Test) {
 			validTOML := `
-[project]
-name = "my-chrome-tool"
-version = "1.0.0"
 requires-python = ">=3.11"
 dependencies = [
     "requests>=2.31.0",
@@ -42,7 +39,6 @@ dependencies = [
 			spec, err := parseVPythonTOMLContent([]byte(validTOML))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
-			assert.Loosely(t, spec.Name, should.Equal("my-chrome-tool"))
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11"))
 			assert.Loosely(t, spec.Dependencies, should.Match([]string{
 				"requests>=2.31.0",
@@ -62,7 +58,7 @@ ignore = ["E501"]
 `
 			_, err := parseVPythonTOMLContent([]byte(linterTOML))
 			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err.Error(), should.ContainSubstring("missing [project] table"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("empty spec file"))
 		})
 
 		t.Run("Fails strictly for empty or zeroed tables", func(t *ftt.Test) {
@@ -71,13 +67,11 @@ ignore = ["E501"]
 `
 			_, err := parseVPythonTOMLContent([]byte(emptyTOML))
 			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, err.Error(), should.ContainSubstring("missing [project] table"))
+			assert.Loosely(t, err.Error(), should.ContainSubstring("empty spec file"))
 		})
 
-		t.Run("Returns error on invalid TOML syntax inside project block", func(t *ftt.Test) {
+		t.Run("Returns error on invalid TOML syntax", func(t *ftt.Test) {
 			invalidTOML := `
-[project]
-name = "broken"
 dependencies = [
     "requests",  # Missing closing quote
 `
@@ -88,8 +82,6 @@ dependencies = [
 		t.Run("Successfully loads and parses from a physical disk file path", func(t *ftt.Test) {
 			tmpPath := filepath.Join(tT.TempDir(), "vpython.toml")
 			content := `
-[project]
-name = "file-test"
 requires-python = ">=3.11"
 `
 			err := os.WriteFile(tmpPath, []byte(content), 0644)
@@ -98,7 +90,6 @@ requires-python = ">=3.11"
 			spec, err := ParseVPythonTOML(tmpPath)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
-			assert.Loosely(t, spec.Name, should.Equal("file-test"))
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11"))
 		})
 
@@ -108,10 +99,8 @@ requires-python = ">=3.11"
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		t.Run("Returns error when [project] table has valid TOML but invalid schema types", func(t *ftt.Test) {
+		t.Run("Returns error when valid TOML has invalid schema types", func(t *ftt.Test) {
 			typeMismatchTOML := `
-[project]
-name = "type-mismatch"
 dependencies = "this-should-be-a-list-but-is-a-string"
 `
 			_, err := parseVPythonTOMLContent([]byte(typeMismatchTOML))
