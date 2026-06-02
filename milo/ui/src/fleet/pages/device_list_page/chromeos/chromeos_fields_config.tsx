@@ -30,7 +30,7 @@ import { getStatusColor } from '@/fleet/pages/device_list_page/chromeos/dut_stat
 import { FC_CellProps } from '@/fleet/types/table';
 import {
   DEVICE_TASKS_SWARMING_HOST,
-  generateBuildUrl,
+  getBuildUrlFromName,
 } from '@/fleet/utils/builds';
 import { getDeviceStateString } from '@/fleet/utils/devices';
 import { getTaskURL } from '@/fleet/utils/swarming';
@@ -79,19 +79,7 @@ const renderCurrentTaskCell = renderCellWithLink<ChromeOSDevice>({
     if (!task || task === 'loading') {
       return '';
     }
-    const buildRegex =
-      /^bb-(?<buildId>\d+)-(?<project>[^/]+)\/(?<bucket>[^/]+)\/(?<builder>[^/]+)$/;
-    const match = task.taskName.match(buildRegex);
-    if (match?.groups) {
-      const { project, bucket, builder, buildId } = match.groups;
-      return generateBuildUrl({
-        project,
-        bucket,
-        builder,
-        buildId: `b${buildId}`,
-      });
-    }
-    return getTaskURL(task.taskId);
+    return getBuildUrlFromName(task.taskName) ?? getTaskURL(task.taskId);
   },
   valueGetter: (device) => {
     const task = device.current_task;

@@ -48,6 +48,7 @@ import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { colors } from '@/fleet/theme/colors';
 import {
   extractBuildUrlFromTagData,
+  getBuildUrlFromName,
   getBuilder,
   getProjectAndBucket,
   tagsToMap,
@@ -107,9 +108,14 @@ const TaskCell = ({
   const meta = table.options.meta as TasksGridTableOptionsMeta;
   const taskId = row.original.id as string;
   const task = meta.taskMap.get(taskId);
+  const taskName = cell.getValue<string>();
+
   let url: string | undefined;
-  if (meta.miloHost && task?.tags) {
-    url = extractBuildUrlFromTagData(task.tags, meta.miloHost);
+  if (meta.miloHost) {
+    url = getBuildUrlFromName(taskName, meta.miloHost);
+    if (!url && task?.tags) {
+      url = extractBuildUrlFromTagData(task.tags, meta.miloHost);
+    }
   }
 
   return (
@@ -119,7 +125,7 @@ const TaskCell = ({
         target="_blank"
         rel="noreferrer"
       >
-        {cell.getValue<string>()}
+        {taskName}
       </a>
     </EllipsisTooltip>
   );

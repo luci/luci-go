@@ -61,6 +61,28 @@ export function generateBuildUrl(
   return `https://${miloHost}/p/${project}/builders/${bucket}/${builder}/${buildId}`;
 }
 
+export function getBuildUrlFromName(
+  taskName: string,
+  miloHost?: string,
+): string | undefined {
+  const buildRegex =
+    /^bb-(?<buildId>\d+)-(?<project>[^/]+)\/(?<bucket>[^/]+)\/(?<builder>[^/]+)$/;
+  const match = taskName.match(buildRegex);
+  if (match?.groups) {
+    const { project, bucket, builder, buildId } = match.groups;
+    return generateBuildUrl(
+      {
+        project,
+        bucket,
+        builder,
+        buildId: `b${buildId}`,
+      },
+      miloHost || FLEET_BUILDS_MILO_HOST,
+    );
+  }
+  return undefined;
+}
+
 function getBuildId(tagMap: Map<string, string>) {
   const buildID = tagMap.get('buildbucket_build_id');
   return buildID ? `b${buildID}` : tagMap.get('buildnumber');

@@ -26,7 +26,10 @@ import {
   TaskGridColumnKey,
 } from '@/fleet/components/tasks_grid/tasks_grid';
 import { useTasks } from '@/fleet/hooks/swarming_hooks';
-import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
+import {
+  DEVICE_TASKS_MILO_HOST,
+  DEVICE_TASKS_SWARMING_HOST,
+} from '@/fleet/utils/builds';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { useTasksClient } from '@/swarming/hooks/prpc_clients';
@@ -111,6 +114,7 @@ export const TasksTable = ({
       columnKeys={COLUMNS}
       nextPageToken={taskData.nextPageToken}
       swarmingHost={swarmingHost}
+      miloHost={DEVICE_TASKS_MILO_HOST}
     />
   );
 };

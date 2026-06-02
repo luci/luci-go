@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { extractBuildUrlFromTagData } from './builds';
+import { extractBuildUrlFromTagData, getBuildUrlFromName } from './builds';
 
 describe('utils/builds', () => {
   describe('extractBuildUrlFromTagData', () => {
@@ -43,6 +43,32 @@ describe('utils/builds', () => {
       );
       expect(result).toEqual(
         'https://localhost:8080/p/chromeos/builders/labpack_runner/repair/b1234',
+      );
+    });
+  });
+
+  describe('getBuildUrlFromName', () => {
+    it('returns undefined for non-buildbucket tasks', () => {
+      expect(getBuildUrlFromName('some-random-task-name')).toBeUndefined();
+    });
+
+    it('generates build URL from matching task name', () => {
+      const result = getBuildUrlFromName(
+        'bb-8680155568887180465-chromeos/labpack_runner/repair-clank',
+        'localhost:8080',
+      );
+      expect(result).toEqual(
+        'https://localhost:8080/p/chromeos/builders/labpack_runner/repair-clank/b8680155568887180465',
+      );
+    });
+
+    it('generates build URL with default host when miloHost is omitted', () => {
+      const result = getBuildUrlFromName(
+        'bb-8680155568887180465-chromeos/labpack_runner/repair-clank',
+      );
+      expect(result).toBeDefined();
+      expect(result).toContain(
+        '/p/chromeos/builders/labpack_runner/repair-clank/b8680155568887180465',
       );
     });
   });
