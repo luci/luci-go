@@ -1,6 +1,6 @@
 ---
 name: continuous_improvement
-description: Instructions for reviewing session bottlenecks and drafting process improvements.
+description: Analyzes session friction, reviews logs, and drafts process/documentation improvements. Use at the end of a task, after completing a CL, or when encountering significant workflow friction.
 ---
 
 # Continuous Improvement Skill

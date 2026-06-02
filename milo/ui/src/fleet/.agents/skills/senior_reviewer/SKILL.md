@@ -1,6 +1,6 @@
 ---
 name: senior_reviewer
-description: Instructions for running the SeniorReviewer subagent.
+description: Performs a self-review of changed code using a Senior Reviewer subagent. Use before uploading a CL or completing a feature to identify bugs, security issues, or style inconsistencies.
 ---
 
 # Senior Reviewer Skill
@@ -9,9 +9,19 @@ description: Instructions for running the SeniorReviewer subagent.
 
 Use this skill to perform a self-review of your changes using a subagent.
 
-## Instructions
+## Workflow
 
-To perform the mandatory self-review, follow these steps to invoke a subagent:
+> [!IMPORTANT]
+> **At the start of the self-review**, you MUST copy the progress checklist below into your very next response to the user, and check off the steps sequentially as you complete them.
+
+Progress:
+- [ ] Step 1: Invoke Reviewer Subagent (with full prompt + git diff)
+- [ ] Step 2: Process Review Feedback
+- [ ] Step 3: Iterate on Remediation (limit to 3 loops)
+
+## Detailed Procedures
+
+To perform the mandatory self-review, follow these steps:
 
 1. **Invoke Subagent**: Use the `invoke_subagent` tool with `TypeName: "self"` and the prompt below.
 2. **Pass Diff**: It is recommended to include the output of `git diff` directly inside the prompt along with the review instructions to ensure the subagent has the full context immediately. This establishes a clear, single-prompt process.

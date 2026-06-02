@@ -1,6 +1,6 @@
 ---
 name: prepare_cl
-description: Instructions for preparing a CL for upload, including committing, verification, and optional upload.
+description: Verifies, commits, and uploads code changes as a Gerrit CL. Use when you have completed a task, fixed a bug, or are ready to submit changes for review.
 ---
 
 # Prepare CL Skill
@@ -10,6 +10,9 @@ description: Instructions for preparing a CL for upload, including committing, v
 Use this skill when you have completed a task and need to prepare the changes for code review.
 
 ## Workflow
+
+> [!IMPORTANT]
+> **At the start of preparation**, you MUST copy the progress checklist below into your very next response to the user, and check off the steps sequentially as you complete them. This ensures structured progress visibility and prevents skipping verification steps.
 
 Progress:
 - [ ] Step 0: Branch Safety Check
@@ -54,6 +57,10 @@ Progress:
     > `git cl upload -t "My patchset title"`
     >
     > (If you are doing a first-time upload or encountering other interactive confirmation/editor prompts, you can fallback to: `yes y | EDITOR=true git cl upload`)
+    >
+    > > [!CAUTION]
+    > > **Do NOT switch branches, stage/unstage files, or run other git operations while `git cl upload` is running in the background!**
+    > > `git cl upload` runs asynchronously and expects the repository state to remain stable. If you switch branches (e.g., checkout a downstream branch) before the upload has fully completed, the upload process will package and commit files from the *newly checked out* branch under the old CL, corrupting the Gerrit CL with unrelated changes. Always wait for the upload task to finish completely before doing any further git operations.
 
 5. **Advanced Git Operations for Agents**:
 
@@ -64,6 +71,19 @@ Progress:
      2. Cherry-pick or manually apply the relevant changes to that branch.
      3. Upload as a new CL using `git cl upload`.
      4. Ensure the branches do not depend on each other unless strictly necessary.
+
+   ### Creating Stacked/Chained CLs with Gerrit Dependencies
+   When you want to split a larger task into a series of dependent CLs (stacked changes):
+   - **Workflow**:
+     1. **Start from the base branch/CL**: Ensure you are on the branch of the first CL (e.g., `branch-1` for `CL 1`).
+     2. **Create a dependent branch**: Run `git new-branch --upstream-current <new-branch-name>`. This creates a new branch (e.g., `branch-2`) tracking `branch-1` as its upstream.
+     3. **Apply and commit changes**: Apply your changes and commit them to `branch-2`.
+     4. **Upload to Gerrit**: Run `yes y | EDITOR=true git cl upload`. Because `branch-2` was created with `--upstream-current`, Gerrit will recognize the dependency structure, and the new CL will show as depending on the parent CL in the Gerrit UI.
+     5. **Uploading subsequent edits**:
+        - To update the base CL (`CL 1`), switch back to `branch-1`, make changes, commit (amending if desired: `git commit --amend`), and upload.
+        - After updating `branch-1`, you must rebase `branch-2` onto the updated `branch-1`. Since `branch-1` was amended or rebased, a simple `git rebase branch-1` can cause git to incorrectly re-apply old commits, triggering merge conflicts. Instead, use one of these methods:
+           - **Recommended**: Run `git rebase-update` from any branch. This depot_tools command automatically and cleanly rebases all local stacked branches on their respective upstreams.
+           - **Manual Git**: Switch to `branch-2` and run `git rebase --onto branch-1 <old-branch-1-commit-hash> branch-2` (where `<old-branch-1-commit-hash>` is the commit hash of `branch-1` before it was amended/rebased).
 
    ### Updating CL Description Non-Interactively
    Agents cannot use interactive editors (like `vim`) that `git cl upload` or `git cl description` might open.

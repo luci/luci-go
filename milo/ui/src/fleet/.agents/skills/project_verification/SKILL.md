@@ -1,6 +1,6 @@
 ---
 name: project_verification
-description: Instructions for running tests, linter, and type-checks.
+description: Runs project checks including linter, tests, and type-checks to ensure no regressions. Use before committing changes, before uploading a CL, or when validating code correctness.
 ---
 
 # Project Verification Skill
