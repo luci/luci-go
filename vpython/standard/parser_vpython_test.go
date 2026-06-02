@@ -36,7 +36,7 @@ dependencies = [
     "numpy>=1.24.0",
 ]
 `
-			spec, err := parseVPythonTOMLContent([]byte(validTOML))
+			spec, err := parseVpythonTOMLContent([]byte(validTOML))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11"))
@@ -56,7 +56,7 @@ include = '\.py$'
 select = ["E", "F"]
 ignore = ["E501"]
 `
-			_, err := parseVPythonTOMLContent([]byte(linterTOML))
+			_, err := parseVpythonTOMLContent([]byte(linterTOML))
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("empty spec file"))
 		})
@@ -65,7 +65,7 @@ ignore = ["E501"]
 			emptyTOML := `
 # Just comments and empty space
 `
-			_, err := parseVPythonTOMLContent([]byte(emptyTOML))
+			_, err := parseVpythonTOMLContent([]byte(emptyTOML))
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("empty spec file"))
 		})
@@ -75,7 +75,7 @@ ignore = ["E501"]
 dependencies = [
     "requests",  # Missing closing quote
 `
-			_, err := parseVPythonTOMLContent([]byte(invalidTOML))
+			_, err := parseVpythonTOMLContent([]byte(invalidTOML))
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 
@@ -87,7 +87,7 @@ requires-python = ">=3.11"
 			err := os.WriteFile(tmpPath, []byte(content), 0644)
 			assert.Loosely(t, err, should.BeNil)
 
-			spec, err := ParseVPythonTOML(tmpPath)
+			spec, err := ParseVpythonTOML(tmpPath)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11"))
@@ -95,7 +95,7 @@ requires-python = ">=3.11"
 
 		t.Run("Returns error when physical file does not exist", func(t *ftt.Test) {
 			nonExistentPath := filepath.Join(tT.TempDir(), "non_existent_file_path_xyz_123.toml")
-			_, err := ParseVPythonTOML(nonExistentPath)
+			_, err := ParseVpythonTOML(nonExistentPath)
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 
@@ -103,7 +103,7 @@ requires-python = ">=3.11"
 			typeMismatchTOML := `
 dependencies = "this-should-be-a-list-but-is-a-string"
 `
-			_, err := parseVPythonTOMLContent([]byte(typeMismatchTOML))
+			_, err := parseVpythonTOMLContent([]byte(typeMismatchTOML))
 			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})

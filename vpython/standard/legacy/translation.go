@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package legacy provides utilities to translate old, protobuf-based VPython
+// Package legacy provides utilities to translate old, protobuf-based Vpython
 // specifications into standard PEP 508 and PEP 440 requirements.
 package legacy
 

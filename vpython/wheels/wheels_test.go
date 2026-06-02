@@ -30,7 +30,7 @@ import (
 
 func TestGeneratingEnsureFile(t *testing.T) {
 	ftt.Run("Test generate ensure file", t, func(t *ftt.Test) {
-		ef, err := ensureFileFromVPythonSpec(&vpython.Spec{
+		ef, err := ensureFileFromVpythonSpec(&vpython.Spec{
 			Wheel: []*vpython.Spec_Package{
 				{Name: "pkg1", Version: "version1"},
 				{Name: "pkg2", Version: "version2"},
@@ -44,7 +44,7 @@ func TestGeneratingEnsureFile(t *testing.T) {
 	})
 	ftt.Run("Test duplicated wheels", t, func(t *ftt.Test) {
 		t.Run("Same version", func(t *ftt.Test) {
-			ef, err := ensureFileFromVPythonSpec(&vpython.Spec{
+			ef, err := ensureFileFromVpythonSpec(&vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "pkg1", Version: "version1"},
 					{Name: "pkg1", Version: "version1"},
@@ -56,7 +56,7 @@ func TestGeneratingEnsureFile(t *testing.T) {
 			}))
 		})
 		t.Run("Different version", func(t *ftt.Test) {
-			_, err := ensureFileFromVPythonSpec(&vpython.Spec{
+			_, err := ensureFileFromVpythonSpec(&vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "pkg1", Version: "version1"},
 					{Name: "pkg1", Version: "version2"},
@@ -68,7 +68,7 @@ func TestGeneratingEnsureFile(t *testing.T) {
 	})
 	ftt.Run("Test match tag", t, func(t *ftt.Test) {
 		t.Run("match", func(t *ftt.Test) {
-			ef, err := ensureFileFromVPythonSpec(&vpython.Spec{
+			ef, err := ensureFileFromVpythonSpec(&vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "pkg1", Version: "version1", MatchTag: []*vpython.PEP425Tag{{Platform: "manylinux1_x86_64"}}},
 					{Name: "pkg2", Version: "version2"},
@@ -81,7 +81,7 @@ func TestGeneratingEnsureFile(t *testing.T) {
 			}))
 		})
 		t.Run("mismatch", func(t *ftt.Test) {
-			ef, err := ensureFileFromVPythonSpec(&vpython.Spec{
+			ef, err := ensureFileFromVpythonSpec(&vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "pkg1", Version: "version1", MatchTag: []*vpython.PEP425Tag{{Platform: "manylinux1_x86_64"}}},
 					{Name: "pkg2", Version: "version2"},

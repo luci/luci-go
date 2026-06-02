@@ -31,7 +31,7 @@ import (
 // directly.
 func Verify(spec *vpython.Spec) error {
 	for _, t := range spec.VerifyPep425Tag {
-		ef, err := ensureFileFromVPythonSpec(spec, []*vpython.PEP425Tag{t})
+		ef, err := ensureFileFromVpythonSpec(spec, []*vpython.PEP425Tag{t})
 		if err != nil {
 			return err
 		}

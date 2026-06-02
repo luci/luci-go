@@ -42,7 +42,7 @@ type DiscoveredFlow struct {
 	StandardSpec    *standard.ProjectSpec
 	VpythonSpec     *vpythonAPI.Spec
 	ProjectRoot     string
-	FromVPythonTOML bool
+	FromVpythonTOML bool
 }
 
 // ResolveFlow climbs parent trees to discover standard (PEP 723, vpython.toml) or legacy specs.
@@ -67,7 +67,7 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 		}
 
 		if filepath.Base(specPath) == "vpython.toml" || strings.EqualFold(filepath.Ext(specPath), ".toml") {
-			projectSpec, err := standard.ParseVPythonTOML(specPath)
+			projectSpec, err := standard.ParseVpythonTOML(specPath)
 			if err != nil {
 				return nil, errors.Fmt("explicit TOML spec %q is invalid: %w", specPath, err)
 			}
@@ -75,7 +75,7 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 				Flow:            FlowUV,
 				StandardSpec:    projectSpec,
 				ProjectRoot:     filepath.Dir(specPath),
-				FromVPythonTOML: true,
+				FromVpythonTOML: true,
 			}, nil
 		}
 		// Try parsing as legacy spec.
@@ -179,7 +179,7 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 	}
 
 	if filepath.Base(foundSpecPath) == "vpython.toml" {
-		projectSpec, err := standard.ParseVPythonTOML(foundSpecPath)
+		projectSpec, err := standard.ParseVpythonTOML(foundSpecPath)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +190,7 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 			Flow:            FlowUV,
 			StandardSpec:    projectSpec,
 			ProjectRoot:     filepath.Dir(foundSpecPath),
-			FromVPythonTOML: true,
+			FromVpythonTOML: true,
 		}, nil
 	}
 

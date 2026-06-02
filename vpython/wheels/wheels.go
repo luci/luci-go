@@ -99,10 +99,10 @@ func (v *vpythonSpecTransformer) Transform(spec *vpython.Spec, deps []actions.Pa
 }
 
 func MustSetExecutor(reexec *actions.ReexecRegistry) {
-	actions.MustSetExecutor[*vpython.Spec](reexec, actionVPythonSpecExecutor)
+	actions.MustSetExecutor[*vpython.Spec](reexec, actionVpythonSpecExecutor)
 }
 
-func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string) error {
+func actionVpythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string) error {
 	envs := environ.FromCtx(ctx)
 
 	// Parse tags file
@@ -135,7 +135,7 @@ func actionVPythonSpecExecutor(ctx context.Context, s *vpython.Spec, out string)
 	return nil
 }
 
-func ensureFileFromVPythonSpec(s *vpython.Spec, tags []*vpython.PEP425Tag) (*ensure.File, error) {
+func ensureFileFromVpythonSpec(s *vpython.Spec, tags []*vpython.PEP425Tag) (*ensure.File, error) {
 	s = proto.Clone(s).(*vpython.Spec)
 
 	// Remove unmatched wheels from spec
@@ -181,8 +181,8 @@ func ensureFileFromVPythonSpec(s *vpython.Spec, tags []*vpython.PEP425Tag) (*ens
 }
 
 func writeRequirementsFromSpec(path string, s *vpython.Spec, tags []*vpython.PEP425Tag) (err error) {
-	// Use ensureFileFromVPythonSpec to filter and expand template names.
-	ef, err := ensureFileFromVPythonSpec(s, tags)
+	// Use ensureFileFromVpythonSpec to filter and expand template names.
+	ef, err := ensureFileFromVpythonSpec(s, tags)
 	if err != nil {
 		return err
 	}

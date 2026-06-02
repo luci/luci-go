@@ -28,17 +28,17 @@ type ProjectSpec struct {
 	Dependencies   []string `toml:"dependencies,omitempty" multiline:"true"`
 }
 
-// ParseVPythonTOML loads and parses a standard vpython.toml spec file.
-func ParseVPythonTOML(path string) (*ProjectSpec, error) {
+// ParseVpythonTOML loads and parses a standard vpython.toml spec file.
+func ParseVpythonTOML(path string) (*ProjectSpec, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errors.Fmt("failed to read vpython.toml at: %s: %w", path, err)
 	}
-	return parseVPythonTOMLContent(content)
+	return parseVpythonTOMLContent(content)
 }
 
-// parseVPythonTOMLContent parses the byte slice content of a flat vpython.toml spec file.
-func parseVPythonTOMLContent(content []byte) (*ProjectSpec, error) {
+// parseVpythonTOMLContent parses the byte slice content of a flat vpython.toml spec file.
+func parseVpythonTOMLContent(content []byte) (*ProjectSpec, error) {
 	var spec ProjectSpec
 	if err := toml.Unmarshal(content, &spec); err != nil {
 		return nil, errors.Fmt("failed to parse TOML: %w", err)

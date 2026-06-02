@@ -120,7 +120,7 @@ dependencies = ["numpy"]
 			assert.Loosely(t, res.Flow, should.Equal(FlowUV))
 			assert.Loosely(t, res.StandardSpec.RequiresPython, should.Equal(">=3.8"))
 			assert.Loosely(t, res.ProjectRoot, should.Equal(root))
-			assert.Loosely(t, res.FromVPythonTOML, should.BeTrue)
+			assert.Loosely(t, res.FromVpythonTOML, should.BeTrue)
 		})
 
 		t.Run("Stops climbing at .gclient stop barrier and falls back cleanly", func(t *ftt.Test) {

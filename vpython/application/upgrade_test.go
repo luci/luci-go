@@ -61,7 +61,7 @@ wheel {
 
 			// Verify vpython.toml exists and has correct translated properties
 			tomlPath := filepath.Join(tempDir, "vpython.toml")
-			spec, err := standard.ParseVPythonTOML(tomlPath)
+			spec, err := standard.ParseVpythonTOML(tomlPath)
 			assert.NoErr(t, err)
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.8,<3.9"))
 			assert.Loosely(t, spec.Dependencies, should.Match([]string{"requests==2.22.0"}))
@@ -513,7 +513,7 @@ func TestUpgradeSpecs_Python2(t *testing.T) {
 
 			// Verify vpython.toml was created with standard Python 2 constraints
 			tomlPath := filepath.Join(tempDir, "vpython.toml")
-			spec, err := standard.ParseVPythonTOML(tomlPath)
+			spec, err := standard.ParseVpythonTOML(tomlPath)
 			assert.NoErr(t, err)
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=2.7,<2.8"))
 		})
@@ -568,7 +568,7 @@ func TestUpgradeSpecs_Standalone_Precedence(t *testing.T) {
 			assert.Loosely(t, errors.Is(err, os.ErrNotExist), should.BeTrue)
 
 			// 3. Verify that vpython.toml has exactly the correct high-priority .vpython3 spec
-			spec, err := standard.ParseVPythonTOML(tomlPath)
+			spec, err := standard.ParseVpythonTOML(tomlPath)
 			assert.NoErr(t, err)
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11,<3.12"))
 		})
