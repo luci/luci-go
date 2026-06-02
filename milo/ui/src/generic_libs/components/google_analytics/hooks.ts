@@ -72,6 +72,16 @@ export interface EventPayload {
    * The platform associated with the event.
    */
   platform?: string;
+
+  /**
+   * The unique ID of the AI-assisted analysis run/event.
+   */
+  eventId?: string;
+
+  /**
+   * User feedback on whether the Smart Repair saved them time: 'up' (Yes) or 'down' (No).
+   */
+  feedback?: 'up' | 'down';
 }
 
 /**

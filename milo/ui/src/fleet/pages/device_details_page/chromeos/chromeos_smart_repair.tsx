@@ -16,6 +16,8 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import BuildIcon from '@mui/icons-material/Build';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import {
   Accordion,
   AccordionDetails,
@@ -27,6 +29,7 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Fade,
   Grid,
   Typography,
 } from '@mui/material';
@@ -37,7 +40,7 @@ import {
   doc,
   onSnapshot,
 } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router';
 
 import { genFeedbackUrl } from '@/common/tools/utils';
@@ -45,6 +48,7 @@ import { db } from '@/firebase';
 import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { GetSmartRepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
@@ -64,7 +68,9 @@ export const ChromeOSSmartRepair = () => {
   const hasAdminTaskPermission = useAdminTaskPermission();
   const fleetConsoleClient = useFleetConsoleClient();
   const queryClient = useQueryClient();
+  const { trackEvent } = useGoogleAnalytics();
 
+  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
   const [realtimeData, setRealtimeData] =
     useState<SmartRepairRealtimeData | null>(null);
   const [realtimeError, setRealtimeError] = useState<string | null>(null);
@@ -130,6 +136,22 @@ export const ChromeOSSmartRepair = () => {
   const eventId = data?.eventId;
   const hasCachedResult = !!data?.cachedResult;
   const alreadyInProgress = data?.alreadyInProgress;
+
+  useEffect(() => {
+    setFeedback(null);
+  }, [eventId]);
+
+  const handleFeedback = useCallback(
+    (savedTime: boolean) => {
+      if (!eventId) return;
+      trackEvent('smart_repair_feedback', {
+        eventId,
+        feedback: savedTime ? 'up' : 'down',
+      });
+      setFeedback(savedTime ? 'up' : 'down');
+    },
+    [eventId, trackEvent],
+  );
 
   useEffect(() => {
     if (!eventId) {
@@ -259,6 +281,8 @@ export const ChromeOSSmartRepair = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           mb: 3,
+          flexWrap: 'wrap',
+          gap: 2,
         }}
       >
         <Typography
@@ -277,30 +301,112 @@ export const ChromeOSSmartRepair = () => {
             />
           )}
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={
-            retriggerMutation.isPending ? (
-              <CircularProgress size={20} />
-            ) : (
-              <RefreshIcon />
-            )
-          }
-          onClick={() => {
-            setSessionError(null);
-            retriggerMutation.mutate();
-          }}
-          disabled={
-            isLoading ||
-            retriggerMutation.isPending ||
-            currentStatus === 'pending' ||
-            currentStatus === 'processing'
-          }
-        >
-          {retriggerMutation.isPending
-            ? 'Retriggering...'
-            : 'Retrigger Analysis'}
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {currentStatus === 'completed' && eventId && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                p: 1,
+                px: 2,
+                borderRadius: 2,
+                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 500, color: 'text.secondary' }}
+              >
+                Did this save time?
+              </Typography>
+              {feedback === null ? (
+                <Fade in={feedback === null} timeout={300}>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="success"
+                      aria-label="Yes, it saved time"
+                      sx={{
+                        minWidth: 0,
+                        p: '4px 8px',
+                        borderRadius: 1.5,
+                        borderColor: 'rgba(46, 125, 50, 0.3)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(46, 125, 50, 0.08)',
+                          borderColor: 'success.main',
+                        },
+                      }}
+                      onClick={() => handleFeedback(true)}
+                    >
+                      <ThumbUpIcon sx={{ fontSize: 18 }} />
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      aria-label="No, it did not"
+                      sx={{
+                        minWidth: 0,
+                        p: '4px 8px',
+                        borderRadius: 1.5,
+                        borderColor: 'rgba(211, 47, 47, 0.3)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(211, 47, 47, 0.08)',
+                          borderColor: 'error.main',
+                        },
+                      }}
+                      onClick={() => handleFeedback(false)}
+                    >
+                      <ThumbDownIcon sx={{ fontSize: 18 }} />
+                    </Button>
+                  </Box>
+                </Fade>
+              ) : (
+                <Fade in={feedback !== null} timeout={300}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Thank you!
+                  </Typography>
+                </Fade>
+              )}
+            </Box>
+          )}
+          <Button
+            variant="outlined"
+            startIcon={
+              retriggerMutation.isPending ? (
+                <CircularProgress size={20} />
+              ) : (
+                <RefreshIcon />
+              )
+            }
+            onClick={() => {
+              setSessionError(null);
+              retriggerMutation.mutate();
+            }}
+            disabled={
+              isLoading ||
+              retriggerMutation.isPending ||
+              currentStatus === 'pending' ||
+              currentStatus === 'processing'
+            }
+          >
+            {retriggerMutation.isPending
+              ? 'Retriggering...'
+              : 'Retrigger Analysis'}
+          </Button>
+        </Box>
       </Box>
 
       {timeInfo && (

@@ -46,6 +46,11 @@ jest.mock('react-router', () => ({
   useParams: () => ({ id: 'test-device-1' }),
 }));
 
+const mockTrackEvent = jest.fn();
+jest.mock('@/generic_libs/components/google_analytics', () => ({
+  useGoogleAnalytics: () => ({ trackEvent: mockTrackEvent }),
+}));
+
 describe('<ChromeOSSmartRepair />', () => {
   let queryClient: QueryClient;
   let firestoreCallback: (doc: DocumentSnapshot) => void;
@@ -62,6 +67,7 @@ describe('<ChromeOSSmartRepair />', () => {
     mockGetSmartRepair.mockReset();
     mockUseAdminTaskPermission.mockReset();
     mockOnSnapshot.mockReset();
+    mockTrackEvent.mockReset();
 
     mockOnSnapshot.mockImplementation((_ref, callback) => {
       firestoreCallback = callback;
@@ -366,5 +372,136 @@ describe('<ChromeOSSmartRepair />', () => {
     expect(
       screen.queryByText(/Analysis resulted in error/i),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders the feedback widget when Smart Repair is completed and tracks thumbs up clicks', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: 'event-123',
+          alreadyInProgress: true,
+          cachedResult: undefined,
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText(/Analysis is currently processing/i),
+    ).toBeInTheDocument();
+
+    // Emit completed Firestore document update
+    const mockCompletedDoc = {
+      exists: () => true,
+      data: () => ({
+        status: 'completed',
+        result: {
+          summary: 'All components functioning normally.',
+          conclusions: [],
+          manualRepairActions: [],
+          logsPath: 'gs://test-bucket/logs/2026-05-27-00-00-00/log.txt',
+        },
+      }),
+    };
+
+    await act(async () => {
+      firestoreCallback(mockCompletedDoc as unknown as DocumentSnapshot);
+    });
+
+    // Verify feedback widget is visible
+    expect(screen.getByText('Did this save time?')).toBeInTheDocument();
+
+    const thumbsUpButton = screen.getByRole('button', {
+      name: 'Yes, it saved time',
+    });
+    expect(thumbsUpButton).toBeInTheDocument();
+
+    const thumbsDownButton = screen.getByRole('button', {
+      name: 'No, it did not',
+    });
+    expect(thumbsDownButton).toBeInTheDocument();
+
+    // Click thumbs up
+    await act(async () => {
+      fireEvent.click(thumbsUpButton);
+    });
+
+    // Verify feedback submission calls GA trackEvent and updates UI
+    expect(mockTrackEvent).toHaveBeenCalledTimes(1);
+    expect(mockTrackEvent).toHaveBeenCalledWith('smart_repair_feedback', {
+      eventId: 'event-123',
+      feedback: 'up',
+    });
+
+    expect(screen.getByText('Thank you!')).toBeInTheDocument();
+  });
+
+  it('renders the feedback widget and tracks thumbs down clicks', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: 'event-123',
+          alreadyInProgress: true,
+          cachedResult: undefined,
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByText(/Analysis is currently processing/i),
+    ).toBeInTheDocument();
+
+    const mockCompletedDoc = {
+      exists: () => true,
+      data: () => ({
+        status: 'completed',
+        result: {
+          summary: 'All components functioning normally.',
+          conclusions: [],
+          manualRepairActions: [],
+          logsPath: 'gs://test-bucket/logs/2026-05-27-00-00-00/log.txt',
+        },
+      }),
+    };
+
+    await act(async () => {
+      firestoreCallback(mockCompletedDoc as unknown as DocumentSnapshot);
+    });
+
+    const thumbsDownButton = screen.getByRole('button', {
+      name: 'No, it did not',
+    });
+
+    // Click thumbs down
+    await act(async () => {
+      fireEvent.click(thumbsDownButton);
+    });
+
+    expect(mockTrackEvent).toHaveBeenCalledTimes(1);
+    expect(mockTrackEvent).toHaveBeenCalledWith('smart_repair_feedback', {
+      eventId: 'event-123',
+      feedback: 'down',
+    });
+
+    expect(screen.getByText('Thank you!')).toBeInTheDocument();
   });
 });
