@@ -119,7 +119,7 @@ const TaskCell = ({
   }
 
   return (
-    <EllipsisTooltip>
+    <EllipsisTooltip tooltip={taskName}>
       <a
         href={url ?? getSwarmingTaskURL(meta.swarmingHost, taskId)}
         target="_blank"
@@ -141,7 +141,7 @@ const DutNameCell = ({
     return null;
   }
   return (
-    <EllipsisTooltip>
+    <EllipsisTooltip tooltip={dutName}>
       <a href={generateChromeOsDeviceDetailsURL(dutName)}>{dutName}</a>
     </EllipsisTooltip>
   );
