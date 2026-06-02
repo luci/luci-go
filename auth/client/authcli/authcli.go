@@ -560,15 +560,6 @@ func (c *infoRun) Run(a subcommands.Application, args []string, env subcommands.
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// SubcommandToken returns subcommand.Command that can be used to print current
-// access token.
-func SubcommandToken(opts auth.Options, name string) *subcommands.Command {
-	return SubcommandTokenWithParams(CommandParams{
-		Name:        name,
-		AuthOptions: opts,
-	})
-}
-
 // SubcommandTokenWithParams returns subcommand.Command that can be used to
 // print current access token.
 func SubcommandTokenWithParams(params CommandParams) *subcommands.Command {
