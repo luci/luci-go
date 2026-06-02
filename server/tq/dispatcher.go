@@ -160,6 +160,13 @@ type Dispatcher struct {
 	// "default@example.com", which is pretty useless outside of tests.
 	PushAs string
 
+	// PushOIDCTokenAudience is the audience value to use when generating OIDC tokens.
+	//
+	// Used only for Cloud Tasks tasks. Doesn't affect PubSub tasks.
+	//
+	// Optional. If unset, a default audience value is assigned by Cloud Tasks.
+	PushOIDCTokenAudience string
+
 	// AuthorizedPushers is a list of service account emails to accept pushes from
 	// in addition to PushAs.
 	//
@@ -1035,6 +1042,7 @@ func (d *Dispatcher) prepCloudTasksRequest(ctx context.Context, cls *taskClassIm
 			AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 				OidcToken: &taskspb.OidcToken{
 					ServiceAccountEmail: pushAs,
+					Audience:            d.PushOIDCTokenAudience,
 				},
 			},
 		},

@@ -65,10 +65,11 @@ func TestAddTask(t *testing.T) {
 		ctx = UseSubmitter(ctx, submitter)
 
 		d := Dispatcher{
-			CloudProject:      "proj",
-			CloudRegion:       "reg",
-			DefaultTargetHost: "example.com",
-			PushAs:            "push-as@example.com",
+			CloudProject:          "proj",
+			CloudRegion:           "reg",
+			DefaultTargetHost:     "example.com",
+			PushAs:                "push-as@example.com",
+			PushOIDCTokenAudience: "https://example.com",
 		}
 
 		d.RegisterTaskClass(TaskClass{
@@ -110,6 +111,7 @@ func TestAddTask(t *testing.T) {
 							AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 								OidcToken: &taskspb.OidcToken{
 									ServiceAccountEmail: "push-as@example.com",
+									Audience:            "https://example.com",
 								},
 							},
 						},
@@ -138,6 +140,7 @@ func TestAddTask(t *testing.T) {
 							AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
 								OidcToken: &taskspb.OidcToken{
 									ServiceAccountEmail: "push-as@example.com",
+									Audience:            "https://example.com",
 								},
 							},
 						},

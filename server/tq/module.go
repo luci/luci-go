@@ -78,6 +78,11 @@ type ModuleOptions struct {
 	// Default is the server's own account.
 	PushAs string
 
+	// PushOIDCTokenAudience is the audience value to use when generating OIDC tokens.
+	//
+	// Default is to use the full URI of the task being dispatched.
+	PushOIDCTokenAudience string
+
 	// AuthorizedPushers is a list of service account emails to accept pushes from
 	// in addition to PushAs.
 	//
@@ -212,6 +217,9 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		`Service account email to be used for generating OIDC tokens. `+
 			`Default is server's own account.`)
 
+	f.StringVar(&o.PushOIDCTokenAudience, "tq-push-oidc-token-audience", o.PushOIDCTokenAudience,
+		`Audience to use when generating OIDC tokens.`)
+
 	f.Var(luciflag.StringSlice(&o.AuthorizedPushers), "tq-authorized-pusher",
 		`Service account email to accept pushes from (in addition to -tq-push-as). May be repeated.`)
 
@@ -316,6 +324,7 @@ func (m *tqModule) initDispatching(ctx context.Context, host module.Host, opts m
 	disp.AuthorizedPushers = m.opts.AuthorizedPushers
 	disp.SweepInitiationLaunchers = m.opts.SweepInitiationLaunchers
 
+	disp.PushOIDCTokenAudience = m.opts.PushOIDCTokenAudience
 	disp.CloudProject = m.opts.CloudProject
 	if disp.CloudProject == "" {
 		disp.CloudProject = opts.CloudProject
