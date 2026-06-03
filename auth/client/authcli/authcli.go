@@ -675,20 +675,6 @@ func (c *tokenRun) Run(a subcommands.Application, args []string, env subcommands
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// SubcommandContext returns subcommand.Command that can be used to setup new
-// LUCI authentication context for a process tree.
-//
-// This is an advanced command and shouldn't be usually embedded into binaries.
-// It is primarily used by 'luci-auth' program. It exists to simplify
-// development and debugging of programs that rely on LUCI authentication
-// context.
-func SubcommandContext(opts auth.Options, name string) *subcommands.Command {
-	return SubcommandContextWithParams(CommandParams{
-		Name:        name,
-		AuthOptions: opts,
-	})
-}
-
 // SubcommandContextWithParams returns subcommand.Command that can be used to
 // setup new LUCI authentication context for a process tree.
 func SubcommandContextWithParams(params CommandParams) *subcommands.Command {
