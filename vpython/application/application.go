@@ -139,6 +139,9 @@ type Application struct {
 	Environments []string
 	Arguments    []string
 
+	// ToolArgs holds the raw remainder arguments when running in ToolMode.
+	ToolArgs []string
+
 	VpythonSpec       *vpythonAPI.Spec
 	PythonCommandLine *python.CommandLine
 	PythonExecutable  string
@@ -277,6 +280,11 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 	// Set CIPD CacheDIR
 	if a.CIPDCacheDir == "" {
 		a.CIPDCacheDir = filepath.Join(a.VpythonRoot, "cipd")
+	}
+
+	if a.ToolMode == "upgrade" {
+		a.ToolArgs = pythonArgs
+		return nil
 	}
 
 	if a.PythonCommandLine, err = python.ParseCommandLine(pythonArgs); err != nil {

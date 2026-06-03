@@ -52,7 +52,7 @@ wheel {
 			err := os.WriteFile(srcPath, []byte(strings.TrimSpace(legacyContent)), 0644)
 			assert.NoErr(t, err)
 
-			err = UpgradeSpecs(ctx, srcPath, false) // keepLegacy = false
+			err = UpgradeSpecs(ctx, srcPath, false, true, true) // keepLegacy = false
 			assert.NoErr(t, err)
 
 			// Verify original legacy file was deleted
@@ -98,7 +98,7 @@ wheel {
 			err = os.WriteFile(srcPath, []byte(strings.TrimSpace(legacyMultipleContent)), 0644)
 			assert.NoErr(t, err)
 
-			err = UpgradeSpecs(ctx, srcPath, false)
+			err = UpgradeSpecs(ctx, srcPath, false, true, true)
 			assert.NoErr(t, err)
 
 			tomlPath := filepath.Join(subDir, "vpython.toml")
@@ -124,7 +124,7 @@ dependencies = [
 			tomlPath := filepath.Join(tempDir, "vpython.toml")
 			_ = os.Remove(tomlPath)
 
-			err = UpgradeSpecs(ctx, srcPath, true) // keepLegacy = true
+			err = UpgradeSpecs(ctx, srcPath, true, true, true) // keepLegacy = true
 			assert.NoErr(t, err)
 
 			// Verify original legacy file still exists
@@ -146,7 +146,7 @@ dependencies = [
 			_ = os.Remove(tomlPath)
 
 			mctx := memlogger.Use(ctx)
-			err = UpgradeSpecs(mctx, srcPath, false)
+			err = UpgradeSpecs(mctx, srcPath, false, true, true)
 			assert.NoErr(t, err)
 
 			// Verify custom spec file still exists
@@ -190,7 +190,7 @@ print("OK")
 			err := os.WriteFile(scriptPath, []byte(strings.TrimSpace(scriptContent)), 0755)
 			assert.NoErr(t, err)
 
-			err = UpgradeSpecs(ctx, scriptPath, false)
+			err = UpgradeSpecs(ctx, scriptPath, false, true, true)
 			assert.NoErr(t, err)
 
 			// Read script and verify content replacement
@@ -226,7 +226,7 @@ print("OK")
 
 			mctx := memlogger.Use(ctx)
 
-			err = UpgradeSpecs(mctx, scriptPath, false)
+			err = UpgradeSpecs(mctx, scriptPath, false, true, true)
 			assert.NoErr(t, err)
 
 			// Verify script remains untouched
@@ -264,7 +264,7 @@ print("OK")
 			err := os.WriteFile(scriptPath, []byte(strings.TrimSpace(scriptContent)), 0755)
 			assert.NoErr(t, err)
 
-			err = UpgradeSpecs(ctx, scriptPath, false)
+			err = UpgradeSpecs(ctx, scriptPath, false, true, true)
 			assert.NoErr(t, err)
 
 			// Read script and verify content replacement
@@ -317,7 +317,7 @@ print("OK")
 			hiddenSpecPath := filepath.Join(hidden, "hidden.vpython3")
 			assert.NoErr(t, os.WriteFile(hiddenSpecPath, []byte(specContent), 0644))
 
-			err := UpgradeSpecs(ctx, tempDir, false)
+			err := UpgradeSpecs(ctx, tempDir, false, true, true)
 			assert.NoErr(t, err)
 
 			// 1. Verify standalone spec inside sub1 was migrated and original was deleted
@@ -356,7 +356,7 @@ print("broken")
 			assert.NoErr(t, os.WriteFile(corruptScriptPath, []byte(strings.TrimSpace(corruptContent)), 0755))
 
 			// Run recursive UpgradeSpecs on the root tempDir!
-			err := UpgradeSpecs(ctx, tempDir, false)
+			err := UpgradeSpecs(ctx, tempDir, false, true, true)
 			assert.Loosely(t, err, should.NotBeNil) // Must report the collected error at the end!
 			assert.Loosely(t, err.Error(), should.ContainSubstring("contains mismatched inline spec guards"))
 
@@ -400,7 +400,7 @@ wheel {
 			err = os.WriteFile(specPath, []byte(strings.TrimSpace(specContent)), 0644)
 			assert.NoErr(t, err)
 
-			err = UpgradeSpecs(ctx, specPath, false) // keepLegacy = false
+			err = UpgradeSpecs(ctx, specPath, false, true, true) // keepLegacy = false
 			assert.NoErr(t, err)
 
 			// Verify original companion spec file was deleted
@@ -432,7 +432,7 @@ print("OK")`
 			err = os.WriteFile(specPath, []byte(strings.TrimSpace(specContent)), 0644)
 			assert.NoErr(t, err)
 
-			err = UpgradeSpecs(ctx, specPath, true) // keepLegacy = true
+			err = UpgradeSpecs(ctx, specPath, true, true, true) // keepLegacy = true
 			assert.NoErr(t, err)
 
 			// Verify original companion spec file still exists
@@ -475,7 +475,7 @@ venv = "normal"
 			err = os.WriteFile(srcPath, []byte(strings.TrimSpace(legacyContent)), 0644)
 			assert.NoErr(t, err)
 
-			err = UpgradeSpecs(ctx, srcPath, false)
+			err = UpgradeSpecs(ctx, srcPath, false, true, true)
 			assert.NoErr(t, err)
 
 			data, err := os.ReadFile(tomlPath)
@@ -504,7 +504,7 @@ func TestUpgradeSpecs_Python2(t *testing.T) {
 			err := os.WriteFile(srcPath, []byte(content), 0644)
 			assert.NoErr(t, err)
 
-			err = UpgradeSpecs(ctx, srcPath, false)
+			err = UpgradeSpecs(ctx, srcPath, false, true, true)
 			assert.NoErr(t, err)
 
 			// Verify legacy .vpython was deleted
@@ -529,7 +529,7 @@ print "OK"
 			err := os.WriteFile(scriptPath, []byte(strings.TrimSpace(scriptContent)), 0755)
 			assert.NoErr(t, err)
 
-			err = UpgradeSpecs(ctx, scriptPath, false)
+			err = UpgradeSpecs(ctx, scriptPath, false, true, true)
 			assert.NoErr(t, err)
 
 			// Verify script remains completely untouched
@@ -556,7 +556,7 @@ func TestUpgradeSpecs_Standalone_Precedence(t *testing.T) {
 			tomlPath := filepath.Join(tempDir, "vpython.toml")
 			_ = os.Remove(tomlPath)
 
-			err := UpgradeSpecs(ctx, tempDir, false)
+			err := UpgradeSpecs(ctx, tempDir, false, true, true)
 			assert.NoErr(t, err)
 
 			// 1. Verify that .vpython3 was successfully migrated and deleted
@@ -580,7 +580,7 @@ func TestUpgradeSpecs_Standalone_Precedence(t *testing.T) {
 			tomlPath := filepath.Join(tempDir, "vpython.toml")
 			_ = os.Remove(tomlPath)
 
-			err := UpgradeSpecs(ctx, tempDir, true)
+			err := UpgradeSpecs(ctx, tempDir, true, true, true)
 			assert.NoErr(t, err)
 
 			// Verify both files still exist!
@@ -606,7 +606,7 @@ func TestUpgradeSpecs_UnsupportedTarget(t *testing.T) {
 		mctx := memlogger.Use(ctx)
 
 		// Execute UpgradeSpecs directly on the custom script!
-		err = UpgradeSpecs(mctx, scriptPath, false)
+		err = UpgradeSpecs(mctx, scriptPath, false, true, true)
 		assert.NoErr(t, err)
 
 		// Verify custom script was NOT deleted!
@@ -639,7 +639,7 @@ print("OK")
 		assert.NoErr(t, err)
 
 		// Execute UpgradeSpecs directly and verify it returns a mismatched guards error!
-		err = UpgradeSpecs(ctx, scriptPath, false)
+		err = UpgradeSpecs(ctx, scriptPath, false, true, true)
 		assert.Loosely(t, err, should.NotBeNil)
 		assert.Loosely(t, err.Error(), should.ContainSubstring("contains mismatched inline spec guards"))
 		assert.Loosely(t, err.Error(), should.ContainSubstring("begin index: 0, end index: -1"))
@@ -675,7 +675,7 @@ print("OK")
 		assert.NoErr(t, err)
 
 		// Run UpgradeSpecs on the folder containing both!
-		err = UpgradeSpecs(ctx, tempDir, false)
+		err = UpgradeSpecs(ctx, tempDir, false, true, true)
 		assert.NoErr(t, err)
 
 		// 1. Verify that the companion spec file was successfully merged and deleted!

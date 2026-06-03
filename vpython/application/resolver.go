@@ -42,6 +42,7 @@ type DiscoveredFlow struct {
 	StandardSpec    *standard.ProjectSpec
 	VpythonSpec     *vpythonAPI.Spec
 	ProjectRoot     string
+	SpecPath        string // Path to the file declaring the specification
 	FromVpythonTOML bool
 }
 
@@ -75,6 +76,7 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 				Flow:            FlowUV,
 				StandardSpec:    projectSpec,
 				ProjectRoot:     filepath.Dir(specPath),
+				SpecPath:        specPath,
 				FromVpythonTOML: true,
 			}, nil
 		}
@@ -101,6 +103,7 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 				Flow:         FlowUV,
 				StandardSpec: projectSpec,
 				ProjectRoot:  filepath.Dir(scriptPath),
+				SpecPath:     scriptPath,
 			}, nil
 		}
 
@@ -190,6 +193,7 @@ func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpe
 			Flow:            FlowUV,
 			StandardSpec:    projectSpec,
 			ProjectRoot:     filepath.Dir(foundSpecPath),
+			SpecPath:        foundSpecPath,
 			FromVpythonTOML: true,
 		}, nil
 	}

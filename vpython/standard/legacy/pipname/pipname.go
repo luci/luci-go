@@ -126,24 +126,15 @@ func PipVersionFromPackageVersion(version string) string {
 			}
 		}
 		if !allDigits {
-			isPre := false
-			for _, pre := range [...]string{"a", "b", "rc", "alpha", "beta", "pre", "preview", "c", "post", "rev", "r", "dev"} {
-				if strings.HasPrefix(strings.ToLower(seg), pre) {
-					rest := seg[len(pre):]
-					isNumeric := true
-					for _, r := range rest {
-						if !unicode.IsDigit(r) {
-							isNumeric = false
-							break
-						}
-					}
-					if isNumeric {
-						isPre = true
-						break
-					}
+			firstNonDigit := -1
+			for j, r := range seg {
+				if !unicode.IsDigit(r) {
+					firstNonDigit = j
+					break
 				}
 			}
-			if !isPre {
+			rest := seg[firstNonDigit:]
+			if !isPrePostRelease(rest) {
 				if actualIdx > 0 {
 					sep := v[actualIdx-1]
 					if sep == '.' || sep == '-' {
@@ -156,4 +147,27 @@ func PipVersionFromPackageVersion(version string) string {
 	}
 
 	return v
+}
+
+func isPrePostRelease(s string) bool {
+	s = strings.ToLower(s)
+	for _, pre := range [...]string{"a", "b", "rc", "alpha", "beta", "pre", "preview", "c", "post", "rev", "r", "dev"} {
+		if strings.HasPrefix(s, pre) {
+			rest := s[len(pre):]
+			if rest == "" {
+				return true
+			}
+			allDigits := true
+			for _, r := range rest {
+				if !unicode.IsDigit(r) {
+					allDigits = false
+					break
+				}
+			}
+			if allDigits {
+				return true
+			}
+		}
+	}
+	return false
 }

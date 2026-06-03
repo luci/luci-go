@@ -37,8 +37,9 @@ import (
 	"go.chromium.org/luci/vpython/standard/legacy"
 )
 
-// UpgradeSpecs converts legacy specs in target path to standard formats.
-func UpgradeSpecs(ctx context.Context, path string, keepLegacy bool) error {
+// UpgradeSpecs converts legacy specs in target path to standard formats,
+// or force-regenerates lockfiles for standard specs.
+func UpgradeSpecs(ctx context.Context, path string, keepLegacy, legacyMode, allMode bool) error {
 	absPath := path
 	if err := filesystem.AbsPath(&absPath); err != nil {
 		return errors.Fmt("failed to get absolute target path of %q: %w", path, err)
@@ -49,10 +50,50 @@ func UpgradeSpecs(ctx context.Context, path string, keepLegacy bool) error {
 		return errors.Fmt("target path %q does not exist: %w", path, err)
 	}
 
-	if st.IsDir() {
-		return upgradeDir(ctx, absPath, keepLegacy)
+	if legacyMode || allMode {
+		if st.IsDir() {
+			if legacyMode {
+				return upgradeDir(ctx, absPath, keepLegacy)
+			}
+			return forceRegenerateDir(ctx, absPath)
+		}
+		if legacyMode {
+			return upgradeFile(ctx, absPath, keepLegacy, true)
+		}
+		return forceRegenerateFile(ctx, absPath, true)
 	}
-	return upgradeFile(ctx, absPath, keepLegacy, true)
+
+	// Git-based modified files detection (default mode)
+	if st.IsDir() {
+		modifiedFiles, err := detectGitModifiedFiles(ctx, absPath)
+		if err != nil {
+			return err
+		}
+		if len(modifiedFiles) == 0 {
+			fmt.Printf("vpython3 upgrade: No Git-modified vpython specs or Python scripts detected in %s. (Use -all to scan/compile all files recursively).\n", path)
+			return nil
+		}
+
+		var errs errors.MultiError
+		for _, file := range modifiedFiles {
+			if legacyMode {
+				if errFile := upgradeFile(ctx, file, keepLegacy, false); errFile != nil {
+					errs = append(errs, errFile)
+				}
+			} else {
+				if errFile := forceRegenerateFile(ctx, file, false); errFile != nil {
+					errs = append(errs, errFile)
+				}
+			}
+		}
+		return errs.AsError()
+	}
+
+	// Direct single file target
+	if legacyMode {
+		return upgradeFile(ctx, absPath, keepLegacy, true)
+	}
+	return forceRegenerateFile(ctx, absPath, true)
 }
 
 func upgradeDir(ctx context.Context, dirPath string, keepLegacy bool) error {
@@ -239,60 +280,8 @@ func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool,
 		return errors.Fmt("failed to replace vpython.toml %q: %w", destPath, err)
 	}
 
-	// Best-effort proactive uv.lock generation.
-	uvBin := os.Getenv("VPYTHON_UV_BIN")
-	if uvBin != "" {
-		arURL := os.Getenv("VPYTHON_AR_URL")
-		if arURL == "" {
-			arURL = "https://us-python.pkg.dev/chrome-python-ar/chrome-python-ar/simple/"
-		}
-
-		// Securely run uv lock inside a temporary directory to prevent mutating or
-		// corrupting any pre-existing pyproject.toml inside the workspace.
-		tmpDir, err := os.MkdirTemp("", "vpython-uv-lock-*")
-		if err != nil {
-			return errors.Fmt("failed to create temporary directory for uv lock: %w", err)
-		}
-		defer os.RemoveAll(tmpDir)
-
-		vpythonData, err := os.ReadFile(destPath)
-		if err != nil {
-			return errors.Fmt("failed to read vpython.toml for uv lock: %w", err)
-		}
-		tmpPyprojectPath := filepath.Join(tmpDir, "pyproject.toml")
-		if err := os.WriteFile(tmpPyprojectPath, vpythonData, 0644); err != nil {
-			return errors.Fmt("failed to write temporary pyproject.toml: %w", err)
-		}
-
-		fmt.Printf("Automatically generating uv.lock for newly migrated vpython.toml inside %s...\n", filepath.Dir(destPath))
-		logging.Infof(ctx, "Automatically generating uv.lock for newly migrated vpython.toml inside %s...", filepath.Dir(destPath))
-		cmdLock := exec.CommandContext(ctx, uvBin, "lock")
-		cmdLock.Dir = tmpDir
-		cmdLock.Env = append(os.Environ(),
-			"UV_PYTHON_DOWNLOADS=never",
-			"UV_DEFAULT_INDEX="+arURL,
-			"UV_NO_WORKSPACE=1",
-		)
-		if out, errCmd := cmdLock.CombinedOutput(); errCmd != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to automatically generate uv.lock: %v\nOutput:\n%s\n", errCmd, string(out))
-			logging.Warningf(ctx, "Warning: failed to automatically generate uv.lock: %v\nOutput:\n%s", errCmd, string(out))
-		} else {
-			// Best-effort copy the successfully generated uv.lock to target directory.
-			tmpLockPath := filepath.Join(tmpDir, "uv.lock")
-			destLockPath := filepath.Join(filepath.Dir(destPath), "uv.lock")
-			if lockData, err := os.ReadFile(tmpLockPath); err != nil {
-				fmt.Fprintf(os.Stderr, "Warning: failed to read generated uv.lock: %v\n", err)
-				logging.Warningf(ctx, "Warning: failed to read generated uv.lock: %v", err)
-			} else if err := os.WriteFile(destLockPath, lockData, 0644); err != nil {
-				fmt.Fprintf(os.Stderr, "Warning: failed to write uv.lock to destination %s: %v\n", destLockPath, err)
-				logging.Warningf(ctx, "Warning: failed to write uv.lock to destination %s: %v", destLockPath, err)
-			} else {
-				fmt.Printf("Successfully generated uv.lock inside %s!\n", filepath.Dir(destPath))
-				logging.Infof(ctx, "Successfully generated uv.lock inside %s!", filepath.Dir(destPath))
-			}
-		}
-	}
-
+	// Best-effort proactive lockfile generation.
+	generateProactiveLockfile(ctx, destPath, projectSpec.Dependencies)
 	if !keepLegacy {
 		if err := os.Remove(srcPath); err != nil {
 			return errors.Fmt("failed to delete legacy spec file %q after migration: %w", srcPath, err)
@@ -412,6 +401,8 @@ func mergeSpecIntoScript(ctx context.Context, scriptPath, specPath string, keepL
 		fmt.Printf("Successfully merged companion spec: %s -> injected inline inside script %s (kept original spec file)\n", specPath, scriptPath)
 		logging.Infof(ctx, "Successfully merged companion spec: %s -> injected inline inside script %s (kept original spec file)", specPath, scriptPath)
 	}
+	// Best-effort proactive lockfile generation.
+	generateProactiveLockfile(ctx, scriptPath, projectSpec.Dependencies)
 	return nil
 }
 
@@ -567,6 +558,8 @@ func convertInlineSpec(ctx context.Context, scriptPath string) error {
 
 	fmt.Printf("Successfully migrated inline legacy spec -> PEP 723 shebang in script %q\n", scriptPath)
 	logging.Infof(ctx, "Successfully migrated inline legacy spec -> PEP 723 shebang in script %q", scriptPath)
+	// Best-effort proactive lockfile generation.
+	generateProactiveLockfile(ctx, scriptPath, projectSpec.Dependencies)
 	return nil
 }
 
@@ -640,4 +633,283 @@ func hasCompanionSpecFile(scriptPath string) bool {
 	}
 
 	return false
+}
+
+func generateProactiveLockfile(ctx context.Context, specPath string, dependencies []string) {
+	if len(dependencies) == 0 {
+		return
+	}
+	uvBin := os.Getenv("VPYTHON_UV_BIN")
+	if uvBin == "" {
+		var err error
+		uvBin, err = exec.LookPath("uv")
+		if err != nil {
+			logging.Infof(ctx, "Proactive lockfile skipped: 'uv' not found on PATH and VPYTHON_UV_BIN not set")
+			return
+		}
+	}
+	arURL := os.Getenv("VPYTHON_AR_URL")
+
+	lockPath := specPath + ".uv.lock"
+	msg := fmt.Sprintf("Automatically generating lockfile %s...", filepath.Base(lockPath))
+	fmt.Println(msg)
+	logging.Infof(ctx, "%s", msg)
+
+	var reqs bytes.Buffer
+	for _, dep := range dependencies {
+		reqs.WriteString(dep)
+		reqs.WriteByte('\n')
+	}
+
+	cmdLock := exec.CommandContext(ctx, uvBin, "pip", "compile", "-",
+		"--universal",
+		"--generate-hashes",
+		"--no-header",
+	)
+	cmdLock.Dir = filepath.Dir(specPath)
+	cmdLock.Stdin = &reqs
+	env := append(os.Environ(),
+		"UV_PYTHON_DOWNLOADS=never",
+		"UV_NO_WORKSPACE=1",
+	)
+	if arURL != "" {
+		env = append(env, "UV_DEFAULT_INDEX="+arURL)
+	}
+	cmdLock.Env = env
+
+	var stdout, stderr bytes.Buffer
+	cmdLock.Stdout = &stdout
+	cmdLock.Stderr = &stderr
+
+	if errCmd := cmdLock.Run(); errCmd != nil {
+		errMsg := fmt.Sprintf("Warning: failed to automatically generate lockfile %s: %v\nOutput:\n%s", filepath.Base(lockPath), errCmd, stderr.String())
+		fmt.Fprintln(os.Stderr, errMsg)
+		logging.Warningf(ctx, "%s", errMsg)
+	} else {
+		if err := os.WriteFile(lockPath, stdout.Bytes(), 0644); err != nil {
+			errMsg := fmt.Sprintf("Warning: failed to write lockfile %s: %v", filepath.Base(lockPath), err)
+			fmt.Fprintln(os.Stderr, errMsg)
+			logging.Warningf(ctx, "%s", errMsg)
+		} else {
+			successMsg := fmt.Sprintf("Successfully generated lockfile %s!", filepath.Base(lockPath))
+			fmt.Println(successMsg)
+			logging.Infof(ctx, "%s", successMsg)
+		}
+	}
+}
+
+func detectGitModifiedFiles(ctx context.Context, targetDir string) ([]string, error) {
+	// Find Git repository top-level directory
+	cmdRoot := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
+	cmdRoot.Dir = targetDir
+	rootBytes, err := cmdRoot.Output()
+	if err != nil {
+		return nil, errors.Fmt("failed to find git repository root for target %s: %w", targetDir, err)
+	}
+	gitRoot := strings.TrimSpace(string(rootBytes))
+
+	absTargetDir, err := filepath.Abs(targetDir)
+	if err != nil {
+		return nil, err
+	}
+
+	fileSet := make(map[string]struct{})
+
+	// 1. Get porcelain status relative to git root (uncommitted & untracked files)
+	cmdStatus := exec.CommandContext(ctx, "git", "status", "--porcelain")
+	cmdStatus.Dir = gitRoot
+	statusBytes, err := cmdStatus.Output()
+	if err == nil {
+		scanner := bufio.NewScanner(bytes.NewReader(statusBytes))
+		for scanner.Scan() {
+			line := scanner.Text()
+			if len(line) < 4 {
+				continue
+			}
+			status := line[:2]
+			// Ignore deleted files
+			if strings.Contains(status, "D") {
+				continue
+			}
+			relPath := line[3:]
+			if strings.HasPrefix(relPath, "\"") && strings.HasSuffix(relPath, "\"") {
+				relPath = relPath[1 : len(relPath)-1]
+			}
+			fileSet[filepath.Join(gitRoot, relPath)] = struct{}{}
+		}
+	}
+
+	// 2. Get branch diff changes against upstream main branch (locally committed files)
+	cmdDiff := exec.CommandContext(ctx, "git", "diff", "--name-only", "origin/main...")
+	cmdDiff.Dir = gitRoot
+	diffBytes, err := cmdDiff.Output()
+	if err != nil {
+		// Fallback to master if main branch doesn't exist
+		cmdDiffMaster := exec.CommandContext(ctx, "git", "diff", "--name-only", "origin/master...")
+		cmdDiffMaster.Dir = gitRoot
+		diffBytes, err = cmdDiffMaster.Output()
+	}
+
+	if err == nil {
+		scanner := bufio.NewScanner(bytes.NewReader(diffBytes))
+		for scanner.Scan() {
+			relPath := strings.TrimSpace(scanner.Text())
+			if relPath != "" {
+				fileSet[filepath.Join(gitRoot, relPath)] = struct{}{}
+			}
+		}
+	}
+
+	var modifiedFiles []string
+	for absPath := range fileSet {
+		// Only process existing files
+		st, err := os.Stat(absPath)
+		if err != nil || st.IsDir() {
+			continue
+		}
+
+		// Only process files inside targetDir
+		if !strings.HasPrefix(absPath, absTargetDir) {
+			continue
+		}
+
+		// Only process supported files
+		ext := strings.ToLower(filepath.Ext(absPath))
+		base := filepath.Base(absPath)
+		if ext == ".py" || ext == ".vpython" || ext == ".vpython3" || base == "vpython.toml" {
+			modifiedFiles = append(modifiedFiles, absPath)
+		}
+	}
+
+	return modifiedFiles, nil
+}
+
+func forceRegenerateLockfile(ctx context.Context, specPath string) error {
+	var dependencies []string
+	base := filepath.Base(specPath)
+
+	if base == "vpython.toml" {
+		spec, err := standard.ParseVpythonTOML(specPath)
+		if err != nil {
+			return errors.Fmt("failed to parse standard spec TOML: %w", err)
+		}
+		dependencies = spec.Dependencies
+	} else {
+		spec, err := standard.ParseScriptMetadata(specPath)
+		if err != nil {
+			return errors.Fmt("failed to parse PEP 723 script shebang: %w", err)
+		}
+		if spec == nil {
+			// Skip python scripts without shebangs when force-locking!
+			return nil
+		}
+		dependencies = spec.Dependencies
+	}
+
+	lockPath := specPath + ".uv.lock"
+	msg := fmt.Sprintf("Forcing regeneration of lockfile %s...", filepath.Base(lockPath))
+	fmt.Println(msg)
+	logging.Infof(ctx, "%s", msg)
+
+	uvBin := os.Getenv("VPYTHON_UV_BIN")
+	if uvBin == "" {
+		var err error
+		uvBin, err = exec.LookPath("uv")
+		if err != nil {
+			return errors.New("failed to resolve 'uv' on PATH and VPYTHON_UV_BIN is not set")
+		}
+	}
+	arURL := os.Getenv("VPYTHON_AR_URL")
+
+	var reqs bytes.Buffer
+	for _, dep := range dependencies {
+		reqs.WriteString(dep)
+		reqs.WriteByte('\n')
+	}
+
+	cmdLock := exec.CommandContext(ctx, uvBin, "pip", "compile", "-",
+		"--universal",
+		"--generate-hashes",
+		"--no-header",
+	)
+	cmdLock.Dir = filepath.Dir(specPath)
+	cmdLock.Stdin = &reqs
+	env := append(os.Environ(),
+		"UV_PYTHON_DOWNLOADS=never",
+		"UV_NO_WORKSPACE=1",
+	)
+	if arURL != "" {
+		env = append(env, "UV_DEFAULT_INDEX="+arURL)
+	}
+	cmdLock.Env = env
+
+	var stdout, stderr bytes.Buffer
+	cmdLock.Stdout = &stdout
+	cmdLock.Stderr = &stderr
+
+	if errCmd := cmdLock.Run(); errCmd != nil {
+		return errors.Fmt("failed to compile lockfile %s: %s\nOutput:\n%s", filepath.Base(lockPath), errCmd, stderr.String())
+	}
+
+	if err := os.WriteFile(lockPath, stdout.Bytes(), 0644); err != nil {
+		return errors.Fmt("failed to write lockfile %s: %w", filepath.Base(lockPath), err)
+	}
+
+	fmt.Printf("Successfully force-regenerated lockfile %s!\n", filepath.Base(lockPath))
+	logging.Infof(ctx, "Successfully force-regenerated lockfile %s!", filepath.Base(lockPath))
+	return nil
+}
+
+func forceRegenerateFile(ctx context.Context, filePath string, isDirectTarget bool) error {
+	base := filepath.Base(filePath)
+
+	if base == "vpython.toml" {
+		return forceRegenerateLockfile(ctx, filePath)
+	}
+
+	isPy, err := isPythonScript(filePath)
+	if err != nil {
+		if isDirectTarget {
+			return err
+		}
+		return nil
+	}
+
+	if isPy {
+		return forceRegenerateLockfile(ctx, filePath)
+	}
+
+	if isDirectTarget {
+		logging.Warningf(ctx, "Skipped unsupported file target %q for lockfile regeneration.", filePath)
+	}
+	return nil
+}
+
+func forceRegenerateDir(ctx context.Context, dirPath string) error {
+	var errs errors.MultiError
+	errWalk := filepath.WalkDir(dirPath, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			errs = append(errs, err)
+			return nil
+		}
+		if d.Type()&os.ModeSymlink != 0 {
+			return nil
+		}
+		if d.IsDir() {
+			if strings.HasPrefix(d.Name(), ".") && d.Name() != "." && d.Name() != ".." {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if errFile := forceRegenerateFile(ctx, path, false); errFile != nil {
+			errs = append(errs, errFile)
+		}
+		return nil
+	})
+
+	if errWalk != nil {
+		errs = append(errs, errWalk)
+	}
+
+	return errs.AsError()
 }
