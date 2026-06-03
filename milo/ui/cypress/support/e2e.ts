@@ -14,15 +14,70 @@
 
 /// <reference types="cypress" />
 
-// Tell TypeScript that the global Window object may have a 'gapi' property.
-// Tell TypeScript that the global Window object may have a 'gapi' property.
+// Tell TypeScript that the global Window and Cypress namespaces have these custom properties/commands.
 declare global {
   interface Window {
     gapi: unknown;
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Cypress {
+    interface Chainable {
+      /**
+       * Clears all IndexedDB databases in the current window context.
+       */
+      clearIndexedDB(): Chainable<void>;
+      /**
+       * Clears all client-side state (IndexedDB, LocalStorage, Cookies)
+       * to isolate tests and prevent state leakage.
+       */
+      clearAllClientState(): Chainable<void>;
+    }
+  }
 }
 
+// Register custom command to clear IndexedDB
+Cypress.Commands.add('clearIndexedDB', () => {
+  return cy.window().then((win) => {
+    if (!win.indexedDB || !win.indexedDB.databases) {
+      return;
+    }
+    return win.indexedDB.databases().then((dbs) => {
+      return Promise.all(
+        dbs.map((db) => {
+          return new Promise<void>((resolve, reject) => {
+            if (!db.name) {
+              resolve();
+              return;
+            }
+            const req = win.indexedDB.deleteDatabase(db.name);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+            req.onblocked = () => {
+              // eslint-disable-next-line no-console
+              console.warn(
+                `IndexedDB deletion blocked for database: ${db.name}`,
+              );
+              resolve(); // Resolve to avoid hanging the test suite
+            };
+          });
+        }),
+      ).then(() => {});
+    });
+  });
+});
+
+// Register custom command to clear all client-side state
+Cypress.Commands.add('clearAllClientState', () => {
+  cy.clearLocalStorage();
+  cy.clearCookies();
+  return cy.clearIndexedDB();
+});
+
 beforeEach(() => {
+  // Automatically clear client state before every test across all specs to prevent state leakage
+  cy.clearAllClientState();
+
   // Intercept the Google API script and return an empty response
   // to prevent it from loading and executing in tests.
   cy.intercept('https://apis.google.com/js/api.js', { body: '' });

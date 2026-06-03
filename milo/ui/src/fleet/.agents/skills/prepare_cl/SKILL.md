@@ -52,15 +52,18 @@ Progress:
 4. **Optional Upload**:
    - Attempt to run `git cl upload`.
    - *Note*: If this fails with an error like `chmod ~/.sso: operation not permitted` or a path-specific permission error, it is due to sandbox restrictions preventing the agent from modifying home directory files. In this case, do not block the task; notify the developer and ask them to run `git cl upload` on your behalf. (Alternatively, the developer may choose to disable the sandbox to allow direct uploads).
-   > [!IMPORTANT]
-    > When uploading updates from background tasks, you can bypass all interactive patchset title prompts cleanly by specifying a title directly from the CLI:
-    > `git cl upload -t "My patchset title"`
-    >
-    > (If you are doing a first-time upload or encountering other interactive confirmation/editor prompts, you can fallback to: `yes y | EDITOR=true git cl upload`)
-    >
-    > > [!CAUTION]
-    > > **Do NOT switch branches, stage/unstage files, or run other git operations while `git cl upload` is running in the background!**
-    > > `git cl upload` runs asynchronously and expects the repository state to remain stable. If you switch branches (e.g., checkout a downstream branch) before the upload has fully completed, the upload process will package and commit files from the *newly checked out* branch under the old CL, corrupting the Gerrit CL with unrelated changes. Always wait for the upload task to finish completely before doing any further git operations.
+   > When uploading from background tasks, you can bypass all interactive prompts and text editor popups using these official non-interactive options:
+   > - **For New CLs (Initial Upload)**: Use `-f` to force yes to prompts and `--commit-description=+` to load the description directly from the HEAD commit message instead of opening an editor:
+   >   `git cl upload -f --commit-description=+`
+   > - **For Existing CLs (Subsequent Updates)**: Use `-t` to specify the patchset title directly from the command line:
+   >   `git cl upload -t "My patchset title"`
+   >   *(Alternatively, use `-T` or `--skip-title` to automatically use the last commit message as the title)*
+   >
+   > (If you are encountering other interactive confirmation/editor prompts, you can fallback to: `yes y | EDITOR=true git cl upload`)
+   >
+   > > [!CAUTION]
+   > > **Do NOT switch branches, stage/unstage files, or run other git operations while `git cl upload` is running in the background!**
+   > > `git cl upload` runs asynchronously and expects the repository state to remain stable. If you switch branches (e.g., checkout a downstream branch) before the upload has fully completed, the upload process will package and commit files from the *newly checked out* branch under the old CL, corrupting the Gerrit CL with unrelated changes. Always wait for the upload task to finish completely before doing any further git operations.
 
 5. **Advanced Git Operations for Agents**:
 
