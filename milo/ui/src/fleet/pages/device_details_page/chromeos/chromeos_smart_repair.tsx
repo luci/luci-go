@@ -82,6 +82,14 @@ export const ChromeOSSmartRepair = () => {
     setSessionError(null);
   }, [id]);
 
+  useEffect(() => {
+    if (hasAdminTaskPermission === true) {
+      trackEvent('smart_repair_tab_viewed', {
+        componentName: 'smart_repair_tab',
+      });
+    }
+  }, [id, hasAdminTaskPermission, trackEvent]);
+
   const {
     data,
     isLoading: isInitialLoading,
@@ -392,6 +400,9 @@ export const ChromeOSSmartRepair = () => {
               )
             }
             onClick={() => {
+              trackEvent('run_smart_repair', {
+                componentName: 'retrigger_analysis_button',
+              });
               setSessionError(null);
               retriggerMutation.mutate();
             }}

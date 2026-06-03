@@ -436,8 +436,15 @@ describe('<ChromeOSSmartRepair />', () => {
     });
 
     // Verify feedback submission calls GA trackEvent and updates UI
-    expect(mockTrackEvent).toHaveBeenCalledTimes(1);
-    expect(mockTrackEvent).toHaveBeenCalledWith('smart_repair_feedback', {
+    expect(mockTrackEvent).toHaveBeenCalledTimes(2);
+    expect(mockTrackEvent).toHaveBeenNthCalledWith(
+      1,
+      'smart_repair_tab_viewed',
+      {
+        componentName: 'smart_repair_tab',
+      },
+    );
+    expect(mockTrackEvent).toHaveBeenNthCalledWith(2, 'smart_repair_feedback', {
       eventId: 'event-123',
       feedback: 'up',
     });
@@ -496,12 +503,104 @@ describe('<ChromeOSSmartRepair />', () => {
       fireEvent.click(thumbsDownButton);
     });
 
-    expect(mockTrackEvent).toHaveBeenCalledTimes(1);
-    expect(mockTrackEvent).toHaveBeenCalledWith('smart_repair_feedback', {
+    expect(mockTrackEvent).toHaveBeenCalledTimes(2);
+    expect(mockTrackEvent).toHaveBeenNthCalledWith(
+      1,
+      'smart_repair_tab_viewed',
+      {
+        componentName: 'smart_repair_tab',
+      },
+    );
+    expect(mockTrackEvent).toHaveBeenNthCalledWith(2, 'smart_repair_feedback', {
       eventId: 'event-123',
       feedback: 'down',
     });
 
     expect(screen.getByText('Thank you!')).toBeInTheDocument();
+  });
+
+  it('tracks smart_repair_tab_viewed when rendered with admin permissions', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: '',
+          alreadyInProgress: false,
+          cachedResult: undefined,
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    // Should call trackEvent with 'smart_repair_tab_viewed'
+    expect(mockTrackEvent).toHaveBeenCalledTimes(1);
+    expect(mockTrackEvent).toHaveBeenCalledWith('smart_repair_tab_viewed', {
+      componentName: 'smart_repair_tab',
+    });
+  });
+
+  it('does not track smart_repair_tab_viewed when rendered without admin permissions', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(false);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    // Should NOT call trackEvent
+    expect(mockTrackEvent).not.toHaveBeenCalled();
+  });
+
+  it('tracks run_smart_repair when Retrigger Analysis is clicked', async () => {
+    mockUseAdminTaskPermission.mockReturnValue(true);
+    mockGetSmartRepair.mockResolvedValue({
+      results: [
+        {
+          deviceId: 'test-device-1',
+          eventId: '',
+          alreadyInProgress: false,
+          cachedResult: undefined,
+        },
+      ],
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <ChromeOSSmartRepair />
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    // Wait for query to resolve so button is not disabled
+    expect(
+      await screen.findByText(/No active or cached analysis found/i),
+    ).toBeInTheDocument();
+
+    const retriggerButton = screen.getByRole('button', {
+      name: /Retrigger Analysis/i,
+    });
+
+    // Reset trackEvent calls mock to ignore the mount event
+    mockTrackEvent.mockClear();
+
+    await act(async () => {
+      fireEvent.click(retriggerButton);
+    });
+
+    expect(mockTrackEvent).toHaveBeenCalledTimes(1);
+    expect(mockTrackEvent).toHaveBeenCalledWith('run_smart_repair', {
+      componentName: 'retrigger_analysis_button',
+    });
   });
 });
