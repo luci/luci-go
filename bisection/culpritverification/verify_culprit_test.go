@@ -130,7 +130,11 @@ func TestVerifySuspect(t *testing.T) {
 				"https://chromium.googlesource.com/chromium/src/+log/3425~2..3425^": string(gitilesResponseStr),
 			})
 
-			fb := &model.LuciFailedBuild{}
+			fb := &model.LuciFailedBuild{
+				LuciBuild: model.LuciBuild{
+					Project: "chromium",
+				},
+			}
 			assert.Loosely(t, datastore.Put(c, fb), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 

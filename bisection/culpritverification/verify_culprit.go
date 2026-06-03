@@ -44,8 +44,6 @@ import (
 	"go.chromium.org/luci/bisection/util/loggingutil"
 )
 
-const treeName = "chromium"
-
 // RegisterTaskClass registers the task class for tq dispatcher
 func RegisterTaskClass() {
 	compileHandler := func(ctx context.Context, payload proto.Message) error {
@@ -112,6 +110,11 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 		return err
 	}
 
+	project, err := datastoreutil.GetProjectForCompileFailureAnalysis(c, cfa)
+	if err != nil {
+		return errors.Fmt("get project for compile failure analysis: %w", err)
+	}
+
 	defer updateSuspectStatus(c, suspect, cfa)
 
 	if len(cfa.VerifiedCulprits) > 0 {
@@ -130,7 +133,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 	}
 
 	// Check if the same suspect has been confirmed and reverted in another analysis
-	skipped, err := skipVerificationIfConfirmed(c, suspect, cfa, analysisID)
+	skipped, err := skipVerificationIfConfirmed(c, project, suspect, cfa, analysisID)
 	if err != nil {
 		return err
 	}
@@ -183,9 +186,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 		return errors.Fmt("failed getting priority: %w", err)
 	}
 
-	// TODO(nqmtuan): Pass in the project.
-	// For now, hardcode to treeName, since we only support chromium for compile failure.
-	suspectBuild, parentBuild, err := VerifySuspectCommit(c, treeName, suspect, failedBuildID, props, priority)
+	suspectBuild, parentBuild, err := VerifySuspectCommit(c, project, suspect, failedBuildID, props, priority)
 	if err != nil {
 		logging.Errorf(c, "Error triggering rerun for build %d: %s", failedBuildID, err)
 		return err
@@ -220,7 +221,7 @@ func VerifySuspect(c context.Context, suspect *model.Suspect, failedBuildID int6
 // skipVerificationIfConfirmed checks if the suspect has already been confirmed in another analysis.
 // If so, it skips verification, notifies LUCI Notify to reopen the tree if a revert was created,
 // schedules a revert action task, and returns true.
-func skipVerificationIfConfirmed(c context.Context, suspect *model.Suspect, cfa *model.CompileFailureAnalysis, analysisID int64) (bool, error) {
+func skipVerificationIfConfirmed(c context.Context, project string, suspect *model.Suspect, cfa *model.CompileFailureAnalysis, analysisID int64) (bool, error) {
 	otherSuspects, err := datastoreutil.GetOtherSuspectsWithSameCL(c, suspect)
 	if err != nil {
 		logging.Errorf(c, "Failed to GetOtherSuspectsWithSameCL: %v", err)
@@ -235,8 +236,7 @@ func skipVerificationIfConfirmed(c context.Context, suspect *model.Suspect, cfa 
 			// Only notify tree reopen if a revert was actually created
 			if s.ActionDetails.IsRevertCreated {
 				// Notify LUCI Notify to reopen the tree
-				// Use treeName constant
-				err = revertculprit.NotifyRevertLanded(c, treeName, suspect, s.ActionDetails.RevertURL)
+				err = revertculprit.NotifyRevertLanded(c, project, suspect, s.ActionDetails.RevertURL)
 				if err != nil {
 					logging.Errorf(c, "Failed to notify LUCI Notify about revert: %v", err)
 				}
