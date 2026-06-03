@@ -39,7 +39,17 @@ import (
 
 // UpgradeSpecs converts legacy specs in target path to standard formats,
 // or force-regenerates lockfiles for standard specs.
-func UpgradeSpecs(ctx context.Context, path string, keepLegacy, legacyMode, allMode bool) error {
+func UpgradeSpecs(ctx context.Context, path string, mods ...bool) error {
+	var keepLegacy, legacyMode, allMode bool
+	if len(mods) > 0 {
+		keepLegacy = mods[0]
+	}
+	if len(mods) > 1 {
+		legacyMode = mods[1]
+	}
+	if len(mods) > 2 {
+		allMode = mods[2]
+	}
 	absPath := path
 	if err := filesystem.AbsPath(&absPath); err != nil {
 		return errors.Fmt("failed to get absolute target path of %q: %w", path, err)
