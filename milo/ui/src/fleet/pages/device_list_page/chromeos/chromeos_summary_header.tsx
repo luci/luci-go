@@ -456,6 +456,7 @@ export function ChromeOSSummaryHeader({
               />
               <Box sx={{ ml: 2 }}>
                 <SmallMetricItem
+                  ariaLabel="Ready"
                   label={
                     <Box
                       sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
@@ -483,6 +484,7 @@ export function ChromeOSSummaryHeader({
                   onClick={() => handleMetricClick(AVAILABLE_READY_FILTERS)}
                 />
                 <SmallMetricItem
+                  ariaLabel="Not ready"
                   label={
                     <Box
                       sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
@@ -552,6 +554,7 @@ export function ChromeOSSummaryHeader({
                 }
               />
               <SmallMetricItem
+                ariaLabel="Recovering"
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     Recovering:

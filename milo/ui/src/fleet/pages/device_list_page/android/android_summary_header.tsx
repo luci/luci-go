@@ -14,11 +14,11 @@
 
 import CheckIcon from '@mui/icons-material/Check';
 import ErrorIcon from '@mui/icons-material/Error';
-import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Box, Grid, Typography, Divider, Link } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 
+import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { SingleMetric } from '@/fleet/components/summary_header/single_metric';
 import { SmallMetricItem } from '@/fleet/components/summary_header/small_metric_item';
@@ -43,6 +43,7 @@ export interface AndroidSummaryHeaderProps {
 const FILTER_KEYS = {
   STATE: '"state"',
   MACHINE_TYPE: '"fc_machine_type"',
+  FC_IS_OFFLINE: '"fc_is_offline"',
 } as const;
 
 export function AndroidSummaryHeader({
@@ -76,48 +77,81 @@ export function AndroidSummaryHeader({
   const totalDevices = data?.totalDevices || 0;
   const totalHosts = data?.totalHosts || 0;
 
+  const onlineFilter = [aip160, stringifyFilters({ fc_is_offline: ['false'] })]
+    .filter(Boolean)
+    .join(' AND ');
+  const offlineFilter = [aip160, stringifyFilters({ fc_is_offline: ['true'] })]
+    .filter(Boolean)
+    .join(' AND ');
+
+  // TODO(b/512174685): Optimize backend CountDevices to return online/offline breakdown in a single payload to reduce traffic.
+  const onlineCountQuery = useQuery(
+    client.CountDevices.query({
+      filter: onlineFilter,
+      platform: Platform.ANDROID,
+    }),
+  );
+
+  const offlineCountQuery = useQuery(
+    client.CountDevices.query({
+      filter: offlineFilter,
+      platform: Platform.ANDROID,
+    }),
+  );
+
+  const onlineData = onlineCountQuery.data?.androidCount;
+  const offlineData = offlineCountQuery.data?.androidCount;
+
   // Guard against flashing 0 counts by checking data availability
-  const isLoading = countQuery.isPending || !data;
+  const isLoading =
+    countQuery.isPending ||
+    onlineCountQuery.isPending ||
+    offlineCountQuery.isPending ||
+    !data;
 
-  const recoveringCount = isLoading
+  const onlineDevicesCount = isLoading
     ? undefined
-    : (data?.initDevices || 0) +
-      (data?.dirtyDevices || 0) +
-      (data?.preppingDevices || 0) +
-      (data?.lameduckDevices || 0);
+    : onlineData?.totalDevices || 0;
 
-  const totalHealthyDevices = isLoading
+  const failedDeviceType = isLoading
     ? undefined
-    : (data?.idleDevices || 0) +
-      (data?.busyDevices || 0) +
-      (recoveringCount || 0);
+    : (offlineData?.idleDevices || 0) +
+      (offlineData?.busyDevices || 0) +
+      (offlineData?.lameduckDevices || 0);
 
-  const totalUnhealthyDevices = isLoading
+  // In Automation for Offline includes Init, Dirty, Prepping
+  const inAutomationOffline = isLoading
     ? undefined
-    : (data?.missingDevices || 0) +
-      (data?.failedDevices || 0) +
-      (data?.dyingDevices || 0);
+    : (offlineData?.initDevices || 0) +
+      (offlineData?.dirtyDevices || 0) +
+      (offlineData?.preppingDevices || 0);
 
-  // Enforce lower boundary to avoid negative rendering during sync delays
-  const totalOtherDevices = isLoading
-    ? undefined
-    : Math.max(
-        0,
-        totalDevices -
-          (totalHealthyDevices || 0) -
-          (totalUnhealthyDevices || 0),
-      );
-
-  const unclassifiedDevices = totalOtherDevices;
+  const blankStatesCount =
+    isLoading || !onlineData
+      ? undefined
+      : Math.max(
+          0,
+          onlineData.totalDevices -
+            (onlineData.idleDevices || 0) -
+            (onlineData.busyDevices || 0) -
+            (onlineData.lameduckDevices || 0),
+        );
 
   // TODO(b/503171080): CountDevices API returns 0 for (Blank) state searches.
   // Investigate why backend aggregation fails for blank states.
 
   const getContent = () => {
-    if (countQuery.isError) {
+    const isError =
+      countQuery.isError ||
+      onlineCountQuery.isError ||
+      offlineCountQuery.isError;
+    const error =
+      countQuery.error || onlineCountQuery.error || offlineCountQuery.error;
+
+    if (isError) {
       return (
         <Alert severity="error">
-          {getErrorMessage(countQuery.error, 'get the main metrics')}
+          {getErrorMessage(error, 'get the metrics')}
         </Alert>
       );
     }
@@ -155,7 +189,13 @@ export function AndroidSummaryHeader({
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3} sx={gridStyles.col3}>
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            sx={{ ...gridStyles.col3, borderRight: 'none' }}
+          >
             <SingleMetric
               name="Hosts Missing"
               value={data?.labMissingHosts || 0}
@@ -209,343 +249,16 @@ export function AndroidSummaryHeader({
                 })
               }
             />
-          </Grid>
-
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md
-            aria-label="Healthy Devices"
-            sx={{
-              ...METRICS_COLUMN_STYLE,
-              borderRight: { md: BORDER_STYLE },
-              borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
-            }}
-          >
-            <SingleMetric
-              name="Total Healthy"
-              value={totalHealthyDevices}
-              total={totalDevices}
-              loading={isLoading}
-              Icon={<CheckIcon sx={{ color: colors.emerald }} />}
-              handleClick={() =>
-                setFiltersBatch({
-                  [FILTER_KEYS.STATE]: [
-                    androidState.IDLE,
-                    androidState.BUSY,
-                    androidState.INIT,
-                    androidState.DIRTY,
-                    androidState.PREPPING,
-                    androidState.LAMEDUCK,
-                  ],
-                  [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                })
-              }
-            />
-            <Box
-              sx={{
-                mt: 0.5,
-                px: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0,
-              }}
-            >
-              <SmallMetricItem
-                label="Idle:"
-                value={data?.idleDevices || 0}
-                total={totalDevices}
-                onClick={() =>
-                  setFiltersBatch({
-                    [FILTER_KEYS.STATE]: [androidState.IDLE],
-                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                  })
-                }
-                dotColor={colors.emerald}
-                loading={isLoading}
-              />
-              <SmallMetricItem
-                label="Busy:"
-                value={data?.busyDevices || 0}
-                total={totalDevices}
-                onClick={() =>
-                  setFiltersBatch({
-                    [FILTER_KEYS.STATE]: [androidState.BUSY],
-                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                  })
-                }
-                dotColor={colors.emerald}
-                loading={isLoading}
-              />
-              <SmallMetricItem
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    Recovering:
-                    <InfoTooltip>
-                      <Box sx={{ p: 0.5 }}>
-                        <Typography variant="body2">
-                          Counted as healthy because these devices are expected
-                          to recover automatically (Init, Dirty, Prepping,
-                          Lameduck).
-                        </Typography>
-                        <Typography variant="body2" sx={{ mt: 2 }}>
-                          <Link
-                            href="http://go/android-labtechs#device-terminology"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label="documentation (opens in a new tab)"
-                          >
-                            See documentation for details.
-                          </Link>
-                        </Typography>
-                      </Box>
-                    </InfoTooltip>
-                  </Box>
-                }
-                value={recoveringCount || 0}
-                total={totalDevices}
-                dotColor={colors.grey}
-                onClick={() =>
-                  setFiltersBatch({
-                    [FILTER_KEYS.STATE]: [
-                      androidState.INIT,
-                      androidState.DIRTY,
-                      androidState.PREPPING,
-                      androidState.LAMEDUCK,
-                    ],
-                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                  })
-                }
-                loading={isLoading}
-              />
-              <Box sx={{ ml: 2 }}>
-                <SmallMetricItem
-                  label="Init:"
-                  value={data?.initDevices || 0}
-                  total={totalDevices}
-                  onClick={() =>
-                    setFiltersBatch({
-                      [FILTER_KEYS.STATE]: [androidState.INIT],
-                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                    })
-                  }
-                  dotColor={colors.grey}
-                  loading={isLoading}
-                />
-                <SmallMetricItem
-                  label="Dirty:"
-                  value={data?.dirtyDevices || 0}
-                  total={totalDevices}
-                  onClick={() =>
-                    setFiltersBatch({
-                      [FILTER_KEYS.STATE]: [androidState.DIRTY],
-                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                    })
-                  }
-                  dotColor={colors.grey}
-                  loading={isLoading}
-                />
-                <SmallMetricItem
-                  label="Prepping:"
-                  value={data?.preppingDevices || 0}
-                  total={totalDevices}
-                  onClick={() =>
-                    setFiltersBatch({
-                      [FILTER_KEYS.STATE]: [androidState.PREPPING],
-                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                    })
-                  }
-                  dotColor={colors.grey}
-                  loading={isLoading}
-                />
-                <SmallMetricItem
-                  label="Lameduck:"
-                  value={data?.lameduckDevices || 0}
-                  total={totalDevices}
-                  onClick={() =>
-                    setFiltersBatch({
-                      [FILTER_KEYS.STATE]: [androidState.LAMEDUCK],
-                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                    })
-                  }
-                  dotColor={colors.grey}
-                  loading={isLoading}
-                />
-              </Box>
-            </Box>
-          </Grid>
-
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md
-            aria-label="Unhealthy Devices"
-            sx={{
-              ...METRICS_COLUMN_STYLE,
-              borderRight: { sm: BORDER_STYLE, md: BORDER_STYLE },
-              borderBottom: {
-                xs: BORDER_STYLE,
-                sm: showAvgUtilization ? BORDER_STYLE : 'none',
-                md: 'none',
-              },
-            }}
-          >
-            <SingleMetric
-              name="Total Unhealthy"
-              value={totalUnhealthyDevices}
-              total={totalDevices}
-              loading={isLoading}
-              Icon={<ErrorIcon sx={{ color: colors.rose }} />}
-              handleClick={() =>
-                setFiltersBatch({
-                  [FILTER_KEYS.STATE]: [
-                    androidState.MISSING,
-                    androidState.FAILED,
-                    androidState.DYING,
-                  ],
-                  [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                })
-              }
-            />
-            <Box
-              sx={{
-                mt: 0.5,
-                px: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0,
-              }}
-            >
-              <SmallMetricItem
-                label="Missing:"
-                value={data?.missingDevices || 0}
-                total={totalDevices}
-                onClick={() =>
-                  setFiltersBatch({
-                    [FILTER_KEYS.STATE]: [androidState.MISSING],
-                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                  })
-                }
-                dotColor={colors.rose}
-                loading={isLoading}
-              />
-              <SmallMetricItem
-                label="Failed:"
-                value={data?.failedDevices || 0}
-                total={totalDevices}
-                onClick={() =>
-                  setFiltersBatch({
-                    [FILTER_KEYS.STATE]: [androidState.FAILED],
-                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                  })
-                }
-                dotColor={colors.rose}
-                loading={isLoading}
-              />
-              <SmallMetricItem
-                label="Dying:"
-                value={data?.dyingDevices || 0}
-                total={totalDevices}
-                onClick={() =>
-                  setFiltersBatch({
-                    [FILTER_KEYS.STATE]: [androidState.DYING],
-                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                  })
-                }
-                dotColor={colors.rose}
-                loading={isLoading}
-              />
-            </Box>
-          </Grid>
-
-          <Grid
-            item
-            xs={12}
-            sm={6}
-            md
-            aria-label="Other Devices"
-            sx={{
-              ...METRICS_COLUMN_STYLE,
-              borderRight: {
-                sm: 'none',
-                md: showAvgUtilization ? BORDER_STYLE : 'none',
-              },
-              borderBottom: {
-                xs: showAvgUtilization ? BORDER_STYLE : 'none',
-                sm: showAvgUtilization ? BORDER_STYLE : 'none',
-                md: 'none',
-              },
-            }}
-          >
-            <SingleMetric
-              name="Total Other"
-              value={totalOtherDevices}
-              total={totalDevices}
-              loading={isLoading}
-              Icon={<WarningIcon sx={{ color: colors.amber }} />}
-              handleClick={() =>
-                setFiltersBatch({
-                  [FILTER_KEYS.STATE]: ['(Blank)'],
-                  [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                })
-              }
-            />
-            <Box
-              sx={{
-                mt: 0.5,
-                px: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0,
-              }}
-            >
-              <SmallMetricItem
-                label="Unclassified:"
-                value={unclassifiedDevices || 0}
-                total={totalDevices}
-                onClick={() =>
-                  setFiltersBatch({
-                    [FILTER_KEYS.STATE]: ['(Blank)'],
-                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
-                  })
-                }
-                dotColor={colors.amber}
-                loading={isLoading}
-              />
-            </Box>
-          </Grid>
-
-          {showAvgUtilization && (
-            <Grid
-              item
-              xs={12}
-              sm={6}
-              md
-              sx={{
-                ...METRICS_COLUMN_STYLE,
-                borderRight: 'none',
-                borderBottom: 'none',
-              }}
-            >
+            {showAvgUtilization && (
               <Box
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
-                  height: '100%',
-                  p: 1,
+                  mt: 0.5,
+                  px: 1,
                 }}
               >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    fontWeight: 500,
-                  }}
-                >
-                  Utilization
-                </Typography>
+                <Typography variant="body2">Utilization</Typography>
                 <Box
                   sx={{
                     mt: 1,
@@ -568,8 +281,339 @@ export function AndroidSummaryHeader({
                   />
                 </Box>
               </Box>
+            )}
+          </Grid>
+
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={3}
+            aria-label="Online Devices"
+            sx={{
+              ...METRICS_COLUMN_STYLE,
+              borderRight: { md: BORDER_STYLE },
+              borderBottom: { xs: BORDER_STYLE, sm: BORDER_STYLE, md: 'none' },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <SingleMetric
+                name="Online"
+                value={onlineDevicesCount}
+                total={totalDevices}
+                loading={isLoading}
+                Icon={<CheckIcon sx={{ color: colors.emerald }} />}
+                handleClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+              />
+              <InfoTooltip>
+                <Typography variant="body2">
+                  Devices considered healthy per{' '}
+                  <Link
+                    href="https://g3doc.corp.google.com/company/teams/omnilab/products/lmp/monitoring/alert_config_manual.md?cl=head#Q3"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Omnilab&apos;s definition
+                  </Link>
+                  . This status is tracked by the fc_is_offline field.
+                  <br />
+                  <br />
+                  Note: Percentages of breakdown items may not sum to the total
+                  due to rounding.
+                </Typography>
+              </InfoTooltip>
+            </Box>
+            <Grid container spacing={1} sx={{ mt: 0.5, px: 1 }}>
+              <Grid item xs={12}>
+                <SmallMetricItem
+                  label="Idle:"
+                  value={onlineData?.idleDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.IDLE],
+                      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.emerald}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  label="Busy:"
+                  value={onlineData?.busyDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.BUSY],
+                      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.emerald}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  label="Lameduck:"
+                  value={onlineData?.lameduckDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.LAMEDUCK],
+                      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  label="Blank states:"
+                  value={blankStatesCount}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: ['(Blank)'],
+                      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.grey}
+                  loading={isLoading}
+                />
+              </Grid>
             </Grid>
-          )}
+          </Grid>
+
+          {/* Offline Devices takes md={6} to accommodate two internal sub-columns (Needs Action and Recovering) */}
+          <Grid
+            item
+            xs={12}
+            sm={12}
+            md={6}
+            aria-label="Offline Devices"
+            sx={{
+              ...METRICS_COLUMN_STYLE,
+              borderRight: {
+                sm: 'none',
+                md: 'none',
+              },
+              borderBottom: {
+                xs: 'none',
+                sm: 'none',
+                md: 'none',
+              },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <SingleMetric
+                name="Offline"
+                value={offlineData?.totalDevices || 0}
+                total={totalDevices}
+                loading={isLoading}
+                Icon={<ErrorIcon sx={{ color: colors.rose }} />}
+                handleClick={() =>
+                  setFiltersBatch({
+                    [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+                    [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                  })
+                }
+              />
+              <InfoTooltip>
+                <Typography variant="body2">
+                  Devices considered unhealthy per{' '}
+                  <Link
+                    href="https://g3doc.corp.google.com/company/teams/omnilab/products/lmp/monitoring/alert_config_manual.md?cl=head#Q3"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Omnilab&apos;s definition
+                  </Link>
+                  . This status is tracked by the fc_is_offline field.
+                  <br />
+                  <br />
+                  Note: Percentages of breakdown items may not sum to the total
+                  due to rounding.
+                </Typography>
+              </InfoTooltip>
+            </Box>
+            <Grid container spacing={1} sx={{ mt: 0.5, px: 1 }}>
+              <Grid item xs={12} md={7}>
+                <SmallMetricItem
+                  label="Missing:"
+                  value={offlineData?.missingDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.MISSING],
+                      [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.rose}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  label="Failed:"
+                  value={offlineData?.failedDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.FAILED],
+                      [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.rose}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  label="Dying:"
+                  value={offlineData?.dyingDevices || 0}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [androidState.DYING],
+                      [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.rose}
+                  loading={isLoading}
+                />
+                <SmallMetricItem
+                  ariaLabel="Failed device_type"
+                  label={
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                    >
+                      Failed device_type:
+                      <InfoTooltip>
+                        <Typography variant="body2">
+                          Devices in IDLE, BUSY, or LAMEDUCK status but marked
+                          Offline because they have an unhealthy device type
+                          (e.g. FailedDevice). See{' '}
+                          <Link
+                            href="https://g3doc.corp.google.com/company/teams/omnilab/products/lmp/monitoring/alert_config_manual.md?cl=head#Q3"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Omnilab Definition
+                          </Link>
+                          .
+                        </Typography>
+                      </InfoTooltip>
+                    </Box>
+                  }
+                  value={failedDeviceType}
+                  total={totalDevices}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [
+                        androidState.IDLE,
+                        androidState.BUSY,
+                        androidState.LAMEDUCK,
+                      ],
+                      [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  dotColor={colors.rose}
+                  loading={isLoading}
+                />
+              </Grid>
+              <Grid item xs={12} md={5}>
+                <SmallMetricItem
+                  ariaLabel="Recovering"
+                  label={
+                    <Box
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                    >
+                      Recovering:
+                      <InfoTooltip>
+                        <Typography variant="body2">
+                          These devices are in transitory states and are
+                          expected to be recovered by automated jobs. See{' '}
+                          <Link
+                            href="http://go/android-labtechs#device-terminology"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Device Terminology
+                          </Link>
+                          .
+                        </Typography>
+                      </InfoTooltip>
+                    </Box>
+                  }
+                  value={inAutomationOffline}
+                  total={totalDevices}
+                  dotColor={colors.grey}
+                  onClick={() =>
+                    setFiltersBatch({
+                      [FILTER_KEYS.STATE]: [
+                        androidState.INIT,
+                        androidState.DIRTY,
+                        androidState.PREPPING,
+                      ],
+                      [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+                      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                    })
+                  }
+                  loading={isLoading}
+                />
+                <Box sx={{ ml: 2 }}>
+                  <SmallMetricItem
+                    label="Init:"
+                    value={offlineData?.initDevices || 0}
+                    total={totalDevices}
+                    onClick={() =>
+                      setFiltersBatch({
+                        [FILTER_KEYS.STATE]: [androidState.INIT],
+                        [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+                        [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                      })
+                    }
+                    dotColor={colors.grey}
+                    loading={isLoading}
+                  />
+                  <SmallMetricItem
+                    label="Dirty:"
+                    value={offlineData?.dirtyDevices || 0}
+                    total={totalDevices}
+                    onClick={() =>
+                      setFiltersBatch({
+                        [FILTER_KEYS.STATE]: [androidState.DIRTY],
+                        [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+                        [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                      })
+                    }
+                    dotColor={colors.grey}
+                    loading={isLoading}
+                  />
+                  <SmallMetricItem
+                    label="Prepping:"
+                    value={offlineData?.preppingDevices || 0}
+                    total={totalDevices}
+                    onClick={() =>
+                      setFiltersBatch({
+                        [FILTER_KEYS.STATE]: [androidState.PREPPING],
+                        [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+                        [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+                      })
+                    }
+                    dotColor={colors.grey}
+                    loading={isLoading}
+                  />
+                </Box>
+              </Grid>
+            </Grid>
+          </Grid>
         </Grid>
       </Box>
     );

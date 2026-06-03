@@ -13,9 +13,13 @@ The design applies Gestalt principles of visual perception to make dense metrics
 
 ### Android
 - **Layout**: Uses rows for **Hosts** and **Devices** to separate infrastructure issues from instance issues.
-- **State Accounting**: Includes states like `Init`, `Dirty`, `Prepping`, and `Lameduck` under a **Recovering** group within the Healthy column, as they are expected to recover automatically.
-- **Unclassified**: A remainder bucket to ensure 100% sum.
-- **Scope-Switching Logic**: Automatically clears `state` filters when switching between Host and Device scopes (e.g., clicking "Total Hosts" clears device states) to avoid empty results from mutually exclusive states.
+- **State Accounting**: Categorizes devices into **Online** (`fc_is_offline = false`) and **Offline** (`fc_is_offline = true`) to align with the repairs page and resolve tension between availability and actionability.
+  - **Online**: Includes `IDLE`, `BUSY`, and `LAMEDUCK` (with a grey dot to indicate transitory state).
+  - **Offline**: Split into two sub-columns in the layout:
+    - **Needs Action**: `Missing`, `Failed`, `Dying`, and **Failed device_type** (devices that are Idle/Busy but marked offline due to type).
+    - **Recovering**: `Init`, `Dirty`, `Prepping` (nested under a "Recovering" parent item).
+- **100% Accounting**: Achieved by using `fc_is_offline` boolean flag for top-level Online/Offline counts, ensuring they add up to 100% of total devices.
+- **Scope-Switching Logic**: Automatically clears `state` filters when switching between Host and Device scopes, and applies `fc_is_offline` filters when clicking specific summary cards.
 
 ### ChromeOS (Plan)
 - **Layout**: Plan to extend the grid layout to **Labstations** in the top row, accounting for all states (`Need Repair`, `Repair Failed`, etc.).

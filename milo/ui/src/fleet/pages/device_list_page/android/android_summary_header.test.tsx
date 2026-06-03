@@ -33,6 +33,7 @@ jest.mock('react-router', () => ({
 const FILTER_KEYS = {
   STATE: '"state"',
   MACHINE_TYPE: '"fc_machine_type"',
+  FC_IS_OFFLINE: '"fc_is_offline"',
 } as const;
 
 describe('AndroidSummaryHeader', () => {
@@ -82,11 +83,10 @@ describe('AndroidSummaryHeader', () => {
     // Verify that some metrics are rendered
     expect(screen.getByText('Total Devices')).toBeInTheDocument();
     expect(screen.getByText('Total Hosts')).toBeInTheDocument();
-    expect(screen.getByText('Total Healthy')).toBeInTheDocument();
-    expect(screen.getByText('Total Unhealthy')).toBeInTheDocument();
-
-    // Verify that Recovering state is rendered
-    expect(screen.getByText(/Recovering/)).toBeInTheDocument();
+    expect(screen.getByText('Hosts Running')).toBeInTheDocument();
+    expect(screen.getByText('Hosts Missing')).toBeInTheDocument();
+    expect(screen.getByText('Online')).toBeInTheDocument();
+    expect(screen.getByText('Offline')).toBeInTheDocument();
   });
 
   it('should call setFiltersBatch when clicking a breakdown item and switch scope', async () => {
@@ -116,17 +116,18 @@ describe('AndroidSummaryHeader', () => {
       </QueryClientProvider>,
     );
 
-    // Click on Idle metric using role
-    fireEvent.click(screen.getByRole('button', { name: /Idle/ }));
+    // Click on Idle metric
+    fireEvent.click(screen.getByRole('button', { name: 'Idle' }));
 
     // Verify that setFiltersBatch was called
     expect(mockSetFiltersBatch).toHaveBeenCalledWith({
       [FILTER_KEYS.STATE]: ['IDLE'],
+      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
       [FILTER_KEYS.MACHINE_TYPE]: ['device'],
     });
   });
 
-  it('should call setFiltersBatch with all recovering states when clicking Recovering', async () => {
+  it('should call setFiltersBatch with Init state when clicking Init', async () => {
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
 
     mockUseFleetConsoleClient.mockReturnValue({
@@ -153,12 +154,73 @@ describe('AndroidSummaryHeader', () => {
       </QueryClientProvider>,
     );
 
-    // Click on Recovering metric using role
-    fireEvent.click(screen.getByRole('button', { name: /Recovering/ }));
+    // Click on Init metric
+    fireEvent.click(screen.getByRole('button', { name: 'Init' }));
 
-    // Verify that setFiltersBatch was called with all 4 states
+    // Verify that setFiltersBatch was called
     expect(mockSetFiltersBatch).toHaveBeenCalledWith({
-      [FILTER_KEYS.STATE]: ['INIT', 'DIRTY', 'PREPPING', 'LAMEDUCK'],
+      [FILTER_KEYS.STATE]: ['INIT'],
+      [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+    });
+  });
+
+  it('should call setFiltersBatch with IDLE, BUSY, LAMEDUCK when clicking Failed device_type', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      CountDevices: {
+        query: () => ({
+          queryKey: ['CountDevices'],
+          queryFn: async () => ({ androidCount: {} }),
+        }),
+      },
+    });
+
+    const mockSetFiltersBatch = jest.fn();
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AndroidSummaryHeader aip160="" setFiltersBatch={mockSetFiltersBatch} />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Failed device_type' }));
+
+    expect(mockSetFiltersBatch).toHaveBeenCalledWith({
+      [FILTER_KEYS.STATE]: ['IDLE', 'BUSY', 'LAMEDUCK'],
+      [FILTER_KEYS.FC_IS_OFFLINE]: ['true'],
+      [FILTER_KEYS.MACHINE_TYPE]: ['device'],
+    });
+  });
+
+  it('should call setFiltersBatch with (Blank) when clicking Blank states', async () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+
+    mockUseFleetConsoleClient.mockReturnValue({
+      CountDevices: {
+        query: () => ({
+          queryKey: ['CountDevices'],
+          queryFn: async () => ({ androidCount: {} }),
+        }),
+      },
+    });
+
+    const mockSetFiltersBatch = jest.fn();
+    const queryClient = new QueryClient();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AndroidSummaryHeader aip160="" setFiltersBatch={mockSetFiltersBatch} />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Blank states' }));
+
+    expect(mockSetFiltersBatch).toHaveBeenCalledWith({
+      [FILTER_KEYS.STATE]: ['(Blank)'],
+      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
       [FILTER_KEYS.MACHINE_TYPE]: ['device'],
     });
   });
@@ -254,7 +316,7 @@ describe('AndroidSummaryHeader', () => {
     expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
   });
 
-  it('should call setFiltersBatch with all healthy states when clicking Total Healthy', async () => {
+  it('should call setFiltersBatch with Online filter when clicking Online', async () => {
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
 
     mockUseFleetConsoleClient.mockReturnValue({
@@ -275,19 +337,12 @@ describe('AndroidSummaryHeader', () => {
       </QueryClientProvider>,
     );
 
-    // Click on Total Healthy
-    fireEvent.click(screen.getByText('Total Healthy'));
+    // Click on Online
+    fireEvent.click(screen.getByText('Online'));
 
     // Verify that setFiltersBatch was called
     expect(mockSetFiltersBatch).toHaveBeenCalledWith({
-      [FILTER_KEYS.STATE]: [
-        'IDLE',
-        'BUSY',
-        'INIT',
-        'DIRTY',
-        'PREPPING',
-        'LAMEDUCK',
-      ],
+      [FILTER_KEYS.FC_IS_OFFLINE]: ['false'],
       [FILTER_KEYS.MACHINE_TYPE]: ['device'],
     });
   });

@@ -16,15 +16,29 @@ import { Box, ButtonBase, Skeleton, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
 
-export interface SmallMetricItemProps {
-  label: string | React.ReactNode;
-  value: number;
+export type SmallMetricItemProps = {
+  value?: number;
   total?: number;
   onClick?: () => void;
   dotColor?: string;
   loading?: boolean;
   formatValue?: (val: number) => string;
-}
+} & (
+  | {
+      label: string;
+      /**
+       * Accessible label for the item. If omitted, it will be derived from the label by removing colons.
+       */
+      ariaLabel?: string;
+    }
+  | {
+      label: React.ReactNode;
+      /**
+       * Accessible label for the item. Required if label is a non-string node.
+       */
+      ariaLabel: string;
+    }
+);
 
 export function SmallMetricItem({
   label,
@@ -34,6 +48,7 @@ export function SmallMetricItem({
   dotColor,
   loading,
   formatValue,
+  ariaLabel,
 }: SmallMetricItemProps) {
   const theme = useTheme();
   const percentage =
@@ -46,9 +61,14 @@ export function SmallMetricItem({
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
+      aria-label={
+        ariaLabel ||
+        (typeof label === 'string' ? label.replace(':', '') : undefined)
+      }
       sx={{
         display: 'flex',
         alignItems: 'center',
+        flexWrap: 'wrap',
         gap: 0.5,
         cursor: onClick ? 'pointer' : 'default',
         width: '100%',
@@ -96,30 +116,42 @@ export function SmallMetricItem({
       {loading ? (
         <Skeleton width={30} height={16} sx={{ ml: 0.5 }} />
       ) : (
-        <Typography
-          variant="body2"
+        <Box
+          component="span"
           sx={{
-            color: 'text.primary',
-            fontWeight: 700,
+            display: 'inline-flex',
+            alignItems: 'baseline',
+            gap: 0.5,
             ml: 0.5,
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
           }}
         >
-          {formatValue ? formatValue(value) : (value ?? 0).toLocaleString()}
-        </Typography>
-      )}
-      {percentage !== undefined && !loading && (
-        <Typography
-          variant="caption"
-          sx={{
-            color: 'text.secondary',
-            fontWeight: 300,
-            fontSize: '0.75rem',
-            opacity: 0.7,
-            ml: 0.5,
-          }}
-        >
-          ({percentage}%)
-        </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: 'text.primary',
+              fontWeight: 700,
+            }}
+          >
+            {formatValue
+              ? formatValue(value ?? 0)
+              : (value ?? 0).toLocaleString()}
+          </Typography>
+          {percentage !== undefined && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: 300,
+                fontSize: '0.75rem',
+                opacity: 0.7,
+              }}
+            >
+              ({percentage}%)
+            </Typography>
+          )}
+        </Box>
       )}
     </ButtonBase>
   );
