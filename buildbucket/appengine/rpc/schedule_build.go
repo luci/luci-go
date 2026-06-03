@@ -34,12 +34,14 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	cipdcommon "go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/caching"
@@ -1386,7 +1388,17 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 // build (prefetching its bucket if necessary).
 func validateScheduleBuild(ctx context.Context, op *scheduleBuildOp, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
 	pBld, err := op.Parents.parentBuildForRequest(req)
-	if err != nil {
+	if err != nil && req.DryRun {
+		// If the request is to actually create a build, we need to dedup before
+		// returning the parent error.
+		// For example, if a request has created a child build, then retrying that
+		// request later should return that child build, even if the parent has
+		// ended at time of retrying.
+		// Later in prepareBuild after best-effort batch level builds deduplication
+		// the parent error will be rechecked. And we will return the `parent has
+		// ended` error at that time.
+		// For dry run we should just return the error right away since it has
+		// nothing to do with build deduplication.
 		return nil, nil, err
 	}
 	if err = validateSchedule(ctx, req, op.WellKnownExperiments, pBld); err != nil {
@@ -1519,6 +1531,15 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest, params
 	}
 	eg.Wait()
 	op.UpdateReqMap()
+
+	// Pre-batch best-effort deduplication.
+	builds := findDuppedBldsForAllReqs(ctx, reqs)
+	if builds != nil {
+		for i, req := range op.Reqs {
+			op.SetBuild(req, builds[i])
+		}
+		return op.Finalize(ctx)
+	}
 
 	// Now that we have expanded TemplateBuildId and know all involved builders,
 	// we can fetch their configs. This updates op.Errs in place on errors.
@@ -1699,4 +1720,38 @@ func buildURL(baseURL string) string {
 		u.Scheme = "https"
 	}
 	return u.String()
+}
+
+// findDuppedBldsForAllReqs finds the duplicated builds for all of the reqs.
+//
+// It is best effort with some simplifications:
+//   - It only works if all requests have the duplicated builds, and only then
+//     it returns a slice of *model.Build with len(reqs). If some but not all
+//     requests have duplicates, they will be handled later in CreateBuilds.
+//   - If encounters any failure, it doesn't fail to let the schedule builds
+//     operation continue.
+func findDuppedBldsForAllReqs(ctx context.Context, reqs []*pb.ScheduleBuildRequest) []*model.Build {
+	toGet := make([]*model.RequestID, len(reqs))
+	for i, req := range reqs {
+		if req.GetRequestId() == "" {
+			// Cannot dedup without request ID, bail out.
+			return nil
+		}
+		toGet[i] = model.NewRequestID(ctx, 0, clock.Now(ctx), req.GetRequestId())
+	}
+
+	if err := datastore.Get(ctx, toGet); err != nil {
+		// Either a real error or some RequestID entities don't exist, either way, bail out.
+		return nil
+	}
+
+	builds := make([]*model.Build, len(reqs))
+	for i, ent := range toGet {
+		builds[i] = &model.Build{ID: ent.BuildID}
+	}
+	if err := datastore.Get(ctx, builds); err != nil {
+		// Either a real error or some Build entities don't exist, either way, bail out.
+		return nil
+	}
+	return builds
 }

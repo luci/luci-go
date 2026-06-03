@@ -4050,6 +4050,7 @@ func TestScheduleBuild(t *testing.T) {
 					Identity: userID,
 					FakeDB: authtest.NewFakeDB(
 						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsAdd),
+						authtest.MockPermission(userID, "project:bucket", bbperms.BuildsGet),
 					),
 				})
 
@@ -4356,7 +4357,24 @@ func TestScheduleBuild(t *testing.T) {
 						})
 
 						t.Run("ok", func(t *ftt.Test) {
-							assert.Loosely(t, datastore.Put(ctx, &model.Build{
+							// Set the Build status to CANCELED to intentionally
+							// fail the scheduleBuilds call if it doesn't dedup before
+							// returning the parent has ended error as expected.
+							parent := &model.Build{
+								ID: 2,
+								Proto: &pb.Build{
+									Builder: &pb.BuilderID{
+										Project: "project",
+										Bucket:  "bucket",
+										Builder: "builder",
+									},
+									Id:     2,
+									Status: pb.Status_CANCELED,
+								},
+							}
+							pInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, parent)}
+
+							build := &model.Build{
 								ID: 1,
 								Proto: &pb.Build{
 									Builder: &pb.BuilderID{
@@ -4366,10 +4384,15 @@ func TestScheduleBuild(t *testing.T) {
 									},
 									Id: 1,
 								},
-							}), should.BeNil)
+								ParentID: 2,
+							}
+							assert.Loosely(t, datastore.Put(ctx, build, parent, pInfra), should.BeNil)
 
-							rsp, err := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req}, nil)
-							assert.Loosely(t, err[0], should.BeNil)
+							rsp, merr := scheduleBuilds(ctx, []*pb.ScheduleBuildRequest{req},
+								&scheduleBuildsParams{
+									OverrideParent: parent,
+								})
+							assert.Loosely(t, merr[0], should.BeNil)
 							assert.Loosely(t, rsp[0], should.Resemble(&pb.Build{
 								Builder: &pb.BuilderID{
 									Project: "project",

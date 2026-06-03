@@ -88,16 +88,14 @@ func (ps *parentsMap) parentForRequest(req *pb.ScheduleBuildRequest) *parent {
 }
 
 // parentBuildForRequest returns a parent build for the given request.
+//
+// Always returns the parent build if it exits, regardless of the error.
 func (ps *parentsMap) parentBuildForRequest(req *pb.ScheduleBuildRequest) (*model.Build, error) {
 	p := ps.parentForRequest(req)
-	switch {
-	case p == nil:
+	if p == nil {
 		return nil, nil
-	case p.err != nil:
-		return nil, p.err
-	default:
-		return p.bld, nil
 	}
+	return p.bld, p.err
 }
 
 // ancestorsForRequest returns a list of ancestor builds for the given request.
@@ -141,14 +139,14 @@ func (ps *parentsMap) parentInfraForRequest(req *pb.ScheduleBuildRequest) (*mode
 
 // populateParentFields fills in `p` based on fetch entities.
 //
-// Updates it to erroneous if the build has finished already.
+// Always populate fields for the parent, and only set it to erroneous if the
+// build has finished already.
 func populateParentFields(p *parent, pBld *model.Build, pInfra *model.BuildInfra) {
 	if pBld == nil || pInfra == nil {
 		panic("impossible")
 	}
 	if protoutil.IsEnded(pBld.Proto.GetStatus()) || protoutil.IsEnded(pBld.Proto.GetOutput().GetStatus()) {
 		p.err = appstatus.BadRequest(errors.Fmt("%d has ended, cannot add child to it", pBld.ID))
-		return
 	}
 
 	p.bld = pBld
