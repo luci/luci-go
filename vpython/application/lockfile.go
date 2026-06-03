@@ -41,6 +41,10 @@ func SyncLockfile(ctx context.Context, specPath, uvBin, pythonBin string, isBot 
 		return errors.Fmt("failed to stat spec source: %w", err)
 	}
 
+	if len(spec.Dependencies) == 0 {
+		return nil
+	}
+
 	outOfSync := false
 	var missingDeps []string
 	lockData, readErr := os.ReadFile(lockPath)

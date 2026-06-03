@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -817,6 +818,13 @@ func forceRegenerateLockfile(ctx context.Context, specPath string) error {
 	}
 
 	lockPath := specPath + ".uv.lock"
+	if len(dependencies) == 0 {
+		if err := os.Remove(lockPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return errors.Fmt("failed to delete obsolete lockfile %s: %w", filepath.Base(lockPath), err)
+		}
+		return nil
+	}
+
 	msg := fmt.Sprintf("Forcing regeneration of lockfile %s...", filepath.Base(lockPath))
 	fmt.Println(msg)
 	logging.Infof(ctx, "%s", msg)
