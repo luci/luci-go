@@ -1,5 +1,5 @@
 ---
-name: senior_reviewer
+name: senior-reviewer
 description: Performs a self-review of changed code using a Senior Reviewer subagent. Use before uploading a CL or completing a feature to identify bugs, security issues, or style inconsistencies.
 ---
 

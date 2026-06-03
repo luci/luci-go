@@ -1,13 +1,13 @@
 ---
-name: manual_testing
-description: Instructions for manually testing the Fleet Console using the browser subagent.
+name: manual-testing
+description: Instructions for manually testing the Fleet Console using the browser subagent. Use when you need to verify UI changes, filter interactions, or page loads in the actual browser.
 ---
 
 # Manual Testing Skill
 
 > **Note**: This document contains instructions for AI code assistants working in this repository. Human developers can use it as a reference.
 
-Use this skill when you need to verify UI changes, filter interactions, or page loads in the actual browser.
+Use this skill when you need to verify UI changes, filter interactions, or page loads in the actual browser. For automated validations, see [project-verification](../project-verification/SKILL.md).
 
 ## Prerequisites
 

@@ -1,6 +1,6 @@
 ---
-name: aip160_filtering
-description: Guidelines for generating AIP-160 filter strings for Fleet Console.
+name: aip160-filtering
+description: Guidelines for generating AIP-160 filter strings for Fleet Console. Use when you need to generate filter strings for RPC queries or update the URL with filters.
 ---
 
 # AIP-160 Filtering Skill
@@ -11,7 +11,7 @@ Use this skill when you need to generate filter strings for RPC queries or updat
 
 ## Reference Documents
 
-- **AIP-160 Filtering Architecture**: Refer to `../../../docs/decisions/aip160-filtering.md` for the full decision doc on filter handling and transition states.
+- **AIP-160 Filtering Architecture**: Refer to [AIP-160 Filtering Architecture](../../../docs/decisions/aip160-filtering.md) for the full decision doc on filter handling and transition states.
 
 ## Golden Examples
 

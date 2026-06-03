@@ -1,5 +1,5 @@
 ---
-name: project_verification
+name: project-verification
 description: Runs project checks including linter, tests, and type-checks to ensure no regressions. Use before committing changes, before uploading a CL, or when validating code correctness.
 ---
 
@@ -9,16 +9,26 @@ description: Runs project checks including linter, tests, and type-checks to ens
 
 Use this skill before declaring a task complete to ensure no regressions.
 
+## Workflow
+
+> [!IMPORTANT]
+> **At the start of project verification**, you MUST copy the progress checklist below into your very next response to the user, and check off the steps sequentially as you complete them.
+
+Progress:
+- [ ] Step 1: Run linting (`npm run lint-inc` or `npm run lint`)
+- [ ] Step 2: Run tests (`npm test -- ./src/fleet/` or specific spec files)
+- [ ] Step 3: Run type checking (`npm run type-check`)
+
 ## Commands
 
-> **Note**: If you get an error that `npm` is not found, you may need to initialize the environment by running `env.py` (refer to the setup instructions in `src/fleet/README.md`).
+> [!NOTE]
+> If you get an error that `npm` is not found, you may need to initialize the environment by running `env.py` (refer to the setup instructions in `src/fleet/README.md`).
 
 - **Linting**:
   - `npm run lint`: Runs linting on the entire project.
   - `npm run lint-inc`: Runs linting only on files modified against `origin/main` (faster).
 - **Testing**: `npm test -- ./src/fleet/`
 - **Type Checking**: `npm run type-check`
-
 
 ## Preventing Test Flakiness and State Leakage
 
@@ -41,3 +51,7 @@ Persistent client-side state (like IndexedDB, LocalStorage, or Cookies) can leak
       STRESS_COUNT=5 STRESS_SPEC="cypress/e2e/fleet/android_devices_page.cy.ts" PREVIEW_PORT=8765 ./scripts/stress_e2e.sh
       ```
 
+## Local Debugging and Temp Files
+
+If you need to redirect command output, dump test logs, or write intermediate debug files:
+- **Rule**: Always write these files to the local gitignored `.tmp/` folder (e.g., `milo/ui/.tmp/`). Never dump them directly in the `src/` or root directories where they could be accidentally staged.

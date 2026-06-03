@@ -1,5 +1,5 @@
 ---
-name: prepare_cl
+name: prepare-cl
 description: Verifies, commits, and uploads code changes as a Gerrit CL. Use when you have completed a task, fixed a bug, or are ready to submit changes for review.
 ---
 
@@ -28,8 +28,8 @@ Progress:
    - **Check for Unrelated Changes**: Double check that the branch you're currently on doesn't have unrelated changes before you upload a CL. Run `git log origin/main..HEAD` to see the commits on your branch relative to main, and ensure they are all related to the current task.
 
 1. **Verification**:
-   - Run the `project_verification` skill (lint, test, type-check) to ensure no regressions.
-   - Run the `senior_reviewer` skill to get a self-review and address feedback.
+   - Run the [project-verification](../project-verification/SKILL.md) skill (lint, test, type-check) to ensure no regressions.
+   - Run the [senior-reviewer](../senior-reviewer/SKILL.md) skill to get a self-review and address feedback.
 
 2. **Commit Changes**:
    - Run `git status` to see modified files.
@@ -59,7 +59,7 @@ Progress:
    >   `git cl upload -t "My patchset title"`
    >   *(Alternatively, use `-T` or `--skip-title` to automatically use the last commit message as the title)*
    >
-   > (If you are encountering other interactive confirmation/editor prompts, you can fallback to: `yes y | EDITOR=true git cl upload`)
+   > (If you are encountering other interactive prompts, bypass them using the non-interactive option: `EDITOR=touch git cl upload -f --commit-description=+`)
    >
    > > [!CAUTION]
    > > **Do NOT switch branches, stage/unstage files, or run other git operations while `git cl upload` is running in the background!**
@@ -81,7 +81,7 @@ Progress:
      1. **Start from the base branch/CL**: Ensure you are on the branch of the first CL (e.g., `branch-1` for `CL 1`).
      2. **Create a dependent branch**: Run `git new-branch --upstream-current <new-branch-name>`. This creates a new branch (e.g., `branch-2`) tracking `branch-1` as its upstream.
      3. **Apply and commit changes**: Apply your changes and commit them to `branch-2`.
-     4. **Upload to Gerrit**: Run `yes y | EDITOR=true git cl upload`. Because `branch-2` was created with `--upstream-current`, Gerrit will recognize the dependency structure, and the new CL will show as depending on the parent CL in the Gerrit UI.
+     4. **Upload to Gerrit**: Run `EDITOR=touch git cl upload -f --commit-description=+`. Because `branch-2` was created with `--upstream-current`, Gerrit will recognize the dependency structure, and the new CL will show as depending on the parent CL in the Gerrit UI.
      5. **Uploading subsequent edits**:
         - To update the base CL (`CL 1`), switch back to `branch-1`, make changes, commit (amending if desired: `git commit --amend`), and upload.
         - After updating `branch-1`, you must rebase `branch-2` onto the updated `branch-1`. Since `branch-1` was amended or rebased, a simple `git rebase branch-1` can cause git to incorrectly re-apply old commits, triggering merge conflicts. Instead, use one of these methods:
@@ -96,8 +96,9 @@ Progress:
      3. Remove the temporary file: `rm desc.txt`.
 
    ### Avoiding Dirty Tree Traps
-   Do not use `git add -A` or `git add .` blindly. If you created temporary directories or output files (like `spool/` for `led` or `builder.json`) that are not ignored in `.gitignore`, they will be staged and committed!
-   - **Rule**: Always check `git status` before staging, and prefer staging files explicitly by name instead of using catch-all commands. Ensure temporary files are added to `.gitignore` if they are part of a recurring workflow.
+   Do not use `git add -A` or `git add .` blindly. If you created temporary directories or output files, they will pollute your branch unless they are channeled into the gitignored `.tmp/` folder (which is ignored at the `milo/ui` root). See [preventing-workspace-leakage](../preventing-workspace-leakage/SKILL.md) for detailed staging safety workflows.
+   - **Rule 1**: Always write transient or generated files (e.g. temporary logs, test results, or generated queries) to the local gitignored `.tmp/` directory (e.g., `milo/ui/.tmp/`).
+   - **Rule 2**: Always check `git status` before staging, and prefer staging files explicitly by name instead of using catch-all commands.
 
    ### Splitting a Single Commit
    If you accidentally combined unrelated changes into a single commit and want to split it:
