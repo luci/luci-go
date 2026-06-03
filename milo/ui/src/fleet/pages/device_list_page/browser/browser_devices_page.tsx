@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Alert, Link } from '@mui/material';
 import _ from 'lodash';
 import {
   MaterialReactTable,
@@ -325,6 +326,19 @@ export const BrowserDevicesPage = () => {
       <WarningNotifications warnings={[...filterWarnings, ...warnings]} />
       <BrowserSummaryHeader />
       <AdminTasksAlert />
+      <Alert
+        severity="info"
+        sx={{
+          marginTop: '24px',
+        }}
+      >
+        Currently, this page only displays physical devices. VMs will be
+        onboarded by the end of Q2 or early Q3 (tracking bug:{' '}
+        <Link href="http://b/503171517" target="_blank" rel="noreferrer">
+          b/503171517
+        </Link>
+        ).
+      </Alert>
       <div
         css={{
           marginTop: 24,
