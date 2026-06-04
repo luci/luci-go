@@ -50,12 +50,26 @@ func TestRepeatedStringColumn(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`argument for field "array": expected a quoted ("") string literal but got possible field reference "somevalue", did you mean to wrap the value in quotes?`))
 		})
 
-		t.Run("operator not implemented", func(t *ftt.Test) {
+		t.Run("array exact match operator", func(t *ftt.Test) {
 			filter, err := ParseFilter(`array = "somevalue"`)
 			assert.Loosely(t, err, should.BeNil)
 
+			result, pars, err := table.WhereClause(filter, "T", "p_")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pars, should.Match([]SqlQueryParameter{
+				{
+					Name: "p_0", Value: "somevalue",
+				},
+			}))
+			assert.Loosely(t, result, should.Equal("(EXISTS (SELECT value FROM UNNEST(T.db_array) as value WHERE value = @p_0))"))
+		})
+
+		t.Run("operator not implemented", func(t *ftt.Test) {
+			filter, err := ParseFilter(`array > "somevalue"`)
+			assert.Loosely(t, err, should.BeNil)
+
 			_, _, err = table.WhereClause(filter, "T", "p_")
-			assert.Loosely(t, err, should.ErrLike(`operator "=" not implemented for field "array" of type REPEATED STRING`))
+			assert.Loosely(t, err, should.ErrLike(`operator ">" not implemented for field "array" of type REPEATED STRING`))
 		})
 	})
 }

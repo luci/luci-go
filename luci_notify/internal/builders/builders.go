@@ -20,9 +20,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 )
 
@@ -59,7 +61,7 @@ type ListOptions struct {
 func List(ctx context.Context, opts ListOptions) ([]*BuilderStatus, string, error) {
 	whereClause, aipParams, err := builderStatusesTable.WhereClause(opts.Filter, "", "w_")
 	if err != nil {
-		return nil, "", errors.Fmt("generating where clause: %w", err)
+		return nil, "", appstatus.Attachf(err, codes.InvalidArgument, "generating where clause")
 	}
 
 	pageSize := opts.PageSize

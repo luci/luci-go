@@ -32,10 +32,14 @@ func (r *RepeatedStringColumn) RestrictionQuery(restriction RestrictionContext, 
 		return "", fmt.Errorf("argument for field %q: %w", restriction.FieldPath.String(), err)
 	}
 
-	if restriction.Comparator == ":" {
+	switch restriction.Comparator {
+	case ":":
 		return fmt.Sprintf("(EXISTS (SELECT value FROM UNNEST(%s) as value WHERE value LIKE %s))",
 			g.ColumnReference(r.databaseName), g.BindString("%"+QuoteLike(argValueUnsafe)+"%")), nil
-	} else {
+	case "=":
+		return fmt.Sprintf("(EXISTS (SELECT value FROM UNNEST(%s) as value WHERE value = %s))",
+			g.ColumnReference(r.databaseName), g.BindString(argValueUnsafe)), nil
+	default:
 		return "", OperatorNotImplementedError(restriction.Comparator, restriction.FieldPath, "REPEATED STRING")
 	}
 }
