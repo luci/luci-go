@@ -46,7 +46,9 @@ def main():
     env["UV_NO_BUILD"] = "true"
 
     # Configure package registry mirror.
-    ar_url = os.getenv("VPYTHON_AR_URL") or "https://us-python.pkg.dev/chrome-python-ar/chrome-python-ar/simple/"
+    ar_url = os.getenv("VPYTHON_AR_URL")
+    if not ar_url:
+        raise RuntimeError("VPYTHON_AR_URL environment variable is mandatory")
     env["UV_DEFAULT_INDEX"] = ar_url
 
     print("Creating virtualenv via UV...")

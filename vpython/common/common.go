@@ -29,6 +29,8 @@ const (
 	EnvVpythonCacheSalt = "_VPYTHON_CACHE_SALT"
 )
 
+const DefaultARURL = "https://us-python.pkg.dev/chrome-python-ar/chrome-python-ar/simple/"
+
 const (
 	// Must be changed +1 to invalidate cache.
 	VpythonCacheSalt = "2"

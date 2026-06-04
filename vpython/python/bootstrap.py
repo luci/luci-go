@@ -53,7 +53,9 @@ if 'wheels' in os.environ:
   pip = glob.glob(os.path.join(os.environ['out'], '*', 'pip*'))[0]
   requirements_file = os.path.join(os.environ['wheels'], 'requirements.txt')
 
-  ar_url = os.environ.get('VPYTHON_AR_URL', 'https://us-python.pkg.dev/chrome-python-ar/chrome-python-ar/simple/')
+  ar_url = os.environ.get('VPYTHON_AR_URL')
+  if not ar_url:
+    raise RuntimeError("VPYTHON_AR_URL environment variable is mandatory")
 
   command = [
       pip, 'install',

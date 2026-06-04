@@ -117,9 +117,11 @@ func (e *Environment) Pep425Tags() generators.Generator {
 
 func (e *Environment) WithWheels(wheels generators.Generator) generators.Generator {
 	env := environ.New(nil)
-	if v := os.Getenv(common.EnvVpythonArUrl); v != "" {
-		env.Set(common.EnvVpythonArUrl, v)
+	arURL := os.Getenv(common.EnvVpythonArUrl)
+	if arURL == "" {
+		arURL = common.DefaultARURL
 	}
+	env.Set(common.EnvVpythonArUrl, arURL)
 	cipdPath := "cipd"
 	if path, err := exec.LookPath("cipd"); err == nil {
 		cipdPath = path
@@ -237,9 +239,11 @@ func (s *SpecRequirementsGenerator) Generate(_ context.Context, plats generators
 // WithUV returns a workflow.Generator for the UV virtualenv.
 func (e *Environment) WithUV(uv generators.Generator, spec *standard.ProjectSpec) generators.Generator {
 	env := environ.New(nil)
-	if v := os.Getenv(common.EnvVpythonArUrl); v != "" {
-		env.Set(common.EnvVpythonArUrl, v)
+	arURL := os.Getenv(common.EnvVpythonArUrl)
+	if arURL == "" {
+		arURL = common.DefaultARURL
 	}
+	env.Set(common.EnvVpythonArUrl, arURL)
 
 	reqGen := &SpecRequirementsGenerator{Spec: spec}
 

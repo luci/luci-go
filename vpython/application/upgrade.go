@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/system/filesystem"
 
 	"go.chromium.org/luci/vpython/api/vpython"
+	"go.chromium.org/luci/vpython/common"
 	"go.chromium.org/luci/vpython/spec"
 	"go.chromium.org/luci/vpython/standard"
 	"go.chromium.org/luci/vpython/standard/legacy"
@@ -649,7 +650,10 @@ func generateProactiveLockfile(ctx context.Context, specPath string, dependencie
 			return
 		}
 	}
-	arURL := os.Getenv("VPYTHON_AR_URL")
+	arURL := os.Getenv(common.EnvVpythonArUrl)
+	if arURL == "" {
+		arURL = common.DefaultARURL
+	}
 
 	lockPath := specPath + ".uv.lock"
 	msg := fmt.Sprintf("Automatically generating lockfile %s...", filepath.Base(lockPath))

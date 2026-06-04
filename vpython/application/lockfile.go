@@ -134,8 +134,7 @@ func updateLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin st
 
 	arURL := os.Getenv(common.EnvVpythonArUrl)
 	if arURL == "" {
-		// Will be replaced with common source in the next CL.
-		arURL = "https://us-python.pkg.dev/chrome-python-ar/chrome-python-ar/simple/"
+		arURL = common.DefaultARURL
 	}
 	env := append(os.Environ(),
 		"UV_PYTHON_DOWNLOADS=never",
