@@ -55,6 +55,7 @@ describe('getRedirectAddress', () => {
           ['f', 'dut_state:needs_replacement'],
           ['f', 'dut_state:needs_repair'],
           ['f', 'label-bluetooth:True'],
+          ['f', 'status:ready'],
         ]),
         swarmingClient,
         fleetConsoleClient,
@@ -66,7 +67,7 @@ describe('getRedirectAddress', () => {
           new URLSearchParams([
             [
               'filters',
-              `labels.dut_state = ("ready" OR "needs_replacement" OR "needs_repair") labels.label-bluetooth = "True"`,
+              `labels.dut_state = ("ready" OR "needs_replacement" OR "needs_repair") labels.label-bluetooth = "True" state = "ready"`,
             ],
           ]).toString(),
         pathname: prefix + 'devices',
@@ -111,6 +112,63 @@ describe('getRedirectAddress', () => {
             ['c', 'col3'],
             ['c', 'col4'],
           ]).toString(),
+        pathname: prefix + 'devices',
+      });
+    });
+    test('botlist columns mapping', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['c', 'id'],
+          ['c', 'task'],
+          ['c', 'os'],
+          ['c', 'status'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+      );
+      expect(to).toEqual({
+        search:
+          '?' +
+          new URLSearchParams([
+            ['c', 'id'],
+            ['c', 'current_task'],
+            ['c', 'os'],
+            ['c', 'state'],
+          ]).toString(),
+        pathname: prefix + 'devices',
+      });
+    });
+    test('botlist orderBy mapping', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['s', 'task'],
+          ['d', 'asc'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+      );
+      expect(to).toEqual({
+        search:
+          '?' + new URLSearchParams([['order_by', 'current_task']]).toString(),
+        pathname: prefix + 'devices',
+      });
+
+      const toStatus = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['s', 'status'],
+          ['d', 'asc'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+      );
+      expect(toStatus).toEqual({
+        search: '?' + new URLSearchParams([['order_by', 'state']]).toString(),
         pathname: prefix + 'devices',
       });
     });
@@ -163,6 +221,41 @@ describe('getRedirectAddress', () => {
         pathname: prefix + 'devices',
       });
     });
+    test('botlist orderBy with k fallback', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['k', 'label-board'],
+          ['d', 'asc'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+      );
+      expect(to).toEqual({
+        search:
+          '?' +
+          new URLSearchParams([['order_by', 'labels.label-board']]).toString(),
+        pathname: prefix + 'devices',
+      });
+
+      const toSAndK = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['k', 'python'],
+          ['s', 'id'],
+          ['d', 'asc'],
+          ['v', 'false'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        ['id'],
+      );
+      expect(toSAndK).toEqual({
+        search: '?' + new URLSearchParams([['order_by', 'id']]).toString(),
+        pathname: prefix + 'devices',
+      });
+    });
   });
 
   describe('/botlist page (browser)', () => {
@@ -187,6 +280,7 @@ describe('getRedirectAddress', () => {
         new URLSearchParams([
           ['f', 'device_type:a23xq'],
           ['f', 'label-model:sapphire'],
+          ['f', 'id:my-device-id'],
         ]),
         swarmingClient,
         fleetConsoleClient,
@@ -199,7 +293,7 @@ describe('getRedirectAddress', () => {
           new URLSearchParams([
             [
               'filters',
-              `sw."device_type" = "a23xq" sw."label-model" = "sapphire"`,
+              `sw."device_type" = "a23xq" sw."label-model" = "sapphire" id = "my-device-id"`,
             ],
           ]).toString(),
         pathname: browserPrefix + 'devices',
@@ -219,6 +313,101 @@ describe('getRedirectAddress', () => {
       );
       expect(to).toEqual({
         search: '?' + new URLSearchParams([['order_by', 'sw.col1']]).toString(),
+        pathname: browserPrefix + 'devices',
+      });
+    });
+    test('botlist orderBy id', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['s', 'id'],
+          ['d', 'asc'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+        'chromium',
+      );
+      expect(to).toEqual({
+        search: '?' + new URLSearchParams([['order_by', 'id']]).toString(),
+        pathname: browserPrefix + 'devices',
+      });
+    });
+    test('botlist columns mapping', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['c', 'id'],
+          ['c', 'task'],
+          ['c', 'status'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+        'chromium',
+      );
+      expect(to).toEqual({
+        search:
+          '?' +
+          new URLSearchParams([
+            ['c', 'id'],
+            ['c', 'sw.current_task'],
+            ['c', 'sw.state'],
+          ]).toString(),
+        pathname: browserPrefix + 'devices',
+      });
+    });
+    test('botlist orderBy mapping', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['s', 'task'],
+          ['d', 'asc'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+        'chromium',
+      );
+      expect(to).toEqual({
+        search:
+          '?' +
+          new URLSearchParams([['order_by', 'sw.current_task']]).toString(),
+        pathname: browserPrefix + 'devices',
+      });
+
+      const toStatus = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['s', 'status'],
+          ['d', 'asc'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+        'chromium',
+      );
+      expect(toStatus).toEqual({
+        search:
+          '?' + new URLSearchParams([['order_by', 'sw.state']]).toString(),
+        pathname: browserPrefix + 'devices',
+      });
+    });
+    test('botlist orderBy with k fallback', async () => {
+      const to = await getRedirectAddress(
+        'botlist',
+        new URLSearchParams([
+          ['k', 'status'],
+          ['d', 'asc'],
+        ]),
+        swarmingClient,
+        fleetConsoleClient,
+        [],
+        'chromium',
+      );
+      expect(to).toEqual({
+        search:
+          '?' + new URLSearchParams([['order_by', 'sw.state']]).toString(),
         pathname: browserPrefix + 'devices',
       });
     });

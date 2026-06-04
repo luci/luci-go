@@ -16,7 +16,10 @@ import { To } from 'react-router';
 
 import { DecoratedClient } from '@/common/hooks/prpc_query';
 import { stringifyFilters } from '@/fleet/components/filter_dropdown/parser/parser';
-import { BROWSER_SWARMING_SOURCE } from '@/fleet/constants/browser';
+import {
+  BROWSER_SWARMING_SOURCE,
+  BROWSER_UFS_SOURCE,
+} from '@/fleet/constants/browser';
 import { getDutName } from '@/fleet/utils/swarming';
 import {
   FleetConsoleClientImpl,
@@ -86,6 +89,18 @@ export const getRedirectAddress = async (
   throw Error(`No page mapping found for page ${url}`);
 };
 
+const mapColumn = (col: string, isBrowser: boolean): string => {
+  if (isBrowser) {
+    if (col === 'task') return 'sw.current_task';
+    if (col === 'status') return 'sw.state';
+    return col;
+  }
+
+  if (col === 'task') return 'current_task';
+  if (col === 'status') return 'state';
+  return col;
+};
+
 const botListParseParams = (
   searchParams: URLSearchParams,
   baseDimensions: string[],
@@ -93,7 +108,7 @@ const botListParseParams = (
 ): string => {
   const out = new URLSearchParams([
     ...convertFilters(searchParams, baseDimensions, isBrowser),
-    ...convertColumns(searchParams),
+    ...convertColumns(searchParams, isBrowser),
     ...convertOrderBy(searchParams, baseDimensions, isBrowser),
   ]);
   return '?' + out.toString();
@@ -117,9 +132,20 @@ const convertFilters = (
     }
     const vals = val.split('|');
 
+    key = mapColumn(key, isBrowser);
+
     if (isBrowser) {
-      key = `${BROWSER_SWARMING_SOURCE}."${key}"`;
-    } else if (!baseDimensions.includes(key)) {
+      const match = key.match(/^(\w+)\.(.*)$/);
+      if (match) {
+        key = `${match[1]}."${match[2]}"`;
+      } else if (key !== 'id') {
+        key = `${BROWSER_SWARMING_SOURCE}."${key}"`;
+      }
+    } else if (
+      !baseDimensions.includes(key) &&
+      key !== 'current_task' &&
+      key !== 'state'
+    ) {
       key = 'labels.' + key;
     }
 
@@ -132,9 +158,9 @@ const convertFilters = (
   return [['filters', stringifyFilters(filterObj)]];
 };
 
-const convertColumns = (searchParams: URLSearchParams) => {
+const convertColumns = (searchParams: URLSearchParams, isBrowser: boolean) => {
   const columns = searchParams.getAll('c');
-  return columns.map((col) => ['c', col]);
+  return columns.map((col) => ['c', mapColumn(col, isBrowser)]);
 };
 
 const convertOrderBy = (
@@ -142,16 +168,26 @@ const convertOrderBy = (
   baseDimensions: string[],
   isBrowser: boolean,
 ) => {
-  const sParam = searchParams.get('s');
+  const sParam = searchParams.get('s') || searchParams.get('k');
   const ascDesc = searchParams.get('d');
 
   if (!sParam) return [];
 
-  let by = sParam;
-  if (isBrowser) {
-    by = `${BROWSER_SWARMING_SOURCE}.${sParam}`;
-  } else if (!baseDimensions.includes(sParam)) {
-    by = `labels.${sParam}`;
+  let by = mapColumn(sParam, isBrowser);
+  if (
+    isBrowser &&
+    by !== 'id' &&
+    !by.startsWith(`${BROWSER_SWARMING_SOURCE}.`) &&
+    !by.startsWith(`${BROWSER_UFS_SOURCE}.`)
+  ) {
+    by = `${BROWSER_SWARMING_SOURCE}.${by}`;
+  } else if (
+    !isBrowser &&
+    !baseDimensions.includes(by) &&
+    by !== 'current_task' &&
+    by !== 'state'
+  ) {
+    by = `labels.${by}`;
   }
 
   if (ascDesc === 'desc') return [['order_by', `${by} desc`]];
