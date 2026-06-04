@@ -31,6 +31,7 @@ import { Timestamp } from '@/common/components/timestamp';
 import { SHORT_TIME_FORMAT } from '@/common/tools/time_utils';
 import {
   getBuildURLPathFromBuildData,
+  getBuildURLPathFromBuildId,
   getBuilderURLPath,
   getProjectURLPath,
 } from '@/common/tools/url_utils';
@@ -144,7 +145,27 @@ export function AncestorBuild({ buildId }: AncestorBuildProps) {
     select: (data) => data as PartialBuild,
   });
   if (isError) {
-    throw error;
+    interface MaybeGrpcError {
+      message?: string;
+    }
+    const errMsg =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as MaybeGrpcError).message)
+        : String(error);
+    return (
+      <HtmlTooltip title={`Failed to load build details: ${errMsg}`}>
+        <ChipContainer>
+          <span>⚠️</span>
+          <Link
+            component={RouterLink}
+            sx={{ fontWeight: 'bold' }}
+            to={getBuildURLPathFromBuildId(buildId)}
+          >
+            {buildId}
+          </Link>
+        </ChipContainer>
+      </HtmlTooltip>
+    );
   }
 
   return (

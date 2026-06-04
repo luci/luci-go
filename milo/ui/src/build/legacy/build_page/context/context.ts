@@ -20,6 +20,7 @@ import { Analysis } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analys
 export interface BuildContext {
   readonly build?: OutputBuild;
   readonly analysis?: Analysis;
+  readonly analysisError?: unknown;
 }
 
 /**

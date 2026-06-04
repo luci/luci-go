@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Alert } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 
@@ -27,7 +28,11 @@ export interface BuildProviderProps {
 
 export function BuildContextProvider({ build, children }: BuildProviderProps) {
   const analysisClient = useAnalysesClient();
-  const { data: response } = useQuery({
+  const {
+    data: response,
+    isError,
+    error,
+  } = useQuery({
     ...analysisClient.QueryAnalysis.query(
       QueryAnalysisRequest.fromPartial({
         buildFailure: {
@@ -36,13 +41,19 @@ export function BuildContextProvider({ build, children }: BuildProviderProps) {
         },
       }),
     ),
-    // only use the query if a Buildbucket ID has been provided
     enabled: !!(build && build.id),
+    throwOnError: false,
+    retry: false,
   });
   const analysis = response?.analyses[0];
   return (
-    <BuildCtx.Provider value={{ build, analysis }}>
-      {' '}
+    <BuildCtx.Provider value={{ build, analysis, analysisError: error }}>
+      {isError && (
+        <Alert severity="warning" sx={{ margin: '10px' }}>
+          Failed to load secondary data. If you log in you may be able to see
+          more information on this page.
+        </Alert>
+      )}
       {children}
     </BuildCtx.Provider>
   );

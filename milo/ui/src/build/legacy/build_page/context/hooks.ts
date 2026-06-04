@@ -31,3 +31,13 @@ export function useAnalysis() {
   }
   return ctx?.analysis;
 }
+
+export function useAnalysisError() {
+  const ctx = useContext(BuildCtx);
+  if (ctx === undefined) {
+    throw new Error(
+      'useAnalysisError can only be used in a BuildContextProvider',
+    );
+  }
+  return ctx?.analysisError;
+}

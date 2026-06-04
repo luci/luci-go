@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GrpcError } from '@chopsui/prpc-client';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { Box, Button, Typography } from '@mui/material';
 import { useEffect, useRef } from 'react';
@@ -52,11 +51,19 @@ export function RecoverableErrorFallback({
     resetRef.current();
   }, [authState.identity, resetRef]);
 
-  const err = error instanceof Error ? error : new Error(`${error}`);
+  interface MaybeGrpcError {
+    code?: number;
+    message?: string;
+  }
+  const maybeGrpc = error as MaybeGrpcError;
+  const errCode = maybeGrpc?.code;
+  const errMsg = maybeGrpc?.message || String(error);
+  const err = error instanceof Error ? error : new Error(errMsg);
+
   const shouldAskToLogin =
     initialIdentity.current === ANONYMOUS_IDENTITY &&
-    err instanceof GrpcError &&
-    POTENTIAL_PERM_ERROR_CODES.includes(err.code);
+    errCode !== undefined &&
+    POTENTIAL_PERM_ERROR_CODES.includes(errCode);
 
   if (shouldAskToLogin) {
     return (

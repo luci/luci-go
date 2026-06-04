@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  Alert,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -27,13 +28,14 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 
-import { useAnalysis, useBuild } from '../context';
+import { useAnalysis, useAnalysisError, useBuild } from '../context';
 
 import { BlamelistDisplay } from './blamelist_display';
 
 export function BlamelistTab() {
   const build = useBuild();
   const analysis = useAnalysis();
+  const analysisError = useAnalysisError();
 
   const repoSelectorLabelId = useId();
 
@@ -57,6 +59,12 @@ export function BlamelistTab() {
 
   return (
     <>
+      {analysisError && (
+        <Alert severity="warning" sx={{ margin: '10px' }}>
+          Failed to load secondary data. If you log in you may be able to see
+          more information on this page.
+        </Alert>
+      )}
       <FormControl size="small" sx={{ margin: '10px' }}>
         <InputLabel id={repoSelectorLabelId}>Repo</InputLabel>
         <Select
