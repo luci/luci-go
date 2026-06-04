@@ -132,7 +132,7 @@ func upgradeDir(ctx context.Context, dirPath string, keepLegacy bool) error {
 func upgradeFile(ctx context.Context, filePath string, keepLegacy bool, isDirectTarget bool) error {
 	ext := strings.ToLower(filepath.Ext(filePath))
 	if ext == ".vpython" || ext == ".vpython3" {
-		return convertStandaloneSpec(ctx, filePath, keepLegacy, isDirectTarget)
+		return convertStandaloneSpec(ctx, filePath, keepLegacy)
 	}
 
 	isPy, err := isPythonScript(filePath)
@@ -185,7 +185,7 @@ func marshalScriptMetadataSpec(spec *standard.ProjectSpec) (string, error) {
 	return buf.String(), nil
 }
 
-func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool, isDirectTarget bool) error {
+func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool) error {
 	// Check if this standalone spec is a script companion spec.
 	dir := filepath.Dir(srcPath)
 	base := filepath.Base(srcPath)
@@ -230,11 +230,13 @@ func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool,
 		return mergeSpecIntoScript(ctx, scriptPath, srcPath, keepLegacy)
 	}
 
+	var destPath string
 	if base != ".vpython" && base != ".vpython3" {
-		if isDirectTarget {
-			logging.Warningf(ctx, "Skipped custom spec file %q. Standalone custom spec files cannot be converted to folder-level vpython.toml as they represent explicitly-called environments. Only standard .vpython or .vpython3 common spec files are converted.", srcPath)
-		}
-		return nil
+		ext := filepath.Ext(base)
+		name := strings.TrimSuffix(base, ext)
+		destPath = filepath.Join(dir, name+".vpython.toml")
+	} else {
+		destPath = filepath.Join(dir, "vpython.toml")
 	}
 
 	if base == ".vpython" {
@@ -266,8 +268,6 @@ func convertStandaloneSpec(ctx context.Context, srcPath string, keepLegacy bool,
 	if err != nil {
 		return errors.Fmt("failed to serialize TOML for spec %q: %w", srcPath, err)
 	}
-
-	destPath := filepath.Join(filepath.Dir(srcPath), "vpython.toml")
 	var perm os.FileMode = 0644
 	if st, err := os.Stat(destPath); err == nil && !st.IsDir() {
 		perm = st.Mode().Perm()

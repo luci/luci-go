@@ -135,34 +135,6 @@ dependencies = [
 			_, err = os.Stat(tomlPath)
 			assert.NoErr(t, err)
 		})
-
-		t.Run("Skips custom explicit standalone spec files completely (no migration, no deletion)", func(t *ftt.Test) {
-			srcPath := filepath.Join(tempDir, "custom.vpython3")
-			err := os.WriteFile(srcPath, []byte(strings.TrimSpace(legacyContent)), 0644)
-			assert.NoErr(t, err)
-
-			// Clear any existing vpython.toml
-			tomlPath := filepath.Join(tempDir, "vpython.toml")
-			_ = os.Remove(tomlPath)
-
-			mctx := memlogger.Use(ctx)
-			err = UpgradeSpecs(mctx, srcPath, false, true, true)
-			assert.NoErr(t, err)
-
-			// Verify custom spec file still exists
-			_, err = os.Stat(srcPath)
-			assert.NoErr(t, err)
-
-			// Verify vpython.toml was NOT created
-			_, err = os.Stat(tomlPath)
-			assert.Loosely(t, errors.Is(err, os.ErrNotExist), should.BeTrue)
-
-			// Verify warning was captured in the test logger!
-			ml := logging.Get(mctx).(*memlogger.MemLogger)
-			assert.Loosely(t, len(ml.Messages()), should.BeGreaterThan(0))
-			assert.Loosely(t, ml.Messages()[0].Msg, should.ContainSubstring("Skipped custom spec file"))
-			assert.Loosely(t, ml.Messages()[0].Msg, should.ContainSubstring("Only standard .vpython or .vpython3 common spec files are converted."))
-		})
 	})
 }
 
@@ -689,5 +661,41 @@ print("OK")
 		assert.Loosely(t, string(data), should.ContainSubstring("# /// script"))
 		assert.Loosely(t, string(data), should.ContainSubstring("requires-python = '>=3.11,<3.12'"))
 		assert.Loosely(t, string(data), should.NotContainSubstring("requires-python = \">=3.8,<3.9\""))
+	})
+}
+
+func TestUpgradeSpecs_CustomStandalone(t *testing.T) {
+	ctx := context.Background()
+
+	ftt.Run("Test custom standalone specs migration", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
+
+		t.Run("Migrates custom standalone spec with no dependencies and does NOT create lockfile", func(t *ftt.Test) {
+			legacyContent := `
+python_version: "3.8"
+`
+			srcPath := filepath.Join(tempDir, "standalone.vpython3")
+			err := os.WriteFile(srcPath, []byte(strings.TrimSpace(legacyContent)), 0644)
+			assert.NoErr(t, err)
+
+			err = UpgradeSpecs(ctx, srcPath, false, true, true)
+			assert.NoErr(t, err)
+
+			// Verify original custom legacy spec was deleted
+			_, err = os.Stat(srcPath)
+			assert.Loosely(t, errors.Is(err, os.ErrNotExist), should.BeTrue)
+
+			// Verify standalone.vpython.toml was created
+			tomlPath := filepath.Join(tempDir, "standalone.vpython.toml")
+			spec, err := standard.ParseVpythonTOML(tomlPath)
+			assert.NoErr(t, err)
+			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.8,<3.9"))
+			assert.Loosely(t, spec.Dependencies, should.BeEmpty)
+
+			// Verify proactive lockfile was NOT created
+			lockPath := tomlPath + ".uv.lock"
+			_, err = os.Stat(lockPath)
+			assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
+		})
 	})
 }
