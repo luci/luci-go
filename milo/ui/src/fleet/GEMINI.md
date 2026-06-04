@@ -34,6 +34,12 @@ For every task that involves code changes, the agent MUST use the [senior-review
 ## 4. Coding Conventions & Best Practices
 - **Avoid type casting unless strictly necessary.** Try to rely on TypeScript's type inference and narrowing instead of using `as Type`.
 
+## 5. Sandbox & Temp File Hygiene (No terminal deletion prompts)
+To maximize productivity and prevent unnecessary manual permission prompts for the user:
+- **Do NOT run `rm` or other terminal deletion commands** to clean up temporary/sandbox files, patches, or log dumps.
+- **Leave transient files in `.tmp/`**: Since `.tmp/` is globally gitignored and excluded from all build tools, leaving files there is completely safe and causes no workspace pollution.
+- **Overwrite instead of delete**: If you need to clear a file's content or size to save disk space, use the `write_to_file` tool to overwrite the file with an empty string (`""`) rather than running `rm`.
+
 ## Architectural Principles & Design Documentation
 We maintain documentation of key architectural principles and design tradeoffs in `decisions/` directories.
 - Frontend-specific and cross-cutting docs live in `./docs/decisions/`
@@ -52,7 +58,9 @@ Available skills include:
 - [high-density-ui](./.agents/skills/high-density-ui/SKILL.md)
 - [project-verification](./.agents/skills/project-verification/SKILL.md)
 - [ux-prototyping](./.agents/skills/ux-prototyping/SKILL.md)
+- [preventing-workspace-leakage](./.agents/skills/preventing-workspace-leakage/SKILL.md)
 - [continuous-improvement](./.agents/skills/continuous-improvement/SKILL.md)
+
 
 ## Confidentiality Guidelines
 This project is open source. When writing code, documentation, or commit messages:
