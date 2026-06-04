@@ -37,6 +37,12 @@ const config: Config = {
   transformIgnorePatterns: ['/node_modules/(?!lodash-es|lit|markdown-it)/'],
   globalSetup: './src/testing_tools/global_setup.ts',
   setupFilesAfterEnv: ['./src/testing_tools/setup_after_env.ts'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/\\.tmp/',
+    '<rootDir>/\\.worktrees/',
+  ],
+  watchPathIgnorePatterns: ['<rootDir>/\\.tmp/', '<rootDir>/\\.worktrees/'],
 
   transform: {
     // The default transform from `ts-jest` preset doesn't handle `.mjs` files.

@@ -83,5 +83,7 @@
     "dist",
     // Exclude the generated proto bindings to make type check faster.
     "src/proto",
+    ".tmp",
+    ".worktrees",
   ]
 }

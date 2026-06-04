@@ -11,3 +11,11 @@ coverage
 
 # Ignore compiled Go binaries.
 scripts/check-tests
+
+# Generated local preview spools and sandbox temp files
+.tmp/
+/spool/
+
+# Isolated parallel worktrees
+.worktrees/
+

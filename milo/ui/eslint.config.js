@@ -78,7 +78,14 @@ const localPlugin = {
 export default [
   // 1. Global Ignores (from .eslintignore)
   {
-    ignores: ['**/node_modules', 'generated/', 'dist/', 'src/proto'],
+    ignores: [
+      '**/node_modules',
+      'generated/',
+      'dist/',
+      'src/proto',
+      '**/.tmp/**',
+      '**/.worktrees/**',
+    ],
   },
 
   // 2. TypeScript-specific configuration (from tseslint.configs.recommended)
