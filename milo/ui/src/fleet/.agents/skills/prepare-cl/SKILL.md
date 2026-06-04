@@ -39,7 +39,7 @@ Progress:
        - Title: Short, descriptive summary.
        - Body: Explain what changed and why. Include business or design context (e.g., "This is needed to support the new Android health layout..."). If it fixes a bug, explain the fix.
        - Footer: If the change fixes a bug, include reference in the format `Bug: b/XXXXXXX` (note the `b/` prefix).
-     - Example: `git commit -m "[fleet] Fix CSV export missing columns by preserving URL columns\n\n... details ...\n\nBug: b/515102813"`
+     - Example: `git commit -m "[fleet console] Fix CSV export missing columns by preserving URL columns\n\n... details ...\n\nBug: b/515102813"`
 
 3. **Upload UI Demo**:
    - For UI changes, consider uploading a demo to a dev environment.
@@ -49,15 +49,17 @@ Progress:
    - If successful, include the demo link in the CL description (typically printed in the output of the deploy command). **The demo link should ALWAYS be at the top of the commit message (right after the title line).** **Make sure the demo link goes directly to the affected pages for convenience.**
    - Include testing instructions for the reviewer in the CL description, encouraging them to also test edge cases or related functionality that might break.
 
-4. **Optional Upload**:
+4. **Optional Upload (WIP Workflows)**:
    - Attempt to run `git cl upload`.
+   - **Always upload new CLs in Work In Progress (WIP) mode** to suppress premature notifications to reviewers and watchlisted groups (such as `fleet-console-reviews`).
    - *Note*: If this fails with an error like `chmod ~/.sso: operation not permitted` or a path-specific permission error, it is due to sandbox restrictions preventing the agent from modifying home directory files. In this case, do not block the task; notify the developer and ask them to run `git cl upload` on your behalf. (Alternatively, the developer may choose to disable the sandbox to allow direct uploads).
    > When uploading from background tasks, you can bypass all interactive prompts and text editor popups using these official non-interactive options:
-   > - **For New CLs (Initial Upload)**: Use `-f` to force yes to prompts and `--commit-description=+` to load the description directly from the HEAD commit message instead of opening an editor:
-   >   `git cl upload -f --commit-description=+`
-   > - **For Existing CLs (Subsequent Updates)**: Use `-t` to specify the patchset title directly from the command line:
+   > - **For New CLs (Initial Upload)**: **Always use the `--wip` flag** along with `-f` and `--commit-description=+` to ensure the CL starts as WIP:
+   >   `git cl upload -f --wip --commit-description=+`
+   > - **For Existing CLs (Subsequent Updates)**: Use `-t` to specify the patchset title directly from the command line (keep the CL in WIP state):
    >   `git cl upload -t "My patchset title"`
    >   *(Alternatively, use `-T` or `--skip-title` to automatically use the last commit message as the title)*
+   - **Transition to Review**: Do not mark the CL as "Ready" or send review emails. Leave it in the WIP state for the user to explicitly review and transition when ready.
    >
    > (If you are encountering other interactive prompts, bypass them using the non-interactive option: `EDITOR=touch git cl upload -f --commit-description=+`)
    >
