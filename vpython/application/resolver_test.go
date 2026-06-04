@@ -170,3 +170,60 @@ key = "value"
 		})
 	})
 }
+
+func TestResolveFlow_CommandTarget(t *testing.T) {
+	ctx := context.Background()
+
+	ftt.Run("Test ResolveFlow command-string specific targets", t, func(t *ftt.Test) {
+		tempDir := t.TempDir()
+
+		t.Run("Resolves to FlowUV when PEP 723 block is present inside command string", func(t *ftt.Test) {
+			code := `
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["requests>=2.0"]
+# ///
+print("OK")
+`
+			target := python.CommandTarget{Command: strings.TrimSpace(code)}
+			res, err := ResolveFlow(ctx, target, "", "", ".vpython3", tempDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Flow, should.Equal(FlowUV))
+			assert.Loosely(t, res.StandardSpec.RequiresPython, should.Equal(">=3.11"))
+			assert.Loosely(t, res.StandardSpec.Dependencies, should.Resemble([]string{"requests>=2.0"}))
+			assert.Loosely(t, res.ProjectRoot, should.Equal(tempDir))
+		})
+
+		t.Run("Fails fast with error when PEP 723 block inside command string is corrupted/invalid", func(t *ftt.Test) {
+			code := `
+# /// script
+# requires-python = >=3.11
+# ///
+print("OK")
+`
+			target := python.CommandTarget{Command: strings.TrimSpace(code)}
+			_, err := ResolveFlow(ctx, target, "", "", ".vpython3", tempDir)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("failed to decode PEP 723 TOML schema"))
+		})
+
+		t.Run("Falls back gracefully to parent climbing when PEP 723 block is missing inside command string", func(t *ftt.Test) {
+			// Pre-create a parent default TOML spec
+			tomlPath := filepath.Join(tempDir, "vpython.toml")
+			tomlContent := `
+requires-python = ">=3.8"
+`
+			err := os.WriteFile(tomlPath, []byte(strings.TrimSpace(tomlContent)), 0644)
+			assert.NoErr(t, err)
+
+			code := `print("NO INLINE SPECS")`
+			target := python.CommandTarget{Command: strings.TrimSpace(code)}
+
+			res, err := ResolveFlow(ctx, target, "", "", ".vpython3", tempDir)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Flow, should.Equal(FlowUV)) // Found standard parent spec!
+			assert.Loosely(t, res.StandardSpec.RequiresPython, should.Equal(">=3.8"))
+			assert.Loosely(t, res.ProjectRoot, should.Equal(tempDir))
+		})
+	})
+}

@@ -52,7 +52,7 @@ func ParseScriptMetadata(path string) (*ProjectSpec, error) {
 		return nil, errors.Fmt("failed to open script file at: %s: %w", path, err)
 	}
 
-	return parseScriptMetadataContent(content)
+	return ParseScriptMetadataContent(content)
 }
 
 // parseScriptMetadataReader scans and parses a generic io.Reader for PEP 723 metadata blocks.
@@ -61,11 +61,12 @@ func parseScriptMetadataReader(r io.Reader) (*ProjectSpec, error) {
 	if err != nil {
 		return nil, errors.Fmt("error scanning script content: %w", err)
 	}
-	return parseScriptMetadataContent(content)
+	return ParseScriptMetadataContent(content)
 }
 
-// parseScriptMetadataContent parses PEP 723 metadata from raw content.
-func parseScriptMetadataContent(content []byte) (*ProjectSpec, error) {
+// ParseScriptMetadataContent parses PEP 723 metadata from raw content bytes.
+// Returns (nil, nil) if no metadata block is found.
+func ParseScriptMetadataContent(content []byte) (*ProjectSpec, error) {
 	if err := preValidateSentinels(content); err != nil {
 		return nil, err
 	}

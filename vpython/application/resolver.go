@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
 
 	vpythonAPI "go.chromium.org/luci/vpython/api/vpython"
@@ -48,6 +49,21 @@ type DiscoveredFlow struct {
 
 // ResolveFlow climbs parent trees to discover standard (PEP 723, vpython.toml) or legacy specs.
 func ResolveFlow(ctx context.Context, target python.Target, specPath, defaultSpecPath, defaultSpecPattern, workDir string) (*DiscoveredFlow, error) {
+	// Try parsing inline PEP 723 spec from raw command-line code strings (-c).
+	if ct, ok := target.(python.CommandTarget); ok {
+		projectSpec, err := standard.ParseScriptMetadataContent([]byte(ct.Command))
+		if err != nil {
+			return nil, err
+		}
+		if projectSpec != nil {
+			logging.Infof(ctx, "Detected inline PEP 723 spec inside -c command string. Bypassing parent climbing.")
+			return &DiscoveredFlow{
+				Flow:         FlowUV,
+				StandardSpec: projectSpec,
+				ProjectRoot:  workDir,
+			}, nil
+		}
+	}
 	// Extract script path for companion checks.
 	var scriptPath string
 	isModule := false

@@ -42,7 +42,7 @@ import requests
 import numpy as np
 print("Running standalone script!")
 `
-			spec, err := parseScriptMetadataContent([]byte(scriptContent))
+			spec, err := ParseScriptMetadataContent([]byte(scriptContent))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
 			assert.Loosely(t, spec.RequiresPython, should.Equal(">=3.11"))
@@ -60,7 +60,7 @@ this-line-is-not-commented-out = true
 # dependencies = ["requests"]
 # ///
 `
-			_, err := parseScriptMetadataContent([]byte(brokenScript))
+			_, err := ParseScriptMetadataContent([]byte(brokenScript))
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("non-comment line inside metadata block"))
 		})
@@ -71,7 +71,7 @@ this-line-is-not-commented-out = true
 # requires-python = ">=3.11"
 # dependencies = ["requests"]
 `
-			_, err := parseScriptMetadataContent([]byte(unterminatedScript))
+			_, err := ParseScriptMetadataContent([]byte(unterminatedScript))
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("unterminated PEP 723 script metadata block (missing closing # /// sentinel)"))
 		})
@@ -81,7 +81,7 @@ this-line-is-not-commented-out = true
 import os
 print("No inline metadata here!")
 `
-			spec, err := parseScriptMetadataContent([]byte(plainScript))
+			spec, err := ParseScriptMetadataContent([]byte(plainScript))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.BeNil)
 		})
@@ -91,7 +91,7 @@ print("No inline metadata here!")
 # /// script
 # ///
 `
-			spec, err := parseScriptMetadataContent([]byte(emptyBlockScript))
+			spec, err := ParseScriptMetadataContent([]byte(emptyBlockScript))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.BeNil)
 		})
@@ -128,7 +128,7 @@ print("No inline metadata here!")
 # dependencies = "should-be-a-list-but-is-a-string"
 # ///
 `
-			_, err := parseScriptMetadataContent([]byte(typeMismatchScript))
+			_, err := ParseScriptMetadataContent([]byte(typeMismatchScript))
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("failed to decode PEP 723 TOML schema"))
 		})
@@ -147,7 +147,7 @@ print("No inline metadata here!")
 # foo = "bar"
 # ///
 `
-			spec, err := parseScriptMetadataContent([]byte(unparsedScript))
+			spec, err := ParseScriptMetadataContent([]byte(unparsedScript))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.BeNil) // Silently skipped!
 		})
@@ -160,7 +160,7 @@ print("No inline metadata here!")
 # ]
 # ///
 `
-			spec, err := parseScriptMetadataContent([]byte(scriptWithTrailing))
+			spec, err := ParseScriptMetadataContent([]byte(scriptWithTrailing))
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, spec, should.NotBeNil)
 			assert.Loosely(t, spec.Dependencies, should.Match([]string{
@@ -177,7 +177,7 @@ print("Code before sentinel!")
 # dependencies = ["requests"]
 # ///
 `
-			_, err := parseScriptMetadataContent([]byte(misplacedScript))
+			_, err := ParseScriptMetadataContent([]byte(misplacedScript))
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("block must be placed before any executable code or docstring statements"))
 		})
@@ -188,7 +188,7 @@ print("Code before sentinel!")
 # requires-python = ">=3.11"
 # ///
 `
-			_, err := parseScriptMetadataContent([]byte(docstringScript))
+			_, err := ParseScriptMetadataContent([]byte(docstringScript))
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("block must be placed before any executable code or docstring statements"))
 		})
