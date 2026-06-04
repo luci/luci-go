@@ -23,7 +23,6 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 
 import CentralizedProgress from '@/clusters/components/centralized_progress/centralized_progress';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useFeatureFlag } from '@/common/feature_flags';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
@@ -37,7 +36,6 @@ import {
   generateDeviceListURL,
   CHROMEOS_PLATFORM,
 } from '@/fleet/constants/paths';
-import { enableSmartRepairTab } from '@/fleet/features';
 import { usePlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import {
@@ -133,7 +131,6 @@ export const ChromeOSDeviceDetailsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { error, isError, isLoading, device } = useChromeOSDeviceData(id);
-  const hasSmartRepairTabPermission = useFeatureFlag(enableSmartRepairTab);
 
   const deviceIdInputRef = useRef<HTMLInputElement>(null);
 
@@ -305,9 +302,7 @@ export const ChromeOSDeviceDetailsPage = () => {
                 <Tab label="Dimensions" value={TabValue.DIMENSIONS} />
                 <Tab label="Inventory data" value={TabValue.INVENTORY_DATA} />
                 <Tab label="Bot info" value={TabValue.BOT_INFO} />
-                {hasSmartRepairTabPermission && (
-                  <Tab label="Smart Repair" value={TabValue.SMART_REPAIR} />
-                )}
+                <Tab label="Smart Repair" value={TabValue.SMART_REPAIR} />
               </TabList>
             </Box>
             <TabPanel value={TabValue.TASKS}>
@@ -334,11 +329,9 @@ export const ChromeOSDeviceDetailsPage = () => {
                 <BotData />
               )}
             </TabPanel>
-            {hasSmartRepairTabPermission && (
-              <TabPanel value={TabValue.SMART_REPAIR}>
-                <ChromeOSSmartRepair />
-              </TabPanel>
-            )}
+            <TabPanel value={TabValue.SMART_REPAIR}>
+              <ChromeOSSmartRepair />
+            </TabPanel>
           </TabContext>
         </>
       )}
