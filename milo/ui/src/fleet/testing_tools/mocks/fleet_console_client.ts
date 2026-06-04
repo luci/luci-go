@@ -43,6 +43,16 @@ const MOCK_REPAIR_METRICS: readonly RepairMetric[] = [
     totalDevices: 4,
     peakUsage: 1,
   },
+  {
+    priority: RepairMetric_Priority.WATCH,
+    labName: 'sjc-mdpt9-wear',
+    hostGroup: 'group3',
+    runTarget: 'target3',
+    minimumRepairs: 3,
+    devicesOffline: 1,
+    totalDevices: 5,
+    peakUsage: 1,
+  },
 ];
 
 const MOCK_COUNT_REPAIR_METRICS: CountRepairMetricsResponse = {

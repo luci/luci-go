@@ -60,6 +60,24 @@ describe('RepairListPage', () => {
   it('renders table data', async () => {
     expect(await screen.findByText('lab1')).toBeInTheDocument();
     expect(await screen.findByText('lab2')).toBeInTheDocument();
+    expect(await screen.findByText('sjc-mdpt9-wear')).toBeInTheDocument();
+  });
+
+  it('generates the correct omnilab links', async () => {
+    expect(await screen.findByText('sjc-mdpt9-wear')).toBeInTheDocument();
+
+    const links = screen.getAllByRole('link');
+    const hrefs = links.map((link) => link.getAttribute('href'));
+
+    // Check link for lab1 (uses lab_location)
+    expect(hrefs).toContain(
+      'https://omnilab.corp.google.com/recovery?host=lab_location%3Ainclude%3Alab1&host=host_group%3Ainclude%3Agroup1&device=hardware%3Ainclude%3Atarget1',
+    );
+
+    // Check link for sjc-mdpt9-wear (uses lab)
+    expect(hrefs).toContain(
+      'https://omnilab.corp.google.com/recovery?host=lab%3Ainclude%3Asjc-mdpt9-wear&host=host_group%3Ainclude%3Agroup3&device=hardware%3Ainclude%3Atarget3',
+    );
   });
 
   it('allows opening filter menu for Lab Name', async () => {
