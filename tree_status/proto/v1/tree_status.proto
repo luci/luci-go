@@ -17,6 +17,7 @@ syntax = "proto3";
 package luci.tree_status.v1;
 
 import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "go.chromium.org/luci/tree_status/proto/v1";
@@ -35,6 +36,9 @@ service TreeStatus {
 
   // Create a new status update for the tree.
   rpc CreateStatus(CreateStatusRequest) returns (Status) {};
+
+  // Delete a status update.
+  rpc DeleteStatus(DeleteStatusRequest) returns (google.protobuf.Empty) {};
 }
 
 message GetStatusRequest {
@@ -144,4 +148,12 @@ message CreateStatusRequest {
   // Only the general state and message fields can be provided, the current date
   // will be used for the date and the RPC caller will be used for the username.
   Status status = 2;
+}
+
+message DeleteStatusRequest {
+  // The name of the status to delete.
+  // Format: trees/{tree_id}/status/{status_id}
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
 }

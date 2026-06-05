@@ -6,6 +6,8 @@ import (
 	"context"
 
 	proto "github.com/golang/protobuf/proto"
+
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 type DecoratedTreeStatus struct {
@@ -70,6 +72,23 @@ func (s *DecoratedTreeStatus) CreateStatus(ctx context.Context, req *CreateStatu
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(ctx, "CreateStatus", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedTreeStatus) DeleteStatus(ctx context.Context, req *DeleteStatusRequest) (rsp *emptypb.Empty, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(ctx, "DeleteStatus", req)
+		if err == nil {
+			ctx = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.DeleteStatus(ctx, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(ctx, "DeleteStatus", rsp, err)
 	}
 	return
 }

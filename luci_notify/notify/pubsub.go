@@ -27,12 +27,12 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
-	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/auth/scopes"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	buildbucketgrpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
@@ -626,4 +626,3 @@ func extractOnCallRotations(build *buildbucketpb.Build) []string {
 	}
 	return extract("sheriff_rotations")
 }
-

@@ -103,6 +103,11 @@ func Create(status *Status, currentUser string) (*spanner.Mutation, error) {
 	return spanner.InsertOrUpdateMap("Status", row), nil
 }
 
+// Delete deletes a status entry from the Spanner Database.
+func Delete(treeName, statusID string) *spanner.Mutation {
+	return spanner.Delete("Status", spanner.Key{treeName, statusID})
+}
+
 // Read retrieves a status update from the database given the exact time the status update was made.
 func Read(ctx context.Context, treeName, statusID string) (*Status, error) {
 	row, err := span.ReadRow(ctx, "Status", spanner.Key{treeName, statusID}, []string{"TreeName", "StatusId", "GeneralStatus", "Message", "CreateUser", "CreateTime", "ClosingBuilderName"})

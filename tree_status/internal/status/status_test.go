@@ -170,6 +170,25 @@ func TestStatusTable(t *testing.T) {
 		})
 	})
 
+	ftt.Run("Delete", t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+		status := NewStatusBuilder().CreateInDB(ctx)
+
+		// Verify it exists first.
+		fetched, err := Read(span.Single(ctx), "chromium", status.StatusID)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fetched, should.Match(status))
+
+		// Delete it.
+		m := Delete("chromium", status.StatusID)
+		_, err = span.Apply(ctx, []*spanner.Mutation{m})
+		assert.Loosely(t, err, should.BeNil)
+
+		// Verify it is gone.
+		_, err = Read(span.Single(ctx), "chromium", status.StatusID)
+		assert.Loosely(t, err, should.Equal(NotExistsErr))
+	})
+
 	ftt.Run("List", t, func(t *ftt.Test) {
 		t.Run("Empty", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)

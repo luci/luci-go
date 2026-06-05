@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -228,6 +229,10 @@ func (m *mockTreeStatusClient) CreateStatus(ctx context.Context, in *tspb.Create
 }
 
 func (m *mockTreeStatusClient) ListStatus(ctx context.Context, in *tspb.ListStatusRequest, opts ...grpc.CallOption) (*tspb.ListStatusResponse, error) {
+	return nil, nil
+}
+
+func (m *mockTreeStatusClient) DeleteStatus(ctx context.Context, in *tspb.DeleteStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	return nil, nil
 }
 

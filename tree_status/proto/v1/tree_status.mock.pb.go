@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // MockTreeStatusClient is a mock of TreeStatusClient interface.
@@ -52,6 +53,26 @@ func (mr *MockTreeStatusClientMockRecorder) CreateStatus(ctx, in interface{}, op
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStatus", reflect.TypeOf((*MockTreeStatusClient)(nil).CreateStatus), varargs...)
+}
+
+// DeleteStatus mocks base method.
+func (m *MockTreeStatusClient) DeleteStatus(ctx context.Context, in *DeleteStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteStatus", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteStatus indicates an expected call of DeleteStatus.
+func (mr *MockTreeStatusClientMockRecorder) DeleteStatus(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStatus", reflect.TypeOf((*MockTreeStatusClient)(nil).DeleteStatus), varargs...)
 }
 
 // GetStatus mocks base method.
@@ -130,6 +151,21 @@ func (m *MockTreeStatusServer) CreateStatus(arg0 context.Context, arg1 *CreateSt
 func (mr *MockTreeStatusServerMockRecorder) CreateStatus(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStatus", reflect.TypeOf((*MockTreeStatusServer)(nil).CreateStatus), arg0, arg1)
+}
+
+// DeleteStatus mocks base method.
+func (m *MockTreeStatusServer) DeleteStatus(arg0 context.Context, arg1 *DeleteStatusRequest) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteStatus", arg0, arg1)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteStatus indicates an expected call of DeleteStatus.
+func (mr *MockTreeStatusServerMockRecorder) DeleteStatus(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStatus", reflect.TypeOf((*MockTreeStatusServer)(nil).DeleteStatus), arg0, arg1)
 }
 
 // GetStatus mocks base method.

@@ -801,6 +801,100 @@ func TestStatus(t *testing.T) {
 				}))
 			})
 		})
+
+		t.Run("DeleteStatus", func(t *ftt.Test) {
+			t.Run("Default ACLs anonymous rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().Anonymous().SetInContext(ctx)
+
+				request := &pb.DeleteStatusRequest{
+					Name: "trees/chromium/status/abcd1234abcd1234abcd1234abcd1234",
+				}
+				_, err := server.DeleteStatus(ctx, request)
+
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("log in"))
+			})
+			t.Run("Default ACLs no access rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().SetInContext(ctx)
+
+				request := &pb.DeleteStatusRequest{
+					Name: "trees/chromium/status/abcd1234abcd1234abcd1234abcd1234",
+				}
+				_, err := server.DeleteStatus(ctx, request)
+
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user is not a member of group \"luci-tree-status-writers\""))
+			})
+			t.Run("Realm-based ACLs no write access rejected", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().SetInContext(ctx)
+
+				request := &pb.DeleteStatusRequest{
+					Name: "trees/chromium/status/abcd1234abcd1234abcd1234abcd1234",
+				}
+				_, err = server.DeleteStatus(ctx, request)
+
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user does not have permission to perform this action"))
+			})
+			t.Run("Delete of invalid name", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
+
+				request := &pb.DeleteStatusRequest{
+					Name: "trees/chromium/status/INVALID",
+				}
+				_, err := server.DeleteStatus(ctx, request)
+
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("name: expected format"))
+			})
+			t.Run("Delete of non-existing ID", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
+
+				request := &pb.DeleteStatusRequest{
+					Name: "trees/chromium/status/abcd1234abcd1234abcd1234abcd1235",
+				}
+				_, err := server.DeleteStatus(ctx, request)
+
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("status value was not found"))
+			})
+			t.Run("Default ACLs successful delete", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
+				s := NewStatusBuilder().CreateInDB(ctx)
+
+				request := &pb.DeleteStatusRequest{
+					Name: fmt.Sprintf("trees/chromium/status/%s", s.StatusID),
+				}
+				_, err := server.DeleteStatus(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+
+				// Verify it is gone.
+				_, err = status.Read(span.Single(ctx), "chromium", s.StatusID)
+				assert.Loosely(t, err, should.Equal(status.NotExistsErr))
+			})
+			t.Run("Realm-based ACLs successful delete", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = false
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().WithPermissionInRealm(perms.PermCreateStatus, "chromium:@project").SetInContext(ctx)
+				s := NewStatusBuilder().CreateInDB(ctx)
+
+				request := &pb.DeleteStatusRequest{
+					Name: fmt.Sprintf("trees/chromium/status/%s", s.StatusID),
+				}
+				_, err = server.DeleteStatus(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+
+				// Verify it is gone.
+				_, err = status.Read(span.Single(ctx), "chromium", s.StatusID)
+				assert.Loosely(t, err, should.Equal(status.NotExistsErr))
+			})
+		})
 	})
 }
 

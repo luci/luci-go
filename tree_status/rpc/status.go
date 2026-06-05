@@ -23,6 +23,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -221,6 +222,42 @@ func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateSta
 		CreateTime:         timestamppb.New(ts),
 		ClosingBuilderName: closingBuilderName,
 	}, nil
+}
+
+// DeleteStatus deletes a status update.
+func (*treeStatusServer) DeleteStatus(ctx context.Context, request *pb.DeleteStatusRequest) (*emptypb.Empty, error) {
+	tree, id, err := parseStatusName(request.Name)
+	if err != nil {
+		return nil, invalidArgumentError(errors.Fmt("name: %w", err))
+	}
+	ctx = logging.SetField(ctx, "tree_name", tree)
+
+	hasWriteAccess, msg, err := perms.HasCreateStatusPermission(ctx, tree)
+	if err != nil {
+		return nil, errors.Fmt("checking delete status permission: %w", err)
+	}
+	if !hasWriteAccess {
+		return nil, appstatus.Error(codes.PermissionDenied, msg)
+	}
+
+	_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		_, err := status.Read(ctx, tree, id)
+		if err != nil {
+			return err
+		}
+		m := status.Delete(tree, id)
+		span.BufferWrite(ctx, m)
+		return nil
+	})
+
+	if err != nil {
+		if errors.Is(err, status.NotExistsErr) {
+			return nil, notFoundError(err)
+		}
+		return nil, errors.Fmt("deleting status: %w", err)
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 var statusParentRE = regexp.MustCompile(`^trees/(` + pbutil.TreeIDExpression + `)/status$`)

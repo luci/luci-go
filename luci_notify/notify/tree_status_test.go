@@ -23,6 +23,7 @@ import (
 	"time"
 
 	grpc "google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
@@ -1040,4 +1041,8 @@ func (c *fakePRPCTreeStatusClient) GetStatus(ctx context.Context, in *tspb.GetSt
 func (c *fakePRPCTreeStatusClient) CreateStatus(ctx context.Context, in *tspb.CreateStatusRequest, opts ...grpc.CallOption) (*tspb.Status, error) {
 	c.latestStatus = in.Status
 	return in.Status, nil
+}
+
+func (c *fakePRPCTreeStatusClient) DeleteStatus(ctx context.Context, in *tspb.DeleteStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return nil, errors.New("Not implemented")
 }
