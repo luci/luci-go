@@ -17,7 +17,6 @@ package rpc
 import (
 	"time"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
@@ -27,75 +26,59 @@ import (
 )
 
 const (
-	// Margin applied to a timeout duration from build to policy.
-	// To avoid Buildbucket and TurboCI colliding when they both try to handle
-	// a timeout event.
-	buildToPolicyTimeoutMargin = 30 * time.Second
+	// A difference between Turbo CI timeout and matching Buildbucket timeout.
+	//
+	// Turbo CI timeout will always be bigger by this margin. To avoid Buildbucket
+	// and TurboCI colliding when they both try to handle a timeout event.
+	timeoutMargin = 30 * time.Second
+
+	// How long TurboCI will keep trying to call CancelStage RPC before failing
+	// the stage. This is purely a property of the Buildbucket backend and it
+	// doesn't depend on the build being cancelled.
+	cancellingTimeout = 5 * time.Minute
 )
 
-func buildToPolicyTimeout(d *durationpb.Duration) *durationpb.Duration {
-	if d == nil {
-		return nil
-	}
-	return durationpb.New(d.AsDuration() + buildToPolicyTimeoutMargin)
-}
-
-// policyToBuildTimeout calculates a timeout that should be given to a build
-// based on the corresponding timeout in execution policy.
-//
-// If the policy timeout is smaller than buildToPolicyTimeoutMargin,
-// return nil so that Buildbucket could apply configured/default timeout to
-// the build instead.
-func policyToBuildTimeout(d *durationpb.Duration) *durationpb.Duration {
-	if d == nil {
-		return nil
-	}
-
-	if d.AsDuration() < buildToPolicyTimeoutMargin {
-		return nil
-	}
-
-	return durationpb.New(d.AsDuration() - buildToPolicyTimeoutMargin)
-}
-
-// fillScheduleBuildRequestWithPolicy updates req in place to fill its timeout
-// fields with policy.
-func fillScheduleBuildRequestWithPolicy(req *pb.ScheduleBuildRequest, policyTimeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout) {
-	req.ExecutionTimeout = policyToBuildTimeout(policyTimeouts.GetRunning())
-	req.SchedulingTimeout = policyToBuildTimeout(policyTimeouts.GetScheduled())
-	req.GracePeriod = policyToBuildTimeout(policyTimeouts.GetTearingDown())
-}
-
+// scheduleBuildRequestToPolicyTimeout constructs policy timeouts based on
+// what's in `req`.
 func scheduleBuildRequestToPolicyTimeout(req *pb.ScheduleBuildRequest) *orchestratorpb.StageAttemptExecutionPolicy_Timeout {
-	b := orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
-		Scheduled:   buildToPolicyTimeout(req.GetSchedulingTimeout()),
-		Running:     buildToPolicyTimeout(req.GetExecutionTimeout()),
-		TearingDown: buildToPolicyTimeout(req.GetGracePeriod()),
-	}
-	if b.Scheduled == nil && b.Running == nil && b.TearingDown == nil {
+	if req.SchedulingTimeout == nil && req.ExecutionTimeout == nil && req.GracePeriod == nil {
 		return nil
 	}
-	return b.Build()
-}
-
-func buildToStageExecutionPolicy(bld *pb.Build, requested *orchestratorpb.StageExecutionPolicy) *orchestratorpb.StageExecutionPolicy {
-	return orchestratorpb.StageExecutionPolicy_builder{
-		Retry:                          requested.GetRetry(),
-		AttemptExecutionPolicyTemplate: buildToStagetAttemptExecutionPolicy(bld),
-		ExecuteAtLeastOneAttempt:       proto.Bool(requested.GetExecuteAtLeastOneAttempt()),
-		StageTimeout:                   requested.GetStageTimeout(),
+	return orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
+		Scheduled:   req.GetSchedulingTimeout(),
+		Running:     req.GetExecutionTimeout(),
+		TearingDown: req.GetGracePeriod(),
 	}.Build()
 }
 
-func buildToStagetAttemptExecutionPolicy(bld *pb.Build) *orchestratorpb.StageAttemptExecutionPolicy {
+// scheduleBuildRequestFromPolicyTimeout populates timeouts in `req` with
+// what's in the policy.
+//
+// This is reverse of scheduleBuildRequestToPolicyTimeout(...).
+func scheduleBuildRequestFromPolicyTimeout(req *pb.ScheduleBuildRequest, timeouts *orchestratorpb.StageAttemptExecutionPolicy_Timeout) {
+	req.SchedulingTimeout = timeouts.GetScheduled()
+	req.ExecutionTimeout = timeouts.GetRunning()
+	req.GracePeriod = timeouts.GetTearingDown()
+}
+
+// buildToAttemptExecutionPolicy converts timeouts in the build into a policy.
+//
+// To avoid clashes between Turbo CI and Buildbucket timeout enforcing
+// mechanisms, make all Turbo CI timeouts slightly larger (i.e. we'll
+// primarily rely on Buildbucket to enforce timeouts).
+//
+// Heartbeat timeouts are unset, we'll rely on Buildbucket to track heartbeats.
+func buildToAttemptExecutionPolicy(bld *pb.Build) *orchestratorpb.StageAttemptExecutionPolicy {
 	return orchestratorpb.StageAttemptExecutionPolicy_builder{
-		// Buildbucket will handle heartbeats by itself, it will not send
-		// heartbeats to TurboCI.
 		Timeout: orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
-			Scheduled: buildToPolicyTimeout(bld.GetSchedulingTimeout()),
-			Running:   buildToPolicyTimeout(bld.GetExecutionTimeout()),
-			TearingDown: buildToPolicyTimeout(durationpb.New(
-				bld.GetGracePeriod().AsDuration() + buildbucket.MinUpdateBuildInterval)),
+			Scheduled:   durationWithMargin(bld.GetSchedulingTimeout(), timeoutMargin),
+			Running:     durationWithMargin(bld.GetExecutionTimeout(), timeoutMargin),
+			TearingDown: durationWithMargin(bld.GetGracePeriod(), timeoutMargin+buildbucket.MinUpdateBuildInterval),
+			Cancelling:  durationpb.New(cancellingTimeout),
 		}.Build(),
 	}.Build()
+}
+
+func durationWithMargin(d *durationpb.Duration, margin time.Duration) *durationpb.Duration {
+	return durationpb.New(d.AsDuration() + margin)
 }

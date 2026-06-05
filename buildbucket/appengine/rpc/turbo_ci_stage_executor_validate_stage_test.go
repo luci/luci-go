@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -175,9 +174,9 @@ func TestValidateStage(t *testing.T) {
 						TearingDown: &durationpb.Duration{
 							Seconds: 30 + 30 + 30,
 						},
+						Cancelling: durationpb.New(cancellingTimeout),
 					}.Build(),
 				}.Build(),
-				ExecuteAtLeastOneAttempt: proto.Bool(false),
 			}.Build()
 			assert.That(t, policy, should.Match(expectedPolicy))
 			assert.That(t, taskAccount, should.Equal("account@example.com"))
@@ -302,9 +301,8 @@ func TestValidateStage(t *testing.T) {
 				Requested: orchestratorpb.StageExecutionPolicy_builder{
 					AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
 						Timeout: orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
-							Running: durationpb.New(200 * time.Second),
-							// Too small, build will not use.
-							TearingDown: durationpb.New(time.Second),
+							Running:     durationpb.New(200 * time.Second),
+							TearingDown: durationpb.New(10 * time.Second),
 						}.Build(),
 					}.Build(),
 				}.Build(),
@@ -314,17 +312,17 @@ func TestValidateStage(t *testing.T) {
 			updatedPolicy, _, err := validateStage(ctx, stg, req)
 			assert.NoErr(t, err)
 
-			// The returned policy should have the requested running timeout, and other
-			// timeouts filled from the builder config.
+			// The returned policy should have the requested running timeout, and
+			// other timeouts filled from the builder config.
 			expectedPolicy := orchestratorpb.StageExecutionPolicy_builder{
 				AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
 					Timeout: orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
 						Scheduled:   durationpb.New(1830 * time.Second),
-						Running:     durationpb.New(200 * time.Second),
-						TearingDown: durationpb.New(180 * time.Second),
+						Running:     durationpb.New(230 * time.Second),
+						TearingDown: durationpb.New(70 * time.Second),
+						Cancelling:  durationpb.New(cancellingTimeout),
 					}.Build(),
 				}.Build(),
-				ExecuteAtLeastOneAttempt: proto.Bool(false),
 			}.Build()
 			assert.That(t, updatedPolicy, should.Match(expectedPolicy))
 		})

@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
@@ -34,7 +35,7 @@ func (*TurboCIStageExecutor) ValidateStage(ctx context.Context, req *executorpb.
 	call := TurboCICall(ctx)
 	call.LogDetails(ctx)
 
-	updatedPolicy, taskAccount, err := validateStage(ctx, req.GetStage(), call.ScheduleBuild)
+	policy, taskAccount, err := validateStage(ctx, req.GetStage(), call.ScheduleBuild)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +46,7 @@ func (*TurboCIStageExecutor) ValidateStage(ctx context.Context, req *executorpb.
 	}
 
 	return executorpb.ValidateStageResponse_builder{
-		StageExecutionPolicy: updatedPolicy,
+		StageExecutionPolicy: policy,
 		StageServiceAccounts: []string{
 			// To allow Buildbucket server to cleanup after e.g. crashed build.
 			projectAccount,
@@ -65,9 +66,12 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage, req *pb.Sch
 	if req.GetMask() != nil || req.GetFields() != nil {
 		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with field masks is not supported"))
 	}
+	if req.GetDryRun() {
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with dry_run is not supported"))
+	}
 
-	// Stage execution policy
-	// The timeout fields in req must be unset.
+	// The timeout fields in req must be unset, they should be passed via Turbo CI
+	// execution policy instead.
 	if req.GetExecutionTimeout() != nil {
 		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset execution_timeout"))
 	}
@@ -78,14 +82,17 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage, req *pb.Sch
 		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage args must unset grace_period"))
 	}
 
-	if req.GetDryRun() {
-		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with dry_run is not supported"))
+	// Buildbucket executor doesn't support multiple attempts currently. A stage
+	// is bolted to a single concrete build ID representing one single attempt.
+	policy = stage.GetExecutionPolicy().GetRequested()
+	if policy.GetRetry() != nil {
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket doesn't support retrying stage attempts"))
 	}
 
-	// Fill the timeout fields with requested stage execution policy, so it
-	// could be combined with configuration in schedule_build.setTimeouts.
-	reqPolicy := stage.GetExecutionPolicy().GetRequested()
-	fillScheduleBuildRequestWithPolicy(req, reqPolicy.GetAttemptExecutionPolicyTemplate().GetTimeout())
+	// Put requested timeouts (if any) back into ScheduleBuildRequest to pass them
+	// to the Buildbucket guts to be joined with the builder config. This is a
+	// reverse of scheduleBuildRequestToStage(...).
+	scheduleBuildRequestFromPolicyTimeout(req, policy.GetAttemptExecutionPolicyTemplate().GetTimeout())
 
 	// Set DryRun to true so the request is only being validated.
 	req.DryRun = true
@@ -95,6 +102,8 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage, req *pb.Sch
 		return nil, "", err
 	}
 
+	// Validate the request (including ACLs) and fully expand it into a Build
+	// based on the builder config.
 	blds, merr := scheduleBuilds(
 		ctx,
 		[]*pb.ScheduleBuildRequest{req},
@@ -105,14 +114,25 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage, req *pb.Sch
 	if merr[0] != nil {
 		return nil, "", merr[0]
 	}
+	build := blds[0]
 
-	updatedPolicy := buildToStageExecutionPolicy(blds[0], reqPolicy)
-	taskAccount = taskServiceAccount(blds[0].Infra)
+	// Get the account the build runs as to bound a stage attempt token to it.
+	taskAccount = taskServiceAccount(build.Infra)
 	if taskAccount == "" {
 		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage builder doesn't have a service account configured: it is requires to call Turbo CI APIs"))
 	}
 
-	return updatedPolicy, taskAccount, nil
+	// Prepare the first draft of the policy that will be enforced by the
+	// Turbo CI, to show it in the API responses while the stage is PLANNED. We'll
+	// potentially adjust it when moving the stage to SCHEDULED/RUNNING state
+	// (since the builder config may change by that time).
+	policy = proto.CloneOf(policy)
+	if policy == nil {
+		policy = &orchestratorpb.StageExecutionPolicy{}
+	}
+	policy.SetAttemptExecutionPolicyTemplate(buildToAttemptExecutionPolicy(build))
+
+	return policy, taskAccount, nil
 }
 
 func lookupProjectAccount(ctx context.Context, project string) (string, error) {

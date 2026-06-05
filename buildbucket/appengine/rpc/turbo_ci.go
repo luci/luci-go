@@ -147,7 +147,7 @@ func launchTurboCIRoot(ctx context.Context, req *pb.ScheduleBuildRequest, build 
 	}.Build()
 
 	stages := []turboci.ScheduleBuildRequestStage{
-		scheduleBuildRequestToStage(req, build, rootStageID),
+		scheduleBuildRequestToStage(req, rootStageID, build.Realm()),
 	}
 
 	// Submit the build stage as an end user (to attribute it to whoever triggers
@@ -230,7 +230,7 @@ func launchTurboCIChildren(ctx context.Context, parent *model.Build, reqs []*pb.
 			Id:         proto.String(generateStageID(req.GetRequestId())),
 			IsWorknode: proto.Bool(false),
 		}.Build()
-		stages[i] = scheduleBuildRequestToStage(req, builds[i], stageID)
+		stages[i] = scheduleBuildRequestToStage(req, stageID, builds[i].Realm())
 		stageIDs[i] = stageID
 	}
 
@@ -291,14 +291,21 @@ func generateStageID(reqID string) string {
 	return base64.StdEncoding.EncodeToString(bytes)
 }
 
-func scheduleBuildRequestToStage(req *pb.ScheduleBuildRequest, build *model.Build, stageID *idspb.Stage) turboci.ScheduleBuildRequestStage {
+// scheduleBuildRequestToStage prepares stage args based on a build request.
+//
+// Note `req` here is roughly whatever was passed to ScheduleBuild(...). Only
+// a minor normalization was applied to it.
+func scheduleBuildRequestToStage(req *pb.ScheduleBuildRequest, stageID *idspb.Stage, realm string) turboci.ScheduleBuildRequestStage {
 	// Field masks make no sense inside Turbo CI stage args.
 	req.Mask = nil
 	req.Fields = nil
 
-	// Extract timeouts (if any) into Turbo CI stage attempt execution policy,
-	// since we want them to be enforced and visible via Turbo CI, not just
-	// Buildbucket.
+	// Convert explicitly requested Buildbucket build timeouts (if any) into
+	// Turbo CI attempt timeouts that will be passed to the ValidateStage RPC,
+	// because this is how they are expected to be passed for native stages. Note
+	// that the Turbo CI doesn't actually use this version of timeouts. It will
+	// use whatever is returned from the ValidateStage RPC or set later when
+	// switching into SCHEDULED/RUNNING state.
 	timeouts := scheduleBuildRequestToPolicyTimeout(req)
 	req.SchedulingTimeout = nil
 	req.ExecutionTimeout = nil
@@ -307,7 +314,7 @@ func scheduleBuildRequestToStage(req *pb.ScheduleBuildRequest, build *model.Buil
 	return turboci.ScheduleBuildRequestStage{
 		ID:       stageID,
 		Req:      req,
-		Realm:    build.Realm(),
+		Realm:    realm,
 		Timeouts: timeouts,
 	}
 }
@@ -585,9 +592,8 @@ func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld 
 	details := tasks.PopulateBuildDetails(bld)
 	curWrite.AddDetails(value.MustWrites(details)...)
 
-	updatedPolicy := buildToStagetAttemptExecutionPolicy(bld)
 	st := curWrite.GetStateTransition()
-	st.SetScheduled(updatedPolicy)
+	st.SetScheduled(buildToAttemptExecutionPolicy(bld))
 
 	_, err := cl.WriteNodes(ctx, writeReq)
 	return handleStageAttemptStatusConflict(ctx, bld, err)
@@ -606,8 +612,11 @@ func updateStageAttemptToRunning(ctx context.Context, cl *turboci.Client, bld *p
 	details := tasks.PopulateBuildDetails(bld)
 	curWrite.AddDetails(value.MustWrites(details)...)
 
+	// Note need to pass the execution policy here as well in case StartBuild
+	// won the race with RunStage and we are completely skipping SCHEDULED
+	// state.
 	st := curWrite.GetStateTransition()
-	st.SetRunning(reqID, nil)
+	st.SetRunning(reqID, buildToAttemptExecutionPolicy(bld))
 
 	_, err := cl.WriteNodes(ctx, writeReq)
 	return handleStageAttemptStatusConflict(ctx, bld, err)

@@ -36,9 +36,8 @@ import (
 func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.RunStageRequest) (*executorpb.RunStageResponse, error) {
 	TurboCICall(ctx).LogDetails(ctx)
 
-	// Validate stage attempt
-	// Any error here means the stage/attempt is broken that Buildbucket cannot
-	// handle, so just return them.
+	// Validate the Turbo CI sent a valid request per its API contract. This
+	// should never really fail.
 	stage := req.GetStage()
 	attemptID := req.GetAttempt()
 	attemptIDStr := id.ToString(attemptID)
@@ -84,12 +83,18 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 		)
 	}
 
-	reqPolicy := stage.GetExecutionPolicy().GetValidated().GetAttemptExecutionPolicyTemplate()
-	fillScheduleBuildRequestWithPolicy(schReq, reqPolicy.GetTimeout())
+	// Put requested timeouts (if any) back into ScheduleBuildRequest to pass them
+	// to the Buildbucket guts to be joined with the builder config. This is a
+	// reverse of scheduleBuildRequestToStage(...). Note we completely ignore the
+	// policy we returned in ValidateStage and just redo this calculation because
+	// the builder config might have changed since then.
+	scheduleBuildRequestFromPolicyTimeout(schReq, req.GetStage().
+		GetExecutionPolicy().
+		GetRequested().
+		GetAttemptExecutionPolicyTemplate().
+		GetTimeout(),
+	)
 
-	// Strip out field masks from schReq, they don't make sense inside Turbo CI
-	// stage args.
-	schReq.Fields = nil
 	// Override schReq.Mask to get all the fields of the created builds.
 	schReq.Mask = &pb.BuildMask{
 		AllFields: true,

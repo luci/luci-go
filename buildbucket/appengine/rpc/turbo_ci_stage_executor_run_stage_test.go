@@ -19,11 +19,13 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"testing"
+	"time"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth/scopes"
@@ -92,6 +94,8 @@ func TestRunStage(t *testing.T) {
 			),
 		})
 
+		const requestedExecutionTimeout = 123 * time.Second
+
 		setup := func() (context.Context, *executorpb.RunStageRequest, *idspb.StageAttempt, *turboci.FakeOrchestratorClient, *TurboCIStageExecutor) {
 			schReq := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{
@@ -115,6 +119,15 @@ func TestRunStage(t *testing.T) {
 						State:      orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_PENDING.Enum(),
 					}.Build(),
 				},
+				ExecutionPolicy: orchestratorpb.Stage_ExecutionPolicyState_builder{
+					Requested: orchestratorpb.StageExecutionPolicy_builder{
+						AttemptExecutionPolicyTemplate: orchestratorpb.StageAttemptExecutionPolicy_builder{
+							Timeout: orchestratorpb.StageAttemptExecutionPolicy_Timeout_builder{
+								Running: durationpb.New(requestedExecutionTimeout),
+							}.Build(),
+						}.Build(),
+					}.Build(),
+				}.Build(),
 			}.Build()
 
 			req := executorpb.RunStageRequest_builder{
@@ -158,18 +171,25 @@ func TestRunStage(t *testing.T) {
 				Hostname:       "turbocihost",
 				StageAttemptId: attemptIDStr,
 			}))
+			assert.That(t, bld.Proto.ExecutionTimeout, should.Match(durationpb.New(requestedExecutionTimeout)))
 
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))
+
 			reason := mockOrch.LastWriteNodesCall.GetReason()
 			assert.That(t, reason.GetMessage(), should.Equal(`Buildbucket build scheduled`))
 			assert.That(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().HasScheduled(), should.BeTrue)
 			assert.That(t, len(mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()), should.Equal(2))
+
 			bldDetails := &pb.BuildStageDetails{}
 			assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetData().UnmarshalTo(bldDetails))
 			assert.That(t, bldDetails.GetId(), should.Equal(bld.ID))
+
 			commonDetails := &stagepb.CommonStageAttemptDetails{}
 			assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[1].GetData().UnmarshalTo(commonDetails))
 			assert.That(t, commonDetails.GetViewUrls()["Buildbucket"].GetUrl(), should.Equal(fmt.Sprintf("https://app.appspot.com/build/%d", bld.ID)))
+
+			policy := mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().GetScheduled().GetAttemptExecutionPolicy()
+			assert.That(t, policy.GetTimeout().GetRunning(), should.Match(durationpb.New(requestedExecutionTimeout+timeoutMargin)))
 		})
 
 		t.Run("validation failures", func(t *ftt.Test) {
