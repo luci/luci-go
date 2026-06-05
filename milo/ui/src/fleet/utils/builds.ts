@@ -58,7 +58,7 @@ export function generateBuildUrl(
   { project, bucket, builder, buildId }: BuildIdentifier,
   miloHost: string = FLEET_BUILDS_MILO_HOST,
 ) {
-  return `https://${miloHost}/p/${project}/builders/${bucket}/${builder}/${buildId}`;
+  return `https://${miloHost}/p/${project}/builders/${bucket}/${builder}/${buildId}/infra`;
 }
 
 export function getBuildUrlFromName(

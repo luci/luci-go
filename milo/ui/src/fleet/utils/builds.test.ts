@@ -42,7 +42,7 @@ describe('utils/builds', () => {
         'localhost:8080',
       );
       expect(result).toEqual(
-        'https://localhost:8080/p/chromeos/builders/labpack_runner/repair/b1234',
+        'https://localhost:8080/p/chromeos/builders/labpack_runner/repair/b1234/infra',
       );
     });
   });
@@ -58,7 +58,7 @@ describe('utils/builds', () => {
         'localhost:8080',
       );
       expect(result).toEqual(
-        'https://localhost:8080/p/chromeos/builders/labpack_runner/repair-clank/b8680155568887180465',
+        'https://localhost:8080/p/chromeos/builders/labpack_runner/repair-clank/b8680155568887180465/infra',
       );
     });
 
@@ -68,7 +68,7 @@ describe('utils/builds', () => {
       );
       expect(result).toBeDefined();
       expect(result).toContain(
-        '/p/chromeos/builders/labpack_runner/repair-clank/b8680155568887180465',
+        '/p/chromeos/builders/labpack_runner/repair-clank/b8680155568887180465/infra',
       );
     });
   });
