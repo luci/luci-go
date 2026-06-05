@@ -54,6 +54,14 @@ message NetworkInterface {
   // https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/list.
   // Example: regions/us-west2/subnetworks/cloudbots-network-us-west2.
   string subnetwork = 3;
+
+  // The IP stack type for this interface.
+  // If not specified, IPV4_ONLY is used.
+  // Possible values:
+  //   "IPV4_ONLY" - The network interface will only be assigned IPv4 addresses.
+  //   "IPV4_IPV6" - The network interface can have both IPv4 and IPv6 addresses.
+  //   "IPV6_ONLY" - The network interface will only be assigned IPv6 addresses.
+  string stack_type = 4;
 }
 
 // A disk interface.

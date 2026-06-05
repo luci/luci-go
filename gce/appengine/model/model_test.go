@@ -554,6 +554,7 @@ func TestVM(t *testing.T) {
 				assert.Loosely(t, n, should.HaveLength(1))
 				assert.Loosely(t, n[0].AccessConfigs, should.HaveLength(0))
 				assert.Loosely(t, n[0].Network, should.BeEmpty)
+				assert.Loosely(t, n[0].StackType, should.BeEmpty)
 			})
 
 			t.Run("non-empty", func(t *ftt.Test) {
@@ -628,6 +629,21 @@ func TestVM(t *testing.T) {
 					assert.Loosely(t, n, should.HaveLength(1))
 					assert.Loosely(t, n[0].AccessConfigs, should.HaveLength(1))
 					assert.Loosely(t, n[0].AccessConfigs[0].Type, should.Equal("ONE_TO_ONE_NAT"))
+				})
+
+				t.Run("stack type", func(t *ftt.Test) {
+					v := &VM{
+						Attributes: config.VM{
+							NetworkInterface: []*config.NetworkInterface{
+								{
+									StackType: "IPV4_IPV6",
+								},
+							},
+						},
+					}
+					n := v.getNetworkInterfaces()
+					assert.Loosely(t, n, should.HaveLength(1))
+					assert.Loosely(t, n[0].StackType, should.Equal("IPV4_IPV6"))
 				})
 			})
 		})
@@ -1095,6 +1111,26 @@ func TestGetInstanceReturnsAlpha(t *testing.T) {
 			},
 			output: &computealpha.Instance{
 				Name: "awesome-host",
+			},
+		},
+		{
+			name: "network interface stack type",
+			input: &VM{
+				Attributes: config.VM{
+					GcpChannel: config.GCPChannel_GCP_CHANNEL_ALPHA,
+					NetworkInterface: []*config.NetworkInterface{
+						{
+							StackType: "IPV4_IPV6",
+						},
+					},
+				},
+			},
+			output: &computealpha.Instance{
+				NetworkInterfaces: []*computealpha.NetworkInterface{
+					{
+						StackType: "IPV4_IPV6",
+					},
+				},
 			},
 		},
 	}

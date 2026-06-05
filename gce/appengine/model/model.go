@@ -226,6 +226,7 @@ func (vm *VM) getNetworkInterfaces() []*compute.NetworkInterface {
 			Network:    nic.Network,
 			Subnetwork: nic.Subnetwork,
 		}
+		nics[i].StackType = nic.StackType
 		if len(nic.GetAccessConfig()) > 0 {
 			nics[i].AccessConfigs = make([]*compute.AccessConfig, len(nic.AccessConfig))
 			for j, cfg := range nic.AccessConfig {
