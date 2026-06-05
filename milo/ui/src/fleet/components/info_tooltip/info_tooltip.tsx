@@ -26,7 +26,14 @@ export function InfoTooltip({
   children,
   infoCss = {},
   paperCss = {},
-}: React.PropsWithChildren<{ infoCss?: CSSObject; paperCss?: CSSObject }>) {
+  color = 'action.active',
+  fontSize = '1rem',
+}: React.PropsWithChildren<{
+  infoCss?: CSSObject;
+  paperCss?: CSSObject;
+  color?: string;
+  fontSize?: string;
+}>) {
   return (
     <Tooltip
       title={
@@ -74,7 +81,7 @@ export function InfoTooltip({
           infoCss,
         ]}
       >
-        <InfoOutlined sx={{ fontSize: '1rem', color: 'action.active' }} />
+        <InfoOutlined sx={{ fontSize, color }} />
       </span>
     </Tooltip>
   );

@@ -223,4 +223,59 @@ describe('<HomePage />', () => {
     const errorMessages = await screen.findAllByText('Error loading data');
     expect(errorMessages.length).toBe(3); // One for each platform
   });
+
+  it('displays permission warning tooltip when device count is 0', async () => {
+    (useFleetConsoleClient as jest.Mock).mockReturnValue({
+      CountDevices: {
+        query: jest.fn().mockImplementation((req) => ({
+          queryKey: ['CountDevices', req.platform],
+          queryFn: () => {
+            if (req.platform === Platform.CHROMEOS) {
+              return Promise.resolve({
+                total: 0,
+              });
+            }
+            if (req.platform === Platform.ANDROID) {
+              return Promise.resolve({
+                androidCount: {
+                  totalDevices: 0,
+                },
+              });
+            }
+            return Promise.resolve({});
+          },
+        })),
+      },
+      CountRepairMetrics: {
+        query: jest.fn().mockImplementation(() => ({
+          queryKey: ['CountRepairMetrics'],
+          queryFn: () =>
+            Promise.resolve({
+              offlineDevices: 0,
+            }),
+        })),
+      },
+      CountBrowserDevices: {
+        query: jest.fn().mockImplementation(() => ({
+          queryKey: ['CountBrowserDevices'],
+          queryFn: () =>
+            Promise.resolve({
+              total: 0,
+            }),
+        })),
+      },
+    });
+
+    render(
+      <FakeContextProvider>
+        <HomePage />
+      </FakeContextProvider>,
+    );
+
+    const countElements = await screen.findAllByText('0');
+    expect(countElements.length).toBe(4);
+
+    const warningIcons = screen.getAllByTestId('InfoOutlinedIcon');
+    expect(warningIcons.length).toBe(4);
+  });
 });

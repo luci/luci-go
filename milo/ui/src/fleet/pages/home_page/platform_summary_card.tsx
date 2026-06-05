@@ -17,13 +17,37 @@ import {
   Button,
   Card,
   CardContent,
+  Link,
   Skeleton,
   Typography,
 } from '@mui/material';
 import { type ReactNode } from 'react';
 import { NavLink } from 'react-router';
 
+import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
 import { colors } from '@/fleet/theme/colors';
+
+const PermissionWarningTooltip = () => (
+  <InfoTooltip color="warning.main" fontSize="1.25rem">
+    <Typography variant="body2">
+      <strong>
+        You may not have the proper permissions to see the devices.
+      </strong>
+      <br />
+      <br />
+      Go to{' '}
+      <Link
+        href="http://go/fcon-user-guide#getting-access"
+        target="_blank"
+        rel="noreferrer"
+        sx={{ textDecoration: 'underline' }}
+      >
+        go/fcon-user-guide#getting-access
+      </Link>{' '}
+      to read more on how to get those permissions.
+    </Typography>
+  </InfoTooltip>
+);
 
 export interface PlatformSummaryCardProps {
   title: string;
@@ -126,32 +150,35 @@ export function PlatformSummaryCard({
                   {linkIcon}
                 </Box>
               )}
-              <Button
-                variant="text"
-                component={NavLink}
-                to={linkTo}
-                sx={{
-                  color: 'inherit',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <Typography variant="h3" component="div" sx={{ mb: 0.5 }}>
-                  {total?.toLocaleString('en-US') ?? 0}
-                </Typography>
-                <Box
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Button
+                  variant="text"
+                  component={NavLink}
+                  to={linkTo}
                   sx={{
+                    color: 'inherit',
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
                   }}
                 >
-                  <Typography color="text.secondary" variant="body2">
-                    {totalText ?? 'Total Devices'}
+                  <Typography variant="h3" component="div" sx={{ mb: 0.5 }}>
+                    {total?.toLocaleString('en-US') ?? 0}
                   </Typography>
-                </Box>
-              </Button>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                    }}
+                  >
+                    <Typography color="text.secondary" variant="body2">
+                      {totalText ?? 'Total Devices'}
+                    </Typography>
+                  </Box>
+                </Button>
+                {total === 0 && <PermissionWarningTooltip />}
+              </Box>
               <Box
                 sx={{
                   display: 'flex',
@@ -191,36 +218,39 @@ export function PlatformSummaryCard({
                     {secondaryLinkIcon}
                   </Box>
                 )}
-                <Button
-                  variant="text"
-                  component={NavLink}
-                  to={secondaryLinkTo}
-                  sx={{
-                    textTransform: 'none',
-                    color: 'inherit',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    padding: 1,
-                    minWidth: 0,
-                    borderRadius: 1,
-                  }}
-                >
-                  <Typography variant="h3" component="div" sx={{ mb: 0.5 }}>
-                    {secondTotal?.toLocaleString('en-US') ?? 0}
-                  </Typography>
-                  <Box
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Button
+                    variant="text"
+                    component={NavLink}
+                    to={secondaryLinkTo}
                     sx={{
+                      textTransform: 'none',
+                      color: 'inherit',
                       display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      padding: 1,
+                      minWidth: 0,
+                      borderRadius: 1,
                     }}
                   >
-                    <Typography color="text.secondary" variant="body2">
-                      {secondTotalText ?? 'Total Devices'}
+                    <Typography variant="h3" component="div" sx={{ mb: 0.5 }}>
+                      {secondTotal?.toLocaleString('en-US') ?? 0}
                     </Typography>
-                  </Box>
-                </Button>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      <Typography color="text.secondary" variant="body2">
+                        {secondTotalText ?? 'Total Devices'}
+                      </Typography>
+                    </Box>
+                  </Button>
+                  {secondTotal === 0 && <PermissionWarningTooltip />}
+                </Box>
                 <Box
                   sx={{
                     display: 'flex',
