@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/turboci/id"
@@ -78,9 +79,7 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 			// Let TurboCI retry on transient errors.
 			return nil, err
 		}
-		return &executorpb.RunStageResponse{}, appstatus.FromStatusErr(
-			cl.FailCurrentAttempt(ctx, attemptID, &turboci.AttemptFailure{Err: err}),
-		)
+		return &executorpb.RunStageResponse{}, cl.FailAttempt(ctx, &turboci.AttemptFailure{Err: err})
 	}
 
 	// Put requested timeouts (if any) back into ScheduleBuildRequest to pass them
@@ -121,12 +120,18 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 			// Let TurboCI retry on transient errors.
 			return nil, err
 		}
-		return &executorpb.RunStageResponse{}, appstatus.FromStatusErr(
-			cl.FailCurrentAttempt(ctx, attemptID, &turboci.AttemptFailure{Err: err}),
-		)
+		return &executorpb.RunStageResponse{}, cl.FailAttempt(ctx, &turboci.AttemptFailure{Err: err})
 	}
 
-	return &executorpb.RunStageResponse{}, updateStageAttemptToScheduled(ctx, cl, blds[0])
+	// Switch the attempt to SCHEDULED. If the attempt is already SCHEDULED or
+	// RUNNING (either because RunStage was retried or the build started really
+	// fast), this will just do nothing.
+	cl.Build = blds[0]
+	err = cl.SwitchAttemptToScheduled(ctx, buildToAttemptExecutionPolicy(blds[0]))
+	if errors.Is(err, turboci.ErrAttemptAlreadyEnded) {
+		err = abortBuildAsAbandoned(ctx, blds[0].Id)
+	}
+	return &executorpb.RunStageResponse{}, err
 }
 
 func sha256hex(str string) string {

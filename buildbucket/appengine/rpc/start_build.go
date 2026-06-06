@@ -19,16 +19,15 @@ import (
 	"strings"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/protowalk"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/turboci/id"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/appengine/common"
@@ -123,6 +122,16 @@ type startBuildResult struct {
 	bld                *model.Build
 	infra              *model.BuildInfra
 	buildStatusChanged bool
+}
+
+// buildWithInfra returns a build proto with Infra section populated.
+func (r *startBuildResult) buildWithInfra() *pb.Build {
+	if r.bld.Proto.Infra != nil || r.infra == nil || r.infra.Proto == nil {
+		return r.bld.Proto
+	}
+	bp := proto.CloneOf(r.bld.Proto)
+	bp.Infra = r.infra.Proto
+	return bp
 }
 
 // startBuildOnBackend verifies the build has a backend task.
@@ -275,26 +284,24 @@ func notifyTurboCI(ctx context.Context, res startBuildResult, startErr error) er
 	cl := &turboci.Client{
 		Creds: creds,
 		Token: bld.StageAttemptToken,
-	}
-
-	bp := proto.CloneOf(bld.Proto)
-	if res.infra != nil {
-		bp.Infra = res.infra.Proto
+		Build: res.buildWithInfra(),
 	}
 
 	if startErr != nil {
-		aID, aErr := id.FromString(bld.StageAttemptID)
-		if aErr != nil {
-			logging.Errorf(ctx, "Build %d has a malformed StageAttemptID: %s", bld.ID, aErr)
-			return nil
-		}
-		err = cl.FailCurrentAttempt(ctx, aID.GetStageAttempt(), &turboci.AttemptFailure{Err: startErr}, tasks.PopulateBuildDetails(bp)...)
-		if err != nil && !grpcutil.IsTransientCode(status.Code(err)) {
+		err = cl.FailAttempt(ctx, &turboci.AttemptFailure{Err: startErr})
+		if err != nil && !grpcutil.IsTransientCode(appstatus.Code(err)) {
 			logging.Errorf(ctx, "Failed to update TurboCI on failure to start build %d (attempt %s): %s", bld.ID, bld.StageAttemptID, err)
 			return nil
 		}
-		return appstatus.FromStatusErr(err)
+		return err
 	}
 
-	return updateStageAttemptToRunning(ctx, cl, bp, bld.StartBuildRequestID)
+	// Note need to pass the execution policy here as well in case StartBuild
+	// won the race with RunStage and we are completely skipping SCHEDULED
+	// state.
+	err = cl.SwitchAttemptToRunning(ctx, bld.StartBuildRequestID, buildToAttemptExecutionPolicy(bld.Proto))
+	if errors.Is(err, turboci.ErrAttemptAlreadyEnded) {
+		err = abortBuildAsAbandoned(ctx, bld.ID)
+	}
+	return err
 }

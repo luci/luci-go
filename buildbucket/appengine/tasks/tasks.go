@@ -235,7 +235,7 @@ func init() {
 		Queue:     "end-turboci-stage-attempt",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.EndTurboCIStageAttempt)
-			return writeStageAttemptOnBuildCompletion(ctx, t.BuildId, t.OldStatus)
+			return writeStageAttemptOnBuildCompletion(ctx, t.BuildId)
 		},
 	})
 }
@@ -410,14 +410,13 @@ func createBatchCreateBackendBuildTasks(ctx context.Context, task *taskdefs.Batc
 }
 
 // endTurboCIStageAttempt enqueues an EndTurboCIStageAttempt task.
-func endTurboCIStageAttempt(ctx context.Context, bld *model.Build, oldStatus pb.Status) error {
+func endTurboCIStageAttempt(ctx context.Context, bld *model.Build) error {
 	if bld.StageAttemptToken == "" {
 		return nil
 	}
 
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: &taskdefs.EndTurboCIStageAttempt{
-			BuildId:   bld.ID,
-			OldStatus: oldStatus,
+			BuildId: bld.ID,
 		}})
 }

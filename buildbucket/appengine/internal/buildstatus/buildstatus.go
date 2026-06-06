@@ -192,9 +192,8 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 
 	// post process after build status change.
 	params := &PostProcessParams{
-		Build:     u.Build,
-		Infra:     u.Infra,
-		OldStatus: oldBuildStatus,
+		Build: u.Build,
+		Infra: u.Infra,
 	}
 	if err := u.PostProcess(ctx, params); err != nil {
 		return nil, errors.Fmt("failed to run post process when updating build %d to %s: %w", u.Build.ID, newBuildStatus.Status, err)

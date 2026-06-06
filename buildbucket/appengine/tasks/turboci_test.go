@@ -44,7 +44,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 		ctx = turboci.WithTurboCIOrchestratorClient(ctx, mockOrch)
 
 		t.Run("not found", func(t *ftt.Test) {
-			assert.ErrIsLike(t, writeStageAttemptOnBuildCompletion(ctx, 1, pb.Status_STARTED), "build 1 not found")
+			assert.ErrIsLike(t, writeStageAttemptOnBuildCompletion(ctx, 1), "build 1 not found")
 		})
 
 		t.Run("build still active", func(t *ftt.Test) {
@@ -60,7 +60,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 				},
 			}
 			assert.NoErr(t, datastore.Put(ctx, bld))
-			assert.ErrIsLike(t, writeStageAttemptOnBuildCompletion(ctx, 2, pb.Status_STARTED), "build 2 has not ended yet, current status: STARTED")
+			assert.ErrIsLike(t, writeStageAttemptOnBuildCompletion(ctx, 2), "build 2 has not ended yet, current status: STARTED")
 		})
 
 		t.Run("build doesn't have a stage attempt token", func(t *ftt.Test) {
@@ -76,7 +76,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 				},
 			}
 			assert.NoErr(t, datastore.Put(ctx, bld))
-			assert.ErrIsLike(t, writeStageAttemptOnBuildCompletion(ctx, 3, pb.Status_STARTED), "build 3 doesn't have a stage attempt token, cannot update TurboCI")
+			assert.ErrIsLike(t, writeStageAttemptOnBuildCompletion(ctx, 3), "build 3 doesn't have a stage attempt token, cannot update TurboCI")
 		})
 
 		buildToUpdate := func(bID int, status pb.Status) *model.Build {
@@ -100,7 +100,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 
 		t.Run("success", func(t *ftt.Test) {
 			bld := buildToUpdate(4, pb.Status_SUCCESS)
-			assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID, pb.Status_STARTED))
+			assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID))
 			assert.Loosely(t, mockOrch.LastWriteNodesCall, should.NotBeNil)
 			cw := mockOrch.LastWriteNodesCall.GetCurrentAttempt()
 			assert.That(t, cw.GetStateTransition().HasComplete(), should.BeTrue)
@@ -108,7 +108,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 
 		t.Run("canceled", func(t *ftt.Test) {
 			bld := buildToUpdate(5, pb.Status_CANCELED)
-			assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID, pb.Status_STARTED))
+			assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID))
 			assert.Loosely(t, mockOrch.LastWriteNodesCall, should.NotBeNil)
 			cw := mockOrch.LastWriteNodesCall.GetCurrentAttempt()
 			assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)
@@ -120,7 +120,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 		t.Run("attempt already final", func(t *ftt.Test) {
 			bld := buildToUpdate(5, pb.Status_CANCELED)
 			mockOrch.Err = turboci.ErrorWithStageAttemptCurrentState(orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE.Enum(), t)
-			assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID, pb.Status_STARTED))
+			assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID))
 		})
 
 		t.Run("infra failure", func(t *ftt.Test) {
@@ -130,7 +130,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 				Timeout:            &pb.StatusDetails_Timeout{},
 			}
 			assert.NoErr(t, datastore.Put(ctx, bld))
-			assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID, pb.Status_STARTED))
+			assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID))
 			assert.Loosely(t, mockOrch.LastWriteNodesCall, should.NotBeNil)
 			cw := mockOrch.LastWriteNodesCall.GetCurrentAttempt()
 			assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)
@@ -152,7 +152,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 					},
 				}
 				assert.NoErr(t, datastore.Put(ctx, infra))
-				assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID, pb.Status_SCHEDULED))
+				assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID))
 				assert.Loosely(t, mockOrch.LastWriteNodesCall, should.NotBeNil)
 				cw := mockOrch.LastWriteNodesCall.GetCurrentAttempt()
 				assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)
@@ -183,7 +183,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 					},
 				}
 				assert.NoErr(t, datastore.Put(ctx, bld, infra))
-				assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID, pb.Status_SCHEDULED))
+				assert.NoErr(t, writeStageAttemptOnBuildCompletion(ctx, bld.ID))
 				assert.Loosely(t, mockOrch.LastWriteNodesCall, should.NotBeNil)
 				cw := mockOrch.LastWriteNodesCall.GetCurrentAttempt()
 				assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)

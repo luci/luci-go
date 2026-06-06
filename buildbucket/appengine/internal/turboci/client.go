@@ -29,21 +29,26 @@ import (
 	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/turboci/id"
+	"go.chromium.org/luci/turboci/rpc"
 	"go.chromium.org/luci/turboci/rpc/write"
 	"go.chromium.org/luci/turboci/value"
 	"go.chromium.org/luci/turboci/workplan"
+	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+// ErrAttemptAlreadyEnded is returned by SwitchAttemptToScheduled and
+// SwitchAttemptToRunning when trying to update an already ended attempt.
+var ErrAttemptAlreadyEnded = appstatus.Errorf(codes.FailedPrecondition, "the stage attempt has already ended")
+
 // Client is a short-lived TurboCIOrchestratorClient scoped to a
-// particular caller and plan.
-//
-// All errors are gRPC status errors.
+// particular caller, plan or stage attempt.
 type Client struct {
 	// Creds is the credentials to use to call TurboCI Orchestrator.
 	Creds credentials.PerRPCCredentials
@@ -55,6 +60,12 @@ type Client struct {
 	//
 	// It could be a plan creator token or a stage attempt token.
 	Token string
+
+	// Build is a build associated with the current stage attempt.
+	//
+	// Will be used to attach build details to WriteNodes requests that change
+	// the attempt state.
+	Build *pb.Build
 }
 
 // AdjustTurboCIRPCError converts Unauthenticated error to Internal.
@@ -137,7 +148,9 @@ func (c *Client) WriteStages(ctx context.Context, stages []ScheduleBuildRequestS
 			}.Build())
 		}
 	}
-	_, err := c.WriteNodes(ctx, writeReq)
+	writeReq.Msg.SetToken(c.Token)
+	_, err := WriteNodes(ctx, writeReq.Msg, grpc.PerRPCCredentials(c.Creds))
+	err = AdjustTurboCIRPCError(err)
 	return convertToMultiError(err, len(stages))
 }
 
@@ -238,72 +251,149 @@ func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.Buil
 // AttemptFailure contains the failure information to report to TurboCI when
 // setting a stage attempt to INCOMPLETE.
 type AttemptFailure struct {
-	// Err is the human-readable error of a failure.
+	// Err is the human-readable error of a failure (usually an appstatus error).
 	Err error
 	// Details is the machine-readable details of a failure, e.g.
 	// ResourceExhaustion or Timeout.
 	Details *pb.StatusDetails
 }
 
-// FailCurrentAttempt sets the current stage attempt (conveyed by the c.Token
-// as StageAttemptToken) to INCOMPLETE and reports the failure.
-func (c *Client) FailCurrentAttempt(ctx context.Context, attemptID *idspb.StageAttempt, failure *AttemptFailure, details ...proto.Message) error {
-	logging.Errorf(ctx, "Fail stage attempt: %s", failure.Err)
-	writeReq := write.NewRequest()
-	writeReq.SetReason(fmt.Sprintf("Set the stage attempt %s to INCOMPLETE due to an error: %s", id.ToString(attemptID), failure.Err))
-	curWrite := writeReq.GetCurrentAttempt()
-	prog := curWrite.AddProgress(failure.Err.Error(), value.MustWrite(failure.Details))
-	prog.SetIdempotencyKey("server/failure")
-
-	if len(details) > 0 {
-		curWrite.AddDetails(value.MustWrites(details)...)
-	}
-
-	st := curWrite.GetStateTransition()
-	st.SetIncomplete()
-
-	_, err := c.WriteNodes(ctx, writeReq)
-	return err
-}
-
-// AbortCurrentAttempt sets the current stage attempt (by c.Token as StageAttemptToken)
-// to INCOMPLETE and report the cancellation through progress.
-func (c *Client) AbortCurrentAttempt(ctx context.Context, attemptID string, details ...proto.Message) error {
-	logging.Infof(ctx, "Abort stage attempt: %s", attemptID)
-	writeReq := write.NewRequest()
-	writeReq.SetReason("Buildbucket build cancelled")
-
-	curWrite := writeReq.GetCurrentAttempt()
-	curWrite.AddProgress("Cancelled via Buildbucket")
-
-	if len(details) > 0 {
-		curWrite.AddDetails(value.MustWrites(details)...)
-	}
-
-	st := curWrite.GetStateTransition()
-	st.SetIncomplete()
-
-	_, err := c.WriteNodes(ctx, writeReq)
-	return err
-}
-
-// CompleteCurrentAttempt sets the current stage attempt (by c.Token as StageAttemptToken)
-// to COMPLETE.
-func (c *Client) CompleteCurrentAttempt(ctx context.Context, attemptID string) error {
-	logging.Infof(ctx, "Complete stage attempt: %s", attemptID)
-	writeReq := write.NewRequest()
-	writeReq.SetReason("Buildbucket build completed")
-	st := writeReq.GetCurrentAttempt().GetStateTransition()
-	st.SetComplete()
-	_, err := c.WriteNodes(ctx, writeReq)
-	return err
-}
-
-// WriteNodes calls the Turbo CI RPC with correct credentials.
+// writeAttempt writes a change that switches the current attempt state.
 //
-// It mutates the request by inserting the token into it.
-func (c *Client) WriteNodes(ctx context.Context, req write.Request) (*orchestratorpb.WriteNodesResponse, error) {
+// Attaches build details if they are available. Handles state conflict errors.
+func (c *Client) writeAttempt(ctx context.Context, ignoreEnded bool, reason string, cb func(write.CurrentAttemptWrite)) error {
+	logging.Infof(ctx, "Changing stage attempt state: %s", reason)
+
+	req := write.NewRequest()
 	req.Msg.SetToken(c.Token)
+	req.SetReason(reason)
+
+	cur := req.GetCurrentAttempt()
+	if c.Build != nil {
+		cur.AddDetails(value.MustWrites(buildDetails(c.Build))...)
+	}
+	cb(cur)
+
 	resp, err := WriteNodes(ctx, req.Msg, grpc.PerRPCCredentials(c.Creds))
-	return resp, AdjustTurboCIRPCError(err)
+	if err == nil {
+		logging.Infof(ctx, "WriteNodes succeeded: %v", resp)
+		return nil
+	}
+
+	attempt, _ := rpc.StageAttemptCurrentState(err)
+	if attempt == nil {
+		logging.Errorf(ctx, "WriteNodes failed unexpectedly: %s", err)
+		return appstatus.FromStatusErr(AdjustTurboCIRPCError(err))
+	}
+	logging.Infof(ctx, "WriteNodes conflict, current attempt state: %v", attempt)
+
+	// We only really care about detecting unexpectedly finished attempts.
+	// Conflicts involving non-final state (like when attempting to switch
+	// RUNNING -> SCHEDULED) are expected and we can ignore them.
+	ended := attempt.GetState() == orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_COMPLETE ||
+		attempt.GetState() == orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE
+	if !ended || ignoreEnded {
+		return nil
+	}
+	return fmt.Errorf("%w: %s", ErrAttemptAlreadyEnded, attempt.GetState())
+}
+
+// FailAttempt sets the current stage attempt to INCOMPLETE and reports
+// the failure as a progress detail.
+//
+// If the attempt is already COMPLETE/INCOMPLETE, logs this and returns nil.
+//
+// Returns appstatus errors.
+func (c *Client) FailAttempt(ctx context.Context, failure *AttemptFailure) error {
+	return c.writeAttempt(ctx, true, fmt.Sprintf("Setting the stage attempt to INCOMPLETE: %s", failure.Err), func(cur write.CurrentAttemptWrite) {
+		cur.GetStateTransition().SetIncomplete()
+		prog := cur.AddProgress(failure.Err.Error(), value.MustWrite(failure.Details))
+		prog.SetIdempotencyKey("server/failure")
+	})
+}
+
+// AbortAttempt sets the current stage attempt to INCOMPLETE and reports the
+// cancellation through progress.
+//
+// If the attempt is already COMPLETE/INCOMPLETE, logs this and returns nil.
+//
+// Returns appstatus errors.
+func (c *Client) AbortAttempt(ctx context.Context) error {
+	return c.writeAttempt(ctx, true, "Buildbucket build cancelled", func(cur write.CurrentAttemptWrite) {
+		cur.GetStateTransition().SetIncomplete()
+		cur.AddProgress("Cancelled via Buildbucket")
+	})
+}
+
+// CompleteAttempt sets the current stage attempt to COMPLETE.
+//
+// If the attempt is already COMPLETE/INCOMPLETE, logs this and returns nil.
+//
+// Returns appstatus errors.
+func (c *Client) CompleteAttempt(ctx context.Context) error {
+	return c.writeAttempt(ctx, true, "Buildbucket build completed", func(cur write.CurrentAttemptWrite) {
+		cur.GetStateTransition().SetComplete()
+	})
+}
+
+// SwitchAttemptToScheduled switches the current stage attempt to SCHEDULED.
+//
+// If the attempt is already active, logs this and does nothing. If it is
+// COMPLETE/INCOMPLETE returns an error wrapping ErrAttemptAlreadyEnded.
+//
+// Returns appstatus errors.
+func (c *Client) SwitchAttemptToScheduled(ctx context.Context, policy *orchestratorpb.StageAttemptExecutionPolicy) error {
+	return c.writeAttempt(ctx, false, "Buildbucket build scheduled", func(cur write.CurrentAttemptWrite) {
+		cur.GetStateTransition().SetScheduled(policy)
+	})
+}
+
+// SwitchAttemptToRunning switches the current stage attempt to RUNNING.
+//
+// If the attempt is already active, logs this and does nothing. If it is
+// COMPLETE/INCOMPLETE returns an error wrapping ErrAttemptAlreadyEnded.
+//
+// Returns appstatus errors.
+func (c *Client) SwitchAttemptToRunning(ctx context.Context, processUID string, policy *orchestratorpb.StageAttemptExecutionPolicy) error {
+	return c.writeAttempt(ctx, false, "Buildbucket build started", func(cur write.CurrentAttemptWrite) {
+		cur.GetStateTransition().SetRunning(processUID, policy)
+	})
+}
+
+// SwitchAttemptToTearingDown switches the current stage attempt to
+// TEARING_DOWN.
+//
+// If the attempt is already COMPLETE/INCOMPLETE, logs this and returns nil.
+//
+// Returns appstatus errors.
+func (c *Client) SwitchAttemptToTearingDown(ctx context.Context, processUID string, policy *orchestratorpb.StageAttemptExecutionPolicy) error {
+	return c.writeAttempt(ctx, true, "Buildbucket build tearing down", func(cur write.CurrentAttemptWrite) {
+		cur.GetStateTransition().SetTearingDown()
+	})
+}
+
+// buildDetails populates details about a build in a WriteNodes request.
+//
+// Most build stage attempt should have the details when they are advanced to
+// SCHEDULED. But to ensure the builds have the details at all cases (e.g. the
+// stage attempt could be advanced to RUNNING directly if that WriteNodes
+// reaches TurboCI before the SCHEDULED one), Buildbucket adds the same details
+// in all WriteNodes calls that update the attempt state.
+func buildDetails(bld *pb.Build) []proto.Message {
+	bldDetails := &pb.BuildStageDetails{
+		Result: &pb.BuildStageDetails_Id{
+			Id: bld.Id,
+		},
+	}
+	if bld.GetInfra().GetBuildbucket().GetHostname() == "" {
+		return []proto.Message{bldDetails}
+	}
+	commonDetails := stagepb.CommonStageAttemptDetails_builder{
+		ViewUrls: map[string]*stagepb.CommonStageAttemptDetails_UrlDetails{
+			"Buildbucket": stagepb.CommonStageAttemptDetails_UrlDetails_builder{
+				Url: proto.String(fmt.Sprintf("https://%s/build/%d", bld.GetInfra().GetBuildbucket().GetHostname(), bld.Id)),
+			}.Build(),
+		},
+	}.Build()
+	return []proto.Message{bldDetails, commonDetails}
 }

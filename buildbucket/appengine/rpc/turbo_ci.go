@@ -45,8 +45,6 @@ import (
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/gerritauth"
 	"go.chromium.org/luci/turboci/id"
-	"go.chromium.org/luci/turboci/rpc/write"
-	"go.chromium.org/luci/turboci/value"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
@@ -569,55 +567,12 @@ func pollStages(ctx context.Context, cl *turboci.Client, stageIDs []*idspb.Stage
 	return buildIDs, mErr
 }
 
-// updateStageAttemptToScheduled sets the current stage attempt (conveyed by
-// cl.Token as StageAttemptToken) to SCHEDULED and reports the build details
-// (e.g. build ID).
+// abortBuildAsAbandoned is called when we attempt to move the stage into some
+// active state (SCHEDULED or RUNNING), but discover that for whatever reason
+// the attempt is already marked as COMPLETE or INCOMPLETE.
 //
-// Returns appstatus errors.
-func updateStageAttemptToScheduled(ctx context.Context, cl *turboci.Client, bld *pb.Build) error {
-	// This can happen if a previous RunTask created the build but failed to
-	// update TurboCI, so TurboCI retries the RunTask. And after TurboCI sends
-	// the retry, the build starts running.
-	// In this case Buildbucket skips updating TurboCI.
-	if bld.Status != pb.Status_SCHEDULED {
-		logging.Infof(ctx, "Build %d has passed SCHEDULED status, skip updating TurboCI", bld.Id)
-		return nil
-	}
-
-	writeReq := write.NewRequest()
-	writeReq.SetReason("Buildbucket build scheduled")
-
-	curWrite := writeReq.GetCurrentAttempt()
-
-	details := tasks.PopulateBuildDetails(bld)
-	curWrite.AddDetails(value.MustWrites(details)...)
-
-	st := curWrite.GetStateTransition()
-	st.SetScheduled(buildToAttemptExecutionPolicy(bld))
-
-	_, err := cl.WriteNodes(ctx, writeReq)
-	return handleStageAttemptStatusConflict(ctx, bld, err)
-}
-
-// updateStageAttemptToRunning sets the StageAttempt to RUNNING and reports its
-// process_uid and details.
-//
-// Returns appstatus errors.
-func updateStageAttemptToRunning(ctx context.Context, cl *turboci.Client, bld *pb.Build, reqID string) error {
-	writeReq := write.NewRequest()
-	writeReq.SetReason("Buildbucket build started")
-
-	curWrite := writeReq.GetCurrentAttempt()
-
-	details := tasks.PopulateBuildDetails(bld)
-	curWrite.AddDetails(value.MustWrites(details)...)
-
-	// Note need to pass the execution policy here as well in case StartBuild
-	// won the race with RunStage and we are completely skipping SCHEDULED
-	// state.
-	st := curWrite.GetStateTransition()
-	st.SetRunning(reqID, buildToAttemptExecutionPolicy(bld))
-
-	_, err := cl.WriteNodes(ctx, writeReq)
-	return handleStageAttemptStatusConflict(ctx, bld, err)
+// We cancel the build.
+func abortBuildAsAbandoned(ctx context.Context, buildID int64) error {
+	_, err := tasks.StartCancel(ctx, buildID, "Cancelled because TurboCI stage attempt is no longer running")
+	return err
 }

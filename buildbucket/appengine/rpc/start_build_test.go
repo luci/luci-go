@@ -282,10 +282,10 @@ func TestStartBuild(t *testing.T) {
 				_, err := srv.StartBuild(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
 
-				// TQ tasks for pubsub-notification and
-				// CancelBuildTask for handling status mismatch from TurboCI.
+				// TQ tasks for pubsub-notification. The cancellation state is ignored,
+				// the cancellation will be handled by CancelStage RPC.
 				tasks := sch.Tasks()
-				assert.Loosely(t, tasks, should.HaveLength(2))
+				assert.Loosely(t, tasks, should.HaveLength(1))
 			})
 
 			t.Run("TurboCI returns fatal error", func(t *ftt.Test) {

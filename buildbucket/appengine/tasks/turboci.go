@@ -16,20 +16,12 @@ package tasks
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
-	"go.chromium.org/luci/turboci/id"
-	"go.chromium.org/luci/turboci/rpc"
-	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
-	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/turboci"
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -42,30 +34,25 @@ import (
 //
 // Returns TQ-annotated errors, i.e. any error **not** tagged as tq.Fatal will
 // result in an retry.
-func writeStageAttemptOnBuildCompletion(ctx context.Context, bID int64, oldStatus pb.Status) error {
-	// Get the build, no need to be in a transaction since the build should have
-	// ended.
-	// Check build status and call different turboci client code accordingly.
+func writeStageAttemptOnBuildCompletion(ctx context.Context, bID int64) error {
+	// Get the build and its infra, if it is already available.
 	bld := &model.Build{ID: bID}
-	toGet := []any{bld}
-	var infra *model.BuildInfra
-	// The build failed to start, it's possible that TurboCI has not got the
-	// details yet.
-	// Also get build infra to populate details.
-	if oldStatus == pb.Status_SCHEDULED {
-		bk := datastore.KeyForObj(ctx, bld)
-		infra = &model.BuildInfra{
-			Build: bk,
+	infra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, bld)}
+	if err := datastore.Get(ctx, bld, infra); err != nil {
+		merr, ok := err.(errors.MultiError)
+		if !ok || len(merr) != 2 {
+			return transient.Tag.Apply(errors.Fmt("error fetching build %d: %w", bID, err))
 		}
-		toGet = append(toGet, infra)
+		for _, err := range merr {
+			if err != nil && err != datastore.ErrNoSuchEntity {
+				return transient.Tag.Apply(errors.Fmt("error fetching build %d: %w", bID, err))
+			}
+		}
+		if merr[0] == datastore.ErrNoSuchEntity {
+			return tq.Fatal.Apply(errors.Fmt("build %d not found", bID))
+		}
 	}
-
-	switch err := datastore.Get(ctx, toGet...); {
-	case errors.Contains(err, datastore.ErrNoSuchEntity):
-		return tq.Fatal.Apply(errors.Fmt("entities for build %d not found: %w", bID, err))
-	case err != nil:
-		return transient.Tag.Apply(errors.Fmt("error fetching build %d: %w", bID, err))
-	}
+	bld.Proto.Infra = infra.Proto
 
 	if !protoutil.IsEnded(bld.Proto.Status) {
 		// Should never happen.
@@ -84,50 +71,23 @@ func writeStageAttemptOnBuildCompletion(ctx context.Context, bID int64, oldStatu
 	cl := &turboci.Client{
 		Creds: creds,
 		Token: bld.StageAttemptToken,
-	}
-
-	if infra != nil {
-		bld.Proto.Infra = infra.Proto
+		Build: bld.Proto,
 	}
 
 	switch bld.Proto.Status {
 	case pb.Status_SUCCESS, pb.Status_FAILURE:
-		return cl.CompleteCurrentAttempt(ctx, bld.StageAttemptID)
+		return cl.CompleteAttempt(ctx)
 	case pb.Status_CANCELED:
-		return cancelBuildStageAttempt(ctx, cl, bld.Proto, bld.StageAttemptID, oldStatus)
+		return cl.AbortAttempt(ctx)
 	case pb.Status_INFRA_FAILURE:
-		return failBuildStageAttemptWithDetails(ctx, cl, bld.Proto, bld.StageAttemptID, oldStatus)
+		return cl.FailAttempt(ctx, attemptFailure(bld.Proto))
 	default:
 		return tq.Fatal.Apply(errors.Fmt("invalid status %s", bld.Proto.Status))
 	}
 }
 
-// cancelBuildStageAttempt marks the attempt into INCOMPLETE, reporting it
-// as canceled via progress details.
-//
-// Returns gRPC status errors.
-func cancelBuildStageAttempt(ctx context.Context, cl *turboci.Client, bp *pb.Build, attemptID string, oldStatus pb.Status) error {
-	var details []proto.Message
-	// The build failed to start, needs to populate details.
-	if oldStatus == pb.Status_SCHEDULED {
-		details = PopulateBuildDetails(bp)
-	}
-
-	return handleStageAttemptStatusConflict(ctx,
-		cl.AbortCurrentAttempt(ctx, attemptID, details...))
-}
-
-// failBuildStageAttemptWithDetails marks the attempt into INCOMPLETE, reporting
-// it as failed via progress details.
-//
-// Returns gRPC status errors.
-func failBuildStageAttemptWithDetails(ctx context.Context, cl *turboci.Client, bp *pb.Build, attemptID string, oldStatus pb.Status) error {
-	aID, aErr := id.FromString(attemptID)
-	if aErr != nil {
-		logging.Errorf(ctx, "Build %d has a malformed StageAttemptID: %s", bp.Id, aErr)
-		return nil
-	}
-
+// attemptFailure converts a failed Build to AttemptFailure for Turbo CI.
+func attemptFailure(bp *pb.Build) *turboci.AttemptFailure {
 	var errMsgs []string
 	if bp.GetStatusDetails().GetResourceExhaustion() != nil {
 		errMsgs = append(errMsgs, "Resource exhausted")
@@ -143,64 +103,8 @@ func failBuildStageAttemptWithDetails(ctx context.Context, cl *turboci.Client, b
 		errMsg = "Infra failure"
 	}
 
-	var details []proto.Message
-	// The build failed to start, needs to populate details.
-	if oldStatus == pb.Status_SCHEDULED {
-		details = PopulateBuildDetails(bp)
+	return &turboci.AttemptFailure{
+		Err:     errors.New(errMsg),
+		Details: bp.GetStatusDetails(),
 	}
-
-	return handleStageAttemptStatusConflict(ctx,
-		cl.FailCurrentAttempt(ctx, aID.GetStageAttempt(),
-			&turboci.AttemptFailure{
-				Err:     errors.New(errMsg),
-				Details: bp.GetStatusDetails()}, details...))
-}
-
-// PopulateBuildDetails populates details about a build in a WriteNodes request.
-//
-// Most build stage attempt should have the details when they are advanced to
-// SCHEDULED. But to ensure the builds have the details at all cases (e.g. the
-// stage attempt could be advanced to RUNNING directly if that WriteNodes reaches
-// TurboCI before the SCHEDULED one), Buildbucket adds the same details in the
-// WriteNodes to advance the attempt to RUNNING (or to INCOMPLETE if it fails to
-// start the build).
-func PopulateBuildDetails(bld *pb.Build) []proto.Message {
-	bldDetails := &pb.BuildStageDetails{
-		Result: &pb.BuildStageDetails_Id{
-			Id: bld.Id,
-		},
-	}
-	commonDetails := stagepb.CommonStageAttemptDetails_builder{
-		ViewUrls: map[string]*stagepb.CommonStageAttemptDetails_UrlDetails{
-			"Buildbucket": stagepb.CommonStageAttemptDetails_UrlDetails_builder{
-				Url: proto.String(fmt.Sprintf("https://%s/build/%d", bld.GetInfra().GetBuildbucket().GetHostname(), bld.Id)),
-			}.Build(),
-		},
-	}.Build()
-	return []proto.Message{bldDetails, commonDetails}
-}
-
-func handleStageAttemptStatusConflict(ctx context.Context, err error) error {
-	if err == nil {
-		return nil
-	}
-
-	sacs, sErr := rpc.StageAttemptCurrentState(err)
-	if sErr != nil {
-		return err
-	}
-
-	if sacs == nil {
-		return err
-	}
-
-	curState := sacs.GetState()
-	// The stage attempt is no longer active, nothing more need to do.
-	if curState == orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_COMPLETE ||
-		curState == orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_INCOMPLETE {
-		logging.Infof(ctx, "The stage attempt is no longer active.")
-		return nil
-	}
-
-	return err
 }

@@ -298,7 +298,7 @@ func TestTasks(t *testing.T) {
 
 		t.Run("endTurboCIStageAttempt", func(t *ftt.Test) {
 			t.Run("bypass", func(t *ftt.Test) {
-				assert.NoErr(t, endTurboCIStageAttempt(ctx, &model.Build{}, pb.Status_SCHEDULED))
+				assert.NoErr(t, endTurboCIStageAttempt(ctx, &model.Build{}))
 			})
 
 			t.Run("valid", func(t *ftt.Test) {
@@ -307,7 +307,7 @@ func TestTasks(t *testing.T) {
 						ID:                123,
 						StageAttemptID:    "stage-attempt-id",
 						StageAttemptToken: "token",
-					}, pb.Status_STARTED)
+					})
 				}, nil)
 				assert.NoErr(t, err)
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))

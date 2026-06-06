@@ -52,7 +52,7 @@ func sendOnBuildCompletion(ctx context.Context, params *buildstatus.PostProcessP
 			return errors.WrapIf(ExportBigQuery(ctx, bld.ID), "failed to enqueue bigquery export task: %d", bld.ID)
 		}
 		tks <- func() error {
-			return errors.WrapIf(endTurboCIStageAttempt(ctx, bld, params.OldStatus), "failed to enqueue TurboCI stage attempt end task: %d", bld.ID)
+			return errors.WrapIf(endTurboCIStageAttempt(ctx, bld), "failed to enqueue TurboCI stage attempt end task: %d", bld.ID)
 		}
 		tks <- func() error {
 			bldr := &model.Builder{

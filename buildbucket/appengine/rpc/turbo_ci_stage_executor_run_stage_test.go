@@ -268,7 +268,7 @@ func TestRunStage(t *testing.T) {
 			// Check that failCurrentStage was called.
 			assert.That(t, mockOrch.LastWriteNodesCall.GetToken(), should.Equal("secret-token"))
 			reason := mockOrch.LastWriteNodesCall.GetReason()
-			assert.That(t, reason.GetMessage(), should.Equal(`Set the stage attempt Lplan-id:Sstage-id:A1 to INCOMPLETE due to an error: rpc error: code = NotFound desc = requested resource not found or "user:test@example.com" does not have permission to view it`))
+			assert.That(t, reason.GetMessage(), should.Equal(`Setting the stage attempt to INCOMPLETE: rpc error: code = NotFound desc = requested resource not found or "user:test@example.com" does not have permission to view it`))
 			assert.That(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetStateTransition().HasIncomplete(), should.BeTrue)
 			progress := mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetProgress()
 			assert.That(t, len(progress), should.Equal(1))
@@ -286,7 +286,7 @@ func TestRunStage(t *testing.T) {
 			assert.That(t, err, should.ErrLike("update failed"))
 		})
 
-		t.Run("attempt is alread running", func(t *ftt.Test) {
+		t.Run("attempt is already running", func(t *ftt.Test) {
 			ctx, req, _, mockOrch, se := setup()
 			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
 			testutil.PutBuilder(ctx, "project", "bucket", "builder")
@@ -308,11 +308,10 @@ func TestRunStage(t *testing.T) {
 			assert.NoErr(t, err)
 
 			tasks := sch.Tasks()
-			// CreateBackendBuildTask, NotifyPubSubGoProxy for schedule build
-			// CancelBuildTask for handling status mismatch from TurboCI
-			assert.That(t, len(tasks), should.Equal(3))
-			_, ok := tasks.Payloads()[2].(*taskdefs.CancelBuildTask)
-			assert.Loosely(t, ok, should.BeTrue)
+			// CreateBackendBuildTask, NotifyPubSubGoProxy for schedule build.
+			// Cancellation state is ignored. Cancellation will be performed by
+			// CancelStage RPC.
+			assert.That(t, len(tasks), should.Equal(2))
 		})
 
 		t.Run("attempt is incomplete", func(t *ftt.Test) {
@@ -373,42 +372,6 @@ func TestRunStage(t *testing.T) {
 			bldDetails := &pb.BuildStageDetails{}
 			assert.NoErr(t, mockOrch.LastWriteNodesCall.GetCurrentAttempt().GetDetails()[0].GetData().UnmarshalTo(bldDetails))
 			assert.That(t, bldDetails.GetId(), should.Equal(bld.ID))
-		})
-
-		t.Run("dedup request id - the build has started", func(t *ftt.Test) {
-			ctx, req, attemptID, mockOrch, se := setup()
-			attemptIDStr := id.ToString(attemptID)
-			testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{Swarming: &pb.Swarming{}})
-			testutil.PutBuilder(ctx, "project", "bucket", "builder")
-
-			// First RunStage.
-			se.RunStage(ctx, req)
-
-			reqID := &model.RequestID{
-				ID: fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s:%s", auth.CurrentIdentity(ctx), sha256hex(attemptIDStr))))),
-			}
-			assert.NoErr(t, datastore.Get(ctx, reqID))
-
-			bld := &model.Build{
-				ID: reqID.BuildID,
-			}
-			assert.NoErr(t, datastore.Get(ctx, bld))
-			assert.That(t, bld.StageAttemptID, should.Equal(attemptIDStr))
-			assert.That(t, bld.StageAttemptToken, should.Equal("secret-token"))
-
-			// The build has started.
-			bld.Proto.Status = pb.Status_STARTED
-			assert.NoErr(t, datastore.Put(ctx, bld))
-
-			// reset mockOrch
-			mockOrch.LastWriteNodesCall = nil
-
-			// Second RunStage.
-			_, err := se.RunStage(ctx, req)
-			assert.NoErr(t, err)
-
-			// No update to TurboCI.
-			assert.Loosely(t, mockOrch.LastWriteNodesCall, should.BeNil)
 		})
 	})
 }
