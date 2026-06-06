@@ -482,9 +482,24 @@ export const ChromeOSSmartRepair = () => {
 
           {(currentStatus === 'pending' || currentStatus === 'processing') &&
             !displayData?.result && (
-              <Alert severity="info" sx={{ mb: 3 }}>
-                Analysis is currently {currentStatus}.
-                <CircularProgress size={16} sx={{ ml: 2 }} />
+              <Alert
+                severity="info"
+                sx={{
+                  mb: 3,
+                  '& .MuiAlert-message': {
+                    overflow: 'visible',
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  Analysis is currently {currentStatus}.
+                  <CircularProgress size={16} sx={{ ml: 2 }} />
+                </Box>
               </Alert>
             )}
 
