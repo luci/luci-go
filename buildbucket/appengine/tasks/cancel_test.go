@@ -323,7 +323,7 @@ func TestCancelBuild(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, now)
 
 		t.Run("not found", func(t *ftt.Test) {
-			_, err := StartCancel(ctx, 1, "")
+			_, err := StartCancel(ctx, 1, &CancellationDetails{})
 			assert.Loosely(t, err, should.ErrLike("not found"))
 			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 		})
@@ -340,7 +340,10 @@ func TestCancelBuild(t *testing.T) {
 					Status: pb.Status_STARTED,
 				},
 			}), should.BeNil)
-			bld, err := StartCancel(ctx, 1, "summary")
+			bld, err := StartCancel(ctx, 1, &CancellationDetails{
+				CanceledBy: "buildbucket",
+				Summary:    "summary",
+			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
@@ -370,7 +373,7 @@ func TestCancelBuild(t *testing.T) {
 					Status: pb.Status_SUCCESS,
 				},
 			}), should.BeNil)
-			bld, err := StartCancel(ctx, 1, "summary")
+			bld, err := StartCancel(ctx, 1, &CancellationDetails{})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
@@ -397,7 +400,7 @@ func TestCancelBuild(t *testing.T) {
 					CancelTime: timestamppb.New(now.Add(-time.Minute)),
 				},
 			}), should.BeNil)
-			bld, err := StartCancel(ctx, 1, "summary")
+			bld, err := StartCancel(ctx, 1, &CancellationDetails{})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,
@@ -466,7 +469,10 @@ func TestCancelBuild(t *testing.T) {
 					CanOutliveParent: false,
 				},
 			}), should.BeNil)
-			bld, err := StartCancel(ctx, 1, "summary")
+			bld, err := StartCancel(ctx, 1, &CancellationDetails{
+				CanceledBy: "buildbucket",
+				Summary:    "summary",
+			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, bld.Proto, should.Match(&pb.Build{
 				Id: 1,

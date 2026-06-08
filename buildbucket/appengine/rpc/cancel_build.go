@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/buildbucket/appengine/common"
 	"go.chromium.org/luci/buildbucket/appengine/internal/perm"
@@ -71,7 +72,10 @@ func (*Builds) CancelBuild(ctx context.Context, req *pb.CancelBuildRequest) (*pb
 		return bld.ToProto(ctx, m, redact)
 	}
 
-	bld, err = tasks.StartCancel(ctx, req.Id, req.SummaryMarkdown)
+	bld, err = tasks.StartCancel(ctx, req.Id, &tasks.CancellationDetails{
+		CanceledBy: string(auth.CurrentIdentity(ctx)),
+		Summary:    req.SummaryMarkdown,
+	})
 	if err != nil {
 		return nil, err
 	}

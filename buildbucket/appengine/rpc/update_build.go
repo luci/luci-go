@@ -656,7 +656,9 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 
 	// Cancel children.
 	if shouldCancelChildren {
-		if err := tasks.CancelChildren(ctx, b.ID); err != nil {
+		if err := tasks.CancelChildren(ctx, b.ID, &tasks.CancellationDetails{
+			CanceledBy: "buildbucket",
+		}); err != nil {
 			// Failures of canceling children should not block updating parent.
 			logging.Debugf(ctx, "failed to cancel children of %d: %s", b.ID, err)
 		}

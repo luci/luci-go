@@ -20,14 +20,14 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket"
@@ -40,41 +40,74 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-// StartCancel starts canceling a build and schedules the delayed task to finally cancel it
-func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, error) {
-	bld := &model.Build{ID: bID}
+// CancellationDetails are passed to StartCancel.
+type CancellationDetails struct {
+	// CanceledBy is what to put in Build's `canceled_by` field.
+	CanceledBy string
+	// Summary is what to put in Build's `cancellation_markdown` field.
+	Summary string
+	// SkipGracePeriod instructs to kill the build ASAP.
+	SkipGracePeriod bool
+}
+
+// StartCancel moves the build into canceling state and schedules the delayed
+// task to definitely terminate the build upon reaching the grace termination
+// timeout.
+//
+// Performs best effort cancellation of all transitive child builds not marked
+// as CanOutliveParent. Does it even if the root build is already finished or
+// is already being cancelled.
+//
+// Returns the build as it is in the datastore after this call. Can be nil if
+// it is missing.
+//
+// Returns appstatus errors.
+func StartCancel(ctx context.Context, bID int64, details *CancellationDetails) (*model.Build, error) {
+	var bld *model.Build
+
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		bld = &model.Build{ID: bID}
 		switch err := datastore.Get(ctx, bld); {
 		case err == datastore.ErrNoSuchEntity:
+			bld = nil
 			return perm.NotFoundErr(ctx)
 		case err != nil:
-			return errors.Fmt("failed to fetch build: %d: %w", bld.ID, err)
+			return appstatus.Errorf(codes.Internal, "failed to fetch build: %d: %s", bld.ID, err)
 		case protoutil.IsEnded(bld.Proto.Status):
 			return nil
 		case bld.Proto.CancelTime != nil:
 			return nil
 		}
+
+		// Mark the build as being canceled. The bbagent should notice that on its
+		// next heartbeat call and start actual cancellation.
 		now := timestamppb.New(clock.Now(ctx).UTC())
 		bld.Proto.CancelTime = now
 		bld.Proto.UpdateTime = now
-		bld.Proto.CancellationMarkdown = summary
-		canceledBy := "buildbucket"
-		if auth.CurrentIdentity(ctx) != identity.AnonymousIdentity {
-			canceledBy = string(auth.CurrentIdentity(ctx))
+		bld.Proto.CanceledBy = details.CanceledBy
+		bld.Proto.CancellationMarkdown = details.Summary
+		if err := datastore.Put(ctx, bld); err != nil {
+			return appstatus.Errorf(codes.Internal, "failed to store build: %d: %s", bld.ID, err)
 		}
 
-		bld.Proto.CanceledBy = canceledBy
-		if err := datastore.Put(ctx, bld); err != nil {
-			return errors.Fmt("failed to store build: %d: %w", bld.ID, err)
+		// Enqueue the task to cancel the build upon reaching the deadline in case
+		// the bbagent is not responding to seeing the build is being cancelled.
+		//
+		// TODO: Skip waiting if the build hasn't started yet. There's no sense in
+		// waiting for GracePeriod if the build is still queued, since bbagent isn't
+		// running yet and it can't possibly do graceful termination.
+		delay := buildbucket.MinUpdateBuildInterval + bld.Proto.GracePeriod.AsDuration()
+		if details.SkipGracePeriod {
+			delay = 0
 		}
-		// Enqueue the task to finally cancel the build.
-		if err := ScheduleCancelBuildTask(ctx, bID, buildbucket.MinUpdateBuildInterval+bld.Proto.GracePeriod.AsDuration()); err != nil {
-			return errors.Fmt("failed to enqueue cancel task for build: %d: %w", bld.ID, err)
+		if err := ScheduleCancelBuildTask(ctx, bID, delay); err != nil {
+			return appstatus.Errorf(codes.Internal, "failed to enqueue cancel task for build: %d: %s", bld.ID, err)
 		}
+
 		return nil
 	}, nil)
 	if err != nil {
-		return bld, errors.Fmt("failed to set the build to CANCELING: %d: %w", bID, err)
+		return bld, err
 	}
 
 	// TODO(crbug.com/1031205): alternatively, we could just map out the entire
@@ -82,7 +115,7 @@ func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, 
 	// cancel. We could add a bool argument to StartCancel to control if the
 	// function should cancel the entire tree or just the build itself.
 	// Discussion: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3402796/comments/8aba3108_b4ca9f76
-	if err := CancelChildren(ctx, bID); err != nil {
+	if err := CancelChildren(ctx, bID, details); err != nil {
 		// Failures of canceling children should not block canceling parent.
 		logging.Debugf(ctx, "failed to cancel children of %d: %s", bID, err)
 	}
@@ -95,7 +128,7 @@ func StartCancel(ctx context.Context, bID int64, summary string) (*model.Build, 
 // frequency and Buildbucket will inform them if they should start the cancel
 // process (by checking the parent build, if any).
 // So, even if this fails, the next UpdateBuild will catch it.
-func CancelChildren(ctx context.Context, bID int64) error {
+func CancelChildren(ctx context.Context, bID int64, details *CancellationDetails) error {
 	// Look for the build's children to cancel.
 	children, err := childrenToCancel(ctx, bID)
 	if err != nil {
@@ -105,16 +138,23 @@ func CancelChildren(ctx context.Context, bID int64) error {
 		return nil
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
-	summary := fmt.Sprintf("cancel since the parent %d is canceled", bID)
+	updated := *details
+	updated.Summary = fmt.Sprintf("Cancel since the parent %d is canceled", bID)
+	updated.SkipGracePeriod = false
 
-	for _, child := range children {
+	var eg errgroup.Group
+	eg.SetLimit(64)
+
+	merr := make(errors.MultiError, len(children))
+	for idx, child := range children {
 		eg.Go(func() error {
-			_, err := StartCancel(ctx, child.ID, summary)
-			return err
+			_, merr[idx] = StartCancel(ctx, child.ID, &updated)
+			return nil // carry on cancelling
 		})
 	}
-	return eg.Wait()
+	eg.Wait()
+
+	return merr.First()
 }
 
 // childrenToCancel returns the child build ids that should be canceled with
@@ -135,7 +175,9 @@ func childrenToCancel(ctx context.Context, bID int64) (children []*model.Build, 
 	return
 }
 
-// Cancel actually cancels a build.
+// Cancel cancels a build task associated with the build.
+//
+// This is called as a delayed CancelBuildTask when reaching the grace timeout.
 func Cancel(ctx context.Context, bID int64) (*model.Build, error) {
 	bld := &model.Build{ID: bID}
 	canceled := false

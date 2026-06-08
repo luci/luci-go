@@ -573,6 +573,10 @@ func pollStages(ctx context.Context, cl *turboci.Client, stageIDs []*idspb.Stage
 //
 // We cancel the build.
 func abortBuildAsAbandoned(ctx context.Context, buildID int64) error {
-	_, err := tasks.StartCancel(ctx, buildID, "Cancelled because TurboCI stage attempt is no longer running")
+	_, err := tasks.StartCancel(ctx, buildID, &tasks.CancellationDetails{
+		CanceledBy:      "buildbucket",
+		Summary:         "Cancelled because TurboCI stage attempt is no longer running",
+		SkipGracePeriod: true, // it is mostly dead already
+	})
 	return err
 }
