@@ -132,6 +132,8 @@ SELECT regression_group.*,
 FROM builder_regression_groups_with_latest_build
 WHERE {{.DimensionExcludeFilter}} AND (bucket NOT IN UNNEST(@excludedBuckets))
   -- We need to compare ARRAY_LENGTH with null because of unexpected Bigquery behaviour b/138262091.
+  AND ((builder IN UNNEST(@allowedBuilders)) OR ARRAY_LENGTH(@allowedBuilders) = 0 OR ARRAY_LENGTH(@allowedBuilders) IS NULL)
+  AND (builder NOT IN UNNEST(@excludedBuilders))
   AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 OR ARRAY_LENGTH(@allowedBuilderGroups) IS NULL)
   AND (BuilderGroup NOT IN UNNEST(@excludedBuilderGroups))
 {{end}}
@@ -149,6 +151,8 @@ WHERE s.end_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 3 DAY)
   AND {{.DimensionExcludeFilter}} AND (bucket NOT IN UNNEST(@excludedBuckets))
   AND (s.bot.pools[0] NOT IN UNNEST(@excludedPools))
   -- We need to compare ARRAY_LENGTH with null because of unexpected Bigquery behaviour b/138262091.
+  AND ((builder IN UNNEST(@allowedBuilders)) OR ARRAY_LENGTH(@allowedBuilders) = 0 OR ARRAY_LENGTH(@allowedBuilders) IS NULL)
+  AND (builder NOT IN UNNEST(@excludedBuilders))
   AND ((BuilderGroup IN UNNEST(@allowedBuilderGroups)) OR ARRAY_LENGTH(@allowedBuilderGroups) = 0 OR ARRAY_LENGTH(@allowedBuilderGroups) IS NULL)
   AND (BuilderGroup NOT IN UNNEST(@excludedBuilderGroups))
 {{end}}
@@ -247,6 +251,8 @@ func (c *Client) ReadTestFailures(ctx context.Context, task *tpb.TestFailureDete
 		{Name: "excludedPools", Value: filter.GetExcludedTestPools()},
 		{Name: "allowedBuilderGroups", Value: filter.GetAllowedBuilderGroups()},
 		{Name: "excludedBuilderGroups", Value: filter.GetExcludedBuilderGroups()},
+		{Name: "allowedBuilders", Value: filter.GetAllowedBuilders()},
+		{Name: "excludedBuilders", Value: filter.GetExcludedBuilders()},
 		{Name: "testVariantLimit", Value: testVariantLimit},
 	}
 	it, err := q.Read(ctx)

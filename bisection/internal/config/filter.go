@@ -33,3 +33,19 @@ func GetExcludedBuilderGroupsForTest(ctx context.Context, project string) ([]str
 	}
 	return cfg.TestAnalysisConfig.GetFailureIngestionFilter().GetExcludedBuilderGroups(), nil
 }
+
+func GetExcludedBuildersForTest(ctx context.Context, project string) ([]string, error) {
+	cfg, err := Project(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.TestAnalysisConfig.GetFailureIngestionFilter().GetExcludedBuilders(), nil
+}
+
+func GetAllowedBuildersForTest(ctx context.Context, project string) ([]string, error) {
+	cfg, err := Project(ctx, project)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.TestAnalysisConfig.GetFailureIngestionFilter().GetAllowedBuilders(), nil
+}

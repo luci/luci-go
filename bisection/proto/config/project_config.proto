@@ -94,6 +94,12 @@ message FailureIngestionFilter {
   repeated string allowed_builder_groups = 3;
   // The list of builder groups that we should not run bisect on.
   repeated string excluded_builder_groups = 4;
+  // The list of specific buildbucket builders that we should not run bisect on.
+  // Only applicable for test failure analysis.
+  repeated string excluded_builders = 5;
+  // If this is specified, bisection will only run on failures from the builders in this list.
+  // Only applicable for test failure analysis.
+  repeated string allowed_builders = 6;
 }
 
 // GerritConfig is the configuration data for Gerrit integration
