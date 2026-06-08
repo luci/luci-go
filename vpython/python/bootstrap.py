@@ -79,11 +79,15 @@ if 'wheels' in os.environ:
   try:
     subprocess.check_output(command, env=env, stderr=subprocess.STDOUT)
   except subprocess.CalledProcessError as e:
+    output_str = e.output.decode('utf-8', errors='ignore')
     sys.stderr.write('\n' + '=' * 60 + '\n')
     sys.stderr.write("vpython AR INSTALL FAILED\n")
     sys.stderr.write(e.output.decode('utf-8', errors='ignore') + "\n")
-    sys.stderr.write("If you see this, it means some python packages are missing from Artifact Registry or installation failed.\n")
-    sys.stderr.write("Please report this issue at https://crbug.com/492362903\n")
+    if '429' in output_str and 'Too Many Requests' in output_str:
+      sys.stderr.write("AR likely got overflown with request. Please retry after some time.\n")
+    else:
+      sys.stderr.write("If you see this, it means some python packages are missing from Artifact Registry or installation failed.\n")
+      sys.stderr.write("Please report this issue at https://crbug.com/492362903\n")
     sys.stderr.write('=' * 60 + '\n')
     raise
 
