@@ -28,7 +28,12 @@ Progress:
    - **Check for Unrelated Changes**: Double check that the branch you're currently on doesn't have unrelated changes before you upload a CL. Run `git log origin/main..HEAD` to see the commits on your branch relative to main, and ensure they are all related to the current task.
 
 1. **Verification**:
-   - Run the [project-verification](../project-verification/SKILL.md) skill (lint, test, type-check) to ensure no regressions.
+   - Format modified files: `git cl format`.
+   - Run the [project-verification](../project-verification/SKILL.md) skill (lint, test, type-check) to ensure no regressions. Alternatively, run targeted checks:
+     - Lint changed files: `npm run lint -- <changed_file_paths>`
+     - Run unit tests: `npm run test -- <test_file_paths>`
+     - Run type checks: `npm run type-check`
+   - Run local presubmits to check licenses, syntax, and static analysis: `git cl presubmit`.
    - Run the [senior-reviewer](../senior-reviewer/SKILL.md) skill to get a self-review and address feedback.
 
 2. **Commit Changes**:
@@ -50,9 +55,11 @@ Progress:
    - Include testing instructions for the reviewer in the CL description, encouraging them to also test edge cases or related functionality that might break.
 
 4. **Optional Upload (WIP Workflows)**:
+   - Read the existing CL description/metadata first if amending. Ensure you preserve existing metadata tags (like `Bug:`, `Reviewers:`, `Cc:`) in the description so you don't overwrite user configurations.
    - Attempt to run `git cl upload`.
    - **Always upload new CLs in Work In Progress (WIP) mode** to suppress premature notifications to reviewers and watchlisted groups (such as `fleet-console-reviews`).
    - *Note*: If this fails with an error like `chmod ~/.sso: operation not permitted` or a path-specific permission error, it is due to sandbox restrictions preventing the agent from modifying home directory files. In this case, do not block the task; notify the developer and ask them to run `git cl upload` on your behalf. (Alternatively, the developer may choose to disable the sandbox to allow direct uploads).
+   - **Gerrit Verification**: After uploading, remote Gerrit Tryjobs/checks will run. NEVER mark a CL "ready" or ask for user submission consent until these remote Tryjobs/checks have fully passed. Polling remote checks can take time (5-15+ minutes); set a timer using the `schedule` tool to go idle and check back.
    > When uploading from background tasks, you can bypass all interactive prompts and text editor popups using these official non-interactive options:
    > - **For New CLs (Initial Upload)**: **Always use the `--wip` flag** along with `-f` and `--commit-description=+` to ensure the CL starts as WIP:
    >   `git cl upload -f --wip --commit-description=+`
@@ -76,6 +83,21 @@ Progress:
      2. Cherry-pick or manually apply the relevant changes to that branch.
      3. Upload as a new CL using `git cl upload`.
      4. Ensure the branches do not depend on each other unless strictly necessary.
+
+   ### Cleaning Up Accumulating Commits (Unstacking & Decoupling Branches)
+   When rebasing local branches that were previously stacked, a branch may carry over commits and file modifications from its old parent branches, causing `git cl upload` to pull in unrelated changes.
+   To surgically clean up a branch so it contains exactly one commit with only the desired changes:
+   1. Checkout `origin/main` to a temporary branch:
+      `git checkout -b temp-clean-branch origin/main`
+   2. Checkout only the files belonging to the specific CL from your dirty local branch:
+      `git checkout <dirty-branch-name> -- path/to/file1.tsx path/to/file2.ts`
+   3. Commit the clean files:
+      `git commit -m "[Category] Commit description message"`
+   4. Switch back to your dirty branch and hard reset it to the clean state:
+      `git checkout <dirty-branch-name> && git reset --hard temp-clean-branch`
+   5. Delete the temporary branch:
+      `git branch -D temp-clean-branch`
+   This guarantees the branch contains exactly one commit on top of `origin/main` with no unrelated tracking files.
 
    ### Creating Stacked/Chained CLs with Gerrit Dependencies
    When you want to split a larger task into a series of dependent CLs (stacked changes):
@@ -139,3 +161,9 @@ Progress:
      - After resolving, stage the files: `git add <files>`.
      - Continue the rebase: `git rebase --continue`.
      - Re-run tests after rebasing to ensure no regressions.
+
+## Guardrails
+
+> [!IMPORTANT]
+> - **No Bypass Tags**: Do not include bypass directives (like `--bypass-hooks` or `--bypass-watchdog`) unless explicitly authorized by the user or required due to pre-existing upstream failures at HEAD.
+> - **Anti-Flip-Flopping & Iteration Cap**: If you are fixing lints or test failures, keep track of your history. If your fix reverts a previous commit or changes the same lines back and forth, stop. Limit autonomous repair loops to a maximum of 3 iterations before asking the user for help.
