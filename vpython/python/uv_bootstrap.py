@@ -44,6 +44,7 @@ def main():
     env = os.environ.copy()
     env["UV_PYTHON_DOWNLOADS"] = "never"
     env["UV_NO_BUILD"] = "true"
+    env["UV_KEYRING_PROVIDER"] = "disabled"
 
     # Configure package registry mirror.
     ar_url = os.getenv("VPYTHON_AR_URL")

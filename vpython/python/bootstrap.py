@@ -74,6 +74,7 @@ if 'wheels' in os.environ:
       command = ['arch', '-x86_64'] + command
   env = os.environ.copy()
   env['NETRC'] = os.devnull
+  env['PIP_KEYRING_PROVIDER'] = 'disabled'
 
   try:
     subprocess.check_output(command, env=env, stderr=subprocess.STDOUT)
