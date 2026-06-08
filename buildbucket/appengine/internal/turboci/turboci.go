@@ -213,6 +213,8 @@ func turboCIMsgToText(msg any) string {
 		defer redactToken(v.HasCreatorToken, v.GetCreatorToken, v.SetCreatorToken)()
 	case *executorpb.RunStageRequest:
 		defer redactToken(v.HasStageAttemptToken, v.GetStageAttemptToken, v.SetStageAttemptToken)()
+	case *executorpb.CancelStageRequest:
+		defer redactToken(v.HasStageAttemptToken, v.GetStageAttemptToken, v.SetStageAttemptToken)()
 	}
 	blob, err := (prototext.MarshalOptions{Multiline: true}).Marshal(m)
 	if err != nil {

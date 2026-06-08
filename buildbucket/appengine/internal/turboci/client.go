@@ -366,7 +366,7 @@ func (c *Client) SwitchAttemptToRunning(ctx context.Context, processUID string, 
 // If the attempt is already COMPLETE/INCOMPLETE, logs this and returns nil.
 //
 // Returns appstatus errors.
-func (c *Client) SwitchAttemptToTearingDown(ctx context.Context, processUID string, policy *orchestratorpb.StageAttemptExecutionPolicy) error {
+func (c *Client) SwitchAttemptToTearingDown(ctx context.Context) error {
 	return c.writeAttempt(ctx, true, "Buildbucket build tearing down", func(cur write.CurrentAttemptWrite) {
 		cur.GetStateTransition().SetTearingDown()
 	})
