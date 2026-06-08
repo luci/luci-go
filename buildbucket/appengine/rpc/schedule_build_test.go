@@ -5666,15 +5666,6 @@ func TestScheduleBuild(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("builder or template_build_id is required"))
 		})
 
-		t.Run("request ID", func(t *ftt.Test) {
-			req := &pb.ScheduleBuildRequest{
-				RequestId:       "request/id",
-				TemplateBuildId: 1,
-			}
-			err := validateSchedule(ctx, req, nil, nil)
-			assert.Loosely(t, err, should.ErrLike("request_id cannot contain"))
-		})
-
 		t.Run("builder ID", func(t *ftt.Test) {
 			req := &pb.ScheduleBuildRequest{
 				Builder: &pb.BuilderID{},
@@ -5900,6 +5891,30 @@ func TestScheduleBuild(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 				})
 
+				t.Run("request ID", func(t *ftt.Test) {
+					req := &pb.ScheduleBuildRequest{
+						RequestId:       "request/id",
+						TemplateBuildId: 1,
+					}
+					op := &scheduleBuildOp{
+						Reqs: []*pb.ScheduleBuildRequest{req},
+					}
+					_, _, err := validateScheduleBuild(ctx, op, req, true)
+					assert.Loosely(t, err, should.ErrLike("request_id cannot contain"))
+				})
+
+				t.Run("internal request ID", func(t *ftt.Test) {
+					req := &pb.ScheduleBuildRequest{
+						RequestId:       "__bb__:zz",
+						TemplateBuildId: 1,
+					}
+					op := &scheduleBuildOp{
+						Reqs: []*pb.ScheduleBuildRequest{req},
+					}
+					_, _, err := validateScheduleBuild(ctx, op, req, false)
+					assert.Loosely(t, err, should.ErrLike(`request_id prefix "__bb__:" is reserved for internal use`))
+				})
+
 				t.Run("use parent build token", func(t *ftt.Test) {
 					t.Run("ended parent", func(t *ftt.Test) {
 						pBld.Proto.Status = pb.Status_SUCCESS
@@ -5948,7 +5963,7 @@ func TestScheduleBuild(t *testing.T) {
 								},
 							},
 						}
-						_, _, err := validateScheduleBuild(ctx, op, req)
+						_, _, err := validateScheduleBuild(ctx, op, req, false)
 						assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					})
 

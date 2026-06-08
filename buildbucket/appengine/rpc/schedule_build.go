@@ -62,6 +62,12 @@ import (
 // the 255 character limit must be seperately applied.)
 var hostnameRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]+(\.[a-z0-9-]+)*$`)
 
+// internalRequestIDPrefix is a prefix of auto-generated request_id's.
+//
+// Such request IDs are not allowed to be passed externally to ScheduleBuild or
+// CreateBuild.
+const internalRequestIDPrefix = "__bb__:"
+
 // validateExpirationDuration validates the given expiration duration.
 func validateExpirationDuration(d *durationpb.Duration) error {
 	switch {
@@ -247,12 +253,26 @@ func validateProperties(p *structpb.Struct) error {
 	return nil
 }
 
+// validateRequestID validates request_id format.
+//
+// If allowInternal is false, will reject request_ids that start with some
+// reserved prefix. This prefix is used by auto-generated request IDs used
+// internally in Turbo CI stage implementation. They are not allowed to be
+// passed to CreateBuild/ScheduleBuild.
+func validateRequestID(reqID string, allowInternal bool) error {
+	if strings.Contains(reqID, "/") {
+		return errors.New("request_id cannot contain '/'")
+	}
+	if !allowInternal && strings.HasPrefix(reqID, internalRequestIDPrefix) {
+		return errors.Fmt("request_id prefix %q is reserved for internal use", internalRequestIDPrefix)
+	}
+	return nil
+}
+
 // validateSchedule validates the given request.
 func validateSchedule(ctx context.Context, req *pb.ScheduleBuildRequest, wellKnownExperiments stringset.Set, parent *model.Build) error {
 	var err error
 	switch {
-	case strings.Contains(req.GetRequestId(), "/"):
-		return errors.New("request_id cannot contain '/'")
 	case req.GetBuilder() == nil && req.GetTemplateBuildId() == 0:
 		return errors.New("builder or template_build_id is required")
 	case req.Builder != nil && teeErr(protoutil.ValidateRequiredBuilderID(req.Builder), &err) != nil:
@@ -1386,7 +1406,7 @@ func normalizeSchedule(req *pb.ScheduleBuildRequest) {
 //
 // In particular replaces TemplateBuildId with the body of the corresponding
 // build (prefetching its bucket if necessary).
-func validateScheduleBuild(ctx context.Context, op *scheduleBuildOp, req *pb.ScheduleBuildRequest) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
+func validateScheduleBuild(ctx context.Context, op *scheduleBuildOp, req *pb.ScheduleBuildRequest, allowInternalReqID bool) (*pb.ScheduleBuildRequest, *model.BuildMask, error) {
 	pBld, err := op.Parents.parentBuildForRequest(req)
 	if err != nil && req.DryRun {
 		// If the request is to actually create a build, we need to dedup before
@@ -1402,6 +1422,9 @@ func validateScheduleBuild(ctx context.Context, op *scheduleBuildOp, req *pb.Sch
 		return nil, nil, err
 	}
 	if err = validateSchedule(ctx, req, op.WellKnownExperiments, pBld); err != nil {
+		return nil, nil, appstatus.BadRequest(err)
+	}
+	if err := validateRequestID(req.GetRequestId(), allowInternalReqID); err != nil {
 		return nil, nil, appstatus.BadRequest(err)
 	}
 	normalizeSchedule(req)
@@ -1482,6 +1505,9 @@ type scheduleBuildsParams struct {
 
 	// TurboCIHost is TurboCI orchestrator's hostname.
 	TurboCIHost string
+
+	// AllowInternalRequestID is true to indicate request_id might be generated.
+	AllowInternalRequestID bool
 }
 
 // scheduleBuilds handles requests to schedule a batch of builds.
@@ -1520,7 +1546,7 @@ func scheduleBuilds(ctx context.Context, reqs []*pb.ScheduleBuildRequest, params
 	eg.SetLimit(64)
 	for i, req := range op.Reqs {
 		eg.Go(func() error {
-			updatedReq, mask, err := validateScheduleBuild(ctx, op, req)
+			updatedReq, mask, err := validateScheduleBuild(ctx, op, req, params.AllowInternalRequestID)
 			if err != nil {
 				op.Errs[i] = err
 			} else {

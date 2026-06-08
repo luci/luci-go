@@ -154,7 +154,7 @@ func TestRunStage(t *testing.T) {
 			assert.That(t, resp, should.Match(&executorpb.RunStageResponse{}))
 
 			reqID := &model.RequestID{
-				ID: fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s:%s", auth.CurrentIdentity(ctx), sha256hex(attemptIDStr))))),
+				ID: fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s:%s", auth.CurrentIdentity(ctx), generateRequestID(attemptIDStr))))),
 			}
 			assert.NoErr(t, datastore.Get(ctx, reqID))
 
@@ -351,7 +351,7 @@ func TestRunStage(t *testing.T) {
 			se.RunStage(ctx, req)
 
 			reqID := &model.RequestID{
-				ID: fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s:%s", auth.CurrentIdentity(ctx), sha256hex(attemptIDStr))))),
+				ID: fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s:%s", auth.CurrentIdentity(ctx), generateRequestID(attemptIDStr))))),
 			}
 			assert.NoErr(t, datastore.Get(ctx, reqID))
 

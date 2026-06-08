@@ -543,9 +543,8 @@ func validateCreateBuildRequest(ctx context.Context, wellKnownExperiments string
 	if err := validateBuild(ctx, wellKnownExperiments, req.GetBuild()); err != nil {
 		return nil, errors.Fmt("build: %w", err)
 	}
-
-	if strings.Contains(req.GetRequestId(), "/") {
-		return nil, errors.New("request_id cannot contain '/'")
+	if err := validateRequestID(req.GetRequestId(), false); err != nil {
+		return nil, err
 	}
 
 	m, err := model.NewBuildMask("", nil, req.Mask)

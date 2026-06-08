@@ -102,17 +102,18 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 	// Dedup by stage attempt id.
 	// RequestID cannot contain "/", while the stage ID (as part of attemptID)
 	// is a freeformed string, so hash it.
-	schReq.RequestId = sha256hex(attemptIDStr)
+	schReq.RequestId = generateRequestID(attemptIDStr)
 
 	blds, merr := scheduleBuilds(
 		ctx,
 		[]*pb.ScheduleBuildRequest{schReq},
 		&scheduleBuildsParams{
-			OverrideParent:    pBld,
-			LaunchAsNative:    true,
-			StageAttemptID:    attemptIDStr,
-			StageAttemptToken: req.GetStageAttemptToken(),
-			TurboCIHost:       se.TurboCIHost,
+			OverrideParent:         pBld,
+			LaunchAsNative:         true,
+			StageAttemptID:         attemptIDStr,
+			StageAttemptToken:      req.GetStageAttemptToken(),
+			TurboCIHost:            se.TurboCIHost,
+			AllowInternalRequestID: true,
 		})
 	err = merr[0]
 	if err != nil {
@@ -134,6 +135,6 @@ func (se *TurboCIStageExecutor) RunStage(ctx context.Context, req *executorpb.Ru
 	return &executorpb.RunStageResponse{}, err
 }
 
-func sha256hex(str string) string {
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(str)))
+func generateRequestID(attemptID string) string {
+	return fmt.Sprintf("%sturboci:%x", internalRequestIDPrefix, sha256.Sum256([]byte(attemptID)))
 }
