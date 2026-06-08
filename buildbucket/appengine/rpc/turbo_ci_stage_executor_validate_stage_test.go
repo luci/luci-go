@@ -73,15 +73,14 @@ func TestValidateStage(t *testing.T) {
 				Builder: &pb.BuilderID{
 					Project: "project",
 					Bucket:  "bucket",
-					Builder: "builder",
+					Builder: "",
 				},
-				RequestId: "invalid/request",
 			}
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:test@example.com",
 			})
 			_, _, err := validateStage(ctx, nil, req)
-			assert.That(t, err, should.ErrLike("request_id cannot contain '/'"))
+			assert.That(t, err, should.ErrLike("builder is required"))
 		})
 
 		t.Run("unset timeouts", func(t *ftt.Test) {

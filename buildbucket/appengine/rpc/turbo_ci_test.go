@@ -125,8 +125,7 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 					Identifier: stageID,
 					Realm:      proto.String("project:bucket"),
 					Args: value.MustWrite(&pb.ScheduleBuildRequest{
-						Builder:   builder,
-						RequestId: "some-request-id",
+						Builder: builder,
 					}, value.RealmFromContainer),
 				}.Build(),
 			},

@@ -69,6 +69,9 @@ func validateStage(ctx context.Context, stage *orchestratorpb.Stage, req *pb.Sch
 	if req.GetDryRun() {
 		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with dry_run is not supported"))
 	}
+	if req.GetRequestId() != "" {
+		return nil, "", appstatus.BadRequest(fmt.Errorf("Buildbucket stage with request_id is not supported: use stage ID as an idempotency key instead"))
+	}
 
 	// The timeout fields in req must be unset, they should be passed via Turbo CI
 	// execution policy instead.

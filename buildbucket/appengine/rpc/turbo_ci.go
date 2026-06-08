@@ -294,6 +294,11 @@ func generateStageID(reqID string) string {
 // Note `req` here is roughly whatever was passed to ScheduleBuild(...). Only
 // a minor normalization was applied to it.
 func scheduleBuildRequestToStage(req *pb.ScheduleBuildRequest, stageID *idspb.Stage, realm string) turboci.ScheduleBuildRequestStage {
+	// Request ID has already been used to derive CreateWorkPlan idempotency key
+	// or a unique stage ID (see generateStageID). It isn't directly used by the
+	// Buildbucket stage executor.
+	req.RequestId = ""
+
 	// Field masks make no sense inside Turbo CI stage args.
 	req.Mask = nil
 	req.Fields = nil
