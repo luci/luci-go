@@ -312,16 +312,18 @@ func (c *Client) FailAttempt(ctx context.Context, failure *AttemptFailure) error
 	})
 }
 
-// AbortAttempt sets the current stage attempt to INCOMPLETE and reports the
-// cancellation through progress.
+// AbandonAttempt sets the current stage attempt to INCOMPLETE with the given
+// progress message (if any).
 //
 // If the attempt is already COMPLETE/INCOMPLETE, logs this and returns nil.
 //
 // Returns appstatus errors.
-func (c *Client) AbortAttempt(ctx context.Context) error {
+func (c *Client) AbandonAttempt(ctx context.Context, progress string) error {
 	return c.writeAttempt(ctx, true, "Buildbucket build cancelled", func(cur write.CurrentAttemptWrite) {
 		cur.GetStateTransition().SetIncomplete()
-		cur.AddProgress("Cancelled via Buildbucket")
+		if progress != "" {
+			cur.AddProgress(progress)
+		}
 	})
 }
 

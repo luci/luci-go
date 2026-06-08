@@ -78,7 +78,12 @@ func writeStageAttemptOnBuildCompletion(ctx context.Context, bID int64) error {
 	case pb.Status_SUCCESS, pb.Status_FAILURE:
 		return cl.CompleteAttempt(ctx)
 	case pb.Status_CANCELED:
-		return cl.AbortAttempt(ctx)
+		// See CancelStage where "turboci" is set as the canceler.
+		var msg string
+		if bld.Proto.CanceledBy != "turboci" {
+			msg = "Cancelled via Buildbucket API"
+		}
+		return cl.AbandonAttempt(ctx, msg)
 	case pb.Status_INFRA_FAILURE:
 		return cl.FailAttempt(ctx, attemptFailure(bld.Proto))
 	default:

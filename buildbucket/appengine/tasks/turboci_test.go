@@ -114,7 +114,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 			assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)
 			progress := cw.GetProgress()
 			assert.That(t, len(progress), should.Equal(1))
-			assert.That(t, progress[0].GetMessage(), should.Equal("Cancelled via Buildbucket"))
+			assert.That(t, progress[0].GetMessage(), should.Equal("Cancelled via Buildbucket API"))
 		})
 
 		t.Run("attempt already final", func(t *ftt.Test) {
@@ -158,7 +158,7 @@ func TestWriteStageAttemptOnBuildCompletion(t *testing.T) {
 				assert.That(t, cw.GetStateTransition().HasIncomplete(), should.BeTrue)
 				progress := cw.GetProgress()
 				assert.That(t, len(progress), should.Equal(1))
-				assert.That(t, progress[0].GetMessage(), should.Equal("Cancelled via Buildbucket"))
+				assert.That(t, progress[0].GetMessage(), should.Equal("Cancelled via Buildbucket API"))
 				details := cw.GetDetails()
 				assert.That(t, len(details), should.Equal(2))
 				bldDetails := &pb.BuildStageDetails{}
