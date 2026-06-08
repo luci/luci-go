@@ -60,6 +60,7 @@ Available skills include:
 - [ux-prototyping](./.agents/skills/ux-prototyping/SKILL.md)
 - [preventing-workspace-leakage](./.agents/skills/preventing-workspace-leakage/SKILL.md)
 - [managing-parallel-workspaces](./.agents/skills/managing-parallel-workspaces/SKILL.md)
+- [bypassing-interactive-prompts](./.agents/skills/bypassing-interactive-prompts/SKILL.md)
 - [continuous-improvement](./.agents/skills/continuous-improvement/SKILL.md)
 
 
