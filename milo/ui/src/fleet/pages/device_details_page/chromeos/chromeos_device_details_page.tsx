@@ -25,6 +25,7 @@ import CentralizedProgress from '@/clusters/components/centralized_progress/cent
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { RunDeploy } from '@/fleet/components/actions/deploy/run_deploy';
+import { LeaseTip } from '@/fleet/components/actions/lease/lease_tip';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import { SshTip } from '@/fleet/components/actions/ssh/ssh_tip';
 import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
@@ -294,6 +295,7 @@ export const ChromeOSDeviceDetailsPage = () => {
               platform={Platform.CHROMEOS}
             />
             <SshTip hostname={id} dutId={dutId} />
+            <LeaseTip hostname={id} />
           </div>
           <TabContext value={selectedTab || TabValue.TASKS}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
