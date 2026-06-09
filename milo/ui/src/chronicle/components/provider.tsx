@@ -131,7 +131,7 @@ export function ChronicleContextProvider({
       workplan: response?.workplan,
       valueDataMap: valueDataMap,
     };
-  }, [normalizedWorkplanId, workflowType, useFakeData, result]);
+  }, [normalizedWorkplanId, workflowType, useFakeData, result.data]);
 
   const value = useMemo(
     () => ({
