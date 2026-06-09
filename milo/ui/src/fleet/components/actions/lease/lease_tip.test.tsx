@@ -19,6 +19,11 @@ import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_pro
 
 import { LeaseTip } from './lease_tip';
 
+const mockTrackEvent = jest.fn();
+jest.mock('@/generic_libs/components/google_analytics', () => ({
+  useGoogleAnalytics: () => ({ trackEvent: mockTrackEvent }),
+}));
+
 describe('<LeaseTip />', () => {
   it('renders CLI command for leasing device', async () => {
     render(
@@ -31,6 +36,10 @@ describe('<LeaseTip />', () => {
     await act(() => {
       const button = screen.getByRole('button');
       button.click();
+    });
+
+    expect(mockTrackEvent).toHaveBeenCalledWith('lease_tip', {
+      componentName: 'lease_tip_button',
     });
 
     expect(

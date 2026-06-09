@@ -23,6 +23,8 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
+
 import CodeSnippet from '../../code_snippet/code_snippet';
 
 interface LeaseTipProps {
@@ -34,8 +36,16 @@ interface LeaseTipProps {
  */
 export function LeaseTip({ hostname }: LeaseTipProps) {
   const [open, setOpen] = useState<boolean>(false);
+  const { trackEvent } = useGoogleAnalytics();
 
   const command = `crosfleet dut lease -host ${hostname}`;
+
+  const handleClickOpen = () => {
+    trackEvent('lease_tip', {
+      componentName: 'lease_tip_button',
+    });
+    setOpen(true);
+  };
 
   return (
     <>
@@ -43,7 +53,7 @@ export function LeaseTip({ hostname }: LeaseTipProps) {
         color="primary"
         size="small"
         startIcon={<VpnKeyIcon />}
-        onClick={() => setOpen(true)}
+        onClick={handleClickOpen}
       >
         Lease
       </Button>

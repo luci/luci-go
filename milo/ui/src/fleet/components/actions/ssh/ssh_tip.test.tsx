@@ -22,6 +22,11 @@ import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_pro
 
 import { SshTip } from './ssh_tip';
 
+const mockTrackEvent = jest.fn();
+jest.mock('@/generic_libs/components/google_analytics', () => ({
+  useGoogleAnalytics: () => ({ trackEvent: mockTrackEvent }),
+}));
+
 jest.mock('@/fleet/hooks/swarming_hooks');
 const useBotMock = useBot as jest.Mock;
 
@@ -31,6 +36,7 @@ const useBotsClientMock = useBotsClient as jest.Mock;
 describe('<SshTip />', () => {
   beforeEach(() => {
     useBotsClientMock.mockReturnValue(undefined);
+    mockTrackEvent.mockClear();
   });
 
   it('renders CLI command for non-satlab device', async () => {
@@ -47,6 +53,10 @@ describe('<SshTip />', () => {
     await act(() => {
       const button = screen.getByRole('button');
       button.click();
+    });
+
+    expect(mockTrackEvent).toHaveBeenCalledWith('ssh_tip', {
+      componentName: 'ssh_tip_button',
     });
 
     expect(screen.getByText('ssh test-device')).toBeVisible();

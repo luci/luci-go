@@ -26,6 +26,7 @@ import { useState } from 'react';
 import { useBot } from '@/fleet/hooks/swarming_hooks';
 import { getDimensionValue } from '@/fleet/utils/bots';
 import { DEVICE_TASKS_SWARMING_HOST } from '@/fleet/utils/builds';
+import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { useBotsClient } from '@/swarming/hooks/prpc_clients';
 
 import CodeSnippet from '../../code_snippet/code_snippet';
@@ -45,6 +46,14 @@ interface SshTipProps {
 // devices.
 export function SshTip({ hostname, dutId }: SshTipProps) {
   const [open, setOpen] = useState<boolean>(false);
+  const { trackEvent } = useGoogleAnalytics();
+
+  const handleClickOpen = () => {
+    trackEvent('ssh_tip', {
+      componentName: 'ssh_tip_button',
+    });
+    setOpen(true);
+  };
 
   const client = useBotsClient(DEVICE_TASKS_SWARMING_HOST);
 
@@ -70,7 +79,7 @@ export function SshTip({ hostname, dutId }: SshTipProps) {
         color="primary"
         size="small"
         startIcon={<TerminalIcon />}
-        onClick={() => setOpen(true)}
+        onClick={handleClickOpen}
       >
         SSH
       </Button>
