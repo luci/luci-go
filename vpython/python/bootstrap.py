@@ -61,7 +61,7 @@ if 'wheels' in os.environ:
       pip, 'install',
       '--disable-pip-version-check', '--isolated',
       '--compile',
-      '--no-deps',
+      '--only-binary=:all:',
       '--index-url', ar_url,
       '--requirement', requirements_file
   ]
